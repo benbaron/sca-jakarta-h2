@@ -1,0 +1,8 @@
+.root { -fx-font-size: 13px; }
+.top-chrome { -fx-background-color: -fx-control-inner-background; }
+.toolbar { -fx-padding: 6 8 6 8; }
+.nav { -fx-min-width: 260px; -fx-pref-width: 280px; }
+.inspector { -fx-min-width: 280px; -fx-pref-width: 320px; }
+.inspector-title { -fx-font-size: 14px; -fx-font-weight: bold; }
+.panel-title { -fx-font-size: 18px; -fx-font-weight: bold; }
+.subheader { -fx-font-weight: bold; }

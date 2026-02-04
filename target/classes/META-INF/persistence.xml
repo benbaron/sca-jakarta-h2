@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_1.xsd"
+             version="3.1">
+
+  <persistence-unit name="scaLedgerPU" transaction-type="RESOURCE_LOCAL">
+    <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+
+    <class>org.nonprofitbookkeeping.model.ChartOfAccounts</class>
+    <class>org.nonprofitbookkeeping.model.Account</class>
+    <class>org.nonprofitbookkeeping.model.AccountAlias</class>
+    <class>org.nonprofitbookkeeping.model.ReportSection</class>
+    <class>org.nonprofitbookkeeping.model.AccountReportSection</class>
+    <class>org.nonprofitbookkeeping.model.ScheduleKind</class>
+    <class>org.nonprofitbookkeeping.model.AccountScheduleRequirement</class>
+    <class>org.nonprofitbookkeeping.model.AccountSubtypeScheduleDefault</class>
+
+    <class>org.nonprofitbookkeeping.model.Fund</class>
+    <class>org.nonprofitbookkeeping.model.FundAlias</class>
+
+    <class>org.nonprofitbookkeeping.model.Counterparty</class>
+    <class>org.nonprofitbookkeeping.model.Merchant</class>
+    <class>org.nonprofitbookkeeping.model.Activity</class>
+
+    <class>org.nonprofitbookkeeping.model.Txn</class>
+    <class>org.nonprofitbookkeeping.model.TxnSplit</class>
+    <class>org.nonprofitbookkeeping.model.FundTransfer</class>
+
+    <properties>
+      <!-- H2 file DB in ./data -->
+      <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
+      <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:file:./data/sca-ledger;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH"/>
+      <property name="jakarta.persistence.jdbc.user" value="sa"/>
+      <property name="jakarta.persistence.jdbc.password" value=""/>
+
+      <!-- Hibernate -->
+      <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+      <property name="hibernate.hbm2ddl.auto" value="validate"/>
+      <property name="hibernate.show_sql" value="false"/>
+      <property name="hibernate.format_sql" value="true"/>
+      <property name="hibernate.jdbc.time_zone" value="UTC"/>
+    </properties>
+  </persistence-unit>
+
+</persistence>
