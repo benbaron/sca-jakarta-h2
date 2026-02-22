@@ -11,7 +11,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.concurrent.Task;
 
 import org.nonprofitbookkeeping.model.Account;
 
@@ -74,28 +73,22 @@ public class ChartOfAccountsPanel implements AppPanel
         refresh.setDisable(true);
         status.setText("Loading accounts...");
 
-        Task<List<Account>> task = new Task<>()
-        {
-            @Override
-            protected List<Account> call()
-            {
-                return UiServiceRegistry.accountLookup().listActivePostingAccounts();
-            }
-        };
-
-        task.setOnSucceeded(e -> {
-            table.getItems().setAll(task.getValue());
-            status.setText("Loaded " + task.getValue().size() + " posting account(s).");
+        UiAsync.run("coa-load",
+            () -> UiServiceRegistry.accountLookup().listActivePostingAccounts(),
+            rows -> {
+            table.getItems().setAll(rows);
+            status.setText("Loaded " + rows.size() + " posting account(s).");
             refresh.setDisable(false);
-        });
-
-        task.setOnFailed(e -> {
-            status.setText("Failed to load accounts: " + task.getException().getMessage());
+            },
+            ex -> {
+            status.setText("Failed to load accounts: " + safeMessage(ex));
             refresh.setDisable(false);
-        });
+            });
+    }
 
-        Thread t = new Thread(task, "coa-load");
-        t.setDaemon(true);
-        t.start();
+    private String safeMessage(Throwable ex)
+    {
+        if (ex == null || ex.getMessage() == null || ex.getMessage().isBlank()) return "unknown error";
+        return ex.getMessage();
     }
 }

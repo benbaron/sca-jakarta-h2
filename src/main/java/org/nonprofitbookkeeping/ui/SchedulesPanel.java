@@ -8,7 +8,6 @@ import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.concurrent.Task;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -114,37 +113,28 @@ public class SchedulesPanel implements AppPanel
     {
         status.setText("Loading accounts...");
 
-        Task<List<Account>> task = new Task<>()
-        {
-            @Override
-            protected List<Account> call()
-            {
-                AccountLookupService lookup = UiServiceRegistry.accountLookup();
-                return lookup.listActivePostingAccounts();
-            }
-        };
-
-        task.setOnSucceeded(e -> {
-            List<Account> accounts = task.getValue();
-            if (!accounts.isEmpty())
-            {
-                accountSelect.getItems().setAll(accounts);
-                status.setText("Loaded " + accounts.size() + " account(s).");
-                accountSelect.getSelectionModel().select(0);
-                return;
-            }
-
-            loadFallbackAccounts();
-        });
-
-        task.setOnFailed(e -> loadFallbackAccounts());
-
-        Thread t = new Thread(task, "schedule-accounts-load");
-        t.setDaemon(true);
-        t.start();
+        UiAsync.run("schedule-accounts-load",
+            this::loadDbAccounts,
+            accounts -> {
+                if (!accounts.isEmpty())
+                {
+                    accountSelect.getItems().setAll(accounts);
+                    status.setText("Loaded " + accounts.size() + " account(s).");
+                    accountSelect.getSelectionModel().select(0);
+                    return;
+                }
+                loadFallbackAccounts("seed data unavailable");
+            },
+            ex -> loadFallbackAccounts("lookup failed: " + safeMessage(ex)));
     }
 
-    private void loadFallbackAccounts()
+    private List<Account> loadDbAccounts()
+    {
+        AccountLookupService lookup = UiServiceRegistry.accountLookup();
+        return lookup.listActivePostingAccounts();
+    }
+
+    private void loadFallbackAccounts(String reason)
     {
         accountSelect.getItems().setAll(
             demoAccount("I.c", "Receivables", AccountSubtype.RECEIVABLE),
@@ -154,7 +144,13 @@ public class SchedulesPanel implements AppPanel
             demoAccount("I.a", "Checking / Cash", AccountSubtype.CASH)
         );
         accountSelect.getSelectionModel().select(0);
-        status.setText("Using fallback demo accounts (seed data unavailable).");
+        status.setText("Using fallback demo accounts (" + reason + ").");
+    }
+
+    private String safeMessage(Throwable ex)
+    {
+        if (ex == null || ex.getMessage() == null || ex.getMessage().isBlank()) return "unknown error";
+        return ex.getMessage();
     }
 
     private Account demoAccount(String code, String name, AccountSubtype subtype)

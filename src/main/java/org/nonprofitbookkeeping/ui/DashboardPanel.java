@@ -12,7 +12,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.concurrent.Task;
 
 import org.nonprofitbookkeeping.service.FundBalanceRow;
 
@@ -72,34 +71,32 @@ public class DashboardPanel implements AppPanel
         refresh.setDisable(true);
         status.setText("Loading dashboard data...");
 
-        Task<DashboardData> task = new Task<>()
-        {
-            @Override
-            protected DashboardData call()
-            {
-                List<FundBalanceRow> rows = UiServiceRegistry.fundBalance().balancesAsOf(LocalDate.now());
-                int accountCount = UiServiceRegistry.accountLookup().listActivePostingAccounts().size();
-                int fundCount = UiServiceRegistry.fundLookup().listActiveFunds().size();
-                return new DashboardData(rows, accountCount, fundCount);
-            }
-        };
+        UiAsync.run("dashboard-load",
+            this::loadDashboardData,
+            data -> {
+                balances.getItems().setAll(data.rows());
+                totals.setText("Active posting accounts: " + data.accountCount() + " | Active funds: " + data.fundCount());
+                status.setText("Dashboard updated.");
+                refresh.setDisable(false);
+            },
+            ex -> {
+                status.setText("Failed to load dashboard: " + safeMessage(ex));
+                refresh.setDisable(false);
+            });
+    }
 
-        task.setOnSucceeded(e -> {
-            DashboardData data = task.getValue();
-            balances.getItems().setAll(data.rows());
-            totals.setText("Active posting accounts: " + data.accountCount() + " | Active funds: " + data.fundCount());
-            status.setText("Dashboard updated.");
-            refresh.setDisable(false);
-        });
+    private DashboardData loadDashboardData()
+    {
+        List<FundBalanceRow> rows = UiServiceRegistry.fundBalance().balancesAsOf(LocalDate.now());
+        int accountCount = UiServiceRegistry.accountLookup().listActivePostingAccounts().size();
+        int fundCount = UiServiceRegistry.fundLookup().listActiveFunds().size();
+        return new DashboardData(rows, accountCount, fundCount);
+    }
 
-        task.setOnFailed(e -> {
-            status.setText("Failed to load dashboard: " + task.getException().getMessage());
-            refresh.setDisable(false);
-        });
-
-        Thread t = new Thread(task, "dashboard-load");
-        t.setDaemon(true);
-        t.start();
+    private String safeMessage(Throwable ex)
+    {
+        if (ex == null || ex.getMessage() == null || ex.getMessage().isBlank()) return "unknown error";
+        return ex.getMessage();
     }
 
     private record DashboardData(List<FundBalanceRow> rows, int accountCount, int fundCount) {}

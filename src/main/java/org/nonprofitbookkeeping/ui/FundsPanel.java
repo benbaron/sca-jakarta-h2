@@ -11,7 +11,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.concurrent.Task;
 
 import org.nonprofitbookkeeping.model.Fund;
 
@@ -71,28 +70,22 @@ public class FundsPanel implements AppPanel
         refresh.setDisable(true);
         status.setText("Loading funds...");
 
-        Task<List<Fund>> task = new Task<>()
-        {
-            @Override
-            protected List<Fund> call()
-            {
-                return UiServiceRegistry.fundLookup().listActiveFunds();
-            }
-        };
-
-        task.setOnSucceeded(e -> {
-            table.getItems().setAll(task.getValue());
-            status.setText("Loaded " + task.getValue().size() + " fund(s).");
+        UiAsync.run("fund-load",
+            () -> UiServiceRegistry.fundLookup().listActiveFunds(),
+            rows -> {
+            table.getItems().setAll(rows);
+            status.setText("Loaded " + rows.size() + " fund(s).");
             refresh.setDisable(false);
-        });
-
-        task.setOnFailed(e -> {
-            status.setText("Failed to load funds: " + task.getException().getMessage());
+            },
+            ex -> {
+            status.setText("Failed to load funds: " + safeMessage(ex));
             refresh.setDisable(false);
-        });
+            });
+    }
 
-        Thread t = new Thread(task, "fund-load");
-        t.setDaemon(true);
-        t.start();
+    private String safeMessage(Throwable ex)
+    {
+        if (ex == null || ex.getMessage() == null || ex.getMessage().isBlank()) return "unknown error";
+        return ex.getMessage();
     }
 }
