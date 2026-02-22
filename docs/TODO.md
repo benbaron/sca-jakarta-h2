@@ -13,7 +13,17 @@
   - Txn header fields + split editor
   - Show Journal drawer
 - CoA editor screen + import/export buttons
+  - [x] Read-only account list now wired to `AccountLookupService`
+  - [ ] Add account create/edit forms + import/export
 - Fund editor screen + transfer wizard
+  - [x] Read-only fund list now wired to `FundLookupService`
+  - [ ] Add fund create/edit + transfer wizard
+- Dashboard data wiring
+  - [x] Dashboard now calls `FundBalanceService` + lookup services for summary counts
+  - [x] Data loads moved off JavaFX UI thread for dashboard/CoA/funds/schedules read-only views
+  - [x] Shared async helper (`UiAsync`) used to reduce duplicated JavaFX task boilerplate
+  - [x] Shared error helper (`UiErrors.safeMessage`) used across read-only panels
+  - [ ] Add chart widgets and drill-down links
 
 ## Mid term (Schedules)
 - Schedule screens aligned with workbook:

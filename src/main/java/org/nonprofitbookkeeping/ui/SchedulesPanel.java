@@ -2,7 +2,6 @@ package org.nonprofitbookkeeping.ui;
 
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.AccountSubtype;
-import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.service.AccountLookupService;
 import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
 
@@ -14,6 +13,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,10 +29,11 @@ public class SchedulesPanel implements AppPanel
 
     private final ComboBox<Account> accountSelect = new ComboBox<>();
     private final TabPane tabs = new TabPane();
+    private final Label status = new Label();
 
     private final Map<String, Tab> tabIndex = new LinkedHashMap<>();
 
-    private final ScheduleEligibilityService eligibility = buildEligibility();
+    private final ScheduleEligibilityService eligibility = UiServiceRegistry.schedules();
 
     public SchedulesPanel()
     {
@@ -49,7 +50,7 @@ public class SchedulesPanel implements AppPanel
         HBox top = new HBox(10, new Label("Account:"), accountSelect);
         top.setPadding(new Insets(6, 6, 6, 6));
 
-        VBox header = new VBox(6, title, help, top, new Separator());
+        VBox header = new VBox(6, title, help, top, status, new Separator());
         header.setPadding(new Insets(6, 6, 6, 6));
 
         root.setTop(header);
@@ -110,19 +111,31 @@ public class SchedulesPanel implements AppPanel
 
     private void loadAccounts()
     {
-        // Preferred: DB
-        try
-        {
-            AccountLookupService lookup = buildAccountLookup();
-            accountSelect.getItems().setAll(lookup.listActivePostingAccounts());
-            if (!accountSelect.getItems().isEmpty()) return;
-        }
-        catch (Throwable ignored)
-        {
-            // fall back
-        }
+        status.setText("Loading accounts...");
 
-        // Fallback demo list
+        UiAsync.run("schedule-accounts-load",
+            this::loadDbAccounts,
+            accounts -> {
+                if (!accounts.isEmpty())
+                {
+                    accountSelect.getItems().setAll(accounts);
+                    status.setText("Loaded " + accounts.size() + " account(s).");
+                    accountSelect.getSelectionModel().select(0);
+                    return;
+                }
+                loadFallbackAccounts("seed data unavailable");
+            },
+            ex -> loadFallbackAccounts("lookup failed: " + UiErrors.safeMessage(ex)));
+    }
+
+    private List<Account> loadDbAccounts()
+    {
+        AccountLookupService lookup = UiServiceRegistry.accountLookup();
+        return lookup.listActivePostingAccounts();
+    }
+
+    private void loadFallbackAccounts(String reason)
+    {
         accountSelect.getItems().setAll(
             demoAccount("I.c", "Receivables", AccountSubtype.RECEIVABLE),
             demoAccount("II.b", "Payables", AccountSubtype.PAYABLE),
@@ -130,6 +143,8 @@ public class SchedulesPanel implements AppPanel
             demoAccount("II.c", "Other Liabilities", AccountSubtype.OTHER_LIABILITY),
             demoAccount("I.a", "Checking / Cash", AccountSubtype.CASH)
         );
+        accountSelect.getSelectionModel().select(0);
+        status.setText("Using fallback demo accounts (" + reason + ").");
     }
 
     private Account demoAccount(String code, String name, AccountSubtype subtype)
@@ -156,46 +171,5 @@ public class SchedulesPanel implements AppPanel
         }
     }
 
-    private AccountLookupService buildAccountLookup()
-    {
-        try
-        {
-            AccountLookupService svc = new AccountLookupService();
-            java.lang.reflect.Field f = AccountLookupService.class.getDeclaredField("jpa");
-            f.setAccessible(true);
-            f.set(svc, new Jpa());
-            return svc;
-        }
-        catch (Throwable t)
-        {
-            return new AccountLookupService();
-        }
-    }
-
-    private ScheduleEligibilityService buildEligibility()
-    {
-        try
-        {
-            ScheduleEligibilityService svc = new ScheduleEligibilityService();
-            java.lang.reflect.Field f = ScheduleEligibilityService.class.getDeclaredField("jpa");
-            f.setAccessible(true);
-            f.set(svc, new Jpa());
-            return svc;
-        }
-        catch (Throwable t)
-        {
-            return new ScheduleEligibilityService();
-        }
-    }
-
-	/**
-	 * Override @see org.nonprofitbookkeeping.ui.AppPanel#root() 
-	 */
-	@Override
-	public Node root()
-	{
-		// TODO Auto-generated method stub
-		return null;
-		
-	}
+    @Override public Node root() { return root; }
 }
