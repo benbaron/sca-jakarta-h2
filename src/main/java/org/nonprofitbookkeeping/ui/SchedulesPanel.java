@@ -125,7 +125,7 @@ public class SchedulesPanel implements AppPanel
                 }
                 loadFallbackAccounts("seed data unavailable");
             },
-            ex -> loadFallbackAccounts("lookup failed: " + safeMessage(ex)));
+            ex -> loadFallbackAccounts("lookup failed: " + UiErrors.safeMessage(ex)));
     }
 
     private List<Account> loadDbAccounts()
@@ -145,12 +145,6 @@ public class SchedulesPanel implements AppPanel
         );
         accountSelect.getSelectionModel().select(0);
         status.setText("Using fallback demo accounts (" + reason + ").");
-    }
-
-    private String safeMessage(Throwable ex)
-    {
-        if (ex == null || ex.getMessage() == null || ex.getMessage().isBlank()) return "unknown error";
-        return ex.getMessage();
     }
 
     private Account demoAccount(String code, String name, AccountSubtype subtype)

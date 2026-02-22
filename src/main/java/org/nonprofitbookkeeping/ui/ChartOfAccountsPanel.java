@@ -81,14 +81,8 @@ public class ChartOfAccountsPanel implements AppPanel
             refresh.setDisable(false);
             },
             ex -> {
-            status.setText("Failed to load accounts: " + safeMessage(ex));
+            status.setText("Failed to load accounts: " + UiErrors.safeMessage(ex));
             refresh.setDisable(false);
             });
-    }
-
-    private String safeMessage(Throwable ex)
-    {
-        if (ex == null || ex.getMessage() == null || ex.getMessage().isBlank()) return "unknown error";
-        return ex.getMessage();
     }
 }

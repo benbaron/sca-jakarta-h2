@@ -22,6 +22,7 @@
   - [x] Dashboard now calls `FundBalanceService` + lookup services for summary counts
   - [x] Data loads moved off JavaFX UI thread for dashboard/CoA/funds/schedules read-only views
   - [x] Shared async helper (`UiAsync`) used to reduce duplicated JavaFX task boilerplate
+  - [x] Shared error helper (`UiErrors.safeMessage`) used across read-only panels
   - [ ] Add chart widgets and drill-down links
 
 ## Mid term (Schedules)

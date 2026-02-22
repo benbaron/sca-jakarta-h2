@@ -80,7 +80,7 @@ public class DashboardPanel implements AppPanel
                 refresh.setDisable(false);
             },
             ex -> {
-                status.setText("Failed to load dashboard: " + safeMessage(ex));
+                status.setText("Failed to load dashboard: " + UiErrors.safeMessage(ex));
                 refresh.setDisable(false);
             });
     }
@@ -91,12 +91,6 @@ public class DashboardPanel implements AppPanel
         int accountCount = UiServiceRegistry.accountLookup().listActivePostingAccounts().size();
         int fundCount = UiServiceRegistry.fundLookup().listActiveFunds().size();
         return new DashboardData(rows, accountCount, fundCount);
-    }
-
-    private String safeMessage(Throwable ex)
-    {
-        if (ex == null || ex.getMessage() == null || ex.getMessage().isBlank()) return "unknown error";
-        return ex.getMessage();
     }
 
     private record DashboardData(List<FundBalanceRow> rows, int accountCount, int fundCount) {}
