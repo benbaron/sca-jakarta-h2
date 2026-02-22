@@ -11,13 +11,18 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.concurrent.Task;
 
 import org.nonprofitbookkeeping.model.Account;
+
+import java.util.List;
 
 public class ChartOfAccountsPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
     private final TableView<Account> table = new TableView<>();
+    private final Label status = new Label();
+    private Button refresh;
 
     public ChartOfAccountsPanel()
     {
@@ -29,11 +34,11 @@ public class ChartOfAccountsPanel implements AppPanel
         Button add = new Button("+ Add");
         add.setOnAction(e -> onNew());
 
-        Button refresh = new Button("Refresh");
+        refresh = new Button("Refresh");
         refresh.setOnAction(e -> reload());
 
         HBox actions = new HBox(8, add, refresh);
-        VBox header = new VBox(6, title, actions, new Separator());
+        VBox header = new VBox(6, title, actions, status, new Separator());
 
         root.setTop(header);
 
@@ -66,6 +71,31 @@ public class ChartOfAccountsPanel implements AppPanel
 
     private void reload()
     {
-        table.getItems().setAll(UiServiceRegistry.accountLookup().listActivePostingAccounts());
+        refresh.setDisable(true);
+        status.setText("Loading accounts...");
+
+        Task<List<Account>> task = new Task<>()
+        {
+            @Override
+            protected List<Account> call()
+            {
+                return UiServiceRegistry.accountLookup().listActivePostingAccounts();
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            table.getItems().setAll(task.getValue());
+            status.setText("Loaded " + task.getValue().size() + " posting account(s).");
+            refresh.setDisable(false);
+        });
+
+        task.setOnFailed(e -> {
+            status.setText("Failed to load accounts: " + task.getException().getMessage());
+            refresh.setDisable(false);
+        });
+
+        Thread t = new Thread(task, "coa-load");
+        t.setDaemon(true);
+        t.start();
     }
 }

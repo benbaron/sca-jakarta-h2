@@ -11,13 +11,18 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.concurrent.Task;
 
 import org.nonprofitbookkeeping.model.Fund;
+
+import java.util.List;
 
 public class FundsPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
     private final TableView<Fund> table = new TableView<>();
+    private final Label status = new Label();
+    private Button refresh;
 
     public FundsPanel()
     {
@@ -29,11 +34,11 @@ public class FundsPanel implements AppPanel
         Button add = new Button("+ Add");
         add.setOnAction(e -> onNew());
 
-        Button refresh = new Button("Refresh");
+        refresh = new Button("Refresh");
         refresh.setOnAction(e -> reload());
 
         HBox actions = new HBox(8, add, refresh);
-        VBox header = new VBox(6, title, actions, new Separator());
+        VBox header = new VBox(6, title, actions, status, new Separator());
 
         root.setTop(header);
 
@@ -63,6 +68,31 @@ public class FundsPanel implements AppPanel
 
     private void reload()
     {
-        table.getItems().setAll(UiServiceRegistry.fundLookup().listActiveFunds());
+        refresh.setDisable(true);
+        status.setText("Loading funds...");
+
+        Task<List<Fund>> task = new Task<>()
+        {
+            @Override
+            protected List<Fund> call()
+            {
+                return UiServiceRegistry.fundLookup().listActiveFunds();
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            table.getItems().setAll(task.getValue());
+            status.setText("Loaded " + task.getValue().size() + " fund(s).");
+            refresh.setDisable(false);
+        });
+
+        task.setOnFailed(e -> {
+            status.setText("Failed to load funds: " + task.getException().getMessage());
+            refresh.setDisable(false);
+        });
+
+        Thread t = new Thread(task, "fund-load");
+        t.setDaemon(true);
+        t.start();
     }
 }

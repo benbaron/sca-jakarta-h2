@@ -8,11 +8,13 @@ import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.concurrent.Task;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,6 +30,7 @@ public class SchedulesPanel implements AppPanel
 
     private final ComboBox<Account> accountSelect = new ComboBox<>();
     private final TabPane tabs = new TabPane();
+    private final Label status = new Label();
 
     private final Map<String, Tab> tabIndex = new LinkedHashMap<>();
 
@@ -48,7 +51,7 @@ public class SchedulesPanel implements AppPanel
         HBox top = new HBox(10, new Label("Account:"), accountSelect);
         top.setPadding(new Insets(6, 6, 6, 6));
 
-        VBox header = new VBox(6, title, help, top, new Separator());
+        VBox header = new VBox(6, title, help, top, status, new Separator());
         header.setPadding(new Insets(6, 6, 6, 6));
 
         root.setTop(header);
@@ -109,19 +112,40 @@ public class SchedulesPanel implements AppPanel
 
     private void loadAccounts()
     {
-        // Preferred: DB
-        try
-        {
-            AccountLookupService lookup = UiServiceRegistry.accountLookup();
-            accountSelect.getItems().setAll(lookup.listActivePostingAccounts());
-            if (!accountSelect.getItems().isEmpty()) return;
-        }
-        catch (Throwable ignored)
-        {
-            // fall back
-        }
+        status.setText("Loading accounts...");
 
-        // Fallback demo list
+        Task<List<Account>> task = new Task<>()
+        {
+            @Override
+            protected List<Account> call()
+            {
+                AccountLookupService lookup = UiServiceRegistry.accountLookup();
+                return lookup.listActivePostingAccounts();
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            List<Account> accounts = task.getValue();
+            if (!accounts.isEmpty())
+            {
+                accountSelect.getItems().setAll(accounts);
+                status.setText("Loaded " + accounts.size() + " account(s).");
+                accountSelect.getSelectionModel().select(0);
+                return;
+            }
+
+            loadFallbackAccounts();
+        });
+
+        task.setOnFailed(e -> loadFallbackAccounts());
+
+        Thread t = new Thread(task, "schedule-accounts-load");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private void loadFallbackAccounts()
+    {
         accountSelect.getItems().setAll(
             demoAccount("I.c", "Receivables", AccountSubtype.RECEIVABLE),
             demoAccount("II.b", "Payables", AccountSubtype.PAYABLE),
@@ -129,6 +153,8 @@ public class SchedulesPanel implements AppPanel
             demoAccount("II.c", "Other Liabilities", AccountSubtype.OTHER_LIABILITY),
             demoAccount("I.a", "Checking / Cash", AccountSubtype.CASH)
         );
+        accountSelect.getSelectionModel().select(0);
+        status.setText("Using fallback demo accounts (seed data unavailable).");
     }
 
     private Account demoAccount(String code, String name, AccountSubtype subtype)
