@@ -25,6 +25,13 @@ public class ScheduleEligibilityService
     @Inject
     Jpa jpa;
 
+    public ScheduleEligibilityService() {}
+
+    public ScheduleEligibilityService(Jpa jpa)
+    {
+        this.jpa = jpa;
+    }
+
     public Set<String> allowedScheduleKindCodes(Account account)
     {
         if (account == null) return Set.of();

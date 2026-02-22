@@ -5,13 +5,19 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.beans.property.SimpleStringProperty;
+
+import org.nonprofitbookkeeping.model.Account;
 
 public class ChartOfAccountsPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
+    private final TableView<Account> table = new TableView<>();
 
     public ChartOfAccountsPanel()
     {
@@ -23,17 +29,43 @@ public class ChartOfAccountsPanel implements AppPanel
         Button add = new Button("+ Add");
         add.setOnAction(e -> onNew());
 
-        HBox actions = new HBox(8, add);
+        Button refresh = new Button("Refresh");
+        refresh.setOnAction(e -> reload());
+
+        HBox actions = new HBox(8, add, refresh);
         VBox header = new VBox(6, title, actions, new Separator());
 
         root.setTop(header);
-        root.setCenter(new Label("TODO: Implement Chart of Accounts content."));
+
+        TableColumn<Account, String> code = new TableColumn<>("Code");
+        code.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().getCode()));
+
+        TableColumn<Account, String> name = new TableColumn<>("Name");
+        name.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().getName()));
+
+        TableColumn<Account, String> type = new TableColumn<>("Type");
+        type.setCellValueFactory(v -> new SimpleStringProperty(String.valueOf(v.getValue().getAccountType())));
+
+        TableColumn<Account, String> subtype = new TableColumn<>("Subtype");
+        subtype.setCellValueFactory(v -> new SimpleStringProperty(String.valueOf(v.getValue().getSubtype())));
+
+        table.getColumns().addAll(code, name, type, subtype);
+        table.setPlaceholder(new Label("No accounts found. Run the seed command to create starter data."));
+        root.setCenter(table);
+
+        reload();
     }
 
     @Override public String title() { return "Chart of Accounts"; }
     @Override public Node root() { return root; }
 
     @Override public void onNew() {
-        // placeholder
+        new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION,
+            "Create account UI is not built yet. This panel is now connected to AccountLookupService for read-only listing.").showAndWait();
+    }
+
+    private void reload()
+    {
+        table.getItems().setAll(UiServiceRegistry.accountLookup().listActivePostingAccounts());
     }
 }

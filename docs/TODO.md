@@ -13,7 +13,14 @@
   - Txn header fields + split editor
   - Show Journal drawer
 - CoA editor screen + import/export buttons
+  - [x] Read-only account list now wired to `AccountLookupService`
+  - [ ] Add account create/edit forms + import/export
 - Fund editor screen + transfer wizard
+  - [x] Read-only fund list now wired to `FundLookupService`
+  - [ ] Add fund create/edit + transfer wizard
+- Dashboard data wiring
+  - [x] Dashboard now calls `FundBalanceService` + lookup services for summary counts
+  - [ ] Add chart widgets and drill-down links
 
 ## Mid term (Schedules)
 - Schedule screens aligned with workbook:

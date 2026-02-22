@@ -2,7 +2,6 @@ package org.nonprofitbookkeeping.ui;
 
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.AccountSubtype;
-import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.service.AccountLookupService;
 import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
 
@@ -32,7 +31,7 @@ public class SchedulesPanel implements AppPanel
 
     private final Map<String, Tab> tabIndex = new LinkedHashMap<>();
 
-    private final ScheduleEligibilityService eligibility = buildEligibility();
+    private final ScheduleEligibilityService eligibility = UiServiceRegistry.schedules();
 
     public SchedulesPanel()
     {
@@ -113,7 +112,7 @@ public class SchedulesPanel implements AppPanel
         // Preferred: DB
         try
         {
-            AccountLookupService lookup = buildAccountLookup();
+            AccountLookupService lookup = UiServiceRegistry.accountLookup();
             accountSelect.getItems().setAll(lookup.listActivePostingAccounts());
             if (!accountSelect.getItems().isEmpty()) return;
         }
@@ -156,46 +155,5 @@ public class SchedulesPanel implements AppPanel
         }
     }
 
-    private AccountLookupService buildAccountLookup()
-    {
-        try
-        {
-            AccountLookupService svc = new AccountLookupService();
-            java.lang.reflect.Field f = AccountLookupService.class.getDeclaredField("jpa");
-            f.setAccessible(true);
-            f.set(svc, new Jpa());
-            return svc;
-        }
-        catch (Throwable t)
-        {
-            return new AccountLookupService();
-        }
-    }
-
-    private ScheduleEligibilityService buildEligibility()
-    {
-        try
-        {
-            ScheduleEligibilityService svc = new ScheduleEligibilityService();
-            java.lang.reflect.Field f = ScheduleEligibilityService.class.getDeclaredField("jpa");
-            f.setAccessible(true);
-            f.set(svc, new Jpa());
-            return svc;
-        }
-        catch (Throwable t)
-        {
-            return new ScheduleEligibilityService();
-        }
-    }
-
-	/**
-	 * Override @see org.nonprofitbookkeeping.ui.AppPanel#root() 
-	 */
-	@Override
-	public Node root()
-	{
-		// TODO Auto-generated method stub
-		return null;
-		
-	}
+    @Override public Node root() { return root; }
 }
