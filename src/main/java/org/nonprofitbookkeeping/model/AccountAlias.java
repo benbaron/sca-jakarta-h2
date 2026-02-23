@@ -10,6 +10,9 @@ import java.time.*;
            @Index(name = "ix_account_alias_account", columnList = "account_id"),
            @Index(name = "ix_account_alias_text", columnList = "alias_text")
        })
+/**
+ * Represents the AccountAlias component in the nonprofit bookkeeping application.
+ */
 public class AccountAlias
 {
     @Id

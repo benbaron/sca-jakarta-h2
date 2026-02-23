@@ -7,6 +7,9 @@ import java.time.*;
 @Entity
 @Table(name = "account_report_section",
        uniqueConstraints = @UniqueConstraint(name = "uq_account_report", columnNames = {"account_id", "report_section_id"}))
+/**
+ * Represents the AccountReportSection component in the nonprofit bookkeeping application.
+ */
 public class AccountReportSection
 {
     @Id

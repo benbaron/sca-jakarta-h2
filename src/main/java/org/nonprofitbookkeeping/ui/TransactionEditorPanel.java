@@ -6,6 +6,9 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
+/**
+ * Represents the TransactionEditorPanel component in the nonprofit bookkeeping application.
+ */
 public class TransactionEditorPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();

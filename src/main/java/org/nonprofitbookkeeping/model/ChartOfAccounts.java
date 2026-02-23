@@ -6,6 +6,9 @@ import java.time.*;
 
 @Entity
 @Table(name = "chart_of_accounts")
+/**
+ * Represents the ChartOfAccounts component in the nonprofit bookkeeping application.
+ */
 public class ChartOfAccounts
 {
     @Id

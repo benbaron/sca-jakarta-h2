@@ -7,6 +7,9 @@ import java.time.*;
 @Entity
 @Table(name = "account_schedule_requirement",
        uniqueConstraints = @UniqueConstraint(name = "uq_asr", columnNames = {"account_id", "schedule_kind_id"}))
+/**
+ * Represents the AccountScheduleRequirement component in the nonprofit bookkeeping application.
+ */
 public class AccountScheduleRequirement
 {
     @Id

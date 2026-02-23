@@ -12,6 +12,9 @@ import java.math.*;
            @Index(name = "ix_fund_parent", columnList = "parent_id"),
            @Index(name = "ix_fund_active", columnList = "is_active")
        })
+/**
+ * Represents the Fund component in the nonprofit bookkeeping application.
+ */
 public class Fund
 {
     @Id

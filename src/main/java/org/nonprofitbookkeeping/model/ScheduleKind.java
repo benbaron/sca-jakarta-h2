@@ -7,6 +7,9 @@ import java.time.*;
 @Entity
 @Table(name = "schedule_kind",
        uniqueConstraints = @UniqueConstraint(name = "uq_schedule_kind_code", columnNames = {"code"}))
+/**
+ * Represents the ScheduleKind component in the nonprofit bookkeeping application.
+ */
 public class ScheduleKind
 {
     @Id

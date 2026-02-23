@@ -12,6 +12,9 @@ import java.time.*;
            @Index(name = "ix_account_parent", columnList = "parent_id"),
            @Index(name = "ix_account_active", columnList = "is_active")
        })
+/**
+ * Represents the Account component in the nonprofit bookkeeping application.
+ */
 public class Account
 {
     @Id

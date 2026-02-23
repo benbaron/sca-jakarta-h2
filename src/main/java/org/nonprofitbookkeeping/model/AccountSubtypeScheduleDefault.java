@@ -5,6 +5,9 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "account_subtype_schedule_default",
        uniqueConstraints = @UniqueConstraint(name = "uq_subtype_sched", columnNames = {"subtype", "schedule_kind_id"}))
+/**
+ * Represents the AccountSubtypeScheduleDefault component in the nonprofit bookkeeping application.
+ */
 public class AccountSubtypeScheduleDefault
 {
     @Id

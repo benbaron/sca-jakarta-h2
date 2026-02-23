@@ -9,6 +9,9 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+/**
+ * Represents the SettingsPanel component in the nonprofit bookkeeping application.
+ */
 public class SettingsPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();

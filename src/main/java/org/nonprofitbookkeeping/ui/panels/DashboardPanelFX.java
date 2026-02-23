@@ -1,4 +1,4 @@
-package nonprofitbookkeeping.ui.panels;
+package org.nonprofitbookkeeping.ui.panels;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.geometry.Insets;

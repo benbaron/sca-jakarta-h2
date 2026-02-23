@@ -8,6 +8,9 @@ import java.math.*;
 @Entity
 @Table(name = "counterparty",
        indexes = @Index(name = "ix_counterparty_name", columnList = "display_name"))
+/**
+ * Represents the Counterparty component in the nonprofit bookkeeping application.
+ */
 public class Counterparty
 {
     @Id

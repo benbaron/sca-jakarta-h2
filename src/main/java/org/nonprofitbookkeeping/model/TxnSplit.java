@@ -13,6 +13,9 @@ import java.math.*;
            @Index(name = "ix_split_fund", columnList = "fund_id"),
            @Index(name = "ix_split_activity", columnList = "activity_id")
        })
+/**
+ * Represents the TxnSplit component in the nonprofit bookkeeping application.
+ */
 public class TxnSplit
 {
     @Id

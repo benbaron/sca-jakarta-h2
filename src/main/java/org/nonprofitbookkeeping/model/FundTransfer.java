@@ -11,6 +11,9 @@ import java.math.*;
            @Index(name = "ix_ft_date", columnList = "transfer_date"),
            @Index(name = "ix_ft_posted", columnList = "posted_txn_id")
        })
+/**
+ * Represents the FundTransfer component in the nonprofit bookkeeping application.
+ */
 public class FundTransfer
 {
     @Id

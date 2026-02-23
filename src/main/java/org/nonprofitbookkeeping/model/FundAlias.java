@@ -11,6 +11,9 @@ import java.math.*;
            @Index(name = "ix_fund_alias_fund", columnList = "fund_id"),
            @Index(name = "ix_fund_alias_text", columnList = "alias_text")
        })
+/**
+ * Represents the FundAlias component in the nonprofit bookkeeping application.
+ */
 public class FundAlias
 {
     @Id

@@ -1,5 +1,8 @@
 package org.nonprofitbookkeeping.model;
 
+/**
+ * Enumerates FundType values used by the nonprofit bookkeeping application.
+ */
 public enum FundType
 {
     UNRESTRICTED,

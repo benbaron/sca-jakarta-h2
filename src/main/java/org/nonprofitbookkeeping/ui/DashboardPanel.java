@@ -13,7 +13,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import nonprofitbookkeeping.ui.panels.DashboardPanelFX;
+import org.nonprofitbookkeeping.ui.panels.DashboardPanelFX;
 import org.nonprofitbookkeeping.service.FundBalanceRow;
 
 import java.time.LocalDate;

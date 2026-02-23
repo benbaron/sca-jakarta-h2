@@ -5,6 +5,9 @@ import javafx.scene.layout.BorderPane;
 import java.util.EnumMap;
 import java.util.Map;
 
+/**
+ * Represents the PanelHost component in the nonprofit bookkeeping application.
+ */
 public class PanelHost extends BorderPane
 {
     private final Map<AppPanelId, AppPanel> panels = new EnumMap<>(AppPanelId.class);

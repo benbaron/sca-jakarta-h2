@@ -16,6 +16,9 @@ import org.nonprofitbookkeeping.model.Fund;
 
 import java.util.List;
 
+/**
+ * Represents the FundsPanel component in the nonprofit bookkeeping application.
+ */
 public class FundsPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
