@@ -35,3 +35,12 @@
 ## Longer term
 - Inventory module (operational + optional postings)
 - Fixed assets + depreciation runs (posting automation)
+
+
+## NonprofitBookkeeping roadmap progress
+- [x] Base-codebase decision recorded: keep `sca-jakarta-h2` as host and integrate upstream packages via subpanel adapters (`docs/nonprofitbookkeeping-starting-point-assessment.md`)
+- [x] Phase 0: Archive inventory published (`docs/nonprofitbookkeeping-inventory.md`)
+- [x] Phase 1: Compatibility matrix published (`docs/nonprofitbookkeeping-compatibility-matrix.md`)
+- [x] Phase 3 (first vertical slice): Dashboard package integrated with bridge wiring and mounted through `PanelHost`
+- [ ] Next slice: Chart of Accounts package import + adapter wiring
+- [ ] Next slice: Funds package import + adapter wiring

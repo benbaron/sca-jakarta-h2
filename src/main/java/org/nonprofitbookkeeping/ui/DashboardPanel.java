@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -7,23 +8,27 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TitledPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.beans.property.SimpleStringProperty;
-
+import nonprofitbookkeeping.ui.panels.DashboardPanelFX;
 import org.nonprofitbookkeeping.service.FundBalanceRow;
 
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Keeps the shell-consistent dashboard layout and embeds imported dashboard workspace as a subpanel.
+ */
 public class DashboardPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
     private final Label totals = new Label();
     private final Label status = new Label();
     private final TableView<FundBalanceRow> balances = new TableView<>();
+    private final DashboardPanelFX importedDashboard = new DashboardPanelFX();
     private Button refresh;
 
     public DashboardPanel()
@@ -41,7 +46,6 @@ public class DashboardPanel implements AppPanel
 
         HBox actions = new HBox(8, add, refresh);
         VBox header = new VBox(6, title, actions, status, new Separator());
-
         root.setTop(header);
 
         TableColumn<FundBalanceRow, String> code = new TableColumn<>("Fund");
@@ -52,8 +56,16 @@ public class DashboardPanel implements AppPanel
         balance.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().getBalance().toPlainString()));
         balances.getColumns().addAll(code, name, balance);
 
-        VBox center = new VBox(8, new Label("Fund balances"), totals, balances);
+        TitledPane importedWorkspace = new TitledPane("NonprofitBookkeeping workspace", importedDashboard);
+        importedWorkspace.setCollapsible(false);
+
+        VBox center = new VBox(8,
+            new Label("Fund balances"),
+            totals,
+            balances,
+            importedWorkspace);
         VBox.setVgrow(balances, Priority.ALWAYS);
+        VBox.setVgrow(importedWorkspace, Priority.ALWAYS);
         root.setCenter(center);
 
         reload();
@@ -62,8 +74,10 @@ public class DashboardPanel implements AppPanel
     @Override public String title() { return "Dashboard"; }
     @Override public Node root() { return root; }
 
-    @Override public void onNew() {
+    @Override public void onNew()
+    {
         reload();
+        importedDashboard.reloadData();
     }
 
     private void reload()
