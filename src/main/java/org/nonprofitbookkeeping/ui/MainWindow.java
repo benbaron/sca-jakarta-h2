@@ -5,6 +5,9 @@ import javafx.scene.control.*;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.*;
 
+/**
+ * Represents the MainWindow component in the nonprofit bookkeeping application.
+ */
 public class MainWindow extends BorderPane
 {
     private final PanelHost panelHost = new PanelHost();

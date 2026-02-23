@@ -7,6 +7,9 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+/**
+ * Represents the BudgetEditorPanel component in the nonprofit bookkeeping application.
+ */
 public class BudgetEditorPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();

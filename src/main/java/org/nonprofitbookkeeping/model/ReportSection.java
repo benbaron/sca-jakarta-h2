@@ -6,6 +6,9 @@ import java.time.*;
 
 @Entity
 @Table(name = "report_section")
+/**
+ * Represents the ReportSection component in the nonprofit bookkeeping application.
+ */
 public class ReportSection
 {
     @Id

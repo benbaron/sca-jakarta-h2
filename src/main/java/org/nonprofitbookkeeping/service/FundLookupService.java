@@ -10,6 +10,9 @@ import jakarta.persistence.EntityManager;
 import java.util.List;
 
 @ApplicationScoped
+/**
+ * Represents the FundLookupService component in the nonprofit bookkeeping application.
+ */
 public class FundLookupService
 {
     @Inject

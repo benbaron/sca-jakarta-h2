@@ -6,6 +6,9 @@ import javafx.scene.control.Separator;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 
+/**
+ * Represents the InspectorPane component in the nonprofit bookkeeping application.
+ */
 public class InspectorPane extends VBox
 {
     private final Label title = new Label("Inspector");

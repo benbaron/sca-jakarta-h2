@@ -11,6 +11,9 @@ import java.math.*;
            @Index(name = "ix_txn_date", columnList = "txn_date"),
            @Index(name = "ix_txn_payee", columnList = "payee_id")
        })
+/**
+ * Represents the Txn component in the nonprofit bookkeeping application.
+ */
 public class Txn
 {
     @Id

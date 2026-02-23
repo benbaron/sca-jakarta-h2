@@ -16,6 +16,9 @@ import org.nonprofitbookkeeping.model.Account;
 
 import java.util.List;
 
+/**
+ * Represents the ChartOfAccountsPanel component in the nonprofit bookkeeping application.
+ */
 public class ChartOfAccountsPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();

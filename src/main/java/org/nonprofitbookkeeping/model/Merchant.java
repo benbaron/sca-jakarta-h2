@@ -7,6 +7,9 @@ import java.math.*;
 
 @Entity
 @Table(name = "merchant")
+/**
+ * Represents the Merchant component in the nonprofit bookkeeping application.
+ */
 public class Merchant
 {
     @Id

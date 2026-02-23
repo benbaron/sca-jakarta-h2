@@ -5,6 +5,9 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 
+/**
+ * Represents the GlobalShortcuts component in the nonprofit bookkeeping application.
+ */
 public final class GlobalShortcuts
 {
     private GlobalShortcuts() {}

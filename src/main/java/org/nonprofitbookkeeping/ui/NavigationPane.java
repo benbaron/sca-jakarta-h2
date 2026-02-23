@@ -8,6 +8,9 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+/**
+ * Represents the NavigationPane component in the nonprofit bookkeeping application.
+ */
 public class NavigationPane extends VBox
 {
     private final TreeView<NavItem> tree;

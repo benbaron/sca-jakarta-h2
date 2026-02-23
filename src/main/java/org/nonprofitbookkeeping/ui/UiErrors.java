@@ -1,5 +1,8 @@
 package org.nonprofitbookkeeping.ui;
 
+/**
+ * Represents the UiErrors component in the nonprofit bookkeeping application.
+ */
 public final class UiErrors
 {
     private UiErrors() {}
