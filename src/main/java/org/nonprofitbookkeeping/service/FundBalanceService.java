@@ -25,6 +25,13 @@ public class FundBalanceService
     @Inject
     private Jpa jpa;
 
+    public FundBalanceService() {}
+
+    public FundBalanceService(Jpa jpa)
+    {
+        this.jpa = jpa;
+    }
+
     public List<FundBalanceRow> balancesAsOf(LocalDate asOf)
     {
         try (EntityManager em = jpa.em())

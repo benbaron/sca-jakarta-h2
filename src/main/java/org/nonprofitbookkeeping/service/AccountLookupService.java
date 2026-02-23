@@ -23,6 +23,13 @@ public class AccountLookupService
     @Inject
     Jpa jpa;
 
+    public AccountLookupService() {}
+
+    public AccountLookupService(Jpa jpa)
+    {
+        this.jpa = jpa;
+    }
+
     /**
      * List active posting accounts ordered by code.
      */
