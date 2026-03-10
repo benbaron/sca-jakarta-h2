@@ -14,5 +14,6 @@ public enum PanelAction
     IMPORT,
     EXPORT,
     APPROVE,
-    REVIEW_AUDIT
+    REVIEW_AUDIT,
+    SELECT_GROUP
 }

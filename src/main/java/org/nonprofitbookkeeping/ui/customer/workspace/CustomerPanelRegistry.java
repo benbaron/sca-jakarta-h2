@@ -44,7 +44,7 @@ public final class CustomerPanelRegistry
         Map<CustomerPanelId, CustomerPanelDefinition> definitions = new EnumMap<>(CustomerPanelId.class);
 
         register(definitions, new CustomerPanelDefinition(CustomerPanelId.GROUP_SELECTOR, "Group Selector", UserRole.USER,
-                CustomerPanelDefinition.actions(PanelAction.REVIEW_AUDIT)));
+                CustomerPanelDefinition.actions(PanelAction.SELECT_GROUP)));
         register(definitions, new CustomerPanelDefinition(CustomerPanelId.JOURNAL_WORKBENCH, "Journal Workbench", UserRole.USER,
                 CustomerPanelDefinition.actions(PanelAction.CREATE, PanelAction.EDIT, PanelAction.POST)));
         register(definitions, new CustomerPanelDefinition(CustomerPanelId.OPEN_ITEMS_SCHEDULES, "Open Item Schedules", UserRole.USER,

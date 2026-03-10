@@ -21,11 +21,11 @@ This document defines a concrete, testable customer-panel model for the SCA acco
 - `LoginMode`
   - `OPTIONAL` vs `REQUIRED` login validation behavior.
 - `PanelAction`
-  - Action capabilities (post, resolve, reconcile, close period, import/export, approve, audit).
+  - Action capabilities (select group, post, resolve, reconcile, close period, import/export, approve, audit).
 
 ## Behavioral rules
 
-- If login mode is `REQUIRED`, panel open operations fail until login is completed.
+- If login mode is `REQUIRED`, both access checks and panel open operations fail until login is completed.
 - If login mode is `OPTIONAL`, the default effective role is `USER`.
 - `USER` role cannot open supervisor-only panels (`PERIOD_CLOSE`, `IMPORT_EXPORT`, `APPROVAL_AUDIT`).
 - `SUPERVISOR` role can access all panels.

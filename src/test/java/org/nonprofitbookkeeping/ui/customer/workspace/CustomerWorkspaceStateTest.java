@@ -19,6 +19,16 @@ public class CustomerWorkspaceStateTest
         assertTrue(ex.getMessage().contains("Login required"));
     }
 
+
+    @Test
+    public void requiredLogin_canAccessReturnsFalseBeforeLogin()
+    {
+        CustomerWorkspaceState state = new CustomerWorkspaceState(LoginMode.REQUIRED);
+
+        assertFalse(state.canAccess(CustomerPanelId.JOURNAL_WORKBENCH));
+        assertFalse(state.canAccess(CustomerPanelId.PERIOD_CLOSE));
+    }
+
     @Test
     public void optionalLogin_defaultsToUserRole()
     {

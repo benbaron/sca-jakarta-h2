@@ -28,6 +28,14 @@ public class CustomerPanelRegistryTest
     }
 
     @Test
+    public void groupSelector_hasSelectGroupActionOnly()
+    {
+        CustomerPanelDefinition panel = CustomerPanelRegistry.get(CustomerPanelId.GROUP_SELECTOR);
+        assertTrue(panel.actions().contains(PanelAction.SELECT_GROUP));
+        assertEquals(1, panel.actions().size());
+    }
+
+    @Test
     public void find_returnsPresentForKnownPanel()
     {
         assertTrue(CustomerPanelRegistry.find(CustomerPanelId.RECONCILIATION).isPresent());

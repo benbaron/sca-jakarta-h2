@@ -60,6 +60,11 @@ public final class CustomerWorkspaceState
 
     public boolean canAccess(CustomerPanelId panelId)
     {
+        if (loginMode == LoginMode.REQUIRED && currentRole == null)
+        {
+            return false;
+        }
+
         UserRole role = resolveRole();
         return CustomerPanelRegistry.get(panelId).isAllowedFor(role);
     }
