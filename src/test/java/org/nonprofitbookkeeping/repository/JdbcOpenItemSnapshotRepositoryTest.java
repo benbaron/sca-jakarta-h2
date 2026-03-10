@@ -1,0 +1,131 @@
+package org.nonprofitbookkeeping.repository;
+
+import org.junit.jupiter.api.Test;
+
+import javax.sql.DataSource;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class JdbcOpenItemSnapshotRepositoryTest
+{
+    @Test
+    public void createAndFindById_roundTripsSnapshot()
+    {
+        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
+
+        OpenItemSnapshotRecord snapshot = new OpenItemSnapshotRecord(
+                UUID.randomUUID(),
+                "BARONY-RED",
+                "RECEIVABLE",
+                "AR-2026-001",
+                "OPEN",
+                new BigDecimal("120.00"),
+                new BigDecimal("120.00"),
+                null,
+                LocalDate.of(2026, 4, 10),
+                0);
+
+        repository.create(snapshot);
+
+        OpenItemSnapshotRecord loaded = repository.findById(snapshot.id()).orElseThrow();
+        assertEquals("RECEIVABLE", loaded.itemKind());
+        assertEquals("OPEN", loaded.state());
+        assertEquals(0, loaded.version());
+    }
+
+    @Test
+    public void transition_updatesSnapshotState_andQueryByGroupKindWorks()
+    {
+        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
+
+        UUID id = UUID.randomUUID();
+        repository.create(new OpenItemSnapshotRecord(
+                id,
+                "BARONY-RED",
+                "RECEIVABLE",
+                "AR-2026-002",
+                "OPEN",
+                new BigDecimal("75.00"),
+                new BigDecimal("75.00"),
+                null,
+                LocalDate.of(2026, 4, 10),
+                0));
+
+        repository.transition(id, "OPEN", "SETTLED_BY_CASH", null, "Paid by check", LocalDate.of(2026, 4, 11), 0);
+
+        OpenItemSnapshotRecord loaded = repository.findById(id).orElseThrow();
+        assertEquals("SETTLED_BY_CASH", loaded.state());
+        assertNull(loaded.lastTransactionId());
+        assertEquals(1, loaded.version());
+
+        List<OpenItemSnapshotRecord> rows = repository.findByGroupAndKind("BARONY-RED", "RECEIVABLE");
+        assertEquals(1, rows.size());
+        assertEquals("AR-2026-002", rows.get(0).itemRef());
+    }
+
+    @Test
+    public void transition_rejectsUnexpectedState_andDoesNotRecordChange()
+    {
+        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
+
+        UUID id = UUID.randomUUID();
+
+        repository.create(new OpenItemSnapshotRecord(
+                id,
+                "BARONY-RED",
+                "PAYABLE",
+                "AP-2026-010",
+                "OPEN",
+                new BigDecimal("50.00"),
+                new BigDecimal("50.00"),
+                null,
+                LocalDate.of(2026, 4, 10),
+                0));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                repository.transition(id, "PAID", "REVERSED", null, "bad request", LocalDate.of(2026, 4, 11), 0));
+
+        assertTrue(ex.getMessage().contains("state mismatch"));
+
+        OpenItemSnapshotRecord loaded = repository.findById(id).orElseThrow();
+        assertEquals("OPEN", loaded.state());
+        assertEquals(0, loaded.version());
+    }
+
+    @Test
+    public void transition_rejectsUnexpectedVersion_andDoesNotRecordChange()
+    {
+        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
+
+        UUID id = UUID.randomUUID();
+
+        repository.create(new OpenItemSnapshotRecord(
+                id,
+                "BARONY-RED",
+                "RECEIVABLE",
+                "AR-2026-003",
+                "OPEN",
+                new BigDecimal("80.00"),
+                new BigDecimal("80.00"),
+                null,
+                LocalDate.of(2026, 4, 10),
+                0));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                repository.transition(id, "OPEN", "PARTIALLY_APPLIED", null, "stale version", LocalDate.of(2026, 4, 11), 99));
+
+        assertTrue(ex.getMessage().contains("version mismatch"));
+
+        OpenItemSnapshotRecord loaded = repository.findById(id).orElseThrow();
+        assertEquals("OPEN", loaded.state());
+        assertEquals(0, loaded.version());
+    }
+}
