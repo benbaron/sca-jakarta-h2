@@ -200,3 +200,25 @@ Test execution status after reengineering remains blocked by environment-level M
 ## 17) Next-steps prompt for the next pass
 
 > Continue from `docs/progress-report-next-pass.md`. Add Maven `settings.xml` guidance and an optional repo-local bootstrap profile for restricted environments, then implement the first `JournalPostingService` derivation slice (`Receivable` + `PrepaidExpense`) with deterministic tests. Run `mvn test`, report results, perform a code review, and offer to fix any issues (including build/test problems).
+
+
+## 18) Latest pass update (repo-local build bootstrap)
+
+Implemented repo-local Maven build bootstrap for restricted environments:
+
+- Added `.mvn/maven.config` to force use of repo-local cache (`.mvn/local-repo`) and project settings file.
+- Added `.mvn/settings.xml` with active `repo-local-bootstrap` profile that:
+  - checks `${user.home}/.m2/repository` as a local seed source,
+  - configures both dependency and plugin repositories,
+  - keeps Maven Central as fallback when reachable.
+- Added `scripts/bootstrap-local-m2.sh` to seed `.mvn/local-repo` from an existing machine cache.
+- Added `docs/repo-local-build.md` with usage instructions and restricted-network guidance.
+
+## 19) Updated status report
+
+- Build bootstrap now supports deterministic repo-local cache usage in-repo.
+- The environment still blocks external Maven Central plugin resolution unless artifacts are pre-seeded or mirror URLs are configured.
+
+## 20) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Verify the repo-local bootstrap against a pre-seeded cache in CI (or mirror), then implement the first `JournalPostingService` derivation slice (`Receivable` + `PrepaidExpense`) with deterministic tests. Run `mvn test`, report results, perform a code review, and offer to fix any issues (including build/test problems).
