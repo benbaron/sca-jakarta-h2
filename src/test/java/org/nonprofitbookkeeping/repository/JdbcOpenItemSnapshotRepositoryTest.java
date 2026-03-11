@@ -4,6 +4,9 @@ import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -63,10 +66,42 @@ public class JdbcOpenItemSnapshotRepositoryTest
         assertEquals("SETTLED_BY_CASH", loaded.state());
         assertNull(loaded.lastTransactionId());
         assertEquals(1, loaded.version());
+        assertEquals(1, transitionCount(ds, id));
 
         List<OpenItemSnapshotRecord> rows = repository.findByGroupAndKind("BARONY-RED", "RECEIVABLE");
         assertEquals(1, rows.size());
         assertEquals("AR-2026-002", rows.get(0).itemRef());
+    }
+
+    @Test
+    public void transition_rejectsPolicyDisallowedTransition_andDoesNotRecordHistory()
+    {
+        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
+
+        UUID id = UUID.randomUUID();
+
+        repository.create(new OpenItemSnapshotRecord(
+                id,
+                "BARONY-RED",
+                "RECEIVABLE",
+                "AR-2026-099",
+                "SETTLED_BY_CASH",
+                new BigDecimal("10.00"),
+                new BigDecimal("0.00"),
+                null,
+                LocalDate.of(2026, 4, 10),
+                0));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                repository.transition(id, "SETTLED_BY_CASH", "OPEN", null, "invalid lifecycle", LocalDate.of(2026, 4, 11), 0));
+
+        assertTrue(ex.getMessage().contains("Transition not allowed"));
+        assertEquals(0, transitionCount(ds, id));
+
+        OpenItemSnapshotRecord loaded = repository.findById(id).orElseThrow();
+        assertEquals("SETTLED_BY_CASH", loaded.state());
+        assertEquals(0, loaded.version());
     }
 
     @Test
@@ -93,6 +128,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
                 repository.transition(id, "PAID", "REVERSED", null, "bad request", LocalDate.of(2026, 4, 11), 0));
 
         assertTrue(ex.getMessage().contains("state mismatch"));
+        assertEquals(0, transitionCount(ds, id));
 
         OpenItemSnapshotRecord loaded = repository.findById(id).orElseThrow();
         assertEquals("OPEN", loaded.state());
@@ -123,9 +159,30 @@ public class JdbcOpenItemSnapshotRepositoryTest
                 repository.transition(id, "OPEN", "PARTIALLY_APPLIED", null, "stale version", LocalDate.of(2026, 4, 11), 99));
 
         assertTrue(ex.getMessage().contains("version mismatch"));
+        assertEquals(0, transitionCount(ds, id));
 
         OpenItemSnapshotRecord loaded = repository.findById(id).orElseThrow();
         assertEquals("OPEN", loaded.state());
         assertEquals(0, loaded.version());
+    }
+
+    private int transitionCount(DataSource ds, UUID snapshotId)
+    {
+        String sql = "SELECT COUNT(*) FROM open_item_transition WHERE snapshot_id = ?";
+
+        try (Connection connection = ds.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql))
+        {
+            ps.setObject(1, snapshotId);
+            try (ResultSet rs = ps.executeQuery())
+            {
+                rs.next();
+                return rs.getInt(1);
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new IllegalStateException("Could not count transitions", ex);
+        }
     }
 }

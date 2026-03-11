@@ -142,3 +142,19 @@ Implemented improvements from review feedback:
 Use this prompt directly next time:
 
 > Continue from `docs/progress-report-next-pass.md`. Implement transition-policy validation inside `JdbcOpenItemSnapshotRepository` by mapping `item_kind` to the relevant policy in `OpenItemStatePolicies`, then add integration tests that prove invalid state transitions are rejected and valid ones succeed. After coding, run `mvn test`, report the results, provide a code review, and offer to fix any identified issues or test problems.
+
+
+## 11) Latest pass update (policy-aware transitions + rollback assertions)
+
+Implemented additional hardening requested in review:
+
+- Added item-kind policy validation in `JdbcOpenItemSnapshotRepository.transition(...)`.
+  - The repository now maps `item_kind` to `OpenItemStatePolicies` and rejects lifecycle-invalid transitions even when state/version preconditions match.
+- Expanded repository integration tests with:
+  - disallowed policy transition rejection,
+  - transition-history row-count assertions for both success and rollback scenarios.
+- Re-ran `mvn test`; build remains blocked by environment plugin resolution (`maven-resources-plugin:3.3.1` HTTP 403).
+
+## 12) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Add a persistence-level enum normalization layer for `item_kind` (replace raw strings with a strong enum + mapper), enforce valid item-kind values at insert time, and add integration tests for unsupported item kinds and invalid enum-state tokens. Then run `mvn test`, report results, perform a code review, and offer to fix any issues (including test/build issues).

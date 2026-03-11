@@ -1,6 +1,15 @@
 package org.nonprofitbookkeeping.repository;
 
 import javax.sql.DataSource;
+import org.nonprofitbookkeeping.domain.state.AssetItemState;
+import org.nonprofitbookkeeping.domain.state.DeferredRevenueItemState;
+import org.nonprofitbookkeeping.domain.state.OutstandingBankItemState;
+import org.nonprofitbookkeeping.domain.state.PayableItemState;
+import org.nonprofitbookkeeping.domain.state.PrepaidExpenseItemState;
+import org.nonprofitbookkeeping.domain.state.ReceivableItemState;
+import org.nonprofitbookkeeping.workflow.state.OpenItemStatePolicies;
+import org.nonprofitbookkeeping.workflow.state.StateTransitionPolicy;
+
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -73,6 +82,8 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
                     throw new IllegalStateException("Open-item snapshot version mismatch for id " + snapshotId
                             + ": expected " + expectedVersion + " but was " + current.version());
                 }
+
+                assertTransitionAllowed(current.itemKind(), fromState, toState);
 
                 insertTransition(connection, snapshotId, fromState, toState, triggerTransactionId, notes, transitionOn);
                 updateSnapshotState(connection, snapshotId, toState, triggerTransactionId, transitionOn, expectedVersion);
@@ -224,6 +235,45 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
                         + " due to concurrent modification");
             }
         }
+    }
+
+    private void assertTransitionAllowed(String itemKind, String fromState, String toState)
+    {
+        String normalizedKind = itemKind.trim().toUpperCase();
+
+        switch (normalizedKind)
+        {
+            case "OUTSTANDING_BANK_ITEM" -> assertTransitionAllowed(
+                    OpenItemStatePolicies.outstandingBankItemPolicy(),
+                    OutstandingBankItemState.valueOf(fromState),
+                    OutstandingBankItemState.valueOf(toState));
+            case "RECEIVABLE" -> assertTransitionAllowed(
+                    OpenItemStatePolicies.receivablePolicy(),
+                    ReceivableItemState.valueOf(fromState),
+                    ReceivableItemState.valueOf(toState));
+            case "PREPAID_EXPENSE" -> assertTransitionAllowed(
+                    OpenItemStatePolicies.prepaidExpensePolicy(),
+                    PrepaidExpenseItemState.valueOf(fromState),
+                    PrepaidExpenseItemState.valueOf(toState));
+            case "DEFERRED_REVENUE" -> assertTransitionAllowed(
+                    OpenItemStatePolicies.deferredRevenuePolicy(),
+                    DeferredRevenueItemState.valueOf(fromState),
+                    DeferredRevenueItemState.valueOf(toState));
+            case "PAYABLE" -> assertTransitionAllowed(
+                    OpenItemStatePolicies.payablePolicy(),
+                    PayableItemState.valueOf(fromState),
+                    PayableItemState.valueOf(toState));
+            case "ASSET" -> assertTransitionAllowed(
+                    OpenItemStatePolicies.assetPolicy(),
+                    AssetItemState.valueOf(fromState),
+                    AssetItemState.valueOf(toState));
+            default -> throw new IllegalArgumentException("Unsupported open-item kind: " + itemKind);
+        }
+    }
+
+    private <S extends Enum<S>> void assertTransitionAllowed(StateTransitionPolicy<S> policy, S fromState, S toState)
+    {
+        policy.assertTransitionAllowed(fromState, toState);
     }
 
     private OpenItemSnapshotRecord mapSnapshot(ResultSet rs) throws SQLException
