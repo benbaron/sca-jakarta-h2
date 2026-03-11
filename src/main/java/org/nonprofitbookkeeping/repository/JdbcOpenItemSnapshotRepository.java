@@ -44,9 +44,11 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql))
         {
+            assertStateTokenValid(snapshot.itemKind(), snapshot.state(), "state");
+
             ps.setObject(1, snapshot.id());
             ps.setString(2, snapshot.groupCode());
-            ps.setString(3, snapshot.itemKind());
+            ps.setString(3, snapshot.itemKind().name());
             ps.setString(4, snapshot.itemRef());
             ps.setString(5, snapshot.state());
             ps.setBigDecimal(6, snapshot.originalAmount());
@@ -72,6 +74,9 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
             try
             {
                 OpenItemSnapshotRecord current = loadSnapshotForUpdate(connection, snapshotId);
+                assertStateTokenValid(current.itemKind(), fromState, "fromState");
+                assertStateTokenValid(current.itemKind(), toState, "toState");
+
                 if (!current.state().equals(fromState))
                 {
                     throw new IllegalStateException("Open-item snapshot state mismatch for id " + snapshotId
@@ -131,7 +136,7 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
     }
 
     @Override
-    public List<OpenItemSnapshotRecord> findByGroupAndKind(String groupCode, String itemKind)
+    public List<OpenItemSnapshotRecord> findByGroupAndKind(String groupCode, OpenItemKind itemKind)
     {
         String sql = """
                 SELECT id, group_code, item_kind, item_ref, state, original_amount, open_amount,
@@ -146,7 +151,7 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
              PreparedStatement ps = connection.prepareStatement(sql))
         {
             ps.setString(1, groupCode);
-            ps.setString(2, itemKind);
+            ps.setString(2, itemKind.name());
             try (ResultSet rs = ps.executeQuery())
             {
                 List<OpenItemSnapshotRecord> rows = new ArrayList<>();
@@ -237,37 +242,55 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
         }
     }
 
-    private void assertTransitionAllowed(String itemKind, String fromState, String toState)
+    private void assertTransitionAllowed(OpenItemKind itemKind, String fromState, String toState)
     {
-        String normalizedKind = itemKind.trim().toUpperCase();
-
-        switch (normalizedKind)
+        switch (itemKind)
         {
-            case "OUTSTANDING_BANK_ITEM" -> assertTransitionAllowed(
+            case OUTSTANDING_BANK_ITEM -> assertTransitionAllowed(
                     OpenItemStatePolicies.outstandingBankItemPolicy(),
                     OutstandingBankItemState.valueOf(fromState),
                     OutstandingBankItemState.valueOf(toState));
-            case "RECEIVABLE" -> assertTransitionAllowed(
+            case RECEIVABLE -> assertTransitionAllowed(
                     OpenItemStatePolicies.receivablePolicy(),
                     ReceivableItemState.valueOf(fromState),
                     ReceivableItemState.valueOf(toState));
-            case "PREPAID_EXPENSE" -> assertTransitionAllowed(
+            case PREPAID_EXPENSE -> assertTransitionAllowed(
                     OpenItemStatePolicies.prepaidExpensePolicy(),
                     PrepaidExpenseItemState.valueOf(fromState),
                     PrepaidExpenseItemState.valueOf(toState));
-            case "DEFERRED_REVENUE" -> assertTransitionAllowed(
+            case DEFERRED_REVENUE -> assertTransitionAllowed(
                     OpenItemStatePolicies.deferredRevenuePolicy(),
                     DeferredRevenueItemState.valueOf(fromState),
                     DeferredRevenueItemState.valueOf(toState));
-            case "PAYABLE" -> assertTransitionAllowed(
+            case PAYABLE -> assertTransitionAllowed(
                     OpenItemStatePolicies.payablePolicy(),
                     PayableItemState.valueOf(fromState),
                     PayableItemState.valueOf(toState));
-            case "ASSET" -> assertTransitionAllowed(
+            case ASSET -> assertTransitionAllowed(
                     OpenItemStatePolicies.assetPolicy(),
                     AssetItemState.valueOf(fromState),
                     AssetItemState.valueOf(toState));
-            default -> throw new IllegalArgumentException("Unsupported open-item kind: " + itemKind);
+        }
+    }
+
+    private void assertStateTokenValid(OpenItemKind itemKind, String stateToken, String fieldName)
+    {
+        try
+        {
+            switch (itemKind)
+            {
+                case OUTSTANDING_BANK_ITEM -> OutstandingBankItemState.valueOf(stateToken);
+                case RECEIVABLE -> ReceivableItemState.valueOf(stateToken);
+                case PREPAID_EXPENSE -> PrepaidExpenseItemState.valueOf(stateToken);
+                case DEFERRED_REVENUE -> DeferredRevenueItemState.valueOf(stateToken);
+                case PAYABLE -> PayableItemState.valueOf(stateToken);
+                case ASSET -> AssetItemState.valueOf(stateToken);
+            }
+        }
+        catch (IllegalArgumentException ex)
+        {
+            throw new IllegalArgumentException("Invalid " + fieldName + " token '" + stateToken
+                    + "' for open-item kind " + itemKind, ex);
         }
     }
 
@@ -281,7 +304,7 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
         return new OpenItemSnapshotRecord(
                 rs.getObject("id", UUID.class),
                 rs.getString("group_code"),
-                rs.getString("item_kind"),
+                OpenItemKind.parse(rs.getString("item_kind")),
                 rs.getString("item_ref"),
                 rs.getString("state"),
                 rs.getBigDecimal("original_amount"),

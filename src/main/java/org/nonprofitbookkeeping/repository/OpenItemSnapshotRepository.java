@@ -22,5 +22,5 @@ public interface OpenItemSnapshotRepository
 
     Optional<OpenItemSnapshotRecord> findById(UUID snapshotId);
 
-    List<OpenItemSnapshotRecord> findByGroupAndKind(String groupCode, String itemKind);
+    List<OpenItemSnapshotRecord> findByGroupAndKind(String groupCode, OpenItemKind itemKind);
 }

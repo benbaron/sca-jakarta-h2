@@ -158,3 +158,29 @@ Implemented additional hardening requested in review:
 ## 12) Next-steps prompt for the next pass
 
 > Continue from `docs/progress-report-next-pass.md`. Add a persistence-level enum normalization layer for `item_kind` (replace raw strings with a strong enum + mapper), enforce valid item-kind values at insert time, and add integration tests for unsupported item kinds and invalid enum-state tokens. Then run `mvn test`, report results, perform a code review, and offer to fix any issues (including test/build issues).
+
+
+## 13) Latest pass update (persistence enum normalization)
+
+Implemented persistence hardening for open-item kind/state tokens:
+
+- Added `OpenItemKind` enum as the canonical persisted open-item category type.
+- Updated `OpenItemSnapshotRecord` to use `OpenItemKind` instead of raw `String itemKind`.
+- Updated repository API and JDBC implementation to query by `OpenItemKind` and persist `item_kind` from enum names.
+- Added state-token validation by item kind during both create and transition workflows.
+  - Invalid state tokens now fail fast with explicit error messages.
+- Added integration tests for:
+  - invalid state token at create,
+  - invalid state token at transition,
+  - unsupported persisted `item_kind` token,
+  - existing success/failure transition + history-count behavior.
+
+## 14) Updated status report
+
+- Persistence typing improved: `item_kind` now uses a strong enum in the Java persistence model.
+- Lifecycle/state input quality improved: token validation now occurs before write operations.
+- Remaining blocker: Maven plugin resolution is still blocked by HTTP 403 to Maven Central in this environment.
+
+## 15) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Implement the first `JournalPostingService` slice that derives `Receivable` and `PrepaidExpense` open-item projections from `JournalTransaction` + `TransactionTiming`, persists resulting snapshots/transitions via repositories, and add deterministic integration tests for those derivation paths. Then run `mvn test`, report results, perform a code review, and offer to fix any issues (including test/build issues).

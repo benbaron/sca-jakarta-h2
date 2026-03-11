@@ -24,7 +24,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
         OpenItemSnapshotRecord snapshot = new OpenItemSnapshotRecord(
                 UUID.randomUUID(),
                 "BARONY-RED",
-                "RECEIVABLE",
+                OpenItemKind.RECEIVABLE,
                 "AR-2026-001",
                 "OPEN",
                 new BigDecimal("120.00"),
@@ -36,9 +36,30 @@ public class JdbcOpenItemSnapshotRepositoryTest
         repository.create(snapshot);
 
         OpenItemSnapshotRecord loaded = repository.findById(snapshot.id()).orElseThrow();
-        assertEquals("RECEIVABLE", loaded.itemKind());
+        assertEquals(OpenItemKind.RECEIVABLE, loaded.itemKind());
         assertEquals("OPEN", loaded.state());
         assertEquals(0, loaded.version());
+    }
+
+    @Test
+    public void create_rejectsInvalidStateTokenForKind()
+    {
+        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> repository.create(new OpenItemSnapshotRecord(
+                UUID.randomUUID(),
+                "BARONY-RED",
+                OpenItemKind.PREPAID_EXPENSE,
+                "PP-2026-001",
+                "SETTLED_BY_CASH",
+                new BigDecimal("40.00"),
+                new BigDecimal("40.00"),
+                null,
+                LocalDate.of(2026, 4, 10),
+                0)));
+
+        assertTrue(ex.getMessage().contains("Invalid state token"));
     }
 
     @Test
@@ -51,7 +72,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
         repository.create(new OpenItemSnapshotRecord(
                 id,
                 "BARONY-RED",
-                "RECEIVABLE",
+                OpenItemKind.RECEIVABLE,
                 "AR-2026-002",
                 "OPEN",
                 new BigDecimal("75.00"),
@@ -68,7 +89,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
         assertEquals(1, loaded.version());
         assertEquals(1, transitionCount(ds, id));
 
-        List<OpenItemSnapshotRecord> rows = repository.findByGroupAndKind("BARONY-RED", "RECEIVABLE");
+        List<OpenItemSnapshotRecord> rows = repository.findByGroupAndKind("BARONY-RED", OpenItemKind.RECEIVABLE);
         assertEquals(1, rows.size());
         assertEquals("AR-2026-002", rows.get(0).itemRef());
     }
@@ -84,7 +105,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
         repository.create(new OpenItemSnapshotRecord(
                 id,
                 "BARONY-RED",
-                "RECEIVABLE",
+                OpenItemKind.RECEIVABLE,
                 "AR-2026-099",
                 "SETTLED_BY_CASH",
                 new BigDecimal("10.00"),
@@ -105,6 +126,32 @@ public class JdbcOpenItemSnapshotRepositoryTest
     }
 
     @Test
+    public void transition_rejectsInvalidStateTokenForKind()
+    {
+        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
+
+        UUID id = UUID.randomUUID();
+        repository.create(new OpenItemSnapshotRecord(
+                id,
+                "BARONY-RED",
+                OpenItemKind.PAYABLE,
+                "AP-2026-009",
+                "OPEN",
+                new BigDecimal("50.00"),
+                new BigDecimal("50.00"),
+                null,
+                LocalDate.of(2026, 4, 10),
+                0));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                repository.transition(id, "OPEN", "SETTLED_BY_CASH", null, "invalid token", LocalDate.of(2026, 4, 11), 0));
+
+        assertTrue(ex.getMessage().contains("Invalid toState token"));
+        assertEquals(0, transitionCount(ds, id));
+    }
+
+    @Test
     public void transition_rejectsUnexpectedState_andDoesNotRecordChange()
     {
         DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
@@ -115,7 +162,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
         repository.create(new OpenItemSnapshotRecord(
                 id,
                 "BARONY-RED",
-                "PAYABLE",
+                OpenItemKind.PAYABLE,
                 "AP-2026-010",
                 "OPEN",
                 new BigDecimal("50.00"),
@@ -146,7 +193,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
         repository.create(new OpenItemSnapshotRecord(
                 id,
                 "BARONY-RED",
-                "RECEIVABLE",
+                OpenItemKind.RECEIVABLE,
                 "AR-2026-003",
                 "OPEN",
                 new BigDecimal("80.00"),
@@ -164,6 +211,48 @@ public class JdbcOpenItemSnapshotRepositoryTest
         OpenItemSnapshotRecord loaded = repository.findById(id).orElseThrow();
         assertEquals("OPEN", loaded.state());
         assertEquals(0, loaded.version());
+    }
+
+    @Test
+    public void findById_rejectsUnsupportedPersistedItemKind()
+    {
+        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
+        UUID id = UUID.randomUUID();
+
+        insertInvalidItemKindRow(ds, id);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> repository.findById(id));
+        assertTrue(ex.getMessage().contains("Unsupported open-item kind"));
+    }
+
+    private void insertInvalidItemKindRow(DataSource ds, UUID id)
+    {
+        String sql = """
+                INSERT INTO open_item_snapshot
+                (id, group_code, item_kind, item_ref, state, original_amount, open_amount, last_transaction_id, last_updated_on, version)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+
+        try (Connection connection = ds.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql))
+        {
+            ps.setObject(1, id);
+            ps.setString(2, "BARONY-RED");
+            ps.setString(3, "NOT_A_KIND");
+            ps.setString(4, "BAD-1");
+            ps.setString(5, "OPEN");
+            ps.setBigDecimal(6, new BigDecimal("10.00"));
+            ps.setBigDecimal(7, new BigDecimal("10.00"));
+            ps.setObject(8, null);
+            ps.setDate(9, Date.valueOf(LocalDate.of(2026, 4, 10)));
+            ps.setLong(10, 0);
+            ps.executeUpdate();
+        }
+        catch (Exception ex)
+        {
+            throw new IllegalStateException(ex);
+        }
     }
 
     private int transitionCount(DataSource ds, UUID snapshotId)

@@ -11,7 +11,7 @@ import java.util.UUID;
 public record OpenItemSnapshotRecord(
         UUID id,
         String groupCode,
-        String itemKind,
+        OpenItemKind itemKind,
         String itemRef,
         String state,
         BigDecimal originalAmount,
@@ -24,7 +24,7 @@ public record OpenItemSnapshotRecord(
     {
         id = Objects.requireNonNull(id, "id");
         groupCode = require(groupCode, "groupCode");
-        itemKind = require(itemKind, "itemKind");
+        itemKind = Objects.requireNonNull(itemKind, "itemKind");
         itemRef = require(itemRef, "itemRef");
         state = require(state, "state");
         originalAmount = Objects.requireNonNull(originalAmount, "originalAmount");
