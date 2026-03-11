@@ -62,6 +62,7 @@ public class JournalPostingServiceIntegrationTest
         OpenItemSnapshotRecord settledSnapshot = snapshot(ds, "BARONY-RED", OpenItemKind.RECEIVABLE, "1100-AR|GENERAL");
         assertEquals("SETTLED_BY_CASH", settledSnapshot.state());
         assertEquals(receiveCash.transactionId(), settledSnapshot.lastTransactionId());
+        assertEquals(new BigDecimal("0.00"), settledSnapshot.openAmount());
         assertEquals(1, settledSnapshot.version());
         assertEquals(1, transitionCount(ds, settledSnapshot.id()));
     }
@@ -103,8 +104,37 @@ public class JournalPostingServiceIntegrationTest
         OpenItemSnapshotRecord settledSnapshot = snapshot(ds, "BARONY-BLUE", OpenItemKind.PREPAID_EXPENSE, "1200-PREPAID-INSURANCE|GENERAL");
         assertEquals("FULLY_RECOGNIZED", settledSnapshot.state());
         assertEquals(recognizePrepaid.transactionId(), settledSnapshot.lastTransactionId());
+        assertEquals(new BigDecimal("0.00"), settledSnapshot.openAmount());
         assertEquals(1, settledSnapshot.version());
         assertEquals(1, transitionCount(ds, settledSnapshot.id()));
+    }
+
+
+    @Test
+    public void post_ignoresNonMappedAccountsForReceivableAndPrepaidDerivation()
+    {
+        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        JournalPostingService service = new JournalPostingService(
+                new JdbcJournalTransactionRepository(ds),
+                new JdbcOpenItemSnapshotRepository(ds));
+
+        JournalTransaction transaction = JournalTransaction.create(
+                "BARONY-GREEN",
+                LocalDate.of(2026, 8, 1),
+                "Future bank with non-AR account",
+                TransactionTiming.of(TimingPosition.FUTURE, TimingPosition.NOW),
+                List.of(
+                        new PostingLine("1199-NON-AR", "GENERAL", EntrySide.DEBIT, new BigDecimal("55.00")),
+                        new PostingLine("4100-INCOME", "GENERAL", EntrySide.CREDIT, new BigDecimal("55.00"))));
+
+        service.post(transaction);
+
+        assertEquals(0, new JdbcOpenItemSnapshotRepository(ds)
+                .findByGroupAndKind("BARONY-GREEN", OpenItemKind.RECEIVABLE)
+                .size());
+        assertEquals(0, new JdbcOpenItemSnapshotRepository(ds)
+                .findByGroupAndKind("BARONY-GREEN", OpenItemKind.PREPAID_EXPENSE)
+                .size());
     }
 
     private OpenItemSnapshotRecord snapshot(DataSource ds, String groupCode, OpenItemKind itemKind, String itemRef)

@@ -11,14 +11,13 @@ import org.nonprofitbookkeeping.repository.OpenItemSnapshotRepository;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
- * Projects journal transactions into initial open-item schedules.
+ * Projects journal transactions into deterministic receivable and prepaid open-item schedules.
  */
 public class JournalPostingService
 {
@@ -26,6 +25,9 @@ public class JournalPostingService
     private static final String RECEIVABLE_SETTLED = "SETTLED_BY_CASH";
     private static final String PREPAID_OPEN = "OPEN";
     private static final String PREPAID_FULLY_RECOGNIZED = "FULLY_RECOGNIZED";
+
+    private static final Set<String> RECEIVABLE_ACCOUNT_PREFIXES = Set.of("1100-");
+    private static final Set<String> PREPAID_ACCOUNT_PREFIXES = Set.of("1200-");
 
     private final JournalTransactionRepository journalTransactionRepository;
     private final OpenItemSnapshotRepository openItemSnapshotRepository;
@@ -69,6 +71,7 @@ public class JournalPostingService
                 if (isReceivableLine(line) && line.side() == EntrySide.CREDIT)
                 {
                     transitionIfPresent(transaction, OpenItemKind.RECEIVABLE, line, RECEIVABLE_SETTLED,
+                            BigDecimal.ZERO,
                             "Receivable settled by bank movement");
                 }
             }
@@ -98,6 +101,7 @@ public class JournalPostingService
                 if (isPrepaidLine(line) && line.side() == EntrySide.CREDIT)
                 {
                     transitionIfPresent(transaction, OpenItemKind.PREPAID_EXPENSE, line, PREPAID_FULLY_RECOGNIZED,
+                            BigDecimal.ZERO,
                             "Prepaid fully recognized into budget period");
                 }
             }
@@ -129,7 +133,7 @@ public class JournalPostingService
     }
 
     private void transitionIfPresent(JournalTransaction transaction, OpenItemKind kind, PostingLine line,
-                                     String toState, String notes)
+                                     String toState, BigDecimal newOpenAmount, String notes)
     {
         String itemRef = itemRef(line);
         Optional<OpenItemSnapshotRecord> existing = findSnapshot(transaction.groupCode(), kind, itemRef);
@@ -143,6 +147,7 @@ public class JournalPostingService
                 snapshot.id(),
                 snapshot.state(),
                 toState,
+                newOpenAmount,
                 transaction.transactionId(),
                 notes,
                 transaction.postedOn(),
@@ -151,22 +156,23 @@ public class JournalPostingService
 
     private Optional<OpenItemSnapshotRecord> findSnapshot(String groupCode, OpenItemKind kind, String itemRef)
     {
-        return openItemSnapshotRepository.findByGroupAndKind(groupCode, kind)
-                .stream()
-                .filter(row -> row.itemRef().equals(itemRef))
-                .findFirst();
+        return openItemSnapshotRepository.findByGroupKindAndItemRef(groupCode, kind, itemRef);
     }
 
     private boolean isReceivableLine(PostingLine line)
     {
-        String account = line.accountCode().toUpperCase();
-        return account.contains("RECEIVABLE") || account.startsWith("1100") || account.contains("-AR");
+        return hasAnyPrefix(line.accountCode(), RECEIVABLE_ACCOUNT_PREFIXES);
     }
 
     private boolean isPrepaidLine(PostingLine line)
     {
-        String account = line.accountCode().toUpperCase();
-        return account.contains("PREPAID") || account.startsWith("1200");
+        return hasAnyPrefix(line.accountCode(), PREPAID_ACCOUNT_PREFIXES);
+    }
+
+    private boolean hasAnyPrefix(String accountCode, Set<String> prefixes)
+    {
+        String normalized = accountCode.toUpperCase();
+        return prefixes.stream().anyMatch(normalized::startsWith);
     }
 
     private String itemRef(PostingLine line)

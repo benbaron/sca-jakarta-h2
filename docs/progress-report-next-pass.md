@@ -247,3 +247,31 @@ Implemented the first deterministic `JournalPostingService` slice that bridges j
 ## 22) Next-steps prompt for the next pass
 
 > Continue from `docs/progress-report-next-pass.md`. Extend `JournalPostingService` to support partial receivable/prepaid applications (state + open amount evolution), add repository support for open_amount updates alongside transitions, and add integration tests for partial and full multi-step lifecycle flows. Then run `mvn test`, report results, perform a code review, and offer to fix any issues (including build/test blockers).
+
+## 23) Latest pass update (JournalPostingService hardening follow-up)
+
+Addressed follow-up review issues from the first posting-service slice:
+
+- Added repository natural-key lookup support:
+  - `OpenItemSnapshotRepository.findByGroupKindAndItemRef(...)`
+  - JDBC implementation with direct SQL lookup by `(group_code, item_kind, item_ref)`.
+- Extended repository transitions to optionally update `open_amount` atomically with state transitions:
+  - New overloaded `transition(...)` accepting `newOpenAmount`.
+  - JDBC update now applies `open_amount = COALESCE(?, open_amount)`.
+- Hardened `JournalPostingService` derivation behavior:
+  - switched snapshot lookup to natural-key repository query,
+  - narrowed account classification to deterministic prefixes (`1100-` receivable, `1200-` prepaid),
+  - settlement/recognition transitions now set `open_amount` to zero.
+- Expanded integration tests:
+  - posting-service tests now verify zero `open_amount` after settlement/recognition,
+  - added guard test that non-mapped accounts do not create projections,
+  - repository tests now cover open-amount updates during transitions and natural-key lookup.
+
+## 24) Test execution status
+
+- Command attempted: `mvn test`
+- Result: **failed in environment** before compilation due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, Maven Central unreachable).
+
+## 25) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Implement partial receivable/prepaid application flows in `JournalPostingService` by deriving proportional `open_amount` reductions and state selection (`PARTIALLY_*` vs terminal), then add deterministic integration tests for multi-step partial-to-full lifecycle scenarios. Run `mvn test`, report results, perform a code review, and offer to fix any issues (including build/test blockers).
