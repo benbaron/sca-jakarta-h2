@@ -184,3 +184,19 @@ Implemented persistence hardening for open-item kind/state tokens:
 ## 15) Next-steps prompt for the next pass
 
 > Continue from `docs/progress-report-next-pass.md`. Implement the first `JournalPostingService` slice that derives `Receivable` and `PrepaidExpense` open-item projections from `JournalTransaction` + `TransactionTiming`, persists resulting snapshots/transitions via repositories, and add deterministic integration tests for those derivation paths. Then run `mvn test`, report results, perform a code review, and offer to fix any issues (including test/build issues).
+
+
+## 16) Latest pass update (pom.xml reengineering)
+
+Build configuration was fully reworked to establish a cleaner Maven baseline:
+
+- Reorganized dependency properties and version management for Jakarta, persistence, logging, CLI, JavaFX, and test stacks.
+- Restructured dependencies into clearer groups (Jakarta APIs, persistence/migration, runtime/logging, interchange/CLI, testing).
+- Refactored build plugins to a simpler stable set (`compiler`, `surefire`, `exec`) with explicit versions/configuration.
+- Moved JavaFX dependencies under a dedicated `ui` profile so non-UI builds/tests avoid unnecessary UI dependency resolution.
+
+Test execution status after reengineering remains blocked by environment-level Maven plugin resolution (`maven-resources-plugin:3.3.1` HTTP 403).
+
+## 17) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Add Maven `settings.xml` guidance and an optional repo-local bootstrap profile for restricted environments, then implement the first `JournalPostingService` derivation slice (`Receivable` + `PrepaidExpense`) with deterministic tests. Run `mvn test`, report results, perform a code review, and offer to fix any issues (including build/test problems).
