@@ -112,3 +112,113 @@ I can immediately proceed with either:
 - **Option A (recommended):** Persistence-first slice (migrations + repositories + deterministic journal read/write tests).
 - **Option B:** Open-item entity + posting-service derivation slice (receivables/prepaids first).
 - **Option C:** Build-system resilience slice (Maven mirror/local cache setup) so tests run reliably in this environment.
+
+
+## 8) Latest pass update (concurrency and transition safety)
+
+Implemented improvements from review feedback:
+
+- Added **optimistic concurrency** to open-item snapshots with a new `version` column and repository-level expected-version checks.
+- Added **state-precondition enforcement** in `JdbcOpenItemSnapshotRepository.transition(...)` so transitions fail when `fromState` does not match current state.
+- Added **transaction referential integrity**:
+  - `open_item_snapshot.last_transaction_id -> journal_transaction(id)`
+  - `open_item_transition.trigger_transaction_id -> journal_transaction(id)`
+- Added migration `V5__open_item_concurrency_and_fks.sql` to evolve schema safely.
+- Expanded integration tests for:
+  - successful transition + version increment,
+  - rejection on state mismatch,
+  - rejection on version mismatch,
+  - rollback safety (snapshot remains unchanged after failed transition).
+
+## 9) Updated status report
+
+- **Architecture/domain baseline:** established and documented.
+- **Persistence baseline:** append-only journal + open-item snapshots/transitions implemented.
+- **Persistence hardening:** optimistic concurrency + FK integrity added.
+- **Known blocker:** Maven test execution may still fail in restricted network environments when plugin resolution to Maven Central is blocked.
+
+## 10) Next-steps prompt for the next pass
+
+Use this prompt directly next time:
+
+> Continue from `docs/progress-report-next-pass.md`. Implement transition-policy validation inside `JdbcOpenItemSnapshotRepository` by mapping `item_kind` to the relevant policy in `OpenItemStatePolicies`, then add integration tests that prove invalid state transitions are rejected and valid ones succeed. After coding, run `mvn test`, report the results, provide a code review, and offer to fix any identified issues or test problems.
+
+
+## 11) Latest pass update (policy-aware transitions + rollback assertions)
+
+Implemented additional hardening requested in review:
+
+- Added item-kind policy validation in `JdbcOpenItemSnapshotRepository.transition(...)`.
+  - The repository now maps `item_kind` to `OpenItemStatePolicies` and rejects lifecycle-invalid transitions even when state/version preconditions match.
+- Expanded repository integration tests with:
+  - disallowed policy transition rejection,
+  - transition-history row-count assertions for both success and rollback scenarios.
+- Re-ran `mvn test`; build remains blocked by environment plugin resolution (`maven-resources-plugin:3.3.1` HTTP 403).
+
+## 12) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Add a persistence-level enum normalization layer for `item_kind` (replace raw strings with a strong enum + mapper), enforce valid item-kind values at insert time, and add integration tests for unsupported item kinds and invalid enum-state tokens. Then run `mvn test`, report results, perform a code review, and offer to fix any issues (including test/build issues).
+
+
+## 13) Latest pass update (persistence enum normalization)
+
+Implemented persistence hardening for open-item kind/state tokens:
+
+- Added `OpenItemKind` enum as the canonical persisted open-item category type.
+- Updated `OpenItemSnapshotRecord` to use `OpenItemKind` instead of raw `String itemKind`.
+- Updated repository API and JDBC implementation to query by `OpenItemKind` and persist `item_kind` from enum names.
+- Added state-token validation by item kind during both create and transition workflows.
+  - Invalid state tokens now fail fast with explicit error messages.
+- Added integration tests for:
+  - invalid state token at create,
+  - invalid state token at transition,
+  - unsupported persisted `item_kind` token,
+  - existing success/failure transition + history-count behavior.
+
+## 14) Updated status report
+
+- Persistence typing improved: `item_kind` now uses a strong enum in the Java persistence model.
+- Lifecycle/state input quality improved: token validation now occurs before write operations.
+- Remaining blocker: Maven plugin resolution is still blocked by HTTP 403 to Maven Central in this environment.
+
+## 15) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Implement the first `JournalPostingService` slice that derives `Receivable` and `PrepaidExpense` open-item projections from `JournalTransaction` + `TransactionTiming`, persists resulting snapshots/transitions via repositories, and add deterministic integration tests for those derivation paths. Then run `mvn test`, report results, perform a code review, and offer to fix any issues (including test/build issues).
+
+
+## 16) Latest pass update (pom.xml reengineering)
+
+Build configuration was fully reworked to establish a cleaner Maven baseline:
+
+- Reorganized dependency properties and version management for Jakarta, persistence, logging, CLI, JavaFX, and test stacks.
+- Restructured dependencies into clearer groups (Jakarta APIs, persistence/migration, runtime/logging, interchange/CLI, testing).
+- Refactored build plugins to a simpler stable set (`compiler`, `surefire`, `exec`) with explicit versions/configuration.
+- Moved JavaFX dependencies under a dedicated `ui` profile so non-UI builds/tests avoid unnecessary UI dependency resolution.
+
+Test execution status after reengineering remains blocked by environment-level Maven plugin resolution (`maven-resources-plugin:3.3.1` HTTP 403).
+
+## 17) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Add Maven `settings.xml` guidance and an optional repo-local bootstrap profile for restricted environments, then implement the first `JournalPostingService` derivation slice (`Receivable` + `PrepaidExpense`) with deterministic tests. Run `mvn test`, report results, perform a code review, and offer to fix any issues (including build/test problems).
+
+
+## 18) Latest pass update (repo-local build bootstrap)
+
+Implemented repo-local Maven build bootstrap for restricted environments:
+
+- Added `.mvn/maven.config` to force use of repo-local cache (`.mvn/local-repo`) and project settings file.
+- Added `.mvn/settings.xml` with active `repo-local-bootstrap` profile that:
+  - checks `${user.home}/.m2/repository` as a local seed source,
+  - configures both dependency and plugin repositories,
+  - keeps Maven Central as fallback when reachable.
+- Added `scripts/bootstrap-local-m2.sh` to seed `.mvn/local-repo` from an existing machine cache.
+- Added `docs/repo-local-build.md` with usage instructions and restricted-network guidance.
+
+## 19) Updated status report
+
+- Build bootstrap now supports deterministic repo-local cache usage in-repo.
+- The environment still blocks external Maven Central plugin resolution unless artifacts are pre-seeded or mirror URLs are configured.
+
+## 20) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Verify the repo-local bootstrap against a pre-seeded cache in CI (or mirror), then implement the first `JournalPostingService` derivation slice (`Receivable` + `PrepaidExpense`) with deterministic tests. Run `mvn test`, report results, perform a code review, and offer to fix any issues (including build/test problems).

@@ -11,24 +11,30 @@ import java.util.UUID;
 public record OpenItemSnapshotRecord(
         UUID id,
         String groupCode,
-        String itemKind,
+        OpenItemKind itemKind,
         String itemRef,
         String state,
         BigDecimal originalAmount,
         BigDecimal openAmount,
         UUID lastTransactionId,
-        LocalDate lastUpdatedOn)
+        LocalDate lastUpdatedOn,
+        long version)
 {
     public OpenItemSnapshotRecord
     {
         id = Objects.requireNonNull(id, "id");
         groupCode = require(groupCode, "groupCode");
-        itemKind = require(itemKind, "itemKind");
+        itemKind = Objects.requireNonNull(itemKind, "itemKind");
         itemRef = require(itemRef, "itemRef");
         state = require(state, "state");
         originalAmount = Objects.requireNonNull(originalAmount, "originalAmount");
         openAmount = Objects.requireNonNull(openAmount, "openAmount");
         lastUpdatedOn = Objects.requireNonNull(lastUpdatedOn, "lastUpdatedOn");
+
+        if (version < 0)
+        {
+            throw new IllegalArgumentException("version cannot be negative");
+        }
     }
 
     private static String require(String value, String field)

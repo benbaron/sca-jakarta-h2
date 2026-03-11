@@ -5,47 +5,64 @@
 
   <groupId>org.nonprofitbookkeeping</groupId>
   <artifactId>sca-ledger-h2-jakarta</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.2.0-SNAPSHOT</version>
   <name>SCA Ledger (H2 + Jakarta)</name>
+  <description>Stateful accounting system for SCA branch operations with immutable journaling and deterministic projections.</description>
 
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <jakarta.persistence.version>3.1.0</jakarta.persistence.version>
+    <jakarta.validation.version>3.0.2</jakarta.validation.version>
+    <jakarta.inject.version>2.0.1</jakarta.inject.version>
+    <jakarta.cdi.version>4.0.1</jakarta.cdi.version>
+
     <hibernate.version>6.4.4.Final</hibernate.version>
     <weld.version>5.1.2.Final</weld.version>
+    <h2.version>2.2.224</h2.version>
+    <flyway.version>10.17.0</flyway.version>
+
     <slf4j.version>2.0.13</slf4j.version>
     <logback.version>1.5.6</logback.version>
-    <flyway.version>10.17.0</flyway.version>
+    <jackson.version>2.17.2</jackson.version>
+    <picocli.version>4.7.6</picocli.version>
+    <javafx.version>21.0.4</javafx.version>
+    <junit.version>5.10.3</junit.version>
+
+    <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
+    <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
+    <maven.exec.plugin.version>3.3.0</maven.exec.plugin.version>
+    <javafx.maven.plugin.version>0.0.8</javafx.maven.plugin.version>
   </properties>
+
 
   <dependencies>
     <!-- Jakarta APIs -->
     <dependency>
       <groupId>jakarta.persistence</groupId>
       <artifactId>jakarta.persistence-api</artifactId>
-      <version>3.1.0</version>
+      <version>${jakarta.persistence.version}</version>
     </dependency>
     <dependency>
       <groupId>jakarta.validation</groupId>
       <artifactId>jakarta.validation-api</artifactId>
-      <version>3.0.2</version>
+      <version>${jakarta.validation.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.inject</groupId>
+      <artifactId>jakarta.inject-api</artifactId>
+      <version>${jakarta.inject.version}</version>
     </dependency>
     <dependency>
       <groupId>jakarta.enterprise</groupId>
       <artifactId>jakarta.enterprise.cdi-api</artifactId>
-      <version>4.0.1</version>
+      <version>${jakarta.cdi.version}</version>
       <scope>provided</scope>
     </dependency>
 
-
-    <!-- Jakarta Inject (jakarta.inject.Inject) -->
-    <dependency>
-      <groupId>jakarta.inject</groupId>
-      <artifactId>jakarta.inject-api</artifactId>
-      <version>2.0.1</version>
-    </dependency>
-
-    <!-- Hibernate ORM (JPA provider) -->
+    <!-- Persistence and migration -->
     <dependency>
       <groupId>org.hibernate.orm</groupId>
       <artifactId>hibernate-core</artifactId>
@@ -56,30 +73,24 @@
       <artifactId>hibernate-hikaricp</artifactId>
       <version>${hibernate.version}</version>
     </dependency>
-
-    <!-- H2 database -->
-    <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <version>2.2.224</version>
-      <scope>runtime</scope>
-    </dependency>
-
-    <!-- Flyway for schema migrations -->
     <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-core</artifactId>
       <version>${flyway.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>${h2.version}</version>
+      <scope>runtime</scope>
+    </dependency>
 
-    <!-- CDI container (Weld SE) -->
+    <!-- Runtime container and logging -->
     <dependency>
       <groupId>org.jboss.weld.se</groupId>
       <artifactId>weld-se-core</artifactId>
       <version>${weld.version}</version>
     </dependency>
-
-    <!-- Logging -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
@@ -92,50 +103,28 @@
       <scope>runtime</scope>
     </dependency>
 
-
-    <!-- JSON (for CoA/Fund import/export) -->
+    <!-- Data interchange and CLI -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.17.2</version>
+      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
-      <version>2.17.2</version>
+      <version>${jackson.version}</version>
     </dependency>
-
-
-    <!-- CLI -->
     <dependency>
       <groupId>info.picocli</groupId>
       <artifactId>picocli</artifactId>
-      <version>4.7.6</version>
+      <version>${picocli.version}</version>
     </dependency>
 
-
-    <!-- JavaFX (UI) -->
-    <dependency>
-      <groupId>org.openjfx</groupId>
-      <artifactId>javafx-controls</artifactId>
-      <version>21.0.4</version>
-    </dependency>
-    <dependency>
-      <groupId>org.openjfx</groupId>
-      <artifactId>javafx-graphics</artifactId>
-      <version>21.0.4</version>
-    </dependency>
-    <dependency>
-      <groupId>org.openjfx</groupId>
-      <artifactId>javafx-base</artifactId>
-      <version>21.0.4</version>
-    </dependency>
-
-    <!-- Tests -->
+    <!-- Testing -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
-      <version>5.10.3</version>
+      <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -144,16 +133,27 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven.compiler.plugin.version}</version>
+        <configuration>
+          <release>${maven.compiler.release}</release>
+          <showWarnings>true</showWarnings>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.2.5</version>
+        <version>${maven.surefire.plugin.version}</version>
         <configuration>
           <useModulePath>false</useModulePath>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>3.3.0</version>
+        <version>${maven.exec.plugin.version}</version>
         <configuration>
           <mainClass>org.nonprofitbookkeeping.app.Main</mainClass>
         </configuration>
@@ -164,15 +164,29 @@
   <profiles>
     <profile>
       <id>ui</id>
-      <properties>
-        <javafx.version>21.0.4</javafx.version>
-      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>org.openjfx</groupId>
+          <artifactId>javafx-controls</artifactId>
+          <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.openjfx</groupId>
+          <artifactId>javafx-graphics</artifactId>
+          <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.openjfx</groupId>
+          <artifactId>javafx-base</artifactId>
+          <version>${javafx.version}</version>
+        </dependency>
+      </dependencies>
       <build>
         <plugins>
           <plugin>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-maven-plugin</artifactId>
-            <version>0.0.8</version>
+            <version>${javafx.maven.plugin.version}</version>
             <configuration>
               <mainClass>org.nonprofitbookkeeping.ui.FxMain</mainClass>
             </configuration>
@@ -181,5 +195,4 @@
       </build>
     </profile>
   </profiles>
-
 </project>

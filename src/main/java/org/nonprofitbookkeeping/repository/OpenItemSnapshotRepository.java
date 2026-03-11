@@ -17,9 +17,10 @@ public interface OpenItemSnapshotRepository
                     String toState,
                     UUID triggerTransactionId,
                     String notes,
-                    LocalDate transitionOn);
+                    LocalDate transitionOn,
+                    long expectedVersion);
 
     Optional<OpenItemSnapshotRecord> findById(UUID snapshotId);
 
-    List<OpenItemSnapshotRecord> findByGroupAndKind(String groupCode, String itemKind);
+    List<OpenItemSnapshotRecord> findByGroupAndKind(String groupCode, OpenItemKind itemKind);
 }

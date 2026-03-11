@@ -1,6 +1,15 @@
 package org.nonprofitbookkeeping.repository;
 
 import javax.sql.DataSource;
+import org.nonprofitbookkeeping.domain.state.AssetItemState;
+import org.nonprofitbookkeeping.domain.state.DeferredRevenueItemState;
+import org.nonprofitbookkeeping.domain.state.OutstandingBankItemState;
+import org.nonprofitbookkeeping.domain.state.PayableItemState;
+import org.nonprofitbookkeeping.domain.state.PrepaidExpenseItemState;
+import org.nonprofitbookkeeping.domain.state.ReceivableItemState;
+import org.nonprofitbookkeeping.workflow.state.OpenItemStatePolicies;
+import org.nonprofitbookkeeping.workflow.state.StateTransitionPolicy;
+
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -28,22 +37,25 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
     {
         String sql = """
                 INSERT INTO open_item_snapshot
-                (id, group_code, item_kind, item_ref, state, original_amount, open_amount, last_transaction_id, last_updated_on)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, group_code, item_kind, item_ref, state, original_amount, open_amount, last_transaction_id, last_updated_on, version)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql))
         {
+            assertStateTokenValid(snapshot.itemKind(), snapshot.state(), "state");
+
             ps.setObject(1, snapshot.id());
             ps.setString(2, snapshot.groupCode());
-            ps.setString(3, snapshot.itemKind());
+            ps.setString(3, snapshot.itemKind().name());
             ps.setString(4, snapshot.itemRef());
             ps.setString(5, snapshot.state());
             ps.setBigDecimal(6, snapshot.originalAmount());
             ps.setBigDecimal(7, snapshot.openAmount());
             ps.setObject(8, snapshot.lastTransactionId());
             ps.setDate(9, Date.valueOf(snapshot.lastUpdatedOn()));
+            ps.setLong(10, snapshot.version());
             ps.executeUpdate();
         }
         catch (SQLException ex)
@@ -53,15 +65,33 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
     }
 
     @Override
-    public void transition(UUID snapshotId, String fromState, String toState, UUID triggerTransactionId, String notes, java.time.LocalDate transitionOn)
+    public void transition(UUID snapshotId, String fromState, String toState, UUID triggerTransactionId, String notes,
+                           java.time.LocalDate transitionOn, long expectedVersion)
     {
         try (Connection connection = dataSource.getConnection())
         {
             connection.setAutoCommit(false);
             try
             {
+                OpenItemSnapshotRecord current = loadSnapshotForUpdate(connection, snapshotId);
+                assertStateTokenValid(current.itemKind(), fromState, "fromState");
+                assertStateTokenValid(current.itemKind(), toState, "toState");
+
+                if (!current.state().equals(fromState))
+                {
+                    throw new IllegalStateException("Open-item snapshot state mismatch for id " + snapshotId
+                            + ": expected " + fromState + " but was " + current.state());
+                }
+                if (current.version() != expectedVersion)
+                {
+                    throw new IllegalStateException("Open-item snapshot version mismatch for id " + snapshotId
+                            + ": expected " + expectedVersion + " but was " + current.version());
+                }
+
+                assertTransitionAllowed(current.itemKind(), fromState, toState);
+
                 insertTransition(connection, snapshotId, fromState, toState, triggerTransactionId, notes, transitionOn);
-                updateSnapshotState(connection, snapshotId, toState, triggerTransactionId, transitionOn);
+                updateSnapshotState(connection, snapshotId, toState, triggerTransactionId, transitionOn, expectedVersion);
                 connection.commit();
             }
             catch (SQLException ex)
@@ -80,7 +110,8 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
     public Optional<OpenItemSnapshotRecord> findById(UUID snapshotId)
     {
         String sql = """
-                SELECT id, group_code, item_kind, item_ref, state, original_amount, open_amount, last_transaction_id, last_updated_on
+                SELECT id, group_code, item_kind, item_ref, state, original_amount, open_amount,
+                       last_transaction_id, last_updated_on, version
                   FROM open_item_snapshot
                  WHERE id = ?
                 """;
@@ -105,10 +136,11 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
     }
 
     @Override
-    public List<OpenItemSnapshotRecord> findByGroupAndKind(String groupCode, String itemKind)
+    public List<OpenItemSnapshotRecord> findByGroupAndKind(String groupCode, OpenItemKind itemKind)
     {
         String sql = """
-                SELECT id, group_code, item_kind, item_ref, state, original_amount, open_amount, last_transaction_id, last_updated_on
+                SELECT id, group_code, item_kind, item_ref, state, original_amount, open_amount,
+                       last_transaction_id, last_updated_on, version
                   FROM open_item_snapshot
                  WHERE group_code = ?
                    AND item_kind = ?
@@ -119,7 +151,7 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
              PreparedStatement ps = connection.prepareStatement(sql))
         {
             ps.setString(1, groupCode);
-            ps.setString(2, itemKind);
+            ps.setString(2, itemKind.name());
             try (ResultSet rs = ps.executeQuery())
             {
                 List<OpenItemSnapshotRecord> rows = new ArrayList<>();
@@ -133,6 +165,29 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
         catch (SQLException ex)
         {
             throw new IllegalStateException("Could not query open-item snapshots", ex);
+        }
+    }
+
+    private OpenItemSnapshotRecord loadSnapshotForUpdate(Connection connection, UUID snapshotId) throws SQLException
+    {
+        String sql = """
+                SELECT id, group_code, item_kind, item_ref, state, original_amount, open_amount,
+                       last_transaction_id, last_updated_on, version
+                  FROM open_item_snapshot
+                 WHERE id = ?
+                """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql))
+        {
+            ps.setObject(1, snapshotId);
+            try (ResultSet rs = ps.executeQuery())
+            {
+                if (!rs.next())
+                {
+                    throw new IllegalStateException("Open-item snapshot not found for id " + snapshotId);
+                }
+                return mapSnapshot(rs);
+            }
         }
     }
 
@@ -158,14 +213,17 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
     }
 
     private void updateSnapshotState(Connection connection, UUID snapshotId, String toState,
-                                     UUID triggerTransactionId, java.time.LocalDate transitionOn) throws SQLException
+                                     UUID triggerTransactionId, java.time.LocalDate transitionOn,
+                                     long expectedVersion) throws SQLException
     {
         String sql = """
                 UPDATE open_item_snapshot
                    SET state = ?,
                        last_transaction_id = ?,
-                       last_updated_on = ?
+                       last_updated_on = ?,
+                       version = version + 1
                  WHERE id = ?
+                   AND version = ?
                 """;
 
         try (PreparedStatement ps = connection.prepareStatement(sql))
@@ -174,12 +232,71 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
             ps.setObject(2, triggerTransactionId);
             ps.setDate(3, Date.valueOf(transitionOn));
             ps.setObject(4, snapshotId);
+            ps.setLong(5, expectedVersion);
             int updated = ps.executeUpdate();
             if (updated != 1)
             {
-                throw new IllegalStateException("Open-item snapshot not found for id " + snapshotId);
+                throw new IllegalStateException("Open-item snapshot update failed for id " + snapshotId
+                        + " due to concurrent modification");
             }
         }
+    }
+
+    private void assertTransitionAllowed(OpenItemKind itemKind, String fromState, String toState)
+    {
+        switch (itemKind)
+        {
+            case OUTSTANDING_BANK_ITEM -> assertTransitionAllowed(
+                    OpenItemStatePolicies.outstandingBankItemPolicy(),
+                    OutstandingBankItemState.valueOf(fromState),
+                    OutstandingBankItemState.valueOf(toState));
+            case RECEIVABLE -> assertTransitionAllowed(
+                    OpenItemStatePolicies.receivablePolicy(),
+                    ReceivableItemState.valueOf(fromState),
+                    ReceivableItemState.valueOf(toState));
+            case PREPAID_EXPENSE -> assertTransitionAllowed(
+                    OpenItemStatePolicies.prepaidExpensePolicy(),
+                    PrepaidExpenseItemState.valueOf(fromState),
+                    PrepaidExpenseItemState.valueOf(toState));
+            case DEFERRED_REVENUE -> assertTransitionAllowed(
+                    OpenItemStatePolicies.deferredRevenuePolicy(),
+                    DeferredRevenueItemState.valueOf(fromState),
+                    DeferredRevenueItemState.valueOf(toState));
+            case PAYABLE -> assertTransitionAllowed(
+                    OpenItemStatePolicies.payablePolicy(),
+                    PayableItemState.valueOf(fromState),
+                    PayableItemState.valueOf(toState));
+            case ASSET -> assertTransitionAllowed(
+                    OpenItemStatePolicies.assetPolicy(),
+                    AssetItemState.valueOf(fromState),
+                    AssetItemState.valueOf(toState));
+        }
+    }
+
+    private void assertStateTokenValid(OpenItemKind itemKind, String stateToken, String fieldName)
+    {
+        try
+        {
+            switch (itemKind)
+            {
+                case OUTSTANDING_BANK_ITEM -> OutstandingBankItemState.valueOf(stateToken);
+                case RECEIVABLE -> ReceivableItemState.valueOf(stateToken);
+                case PREPAID_EXPENSE -> PrepaidExpenseItemState.valueOf(stateToken);
+                case DEFERRED_REVENUE -> DeferredRevenueItemState.valueOf(stateToken);
+                case PAYABLE -> PayableItemState.valueOf(stateToken);
+                case ASSET -> AssetItemState.valueOf(stateToken);
+            }
+        }
+        catch (IllegalArgumentException ex)
+        {
+            throw new IllegalArgumentException("Invalid " + fieldName + " token '" + stateToken
+                    + "' for open-item kind " + itemKind, ex);
+        }
+    }
+
+    private <S extends Enum<S>> void assertTransitionAllowed(StateTransitionPolicy<S> policy, S fromState, S toState)
+    {
+        policy.assertTransitionAllowed(fromState, toState);
     }
 
     private OpenItemSnapshotRecord mapSnapshot(ResultSet rs) throws SQLException
@@ -187,12 +304,13 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
         return new OpenItemSnapshotRecord(
                 rs.getObject("id", UUID.class),
                 rs.getString("group_code"),
-                rs.getString("item_kind"),
+                OpenItemKind.parse(rs.getString("item_kind")),
                 rs.getString("item_ref"),
                 rs.getString("state"),
                 rs.getBigDecimal("original_amount"),
                 rs.getBigDecimal("open_amount"),
                 rs.getObject("last_transaction_id", UUID.class),
-                rs.getDate("last_updated_on").toLocalDate());
+                rs.getDate("last_updated_on").toLocalDate(),
+                rs.getLong("version"));
     }
 }
