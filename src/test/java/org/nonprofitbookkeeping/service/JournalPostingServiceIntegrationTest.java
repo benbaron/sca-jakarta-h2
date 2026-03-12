@@ -45,7 +45,7 @@ public class JournalPostingServiceIntegrationTest
 
         OpenItemSnapshotRecord openSnapshot = snapshot(ds, "BARONY-RED", OpenItemKind.RECEIVABLE, "1100-AR|GENERAL");
         assertEquals("OPEN", openSnapshot.state());
-        assertEquals(new BigDecimal("125.00"), openSnapshot.openAmount());
+        assertAmountEquals("125.00", openSnapshot.openAmount());
         assertEquals(0, openSnapshot.version());
 
         JournalTransaction receiveCash = JournalTransaction.create(
@@ -88,7 +88,7 @@ public class JournalPostingServiceIntegrationTest
 
         OpenItemSnapshotRecord openSnapshot = snapshot(ds, "BARONY-BLUE", OpenItemKind.PREPAID_EXPENSE, "1200-PREPAID-INSURANCE|GENERAL");
         assertEquals("OPEN", openSnapshot.state());
-        assertEquals(new BigDecimal("300.00"), openSnapshot.openAmount());
+        assertAmountEquals("300.00", openSnapshot.openAmount());
 
         JournalTransaction recognizePrepaid = JournalTransaction.create(
                 "BARONY-BLUE",
@@ -164,5 +164,10 @@ public class JournalPostingServiceIntegrationTest
         {
             throw new IllegalStateException(ex);
         }
+    }
+
+    private void assertAmountEquals(String expected, BigDecimal actual)
+    {
+        assertEquals(0, new BigDecimal(expected).compareTo(actual));
     }
 }

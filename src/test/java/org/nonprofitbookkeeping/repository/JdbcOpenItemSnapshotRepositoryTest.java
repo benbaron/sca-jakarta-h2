@@ -86,7 +86,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
 
         OpenItemSnapshotRecord loaded = repository.findById(id).orElseThrow();
         assertEquals("SETTLED_BY_CASH", loaded.state());
-        assertEquals(new BigDecimal("75.00"), loaded.openAmount());
+        assertAmountEquals("75.00", loaded.openAmount());
         assertNull(loaded.lastTransactionId());
         assertEquals(1, loaded.version());
         assertEquals(1, transitionCount(ds, id));
@@ -240,7 +240,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
 
         OpenItemSnapshotRecord loaded = repository.findById(id).orElseThrow();
         assertEquals("PARTIALLY_APPLIED", loaded.state());
-        assertEquals(new BigDecimal("40.00"), loaded.openAmount());
+        assertAmountEquals("40.00", loaded.openAmount());
         assertEquals(1, loaded.version());
     }
 
@@ -329,5 +329,10 @@ public class JdbcOpenItemSnapshotRepositoryTest
         {
             throw new IllegalStateException("Could not count transitions", ex);
         }
+    }
+
+    private void assertAmountEquals(String expected, BigDecimal actual)
+    {
+        assertEquals(0, new BigDecimal(expected).compareTo(actual));
     }
 }
