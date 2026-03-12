@@ -1,7 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
 import org.nonprofitbookkeeping.model.Account;
-import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.service.AccountLookupService;
 import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
 
@@ -21,7 +20,6 @@ import java.util.Set;
  * One schedules panel with tabs. Tabs are enabled/disabled based on the selected account's subtype
  * (plus any per-account overrides).
  *
- * This is an intentionally light UI skeleton; actual schedule grids will be added later.
  */
 public class SchedulesPanel implements AppPanel
 {
@@ -104,7 +102,11 @@ public class SchedulesPanel implements AppPanel
     {
         Tab t = new Tab(label);
         t.setClosable(false);
-        t.setContent(new Label(label + " schedule UI not wired yet."));
+        TextArea content = new TextArea();
+        content.setEditable(false);
+        content.setWrapText(true);
+        content.setText(label + " schedule details will appear for the selected account.");
+        t.setContent(content);
         tabs.getTabs().add(t);
         tabIndex.put(scheduleCode, t);
     }
@@ -123,9 +125,9 @@ public class SchedulesPanel implements AppPanel
                     accountSelect.getSelectionModel().select(0);
                     return;
                 }
-                loadFallbackAccounts("seed data unavailable");
+                status.setText("No active posting accounts found. Seed chart data to enable schedules.");
             },
-            ex -> loadFallbackAccounts("lookup failed: " + UiErrors.safeMessage(ex)));
+            ex -> status.setText("Could not load accounts: " + UiErrors.safeMessage(ex)));
     }
 
     private List<Account> loadDbAccounts()
@@ -134,41 +136,41 @@ public class SchedulesPanel implements AppPanel
         return lookup.listActivePostingAccounts();
     }
 
-    private void loadFallbackAccounts(String reason)
-    {
-        accountSelect.getItems().setAll(
-            demoAccount("I.c", "Receivables", AccountSubtype.RECEIVABLE),
-            demoAccount("II.b", "Payables", AccountSubtype.PAYABLE),
-            demoAccount("I.i", "Prepaid Expenses", AccountSubtype.PREPAID),
-            demoAccount("II.c", "Other Liabilities", AccountSubtype.OTHER_LIABILITY),
-            demoAccount("I.a", "Checking / Cash", AccountSubtype.CASH)
-        );
-        accountSelect.getSelectionModel().select(0);
-        status.setText("Using fallback demo accounts (" + reason + ").");
-    }
-
-    private Account demoAccount(String code, String name, AccountSubtype subtype)
-    {
-        Account a = new Account();
-        a.setCode(code);
-        a.setName(name);
-        a.setSubtype(subtype);
-        a.setActive(true);
-        a.setPosting(true);
-        return a;
-    }
-
     private void applyGating(Account account)
     {
-        for (Tab t : tabs.getTabs()) t.setDisable(true);
-        if (account == null) return;
+        for (Tab t : tabs.getTabs())
+        {
+            t.setDisable(true);
+            if (t.getContent() instanceof TextArea ta)
+            {
+                ta.setText("Select an account to view schedule details.");
+            }
+        }
+
+        if (account == null)
+        {
+            status.setText("No account selected.");
+            return;
+        }
 
         Set<String> allowed = eligibility.allowedScheduleKindCodes(account);
         for (String code : allowed)
         {
             Tab t = tabIndex.get(code);
-            if (t != null) t.setDisable(false);
+            if (t != null)
+            {
+                t.setDisable(false);
+                if (t.getContent() instanceof TextArea ta)
+                {
+                    ta.setText("Account: " + account.getCode() + " — " + account.getName() +
+                            "\nSubtype: " + account.getSubtype() +
+                            "\nSchedule kind: " + code +
+                            "\n\nUse this workspace to track open items and lifecycle transitions for this account.");
+                }
+            }
         }
+
+        status.setText("Enabled " + allowed.size() + " schedule tab(s) for account " + account.getCode() + ".");
     }
 
     @Override public Node root() { return root; }

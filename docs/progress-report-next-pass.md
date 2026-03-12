@@ -315,3 +315,128 @@ Remaining risks / improvements to consider:
 ## 29) Next-steps prompt for the next pass
 
 > Continue from `docs/progress-report-next-pass.md`. Extract shared money-amount assertion helpers for tests, then implement partial receivable/prepaid application flow in `JournalPostingService` with deterministic multi-step integration tests (partial to terminal transitions). Run `mvn test`, report results, perform a code review, and offer to fix issues (including test/build blockers).
+
+## 30) Latest pass update (partial application lifecycle + test helper extraction)
+
+Implemented the requested next action from this report:
+
+- Extended `JournalPostingService` to support **partial receivable settlement** and **partial prepaid recognition**.
+  - Settlement/recognition transitions now reduce `open_amount` by the posted credit line amount.
+  - Service selects lifecycle state deterministically based on resulting `open_amount`:
+    - receivable: `PARTIALLY_APPLIED` vs `SETTLED_BY_CASH`
+    - prepaid: `PARTIALLY_RECOGNIZED` vs `FULLY_RECOGNIZED`
+  - Final transitions clamp negative or zero residuals to `0`.
+- Extracted shared test money assertion helper into:
+  - `src/test/java/org/nonprofitbookkeeping/testutil/TestAmountAssertions.java`
+- Updated integration tests to cover deterministic multi-step partial-to-terminal flows:
+  - receivable: open -> partial -> settled
+  - prepaid: open -> partial -> fully recognized
+- Updated repository integration tests to use the shared money assertion helper.
+
+## 31) Test execution status
+
+- Command attempted: `mvn -B -ntp test`
+- Result: **failed in environment before test execution** due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, Maven Central unreachable / network unreachable).
+
+## 32) Code review snapshot
+
+Resolved in this pass:
+
+1. Partial lifecycle behavior now aligns better with domain states by representing intermediate reductions before terminal closure.
+2. Duplicate amount comparison helpers were consolidated to one test utility, reducing drift and maintenance overhead.
+
+Remaining risks / improvements to consider:
+
+1. Over-application policy:
+   - Current logic clamps below-zero residuals to zero; consider explicit rejection when application exceeds open amount if business policy requires strict prevention.
+2. Concurrency on projection updates:
+   - Multi-step partial flows rely on optimistic version checks; higher-volume posting paths may benefit from retry strategy at service layer.
+3. Build portability:
+   - CI/local reliability still depends on plugin artifact availability (mirror or pre-seeded cache remains important).
+
+## 33) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Add explicit over-application guards in `JournalPostingService` (reject reductions that exceed `open_amount` with clear errors), then add deterministic integration tests for rejection paths and idempotent retries under optimistic-concurrency conflicts. Run `mvn test`, report results, perform a code review, and offer to fix issues (including build/test blockers).
+
+## 34) Latest pass update (UI consistency/completeness review follow-up)
+
+Performed a focused UX consistency pass across the JavaFX shell and implemented pragmatic navigation improvements:
+
+- Navigation completeness:
+  - Added `Dashboard` entry to the left navigation tree so all primary top-level panels are discoverable from navigation.
+- Navigation consistency:
+  - Changed panel activation from double-click-only to selection-driven open behavior (single-click/selection opens panel).
+  - Added keyboard activation via `Enter` for accessibility and parity.
+  - Improved navigation focus by scrolling highlighted items into view.
+- Context awareness:
+  - Added active panel indicator in the toolbar (`Panel: <title>`) to keep users oriented while switching panels.
+  - Added corresponding style hook `.toolbar-active-panel`.
+
+## 35) Test execution status
+
+- Command attempted: `mvn -B -ntp test`
+- Result: **failed in environment before test execution** due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, Maven Central unreachable / network unreachable).
+
+## 36) Code review snapshot
+
+Resolved in this pass:
+
+1. Primary navigation now exposes `Dashboard` and avoids hidden/discoverability gaps.
+2. Interaction model is more consistent (single-click + keyboard activation) and better aligned with desktop expectations.
+3. Toolbar context labeling improves orientation and reduces panel-switch ambiguity.
+
+Remaining risks / improvements to consider:
+
+1. Placeholder inconsistency across panel bodies/buttons still exists and could be standardized with a shared panel scaffold.
+2. No JavaFX interaction tests currently verify navigation-selection behavior; lightweight UI tests could reduce regressions.
+3. Maven/plugin network blocking continues to prevent full test execution in this environment.
+
+## 37) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Standardize placeholder panel scaffolding (header/actions/empty-state language) across UI panels, add focused JavaFX interaction tests for navigation selection and active panel labeling, then run `mvn test`, report results, provide a code review, and offer fixes for any identified issues (including build/test blockers).
+
+## 38) Latest pass update (panel TODO/sample-data resolution)
+
+Completed a full UI panel hardening pass to remove TODO/sample-driven panel states and use live persisted data sources where available.
+
+Implemented:
+
+- Added `LedgerQueryService` and wired it into `UiServiceRegistry` for real transaction register/journal queries.
+- Reworked `LedgerRegisterPanel` to:
+  - load real transactions from DB,
+  - show split counts and posted status,
+  - provide in-panel journal drill-down details for selected transactions,
+  - remove hardcoded sample transaction rows.
+- Reworked placeholder panels to data-backed views:
+  - `AssetsRegisterPanel`: live fixed-asset account listing,
+  - `BudgetEditorPanel`: live posting-account listing for planning scope,
+  - `BudgetVsActualPanel`: live fund-balance snapshot as actuals,
+  - `DepreciationRunsPanel`: live fixed-asset basis listing,
+  - `InventoryPanel`: live inventory-account listing.
+- Reworked `ReportLibraryPanel` to generate a live text preview from fund-balance rows instead of TODO/placeholder text areas.
+- Reworked `SchedulesPanel` to remove demo fallback accounts and show account-specific schedule context using real account lookup + eligibility gating.
+- Reworked `SettingsPanel` to a concrete in-session settings form (fiscal start + toggles), replacing TODO content.
+- Updated `TransactionEditorPanel` messaging to remove placeholder wording and provide actionable validation/save guidance.
+
+## 39) Test execution status
+
+- Command attempted: `mvn -B -ntp test`
+- Result: **failed in environment before test execution** due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, Maven Central unreachable / network unreachable).
+
+## 40) Code review snapshot
+
+Resolved in this pass:
+
+1. Panel TODO/sample states were removed from major UI panels; screens now derive display content from persisted application data/services where available.
+2. Ledger UX now supports practical transaction-to-journal drill-down without sample rows.
+3. Schedules panel no longer silently injects demo accounts, reducing data-trust ambiguity.
+
+Remaining risks / improvements to consider:
+
+1. `LedgerQueryService` currently performs view queries directly; extracting repository interfaces may improve long-term testability/architecture consistency.
+2. Report preview output is text-based; richer tabular rendering/export contracts can be added for production workflows.
+3. Build/test execution remains blocked by Maven plugin network resolution in this environment.
+
+## 41) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Add focused JavaFX tests for ledger reload/journal drill-down and schedules gating without demo fallback, then extract `LedgerQueryService` behind a repository interface and add deterministic service tests. Run `mvn test`, report results, provide a code review, and offer fixes for any identified issues (including build/test blockers).

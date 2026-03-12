@@ -1,6 +1,10 @@
 package org.nonprofitbookkeeping.ui;
 
-import javafx.scene.control.*;
+import javafx.scene.control.TreeCell;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.VBox;
 
 import java.util.EnumMap;
@@ -29,6 +33,7 @@ public class NavigationPane extends VBox
         root.setExpanded(true);
 
         TreeItem<NavItem> ops = group(root, "Operations");
+        add(ops, AppPanelId.DASHBOARD, "Dashboard");
 
         TreeItem<NavItem> ledger = group(ops, "Ledger");
         add(ledger, AppPanelId.LEDGER_REGISTER, "Ledger Register");
@@ -67,23 +72,45 @@ public class NavigationPane extends VBox
             }
         });
 
+        tree.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) ->
+        {
+            if (newSel == null || newSel.getValue() == null || newSel.getValue().panelId() == null)
+            {
+                return;
+            }
+            openPanel.accept(newSel.getValue().panelId());
+        });
+
         tree.setOnMouseClicked(e ->
         {
             TreeItem<NavItem> sel = tree.getSelectionModel().getSelectedItem();
-            if (sel == null || sel.getValue() == null) return;
-
-            if (e.getClickCount() == 2 && sel.getValue().panelId() != null)
+            if (sel == null || sel.getValue() == null)
             {
-                openPanel.accept(sel.getValue().panelId());
+                return;
             }
 
-            if (e.getButton() == javafx.scene.input.MouseButton.SECONDARY)
+            if (e.getButton() == MouseButton.SECONDARY)
             {
                 tree.getSelectionModel().select(sel);
                 NavItem v = sel.getValue();
                 openInspector.accept("Details: " + v.label(),
-                    "Detail inspector placeholder for: " + v.label() + "\n\n(Details-first; journal is a drill-down.)");
+                        "Detail inspector placeholder for: " + v.label() + "\n\n(Details-first; journal is a drill-down.)");
             }
+        });
+
+        tree.setOnKeyPressed(e ->
+        {
+            if (e.getCode() != KeyCode.ENTER)
+            {
+                return;
+            }
+
+            TreeItem<NavItem> sel = tree.getSelectionModel().getSelectedItem();
+            if (sel == null || sel.getValue() == null || sel.getValue().panelId() == null)
+            {
+                return;
+            }
+            openPanel.accept(sel.getValue().panelId());
         });
 
         getChildren().add(tree);
@@ -92,7 +119,11 @@ public class NavigationPane extends VBox
     public void highlight(AppPanelId id)
     {
         TreeItem<NavItem> ti = index.get(id);
-        if (ti != null) tree.getSelectionModel().select(ti);
+        if (ti != null)
+        {
+            tree.getSelectionModel().select(ti);
+            tree.scrollTo(tree.getRow(ti));
+        }
     }
 
     private TreeItem<NavItem> group(TreeItem<NavItem> parent, String label)
