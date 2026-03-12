@@ -22,8 +22,10 @@ import java.util.UUID;
 public class JournalPostingService
 {
     private static final String RECEIVABLE_OPEN = "OPEN";
+    private static final String RECEIVABLE_PARTIALLY_APPLIED = "PARTIALLY_APPLIED";
     private static final String RECEIVABLE_SETTLED = "SETTLED_BY_CASH";
     private static final String PREPAID_OPEN = "OPEN";
+    private static final String PREPAID_PARTIALLY_RECOGNIZED = "PARTIALLY_RECOGNIZED";
     private static final String PREPAID_FULLY_RECOGNIZED = "FULLY_RECOGNIZED";
 
     private static final Set<String> RECEIVABLE_ACCOUNT_PREFIXES = Set.of("1100-");
@@ -70,9 +72,7 @@ public class JournalPostingService
             {
                 if (isReceivableLine(line) && line.side() == EntrySide.CREDIT)
                 {
-                    transitionIfPresent(transaction, OpenItemKind.RECEIVABLE, line, RECEIVABLE_SETTLED,
-                            BigDecimal.ZERO,
-                            "Receivable settled by bank movement");
+                    applyReceivableSettlement(transaction, line);
                 }
             }
         }
@@ -100,12 +100,34 @@ public class JournalPostingService
             {
                 if (isPrepaidLine(line) && line.side() == EntrySide.CREDIT)
                 {
-                    transitionIfPresent(transaction, OpenItemKind.PREPAID_EXPENSE, line, PREPAID_FULLY_RECOGNIZED,
-                            BigDecimal.ZERO,
-                            "Prepaid fully recognized into budget period");
+                    applyPrepaidRecognition(transaction, line);
                 }
             }
         }
+    }
+
+    private void applyReceivableSettlement(JournalTransaction transaction, PostingLine line)
+    {
+        applyOpenAmountReduction(
+                transaction,
+                OpenItemKind.RECEIVABLE,
+                line,
+                RECEIVABLE_PARTIALLY_APPLIED,
+                RECEIVABLE_SETTLED,
+                "Receivable partially settled by bank movement",
+                "Receivable settled by bank movement");
+    }
+
+    private void applyPrepaidRecognition(JournalTransaction transaction, PostingLine line)
+    {
+        applyOpenAmountReduction(
+                transaction,
+                OpenItemKind.PREPAID_EXPENSE,
+                line,
+                PREPAID_PARTIALLY_RECOGNIZED,
+                PREPAID_FULLY_RECOGNIZED,
+                "Prepaid partially recognized into budget period",
+                "Prepaid fully recognized into budget period");
     }
 
     private void createIfAbsent(JournalTransaction transaction, OpenItemKind kind, PostingLine line, String state)
@@ -132,8 +154,13 @@ public class JournalPostingService
         openItemSnapshotRepository.create(record);
     }
 
-    private void transitionIfPresent(JournalTransaction transaction, OpenItemKind kind, PostingLine line,
-                                     String toState, BigDecimal newOpenAmount, String notes)
+    private void applyOpenAmountReduction(JournalTransaction transaction,
+                                          OpenItemKind kind,
+                                          PostingLine line,
+                                          String partialState,
+                                          String terminalState,
+                                          String partialNotes,
+                                          String terminalNotes)
     {
         String itemRef = itemRef(line);
         Optional<OpenItemSnapshotRecord> existing = findSnapshot(transaction.groupCode(), kind, itemRef);
@@ -143,6 +170,23 @@ public class JournalPostingService
         }
 
         OpenItemSnapshotRecord snapshot = existing.get();
+        BigDecimal reduction = line.amount();
+        if (reduction.signum() <= 0)
+        {
+            return;
+        }
+
+        BigDecimal newOpenAmount = snapshot.openAmount().subtract(reduction);
+        String toState = partialState;
+        String notes = partialNotes;
+
+        if (newOpenAmount.compareTo(BigDecimal.ZERO) <= 0)
+        {
+            newOpenAmount = BigDecimal.ZERO;
+            toState = terminalState;
+            notes = terminalNotes;
+        }
+
         openItemSnapshotRepository.transition(
                 snapshot.id(),
                 snapshot.state(),

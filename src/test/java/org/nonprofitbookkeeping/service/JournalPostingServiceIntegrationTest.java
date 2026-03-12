@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.nonprofitbookkeeping.testutil.TestAmountAssertions.assertAmountEquals;
 
 public class JournalPostingServiceIntegrationTest
 {
@@ -109,6 +110,99 @@ public class JournalPostingServiceIntegrationTest
         assertEquals(1, transitionCount(ds, settledSnapshot.id()));
     }
 
+    @Test
+    public void post_supportsReceivablePartialThenFullSettlement()
+    {
+        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        JournalPostingService service = new JournalPostingService(
+                new JdbcJournalTransactionRepository(ds),
+                new JdbcOpenItemSnapshotRepository(ds));
+
+        service.post(JournalTransaction.create(
+                "BARONY-GOLD",
+                LocalDate.of(2026, 9, 1),
+                "Issue AR",
+                TransactionTiming.of(TimingPosition.FUTURE, TimingPosition.NOW),
+                List.of(
+                        new PostingLine("1100-AR", "GENERAL", EntrySide.DEBIT, new BigDecimal("150.00")),
+                        new PostingLine("4100-INCOME", "GENERAL", EntrySide.CREDIT, new BigDecimal("150.00")))));
+
+        service.post(JournalTransaction.create(
+                "BARONY-GOLD",
+                LocalDate.of(2026, 9, 2),
+                "Partial cash",
+                TransactionTiming.of(TimingPosition.NOW, TimingPosition.PREVIOUSLY),
+                List.of(
+                        new PostingLine("1000-BANK", "GENERAL", EntrySide.DEBIT, new BigDecimal("50.00")),
+                        new PostingLine("1100-AR", "GENERAL", EntrySide.CREDIT, new BigDecimal("50.00")))));
+
+        OpenItemSnapshotRecord partial = snapshot(ds, "BARONY-GOLD", OpenItemKind.RECEIVABLE, "1100-AR|GENERAL");
+        assertEquals("PARTIALLY_APPLIED", partial.state());
+        assertAmountEquals("100.00", partial.openAmount());
+        assertEquals(1, partial.version());
+
+        service.post(JournalTransaction.create(
+                "BARONY-GOLD",
+                LocalDate.of(2026, 9, 3),
+                "Final cash",
+                TransactionTiming.of(TimingPosition.NOW, TimingPosition.PREVIOUSLY),
+                List.of(
+                        new PostingLine("1000-BANK", "GENERAL", EntrySide.DEBIT, new BigDecimal("100.00")),
+                        new PostingLine("1100-AR", "GENERAL", EntrySide.CREDIT, new BigDecimal("100.00")))));
+
+        OpenItemSnapshotRecord settled = snapshot(ds, "BARONY-GOLD", OpenItemKind.RECEIVABLE, "1100-AR|GENERAL");
+        assertEquals("SETTLED_BY_CASH", settled.state());
+        assertAmountEquals("0.00", settled.openAmount());
+        assertEquals(2, settled.version());
+        assertEquals(2, transitionCount(ds, settled.id()));
+    }
+
+    @Test
+    public void post_supportsPrepaidPartialThenFullRecognition()
+    {
+        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        JournalPostingService service = new JournalPostingService(
+                new JdbcJournalTransactionRepository(ds),
+                new JdbcOpenItemSnapshotRepository(ds));
+
+        service.post(JournalTransaction.create(
+                "BARONY-SILVER",
+                LocalDate.of(2026, 10, 1),
+                "Pay prepaid",
+                TransactionTiming.of(TimingPosition.NOW, TimingPosition.FUTURE),
+                List.of(
+                        new PostingLine("1200-PREPAID-RENT", "GENERAL", EntrySide.DEBIT, new BigDecimal("90.00")),
+                        new PostingLine("1000-BANK", "GENERAL", EntrySide.CREDIT, new BigDecimal("90.00")))));
+
+        service.post(JournalTransaction.create(
+                "BARONY-SILVER",
+                LocalDate.of(2026, 10, 15),
+                "Recognize month 1",
+                TransactionTiming.of(TimingPosition.PREVIOUSLY, TimingPosition.NOW),
+                List.of(
+                        new PostingLine("5100-RENT-EXPENSE", "GENERAL", EntrySide.DEBIT, new BigDecimal("30.00")),
+                        new PostingLine("1200-PREPAID-RENT", "GENERAL", EntrySide.CREDIT, new BigDecimal("30.00")))));
+
+        OpenItemSnapshotRecord partial = snapshot(ds, "BARONY-SILVER", OpenItemKind.PREPAID_EXPENSE, "1200-PREPAID-RENT|GENERAL");
+        assertEquals("PARTIALLY_RECOGNIZED", partial.state());
+        assertAmountEquals("60.00", partial.openAmount());
+        assertEquals(1, partial.version());
+
+        service.post(JournalTransaction.create(
+                "BARONY-SILVER",
+                LocalDate.of(2026, 11, 1),
+                "Recognize remaining",
+                TransactionTiming.of(TimingPosition.PREVIOUSLY, TimingPosition.NOW),
+                List.of(
+                        new PostingLine("5100-RENT-EXPENSE", "GENERAL", EntrySide.DEBIT, new BigDecimal("60.00")),
+                        new PostingLine("1200-PREPAID-RENT", "GENERAL", EntrySide.CREDIT, new BigDecimal("60.00")))));
+
+        OpenItemSnapshotRecord recognized = snapshot(ds, "BARONY-SILVER", OpenItemKind.PREPAID_EXPENSE, "1200-PREPAID-RENT|GENERAL");
+        assertEquals("FULLY_RECOGNIZED", recognized.state());
+        assertAmountEquals("0.00", recognized.openAmount());
+        assertEquals(2, recognized.version());
+        assertEquals(2, transitionCount(ds, recognized.id()));
+    }
 
     @Test
     public void post_ignoresNonMappedAccountsForReceivableAndPrepaidDerivation()
@@ -164,10 +258,5 @@ public class JournalPostingServiceIntegrationTest
         {
             throw new IllegalStateException(ex);
         }
-    }
-
-    private void assertAmountEquals(String expected, BigDecimal actual)
-    {
-        assertEquals(0, new BigDecimal(expected).compareTo(actual));
     }
 }

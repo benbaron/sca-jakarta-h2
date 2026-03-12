@@ -315,3 +315,45 @@ Remaining risks / improvements to consider:
 ## 29) Next-steps prompt for the next pass
 
 > Continue from `docs/progress-report-next-pass.md`. Extract shared money-amount assertion helpers for tests, then implement partial receivable/prepaid application flow in `JournalPostingService` with deterministic multi-step integration tests (partial to terminal transitions). Run `mvn test`, report results, perform a code review, and offer to fix issues (including test/build blockers).
+
+## 30) Latest pass update (partial application lifecycle + test helper extraction)
+
+Implemented the requested next action from this report:
+
+- Extended `JournalPostingService` to support **partial receivable settlement** and **partial prepaid recognition**.
+  - Settlement/recognition transitions now reduce `open_amount` by the posted credit line amount.
+  - Service selects lifecycle state deterministically based on resulting `open_amount`:
+    - receivable: `PARTIALLY_APPLIED` vs `SETTLED_BY_CASH`
+    - prepaid: `PARTIALLY_RECOGNIZED` vs `FULLY_RECOGNIZED`
+  - Final transitions clamp negative or zero residuals to `0`.
+- Extracted shared test money assertion helper into:
+  - `src/test/java/org/nonprofitbookkeeping/testutil/TestAmountAssertions.java`
+- Updated integration tests to cover deterministic multi-step partial-to-terminal flows:
+  - receivable: open -> partial -> settled
+  - prepaid: open -> partial -> fully recognized
+- Updated repository integration tests to use the shared money assertion helper.
+
+## 31) Test execution status
+
+- Command attempted: `mvn -B -ntp test`
+- Result: **failed in environment before test execution** due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, Maven Central unreachable / network unreachable).
+
+## 32) Code review snapshot
+
+Resolved in this pass:
+
+1. Partial lifecycle behavior now aligns better with domain states by representing intermediate reductions before terminal closure.
+2. Duplicate amount comparison helpers were consolidated to one test utility, reducing drift and maintenance overhead.
+
+Remaining risks / improvements to consider:
+
+1. Over-application policy:
+   - Current logic clamps below-zero residuals to zero; consider explicit rejection when application exceeds open amount if business policy requires strict prevention.
+2. Concurrency on projection updates:
+   - Multi-step partial flows rely on optimistic version checks; higher-volume posting paths may benefit from retry strategy at service layer.
+3. Build portability:
+   - CI/local reliability still depends on plugin artifact availability (mirror or pre-seeded cache remains important).
+
+## 33) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Add explicit over-application guards in `JournalPostingService` (reject reductions that exceed `open_amount` with clear errors), then add deterministic integration tests for rejection paths and idempotent retries under optimistic-concurrency conflicts. Run `mvn test`, report results, perform a code review, and offer to fix issues (including build/test blockers).
