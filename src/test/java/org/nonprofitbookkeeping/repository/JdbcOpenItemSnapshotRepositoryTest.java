@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.nonprofitbookkeeping.testutil.TestAmountAssertions.assertAmountEquals;
 
 public class JdbcOpenItemSnapshotRepositoryTest
 {
@@ -331,8 +332,4 @@ public class JdbcOpenItemSnapshotRepositoryTest
         }
     }
 
-    private void assertAmountEquals(String expected, BigDecimal actual)
-    {
-        assertEquals(0, new BigDecimal(expected).compareTo(actual));
-    }
 }
