@@ -222,3 +222,56 @@ Implemented repo-local Maven build bootstrap for restricted environments:
 ## 20) Next-steps prompt for the next pass
 
 > Continue from `docs/progress-report-next-pass.md`. Verify the repo-local bootstrap against a pre-seeded cache in CI (or mirror), then implement the first `JournalPostingService` derivation slice (`Receivable` + `PrepaidExpense`) with deterministic tests. Run `mvn test`, report results, perform a code review, and offer to fix any issues (including build/test problems).
+
+## 20) Latest pass update (JournalPostingService first projection slice)
+
+Implemented the first deterministic `JournalPostingService` slice that bridges journal writes and open-item projection writes:
+
+- Added `JournalPostingService` with `post(JournalTransaction)` orchestration that:
+  - appends immutable journal transactions,
+  - derives and persists `RECEIVABLE` open-item snapshots when timing is `bank=FUTURE, budget=NOW`,
+  - derives and persists `PREPAID_EXPENSE` snapshots when timing is `bank=NOW, budget=FUTURE`,
+  - applies lifecycle transitions for settlement/recognition timing paths:
+    - receivable settle: `bank=NOW, budget=PREVIOUSLY` -> `SETTLED_BY_CASH`
+    - prepaid recognize: `bank=PREVIOUSLY, budget=NOW` -> `FULLY_RECOGNIZED`.
+- Added deterministic item identity mechanics:
+  - stable `item_ref` = `accountCode|fundCode`,
+  - stable projection IDs derived from transaction/kind/ref using name-based UUIDs.
+- Added integration tests for both derivation paths, including snapshot creation and transition-history assertions.
+
+## 21) Test execution status
+
+- Command attempted: `mvn test`
+- Result: **failed in environment** before compilation due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, Maven Central unreachable).
+
+## 22) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Extend `JournalPostingService` to support partial receivable/prepaid applications (state + open amount evolution), add repository support for open_amount updates alongside transitions, and add integration tests for partial and full multi-step lifecycle flows. Then run `mvn test`, report results, perform a code review, and offer to fix any issues (including build/test blockers).
+
+## 23) Latest pass update (JournalPostingService hardening follow-up)
+
+Addressed follow-up review issues from the first posting-service slice:
+
+- Added repository natural-key lookup support:
+  - `OpenItemSnapshotRepository.findByGroupKindAndItemRef(...)`
+  - JDBC implementation with direct SQL lookup by `(group_code, item_kind, item_ref)`.
+- Extended repository transitions to optionally update `open_amount` atomically with state transitions:
+  - New overloaded `transition(...)` accepting `newOpenAmount`.
+  - JDBC update now applies `open_amount = COALESCE(?, open_amount)`.
+- Hardened `JournalPostingService` derivation behavior:
+  - switched snapshot lookup to natural-key repository query,
+  - narrowed account classification to deterministic prefixes (`1100-` receivable, `1200-` prepaid),
+  - settlement/recognition transitions now set `open_amount` to zero.
+- Expanded integration tests:
+  - posting-service tests now verify zero `open_amount` after settlement/recognition,
+  - added guard test that non-mapped accounts do not create projections,
+  - repository tests now cover open-amount updates during transitions and natural-key lookup.
+
+## 24) Test execution status
+
+- Command attempted: `mvn test`
+- Result: **failed in environment** before compilation due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, Maven Central unreachable).
+
+## 25) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Implement partial receivable/prepaid application flows in `JournalPostingService` by deriving proportional `open_amount` reductions and state selection (`PARTIALLY_*` vs terminal), then add deterministic integration tests for multi-step partial-to-full lifecycle scenarios. Run `mvn test`, report results, perform a code review, and offer to fix any issues (including build/test blockers).
