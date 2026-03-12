@@ -165,16 +165,21 @@ public class JdbcJournalTransactionRepository implements JournalTransactionRepos
         while (rs.next())
         {
             UUID id = rs.getObject("id", UUID.class);
-            TxnAccumulator accumulator = byId.computeIfAbsent(id, key -> new TxnAccumulator(
-                    id,
-                    rsGetString(rs, "group_code"),
-                    rs.getDate("posted_on").toLocalDate(),
-                    rsGetString(rs, "memo"),
-                    TransactionTiming.of(
-                            TimingPosition.valueOf(rsGetString(rs, "bank_timing")),
-                            TimingPosition.valueOf(rsGetString(rs, "budget_timing"))),
-                    rs.getObject("reversed_transaction_id", UUID.class)
-            ));
+            TxnAccumulator accumulator = byId.get(id);
+            if (accumulator == null)
+            {
+                accumulator = new TxnAccumulator(
+                        id,
+                        rsGetString(rs, "group_code"),
+                        rs.getDate("posted_on").toLocalDate(),
+                        rsGetString(rs, "memo"),
+                        TransactionTiming.of(
+                                TimingPosition.valueOf(rsGetString(rs, "bank_timing")),
+                                TimingPosition.valueOf(rsGetString(rs, "budget_timing"))),
+                        rs.getObject("reversed_transaction_id", UUID.class)
+                );
+                byId.put(id, accumulator);
+            }
 
             accumulator.lines.add(new LineAccumulator(
                     rs.getInt("line_order"),

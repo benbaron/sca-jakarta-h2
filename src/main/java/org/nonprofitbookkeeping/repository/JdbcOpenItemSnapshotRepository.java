@@ -10,6 +10,7 @@ import org.nonprofitbookkeeping.domain.state.ReceivableItemState;
 import org.nonprofitbookkeeping.workflow.state.OpenItemStatePolicies;
 import org.nonprofitbookkeeping.workflow.state.StateTransitionPolicy;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -65,8 +66,8 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
     }
 
     @Override
-    public void transition(UUID snapshotId, String fromState, String toState, UUID triggerTransactionId, String notes,
-                           java.time.LocalDate transitionOn, long expectedVersion)
+    public void transition(UUID snapshotId, String fromState, String toState, BigDecimal newOpenAmount,
+                           UUID triggerTransactionId, String notes, java.time.LocalDate transitionOn, long expectedVersion)
     {
         try (Connection connection = dataSource.getConnection())
         {
@@ -91,7 +92,7 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
                 assertTransitionAllowed(current.itemKind(), fromState, toState);
 
                 insertTransition(connection, snapshotId, fromState, toState, triggerTransactionId, notes, transitionOn);
-                updateSnapshotState(connection, snapshotId, toState, triggerTransactionId, transitionOn, expectedVersion);
+                updateSnapshotState(connection, snapshotId, toState, newOpenAmount, triggerTransactionId, transitionOn, expectedVersion);
                 connection.commit();
             }
             catch (SQLException ex)
@@ -132,6 +133,39 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
         catch (SQLException ex)
         {
             throw new IllegalStateException("Could not query open-item snapshot", ex);
+        }
+    }
+
+    @Override
+    public Optional<OpenItemSnapshotRecord> findByGroupKindAndItemRef(String groupCode, OpenItemKind itemKind, String itemRef)
+    {
+        String sql = """
+                SELECT id, group_code, item_kind, item_ref, state, original_amount, open_amount,
+                       last_transaction_id, last_updated_on, version
+                  FROM open_item_snapshot
+                 WHERE group_code = ?
+                   AND item_kind = ?
+                   AND item_ref = ?
+                """;
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql))
+        {
+            ps.setString(1, groupCode);
+            ps.setString(2, itemKind.name());
+            ps.setString(3, itemRef);
+            try (ResultSet rs = ps.executeQuery())
+            {
+                if (!rs.next())
+                {
+                    return Optional.empty();
+                }
+                return Optional.of(mapSnapshot(rs));
+            }
+        }
+        catch (SQLException ex)
+        {
+            throw new IllegalStateException("Could not query open-item snapshot by natural key", ex);
         }
     }
 
@@ -213,12 +247,13 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
     }
 
     private void updateSnapshotState(Connection connection, UUID snapshotId, String toState,
-                                     UUID triggerTransactionId, java.time.LocalDate transitionOn,
-                                     long expectedVersion) throws SQLException
+                                     BigDecimal newOpenAmount, UUID triggerTransactionId,
+                                     java.time.LocalDate transitionOn, long expectedVersion) throws SQLException
     {
         String sql = """
                 UPDATE open_item_snapshot
                    SET state = ?,
+                       open_amount = COALESCE(?, open_amount),
                        last_transaction_id = ?,
                        last_updated_on = ?,
                        version = version + 1
@@ -229,10 +264,11 @@ public class JdbcOpenItemSnapshotRepository implements OpenItemSnapshotRepositor
         try (PreparedStatement ps = connection.prepareStatement(sql))
         {
             ps.setString(1, toState);
-            ps.setObject(2, triggerTransactionId);
-            ps.setDate(3, Date.valueOf(transitionOn));
-            ps.setObject(4, snapshotId);
-            ps.setLong(5, expectedVersion);
+            ps.setBigDecimal(2, newOpenAmount);
+            ps.setObject(3, triggerTransactionId);
+            ps.setDate(4, Date.valueOf(transitionOn));
+            ps.setObject(5, snapshotId);
+            ps.setLong(6, expectedVersion);
             int updated = ps.executeUpdate();
             if (updated != 1)
             {

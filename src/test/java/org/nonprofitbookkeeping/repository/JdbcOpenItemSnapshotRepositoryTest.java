@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.LocalDate;
@@ -85,6 +86,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
 
         OpenItemSnapshotRecord loaded = repository.findById(id).orElseThrow();
         assertEquals("SETTLED_BY_CASH", loaded.state());
+        assertAmountEquals("75.00", loaded.openAmount());
         assertNull(loaded.lastTransactionId());
         assertEquals(1, loaded.version());
         assertEquals(1, transitionCount(ds, id));
@@ -213,6 +215,60 @@ public class JdbcOpenItemSnapshotRepositoryTest
         assertEquals(0, loaded.version());
     }
 
+
+    @Test
+    public void transition_withOpenAmountUpdate_persistsNewAmount()
+    {
+        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
+
+        UUID id = UUID.randomUUID();
+        repository.create(new OpenItemSnapshotRecord(
+                id,
+                "BARONY-RED",
+                OpenItemKind.RECEIVABLE,
+                "AR-2026-004",
+                "OPEN",
+                new BigDecimal("90.00"),
+                new BigDecimal("90.00"),
+                null,
+                LocalDate.of(2026, 4, 10),
+                0));
+
+        repository.transition(id, "OPEN", "PARTIALLY_APPLIED", new BigDecimal("40.00"),
+                null, "partial payment", LocalDate.of(2026, 4, 11), 0);
+
+        OpenItemSnapshotRecord loaded = repository.findById(id).orElseThrow();
+        assertEquals("PARTIALLY_APPLIED", loaded.state());
+        assertAmountEquals("40.00", loaded.openAmount());
+        assertEquals(1, loaded.version());
+    }
+
+    @Test
+    public void findByGroupKindAndItemRef_returnsSnapshotWhenPresent()
+    {
+        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
+
+        UUID id = UUID.randomUUID();
+        repository.create(new OpenItemSnapshotRecord(
+                id,
+                "BARONY-RED",
+                OpenItemKind.PREPAID_EXPENSE,
+                "PP-2026-011",
+                "OPEN",
+                new BigDecimal("42.00"),
+                new BigDecimal("42.00"),
+                null,
+                LocalDate.of(2026, 4, 10),
+                0));
+
+        OpenItemSnapshotRecord loaded = repository.findByGroupKindAndItemRef("BARONY-RED", OpenItemKind.PREPAID_EXPENSE, "PP-2026-011")
+                .orElseThrow();
+
+        assertEquals(id, loaded.id());
+    }
+
     @Test
     public void findById_rejectsUnsupportedPersistedItemKind()
     {
@@ -273,5 +329,10 @@ public class JdbcOpenItemSnapshotRepositoryTest
         {
             throw new IllegalStateException("Could not count transitions", ex);
         }
+    }
+
+    private void assertAmountEquals(String expected, BigDecimal actual)
+    {
+        assertEquals(0, new BigDecimal(expected).compareTo(actual));
     }
 }
