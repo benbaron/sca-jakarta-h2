@@ -275,3 +275,43 @@ Addressed follow-up review issues from the first posting-service slice:
 ## 25) Next-steps prompt for the next pass
 
 > Continue from `docs/progress-report-next-pass.md`. Implement partial receivable/prepaid application flows in `JournalPostingService` by deriving proportional `open_amount` reductions and state selection (`PARTIALLY_*` vs terminal), then add deterministic integration tests for multi-step partial-to-full lifecycle scenarios. Run `mvn test`, report results, perform a code review, and offer to fix any issues (including build/test blockers).
+
+## 26) Latest pass update (test assertion stabilization)
+
+Addressed follow-up CI test failures caused by `BigDecimal` scale-sensitive comparisons:
+
+- Updated failing assertions in:
+  - `JdbcOpenItemSnapshotRepositoryTest`
+  - `JournalPostingServiceIntegrationTest`
+- Replaced direct `assertEquals(new BigDecimal("..."), actual)` checks with numeric-meaning comparisons using `BigDecimal.compareTo(...)` via `assertAmountEquals(...)` helpers.
+- Specifically fixed remaining settled amount checks (`0.00` vs `0.0000`) in journal posting integration scenarios.
+
+Rationale:
+
+- JDBC/H2 can return values like `0.0000` while expectations were written as `0.00`.
+- These values are numerically equal but fail `BigDecimal.equals(...)` due to scale differences.
+- Test intent is amount equality, not scale equality.
+
+## 27) Test execution status
+
+- Command attempted: `mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository`
+- Result: **failed in environment before test execution** due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, Maven Central unreachable).
+
+## 28) Code review snapshot
+
+Resolved in this pass:
+
+- Test brittleness around `BigDecimal` scale handling is reduced for open-item projection paths.
+
+Remaining risks / improvements to consider:
+
+1. Helper duplication:
+   - `assertAmountEquals(...)` appears in multiple test classes; could be extracted to a shared test utility.
+2. CI reliability:
+   - Build still depends on external plugin availability; mirror/pre-seeded plugin strategy may still be needed.
+3. Behavioral coverage:
+   - Partial-application lifecycle tests (`PARTIALLY_APPLIED`, `PARTIALLY_RECOGNIZED`) are still not yet fully represented end-to-end.
+
+## 29) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Extract shared money-amount assertion helpers for tests, then implement partial receivable/prepaid application flow in `JournalPostingService` with deterministic multi-step integration tests (partial to terminal transitions). Run `mvn test`, report results, perform a code review, and offer to fix issues (including test/build blockers).
