@@ -62,7 +62,7 @@ public class JournalPostingServiceIntegrationTest
         OpenItemSnapshotRecord settledSnapshot = snapshot(ds, "BARONY-RED", OpenItemKind.RECEIVABLE, "1100-AR|GENERAL");
         assertEquals("SETTLED_BY_CASH", settledSnapshot.state());
         assertEquals(receiveCash.transactionId(), settledSnapshot.lastTransactionId());
-        assertEquals(new BigDecimal("0.00"), settledSnapshot.openAmount());
+        assertAmountEquals("0.00", settledSnapshot.openAmount());
         assertEquals(1, settledSnapshot.version());
         assertEquals(1, transitionCount(ds, settledSnapshot.id()));
     }
@@ -104,7 +104,7 @@ public class JournalPostingServiceIntegrationTest
         OpenItemSnapshotRecord settledSnapshot = snapshot(ds, "BARONY-BLUE", OpenItemKind.PREPAID_EXPENSE, "1200-PREPAID-INSURANCE|GENERAL");
         assertEquals("FULLY_RECOGNIZED", settledSnapshot.state());
         assertEquals(recognizePrepaid.transactionId(), settledSnapshot.lastTransactionId());
-        assertEquals(new BigDecimal("0.00"), settledSnapshot.openAmount());
+        assertAmountEquals("0.00", settledSnapshot.openAmount());
         assertEquals(1, settledSnapshot.version());
         assertEquals(1, transitionCount(ds, settledSnapshot.id()));
     }
