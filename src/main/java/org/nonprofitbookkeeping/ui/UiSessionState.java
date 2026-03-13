@@ -1,0 +1,58 @@
+package org.nonprofitbookkeeping.ui;
+
+import org.nonprofitbookkeeping.model.AppPreferencesState;
+import org.nonprofitbookkeeping.model.MultiCompanyState;
+import org.nonprofitbookkeeping.model.UiThemePreference;
+import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
+
+/**
+ * In-memory session state with observable preferences/company context.
+ */
+public class UiSessionState
+{
+    private AppPreferencesState preferences = new AppPreferencesState(
+            UiThemePreference.SYSTEM_DEFAULT,
+            false,
+            true,
+            UserPrivilegeLevel.ACCOUNTANT);
+    private MultiCompanyState multiCompany = new MultiCompanyState("DEFAULT", List.of("DEFAULT"));
+
+    private final List<Consumer<AppPreferencesState>> preferenceListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<MultiCompanyState>> companyListeners = new CopyOnWriteArrayList<>();
+
+    public AppPreferencesState preferences()
+    {
+        return preferences;
+    }
+
+    public MultiCompanyState multiCompany()
+    {
+        return multiCompany;
+    }
+
+    public void setPreferences(AppPreferencesState next)
+    {
+        this.preferences = next;
+        preferenceListeners.forEach(l -> l.accept(next));
+    }
+
+    public void setMultiCompany(MultiCompanyState next)
+    {
+        this.multiCompany = next;
+        companyListeners.forEach(l -> l.accept(next));
+    }
+
+    public void onPreferencesChanged(Consumer<AppPreferencesState> listener)
+    {
+        preferenceListeners.add(listener);
+    }
+
+    public void onMultiCompanyChanged(Consumer<MultiCompanyState> listener)
+    {
+        companyListeners.add(listener);
+    }
+}

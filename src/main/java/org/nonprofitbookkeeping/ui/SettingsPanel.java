@@ -2,13 +2,22 @@ package org.nonprofitbookkeeping.ui;
 
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import org.nonprofitbookkeeping.model.AppPreferencesState;
+import org.nonprofitbookkeeping.model.MultiCompanyState;
+import org.nonprofitbookkeeping.model.UiThemePreference;
+import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents the SettingsPanel component in the nonprofit bookkeeping application.
@@ -16,10 +25,25 @@ import javafx.scene.layout.VBox;
 public class SettingsPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
-    private final Label status = new Label("Settings are applied in-memory for this session.");
+    private final Label status = new Label("Preferences and company context can be saved for next startup.");
+
+    private final ComboBox<UiThemePreference> theme = new ComboBox<>();
+    private final CheckBox nativeWindow = new CheckBox("Use native window decorations when available");
+    private final CheckBox rememberState = new CheckBox("Remember window/state on startup");
+    private final ComboBox<UserPrivilegeLevel> defaultPrivilege = new ComboBox<>();
+    private final ComboBox<String> activeCompany = new ComboBox<>();
+
+    private final UiSessionState session;
 
     public SettingsPanel()
     {
+        this(MainWindow.sharedSessionState());
+    }
+
+    SettingsPanel(UiSessionState session)
+    {
+        this.session = session;
+
         root.setPadding(new Insets(8));
 
         Label title = new Label("Settings");
@@ -30,28 +54,92 @@ public class SettingsPanel implements AppPanel
         grid.setVgap(10);
         grid.setPadding(new Insets(4));
 
-        ComboBox<String> fiscalStart = new ComboBox<>();
-        fiscalStart.getItems().addAll("January", "April", "July", "October");
-        fiscalStart.getSelectionModel().select("January");
+        theme.getItems().addAll(UiThemePreference.values());
+        defaultPrivilege.getItems().addAll(UserPrivilegeLevel.values());
 
-        CheckBox includeNmr = new CheckBox("Include NMR in dashboard summaries");
-        includeNmr.setSelected(true);
-
-        CheckBox compactTables = new CheckBox("Use compact table density");
-        compactTables.setSelected(false);
+        activeCompany.setEditable(true);
+        activeCompany.getItems().addAll(session.multiCompany().recentCompanyCodes());
 
         int row = 0;
-        grid.add(new Label("Fiscal year starts"), 0, row);
-        grid.add(fiscalStart, 1, row++);
-        grid.add(includeNmr, 0, row++, 2, 1);
-        grid.add(compactTables, 0, row++, 2, 1);
+        grid.add(new Label("Theme"), 0, row);
+        grid.add(theme, 1, row++);
 
-        fiscalStart.valueProperty().addListener((obs, oldV, newV) -> status.setText("Fiscal year start set to " + newV + " (session only)."));
-        includeNmr.selectedProperty().addListener((obs, oldV, newV) -> status.setText("NMR inclusion toggled to " + newV + " (session only)."));
-        compactTables.selectedProperty().addListener((obs, oldV, newV) -> status.setText("Compact table density set to " + newV + " (session only)."));
+        grid.add(nativeWindow, 0, row++, 2, 1);
+        grid.add(rememberState, 0, row++, 2, 1);
+
+        grid.add(new Label("Default privilege"), 0, row);
+        grid.add(defaultPrivilege, 1, row++);
+
+        grid.add(new Label("Active company"), 0, row);
+        grid.add(activeCompany, 1, row++);
+
+        Button apply = new Button("Apply");
+        apply.setOnAction(e -> applyToSession());
+
+        Button save = new Button("Save");
+        save.setOnAction(e -> onSave());
 
         root.setTop(new VBox(6, title, status, new Separator()));
         root.setCenter(grid);
+        root.setBottom(new HBox(8, apply, save));
+
+        syncFromSession();
+    }
+
+    private void syncFromSession()
+    {
+        AppPreferencesState p = session.preferences();
+        MultiCompanyState c = session.multiCompany();
+
+        theme.getSelectionModel().select(p.themePreference());
+        nativeWindow.setSelected(p.useNativeWindowDecorations());
+        rememberState.setSelected(p.rememberWindowState());
+        defaultPrivilege.getSelectionModel().select(p.defaultPrivilege());
+
+        activeCompany.getItems().setAll(c.recentCompanyCodes());
+        if (!c.recentCompanyCodes().contains(c.activeCompanyCode()))
+        {
+            activeCompany.getItems().add(c.activeCompanyCode());
+        }
+        activeCompany.getSelectionModel().select(c.activeCompanyCode());
+    }
+
+    private void applyToSession()
+    {
+        session.setPreferences(readPreferences());
+        session.setMultiCompany(readMultiCompany());
+        status.setText("Applied settings to current session.");
+    }
+
+    AppPreferencesState readPreferences()
+    {
+        return new AppPreferencesState(
+                theme.getValue() == null ? UiThemePreference.SYSTEM_DEFAULT : theme.getValue(),
+                nativeWindow.isSelected(),
+                rememberState.isSelected(),
+                defaultPrivilege.getValue() == null ? UserPrivilegeLevel.ACCOUNTANT : defaultPrivilege.getValue());
+    }
+
+    MultiCompanyState readMultiCompany()
+    {
+        String selected = activeCompany.getEditor().getText();
+        if (selected == null || selected.isBlank())
+        {
+            selected = "DEFAULT";
+        }
+        List<String> recents = new ArrayList<>(activeCompany.getItems());
+        if (!recents.contains(selected))
+        {
+            recents.add(0, selected);
+        }
+        return new MultiCompanyState(selected, recents);
+    }
+
+    @Override
+    public void onSave()
+    {
+        applyToSession();
+        status.setText("Saved settings. They will be restored on next startup.");
     }
 
     @Override public String title() { return "Settings"; }

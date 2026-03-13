@@ -501,3 +501,205 @@ Remaining risks / improvements to consider:
 > 2) Extract query persistence behind a repository interface (keep behavior unchanged), with service tests validating repository-driven outputs.
 > 3) Run `mvn -B -ntp test` locally, report raw outcome concisely, and do **not** spend scope on container-specific Maven/network workarounds.
 > 4) Treat GitHub/CI as authoritative for pass/fail; include a short code review section (resolved issues, remaining risks) and offer follow-up fixes for any local/CI failures.
+
+## 50) Latest pass update (ledger rendering regression guards)
+
+Implemented regression-focused coverage for ledger register rendering/service contracts:
+
+- Added `LedgerRegisterPanelTest` with deterministic assertions for:
+  - `toRow(...)` mapping behavior (blank-to-`(none)` normalization, split-count/string shape, posted status).
+  - `renderJournal(...)` output formatting using `JournalLine` JavaBean getters, guarding against prior getter/record accessor mismatches.
+- Refactored `LedgerRegisterPanel` internals for testability without behavior changes:
+  - promoted `toRow(...)` and `renderJournal(...)` to package-visible static helpers,
+  - updated call sites to use the static helpers directly.
+
+## 51) Test execution status
+
+- Command attempted: `mvn -B -ntp test`
+- Result: **failed in environment before test execution** due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, Maven Central unreachable / network unreachable).
+- Process note: GitHub/CI remains the authoritative pass/fail signal.
+
+## 52) Code review snapshot
+
+Resolved in this pass:
+
+1. Added deterministic regression coverage around ledger row/journal rendering contracts.
+2. Reduced risk of repeating the prior compile break by testing formatter paths that rely on `JournalLine` getters.
+
+Remaining risks / improvements to consider:
+
+1. Rendering is still string-based; introducing a small view-model renderer abstraction could further isolate formatting from JavaFX panel concerns.
+2. Full local validation is still blocked by Maven plugin network resolution in this environment.
+
+## 53) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Add targeted service/repository contract tests for `JpaLedgerQueryRepository` using a migrated in-memory datasource fixture (verify deterministic ordering, null-coalesced text columns, split counts, and journal row ordering by account code), then run `mvn -B -ntp test`, report results concisely, provide a short code review, and offer follow-up fixes for local/CI failures.
+
+## 54) Latest pass update (UI pane consistency + coverage expansion)
+
+Implemented a UI consistency and coverage pass across panel navigation/hosting:
+
+- Closed a discoverability gap by wiring `Inventory` into primary navigation and panel hosting:
+  - added `INVENTORY` to `AppPanelId`,
+  - added `InventoryPanel` factory to `PanelHost`,
+  - added `Inventory` entry under the Assets navigation group.
+- Improved panel-host testability/consistency guarantees:
+  - centralized `PanelHost` factories into a static registry,
+  - added `PanelHost.supportedPanelIds()` for deterministic mapping checks.
+- Added JavaFX-focused unit tests to validate shell consistency across all panes:
+  - `panelHost_hasFactoryForEveryPanelId`,
+  - `navigationIndexesEveryPanelId`,
+  - `everyPanelCanBeShownWithTitleAndRoot` (iterates all `AppPanelId` values).
+- Added `FxTestSupport` helper to initialize JavaFX toolkit and run assertions on the FX thread.
+
+## 55) Test execution status
+
+- Command attempted: `mvn -B -ntp test`
+- Result: **failed in environment before test execution** due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, Maven Central unreachable / network unreachable).
+- Process note: GitHub/CI remains authoritative for final pass/fail.
+
+## 56) Code review snapshot
+
+Resolved in this pass:
+
+1. All top-level panel IDs are now consistently hostable and navigable.
+2. Added broad UI shell regression coverage to detect panel-map drift and broken panel construction early.
+
+Remaining risks / improvements to consider:
+
+1. Current UI consistency tests focus on shell contracts (mapping/title/root) and do not yet validate deeper per-panel interaction flows.
+2. Some panel behavior still depends on async service callbacks; focused interaction tests for key workflows (ledger drill-down, schedule gating) should be expanded next.
+
+## 57) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Add focused JavaFX interaction tests for at least three high-traffic panels (`LedgerRegisterPanel`, `SchedulesPanel`, `TransactionEditorPanel`) covering one primary user flow each, keep fixtures deterministic, then run `mvn -B -ntp test`, report concise results, provide a short code review, and offer follow-up fixes for local/CI failures.
+
+## 58) Latest pass update (long-horizon feature staging + cross-layer contracts)
+
+Added a staged execution plan and initial cross-layer contract baseline for the requested long feature set.
+
+### Stage plan (UI + model + actions + tests)
+
+1. **Stage A: capability contracts + coverage matrix (this pass)**
+   - Add explicit capability list and coverage catalog tying each capability to:
+     - UI surface,
+     - model contract,
+     - action contract,
+     - test contract.
+   - Add baseline model/action types for:
+     - multi-company state,
+     - import/export state,
+     - preferences + theme saving,
+     - help/wizard/plugins,
+     - user privilege levels,
+     - chart/banking transfer formats (OFX/QFX + COA CSV/JSON).
+   - Add deterministic tests validating full capability matrix coverage and contract loadability.
+
+2. **Stage B: preference/state persistence wiring**
+   - Persist `AppPreferencesState` + `MultiCompanyState` (theme/native-window/state, active company).
+   - Hook settings/menu actions to storage and restore on app startup.
+
+3. **Stage C: import/export workflows**
+   - Build import/export actions and service orchestration for COA and banking (OFX/QFX parse/export).
+   - Add deterministic parser and mapping tests.
+
+4. **Stage D: privilege-aware action gating**
+   - Bind `UserPrivilegeLevel` to `AppActionId` policy checks and panel/action enablement.
+   - Add policy tests and UI gating tests.
+
+5. **Stage E: help/wizard UX + plugin lifecycle**
+   - Implement guided setup wizard and help center state transitions.
+   - Introduce plugin discovery/enable/disable contracts with test doubles.
+
+6. **Stage F: integration hardening**
+   - Add cross-feature integration tests (multi-company + privilege + import/export + persisted preferences).
+
+### Implemented in this pass
+
+- Added `Capability`, `CapabilityCoverage`, and `CapabilityCoverageCatalog` to explicitly track cross-layer coverage for all requested capabilities.
+- Added baseline action/model contracts:
+  - `AppActionId`
+  - `MultiCompanyState`, `ImportExportState`, `AppPreferencesState`
+  - `UiThemePreference`, `UserPrivilegeLevel`, `BankingDataFormat`, `ChartOfAccountsTransferFormat`
+  - `HelpState`, `WizardState`, `PluginState`
+- Added deterministic tests:
+  - `CapabilityCoverageCatalogTest` (full matrix coverage + loadability checks)
+  - `AppStateContractsTest` (state records and format/theme/privilege contract assertions)
+
+## 59) Test execution status
+
+- Command attempted: `mvn -B -ntp test`
+- Result: **failed in environment before test execution** due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, Maven Central unreachable / network unreachable).
+- Process note: GitHub/CI remains authoritative for pass/fail.
+
+## 60) Code review snapshot
+
+Resolved in this pass:
+
+1. The requested long feature set is now staged with explicit implementation order and dependencies.
+2. Cross-layer coverage is now explicit and test-checked for all requested capabilities.
+3. Baseline model/action contracts exist for multi-company, preferences/theme/native-state, help/wizard/plugins, privilege levels, and import/export format families.
+
+Remaining risks / improvements to consider:
+
+1. Current pass establishes contracts and coverage mapping; concrete workflow implementations (e.g., OFX/QFX parsers, plugin loading, persisted theme application) are still upcoming stages.
+2. UI/action bindings to these new contracts are mostly planned rather than fully interactive in this pass.
+
+## 61) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Execute Stage B: implement persisted `AppPreferencesState` + `MultiCompanyState` storage/load wiring in the JavaFX shell (`MainWindow`/`SettingsPanel`), add deterministic unit tests for save/restore behavior and theme/native-state preference propagation, then run `mvn -B -ntp test`, report concise results, provide a short code review, and offer follow-up fixes for local/CI failures.
+
+## 62) Latest pass update (Stage B: persisted preferences + multi-company wiring)
+
+Implemented Stage B persistence wiring for shell preferences and multi-company context.
+
+### Implemented
+
+- Added app-state persistence contract and implementation:
+  - `AppStateStore` (load/save for `AppPreferencesState` and `MultiCompanyState`)
+  - `FileAppStateStore` (properties-file backed store at `~/.sca-ledger/ui-state.properties` by default)
+- Added `UiSessionState` as in-memory observable session state for preferences and active company context.
+- Wired `MainWindow` to Stage B persistence flow:
+  - loads preferences/company at startup from store,
+  - applies theme/native-decoration flags to root style classes,
+  - reflects active company in toolbar label,
+  - persists session preferences/company on save.
+- Upgraded `SettingsPanel` to edit/apply/save:
+  - theme preference (`LIGHT`/`DARK`/`SYSTEM_DEFAULT`),
+  - native window decoration preference,
+  - remember-state preference,
+  - default privilege level,
+  - active company + recent companies list.
+  - `onSave()` now applies into session state for persistence by shell save workflow.
+
+### Tests added
+
+- `FileAppStateStoreTest`
+  - validates preference+company round-trip save/load,
+  - validates import/export contract coverage for QFX/JSON format pair.
+- `MainWindowStateWiringTest`
+  - validates startup restore and propagation of dark theme/native flag/company,
+  - validates `saveActivePanel()` persists current session preferences/company.
+
+## 63) Test execution status
+
+- Command attempted: `mvn -B -ntp test`
+- Result: **failed in environment before test execution** due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, Maven Central unreachable / network unreachable).
+- Process note: GitHub/CI remains authoritative for final pass/fail.
+
+## 64) Code review snapshot
+
+Resolved in this pass:
+
+1. Stage B save/restore wiring is now implemented for preferences and multi-company context.
+2. Theme/native/company state now propagates through shell UI state (toolbar + style classes).
+3. Deterministic tests cover both persistence round-trip and shell wiring behavior.
+
+Remaining risks / improvements to consider:
+
+1. Native window decoration is currently represented as a persisted/apply flag; true platform-level undecorated/native window behavior is toolkit/platform dependent and may need per-platform adapters.
+2. Settings persistence currently writes on shell save; optional immediate autosave can be added if UX requires.
+
+## 65) Next-steps prompt for the next pass
+
+> Continue from `docs/progress-report-next-pass.md`. Execute Stage C: implement import/export orchestration contracts and first deterministic parser/mapper slice for chart-of-accounts (CSV) and banking imports (OFX/QFX envelope recognition), wire actions in menu/tools, add unit tests for happy-path and invalid-format handling, then run `mvn -B -ntp test`, report concise results, provide a short code review, and offer follow-up fixes for local/CI failures.

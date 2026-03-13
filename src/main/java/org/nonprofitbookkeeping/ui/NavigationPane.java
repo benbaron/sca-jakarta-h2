@@ -8,6 +8,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.VBox;
 
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -48,6 +49,7 @@ public class NavigationPane extends VBox
         TreeItem<NavItem> assets = group(ops, "Assets");
         add(assets, AppPanelId.ASSETS_REGISTER, "Asset Register");
         add(assets, AppPanelId.DEPRECIATION_RUNS, "Depreciation Runs");
+        add(assets, AppPanelId.INVENTORY, "Inventory");
 
         TreeItem<NavItem> outputs = group(root, "Outputs");
         add(outputs, AppPanelId.REPORT_LIBRARY, "Reports Library");
@@ -132,6 +134,12 @@ public class NavigationPane extends VBox
         g.setExpanded(true);
         parent.getChildren().add(g);
         return g;
+    }
+
+
+    EnumSet<AppPanelId> indexedPanelIds()
+    {
+        return EnumSet.copyOf(index.keySet());
     }
 
     private void add(TreeItem<NavItem> parent, AppPanelId id, String label)
