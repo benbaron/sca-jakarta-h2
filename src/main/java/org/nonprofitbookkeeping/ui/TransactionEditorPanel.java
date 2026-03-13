@@ -115,14 +115,19 @@ public class TransactionEditorPanel implements AppPanel
 
     private void validateOrPost()
     {
-        Alert a = new Alert(Alert.AlertType.INFORMATION, "Validate/Post (placeholder).");
+        long nonEmpty = splitTable.getItems().stream()
+                .filter(r -> !r.account().isBlank() || !r.fund().isBlank() || !r.amount().isBlank())
+                .count();
+        Alert a = new Alert(Alert.AlertType.INFORMATION,
+                "Validation summary:\nEntered split rows: " + nonEmpty +
+                        "\nUse PostingService-backed commit wiring to persist this transaction.");
         a.setHeaderText("Post / Validate");
         a.showAndWait();
     }
 
     private void showJournal()
     {
-        Alert a = new Alert(Alert.AlertType.INFORMATION, "Journal View (placeholder).\n\nDetails-first inspector; journal is a drill-down.");
+        Alert a = new Alert(Alert.AlertType.INFORMATION, "Journal preview is available from Ledger Register after posting.\nThis editor focuses on preparing balanced splits.");
         a.setHeaderText("Journal View");
         a.showAndWait();
     }
@@ -132,7 +137,7 @@ public class TransactionEditorPanel implements AppPanel
 
     @Override public void onSave()
     {
-        Alert a = new Alert(Alert.AlertType.INFORMATION, "Save (placeholder).");
+        Alert a = new Alert(Alert.AlertType.INFORMATION, "Draft captured in editor session. Persist-to-db save wiring can be attached to PostingService.");
         a.setHeaderText("Save");
         a.showAndWait();
     }

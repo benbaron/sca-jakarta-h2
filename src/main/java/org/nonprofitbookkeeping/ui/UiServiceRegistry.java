@@ -4,6 +4,7 @@ import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.service.AccountLookupService;
 import org.nonprofitbookkeeping.service.FundBalanceService;
 import org.nonprofitbookkeeping.service.FundLookupService;
+import org.nonprofitbookkeeping.service.LedgerQueryService;
 import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
 
 /**
@@ -16,6 +17,7 @@ public final class UiServiceRegistry
     private static final FundLookupService FUND_LOOKUP = new FundLookupService(JPA);
     private static final FundBalanceService FUND_BALANCE = new FundBalanceService(JPA);
     private static final ScheduleEligibilityService SCHEDULES = new ScheduleEligibilityService(JPA);
+    private static final LedgerQueryService LEDGER_QUERY = new LedgerQueryService(JPA);
 
     private UiServiceRegistry() {}
 
@@ -23,4 +25,5 @@ public final class UiServiceRegistry
     public static FundLookupService fundLookup() { return FUND_LOOKUP; }
     public static FundBalanceService fundBalance() { return FUND_BALANCE; }
     public static ScheduleEligibilityService schedules() { return SCHEDULES; }
+    public static LedgerQueryService ledgerQuery() { return LEDGER_QUERY; }
 }
