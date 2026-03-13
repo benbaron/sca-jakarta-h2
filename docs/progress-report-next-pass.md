@@ -523,3 +523,46 @@ Remaining risks / improvements to consider:
 > 4) Run `mvn -B -ntp test` locally and report the raw outcome in one short block.
 > 5) State that GitHub/CI is the authoritative test gate and summarize any CI follow-up needed.
 > 6) Provide a compact code review section: `Resolved`, `Remaining risks`, `Immediate next fixes offered`.
+
+
+## 51) More explicit next-pass prompt (supersedes #50)
+
+> Continue from `docs/progress-report-next-pass.md`.
+>
+> ### Objective
+> Deliver a **test-first** extraction of ledger query persistence behind an interface while preserving current behavior.
+>
+> ### Required implementation steps
+> 1. Create a `LedgerQueryRepository` interface with methods equivalent to current `LedgerQueryService` query needs:
+>    - recent ledger rows query,
+>    - journal lines by transaction id query.
+> 2. Add a default JPA implementation (e.g., `JpaLedgerQueryRepository`) that contains the existing JPQL currently in `LedgerQueryService`.
+> 3. Refactor `LedgerQueryService` to depend on `LedgerQueryRepository` and keep it as orchestration/translation only.
+> 4. Keep UI wiring behavior unchanged (no new UI features, no copy updates).
+>
+> ### Required tests
+> 5. Add deterministic contract tests for `LedgerQueryService` covering:
+>    - `listRecent(int)` ordering (`txnDate DESC`, then `id DESC`),
+>    - max-row limiting behavior,
+>    - `journalForTxn(Long)` DR/CR mapping for both debit-normal and credit-normal accounts,
+>    - row-shape assertions (required fields and expected fallback values).
+> 6. Add repository-level integration tests for the new repository implementation using fixture data.
+>
+> ### Out of scope
+> - No unrelated UI refactors.
+> - No schema/migration changes unless a failing test proves they are required for this slice.
+> - No container-specific Maven/network workaround work.
+>
+> ### Validation + reporting requirements
+> 7. Run `mvn -B -ntp test` locally and report the **raw** command result concisely.
+> 8. State explicitly that GitHub/CI is the authoritative pass/fail gate.
+> 9. Include a compact code review section with:
+>    - `Resolved`,
+>    - `Remaining risks`,
+>    - `Immediate fixes offered`.
+>
+> ### Definition of done
+> - Service compiles against repository abstraction.
+> - New service/repository tests are present and deterministic.
+> - Local Maven test command result is reported.
+> - CI-authoritative testing note is included.
