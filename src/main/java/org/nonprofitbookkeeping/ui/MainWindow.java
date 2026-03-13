@@ -1,9 +1,20 @@
 package org.nonprofitbookkeeping.ui;
 
 import javafx.geometry.Insets;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.Separator;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.ToolBar;
 import javafx.scene.input.KeyCombination;
-import javafx.scene.layout.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 
 /**
  * Represents the MainWindow component in the nonprofit bookkeeping application.
@@ -14,6 +25,7 @@ public class MainWindow extends BorderPane
     private final InspectorPane inspectorPane = new InspectorPane();
     private final NavigationPane nav = new NavigationPane(this::openPanel, this::openInspectorForSelection);
     private DateRangeSelector dateRangeSelector;
+    private Label activePanelLabel;
 
     public MainWindow()
     {
@@ -42,48 +54,48 @@ public class MainWindow extends BorderPane
     {
         Menu file = new Menu("File");
         file.getItems().addAll(
-            item("New", "Ctrl+N", this::newItemInActivePanel),
-            item("Open…", null, () -> info("Open not wired yet.")),
-            new SeparatorMenuItem(),
-            item("Save", "Ctrl+S", this::saveActivePanel),
-            item("Export…", null, () -> info("Export not wired yet.")),
-            new SeparatorMenuItem(),
-            item("Exit", null, () -> System.exit(0))
+                item("New", "Ctrl+N", this::newItemInActivePanel),
+                item("Open…", null, () -> info("Open not wired yet.")),
+                new SeparatorMenuItem(),
+                item("Save", "Ctrl+S", this::saveActivePanel),
+                item("Export…", null, () -> info("Export not wired yet.")),
+                new SeparatorMenuItem(),
+                item("Exit", null, () -> System.exit(0))
         );
 
         Menu edit = new Menu("Edit");
         edit.getItems().addAll(
-            item("Undo", "Ctrl+Z", () -> info("Undo not wired yet.")),
-            item("Redo", "Ctrl+Y", () -> info("Redo not wired yet.")),
-            new SeparatorMenuItem(),
-            item("Cut", "Ctrl+X", () -> info("Cut not wired yet.")),
-            item("Copy", "Ctrl+C", this::copySelection),
-            item("Paste", "Ctrl+V", this::paste)
+                item("Undo", "Ctrl+Z", () -> info("Undo not wired yet.")),
+                item("Redo", "Ctrl+Y", () -> info("Redo not wired yet.")),
+                new SeparatorMenuItem(),
+                item("Cut", "Ctrl+X", () -> info("Cut not wired yet.")),
+                item("Copy", "Ctrl+C", this::copySelection),
+                item("Paste", "Ctrl+V", this::paste)
         );
 
         Menu search = new Menu("Search");
         search.getItems().addAll(
-            item("Find…", "Ctrl+F", this::openSearch),
-            item("Go to…", "Ctrl+G", () -> info("Go to not wired yet.")),
-            new SeparatorMenuItem(),
-            item("Date Range…", null, this::focusDateRangeSelector)
+                item("Find…", "Ctrl+F", this::openSearch),
+                item("Go to…", "Ctrl+G", () -> info("Go to not wired yet.")),
+                new SeparatorMenuItem(),
+                item("Date Range…", null, this::focusDateRangeSelector)
         );
 
         Menu run = new Menu("Run");
         run.getItems().addAll(
-            item("Post / Validate", null, () -> info("Posting not wired in UI yet.")),
-            item("Recalculate summaries", null, () -> info("Recalculate not wired yet."))
+                item("Post / Validate", null, () -> info("Posting not wired in UI yet.")),
+                item("Recalculate summaries", null, () -> info("Recalculate not wired yet."))
         );
 
         Menu tools = new Menu("Tools");
         tools.getItems().addAll(
-            item("Import/Export…", null, () -> info("Tools not wired yet.")),
-            item("Preferences…", null, () -> openPanel(AppPanelId.SETTINGS))
+                item("Import/Export…", null, () -> info("Tools not wired yet.")),
+                item("Preferences…", null, () -> openPanel(AppPanelId.SETTINGS))
         );
 
         Menu help = new Menu("Help");
         help.getItems().addAll(
-            item("About", null, () -> info("SCA Ledger prototype shell."))
+                item("About", null, () -> info("SCA Ledger prototype shell."))
         );
 
         return new MenuBar(file, edit, search, run, tools, help);
@@ -106,23 +118,35 @@ public class MainWindow extends BorderPane
         DateRangeSelector dr = new DateRangeSelector();
         this.dateRangeSelector = dr;
 
-        ToolBar tb = new ToolBar(btnNew, btnSave, new Separator(), btnFind, new Separator(), btnJournal, new Separator(), dr);
+        activePanelLabel = new Label("Panel: (none)");
+        activePanelLabel.getStyleClass().add("toolbar-active-panel");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        ToolBar tb = new ToolBar(btnNew, btnSave, new Separator(), btnFind, new Separator(), btnJournal,
+                new Separator(), dr, spacer, activePanelLabel);
         tb.getStyleClass().add("toolbar");
         return tb;
     }
 
-    
     private void focusDateRangeSelector()
     {
-        if (dateRangeSelector == null) return;
+        if (dateRangeSelector == null)
+        {
+            return;
+        }
         dateRangeSelector.presetBox().requestFocus();
         dateRangeSelector.presetBox().show();
     }
 
-private MenuItem item(String text, String accel, Runnable action)
+    private MenuItem item(String text, String accel, Runnable action)
     {
         MenuItem mi = new MenuItem(text);
-        if (accel != null) mi.setAccelerator(KeyCombination.keyCombination(accel));
+        if (accel != null)
+        {
+            mi.setAccelerator(KeyCombination.keyCombination(accel));
+        }
         mi.setOnAction(e -> action.run());
         return mi;
     }
@@ -132,6 +156,10 @@ private MenuItem item(String text, String accel, Runnable action)
     {
         panelHost.show(id);
         nav.highlight(id);
+        if (activePanelLabel != null)
+        {
+            activePanelLabel.setText("Panel: " + panelHost.getActiveTitle());
+        }
     }
 
     public void openInspectorForSelection(String title, String body)
