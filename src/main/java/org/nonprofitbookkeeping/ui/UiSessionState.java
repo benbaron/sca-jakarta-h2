@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.ui;
 
 import org.nonprofitbookkeeping.model.AppPreferencesState;
+import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
@@ -20,9 +21,11 @@ public class UiSessionState
             true,
             UserPrivilegeLevel.ACCOUNTANT);
     private MultiCompanyState multiCompany = new MultiCompanyState("DEFAULT", List.of("DEFAULT"));
+    private DatabaseSelectionState databaseSelection = new DatabaseSelectionState("data/sca-ledger.mv.db", List.of("data/sca-ledger.mv.db"));
 
     private final List<Consumer<AppPreferencesState>> preferenceListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<MultiCompanyState>> companyListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<DatabaseSelectionState>> databaseListeners = new CopyOnWriteArrayList<>();
 
     public AppPreferencesState preferences()
     {
@@ -32,6 +35,11 @@ public class UiSessionState
     public MultiCompanyState multiCompany()
     {
         return multiCompany;
+    }
+
+    public DatabaseSelectionState databaseSelection()
+    {
+        return databaseSelection;
     }
 
     public void setPreferences(AppPreferencesState next)
@@ -51,8 +59,19 @@ public class UiSessionState
         preferenceListeners.add(listener);
     }
 
+    public void setDatabaseSelection(DatabaseSelectionState next)
+    {
+        this.databaseSelection = next;
+        databaseListeners.forEach(l -> l.accept(next));
+    }
+
     public void onMultiCompanyChanged(Consumer<MultiCompanyState> listener)
     {
         companyListeners.add(listener);
+    }
+
+    public void onDatabaseSelectionChanged(Consumer<DatabaseSelectionState> listener)
+    {
+        databaseListeners.add(listener);
     }
 }

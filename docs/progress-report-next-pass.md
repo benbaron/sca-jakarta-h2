@@ -798,3 +798,415 @@ Remaining risks / improvements to consider:
 ## 73) Next-steps prompt for the next pass
 
 > Continue from `docs/progress-report-next-pass.md`. Expand Stage C with real file-driven import actions and OFX/QFX transaction extraction; ensure all JavaFX tests use `FxTestSupport.initToolkitOrSkip()` for headless safety, then run `mvn -B -ntp test`, report concise results, provide a short code review, and offer follow-up fixes for local/CI failures.
+
+## 74) Latest pass update (Stage C expansion: file-driven imports + OFX/QFX transaction extraction)
+
+Implemented the requested Stage C expansion so import actions are now file-driven and banking imports include deterministic transaction extraction.
+
+### Implemented
+
+- Extended `ImportExportOrchestrationService` with file-based import entry points:
+  - `importChartOfAccountsCsvFile(Path path)`
+  - `importBankDataFile(Path path)`
+- Added deterministic file-level validation and error handling for import reads:
+  - null path rejection,
+  - missing/non-regular file rejection,
+  - read-failure wrapping with context-rich message.
+- Added OFX/QFX transaction extraction model mapping:
+  - new `BankTransactionRecord` projection model,
+  - new `OfxQfxTransactionExtractor` that extracts `STMTTRN` blocks and maps `FITID`, `DTPOSTED`, `TRNAMT`, `TRNTYPE`, `NAME`, `MEMO`.
+- Expanded bank import result payload:
+  - `BankImportResult` now includes `transactionCount` and extracted `transactions`.
+- Replaced sample-only UI actions with real file-driven imports in `MainWindow` Tools menu:
+  - `Import CoA CSV…`
+  - `Import Bank OFX/QFX…`
+  - uses JavaFX `FileChooser` with extension filters and inspector status messages.
+
+### JavaFX test safety check
+
+- Verified JavaFX test classes already call `FxTestSupport.initToolkitOrSkip()`.
+- Hardened `FxTestSupport.onFx(...)` to call `initToolkitOrSkip()` defensively, so any future FX test path also gets headless-safe gating.
+
+### Tests added/expanded
+
+- `ImportExportOrchestrationServiceTest`
+  - file-based CoA import happy path,
+  - file-based bank import happy path with transaction-count derivation,
+  - missing-file failures for both CoA and bank imports,
+  - OFX/QFX extraction count + field mapping assertions.
+- `OfxQfxTransactionExtractorTest`
+  - XML-style tag extraction,
+  - one-line OFX tag extraction.
+
+## 75) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: see latest run output in this pass (environment-dependent).
+
+## 76) Code review snapshot
+
+Resolved in this pass:
+
+1. Stage C now has real file-driven import actions instead of sample-only payloads.
+2. Banking import now includes deterministic transaction extraction and model mapping.
+3. File-level import error handling is explicit and covered by unit tests.
+4. JavaFX headless-safety enforcement is now both explicit (`@BeforeAll`) and defensive (`onFx()` bootstrap).
+
+Potential follow-ups:
+
+1. OFX/QFX parser currently targets deterministic core tags only; bank-specific variants can be layered with a richer parser profile map.
+2. UI can be improved by surfacing a preview table of extracted transactions before apply/commit.
+3. Add parse diagnostics (line/record-level warning collection) to support partial-import workflows.
+
+## 77) Latest pass update (file import/export test hardening)
+
+Addressed review follow-up by adding deterministic file import/export test coverage.
+
+### Implemented
+
+- Extended Stage C orchestration with file export methods:
+  - `exportChartOfAccountsCsvFile(List<CoaCsvRow>, Path)`
+  - `exportBankDataFile(BankingDataFormat, List<BankTransactionRecord>, Path)`
+- Added deterministic COA CSV writer support in `CoaCsvMapper` (`write(...)`) with proper CSV quoting/escaping.
+- Added export file-write validation and clear error messaging for null path / write failures.
+
+### Tests added/expanded
+
+- `ImportExportOrchestrationServiceTest` now includes:
+  - COA CSV export write assertions and import round-trip validation,
+  - bank OFX export and import round-trip transaction-count validation,
+  - export input validation failures (null path, missing bank format).
+
+## 78) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: environment still blocked before tests by Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+- Additional check: `mvn -B -ntp -o test` confirms plugin is not yet present in local cache, so offline mode cannot execute tests either.
+
+## 79) Code review snapshot
+
+Resolved in this pass:
+
+1. File import coverage now has corresponding file export coverage in Stage C orchestration tests.
+2. COA CSV export format is deterministic and round-trip validated.
+3. Bank OFX export is deterministic and validates transaction-count round-trip behavior.
+
+Potential follow-ups:
+
+1. Add explicit export actions in UI menu (currently File -> Export remains placeholder while service export APIs now exist).
+2. Add stronger XML escaping for bank export fields if upstream data may include `<`, `>`, or `&`.
+
+## 80) Latest pass update (follow-ups completed: UI export wiring + XML escaping)
+
+Completed both follow-ups from prior review.
+
+### Implemented
+
+- Wired `File -> Export…` in `MainWindow` to real Stage C export service methods:
+  - saves `.csv` via `exportChartOfAccountsCsvFile(...)`,
+  - saves `.ofx` / `.qfx` via `exportBankDataFile(...)`.
+- Added `chooseSaveFile(...)` and extension-based export routing in UI shell.
+- Hardened bank export payload safety with XML escaping for reserved characters in tag values (`&`, `<`, `>`, `"`, `'`).
+
+### Tests added/expanded
+
+- Extended `ImportExportOrchestrationServiceTest` with XML-escaping assertions for exported OFX payload values containing reserved characters.
+
+## 81) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+- Additional check: `mvn -B -ntp -o test` confirms required plugin is unavailable in local cache for offline mode.
+
+## 82) Latest pass update (Phase 3 continuation: workflow run persistence)
+
+Continued Phase 3 persistence slice with workflow run records needed for reconciliation/period-close auditability.
+
+### Implemented
+
+- Added migration `V6__workflow_run_records.sql` with new persistence tables:
+  - `reconciliation_run`
+  - `period_close_run`
+- Added repository contracts + JDBC implementations:
+  - `ReconciliationRunRepository` / `JdbcReconciliationRunRepository`
+  - `PeriodCloseRunRepository` / `JdbcPeriodCloseRunRepository`
+- Added persistence records:
+  - `ReconciliationRunRecord`
+  - `PeriodCloseRunRecord`
+
+### Tests added
+
+- `JdbcReconciliationRunRepositoryTest`
+  - append/find-by-id round-trip,
+  - group/date-range filter behavior.
+- `JdbcPeriodCloseRunRepositoryTest`
+  - append/find-by-id round-trip,
+  - group/date-range filter behavior.
+
+## 83) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 84) Latest pass update (follow-on fixes + next-stage bridge)
+
+Completed follow-on fixes from review and started the next functionality stage bridge.
+
+### Follow-on fixes completed
+
+- Added enum normalization for workflow run persistence:
+  - new `WorkflowRunStatus` enum (`STARTED`, `COMPLETED`, `FAILED`),
+  - `ReconciliationRunRecord.status` and `PeriodCloseRunRecord.status` now strongly typed,
+  - `ReconciliationRunRecord.bankFormat` now uses `BankingDataFormat` enum.
+- Added migration `V7__workflow_run_status_constraints.sql` enforcing DB-level token validity:
+  - reconciliation status check,
+  - reconciliation bank format check (`OFX`/`QFX`),
+  - period-close status check.
+- Updated repository tests with direct SQL invalid-token inserts proving schema constraints reject unsupported values.
+
+### Next functionality stage bridge (Phase 4 service layer seed)
+
+- Added initial service-layer workflow wrappers:
+  - `ReconciliationService.recordCompletedRun(...)`
+  - `PeriodCloseService.recordCompletedClose(...)`
+- Added integration tests proving service-to-repository persistence behavior.
+
+## 85) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 86) Latest pass update (CI compile fix)
+
+Addressed reported CI compile failure in `ImportExportOrchestrationServiceTest`.
+
+### Implemented
+
+- Fixed invalid static import syntax causing test compilation error:
+  - from `import static assertTrue;`
+  - to `import static org.junit.jupiter.api.Assertions.assertTrue;`
+
+## 87) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 88) Latest pass update (requested UX slice: Help + Preferences + multi-database selection)
+
+Implemented the requested UX slice that clarifies where Help/Preferences/database-file selection fit and wires practical functionality.
+
+### Implemented
+
+- Added persisted database-file selection state:
+  - new `DatabaseSelectionState` model,
+  - extended `AppStateStore` with load/save database selection hooks,
+  - implemented persistence in `FileAppStateStore` (`database.active`, `database.recents`).
+- Extended session + shell wiring:
+  - `UiSessionState` now tracks observable database selection state,
+  - `MainWindow` now restores/saves database selection through `AppStateStore`,
+  - toolbar now surfaces active DB file.
+- Added database-file UX actions:
+  - `File -> Select Database File…` action with file chooser,
+  - updates active database selection + recent list,
+  - reports restart requirement for runtime datasource switch.
+- Added Help functionality:
+  - `Help -> Help Topics` now shows practical getting-started guidance in inspector pane.
+- Extended `SettingsPanel` to include editable active database file with recents and apply/save into session state.
+
+### Tests updated
+
+- `FileAppStateStoreTest` now validates DB selection persistence round-trip.
+- `MainWindowStateWiringTest` now validates DB selection restore/save wiring in shell state flow.
+
+## 89) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 90) Latest pass update (runtime DB reconnect + dedicated Help panel + settings recents tests)
+
+Implemented the requested next slice.
+
+### Implemented
+
+- Added runtime datasource/profile reconnect flow in UI runtime wiring:
+  - `Jpa(Path databaseFile)` constructor with JDBC URL override,
+  - `UiServiceRegistry.reconnectToDatabase(Path)` that safely constructs fresh service graph and swaps only after successful init.
+- Added dedicated structured Help panel:
+  - new `HelpPanel` implementing `AppPanel`,
+  - new `AppPanelId.HELP`, wired in `PanelHost` + `NavigationPane`,
+  - `Help -> Help Topics` now opens the panel instead of inspector placeholder text.
+- Improved database-selection UX/testing hooks:
+  - `SettingsPanel.readDatabaseSelection()` now enforces selected-path-first ordering and de-duplicates recents,
+  - package-visible test hooks added for database combo value/list manipulation.
+
+### Tests added/updated
+
+- Added `SettingsPanelDatabaseSelectionTest` for:
+  - selected database path ordering at front,
+  - duplicate recent path de-duplication.
+- Existing UI persistence/wiring tests continue to cover restore/save behavior.
+
+## 91) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 92) Latest pass update (UI theme selection menu)
+
+Added explicit shell-level UI theme selection controls.
+
+### Implemented
+
+- Added `View` menu in `MainWindow` with direct theme actions:
+  - `Theme: Light`
+  - `Theme: Dark`
+  - `Theme: System`
+- Added `MainWindow.selectTheme(UiThemePreference)` helper that updates session preferences while preserving other preference fields.
+
+### Tests updated
+
+- Expanded `MainWindowStateWiringTest` with `selectTheme_updatesSessionPreferencesAndThemeFlags`.
+
+## 93) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 94) Architecture plan extension (UI panel capability roadmap)
+
+Added a focused UI capability roadmap based on panel review so Phase 3/Stage C can transition into operator-grade workflows.
+
+### Newly prioritized UI capabilities
+
+1. **CoA/Fund maintenance workflows (CRUD + validation + optimistic UX)**
+   - Move `ChartOfAccountsPanel` and `FundsPanel` from read-only to inline create/update/deactivate.
+   - Keep optimistic feedback in-panel (non-fatal validation messages and async reload).
+2. **Workflow workspaces for Phase 3 persistence outputs**
+   - Add dedicated **Reconciliation** and **Period Close** panels that surface run records and lifecycle actions.
+3. **Import preview + validation grid**
+   - Add pre-commit preview for CSV/OFX imports (accepted/rejected rows, error reasons, duplicates).
+4. **Cross-panel drill-through**
+   - Dashboard/Reports row → scoped Ledger Register and journal inspector drill-down.
+5. **Productivity layer**
+   - Global command palette and saved view presets (date range/column/filter state per panel).
+6. **Diagnostics panel**
+   - Runtime profile + datasource diagnostics and data-quality checks.
+
+### Execution order
+
+- **V1 (implemented now):** CoA/Fund CRUD + validation + optimistic UX errors.
+- **V2:** Reconciliation + Period Close workspaces.
+- **V3:** Import preview grid + drill-through.
+- **V4:** Command palette/saved views + diagnostics center.
+
+## 95) Latest pass update (CoA/Fund CRUD v1 + validation + optimistic UX errors)
+
+Implemented first management slice for reference master data maintenance.
+
+### Implemented
+
+- Added `AccountAdminService` with `upsert(...)`:
+  - validates required account fields,
+  - resolves active chart-of-accounts (fallback to first available chart),
+  - creates or updates posting account by `(chart, code)`,
+  - supports active/inactive toggling for soft deactivation flows.
+- Added `FundAdminService` with `upsert(...)`:
+  - validates required fund fields,
+  - creates or updates by `code`,
+  - supports active/inactive toggling.
+- Extended `UiServiceRegistry` wiring with `accountAdmin()` and `fundAdmin()` and runtime reconnect rewire support.
+- Upgraded `ChartOfAccountsPanel` to CRUD form workflow:
+  - inline editor (code/name/type/normal-balance/active),
+  - +Add resets to create mode,
+  - Save performs create/update and refresh,
+  - optimistic error messaging via panel status text.
+- Upgraded `FundsPanel` similarly:
+  - inline editor (code/name/type/active),
+  - create/update/deactivate flow,
+  - optimistic status/error handling.
+- Added lookup helpers for maintenance screens:
+  - `AccountLookupService.listPostingAccountsIncludingInactive()`
+  - `FundLookupService.listAllFunds()`
+
+## 96) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 97) Latest pass update (duplicate-friendly messages + CoA hierarchy editing + integration upsert tests)
+
+Implemented requested follow-on fixes for CRUD v1.
+
+### Implemented
+
+- Added duplicate-conflict friendly messaging at service layer:
+  - `AccountAdminService` maps persistence unique/constraint collisions to `IllegalArgumentException("Account code already exists: ...")`.
+  - `FundAdminService` maps persistence unique/constraint collisions to `IllegalArgumentException("Fund code already exists: ...")`.
+- Extended CoA editing for hierarchy management:
+  - `ChartOfAccountsPanel` now includes `Subtype` and `Parent code` fields in editor form.
+  - Save flow persists subtype and parent linkage through `AccountAdminService.upsert(...)`.
+- Extended `AccountAdminService.upsert(...)` contract:
+  - supports `AccountSubtype` and optional `parentCode`,
+  - validates parent linkage rules (no self-parent, parent must exist in active chart).
+- Added account lookup join-fetch behavior for parent account references to avoid lazy parent dereference issues in panel tables.
+
+### Tests added/updated
+
+- Added integration tests for successful upsert flows:
+  - `AccountAdminServiceIntegrationTest` (create/update, subtype, parent linkage, missing-parent validation).
+  - `FundAdminServiceIntegrationTest` (create/update and active/type changes).
+- Updated `AccountAdminServiceTest` for the expanded upsert signature.
+
+## 98) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 99) Latest pass update (UX copy cleanup + CoA form round-trip UI test + Step 2 start)
+
+Addressed quick UX/test follow-up and started priority Step 2 workflow workspace implementation.
+
+### Implemented
+
+- UX copy cleanup:
+  - `ChartOfAccountsPanel` and `FundsPanel` status copy now explicitly indicates lists include active + inactive records for maintenance clarity.
+- Added focused UI form-state test coverage for CoA hierarchy fields:
+  - new `ChartOfAccountsPanelFormStateTest` validates subtype + parent code round-trip in panel form state.
+- Started Step 2 (`Reconciliation + Period Close workspaces`):
+  - added new panel IDs and navigation entries for `RECONCILIATION_RUNS` and `PERIOD_CLOSE_RUNS`,
+  - wired these into `PanelHost` factories,
+  - added `ReconciliationRunsPanel` and `PeriodCloseRunsPanel` with:
+    - run-history table views for active company,
+    - refresh actions,
+    - basic "record completed run" actions using existing services/repositories.
+  - added `UiDataSources` helper for JDBC datasource creation from the active session DB path.
+
+## 100) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 101) Latest pass update (follow-up centralization + Step 3 start)
+
+Completed requested follow-up and moved forward to Step 3.
+
+### Implemented
+
+- Follow-up centralization:
+  - workflow run panels now consume repositories/services through `UiServiceRegistry` methods instead of constructing them inline,
+  - added `UiServiceRegistry.reconciliationRunRepository()`, `periodCloseRunRepository()`, `reconciliationService()`, and `periodCloseService()`.
+- Step 3 start (`Import preview + validation grid`):
+  - added new `IMPORT_PREVIEW` workspace panel ID and navigation/host wiring,
+  - added `ImportPreviewService` with deterministic preview methods:
+    - `previewCoaCsv(Path)` with duplicate-account-code warning detection,
+    - `previewBankStatement(Path)` returning format + transaction count,
+  - added `ImportPreviewPanel` with file-chooser preview flows, warning list, and COA-row table preview,
+  - added Tools menu entry `Import Preview…` to open the panel.
+- Added service tests for Step 3 preview logic:
+  - `ImportPreviewServiceTest` covers duplicate warning detection and bank transaction count extraction.
+
+## 102) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
