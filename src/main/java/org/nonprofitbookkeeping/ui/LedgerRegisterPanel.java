@@ -102,7 +102,7 @@ public class LedgerRegisterPanel implements AppPanel
         UiAsync.run("ledger-register-load",
                 () -> UiServiceRegistry.ledgerQuery().listRecent(250),
                 rows -> {
-                    txnTable.getItems().setAll(rows.stream().map(this::toRow).toList());
+                    txnTable.getItems().setAll(rows.stream().map(LedgerRegisterPanel::toRow).toList());
                     status.setText("Loaded " + rows.size() + " transaction(s).");
                     details.clear();
                 },
@@ -112,7 +112,7 @@ public class LedgerRegisterPanel implements AppPanel
                 });
     }
 
-    private Row toRow(LedgerQueryService.LedgerRow row)
+    static Row toRow(LedgerQueryService.LedgerRow row)
     {
         return new Row(
                 row.id(),
@@ -137,11 +137,11 @@ public class LedgerRegisterPanel implements AppPanel
     {
         UiAsync.run("ledger-journal-inspect-" + row.id(),
                 () -> UiServiceRegistry.ledgerQuery().journalForTxn(row.id()),
-                lines -> details.setText(renderJournal(row, lines)),
+                lines -> details.setText(LedgerRegisterPanel.renderJournal(row, lines)),
                 ex -> details.setText("Could not load journal for txn " + row.id() + ": " + UiErrors.safeMessage(ex)));
     }
 
-    private String renderJournal(Row row, List<JournalLine> lines)
+    static String renderJournal(Row row, List<JournalLine> lines)
     {
         StringBuilder sb = new StringBuilder();
         sb.append("Txn #").append(row.id())

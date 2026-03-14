@@ -15,20 +15,40 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import org.nonprofitbookkeeping.model.AppPreferencesState;
+import org.nonprofitbookkeeping.model.MultiCompanyState;
+import org.nonprofitbookkeeping.model.UiThemePreference;
+import org.nonprofitbookkeeping.service.ImportExportOrchestrationService;
+
+import java.nio.file.Path;
 
 /**
  * Represents the MainWindow component in the nonprofit bookkeeping application.
  */
 public class MainWindow extends BorderPane
 {
+    private static final UiSessionState SESSION_STATE = new UiSessionState();
+
+    private final AppStateStore stateStore;
+    private final ImportExportOrchestrationService importExportService = new ImportExportOrchestrationService();
     private final PanelHost panelHost = new PanelHost();
     private final InspectorPane inspectorPane = new InspectorPane();
     private final NavigationPane nav = new NavigationPane(this::openPanel, this::openInspectorForSelection);
     private DateRangeSelector dateRangeSelector;
     private Label activePanelLabel;
+    private Label activeCompanyLabel;
 
     public MainWindow()
     {
+        this(defaultStateStore());
+    }
+
+    MainWindow(AppStateStore stateStore)
+    {
+        this.stateStore = stateStore;
+
+        restoreState();
+
         setTop(buildTopChrome());
         setLeft(nav);
         setCenter(panelHost);
@@ -38,7 +58,36 @@ public class MainWindow extends BorderPane
         BorderPane.setMargin(nav, new Insets(8, 4, 8, 8));
         BorderPane.setMargin(inspectorPane, new Insets(8, 8, 8, 4));
 
+        SESSION_STATE.onPreferencesChanged(this::applyPreferences);
+        SESSION_STATE.onMultiCompanyChanged(this::applyMultiCompany);
+
+        applyPreferences(SESSION_STATE.preferences());
+        applyMultiCompany(SESSION_STATE.multiCompany());
+
         openPanel(AppPanelId.LEDGER_REGISTER);
+    }
+
+    static UiSessionState sharedSessionState()
+    {
+        return SESSION_STATE;
+    }
+
+    static void resetSessionForTests(AppPreferencesState preferences, MultiCompanyState multiCompany)
+    {
+        SESSION_STATE.setPreferences(preferences);
+        SESSION_STATE.setMultiCompany(multiCompany);
+    }
+
+    private static AppStateStore defaultStateStore()
+    {
+        Path statePath = Path.of(System.getProperty("user.home"), ".sca-ledger", "ui-state.properties");
+        return new FileAppStateStore(statePath);
+    }
+
+    private void restoreState()
+    {
+        stateStore.loadPreferences().ifPresent(SESSION_STATE::setPreferences);
+        stateStore.loadMultiCompany().ifPresent(SESSION_STATE::setMultiCompany);
     }
 
     private VBox buildTopChrome()
@@ -89,7 +138,8 @@ public class MainWindow extends BorderPane
 
         Menu tools = new Menu("Tools");
         tools.getItems().addAll(
-                item("Import/Export…", null, () -> info("Tools not wired yet.")),
+                item("Import CoA CSV (sample)", null, this::importCoaCsvSample),
+                item("Import Bank OFX/QFX Envelope (sample)", null, this::importBankEnvelopeSample),
                 item("Preferences…", null, () -> openPanel(AppPanelId.SETTINGS))
         );
 
@@ -121,11 +171,14 @@ public class MainWindow extends BorderPane
         activePanelLabel = new Label("Panel: (none)");
         activePanelLabel.getStyleClass().add("toolbar-active-panel");
 
+        activeCompanyLabel = new Label("Company: " + SESSION_STATE.multiCompany().activeCompanyCode());
+        activeCompanyLabel.getStyleClass().add("toolbar-active-panel");
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         ToolBar tb = new ToolBar(btnNew, btnSave, new Separator(), btnFind, new Separator(), btnJournal,
-                new Separator(), dr, spacer, activePanelLabel);
+                new Separator(), dr, spacer, activeCompanyLabel, new Separator(), activePanelLabel);
         tb.getStyleClass().add("toolbar");
         return tb;
     }
@@ -140,6 +193,23 @@ public class MainWindow extends BorderPane
         dateRangeSelector.presetBox().show();
     }
 
+
+    private void importCoaCsvSample()
+    {
+        String csv = "code,name,account_type,normal_balance,parent_code\n" +
+                "1000,Operating Bank,ASSET,DEBIT,\n" +
+                "1100,Accounts Receivable,ASSET,DEBIT,1000\n";
+        ImportExportOrchestrationService.CoaImportResult result = importExportService.importChartOfAccountsCsv(csv);
+        info("Imported CoA sample rows: " + result.rowCount());
+    }
+
+    private void importBankEnvelopeSample()
+    {
+        String sample = "<OFX><BANKMSGSRSV1></BANKMSGSRSV1></OFX>";
+        ImportExportOrchestrationService.BankImportResult result = importExportService.importBankData(sample, "sample.ofx");
+        info("Recognized bank import format: " + result.format());
+    }
+
     private MenuItem item(String text, String accel, Runnable action)
     {
         MenuItem mi = new MenuItem(text);
@@ -149,6 +219,48 @@ public class MainWindow extends BorderPane
         }
         mi.setOnAction(e -> action.run());
         return mi;
+    }
+
+    void applyPreferences(AppPreferencesState state)
+    {
+        getStyleClass().removeAll("theme-light", "theme-dark", "theme-system", "native-window-enabled", "native-window-disabled");
+        if (state.themePreference() == UiThemePreference.DARK)
+        {
+            getStyleClass().add("theme-dark");
+        }
+        else if (state.themePreference() == UiThemePreference.LIGHT)
+        {
+            getStyleClass().add("theme-light");
+        }
+        else
+        {
+            getStyleClass().add("theme-system");
+        }
+
+        getStyleClass().add(state.useNativeWindowDecorations() ? "native-window-enabled" : "native-window-disabled");
+    }
+
+    void applyMultiCompany(MultiCompanyState state)
+    {
+        if (activeCompanyLabel != null)
+        {
+            activeCompanyLabel.setText("Company: " + state.activeCompanyCode());
+        }
+    }
+
+    String activeCompanyCode()
+    {
+        return SESSION_STATE.multiCompany().activeCompanyCode();
+    }
+
+    boolean usesNativeDecorationsFlag()
+    {
+        return getStyleClass().contains("native-window-enabled");
+    }
+
+    boolean usesDarkThemeFlag()
+    {
+        return getStyleClass().contains("theme-dark");
     }
 
     // --- hooks ---
@@ -175,6 +287,8 @@ public class MainWindow extends BorderPane
     public void saveActivePanel()
     {
         panelHost.saveActive();
+        stateStore.savePreferences(SESSION_STATE.preferences());
+        stateStore.saveMultiCompany(SESSION_STATE.multiCompany());
         info("Save: " + panelHost.getActiveTitle());
     }
 
