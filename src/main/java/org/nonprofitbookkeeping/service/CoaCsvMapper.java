@@ -46,6 +46,31 @@ public class CoaCsvMapper
         return rows;
     }
 
+
+    public String write(List<CoaCsvRow> rows)
+    {
+        List<CoaCsvRow> safeRows = rows == null ? List.of() : rows;
+        StringBuilder out = new StringBuilder();
+        out.append("code,name,account_type,normal_balance,parent_code\n");
+        for (CoaCsvRow row : safeRows)
+        {
+            out.append(csv(row.code())).append(',')
+                    .append(csv(row.name())).append(',')
+                    .append(csv(row.accountType())).append(',')
+                    .append(csv(row.normalBalance())).append(',')
+                    .append(csv(row.parentCode())).append('\n');
+        }
+        return out.toString();
+    }
+
+    private static String csv(String raw)
+    {
+        String value = raw == null ? "" : raw;
+        boolean quote = value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r");
+        String escaped = value.replace("\"", "\"\"");
+        return quote ? ("\"" + escaped + "\"") : escaped;
+    }
+
     private void requireHeaders(List<String> headers, List<String> required)
     {
         for (String key : required)

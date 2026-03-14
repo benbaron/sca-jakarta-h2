@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.ui;
 
 import org.nonprofitbookkeeping.model.AppPreferencesState;
+import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
@@ -27,6 +28,9 @@ public class FileAppStateStore implements AppStateStore
 
     private static final String K_ACTIVE_COMPANY = "multiCompany.active";
     private static final String K_RECENTS = "multiCompany.recents";
+
+    private static final String K_ACTIVE_DB = "database.active";
+    private static final String K_DB_RECENTS = "database.recents";
 
     private final Path file;
 
@@ -68,6 +72,25 @@ public class FileAppStateStore implements AppStateStore
         return Optional.of(new MultiCompanyState(active, recents.isEmpty() ? List.of(active) : recents));
     }
 
+
+    @Override
+    public Optional<DatabaseSelectionState> loadDatabaseSelection()
+    {
+        Properties p = read();
+        String active = p.getProperty(K_ACTIVE_DB);
+        if (active == null || active.isBlank())
+        {
+            return Optional.empty();
+        }
+
+        String recentsRaw = p.getProperty(K_DB_RECENTS, active);
+        List<String> recents = Arrays.stream(recentsRaw.split(","))
+                .map(String::trim)
+                .filter(v -> !v.isBlank())
+                .toList();
+        return Optional.of(new DatabaseSelectionState(active, recents.isEmpty() ? List.of(active) : recents));
+    }
+
     @Override
     public void savePreferences(AppPreferencesState state)
     {
@@ -85,6 +108,16 @@ public class FileAppStateStore implements AppStateStore
         Properties p = read();
         p.setProperty(K_ACTIVE_COMPANY, state.activeCompanyCode());
         p.setProperty(K_RECENTS, String.join(",", state.recentCompanyCodes()));
+        write(p);
+    }
+
+
+    @Override
+    public void saveDatabaseSelection(DatabaseSelectionState state)
+    {
+        Properties p = read();
+        p.setProperty(K_ACTIVE_DB, state.activeDatabasePath());
+        p.setProperty(K_DB_RECENTS, String.join(",", state.recentDatabasePaths()));
         write(p);
     }
 

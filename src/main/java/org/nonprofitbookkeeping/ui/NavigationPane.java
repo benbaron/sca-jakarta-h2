@@ -60,6 +60,7 @@ public class NavigationPane extends VBox
 
         TreeItem<NavItem> sys = group(root, "System");
         add(sys, AppPanelId.SETTINGS, "Settings");
+        add(sys, AppPanelId.HELP, "Help");
 
         tree = new TreeView<>(root);
         tree.setShowRoot(false);
