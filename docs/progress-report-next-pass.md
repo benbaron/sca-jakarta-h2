@@ -990,3 +990,35 @@ Addressed reported CI compile failure in `ImportExportOrchestrationServiceTest`.
 
 - Command executed: `mvn -B -ntp test`
 - Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 88) Latest pass update (requested UX slice: Help + Preferences + multi-database selection)
+
+Implemented the requested UX slice that clarifies where Help/Preferences/database-file selection fit and wires practical functionality.
+
+### Implemented
+
+- Added persisted database-file selection state:
+  - new `DatabaseSelectionState` model,
+  - extended `AppStateStore` with load/save database selection hooks,
+  - implemented persistence in `FileAppStateStore` (`database.active`, `database.recents`).
+- Extended session + shell wiring:
+  - `UiSessionState` now tracks observable database selection state,
+  - `MainWindow` now restores/saves database selection through `AppStateStore`,
+  - toolbar now surfaces active DB file.
+- Added database-file UX actions:
+  - `File -> Select Database File…` action with file chooser,
+  - updates active database selection + recent list,
+  - reports restart requirement for runtime datasource switch.
+- Added Help functionality:
+  - `Help -> Help Topics` now shows practical getting-started guidance in inspector pane.
+- Extended `SettingsPanel` to include editable active database file with recents and apply/save into session state.
+
+### Tests updated
+
+- `FileAppStateStoreTest` now validates DB selection persistence round-trip.
+- `MainWindowStateWiringTest` now validates DB selection restore/save wiring in shell state flow.
+
+## 89) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
