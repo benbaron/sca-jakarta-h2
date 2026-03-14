@@ -1,5 +1,7 @@
 package org.nonprofitbookkeeping.repository;
 
+import org.nonprofitbookkeeping.model.BankingDataFormat;
+
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -9,9 +11,9 @@ import java.util.UUID;
 public record ReconciliationRunRecord(UUID id,
                                       String groupCode,
                                       LocalDate statementEndingOn,
-                                      String bankFormat,
+                                      BankingDataFormat bankFormat,
                                       int importedTransactionCount,
-                                      String status,
+                                      WorkflowRunStatus status,
                                       String notes)
 {
 }

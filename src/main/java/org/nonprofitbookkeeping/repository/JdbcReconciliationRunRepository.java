@@ -36,9 +36,9 @@ public class JdbcReconciliationRunRepository implements ReconciliationRunReposit
             ps.setObject(1, record.id());
             ps.setString(2, record.groupCode());
             ps.setDate(3, Date.valueOf(record.statementEndingOn()));
-            ps.setString(4, record.bankFormat());
+            ps.setString(4, record.bankFormat().name());
             ps.setInt(5, record.importedTransactionCount());
-            ps.setString(6, record.status());
+            ps.setString(6, record.status().name());
             ps.setString(7, record.notes());
             ps.executeUpdate();
         }
@@ -115,9 +115,9 @@ public class JdbcReconciliationRunRepository implements ReconciliationRunReposit
                 rs.getObject("id", UUID.class),
                 rs.getString("group_code"),
                 rs.getDate("statement_ending_on").toLocalDate(),
-                rs.getString("bank_format"),
+                org.nonprofitbookkeeping.model.BankingDataFormat.valueOf(rs.getString("bank_format")),
                 rs.getInt("imported_transaction_count"),
-                rs.getString("status"),
+                WorkflowRunStatus.valueOf(rs.getString("status")),
                 rs.getString("notes"));
     }
 }

@@ -36,7 +36,7 @@ public class JdbcPeriodCloseRunRepository implements PeriodCloseRunRepository
             ps.setObject(1, record.id());
             ps.setString(2, record.groupCode());
             ps.setDate(3, Date.valueOf(record.closeDate()));
-            ps.setString(4, record.status());
+            ps.setString(4, record.status().name());
             ps.setObject(5, record.producedTransactionId());
             ps.setString(6, record.notes());
             ps.executeUpdate();
@@ -114,7 +114,7 @@ public class JdbcPeriodCloseRunRepository implements PeriodCloseRunRepository
                 rs.getObject("id", UUID.class),
                 rs.getString("group_code"),
                 rs.getDate("close_date").toLocalDate(),
-                rs.getString("status"),
+                WorkflowRunStatus.valueOf(rs.getString("status")),
                 rs.getObject("produced_transaction_id", UUID.class),
                 rs.getString("notes"));
     }

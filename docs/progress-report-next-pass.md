@@ -947,3 +947,31 @@ Continued Phase 3 persistence slice with workflow run records needed for reconci
 
 - Command executed: `mvn -B -ntp test`
 - Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 84) Latest pass update (follow-on fixes + next-stage bridge)
+
+Completed follow-on fixes from review and started the next functionality stage bridge.
+
+### Follow-on fixes completed
+
+- Added enum normalization for workflow run persistence:
+  - new `WorkflowRunStatus` enum (`STARTED`, `COMPLETED`, `FAILED`),
+  - `ReconciliationRunRecord.status` and `PeriodCloseRunRecord.status` now strongly typed,
+  - `ReconciliationRunRecord.bankFormat` now uses `BankingDataFormat` enum.
+- Added migration `V7__workflow_run_status_constraints.sql` enforcing DB-level token validity:
+  - reconciliation status check,
+  - reconciliation bank format check (`OFX`/`QFX`),
+  - period-close status check.
+- Updated repository tests with direct SQL invalid-token inserts proving schema constraints reject unsupported values.
+
+### Next functionality stage bridge (Phase 4 service layer seed)
+
+- Added initial service-layer workflow wrappers:
+  - `ReconciliationService.recordCompletedRun(...)`
+  - `PeriodCloseService.recordCompletedClose(...)`
+- Added integration tests proving service-to-repository persistence behavior.
+
+## 85) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).

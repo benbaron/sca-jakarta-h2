@@ -9,7 +9,7 @@ import java.util.UUID;
 public record PeriodCloseRunRecord(UUID id,
                                    String groupCode,
                                    LocalDate closeDate,
-                                   String status,
+                                   WorkflowRunStatus status,
                                    UUID producedTransactionId,
                                    String notes)
 {
