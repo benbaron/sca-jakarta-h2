@@ -975,3 +975,18 @@ Completed follow-on fixes from review and started the next functionality stage b
 
 - Command executed: `mvn -B -ntp test`
 - Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 86) Latest pass update (CI compile fix)
+
+Addressed reported CI compile failure in `ImportExportOrchestrationServiceTest`.
+
+### Implemented
+
+- Fixed invalid static import syntax causing test compilation error:
+  - from `import static assertTrue;`
+  - to `import static org.junit.jupiter.api.Assertions.assertTrue;`
+
+## 87) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).

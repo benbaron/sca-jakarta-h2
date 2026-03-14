@@ -11,7 +11,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ImportExportOrchestrationServiceTest
 {
