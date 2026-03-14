@@ -1,29 +1,56 @@
 package org.nonprofitbookkeeping.ui;
 
 import javafx.application.Platform;
+import org.junit.jupiter.api.Assumptions;
 
+import java.util.Locale;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 final class FxTestSupport
 {
-    private static final AtomicBoolean STARTED = new AtomicBoolean(false);
+    private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
+    private static volatile boolean available = false;
+    private static volatile String unavailableReason = "JavaFX toolkit unavailable";
 
     private FxTestSupport()
     {
     }
 
-    static void initToolkit()
+    static void initToolkitOrSkip()
     {
-        if (STARTED.compareAndSet(false, true))
+        if (!INITIALIZED.compareAndSet(false, true))
+        {
+            Assumptions.assumeTrue(available, unavailableReason);
+            return;
+        }
+
+        if (isHeadlessLinuxWithoutDisplay())
+        {
+            available = false;
+            unavailableReason = "Skipping JavaFX tests: DISPLAY is unavailable in this environment.";
+            Assumptions.assumeTrue(false, unavailableReason);
+            return;
+        }
+
+        try
         {
             Platform.startup(() -> { });
+            available = true;
+        }
+        catch (Throwable ex)
+        {
+            available = false;
+            unavailableReason = "Skipping JavaFX tests: " + ex.getMessage();
+            Assumptions.assumeTrue(false, unavailableReason);
         }
     }
 
     static <T> T onFx(Callable<T> callable)
     {
+        Assumptions.assumeTrue(available, unavailableReason);
+
         CompletableFuture<T> future = new CompletableFuture<>();
         Platform.runLater(() -> {
             try
@@ -36,5 +63,16 @@ final class FxTestSupport
             }
         });
         return future.join();
+    }
+
+    private static boolean isHeadlessLinuxWithoutDisplay()
+    {
+        String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
+        if (!os.contains("linux"))
+        {
+            return false;
+        }
+        String display = System.getenv("DISPLAY");
+        return display == null || display.isBlank();
     }
 }

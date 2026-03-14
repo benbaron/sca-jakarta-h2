@@ -18,6 +18,7 @@ import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.AppPreferencesState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
+import org.nonprofitbookkeeping.service.ImportExportOrchestrationService;
 
 import java.nio.file.Path;
 
@@ -29,6 +30,7 @@ public class MainWindow extends BorderPane
     private static final UiSessionState SESSION_STATE = new UiSessionState();
 
     private final AppStateStore stateStore;
+    private final ImportExportOrchestrationService importExportService = new ImportExportOrchestrationService();
     private final PanelHost panelHost = new PanelHost();
     private final InspectorPane inspectorPane = new InspectorPane();
     private final NavigationPane nav = new NavigationPane(this::openPanel, this::openInspectorForSelection);
@@ -136,7 +138,8 @@ public class MainWindow extends BorderPane
 
         Menu tools = new Menu("Tools");
         tools.getItems().addAll(
-                item("Import/Export…", null, () -> info("Tools not wired yet.")),
+                item("Import CoA CSV (sample)", null, this::importCoaCsvSample),
+                item("Import Bank OFX/QFX Envelope (sample)", null, this::importBankEnvelopeSample),
                 item("Preferences…", null, () -> openPanel(AppPanelId.SETTINGS))
         );
 
@@ -188,6 +191,23 @@ public class MainWindow extends BorderPane
         }
         dateRangeSelector.presetBox().requestFocus();
         dateRangeSelector.presetBox().show();
+    }
+
+
+    private void importCoaCsvSample()
+    {
+        String csv = "code,name,account_type,normal_balance,parent_code\n" +
+                "1000,Operating Bank,ASSET,DEBIT,\n" +
+                "1100,Accounts Receivable,ASSET,DEBIT,1000\n";
+        ImportExportOrchestrationService.CoaImportResult result = importExportService.importChartOfAccountsCsv(csv);
+        info("Imported CoA sample rows: " + result.rowCount());
+    }
+
+    private void importBankEnvelopeSample()
+    {
+        String sample = "<OFX><BANKMSGSRSV1></BANKMSGSRSV1></OFX>";
+        ImportExportOrchestrationService.BankImportResult result = importExportService.importBankData(sample, "sample.ofx");
+        info("Recognized bank import format: " + result.format());
     }
 
     private MenuItem item(String text, String accel, Runnable action)

@@ -14,7 +14,7 @@ public class AppPanelConsistencyTest
     @BeforeAll
     static void setupFx()
     {
-        FxTestSupport.initToolkit();
+        FxTestSupport.initToolkitOrSkip();
     }
 
     @Test

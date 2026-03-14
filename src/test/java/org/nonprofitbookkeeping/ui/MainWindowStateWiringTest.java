@@ -18,7 +18,7 @@ public class MainWindowStateWiringTest
     @BeforeAll
     static void setupFx()
     {
-        FxTestSupport.initToolkit();
+        FxTestSupport.initToolkitOrSkip();
     }
 
     @Test
