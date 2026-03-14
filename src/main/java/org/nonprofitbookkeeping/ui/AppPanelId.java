@@ -15,6 +15,7 @@ public enum AppPanelId
 
     ASSETS_REGISTER,
     DEPRECIATION_RUNS,
+    INVENTORY,
 
     REPORT_LIBRARY,
 
