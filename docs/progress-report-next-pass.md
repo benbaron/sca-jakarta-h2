@@ -917,3 +917,33 @@ Completed both follow-ups from prior review.
 - Command executed: `mvn -B -ntp test`
 - Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
 - Additional check: `mvn -B -ntp -o test` confirms required plugin is unavailable in local cache for offline mode.
+
+## 82) Latest pass update (Phase 3 continuation: workflow run persistence)
+
+Continued Phase 3 persistence slice with workflow run records needed for reconciliation/period-close auditability.
+
+### Implemented
+
+- Added migration `V6__workflow_run_records.sql` with new persistence tables:
+  - `reconciliation_run`
+  - `period_close_run`
+- Added repository contracts + JDBC implementations:
+  - `ReconciliationRunRepository` / `JdbcReconciliationRunRepository`
+  - `PeriodCloseRunRepository` / `JdbcPeriodCloseRunRepository`
+- Added persistence records:
+  - `ReconciliationRunRecord`
+  - `PeriodCloseRunRecord`
+
+### Tests added
+
+- `JdbcReconciliationRunRepositoryTest`
+  - append/find-by-id round-trip,
+  - group/date-range filter behavior.
+- `JdbcPeriodCloseRunRepositoryTest`
+  - append/find-by-id round-trip,
+  - group/date-range filter behavior.
+
+## 83) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
