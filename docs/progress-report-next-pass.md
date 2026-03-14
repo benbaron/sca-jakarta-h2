@@ -1072,3 +1072,93 @@ Added explicit shell-level UI theme selection controls.
 
 - Command executed: `mvn -B -ntp test`
 - Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 94) Architecture plan extension (UI panel capability roadmap)
+
+Added a focused UI capability roadmap based on panel review so Phase 3/Stage C can transition into operator-grade workflows.
+
+### Newly prioritized UI capabilities
+
+1. **CoA/Fund maintenance workflows (CRUD + validation + optimistic UX)**
+   - Move `ChartOfAccountsPanel` and `FundsPanel` from read-only to inline create/update/deactivate.
+   - Keep optimistic feedback in-panel (non-fatal validation messages and async reload).
+2. **Workflow workspaces for Phase 3 persistence outputs**
+   - Add dedicated **Reconciliation** and **Period Close** panels that surface run records and lifecycle actions.
+3. **Import preview + validation grid**
+   - Add pre-commit preview for CSV/OFX imports (accepted/rejected rows, error reasons, duplicates).
+4. **Cross-panel drill-through**
+   - Dashboard/Reports row → scoped Ledger Register and journal inspector drill-down.
+5. **Productivity layer**
+   - Global command palette and saved view presets (date range/column/filter state per panel).
+6. **Diagnostics panel**
+   - Runtime profile + datasource diagnostics and data-quality checks.
+
+### Execution order
+
+- **V1 (implemented now):** CoA/Fund CRUD + validation + optimistic UX errors.
+- **V2:** Reconciliation + Period Close workspaces.
+- **V3:** Import preview grid + drill-through.
+- **V4:** Command palette/saved views + diagnostics center.
+
+## 95) Latest pass update (CoA/Fund CRUD v1 + validation + optimistic UX errors)
+
+Implemented first management slice for reference master data maintenance.
+
+### Implemented
+
+- Added `AccountAdminService` with `upsert(...)`:
+  - validates required account fields,
+  - resolves active chart-of-accounts (fallback to first available chart),
+  - creates or updates posting account by `(chart, code)`,
+  - supports active/inactive toggling for soft deactivation flows.
+- Added `FundAdminService` with `upsert(...)`:
+  - validates required fund fields,
+  - creates or updates by `code`,
+  - supports active/inactive toggling.
+- Extended `UiServiceRegistry` wiring with `accountAdmin()` and `fundAdmin()` and runtime reconnect rewire support.
+- Upgraded `ChartOfAccountsPanel` to CRUD form workflow:
+  - inline editor (code/name/type/normal-balance/active),
+  - +Add resets to create mode,
+  - Save performs create/update and refresh,
+  - optimistic error messaging via panel status text.
+- Upgraded `FundsPanel` similarly:
+  - inline editor (code/name/type/active),
+  - create/update/deactivate flow,
+  - optimistic status/error handling.
+- Added lookup helpers for maintenance screens:
+  - `AccountLookupService.listPostingAccountsIncludingInactive()`
+  - `FundLookupService.listAllFunds()`
+
+## 96) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 97) Latest pass update (duplicate-friendly messages + CoA hierarchy editing + integration upsert tests)
+
+Implemented requested follow-on fixes for CRUD v1.
+
+### Implemented
+
+- Added duplicate-conflict friendly messaging at service layer:
+  - `AccountAdminService` maps persistence unique/constraint collisions to `IllegalArgumentException("Account code already exists: ...")`.
+  - `FundAdminService` maps persistence unique/constraint collisions to `IllegalArgumentException("Fund code already exists: ...")`.
+- Extended CoA editing for hierarchy management:
+  - `ChartOfAccountsPanel` now includes `Subtype` and `Parent code` fields in editor form.
+  - Save flow persists subtype and parent linkage through `AccountAdminService.upsert(...)`.
+- Extended `AccountAdminService.upsert(...)` contract:
+  - supports `AccountSubtype` and optional `parentCode`,
+  - validates parent linkage rules (no self-parent, parent must exist in active chart).
+- Added account lookup join-fetch behavior for parent account references to avoid lazy parent dereference issues in panel tables.
+
+### Tests added/updated
+
+- Added integration tests for successful upsert flows:
+  - `AccountAdminServiceIntegrationTest` (create/update, subtype, parent linkage, missing-parent validation).
+  - `FundAdminServiceIntegrationTest` (create/update and active/type changes).
+- Updated `AccountAdminServiceTest` for the expanded upsert signature.
+
+## 98) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
