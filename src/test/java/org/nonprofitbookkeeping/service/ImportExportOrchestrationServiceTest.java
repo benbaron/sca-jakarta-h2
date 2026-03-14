@@ -1,13 +1,21 @@
 package org.nonprofitbookkeeping.service;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.model.BankingDataFormat;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ImportExportOrchestrationServiceTest
 {
+    @TempDir
+    Path tempDir;
+
     @Test
     public void importChartOfAccountsCsv_parsesDeterministicRows()
     {
@@ -37,12 +45,84 @@ public class ImportExportOrchestrationServiceTest
     }
 
     @Test
-    public void importBankData_recognizesOfxAndQfxEnvelopes()
+    public void importChartOfAccountsCsvFile_readsFileAndParsesRows() throws IOException
     {
         ImportExportOrchestrationService service = new ImportExportOrchestrationService();
 
-        assertEquals(BankingDataFormat.OFX, service.importBankData("<OFX><BANKMSGSRSV1/>", "bank.ofx").format());
-        assertEquals(BankingDataFormat.QFX, service.importBankData("<QFX><BANKMSGSRSV1/>", "bank.qfx").format());
+        Path file = tempDir.resolve("coa.csv");
+        Files.writeString(file, "code,name,account_type,normal_balance,parent_code\n1000,Operating Bank,ASSET,DEBIT,\n");
+
+        ImportExportOrchestrationService.CoaImportResult result = service.importChartOfAccountsCsvFile(file);
+
+        assertEquals(1, result.rowCount());
+        assertEquals("1000", result.rows().get(0).code());
+    }
+
+    @Test
+    public void importChartOfAccountsCsvFile_rejectsMissingFile()
+    {
+        ImportExportOrchestrationService service = new ImportExportOrchestrationService();
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> service.importChartOfAccountsCsvFile(tempDir.resolve("missing.csv")));
+
+        assertEquals("Cannot import COA CSV: file does not exist -> " + tempDir.resolve("missing.csv"), ex.getMessage());
+    }
+
+    @Test
+    public void importBankData_recognizesOfxAndExtractsTransactions()
+    {
+        ImportExportOrchestrationService service = new ImportExportOrchestrationService();
+
+        String ofx = "<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><BANKTRANLIST>" +
+                "<STMTTRN><TRNTYPE>DEBIT</TRNTYPE><DTPOSTED>20260313000000</DTPOSTED><TRNAMT>-25.00</TRNAMT><FITID>FIT-1</FITID><NAME>Stationery Shop</NAME><MEMO>Paper</MEMO></STMTTRN>" +
+                "<STMTTRN><TRNTYPE>CREDIT</TRNTYPE><DTPOSTED>20260314000000</DTPOSTED><TRNAMT>100.00</TRNAMT><FITID>FIT-2</FITID><NAME>Donation</NAME><MEMO>Member gift</MEMO></STMTTRN>" +
+                "</BANKTRANLIST></STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>";
+
+        ImportExportOrchestrationService.BankImportResult result = service.importBankData(ofx, "bank.ofx");
+
+        assertEquals(BankingDataFormat.OFX, result.format());
+        assertEquals(2, result.transactionCount());
+        assertEquals("FIT-1", result.transactions().get(0).fitId());
+        assertEquals("-25.00", result.transactions().get(0).amount().toPlainString());
+    }
+
+    @Test
+    public void importBankData_recognizesQfxByExtension()
+    {
+        ImportExportOrchestrationService service = new ImportExportOrchestrationService();
+
+        ImportExportOrchestrationService.BankImportResult result = service.importBankData("<QFX><BANKMSGSRSV1/></QFX>", "bank.qfx");
+
+        assertEquals(BankingDataFormat.QFX, result.format());
+        assertEquals(0, result.transactionCount());
+    }
+
+    @Test
+    public void importBankDataFile_readsStatementAndDerivesTransactionCount() throws IOException
+    {
+        ImportExportOrchestrationService service = new ImportExportOrchestrationService();
+
+        Path statement = tempDir.resolve("statement.ofx");
+        Files.writeString(statement,
+                "<OFX><STMTTRN><TRNTYPE>DEBIT</TRNTYPE><TRNAMT>-9.50</TRNAMT><DTPOSTED>20260315000000</DTPOSTED><FITID>FIT-9</FITID><NAME>Coffee</NAME><MEMO>Meeting</MEMO></STMTTRN></OFX>");
+
+        ImportExportOrchestrationService.BankImportResult result = service.importBankDataFile(statement);
+
+        assertEquals(BankingDataFormat.OFX, result.format());
+        assertEquals(1, result.transactionCount());
+        assertEquals("FIT-9", result.transactions().get(0).fitId());
+    }
+
+    @Test
+    public void importBankDataFile_rejectsMissingFile()
+    {
+        ImportExportOrchestrationService service = new ImportExportOrchestrationService();
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> service.importBankDataFile(tempDir.resolve("missing.ofx")));
+
+        assertEquals("Cannot import bank statement: file does not exist -> " + tempDir.resolve("missing.ofx"), ex.getMessage());
     }
 
     @Test

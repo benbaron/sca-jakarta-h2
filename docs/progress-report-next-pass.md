@@ -798,3 +798,62 @@ Remaining risks / improvements to consider:
 ## 73) Next-steps prompt for the next pass
 
 > Continue from `docs/progress-report-next-pass.md`. Expand Stage C with real file-driven import actions and OFX/QFX transaction extraction; ensure all JavaFX tests use `FxTestSupport.initToolkitOrSkip()` for headless safety, then run `mvn -B -ntp test`, report concise results, provide a short code review, and offer follow-up fixes for local/CI failures.
+
+## 74) Latest pass update (Stage C expansion: file-driven imports + OFX/QFX transaction extraction)
+
+Implemented the requested Stage C expansion so import actions are now file-driven and banking imports include deterministic transaction extraction.
+
+### Implemented
+
+- Extended `ImportExportOrchestrationService` with file-based import entry points:
+  - `importChartOfAccountsCsvFile(Path path)`
+  - `importBankDataFile(Path path)`
+- Added deterministic file-level validation and error handling for import reads:
+  - null path rejection,
+  - missing/non-regular file rejection,
+  - read-failure wrapping with context-rich message.
+- Added OFX/QFX transaction extraction model mapping:
+  - new `BankTransactionRecord` projection model,
+  - new `OfxQfxTransactionExtractor` that extracts `STMTTRN` blocks and maps `FITID`, `DTPOSTED`, `TRNAMT`, `TRNTYPE`, `NAME`, `MEMO`.
+- Expanded bank import result payload:
+  - `BankImportResult` now includes `transactionCount` and extracted `transactions`.
+- Replaced sample-only UI actions with real file-driven imports in `MainWindow` Tools menu:
+  - `Import CoA CSV…`
+  - `Import Bank OFX/QFX…`
+  - uses JavaFX `FileChooser` with extension filters and inspector status messages.
+
+### JavaFX test safety check
+
+- Verified JavaFX test classes already call `FxTestSupport.initToolkitOrSkip()`.
+- Hardened `FxTestSupport.onFx(...)` to call `initToolkitOrSkip()` defensively, so any future FX test path also gets headless-safe gating.
+
+### Tests added/expanded
+
+- `ImportExportOrchestrationServiceTest`
+  - file-based CoA import happy path,
+  - file-based bank import happy path with transaction-count derivation,
+  - missing-file failures for both CoA and bank imports,
+  - OFX/QFX extraction count + field mapping assertions.
+- `OfxQfxTransactionExtractorTest`
+  - XML-style tag extraction,
+  - one-line OFX tag extraction.
+
+## 75) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: see latest run output in this pass (environment-dependent).
+
+## 76) Code review snapshot
+
+Resolved in this pass:
+
+1. Stage C now has real file-driven import actions instead of sample-only payloads.
+2. Banking import now includes deterministic transaction extraction and model mapping.
+3. File-level import error handling is explicit and covered by unit tests.
+4. JavaFX headless-safety enforcement is now both explicit (`@BeforeAll`) and defensive (`onFx()` bootstrap).
+
+Potential follow-ups:
+
+1. OFX/QFX parser currently targets deterministic core tags only; bank-specific variants can be layered with a richer parser profile map.
+2. UI can be improved by surfacing a preview table of extracted transactions before apply/commit.
+3. Add parse diagnostics (line/record-level warning collection) to support partial-import workflows.
