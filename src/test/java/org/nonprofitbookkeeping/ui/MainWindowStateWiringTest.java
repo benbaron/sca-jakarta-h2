@@ -63,6 +63,31 @@ public class MainWindowStateWiringTest
         assertEquals("data/sca-ledger.mv.db", store.savedDatabaseSelection.activeDatabasePath());
     }
 
+
+    @Test
+    public void selectTheme_updatesSessionPreferencesAndThemeFlags()
+    {
+        InMemoryAppStateStore store = new InMemoryAppStateStore(Optional.empty(), Optional.empty(), Optional.empty());
+
+        MainWindow.resetSessionForTests(
+                new AppPreferencesState(UiThemePreference.SYSTEM_DEFAULT, false, true, UserPrivilegeLevel.ADMIN),
+                new MultiCompanyState("BARONY-RED", List.of("BARONY-RED")));
+
+        MainWindow window = FxTestSupport.onFx(() -> new MainWindow(store));
+
+        FxTestSupport.onFx(() -> {
+            window.selectTheme(UiThemePreference.DARK);
+            return null;
+        });
+        assertTrue(window.usesDarkThemeFlag());
+
+        FxTestSupport.onFx(() -> {
+            window.selectTheme(UiThemePreference.LIGHT);
+            return null;
+        });
+        assertEquals(UiThemePreference.LIGHT, MainWindow.sharedSessionState().preferences().themePreference());
+    }
+
     private static final class InMemoryAppStateStore implements AppStateStore
     {
         private Optional<AppPreferencesState> preferences;

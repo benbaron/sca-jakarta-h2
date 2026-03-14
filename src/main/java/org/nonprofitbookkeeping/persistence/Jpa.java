@@ -5,6 +5,10 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Simple JPA bootstrap helper for a desktop (RESOURCE_LOCAL) application.
  *
@@ -21,9 +25,38 @@ public class Jpa
         this.emf = Persistence.createEntityManagerFactory("scaLedgerPU");
     }
 
+    public Jpa(Path databaseFile)
+    {
+        Map<String, Object> overrides = new HashMap<>();
+        overrides.put("jakarta.persistence.jdbc.url", jdbcUrlFor(databaseFile));
+        this.emf = Persistence.createEntityManagerFactory("scaLedgerPU", overrides);
+    }
+
     public EntityManager em()
     {
         return emf.createEntityManager();
+    }
+
+
+    private static String jdbcUrlFor(Path databaseFile)
+    {
+        if (databaseFile == null)
+        {
+            throw new IllegalArgumentException("databaseFile is required");
+        }
+
+        String raw = databaseFile.toString();
+        String normalized = raw;
+        if (raw.endsWith(".mv.db"))
+        {
+            normalized = raw.substring(0, raw.length() - ".mv.db".length());
+        }
+        else if (raw.endsWith(".db"))
+        {
+            normalized = raw.substring(0, raw.length() - ".db".length());
+        }
+
+        return "jdbc:h2:file:" + normalized + ";MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH";
     }
 
     public void close()

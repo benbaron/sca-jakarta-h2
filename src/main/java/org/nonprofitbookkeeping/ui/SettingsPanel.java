@@ -160,12 +160,33 @@ public class SettingsPanel implements AppPanel
         {
             selected = "data/sca-ledger.mv.db";
         }
-        List<String> recents = new ArrayList<>(activeDatabase.getItems());
-        if (!recents.contains(selected))
+
+        List<String> recents = new ArrayList<>();
+        recents.add(selected);
+        for (String candidate : activeDatabase.getItems())
         {
-            recents.add(0, selected);
+            if (candidate == null || candidate.isBlank() || candidate.equals(selected))
+            {
+                continue;
+            }
+            if (!recents.contains(candidate))
+            {
+                recents.add(candidate);
+            }
         }
+
         return new DatabaseSelectionState(selected, recents);
+    }
+
+
+    void setActiveDatabaseForTests(String value)
+    {
+        activeDatabase.getEditor().setText(value);
+    }
+
+    void setRecentDatabasesForTests(List<String> values)
+    {
+        activeDatabase.getItems().setAll(values);
     }
 
     @Override

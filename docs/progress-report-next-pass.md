@@ -1022,3 +1022,53 @@ Implemented the requested UX slice that clarifies where Help/Preferences/databas
 
 - Command executed: `mvn -B -ntp test`
 - Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 90) Latest pass update (runtime DB reconnect + dedicated Help panel + settings recents tests)
+
+Implemented the requested next slice.
+
+### Implemented
+
+- Added runtime datasource/profile reconnect flow in UI runtime wiring:
+  - `Jpa(Path databaseFile)` constructor with JDBC URL override,
+  - `UiServiceRegistry.reconnectToDatabase(Path)` that safely constructs fresh service graph and swaps only after successful init.
+- Added dedicated structured Help panel:
+  - new `HelpPanel` implementing `AppPanel`,
+  - new `AppPanelId.HELP`, wired in `PanelHost` + `NavigationPane`,
+  - `Help -> Help Topics` now opens the panel instead of inspector placeholder text.
+- Improved database-selection UX/testing hooks:
+  - `SettingsPanel.readDatabaseSelection()` now enforces selected-path-first ordering and de-duplicates recents,
+  - package-visible test hooks added for database combo value/list manipulation.
+
+### Tests added/updated
+
+- Added `SettingsPanelDatabaseSelectionTest` for:
+  - selected database path ordering at front,
+  - duplicate recent path de-duplication.
+- Existing UI persistence/wiring tests continue to cover restore/save behavior.
+
+## 91) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 92) Latest pass update (UI theme selection menu)
+
+Added explicit shell-level UI theme selection controls.
+
+### Implemented
+
+- Added `View` menu in `MainWindow` with direct theme actions:
+  - `Theme: Light`
+  - `Theme: Dark`
+  - `Theme: System`
+- Added `MainWindow.selectTheme(UiThemePreference)` helper that updates session preferences while preserving other preference fields.
+
+### Tests updated
+
+- Expanded `MainWindowStateWiringTest` with `selectTheme_updatesSessionPreferencesAndThemeFlags`.
+
+## 93) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).

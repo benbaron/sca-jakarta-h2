@@ -146,6 +146,13 @@ public class MainWindow extends BorderPane
                 item("Date Range…", null, this::focusDateRangeSelector)
         );
 
+        Menu view = new Menu("View");
+        view.getItems().addAll(
+                item("Theme: Light", null, () -> selectTheme(UiThemePreference.LIGHT)),
+                item("Theme: Dark", null, () -> selectTheme(UiThemePreference.DARK)),
+                item("Theme: System", null, () -> selectTheme(UiThemePreference.SYSTEM_DEFAULT))
+        );
+
         Menu run = new Menu("Run");
         run.getItems().addAll(
                 item("Post / Validate", null, () -> info("Posting not wired in UI yet.")),
@@ -161,11 +168,11 @@ public class MainWindow extends BorderPane
 
         Menu help = new Menu("Help");
         help.getItems().addAll(
-                item("Help Topics", null, this::openHelpTopics),
+                item("Help Topics", null, () -> openPanel(AppPanelId.HELP)),
                 item("About", null, () -> info("SCA Ledger prototype shell."))
         );
 
-        return new MenuBar(file, edit, search, run, tools, help);
+        return new MenuBar(file, edit, search, view, run, tools, help);
     }
 
     private ToolBar buildToolBar()
@@ -316,13 +323,15 @@ public class MainWindow extends BorderPane
                 });
     }
 
-    private void openHelpTopics()
+    void selectTheme(UiThemePreference themePreference)
     {
-        inspectorPane.show("Help",
-                "Getting Started\n" +
-                        "- Use Tools -> Preferences to set theme/company/database defaults.\n" +
-                        "- Use File -> Select Database File to switch active DB path for next startup.\n" +
-                        "- Use Tools import/export actions for COA CSV and OFX/QFX statement workflows.");
+        AppPreferencesState current = SESSION_STATE.preferences();
+        SESSION_STATE.setPreferences(new AppPreferencesState(
+                themePreference,
+                current.useNativeWindowDecorations(),
+                current.rememberWindowState(),
+                current.defaultPrivilege()));
+        info("Applied theme: " + themePreference);
     }
 
     private MenuItem item(String text, String accel, Runnable action)
