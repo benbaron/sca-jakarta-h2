@@ -3,6 +3,7 @@ package org.nonprofitbookkeeping.ui;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.nonprofitbookkeeping.model.AppPreferencesState;
+import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
@@ -27,7 +28,8 @@ public class MainWindowStateWiringTest
         AppPreferencesState prefs = new AppPreferencesState(UiThemePreference.DARK, true, true, UserPrivilegeLevel.MANAGER);
         MultiCompanyState company = new MultiCompanyState("BARONY-GREEN", List.of("BARONY-GREEN"));
 
-        InMemoryAppStateStore store = new InMemoryAppStateStore(Optional.of(prefs), Optional.of(company));
+        DatabaseSelectionState db = new DatabaseSelectionState("/tmp/dragon.mv.db", List.of("/tmp/dragon.mv.db"));
+        InMemoryAppStateStore store = new InMemoryAppStateStore(Optional.of(prefs), Optional.of(company), Optional.of(db));
 
         MainWindow.resetSessionForTests(
                 new AppPreferencesState(UiThemePreference.SYSTEM_DEFAULT, false, true, UserPrivilegeLevel.ACCOUNTANT),
@@ -38,12 +40,13 @@ public class MainWindowStateWiringTest
         assertTrue(window.usesDarkThemeFlag());
         assertTrue(window.usesNativeDecorationsFlag());
         assertEquals("BARONY-GREEN", window.activeCompanyCode());
+        assertEquals("/tmp/dragon.mv.db", window.activeDatabasePath());
     }
 
     @Test
     public void saveActivePanel_persistsCurrentSessionState()
     {
-        InMemoryAppStateStore store = new InMemoryAppStateStore(Optional.empty(), Optional.empty());
+        InMemoryAppStateStore store = new InMemoryAppStateStore(Optional.empty(), Optional.empty(), Optional.empty());
 
         MainWindow.resetSessionForTests(
                 new AppPreferencesState(UiThemePreference.LIGHT, false, true, UserPrivilegeLevel.ADMIN),
@@ -57,21 +60,26 @@ public class MainWindowStateWiringTest
 
         assertEquals(UiThemePreference.LIGHT, store.savedPreferences.themePreference());
         assertEquals("BARONY-RED", store.savedCompany.activeCompanyCode());
+        assertEquals("data/sca-ledger.mv.db", store.savedDatabaseSelection.activeDatabasePath());
     }
 
     private static final class InMemoryAppStateStore implements AppStateStore
     {
         private Optional<AppPreferencesState> preferences;
         private Optional<MultiCompanyState> multiCompany;
+        private Optional<DatabaseSelectionState> databaseSelection;
 
         private AppPreferencesState savedPreferences;
         private MultiCompanyState savedCompany;
+        private DatabaseSelectionState savedDatabaseSelection;
 
         private InMemoryAppStateStore(Optional<AppPreferencesState> preferences,
-                                      Optional<MultiCompanyState> multiCompany)
+                                      Optional<MultiCompanyState> multiCompany,
+                                      Optional<DatabaseSelectionState> databaseSelection)
         {
             this.preferences = preferences;
             this.multiCompany = multiCompany;
+            this.databaseSelection = databaseSelection;
         }
 
         @Override
@@ -98,6 +106,19 @@ public class MainWindowStateWiringTest
         {
             savedCompany = state;
             multiCompany = Optional.of(state);
+        }
+
+        @Override
+        public Optional<DatabaseSelectionState> loadDatabaseSelection()
+        {
+            return databaseSelection;
+        }
+
+        @Override
+        public void saveDatabaseSelection(DatabaseSelectionState state)
+        {
+            savedDatabaseSelection = state;
+            databaseSelection = Optional.of(state);
         }
     }
 }

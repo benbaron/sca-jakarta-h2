@@ -17,6 +17,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.AppPreferencesState;
 import org.nonprofitbookkeeping.model.BankingDataFormat;
+import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.service.BankTransactionRecord;
@@ -46,6 +47,7 @@ public class MainWindow extends BorderPane
     private DateRangeSelector dateRangeSelector;
     private Label activePanelLabel;
     private Label activeCompanyLabel;
+    private Label activeDatabaseLabel;
 
     public MainWindow()
     {
@@ -69,9 +71,11 @@ public class MainWindow extends BorderPane
 
         SESSION_STATE.onPreferencesChanged(this::applyPreferences);
         SESSION_STATE.onMultiCompanyChanged(this::applyMultiCompany);
+        SESSION_STATE.onDatabaseSelectionChanged(this::applyDatabaseSelection);
 
         applyPreferences(SESSION_STATE.preferences());
         applyMultiCompany(SESSION_STATE.multiCompany());
+        applyDatabaseSelection(SESSION_STATE.databaseSelection());
 
         openPanel(AppPanelId.LEDGER_REGISTER);
     }
@@ -85,6 +89,7 @@ public class MainWindow extends BorderPane
     {
         SESSION_STATE.setPreferences(preferences);
         SESSION_STATE.setMultiCompany(multiCompany);
+        SESSION_STATE.setDatabaseSelection(new DatabaseSelectionState("data/sca-ledger.mv.db", List.of("data/sca-ledger.mv.db")));
     }
 
     private static AppStateStore defaultStateStore()
@@ -97,6 +102,7 @@ public class MainWindow extends BorderPane
     {
         stateStore.loadPreferences().ifPresent(SESSION_STATE::setPreferences);
         stateStore.loadMultiCompany().ifPresent(SESSION_STATE::setMultiCompany);
+        stateStore.loadDatabaseSelection().ifPresent(SESSION_STATE::setDatabaseSelection);
     }
 
     private VBox buildTopChrome()
@@ -114,6 +120,7 @@ public class MainWindow extends BorderPane
         file.getItems().addAll(
                 item("New", "Ctrl+N", this::newItemInActivePanel),
                 item("Open…", null, () -> info("Open not wired yet.")),
+                item("Select Database File…", null, this::selectDatabaseFile),
                 new SeparatorMenuItem(),
                 item("Save", "Ctrl+S", this::saveActivePanel),
                 item("Export…", null, this::exportDataFromFileMenu),
@@ -154,6 +161,7 @@ public class MainWindow extends BorderPane
 
         Menu help = new Menu("Help");
         help.getItems().addAll(
+                item("Help Topics", null, this::openHelpTopics),
                 item("About", null, () -> info("SCA Ledger prototype shell."))
         );
 
@@ -183,11 +191,14 @@ public class MainWindow extends BorderPane
         activeCompanyLabel = new Label("Company: " + SESSION_STATE.multiCompany().activeCompanyCode());
         activeCompanyLabel.getStyleClass().add("toolbar-active-panel");
 
+        activeDatabaseLabel = new Label("DB: " + Path.of(SESSION_STATE.databaseSelection().activeDatabasePath()).getFileName());
+        activeDatabaseLabel.getStyleClass().add("toolbar-active-panel");
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         ToolBar tb = new ToolBar(btnNew, btnSave, new Separator(), btnFind, new Separator(), btnJournal,
-                new Separator(), dr, spacer, activeCompanyLabel, new Separator(), activePanelLabel);
+                new Separator(), dr, spacer, activeDatabaseLabel, new Separator(), activeCompanyLabel, new Separator(), activePanelLabel);
         tb.getStyleClass().add("toolbar");
         return tb;
     }
@@ -292,6 +303,28 @@ public class MainWindow extends BorderPane
         return Optional.of(selected.toPath());
     }
 
+    private void selectDatabaseFile()
+    {
+        chooseFile("Select Database File", "Database Files", "*.mv.db", "*.db")
+                .ifPresent(path -> {
+                    String selected = path.toString();
+                    List<String> recents = new java.util.ArrayList<>(SESSION_STATE.databaseSelection().recentDatabasePaths());
+                    recents.remove(selected);
+                    recents.add(0, selected);
+                    SESSION_STATE.setDatabaseSelection(new DatabaseSelectionState(selected, recents));
+                    info("Database file selected: " + path.getFileName() + " (restart required for runtime datasource switch)");
+                });
+    }
+
+    private void openHelpTopics()
+    {
+        inspectorPane.show("Help",
+                "Getting Started\n" +
+                        "- Use Tools -> Preferences to set theme/company/database defaults.\n" +
+                        "- Use File -> Select Database File to switch active DB path for next startup.\n" +
+                        "- Use Tools import/export actions for COA CSV and OFX/QFX statement workflows.");
+    }
+
     private MenuItem item(String text, String accel, Runnable action)
     {
         MenuItem mi = new MenuItem(text);
@@ -330,9 +363,22 @@ public class MainWindow extends BorderPane
         }
     }
 
+    void applyDatabaseSelection(DatabaseSelectionState state)
+    {
+        if (activeDatabaseLabel != null)
+        {
+            activeDatabaseLabel.setText("DB: " + Path.of(state.activeDatabasePath()).getFileName());
+        }
+    }
+
     String activeCompanyCode()
     {
         return SESSION_STATE.multiCompany().activeCompanyCode();
+    }
+
+    String activeDatabasePath()
+    {
+        return SESSION_STATE.databaseSelection().activeDatabasePath();
     }
 
     boolean usesNativeDecorationsFlag()
@@ -371,6 +417,7 @@ public class MainWindow extends BorderPane
         panelHost.saveActive();
         stateStore.savePreferences(SESSION_STATE.preferences());
         stateStore.saveMultiCompany(SESSION_STATE.multiCompany());
+        stateStore.saveDatabaseSelection(SESSION_STATE.databaseSelection());
         info("Save: " + panelHost.getActiveTitle());
     }
 
