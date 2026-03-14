@@ -17,6 +17,8 @@ import org.nonprofitbookkeeping.service.ReconciliationService;
 
 import java.nio.file.Path;
 
+import java.nio.file.Path;
+
 /**
  * Lightweight service wiring for JavaFX runtime (without CDI bootstrap).
  */
