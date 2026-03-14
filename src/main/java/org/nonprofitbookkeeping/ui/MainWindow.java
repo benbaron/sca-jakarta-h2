@@ -27,8 +27,8 @@ import org.nonprofitbookkeeping.service.ImportExportOrchestrationService;
 import javafx.stage.FileChooser;
 
 import java.io.File;
-import java.math.BigDecimal;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,6 +48,8 @@ public class MainWindow extends BorderPane
     private Label activePanelLabel;
     private Label activeCompanyLabel;
     private Label activeDatabaseLabel;
+    private List<CoaCsvMapper.CoaCsvRow> lastImportedCoaRows = List.of();
+    private List<BankTransactionRecord> lastImportedBankTransactions = List.of();
 
     public MainWindow()
     {
@@ -226,6 +228,7 @@ public class MainWindow extends BorderPane
         chooseFile("Import Chart of Accounts CSV", "CSV Files", "*.csv")
                 .ifPresent(path -> {
                     ImportExportOrchestrationService.CoaImportResult result = importExportService.importChartOfAccountsCsvFile(path);
+                    lastImportedCoaRows = List.copyOf(result.rows());
                     info("Imported CoA rows: " + result.rowCount() + " from " + path.getFileName());
                 });
     }
@@ -235,6 +238,7 @@ public class MainWindow extends BorderPane
         chooseFile("Import Bank OFX/QFX", "Bank Statement Files", "*.ofx", "*.qfx")
                 .ifPresent(path -> {
                     ImportExportOrchestrationService.BankImportResult result = importExportService.importBankDataFile(path);
+                    lastImportedBankTransactions = List.copyOf(result.transactions());
                     info("Imported " + result.format() + " transactions: " + result.transactionCount() + " from " + path.getFileName());
                 });
     }
@@ -270,10 +274,9 @@ public class MainWindow extends BorderPane
         String file = path.getFileName().toString().toLowerCase();
         if (file.endsWith(".csv"))
         {
-            importExportService.exportChartOfAccountsCsvFile(List.of(
-                    new CoaCsvMapper.CoaCsvRow("1000", "Operating Bank", "ASSET", "DEBIT", ""),
-                    new CoaCsvMapper.CoaCsvRow("1100", "Accounts Receivable", "ASSET", "DEBIT", "1000")), path);
-            info("Exported CoA CSV to " + path.getFileName());
+            List<CoaCsvMapper.CoaCsvRow> exportRows = buildCoaExportRows();
+            importExportService.exportChartOfAccountsCsvFile(exportRows, path);
+            info("Exported CoA CSV rows: " + exportRows.size() + " to " + path.getFileName());
             return;
         }
         if (file.endsWith(".ofx") || file.endsWith(".qfx"))
@@ -281,10 +284,8 @@ public class MainWindow extends BorderPane
             BankingDataFormat format = file.endsWith(".qfx")
                     ? BankingDataFormat.QFX
                     : BankingDataFormat.OFX;
-            importExportService.exportBankDataFile(format, List.of(
-                    new BankTransactionRecord("FIT-1", "20260313000000", new BigDecimal("-25.00"), "DEBIT", "Stationery Shop", "Paper"),
-                    new BankTransactionRecord("FIT-2", "20260314000000", new BigDecimal("100.00"), "CREDIT", "Donation", "Member gift")), path);
-            info("Exported " + format + " bank statement to " + path.getFileName());
+            importExportService.exportBankDataFile(format, lastImportedBankTransactions, path);
+            info("Exported " + format + " bank statement transactions: " + lastImportedBankTransactions.size() + " to " + path.getFileName());
             return;
         }
 
@@ -313,14 +314,46 @@ public class MainWindow extends BorderPane
     private void selectDatabaseFile()
     {
         chooseFile("Select Database File", "Database Files", "*.mv.db", "*.db")
-                .ifPresent(path -> {
-                    String selected = path.toString();
-                    List<String> recents = new java.util.ArrayList<>(SESSION_STATE.databaseSelection().recentDatabasePaths());
-                    recents.remove(selected);
-                    recents.add(0, selected);
-                    SESSION_STATE.setDatabaseSelection(new DatabaseSelectionState(selected, recents));
-                    info("Database file selected: " + path.getFileName() + " (restart required for runtime datasource switch)");
-                });
+                .ifPresent(this::applySelectedDatabasePath);
+    }
+
+    void applySelectedDatabasePath(Path path)
+    {
+        String selected = path.toString();
+        try
+        {
+            UiServiceRegistry.reconnectToDatabase(path);
+        }
+        catch (RuntimeException ex)
+        {
+            info("Database switch failed for " + path.getFileName() + ": " + ex.getMessage());
+            return;
+        }
+
+        List<String> recents = new ArrayList<>(SESSION_STATE.databaseSelection().recentDatabasePaths());
+        recents.remove(selected);
+        recents.add(0, selected);
+        SESSION_STATE.setDatabaseSelection(new DatabaseSelectionState(selected, recents));
+        info("Database switched to: " + path.getFileName());
+    }
+
+    private List<CoaCsvMapper.CoaCsvRow> buildCoaExportRows()
+    {
+        if (!lastImportedCoaRows.isEmpty())
+        {
+            return lastImportedCoaRows;
+        }
+
+        return UiServiceRegistry.accountLookup()
+                .listActivePostingAccounts()
+                .stream()
+                .map(account -> new CoaCsvMapper.CoaCsvRow(
+                        account.getCode(),
+                        account.getName(),
+                        account.getAccountType().name(),
+                        account.getNormalBalance().name(),
+                        ""))
+                .toList();
     }
 
     void selectTheme(UiThemePreference themePreference)

@@ -7,6 +7,10 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 import javafx.scene.layout.VBox;
 
+import java.awt.Desktop;
+import java.io.IOException;
+import java.net.URI;
+
 /**
  * Structured help panel with quick-start topics and links.
  */
@@ -31,11 +35,11 @@ public class HelpPanel implements AppPanel
                 + "- Ctrl+F: Open Search pane\n"
                 + "- Ctrl+N: New item in active panel");
 
-        Hyperlink migrationGuide = new Hyperlink("docs/repo-local-build.md");
-        migrationGuide.setDisable(true);
+        Hyperlink migrationGuide = new Hyperlink("Build guide: docs/repo-local-build.md");
+        migrationGuide.setOnAction(e -> openExternal("https://github.com/nonprofitbookkeeping/sca-jakarta-h2/blob/main/docs/repo-local-build.md"));
 
-        Hyperlink importGuide = new Hyperlink("docs/IMPORT_EXPORT_SPEC.md");
-        importGuide.setDisable(true);
+        Hyperlink importGuide = new Hyperlink("Progress report: docs/progress-report-next-pass.md");
+        importGuide.setOnAction(e -> openExternal("https://github.com/nonprofitbookkeeping/sca-jakarta-h2/blob/main/docs/progress-report-next-pass.md"));
 
         root.getChildren().addAll(title, new Separator(), gettingStarted, new Separator(), shortcuts, migrationGuide, importGuide);
     }
@@ -50,5 +54,21 @@ public class HelpPanel implements AppPanel
     public Node root()
     {
         return root;
+    }
+
+    private void openExternal(String url)
+    {
+        if (!Desktop.isDesktopSupported())
+        {
+            return;
+        }
+        try
+        {
+            Desktop.getDesktop().browse(URI.create(url));
+        }
+        catch (IOException ignored)
+        {
+            // Best effort only.
+        }
     }
 }
