@@ -857,3 +857,41 @@ Potential follow-ups:
 1. OFX/QFX parser currently targets deterministic core tags only; bank-specific variants can be layered with a richer parser profile map.
 2. UI can be improved by surfacing a preview table of extracted transactions before apply/commit.
 3. Add parse diagnostics (line/record-level warning collection) to support partial-import workflows.
+
+## 77) Latest pass update (file import/export test hardening)
+
+Addressed review follow-up by adding deterministic file import/export test coverage.
+
+### Implemented
+
+- Extended Stage C orchestration with file export methods:
+  - `exportChartOfAccountsCsvFile(List<CoaCsvRow>, Path)`
+  - `exportBankDataFile(BankingDataFormat, List<BankTransactionRecord>, Path)`
+- Added deterministic COA CSV writer support in `CoaCsvMapper` (`write(...)`) with proper CSV quoting/escaping.
+- Added export file-write validation and clear error messaging for null path / write failures.
+
+### Tests added/expanded
+
+- `ImportExportOrchestrationServiceTest` now includes:
+  - COA CSV export write assertions and import round-trip validation,
+  - bank OFX export and import round-trip transaction-count validation,
+  - export input validation failures (null path, missing bank format).
+
+## 78) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: environment still blocked before tests by Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+- Additional check: `mvn -B -ntp -o test` confirms plugin is not yet present in local cache, so offline mode cannot execute tests either.
+
+## 79) Code review snapshot
+
+Resolved in this pass:
+
+1. File import coverage now has corresponding file export coverage in Stage C orchestration tests.
+2. COA CSV export format is deterministic and round-trip validated.
+3. Bank OFX export is deterministic and validates transaction-count round-trip behavior.
+
+Potential follow-ups:
+
+1. Add explicit export actions in UI menu (currently File -> Export remains placeholder while service export APIs now exist).
+2. Add stronger XML escaping for bank export fields if upstream data may include `<`, `>`, or `&`.

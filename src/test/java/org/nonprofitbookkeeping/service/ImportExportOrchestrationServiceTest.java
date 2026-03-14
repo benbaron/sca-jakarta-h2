@@ -7,6 +7,7 @@ import org.nonprofitbookkeeping.model.BankingDataFormat;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -135,4 +136,67 @@ public class ImportExportOrchestrationServiceTest
 
         assertEquals("Unsupported banking envelope; expected OFX or QFX payload/filename.", ex.getMessage());
     }
+
+    @Test
+    public void exportChartOfAccountsCsvFile_writesDeterministicCsvThatRoundTrips() throws IOException
+    {
+        ImportExportOrchestrationService service = new ImportExportOrchestrationService();
+
+        Path file = tempDir.resolve("exports/coa.csv");
+        List<CoaCsvMapper.CoaCsvRow> rows = List.of(
+                new CoaCsvMapper.CoaCsvRow("1000", "Operating Bank", "ASSET", "DEBIT", ""),
+                new CoaCsvMapper.CoaCsvRow("1100", "Accounts, Receivable", "ASSET", "DEBIT", "1000"));
+
+        service.exportChartOfAccountsCsvFile(rows, file);
+        String csv = Files.readString(file);
+
+        assertEquals("code,name,account_type,normal_balance,parent_code\n" +
+                "1000,Operating Bank,ASSET,DEBIT,\n" +
+                "1100,\"Accounts, Receivable\",ASSET,DEBIT,1000\n", csv);
+
+        ImportExportOrchestrationService.CoaImportResult imported = service.importChartOfAccountsCsvFile(file);
+        assertEquals(2, imported.rowCount());
+        assertEquals("Accounts, Receivable", imported.rows().get(1).name());
+    }
+
+    @Test
+    public void exportChartOfAccountsCsvFile_rejectsNullPath()
+    {
+        ImportExportOrchestrationService service = new ImportExportOrchestrationService();
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> service.exportChartOfAccountsCsvFile(List.of(), null));
+
+        assertEquals("Cannot export COA CSV: file path is required.", ex.getMessage());
+    }
+
+    @Test
+    public void exportBankDataFile_writesOfxThatRoundTripsTransactionCount()
+    {
+        ImportExportOrchestrationService service = new ImportExportOrchestrationService();
+
+        Path statement = tempDir.resolve("exports/statement.ofx");
+        List<BankTransactionRecord> records = List.of(
+                new BankTransactionRecord("FIT-10", "20260316000000", new java.math.BigDecimal("-15.75"), "DEBIT", "Grocer", "Snacks"),
+                new BankTransactionRecord("FIT-11", "20260317000000", new java.math.BigDecimal("150.00"), "CREDIT", "Deposit", "Reimbursement"));
+
+        service.exportBankDataFile(BankingDataFormat.OFX, records, statement);
+
+        ImportExportOrchestrationService.BankImportResult imported = service.importBankDataFile(statement);
+        assertEquals(BankingDataFormat.OFX, imported.format());
+        assertEquals(2, imported.transactionCount());
+        assertEquals("FIT-11", imported.transactions().get(1).fitId());
+    }
+
+    @Test
+    public void exportBankDataFile_rejectsMissingFormat()
+    {
+        ImportExportOrchestrationService service = new ImportExportOrchestrationService();
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> service.exportBankDataFile(null, List.of(), tempDir.resolve("x.ofx")));
+
+        assertEquals("Cannot export bank statement: format is required.", ex.getMessage());
+    }
+
 }
