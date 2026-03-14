@@ -90,8 +90,18 @@ public class ImportExportOrchestrationService
 
     private static String tag(String tag, String value)
     {
-        String safe = value == null ? "" : value;
+        String safe = escapeXml(value == null ? "" : value);
         return "<" + tag + ">" + safe + "</" + tag + ">";
+    }
+
+    private static String escapeXml(String value)
+    {
+        return value
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&apos;");
     }
 
     private String readRequiredFile(Path path, String label)

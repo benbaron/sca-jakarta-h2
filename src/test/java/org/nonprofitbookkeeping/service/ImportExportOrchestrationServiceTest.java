@@ -11,6 +11,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static assertTrue;
 
 public class ImportExportOrchestrationServiceTest
 {
@@ -186,6 +187,31 @@ public class ImportExportOrchestrationServiceTest
         assertEquals(BankingDataFormat.OFX, imported.format());
         assertEquals(2, imported.transactionCount());
         assertEquals("FIT-11", imported.transactions().get(1).fitId());
+    }
+
+    @Test
+    public void exportBankDataFile_escapesXmlReservedCharacters()
+    {
+        ImportExportOrchestrationService service = new ImportExportOrchestrationService();
+
+        Path statement = tempDir.resolve("exports/escaped.ofx");
+        List<BankTransactionRecord> records = List.of(
+                new BankTransactionRecord("FIT<&>\"'", "20260318000000", new java.math.BigDecimal("-1.00"), "DEBIT", "A&B <Store>", "memo with <tag> & value"));
+
+        service.exportBankDataFile(BankingDataFormat.OFX, records, statement);
+        String body;
+        try
+        {
+            body = Files.readString(statement);
+        }
+        catch (IOException ex)
+        {
+            throw new RuntimeException(ex);
+        }
+
+        assertTrue(body.contains("FIT&lt;&amp;&gt;&quot;&apos;"));
+        assertTrue(body.contains("A&amp;B &lt;Store&gt;"));
+        assertTrue(body.contains("memo with &lt;tag&gt; &amp; value"));
     }
 
     @Test

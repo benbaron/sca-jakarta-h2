@@ -895,3 +895,25 @@ Potential follow-ups:
 
 1. Add explicit export actions in UI menu (currently File -> Export remains placeholder while service export APIs now exist).
 2. Add stronger XML escaping for bank export fields if upstream data may include `<`, `>`, or `&`.
+
+## 80) Latest pass update (follow-ups completed: UI export wiring + XML escaping)
+
+Completed both follow-ups from prior review.
+
+### Implemented
+
+- Wired `File -> Export…` in `MainWindow` to real Stage C export service methods:
+  - saves `.csv` via `exportChartOfAccountsCsvFile(...)`,
+  - saves `.ofx` / `.qfx` via `exportBankDataFile(...)`.
+- Added `chooseSaveFile(...)` and extension-based export routing in UI shell.
+- Hardened bank export payload safety with XML escaping for reserved characters in tag values (`&`, `<`, `>`, `"`, `'`).
+
+### Tests added/expanded
+
+- Extended `ImportExportOrchestrationServiceTest` with XML-escaping assertions for exported OFX payload values containing reserved characters.
+
+## 81) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+- Additional check: `mvn -B -ntp -o test` confirms required plugin is unavailable in local cache for offline mode.

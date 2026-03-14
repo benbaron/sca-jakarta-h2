@@ -16,14 +16,19 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.AppPreferencesState;
+import org.nonprofitbookkeeping.model.BankingDataFormat;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
+import org.nonprofitbookkeeping.service.BankTransactionRecord;
+import org.nonprofitbookkeeping.service.CoaCsvMapper;
 import org.nonprofitbookkeeping.service.ImportExportOrchestrationService;
 
 import javafx.stage.FileChooser;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -111,7 +116,7 @@ public class MainWindow extends BorderPane
                 item("Open…", null, () -> info("Open not wired yet.")),
                 new SeparatorMenuItem(),
                 item("Save", "Ctrl+S", this::saveActivePanel),
-                item("Export…", null, () -> info("Export not wired yet.")),
+                item("Export…", null, this::exportDataFromFileMenu),
                 new SeparatorMenuItem(),
                 item("Exit", null, () -> System.exit(0))
         );
@@ -228,6 +233,58 @@ public class MainWindow extends BorderPane
         chooser.setTitle(title);
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(extensionDescription, extensions));
         File selected = chooser.showOpenDialog(getScene().getWindow());
+        if (selected == null)
+        {
+            return Optional.empty();
+        }
+        return Optional.of(selected.toPath());
+    }
+
+
+    private void exportDataFromFileMenu()
+    {
+        chooseSaveFile("Export Data", "Supported Export Files", "*.csv", "*.ofx", "*.qfx")
+                .ifPresent(this::exportByExtension);
+    }
+
+    private void exportByExtension(Path path)
+    {
+        String file = path.getFileName().toString().toLowerCase();
+        if (file.endsWith(".csv"))
+        {
+            importExportService.exportChartOfAccountsCsvFile(List.of(
+                    new CoaCsvMapper.CoaCsvRow("1000", "Operating Bank", "ASSET", "DEBIT", ""),
+                    new CoaCsvMapper.CoaCsvRow("1100", "Accounts Receivable", "ASSET", "DEBIT", "1000")), path);
+            info("Exported CoA CSV to " + path.getFileName());
+            return;
+        }
+        if (file.endsWith(".ofx") || file.endsWith(".qfx"))
+        {
+            BankingDataFormat format = file.endsWith(".qfx")
+                    ? BankingDataFormat.QFX
+                    : BankingDataFormat.OFX;
+            importExportService.exportBankDataFile(format, List.of(
+                    new BankTransactionRecord("FIT-1", "20260313000000", new BigDecimal("-25.00"), "DEBIT", "Stationery Shop", "Paper"),
+                    new BankTransactionRecord("FIT-2", "20260314000000", new BigDecimal("100.00"), "CREDIT", "Donation", "Member gift")), path);
+            info("Exported " + format + " bank statement to " + path.getFileName());
+            return;
+        }
+
+        info("Export cancelled: unsupported extension for " + path.getFileName());
+    }
+
+    private Optional<Path> chooseSaveFile(String title, String extensionDescription, String... extensions)
+    {
+        if (getScene() == null || getScene().getWindow() == null)
+        {
+            info("Export unavailable: window is not ready.");
+            return Optional.empty();
+        }
+
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle(title);
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(extensionDescription, extensions));
+        File selected = chooser.showSaveDialog(getScene().getWindow());
         if (selected == null)
         {
             return Optional.empty();
