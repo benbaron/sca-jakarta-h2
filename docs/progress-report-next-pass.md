@@ -1162,3 +1162,166 @@ Implemented requested follow-on fixes for CRUD v1.
 
 - Command executed: `mvn -B -ntp test`
 - Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 99) Latest pass update (UX copy cleanup + CoA form round-trip UI test + Step 2 start)
+
+Addressed quick UX/test follow-up and started priority Step 2 workflow workspace implementation.
+
+### Implemented
+
+- UX copy cleanup:
+  - `ChartOfAccountsPanel` and `FundsPanel` status copy now explicitly indicates lists include active + inactive records for maintenance clarity.
+- Added focused UI form-state test coverage for CoA hierarchy fields:
+  - new `ChartOfAccountsPanelFormStateTest` validates subtype + parent code round-trip in panel form state.
+- Started Step 2 (`Reconciliation + Period Close workspaces`):
+  - added new panel IDs and navigation entries for `RECONCILIATION_RUNS` and `PERIOD_CLOSE_RUNS`,
+  - wired these into `PanelHost` factories,
+  - added `ReconciliationRunsPanel` and `PeriodCloseRunsPanel` with:
+    - run-history table views for active company,
+    - refresh actions,
+    - basic "record completed run" actions using existing services/repositories.
+  - added `UiDataSources` helper for JDBC datasource creation from the active session DB path.
+
+## 100) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 101) Latest pass update (follow-up centralization + Step 3 start)
+
+Completed requested follow-up and moved forward to Step 3.
+
+### Implemented
+
+- Follow-up centralization:
+  - workflow run panels now consume repositories/services through `UiServiceRegistry` methods instead of constructing them inline,
+  - added `UiServiceRegistry.reconciliationRunRepository()`, `periodCloseRunRepository()`, `reconciliationService()`, and `periodCloseService()`.
+- Step 3 start (`Import preview + validation grid`):
+  - added new `IMPORT_PREVIEW` workspace panel ID and navigation/host wiring,
+  - added `ImportPreviewService` with deterministic preview methods:
+    - `previewCoaCsv(Path)` with duplicate-account-code warning detection,
+    - `previewBankStatement(Path)` returning format + transaction count,
+  - added `ImportPreviewPanel` with file-chooser preview flows, warning list, and COA-row table preview,
+  - added Tools menu entry `Import Preview…` to open the panel.
+- Added service tests for Step 3 preview logic:
+  - `ImportPreviewServiceTest` covers duplicate warning detection and bank transaction count extraction.
+
+## 102) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 103) Latest pass update (Step 3 refinement: row-level import preview outcomes)
+
+Refined Import Preview so previews expose row-level accepted/rejected outcomes with error reasons.
+
+### Implemented
+
+- Extended `ImportPreviewService.previewCoaCsv(Path)` to produce row-level classification:
+  - `acceptedRows` for valid lines,
+  - `rejectedRows` with `(lineNumber, rawLine, errorReason)`,
+  - summary counts: `totalRowCount`, `acceptedCount`, `rejectedCount`.
+- Kept duplicate warning detection over accepted rows to preserve deterministic duplicate signaling.
+- Updated `ImportPreviewPanel` UI to split COA preview into two tables:
+  - Accepted rows table,
+  - Rejected rows table with line/error details.
+- Status summary now reports accepted vs rejected counts.
+- Added test coverage in `ImportPreviewServiceTest` for rejected-row behavior and error reasons.
+
+## 104) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 105) Latest pass update (CSV normalization test + quote-safe row-state parser + drill-through wiring)
+
+Implemented requested follow-up sequence: normalization test first, then robust CSV row-state parsing and focused edge-case tests, then started drill-through wiring.
+
+### Implemented
+
+- Added JDBC URL normalization test coverage for runtime DB file selection helper:
+  - `UiDataSources.jdbcUrlForTests(Path)` package-visible test hook,
+  - `UiDataSourcesNormalizationTest` validates `.mv.db` and `.db` suffix normalization behavior.
+- Promoted COA CSV preview parsing to a true logical-row parser in `ImportPreviewService`:
+  - quote-state aware splitting across physical lines,
+  - multiline quoted field support,
+  - escaped-quote (`""`) handling,
+  - explicit rejection for unterminated quoted fields with reason `Unterminated quoted field.`.
+- Expanded `ImportPreviewServiceTest` with focused cases:
+  - duplicate warning behavior,
+  - validation rejection behavior,
+  - multiline quoted-row acceptance,
+  - escaped-quote acceptance,
+  - unterminated quoted-row rejection,
+  - bank statement preview format/count check.
+- Continued drill-through wiring:
+  - added `DrillThroughCoordinator` context handoff utility,
+  - wired `MainWindow` opener registration,
+  - added dashboard fund-row double-click drill to ledger,
+  - added report library “Drill to Ledger” action,
+  - updated `LedgerRegisterPanel` to consume and display drill context on reload.
+
+## 106) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 107) Latest pass update (fix test text block compile error)
+
+Addressed CI-reported compilation failure in `ImportPreviewServiceTest` caused by a Java text-block delimiter collision.
+
+### Implemented
+
+- Reworked the multiline CSV fixture in `previewCoaCsv_acceptsMultilineQuotedRows` to use `String.join("\\n", ...)` instead of a text block.
+- Preserved the same fixture semantics (multiline quoted field + escaped quotes) while avoiding an accidental `"""` delimiter sequence in source.
+
+## 108) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 109) Latest pass update (regression test + drill-through wiring tests)
+
+Completed both requested follow-ups from the previous review notes.
+
+### Implemented
+
+- Added a focused regression test in `ImportPreviewServiceTest` to assert the multiline/escaped fixture parses into exact expected values:
+  - first row name preserves embedded newline (`Office\nChecking`),
+  - second row name preserves escaped quote rendering (`AR "External"`),
+  - parent-code linkage remains intact.
+- Added focused drill-through wiring test coverage in new `DrillThroughCoordinatorTest`:
+  - verifies drill-through opens `LEDGER_REGISTER`,
+  - verifies context is handed off exactly once (`consumeContext()` clears after read).
+
+## 110) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 111) Latest pass update (Step 4 continuation: productivity + diagnostics baseline)
+
+Continued into Step 4 by implementing an initial productivity/diagnostics slice.
+
+### Implemented
+
+- Added `DiagnosticsPanel` as a lightweight diagnostics center showing:
+  - runtime timestamp,
+  - Java version,
+  - active company,
+  - active DB file path,
+  - datasource connectivity check status.
+- Added `DIAGNOSTICS` workspace id and wired it into both `NavigationPane` and `PanelHost`.
+- Added command-palette baseline in `MainWindow`:
+  - new Search menu action `Command Palette…` (`Ctrl+K`),
+  - palette uses a simple chooser to jump to any registered panel id.
+- Added Tools menu shortcut `Diagnostics…` to open the diagnostics workspace directly.
+
+### Tests added
+
+- Added `MainWindowCommandPaletteTest` to verify palette entries include `DIAGNOSTICS` and `IMPORT_PREVIEW`.
+
+## 112) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).

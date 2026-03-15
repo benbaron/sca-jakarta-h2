@@ -2,6 +2,7 @@ package org.nonprofitbookkeeping.ui;
 
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -29,6 +30,7 @@ import javafx.stage.FileChooser;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -79,6 +81,7 @@ public class MainWindow extends BorderPane
         applyMultiCompany(SESSION_STATE.multiCompany());
         applyDatabaseSelection(SESSION_STATE.databaseSelection());
 
+        DrillThroughCoordinator.configureOpener(this::openPanel);
         openPanel(AppPanelId.LEDGER_REGISTER);
     }
 
@@ -143,6 +146,7 @@ public class MainWindow extends BorderPane
         Menu search = new Menu("Search");
         search.getItems().addAll(
                 item("Find…", "Ctrl+F", this::openSearch),
+                item("Command Palette…", "Ctrl+K", this::openCommandPalette),
                 item("Go to…", "Ctrl+G", () -> info("Go to not wired yet.")),
                 new SeparatorMenuItem(),
                 item("Date Range…", null, this::focusDateRangeSelector)
@@ -165,6 +169,8 @@ public class MainWindow extends BorderPane
         tools.getItems().addAll(
                 item("Import CoA CSV…", null, this::importCoaCsvFromFile),
                 item("Import Bank OFX/QFX…", null, this::importBankEnvelopeFromFile),
+                item("Import Preview…", null, () -> openPanel(AppPanelId.IMPORT_PREVIEW)),
+                item("Diagnostics…", null, () -> openPanel(AppPanelId.DIAGNOSTICS)),
                 item("Preferences…", null, () -> openPanel(AppPanelId.SETTINGS))
         );
 
@@ -210,6 +216,44 @@ public class MainWindow extends BorderPane
                 new Separator(), dr, spacer, activeDatabaseLabel, new Separator(), activeCompanyLabel, new Separator(), activePanelLabel);
         tb.getStyleClass().add("toolbar");
         return tb;
+    }
+
+    void openCommandPalette()
+    {
+        if (getScene() == null || getScene().getWindow() == null)
+        {
+            info("Command palette unavailable: window is not ready.");
+            return;
+        }
+
+        List<PaletteEntry> entries = commandPaletteEntriesForTests();
+        ChoiceDialog<PaletteEntry> dialog = new ChoiceDialog<>(entries.get(0), entries);
+        dialog.setTitle("Command Palette");
+        dialog.setHeaderText("Jump to workspace");
+        dialog.setContentText("Command:");
+        dialog.initOwner(getScene().getWindow());
+
+        dialog.showAndWait().ifPresent(entry -> openPanel(entry.panelId()));
+    }
+
+    static List<PaletteEntry> commandPaletteEntriesForTests()
+    {
+        List<PaletteEntry> entries = new ArrayList<>();
+        for (AppPanelId id : AppPanelId.values())
+        {
+            entries.add(new PaletteEntry(id, id.name().replace('_', ' ')));
+        }
+        entries.sort(Comparator.comparing(PaletteEntry::label));
+        return entries;
+    }
+
+    record PaletteEntry(AppPanelId panelId, String label)
+    {
+        @Override
+        public String toString()
+        {
+            return label;
+        }
     }
 
     private void focusDateRangeSelector()

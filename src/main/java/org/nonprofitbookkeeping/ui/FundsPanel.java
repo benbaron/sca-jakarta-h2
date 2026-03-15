@@ -157,7 +157,7 @@ public class FundsPanel implements AppPanel
             () -> UiServiceRegistry.fundLookup().listAllFunds(),
             rows -> {
                 table.getItems().setAll(rows);
-                status.setText("Loaded " + rows.size() + " active fund(s).");
+                status.setText("Loaded " + rows.size() + " fund(s) (active + inactive).");
                 if (!rows.isEmpty())
                 {
                     Fund selected = table.getSelectionModel().getSelectedItem();

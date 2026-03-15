@@ -8,6 +8,14 @@ import org.nonprofitbookkeeping.service.AccountAdminService;
 import org.nonprofitbookkeeping.service.FundAdminService;
 import org.nonprofitbookkeeping.service.LedgerQueryService;
 import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
+import org.nonprofitbookkeeping.repository.JdbcPeriodCloseRunRepository;
+import org.nonprofitbookkeeping.repository.JdbcReconciliationRunRepository;
+import org.nonprofitbookkeeping.repository.PeriodCloseRunRepository;
+import org.nonprofitbookkeeping.repository.ReconciliationRunRepository;
+import org.nonprofitbookkeeping.service.PeriodCloseService;
+import org.nonprofitbookkeeping.service.ReconciliationService;
+
+import java.nio.file.Path;
 
 import java.nio.file.Path;
 
@@ -36,6 +44,27 @@ public final class UiServiceRegistry
     public static FundBalanceService fundBalance() { return fundBalance; }
     public static ScheduleEligibilityService schedules() { return schedules; }
     public static LedgerQueryService ledgerQuery() { return ledgerQuery; }
+
+
+    public static ReconciliationRunRepository reconciliationRunRepository()
+    {
+        return new JdbcReconciliationRunRepository(UiDataSources.forCurrentSessionDatabase());
+    }
+
+    public static PeriodCloseRunRepository periodCloseRunRepository()
+    {
+        return new JdbcPeriodCloseRunRepository(UiDataSources.forCurrentSessionDatabase());
+    }
+
+    public static ReconciliationService reconciliationService()
+    {
+        return new ReconciliationService(reconciliationRunRepository());
+    }
+
+    public static PeriodCloseService periodCloseService()
+    {
+        return new PeriodCloseService(periodCloseRunRepository());
+    }
 
     public static void reconnectToDatabase(Path databaseFile)
     {

@@ -181,6 +181,40 @@ public class ChartOfAccountsPanel implements AppPanel
         }
     }
 
+
+    FormState readFormStateForTests()
+    {
+        return new FormState(
+                codeField.getText(),
+                nameField.getText(),
+                typeField.getValue(),
+                balanceField.getValue(),
+                subtypeField.getValue(),
+                parentCodeField.getText(),
+                activeField.isSelected());
+    }
+
+    void setFormStateForTests(FormState formState)
+    {
+        codeField.setText(formState.code());
+        nameField.setText(formState.name());
+        typeField.setValue(formState.accountType());
+        balanceField.setValue(formState.normalBalance());
+        subtypeField.setValue(formState.subtype());
+        parentCodeField.setText(formState.parentCode());
+        activeField.setSelected(formState.active());
+    }
+
+    record FormState(String code,
+                     String name,
+                     AccountType accountType,
+                     NormalBalance normalBalance,
+                     AccountSubtype subtype,
+                     String parentCode,
+                     boolean active)
+    {
+    }
+
     private void reload()
     {
         refresh.setDisable(true);
@@ -190,7 +224,7 @@ public class ChartOfAccountsPanel implements AppPanel
             () -> UiServiceRegistry.accountLookup().listPostingAccountsIncludingInactive(),
             rows -> {
                 table.getItems().setAll(rows);
-                status.setText("Loaded " + rows.size() + " posting account(s).");
+                status.setText("Loaded " + rows.size() + " posting account(s) (active + inactive).");
                 if (!rows.isEmpty())
                 {
                     Account selected = table.getSelectionModel().getSelectedItem();
