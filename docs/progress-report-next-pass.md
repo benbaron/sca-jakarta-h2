@@ -1867,3 +1867,25 @@ These changes directly address the reported `cannot find symbol` compile errors.
 
 - Command executed: `mvn -B -ntp test`
 - Result: blocked before test execution during Maven plugin resolution (`maven-resources-plugin:3.3.1`) due mirror/network reachability (`primary-public-mirror`, network unreachable).
+
+## 147) Latest pass update (mirror routing hardening correction)
+
+Adjusted Maven mirror hardening to avoid invalid settings-schema usage and preserve default portability.
+
+### What was corrected
+
+- Removed invalid profile-scoped `<mirrors>` usage from `.mvn/settings.xml` (Maven settings schema supports mirrors only at top-level).
+- Restored `.mvn/settings.xml` to a valid default bootstrap/fallback configuration (local seed repo + central + public fallback repos).
+- Added explicit opt-in mirror settings files:
+  - `.mvn/settings-mirror-huawei.xml`
+  - `.mvn/settings-mirror-aliyun.xml`
+- Updated `docs/repo-local-build.md` with exact mirror-settings-file usage commands.
+
+## 148) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+  - Result: blocked before test execution (plugin resolution to Maven Central unreachable).
+- Command executed: `mvn -B -ntp --settings .mvn/settings-mirror-aliyun.xml -Dmaven.repo.local=.mvn/local-repo test`
+  - Result: blocked before test execution (plugin resolution to Aliyun mirror unreachable).
+
+Both outcomes indicate network reachability constraints to external artifact endpoints in this environment.
