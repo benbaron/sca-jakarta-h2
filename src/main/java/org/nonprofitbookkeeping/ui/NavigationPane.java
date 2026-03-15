@@ -51,6 +51,11 @@ public class NavigationPane extends VBox
         add(assets, AppPanelId.DEPRECIATION_RUNS, "Depreciation Runs");
         add(assets, AppPanelId.INVENTORY, "Inventory");
 
+        TreeItem<NavItem> workflows = group(root, "Workflows");
+        add(workflows, AppPanelId.RECONCILIATION_RUNS, "Reconciliation Runs");
+        add(workflows, AppPanelId.PERIOD_CLOSE_RUNS, "Period Close Runs");
+        add(workflows, AppPanelId.IMPORT_PREVIEW, "Import Preview");
+
         TreeItem<NavItem> outputs = group(root, "Outputs");
         add(outputs, AppPanelId.REPORT_LIBRARY, "Reports Library");
 
@@ -60,6 +65,8 @@ public class NavigationPane extends VBox
 
         TreeItem<NavItem> sys = group(root, "System");
         add(sys, AppPanelId.SETTINGS, "Settings");
+        add(sys, AppPanelId.DIAGNOSTICS, "Diagnostics");
+        add(sys, AppPanelId.HELP, "Help");
 
         tree = new TreeView<>(root);
         tree.setShowRoot(false);
@@ -95,8 +102,7 @@ public class NavigationPane extends VBox
             {
                 tree.getSelectionModel().select(sel);
                 NavItem v = sel.getValue();
-                openInspector.accept("Details: " + v.label(),
-                        "Detail inspector placeholder for: " + v.label() + "\n\n(Details-first; journal is a drill-down.)");
+                openInspector.accept("Details: " + v.label(), inspectorBody(v));
             }
         });
 
@@ -116,6 +122,19 @@ public class NavigationPane extends VBox
         });
 
         getChildren().add(tree);
+    }
+
+    static String inspectorBody(NavItem item)
+    {
+        if (item == null || item.panelId() == null)
+        {
+            return "Navigation group selected. Choose a workspace item to open details.";
+        }
+
+        return "Panel: " + item.label()
+                + "\nID: " + item.panelId().name()
+                + "\nOpen behavior: single-select, Enter, or double-click."
+                + "\nContext: use toolbar Find/Journal for cross-panel queries.";
     }
 
     public void highlight(AppPanelId id)

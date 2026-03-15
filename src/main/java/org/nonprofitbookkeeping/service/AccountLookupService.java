@@ -38,9 +38,20 @@ public class AccountLookupService
         try (EntityManager em = jpa.em())
         {
             return em.createQuery(
-                    "from Account a where a.isActive = true and a.isPosting = true order by a.code",
+                    "select a from Account a left join fetch a.parent where a.isActive = true and a.isPosting = true order by a.code",
                     Account.class)
                 .getResultList();
         }
     }
+    public List<Account> listPostingAccountsIncludingInactive()
+    {
+        try (EntityManager em = jpa.em())
+        {
+            return em.createQuery(
+                    "select a from Account a left join fetch a.parent where a.isPosting = true order by a.code",
+                    Account.class)
+                .getResultList();
+        }
+    }
+
 }
