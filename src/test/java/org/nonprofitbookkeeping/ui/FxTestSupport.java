@@ -49,6 +49,7 @@ final class FxTestSupport
 
     static <T> T onFx(Callable<T> callable)
     {
+        initToolkitOrSkip();
         Assumptions.assumeTrue(available, unavailableReason);
 
         CompletableFuture<T> future = new CompletableFuture<>();
