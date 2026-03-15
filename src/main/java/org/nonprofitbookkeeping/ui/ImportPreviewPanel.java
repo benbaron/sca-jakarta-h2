@@ -14,11 +14,14 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import org.nonprofitbookkeeping.model.AccountType;
+import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.service.CoaCsvMapper;
 import org.nonprofitbookkeeping.service.ImportPreviewService;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.Locale;
 
 public class ImportPreviewPanel implements AppPanel
 {
@@ -28,6 +31,7 @@ public class ImportPreviewPanel implements AppPanel
     private final ListView<String> warnings = new ListView<>();
     private final TableView<CoaCsvMapper.CoaCsvRow> acceptedCoaRows = new TableView<>();
     private final TableView<ImportPreviewService.RejectedCoaRow> rejectedCoaRows = new TableView<>();
+    private ImportPreviewService.CoaPreviewResult lastCoaPreview;
 
     public ImportPreviewPanel()
     {
@@ -41,8 +45,10 @@ public class ImportPreviewPanel implements AppPanel
 
         Button previewBank = new Button("Preview Bank OFX/QFX…");
         previewBank.setOnAction(e -> chooseAndPreviewBank());
+        Button commitAccepted = new Button("Commit Accepted COA Rows");
+        commitAccepted.setOnAction(e -> commitAcceptedCoaRows());
 
-        root.setTop(new VBox(6, title, new HBox(8, previewCoa, previewBank), status, new Separator()));
+        root.setTop(new VBox(6, title, new HBox(8, previewCoa, previewBank, commitAccepted), status, new Separator()));
 
         buildAcceptedTable();
         buildRejectedTable();
@@ -98,6 +104,77 @@ public class ImportPreviewPanel implements AppPanel
         rejectedCoaRows.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
     }
 
+    private void commitAcceptedCoaRows()
+    {
+        ImportPreviewService.CoaPreviewResult preview = lastCoaPreview;
+        if (preview == null)
+        {
+            status.setText("Commit unavailable: preview a COA CSV first.");
+            return;
+        }
+        if (preview.acceptedRows().isEmpty())
+        {
+            status.setText("Commit skipped: there are no accepted COA rows to commit.");
+            return;
+        }
+
+        status.setText("Committing accepted COA rows...");
+        UiAsync.run("import-preview-commit-coa", () -> previewService.commitAcceptedCoaRows(
+                preview.acceptedRows(),
+                row -> UiServiceRegistry.accountAdmin().upsert(
+                        row.code(),
+                        row.name(),
+                        parseAccountTypeToken(row.accountType()),
+                        parseNormalBalanceToken(row.normalBalance()),
+                        null,
+                        row.parentCode(),
+                        true)),
+                result -> {
+                    status.setText("Committed " + result.committedCount() + " of " + result.totalAccepted()
+                            + " accepted COA row(s); failed=" + result.failedCount() + ".");
+                    warnings.getItems().setAll(result.errors());
+                },
+                ex -> status.setText("Could not commit accepted COA rows: " + UiErrors.safeMessage(ex)));
+    }
+
+
+    static AccountType parseAccountTypeToken(String token)
+    {
+        String normalized = normalizeEnumToken(token);
+        if ("REVENUE".equals(normalized))
+        {
+            return AccountType.INCOME;
+        }
+        return AccountType.valueOf(normalized);
+    }
+
+    static NormalBalance parseNormalBalanceToken(String token)
+    {
+        String normalized = normalizeEnumToken(token);
+        if ("DR".equals(normalized))
+        {
+            return NormalBalance.DEBIT;
+        }
+        if ("CR".equals(normalized))
+        {
+            return NormalBalance.CREDIT;
+        }
+        return NormalBalance.valueOf(normalized);
+    }
+
+    static String normalizeEnumToken(String token)
+    {
+        if (token == null || token.isBlank())
+        {
+            throw new IllegalArgumentException("Enum token is required.");
+        }
+        return token.trim()
+                .toUpperCase(Locale.ROOT)
+                .replace('-', '_')
+                .replace(' ', '_')
+                .replace('/', '_');
+    }
+
     private void chooseAndPreviewCoa()
     {
         chooseOpenFile("Preview COA CSV", new FileChooser.ExtensionFilter("CSV Files", "*.csv"))
@@ -113,6 +190,7 @@ public class ImportPreviewPanel implements AppPanel
     private void previewCoa(Path file)
     {
         UiAsync.run("import-preview-coa", () -> previewService.previewCoaCsv(file), result -> {
+            lastCoaPreview = result;
             acceptedCoaRows.getItems().setAll(result.acceptedRows());
             rejectedCoaRows.getItems().setAll(result.rejectedRows());
             warnings.getItems().setAll(result.warnings());
@@ -130,6 +208,7 @@ public class ImportPreviewPanel implements AppPanel
     private void previewBank(Path file)
     {
         UiAsync.run("import-preview-bank", () -> previewService.previewBankStatement(file), result -> {
+            lastCoaPreview = null;
             warnings.getItems().clear();
             acceptedCoaRows.getItems().clear();
             rejectedCoaRows.getItems().clear();

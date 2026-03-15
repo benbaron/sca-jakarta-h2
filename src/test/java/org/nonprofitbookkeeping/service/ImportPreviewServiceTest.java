@@ -126,4 +126,24 @@ public class ImportPreviewServiceTest
         assertEquals(BankingDataFormat.OFX, result.format());
         assertEquals(1, result.transactionCount());
     }
+    @Test
+    public void commitAcceptedCoaRows_reportsCommittedAndFailedCounts()
+    {
+        ImportPreviewService.CoaCommitResult result = service.commitAcceptedCoaRows(
+                java.util.List.of(
+                        new CoaCsvMapper.CoaCsvRow("1000", "Cash", "ASSET", "DEBIT", ""),
+                        new CoaCsvMapper.CoaCsvRow("2000", "Income", "INCOME", "CREDIT", "")),
+                row -> {
+                    if ("2000".equals(row.code()))
+                    {
+                        throw new IllegalArgumentException("duplicate code");
+                    }
+                });
+
+        assertEquals(2, result.totalAccepted());
+        assertEquals(1, result.committedCount());
+        assertEquals(1, result.failedCount());
+        assertTrue(result.errors().get(0).contains("2000"));
+    }
+
 }
