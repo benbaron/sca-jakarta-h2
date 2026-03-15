@@ -35,4 +35,15 @@ public class FundLookupService
                 .getResultList();
         }
     }
+    public List<Fund> listAllFunds()
+    {
+        try (EntityManager em = jpa.em())
+        {
+            return em.createQuery(
+                    "from Fund f order by f.code",
+                    Fund.class)
+                .getResultList();
+        }
+    }
+
 }

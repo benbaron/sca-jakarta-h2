@@ -56,6 +56,20 @@ public class DashboardPanel implements AppPanel
         balance.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().getBalance().toPlainString()));
         balances.getColumns().addAll(code, name, balance);
 
+        balances.setRowFactory(tv ->
+        {
+            javafx.scene.control.TableRow<FundBalanceRow> row = new javafx.scene.control.TableRow<>();
+            row.setOnMouseClicked(evt ->
+            {
+                if (evt.getClickCount() == 2 && !row.isEmpty())
+                {
+                    DrillThroughCoordinator.openLedgerWithContext(
+                            "Dashboard drill-through fund: " + row.getItem().getFundCode());
+                }
+            });
+            return row;
+        });
+
         TitledPane importedWorkspace = new TitledPane("NonprofitBookkeeping workspace", importedDashboard);
         importedWorkspace.setCollapsible(false);
 
