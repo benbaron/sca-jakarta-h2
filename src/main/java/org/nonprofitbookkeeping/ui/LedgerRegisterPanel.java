@@ -173,6 +173,17 @@ public class LedgerRegisterPanel implements AppPanel
     @Override public Node root() { return root; }
 
     @Override
+    public java.util.Optional<JournalSelection> activeJournalSelection()
+    {
+        Row sel = txnTable.getSelectionModel().getSelectedItem();
+        if (sel == null)
+        {
+            return java.util.Optional.empty();
+        }
+        return java.util.Optional.of(new JournalSelection(sel.id(), "Ledger Register table"));
+    }
+
+    @Override
     public void onNew()
     {
         details.setText("Use Transaction Editor to post a new transaction, then click Refresh here to load it.");
