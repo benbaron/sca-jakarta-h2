@@ -22,6 +22,7 @@ import org.nonprofitbookkeeping.model.BankingDataFormat;
 import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
+import org.nonprofitbookkeeping.model.ViewPresetState;
 import org.nonprofitbookkeeping.service.BankTransactionRecord;
 import org.nonprofitbookkeeping.service.CoaCsvMapper;
 import org.nonprofitbookkeeping.service.ImportExportOrchestrationService;
@@ -30,6 +31,7 @@ import javafx.stage.FileChooser;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -112,6 +114,7 @@ public class MainWindow extends BorderPane
         stateStore.loadPreferences().ifPresent(SESSION_STATE::setPreferences);
         stateStore.loadMultiCompany().ifPresent(SESSION_STATE::setMultiCompany);
         stateStore.loadDatabaseSelection().ifPresent(SESSION_STATE::setDatabaseSelection);
+        loadViewPresetsFromStore();
     }
 
     private VBox buildTopChrome()
@@ -163,7 +166,8 @@ public class MainWindow extends BorderPane
                 item("Theme: System", null, () -> selectTheme(UiThemePreference.SYSTEM_DEFAULT)),
                 new SeparatorMenuItem(),
                 item("Save View Preset…", null, this::openSaveViewPresetDialog),
-                item("Apply View Preset…", null, this::openApplyViewPresetDialog)
+                item("Apply View Preset…", null, this::openApplyViewPresetDialog),
+                item("Delete View Preset…", null, this::openDeleteViewPresetDialog)
         );
 
         Menu run = new Menu("Run");
@@ -303,6 +307,54 @@ public class MainWindow extends BorderPane
         return new ArrayList<>(viewPresets.keySet());
     }
 
+    void removeViewPresetForTests(String presetName)
+    {
+        String key = normalizePresetName(presetName);
+        viewPresets.remove(key);
+    }
+
+
+    private void loadViewPresetsFromStore()
+    {
+        viewPresets.clear();
+        for (ViewPresetState state : stateStore.loadViewPresets())
+        {
+            try
+            {
+                String key = normalizePresetName(state.name());
+                AppPanelId panelId = AppPanelId.valueOf(state.panelId());
+                DateRange range = parseDateRange(state.startDateIso(), state.endDateIso());
+                viewPresets.put(key, new ViewPreset(panelId, range));
+            }
+            catch (RuntimeException ignored)
+            {
+                // Skip invalid persisted preset rows defensively.
+            }
+        }
+    }
+
+    private List<ViewPresetState> viewPresetStatesForPersistence()
+    {
+        List<ViewPresetState> out = new ArrayList<>();
+        for (Map.Entry<String, ViewPreset> e : viewPresets.entrySet())
+        {
+            DateRange range = e.getValue().dateRange();
+            out.add(new ViewPresetState(
+                    e.getKey(),
+                    e.getValue().panelId().name(),
+                    range.startInclusive() == null ? "" : range.startInclusive().toString(),
+                    range.endInclusive() == null ? "" : range.endInclusive().toString()));
+        }
+        return out;
+    }
+
+    private static DateRange parseDateRange(String startIso, String endIso)
+    {
+        LocalDate start = (startIso == null || startIso.isBlank()) ? null : LocalDate.parse(startIso);
+        LocalDate end = (endIso == null || endIso.isBlank()) ? null : LocalDate.parse(endIso);
+        return new DateRange(start, end);
+    }
+
     private void openSaveViewPresetDialog()
     {
         if (getScene() == null || getScene().getWindow() == null)
@@ -340,6 +392,30 @@ public class MainWindow extends BorderPane
         dialog.setContentText("Preset:");
         dialog.initOwner(getScene().getWindow());
         dialog.showAndWait().ifPresent(this::applyViewPresetForTests);
+    }
+
+    private void openDeleteViewPresetDialog()
+    {
+        if (getScene() == null || getScene().getWindow() == null)
+        {
+            info("Delete preset unavailable: window is not ready.");
+            return;
+        }
+        if (viewPresets.isEmpty())
+        {
+            info("No saved view presets to delete.");
+            return;
+        }
+        List<String> names = new ArrayList<>(viewPresets.keySet());
+        ChoiceDialog<String> dialog = new ChoiceDialog<>(names.get(0), names);
+        dialog.setTitle("Delete View Preset");
+        dialog.setHeaderText("Remove a saved preset");
+        dialog.setContentText("Preset:");
+        dialog.initOwner(getScene().getWindow());
+        dialog.showAndWait().ifPresent(name -> {
+            removeViewPresetForTests(name);
+            info("Deleted view preset: " + normalizePresetName(name));
+        });
     }
 
     private static String normalizePresetName(String presetName)
@@ -612,6 +688,7 @@ public class MainWindow extends BorderPane
         stateStore.savePreferences(SESSION_STATE.preferences());
         stateStore.saveMultiCompany(SESSION_STATE.multiCompany());
         stateStore.saveDatabaseSelection(SESSION_STATE.databaseSelection());
+        stateStore.saveViewPresets(viewPresetStatesForPersistence());
         info("Save: " + panelHost.getActiveTitle());
     }
 

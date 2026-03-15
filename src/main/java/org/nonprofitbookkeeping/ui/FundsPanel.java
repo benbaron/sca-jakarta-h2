@@ -33,6 +33,7 @@ public class FundsPanel implements AppPanel
     private final ComboBox<FundType> typeField = new ComboBox<>();
     private final CheckBox activeField = new CheckBox("Active");
     private Button refresh;
+    private String pendingDrillContext = "";
 
     public FundsPanel()
     {
@@ -148,16 +149,33 @@ public class FundsPanel implements AppPanel
         }
     }
 
+
+    private String formatStatus(String message)
+    {
+        if (pendingDrillContext == null || pendingDrillContext.isBlank())
+        {
+            return message;
+        }
+        String combined = message + " | " + pendingDrillContext;
+        pendingDrillContext = "";
+        return combined;
+    }
+
     private void reload()
     {
         refresh.setDisable(true);
-        status.setText("Loading funds...");
+        String incomingContext = DrillThroughCoordinator.consumeContext(AppPanelId.FUNDS);
+        if (!incomingContext.isBlank())
+        {
+            pendingDrillContext = incomingContext;
+        }
+        status.setText(formatStatus("Loading funds..."));
 
         UiAsync.run("fund-load",
             () -> UiServiceRegistry.fundLookup().listAllFunds(),
             rows -> {
                 table.getItems().setAll(rows);
-                status.setText("Loaded " + rows.size() + " fund(s) (active + inactive).");
+                status.setText(formatStatus("Loaded " + rows.size() + " fund(s) (active + inactive)."));
                 if (!rows.isEmpty())
                 {
                     Fund selected = table.getSelectionModel().getSelectedItem();
@@ -172,7 +190,7 @@ public class FundsPanel implements AppPanel
                 refresh.setDisable(false);
             },
             ex -> {
-                status.setText("Failed to load funds: " + UiErrors.safeMessage(ex));
+                status.setText(formatStatus("Failed to load funds: " + UiErrors.safeMessage(ex)));
                 refresh.setDisable(false);
             });
     }

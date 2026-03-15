@@ -10,6 +10,7 @@ import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
+import org.nonprofitbookkeeping.model.ViewPresetState;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -39,6 +40,36 @@ public class FileAppStateStoreTest
         assertEquals(prefs, store.loadPreferences().orElseThrow());
         assertEquals(company, store.loadMultiCompany().orElseThrow());
         assertEquals(db, store.loadDatabaseSelection().orElseThrow());
+    }
+
+
+    @Test
+    public void saveThenLoad_roundTripsViewPresets(@TempDir Path tempDir)
+    {
+        FileAppStateStore store = new FileAppStateStore(tempDir.resolve("ui-state.properties"));
+
+        List<ViewPresetState> presets = List.of(
+                new ViewPresetState("Month Reports", "REPORT_LIBRARY", "2026-03-01", "2026-03-31"),
+                new ViewPresetState("Diagnostics", "DIAGNOSTICS", "", ""));
+
+        store.saveViewPresets(presets);
+
+        assertEquals(presets, store.loadViewPresets());
+    }
+
+
+    @Test
+    public void saveThenLoad_roundTripsViewPresets_withSpecialCharacters(@TempDir Path tempDir)
+    {
+        FileAppStateStore store = new FileAppStateStore(tempDir.resolve("ui-state.properties"));
+
+        List<ViewPresetState> presets = List.of(
+                new ViewPresetState("Ops | Close\nRun", "PERIOD_CLOSE_RUNS", "2026-04-01", "2026-04-30"),
+                new ViewPresetState("Ledger → Drill", "LEDGER_REGISTER", "", ""));
+
+        store.saveViewPresets(presets);
+
+        assertEquals(presets, store.loadViewPresets());
     }
 
     @Test

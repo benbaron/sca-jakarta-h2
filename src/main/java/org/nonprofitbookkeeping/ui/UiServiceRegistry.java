@@ -14,6 +14,9 @@ import org.nonprofitbookkeeping.repository.PeriodCloseRunRepository;
 import org.nonprofitbookkeeping.repository.ReconciliationRunRepository;
 import org.nonprofitbookkeeping.service.PeriodCloseService;
 import org.nonprofitbookkeeping.service.ReconciliationService;
+import org.nonprofitbookkeeping.service.ApprovalAuditService;
+import org.nonprofitbookkeeping.repository.JdbcApprovalAuditRepository;
+import org.nonprofitbookkeeping.repository.ApprovalAuditRepository;
 
 import java.nio.file.Path;
 
@@ -62,6 +65,17 @@ public final class UiServiceRegistry
     public static PeriodCloseService periodCloseService()
     {
         return new PeriodCloseService(periodCloseRunRepository());
+    }
+
+
+    public static ApprovalAuditRepository approvalAuditRepository()
+    {
+        return new JdbcApprovalAuditRepository(UiDataSources.forCurrentSessionDatabase());
+    }
+
+    public static ApprovalAuditService approvalAuditService()
+    {
+        return new ApprovalAuditService(approvalAuditRepository());
     }
 
     public static void reconnectToDatabase(Path databaseFile)

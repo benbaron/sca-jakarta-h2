@@ -38,6 +38,7 @@ public class ChartOfAccountsPanel implements AppPanel
     private final TextField parentCodeField = new TextField();
     private final CheckBox activeField = new CheckBox("Active");
     private Button refresh;
+    private String pendingDrillContext = "";
 
     public ChartOfAccountsPanel()
     {
@@ -215,16 +216,33 @@ public class ChartOfAccountsPanel implements AppPanel
     {
     }
 
+
+    private String formatStatus(String message)
+    {
+        if (pendingDrillContext == null || pendingDrillContext.isBlank())
+        {
+            return message;
+        }
+        String combined = message + " | " + pendingDrillContext;
+        pendingDrillContext = "";
+        return combined;
+    }
+
     private void reload()
     {
         refresh.setDisable(true);
-        status.setText("Loading accounts...");
+        String incomingContext = DrillThroughCoordinator.consumeContext(AppPanelId.CHART_OF_ACCOUNTS);
+        if (!incomingContext.isBlank())
+        {
+            pendingDrillContext = incomingContext;
+        }
+        status.setText(formatStatus("Loading accounts..."));
 
         UiAsync.run("coa-load",
             () -> UiServiceRegistry.accountLookup().listPostingAccountsIncludingInactive(),
             rows -> {
                 table.getItems().setAll(rows);
-                status.setText("Loaded " + rows.size() + " posting account(s) (active + inactive).");
+                status.setText(formatStatus("Loaded " + rows.size() + " posting account(s) (active + inactive)."));
                 if (!rows.isEmpty())
                 {
                     Account selected = table.getSelectionModel().getSelectedItem();
@@ -239,7 +257,7 @@ public class ChartOfAccountsPanel implements AppPanel
                 refresh.setDisable(false);
             },
             ex -> {
-                status.setText("Failed to load accounts: " + UiErrors.safeMessage(ex));
+                status.setText(formatStatus("Failed to load accounts: " + UiErrors.safeMessage(ex)));
                 refresh.setDisable(false);
             });
     }

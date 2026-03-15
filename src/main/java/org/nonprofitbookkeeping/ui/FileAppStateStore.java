@@ -5,14 +5,18 @@ import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
+import org.nonprofitbookkeeping.model.ViewPresetState;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -31,6 +35,8 @@ public class FileAppStateStore implements AppStateStore
 
     private static final String K_ACTIVE_DB = "database.active";
     private static final String K_DB_RECENTS = "database.recents";
+
+    private static final String K_VIEW_PRESET_ROWS = "viewPresets.rows";
 
     private final Path file;
 
@@ -92,6 +98,58 @@ public class FileAppStateStore implements AppStateStore
     }
 
     @Override
+    public List<ViewPresetState> loadViewPresets()
+    {
+        Properties p = read();
+        String raw = p.getProperty(K_VIEW_PRESET_ROWS, "");
+        if (raw.isBlank())
+        {
+            return List.of();
+        }
+
+        List<ViewPresetState> out = new ArrayList<>();
+        for (String row : raw.split("\\n"))
+        {
+            if (row.isBlank())
+            {
+                continue;
+            }
+            String[] parts = row.split("\\|", -1);
+            if (parts.length != 4)
+            {
+                continue;
+            }
+            out.add(new ViewPresetState(decodeToken(parts[0]), decodeToken(parts[1]), decodeToken(parts[2]), decodeToken(parts[3])));
+        }
+        return out;
+    }
+
+    @Override
+    public void saveViewPresets(List<ViewPresetState> presets)
+    {
+        Properties p = read();
+        List<ViewPresetState> safe = presets == null ? List.of() : presets;
+        StringBuilder out = new StringBuilder();
+        for (ViewPresetState preset : safe)
+        {
+            if (preset == null)
+            {
+                continue;
+            }
+            if (out.length() > 0)
+            {
+                out.append("\n");
+            }
+            out.append(encodeToken(preset.name())).append("|")
+                    .append(encodeToken(preset.panelId())).append("|")
+                    .append(encodeToken(preset.startDateIso())).append("|")
+                    .append(encodeToken(preset.endDateIso()));
+        }
+        p.setProperty(K_VIEW_PRESET_ROWS, out.toString());
+        write(p);
+    }
+
+    @Override
     public void savePreferences(AppPreferencesState state)
     {
         Properties p = read();
@@ -119,6 +177,29 @@ public class FileAppStateStore implements AppStateStore
         p.setProperty(K_ACTIVE_DB, state.activeDatabasePath());
         p.setProperty(K_DB_RECENTS, String.join(",", state.recentDatabasePaths()));
         write(p);
+    }
+
+    private static String encodeToken(String value)
+    {
+        String safe = value == null ? "" : value;
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(safe.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static String decodeToken(String token)
+    {
+        if (token == null || token.isEmpty())
+        {
+            return "";
+        }
+        try
+        {
+            return new String(Base64.getUrlDecoder().decode(token), StandardCharsets.UTF_8);
+        }
+        catch (IllegalArgumentException ex)
+        {
+            // Backward-compatibility for old plaintext token rows.
+            return token;
+        }
     }
 
     private Properties read()

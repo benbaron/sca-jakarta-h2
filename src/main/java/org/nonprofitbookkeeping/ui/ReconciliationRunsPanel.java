@@ -11,6 +11,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import org.nonprofitbookkeeping.repository.ApprovalDecision;
 import org.nonprofitbookkeeping.model.BankingDataFormat;
 import org.nonprofitbookkeeping.repository.ReconciliationRunRecord;
 
@@ -32,8 +33,12 @@ public class ReconciliationRunsPanel implements AppPanel
         refresh.setOnAction(e -> reload());
         Button record = new Button("Record Completed Run");
         record.setOnAction(e -> recordRun());
+        Button approve = new Button("Approve Selected");
+        approve.setOnAction(e -> recordApproval(ApprovalDecision.APPROVED));
+        Button reject = new Button("Reject Selected");
+        reject.setOnAction(e -> recordApproval(ApprovalDecision.REJECTED));
 
-        root.setTop(new VBox(6, title, new HBox(8, refresh, record), status, new Separator()));
+        root.setTop(new VBox(6, title, new HBox(8, refresh, record, approve, reject), status, new Separator()));
 
         TableColumn<ReconciliationRunRecord, String> when = new TableColumn<>("Statement End");
         when.setCellValueFactory(v -> new SimpleStringProperty(String.valueOf(v.getValue().statementEndingOn())));
@@ -89,5 +94,27 @@ public class ReconciliationRunsPanel implements AppPanel
             table.getItems().setAll(rows);
             status.setText("Loaded " + rows.size() + " reconciliation run(s) for active company.");
         }, ex -> status.setText("Could not load reconciliation runs: " + UiErrors.safeMessage(ex)));
+    }
+
+    private void recordApproval(ApprovalDecision decision)
+    {
+        ReconciliationRunRecord selected = table.getSelectionModel().getSelectedItem();
+        if (selected == null)
+        {
+            status.setText("Select a reconciliation run before recording an approval decision.");
+            return;
+        }
+
+        UiAsync.run("recon-approval-record", () -> {
+            String group = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
+            return UiServiceRegistry.approvalAuditService().recordDecision(
+                    group,
+                    "RECONCILIATION",
+                    selected.id(),
+                    decision,
+                    "ui-operator",
+                    "Recorded from Reconciliation Runs workspace");
+        }, auditId -> status.setText("Recorded " + decision.name() + " decision under audit id " + auditId + "."),
+                ex -> status.setText("Could not record approval decision: " + UiErrors.safeMessage(ex)));
     }
 }

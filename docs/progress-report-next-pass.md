@@ -1369,3 +1369,154 @@ Addressed failing tests in `ImportPreviewServiceTest` for multiline quoted COA r
 
 - Command executed: `mvn -B -ntp test`
 - Result: blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 117) Latest pass update (finish Step 5 + continue Step 6)
+
+Completed requested continuation: finished Step 5 productivity persistence and moved forward on Step 6 diagnostics depth.
+
+### Implemented
+
+- Finished Step 5 productivity work:
+  - added persistent view preset state model `ViewPresetState`,
+  - extended `AppStateStore` with `loadViewPresets()` / `saveViewPresets(...)`,
+  - implemented `FileAppStateStore` read/write support for persisted view presets,
+  - updated `MainWindow` to load presets at startup and persist presets on save,
+  - added delete-preset flow (`Delete View Preset…`) and helper for preset removal.
+- Continued Step 6 diagnostics implementation:
+  - enhanced `DiagnosticsPanel` to include data-quality checks for accounts/funds (active vs total counts),
+  - added explicit quality summary warning when active posting accounts or active funds are missing.
+
+### Tests added/updated
+
+- `FileAppStateStoreTest` now includes round-trip coverage for view preset persistence.
+- `MainWindowStateWiringTest` now verifies:
+  - saved view preset data is persisted via store in `saveActivePanel`,
+  - preset delete behavior removes saved names.
+
+## 118) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 119) Latest pass update (Step 6 hardening + Step 7 start)
+
+Implemented requested additions and moved ahead to Step 7.
+
+### Implemented
+
+- Added reversible view-preset token serialization in `FileAppStateStore`:
+  - switched preset row token persistence from lossy sanitization to Base64 URL-safe encoding,
+  - added decode fallback to preserve backward compatibility with older plaintext rows.
+- Added Step 6 diagnostics hardening:
+  - `DiagnosticsPanel` now runs duplicate-code checks over accounts/funds,
+  - emits duplicate-warning summary when collisions are detected.
+- Started Step 7 with additional reliability/test coverage:
+  - startup restore test for persisted view presets in `MainWindowStateWiringTest`,
+  - focused diagnostics helper test (`DiagnosticsPanelTest`) for duplicate detection behavior,
+  - special-character preset round-trip test in `FileAppStateStoreTest`.
+
+## 120) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 121) Latest pass update (Phase 3.c completion + Phase 4 continuation)
+
+Continued the overall architecture plan as requested: completed a new Phase 3.c persistence slice and moved into Phase 4 service-layer continuation.
+
+### Phase 3.c persistence additions
+
+- Added migration `V8__approval_audit_records.sql` for approval/audit persistence baseline with decision token constraints.
+- Added approval/audit persistence model and repository layer:
+  - `ApprovalDecision`
+  - `ApprovalAuditRecord`
+  - `ApprovalAuditRepository`
+  - `JdbcApprovalAuditRepository`
+- Extended `UiServiceRegistry` wiring with `approvalAuditRepository()` and `approvalAuditService()` accessors.
+
+### Phase 4 service-layer continuation
+
+- Added `ApprovalAuditService` to record and list approval decisions with validation for required inputs.
+- Added integration/service tests covering persistence path and validation behavior.
+
+### Tests added/updated
+
+- `JdbcApprovalAuditRepositoryTest` (append/find/list behaviors).
+- `ApprovalAuditServiceIntegrationTest` (recordDecision persistence and required-field validation).
+
+## 122) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 123) Latest pass update (Step 7 continuation: diagnostics drill-through wiring)
+
+Implemented the previously suggested diagnostics drill-through wiring and supporting coverage.
+
+### Implemented
+
+- Extended `DrillThroughCoordinator` with panel-scoped context handoff:
+  - `openPanelWithContext(AppPanelId, String)`
+  - `consumeContext(AppPanelId)`
+- Wired `DiagnosticsPanel` duplicate-warning actions to drill-through targets:
+  - `Review account duplicates` opens `CHART_OF_ACCOUNTS` with context,
+  - `Review fund duplicates` opens `FUNDS` with context,
+  - action buttons enable only when duplicate checks detect collisions.
+- Updated `ChartOfAccountsPanel` and `FundsPanel` reload flow to consume panel-scoped drill-through context and surface it in status messaging.
+
+### Tests added/updated
+
+- Expanded `DrillThroughCoordinatorTest` with panel-scoped context behavior assertions.
+
+## 124) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 125) Follow-up fix (drill-through test structure correction)
+
+- Corrected `DrillThroughCoordinatorTest` class structure after adding panel-scoped context test.
+- Re-ran `mvn -B -ntp test`; environment remains blocked by Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 126) Latest pass update (Step 7 continuation: approval actions in run workspaces)
+
+Continued Step 7 by wiring approval-audit recording into workflow run workspaces.
+
+### Implemented
+
+- `ReconciliationRunsPanel`
+  - added `Approve Selected` and `Reject Selected` actions,
+  - records decisions through `UiServiceRegistry.approvalAuditService()` with workflow type `RECONCILIATION`,
+  - validates selection before recording and shows explicit status feedback.
+- `PeriodCloseRunsPanel`
+  - added `Approve Selected` and `Reject Selected` actions,
+  - records decisions through `UiServiceRegistry.approvalAuditService()` with workflow type `PERIOD_CLOSE`,
+  - validates selection before recording and shows explicit status feedback.
+
+### Tests added
+
+- `ReconciliationRunsPanelTest` verifies helpful status when approval is attempted with no selection.
+- `PeriodCloseRunsPanelTest` verifies helpful status when approval is attempted with no selection.
+
+## 127) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 128) Latest pass update (test-fix follow-up: DiagnosticsPanelTest null fixture)
+
+Addressed CI-reported test error in `DiagnosticsPanelTest`.
+
+### Fix
+
+- Replaced `List.of(...)` with `Arrays.asList(...)` in the duplicate-code fixture so the test can intentionally include `null` values without throwing `NullPointerException` during test setup.
+
+### Why
+
+- `List.of(...)` rejects `null` elements and throws `NullPointerException` before assertions execute.
+- `DiagnosticsPanel.duplicateCodes(...)` is designed to ignore `null`/blank codes; the test must supply a null-tolerant list implementation.
+
+## 129) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).

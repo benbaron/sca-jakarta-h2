@@ -7,6 +7,7 @@ import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
+import org.nonprofitbookkeeping.model.ViewPresetState;
 
 import java.util.List;
 import java.util.Optional;
@@ -54,6 +55,9 @@ public class MainWindowStateWiringTest
 
         MainWindow window = FxTestSupport.onFx(() -> new MainWindow(store));
         FxTestSupport.onFx(() -> {
+            DateRangeContext.set(new DateRange(java.time.LocalDate.of(2026, 4, 1), java.time.LocalDate.of(2026, 4, 30)));
+            window.openPanel(AppPanelId.REPORT_LIBRARY);
+            window.saveViewPresetForTests("April Reports");
             window.saveActivePanel();
             return null;
         });
@@ -61,6 +65,8 @@ public class MainWindowStateWiringTest
         assertEquals(UiThemePreference.LIGHT, store.savedPreferences.themePreference());
         assertEquals("BARONY-RED", store.savedCompany.activeCompanyCode());
         assertEquals("data/sca-ledger.mv.db", store.savedDatabaseSelection.activeDatabasePath());
+        assertEquals(1, store.savedViewPresets.size());
+        assertEquals("April Reports", store.savedViewPresets.get(0).name());
     }
 
 
@@ -89,6 +95,43 @@ public class MainWindowStateWiringTest
 
         assertEquals(new DateRange(java.time.LocalDate.of(2026, 3, 1), java.time.LocalDate.of(2026, 3, 31)), DateRangeContext.get());
         assertTrue(window.viewPresetNamesForTests().contains("Month Reports"));
+    }
+
+
+
+    @Test
+    public void restoresViewPresetsFromStore_onStartup()
+    {
+        InMemoryAppStateStore store = new InMemoryAppStateStore(Optional.empty(), Optional.empty(), Optional.empty());
+        store.viewPresets = List.of(new ViewPresetState("Stored Preset", "REPORT_LIBRARY", "2026-05-01", "2026-05-31"));
+
+        MainWindow.resetSessionForTests(
+                new AppPreferencesState(UiThemePreference.SYSTEM_DEFAULT, false, true, UserPrivilegeLevel.ADMIN),
+                new MultiCompanyState("BARONY-RED", List.of("BARONY-RED")));
+
+        MainWindow window = FxTestSupport.onFx(() -> new MainWindow(store));
+
+        assertTrue(window.viewPresetNamesForTests().contains("Stored Preset"));
+    }
+
+    @Test
+    public void viewPreset_deleteRemovesPresetName()
+    {
+        InMemoryAppStateStore store = new InMemoryAppStateStore(Optional.empty(), Optional.empty(), Optional.empty());
+
+        MainWindow.resetSessionForTests(
+                new AppPreferencesState(UiThemePreference.SYSTEM_DEFAULT, false, true, UserPrivilegeLevel.ADMIN),
+                new MultiCompanyState("BARONY-RED", List.of("BARONY-RED")));
+
+        MainWindow window = FxTestSupport.onFx(() -> new MainWindow(store));
+
+        FxTestSupport.onFx(() -> {
+            window.saveViewPresetForTests("Temp Preset");
+            window.removeViewPresetForTests("Temp Preset");
+            return null;
+        });
+
+        assertTrue(window.viewPresetNamesForTests().isEmpty());
     }
 
     @Test
@@ -124,6 +167,8 @@ public class MainWindowStateWiringTest
         private AppPreferencesState savedPreferences;
         private MultiCompanyState savedCompany;
         private DatabaseSelectionState savedDatabaseSelection;
+        private List<ViewPresetState> viewPresets = List.of();
+        private List<ViewPresetState> savedViewPresets = List.of();
 
         private InMemoryAppStateStore(Optional<AppPreferencesState> preferences,
                                       Optional<MultiCompanyState> multiCompany,
@@ -171,6 +216,19 @@ public class MainWindowStateWiringTest
         {
             savedDatabaseSelection = state;
             databaseSelection = Optional.of(state);
+        }
+
+        @Override
+        public List<ViewPresetState> loadViewPresets()
+        {
+            return viewPresets;
+        }
+
+        @Override
+        public void saveViewPresets(List<ViewPresetState> presets)
+        {
+            savedViewPresets = presets == null ? List.of() : List.copyOf(presets);
+            viewPresets = savedViewPresets;
         }
     }
 }

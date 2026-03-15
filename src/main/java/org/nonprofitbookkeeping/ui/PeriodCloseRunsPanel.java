@@ -11,6 +11,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import org.nonprofitbookkeeping.repository.ApprovalDecision;
 import org.nonprofitbookkeeping.repository.PeriodCloseRunRecord;
 
 import java.time.LocalDate;
@@ -31,8 +32,12 @@ public class PeriodCloseRunsPanel implements AppPanel
         refresh.setOnAction(e -> reload());
         Button record = new Button("Record Completed Close");
         record.setOnAction(e -> recordRun());
+        Button approve = new Button("Approve Selected");
+        approve.setOnAction(e -> recordApproval(ApprovalDecision.APPROVED));
+        Button reject = new Button("Reject Selected");
+        reject.setOnAction(e -> recordApproval(ApprovalDecision.REJECTED));
 
-        root.setTop(new VBox(6, title, new HBox(8, refresh, record), status, new Separator()));
+        root.setTop(new VBox(6, title, new HBox(8, refresh, record, approve, reject), status, new Separator()));
 
         TableColumn<PeriodCloseRunRecord, String> closeDate = new TableColumn<>("Close Date");
         closeDate.setCellValueFactory(v -> new SimpleStringProperty(String.valueOf(v.getValue().closeDate())));
@@ -86,5 +91,27 @@ public class PeriodCloseRunsPanel implements AppPanel
             table.getItems().setAll(rows);
             status.setText("Loaded " + rows.size() + " period-close run(s) for active company.");
         }, ex -> status.setText("Could not load period-close runs: " + UiErrors.safeMessage(ex)));
+    }
+
+    private void recordApproval(ApprovalDecision decision)
+    {
+        PeriodCloseRunRecord selected = table.getSelectionModel().getSelectedItem();
+        if (selected == null)
+        {
+            status.setText("Select a period-close run before recording an approval decision.");
+            return;
+        }
+
+        UiAsync.run("period-close-approval-record", () -> {
+            String group = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
+            return UiServiceRegistry.approvalAuditService().recordDecision(
+                    group,
+                    "PERIOD_CLOSE",
+                    selected.id(),
+                    decision,
+                    "ui-operator",
+                    "Recorded from Period Close Runs workspace");
+        }, auditId -> status.setText("Recorded " + decision.name() + " decision under audit id " + auditId + "."),
+                ex -> status.setText("Could not record approval decision: " + UiErrors.safeMessage(ex)));
     }
 }
