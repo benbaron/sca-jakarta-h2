@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,22 +14,14 @@ import java.util.Map;
 public class ImportPreviewService
 {
     private final ImportExportOrchestrationService orchestrationService;
-    private final CoaCsvMapper coaCsvMapper;
-
     public ImportPreviewService()
     {
-        this(new ImportExportOrchestrationService(), new CoaCsvMapper());
+        this(new ImportExportOrchestrationService());
     }
 
     public ImportPreviewService(ImportExportOrchestrationService orchestrationService)
     {
-        this(orchestrationService, new CoaCsvMapper());
-    }
-
-    public ImportPreviewService(ImportExportOrchestrationService orchestrationService, CoaCsvMapper coaCsvMapper)
-    {
         this.orchestrationService = orchestrationService;
-        this.coaCsvMapper = coaCsvMapper;
     }
 
     public CoaPreviewResult previewCoaCsv(Path path)
@@ -65,7 +58,9 @@ public class ImportPreviewService
             throw new IllegalArgumentException("Cannot preview COA CSV: header contains an unterminated quoted field.");
         }
 
-        String headerText = header.text();
+        List<String> headers = parseCsvRecord(header.text());
+        requireHeaders(headers, List.of("code", "name", "account_type", "normal_balance"));
+
         List<CoaCsvMapper.CoaCsvRow> acceptedRows = new ArrayList<>();
         List<RejectedCoaRow> rejectedRows = new ArrayList<>();
 
@@ -85,15 +80,14 @@ public class ImportPreviewService
 
             try
             {
-                List<CoaCsvMapper.CoaCsvRow> parsed = coaCsvMapper.parse(headerText + "\n" + row.text());
-                if (parsed.isEmpty())
-                {
-                    rejectedRows.add(new RejectedCoaRow(row.lineNumber(), row.text(), "No row parsed from record."));
-                }
-                else
-                {
-                    acceptedRows.add(parsed.get(0));
-                }
+                List<String> values = parseCsvRecord(row.text());
+                Map<String, String> mapped = map(headers, values);
+                acceptedRows.add(new CoaCsvMapper.CoaCsvRow(
+                        required(mapped, "code"),
+                        required(mapped, "name"),
+                        required(mapped, "account_type"),
+                        required(mapped, "normal_balance"),
+                        optional(mapped, "parent_code")));
             }
             catch (RuntimeException ex)
             {
@@ -171,6 +165,98 @@ public class ImportPreviewService
         }
 
         return rows;
+    }
+
+    private static void requireHeaders(List<String> headers, List<String> required)
+    {
+        for (String key : required)
+        {
+            if (!headers.contains(key))
+            {
+                throw new IllegalArgumentException("Missing required CSV header: " + key);
+            }
+        }
+    }
+
+    private static Map<String, String> map(List<String> headers, List<String> values)
+    {
+        Map<String, String> out = new HashMap<>();
+        for (int i = 0; i < headers.size() && i < values.size(); i++)
+        {
+            out.put(headers.get(i), values.get(i));
+        }
+        return out;
+    }
+
+    private static String required(Map<String, String> row, String key)
+    {
+        String value = row.get(key);
+        if (value == null || value.isBlank())
+        {
+            throw new IllegalArgumentException("Missing required value for column: " + key);
+        }
+        return value.trim();
+    }
+
+    private static String optional(Map<String, String> row, String key)
+    {
+        String value = row.get(key);
+        return value == null ? "" : value.trim();
+    }
+
+    private static List<String> parseCsvRecord(String text)
+    {
+        List<String> out = new ArrayList<>();
+        StringBuilder cur = new StringBuilder();
+        boolean inQuotes = false;
+
+        for (int i = 0; i < text.length(); i++)
+        {
+            char ch = text.charAt(i);
+            if (inQuotes)
+            {
+                if (ch == '"')
+                {
+                    if (i + 1 < text.length() && text.charAt(i + 1) == '"')
+                    {
+                        cur.append('"');
+                        i++;
+                    }
+                    else
+                    {
+                        inQuotes = false;
+                    }
+                }
+                else
+                {
+                    cur.append(ch);
+                }
+            }
+            else
+            {
+                if (ch == '"')
+                {
+                    inQuotes = true;
+                }
+                else if (ch == ',')
+                {
+                    out.add(cur.toString());
+                    cur.setLength(0);
+                }
+                else
+                {
+                    cur.append(ch);
+                }
+            }
+        }
+
+        if (inQuotes)
+        {
+            throw new IllegalArgumentException("Unterminated quoted field.");
+        }
+
+        out.add(cur.toString());
+        return out;
     }
 
     private static List<String> duplicateWarnings(List<CoaCsvMapper.CoaCsvRow> rows)

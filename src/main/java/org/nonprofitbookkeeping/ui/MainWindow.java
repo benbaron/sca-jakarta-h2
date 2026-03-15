@@ -10,6 +10,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.Separator;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.ToolBar;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -31,7 +32,9 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -52,6 +55,7 @@ public class MainWindow extends BorderPane
     private Label activeDatabaseLabel;
     private List<CoaCsvMapper.CoaCsvRow> lastImportedCoaRows = List.of();
     private List<BankTransactionRecord> lastImportedBankTransactions = List.of();
+    private final Map<String, ViewPreset> viewPresets = new LinkedHashMap<>();
 
     public MainWindow()
     {
@@ -156,7 +160,10 @@ public class MainWindow extends BorderPane
         view.getItems().addAll(
                 item("Theme: Light", null, () -> selectTheme(UiThemePreference.LIGHT)),
                 item("Theme: Dark", null, () -> selectTheme(UiThemePreference.DARK)),
-                item("Theme: System", null, () -> selectTheme(UiThemePreference.SYSTEM_DEFAULT))
+                item("Theme: System", null, () -> selectTheme(UiThemePreference.SYSTEM_DEFAULT)),
+                new SeparatorMenuItem(),
+                item("Save View Preset…", null, this::openSaveViewPresetDialog),
+                item("Apply View Preset…", null, this::openApplyViewPresetDialog)
         );
 
         Menu run = new Menu("Run");
@@ -241,10 +248,111 @@ public class MainWindow extends BorderPane
         List<PaletteEntry> entries = new ArrayList<>();
         for (AppPanelId id : AppPanelId.values())
         {
-            entries.add(new PaletteEntry(id, id.name().replace('_', ' ')));
+            entries.add(new PaletteEntry(id, panelLabel(id)));
         }
         entries.sort(Comparator.comparing(PaletteEntry::label));
         return entries;
+    }
+
+    private static String panelLabel(AppPanelId id)
+    {
+        return switch (id)
+        {
+            case DASHBOARD -> "Dashboard";
+            case LEDGER_REGISTER -> "Ledger Register";
+            case TXN_EDITOR -> "Transaction Editor";
+            case SCHEDULES -> "Outstanding / Schedules";
+            case BUDGET_EDITOR -> "Budget Editor";
+            case BUDGET_VS_ACTUAL -> "Budget vs Actual";
+            case ASSETS_REGISTER -> "Asset Register";
+            case DEPRECIATION_RUNS -> "Depreciation Runs";
+            case INVENTORY -> "Inventory";
+            case RECONCILIATION_RUNS -> "Reconciliation Runs";
+            case PERIOD_CLOSE_RUNS -> "Period Close Runs";
+            case IMPORT_PREVIEW -> "Import Preview";
+            case REPORT_LIBRARY -> "Reports Library";
+            case CHART_OF_ACCOUNTS -> "Chart of Accounts";
+            case FUNDS -> "Funds";
+            case SETTINGS -> "Settings";
+            case DIAGNOSTICS -> "Diagnostics";
+            case HELP -> "Help";
+        };
+    }
+
+    void saveViewPresetForTests(String presetName)
+    {
+        String key = normalizePresetName(presetName);
+        AppPanelId panelId = panelHost.activePanelId() == null ? AppPanelId.DASHBOARD : panelHost.activePanelId();
+        viewPresets.put(key, new ViewPreset(panelId, DateRangeContext.get()));
+    }
+
+    void applyViewPresetForTests(String presetName)
+    {
+        String key = normalizePresetName(presetName);
+        ViewPreset preset = viewPresets.get(key);
+        if (preset == null)
+        {
+            throw new IllegalArgumentException("Unknown view preset: " + key);
+        }
+        DateRangeContext.set(preset.dateRange());
+        openPanel(preset.panelId());
+    }
+
+    List<String> viewPresetNamesForTests()
+    {
+        return new ArrayList<>(viewPresets.keySet());
+    }
+
+    private void openSaveViewPresetDialog()
+    {
+        if (getScene() == null || getScene().getWindow() == null)
+        {
+            info("Save preset unavailable: window is not ready.");
+            return;
+        }
+        TextInputDialog dialog = new TextInputDialog("My View");
+        dialog.setTitle("Save View Preset");
+        dialog.setHeaderText("Save current panel and date range");
+        dialog.setContentText("Preset name:");
+        dialog.initOwner(getScene().getWindow());
+        dialog.showAndWait().ifPresent(name -> {
+            saveViewPresetForTests(name);
+            info("Saved view preset: " + normalizePresetName(name));
+        });
+    }
+
+    private void openApplyViewPresetDialog()
+    {
+        if (getScene() == null || getScene().getWindow() == null)
+        {
+            info("Apply preset unavailable: window is not ready.");
+            return;
+        }
+        if (viewPresets.isEmpty())
+        {
+            info("No saved view presets yet.");
+            return;
+        }
+        List<String> names = new ArrayList<>(viewPresets.keySet());
+        ChoiceDialog<String> dialog = new ChoiceDialog<>(names.get(0), names);
+        dialog.setTitle("Apply View Preset");
+        dialog.setHeaderText("Restore panel and date range");
+        dialog.setContentText("Preset:");
+        dialog.initOwner(getScene().getWindow());
+        dialog.showAndWait().ifPresent(this::applyViewPresetForTests);
+    }
+
+    private static String normalizePresetName(String presetName)
+    {
+        if (presetName == null || presetName.isBlank())
+        {
+            throw new IllegalArgumentException("Preset name is required.");
+        }
+        return presetName.trim();
+    }
+
+    private record ViewPreset(AppPanelId panelId, DateRange dateRange)
+    {
     }
 
     record PaletteEntry(AppPanelId panelId, String label)

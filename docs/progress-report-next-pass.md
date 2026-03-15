@@ -1325,3 +1325,47 @@ Continued into Step 4 by implementing an initial productivity/diagnostics slice.
 
 - Command executed: `mvn -B -ntp test`
 - Result: blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 113) Latest pass update (Step 4 polish + Step 5 continuation)
+
+Completed requested polish and continued into Step 5.
+
+### Implemented
+
+- Command palette polish:
+  - switched palette labels from enum-token formatting to user-friendly panel labels aligned with navigation naming,
+  - retained deterministic alphabetical ordering.
+- Added initial Step 5 productivity capability: saved view presets in `MainWindow`:
+  - save current `(active panel + date range)` preset,
+  - apply preset to restore both panel and date range,
+  - wired View menu actions (`Save View Preset…`, `Apply View Preset…`).
+- Added `PanelHost.activePanelId()` exposure for preset capture.
+
+### Tests added/updated
+
+- Expanded `MainWindowCommandPaletteTest` to verify friendly label rendering and sorted label ordering.
+- Expanded `MainWindowStateWiringTest` with view preset round-trip coverage (save then restore panel/date-range state).
+
+## 114) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 115) Latest pass update (fix multiline COA preview parsing regression)
+
+Addressed failing tests in `ImportPreviewServiceTest` for multiline quoted COA rows.
+
+### Implemented
+
+- Refactored `ImportPreviewService.previewCoaCsv(...)` row parsing to avoid delegating single-row parse to `CoaCsvMapper.parse(...)` (which line-splits and breaks multiline quoted values).
+- Added local record-level CSV parsing/mapping in `ImportPreviewService` for preview path:
+  - `parseCsvRecord(...)` for quote-aware field parsing (including escaped quotes),
+  - header validation via `requireHeaders(...)`,
+  - record mapping + required/optional column handling (`map`, `required`, `optional`).
+- Preserved row-level reject behavior and error messaging (`Unterminated quoted field.` etc.) while allowing multiline quoted fields to parse into accepted rows.
+- Simplified constructors in `ImportPreviewService` by removing unused `CoaCsvMapper` field dependency from this path.
+
+## 116) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).

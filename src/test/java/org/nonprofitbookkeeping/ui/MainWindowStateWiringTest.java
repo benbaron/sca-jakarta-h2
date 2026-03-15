@@ -65,6 +65,33 @@ public class MainWindowStateWiringTest
 
 
     @Test
+    public void viewPreset_roundTripRestoresPanelAndDateRange()
+    {
+        InMemoryAppStateStore store = new InMemoryAppStateStore(Optional.empty(), Optional.empty(), Optional.empty());
+
+        MainWindow.resetSessionForTests(
+                new AppPreferencesState(UiThemePreference.SYSTEM_DEFAULT, false, true, UserPrivilegeLevel.ADMIN),
+                new MultiCompanyState("BARONY-RED", List.of("BARONY-RED")));
+
+        MainWindow window = FxTestSupport.onFx(() -> new MainWindow(store));
+
+        FxTestSupport.onFx(() -> {
+            DateRange presetRange = new DateRange(java.time.LocalDate.of(2026, 3, 1), java.time.LocalDate.of(2026, 3, 31));
+            DateRangeContext.set(presetRange);
+            window.openPanel(AppPanelId.REPORT_LIBRARY);
+            window.saveViewPresetForTests("Month Reports");
+
+            DateRangeContext.set(DateRange.ALL);
+            window.openPanel(AppPanelId.DASHBOARD);
+            window.applyViewPresetForTests("Month Reports");
+            return null;
+        });
+
+        assertEquals(new DateRange(java.time.LocalDate.of(2026, 3, 1), java.time.LocalDate.of(2026, 3, 31)), DateRangeContext.get());
+        assertTrue(window.viewPresetNamesForTests().contains("Month Reports"));
+    }
+
+    @Test
     public void selectTheme_updatesSessionPreferencesAndThemeFlags()
     {
         InMemoryAppStateStore store = new InMemoryAppStateStore(Optional.empty(), Optional.empty(), Optional.empty());
