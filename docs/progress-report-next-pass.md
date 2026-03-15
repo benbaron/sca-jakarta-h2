@@ -1905,3 +1905,60 @@ This directly resolves the reported compile error:
 
 - Command executed: `mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository`
 - Result: blocked before test execution by Maven plugin resolution/network policy (`maven-resources-plugin:3.3.1`, Maven Central unreachable from this environment).
+
+## 151) Latest pass update (Phase 4 start: Report Library export workflow)
+
+Completed the next Phase 4 operationalization slice by replacing the remaining report export placeholder behavior with a real deterministic file-output workflow.
+
+### Implemented
+
+- `ReportLibraryPanel` export action now performs an actual save flow:
+  - validates selected report and preview availability,
+  - opens a save dialog with a deterministic default file name,
+  - writes preview text to UTF-8 `.txt` file,
+  - reports success/cancel/failure in-panel via status label.
+- Added deterministic export filename helper:
+  - `buildReportExportFileName(String reportName, LocalDate date)`
+  - normalizes report names with locale-safe lowercasing + non-word collapse,
+  - falls back to `report-<date>.txt` when normalized token is blank.
+
+### Tests added
+
+- Added `ReportLibraryPanelTest` with focused coverage for:
+  - normalized file naming from typical report title,
+  - fallback file naming for symbol-only/blank-normalized titles.
+
+## 152) Test execution status
+
+- Command executed: `mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository`
+- Result: blocked before test execution due Maven plugin resolution/network policy (`maven-resources-plugin:3.3.1` from Maven Central, `Network is unreachable`).
+
+## 153) Latest pass update (Phase 4 continuation: budget workspace deep wiring)
+
+Continued Phase 4 by wiring `Budget Editor` and `Budget vs Actual` together through a deterministic session budget-target model.
+
+### Implemented
+
+- Extended `UiWorkspaceDataStore` with session-scoped budget targets keyed by fund code:
+  - `upsertBudgetTarget(...)`
+  - `removeBudgetTarget(...)`
+  - `budgetTargetsByFundCode()`
+- Reworked `BudgetEditorPanel` from read-only account listing into fund-target editing:
+  - loads fund actuals,
+  - shows budget target + variance columns,
+  - supports `Save Target` / `Clear Target` for selected fund,
+  - persists target values in `UiWorkspaceDataStore`.
+- Updated `BudgetVsActualPanel` to consume shared targets from `UiWorkspaceDataStore`:
+  - now renders Budget, Actual, and Variance columns per fund,
+  - status line includes net totals for actual, budget, and variance.
+
+### Tests added/updated
+
+- Added `BudgetEditorPanelTest` for deterministic row-building with stored budget targets.
+- Added `BudgetVsActualPanelTest` for merge/variance computation and fund-code ordering.
+- Updated `UiWorkspaceDataStoreTest` with budget-target persistence/remove coverage.
+
+## 154) Test execution status
+
+- Command executed: `mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository`
+- Result: blocked before test execution due Maven plugin resolution/network policy (`maven-resources-plugin:3.3.1` from Maven Central, `Network is unreachable`).

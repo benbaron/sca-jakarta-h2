@@ -8,10 +8,15 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.service.FundBalanceRow;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Map;
 
 /**
  * Represents the BudgetEditorPanel component in the nonprofit bookkeeping application.
@@ -19,8 +24,9 @@ import org.nonprofitbookkeeping.model.Account;
 public class BudgetEditorPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
-    private final TableView<Account> table = new TableView<>();
+    private final TableView<FundBudgetRow> table = new TableView<>();
     private final Label status = new Label();
+    private final TextField amountField = new TextField();
 
     public BudgetEditorPanel()
     {
@@ -28,21 +34,40 @@ public class BudgetEditorPanel implements AppPanel
         Label title = new Label("Budget Editor");
         title.getStyleClass().add("panel-title");
 
-        Button refresh = new Button("Refresh Accounts");
+        Button refresh = new Button("Refresh Funds");
         refresh.setOnAction(e -> reload());
-        HBox actions = new HBox(8, refresh);
+        Button saveTarget = new Button("Save Target");
+        saveTarget.setOnAction(e -> saveTarget());
+        Button clearTarget = new Button("Clear Target");
+        clearTarget.setOnAction(e -> clearTarget());
+
+        amountField.setPromptText("Budget target amount");
+
+        HBox actions = new HBox(8, refresh, new Label("Target"), amountField, saveTarget, clearTarget);
 
         root.setTop(new VBox(6, title, actions, status, new Separator()));
 
-        TableColumn<Account, String> code = new TableColumn<>("Account");
-        code.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().getCode()));
-        TableColumn<Account, String> name = new TableColumn<>("Name");
-        name.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().getName()));
-        TableColumn<Account, String> subtype = new TableColumn<>("Subtype");
-        subtype.setCellValueFactory(v -> new SimpleStringProperty(String.valueOf(v.getValue().getSubtype())));
-        table.getColumns().addAll(code, name, subtype);
+        TableColumn<FundBudgetRow, String> fundCode = new TableColumn<>("Fund");
+        fundCode.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().fundCode()));
+        TableColumn<FundBudgetRow, String> fundName = new TableColumn<>("Name");
+        fundName.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().fundName()));
+        TableColumn<FundBudgetRow, String> actual = new TableColumn<>("Actual (Net)");
+        actual.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().actual().toPlainString()));
+        TableColumn<FundBudgetRow, String> budgetTarget = new TableColumn<>("Budget Target");
+        budgetTarget.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().budgetTarget().toPlainString()));
+        TableColumn<FundBudgetRow, String> variance = new TableColumn<>("Variance (Actual-Budget)");
+        variance.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().actual().subtract(v.getValue().budgetTarget()).toPlainString()));
+
+        table.getColumns().addAll(fundCode, fundName, actual, budgetTarget, variance);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
-        table.setPlaceholder(new Label("No posting accounts available for budget planning."));
+        table.setPlaceholder(new Label("No fund activity available for budget planning."));
+
+        table.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
+            if (newV != null)
+            {
+                amountField.setText(newV.budgetTarget().toPlainString());
+            }
+        });
 
         root.setCenter(table);
         reload();
@@ -50,14 +75,68 @@ public class BudgetEditorPanel implements AppPanel
 
     private void reload()
     {
-        status.setText("Loading budget-capable posting accounts...");
-        UiAsync.run("budget-editor-accounts",
-                () -> UiServiceRegistry.accountLookup().listActivePostingAccounts(),
+        status.setText("Loading budget rows by fund...");
+        UiAsync.run("budget-editor-funds",
+                () -> buildRows(UiServiceRegistry.fundBalance().balancesAsOf(LocalDate.now()), UiWorkspaceDataStore.budgetTargetsByFundCode()),
                 rows -> {
                     table.getItems().setAll(rows);
-                    status.setText("Loaded " + rows.size() + " posting account(s). Budget entry can be scoped from this list.");
+                    status.setText("Loaded " + rows.size() + " fund budget row(s). Select a fund to update target.");
                 },
-                ex -> status.setText("Could not load posting accounts: " + UiErrors.safeMessage(ex)));
+                ex -> status.setText("Could not load budget rows: " + UiErrors.safeMessage(ex)));
+    }
+
+    private void saveTarget()
+    {
+        FundBudgetRow selected = table.getSelectionModel().getSelectedItem();
+        if (selected == null)
+        {
+            status.setText("Select a fund row before saving a target.");
+            return;
+        }
+        BigDecimal target;
+        try
+        {
+            target = new BigDecimal(amountField.getText().trim());
+        }
+        catch (RuntimeException ex)
+        {
+            status.setText("Enter a valid numeric target amount.");
+            return;
+        }
+
+        UiWorkspaceDataStore.upsertBudgetTarget(selected.fundCode(), target);
+        status.setText("Saved target " + target.toPlainString() + " for fund " + selected.fundCode() + ".");
+        reload();
+    }
+
+    private void clearTarget()
+    {
+        FundBudgetRow selected = table.getSelectionModel().getSelectedItem();
+        if (selected == null)
+        {
+            status.setText("Select a fund row before clearing a target.");
+            return;
+        }
+        UiWorkspaceDataStore.removeBudgetTarget(selected.fundCode());
+        status.setText("Cleared target for fund " + selected.fundCode() + ".");
+        reload();
+    }
+
+    static java.util.List<FundBudgetRow> buildRows(java.util.List<FundBalanceRow> actualRows,
+                                                   Map<String, BigDecimal> targetsByFund)
+    {
+        return actualRows.stream()
+                .map(r -> new FundBudgetRow(
+                        r.getFundCode(),
+                        r.getFundName(),
+                        r.getBalance(),
+                        targetsByFund.getOrDefault(r.getFundCode(), BigDecimal.ZERO)))
+                .sorted(java.util.Comparator.comparing(FundBudgetRow::fundCode))
+                .toList();
+    }
+
+    record FundBudgetRow(String fundCode, String fundName, BigDecimal actual, BigDecimal budgetTarget)
+    {
     }
 
     @Override public String title() { return "Budget Editor"; }
