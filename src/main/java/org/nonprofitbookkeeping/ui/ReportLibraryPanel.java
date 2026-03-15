@@ -39,7 +39,8 @@ public class ReportLibraryPanel implements AppPanel
 
         Button run = new Button("Run");
         Button export = new Button("Export");
-        HBox actions = new HBox(8, run, export);
+        Button drillLedger = new Button("Drill to Ledger");
+        HBox actions = new HBox(8, run, export, drillLedger);
 
         root.setTop(new VBox(6, title, range, actions, status, new Separator()));
 
@@ -72,6 +73,7 @@ public class ReportLibraryPanel implements AppPanel
         run.setOnAction(e -> runReport());
         export.setOnAction(e -> status.setText("Export is available after preview generation."));
         reportList.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> runReport());
+        drillLedger.setOnAction(e -> drillToLedger());
 
         runReport();
     }
@@ -100,6 +102,16 @@ public class ReportLibraryPanel implements AppPanel
     private List<FundBalanceRow> loadRows()
     {
         return UiServiceRegistry.fundBalance().balancesAsOf(LocalDate.now());
+    }
+
+    private void drillToLedger()
+    {
+        String reportName = reportList.getSelectionModel().getSelectedItem();
+        if (reportName == null)
+        {
+            return;
+        }
+        DrillThroughCoordinator.openLedgerWithContext("Report drill-through: " + reportName);
     }
 
     private String renderPreview(String reportName, List<FundBalanceRow> rows)
