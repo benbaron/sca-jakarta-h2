@@ -110,7 +110,7 @@ public class BankTransactionsPanel implements AppPanel
             return;
         }
 
-        if (getScene() == null || getScene().getWindow() == null)
+        if (root.getScene() == null || root.getScene().getWindow() == null)
         {
             status.setText("Export unavailable: window is not ready.");
             return;
@@ -119,7 +119,7 @@ public class BankTransactionsPanel implements AppPanel
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Export Selected Bank Transactions");
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("OFX/QFX", "*.ofx", "*.qfx"));
-        File selectedFile = chooser.showSaveDialog(getScene().getWindow());
+        File selectedFile = chooser.showSaveDialog(root.getScene().getWindow());
         if (selectedFile == null)
         {
             status.setText("Export cancelled.");

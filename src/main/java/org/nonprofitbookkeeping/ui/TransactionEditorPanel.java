@@ -337,13 +337,13 @@ public class TransactionEditorPanel implements AppPanel
 
         JournalLine first = lines.get(0);
         body.append(" | first line ")
-                .append(first.accountCode())
+                .append(first.getAccountCode())
                 .append("/")
-                .append(first.fundCode() == null ? "" : first.fundCode())
+                .append(first.getFundCode() == null ? "" : first.getFundCode())
                 .append(" DR=")
-                .append(first.debit().toPlainString())
+                .append(first.getDebit().toPlainString())
                 .append(" CR=")
-                .append(first.credit().toPlainString());
+                .append(first.getCredit().toPlainString());
         return body.toString();
     }
 

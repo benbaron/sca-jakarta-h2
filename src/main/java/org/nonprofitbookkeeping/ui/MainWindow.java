@@ -980,9 +980,9 @@ public class MainWindow extends BorderPane
         }
 
         lines.forEach(line -> body.append("- ")
-                .append(line.accountCode()).append("/").append(line.fundCode() == null ? "" : line.fundCode())
-                .append(" DR=").append(line.debit().toPlainString())
-                .append(" CR=").append(line.credit().toPlainString())
+                .append(line.getAccountCode()).append("/").append(line.getFundCode() == null ? "" : line.getFundCode())
+                .append(" DR=").append(line.getDebit().toPlainString())
+                .append(" CR=").append(line.getCredit().toPlainString())
                 .append("\n"));
         return body.toString();
     }
@@ -1016,9 +1016,9 @@ public class MainWindow extends BorderPane
         }
 
         lines.forEach(line -> body.append("- ")
-                .append(line.accountCode()).append("/").append(line.fundCode() == null ? "" : line.fundCode())
-                .append(" DR=").append(line.debit().toPlainString())
-                .append(" CR=").append(line.credit().toPlainString())
+                .append(line.getAccountCode()).append("/").append(line.getFundCode() == null ? "" : line.getFundCode())
+                .append(" DR=").append(line.getDebit().toPlainString())
+                .append(" CR=").append(line.getCredit().toPlainString())
                 .append("\n"));
         return body.toString();
     }

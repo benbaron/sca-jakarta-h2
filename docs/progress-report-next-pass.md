@@ -1849,3 +1849,21 @@ Implemented the two requested follow-ups from review comments.
 - Command executed: `mvn -B -ntp test`
 - Result: still blocked before test execution during plugin resolution via configured primary mirror.
   - Current blocker: `maven-resources-plugin:3.3.1` fetch from `https://repo.huaweicloud.com/repository/maven` failed (`Network is unreachable`).
+
+## 145) Latest pass update (CI compile-failure fixes)
+
+Patched compile failures reported by CI:
+
+- `BankTransactionsPanel`
+  - Replaced invalid panel-level `getScene()` calls with `root.getScene()` for save-dialog window access.
+- `MainWindow`
+  - Replaced record-style `JournalLine` accessor calls (`accountCode/fundCode/debit/credit`) with JavaBean getters (`getAccountCode/getFundCode/getDebit/getCredit`).
+- `TransactionEditorPanel`
+  - Replaced record-style `JournalLine` accessor calls in journal-preview rendering with JavaBean getters.
+
+These changes directly address the reported `cannot find symbol` compile errors.
+
+## 146) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution during Maven plugin resolution (`maven-resources-plugin:3.3.1`) due mirror/network reachability (`primary-public-mirror`, network unreachable).
