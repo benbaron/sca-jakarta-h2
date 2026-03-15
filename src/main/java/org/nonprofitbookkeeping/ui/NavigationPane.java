@@ -60,6 +60,9 @@ public class NavigationPane extends VBox
         add(workflows, AppPanelId.RECONCILIATION_RUNS, "Reconciliation Runs");
         add(workflows, AppPanelId.PERIOD_CLOSE_RUNS, "Period Close Runs");
         add(workflows, AppPanelId.IMPORT_PREVIEW, "Import Preview");
+        add(workflows, AppPanelId.APPROVAL_AUDIT, "Approval Audit");
+        add(workflows, AppPanelId.IMPORT_EXPORT_JOBS, "Import / Export Jobs");
+        add(workflows, AppPanelId.BANK_TRANSACTIONS, "Bank Transactions");
 
         TreeItem<NavItem> outputs = group(root, "Outputs");
         add(outputs, AppPanelId.REPORT_LIBRARY, "Reports Library");

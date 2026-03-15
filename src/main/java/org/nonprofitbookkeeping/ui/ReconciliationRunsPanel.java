@@ -37,8 +37,10 @@ public class ReconciliationRunsPanel implements AppPanel
         approve.setOnAction(e -> recordApproval(ApprovalDecision.APPROVED));
         Button reject = new Button("Reject Selected");
         reject.setOnAction(e -> recordApproval(ApprovalDecision.REJECTED));
+        Button viewAudit = new Button("View Approval Audit");
+        viewAudit.setOnAction(e -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.APPROVAL_AUDIT, "RECONCILIATION"));
 
-        root.setTop(new VBox(6, title, new HBox(8, refresh, record, approve, reject), status, new Separator()));
+        root.setTop(new VBox(6, title, new HBox(8, refresh, record, approve, reject, viewAudit), status, new Separator()));
 
         TableColumn<ReconciliationRunRecord, String> when = new TableColumn<>("Statement End");
         when.setCellValueFactory(v -> new SimpleStringProperty(String.valueOf(v.getValue().statementEndingOn())));

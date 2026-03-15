@@ -33,6 +33,9 @@ public class PanelHost extends BorderPane
         FACTORIES.put(AppPanelId.RECONCILIATION_RUNS, ReconciliationRunsPanel::new);
         FACTORIES.put(AppPanelId.PERIOD_CLOSE_RUNS, PeriodCloseRunsPanel::new);
         FACTORIES.put(AppPanelId.IMPORT_PREVIEW, ImportPreviewPanel::new);
+        FACTORIES.put(AppPanelId.APPROVAL_AUDIT, ApprovalAuditPanel::new);
+        FACTORIES.put(AppPanelId.IMPORT_EXPORT_JOBS, ImportExportJobsPanel::new);
+        FACTORIES.put(AppPanelId.BANK_TRANSACTIONS, BankTransactionsPanel::new);
 
         FACTORIES.put(AppPanelId.REPORT_LIBRARY, ReportLibraryPanel::new);
 

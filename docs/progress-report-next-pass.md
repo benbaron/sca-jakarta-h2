@@ -1730,3 +1730,46 @@ Addressed follow-up feedback to fully complete all remaining Phase 1 items in se
 
 - Command executed: `mvn -B -ntp test`
 - Result: blocked before test execution due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, `https://repo.maven.apache.org/maven2`, network unreachable).
+
+## 138) Latest pass update (Phase 2 implementation: new model-first workflow panels)
+
+Implemented the requested Phase 2 slice after finishing Phase 1.
+
+### Added Phase 2 panels
+
+1. `ApprovalAuditPanel`
+   - Data source: `ApprovalAuditService.listRecent(activeGroup, 500)`.
+   - Filters: workflow type, decision, actor, date range.
+   - Includes run-id visibility and drill-through context support via `DrillThroughCoordinator`.
+2. `ImportExportJobsPanel`
+   - New unified session workspace for import/export job history.
+   - Shows source/target path, outcome, row count, transaction count, format, and errors.
+3. `BankTransactionsPanel`
+   - Renders imported `BankTransactionRecord` rows from shared session store.
+   - Supports drill-to-ledger from selected transaction(s).
+   - Supports export-selected flow (OFX/QFX) with success/failure status and job-history recording.
+
+### Shell and cross-panel wiring updates
+
+- Added new workspace panel IDs and host factories:
+  - `APPROVAL_AUDIT`, `IMPORT_EXPORT_JOBS`, `BANK_TRANSACTIONS`.
+- Added navigation entries for new panels under Workflows.
+- Added Tools menu shortcuts for opening all new panels.
+- Added deep-link actions from:
+  - `ReconciliationRunsPanel -> ApprovalAuditPanel` (context `RECONCILIATION`),
+  - `PeriodCloseRunsPanel -> ApprovalAuditPanel` (context `PERIOD_CLOSE`).
+- Added `UiWorkspaceDataStore` session store for deterministic cross-panel projections:
+  - imported bank transactions,
+  - import/export job audit records.
+- Updated file import/export paths in `MainWindow` to record job outcomes (success/failure metadata).
+
+### Tests added/updated
+
+- Added `ApprovalAuditPanelFilterTest` for deterministic audit filter behavior.
+- Added `UiWorkspaceDataStoreTest` for shared-session transaction/job store behavior.
+- Existing panel consistency and navigation coverage continue validating host/nav completeness with new panel IDs.
+
+## 139) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, `https://repo.maven.apache.org/maven2`, network unreachable).
