@@ -6,6 +6,7 @@ import org.nonprofitbookkeeping.model.AppPreferencesState;
 import org.nonprofitbookkeeping.model.BankingDataFormat;
 import org.nonprofitbookkeeping.model.ChartOfAccountsTransferFormat;
 import org.nonprofitbookkeeping.model.ImportExportState;
+import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
@@ -29,12 +30,15 @@ public class FileAppStateStoreTest
                 false,
                 UserPrivilegeLevel.ADMIN);
         MultiCompanyState company = new MultiCompanyState("BARONY-BLUE", List.of("BARONY-BLUE", "BARONY-RED"));
+        DatabaseSelectionState db = new DatabaseSelectionState("/data/barony-blue.mv.db", List.of("/data/barony-blue.mv.db", "/data/barony-red.mv.db"));
 
         store.savePreferences(prefs);
         store.saveMultiCompany(company);
+        store.saveDatabaseSelection(db);
 
         assertEquals(prefs, store.loadPreferences().orElseThrow());
         assertEquals(company, store.loadMultiCompany().orElseThrow());
+        assertEquals(db, store.loadDatabaseSelection().orElseThrow());
     }
 
     @Test

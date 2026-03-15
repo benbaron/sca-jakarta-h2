@@ -12,6 +12,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.AppPreferencesState;
+import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
@@ -32,6 +33,7 @@ public class SettingsPanel implements AppPanel
     private final CheckBox rememberState = new CheckBox("Remember window/state on startup");
     private final ComboBox<UserPrivilegeLevel> defaultPrivilege = new ComboBox<>();
     private final ComboBox<String> activeCompany = new ComboBox<>();
+    private final ComboBox<String> activeDatabase = new ComboBox<>();
 
     private final UiSessionState session;
 
@@ -60,6 +62,9 @@ public class SettingsPanel implements AppPanel
         activeCompany.setEditable(true);
         activeCompany.getItems().addAll(session.multiCompany().recentCompanyCodes());
 
+        activeDatabase.setEditable(true);
+        activeDatabase.getItems().addAll(session.databaseSelection().recentDatabasePaths());
+
         int row = 0;
         grid.add(new Label("Theme"), 0, row);
         grid.add(theme, 1, row++);
@@ -72,6 +77,9 @@ public class SettingsPanel implements AppPanel
 
         grid.add(new Label("Active company"), 0, row);
         grid.add(activeCompany, 1, row++);
+
+        grid.add(new Label("Active database file"), 0, row);
+        grid.add(activeDatabase, 1, row++);
 
         Button apply = new Button("Apply");
         apply.setOnAction(e -> applyToSession());
@@ -90,6 +98,7 @@ public class SettingsPanel implements AppPanel
     {
         AppPreferencesState p = session.preferences();
         MultiCompanyState c = session.multiCompany();
+        DatabaseSelectionState d = session.databaseSelection();
 
         theme.getSelectionModel().select(p.themePreference());
         nativeWindow.setSelected(p.useNativeWindowDecorations());
@@ -102,12 +111,20 @@ public class SettingsPanel implements AppPanel
             activeCompany.getItems().add(c.activeCompanyCode());
         }
         activeCompany.getSelectionModel().select(c.activeCompanyCode());
+
+        activeDatabase.getItems().setAll(d.recentDatabasePaths());
+        if (!d.recentDatabasePaths().contains(d.activeDatabasePath()))
+        {
+            activeDatabase.getItems().add(d.activeDatabasePath());
+        }
+        activeDatabase.getSelectionModel().select(d.activeDatabasePath());
     }
 
     private void applyToSession()
     {
         session.setPreferences(readPreferences());
         session.setMultiCompany(readMultiCompany());
+        session.setDatabaseSelection(readDatabaseSelection());
         status.setText("Applied settings to current session.");
     }
 
@@ -133,6 +150,43 @@ public class SettingsPanel implements AppPanel
             recents.add(0, selected);
         }
         return new MultiCompanyState(selected, recents);
+    }
+
+
+    DatabaseSelectionState readDatabaseSelection()
+    {
+        String selected = activeDatabase.getEditor().getText();
+        if (selected == null || selected.isBlank())
+        {
+            selected = "data/sca-ledger.mv.db";
+        }
+
+        List<String> recents = new ArrayList<>();
+        recents.add(selected);
+        for (String candidate : activeDatabase.getItems())
+        {
+            if (candidate == null || candidate.isBlank() || candidate.equals(selected))
+            {
+                continue;
+            }
+            if (!recents.contains(candidate))
+            {
+                recents.add(candidate);
+            }
+        }
+
+        return new DatabaseSelectionState(selected, recents);
+    }
+
+
+    void setActiveDatabaseForTests(String value)
+    {
+        activeDatabase.getEditor().setText(value);
+    }
+
+    void setRecentDatabasesForTests(List<String> values)
+    {
+        activeDatabase.getItems().setAll(values);
     }
 
     @Override

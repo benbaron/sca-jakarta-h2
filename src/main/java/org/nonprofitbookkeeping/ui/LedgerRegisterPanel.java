@@ -28,6 +28,7 @@ public class LedgerRegisterPanel implements AppPanel
     private final BorderPane root = new BorderPane();
     private final TableView<Row> txnTable = new TableView<>();
     private final Label status = new Label();
+    private final Label drillContext = new Label();
     private final TextArea details = new TextArea();
 
     public LedgerRegisterPanel()
@@ -43,7 +44,7 @@ public class LedgerRegisterPanel implements AppPanel
         Button inspect = new Button("Inspect Journal");
         HBox actions = new HBox(8, refresh, inspect);
 
-        VBox header = new VBox(6, title, range, actions, status, new Separator());
+        VBox header = new VBox(6, title, range, actions, drillContext, status, new Separator());
         root.setTop(header);
 
         buildTable();
@@ -98,6 +99,8 @@ public class LedgerRegisterPanel implements AppPanel
 
     private void reload()
     {
+        String context = DrillThroughCoordinator.consumeContext();
+        drillContext.setText(context.isBlank() ? "" : context);
         status.setText("Loading ledger transactions...");
         UiAsync.run("ledger-register-load",
                 () -> UiServiceRegistry.ledgerQuery().listRecent(250),
