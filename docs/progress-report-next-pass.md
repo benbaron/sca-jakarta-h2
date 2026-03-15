@@ -1889,3 +1889,19 @@ Adjusted Maven mirror hardening to avoid invalid settings-schema usage and prese
   - Result: blocked before test execution (plugin resolution to Aliyun mirror unreachable).
 
 Both outcomes indicate network reachability constraints to external artifact endpoints in this environment.
+
+## 149) Latest pass update (test-compile constructor mismatch fix)
+
+Addressed the current CI-reported test-compile failure in `TransactionEditorPanelJournalPreviewTest`:
+
+- Updated test fixture construction of `JournalLine` to use the current full constructor signature:
+  - `(LocalDate date, Long txnId, String memo, String payee, String accountCode, String accountName, String fundCode, String fundName, BigDecimal debit, BigDecimal credit)`.
+
+This directly resolves the reported compile error:
+
+- `constructor JournalLine ... cannot be applied to given types` (test previously used outdated 5-arg form).
+
+## 150) Test execution status
+
+- Command executed: `mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository`
+- Result: blocked before test execution by Maven plugin resolution/network policy (`maven-resources-plugin:3.3.1`, Maven Central unreachable from this environment).

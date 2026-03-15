@@ -41,7 +41,17 @@ public class TransactionEditorPanelJournalPreviewTest
                 "Memo",
                 "Bank",
                 2);
-        List<JournalLine> lines = List.of(new JournalLine("1000", "Cash", "F01", BigDecimal.TEN, BigDecimal.ZERO));
+        List<JournalLine> lines = List.of(new JournalLine(
+                LocalDate.of(2026, 4, 5),
+                15L,
+                "Memo",
+                "Payee",
+                "1000",
+                "Cash",
+                "F01",
+                "Fund 01",
+                BigDecimal.TEN,
+                BigDecimal.ZERO));
 
         String preview = TransactionEditorPanel.renderContextJournalPreview(row, lines);
 
