@@ -1653,3 +1653,199 @@ Final response requirements:
 - Include testing section with ✅/⚠️/❌ command prefixes.
 - Include a brief code review and offer follow-up fixes for any identified issues.
 ```
+
+## 134) Latest pass update (Phase 1 follow-up completion: run contract, search query/filter, journal context)
+
+Completed the remaining Phase 1 follow-ups from section 132 before any Phase 2 work.
+
+### Implemented
+
+- Added an explicit active-panel run command contract in `AppPanel`/`PanelHost`:
+  - new `RunCommand.POST_VALIDATE` dispatch path,
+  - structured `RunCommandResult` response for deterministic in-inspector feedback,
+  - optional panel journal-selection context contract (`JournalSelection`).
+- Rewired `MainWindow` Run → Post/Validate to invoke the explicit run contract instead of generic save dispatch.
+- Updated `TransactionEditorPanel` to handle run commands directly:
+  - `POST_VALIDATE` delegates to existing validation flow,
+  - status now stores and reuses last validation summary for consistent save/run feedback.
+- Upgraded Search from snapshot-only to query/filter behavior:
+  - added normalized query matching helpers,
+  - returns filtered panel/account/fund result sets,
+  - added panel jump method (`jumpToPanelFromSearch`) for deterministic navigation.
+- Improved Journal inspector context handling:
+  - prefers active panel selection context when available,
+  - falls back to most recent transaction preview when no selection is exposed.
+- Exposed active journal selection from `LedgerRegisterPanel` for context-aware inspector behavior.
+
+### Tests added/updated
+
+- Added `MainWindowPhase1FollowupTest` covering:
+  - explicit run-command dispatch usage,
+  - search normalization/matching,
+  - search query filtering,
+  - search-driven panel jump,
+  - journal inspector selection-context preference.
+- Existing validation tests continue covering deterministic split validation behavior.
+
+## 135) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, `https://repo.maven.apache.org/maven2`, network unreachable).
+
+## 136) Latest pass update (Phase 1 completion hardening after review feedback)
+
+Addressed follow-up feedback to fully complete all remaining Phase 1 items in section 132.
+
+### Transaction Editor completion
+
+- Kept existing validation/status behavior and explicit `POST_VALIDATE` panel run-command dispatch.
+- Added query-backed journal preview in `TransactionEditorPanel` for current editor context (`date/payee/memo/bank`):
+  - loads recent ledger rows,
+  - deterministically filters by non-blank context fields,
+  - renders a compact preview from the matched transaction + journal lines,
+  - provides explicit in-panel fallback message when no match exists.
+
+### MainWindow shell completion
+
+- Kept run-command contract path and query-based search/jump behavior.
+- Replaced unsupported Edit menu actions with explicit disabled states (`Undo`, `Redo`, `Cut`) rather than informational placeholders.
+- Kept/extended Journal inspector active-selection preference with fallback logic.
+- Locale hardening: search normalization/matching now uses `Locale.ROOT` for deterministic case-folding.
+
+### Navigation details completion
+
+- Enhanced navigation inspector content to include richer context metadata:
+  - active company,
+  - active date range,
+  - panel capability summary.
+
+### Tests added/updated
+
+- Updated `AppPanelConsistencyTest` for new `NavigationPane` constructor contract.
+- Updated `NavigationPaneInspectorBodyTest` to validate metadata-rich inspector body output.
+- Added `TransactionEditorPanelJournalPreviewTest` for deterministic context matching and preview rendering.
+- Expanded `MainWindowPhase1FollowupTest` to validate panel capability metadata expectations.
+
+## 137) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, `https://repo.maven.apache.org/maven2`, network unreachable).
+
+## 138) Latest pass update (Phase 2 implementation: new model-first workflow panels)
+
+Implemented the requested Phase 2 slice after finishing Phase 1.
+
+### Added Phase 2 panels
+
+1. `ApprovalAuditPanel`
+   - Data source: `ApprovalAuditService.listRecent(activeGroup, 500)`.
+   - Filters: workflow type, decision, actor, date range.
+   - Includes run-id visibility and drill-through context support via `DrillThroughCoordinator`.
+2. `ImportExportJobsPanel`
+   - New unified session workspace for import/export job history.
+   - Shows source/target path, outcome, row count, transaction count, format, and errors.
+3. `BankTransactionsPanel`
+   - Renders imported `BankTransactionRecord` rows from shared session store.
+   - Supports drill-to-ledger from selected transaction(s).
+   - Supports export-selected flow (OFX/QFX) with success/failure status and job-history recording.
+
+### Shell and cross-panel wiring updates
+
+- Added new workspace panel IDs and host factories:
+  - `APPROVAL_AUDIT`, `IMPORT_EXPORT_JOBS`, `BANK_TRANSACTIONS`.
+- Added navigation entries for new panels under Workflows.
+- Added Tools menu shortcuts for opening all new panels.
+- Added deep-link actions from:
+  - `ReconciliationRunsPanel -> ApprovalAuditPanel` (context `RECONCILIATION`),
+  - `PeriodCloseRunsPanel -> ApprovalAuditPanel` (context `PERIOD_CLOSE`).
+- Added `UiWorkspaceDataStore` session store for deterministic cross-panel projections:
+  - imported bank transactions,
+  - import/export job audit records.
+- Updated file import/export paths in `MainWindow` to record job outcomes (success/failure metadata).
+
+### Tests added/updated
+
+- Added `ApprovalAuditPanelFilterTest` for deterministic audit filter behavior.
+- Added `UiWorkspaceDataStoreTest` for shared-session transaction/job store behavior.
+- Existing panel consistency and navigation coverage continue validating host/nav completeness with new panel IDs.
+
+## 139) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, `https://repo.maven.apache.org/maven2`, network unreachable).
+
+## 140) Latest pass update (review patch + Phase 3 workflow expansion)
+
+Applied requested review fix and completed Phase 3 workflow-panel follow-ups.
+
+### Review patch applied
+
+- Refined session-store clearing semantics:
+  - added `UiWorkspaceDataStore.clearJobsForTests()` so Import/Export Jobs history can be cleared without deleting bank transaction session data,
+  - updated `ImportExportJobsPanel` clear action to use jobs-only clear behavior.
+
+### Phase 3 implementation
+
+1. Reconciliation Runs panel expansion
+   - Added lifecycle operations beyond completed-run recording:
+     - `Record Started`, `Record Completed Run`, `Record Failed`.
+   - Added approval-audit history summary line (`approvals`, `rejections`) scoped to reconciliation workflow.
+   - Enhanced approval-audit drill action to deep-link either by workflow type or selected run id (`RECONCILIATION::<runId>`).
+
+2. Period Close Runs panel expansion
+   - Added lifecycle operations beyond completed-close recording:
+     - `Record Started`, `Record Completed Close`, `Record Failed`.
+   - Added approval-audit history summary line (`approvals`, `rejections`) scoped to period-close workflow.
+   - Enhanced approval-audit drill action to deep-link either by workflow type or selected run id (`PERIOD_CLOSE::<runId>`).
+
+3. Import Preview completion
+   - Added explicit `Commit Accepted COA Rows` action in `ImportPreviewPanel`.
+   - Added service-level commit helper in `ImportPreviewService`:
+     - `commitAcceptedCoaRows(List<CoaCsvRow>, CoaRowCommitter)`
+     - deterministic committed/failed counts and row-level error list.
+   - Commit flow now persists accepted COA rows using `AccountAdminService.upsert(...)` and reports results in-panel.
+
+4. Approval Audit filtering enhancement
+   - Added run-id filter support in `ApprovalAuditPanel` and drill-context parsing for workflow + run-id deep links.
+
+### Tests added/updated
+
+- Updated `UiWorkspaceDataStoreTest` to verify jobs-only clear does not wipe bank transactions.
+- Updated `ApprovalAuditPanelFilterTest` for new run-id filter argument and added run-id matching test.
+- Updated `ImportPreviewServiceTest` with commit-result deterministic counts/error assertions.
+
+## 141) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, `https://repo.maven.apache.org/maven2`, network unreachable).
+
+## 142) Latest pass update (token-normalization hardening + Maven mirror attempt)
+
+Implemented the two requested follow-ups from review comments.
+
+### A. Stronger token normalization before COA commit
+
+- Improved `ImportPreviewPanel` commit mapping for CSV enum tokens:
+  - added `normalizeEnumToken(...)` to normalize case and separators,
+  - added `parseAccountTypeToken(...)` with alias mapping (`REVENUE -> INCOME`),
+  - added `parseNormalBalanceToken(...)` with aliases (`DR -> DEBIT`, `CR -> CREDIT`).
+- Commit flow now uses these parsers before calling `AccountAdminService.upsert(...)`, reducing avoidable row failures caused by common token variants.
+- Added focused test `ImportPreviewPanelTokenNormalizationTest` for alias/case handling.
+
+### B. Maven mirror/bootstrap fix attempt
+
+- Updated `.mvn/settings.xml` with additional fallback repositories and plugin repositories, and added a primary mirror (`mirrorOf=external:*`) to route external artifact/plugin resolution through a single mirror endpoint first.
+- Updated `docs/repo-local-build.md` with mirror fallback guidance and mirror-of behavior notes.
+
+## 143) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution during plugin resolution.
+  - After mirror routing attempt, Maven now fails on DNS resolution for mirror host (`repo.huaweicloud.com: Name or service not known`) while resolving `maven-resources-plugin:3.3.1`.
+  - This confirms repository-access remains an environment/network/DNS blocker rather than a local test logic failure.
+
+## 144) Test execution re-attempt status
+
+- Command executed: `mvn -B -ntp test`
+- Result: still blocked before test execution during plugin resolution via configured primary mirror.
+  - Current blocker: `maven-resources-plugin:3.3.1` fetch from `https://repo.huaweicloud.com/repository/maven` failed (`Network is unreachable`).

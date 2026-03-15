@@ -18,9 +18,12 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.Fund;
+import org.nonprofitbookkeeping.service.JournalLine;
+import org.nonprofitbookkeeping.service.LedgerQueryService;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -31,6 +34,11 @@ public class TransactionEditorPanel implements AppPanel
     private final BorderPane root = new BorderPane();
     private final TableView<SplitRow> splitTable = new TableView<>();
     private final Label status = new Label("Prepare split lines, then validate before posting.");
+    private ValidationResult lastValidationResult;
+    private final TextField dateField = new TextField();
+    private final TextField payeeField = new TextField();
+    private final TextField memoField = new TextField();
+    private final TextField bankField = new TextField();
 
     public TransactionEditorPanel()
     {
@@ -62,22 +70,17 @@ public class TransactionEditorPanel implements AppPanel
         g.setVgap(8);
         g.setPadding(new Insets(8, 0, 8, 0));
 
-        TextField date = new TextField();
-        TextField payee = new TextField();
-        TextField memo = new TextField();
-        TextField bank = new TextField();
-
         int r = 0;
         g.add(new Label("Date"), 0, r);
-        g.add(date, 1, r);
+        g.add(dateField, 1, r);
         g.add(new Label("Payee"), 2, r);
-        g.add(payee, 3, r);
+        g.add(payeeField, 3, r);
         r++;
         g.add(new Label("Memo"), 0, r);
-        g.add(memo, 1, r, 3, 1);
+        g.add(memoField, 1, r, 3, 1);
         r++;
         g.add(new Label("Bank"), 0, r);
-        g.add(bank, 1, r);
+        g.add(bankField, 1, r);
 
         g.getColumnConstraints().addAll(
                 new ColumnConstraints(70),
@@ -142,7 +145,10 @@ public class TransactionEditorPanel implements AppPanel
     {
         status.setText("Validating split rows against current account/fund catalogs...");
         UiAsync.run("txn-editor-validate", this::validateAgainstReferenceData,
-                result -> status.setText(result.message()),
+                result -> {
+                    lastValidationResult = result;
+                    status.setText(result.message());
+                },
                 ex -> status.setText("Validation failed: " + UiErrors.safeMessage(ex)));
     }
 
@@ -246,9 +252,113 @@ public class TransactionEditorPanel implements AppPanel
         }
     }
 
+
+    static String postValidateStatusFor(ValidationResult result)
+    {
+        if (result == null)
+        {
+            return "Post / Validate completed: run validation first to review row readiness.";
+        }
+        if (result.errorCount() > 0)
+        {
+            return "Post / Validate blocked: fix validation errors before posting.";
+        }
+        if (result.netAmount().compareTo(BigDecimal.ZERO) != 0)
+        {
+            return "Post / Validate blocked: split rows are not balanced (net=" + result.netAmount().toPlainString() + ").";
+        }
+        return "Post / Validate accepted: transaction is balanced and ready to post.";
+    }
+
     private void showJournal()
     {
-        status.setText("Open Ledger Register to inspect persisted journal lines for posted transactions.");
+        status.setText("Loading journal preview for current transaction context...");
+        UiAsync.run("txn-editor-journal-preview", this::buildJournalPreviewForCurrentContext,
+                preview -> status.setText(preview),
+                ex -> status.setText("Journal preview failed: " + UiErrors.safeMessage(ex)));
+    }
+
+    String buildJournalPreviewForCurrentContext()
+    {
+        LedgerQueryService ledger = UiServiceRegistry.ledgerQuery();
+        List<LedgerQueryService.LedgerRow> recent = ledger.listRecent(250);
+        List<LedgerQueryService.LedgerRow> matches = findContextMatches(
+                recent,
+                dateField.getText(),
+                payeeField.getText(),
+                memoField.getText(),
+                bankField.getText());
+
+        if (matches.isEmpty())
+        {
+            return "Journal preview: no posted transaction matched current date/payee/memo/bank context.";
+        }
+
+        LedgerQueryService.LedgerRow match = matches.get(0);
+        List<JournalLine> lines = ledger.journalForTxn(match.id());
+        return renderContextJournalPreview(match, lines);
+    }
+
+    static List<LedgerQueryService.LedgerRow> findContextMatches(List<LedgerQueryService.LedgerRow> rows,
+                                                                  String date,
+                                                                  String payee,
+                                                                  String memo,
+                                                                  String bank)
+    {
+        String dateQuery = normalizeToken(date);
+        String payeeQuery = normalizeToken(payee);
+        String memoQuery = normalizeToken(memo);
+        String bankQuery = normalizeToken(bank);
+
+        return rows.stream()
+                .filter(row -> matches(dateQuery, row.date() == null ? "" : row.date().toString()))
+                .filter(row -> matches(payeeQuery, row.payee()))
+                .filter(row -> matches(memoQuery, row.memo()))
+                .filter(row -> matches(bankQuery, row.bank()))
+                .toList();
+    }
+
+    static String renderContextJournalPreview(LedgerQueryService.LedgerRow row, List<JournalLine> lines)
+    {
+        StringBuilder body = new StringBuilder();
+        body.append("Journal preview: matched Txn #")
+                .append(row.id())
+                .append(" on ")
+                .append(row.date())
+                .append(" (splits: ")
+                .append(row.splitCount())
+                .append(")");
+
+        if (lines.isEmpty())
+        {
+            body.append(" | journal lines: none");
+            return body.toString();
+        }
+
+        JournalLine first = lines.get(0);
+        body.append(" | first line ")
+                .append(first.accountCode())
+                .append("/")
+                .append(first.fundCode() == null ? "" : first.fundCode())
+                .append(" DR=")
+                .append(first.debit().toPlainString())
+                .append(" CR=")
+                .append(first.credit().toPlainString());
+        return body.toString();
+    }
+
+    private static String normalizeToken(String value)
+    {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static boolean matches(String query, String value)
+    {
+        if (query.isBlank())
+        {
+            return true;
+        }
+        return value != null && value.toLowerCase(Locale.ROOT).contains(query);
     }
 
     @Override
@@ -269,7 +379,19 @@ public class TransactionEditorPanel implements AppPanel
         long draftedRows = splitTable.getItems().stream()
                 .filter(r -> !(isBlank(r.account()) && isBlank(r.fund()) && isBlank(r.amount())))
                 .count();
-        status.setText("Draft saved in session with " + draftedRows + " populated split row(s).");
+        status.setText("Draft saved in session with " + draftedRows + " populated split row(s). " + postValidateStatusFor(lastValidationResult));
+    }
+
+
+    @Override
+    public RunCommandResult onRunCommand(RunCommand command)
+    {
+        if (command != RunCommand.POST_VALIDATE)
+        {
+            return new RunCommandResult(false, "Unsupported run command: " + command);
+        }
+        validateOrPost();
+        return new RunCommandResult(true, "Post / Validate command delegated to Transaction Editor validation.");
     }
 
     record ValidationResult(String message, int rowCount, int validCount, int errorCount, BigDecimal netAmount)

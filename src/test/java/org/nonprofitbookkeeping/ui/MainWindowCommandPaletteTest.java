@@ -18,6 +18,15 @@ public class MainWindowCommandPaletteTest
     }
 
     @Test
+    public void commandPaletteEntries_includePhase2Panels()
+    {
+        List<MainWindow.PaletteEntry> entries = MainWindow.commandPaletteEntriesForTests();
+        assertTrue(entries.stream().anyMatch(e -> e.panelId() == AppPanelId.APPROVAL_AUDIT));
+        assertTrue(entries.stream().anyMatch(e -> e.panelId() == AppPanelId.IMPORT_EXPORT_JOBS));
+        assertTrue(entries.stream().anyMatch(e -> e.panelId() == AppPanelId.BANK_TRANSACTIONS));
+    }
+
+    @Test
     public void commandPaletteEntries_useFriendlyLabelsAndSortedOrder()
     {
         List<MainWindow.PaletteEntry> entries = MainWindow.commandPaletteEntriesForTests();
