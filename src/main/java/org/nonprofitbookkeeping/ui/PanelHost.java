@@ -33,6 +33,9 @@ public class PanelHost extends BorderPane
         FACTORIES.put(AppPanelId.RECONCILIATION_RUNS, ReconciliationRunsPanel::new);
         FACTORIES.put(AppPanelId.PERIOD_CLOSE_RUNS, PeriodCloseRunsPanel::new);
         FACTORIES.put(AppPanelId.IMPORT_PREVIEW, ImportPreviewPanel::new);
+        FACTORIES.put(AppPanelId.APPROVAL_AUDIT, ApprovalAuditPanel::new);
+        FACTORIES.put(AppPanelId.IMPORT_EXPORT_JOBS, ImportExportJobsPanel::new);
+        FACTORIES.put(AppPanelId.BANK_TRANSACTIONS, BankTransactionsPanel::new);
 
         FACTORIES.put(AppPanelId.REPORT_LIBRARY, ReportLibraryPanel::new);
 
@@ -68,6 +71,22 @@ public class PanelHost extends BorderPane
     public void newItemActive() { AppPanel p = getActive(); if (p != null) p.onNew(); }
     public void copySelectionActive() { AppPanel p = getActive(); if (p != null) p.onCopy(); }
     public void pasteActive() { AppPanel p = getActive(); if (p != null) p.onPaste(); }
+
+    public AppPanel.RunCommandResult runCommandActive(AppPanel.RunCommand command)
+    {
+        AppPanel p = getActive();
+        if (p == null)
+        {
+            return new AppPanel.RunCommandResult(false, "No active panel selected.");
+        }
+        return p.onRunCommand(command);
+    }
+
+    public java.util.Optional<AppPanel.JournalSelection> activeJournalSelection()
+    {
+        AppPanel p = getActive();
+        return p == null ? java.util.Optional.empty() : p.activeJournalSelection();
+    }
 
     AppPanelId activePanelId()
     {
