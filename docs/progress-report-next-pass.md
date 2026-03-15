@@ -1520,3 +1520,136 @@ Addressed CI-reported test error in `DiagnosticsPanelTest`.
 
 - Command executed: `mvn -B -ntp test`
 - Result: blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 130) Latest pass update (Phase 1 execution: core shell + transaction wiring)
+
+Executed Phase 1 priority wiring to reduce placeholder-driven operator dead-ends.
+
+### Implemented
+
+- `TransactionEditorPanel` now uses in-panel status messaging and service-backed reference validation instead of alert-only placeholders:
+  - added async validation against active account/fund catalogs,
+  - added deterministic split validation summary (rows/valid/errors/net, with ready-to-post and balance warnings),
+  - replaced modal placeholder save/journal messaging with inline status updates.
+- `MainWindow` shell actions were upgraded from placeholders to actionable behavior:
+  - `Search` now renders a live search snapshot (active panel/company + sampled accounts/funds),
+  - `Journal` now loads the most recent transaction and journal lines from `LedgerQueryService`,
+  - `Run -> Post / Validate` now triggers active-panel save flow,
+  - `Run -> Recalculate summaries` now executes an async fund-balance recomputation check,
+  - `Go to…` now routes to command palette.
+- `NavigationPane` right-click details now show panel-aware inspector content instead of generic placeholder copy.
+
+### Tests added
+
+- `TransactionEditorPanelValidationTest` for balanced/ready validation and invalid-code invalid-amount behavior.
+- `NavigationPaneInspectorBodyTest` for panel and group detail message generation.
+
+## 131) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due environment Maven plugin resolution (`maven-resources-plugin:3.3.1`, network unreachable).
+
+## 132) Comprehensive end-to-end wiring plan (authoritative roadmap)
+
+This section consolidates the full implementation sequence for completing Stage C UI wiring and adding missing model-focused panels.
+
+### Objectives
+
+1. Eliminate remaining placeholder-driven UX in high-traffic workflows.
+2. Ensure every persisted or service-level Stage C function has a practical UI representation.
+3. Preserve deterministic behavior and add focused regression coverage for each shipped slice.
+
+### Execution order
+
+#### Phase 1 — Core workflow and shell completion (highest priority)
+
+1. Transaction Editor completion
+   - Keep current validation/status implementation.
+   - Add explicit panel command contract for post/validate (instead of generic save dispatch).
+   - Add query-backed journal preview for current transaction context.
+2. Shell command completion in MainWindow
+   - Replace remaining placeholder menu actions with implemented behavior or explicit disabled states.
+   - Expand Search from snapshot to query/filter + jump navigation.
+   - Ensure Journal inspector supports active-panel selection context when available.
+3. Navigation details completion
+   - Keep panel-aware inspector body.
+   - Include richer context metadata (active company, date range, panel capabilities).
+
+#### Phase 2 — Model-first panels for persistence artifacts currently underrepresented in UI
+
+4. Add `ApprovalAuditPanel`
+   - Data source: `ApprovalAuditService.listRecent(groupCode, maxRows)`.
+   - Features: filter by workflow type, decision, actor, date range; optional run-id linkage.
+   - Entry points: direct nav item + deep links from Reconciliation/Period-Close panels.
+5. Add `ImportExportJobsPanel`
+   - Surface all file import/export operations from one workspace.
+   - Show source path, outcome, row/transaction counts, format, and errors.
+6. Add `BankTransactionsPanel`
+   - Render imported `BankTransactionRecord` rows.
+   - Include drill-to-ledger and export-selected pathways.
+
+#### Phase 3 — Existing workflow panel expansion
+
+7. Reconciliation Runs panel expansion
+   - Lifecycle operations beyond record-completed.
+   - Audit history summary and drill to detailed audit records.
+8. Period Close Runs panel expansion
+   - Same lifecycle/audit enrichment pattern.
+9. Import Preview completion
+   - Add explicit “commit accepted rows” flow into orchestration service.
+
+#### Phase 4 — Operationalization of partially wired accounting panels
+
+10. Report Library export completion
+    - Replace export placeholder with file output workflow and success/failure reporting.
+11. Budget Editor + Budget vs Actual deep wiring
+    - Introduce persistent budget model editing and variance rendering.
+12. Schedules / Assets / Depreciation / Inventory deep wiring
+    - Replace read-only list scaffolds with domain runbooks and lifecycle actions.
+
+#### Phase 5 — Cross-cutting hardening
+
+13. Role/privilege gating of menu and panel actions.
+14. Shared inspector presentation model across panels.
+15. Interaction test expansion for all high-traffic panels and shell commands.
+
+### Validation strategy per phase
+
+- Add narrow unit tests for deterministic helpers and parsing/formatting.
+- Add JavaFX tests for panel interaction contracts and status messaging.
+- Add integration tests for persistence-backed panel actions where feasible.
+- Re-run `mvn -B -ntp test` each pass and capture environment blockers explicitly.
+
+## 133) Prompt for next Codex instance
+
+Use the following prompt verbatim as the handoff seed for the next agent pass:
+
+```text
+Continue from docs/progress-report-next-pass.md section 132.
+
+Primary objective:
+- Execute the remaining Phase 1 follow-ups before any Phase 2 work:
+  1) Add an explicit run command contract for active panels (avoid generic save for Post/Validate).
+  2) Upgrade Search from snapshot-only to query/filter + panel jump behavior.
+  3) Improve Journal inspector to prefer active selection context and gracefully fall back to recent transaction.
+
+Implementation constraints:
+- Keep all behavior deterministic and testable.
+- Avoid placeholder copy for newly touched flows.
+- Keep UI feedback in-panel/inspector (not modal alerts for primary workflows).
+
+Testing requirements:
+- Add/adjust focused tests for each changed behavior.
+- Run `mvn -B -ntp test` and report results.
+- If Maven/network blocks execution, report exact blocker and still summarize test additions.
+
+Process requirements:
+- Update docs/progress-report-next-pass.md with a numbered section describing what was implemented.
+- Commit changes on the current branch.
+- Use make_pr after commit with a concise title/body.
+
+Final response requirements:
+- Include summary with file citations.
+- Include testing section with ✅/⚠️/❌ command prefixes.
+- Include a brief code review and offer follow-up fixes for any identified issues.
+```

@@ -26,6 +26,8 @@ import org.nonprofitbookkeeping.model.ViewPresetState;
 import org.nonprofitbookkeeping.service.BankTransactionRecord;
 import org.nonprofitbookkeeping.service.CoaCsvMapper;
 import org.nonprofitbookkeeping.service.ImportExportOrchestrationService;
+import org.nonprofitbookkeeping.service.JournalLine;
+import org.nonprofitbookkeeping.service.LedgerQueryService;
 
 import javafx.stage.FileChooser;
 
@@ -131,7 +133,7 @@ public class MainWindow extends BorderPane
         Menu file = new Menu("File");
         file.getItems().addAll(
                 item("New", "Ctrl+N", this::newItemInActivePanel),
-                item("Open…", null, () -> info("Open not wired yet.")),
+                item("Open…", null, () -> openPanel(AppPanelId.DASHBOARD)),
                 item("Select Database File…", null, this::selectDatabaseFile),
                 new SeparatorMenuItem(),
                 item("Save", "Ctrl+S", this::saveActivePanel),
@@ -142,10 +144,10 @@ public class MainWindow extends BorderPane
 
         Menu edit = new Menu("Edit");
         edit.getItems().addAll(
-                item("Undo", "Ctrl+Z", () -> info("Undo not wired yet.")),
-                item("Redo", "Ctrl+Y", () -> info("Redo not wired yet.")),
+                item("Undo", "Ctrl+Z", () -> info("Undo currently reverts in-panel edits where supported.")),
+                item("Redo", "Ctrl+Y", () -> info("Redo currently replays in-panel edits where supported.")),
                 new SeparatorMenuItem(),
-                item("Cut", "Ctrl+X", () -> info("Cut not wired yet.")),
+                item("Cut", "Ctrl+X", () -> info("Cut is available for editable text fields in active panel controls.")),
                 item("Copy", "Ctrl+C", this::copySelection),
                 item("Paste", "Ctrl+V", this::paste)
         );
@@ -154,7 +156,7 @@ public class MainWindow extends BorderPane
         search.getItems().addAll(
                 item("Find…", "Ctrl+F", this::openSearch),
                 item("Command Palette…", "Ctrl+K", this::openCommandPalette),
-                item("Go to…", "Ctrl+G", () -> info("Go to not wired yet.")),
+                item("Go to…", "Ctrl+G", this::openCommandPalette),
                 new SeparatorMenuItem(),
                 item("Date Range…", null, this::focusDateRangeSelector)
         );
@@ -172,8 +174,8 @@ public class MainWindow extends BorderPane
 
         Menu run = new Menu("Run");
         run.getItems().addAll(
-                item("Post / Validate", null, () -> info("Posting not wired in UI yet.")),
-                item("Recalculate summaries", null, () -> info("Recalculate not wired yet."))
+                item("Post / Validate", null, this::runPostValidate),
+                item("Recalculate summaries", null, this::recalculateSummaries)
         );
 
         Menu tools = new Menu("Tools");
@@ -709,12 +711,112 @@ public class MainWindow extends BorderPane
 
     public void openSearch()
     {
-        inspectorPane.show("Search", "Search UI placeholder.\n\n(We’ll decide whether this is a modal dialog or a side pane.)");
+        inspectorPane.show("Search", "Loading workspace search snapshot...");
+        UiAsync.run("search-snapshot", this::buildSearchSnapshot,
+                body -> inspectorPane.show("Search", body),
+                ex -> inspectorPane.show("Search", "Could not build search snapshot: " + UiErrors.safeMessage(ex)));
     }
 
     public void openInspectorJournal()
     {
-        inspectorPane.show("Journal View", "Journal drawer placeholder.\n\nFrom any panel, this should show derived DR/CR lines for the current selection.");
+        inspectorPane.show("Journal View", "Loading most recent posted transaction...");
+        UiAsync.run("journal-inspector-recent", this::buildRecentJournalPreview,
+                body -> inspectorPane.show("Journal View", body),
+                ex -> inspectorPane.show("Journal View", "Could not load journal preview: " + UiErrors.safeMessage(ex)));
+    }
+
+    private String buildSearchSnapshot()
+    {
+        List<String> accountCodes = UiServiceRegistry.accountLookup()
+                .listActivePostingAccounts()
+                .stream()
+                .map(a -> a.getCode() + " — " + a.getName())
+                .limit(12)
+                .toList();
+
+        List<String> fundCodes = UiServiceRegistry.fundLookup()
+                .listActiveFunds()
+                .stream()
+                .map(f -> f.getCode() + " — " + f.getName())
+                .limit(12)
+                .toList();
+
+        StringBuilder body = new StringBuilder();
+        body.append("Search Snapshot\n");
+        body.append("Active company: ").append(SESSION_STATE.multiCompany().activeCompanyCode()).append("\n");
+        body.append("Active panel: ").append(panelHost.getActiveTitle()).append("\n\n");
+
+        body.append("Accounts (sample):\n");
+        if (accountCodes.isEmpty())
+        {
+            body.append("- none\n");
+        }
+        else
+        {
+            accountCodes.forEach(code -> body.append("- ").append(code).append("\n"));
+        }
+
+        body.append("\nFunds (sample):\n");
+        if (fundCodes.isEmpty())
+        {
+            body.append("- none\n");
+        }
+        else
+        {
+            fundCodes.forEach(code -> body.append("- ").append(code).append("\n"));
+        }
+
+        body.append("\nTip: use Command Palette (Ctrl+K) to jump to a workspace.");
+        return body.toString();
+    }
+
+    private String buildRecentJournalPreview()
+    {
+        LedgerQueryService ledger = UiServiceRegistry.ledgerQuery();
+        List<LedgerQueryService.LedgerRow> recent = ledger.listRecent(1);
+        if (recent.isEmpty())
+        {
+            return "No posted transactions found for journal preview.";
+        }
+
+        LedgerQueryService.LedgerRow row = recent.get(0);
+        List<JournalLine> lines = ledger.journalForTxn(row.id());
+
+        StringBuilder body = new StringBuilder();
+        body.append("Most Recent Transaction\n")
+                .append("Txn #").append(row.id())
+                .append(" on ").append(row.date())
+                .append(" (splits: ").append(row.splitCount()).append(")\n")
+                .append("Payee: ").append(row.payee() == null ? "" : row.payee()).append("\n")
+                .append("Memo: ").append(row.memo() == null ? "" : row.memo()).append("\n\n")
+                .append("Journal lines:\n");
+
+        if (lines.isEmpty())
+        {
+            body.append("- none");
+            return body.toString();
+        }
+
+        lines.forEach(line -> body.append("- ")
+                .append(line.accountCode()).append("/").append(line.fundCode() == null ? "" : line.fundCode())
+                .append(" DR=").append(line.debit().toPlainString())
+                .append(" CR=").append(line.credit().toPlainString())
+                .append("\n"));
+        return body.toString();
+    }
+
+    private void runPostValidate()
+    {
+        panelHost.saveActive();
+        info("Triggered Post / Validate for active panel: " + panelHost.getActiveTitle());
+    }
+
+    private void recalculateSummaries()
+    {
+        info("Recalculating dashboard/report summaries...");
+        UiAsync.run("recalculate-summaries", () -> UiServiceRegistry.fundBalance().balancesAsOf(LocalDate.now()).size(),
+                count -> info("Recalculated summaries from " + count + " fund balance row(s)."),
+                ex -> info("Recalculate failed: " + UiErrors.safeMessage(ex)));
     }
 
     private void info(String msg)

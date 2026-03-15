@@ -102,8 +102,7 @@ public class NavigationPane extends VBox
             {
                 tree.getSelectionModel().select(sel);
                 NavItem v = sel.getValue();
-                openInspector.accept("Details: " + v.label(),
-                        "Detail inspector placeholder for: " + v.label() + "\n\n(Details-first; journal is a drill-down.)");
+                openInspector.accept("Details: " + v.label(), inspectorBody(v));
             }
         });
 
@@ -123,6 +122,19 @@ public class NavigationPane extends VBox
         });
 
         getChildren().add(tree);
+    }
+
+    static String inspectorBody(NavItem item)
+    {
+        if (item == null || item.panelId() == null)
+        {
+            return "Navigation group selected. Choose a workspace item to open details.";
+        }
+
+        return "Panel: " + item.label()
+                + "\nID: " + item.panelId().name()
+                + "\nOpen behavior: single-select, Enter, or double-click."
+                + "\nContext: use toolbar Find/Journal for cross-panel queries.";
     }
 
     public void highlight(AppPanelId id)

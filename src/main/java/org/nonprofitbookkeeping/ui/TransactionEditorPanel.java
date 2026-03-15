@@ -3,8 +3,25 @@ package org.nonprofitbookkeeping.ui;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Separator;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToolBar;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.Fund;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Represents the TransactionEditorPanel component in the nonprofit bookkeeping application.
@@ -13,6 +30,7 @@ public class TransactionEditorPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
     private final TableView<SplitRow> splitTable = new TableView<>();
+    private final Label status = new Label("Prepare split lines, then validate before posting.");
 
     public TransactionEditorPanel()
     {
@@ -26,7 +44,7 @@ public class TransactionEditorPanel implements AppPanel
         Button journal = new Button("Journal View");
         HBox actions = new HBox(8, save, post, journal);
 
-        VBox top = new VBox(6, title, actions, new Separator(), buildHeaderForm());
+        VBox top = new VBox(6, title, actions, status, new Separator(), buildHeaderForm());
         root.setTop(top);
 
         buildSplitTable();
@@ -50,18 +68,22 @@ public class TransactionEditorPanel implements AppPanel
         TextField bank = new TextField();
 
         int r = 0;
-        g.add(new Label("Date"), 0, r); g.add(date, 1, r);
-        g.add(new Label("Payee"), 2, r); g.add(payee, 3, r);
+        g.add(new Label("Date"), 0, r);
+        g.add(date, 1, r);
+        g.add(new Label("Payee"), 2, r);
+        g.add(payee, 3, r);
         r++;
-        g.add(new Label("Memo"), 0, r); g.add(memo, 1, r, 3, 1);
+        g.add(new Label("Memo"), 0, r);
+        g.add(memo, 1, r, 3, 1);
         r++;
-        g.add(new Label("Bank"), 0, r); g.add(bank, 1, r);
+        g.add(new Label("Bank"), 0, r);
+        g.add(bank, 1, r);
 
         g.getColumnConstraints().addAll(
-            new ColumnConstraints(70),
-            new ColumnConstraints(220),
-            new ColumnConstraints(70),
-            new ColumnConstraints(220)
+                new ColumnConstraints(70),
+                new ColumnConstraints(220),
+                new ColumnConstraints(70),
+                new ColumnConstraints(220)
         );
         g.getColumnConstraints().get(1).setHgrow(Priority.ALWAYS);
         g.getColumnConstraints().get(3).setHgrow(Priority.ALWAYS);
@@ -81,8 +103,8 @@ public class TransactionEditorPanel implements AppPanel
         splitTable.getColumns().add(col("Notes", SplitRow::notes));
 
         splitTable.getItems().addAll(
-            new SplitRow("", "", "", "", "", "", ""),
-            new SplitRow("", "", "", "", "", "", "")
+                new SplitRow("", "", "", "", "", "", ""),
+                new SplitRow("", "", "", "", "", "", "")
         );
     }
 
@@ -98,7 +120,10 @@ public class TransactionEditorPanel implements AppPanel
         addLine.setOnAction(e -> splitTable.getItems().add(new SplitRow("", "", "", "", "", "", "")));
         removeLine.setOnAction(e -> {
             SplitRow sel = splitTable.getSelectionModel().getSelectedItem();
-            if (sel != null) splitTable.getItems().remove(sel);
+            if (sel != null)
+            {
+                splitTable.getItems().remove(sel);
+            }
         });
 
         VBox box = new VBox(6, lbl, tb, splitTable);
@@ -115,32 +140,143 @@ public class TransactionEditorPanel implements AppPanel
 
     private void validateOrPost()
     {
-        long nonEmpty = splitTable.getItems().stream()
-                .filter(r -> !r.account().isBlank() || !r.fund().isBlank() || !r.amount().isBlank())
-                .count();
-        Alert a = new Alert(Alert.AlertType.INFORMATION,
-                "Validation summary:\nEntered split rows: " + nonEmpty +
-                        "\nUse PostingService-backed commit wiring to persist this transaction.");
-        a.setHeaderText("Post / Validate");
-        a.showAndWait();
+        status.setText("Validating split rows against current account/fund catalogs...");
+        UiAsync.run("txn-editor-validate", this::validateAgainstReferenceData,
+                result -> status.setText(result.message()),
+                ex -> status.setText("Validation failed: " + UiErrors.safeMessage(ex)));
+    }
+
+    private ValidationResult validateAgainstReferenceData()
+    {
+        Set<String> accountCodes = UiServiceRegistry.accountLookup().listActivePostingAccounts()
+                .stream()
+                .map(Account::getCode)
+                .collect(java.util.stream.Collectors.toSet());
+        Set<String> fundCodes = UiServiceRegistry.fundLookup().listActiveFunds()
+                .stream()
+                .map(Fund::getCode)
+                .collect(java.util.stream.Collectors.toSet());
+        return validateSplits(splitTable.getItems(), accountCodes, fundCodes);
+    }
+
+    static ValidationResult validateSplits(List<SplitRow> rows, Set<String> accountCodes, Set<String> fundCodes)
+    {
+        int nonEmpty = 0;
+        int valid = 0;
+        int errors = 0;
+        BigDecimal net = BigDecimal.ZERO;
+
+        for (SplitRow row : rows)
+        {
+            boolean hasData = !(isBlank(row.account()) && isBlank(row.fund()) && isBlank(row.amount()));
+            if (!hasData)
+            {
+                continue;
+            }
+            nonEmpty++;
+
+            boolean rowValid = true;
+            if (isBlank(row.account()) || !accountCodes.contains(row.account().trim()))
+            {
+                rowValid = false;
+            }
+            if (isBlank(row.fund()) || !fundCodes.contains(row.fund().trim()))
+            {
+                rowValid = false;
+            }
+
+            BigDecimal amount = parseAmount(row.amount());
+            if (amount == null)
+            {
+                rowValid = false;
+            }
+            else
+            {
+                net = net.add(amount);
+            }
+
+            if (rowValid)
+            {
+                valid++;
+            }
+            else
+            {
+                errors++;
+            }
+        }
+
+        if (nonEmpty == 0)
+        {
+            return new ValidationResult("Validation result: no split rows entered.", 0, 0, 0, BigDecimal.ZERO);
+        }
+
+        String message = "Validation result: rows=" + nonEmpty
+                + ", valid=" + valid
+                + ", errors=" + errors
+                + ", net=" + net.toPlainString();
+        if (errors == 0 && net.compareTo(BigDecimal.ZERO) == 0)
+        {
+            message += " (ready to post)";
+        }
+        else if (errors == 0)
+        {
+            message += " (warning: not balanced)";
+        }
+        return new ValidationResult(message, nonEmpty, valid, errors, net);
+    }
+
+    private static boolean isBlank(String value)
+    {
+        return value == null || value.isBlank();
+    }
+
+    private static BigDecimal parseAmount(String value)
+    {
+        if (isBlank(value))
+        {
+            return null;
+        }
+        try
+        {
+            return new BigDecimal(value.trim());
+        }
+        catch (NumberFormatException ex)
+        {
+            return null;
+        }
     }
 
     private void showJournal()
     {
-        Alert a = new Alert(Alert.AlertType.INFORMATION, "Journal preview is available from Ledger Register after posting.\nThis editor focuses on preparing balanced splits.");
-        a.setHeaderText("Journal View");
-        a.showAndWait();
+        status.setText("Open Ledger Register to inspect persisted journal lines for posted transactions.");
     }
 
-    @Override public String title() { return "Transaction Editor"; }
-    @Override public Node root() { return root; }
-
-    @Override public void onSave()
+    @Override
+    public String title()
     {
-        Alert a = new Alert(Alert.AlertType.INFORMATION, "Draft captured in editor session. Persist-to-db save wiring can be attached to PostingService.");
-        a.setHeaderText("Save");
-        a.showAndWait();
+        return "Transaction Editor";
     }
 
-    public record SplitRow(String account, String fund, String amount, String activity, String merchant, String nmr, String notes) {}
+    @Override
+    public Node root()
+    {
+        return root;
+    }
+
+    @Override
+    public void onSave()
+    {
+        long draftedRows = splitTable.getItems().stream()
+                .filter(r -> !(isBlank(r.account()) && isBlank(r.fund()) && isBlank(r.amount())))
+                .count();
+        status.setText("Draft saved in session with " + draftedRows + " populated split row(s).");
+    }
+
+    record ValidationResult(String message, int rowCount, int validCount, int errorCount, BigDecimal netAmount)
+    {
+    }
+
+    public record SplitRow(String account, String fund, String amount, String activity, String merchant, String nmr, String notes)
+    {
+    }
 }
