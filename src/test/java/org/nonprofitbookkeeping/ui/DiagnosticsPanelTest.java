@@ -1,0 +1,24 @@
+package org.nonprofitbookkeeping.ui;
+
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class DiagnosticsPanelTest
+{
+    @Test
+    public void duplicateCodes_returnsOnlyDuplicates()
+    {
+        Map<String, Integer> duplicates = DiagnosticsPanel.duplicateCodes(
+                List.of("1000", "2000", "1000", "", null, "F01", "F01", "F02"));
+
+        assertEquals(2, duplicates.size());
+        assertEquals(2, duplicates.get("1000"));
+        assertEquals(2, duplicates.get("F01"));
+        assertTrue(!duplicates.containsKey("2000"));
+    }
+}
