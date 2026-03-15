@@ -1962,3 +1962,70 @@ Continued Phase 4 by wiring `Budget Editor` and `Budget vs Actual` together thro
 
 - Command executed: `mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository`
 - Result: blocked before test execution due Maven plugin resolution/network policy (`maven-resources-plugin:3.3.1` from Maven Central, `Network is unreachable`).
+
+## 155) Latest pass update (Phase 4 follow-up: validation + durable budget target persistence)
+
+Implemented the requested follow-up items from review:
+
+1. stricter budget target validation in Budget Editor, and
+2. durable budget target persistence beyond a single app session.
+
+### Implemented
+
+- `BudgetEditorPanel` now validates target input with explicit rules via `parseTargetAmount(...)`:
+  - requires non-blank numeric input,
+  - rejects negative values,
+  - enforces max 2 decimal places,
+  - returns deterministic user-facing validation messages.
+- Added `BudgetTargetPersistence` with deterministic map serialization:
+  - stores budget targets in `${user.home}/.sca-jakarta-h2/budget-targets.properties`,
+  - supports `load()` and `save(...)` flows,
+  - ignores malformed rows safely while reading.
+- `UiWorkspaceDataStore` now:
+  - bootstraps budget targets from persisted storage on class init,
+  - saves persisted state on each target upsert/remove.
+
+### Tests added/updated
+
+- Updated `BudgetEditorPanelTest` with target validation coverage.
+- Added `BudgetTargetPersistenceTest` for deterministic read/write round-trip and malformed-row handling.
+
+## 156) Test execution status
+
+- Command executed: `mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository`
+- Result: blocked before test execution due Maven plugin resolution/network policy (`maven-resources-plugin:3.3.1` from Maven Central, `Network is unreachable`).
+
+## 157) Latest pass update (Phase 4 completion + Phase 5 hardening slice)
+
+Implemented the requested Phase 4/5 continuation focused on operational panel runbooks and shell hardening.
+
+### Phase 4 — Operationalization of partially wired panels
+
+- `SchedulesPanel`:
+  - added lifecycle runbook actions (`Record Open Item`, `Record Settlement`, `Record Write-off`),
+  - records deterministic runbook entries scoped to selected account + enabled schedule tab,
+  - keeps tab-gating behavior while replacing read-only scaffolding with operator actions.
+- `AssetsRegisterPanel`:
+  - added lifecycle action buttons (`Record Acquisition`, `Record Disposal`, `Record Impairment`),
+  - added in-panel lifecycle runbook history list.
+- `DepreciationRunsPanel`:
+  - added run lifecycle action buttons (`Record Started`, `Record Completed`, `Record Failed`),
+  - added deterministic run history list.
+- `InventoryPanel`:
+  - added movement actions (`Receive Stock`, `Issue Stock`, `Adjust Count`) with quantity validation,
+  - records movement runbook entries in-panel.
+
+### Phase 5 — Cross-cutting hardening
+
+- Added role/privilege panel gating in `MainWindow.openPanel(...)`:
+  - `requiredPrivilegeForPanel(...)` and `canAccessPanelForPrivilege(...)` enforce minimum privilege checks before panel open.
+- Added shared inspector presentation model `InspectorPresentationModel` and wired `NavigationPane.inspectorBody(...)` to use it.
+- Expanded interaction/helper tests for high-traffic shell/panel behavior:
+  - privilege gating,
+  - runbook entry formatting for schedules/assets/depreciation/inventory,
+  - shared inspector presentation composition.
+
+## 158) Test execution status
+
+- Command executed: `mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository`
+- Result: blocked before test execution due Maven plugin resolution/network policy (`maven-resources-plugin:3.3.1` from Maven Central, `Network is unreachable`).

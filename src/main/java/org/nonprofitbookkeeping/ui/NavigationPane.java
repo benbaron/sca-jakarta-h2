@@ -141,18 +141,17 @@ public class NavigationPane extends VBox
     {
         if (item == null || item.panelId() == null)
         {
-            return "Navigation group selected. Choose a workspace item to open details."
-                    + "\nActive company: " + context.activeCompany()
-                    + "\nDate range: " + context.dateRange();
+            return InspectorPresentationModel.navigationGroupBody(context.activeCompany(), context.dateRange());
         }
 
-        return "Panel: " + item.label()
-                + "\nID: " + item.panelId().name()
-                + "\nActive company: " + context.activeCompany()
-                + "\nDate range: " + context.dateRange()
-                + "\nCapabilities: " + context.panelCapabilities()
-                + "\nOpen behavior: single-select, Enter, or double-click."
-                + "\nContext: use toolbar Find/Journal for cross-panel queries.";
+        return InspectorPresentationModel.panelBody(
+                item.label(),
+                item.panelId().name(),
+                context.activeCompany(),
+                context.dateRange(),
+                context.panelCapabilities(),
+                "single-select, Enter, or double-click.",
+                "use toolbar Find/Journal for cross-panel queries.");
     }
 
     public void highlight(AppPanelId id)

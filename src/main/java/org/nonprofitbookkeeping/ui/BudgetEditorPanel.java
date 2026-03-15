@@ -96,11 +96,11 @@ public class BudgetEditorPanel implements AppPanel
         BigDecimal target;
         try
         {
-            target = new BigDecimal(amountField.getText().trim());
+            target = parseTargetAmount(amountField.getText());
         }
-        catch (RuntimeException ex)
+        catch (IllegalArgumentException ex)
         {
-            status.setText("Enter a valid numeric target amount.");
+            status.setText(ex.getMessage());
             return;
         }
 
@@ -133,6 +133,32 @@ public class BudgetEditorPanel implements AppPanel
                         targetsByFund.getOrDefault(r.getFundCode(), BigDecimal.ZERO)))
                 .sorted(java.util.Comparator.comparing(FundBudgetRow::fundCode))
                 .toList();
+    }
+
+    static BigDecimal parseTargetAmount(String input)
+    {
+        if (input == null || input.isBlank())
+        {
+            throw new IllegalArgumentException("Enter a target amount before saving.");
+        }
+        final BigDecimal amount;
+        try
+        {
+            amount = new BigDecimal(input.trim());
+        }
+        catch (RuntimeException ex)
+        {
+            throw new IllegalArgumentException("Enter a valid numeric target amount.");
+        }
+        if (amount.signum() < 0)
+        {
+            throw new IllegalArgumentException("Budget target cannot be negative.");
+        }
+        if (amount.scale() > 2)
+        {
+            throw new IllegalArgumentException("Budget target supports up to 2 decimal places.");
+        }
+        return amount;
     }
 
     record FundBudgetRow(String fundCode, String fundName, BigDecimal actual, BigDecimal budgetTarget)

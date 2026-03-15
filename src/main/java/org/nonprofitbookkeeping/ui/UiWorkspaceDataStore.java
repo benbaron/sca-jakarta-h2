@@ -17,7 +17,7 @@ final class UiWorkspaceDataStore
     private static final Object LOCK = new Object();
     private static List<BankTransactionRecord> bankTransactions = List.of();
     private static final List<ImportExportJob> jobs = new ArrayList<>();
-    private static final Map<String, java.math.BigDecimal> budgetTargetsByFundCode = new LinkedHashMap<>();
+    private static final Map<String, java.math.BigDecimal> budgetTargetsByFundCode = new LinkedHashMap<>(BudgetTargetPersistence.load());
 
     private UiWorkspaceDataStore()
     {
@@ -72,6 +72,7 @@ final class UiWorkspaceDataStore
         synchronized (LOCK)
         {
             budgetTargetsByFundCode.put(fundCode, target);
+            BudgetTargetPersistence.save(budgetTargetsByFundCode);
         }
     }
 
@@ -84,6 +85,7 @@ final class UiWorkspaceDataStore
         synchronized (LOCK)
         {
             budgetTargetsByFundCode.remove(fundCode);
+            BudgetTargetPersistence.save(budgetTargetsByFundCode);
         }
     }
 

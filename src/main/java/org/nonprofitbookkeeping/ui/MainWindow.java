@@ -22,6 +22,7 @@ import org.nonprofitbookkeeping.model.BankingDataFormat;
 import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
+import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
 import org.nonprofitbookkeeping.model.ViewPresetState;
 import org.nonprofitbookkeeping.service.BankTransactionRecord;
 import org.nonprofitbookkeeping.service.CoaCsvMapper;
@@ -289,6 +290,21 @@ public class MainWindow extends BorderPane
             case DIAGNOSTICS -> "Health checks and duplicate-code diagnostics";
             default -> "Open panel, inspect context, panel-local actions";
         };
+    }
+
+    static UserPrivilegeLevel requiredPrivilegeForPanel(AppPanelId id)
+    {
+        return switch (id)
+        {
+            case APPROVAL_AUDIT, PERIOD_CLOSE_RUNS -> UserPrivilegeLevel.MANAGER;
+            case SETTINGS, DIAGNOSTICS -> UserPrivilegeLevel.ADMIN;
+            default -> UserPrivilegeLevel.ACCOUNTANT;
+        };
+    }
+
+    static boolean canAccessPanelForPrivilege(AppPanelId id, UserPrivilegeLevel privilege)
+    {
+        return privilege.ordinal() >= requiredPrivilegeForPanel(id).ordinal();
     }
 
     private static String panelLabel(AppPanelId id)
@@ -774,6 +790,12 @@ public class MainWindow extends BorderPane
     // --- hooks ---
     public void openPanel(AppPanelId id)
     {
+        UserPrivilegeLevel privilege = SESSION_STATE.preferences().defaultPrivilege();
+        if (!canAccessPanelForPrivilege(id, privilege))
+        {
+            info("Access denied: " + panelLabel(id) + " requires " + requiredPrivilegeForPanel(id) + " privilege.");
+            return;
+        }
         panelHost.show(id);
         nav.highlight(id);
         if (activePanelLabel != null)
