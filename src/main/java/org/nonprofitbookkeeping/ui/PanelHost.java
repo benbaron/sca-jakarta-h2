@@ -69,6 +69,22 @@ public class PanelHost extends BorderPane
     public void copySelectionActive() { AppPanel p = getActive(); if (p != null) p.onCopy(); }
     public void pasteActive() { AppPanel p = getActive(); if (p != null) p.onPaste(); }
 
+    public AppPanel.RunCommandResult runCommandActive(AppPanel.RunCommand command)
+    {
+        AppPanel p = getActive();
+        if (p == null)
+        {
+            return new AppPanel.RunCommandResult(false, "No active panel selected.");
+        }
+        return p.onRunCommand(command);
+    }
+
+    public java.util.Optional<AppPanel.JournalSelection> activeJournalSelection()
+    {
+        AppPanel p = getActive();
+        return p == null ? java.util.Optional.empty() : p.activeJournalSelection();
+    }
+
     AppPanelId activePanelId()
     {
         return activeId;

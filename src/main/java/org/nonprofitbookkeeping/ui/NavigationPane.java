@@ -12,6 +12,7 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Represents the NavigationPane component in the nonprofit bookkeeping application.
@@ -22,11 +23,15 @@ public class NavigationPane extends VBox
     private final Map<AppPanelId, TreeItem<NavItem>> index = new EnumMap<>(AppPanelId.class);
     private final Consumer<AppPanelId> openPanel;
     private final BiConsumer<String, String> openInspector;
+    private final Supplier<InspectorContext> inspectorContextSupplier;
 
-    public NavigationPane(Consumer<AppPanelId> openPanel, BiConsumer<String, String> openInspector)
+    public NavigationPane(Consumer<AppPanelId> openPanel,
+                          BiConsumer<String, String> openInspector,
+                          Supplier<InspectorContext> inspectorContextSupplier)
     {
         this.openPanel = openPanel;
         this.openInspector = openInspector;
+        this.inspectorContextSupplier = inspectorContextSupplier;
 
         getStyleClass().add("nav");
 
@@ -102,7 +107,7 @@ public class NavigationPane extends VBox
             {
                 tree.getSelectionModel().select(sel);
                 NavItem v = sel.getValue();
-                openInspector.accept("Details: " + v.label(), inspectorBody(v));
+                openInspector.accept("Details: " + v.label(), inspectorBody(v, inspectorContextSupplier.get()));
             }
         });
 
@@ -126,13 +131,23 @@ public class NavigationPane extends VBox
 
     static String inspectorBody(NavItem item)
     {
+        return inspectorBody(item, new InspectorContext("(unknown)", String.valueOf(DateRangeContext.get()), "(unspecified)"));
+    }
+
+    static String inspectorBody(NavItem item, InspectorContext context)
+    {
         if (item == null || item.panelId() == null)
         {
-            return "Navigation group selected. Choose a workspace item to open details.";
+            return "Navigation group selected. Choose a workspace item to open details."
+                    + "\nActive company: " + context.activeCompany()
+                    + "\nDate range: " + context.dateRange();
         }
 
         return "Panel: " + item.label()
                 + "\nID: " + item.panelId().name()
+                + "\nActive company: " + context.activeCompany()
+                + "\nDate range: " + context.dateRange()
+                + "\nCapabilities: " + context.panelCapabilities()
                 + "\nOpen behavior: single-select, Enter, or double-click."
                 + "\nContext: use toolbar Find/Journal for cross-panel queries.";
     }
@@ -169,4 +184,6 @@ public class NavigationPane extends VBox
     }
 
     public record NavItem(AppPanelId panelId, String label) {}
+
+    public record InspectorContext(String activeCompany, String dateRange, String panelCapabilities) {}
 }

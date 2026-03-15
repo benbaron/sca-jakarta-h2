@@ -1653,3 +1653,80 @@ Final response requirements:
 - Include testing section with ✅/⚠️/❌ command prefixes.
 - Include a brief code review and offer follow-up fixes for any identified issues.
 ```
+
+## 134) Latest pass update (Phase 1 follow-up completion: run contract, search query/filter, journal context)
+
+Completed the remaining Phase 1 follow-ups from section 132 before any Phase 2 work.
+
+### Implemented
+
+- Added an explicit active-panel run command contract in `AppPanel`/`PanelHost`:
+  - new `RunCommand.POST_VALIDATE` dispatch path,
+  - structured `RunCommandResult` response for deterministic in-inspector feedback,
+  - optional panel journal-selection context contract (`JournalSelection`).
+- Rewired `MainWindow` Run → Post/Validate to invoke the explicit run contract instead of generic save dispatch.
+- Updated `TransactionEditorPanel` to handle run commands directly:
+  - `POST_VALIDATE` delegates to existing validation flow,
+  - status now stores and reuses last validation summary for consistent save/run feedback.
+- Upgraded Search from snapshot-only to query/filter behavior:
+  - added normalized query matching helpers,
+  - returns filtered panel/account/fund result sets,
+  - added panel jump method (`jumpToPanelFromSearch`) for deterministic navigation.
+- Improved Journal inspector context handling:
+  - prefers active panel selection context when available,
+  - falls back to most recent transaction preview when no selection is exposed.
+- Exposed active journal selection from `LedgerRegisterPanel` for context-aware inspector behavior.
+
+### Tests added/updated
+
+- Added `MainWindowPhase1FollowupTest` covering:
+  - explicit run-command dispatch usage,
+  - search normalization/matching,
+  - search query filtering,
+  - search-driven panel jump,
+  - journal inspector selection-context preference.
+- Existing validation tests continue covering deterministic split validation behavior.
+
+## 135) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, `https://repo.maven.apache.org/maven2`, network unreachable).
+
+## 136) Latest pass update (Phase 1 completion hardening after review feedback)
+
+Addressed follow-up feedback to fully complete all remaining Phase 1 items in section 132.
+
+### Transaction Editor completion
+
+- Kept existing validation/status behavior and explicit `POST_VALIDATE` panel run-command dispatch.
+- Added query-backed journal preview in `TransactionEditorPanel` for current editor context (`date/payee/memo/bank`):
+  - loads recent ledger rows,
+  - deterministically filters by non-blank context fields,
+  - renders a compact preview from the matched transaction + journal lines,
+  - provides explicit in-panel fallback message when no match exists.
+
+### MainWindow shell completion
+
+- Kept run-command contract path and query-based search/jump behavior.
+- Replaced unsupported Edit menu actions with explicit disabled states (`Undo`, `Redo`, `Cut`) rather than informational placeholders.
+- Kept/extended Journal inspector active-selection preference with fallback logic.
+- Locale hardening: search normalization/matching now uses `Locale.ROOT` for deterministic case-folding.
+
+### Navigation details completion
+
+- Enhanced navigation inspector content to include richer context metadata:
+  - active company,
+  - active date range,
+  - panel capability summary.
+
+### Tests added/updated
+
+- Updated `AppPanelConsistencyTest` for new `NavigationPane` constructor contract.
+- Updated `NavigationPaneInspectorBodyTest` to validate metadata-rich inspector body output.
+- Added `TransactionEditorPanelJournalPreviewTest` for deterministic context matching and preview rendering.
+- Expanded `MainWindowPhase1FollowupTest` to validate panel capability metadata expectations.
+
+## 137) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due Maven plugin resolution/network access (`maven-resources-plugin:3.3.1`, `https://repo.maven.apache.org/maven2`, network unreachable).
