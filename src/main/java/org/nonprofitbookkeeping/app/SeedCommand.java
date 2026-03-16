@@ -31,6 +31,9 @@ import java.util.List;
 	name = "seed",
 	mixinStandardHelpOptions = true,
 	description = "Seed a minimal Chart of Accounts and Funds for development/demo use.")
+/**
+ * SeedCommand component.
+ */
 public class SeedCommand implements Runnable
 {
 	@Inject private Jpa jpa;

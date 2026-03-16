@@ -21,6 +21,9 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * BankTransactionsPanel component.
+ */
 public class BankTransactionsPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();

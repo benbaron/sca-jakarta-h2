@@ -8,6 +8,9 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * CustomerPanelRegistryTest component.
+ */
 public class CustomerPanelRegistryTest
 {
     @Test

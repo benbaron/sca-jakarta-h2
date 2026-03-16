@@ -61,6 +61,7 @@ public class AssetsRegisterPanel implements AppPanel
 
         lifecycleLog.setItems(FXCollections.observableArrayList());
         lifecycleLog.setPlaceholder(new Label("No asset lifecycle events recorded in this session."));
+        lifecycleLog.getItems().setAll(UiWorkspaceDataStore.assetLifecycleEntries());
 
         root.setCenter(new VBox(8, table, new Label("Lifecycle Runbook"), lifecycleLog));
         reload();
@@ -75,7 +76,8 @@ public class AssetsRegisterPanel implements AppPanel
             return;
         }
         String line = formatLifecycleEntry(action, selected.getCode(), selected.getName(), LocalDateTime.now());
-        lifecycleLog.getItems().add(0, line);
+        UiWorkspaceDataStore.appendAssetLifecycleEntry(line);
+        lifecycleLog.getItems().setAll(UiWorkspaceDataStore.assetLifecycleEntries());
         status.setText("Recorded asset lifecycle action: " + action + " for " + selected.getCode() + ".");
     }
 

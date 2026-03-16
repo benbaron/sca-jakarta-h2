@@ -16,6 +16,9 @@ import org.nonprofitbookkeeping.repository.PeriodCloseRunRecord;
 
 import java.time.LocalDate;
 
+/**
+ * PeriodCloseRunsPanel component.
+ */
 public class PeriodCloseRunsPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();

@@ -20,6 +20,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * ApprovalAuditPanel component.
+ */
 public class ApprovalAuditPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();

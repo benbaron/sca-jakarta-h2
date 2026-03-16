@@ -12,6 +12,9 @@ import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+/**
+ * PeriodCloseServiceIntegrationTest component.
+ */
 public class PeriodCloseServiceIntegrationTest
 {
     @Test

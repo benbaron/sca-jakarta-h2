@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * JdbcPeriodCloseRunRepository component.
+ */
 public class JdbcPeriodCloseRunRepository implements PeriodCloseRunRepository
 {
     private final DataSource dataSource;

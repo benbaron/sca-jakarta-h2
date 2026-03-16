@@ -2029,3 +2029,134 @@ Implemented the requested Phase 4/5 continuation focused on operational panel ru
 
 - Command executed: `mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository`
 - Result: blocked before test execution due Maven plugin resolution/network policy (`maven-resources-plugin:3.3.1` from Maven Central, `Network is unreachable`).
+
+## 159) Latest pass update (follow-up item 1: persisted operational runbook events)
+
+Implemented persistence of operational runbook events across the panel set introduced in Phase 4.
+
+### Implemented
+
+- Extended `UiWorkspaceDataStore` with cross-panel runbook/event projections:
+  - `scheduleRunbookEntries`
+  - `assetLifecycleEntries`
+  - `depreciationRunEntries`
+  - `inventoryMovementEntries`
+  - append + read APIs for each projection.
+- Updated operational panels to append to and read from shared store:
+  - `SchedulesPanel`
+  - `AssetsRegisterPanel`
+  - `DepreciationRunsPanel`
+  - `InventoryPanel`
+- Result: runbook logs are now panel-persistent for the session and shared consistently when panels are reopened.
+
+### Tests updated
+
+- Updated `UiWorkspaceDataStoreTest` with coverage for cross-panel runbook projection append/read behavior.
+
+## 160) Latest pass update (follow-up item 2: disable restricted menu/toolbar actions)
+
+Implemented privilege-aware disabling (not just open-time denial) for key shell actions.
+
+### Implemented
+
+- Added gated control infrastructure to `MainWindow`:
+  - `gatedMenuItems`, `gatedButtons`
+  - `gatedItem(...)`, `gate(...)`, `refreshPrivilegeGating()`.
+- Added privilege-gated menu items in Tools menu:
+  - `Approval Audit` requires `MANAGER`
+  - `Diagnostics` requires `ADMIN`
+  - `Preferences` requires `ADMIN`
+- Added privilege-gated toolbar buttons:
+  - `New`, `Save`, `Find`, `Journal` require `ACCOUNTANT`.
+- `applyPreferences(...)` now refreshes privilege gating so Settings-driven privilege changes are reflected immediately in shell controls.
+
+## 161) Test execution status
+
+- Command executed: `mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository`
+- Result: blocked before test execution due Maven plugin resolution/network policy (`maven-resources-plugin:3.3.1` from Maven Central, `Network is unreachable`).
+
+## 162) Latest pass update (perform items 1 and 2)
+
+Completed requested follow-up items:
+
+1. add focused UI coverage for privilege-gated shell control state transitions, and
+2. persist operational runbook projections beyond panel-local in-memory lists.
+
+### Implemented
+
+- Added durable runbook persistence helper `RunbookPersistence` (line-based UTF-8 files under `${user.home}/.sca-jakarta-h2/runbooks`).
+- Updated `UiWorkspaceDataStore` to bootstrap and persist runbook entries for:
+  - schedules,
+  - asset lifecycle,
+  - depreciation runs,
+  - inventory movement.
+- Added test hooks in `MainWindow` for gated control disabled states:
+  - `gatedToolItemDisabledStatesForTests()`
+  - `gatedToolbarDisabledStatesForTests()`
+- Expanded `MainWindowPrivilegeGatingTest` with an FX test proving controls are disabled for `VIEWER` and enabled after switching to `ADMIN`.
+- Added `RunbookPersistenceTest` for basic schedule runbook save/load round-trip.
+
+## 163) Test execution status
+
+- Command executed: `mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository`
+- Result: blocked before test execution due Maven plugin resolution/network policy (`maven-resources-plugin:3.3.1` from Maven Central, `Network is unreachable`).
+
+## 164) Documentation refresh + next-stage recommendations
+
+Reviewed panel-facing docs and refreshed them to match the current design state.
+
+### Documentation updates
+
+- Updated `docs/UI_SKELETON.md` to reflect current implementation rather than legacy skeleton placeholders:
+  - explicit run-command/search/journal context status,
+  - operational runbook panels,
+  - session and durable persistence surfaces,
+  - privilege gating and inspector model alignment.
+- Rewrote `docs/TODO.md` as a stage-based roadmap aligned with current architecture:
+  - build reliability,
+  - domain-backed runbook persistence,
+  - privilege hardening,
+  - interaction test expansion,
+  - domain-service integration.
+
+### Recommended next-stage items
+
+1. **Build execution reliability**: deliver deterministic plugin bootstrap in CI/local restricted networks.
+2. **Domain persistence lift**: migrate runbook projections from UI persistence files to DB-backed records.
+3. **Action-level privilege checks**: enforce role policy beyond panel-open checks and disabled controls.
+4. **Interaction-test expansion**: add JavaFX flow coverage for runbook actions and gated controls.
+5. **Service integration**: tie schedule/inventory/depreciation runbook actions to posting/open-item domain services.
+
+## 165) Test execution status
+
+- Command executed: `mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository`
+- Result: blocked before test execution due Maven plugin resolution/network policy (`maven-resources-plugin:3.3.1` from Maven Central, `Network is unreachable`).
+
+## 166) Javadoc sweep for undocumented classes
+
+Added top-level Javadoc comments to all classes/interfaces/enums/records that previously lacked them under `src/main/java` and `src/test/java`.
+
+### Implementation notes
+
+- Applied a consistent class-level Javadoc block immediately above the first top-level type declaration in each affected file.
+- Included UI panels, services, repositories, persistence helpers, domain enums, app/bootstrap classes, and test classes.
+- Verified completion with a repository scan script that reports remaining undocumented top-level types.
+
+## 167) Test execution status
+
+- Command executed: `mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository`
+- Result: blocked before test execution due Maven plugin resolution/network policy (`maven-resources-plugin:3.3.1` from Maven Central, `Network is unreachable`).
+
+## 168) Fix MainWindowPrivilegeGatingTest FX callable signature
+
+Addressed test compilation failure in `MainWindowPrivilegeGatingTest` where a void lambda was passed to `FxTestSupport.onFx(Callable<T>)`.
+
+### Implementation notes
+
+- Replaced the void lambda call with a callable block that applies preferences and returns `null`.
+- This aligns with `FxTestSupport.onFx` generic signature and avoids type inference conflict (`Object` vs `void`).
+
+## 169) Test execution status
+
+- Command executed: `mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository`
+- Result: blocked before test execution due Maven plugin resolution/network policy (`maven-resources-plugin:3.3.1` from Maven Central, `Network is unreachable`).

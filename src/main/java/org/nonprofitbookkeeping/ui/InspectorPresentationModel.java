@@ -1,5 +1,8 @@
 package org.nonprofitbookkeeping.ui;
 
+/**
+ * InspectorPresentationModel component.
+ */
 final class InspectorPresentationModel
 {
     private InspectorPresentationModel()

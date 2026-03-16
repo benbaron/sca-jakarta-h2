@@ -59,6 +59,7 @@ public class DepreciationRunsPanel implements AppPanel
 
         runHistory.setItems(FXCollections.observableArrayList());
         runHistory.setPlaceholder(new Label("No depreciation run events recorded yet."));
+        runHistory.getItems().setAll(UiWorkspaceDataStore.depreciationRunEntries());
 
         root.setCenter(new VBox(8, fixedAssetAccounts, new Label("Depreciation Run History"), runHistory));
         reload();
@@ -73,7 +74,8 @@ public class DepreciationRunsPanel implements AppPanel
             return;
         }
         String entry = formatRunEntry(state, selected.getCode(), selected.getName(), LocalDateTime.now());
-        runHistory.getItems().add(0, entry);
+        UiWorkspaceDataStore.appendDepreciationRunEntry(entry);
+        runHistory.getItems().setAll(UiWorkspaceDataStore.depreciationRunEntries());
         status.setText("Depreciation run state " + state + " recorded for " + selected.getCode() + ".");
     }
 

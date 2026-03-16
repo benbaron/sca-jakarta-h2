@@ -4,6 +4,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * NavigationPaneInspectorBodyTest component.
+ */
 public class NavigationPaneInspectorBodyTest
 {
     @Test

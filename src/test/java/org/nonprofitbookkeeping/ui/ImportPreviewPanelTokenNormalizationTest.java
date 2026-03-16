@@ -6,6 +6,9 @@ import org.nonprofitbookkeeping.model.NormalBalance;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * ImportPreviewPanelTokenNormalizationTest component.
+ */
 public class ImportPreviewPanelTokenNormalizationTest
 {
     @Test

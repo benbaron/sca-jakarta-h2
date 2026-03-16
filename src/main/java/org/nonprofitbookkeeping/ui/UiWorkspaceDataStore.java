@@ -18,6 +18,10 @@ final class UiWorkspaceDataStore
     private static List<BankTransactionRecord> bankTransactions = List.of();
     private static final List<ImportExportJob> jobs = new ArrayList<>();
     private static final Map<String, java.math.BigDecimal> budgetTargetsByFundCode = new LinkedHashMap<>(BudgetTargetPersistence.load());
+    private static final List<String> scheduleRunbookEntries = new ArrayList<>(RunbookPersistence.loadScheduleEntries());
+    private static final List<String> assetLifecycleEntries = new ArrayList<>(RunbookPersistence.loadAssetEntries());
+    private static final List<String> depreciationRunEntries = new ArrayList<>(RunbookPersistence.loadDepreciationEntries());
+    private static final List<String> inventoryMovementEntries = new ArrayList<>(RunbookPersistence.loadInventoryEntries());
 
     private UiWorkspaceDataStore()
     {
@@ -63,6 +67,74 @@ final class UiWorkspaceDataStore
         }
     }
 
+    static void appendScheduleRunbookEntry(String line)
+    {
+        synchronized (LOCK)
+        {
+            scheduleRunbookEntries.add(0, line);
+            RunbookPersistence.saveScheduleEntries(scheduleRunbookEntries);
+        }
+    }
+
+    static List<String> scheduleRunbookEntries()
+    {
+        synchronized (LOCK)
+        {
+            return List.copyOf(scheduleRunbookEntries);
+        }
+    }
+
+    static void appendAssetLifecycleEntry(String line)
+    {
+        synchronized (LOCK)
+        {
+            assetLifecycleEntries.add(0, line);
+            RunbookPersistence.saveAssetEntries(assetLifecycleEntries);
+        }
+    }
+
+    static List<String> assetLifecycleEntries()
+    {
+        synchronized (LOCK)
+        {
+            return List.copyOf(assetLifecycleEntries);
+        }
+    }
+
+    static void appendDepreciationRunEntry(String line)
+    {
+        synchronized (LOCK)
+        {
+            depreciationRunEntries.add(0, line);
+            RunbookPersistence.saveDepreciationEntries(depreciationRunEntries);
+        }
+    }
+
+    static List<String> depreciationRunEntries()
+    {
+        synchronized (LOCK)
+        {
+            return List.copyOf(depreciationRunEntries);
+        }
+    }
+
+    static void appendInventoryMovementEntry(String line)
+    {
+        synchronized (LOCK)
+        {
+            inventoryMovementEntries.add(0, line);
+            RunbookPersistence.saveInventoryEntries(inventoryMovementEntries);
+        }
+    }
+
+    static List<String> inventoryMovementEntries()
+    {
+        synchronized (LOCK)
+        {
+            return List.copyOf(inventoryMovementEntries);
+        }
+    }
+
     static void upsertBudgetTarget(String fundCode, java.math.BigDecimal target)
     {
         if (fundCode == null || fundCode.isBlank() || target == null)
@@ -104,6 +176,10 @@ final class UiWorkspaceDataStore
             bankTransactions = List.of();
             jobs.clear();
             budgetTargetsByFundCode.clear();
+            scheduleRunbookEntries.clear();
+            assetLifecycleEntries.clear();
+            depreciationRunEntries.clear();
+            inventoryMovementEntries.clear();
         }
     }
 

@@ -68,6 +68,7 @@ public class SchedulesPanel implements AppPanel
 
         runbook.setItems(FXCollections.observableArrayList());
         runbook.setPlaceholder(new Label("No schedule lifecycle actions recorded in this session."));
+        runbook.getItems().setAll(UiWorkspaceDataStore.scheduleRunbookEntries());
 
         root.setTop(header);
         root.setCenter(new VBox(8, tabs, new Label("Schedule Runbook"), runbook));
@@ -122,7 +123,7 @@ public class SchedulesPanel implements AppPanel
         TextArea content = new TextArea();
         content.setEditable(false);
         content.setWrapText(true);
-        content.setText(label + " schedule details will appear for the selected account.");
+        content.setText(label + " schedule runbook details are shown for the selected account when this tab is enabled.");
         t.setContent(content);
         tabs.getTabs().add(t);
         tabIndex.put(scheduleCode, t);
@@ -207,7 +208,8 @@ public class SchedulesPanel implements AppPanel
         }
         String scheduleKind = tabCodes.getOrDefault(activeTab, "UNKNOWN");
         String line = formatRunbookEntry(action, scheduleKind, selected.getCode(), selected.getName(), LocalDateTime.now());
-        runbook.getItems().add(0, line);
+        UiWorkspaceDataStore.appendScheduleRunbookEntry(line);
+        runbook.getItems().setAll(UiWorkspaceDataStore.scheduleRunbookEntries());
         status.setText("Recorded " + action + " for schedule " + scheduleKind + " on account " + selected.getCode() + ".");
     }
 

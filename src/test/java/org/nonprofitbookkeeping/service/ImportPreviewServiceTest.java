@@ -9,6 +9,9 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * ImportPreviewServiceTest component.
+ */
 public class ImportPreviewServiceTest
 {
     private final ImportPreviewService service = new ImportPreviewService(new ImportExportOrchestrationService());

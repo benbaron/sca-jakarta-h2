@@ -11,6 +11,9 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * UiWorkspaceDataStoreTest component.
+ */
 public class UiWorkspaceDataStoreTest
 {
     @Test
@@ -68,6 +71,22 @@ public class UiWorkspaceDataStoreTest
         UiWorkspaceDataStore.removeBudgetTarget("PROJ");
 
         assertEquals(Map.of("GEN", BigDecimal.valueOf(2500)), UiWorkspaceDataStore.budgetTargetsByFundCode());
+    }
+
+    @Test
+    public void store_tracksOperationalRunbookEntriesAcrossPanels()
+    {
+        UiWorkspaceDataStore.clearForTests();
+
+        UiWorkspaceDataStore.appendScheduleRunbookEntry("s1");
+        UiWorkspaceDataStore.appendAssetLifecycleEntry("a1");
+        UiWorkspaceDataStore.appendDepreciationRunEntry("d1");
+        UiWorkspaceDataStore.appendInventoryMovementEntry("i1");
+
+        assertEquals(List.of("s1"), UiWorkspaceDataStore.scheduleRunbookEntries());
+        assertEquals(List.of("a1"), UiWorkspaceDataStore.assetLifecycleEntries());
+        assertEquals(List.of("d1"), UiWorkspaceDataStore.depreciationRunEntries());
+        assertEquals(List.of("i1"), UiWorkspaceDataStore.inventoryMovementEntries());
     }
 
 }

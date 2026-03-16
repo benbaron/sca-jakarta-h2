@@ -1,5 +1,8 @@
 package org.nonprofitbookkeeping.domain.state;
 
+/**
+ * Enumeration of DeferredRevenueItemState values.
+ */
 public enum DeferredRevenueItemState
 {
     OPEN,

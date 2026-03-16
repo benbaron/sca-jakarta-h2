@@ -12,6 +12,9 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+/**
+ * ImportExportJobsPanel component.
+ */
 public class ImportExportJobsPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();

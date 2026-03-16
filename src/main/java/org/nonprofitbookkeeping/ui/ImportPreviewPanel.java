@@ -23,6 +23,9 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.Locale;
 
+/**
+ * ImportPreviewPanel component.
+ */
 public class ImportPreviewPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();

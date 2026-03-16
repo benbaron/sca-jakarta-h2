@@ -10,6 +10,9 @@ import org.nonprofitbookkeeping.persistence.Jpa;
 import java.util.List;
 
 @ApplicationScoped
+/**
+ * FundAdminService component.
+ */
 public class FundAdminService
 {
     @Inject

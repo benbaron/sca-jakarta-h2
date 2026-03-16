@@ -13,6 +13,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeSet;
 
+/**
+ * BudgetTargetPersistence component.
+ */
 final class BudgetTargetPersistence
 {
     private static final String STORAGE_DIR = ".sca-jakarta-h2";

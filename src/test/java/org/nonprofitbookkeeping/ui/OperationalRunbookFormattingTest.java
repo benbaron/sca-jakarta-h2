@@ -6,6 +6,9 @@ import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * OperationalRunbookFormattingTest component.
+ */
 class OperationalRunbookFormattingTest
 {
     @Test

@@ -17,6 +17,9 @@ import org.nonprofitbookkeeping.repository.ReconciliationRunRecord;
 
 import java.time.LocalDate;
 
+/**
+ * ReconciliationRunsPanel component.
+ */
 public class ReconciliationRunsPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();

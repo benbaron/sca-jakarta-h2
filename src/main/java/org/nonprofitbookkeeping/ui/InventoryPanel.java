@@ -66,6 +66,7 @@ public class InventoryPanel implements AppPanel
 
         movementLog.setItems(FXCollections.observableArrayList());
         movementLog.setPlaceholder(new Label("No inventory movements recorded in this session."));
+        movementLog.getItems().setAll(UiWorkspaceDataStore.inventoryMovementEntries());
 
         root.setCenter(new VBox(8, table, new Label("Inventory Runbook"), movementLog));
         reload();
@@ -96,7 +97,8 @@ public class InventoryPanel implements AppPanel
         }
 
         String line = formatMovementEntry(movementType, qty, selected.getCode(), selected.getName(), LocalDateTime.now());
-        movementLog.getItems().add(0, line);
+        UiWorkspaceDataStore.appendInventoryMovementEntry(line);
+        movementLog.getItems().setAll(UiWorkspaceDataStore.inventoryMovementEntries());
         status.setText("Recorded inventory " + movementType + " for " + selected.getCode() + " (qty " + qty + ").");
     }
 
