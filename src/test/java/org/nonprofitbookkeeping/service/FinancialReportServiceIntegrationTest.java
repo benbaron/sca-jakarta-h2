@@ -105,13 +105,13 @@ class FinancialReportServiceIntegrationTest
             em.persist(fund);
 
             Counterparty donor = new Counterparty();
-            donor.setKind(CounterpartyKind.DONOR);
+            donor.setKind(CounterpartyKind.ORG);
             donor.setDisplayName("Donor A");
             donor.setActive(true);
             em.persist(donor);
 
             Counterparty vendor = new Counterparty();
-            vendor.setKind(CounterpartyKind.VENDOR);
+            vendor.setKind(CounterpartyKind.ORG);
             vendor.setDisplayName("Vendor B");
             vendor.setActive(true);
             em.persist(vendor);
