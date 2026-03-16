@@ -6,6 +6,9 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * OfxQfxTransactionExtractorTest component.
+ */
 public class OfxQfxTransactionExtractorTest
 {
     @Test

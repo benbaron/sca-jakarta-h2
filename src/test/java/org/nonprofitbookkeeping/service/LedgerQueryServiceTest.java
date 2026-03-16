@@ -10,6 +10,9 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * LedgerQueryServiceTest component.
+ */
 public class LedgerQueryServiceTest
 {
     @Test

@@ -8,6 +8,9 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * CustomerPanelDefinitionTest component.
+ */
 public class CustomerPanelDefinitionTest
 {
     @Test

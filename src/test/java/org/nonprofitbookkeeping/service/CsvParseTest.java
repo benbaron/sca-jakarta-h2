@@ -7,6 +7,9 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * CsvParseTest component.
+ */
 public class CsvParseTest
 {
     @Test

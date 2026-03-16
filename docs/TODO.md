@@ -1,46 +1,47 @@
-# TODO / Next Steps
+# TODO / Next Stages
 
-## Immediate
-- Add CLI commands:
-  - export-funds, import-funds
-  - export-accounts, import-accounts
-  - post-demo (post a sample balanced txn once seeded)
-- Add explicit Posting templates for fund transfers, receivables, payables, etc.
-- Add DB seed migrations for dev environments (optional alternative to CLI seed)
+## Stage A — Reliability + Build Execution
 
-## Near term (JavaFX)
-- Ledger grid UI (SpreadsheetView):
-  - Txn header fields + split editor
-  - Show Journal drawer
-- CoA editor screen + import/export buttons
-  - [x] Read-only account list now wired to `AccountLookupService`
-  - [ ] Add account create/edit forms + import/export
-- Fund editor screen + transfer wizard
-  - [x] Read-only fund list now wired to `FundLookupService`
-  - [ ] Add fund create/edit + transfer wizard
-- Dashboard data wiring
-  - [x] Dashboard now calls `FundBalanceService` + lookup services for summary counts
-  - [x] Data loads moved off JavaFX UI thread for dashboard/CoA/funds/schedules read-only views
-  - [x] Shared async helper (`UiAsync`) used to reduce duplicated JavaFX task boilerplate
-  - [x] Shared error helper (`UiErrors.safeMessage`) used across read-only panels
-  - [ ] Add chart widgets and drill-down links
+- Resolve Maven plugin bootstrap in restricted environments so CI/local tests run without external network dependence.
+  - Preferred: pre-seeded plugin cache + reproducible local repo bootstrap script in CI.
+  - Secondary: approved internal mirror settings profile.
+- Add CI guard to fail fast with explicit diagnostics when plugin/artifact endpoints are unreachable.
 
-## Mid term (Schedules)
-- Schedule screens aligned with workbook:
-  - Outstanding
-  - Asset details (prepaids, deposits)
-  - Liability details (deferred revenue, payables)
-- Schedule linkage to ledger splits for traceability
+## Stage B — Operational Workflow Persistence
 
-## Longer term
-- Inventory module (operational + optional postings)
-- Fixed assets + depreciation runs (posting automation)
+- Promote UI runbook logs to first-class persisted domain records (DB tables + repository APIs).
+- Add query views for lifecycle history by account/fund/workflow.
+- Support runbook export (CSV/JSON) from each operational panel.
 
+## Stage C — Privilege and Security Hardening
 
-## NonprofitBookkeeping roadmap progress
-- [x] Base-codebase decision recorded: keep `sca-jakarta-h2` as host and integrate upstream packages via subpanel adapters (`docs/nonprofitbookkeeping-starting-point-assessment.md`)
-- [x] Phase 0: Archive inventory published (`docs/nonprofitbookkeeping-inventory.md`)
-- [x] Phase 1: Compatibility matrix published (`docs/nonprofitbookkeeping-compatibility-matrix.md`)
-- [x] Phase 3 (first vertical slice): Dashboard package integrated with bridge wiring and mounted through `PanelHost`
-- [ ] Next slice: Chart of Accounts package import + adapter wiring
-- [ ] Next slice: Funds package import + adapter wiring
+- Extend privilege model from coarse shell gating to panel action-level authorization checks.
+- Add role-aware visibility in menus/nav (hide restricted actions where appropriate).
+- Add audit events for denied actions and privileged transitions.
+
+## Stage D — Interaction and Regression Testing
+
+- Expand JavaFX interaction tests for:
+  - gated menu/toolbar state transitions,
+  - runbook action flows,
+  - search -> jump -> inspector coherence,
+  - import/export multi-panel traces.
+- Add deterministic persistence tests for runbook/budget files with test-isolated paths.
+
+## Stage E — Domain-service integration
+
+- Connect operational runbook actions to domain services:
+  - schedules/open-items lifecycle transitions,
+  - depreciation posting workflow,
+  - inventory movement with optional posting templates.
+- Add end-to-end validation from action -> service -> projection -> inspector.
+
+## Roadmap status snapshot
+
+- [x] Explicit panel run-command contract and active selection context
+- [x] Search query/filter + panel jump + journal context improvements
+- [x] Phase 2/3 panel additions (approval/import-export/bank transactions)
+- [x] Phase 4 operational runbooks and budget/report wiring
+- [x] Phase 5 shell privilege gating + shared inspector presentation model
+- [ ] Persistent domain-backed runbook/event history
+- [ ] Fully executable Maven test pipeline in this restricted environment

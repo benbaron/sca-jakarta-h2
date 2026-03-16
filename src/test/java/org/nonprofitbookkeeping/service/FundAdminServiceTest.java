@@ -5,6 +5,9 @@ import org.nonprofitbookkeeping.model.FundType;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+/**
+ * FundAdminServiceTest component.
+ */
 public class FundAdminServiceTest
 {
     private final FundAdminService service = new FundAdminService(null);

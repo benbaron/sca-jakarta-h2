@@ -15,6 +15,9 @@ import picocli.CommandLine.Command;
         SeedCommand.class
     }
 )
+/**
+ * AppCli component.
+ */
 public class AppCli implements Runnable
 {
     @Override

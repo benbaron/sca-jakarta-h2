@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Contract for ReconciliationRunRepository.
+ */
 public interface ReconciliationRunRepository
 {
     void append(ReconciliationRunRecord record);

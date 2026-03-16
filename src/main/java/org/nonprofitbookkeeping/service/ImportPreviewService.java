@@ -11,6 +11,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * ImportPreviewService component.
+ */
 public class ImportPreviewService
 {
     private final ImportExportOrchestrationService orchestrationService;
@@ -111,6 +114,34 @@ public class ImportPreviewService
     {
         ImportExportOrchestrationService.BankImportResult result = orchestrationService.importBankDataFile(path);
         return new BankPreviewResult(path.getFileName().toString(), result.format(), result.transactionCount(), result.transactions());
+    }
+
+
+    public CoaCommitResult commitAcceptedCoaRows(List<CoaCsvMapper.CoaCsvRow> acceptedRows,
+                                                  CoaRowCommitter committer)
+    {
+        if (committer == null)
+        {
+            throw new IllegalArgumentException("Cannot commit COA rows: committer is required.");
+        }
+
+        List<CoaCsvMapper.CoaCsvRow> safeRows = acceptedRows == null ? List.of() : List.copyOf(acceptedRows);
+        int committed = 0;
+        List<String> errors = new ArrayList<>();
+        for (CoaCsvMapper.CoaCsvRow row : safeRows)
+        {
+            try
+            {
+                committer.commit(row);
+                committed++;
+            }
+            catch (RuntimeException ex)
+            {
+                errors.add((row == null ? "(null row)" : row.code()) + ": "
+                        + (ex.getMessage() == null ? "commit failed" : ex.getMessage()));
+            }
+        }
+        return new CoaCommitResult(safeRows.size(), committed, errors.size(), List.copyOf(errors));
     }
 
     private static List<LogicalCsvRow> splitLogicalRows(String csv)
@@ -293,6 +324,18 @@ public class ImportPreviewService
     }
 
     public record RejectedCoaRow(int lineNumber, String rawLine, String errorReason)
+    {
+    }
+
+    public interface CoaRowCommitter
+    {
+        void commit(CoaCsvMapper.CoaCsvRow row);
+    }
+
+    public record CoaCommitResult(int totalAccepted,
+                                  int committedCount,
+                                  int failedCount,
+                                  List<String> errors)
     {
     }
 

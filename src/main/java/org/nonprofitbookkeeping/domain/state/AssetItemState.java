@@ -1,5 +1,8 @@
 package org.nonprofitbookkeeping.domain.state;
 
+/**
+ * Enumeration of AssetItemState values.
+ */
 public enum AssetItemState
 {
     ACTIVE,

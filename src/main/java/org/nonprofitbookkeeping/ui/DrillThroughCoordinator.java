@@ -5,6 +5,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+/**
+ * DrillThroughCoordinator component.
+ */
 final class DrillThroughCoordinator
 {
     private static final AtomicReference<String> CONTEXT = new AtomicReference<>();

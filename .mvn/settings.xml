@@ -17,6 +17,18 @@
           <releases><enabled>true</enabled></releases>
           <snapshots><enabled>false</enabled></snapshots>
         </repository>
+        <repository>
+          <id>aliyun-public</id>
+          <url>https://maven.aliyun.com/repository/public</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </repository>
+        <repository>
+          <id>huaweicloud-public</id>
+          <url>https://repo.huaweicloud.com/repository/maven</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </repository>
       </repositories>
 
       <pluginRepositories>
@@ -31,6 +43,18 @@
           <url>https://repo.maven.apache.org/maven2</url>
           <releases><enabled>true</enabled></releases>
           <snapshots><enabled>false</enabled></snapshots>
+        </pluginRepository>
+        <pluginRepository>
+          <id>aliyun-public-plugins</id>
+          <url>https://maven.aliyun.com/repository/public</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </pluginRepository>
+        <pluginRepository>
+          <id>huaweicloud-public-plugins</id>
+          <url>https://repo.huaweicloud.com/repository/maven</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
         </pluginRepository>
       </pluginRepositories>
     </profile>
