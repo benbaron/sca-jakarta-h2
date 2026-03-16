@@ -1,0 +1,10 @@
+Trial Balance
+As of 2026-03-31
+Rows: 1
+
+Account Name Debit Credit
+1000 Cash 120.00 0
+
+Total Debits: 120.00
+Total Credits: 120.00
+Balanced: PASS

@@ -1,0 +1,12 @@
+Income Statement
+Period: 2026-03-01 to 2026-03-31
+
+Income
+- 4000 Income: 200.00
+Total Income: 200.00
+
+Expenses
+- 5000 Expense: 50.00
+Total Expenses: 50.00
+
+Net Income: 150.00

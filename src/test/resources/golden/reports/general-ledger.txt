@@ -1,0 +1,5 @@
+General Ledger Detail
+Rows: 1
+
+Date Txn Account Account Name Fund Payee Debit Credit
+2026-03-01 1 1000 Cash GEN Payee 120.00 0
