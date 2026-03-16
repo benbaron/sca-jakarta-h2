@@ -7,6 +7,9 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * MainWindowCommandPaletteTest component.
+ */
 public class MainWindowCommandPaletteTest
 {
     @Test
@@ -15,6 +18,15 @@ public class MainWindowCommandPaletteTest
         List<MainWindow.PaletteEntry> entries = MainWindow.commandPaletteEntriesForTests();
         assertTrue(entries.stream().anyMatch(e -> e.panelId() == AppPanelId.DIAGNOSTICS));
         assertTrue(entries.stream().anyMatch(e -> e.panelId() == AppPanelId.IMPORT_PREVIEW));
+    }
+
+    @Test
+    public void commandPaletteEntries_includePhase2Panels()
+    {
+        List<MainWindow.PaletteEntry> entries = MainWindow.commandPaletteEntriesForTests();
+        assertTrue(entries.stream().anyMatch(e -> e.panelId() == AppPanelId.APPROVAL_AUDIT));
+        assertTrue(entries.stream().anyMatch(e -> e.panelId() == AppPanelId.IMPORT_EXPORT_JOBS));
+        assertTrue(entries.stream().anyMatch(e -> e.panelId() == AppPanelId.BANK_TRANSACTIONS));
     }
 
     @Test

@@ -6,6 +6,9 @@ import org.nonprofitbookkeeping.model.NormalBalance;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+/**
+ * AccountAdminServiceTest component.
+ */
 public class AccountAdminServiceTest
 {
     private final AccountAdminService service = new AccountAdminService(null);

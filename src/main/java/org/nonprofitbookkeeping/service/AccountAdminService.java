@@ -14,6 +14,9 @@ import org.nonprofitbookkeeping.persistence.Jpa;
 import java.util.List;
 
 @ApplicationScoped
+/**
+ * AccountAdminService component.
+ */
 public class AccountAdminService
 {
     @Inject

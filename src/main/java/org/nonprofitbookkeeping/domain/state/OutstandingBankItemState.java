@@ -1,5 +1,8 @@
 package org.nonprofitbookkeeping.domain.state;
 
+/**
+ * Enumeration of OutstandingBankItemState values.
+ */
 public enum OutstandingBankItemState
 {
     RECORDED,
