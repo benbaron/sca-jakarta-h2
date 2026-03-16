@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Contract for PeriodCloseRunRepository.
+ */
 public interface PeriodCloseRunRepository
 {
     void append(PeriodCloseRunRecord record);

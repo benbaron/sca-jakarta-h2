@@ -9,6 +9,9 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.logging.Logger;
 
+/**
+ * UiDataSources component.
+ */
 final class UiDataSources
 {
     private UiDataSources()

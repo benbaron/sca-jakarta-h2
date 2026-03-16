@@ -7,6 +7,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ButtonBase;
 import javafx.scene.control.Separator;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.ToolBar;
@@ -22,6 +23,7 @@ import org.nonprofitbookkeeping.model.BankingDataFormat;
 import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
+import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
 import org.nonprofitbookkeeping.model.ViewPresetState;
 import org.nonprofitbookkeeping.service.BankTransactionRecord;
 import org.nonprofitbookkeeping.service.CoaCsvMapper;
@@ -39,6 +41,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -52,7 +55,7 @@ public class MainWindow extends BorderPane
     private final ImportExportOrchestrationService importExportService = new ImportExportOrchestrationService();
     private final PanelHost panelHost = new PanelHost();
     private final InspectorPane inspectorPane = new InspectorPane();
-    private final NavigationPane nav = new NavigationPane(this::openPanel, this::openInspectorForSelection);
+    private final NavigationPane nav = new NavigationPane(this::openPanel, this::openInspectorForSelection, this::navigationInspectorContext);
     private DateRangeSelector dateRangeSelector;
     private Label activePanelLabel;
     private Label activeCompanyLabel;
@@ -60,6 +63,8 @@ public class MainWindow extends BorderPane
     private List<CoaCsvMapper.CoaCsvRow> lastImportedCoaRows = List.of();
     private List<BankTransactionRecord> lastImportedBankTransactions = List.of();
     private final Map<String, ViewPreset> viewPresets = new LinkedHashMap<>();
+    private final Map<MenuItem, UserPrivilegeLevel> gatedMenuItems = new LinkedHashMap<>();
+    private final Map<ButtonBase, UserPrivilegeLevel> gatedButtons = new LinkedHashMap<>();
 
     public MainWindow()
     {
@@ -144,10 +149,10 @@ public class MainWindow extends BorderPane
 
         Menu edit = new Menu("Edit");
         edit.getItems().addAll(
-                item("Undo", "Ctrl+Z", () -> info("Undo currently reverts in-panel edits where supported.")),
-                item("Redo", "Ctrl+Y", () -> info("Redo currently replays in-panel edits where supported.")),
+                disabledItem("Undo", "Ctrl+Z"),
+                disabledItem("Redo", "Ctrl+Y"),
                 new SeparatorMenuItem(),
-                item("Cut", "Ctrl+X", () -> info("Cut is available for editable text fields in active panel controls.")),
+                disabledItem("Cut", "Ctrl+X"),
                 item("Copy", "Ctrl+C", this::copySelection),
                 item("Paste", "Ctrl+V", this::paste)
         );
@@ -183,14 +188,17 @@ public class MainWindow extends BorderPane
                 item("Import CoA CSV…", null, this::importCoaCsvFromFile),
                 item("Import Bank OFX/QFX…", null, this::importBankEnvelopeFromFile),
                 item("Import Preview…", null, () -> openPanel(AppPanelId.IMPORT_PREVIEW)),
-                item("Diagnostics…", null, () -> openPanel(AppPanelId.DIAGNOSTICS)),
-                item("Preferences…", null, () -> openPanel(AppPanelId.SETTINGS))
+                item("Import / Export Jobs…", null, () -> openPanel(AppPanelId.IMPORT_EXPORT_JOBS)),
+                item("Bank Transactions…", null, () -> openPanel(AppPanelId.BANK_TRANSACTIONS)),
+                gatedItem("Approval Audit…", null, () -> openPanel(AppPanelId.APPROVAL_AUDIT), UserPrivilegeLevel.MANAGER),
+                gatedItem("Diagnostics…", null, () -> openPanel(AppPanelId.DIAGNOSTICS), UserPrivilegeLevel.ADMIN),
+                gatedItem("Preferences…", null, () -> openPanel(AppPanelId.SETTINGS), UserPrivilegeLevel.ADMIN)
         );
 
         Menu help = new Menu("Help");
         help.getItems().addAll(
                 item("Help Topics", null, () -> openPanel(AppPanelId.HELP)),
-                item("About", null, () -> info("SCA Ledger prototype shell."))
+                item("About", null, () -> info("SCA Ledger (H2 + Jakarta): operational workspace shell with panel run contracts and cross-panel inspectors."))
         );
 
         return new MenuBar(file, edit, search, view, run, tools, help);
@@ -200,15 +208,19 @@ public class MainWindow extends BorderPane
     {
         Button btnNew = new Button("New");
         btnNew.setOnAction(e -> newItemInActivePanel());
+        gate(btnNew, UserPrivilegeLevel.ACCOUNTANT);
 
         Button btnSave = new Button("Save");
         btnSave.setOnAction(e -> saveActivePanel());
+        gate(btnSave, UserPrivilegeLevel.ACCOUNTANT);
 
         Button btnFind = new Button("Find");
         btnFind.setOnAction(e -> openSearch());
+        gate(btnFind, UserPrivilegeLevel.ACCOUNTANT);
 
         Button btnJournal = new Button("Journal");
         btnJournal.setOnAction(e -> openInspectorJournal());
+        gate(btnJournal, UserPrivilegeLevel.ACCOUNTANT);
 
         DateRangeSelector dr = new DateRangeSelector();
         this.dateRangeSelector = dr;
@@ -260,6 +272,48 @@ public class MainWindow extends BorderPane
         return entries;
     }
 
+
+    private NavigationPane.InspectorContext navigationInspectorContext()
+    {
+        AppPanelId activeId = panelHost.activePanelId();
+        String capabilities = activeId == null ? "(no active panel)" : panelCapabilities(activeId);
+        return new NavigationPane.InspectorContext(
+                SESSION_STATE.multiCompany().activeCompanyCode(),
+                String.valueOf(DateRangeContext.get()),
+                capabilities);
+    }
+
+    static String panelCapabilities(AppPanelId id)
+    {
+        return switch (id)
+        {
+            case TXN_EDITOR -> "Save, New line edits, Post/Validate run command, Journal preview";
+            case LEDGER_REGISTER -> "Refresh, inspect journal, expose active journal selection";
+            case IMPORT_PREVIEW -> "Import review and preview workflow";
+            case APPROVAL_AUDIT -> "Audit filters by workflow/decision/actor/date; run-id visibility";
+            case IMPORT_EXPORT_JOBS -> "Unified import/export job history and error tracking";
+            case BANK_TRANSACTIONS -> "Imported bank transactions, drill to ledger, export selected";
+            case SETTINGS -> "Preferences management";
+            case DIAGNOSTICS -> "Health checks and duplicate-code diagnostics";
+            default -> "Open panel, inspect context, panel-local actions";
+        };
+    }
+
+    static UserPrivilegeLevel requiredPrivilegeForPanel(AppPanelId id)
+    {
+        return switch (id)
+        {
+            case APPROVAL_AUDIT, PERIOD_CLOSE_RUNS -> UserPrivilegeLevel.MANAGER;
+            case SETTINGS, DIAGNOSTICS -> UserPrivilegeLevel.ADMIN;
+            default -> UserPrivilegeLevel.ACCOUNTANT;
+        };
+    }
+
+    static boolean canAccessPanelForPrivilege(AppPanelId id, UserPrivilegeLevel privilege)
+    {
+        return privilege.ordinal() >= requiredPrivilegeForPanel(id).ordinal();
+    }
+
     private static String panelLabel(AppPanelId id)
     {
         return switch (id)
@@ -276,6 +330,9 @@ public class MainWindow extends BorderPane
             case RECONCILIATION_RUNS -> "Reconciliation Runs";
             case PERIOD_CLOSE_RUNS -> "Period Close Runs";
             case IMPORT_PREVIEW -> "Import Preview";
+            case APPROVAL_AUDIT -> "Approval Audit";
+            case IMPORT_EXPORT_JOBS -> "Import / Export Jobs";
+            case BANK_TRANSACTIONS -> "Bank Transactions";
             case REPORT_LIBRARY -> "Reports Library";
             case CHART_OF_ACCOUNTS -> "Chart of Accounts";
             case FUNDS -> "Funds";
@@ -457,9 +514,36 @@ public class MainWindow extends BorderPane
     {
         chooseFile("Import Chart of Accounts CSV", "CSV Files", "*.csv")
                 .ifPresent(path -> {
-                    ImportExportOrchestrationService.CoaImportResult result = importExportService.importChartOfAccountsCsvFile(path);
-                    lastImportedCoaRows = List.copyOf(result.rows());
-                    info("Imported CoA rows: " + result.rowCount() + " from " + path.getFileName());
+                    try
+                    {
+                        ImportExportOrchestrationService.CoaImportResult result = importExportService.importChartOfAccountsCsvFile(path);
+                        lastImportedCoaRows = List.copyOf(result.rows());
+                        UiWorkspaceDataStore.appendJob(new UiWorkspaceDataStore.ImportExportJob(
+                                java.time.LocalDateTime.now(),
+                                "IMPORT_COA",
+                                path.toString(),
+                                "",
+                                null,
+                                result.rowCount(),
+                                0,
+                                "SUCCESS",
+                                ""));
+                        info("Imported CoA rows: " + result.rowCount() + " from " + path.getFileName());
+                    }
+                    catch (RuntimeException ex)
+                    {
+                        UiWorkspaceDataStore.appendJob(new UiWorkspaceDataStore.ImportExportJob(
+                                java.time.LocalDateTime.now(),
+                                "IMPORT_COA",
+                                path.toString(),
+                                "",
+                                null,
+                                0,
+                                0,
+                                "FAILED",
+                                UiErrors.safeMessage(ex)));
+                        info("Import failed for CoA CSV " + path.getFileName() + ": " + UiErrors.safeMessage(ex));
+                    }
                 });
     }
 
@@ -467,9 +551,37 @@ public class MainWindow extends BorderPane
     {
         chooseFile("Import Bank OFX/QFX", "Bank Statement Files", "*.ofx", "*.qfx")
                 .ifPresent(path -> {
-                    ImportExportOrchestrationService.BankImportResult result = importExportService.importBankDataFile(path);
-                    lastImportedBankTransactions = List.copyOf(result.transactions());
-                    info("Imported " + result.format() + " transactions: " + result.transactionCount() + " from " + path.getFileName());
+                    try
+                    {
+                        ImportExportOrchestrationService.BankImportResult result = importExportService.importBankDataFile(path);
+                        lastImportedBankTransactions = List.copyOf(result.transactions());
+                        UiWorkspaceDataStore.replaceBankTransactions(lastImportedBankTransactions);
+                        UiWorkspaceDataStore.appendJob(new UiWorkspaceDataStore.ImportExportJob(
+                                java.time.LocalDateTime.now(),
+                                "IMPORT_BANK",
+                                path.toString(),
+                                "",
+                                result.format(),
+                                0,
+                                result.transactionCount(),
+                                "SUCCESS",
+                                ""));
+                        info("Imported " + result.format() + " transactions: " + result.transactionCount() + " from " + path.getFileName());
+                    }
+                    catch (RuntimeException ex)
+                    {
+                        UiWorkspaceDataStore.appendJob(new UiWorkspaceDataStore.ImportExportJob(
+                                java.time.LocalDateTime.now(),
+                                "IMPORT_BANK",
+                                path.toString(),
+                                "",
+                                null,
+                                0,
+                                0,
+                                "FAILED",
+                                UiErrors.safeMessage(ex)));
+                        info("Import failed for bank file " + path.getFileName() + ": " + UiErrors.safeMessage(ex));
+                    }
                 });
     }
 
@@ -501,11 +613,12 @@ public class MainWindow extends BorderPane
 
     private void exportByExtension(Path path)
     {
-        String file = path.getFileName().toString().toLowerCase();
+        String file = path.getFileName().toString().toLowerCase(Locale.ROOT);
         if (file.endsWith(".csv"))
         {
             List<CoaCsvMapper.CoaCsvRow> exportRows = buildCoaExportRows();
             importExportService.exportChartOfAccountsCsvFile(exportRows, path);
+            UiWorkspaceDataStore.appendJob(new UiWorkspaceDataStore.ImportExportJob(java.time.LocalDateTime.now(), "EXPORT_COA", "(active chart)", path.toString(), null, exportRows.size(), 0, "SUCCESS", ""));
             info("Exported CoA CSV rows: " + exportRows.size() + " to " + path.getFileName());
             return;
         }
@@ -515,10 +628,12 @@ public class MainWindow extends BorderPane
                     ? BankingDataFormat.QFX
                     : BankingDataFormat.OFX;
             importExportService.exportBankDataFile(format, lastImportedBankTransactions, path);
+            UiWorkspaceDataStore.appendJob(new UiWorkspaceDataStore.ImportExportJob(java.time.LocalDateTime.now(), "EXPORT_BANK", "(session bank transactions)", path.toString(), format, 0, lastImportedBankTransactions.size(), "SUCCESS", ""));
             info("Exported " + format + " bank statement transactions: " + lastImportedBankTransactions.size() + " to " + path.getFileName());
             return;
         }
 
+        UiWorkspaceDataStore.appendJob(new UiWorkspaceDataStore.ImportExportJob(java.time.LocalDateTime.now(), "EXPORT_UNKNOWN", "", path.toString(), null, 0, 0, "FAILED", "Unsupported extension"));
         info("Export cancelled: unsupported extension for " + path.getFileName());
     }
 
@@ -597,6 +712,17 @@ public class MainWindow extends BorderPane
         info("Applied theme: " + themePreference);
     }
 
+    private MenuItem disabledItem(String text, String accel)
+    {
+        MenuItem mi = new MenuItem(text + " (disabled)");
+        if (accel != null)
+        {
+            mi.setAccelerator(KeyCombination.keyCombination(accel));
+        }
+        mi.setDisable(true);
+        return mi;
+    }
+
     private MenuItem item(String text, String accel, Runnable action)
     {
         MenuItem mi = new MenuItem(text);
@@ -606,6 +732,39 @@ public class MainWindow extends BorderPane
         }
         mi.setOnAction(e -> action.run());
         return mi;
+    }
+
+    private MenuItem gatedItem(String text, String accel, Runnable action, UserPrivilegeLevel required)
+    {
+        MenuItem item = item(text, accel, action);
+        gatedMenuItems.put(item, required);
+        return item;
+    }
+
+    private void gate(ButtonBase button, UserPrivilegeLevel required)
+    {
+        gatedButtons.put(button, required);
+    }
+
+    private void refreshPrivilegeGating()
+    {
+        UserPrivilegeLevel privilege = SESSION_STATE.preferences().defaultPrivilege();
+        gatedMenuItems.forEach((item, required) -> item.setDisable(privilege.ordinal() < required.ordinal()));
+        gatedButtons.forEach((button, required) -> button.setDisable(privilege.ordinal() < required.ordinal()));
+    }
+
+    Map<String, Boolean> gatedToolItemDisabledStatesForTests()
+    {
+        Map<String, Boolean> states = new LinkedHashMap<>();
+        gatedMenuItems.forEach((item, required) -> states.put(item.getText(), item.isDisable()));
+        return states;
+    }
+
+    Map<String, Boolean> gatedToolbarDisabledStatesForTests()
+    {
+        Map<String, Boolean> states = new LinkedHashMap<>();
+        gatedButtons.forEach((button, required) -> states.put(button.getText(), button.isDisable()));
+        return states;
     }
 
     void applyPreferences(AppPreferencesState state)
@@ -625,6 +784,7 @@ public class MainWindow extends BorderPane
         }
 
         getStyleClass().add(state.useNativeWindowDecorations() ? "native-window-enabled" : "native-window-disabled");
+        refreshPrivilegeGating();
     }
 
     void applyMultiCompany(MultiCompanyState state)
@@ -663,9 +823,20 @@ public class MainWindow extends BorderPane
         return getStyleClass().contains("theme-dark");
     }
 
+    PanelHost panelHostForTests()
+    {
+        return panelHost;
+    }
+
     // --- hooks ---
     public void openPanel(AppPanelId id)
     {
+        UserPrivilegeLevel privilege = SESSION_STATE.preferences().defaultPrivilege();
+        if (!canAccessPanelForPrivilege(id, privilege))
+        {
+            info("Access denied: " + panelLabel(id) + " requires " + requiredPrivilegeForPanel(id) + " privilege.");
+            return;
+        }
         panelHost.show(id);
         nav.highlight(id);
         if (activePanelLabel != null)
@@ -711,63 +882,137 @@ public class MainWindow extends BorderPane
 
     public void openSearch()
     {
-        inspectorPane.show("Search", "Loading workspace search snapshot...");
-        UiAsync.run("search-snapshot", this::buildSearchSnapshot,
+        openSearch("");
+    }
+
+    public void openSearch(String query)
+    {
+        String normalized = normalizeSearchQuery(query);
+        inspectorPane.show("Search", "Running workspace search for query: " + (normalized.isBlank() ? "(all)" : normalized));
+        UiAsync.run("search-query", () -> buildSearchResults(normalized),
                 body -> inspectorPane.show("Search", body),
-                ex -> inspectorPane.show("Search", "Could not build search snapshot: " + UiErrors.safeMessage(ex)));
+                ex -> inspectorPane.show("Search", "Could not run search: " + UiErrors.safeMessage(ex)));
+    }
+
+    public void jumpToPanelFromSearch(AppPanelId panelId)
+    {
+        openPanel(panelId);
+        inspectorPane.show("Search", "Jumped to panel: " + panelLabel(panelId) + " (" + panelId.name() + ")");
+    }
+
+    static String normalizeSearchQuery(String query)
+    {
+        return query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+    }
+
+    static boolean searchMatches(String normalizedQuery, String... haystacks)
+    {
+        if (normalizedQuery == null || normalizedQuery.isBlank())
+        {
+            return true;
+        }
+        for (String haystack : haystacks)
+        {
+            if (haystack != null && haystack.toLowerCase(Locale.ROOT).contains(normalizedQuery))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    String buildSearchResultsForTests(String query)
+    {
+        return buildSearchResults(normalizeSearchQuery(query));
+    }
+
+    private String buildSearchResults(String normalizedQuery)
+    {
+        List<AppPanelId> panelMatches = commandPaletteEntriesForTests().stream()
+                .filter(e -> searchMatches(normalizedQuery, e.label(), e.panelId().name()))
+                .map(PaletteEntry::panelId)
+                .toList();
+
+        List<String> accountMatches = UiServiceRegistry.accountLookup()
+                .listActivePostingAccounts()
+                .stream()
+                .map(a -> a.getCode() + " — " + a.getName())
+                .filter(row -> searchMatches(normalizedQuery, row))
+                .limit(20)
+                .toList();
+
+        List<String> fundMatches = UiServiceRegistry.fundLookup()
+                .listActiveFunds()
+                .stream()
+                .map(f -> f.getCode() + " — " + f.getName())
+                .filter(row -> searchMatches(normalizedQuery, row))
+                .limit(20)
+                .toList();
+
+        StringBuilder body = new StringBuilder();
+        body.append("Search Results\n");
+        body.append("Query: ").append(normalizedQuery.isBlank() ? "(all)" : normalizedQuery).append("\n");
+        body.append("Active company: ").append(SESSION_STATE.multiCompany().activeCompanyCode()).append("\n");
+        body.append("Active panel: ").append(panelHost.getActiveTitle()).append("\n\n");
+
+        body.append("Panels (jump using Go to… or jumpToPanelFromSearch):\n");
+        if (panelMatches.isEmpty())
+        {
+            body.append("- none\n");
+        }
+        else
+        {
+            panelMatches.forEach(id -> body.append("- ").append(panelLabel(id)).append(" [").append(id.name()).append("]\n"));
+        }
+
+        body.append("\nAccounts:\n");
+        if (accountMatches.isEmpty())
+        {
+            body.append("- none\n");
+        }
+        else
+        {
+            accountMatches.forEach(code -> body.append("- ").append(code).append("\n"));
+        }
+
+        body.append("\nFunds:\n");
+        if (fundMatches.isEmpty())
+        {
+            body.append("- none\n");
+        }
+        else
+        {
+            fundMatches.forEach(code -> body.append("- ").append(code).append("\n"));
+        }
+
+        return body.toString();
     }
 
     public void openInspectorJournal()
     {
-        inspectorPane.show("Journal View", "Loading most recent posted transaction...");
-        UiAsync.run("journal-inspector-recent", this::buildRecentJournalPreview,
+        inspectorPane.show("Journal View", "Loading journal context...");
+        UiAsync.run("journal-inspector", this::buildJournalInspectorPreview,
                 body -> inspectorPane.show("Journal View", body),
                 ex -> inspectorPane.show("Journal View", "Could not load journal preview: " + UiErrors.safeMessage(ex)));
     }
 
-    private String buildSearchSnapshot()
+    String buildJournalInspectorPreviewForTests()
     {
-        List<String> accountCodes = UiServiceRegistry.accountLookup()
-                .listActivePostingAccounts()
-                .stream()
-                .map(a -> a.getCode() + " — " + a.getName())
-                .limit(12)
-                .toList();
+        return buildJournalInspectorPreview();
+    }
 
-        List<String> fundCodes = UiServiceRegistry.fundLookup()
-                .listActiveFunds()
-                .stream()
-                .map(f -> f.getCode() + " — " + f.getName())
-                .limit(12)
-                .toList();
+    private String buildJournalInspectorPreview()
+    {
+        return buildJournalInspectorPreview(panelHost.activeJournalSelection());
+    }
 
-        StringBuilder body = new StringBuilder();
-        body.append("Search Snapshot\n");
-        body.append("Active company: ").append(SESSION_STATE.multiCompany().activeCompanyCode()).append("\n");
-        body.append("Active panel: ").append(panelHost.getActiveTitle()).append("\n\n");
-
-        body.append("Accounts (sample):\n");
-        if (accountCodes.isEmpty())
+    String buildJournalInspectorPreview(Optional<AppPanel.JournalSelection> selected)
+    {
+        if (selected.isPresent())
         {
-            body.append("- none\n");
+            return buildJournalPreviewForTransaction(selected.get().txnId(), "Active selection: " + selected.get().sourceLabel());
         }
-        else
-        {
-            accountCodes.forEach(code -> body.append("- ").append(code).append("\n"));
-        }
-
-        body.append("\nFunds (sample):\n");
-        if (fundCodes.isEmpty())
-        {
-            body.append("- none\n");
-        }
-        else
-        {
-            fundCodes.forEach(code -> body.append("- ").append(code).append("\n"));
-        }
-
-        body.append("\nTip: use Command Palette (Ctrl+K) to jump to a workspace.");
-        return body.toString();
+        return buildRecentJournalPreview();
     }
 
     private String buildRecentJournalPreview()
@@ -798,17 +1043,53 @@ public class MainWindow extends BorderPane
         }
 
         lines.forEach(line -> body.append("- ")
-                .append(line.accountCode()).append("/").append(line.fundCode() == null ? "" : line.fundCode())
-                .append(" DR=").append(line.debit().toPlainString())
-                .append(" CR=").append(line.credit().toPlainString())
+                .append(line.getAccountCode()).append("/").append(line.getFundCode() == null ? "" : line.getFundCode())
+                .append(" DR=").append(line.getDebit().toPlainString())
+                .append(" CR=").append(line.getCredit().toPlainString())
+                .append("\n"));
+        return body.toString();
+    }
+
+    private String buildJournalPreviewForTransaction(long transactionId, String heading)
+    {
+        LedgerQueryService ledger = UiServiceRegistry.ledgerQuery();
+        List<LedgerQueryService.LedgerRow> recent = ledger.listRecent(250);
+        Optional<LedgerQueryService.LedgerRow> match = recent.stream().filter(r -> r.id() == transactionId).findFirst();
+        if (match.isEmpty())
+        {
+            return heading + "\nTransaction #" + transactionId + " not found in recent ledger rows.";
+        }
+
+        LedgerQueryService.LedgerRow row = match.get();
+        List<JournalLine> lines = ledger.journalForTxn(row.id());
+
+        StringBuilder body = new StringBuilder();
+        body.append(heading).append("\n")
+                .append("Txn #").append(row.id())
+                .append(" on ").append(row.date())
+                .append(" (splits: ").append(row.splitCount()).append(")\n")
+                .append("Payee: ").append(row.payee() == null ? "" : row.payee()).append("\n")
+                .append("Memo: ").append(row.memo() == null ? "" : row.memo()).append("\n\n")
+                .append("Journal lines:\n");
+
+        if (lines.isEmpty())
+        {
+            body.append("- none");
+            return body.toString();
+        }
+
+        lines.forEach(line -> body.append("- ")
+                .append(line.getAccountCode()).append("/").append(line.getFundCode() == null ? "" : line.getFundCode())
+                .append(" DR=").append(line.getDebit().toPlainString())
+                .append(" CR=").append(line.getCredit().toPlainString())
                 .append("\n"));
         return body.toString();
     }
 
     private void runPostValidate()
     {
-        panelHost.saveActive();
-        info("Triggered Post / Validate for active panel: " + panelHost.getActiveTitle());
+        AppPanel.RunCommandResult result = panelHost.runCommandActive(AppPanel.RunCommand.POST_VALIDATE);
+        info(result.message());
     }
 
     private void recalculateSummaries()

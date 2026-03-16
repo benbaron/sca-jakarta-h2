@@ -34,3 +34,38 @@ This repository now supports a **repo-local Maven cache** to improve reproducibi
 If Maven Central is blocked, point `central` / `central-plugins` URLs in `.mvn/settings.xml` to your reachable mirror.
 
 If no mirror is available, builds can only succeed when required artifacts already exist in the local seeded cache.
+
+
+## Mirror fallback update
+
+The default `.mvn/settings.xml` now includes additional public fallback repositories for both dependencies and plugins (`maven.aliyun.com` and `repo.huaweicloud.com`) after Maven Central.
+
+In restricted networks, this gives Maven multiple fetch endpoints before failing. If your environment mandates internal mirrors only, replace these URLs with your approved mirror endpoints.
+
+
+Additionally, `.mvn/settings.xml` now defines a primary mirror (`mirrorOf` = `external:*`) to route all external artifact/plugin resolution through a single endpoint first. This is useful in environments where direct access to Maven Central is blocked.
+
+
+## Mirror settings files (opt-in)
+
+Mirror routing is now opt-in via dedicated settings files:
+
+- Default behavior (no forced mirror):
+
+  ```bash
+  mvn test
+  ```
+
+- Huawei mirror routing:
+
+  ```bash
+  mvn --settings .mvn/settings-mirror-huawei.xml test
+  ```
+
+- Aliyun mirror routing:
+
+  ```bash
+  mvn --settings .mvn/settings-mirror-aliyun.xml test
+  ```
+
+This keeps default builds portable while allowing explicit mirror routing in restricted environments.

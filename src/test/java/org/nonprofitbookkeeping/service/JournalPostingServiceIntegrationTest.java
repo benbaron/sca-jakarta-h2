@@ -23,6 +23,9 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.nonprofitbookkeeping.testutil.TestAmountAssertions.assertAmountEquals;
 
+/**
+ * JournalPostingServiceIntegrationTest component.
+ */
 public class JournalPostingServiceIntegrationTest
 {
     @Test

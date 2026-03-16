@@ -8,6 +8,9 @@ import org.nonprofitbookkeeping.model.NormalBalance;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * ChartOfAccountsPanelFormStateTest component.
+ */
 public class ChartOfAccountsPanelFormStateTest
 {
     @BeforeAll

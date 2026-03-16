@@ -11,6 +11,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * JdbcApprovalAuditRepository component.
+ */
 public class JdbcApprovalAuditRepository implements ApprovalAuditRepository
 {
     private final DataSource dataSource;

@@ -6,6 +6,9 @@ import org.nonprofitbookkeeping.ui.customer.UserRole;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * CustomerWorkspaceStateTest component.
+ */
 public class CustomerWorkspaceStateTest
 {
     @Test

@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * JdbcReconciliationRunRepository component.
+ */
 public class JdbcReconciliationRunRepository implements ReconciliationRunRepository
 {
     private final DataSource dataSource;

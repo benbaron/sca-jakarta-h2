@@ -1,5 +1,8 @@
 package org.nonprofitbookkeeping.domain.state;
 
+/**
+ * Enumeration of ReceivableItemState values.
+ */
 public enum ReceivableItemState
 {
     OPEN,

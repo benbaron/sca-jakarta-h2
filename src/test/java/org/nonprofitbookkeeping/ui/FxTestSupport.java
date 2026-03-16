@@ -8,6 +8,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * FxTestSupport component.
+ */
 final class FxTestSupport
 {
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
