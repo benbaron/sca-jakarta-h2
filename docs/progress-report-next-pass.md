@@ -2160,3 +2160,64 @@ Addressed test compilation failure in `MainWindowPrivilegeGatingTest` where a vo
 
 - Command executed: `mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository`
 - Result: blocked before test execution due Maven plugin resolution/network policy (`maven-resources-plugin:3.3.1` from Maven Central, `Network is unreachable`).
+
+## 170) Reporting platform progress folded into master progress log
+
+Folded the completed financial reporting slice into the overall program status so implementation and roadmap tracking remain centralized.
+
+### Completed in this reporting slice (M1/M2)
+
+- Implemented `FinancialReportService` projections for:
+  - Trial Balance,
+  - General Ledger Detail,
+  - Balance Sheet,
+  - Income Statement.
+- Implemented deterministic text/CSV report rendering via `FinancialReportRenderer`.
+- Added export contracts and runtime formats:
+  - `FinancialReportExportFormat`,
+  - `FinancialReportExportAdapter`.
+- Added concrete binary export adapters:
+  - PDF export via JasperReports (`JasperPdfFinancialReportAdapter`),
+  - XLSX export via Apache POI (`PoiXlsxFinancialReportAdapter`).
+- Extended Report Library UI flow:
+  - explicit in-panel export format selector,
+  - export pipeline for TEXT/CSV/PDF/XLSX,
+  - drill-through context retention.
+- Added test coverage for reporting stack:
+  - service integration slice tests,
+  - renderer tests,
+  - golden-file rendering tests,
+  - adapter output tests,
+  - JavaFX export selection integration coverage.
+
+### Corrective follow-up applied
+
+- Resolved CI-reported test compile issue in `FinancialReportServiceIntegrationTest` by aligning fixture enum usage to existing `CounterpartyKind` values (`ORG` instead of non-existent `DONOR`/`VENDOR`).
+
+## 171) Recommended next overall program steps (post-reporting-slice)
+
+1. **Build/test reliability first (highest priority)**
+   - Land a deterministic restricted-network Maven bootstrap path in CI and local docs/scripts.
+   - Goal: restore full `mvn test` execution before broader feature expansion.
+
+2. **Reporting hardening (M2.5)**
+   - Externalize Jasper template(s) to versioned resources.
+   - Add structured XLSX layout improvements (style/table/header freeze/formats).
+   - Add run metadata persistence (`report_run`) and export audit trail.
+
+3. **M3 operational reporting delivery**
+   - Implement AR/AP aging and Budget-vs-Actual reports with deterministic fixtures.
+   - Add async job execution and retry/idempotency semantics for large exports.
+
+4. **Security and governance**
+   - Enforce row/role scoped access checks at report execution boundary.
+   - Add security tests for scope leakage and export authorization.
+
+5. **Production readiness and observability**
+   - Add report execution metrics (duration/failure class/row-count) and dashboards.
+   - Publish operational runbook for report failures and export diagnostics.
+
+## 172) Test execution status
+
+- Command executed: `mvn -B -ntp test`
+- Result: blocked before test execution due Maven plugin resolution/network policy (`maven-resources-plugin:3.3.1` from Maven Central, `Network is unreachable`).
