@@ -7,6 +7,7 @@ import org.nonprofitbookkeeping.service.FundLookupService;
 import org.nonprofitbookkeeping.service.AccountAdminService;
 import org.nonprofitbookkeeping.service.FundAdminService;
 import org.nonprofitbookkeeping.service.LedgerQueryService;
+import org.nonprofitbookkeeping.service.FinancialReportService;
 import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
 import org.nonprofitbookkeeping.repository.JdbcPeriodCloseRunRepository;
 import org.nonprofitbookkeeping.repository.JdbcReconciliationRunRepository;
@@ -35,6 +36,7 @@ public final class UiServiceRegistry
     private static FundBalanceService fundBalance = new FundBalanceService(jpa);
     private static ScheduleEligibilityService schedules = new ScheduleEligibilityService(jpa);
     private static LedgerQueryService ledgerQuery = new LedgerQueryService(jpa);
+    private static FinancialReportService financialReports = new FinancialReportService(jpa);
 
     private UiServiceRegistry() {}
 
@@ -45,6 +47,7 @@ public final class UiServiceRegistry
     public static FundBalanceService fundBalance() { return fundBalance; }
     public static ScheduleEligibilityService schedules() { return schedules; }
     public static LedgerQueryService ledgerQuery() { return ledgerQuery; }
+    public static FinancialReportService financialReports() { return financialReports; }
 
 
     public static ReconciliationRunRepository reconciliationRunRepository()
@@ -93,6 +96,7 @@ public final class UiServiceRegistry
                 fundBalance = new FundBalanceService(nextJpa);
                 schedules = new ScheduleEligibilityService(nextJpa);
                 ledgerQuery = new LedgerQueryService(nextJpa);
+                financialReports = new FinancialReportService(nextJpa);
                 jpa = nextJpa;
             }
             catch (RuntimeException ex)
