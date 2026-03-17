@@ -22,6 +22,8 @@ public class UiSessionState
             UserPrivilegeLevel.ACCOUNTANT);
     private MultiCompanyState multiCompany = new MultiCompanyState("DEFAULT", List.of("DEFAULT"));
     private DatabaseSelectionState databaseSelection = new DatabaseSelectionState("data/sca-ledger.mv.db", List.of("data/sca-ledger.mv.db"));
+    private String password = "";
+    private boolean loggedIn = true;
 
     private final List<Consumer<AppPreferencesState>> preferenceListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<MultiCompanyState>> companyListeners = new CopyOnWriteArrayList<>();
@@ -73,5 +75,37 @@ public class UiSessionState
     public void onDatabaseSelectionChanged(Consumer<DatabaseSelectionState> listener)
     {
         databaseListeners.add(listener);
+    }
+
+    public boolean hasPassword()
+    {
+        return password != null && !password.isBlank();
+    }
+
+    public boolean isLoggedIn()
+    {
+        return loggedIn;
+    }
+
+    public void setPassword(String next)
+    {
+        this.password = next == null ? "" : next;
+        this.loggedIn = !hasPassword();
+    }
+
+    public boolean login(String attempt)
+    {
+        if (!hasPassword())
+        {
+            loggedIn = true;
+            return true;
+        }
+        loggedIn = password.equals(attempt == null ? "" : attempt);
+        return loggedIn;
+    }
+
+    public void logout()
+    {
+        loggedIn = false;
     }
 }

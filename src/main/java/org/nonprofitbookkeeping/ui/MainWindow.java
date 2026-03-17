@@ -12,6 +12,10 @@ import javafx.scene.control.Separator;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.SplitPane;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -60,6 +64,7 @@ public class MainWindow extends BorderPane
     private Label activePanelLabel;
     private Label activeCompanyLabel;
     private Label activeDatabaseLabel;
+    private Label authStatusLabel;
     private List<CoaCsvMapper.CoaCsvRow> lastImportedCoaRows = List.of();
     private List<BankTransactionRecord> lastImportedBankTransactions = List.of();
     private final Map<String, ViewPreset> viewPresets = new LinkedHashMap<>();
@@ -78,13 +83,11 @@ public class MainWindow extends BorderPane
         restoreState();
 
         setTop(buildTopChrome());
-        setLeft(nav);
-        setCenter(panelHost);
-        setRight(inspectorPane);
+        SplitPane shellPanes = new SplitPane(nav, panelHost, inspectorPane);
+        shellPanes.setDividerPositions(0.20, 0.78);
+        setCenter(shellPanes);
 
-        BorderPane.setMargin(panelHost, new Insets(8));
-        BorderPane.setMargin(nav, new Insets(8, 4, 8, 8));
-        BorderPane.setMargin(inspectorPane, new Insets(8, 8, 8, 4));
+        BorderPane.setMargin(shellPanes, new Insets(8));
 
         SESSION_STATE.onPreferencesChanged(this::applyPreferences);
         SESSION_STATE.onMultiCompanyChanged(this::applyMultiCompany);
@@ -139,7 +142,9 @@ public class MainWindow extends BorderPane
         file.getItems().addAll(
                 item("New", "Ctrl+N", this::newItemInActivePanel),
                 item("Open…", null, () -> openPanel(AppPanelId.DASHBOARD)),
+                item("Database Wizard…", null, this::openDatabaseWizard),
                 item("Select Database File…", null, this::selectDatabaseFile),
+                item("Create New Database…", null, this::createNewDatabase),
                 new SeparatorMenuItem(),
                 item("Save", "Ctrl+S", this::saveActivePanel),
                 item("Export…", null, this::exportDataFromFileMenu),
@@ -195,13 +200,22 @@ public class MainWindow extends BorderPane
                 gatedItem("Preferences…", null, () -> openPanel(AppPanelId.SETTINGS), UserPrivilegeLevel.ADMIN)
         );
 
+        Menu account = new Menu("Account");
+        account.getItems().addAll(
+                item("Set Password…", null, this::setSessionPassword),
+                item("Log In…", null, this::login),
+                item("Log Out", null, this::logout),
+                item("Company Wizard…", null, this::openCompanyWizard),
+                item("Add Company…", null, this::addNewCompany)
+        );
+
         Menu help = new Menu("Help");
         help.getItems().addAll(
                 item("Help Topics", null, () -> openPanel(AppPanelId.HELP)),
                 item("About", null, () -> info("SCA Ledger (H2 + Jakarta): operational workspace shell with panel run contracts and cross-panel inspectors."))
         );
 
-        return new MenuBar(file, edit, search, view, run, tools, help);
+        return new MenuBar(file, edit, search, view, run, tools, account, help);
     }
 
     private ToolBar buildToolBar()
@@ -234,11 +248,14 @@ public class MainWindow extends BorderPane
         activeDatabaseLabel = new Label("DB: " + Path.of(SESSION_STATE.databaseSelection().activeDatabasePath()).getFileName());
         activeDatabaseLabel.getStyleClass().add("toolbar-active-panel");
 
+        authStatusLabel = new Label(SESSION_STATE.isLoggedIn() ? "Auth: logged in" : "Auth: logged out");
+        authStatusLabel.getStyleClass().add("toolbar-active-panel");
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         ToolBar tb = new ToolBar(btnNew, btnSave, new Separator(), btnFind, new Separator(), btnJournal,
-                new Separator(), dr, spacer, activeDatabaseLabel, new Separator(), activeCompanyLabel, new Separator(), activePanelLabel);
+                new Separator(), dr, spacer, authStatusLabel, new Separator(), activeDatabaseLabel, new Separator(), activeCompanyLabel, new Separator(), activePanelLabel);
         tb.getStyleClass().add("toolbar");
         return tb;
     }
@@ -656,10 +673,165 @@ public class MainWindow extends BorderPane
         return Optional.of(selected.toPath());
     }
 
+
+    private void openDatabaseWizard()
+    {
+        var owner = getScene() == null ? null : getScene().getWindow();
+        DatabaseWizardDialog.show(owner).ifPresent(result -> {
+            if (result.action() == DatabaseWizardDialog.Action.CREATE_NEW)
+            {
+                applySelectedDatabasePath(result.databasePath());
+                initializeSampleCompany();
+                info("Database wizard: created database and initialized sample company.");
+            }
+            else
+            {
+                applySelectedDatabasePath(result.databasePath());
+                info("Database wizard: switched active database.");
+            }
+        });
+    }
+
+    private void openCompanyWizard()
+    {
+        var owner = getScene() == null ? null : getScene().getWindow();
+        String current = SESSION_STATE.multiCompany().activeCompanyCode();
+        CompanyWizardDialog.show(owner, current).ifPresent(result -> {
+            applyCompanySelection(result.companyCode());
+            if (result.action() == CompanyWizardDialog.Action.ADD_COMPANY)
+            {
+                info("Company wizard: added company " + result.companyCode() + " in current database.");
+            }
+            else
+            {
+                info("Company wizard: switched active company to " + result.companyCode() + ".");
+            }
+        });
+    }
+
     private void selectDatabaseFile()
     {
         chooseFile("Select Database File", "Database Files", "*.mv.db", "*.db")
                 .ifPresent(this::applySelectedDatabasePath);
+    }
+
+    private void createNewDatabase()
+    {
+        Optional<Path> target = chooseSaveFile("Create Database", "Database Files", "*.mv.db");
+        if (target.isEmpty())
+        {
+            return;
+        }
+        Path path = target.get();
+        if (!path.toString().endsWith(".mv.db"))
+        {
+            path = Path.of(path.toString() + ".mv.db");
+        }
+        applySelectedDatabasePath(path);
+        initializeSampleCompany();
+        info("Created database and initialized sample company.");
+    }
+
+    private void addNewCompany()
+    {
+        TextInputDialog dialog = new TextInputDialog("NEW-COMPANY");
+        dialog.setTitle("Add Company");
+        dialog.setHeaderText("Add company code");
+        dialog.setContentText("Company:");
+        if (getScene() != null && getScene().getWindow() != null)
+        {
+            dialog.initOwner(getScene().getWindow());
+        }
+        dialog.showAndWait().ifPresent(code -> {
+            String normalized = code == null ? "" : code.trim().toUpperCase(Locale.ROOT);
+            if (normalized.isBlank())
+            {
+                info("Company add cancelled: blank code.");
+                return;
+            }
+            applyCompanySelection(normalized);
+            info("Added company: " + normalized + " in current database.");
+        });
+    }
+
+    private void setSessionPassword()
+    {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Set Password");
+        dialog.setHeaderText("Set session password");
+        dialog.setContentText("Password:");
+        if (getScene() != null && getScene().getWindow() != null)
+        {
+            dialog.initOwner(getScene().getWindow());
+        }
+        dialog.showAndWait().ifPresent(value -> {
+            SESSION_STATE.setPassword(value);
+            refreshAuthStatus();
+            info(SESSION_STATE.hasPassword() ? "Session password set." : "Session password cleared.");
+        });
+    }
+
+    private void login()
+    {
+        if (!SESSION_STATE.hasPassword())
+        {
+            SESSION_STATE.login("");
+            refreshAuthStatus();
+            info("Login complete (no password set).");
+            return;
+        }
+
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Log In");
+        dialog.setHeaderText("Enter password");
+        PasswordField field = new PasswordField();
+        dialog.getDialogPane().setContent(field);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        if (getScene() != null && getScene().getWindow() != null)
+        {
+            dialog.initOwner(getScene().getWindow());
+        }
+        dialog.setResultConverter(bt -> bt == ButtonType.OK ? field.getText() : null);
+        dialog.showAndWait().ifPresent(attempt -> {
+            boolean ok = SESSION_STATE.login(attempt);
+            refreshAuthStatus();
+            info(ok ? "Login successful." : "Login failed.");
+        });
+    }
+
+    private void logout()
+    {
+        SESSION_STATE.logout();
+        refreshAuthStatus();
+        info("Logged out.");
+    }
+
+
+    private void applyCompanySelection(String companyCode)
+    {
+        String normalized = companyCode == null ? "" : companyCode.trim().toUpperCase(Locale.ROOT);
+        if (normalized.isBlank())
+        {
+            return;
+        }
+        List<String> recents = new ArrayList<>(SESSION_STATE.multiCompany().recentCompanyCodes());
+        recents.remove(normalized);
+        recents.add(0, normalized);
+        SESSION_STATE.setMultiCompany(new MultiCompanyState(normalized, recents));
+        stateStore.saveMultiCompany(SESSION_STATE.multiCompany());
+    }
+
+    private void initializeSampleCompany()
+    {
+        applyCompanySelection("SAMPLE-CO");
+    }
+
+    private void refreshAuthStatus()
+    {
+        if (authStatusLabel != null)
+        {
+            authStatusLabel.setText(SESSION_STATE.isLoggedIn() ? "Auth: logged in" : "Auth: logged out");
+        }
     }
 
     void applySelectedDatabasePath(Path path)
@@ -667,6 +839,7 @@ public class MainWindow extends BorderPane
         String selected = path.toString();
         try
         {
+            DatabaseBootstrap.migrate(path);
             UiServiceRegistry.reconnectToDatabase(path);
         }
         catch (RuntimeException ex)
@@ -751,6 +924,41 @@ public class MainWindow extends BorderPane
         UserPrivilegeLevel privilege = SESSION_STATE.preferences().defaultPrivilege();
         gatedMenuItems.forEach((item, required) -> item.setDisable(privilege.ordinal() < required.ordinal()));
         gatedButtons.forEach((button, required) -> button.setDisable(privilege.ordinal() < required.ordinal()));
+    }
+
+
+    List<String> menuItemTextsForTests()
+    {
+        if (!(getTop() instanceof VBox vbox) || vbox.getChildren().isEmpty() || !(vbox.getChildren().get(0) instanceof MenuBar menuBar))
+        {
+            return List.of();
+        }
+        List<String> texts = new ArrayList<>();
+        for (Menu menu : menuBar.getMenus())
+        {
+            for (MenuItem item : menu.getItems())
+            {
+                if (item.getText() != null)
+                {
+                    texts.add(item.getText());
+                }
+            }
+        }
+        return texts;
+    }
+
+    double[] shellDividerPositionsForTests()
+    {
+        if (getCenter() instanceof SplitPane splitPane)
+        {
+            return splitPane.getDividerPositions();
+        }
+        return new double[0];
+    }
+
+    String authStatusTextForTests()
+    {
+        return authStatusLabel == null ? "" : authStatusLabel.getText();
     }
 
     Map<String, Boolean> gatedToolItemDisabledStatesForTests()
