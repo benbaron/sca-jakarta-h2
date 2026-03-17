@@ -6,3 +6,9 @@
 .inspector-title { -fx-font-size: 14px; -fx-font-weight: bold; }
 .panel-title { -fx-font-size: 18px; -fx-font-weight: bold; }
 .subheader { -fx-font-weight: bold; }
+.toolbar-active-panel { -fx-font-weight: bold; -fx-opacity: 0.85; }
+.theme-dark { -fx-base: #2b2b2b; -fx-background: #2b2b2b; }
+.theme-light { -fx-base: #f5f5f5; }
+.theme-system { }
+.native-window-enabled { }
+.native-window-disabled { }
