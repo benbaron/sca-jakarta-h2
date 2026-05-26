@@ -20,6 +20,7 @@ import org.nonprofitbookkeeping.service.FinancialReportExportAdapter;
 import org.nonprofitbookkeeping.service.FinancialReportExportFormat;
 import org.nonprofitbookkeeping.service.JasperPdfFinancialReportAdapter;
 import org.nonprofitbookkeeping.service.PoiXlsxFinancialReportAdapter;
+import org.nonprofitbookkeeping.service.WorkbookModeledReportRenderer;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +37,17 @@ import java.util.Map;
  */
 public class ReportLibraryPanel implements AppPanel
 {
+    private static final String TRIAL_BALANCE = "Trial Balance";
+    private static final String GENERAL_LEDGER_DETAIL = "General Ledger Detail";
+    private static final String BALANCE_SHEET = "Balance Sheet";
+    private static final String INCOME_STATEMENT = "Income Statement";
+    private static final String BALANCE_STMT = "BalanceStmt (SCA workbook)";
+    private static final String INCOME_STMT = "IncomeStmt (SCA workbook)";
+    private static final String WORKBOOK_SUMMARY = "WorkbookSummary (SCA workbook)";
+    private static final String TRANSACTIONS_LIST = "TransactionsList (SCA workbook)";
+    private static final String ALL_CHECKS_TFRS = "AllChecksTfrs (SCA workbook)";
+    private static final String FUND_TRANSFERS = "FundTransfers (SCA workbook)";
+
     private final BorderPane root = new BorderPane();
     private final ListView<String> reportList = new ListView<>();
     private final TextArea preview = new TextArea();
@@ -67,10 +79,16 @@ public class ReportLibraryPanel implements AppPanel
         root.setTop(new VBox(6, title, range, actions, status, new Separator()));
 
         reportList.getItems().addAll(
-                "Trial Balance",
-                "General Ledger Detail",
-                "Balance Sheet",
-                "Income Statement"
+                TRIAL_BALANCE,
+                GENERAL_LEDGER_DETAIL,
+                BALANCE_SHEET,
+                INCOME_STATEMENT,
+                BALANCE_STMT,
+                INCOME_STMT,
+                WORKBOOK_SUMMARY,
+                TRANSACTIONS_LIST,
+                ALL_CHECKS_TFRS,
+                FUND_TRANSFERS
         );
         reportList.getSelectionModel().select(0);
 
@@ -81,6 +99,7 @@ public class ReportLibraryPanel implements AppPanel
                 new Label("Report Parameters"),
                 new Label("Current period: " + DateRangeContext.get()),
                 new Label("Data source: live database records"),
+                new Label("Workbook-modeled reports are adapted from npbk-javafx-h2 into this Report Library."),
                 new Separator(),
                 new Label("Preview"),
                 preview);
@@ -128,29 +147,66 @@ public class ReportLibraryPanel implements AppPanel
 
         return switch (reportName)
         {
-            case "Trial Balance" -> {
+            case TRIAL_BALANCE -> {
                 FinancialReportService.TrialBalanceReport report = reports.trialBalance(end, null);
                 yield new RenderedReport(
                         FinancialReportRenderer.renderTrialBalanceText(report),
                         FinancialReportRenderer.renderTrialBalanceCsv(report));
             }
-            case "General Ledger Detail" -> {
+            case GENERAL_LEDGER_DETAIL -> {
                 java.util.List<FinancialReportService.GeneralLedgerRow> rows = reports.generalLedgerDetail(start, end, null, 400);
                 yield new RenderedReport(
                         FinancialReportRenderer.renderGeneralLedgerText(rows),
                         FinancialReportRenderer.renderGeneralLedgerCsv(rows));
             }
-            case "Balance Sheet" -> {
+            case BALANCE_SHEET -> {
                 FinancialReportService.BalanceSheetReport report = reports.balanceSheet(end, null);
                 yield new RenderedReport(
                         FinancialReportRenderer.renderBalanceSheetText(report),
                         FinancialReportRenderer.renderBalanceSheetCsv(report));
             }
-            case "Income Statement" -> {
+            case INCOME_STATEMENT -> {
                 FinancialReportService.IncomeStatementReport report = reports.incomeStatement(start, end, null);
                 yield new RenderedReport(
                         FinancialReportRenderer.renderIncomeStatementText(report),
                         FinancialReportRenderer.renderIncomeStatementCsv(report));
+            }
+            case BALANCE_STMT -> {
+                FinancialReportService.BalanceSheetReport report = reports.balanceSheet(end, null);
+                yield new RenderedReport(
+                        WorkbookModeledReportRenderer.renderBalanceStmtText(report),
+                        WorkbookModeledReportRenderer.renderBalanceStmtCsv(report));
+            }
+            case INCOME_STMT -> {
+                FinancialReportService.IncomeStatementReport report = reports.incomeStatement(start, end, null);
+                yield new RenderedReport(
+                        WorkbookModeledReportRenderer.renderIncomeStmtText(report),
+                        WorkbookModeledReportRenderer.renderIncomeStmtCsv(report));
+            }
+            case WORKBOOK_SUMMARY -> {
+                FinancialReportService.BalanceSheetReport balance = reports.balanceSheet(end, null);
+                FinancialReportService.IncomeStatementReport income = reports.incomeStatement(start, end, null);
+                yield new RenderedReport(
+                        WorkbookModeledReportRenderer.renderWorkbookSummaryText(balance, income),
+                        WorkbookModeledReportRenderer.renderWorkbookSummaryCsv(balance, income));
+            }
+            case TRANSACTIONS_LIST -> {
+                java.util.List<FinancialReportService.GeneralLedgerRow> rows = reports.generalLedgerDetail(start, end, null, 400);
+                yield new RenderedReport(
+                        WorkbookModeledReportRenderer.renderTransactionsListText(rows),
+                        WorkbookModeledReportRenderer.renderTransactionsListCsv(rows));
+            }
+            case ALL_CHECKS_TFRS -> {
+                java.util.List<FinancialReportService.GeneralLedgerRow> rows = reports.generalLedgerDetail(start, end, null, 400);
+                yield new RenderedReport(
+                        WorkbookModeledReportRenderer.renderAllChecksTfrsText(rows),
+                        WorkbookModeledReportRenderer.renderAllChecksTfrsCsv(rows));
+            }
+            case FUND_TRANSFERS -> {
+                java.util.List<FinancialReportService.GeneralLedgerRow> rows = reports.generalLedgerDetail(start, end, null, 400);
+                yield new RenderedReport(
+                        WorkbookModeledReportRenderer.renderFundTransfersText(rows),
+                        WorkbookModeledReportRenderer.renderFundTransfersCsv(rows));
             }
             default -> new RenderedReport("Report not implemented: " + reportName, "");
         };
