@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "npbk-semantic-report-1",
+  "templateId": "TransactionsList",
+  "sourceSheet": "TransactionsList",
+  "title": "TransactionsList - SCA Workbook Modeled Transaction Listing",
+  "subtitle": "Transaction listing backed by live ledger detail.",
+  "type": "tableReport",
+  "tableKey": "transactionsList.rows",
+  "columns": [
+    { "label": "Date", "field": "txnDate", "format": "date", "width": 10 },
+    { "label": "Txn", "field": "txnId", "width": 10 },
+    { "label": "Payee", "field": "payee", "width": 18 },
+    { "label": "Account", "field": "accountCode", "width": 12 },
+    { "label": "Account Name", "field": "accountName", "width": 24 },
+    { "label": "Fund", "field": "fundCode", "width": 10 },
+    { "label": "Debit", "field": "debit", "format": "currency", "width": 12 },
+    { "label": "Credit", "field": "credit", "format": "currency", "width": 12 },
+    { "label": "Memo", "field": "memo", "width": 28 }
+  ]
+}
