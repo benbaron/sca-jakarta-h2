@@ -2,6 +2,8 @@ package org.nonprofitbookkeeping.ui;
 
 import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.service.AccountLookupService;
+import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
+import org.nonprofitbookkeeping.service.BudgetCategoryLookupService;
 import org.nonprofitbookkeeping.service.FundBalanceService;
 import org.nonprofitbookkeeping.service.FundLookupService;
 import org.nonprofitbookkeeping.service.AccountAdminService;
@@ -31,8 +33,10 @@ public final class UiServiceRegistry
     private static Jpa jpa = new Jpa();
     private static AccountLookupService accountLookup = new AccountLookupService(jpa);
     private static FundLookupService fundLookup = new FundLookupService(jpa);
+    private static BudgetCategoryLookupService budgetCategoryLookup = new BudgetCategoryLookupService(jpa);
     private static AccountAdminService accountAdmin = new AccountAdminService(jpa);
     private static FundAdminService fundAdmin = new FundAdminService(jpa);
+    private static BudgetCategoryAdminService budgetCategoryAdmin = new BudgetCategoryAdminService(jpa);
     private static FundBalanceService fundBalance = new FundBalanceService(jpa);
     private static ScheduleEligibilityService schedules = new ScheduleEligibilityService(jpa);
     private static LedgerQueryService ledgerQuery = new LedgerQueryService(jpa);
@@ -42,8 +46,10 @@ public final class UiServiceRegistry
 
     public static AccountLookupService accountLookup() { return accountLookup; }
     public static FundLookupService fundLookup() { return fundLookup; }
+    public static BudgetCategoryLookupService budgetCategoryLookup() { return budgetCategoryLookup; }
     public static AccountAdminService accountAdmin() { return accountAdmin; }
     public static FundAdminService fundAdmin() { return fundAdmin; }
+    public static BudgetCategoryAdminService budgetCategoryAdmin() { return budgetCategoryAdmin; }
     public static FundBalanceService fundBalance() { return fundBalance; }
     public static ScheduleEligibilityService schedules() { return schedules; }
     public static LedgerQueryService ledgerQuery() { return ledgerQuery; }
@@ -91,8 +97,10 @@ public final class UiServiceRegistry
             {
                 accountLookup = new AccountLookupService(nextJpa);
                 fundLookup = new FundLookupService(nextJpa);
+                budgetCategoryLookup = new BudgetCategoryLookupService(nextJpa);
                 accountAdmin = new AccountAdminService(nextJpa);
                 fundAdmin = new FundAdminService(nextJpa);
+                budgetCategoryAdmin = new BudgetCategoryAdminService(nextJpa);
                 fundBalance = new FundBalanceService(nextJpa);
                 schedules = new ScheduleEligibilityService(nextJpa);
                 ledgerQuery = new LedgerQueryService(nextJpa);
