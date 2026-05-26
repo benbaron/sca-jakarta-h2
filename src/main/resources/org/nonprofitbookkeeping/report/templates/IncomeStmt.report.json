@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "npbk-semantic-report-1",
+  "templateId": "IncomeStmt",
+  "sourceSheet": "IncomeStmt",
+  "title": "IncomeStmt - SCA Workbook Modeled Income Statement",
+  "subtitle": "Statement of Activities adapted from the SCA exchequer workbook form.",
+  "type": "sectionReport",
+  "sections": [
+    {
+      "title": "Income",
+      "rows": [
+        { "line": "", "label": "Income detail is supplied from live income accounts.", "note": "Workbook-specific account mapping will be refined through report sections." },
+        { "type": "totalRow", "label": "Total Income", "valueKey": "incomeStmt.totalIncome", "format": "currency" }
+      ]
+    },
+    {
+      "title": "Expenses",
+      "rows": [
+        { "line": "", "label": "Expense detail is supplied from live expense accounts.", "note": "BudgetCategory-aware grouping will follow the BudgetCategory model slice." },
+        { "type": "totalRow", "label": "Total Expenses", "valueKey": "incomeStmt.totalExpenses", "format": "currency" }
+      ]
+    },
+    {
+      "title": "Change in Net Assets",
+      "rows": [
+        { "type": "totalRow", "label": "Net Income / (Loss)", "valueKey": "incomeStmt.netIncomeLoss", "format": "currency" }
+      ]
+    }
+  ]
+}
