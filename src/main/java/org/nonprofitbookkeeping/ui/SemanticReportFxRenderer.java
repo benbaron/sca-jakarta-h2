@@ -28,16 +28,18 @@ public class SemanticReportFxRenderer
     {
         VBox root = new VBox(10);
         root.setPadding(new Insets(12));
-        root.getStyleClass().add("workbook-report-form");
+        root.setStyle("-fx-background-color: white;");
 
         Label title = new Label(template.path("title").asText(template.path("templateId").asText("Report")));
         title.getStyleClass().addAll("panel-title", "workbook-report-title");
+        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
         root.getChildren().add(title);
 
         if (template.hasNonNull("subtitle"))
         {
             Label subtitle = new Label(template.path("subtitle").asText());
             subtitle.getStyleClass().add("muted");
+            subtitle.setStyle("-fx-text-fill: #5f6b7a;");
             root.getChildren().add(subtitle);
         }
 
@@ -51,6 +53,7 @@ public class SemanticReportFxRenderer
         scroll.setFitToHeight(false);
         scroll.setPannable(true);
         scroll.getStyleClass().add("workbook-report-scroll");
+        scroll.setStyle("-fx-background-color: white;");
         return scroll;
     }
 
@@ -58,6 +61,7 @@ public class SemanticReportFxRenderer
     {
         GridPane grid = new GridPane();
         grid.getStyleClass().add("workbook-report-grid");
+        grid.setStyle("-fx-background-color: white;");
         setColumnWidths(grid, 80, 420, 140, 300);
 
         int row = 0;
@@ -96,6 +100,7 @@ public class SemanticReportFxRenderer
     {
         GridPane grid = new GridPane();
         grid.getStyleClass().add("workbook-report-grid");
+        grid.setStyle("-fx-background-color: white;");
         JsonNode columns = template.path("columns");
         setTableColumnWidths(grid, columns);
 
@@ -179,8 +184,43 @@ public class SemanticReportFxRenderer
         label.getStyleClass().addAll(styleClasses);
         label.setWrapText(true);
         label.setMinHeight(26);
-        label.setAlignment(Pos.CENTER_LEFT);
+        label.setAlignment(hasStyle(styleClasses, "workbook-number-cell") ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+        label.setStyle(styleFor(styleClasses));
         return label;
+    }
+
+    private String styleFor(String... styleClasses)
+    {
+        String base = "-fx-padding: 4 6 4 6; -fx-border-color: #8c98a6; -fx-border-width: 0.5;";
+        if (hasStyle(styleClasses, "workbook-header-cell"))
+        {
+            return base + " -fx-background-color: #d9eaf7; -fx-font-weight: bold; -fx-alignment: center;";
+        }
+        if (hasStyle(styleClasses, "workbook-section-cell"))
+        {
+            return base + " -fx-background-color: #cfe2f3; -fx-font-weight: bold;";
+        }
+        if (hasStyle(styleClasses, "workbook-total-cell"))
+        {
+            return base + " -fx-background-color: #eef3f8; -fx-font-weight: bold; -fx-border-width: 1 0.5 1 0.5;";
+        }
+        if (hasStyle(styleClasses, "workbook-note-cell"))
+        {
+            return base + " -fx-background-color: #fffdf2; -fx-text-fill: #5f6b7a;";
+        }
+        return base + " -fx-background-color: white;";
+    }
+
+    private boolean hasStyle(String[] styleClasses, String style)
+    {
+        for (String styleClass : styleClasses)
+        {
+            if (style.equals(styleClass))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private double columnWidth(GridPane grid, int col)
