@@ -25,35 +25,77 @@ import java.nio.file.Path;
 
 /**
  * Lightweight service wiring for JavaFX runtime (without CDI bootstrap).
+ *
+ * Services are initialized lazily so a database/JPA startup failure does not
+ * poison this class during static initialization and then appear only as a
+ * misleading NoClassDefFoundError on later JavaFX callbacks.
  */
 public final class UiServiceRegistry
 {
     private static final Object LOCK = new Object();
 
-    private static Jpa jpa = new Jpa();
-    private static AccountLookupService accountLookup = new AccountLookupService(jpa);
-    private static FundLookupService fundLookup = new FundLookupService(jpa);
-    private static BudgetCategoryLookupService budgetCategoryLookup = new BudgetCategoryLookupService(jpa);
-    private static AccountAdminService accountAdmin = new AccountAdminService(jpa);
-    private static FundAdminService fundAdmin = new FundAdminService(jpa);
-    private static BudgetCategoryAdminService budgetCategoryAdmin = new BudgetCategoryAdminService(jpa);
-    private static FundBalanceService fundBalance = new FundBalanceService(jpa);
-    private static ScheduleEligibilityService schedules = new ScheduleEligibilityService(jpa);
-    private static LedgerQueryService ledgerQuery = new LedgerQueryService(jpa);
-    private static FinancialReportService financialReports = new FinancialReportService(jpa);
+    private static ServiceBundle services;
 
     private UiServiceRegistry() {}
 
-    public static AccountLookupService accountLookup() { return accountLookup; }
-    public static FundLookupService fundLookup() { return fundLookup; }
-    public static BudgetCategoryLookupService budgetCategoryLookup() { return budgetCategoryLookup; }
-    public static AccountAdminService accountAdmin() { return accountAdmin; }
-    public static FundAdminService fundAdmin() { return fundAdmin; }
-    public static BudgetCategoryAdminService budgetCategoryAdmin() { return budgetCategoryAdmin; }
-    public static FundBalanceService fundBalance() { return fundBalance; }
-    public static ScheduleEligibilityService schedules() { return schedules; }
-    public static LedgerQueryService ledgerQuery() { return ledgerQuery; }
-    public static FinancialReportService financialReports() { return financialReports; }
+    public static AccountLookupService accountLookup() { return services().accountLookup(); }
+    public static FundLookupService fundLookup() { return services().fundLookup(); }
+    public static BudgetCategoryLookupService budgetCategoryLookup() { return services().budgetCategoryLookup(); }
+    public static AccountAdminService accountAdmin() { return services().accountAdmin(); }
+    public static FundAdminService fundAdmin() { return services().fundAdmin(); }
+    public static BudgetCategoryAdminService budgetCategoryAdmin() { return services().budgetCategoryAdmin(); }
+    public static FundBalanceService fundBalance() { return services().fundBalance(); }
+    public static ScheduleEligibilityService schedules() { return services().schedules(); }
+    public static LedgerQueryService ledgerQuery() { return services().ledgerQuery(); }
+    public static FinancialReportService financialReports() { return services().financialReports(); }
+
+    private static ServiceBundle services()
+    {
+        ServiceBundle current = services;
+        if (current != null)
+        {
+            return current;
+        }
+        synchronized (LOCK)
+        {
+            if (services == null)
+            {
+                services = buildServices(defaultJpa());
+            }
+            return services;
+        }
+    }
+
+    private static Jpa defaultJpa()
+    {
+        try
+        {
+            return new Jpa(Path.of(MainWindow.sharedSessionState().databaseSelection().activeDatabasePath()));
+        }
+        catch (RuntimeException ex)
+        {
+            throw new IllegalStateException("Could not initialize services for the selected database. "
+                    + "Use File > Database Wizard or Select Database File after fixing the database schema. "
+                    + "Underlying error: " + ex.getMessage(), ex);
+        }
+    }
+
+    private static ServiceBundle buildServices(Jpa jpa)
+    {
+        return new ServiceBundle(
+                jpa,
+                new AccountLookupService(jpa),
+                new FundLookupService(jpa),
+                new BudgetCategoryLookupService(jpa),
+                new AccountAdminService(jpa),
+                new FundAdminService(jpa),
+                new BudgetCategoryAdminService(jpa),
+                new FundBalanceService(jpa),
+                new ScheduleEligibilityService(jpa),
+                new LedgerQueryService(jpa),
+                new FinancialReportService(jpa)
+        );
+    }
 
 
     public static ReconciliationRunRepository reconciliationRunRepository()
@@ -91,29 +133,33 @@ public final class UiServiceRegistry
     {
         synchronized (LOCK)
         {
-            Jpa oldJpa = jpa;
+            ServiceBundle oldServices = services;
             Jpa nextJpa = new Jpa(databaseFile);
-            try
+            ServiceBundle nextServices = buildServices(nextJpa);
+            services = nextServices;
+            if (oldServices != null)
             {
-                accountLookup = new AccountLookupService(nextJpa);
-                fundLookup = new FundLookupService(nextJpa);
-                budgetCategoryLookup = new BudgetCategoryLookupService(nextJpa);
-                accountAdmin = new AccountAdminService(nextJpa);
-                fundAdmin = new FundAdminService(nextJpa);
-                budgetCategoryAdmin = new BudgetCategoryAdminService(nextJpa);
-                fundBalance = new FundBalanceService(nextJpa);
-                schedules = new ScheduleEligibilityService(nextJpa);
-                ledgerQuery = new LedgerQueryService(nextJpa);
-                financialReports = new FinancialReportService(nextJpa);
-                jpa = nextJpa;
+                oldServices.close();
             }
-            catch (RuntimeException ex)
-            {
-                nextJpa.close();
-                throw ex;
-            }
+        }
+    }
 
-            oldJpa.close();
+    private record ServiceBundle(
+            Jpa jpa,
+            AccountLookupService accountLookup,
+            FundLookupService fundLookup,
+            BudgetCategoryLookupService budgetCategoryLookup,
+            AccountAdminService accountAdmin,
+            FundAdminService fundAdmin,
+            BudgetCategoryAdminService budgetCategoryAdmin,
+            FundBalanceService fundBalance,
+            ScheduleEligibilityService schedules,
+            LedgerQueryService ledgerQuery,
+            FinancialReportService financialReports)
+    {
+        void close()
+        {
+            jpa.close();
         }
     }
 }
