@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
@@ -14,13 +15,16 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import org.nonprofitbookkeeping.report.template.RenderedSemanticReport;
+import org.nonprofitbookkeeping.report.template.SemanticReportRenderer;
+import org.nonprofitbookkeeping.report.template.SemanticReportValueSet;
+import org.nonprofitbookkeeping.report.template.WorkbookSemanticReportService;
 import org.nonprofitbookkeeping.service.FinancialReportRenderer;
 import org.nonprofitbookkeeping.service.FinancialReportService;
 import org.nonprofitbookkeeping.service.FinancialReportExportAdapter;
 import org.nonprofitbookkeeping.service.FinancialReportExportFormat;
 import org.nonprofitbookkeeping.service.JasperPdfFinancialReportAdapter;
 import org.nonprofitbookkeeping.service.PoiXlsxFinancialReportAdapter;
-import org.nonprofitbookkeeping.service.WorkbookModeledReportRenderer;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,11 +55,12 @@ public class ReportLibraryPanel implements AppPanel
     private final BorderPane root = new BorderPane();
     private final ListView<String> reportList = new ListView<>();
     private final TextArea preview = new TextArea();
+    private final BorderPane previewHost = new BorderPane();
     private final Label status = new Label();
     private final ComboBox<FinancialReportExportFormat> exportFormat = new ComboBox<>();
     private final Map<FinancialReportExportFormat, FinancialReportExportAdapter> adapters = new EnumMap<>(FinancialReportExportFormat.class);
 
-    private record RenderedReport(String text, String csv) {}
+    private record RenderedReport(String text, String csv, JsonNode template, SemanticReportValueSet values) {}
 
     public ReportLibraryPanel()
     {
@@ -94,15 +99,16 @@ public class ReportLibraryPanel implements AppPanel
 
         preview.setEditable(false);
         preview.setWrapText(false);
+        previewHost.setCenter(preview);
 
         VBox right = new VBox(8,
                 new Label("Report Parameters"),
                 new Label("Current period: " + DateRangeContext.get()),
                 new Label("Data source: live database records"),
-                new Label("Workbook-modeled reports are adapted from npbk-javafx-h2 into this Report Library."),
+                new Label("Workbook-modeled reports are rendered from semantic JSON templates."),
                 new Separator(),
                 new Label("Preview"),
-                preview);
+                previewHost);
         right.setPadding(new Insets(8));
 
         SplitPane sp = new SplitPane(reportList, right);
@@ -129,13 +135,28 @@ public class ReportLibraryPanel implements AppPanel
         UiAsync.run("report-preview-" + reportName,
                 () -> buildPreview(reportName),
                 rendered -> {
-                    preview.setText(rendered.text());
+                    setPreview(rendered);
                     status.setText("Preview ready for " + reportName + ".");
                 },
                 ex -> {
                     preview.setText("Could not generate preview: " + UiErrors.safeMessage(ex));
+                    previewHost.setCenter(preview);
                     status.setText("Preview failed.");
                 });
+    }
+
+    private void setPreview(RenderedReport rendered)
+    {
+        if (rendered.template() != null && rendered.values() != null)
+        {
+            Node form = new SemanticReportFxRenderer().render(rendered.template(), rendered.values());
+            previewHost.setCenter(form);
+        }
+        else
+        {
+            preview.setText(rendered.text());
+            previewHost.setCenter(preview);
+        }
     }
 
     private RenderedReport buildPreview(String reportName)
@@ -145,70 +166,65 @@ public class ReportLibraryPanel implements AppPanel
         LocalDate start = range.startInclusive();
         LocalDate end = range.endInclusive() == null ? LocalDate.now() : range.endInclusive();
 
+        String templateId = workbookTemplateId(reportName);
+        if (templateId != null)
+        {
+            WorkbookSemanticReportService semantic = new WorkbookSemanticReportService(reports);
+            JsonNode template = semantic.loadTemplate(templateId);
+            SemanticReportValueSet values = semantic.loadValues(templateId, start, end);
+            RenderedSemanticReport rendered = new SemanticReportRenderer().render(template, values);
+            return new RenderedReport(rendered.text(), rendered.csv(), template, values);
+        }
+
         return switch (reportName)
         {
             case TRIAL_BALANCE -> {
                 FinancialReportService.TrialBalanceReport report = reports.trialBalance(end, null);
                 yield new RenderedReport(
                         FinancialReportRenderer.renderTrialBalanceText(report),
-                        FinancialReportRenderer.renderTrialBalanceCsv(report));
+                        FinancialReportRenderer.renderTrialBalanceCsv(report),
+                        null,
+                        null);
             }
             case GENERAL_LEDGER_DETAIL -> {
                 java.util.List<FinancialReportService.GeneralLedgerRow> rows = reports.generalLedgerDetail(start, end, null, 400);
                 yield new RenderedReport(
                         FinancialReportRenderer.renderGeneralLedgerText(rows),
-                        FinancialReportRenderer.renderGeneralLedgerCsv(rows));
+                        FinancialReportRenderer.renderGeneralLedgerCsv(rows),
+                        null,
+                        null);
             }
             case BALANCE_SHEET -> {
                 FinancialReportService.BalanceSheetReport report = reports.balanceSheet(end, null);
                 yield new RenderedReport(
                         FinancialReportRenderer.renderBalanceSheetText(report),
-                        FinancialReportRenderer.renderBalanceSheetCsv(report));
+                        FinancialReportRenderer.renderBalanceSheetCsv(report),
+                        null,
+                        null);
             }
             case INCOME_STATEMENT -> {
                 FinancialReportService.IncomeStatementReport report = reports.incomeStatement(start, end, null);
                 yield new RenderedReport(
                         FinancialReportRenderer.renderIncomeStatementText(report),
-                        FinancialReportRenderer.renderIncomeStatementCsv(report));
+                        FinancialReportRenderer.renderIncomeStatementCsv(report),
+                        null,
+                        null);
             }
-            case BALANCE_STMT -> {
-                FinancialReportService.BalanceSheetReport report = reports.balanceSheet(end, null);
-                yield new RenderedReport(
-                        WorkbookModeledReportRenderer.renderBalanceStmtText(report),
-                        WorkbookModeledReportRenderer.renderBalanceStmtCsv(report));
-            }
-            case INCOME_STMT -> {
-                FinancialReportService.IncomeStatementReport report = reports.incomeStatement(start, end, null);
-                yield new RenderedReport(
-                        WorkbookModeledReportRenderer.renderIncomeStmtText(report),
-                        WorkbookModeledReportRenderer.renderIncomeStmtCsv(report));
-            }
-            case WORKBOOK_SUMMARY -> {
-                FinancialReportService.BalanceSheetReport balance = reports.balanceSheet(end, null);
-                FinancialReportService.IncomeStatementReport income = reports.incomeStatement(start, end, null);
-                yield new RenderedReport(
-                        WorkbookModeledReportRenderer.renderWorkbookSummaryText(balance, income),
-                        WorkbookModeledReportRenderer.renderWorkbookSummaryCsv(balance, income));
-            }
-            case TRANSACTIONS_LIST -> {
-                java.util.List<FinancialReportService.GeneralLedgerRow> rows = reports.generalLedgerDetail(start, end, null, 400);
-                yield new RenderedReport(
-                        WorkbookModeledReportRenderer.renderTransactionsListText(rows),
-                        WorkbookModeledReportRenderer.renderTransactionsListCsv(rows));
-            }
-            case ALL_CHECKS_TFRS -> {
-                java.util.List<FinancialReportService.GeneralLedgerRow> rows = reports.generalLedgerDetail(start, end, null, 400);
-                yield new RenderedReport(
-                        WorkbookModeledReportRenderer.renderAllChecksTfrsText(rows),
-                        WorkbookModeledReportRenderer.renderAllChecksTfrsCsv(rows));
-            }
-            case FUND_TRANSFERS -> {
-                java.util.List<FinancialReportService.GeneralLedgerRow> rows = reports.generalLedgerDetail(start, end, null, 400);
-                yield new RenderedReport(
-                        WorkbookModeledReportRenderer.renderFundTransfersText(rows),
-                        WorkbookModeledReportRenderer.renderFundTransfersCsv(rows));
-            }
-            default -> new RenderedReport("Report not implemented: " + reportName, "");
+            default -> new RenderedReport("Report not implemented: " + reportName, "", null, null);
+        };
+    }
+
+    private String workbookTemplateId(String reportName)
+    {
+        return switch (reportName)
+        {
+            case BALANCE_STMT -> "BalanceStmt";
+            case INCOME_STMT -> "IncomeStmt";
+            case WORKBOOK_SUMMARY -> "WorkbookSummary";
+            case TRANSACTIONS_LIST -> "TransactionsList";
+            case ALL_CHECKS_TFRS -> "AllChecksTfrs";
+            case FUND_TRANSFERS -> "FundTransfers";
+            default -> null;
         };
     }
 

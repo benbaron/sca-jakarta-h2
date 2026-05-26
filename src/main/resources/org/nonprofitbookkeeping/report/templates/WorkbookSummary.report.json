@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "npbk-semantic-report-1",
+  "templateId": "WorkbookSummary",
+  "sourceSheet": "WorkbookSummary",
+  "title": "WorkbookSummary - SCA Workbook Modeled Summary",
+  "subtitle": "Summary page adapted from the workbook support/report page.",
+  "type": "sectionReport",
+  "sections": [
+    {
+      "title": "Summary Status",
+      "rows": [
+        { "label": "Reporting Period Start", "valueKey": "context.periodStart", "format": "date" },
+        { "label": "Reporting Period End", "valueKey": "context.periodEnd", "format": "date" },
+        { "label": "Total Assets", "valueKey": "workbookSummary.totalAssets", "format": "currency" },
+        { "label": "Total Liabilities", "valueKey": "workbookSummary.totalLiabilities", "format": "currency" },
+        { "label": "Total Net Assets", "valueKey": "workbookSummary.totalNetAssets", "format": "currency" },
+        { "label": "Net Income / (Loss)", "valueKey": "workbookSummary.netIncomeLoss", "format": "currency" },
+        { "label": "Balance Check", "valueKey": "workbookSummary.balanceCheck", "format": "currency", "note": "Should be zero when balance statement is internally consistent." }
+      ]
+    }
+  ]
+}

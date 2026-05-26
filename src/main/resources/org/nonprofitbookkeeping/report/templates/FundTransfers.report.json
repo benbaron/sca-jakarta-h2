@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "npbk-semantic-report-1",
+  "templateId": "FundTransfers",
+  "sourceSheet": "FundTransfers",
+  "title": "FundTransfers - SCA Workbook Modeled Fund Transfers",
+  "subtitle": "Fund summary derived from live ledger detail.",
+  "type": "tableReport",
+  "tableKey": "fundTransfers.rows",
+  "columns": [
+    { "label": "Fund", "field": "fundCode", "width": 16 },
+    { "label": "Net Effect", "field": "netEffect", "format": "currency", "width": 14 }
+  ]
+}
