@@ -22,25 +22,30 @@ public class WorkbookSemanticReportService
         this.financialReports = financialReports;
     }
 
+    public JsonNode loadTemplate(String templateId)
+    {
+        return SemanticReportTemplateLoader.load(templateId);
+    }
+
     public RenderedSemanticReport render(String templateId, LocalDate start, LocalDate end)
     {
-        LocalDate effectiveStart = start == null ? LocalDate.now().withDayOfYear(1) : start;
-        LocalDate effectiveEnd = end == null ? LocalDate.now() : end;
-        JsonNode template = SemanticReportTemplateLoader.load(templateId);
-        SemanticReportValueSet values = loadValues(templateId, effectiveStart, effectiveEnd);
+        JsonNode template = loadTemplate(templateId);
+        SemanticReportValueSet values = loadValues(templateId, start, end);
         return renderer.render(template, values);
     }
 
-    private SemanticReportValueSet loadValues(String templateId, LocalDate start, LocalDate end)
+    public SemanticReportValueSet loadValues(String templateId, LocalDate start, LocalDate end)
     {
+        LocalDate effectiveStart = start == null ? LocalDate.now().withDayOfYear(1) : start;
+        LocalDate effectiveEnd = end == null ? LocalDate.now() : end;
         return switch (templateId)
         {
-            case "BalanceStmt" -> balanceValues(end);
-            case "IncomeStmt" -> incomeValues(start, end);
-            case "WorkbookSummary" -> summaryValues(start, end);
-            case "TransactionsList" -> ledgerTableValues("transactionsList.rows", start, end);
-            case "AllChecksTfrs" -> ledgerTableValues("allChecksTfrs.rows", start, end);
-            case "FundTransfers" -> fundTransferValues(start, end);
+            case "BalanceStmt" -> balanceValues(effectiveEnd);
+            case "IncomeStmt" -> incomeValues(effectiveStart, effectiveEnd);
+            case "WorkbookSummary" -> summaryValues(effectiveStart, effectiveEnd);
+            case "TransactionsList" -> ledgerTableValues("transactionsList.rows", effectiveStart, effectiveEnd);
+            case "AllChecksTfrs" -> ledgerTableValues("allChecksTfrs.rows", effectiveStart, effectiveEnd);
+            case "FundTransfers" -> fundTransferValues(effectiveStart, effectiveEnd);
             default -> new SemanticReportValueSet();
         };
     }
