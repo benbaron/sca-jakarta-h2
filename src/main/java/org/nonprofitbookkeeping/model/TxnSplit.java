@@ -11,7 +11,8 @@ import java.math.*;
            @Index(name = "ix_split_txn", columnList = "txn_id"),
            @Index(name = "ix_split_account", columnList = "account_id"),
            @Index(name = "ix_split_fund", columnList = "fund_id"),
-           @Index(name = "ix_split_activity", columnList = "activity_id")
+           @Index(name = "ix_split_activity", columnList = "activity_id"),
+           @Index(name = "ix_split_budget_category", columnList = "budget_category_id")
        })
 /**
  * Represents the TxnSplit component in the nonprofit bookkeeping application.
@@ -33,6 +34,14 @@ public class TxnSplit
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "fund_id", nullable = false)
     private Fund fund;
+
+    /**
+     * Budget/reporting category for workbook-style budget comparisons.
+     * This is distinct from Activity, which identifies an event/project/occasion.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "budget_category_id")
+    private BudgetCategory budgetCategory;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "activity_id")
@@ -64,6 +73,8 @@ public class TxnSplit
     public void setAccount(Account account) { this.account = account; }
     public Fund getFund() { return fund; }
     public void setFund(Fund fund) { this.fund = fund; }
+    public BudgetCategory getBudgetCategory() { return budgetCategory; }
+    public void setBudgetCategory(BudgetCategory budgetCategory) { this.budgetCategory = budgetCategory; }
     public Activity getActivity() { return activity; }
     public void setActivity(Activity activity) { this.activity = activity; }
     public Merchant getMerchant() { return merchant; }
