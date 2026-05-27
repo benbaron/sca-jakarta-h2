@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
 import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.service.AccountLookupService;
 import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
@@ -85,7 +86,8 @@ public final class UiServiceRegistry
 
     private static Jpa defaultJpa()
     {
-        Path databasePath = Path.of(MainWindow.sharedSessionState().databaseSelection().activeDatabasePath());
+        Path databasePath = DatabaseLocationService.resolveDatabasePath(
+                MainWindow.sharedSessionState().databaseSelection().activeDatabasePath());
         System.err.println("[NPBK] UiServiceRegistry selected database path: " + databasePath.toAbsolutePath());
         try
         {
@@ -152,9 +154,10 @@ public final class UiServiceRegistry
     {
         synchronized (LOCK)
         {
-            System.err.println("[NPBK] UiServiceRegistry reconnecting to database: " + databaseFile.toAbsolutePath());
+            Path resolved = DatabaseLocationService.ensureParentDirectory(databaseFile);
+            System.err.println("[NPBK] UiServiceRegistry reconnecting to database: " + resolved.toAbsolutePath());
             ServiceBundle oldServices = services;
-            Jpa nextJpa = new Jpa(databaseFile);
+            Jpa nextJpa = new Jpa(resolved);
             ServiceBundle nextServices = buildServices(nextJpa);
             services = nextServices;
             lastInitializationFailure = null;
@@ -162,7 +165,7 @@ public final class UiServiceRegistry
             {
                 oldServices.close();
             }
-            System.err.println("[NPBK] UiServiceRegistry reconnected to database: " + databaseFile.toAbsolutePath());
+            System.err.println("[NPBK] UiServiceRegistry reconnected to database: " + resolved.toAbsolutePath());
         }
     }
 
