@@ -22,41 +22,50 @@ public class Jpa
 
     public Jpa()
     {
-        this.emf = Persistence.createEntityManagerFactory("scaLedgerPU");
+        System.err.println("[NPBK] Creating default JPA EntityManagerFactory for persistence unit scaLedgerPU.");
+        try
+        {
+            this.emf = Persistence.createEntityManagerFactory("scaLedgerPU");
+            System.err.println("[NPBK] Default JPA EntityManagerFactory created.");
+        }
+        catch (RuntimeException ex)
+        {
+            System.err.println("[NPBK] Default JPA EntityManagerFactory creation failed: " + ex.getClass().getName() + ": " + ex.getMessage());
+            ex.printStackTrace(System.err);
+            throw ex;
+        }
     }
 
     public Jpa(Path databaseFile)
-    {
-        Map<String, Object> overrides = new HashMap<>();
-        overrides.put("jakarta.persistence.jdbc.url", jdbcUrlFor(databaseFile));
-        this.emf = Persistence.createEntityManagerFactory("scaLedgerPU", overrides);
-    }
-
-    public EntityManager em()
-    {
-        return emf.createEntityManager();
-    }
-
-
-    private static String jdbcUrlFor(Path databaseFile)
     {
         if (databaseFile == null)
         {
             throw new IllegalArgumentException("databaseFile is required");
         }
 
-        String raw = databaseFile.toString();
-        String normalized = raw;
-        if (raw.endsWith(".mv.db"))
-        {
-            normalized = raw.substring(0, raw.length() - ".mv.db".length());
-        }
-        else if (raw.endsWith(".db"))
-        {
-            normalized = raw.substring(0, raw.length() - ".db".length());
-        }
+        String jdbcUrl = DatabaseMigrationService.jdbcUrlFor(databaseFile);
+        System.err.println("[NPBK] Preparing database: " + databaseFile.toAbsolutePath());
+        DatabaseMigrationService.migrateJdbcUrl(jdbcUrl);
 
-        return "jdbc:h2:file:" + normalized + ";MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;INIT=CREATE SCHEMA IF NOT EXISTS PUBLIC\\;SET SCHEMA PUBLIC";
+        Map<String, Object> overrides = new HashMap<>();
+        overrides.put("jakarta.persistence.jdbc.url", jdbcUrl);
+        System.err.println("[NPBK] Creating JPA EntityManagerFactory for selected database.");
+        try
+        {
+            this.emf = Persistence.createEntityManagerFactory("scaLedgerPU", overrides);
+            System.err.println("[NPBK] JPA EntityManagerFactory created for selected database.");
+        }
+        catch (RuntimeException ex)
+        {
+            System.err.println("[NPBK] JPA EntityManagerFactory creation failed: " + ex.getClass().getName() + ": " + ex.getMessage());
+            ex.printStackTrace(System.err);
+            throw ex;
+        }
+    }
+
+    public EntityManager em()
+    {
+        return emf.createEntityManager();
     }
 
     public void close()
