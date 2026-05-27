@@ -25,16 +25,13 @@ import java.nio.file.Path;
 
 /**
  * Lightweight service wiring for JavaFX runtime (without CDI bootstrap).
- *
- * Services are initialized lazily so a database/JPA startup failure does not
- * poison this class during static initialization and then appear only as a
- * misleading NoClassDefFoundError on later JavaFX callbacks.
  */
 public final class UiServiceRegistry
 {
     private static final Object LOCK = new Object();
 
     private static ServiceBundle services;
+    private static RuntimeException lastInitializationFailure;
 
     private UiServiceRegistry() {}
 
@@ -58,30 +55,52 @@ public final class UiServiceRegistry
         }
         synchronized (LOCK)
         {
-            if (services == null)
+            if (services != null)
             {
-                services = buildServices(defaultJpa());
+                return services;
             }
-            return services;
+            if (lastInitializationFailure != null)
+            {
+                System.err.println("[NPBK] Previous UiServiceRegistry initialization failure will be rethrown.");
+                lastInitializationFailure.printStackTrace(System.err);
+                throw lastInitializationFailure;
+            }
+            try
+            {
+                System.err.println("[NPBK] UiServiceRegistry initializing services.");
+                services = buildServices(defaultJpa());
+                System.err.println("[NPBK] UiServiceRegistry services initialized.");
+                return services;
+            }
+            catch (RuntimeException ex)
+            {
+                lastInitializationFailure = ex;
+                System.err.println("[NPBK] UiServiceRegistry service initialization failed: "
+                        + ex.getClass().getName() + ": " + ex.getMessage());
+                ex.printStackTrace(System.err);
+                throw ex;
+            }
         }
     }
 
     private static Jpa defaultJpa()
     {
+        Path databasePath = Path.of(MainWindow.sharedSessionState().databaseSelection().activeDatabasePath());
+        System.err.println("[NPBK] UiServiceRegistry selected database path: " + databasePath.toAbsolutePath());
         try
         {
-            return new Jpa(Path.of(MainWindow.sharedSessionState().databaseSelection().activeDatabasePath()));
+            return new Jpa(databasePath);
         }
         catch (RuntimeException ex)
         {
-            throw new IllegalStateException("Could not initialize services for the selected database. "
-                    + "Use File > Database Wizard or Select Database File after fixing the database schema. "
-                    + "Underlying error: " + ex.getMessage(), ex);
+            throw new IllegalStateException("Could not initialize services for selected database "
+                    + databasePath.toAbsolutePath() + ". Underlying error: " + ex.getMessage(), ex);
         }
     }
 
     private static ServiceBundle buildServices(Jpa jpa)
     {
+        System.err.println("[NPBK] Building UI service bundle.");
         return new ServiceBundle(
                 jpa,
                 new AccountLookupService(jpa),
@@ -133,14 +152,17 @@ public final class UiServiceRegistry
     {
         synchronized (LOCK)
         {
+            System.err.println("[NPBK] UiServiceRegistry reconnecting to database: " + databaseFile.toAbsolutePath());
             ServiceBundle oldServices = services;
             Jpa nextJpa = new Jpa(databaseFile);
             ServiceBundle nextServices = buildServices(nextJpa);
             services = nextServices;
+            lastInitializationFailure = null;
             if (oldServices != null)
             {
                 oldServices.close();
             }
+            System.err.println("[NPBK] UiServiceRegistry reconnected to database: " + databaseFile.toAbsolutePath());
         }
     }
 
