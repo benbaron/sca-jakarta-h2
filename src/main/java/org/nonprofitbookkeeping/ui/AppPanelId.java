@@ -28,6 +28,10 @@ public enum AppPanelId
 
     CHART_OF_ACCOUNTS,
     FUNDS,
+
+    COMPANY_ADMIN,
+    USER_ADMIN,
+
     SETTINGS,
     DIAGNOSTICS,
     HELP
