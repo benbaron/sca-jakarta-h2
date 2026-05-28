@@ -5,6 +5,7 @@ import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.service.AccountLookupService;
 import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
 import org.nonprofitbookkeeping.service.BudgetCategoryLookupService;
+import org.nonprofitbookkeeping.service.CompanyAdminService;
 import org.nonprofitbookkeeping.service.FundBalanceService;
 import org.nonprofitbookkeeping.service.FundLookupService;
 import org.nonprofitbookkeeping.service.AccountAdminService;
@@ -12,6 +13,7 @@ import org.nonprofitbookkeeping.service.FundAdminService;
 import org.nonprofitbookkeeping.service.LedgerQueryService;
 import org.nonprofitbookkeeping.service.FinancialReportService;
 import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
+import org.nonprofitbookkeeping.service.UserAdminService;
 import org.nonprofitbookkeeping.repository.JdbcPeriodCloseRunRepository;
 import org.nonprofitbookkeeping.repository.JdbcReconciliationRunRepository;
 import org.nonprofitbookkeeping.repository.PeriodCloseRunRepository;
@@ -42,6 +44,8 @@ public final class UiServiceRegistry
     public static AccountAdminService accountAdmin() { return services().accountAdmin(); }
     public static FundAdminService fundAdmin() { return services().fundAdmin(); }
     public static BudgetCategoryAdminService budgetCategoryAdmin() { return services().budgetCategoryAdmin(); }
+    public static CompanyAdminService companyAdmin() { return services().companyAdmin(); }
+    public static UserAdminService userAdmin() { return services().userAdmin(); }
     public static FundBalanceService fundBalance() { return services().fundBalance(); }
     public static ScheduleEligibilityService schedules() { return services().schedules(); }
     public static LedgerQueryService ledgerQuery() { return services().ledgerQuery(); }
@@ -111,6 +115,8 @@ public final class UiServiceRegistry
                 new AccountAdminService(jpa),
                 new FundAdminService(jpa),
                 new BudgetCategoryAdminService(jpa),
+                new CompanyAdminService(jpa),
+                new UserAdminService(jpa),
                 new FundBalanceService(jpa),
                 new ScheduleEligibilityService(jpa),
                 new LedgerQueryService(jpa),
@@ -177,6 +183,8 @@ public final class UiServiceRegistry
             AccountAdminService accountAdmin,
             FundAdminService fundAdmin,
             BudgetCategoryAdminService budgetCategoryAdmin,
+            CompanyAdminService companyAdmin,
+            UserAdminService userAdmin,
             FundBalanceService fundBalance,
             ScheduleEligibilityService schedules,
             LedgerQueryService ledgerQuery,
