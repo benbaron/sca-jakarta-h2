@@ -71,6 +71,10 @@ public class NavigationPane extends VBox
         add(ref, AppPanelId.CHART_OF_ACCOUNTS, "Chart of Accounts");
         add(ref, AppPanelId.FUNDS, "Funds");
 
+        TreeItem<NavItem> admin = group(root, "Administration");
+        add(admin, AppPanelId.COMPANY_ADMIN, "Company Admin");
+        add(admin, AppPanelId.USER_ADMIN, "User Admin");
+
         TreeItem<NavItem> sys = group(root, "System");
         add(sys, AppPanelId.SETTINGS, "Settings");
         add(sys, AppPanelId.DIAGNOSTICS, "Diagnostics");
