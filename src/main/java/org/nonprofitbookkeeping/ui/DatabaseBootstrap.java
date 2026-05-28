@@ -1,6 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
-import org.flywaydb.core.Flyway;
+import org.nonprofitbookkeeping.persistence.DatabaseMigrationService;
 
 import java.nio.file.Path;
 
@@ -15,11 +15,6 @@ final class DatabaseBootstrap
 
     static void migrate(Path databaseFile)
     {
-        String url = UiDataSources.jdbcUrlForTests(databaseFile);
-        Flyway.configure()
-                .dataSource(url, "sa", "")
-                .baselineOnMigrate(true)
-                .load()
-                .migrate();
+        DatabaseMigrationService.migrate(databaseFile);
     }
 }

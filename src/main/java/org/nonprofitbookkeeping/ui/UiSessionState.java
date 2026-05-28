@@ -5,6 +5,7 @@ import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
+import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -21,13 +22,19 @@ public class UiSessionState
             true,
             UserPrivilegeLevel.ACCOUNTANT);
     private MultiCompanyState multiCompany = new MultiCompanyState("DEFAULT", List.of("DEFAULT"));
-    private DatabaseSelectionState databaseSelection = new DatabaseSelectionState("data/sca-ledger.mv.db", List.of("data/sca-ledger.mv.db"));
+    private DatabaseSelectionState databaseSelection = defaultDatabaseSelection();
     private String password = "";
     private boolean loggedIn = true;
 
     private final List<Consumer<AppPreferencesState>> preferenceListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<MultiCompanyState>> companyListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<DatabaseSelectionState>> databaseListeners = new CopyOnWriteArrayList<>();
+
+    private static DatabaseSelectionState defaultDatabaseSelection()
+    {
+        String path = DatabaseLocationService.defaultUserDatabasePath().toString();
+        return new DatabaseSelectionState(path, List.of(path));
+    }
 
     public AppPreferencesState preferences()
     {

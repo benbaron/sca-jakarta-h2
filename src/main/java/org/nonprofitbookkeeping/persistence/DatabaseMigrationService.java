@@ -2,6 +2,7 @@ package org.nonprofitbookkeeping.persistence;
 
 import org.flywaydb.core.Flyway;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 /** Runs database migrations before Hibernate validates the schema. */
@@ -49,18 +50,44 @@ public final class DatabaseMigrationService
 
     public static String jdbcUrlFor(Path databaseFile)
     {
-        String raw = databaseFile.toString();
-        String normalized = raw;
-        if (raw.endsWith(".mv.db"))
+        if (databaseFile == null)
         {
-            normalized = raw.substring(0, raw.length() - ".mv.db".length());
-        }
-        else if (raw.endsWith(".db"))
-        {
-            normalized = raw.substring(0, raw.length() - ".db".length());
+            throw new IllegalArgumentException("databaseFile is required");
         }
 
-        return "jdbc:h2:file:" + normalized + ";MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;INIT=CREATE SCHEMA IF NOT EXISTS PUBLIC\\;SET SCHEMA PUBLIC";
+        Path absolute = databaseFile.toAbsolutePath().normalize();
+        Path parent = absolute.getParent();
+        if (parent != null)
+        {
+            try
+            {
+                Files.createDirectories(parent);
+            }
+            catch (Exception ex)
+            {
+                throw new IllegalStateException("Could not create database directory: " + parent, ex);
+            }
+        }
+
+        String normalized = stripH2FileSuffix(absolute.toString()).replace('\\', '/');
+        return "jdbc:h2:file:" + normalized
+                + ";MODE=PostgreSQL"
+                + ";DATABASE_TO_LOWER=TRUE"
+                + ";DEFAULT_NULL_ORDERING=HIGH"
+                + ";INIT=CREATE SCHEMA IF NOT EXISTS PUBLIC\\;SET SCHEMA PUBLIC";
+    }
+
+    private static String stripH2FileSuffix(String raw)
+    {
+        if (raw.endsWith(".mv.db"))
+        {
+            return raw.substring(0, raw.length() - ".mv.db".length());
+        }
+        if (raw.endsWith(".db"))
+        {
+            return raw.substring(0, raw.length() - ".db".length());
+        }
+        return raw;
     }
 
     private static String redactJdbcUrl(String jdbcUrl)
