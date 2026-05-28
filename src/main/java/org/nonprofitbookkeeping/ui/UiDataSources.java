@@ -1,5 +1,8 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
+import org.nonprofitbookkeeping.persistence.DatabaseMigrationService;
+
 import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.nio.file.Path;
@@ -20,7 +23,9 @@ final class UiDataSources
 
     static DataSource forCurrentSessionDatabase()
     {
-        return forDatabasePath(Path.of(MainWindow.sharedSessionState().databaseSelection().activeDatabasePath()));
+        Path path = DatabaseLocationService.resolveDatabasePath(
+                MainWindow.sharedSessionState().databaseSelection().activeDatabasePath());
+        return forDatabasePath(path);
     }
 
     static DataSource forDatabasePath(Path databaseFile)
@@ -35,17 +40,7 @@ final class UiDataSources
 
     private static String jdbcUrlFor(Path databaseFile)
     {
-        String raw = databaseFile.toString();
-        String normalized = raw;
-        if (raw.endsWith(".mv.db"))
-        {
-            normalized = raw.substring(0, raw.length() - ".mv.db".length());
-        }
-        else if (raw.endsWith(".db"))
-        {
-            normalized = raw.substring(0, raw.length() - ".db".length());
-        }
-        return "jdbc:h2:file:" + normalized + ";MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;INIT=CREATE SCHEMA IF NOT EXISTS PUBLIC\\;SET SCHEMA PUBLIC";
+        return DatabaseMigrationService.jdbcUrlFor(databaseFile);
     }
 
     private static final class DriverManagerDataSource implements DataSource
@@ -64,7 +59,7 @@ final class UiDataSources
         @Override
         public Connection getConnection() throws SQLException
         {
-            return DriverManager.getConnection(url, username, password);
+            return DriverManager.getConnection(url, username);
         }
 
         @Override
