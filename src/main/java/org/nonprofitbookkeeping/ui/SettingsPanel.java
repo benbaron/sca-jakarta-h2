@@ -7,6 +7,8 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -26,7 +28,7 @@ import java.util.List;
 public class SettingsPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
-    private final Label status = new Label("Preferences and company context can be saved for next startup.");
+    private final Label status = new Label("Preferences and administration settings can be saved for next startup.");
 
     private final ComboBox<UiThemePreference> theme = new ComboBox<>();
     private final CheckBox nativeWindow = new CheckBox("Use native window decorations when available");
@@ -48,9 +50,29 @@ public class SettingsPanel implements AppPanel
 
         root.setPadding(new Insets(8));
 
-        Label title = new Label("Settings");
+        Label title = new Label("Settings and Administration");
         title.getStyleClass().add("panel-title");
 
+        root.setTop(new VBox(6, title, status, new Separator()));
+
+        TabPane tabs = new TabPane();
+        tabs.getTabs().add(tab("Preferences", buildPreferencesPane()));
+        tabs.getTabs().add(tab("Company Admin", new CompanyAdminPanel().root()));
+        tabs.getTabs().add(tab("User Admin", new UserAdminPanel().root()));
+        root.setCenter(tabs);
+
+        syncFromSession();
+    }
+
+    private Tab tab(String title, Node content)
+    {
+        Tab tab = new Tab(title, content);
+        tab.setClosable(false);
+        return tab;
+    }
+
+    private Node buildPreferencesPane()
+    {
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
@@ -87,11 +109,7 @@ public class SettingsPanel implements AppPanel
         Button save = new Button("Save");
         save.setOnAction(e -> onSave());
 
-        root.setTop(new VBox(6, title, status, new Separator()));
-        root.setCenter(grid);
-        root.setBottom(new HBox(8, apply, save));
-
-        syncFromSession();
+        return new VBox(8, grid, new HBox(8, apply, save));
     }
 
     private void syncFromSession()
@@ -158,7 +176,7 @@ public class SettingsPanel implements AppPanel
         String selected = activeDatabase.getEditor().getText();
         if (selected == null || selected.isBlank())
         {
-            selected = "data/sca-ledger.mv.db";
+            selected = org.nonprofitbookkeeping.persistence.DatabaseLocationService.defaultUserDatabasePath().toString();
         }
 
         List<String> recents = new ArrayList<>();
