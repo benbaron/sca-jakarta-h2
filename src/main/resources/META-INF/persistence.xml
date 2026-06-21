@@ -16,6 +16,13 @@
     <class>org.nonprofitbookkeeping.model.AccountScheduleRequirement</class>
     <class>org.nonprofitbookkeeping.model.AccountSubtypeScheduleDefault</class>
 
+    <class>org.nonprofitbookkeeping.model.Company</class>
+    <class>org.nonprofitbookkeeping.model.CompanyBankAccount</class>
+    <class>org.nonprofitbookkeeping.model.CompanyTaxProfile</class>
+    <class>org.nonprofitbookkeeping.model.AppUser</class>
+    <class>org.nonprofitbookkeeping.model.AppRole</class>
+    <class>org.nonprofitbookkeeping.model.UserCompanyRole</class>
+
     <class>org.nonprofitbookkeeping.model.Fund</class>
     <class>org.nonprofitbookkeeping.model.FundAlias</class>
     <class>org.nonprofitbookkeeping.model.BudgetCategory</class>
