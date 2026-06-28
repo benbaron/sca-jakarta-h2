@@ -37,13 +37,15 @@ Import `experiments/dashboard-ui` as an existing Maven project. For a Maven laun
 The launcher class is:
 
 ```text
-org.nonprofitbookkeeping.ui.experiment.DashboardExperimentApp
+org.nonprofitbookkeeping.ui.experiment.DashboardExperimentLauncher
 ```
+
+The launcher constrains the initial window to 90% of the usable display area, caps it at 1440 by 900, and lowers the minimum size on smaller or scaled Windows desktops so the resize borders remain reachable.
 
 ## Experiment checklist
 
-1. Start at approximately 1440 by 900 pixels.
-2. Resize down to the enforced 1024 by 700 minimum.
+1. Start at approximately 1440 by 900 pixels on a large display, or 90% of the usable display on a smaller one.
+2. Resize the window down to its screen-aware minimum.
 3. Drag both split-pane dividers.
 4. Collapse and re-expand the left navigation pane.
 5. Open several navigation destinations and close their workspace tabs.
