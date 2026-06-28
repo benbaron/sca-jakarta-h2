@@ -19,6 +19,12 @@ mvn clean test
 mvn javafx:run
 ```
 
+To run the repository's complete verification first:
+
+```bash
+mvn clean verify
+```
+
 ## Eclipse
 
 Import `experiments/dashboard-ui` as an existing Maven project, then run the Maven goal `javafx:run`.
