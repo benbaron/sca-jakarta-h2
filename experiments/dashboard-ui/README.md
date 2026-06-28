@@ -11,13 +11,14 @@ It intentionally uses fictional in-memory data. It does not initialize CDI, JPA,
 
 ## Run
 
-From the repository root:
+Run the experiment from the repository root so the repository-level `.mvn/maven.config` can resolve `.mvn/settings.xml` correctly:
 
 ```bash
-cd experiments/dashboard-ui
-mvn clean test
-mvn javafx:run
+mvn -f experiments/dashboard-ui/pom.xml clean test
+mvn -f experiments/dashboard-ui/pom.xml javafx:run
 ```
+
+Do not change into `experiments/dashboard-ui` before running Maven. The repository's `.mvn/maven.config` contains a relative `--settings .mvn/settings.xml` entry, and Maven resolves that relative path from the current working directory.
 
 To run the repository's complete verification first:
 
@@ -27,7 +28,11 @@ mvn clean verify
 
 ## Eclipse
 
-Import `experiments/dashboard-ui` as an existing Maven project, then run the Maven goal `javafx:run`.
+Import `experiments/dashboard-ui` as an existing Maven project. For a Maven launch configuration, set the base directory to the repository root and use:
+
+```text
+-f experiments/dashboard-ui/pom.xml javafx:run
+```
 
 The launcher class is:
 
