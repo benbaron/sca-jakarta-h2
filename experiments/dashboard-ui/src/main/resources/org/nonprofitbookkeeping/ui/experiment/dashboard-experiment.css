@@ -1,0 +1,143 @@
+.root
+{
+    -fx-font-family: "Segoe UI", "Noto Sans", sans-serif;
+    -fx-font-size: 12px;
+    -fx-background-color: #f5f7fa;
+}
+
+.menu-bar,
+.main-toolbar
+{
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #dfe5ec transparent;
+}
+
+.main-toolbar
+{
+    -fx-padding: 8 12 8 12;
+}
+
+.split-pane
+{
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.split-pane > .split-pane-divider
+{
+    -fx-background-color: #d6dde6;
+    -fx-padding: 0 2 0 2;
+}
+
+.navigation-pane,
+.inspector-pane
+{
+    -fx-background-color: white;
+    -fx-padding: 12;
+}
+
+.navigation-pane
+{
+    -fx-border-color: transparent #dfe5ec transparent transparent;
+}
+
+.inspector-pane
+{
+    -fx-border-color: transparent transparent transparent #dfe5ec;
+}
+
+.tree-view
+{
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.tree-cell
+{
+    -fx-padding: 6 8 6 8;
+    -fx-background-color: transparent;
+}
+
+.tree-cell:selected
+{
+    -fx-background-color: #dcecff;
+    -fx-text-fill: #075fc7;
+}
+
+.tab-pane > .tab-header-area > .tab-header-background
+{
+    -fx-background-color: white;
+}
+
+.scroll-pane,
+.scroll-pane > .viewport
+{
+    -fx-background-color: #f5f7fa;
+}
+
+.card,
+.inspector-card
+{
+    -fx-background-color: white;
+    -fx-background-radius: 7;
+    -fx-border-radius: 7;
+    -fx-border-color: #dfe5ec;
+    -fx-padding: 14;
+    -fx-effect: dropshadow(gaussian, rgba(31, 45, 61, 0.06), 8, 0.15, 0, 2);
+}
+
+.card-title,
+.section-title
+{
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.section-title,
+.inspector-card-title,
+.quick-link-title
+{
+    -fx-text-fill: #075fc7;
+    -fx-font-weight: bold;
+}
+
+.muted
+{
+    -fx-text-fill: #64748b;
+}
+
+.amount
+{
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #16863a;
+}
+
+.quick-link
+{
+    -fx-padding: 8;
+    -fx-background-radius: 5;
+}
+
+.quick-link:hover
+{
+    -fx-background-color: #edf4ff;
+}
+
+.status-bar
+{
+    -fx-background-color: white;
+    -fx-border-color: #dfe5ec transparent transparent transparent;
+    -fx-padding: 7 12 7 12;
+}
+
+.table-view
+{
+    -fx-border-color: #e4e9ef;
+    -fx-background-color: white;
+}
+
+.table-view .column-header-background
+{
+    -fx-background-color: #f8fafc;
+}
