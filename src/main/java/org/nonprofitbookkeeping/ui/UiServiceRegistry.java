@@ -2,32 +2,34 @@ package org.nonprofitbookkeeping.ui;
 
 import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
 import org.nonprofitbookkeeping.persistence.Jpa;
-import org.nonprofitbookkeeping.service.AccountLookupService;
-import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
-import org.nonprofitbookkeeping.service.BudgetCategoryLookupService;
-import org.nonprofitbookkeeping.service.CompanyAdminService;
-import org.nonprofitbookkeeping.service.FundBalanceService;
-import org.nonprofitbookkeeping.service.FundLookupService;
-import org.nonprofitbookkeeping.service.AccountAdminService;
-import org.nonprofitbookkeeping.service.FundAdminService;
-import org.nonprofitbookkeeping.service.LedgerQueryService;
-import org.nonprofitbookkeeping.service.FinancialReportService;
-import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
-import org.nonprofitbookkeeping.service.UserAdminService;
+import org.nonprofitbookkeeping.repository.ApprovalAuditRepository;
+import org.nonprofitbookkeeping.repository.JdbcApprovalAuditRepository;
 import org.nonprofitbookkeeping.repository.JdbcPeriodCloseRunRepository;
 import org.nonprofitbookkeeping.repository.JdbcReconciliationRunRepository;
 import org.nonprofitbookkeeping.repository.PeriodCloseRunRepository;
 import org.nonprofitbookkeeping.repository.ReconciliationRunRepository;
+import org.nonprofitbookkeeping.service.AccountAdminService;
+import org.nonprofitbookkeeping.service.AccountLookupService;
+import org.nonprofitbookkeeping.service.ApprovalAuditService;
+import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
+import org.nonprofitbookkeeping.service.BudgetCategoryLookupService;
+import org.nonprofitbookkeeping.service.CompanyAdminService;
+import org.nonprofitbookkeeping.service.FinancialReportService;
+import org.nonprofitbookkeeping.service.FundAdminService;
+import org.nonprofitbookkeeping.service.FundBalanceService;
+import org.nonprofitbookkeeping.service.FundLookupService;
+import org.nonprofitbookkeeping.service.LedgerQueryService;
 import org.nonprofitbookkeeping.service.PeriodCloseService;
 import org.nonprofitbookkeeping.service.ReconciliationService;
-import org.nonprofitbookkeeping.service.ApprovalAuditService;
-import org.nonprofitbookkeeping.repository.JdbcApprovalAuditRepository;
-import org.nonprofitbookkeeping.repository.ApprovalAuditRepository;
+import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
+import org.nonprofitbookkeeping.service.UserAdminService;
+import org.nonprofitbookkeeping.service.dashboard.DashboardQueryService;
+import org.nonprofitbookkeeping.service.dashboard.JpaDashboardQueryService;
 
 import java.nio.file.Path;
 
 /**
- * Lightweight service wiring for JavaFX runtime (without CDI bootstrap).
+ * Lightweight service wiring for JavaFX runtime without CDI bootstrap.
  */
 public final class UiServiceRegistry
 {
@@ -36,7 +38,9 @@ public final class UiServiceRegistry
     private static ServiceBundle services;
     private static RuntimeException lastInitializationFailure;
 
-    private UiServiceRegistry() {}
+    private UiServiceRegistry()
+    {
+    }
 
     public static AccountLookupService accountLookup() { return services().accountLookup(); }
     public static FundLookupService fundLookup() { return services().fundLookup(); }
@@ -50,6 +54,7 @@ public final class UiServiceRegistry
     public static ScheduleEligibilityService schedules() { return services().schedules(); }
     public static LedgerQueryService ledgerQuery() { return services().ledgerQuery(); }
     public static FinancialReportService financialReports() { return services().financialReports(); }
+    public static DashboardQueryService dashboardQuery() { return services().dashboardQuery(); }
 
     private static ServiceBundle services()
     {
@@ -120,10 +125,9 @@ public final class UiServiceRegistry
                 new FundBalanceService(jpa),
                 new ScheduleEligibilityService(jpa),
                 new LedgerQueryService(jpa),
-                new FinancialReportService(jpa)
-        );
+                new FinancialReportService(jpa),
+                new JpaDashboardQueryService(jpa));
     }
-
 
     public static ReconciliationRunRepository reconciliationRunRepository()
     {
@@ -144,7 +148,6 @@ public final class UiServiceRegistry
     {
         return new PeriodCloseService(periodCloseRunRepository());
     }
-
 
     public static ApprovalAuditRepository approvalAuditRepository()
     {
@@ -188,7 +191,8 @@ public final class UiServiceRegistry
             FundBalanceService fundBalance,
             ScheduleEligibilityService schedules,
             LedgerQueryService ledgerQuery,
-            FinancialReportService financialReports)
+            FinancialReportService financialReports,
+            DashboardQueryService dashboardQuery)
     {
         void close()
         {
