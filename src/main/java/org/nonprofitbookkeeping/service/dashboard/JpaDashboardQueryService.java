@@ -3,6 +3,7 @@ package org.nonprofitbookkeeping.service.dashboard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.math.BigDecimal;
@@ -10,6 +11,7 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * JPA implementation of the production dashboard projection.
@@ -47,20 +49,23 @@ public class JpaDashboardQueryService implements DashboardQueryService
                         from TxnSplit s
                         where s.txn.txnDate <= :asOf
                           and s.txn.status = 'ENTERED'
-                          and s.account.accountType = 'BANK'
+                          and s.account.accountType = :bankType
                         "", BigDecimal.class)
                         .setParameter("asOf", asOfDate)
+                        .setParameter("bankType", AccountType.BANK)
                         .getSingleResult());
 
                 BigDecimal yearToDate = decimal(em.createQuery("""
                         select coalesce(sum(case
-                            when s.account.accountType = 'INCOME' then -s.amountSigned
-                            when s.account.accountType = 'EXPENSE' then -s.amountSigned
+                            when s.account.accountType = :incomeType then -s.amountSigned
+                            when s.account.accountType = :expenseType then -s.amountSigned
                             else 0 end), 0)
                         from TxnSplit s
                         where s.txn.txnDate between :start and :asOf
                           and s.txn.status = 'ENTERED'
                         "", BigDecimal.class)
+                        .setParameter("incomeType", AccountType.INCOME)
+                        .setParameter("expenseType", AccountType.EXPENSE)
                         .setParameter("start", LocalDate.of(asOfDate.getYear(), 1, 1))
                         .setParameter("asOf", asOfDate)
                         .getSingleResult());
@@ -87,11 +92,12 @@ public class JpaDashboardQueryService implements DashboardQueryService
                         from TxnSplit s join s.account a
                         where s.txn.txnDate <= :asOf
                           and s.txn.status = 'ENTERED'
-                          and a.accountType = 'BANK'
+                          and a.accountType = :bankType
                         group by a.id, a.code, a.name
                         order by abs(sum(s.amountSigned)) desc, a.code
                         "", DashboardSnapshot.BankAccountBalance.class)
                         .setParameter("asOf", asOfDate)
+                        .setParameter("bankType", AccountType.BANK)
                         .getResultList();
 
                 List<DashboardSnapshot.RecentTransaction> recent = em.createQuery("""
@@ -106,12 +112,11 @@ public class JpaDashboardQueryService implements DashboardQueryService
                         .getResultList();
 
                 em.getTransaction().commit();
-                BigDecimal reconciledCash = bookCash;
                 return new DashboardSnapshot(
                         asOfDate,
                         bookCash,
-                        reconciledCash,
-                        bookCash.subtract(reconciledCash),
+                        Optional.empty(),
+                        Optional.empty(),
                         yearToDate,
                         Map.copyOf(fundClassTotals),
                         List.copyOf(bankAccounts),
