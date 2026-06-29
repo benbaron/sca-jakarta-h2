@@ -1,8 +1,11 @@
 package org.nonprofitbookkeeping.ui;
 
 import org.nonprofitbookkeeping.model.AppPreferencesState;
+import org.nonprofitbookkeeping.model.ClosedPeriodPolicy;
+import org.nonprofitbookkeeping.model.CorrectionMethod;
 import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
+import org.nonprofitbookkeeping.model.ReopenScope;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
 import org.nonprofitbookkeeping.model.ViewPresetState;
@@ -13,10 +16,10 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -29,6 +32,11 @@ public class FileAppStateStore implements AppStateStore
     private static final String K_NATIVE = "preferences.nativeDecorations";
     private static final String K_REMEMBER = "preferences.rememberWindowState";
     private static final String K_PRIV = "preferences.defaultPrivilege";
+    private static final String K_CORRECTION = "preferences.correctionMethod";
+    private static final String K_CLOSED_PERIOD = "preferences.closedPeriodPolicy";
+    private static final String K_REQUIRE_REOPEN_REASON = "preferences.requireReopenReason";
+    private static final String K_REOPEN_SCOPE = "preferences.defaultReopenScope";
+    private static final String K_CONFIRM_DELETE = "preferences.confirmEnteredTransactionDeletion";
 
     private static final String K_ACTIVE_COMPANY = "multiCompany.active";
     private static final String K_RECENTS = "multiCompany.recents";
@@ -54,11 +62,26 @@ public class FileAppStateStore implements AppStateStore
             return Optional.empty();
         }
 
-        UiThemePreference theme = UiThemePreference.valueOf(p.getProperty(K_THEME));
+        UiThemePreference theme = enumValue(p, K_THEME, UiThemePreference.SYSTEM_DEFAULT);
         boolean nativeDecorations = Boolean.parseBoolean(p.getProperty(K_NATIVE, "false"));
         boolean remember = Boolean.parseBoolean(p.getProperty(K_REMEMBER, "true"));
-        UserPrivilegeLevel privilege = UserPrivilegeLevel.valueOf(p.getProperty(K_PRIV, UserPrivilegeLevel.ACCOUNTANT.name()));
-        return Optional.of(new AppPreferencesState(theme, nativeDecorations, remember, privilege));
+        UserPrivilegeLevel privilege = enumValue(p, K_PRIV, UserPrivilegeLevel.ACCOUNTANT);
+        CorrectionMethod correction = enumValue(p, K_CORRECTION, CorrectionMethod.DIRECT_EDIT);
+        ClosedPeriodPolicy closedPeriod = enumValue(p, K_CLOSED_PERIOD, ClosedPeriodPolicy.WARN_AND_REOPEN);
+        boolean requireReason = Boolean.parseBoolean(p.getProperty(K_REQUIRE_REOPEN_REASON, "false"));
+        ReopenScope reopenScope = enumValue(p, K_REOPEN_SCOPE, ReopenScope.UNTIL_MANUALLY_CLOSED);
+        boolean confirmDelete = Boolean.parseBoolean(p.getProperty(K_CONFIRM_DELETE, "true"));
+
+        return Optional.of(new AppPreferencesState(
+                theme,
+                nativeDecorations,
+                remember,
+                privilege,
+                correction,
+                closedPeriod,
+                requireReason,
+                reopenScope,
+                confirmDelete));
     }
 
     @Override
@@ -77,7 +100,6 @@ public class FileAppStateStore implements AppStateStore
                 .toList();
         return Optional.of(new MultiCompanyState(active, recents.isEmpty() ? List.of(active) : recents));
     }
-
 
     @Override
     public Optional<DatabaseSelectionState> loadDatabaseSelection()
@@ -157,6 +179,11 @@ public class FileAppStateStore implements AppStateStore
         p.setProperty(K_NATIVE, Boolean.toString(state.useNativeWindowDecorations()));
         p.setProperty(K_REMEMBER, Boolean.toString(state.rememberWindowState()));
         p.setProperty(K_PRIV, state.defaultPrivilege().name());
+        p.setProperty(K_CORRECTION, state.correctionMethod().name());
+        p.setProperty(K_CLOSED_PERIOD, state.closedPeriodPolicy().name());
+        p.setProperty(K_REQUIRE_REOPEN_REASON, Boolean.toString(state.requireReopenReason()));
+        p.setProperty(K_REOPEN_SCOPE, state.defaultReopenScope().name());
+        p.setProperty(K_CONFIRM_DELETE, Boolean.toString(state.confirmEnteredTransactionDeletion()));
         write(p);
     }
 
@@ -169,7 +196,6 @@ public class FileAppStateStore implements AppStateStore
         write(p);
     }
 
-
     @Override
     public void saveDatabaseSelection(DatabaseSelectionState state)
     {
@@ -177,6 +203,23 @@ public class FileAppStateStore implements AppStateStore
         p.setProperty(K_ACTIVE_DB, state.activeDatabasePath());
         p.setProperty(K_DB_RECENTS, String.join(",", state.recentDatabasePaths()));
         write(p);
+    }
+
+    private static <E extends Enum<E>> E enumValue(Properties properties, String key, E fallback)
+    {
+        String raw = properties.getProperty(key);
+        if (raw == null || raw.isBlank())
+        {
+            return fallback;
+        }
+        try
+        {
+            return Enum.valueOf(fallback.getDeclaringClass(), raw);
+        }
+        catch (IllegalArgumentException ex)
+        {
+            return fallback;
+        }
     }
 
     private static String encodeToken(String value)
@@ -197,7 +240,6 @@ public class FileAppStateStore implements AppStateStore
         }
         catch (IllegalArgumentException ex)
         {
-            // Backward-compatibility for old plaintext token rows.
             return token;
         }
     }
