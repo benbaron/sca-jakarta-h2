@@ -46,7 +46,7 @@ public class AppPanelConsistencyTest
             for (AppPanelId id : AppPanelId.values())
             {
                 host.show(id);
-                assertNotNull(host.getCenter(), "center root missing for " + id);
+                assertNotNull(host.activeRoot(), "active root missing for " + id);
                 assertFalse(host.getActiveTitle().isBlank(), "blank title for " + id);
             }
             return null;
