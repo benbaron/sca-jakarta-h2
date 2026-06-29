@@ -32,7 +32,6 @@ public class ProductionWorkspaceWindow extends BorderPane
     private final SplitPane workspace = new SplitPane();
     private final Label activePanelLabel = new Label();
     private final Label activePeriodLabel = new Label();
-    private LocalDate activePeriodDate = LocalDate.now();
 
     public ProductionWorkspaceWindow()
     {
@@ -40,6 +39,9 @@ public class ProductionWorkspaceWindow extends BorderPane
                 this::openPanel,
                 inspectorPane::show,
                 this::inspectorContext);
+
+        ActivePeriodContext.activeDateProperty().addListener(
+                (observable, oldDate, newDate) -> updateActivePeriodLabel());
 
         setTop(buildTopChrome());
         setCenter(buildWorkspace());
@@ -81,7 +83,12 @@ public class ProductionWorkspaceWindow extends BorderPane
 
     LocalDate activePeriodDate()
     {
-        return activePeriodDate;
+        return ActivePeriodContext.get();
+    }
+
+    void setActivePeriodDate(LocalDate date)
+    {
+        ActivePeriodContext.set(date);
     }
 
     PanelHost panelHost()
@@ -149,7 +156,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         Button inspectorButton = new Button("Inspector");
         inspectorButton.setOnAction(event -> setInspectorVisible(!workspace.getItems().contains(inspectorPane)));
 
-        DatePicker periodPicker = new DatePicker(activePeriodDate);
+        DatePicker periodPicker = new DatePicker(ActivePeriodContext.get());
         periodPicker.setPromptText("Active period date");
 
         Button setPeriodButton = new Button("Set Active Period");
@@ -157,8 +164,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         {
             if (periodPicker.getValue() != null)
             {
-                activePeriodDate = periodPicker.getValue();
-                updateActivePeriodLabel();
+                setActivePeriodDate(periodPicker.getValue());
             }
         });
 
@@ -199,14 +205,17 @@ public class ProductionWorkspaceWindow extends BorderPane
 
     private void updateActivePeriodLabel()
     {
-        activePeriodLabel.setText("Active period: " + activePeriodDate);
+        activePeriodLabel.setText("Active period: " + ActivePeriodContext.get());
     }
 
     private NavigationPane.InspectorContext inspectorContext()
     {
         AppPanelId active = panelHost.activePanelId();
         String capabilities = active == null ? "No active panel" : "Active panel: " + panelHost.getActiveTitle();
-        return new NavigationPane.InspectorContext("Active database", activePeriodDate.toString(), capabilities);
+        return new NavigationPane.InspectorContext(
+                "Active database",
+                ActivePeriodContext.get().toString(),
+                capabilities);
     }
 
     private void setNavigationVisible(boolean visible)
