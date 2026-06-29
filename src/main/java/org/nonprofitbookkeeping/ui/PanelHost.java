@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import javafx.scene.Node;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 
@@ -80,6 +81,18 @@ public class PanelHost extends TabPane
         return getTabs().size();
     }
 
+    public Node activeRoot()
+    {
+        AppPanel panel = getActive();
+        return panel == null ? null : panel.root();
+    }
+
+    public boolean isClosable(AppPanelId id)
+    {
+        Tab tab = tabs.get(id);
+        return tab != null && tab.isClosable();
+    }
+
     public String getActiveTitle()
     {
         AppPanel panel = getActive();
@@ -153,7 +166,7 @@ public class PanelHost extends TabPane
         AppPanel panel = panels.computeIfAbsent(id, this::create);
         Tab tab = new Tab(panel.title(), panel.root());
         tab.setUserData(id);
-        tab.setClosable(id != AppPanelId.DASHBOARD);
+        tab.setClosable(!WorkspaceLayoutPolicy.isPermanentTab(id));
         tab.setOnClosed(event ->
         {
             tabs.remove(id);
