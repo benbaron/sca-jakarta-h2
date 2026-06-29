@@ -1,0 +1,97 @@
+package org.nonprofitbookkeeping.service.dashboard;
+
+import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.nonprofitbookkeeping.persistence.Jpa;
+
+import java.math.BigDecimal;
+import java.nio.file.Path;
+import java.time.LocalDate;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class JpaDashboardQueryServiceTest
+{
+    @Test
+    public void emptyDatabase_returnsZeroAndNoFictionalReconciliationValues(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("dashboard-empty")))
+        {
+            DashboardSnapshot snapshot = new JpaDashboardQueryService(jpa)
+                    .load(LocalDate.of(2026, 6, 30), 5);
+
+            assertEquals(BigDecimal.ZERO, snapshot.bookCash());
+            assertEquals(BigDecimal.ZERO, snapshot.yearToDateSurplus());
+            assertTrue(snapshot.reconciledCash().isEmpty());
+            assertTrue(snapshot.unreconciledDifference().isEmpty());
+            assertTrue(snapshot.bankAccounts().isEmpty());
+            assertTrue(snapshot.recentTransactions().isEmpty());
+        }
+    }
+
+    @Test
+    public void populatedDatabase_projectsCashResultsFundsAndRecentTransactions(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("dashboard-populated")))
+        {
+            seed(jpa);
+
+            DashboardSnapshot snapshot = new JpaDashboardQueryService(jpa)
+                    .load(LocalDate.of(2026, 6, 30), 1);
+
+            assertEquals(new BigDecimal("250.0000"), snapshot.bookCash());
+            assertEquals(new BigDecimal("150.0000"), snapshot.yearToDateSurplus());
+            assertEquals(1, snapshot.bankAccounts().size());
+            assertEquals("Checking", snapshot.bankAccounts().get(0).name());
+            assertEquals(1, snapshot.recentTransactions().size());
+            assertEquals("Expense", snapshot.recentTransactions().get(0).memo());
+            assertTrue(snapshot.fundClassTotals().containsKey("UNRESTRICTED"));
+        }
+    }
+
+    @Test
+    public void reversedTransactions_areExcludedFromBalancesButRemainVisibleInHistory(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("dashboard-reversed")))
+        {
+            seed(jpa);
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                em.createNativeQuery("UPDATE txn SET status = 'REVERSED' WHERE id = 1").executeUpdate();
+                em.getTransaction().commit();
+            }
+
+            DashboardSnapshot snapshot = new JpaDashboardQueryService(jpa)
+                    .load(LocalDate.of(2026, 6, 30), 10);
+
+            assertEquals(new BigDecimal("-50.0000"), snapshot.bookCash());
+            assertEquals(new BigDecimal("-100.0000"), snapshot.yearToDateSurplus());
+            assertEquals(2, snapshot.recentTransactions().size());
+        }
+    }
+
+    private static void seed(Jpa jpa)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            em.getTransaction().begin();
+            em.createNativeQuery("INSERT INTO chart_of_accounts (id, name, version, status) VALUES (1, 'Test', '1', 'ACTIVE')").executeUpdate();
+            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (1, 1, '1000', 'Checking', 'BANK', 'DEBIT')").executeUpdate();
+            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (2, 1, '4000', 'Income', 'INCOME', 'CREDIT')").executeUpdate();
+            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (3, 1, '5000', 'Expense', 'EXPENSE', 'DEBIT')").executeUpdate();
+            em.createNativeQuery("INSERT INTO fund (id, code, name, fund_type) VALUES (1, 'OPERATING', 'Operating', 'UNRESTRICTED')").executeUpdate();
+
+            em.createNativeQuery("INSERT INTO txn (id, txn_date, memo, status) VALUES (1, DATE '2026-01-10', 'Income', 'ENTERED')").executeUpdate();
+            em.createNativeQuery("INSERT INTO txn_split (id, txn_id, account_id, fund_id, amount_signed) VALUES (1, 1, 1, 1, 300.0000)").executeUpdate();
+            em.createNativeQuery("INSERT INTO txn_split (id, txn_id, account_id, fund_id, amount_signed) VALUES (2, 1, 2, 1, -300.0000)").executeUpdate();
+
+            em.createNativeQuery("INSERT INTO txn (id, txn_date, memo, status) VALUES (2, DATE '2026-02-10', 'Expense', 'ENTERED')").executeUpdate();
+            em.createNativeQuery("INSERT INTO txn_split (id, txn_id, account_id, fund_id, amount_signed) VALUES (3, 2, 1, 1, -50.0000)").executeUpdate();
+            em.createNativeQuery("INSERT INTO txn_split (id, txn_id, account_id, fund_id, amount_signed) VALUES (4, 2, 3, 1, 50.0000)").executeUpdate();
+            em.getTransaction().commit();
+        }
+    }
+}
