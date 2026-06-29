@@ -50,7 +50,7 @@ public class JpaDashboardQueryService implements DashboardQueryService
                         where s.txn.txnDate <= :asOf
                           and s.txn.status = 'ENTERED'
                           and s.account.accountType = :bankType
-                        "", BigDecimal.class)
+                        """, BigDecimal.class)
                         .setParameter("asOf", asOfDate)
                         .setParameter("bankType", AccountType.BANK)
                         .getSingleResult());
@@ -63,7 +63,7 @@ public class JpaDashboardQueryService implements DashboardQueryService
                         from TxnSplit s
                         where s.txn.txnDate between :start and :asOf
                           and s.txn.status = 'ENTERED'
-                        "", BigDecimal.class)
+                        """, BigDecimal.class)
                         .setParameter("incomeType", AccountType.INCOME)
                         .setParameter("expenseType", AccountType.EXPENSE)
                         .setParameter("start", LocalDate.of(asOfDate.getYear(), 1, 1))
@@ -78,7 +78,7 @@ public class JpaDashboardQueryService implements DashboardQueryService
                           and s.txn.status = 'ENTERED'
                         group by f.fundType
                         order by f.fundType
-                        "", Object[].class)
+                        """, Object[].class)
                         .setParameter("asOf", asOfDate)
                         .getResultList();
                 for (Object[] row : fundRows)
@@ -95,7 +95,7 @@ public class JpaDashboardQueryService implements DashboardQueryService
                           and a.accountType = :bankType
                         group by a.id, a.code, a.name
                         order by abs(sum(s.amountSigned)) desc, a.code
-                        "", DashboardSnapshot.BankAccountBalance.class)
+                        """, DashboardSnapshot.BankAccountBalance.class)
                         .setParameter("asOf", asOfDate)
                         .setParameter("bankType", AccountType.BANK)
                         .getResultList();
@@ -106,7 +106,7 @@ public class JpaDashboardQueryService implements DashboardQueryService
                         from Txn t
                         where t.txnDate <= :asOf
                         order by t.txnDate desc, t.id desc
-                        "", DashboardSnapshot.RecentTransaction.class)
+                        """, DashboardSnapshot.RecentTransaction.class)
                         .setParameter("asOf", asOfDate)
                         .setMaxResults(recentTransactionLimit)
                         .getResultList();
