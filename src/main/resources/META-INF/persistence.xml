@@ -36,14 +36,15 @@
     <class>org.nonprofitbookkeeping.model.TxnSplit</class>
     <class>org.nonprofitbookkeeping.model.FundTransfer</class>
 
+    <class>org.nonprofitbookkeeping.model.AccountingPeriod</class>
+    <class>org.nonprofitbookkeeping.model.PeriodReopenEvent</class>
+    <class>org.nonprofitbookkeeping.model.AuditEvent</class>
+
     <properties>
-      <!-- H2 file DB in ./data -->
       <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
       <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:file:./data/sca-ledger;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH"/>
       <property name="jakarta.persistence.jdbc.user" value="sa"/>
       <property name="jakarta.persistence.jdbc.password" value=""/>
-
-      <!-- Hibernate -->
       <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
       <property name="hibernate.hbm2ddl.auto" value="validate"/>
       <property name="hibernate.show_sql" value="false"/>

@@ -14,8 +14,11 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.AppPreferencesState;
+import org.nonprofitbookkeeping.model.ClosedPeriodPolicy;
+import org.nonprofitbookkeeping.model.CorrectionMethod;
 import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
+import org.nonprofitbookkeeping.model.ReopenScope;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
 
@@ -34,6 +37,11 @@ public class SettingsPanel implements AppPanel
     private final CheckBox nativeWindow = new CheckBox("Use native window decorations when available");
     private final CheckBox rememberState = new CheckBox("Remember window/state on startup");
     private final ComboBox<UserPrivilegeLevel> defaultPrivilege = new ComboBox<>();
+    private final ComboBox<CorrectionMethod> correctionMethod = new ComboBox<>();
+    private final ComboBox<ClosedPeriodPolicy> closedPeriodPolicy = new ComboBox<>();
+    private final CheckBox requireReopenReason = new CheckBox("Require a reason when reopening a closed period");
+    private final ComboBox<ReopenScope> defaultReopenScope = new ComboBox<>();
+    private final CheckBox confirmDeletion = new CheckBox("Confirm before deleting an entered transaction");
     private final ComboBox<String> activeCompany = new ComboBox<>();
     private final ComboBox<String> activeDatabase = new ComboBox<>();
 
@@ -80,6 +88,9 @@ public class SettingsPanel implements AppPanel
 
         theme.getItems().addAll(UiThemePreference.values());
         defaultPrivilege.getItems().addAll(UserPrivilegeLevel.values());
+        correctionMethod.getItems().addAll(CorrectionMethod.values());
+        closedPeriodPolicy.getItems().addAll(ClosedPeriodPolicy.values());
+        defaultReopenScope.getItems().addAll(ReopenScope.values());
 
         activeCompany.setEditable(true);
         activeCompany.getItems().addAll(session.multiCompany().recentCompanyCodes());
@@ -96,6 +107,19 @@ public class SettingsPanel implements AppPanel
 
         grid.add(new Label("Default privilege"), 0, row);
         grid.add(defaultPrivilege, 1, row++);
+
+        grid.add(new Label("Correction method"), 0, row);
+        grid.add(correctionMethod, 1, row++);
+
+        grid.add(new Label("Closed-period policy"), 0, row);
+        grid.add(closedPeriodPolicy, 1, row++);
+
+        grid.add(requireReopenReason, 0, row++, 2, 1);
+
+        grid.add(new Label("Default reopening scope"), 0, row);
+        grid.add(defaultReopenScope, 1, row++);
+
+        grid.add(confirmDeletion, 0, row++, 2, 1);
 
         grid.add(new Label("Active company"), 0, row);
         grid.add(activeCompany, 1, row++);
@@ -122,6 +146,11 @@ public class SettingsPanel implements AppPanel
         nativeWindow.setSelected(p.useNativeWindowDecorations());
         rememberState.setSelected(p.rememberWindowState());
         defaultPrivilege.getSelectionModel().select(p.defaultPrivilege());
+        correctionMethod.getSelectionModel().select(p.correctionMethod());
+        closedPeriodPolicy.getSelectionModel().select(p.closedPeriodPolicy());
+        requireReopenReason.setSelected(p.requireReopenReason());
+        defaultReopenScope.getSelectionModel().select(p.defaultReopenScope());
+        confirmDeletion.setSelected(p.confirmEnteredTransactionDeletion());
 
         activeCompany.getItems().setAll(c.recentCompanyCodes());
         if (!c.recentCompanyCodes().contains(c.activeCompanyCode()))
@@ -152,7 +181,12 @@ public class SettingsPanel implements AppPanel
                 theme.getValue() == null ? UiThemePreference.SYSTEM_DEFAULT : theme.getValue(),
                 nativeWindow.isSelected(),
                 rememberState.isSelected(),
-                defaultPrivilege.getValue() == null ? UserPrivilegeLevel.ACCOUNTANT : defaultPrivilege.getValue());
+                defaultPrivilege.getValue() == null ? UserPrivilegeLevel.ACCOUNTANT : defaultPrivilege.getValue(),
+                correctionMethod.getValue() == null ? CorrectionMethod.DIRECT_EDIT : correctionMethod.getValue(),
+                closedPeriodPolicy.getValue() == null ? ClosedPeriodPolicy.WARN_AND_REOPEN : closedPeriodPolicy.getValue(),
+                requireReopenReason.isSelected(),
+                defaultReopenScope.getValue() == null ? ReopenScope.UNTIL_MANUALLY_CLOSED : defaultReopenScope.getValue(),
+                confirmDeletion.isSelected());
     }
 
     MultiCompanyState readMultiCompany()
@@ -169,7 +203,6 @@ public class SettingsPanel implements AppPanel
         }
         return new MultiCompanyState(selected, recents);
     }
-
 
     DatabaseSelectionState readDatabaseSelection()
     {
@@ -196,7 +229,6 @@ public class SettingsPanel implements AppPanel
         return new DatabaseSelectionState(selected, recents);
     }
 
-
     void setActiveDatabaseForTests(String value)
     {
         activeDatabase.getEditor().setText(value);
@@ -214,6 +246,15 @@ public class SettingsPanel implements AppPanel
         status.setText("Saved settings. They will be restored on next startup.");
     }
 
-    @Override public String title() { return "Settings"; }
-    @Override public Node root() { return root; }
+    @Override
+    public String title()
+    {
+        return "Settings";
+    }
+
+    @Override
+    public Node root()
+    {
+        return root;
+    }
 }

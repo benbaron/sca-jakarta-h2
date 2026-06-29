@@ -16,7 +16,7 @@ import java.util.Map;
  * factory / DI approach.
  */
 @ApplicationScoped
-public class Jpa
+public class Jpa implements AutoCloseable
 {
     private final EntityManagerFactory emf;
 
@@ -68,6 +68,7 @@ public class Jpa
         return emf.createEntityManager();
     }
 
+    @Override
     public void close()
     {
         emf.close();
