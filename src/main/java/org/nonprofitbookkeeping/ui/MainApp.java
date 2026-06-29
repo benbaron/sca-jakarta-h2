@@ -5,27 +5,23 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 /**
- * Skeleton desktop application shell.
- *
- * Design goal:
- * - “Office-like” top menu + toolbar
- * - Left navigation tree
- * - Center workspace with panels
- * - Right-side inspector panel
+ * Production desktop application launcher.
  */
 public class MainApp extends Application
 {
     @Override
     public void start(Stage stage)
     {
-        MainWindow root = new MainWindow();
+        ProductionWorkspaceWindow root = new ProductionWorkspaceWindow();
 
         Scene scene = new Scene(root, 1200, 800);
         scene.getStylesheets().add(getClass().getResource("/ui/styles.css").toExternalForm());
 
         GlobalShortcuts.install(scene, root);
 
-        stage.setTitle("SCA Ledger (H2 + Jakarta) — Prototype");
+        stage.setTitle("SCA Ledger");
+        stage.setMinWidth(900);
+        stage.setMinHeight(620);
         stage.setScene(scene);
         stage.show();
     }
