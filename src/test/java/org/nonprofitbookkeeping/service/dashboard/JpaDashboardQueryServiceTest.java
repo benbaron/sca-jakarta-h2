@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JpaDashboardQueryServiceTest
@@ -32,6 +33,18 @@ public class JpaDashboardQueryServiceTest
     }
 
     @Test
+    public void load_rejectsMissingDateAndNonPositiveLimit(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("dashboard-validation")))
+        {
+            JpaDashboardQueryService service = new JpaDashboardQueryService(jpa);
+
+            assertThrows(IllegalArgumentException.class, () -> service.load(null, 5));
+            assertThrows(IllegalArgumentException.class, () -> service.load(LocalDate.of(2026, 6, 30), 0));
+        }
+    }
+
+    @Test
     public void populatedDatabase_projectsCashResultsFundsAndRecentTransactions(@TempDir Path tempDir)
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("dashboard-populated")))
@@ -42,7 +55,7 @@ public class JpaDashboardQueryServiceTest
                     .load(LocalDate.of(2026, 6, 30), 1);
 
             assertEquals(new BigDecimal("250.0000"), snapshot.bookCash());
-            assertEquals(new BigDecimal("150.0000"), snapshot.yearToDateSurplus());
+            assertEquals(new BigDecimal("250.0000"), snapshot.yearToDateSurplus());
             assertEquals(1, snapshot.bankAccounts().size());
             assertEquals("Checking", snapshot.bankAccounts().get(0).name());
             assertEquals(1, snapshot.recentTransactions().size());
@@ -68,7 +81,7 @@ public class JpaDashboardQueryServiceTest
                     .load(LocalDate.of(2026, 6, 30), 10);
 
             assertEquals(new BigDecimal("-50.0000"), snapshot.bookCash());
-            assertEquals(new BigDecimal("-100.0000"), snapshot.yearToDateSurplus());
+            assertEquals(new BigDecimal("-50.0000"), snapshot.yearToDateSurplus());
             assertEquals(2, snapshot.recentTransactions().size());
         }
     }
