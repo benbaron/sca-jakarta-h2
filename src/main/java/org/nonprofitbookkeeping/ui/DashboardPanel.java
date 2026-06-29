@@ -41,7 +41,8 @@ public class DashboardPanel implements AppPanel
 
     public DashboardPanel()
     {
-        this(UiServiceRegistry.dashboardQuery(), LocalDate::now);
+        this(UiServiceRegistry.dashboardQuery(), ActivePeriodContext::get);
+        ActivePeriodContext.activeDateProperty().addListener((observable, oldDate, newDate) -> reload());
     }
 
     DashboardPanel(DashboardQueryService dashboardQueryService, Supplier<LocalDate> asOfDateSupplier)
