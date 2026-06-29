@@ -1,18 +1,30 @@
 package org.nonprofitbookkeeping.model;
 
-import jakarta.persistence.*;
-import java.time.*;
-import java.math.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 
+import java.time.Instant;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "txn",
        indexes = {
            @Index(name = "ix_txn_date", columnList = "txn_date"),
-           @Index(name = "ix_txn_payee", columnList = "payee_id")
+           @Index(name = "ix_txn_payee", columnList = "payee_id"),
+           @Index(name = "ix_txn_status", columnList = "status"),
+           @Index(name = "ix_txn_replacement_for", columnList = "replacement_for_txn_id")
        })
 /**
- * Represents the Txn component in the nonprofit bookkeeping application.
+ * Represents an entered accounting transaction.
  */
 public class Txn
 {
@@ -30,13 +42,23 @@ public class Txn
     @Column(length = 500)
     private String memo;
 
-    /**
-     * Bank register account (an ASSET account representing the specific bank/PayPal register).
-     * This provides the “bank account” column users expect in the Ledger UI.
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bank_account_id")
     private Account bankAccount;
+
+    @Column(nullable = false, length = 20)
+    private String status = "ENTERED";
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reversal_of_txn_id", unique = true)
+    private Txn reversalOf;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "replacement_for_txn_id")
+    private Txn replacementFor;
+
+    @Column(name = "correction_note", length = 1000)
+    private String correctionNote;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
@@ -53,6 +75,14 @@ public class Txn
     public void setMemo(String memo) { this.memo = memo; }
     public Account getBankAccount() { return bankAccount; }
     public void setBankAccount(Account bankAccount) { this.bankAccount = bankAccount; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public Txn getReversalOf() { return reversalOf; }
+    public void setReversalOf(Txn reversalOf) { this.reversalOf = reversalOf; }
+    public Txn getReplacementFor() { return replacementFor; }
+    public void setReplacementFor(Txn replacementFor) { this.replacementFor = replacementFor; }
+    public String getCorrectionNote() { return correctionNote; }
+    public void setCorrectionNote(String correctionNote) { this.correctionNote = correctionNote; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public void touchUpdatedAt() { this.updatedAt = Instant.now(); }
