@@ -75,7 +75,7 @@ final class FlywaySchemaRecoveryService
             if (!matchesCurrentSchema(connection))
             {
                 throw new IllegalStateException(
-                        "Database contains a partial or unrecognized application schema. "
+                        "Database contains a partial or non-contiguous untracked schema. "
                                 + "No tables were deleted or recreated.");
             }
 
@@ -155,10 +155,23 @@ final class FlywaySchemaRecoveryService
         }
 
         String archivedName = HISTORY_TABLE + "_orphaned_" + System.currentTimeMillis();
+        boolean previousAutoCommit = connection.getAutoCommit();
+        connection.setAutoCommit(false);
         try (Statement statement = connection.createStatement())
         {
-            statement.execute("ALTER TABLE " + quoteIdentifier(actualHistoryTable)
-                    + " RENAME TO " + quoteIdentifier(archivedName));
+            statement.execute("CREATE TABLE " + quoteIdentifier(archivedName)
+                    + " AS SELECT * FROM " + quoteIdentifier(actualHistoryTable));
+            statement.execute("DROP TABLE " + quoteIdentifier(actualHistoryTable));
+            connection.commit();
+        }
+        catch (SQLException ex)
+        {
+            connection.rollback();
+            throw ex;
+        }
+        finally
+        {
+            connection.setAutoCommit(previousAutoCommit);
         }
         System.err.println("[NPBK] Archived empty Flyway history table as " + archivedName + ".");
     }
