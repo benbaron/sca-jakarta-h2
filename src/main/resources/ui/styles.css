@@ -7,6 +7,7 @@
 
 .menu-bar,
 .main-toolbar,
+.tool-bar,
 .top-chrome
 {
     -fx-background-color: white;
@@ -14,6 +15,7 @@
 }
 
 .main-toolbar,
+.tool-bar,
 .toolbar
 {
     -fx-padding: 8 12 8 12;
