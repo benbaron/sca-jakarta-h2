@@ -7,6 +7,7 @@ import javafx.scene.control.TabPane;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -68,6 +69,40 @@ public class PanelHost extends TabPane
         }
         getSelectionModel().select(tab);
         activeId = id;
+    }
+
+    /**
+     * Replaces the cached panel for an identifier and selects the replacement.
+     * This is used for recoverable startup states such as an unavailable
+     * database without changing the permanent workspace tab identity.
+     */
+    public void showReplacement(AppPanelId id, AppPanel replacement)
+    {
+        Objects.requireNonNull(id, "id");
+        Objects.requireNonNull(replacement, "replacement");
+
+        Tab previous = tabs.remove(id);
+        if (previous != null)
+        {
+            getTabs().remove(previous);
+        }
+        panels.remove(id);
+
+        panels.put(id, replacement);
+        Tab tab = createTab(id, replacement);
+        tabs.put(id, tab);
+        getTabs().add(tab);
+        getSelectionModel().select(tab);
+        activeId = id;
+    }
+
+    /** Clears cached panels after changing the authoritative database. */
+    public void reset()
+    {
+        getTabs().clear();
+        tabs.clear();
+        panels.clear();
+        activeId = null;
     }
 
     public boolean isOpen(AppPanelId id)
@@ -164,6 +199,11 @@ public class PanelHost extends TabPane
     private Tab createTab(AppPanelId id)
     {
         AppPanel panel = panels.computeIfAbsent(id, this::create);
+        return createTab(id, panel);
+    }
+
+    private Tab createTab(AppPanelId id, AppPanel panel)
+    {
         Tab tab = new Tab(panel.title(), panel.root());
         tab.setUserData(id);
         tab.setClosable(!WorkspaceLayoutPolicy.isPermanentTab(id));
