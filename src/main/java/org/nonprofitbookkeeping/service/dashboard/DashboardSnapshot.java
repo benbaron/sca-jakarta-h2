@@ -101,7 +101,7 @@ public record DashboardSnapshot(
                     normalizedCode,
                     "",
                     "",
-                    true,
+                    false,
                     "USD");
         }
     }
