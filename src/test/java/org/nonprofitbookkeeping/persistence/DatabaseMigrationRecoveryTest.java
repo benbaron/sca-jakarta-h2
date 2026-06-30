@@ -3,12 +3,14 @@ package org.nonprofitbookkeeping.persistence;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -17,7 +19,7 @@ public class DatabaseMigrationRecoveryTest
     @Test
     public void recoversCompleteSchemaWhenFlywayHistoryIsEmpty() throws Exception
     {
-        String jdbcUrl = jdbcUrl("complete-schema");
+        String jdbcUrl = jdbcUrl("complete-schema-empty-history");
         DatabaseMigrationService.migrateJdbcUrl(jdbcUrl);
 
         try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
@@ -40,9 +42,52 @@ public class DatabaseMigrationRecoveryTest
             assertEquals(1L, scalarLong(statement,
                     "SELECT COUNT(*) FROM flyway_schema_history "
                             + "WHERE version = '48' AND type = 'BASELINE' AND success = TRUE"));
+            assertEquals(0L, archivedHistoryRowCount(connection));
+        }
+    }
+
+    @Test
+    public void recoversCompleteSchemaWhenHistoryContainsSchemaAndFailedRows() throws Exception
+    {
+        String jdbcUrl = jdbcUrl("complete-schema-failed-history");
+        DatabaseMigrationService.migrateJdbcUrl(jdbcUrl);
+
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
+                Statement statement = connection.createStatement())
+        {
+            statement.executeUpdate("""
+                    INSERT INTO chart_of_accounts (name, version, status)
+                    VALUES ('Failed-history sentinel', '1', 'ACTIVE')
+                    """);
+            statement.executeUpdate("DELETE FROM flyway_schema_history");
+            statement.executeUpdate("""
+                    INSERT INTO flyway_schema_history
+                        (installed_rank, version, description, type, script, checksum,
+                         installed_by, execution_time, success)
+                    VALUES
+                        (-1, NULL, '<< Flyway Schema Creation >>', 'SCHEMA',
+                         '<< Flyway Schema Creation >>', NULL, 'sa', 0, TRUE)
+                    """);
+            statement.executeUpdate("""
+                    INSERT INTO flyway_schema_history
+                        (installed_rank, version, description, type, script, checksum,
+                         installed_by, execution_time, success)
+                    VALUES
+                        (1, '1', 'init', 'SQL', 'V1__init.sql', NULL, 'sa', 1, FALSE)
+                    """);
+        }
+
+        DatabaseMigrationService.migrateJdbcUrl(jdbcUrl);
+
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
+                Statement statement = connection.createStatement())
+        {
             assertEquals(1L, scalarLong(statement,
-                    "SELECT COUNT(*) FROM information_schema.tables "
-                            + "WHERE lower(table_name) LIKE 'flyway_schema_history_orphaned_%'"));
+                    "SELECT COUNT(*) FROM chart_of_accounts WHERE name = 'Failed-history sentinel'"));
+            assertEquals(1L, scalarLong(statement,
+                    "SELECT COUNT(*) FROM flyway_schema_history "
+                            + "WHERE version = '48' AND type = 'BASELINE' AND success = TRUE"));
+            assertEquals(2L, archivedHistoryRowCount(connection));
         }
     }
 
@@ -111,6 +156,33 @@ public class DatabaseMigrationRecoveryTest
                 + ";DEFAULT_NULL_ORDERING=HIGH"
                 + ";DB_CLOSE_DELAY=-1"
                 + ";INIT=CREATE SCHEMA IF NOT EXISTS PUBLIC\\;SET SCHEMA PUBLIC";
+    }
+
+    private static long archivedHistoryRowCount(Connection connection) throws Exception
+    {
+        DatabaseMetaData metadata = connection.getMetaData();
+        String archivedTable = null;
+        try (ResultSet tables = metadata.getTables(null, null, "%", new String[] {"TABLE"}))
+        {
+            while (tables.next())
+            {
+                String schema = tables.getString("TABLE_SCHEM");
+                String table = tables.getString("TABLE_NAME");
+                if ("PUBLIC".equalsIgnoreCase(schema)
+                        && table.toLowerCase().startsWith("flyway_schema_history_orphaned_"))
+                {
+                    archivedTable = table;
+                    break;
+                }
+            }
+        }
+
+        assertNotNull(archivedTable, "Recovery must retain an archived copy of Flyway history");
+        try (Statement statement = connection.createStatement())
+        {
+            return scalarLong(statement, "SELECT COUNT(*) FROM \""
+                    + archivedTable.replace("\"", "\"\"") + "\"");
+        }
     }
 
     private static long scalarLong(Statement statement, String sql) throws Exception
