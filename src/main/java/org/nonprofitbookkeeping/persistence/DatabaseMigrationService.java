@@ -4,6 +4,7 @@ import org.flywaydb.core.Flyway;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 
 /** Runs database migrations before Hibernate validates the schema. */
 public final class DatabaseMigrationService
@@ -32,6 +33,22 @@ public final class DatabaseMigrationService
         System.err.println("[NPBK] JDBC URL: " + redactJdbcUrl(jdbcUrl));
         try
         {
+            Optional<String> untrackedVersion =
+                    FlywaySchemaRecoveryService.prepareBaselineForUntrackedSchema(jdbcUrl);
+            if (untrackedVersion.isPresent())
+            {
+                String version = untrackedVersion.get();
+                System.err.println("[NPBK] Existing application schema has no usable Flyway history; "
+                        + "recording a non-destructive baseline at version " + version + ".");
+                Flyway.configure()
+                        .dataSource(jdbcUrl, "sa", "")
+                        .locations("classpath:db/migration")
+                        .baselineVersion(version)
+                        .baselineDescription("Recovered existing application schema")
+                        .load()
+                        .baseline();
+            }
+
             Flyway.configure()
                     .dataSource(jdbcUrl, "sa", "")
                     .locations("classpath:db/migration")
