@@ -4,24 +4,22 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-/**
- * Production desktop application launcher.
- */
+/** Production desktop application launcher. */
 public class MainApp extends Application
 {
     @Override
     public void start(Stage stage)
     {
-        ProductionWorkspaceWindow root = new ProductionWorkspaceWindow();
+        ReferenceWorkspaceWindow root = new ReferenceWorkspaceWindow();
 
-        Scene scene = new Scene(root, 1200, 800);
+        Scene scene = new Scene(root, 1400, 860);
         scene.getStylesheets().add(getClass().getResource("/ui/styles.css").toExternalForm());
 
         GlobalShortcuts.install(scene, root);
 
         stage.setTitle("SCA Ledger");
-        stage.setMinWidth(900);
-        stage.setMinHeight(620);
+        stage.setMinWidth(980);
+        stage.setMinHeight(680);
         stage.setScene(scene);
         stage.show();
     }
