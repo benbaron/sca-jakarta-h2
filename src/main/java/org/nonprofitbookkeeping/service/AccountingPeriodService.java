@@ -6,6 +6,7 @@ import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.AccountingPeriod;
 import org.nonprofitbookkeeping.model.AccountingPeriodStatus;
 import org.nonprofitbookkeeping.model.AuditEvent;
+import org.nonprofitbookkeeping.model.ClosedPeriodPolicy;
 import org.nonprofitbookkeeping.model.PeriodReopenEvent;
 import org.nonprofitbookkeeping.model.ReopenScope;
 import org.nonprofitbookkeeping.persistence.Jpa;
@@ -150,10 +151,42 @@ public class AccountingPeriodService
 
     public AccountingPeriod reopenPeriod(long periodId, String actor, ReopenScope scope, String reason)
     {
+        return reopenPeriod(
+                periodId,
+                actor,
+                scope,
+                reason,
+                ClosedPeriodPolicy.WARN_AND_REOPEN,
+                false);
+    }
+
+    /**
+     * Reopens a closed period after enforcing the configured reopening policy.
+     *
+     * @param periodId accounting period identifier
+     * @param actor user performing the action
+     * @param scope reopening scope
+     * @param reason optional or required reason according to policy
+     * @param policy configured closed-period policy
+     * @param requireReason organization-level reason requirement
+     * @return reopened period
+     */
+    public AccountingPeriod reopenPeriod(
+            long periodId,
+            String actor,
+            ReopenScope scope,
+            String reason,
+            ClosedPeriodPolicy policy,
+            boolean requireReason)
+    {
         String cleanActor = requireText(actor, "actor");
         if (scope == null)
         {
             throw new IllegalArgumentException("scope is required");
+        }
+        if (policy == null)
+        {
+            throw new IllegalArgumentException("policy is required");
         }
 
         try (EntityManager em = jpa.em())
@@ -163,6 +196,7 @@ public class AccountingPeriodService
             {
                 AccountingPeriod period = requirePeriod(em, periodId);
                 requireStatus(period, AccountingPeriodStatus.CLOSED, "reopen");
+                enforceReopenPolicy(periodId, policy, requireReason, reason);
 
                 PeriodReopenEvent event = new PeriodReopenEvent();
                 event.setAccountingPeriod(period);
@@ -186,6 +220,24 @@ public class AccountingPeriodService
                 rollback(em);
                 throw ex;
             }
+        }
+    }
+
+    private static void enforceReopenPolicy(
+            long periodId,
+            ClosedPeriodPolicy policy,
+            boolean requireReason,
+            String reason)
+    {
+        if (policy == ClosedPeriodPolicy.REQUIRE_FORMAL_ADJUSTMENT)
+        {
+            throw new FormalAdjustmentRequiredException(periodId);
+        }
+
+        boolean reasonRequired = requireReason || policy == ClosedPeriodPolicy.REQUIRE_REASON;
+        if (reasonRequired && (reason == null || reason.isBlank()))
+        {
+            throw new IllegalArgumentException("A reopening reason is required");
         }
     }
 
