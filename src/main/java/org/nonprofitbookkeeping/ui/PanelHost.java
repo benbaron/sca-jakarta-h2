@@ -19,7 +19,7 @@ public class PanelHost extends TabPane
 
     static
     {
-        FACTORIES.put(AppPanelId.DASHBOARD, DashboardPanel::new);
+        FACTORIES.put(AppPanelId.DASHBOARD, DashboardExperiment::new);
         FACTORIES.put(AppPanelId.LEDGER_REGISTER, LedgerRegisterPanel::new);
         FACTORIES.put(AppPanelId.TXN_EDITOR, TransactionEditorPanel::new);
         FACTORIES.put(AppPanelId.SCHEDULES, SchedulesPanel::new);
