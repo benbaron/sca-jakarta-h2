@@ -20,11 +20,18 @@
     -fx-background-color: #f5f7fa;
 }
 
-.dashboard-header
+.dashboard-header,
+.dashboard-local-status
 {
     -fx-background-color: white;
 }
 
+.dashboard-local-status
+{
+    -fx-border-color: #dfe5ec transparent transparent transparent;
+}
+
+.card,
 .dashboard-card
 {
     -fx-background-color: white;
@@ -75,12 +82,14 @@
     -fx-background-color: #edf4ff;
 }
 
+.card .table-view,
 .dashboard-card .table-view
 {
     -fx-border-color: #e4e9ef;
     -fx-background-color: white;
 }
 
+.card .table-view .column-header-background,
 .dashboard-card .table-view .column-header-background
 {
     -fx-background-color: #f8fafc;
