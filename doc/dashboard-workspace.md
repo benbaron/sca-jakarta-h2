@@ -43,13 +43,15 @@ All icons are dependency-free JavaFX `SVGPath` graphics created by `UiIcons`. No
 
 The dashboard sits in a fit-to-width `ScrollPane`. The transaction table keeps horizontal scrolling available because the reference requires ten operational columns. The navigation and inspector remain resizable through visible `SplitPane` dividers and do not overlay center content.
 
+The headless geometry assessment models the center viewport after sidebar and divider widths are applied. It also evaluates KPI-card minimum widths, transaction-table minimum and preferred widths, and whether horizontal or vertical scrolling is required.
+
 ## Derived transaction columns
 
 ### Balance
 
 For the displayed transaction window, the service derives an aggregate running balance across posted bank-type accounts. Ordering is stable by transaction date and transaction database ID. The service first calculates the posted bank balance immediately before the oldest displayed transaction, then applies each displayed transaction's posted bank delta in chronological order.
 
-When no bank account exists or a reliable balance cannot be established, the cell is blank.
+When no bank account exists, the balance cannot be established reliably, or the displayed transaction is not posted, the cell is blank.
 
 ### Affects Bank
 
@@ -59,7 +61,11 @@ The indicator is shown only when the transaction is posted and at least one line
 
 The indicator is shown only when the transaction is posted and at least one income or expense line references a budget category. Otherwise the cell is blank.
 
-Reversed and other non-posted history remains visible but does not claim current bank or budget effects.
+Reversed and other non-posted history remains visible but does not claim current balance, bank, or budget effects.
+
+## Fund-class balances
+
+The inspector's unrestricted, restricted, and designated values represent net assets by fund classification. The query includes posted equity, income, and expense lines and converts their debit-positive storage signs into net-asset effects. It does not sum every line in a balanced transaction, which would incorrectly collapse ordinary same-fund activity to zero.
 
 ## Budget values
 
@@ -78,6 +84,6 @@ The schema currently stores budget categories and actual activity but does not p
 Material changes require:
 
 - repository tests for dashboard projections and accounting derivations;
-- responsive layout-policy tests;
+- responsive layout and full geometry-policy tests;
 - `mvn clean verify` through GitHub Actions;
 - a desktop JavaFX visual check at wide, medium, and narrow sizes, including 100%, 125%, and 150% display scaling.
