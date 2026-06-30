@@ -152,8 +152,7 @@ public final class DatabaseMigrationService
             throw new IllegalStateException("Existing Flyway history table has an unexpected structure");
         }
 
-        String sql = "SELECT COUNT(*) FROM " + quoteIdentifier(SCHEMA_NAME) + "."
-                + quoteIdentifier(actualHistoryTable)
+        String sql = "SELECT COUNT(*) FROM " + quoteIdentifier(actualHistoryTable)
                 + " WHERE " + quoteIdentifier(successColumn) + " = TRUE"
                 + " AND " + quoteIdentifier(versionColumn) + " IS NOT NULL";
         try (Statement statement = connection.createStatement(); ResultSet rows = statement.executeQuery(sql))
