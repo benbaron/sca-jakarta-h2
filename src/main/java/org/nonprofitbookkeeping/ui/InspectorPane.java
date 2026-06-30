@@ -102,10 +102,15 @@ public class InspectorPane extends VBox
         parent.setManaged(!organization.parentOrganization().isBlank());
         parent.setVisible(parent.isManaged());
 
-        Label status = new Label(organization.active() ? "Active" : "Inactive");
+        boolean configured = organizationConfigured(organization);
+        Label status = new Label(configured
+                ? organization.active() ? "Active" : "Inactive"
+                : "Not configured");
         status.getStyleClass().addAll(
                 "status-pill",
-                organization.active() ? "status-success" : "status-danger");
+                configured
+                        ? organization.active() ? "status-success" : "status-danger"
+                        : "status-neutral");
 
         VBox values = new VBox(3, name, metadata, parent, status);
         return inspectorCard("Organization", UiIcons.Glyph.ACCOUNTS, "accent-blue", values);
@@ -223,6 +228,14 @@ public class InspectorPane extends VBox
         Label label = new Label(text == null ? "" : text);
         label.getStyleClass().add("muted");
         return label;
+    }
+
+    private static boolean organizationConfigured(
+            DashboardSnapshot.OrganizationSummary organization)
+    {
+        return !organization.branchType().isBlank()
+                || !organization.parentOrganization().isBlank()
+                || !organization.displayName().equals(organization.code());
     }
 
     private static String titleCase(String value)
