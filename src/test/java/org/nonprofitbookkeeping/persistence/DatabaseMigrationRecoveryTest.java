@@ -105,7 +105,7 @@ public class DatabaseMigrationRecoveryTest
 
     private static String jdbcUrl(String name)
     {
-        return "jdbc:h2:mem:" + name + '-' + UUID.randomUUID()
+        return "jdbc:h2:mem:" + name + '-' + UUID.randomUUID().toString().replace("-", "")
                 + ";MODE=PostgreSQL"
                 + ";DATABASE_TO_LOWER=TRUE"
                 + ";DEFAULT_NULL_ORDERING=HIGH"
