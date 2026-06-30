@@ -142,13 +142,22 @@ public class JpaDashboardQueryService implements DashboardQueryService
     {
         Map<String, BigDecimal> totals = new LinkedHashMap<>();
         List<Object[]> rows = em.createQuery("""
-                select f.fundType, coalesce(sum(s.amountSigned), 0)
-                from TxnSplit s join s.fund f
+                select f.fundType, coalesce(sum(case
+                    when a.accountType = :equityType then -s.amountSigned
+                    when a.accountType = :incomeType then -s.amountSigned
+                    when a.accountType = :expenseType then -s.amountSigned
+                    else 0 end), 0)
+                from TxnSplit s
+                join s.fund f
+                join s.account a
                 where s.txn.txnDate <= :asOf
                   and s.txn.status = 'ENTERED'
                 group by f.fundType
                 order by f.fundType
                 """, Object[].class)
+                .setParameter("equityType", AccountType.EQUITY)
+                .setParameter("incomeType", AccountType.INCOME)
+                .setParameter("expenseType", AccountType.EXPENSE)
                 .setParameter("asOf", asOfDate)
                 .getResultList();
         for (Object[] row : rows)
@@ -287,7 +296,10 @@ public class JpaDashboardQueryService implements DashboardQueryService
         for (RecentAccumulator accumulator : chronological)
         {
             runningBalance = runningBalance.add(accumulator.bankDelta());
-            accumulator.setRunningBankBalance(runningBalance);
+            if (accumulator.posted())
+            {
+                accumulator.setRunningBankBalance(runningBalance);
+            }
         }
     }
 
@@ -586,6 +598,11 @@ public class JpaDashboardQueryService implements DashboardQueryService
             return bankDelta;
         }
 
+        private boolean posted()
+        {
+            return "ENTERED".equals(status);
+        }
+
         private void setRunningBankBalance(BigDecimal value)
         {
             runningBankBalance = Optional.of(value);
@@ -616,13 +633,12 @@ public class JpaDashboardQueryService implements DashboardQueryService
                 creditTotal = creditTotal.add(amountSigned.abs());
             }
 
-            boolean posted = "ENTERED".equals(status);
-            if (posted && accountType == AccountType.BANK)
+            if (posted() && accountType == AccountType.BANK)
             {
                 affectsBank = true;
                 bankDelta = bankDelta.add(amountSigned);
             }
-            if (posted
+            if (posted()
                     && hasBudgetCategory
                     && (accountType == AccountType.INCOME || accountType == AccountType.EXPENSE))
             {
