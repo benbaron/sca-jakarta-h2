@@ -35,16 +35,19 @@ public record DashboardSnapshot(
             BigDecimal creditTotal,
             String status)
     {
+        /** Running bank balance is not yet part of the authoritative dashboard projection. */
         public Optional<BigDecimal> runningBankBalance()
         {
             return Optional.empty();
         }
 
+        /** Bank-effect metadata is not yet persisted on the dashboard transaction projection. */
         public boolean affectsBank()
         {
             return false;
         }
 
+        /** Budget-effect metadata is not yet persisted on the dashboard transaction projection. */
         public boolean affectsBudget()
         {
             return false;

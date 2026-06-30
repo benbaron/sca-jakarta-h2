@@ -38,7 +38,10 @@ public class JpaDashboardQueryService implements DashboardQueryService
     }
 
     @Override
-    public DashboardSnapshot load(String groupCode, LocalDate asOfDate, int recentTransactionLimit)
+    public DashboardSnapshot load(
+            String groupCode,
+            LocalDate asOfDate,
+            int recentTransactionLimit)
     {
         if (asOfDate == null)
         {
@@ -50,25 +53,38 @@ public class JpaDashboardQueryService implements DashboardQueryService
         }
 
         String normalizedGroupCode = groupCode == null ? "" : groupCode.trim();
+
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
             try
             {
-                DashboardSnapshot snapshot = new DashboardSnapshot(
-                        asOfDate,
-                        loadBookCash(em, asOfDate),
-                        Optional.empty(),
-                        Optional.empty(),
-                        loadYearToDateSurplus(em, asOfDate),
-                        Map.copyOf(loadFundClassTotals(em, asOfDate)),
-                        List.copyOf(loadBankAccounts(em, asOfDate)),
-                        List.copyOf(loadRecentTransactions(em, asOfDate, recentTransactionLimit)),
-                        loadOpenItems(em, normalizedGroupCode, asOfDate),
-                        List.copyOf(loadReconciliations(em, normalizedGroupCode, asOfDate)),
-                        List.copyOf(loadBudgetActuals(em, asOfDate)));
+                BigDecimal bookCash = loadBookCash(em, asOfDate);
+                BigDecimal yearToDate = loadYearToDateSurplus(em, asOfDate);
+                Map<String, BigDecimal> fundClassTotals = loadFundClassTotals(em, asOfDate);
+                List<DashboardSnapshot.BankAccountBalance> bankAccounts = loadBankAccounts(em, asOfDate);
+                List<DashboardSnapshot.RecentTransaction> recentTransactions =
+                        loadRecentTransactions(em, asOfDate, recentTransactionLimit);
+                DashboardSnapshot.OpenItemSummary openItems =
+                        loadOpenItems(em, normalizedGroupCode, asOfDate);
+                List<DashboardSnapshot.ReconciliationStatus> reconciliations =
+                        loadReconciliations(em, normalizedGroupCode, asOfDate);
+                List<DashboardSnapshot.BudgetActual> budgetActuals =
+                        loadBudgetActuals(em, asOfDate);
+
                 em.getTransaction().commit();
-                return snapshot;
+                return new DashboardSnapshot(
+                        asOfDate,
+                        bookCash,
+                        Optional.empty(),
+                        Optional.empty(),
+                        yearToDate,
+                        Map.copyOf(fundClassTotals),
+                        List.copyOf(bankAccounts),
+                        List.copyOf(recentTransactions),
+                        openItems,
+                        List.copyOf(reconciliations),
+                        List.copyOf(budgetActuals));
             }
             catch (RuntimeException ex)
             {
@@ -133,7 +149,9 @@ public class JpaDashboardQueryService implements DashboardQueryService
         return totals;
     }
 
-    private static List<DashboardSnapshot.BankAccountBalance> loadBankAccounts(EntityManager em, LocalDate asOfDate)
+    private static List<DashboardSnapshot.BankAccountBalance> loadBankAccounts(
+            EntityManager em,
+            LocalDate asOfDate)
     {
         return em.createQuery("""
                 select new org.nonprofitbookkeeping.service.dashboard.DashboardSnapshot$BankAccountBalance(
@@ -150,10 +168,14 @@ public class JpaDashboardQueryService implements DashboardQueryService
                 .getResultList();
     }
 
-    private static List<DashboardSnapshot.RecentTransaction> loadRecentTransactions(EntityManager em, LocalDate asOfDate, int limit)
+    private static List<DashboardSnapshot.RecentTransaction> loadRecentTransactions(
+            EntityManager em,
+            LocalDate asOfDate,
+            int limit)
     {
         List<Object[]> headers = em.createQuery("""
-                select t.id, t.txnDate, coalesce(t.memo, ''), t.status, coalesce(p.displayName, '')
+                select t.id, t.txnDate, coalesce(t.memo, ''), t.status,
+                       coalesce(p.displayName, '')
                 from Txn t left join t.payee p
                 where t.txnDate <= :asOf
                 order by t.txnDate desc, t.id desc
@@ -162,93 +184,79 @@ public class JpaDashboardQueryService implements DashboardQueryService
                 .setMaxResults(limit)
                 .getResultList();
 
-        Map<Long, BigDecimal> runningBalances = loadRunningBankBalances(em, asOfDate);
         Map<Long, RecentAccumulator> accumulators = new LinkedHashMap<>();
         for (Object[] row : headers)
         {
             long transactionId = ((Number) row[0]).longValue();
+            String memo = string(row[2]);
+            String payee = string(row[4]);
             accumulators.put(transactionId, new RecentAccumulator(
                     transactionId,
                     localDate(row[1]),
-                    description(string(row[4]), string(row[2])),
-                    string(row[3]),
-                    Optional.ofNullable(runningBalances.get(transactionId))));
+                    description(payee, memo),
+                    string(row[3])));
         }
 
         if (!accumulators.isEmpty())
         {
             List<Object[]> splitRows = em.createQuery("""
-                    select s.txn.id, a.code, a.name, a.normalBalance, a.accountType,
-                           f.code, f.name, s.amountSigned, s.budgetCategory
-                    from TxnSplit s join s.account a join s.fund f
+                    select s.txn.id, a.code, a.name, a.normalBalance,
+                           f.code, f.name, s.amountSigned
+                    from TxnSplit s
+                    join s.account a
+                    join s.fund f
                     where s.txn.id in :transactionIds
                     order by s.txn.id desc, s.id
                     """, Object[].class)
                     .setParameter("transactionIds", new ArrayList<>(accumulators.keySet()))
                     .getResultList();
+
             for (Object[] row : splitRows)
             {
-                RecentAccumulator accumulator = accumulators.get(((Number) row[0]).longValue());
+                long transactionId = ((Number) row[0]).longValue();
+                RecentAccumulator accumulator = accumulators.get(transactionId);
                 if (accumulator != null)
                 {
                     accumulator.addSplit(
                             string(row[1]),
                             string(row[2]),
                             (NormalBalance) row[3],
-                            (AccountType) row[4],
+                            string(row[4]),
                             string(row[5]),
-                            string(row[6]),
-                            decimal(row[7]),
-                            row[8] != null);
+                            decimal(row[6]));
                 }
             }
         }
-        return accumulators.values().stream().map(RecentAccumulator::toSnapshot).toList();
+
+        return accumulators.values().stream()
+                .map(RecentAccumulator::toSnapshot)
+                .toList();
     }
 
-    private static Map<Long, BigDecimal> loadRunningBankBalances(EntityManager em, LocalDate asOfDate)
-    {
-        @SuppressWarnings("unchecked")
-        List<Object[]> rows = em.createNativeQuery("""
-                SELECT t.id,
-                       COALESCE(SUM(CASE WHEN a.account_type = 'BANK'
-                                         THEN s.amount_signed ELSE 0 END), 0)
-                FROM txn t
-                LEFT JOIN txn_split s ON s.txn_id = t.id
-                LEFT JOIN account a ON a.id = s.account_id
-                WHERE t.txn_date <= ?1 AND t.status = 'ENTERED'
-                GROUP BY t.id, t.txn_date
-                ORDER BY t.txn_date, t.id
-                """)
-                .setParameter(1, Date.valueOf(asOfDate))
-                .getResultList();
-        Map<Long, BigDecimal> balances = new LinkedHashMap<>();
-        BigDecimal running = BigDecimal.ZERO;
-        for (Object[] row : rows)
-        {
-            running = running.add(decimal(row[1]));
-            balances.put(((Number) row[0]).longValue(), running);
-        }
-        return balances;
-    }
-
-    private static DashboardSnapshot.OpenItemSummary loadOpenItems(EntityManager em, String groupCode, LocalDate asOfDate)
+    private static DashboardSnapshot.OpenItemSummary loadOpenItems(
+            EntityManager em,
+            String groupCode,
+            LocalDate asOfDate)
     {
         if (groupCode.isBlank())
         {
             return new DashboardSnapshot.OpenItemSummary(Map.of(), 0L);
         }
+
         @SuppressWarnings("unchecked")
         List<Object[]> rows = em.createNativeQuery("""
                 SELECT item_kind, COUNT(*)
                 FROM open_item_snapshot
-                WHERE group_code = ?1 AND last_updated_on <= ?2 AND open_amount <> 0
+                WHERE group_code = ?1
+                  AND last_updated_on <= ?2
+                  AND open_amount <> 0
                 GROUP BY item_kind
                 ORDER BY item_kind
                 """)
                 .setParameter(1, groupCode)
                 .setParameter(2, Date.valueOf(asOfDate))
                 .getResultList();
+
         Map<String, Long> counts = new LinkedHashMap<>();
         long total = 0L;
         for (Object[] row : rows)
@@ -260,30 +268,41 @@ public class JpaDashboardQueryService implements DashboardQueryService
         return new DashboardSnapshot.OpenItemSummary(Map.copyOf(counts), total);
     }
 
-    private static List<DashboardSnapshot.ReconciliationStatus> loadReconciliations(EntityManager em, String groupCode, LocalDate asOfDate)
+    private static List<DashboardSnapshot.ReconciliationStatus> loadReconciliations(
+            EntityManager em,
+            String groupCode,
+            LocalDate asOfDate)
     {
         if (groupCode.isBlank())
         {
             return List.of();
         }
+
         @SuppressWarnings("unchecked")
         List<Object[]> rows = em.createNativeQuery("""
                 SELECT statement_ending_on, bank_format, status, imported_transaction_count
                 FROM reconciliation_run
-                WHERE group_code = ?1 AND statement_ending_on <= ?2
+                WHERE group_code = ?1
+                  AND statement_ending_on <= ?2
                 ORDER BY statement_ending_on DESC, created_at DESC
                 """)
                 .setParameter(1, groupCode)
                 .setParameter(2, Date.valueOf(asOfDate))
                 .setMaxResults(4)
                 .getResultList();
+
         return rows.stream()
                 .map(row -> new DashboardSnapshot.ReconciliationStatus(
-                        localDate(row[0]), string(row[1]), string(row[2]), ((Number) row[3]).intValue()))
+                        localDate(row[0]),
+                        string(row[1]),
+                        string(row[2]),
+                        ((Number) row[3]).intValue()))
                 .toList();
     }
 
-    private static List<DashboardSnapshot.BudgetActual> loadBudgetActuals(EntityManager em, LocalDate asOfDate)
+    private static List<DashboardSnapshot.BudgetActual> loadBudgetActuals(
+            EntityManager em,
+            LocalDate asOfDate)
     {
         List<Object[]> rows = em.createQuery("""
                 select bc.code, bc.name,
@@ -291,7 +310,9 @@ public class JpaDashboardQueryService implements DashboardQueryService
                            when a.accountType = :incomeType then -s.amountSigned
                            when a.accountType = :expenseType then s.amountSigned
                            else 0 end), 0)
-                from TxnSplit s join s.budgetCategory bc join s.account a
+                from TxnSplit s
+                join s.budgetCategory bc
+                join s.account a
                 where s.txn.txnDate between :start and :asOf
                   and s.txn.status = 'ENTERED'
                 group by bc.code, bc.name
@@ -302,9 +323,13 @@ public class JpaDashboardQueryService implements DashboardQueryService
                 .setParameter("start", LocalDate.of(asOfDate.getYear(), 1, 1))
                 .setParameter("asOf", asOfDate)
                 .getResultList();
+
         return rows.stream()
                 .map(row -> new DashboardSnapshot.BudgetActual(
-                        string(row[0]), string(row[1]), Optional.empty(), decimal(row[2])))
+                        string(row[0]),
+                        string(row[1]),
+                        Optional.empty(),
+                        decimal(row[2])))
                 .toList();
     }
 
@@ -341,7 +366,11 @@ public class JpaDashboardQueryService implements DashboardQueryService
         {
             return memo;
         }
-        return memo.isBlank() ? payee : payee + " — " + memo;
+        if (memo.isBlank())
+        {
+            return payee;
+        }
+        return payee + " — " + memo;
     }
 
     private static final class RecentAccumulator
@@ -350,32 +379,34 @@ public class JpaDashboardQueryService implements DashboardQueryService
         private final LocalDate transactionDate;
         private final String description;
         private final String status;
-        private final Optional<BigDecimal> runningBankBalance;
         private final Set<String> accounts = new LinkedHashSet<>();
         private final Set<String> funds = new LinkedHashSet<>();
         private BigDecimal debitTotal = BigDecimal.ZERO;
         private BigDecimal creditTotal = BigDecimal.ZERO;
-        private boolean affectsBank;
-        private boolean affectsBudget;
 
-        private RecentAccumulator(long transactionId, LocalDate transactionDate, String description,
-                String status, Optional<BigDecimal> runningBankBalance)
+        private RecentAccumulator(
+                long transactionId,
+                LocalDate transactionDate,
+                String description,
+                String status)
         {
             this.transactionId = transactionId;
             this.transactionDate = transactionDate;
             this.description = description;
             this.status = status;
-            this.runningBankBalance = runningBankBalance;
         }
 
-        private void addSplit(String accountCode, String accountName, NormalBalance normalBalance,
-                AccountType accountType, String fundCode, String fundName, BigDecimal amountSigned,
-                boolean hasBudgetCategory)
+        private void addSplit(
+                String accountCode,
+                String accountName,
+                NormalBalance normalBalance,
+                String fundCode,
+                String fundName,
+                BigDecimal amountSigned)
         {
             accounts.add(accountCode + " " + accountName);
             funds.add(fundCode + " " + fundName);
-            affectsBank = affectsBank || accountType == AccountType.BANK;
-            affectsBudget = affectsBudget || hasBudgetCategory;
+
             boolean debit = normalBalance == NormalBalance.DEBIT
                     ? amountSigned.signum() >= 0
                     : amountSigned.signum() < 0;
@@ -399,9 +430,6 @@ public class JpaDashboardQueryService implements DashboardQueryService
                     String.join(", ", funds),
                     debitTotal,
                     creditTotal,
-                    runningBankBalance,
-                    affectsBank,
-                    affectsBudget,
                     status);
         }
     }
