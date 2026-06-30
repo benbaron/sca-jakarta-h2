@@ -59,6 +59,11 @@
     -fx-text-fill: #16863a;
 }
 
+.database-error-message
+{
+    -fx-text-fill: #b42318;
+}
+
 .quick-link
 {
     -fx-padding: 8;
