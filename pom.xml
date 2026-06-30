@@ -123,24 +123,21 @@
     </dependency>
 
 
-    <!-- UI API (compile-time only for non-UI test builds) -->
+    <!-- JavaFX must be present on the runtime classpath for the UI profile. -->
     <dependency>
       <groupId>org.openjfx</groupId>
       <artifactId>javafx-controls</artifactId>
       <version>${javafx.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.openjfx</groupId>
       <artifactId>javafx-graphics</artifactId>
       <version>${javafx.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.openjfx</groupId>
       <artifactId>javafx-base</artifactId>
       <version>${javafx.version}</version>
-      <scope>provided</scope>
     </dependency>
 
     <!-- Reporting adapters -->
