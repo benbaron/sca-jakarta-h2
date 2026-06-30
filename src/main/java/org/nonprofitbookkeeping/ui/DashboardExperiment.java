@@ -3,26 +3,22 @@ package org.nonprofitbookkeeping.ui;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.chart.PieChart;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.service.dashboard.DashboardQueryService;
 import org.nonprofitbookkeeping.service.dashboard.DashboardSnapshot;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.Optional;
@@ -30,23 +26,23 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Production dashboard promoted from the standalone dashboard experiment.
- *
- * <p>The visual hierarchy, responsive card grid, tables, and quick links come
- * from the experiment. All displayed values are supplied by production
- * services; no fictional values remain in this class.</p>
+ * Production dashboard promoted directly from the standalone dashboard
+ * experiment. The visual structure and CSS class contract intentionally match
+ * the experiment; only its fictional values and placeholder actions have been
+ * replaced with production services and drill-through behavior.
  */
 public final class DashboardExperiment implements AppPanel
 {
     private static final int RECENT_TRANSACTION_LIMIT = 12;
+    private static final BigDecimal ON_TRACK_TOLERANCE = new BigDecimal("0.05");
 
-    private final BorderPane root = new BorderPane();
-    private final GridPane dashboardGrid = new GridPane();
     private final DashboardQueryService dashboardQueryService;
     private final Supplier<LocalDate> asOfDateSupplier;
     private final Supplier<String> groupCodeSupplier;
 
-    private final Label status = new Label();
+    private final VBox root = new VBox();
+    private final GridPane dashboardGrid = new GridPane();
+    private final Label loadMessage = new Label();
     private final Label bookCash = amountLabel();
     private final Label yearToDateSurplus = amountLabel();
     private final Label outstandingBankItems = new Label("0");
@@ -54,12 +50,12 @@ public final class DashboardExperiment implements AppPanel
     private final Label payables = new Label("0");
     private final Label timingItems = new Label("0");
     private final Label totalOpenItems = new Label("0");
-    private final PieChart fundChart = new PieChart();
-    private final Label emptyFundChart = new Label("No posted fund activity through the selected date.");
+    private final PieChart budgetPerformanceChart = new PieChart();
+    private final Label emptyBudgetChart = new Label(
+            "No authoritative budget targets are configured.");
     private final TableView<DashboardSnapshot.RecentTransaction> recentTransactions = new TableView<>();
     private final TableView<DashboardSnapshot.ReconciliationStatus> reconciliations = new TableView<>();
     private final TableView<DashboardSnapshot.BudgetActual> budgetActuals = new TableView<>();
-    private final Button refreshButton = new Button("Refresh");
 
     public DashboardExperiment()
     {
@@ -105,25 +101,21 @@ public final class DashboardExperiment implements AppPanel
 
     void reload()
     {
-        refreshButton.setDisable(true);
-        status.setText("Loading dashboard data...");
-
+        setLoadMessage("Loading dashboard data...", false);
         LocalDate asOfDate = asOfDateSupplier.get();
         String groupCode = groupCodeSupplier.get();
+
         UiAsync.run(
                 "dashboard-experiment-load",
                 () -> dashboardQueryService.load(groupCode, asOfDate, RECENT_TRANSACTION_LIMIT),
                 snapshot ->
                 {
                     applySnapshot(snapshot);
-                    status.setText("Dashboard updated through " + snapshot.asOfDate() + ".");
-                    refreshButton.setDisable(false);
+                    setLoadMessage("", false);
                 },
-                ex ->
-                {
-                    status.setText("Failed to load dashboard: " + UiErrors.safeMessage(ex));
-                    refreshButton.setDisable(false);
-                });
+                ex -> setLoadMessage(
+                        "Dashboard data could not be loaded: " + UiErrors.safeMessage(ex),
+                        true));
     }
 
     void applySnapshot(DashboardSnapshot snapshot)
@@ -143,21 +135,7 @@ public final class DashboardExperiment implements AppPanel
         timingItems.setText(Long.toString(timingCount));
         totalOpenItems.setText(Long.toString(snapshot.openItems().totalOpenItems()));
 
-        fundChart.setData(FXCollections.observableArrayList(
-                snapshot.fundClassTotals().entrySet().stream()
-                        .filter(entry -> entry.getValue() != null
-                                && entry.getValue().compareTo(BigDecimal.ZERO) != 0)
-                        .sorted(Map.Entry.comparingByKey())
-                        .map(entry -> new PieChart.Data(
-                                entry.getKey(),
-                                entry.getValue().abs().doubleValue()))
-                        .toList()));
-        boolean chartEmpty = fundChart.getData().isEmpty();
-        emptyFundChart.setVisible(chartEmpty);
-        emptyFundChart.setManaged(chartEmpty);
-        fundChart.setVisible(!chartEmpty);
-        fundChart.setManaged(!chartEmpty);
-
+        applyBudgetPerformance(snapshot);
         recentTransactions.getItems().setAll(snapshot.recentTransactions());
         reconciliations.getItems().setAll(snapshot.reconciliations());
         budgetActuals.getItems().setAll(snapshot.budgetActuals());
@@ -166,8 +144,14 @@ public final class DashboardExperiment implements AppPanel
     private void buildLayout()
     {
         root.getStyleClass().add("dashboard-experiment-root");
-        root.setCenter(buildDashboard());
-        root.setBottom(buildLocalStatusBar());
+        loadMessage.getStyleClass().add("dashboard-load-message");
+        loadMessage.setWrapText(true);
+        loadMessage.setManaged(false);
+        loadMessage.setVisible(false);
+
+        ScrollPane dashboard = (ScrollPane) buildDashboard();
+        VBox.setVgrow(dashboard, Priority.ALWAYS);
+        root.getChildren().addAll(loadMessage, dashboard);
     }
 
     private Node buildDashboard()
@@ -194,58 +178,30 @@ public final class DashboardExperiment implements AppPanel
                 "All Funds",
                 yearToDateSurplus,
                 "Income less expenses through the active period"), 1, 0);
-        dashboardGrid.add(card("Fund Classification Mix", fundChartContent()), 2, 0);
-        dashboardGrid.add(card("Open Items", openItems()), 3, 0);
-        dashboardGrid.add(card("Recent Transactions", configureRecentTransactions()), 0, 1, 4, 1);
-        dashboardGrid.add(card("Bank Reconciliation Status", configureReconciliations()), 0, 2, 2, 1);
-        dashboardGrid.add(card("Budget vs Actual (YTD)", configureBudgetActuals()), 2, 2);
+        dashboardGrid.add(card("Budget Performance", budgetChart()), 2, 0);
+        dashboardGrid.add(card("Open Items", keyValues(
+                "Outstanding bank items", outstandingBankItems,
+                "Receivables", receivables,
+                "Payables", payables,
+                "Prepaids & deferred", timingItems,
+                "Total open items", totalOpenItems)), 3, 0);
+        dashboardGrid.add(card("Recent Transactions", transactions()), 0, 1, 4, 1);
+        dashboardGrid.add(card("Bank Reconciliation Status", reconciliations()), 0, 2, 2, 1);
+        dashboardGrid.add(card("Budget vs Actual (YTD)", budgets()), 2, 2);
         dashboardGrid.add(card("Quick Links", quickLinks()), 3, 2);
 
         ScrollPane scrollPane = new ScrollPane(dashboardGrid);
         scrollPane.setFitToWidth(true);
-        scrollPane.getStyleClass().add("dashboard-scroll");
         scrollPane.viewportBoundsProperty().addListener(
                 (observable, oldBounds, bounds) ->
                         DashboardLayoutPolicy.apply(dashboardGrid, bounds.getWidth()));
         return scrollPane;
     }
 
-    private Node buildLocalStatusBar()
+    private Node transactions()
     {
-        status.getStyleClass().add("muted");
-        refreshButton.setOnAction(event -> reload());
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox bar = new HBox(10, status, spacer, refreshButton);
-        bar.setAlignment(Pos.CENTER_LEFT);
-        bar.setPadding(new Insets(7, 12, 7, 12));
-        bar.getStyleClass().add("dashboard-local-status");
-        return bar;
-    }
-
-    private Node fundChartContent()
-    {
-        fundChart.setLabelsVisible(false);
-        fundChart.setLegendVisible(true);
-        fundChart.setPrefHeight(155);
-        emptyFundChart.setWrapText(true);
-        emptyFundChart.getStyleClass().add("muted");
-        return new StackPane(fundChart, emptyFundChart);
-    }
-
-    private Node openItems()
-    {
-        return keyValues(
-                "Outstanding bank items", outstandingBankItems,
-                "Receivables", receivables,
-                "Payables", payables,
-                "Prepaids / deferred", timingItems,
-                "Total open items", totalOpenItems);
-    }
-
-    private Node configureRecentTransactions()
-    {
-        recentTransactions.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        recentTransactions.setColumnResizePolicy(
+                TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         recentTransactions.setPrefHeight(220);
         recentTransactions.getColumns().setAll(
                 column("Date", row -> row.transactionDate().toString()),
@@ -275,9 +231,10 @@ public final class DashboardExperiment implements AppPanel
         return recentTransactions;
     }
 
-    private Node configureReconciliations()
+    private Node reconciliations()
     {
-        reconciliations.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        reconciliations.setColumnResizePolicy(
+                TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         reconciliations.setPrefHeight(210);
         reconciliations.getColumns().setAll(
                 column("Statement Date", row -> row.statementEndingOn().toString()),
@@ -289,9 +246,10 @@ public final class DashboardExperiment implements AppPanel
         return reconciliations;
     }
 
-    private Node configureBudgetActuals()
+    private Node budgets()
     {
-        budgetActuals.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        budgetActuals.setColumnResizePolicy(
+                TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         budgetActuals.setPrefHeight(210);
         budgetActuals.getColumns().setAll(
                 column("Category", DashboardExperiment::budgetCategoryLabel),
@@ -301,6 +259,15 @@ public final class DashboardExperiment implements AppPanel
         budgetActuals.setPlaceholder(
                 new Label("No posted budget-category activity through the selected date."));
         return budgetActuals;
+    }
+
+    private Node budgetChart()
+    {
+        budgetPerformanceChart.setLabelsVisible(false);
+        budgetPerformanceChart.setPrefHeight(155);
+        emptyBudgetChart.setWrapText(true);
+        emptyBudgetChart.getStyleClass().add("muted");
+        return new StackPane(budgetPerformanceChart, emptyBudgetChart);
     }
 
     private Node quickLinks()
@@ -319,16 +286,83 @@ public final class DashboardExperiment implements AppPanel
                                 "Dashboard quick link: journal entry")),
                 quickLink(
                         "Import SCLX Workbook",
-                        "Open import preview and validation",
+                        "Import from the workbook",
                         () -> DrillThroughCoordinator.openPanelWithContext(
                                 AppPanelId.IMPORT_PREVIEW,
                                 "Dashboard quick link: import")),
                 quickLink(
                         "Reconcile Bank Account",
-                        "Open reconciliation workspace",
+                        "Open reconciliation window",
                         () -> DrillThroughCoordinator.openPanelWithContext(
                                 AppPanelId.RECONCILIATION_RUNS,
                                 "Dashboard quick link: reconciliation")));
+    }
+
+    private void applyBudgetPerformance(DashboardSnapshot snapshot)
+    {
+        long onTrack = 0;
+        long under = 0;
+        long over = 0;
+
+        for (DashboardSnapshot.BudgetActual row : snapshot.budgetActuals())
+        {
+            if (row.budget().isEmpty())
+            {
+                continue;
+            }
+
+            BigDecimal budget = row.budget().orElseThrow().abs();
+            BigDecimal variance = row.actual().subtract(row.budget().orElseThrow());
+            BigDecimal denominator = budget.compareTo(BigDecimal.ZERO) == 0
+                    ? BigDecimal.ONE
+                    : budget;
+            BigDecimal varianceRatio = variance.abs().divide(
+                    denominator,
+                    8,
+                    RoundingMode.HALF_UP);
+
+            if (varianceRatio.compareTo(ON_TRACK_TOLERANCE) <= 0)
+            {
+                onTrack++;
+            }
+            else if (variance.signum() < 0)
+            {
+                under++;
+            }
+            else
+            {
+                over++;
+            }
+        }
+
+        budgetPerformanceChart.setData(FXCollections.observableArrayList(
+                performanceSlice("On track", onTrack),
+                performanceSlice("Under", under),
+                performanceSlice("Over", over)).filtered(data -> data.getPieValue() > 0));
+
+        boolean empty = budgetPerformanceChart.getData().isEmpty();
+        emptyBudgetChart.setManaged(empty);
+        emptyBudgetChart.setVisible(empty);
+        budgetPerformanceChart.setManaged(!empty);
+        budgetPerformanceChart.setVisible(!empty);
+    }
+
+    private static PieChart.Data performanceSlice(String label, long value)
+    {
+        return new PieChart.Data(label, value);
+    }
+
+    private void setLoadMessage(String message, boolean error)
+    {
+        loadMessage.setText(message == null ? "" : message);
+        loadMessage.getStyleClass().remove("dashboard-load-error");
+        if (error)
+        {
+            loadMessage.getStyleClass().add("dashboard-load-error");
+        }
+        boolean visible = message != null && !message.isBlank();
+        loadMessage.setManaged(visible);
+        loadMessage.setVisible(visible);
     }
 
     private static VBox kpi(
@@ -337,10 +371,7 @@ public final class DashboardExperiment implements AppPanel
             Label amount,
             String detail)
     {
-        Label scopeLabel = muted(scope);
-        Label detailLabel = muted(detail);
-        VBox content = new VBox(7, scopeLabel, amount, detailLabel);
-        return card(heading, content);
+        return card(heading, new VBox(7, muted(scope), amount, muted(detail)));
     }
 
     private static VBox card(String heading, Node content)
@@ -350,7 +381,6 @@ public final class DashboardExperiment implements AppPanel
         VBox card = new VBox(10, title, content);
         card.getStyleClass().add("card");
         card.setMinWidth(0);
-        VBox.setVgrow(content, Priority.ALWAYS);
         return card;
     }
 
@@ -361,11 +391,10 @@ public final class DashboardExperiment implements AppPanel
         grid.setVgap(7);
         for (int index = 0; index < values.length; index += 2)
         {
-            Label key = new Label(values[index].toString());
+            grid.add(new Label(values[index].toString()), 0, index / 2);
             Node value = values[index + 1] instanceof Node node
                     ? node
                     : new Label(values[index + 1].toString());
-            grid.add(key, 0, index / 2);
             grid.add(value, 1, index / 2);
         }
         return grid;
@@ -384,6 +413,16 @@ public final class DashboardExperiment implements AppPanel
         return link;
     }
 
+    private static <T> TableColumn<T, String> column(
+            String heading,
+            Function<T, String> getter)
+    {
+        TableColumn<T, String> column = new TableColumn<>(heading);
+        column.setCellValueFactory(
+                cell -> new ReadOnlyStringWrapper(getter.apply(cell.getValue())));
+        return column;
+    }
+
     private static Label amountLabel()
     {
         Label label = new Label();
@@ -397,16 +436,6 @@ public final class DashboardExperiment implements AppPanel
         label.getStyleClass().add("muted");
         label.setWrapText(true);
         return label;
-    }
-
-    private static <T> TableColumn<T, String> column(
-            String heading,
-            Function<T, String> getter)
-    {
-        TableColumn<T, String> column = new TableColumn<>(heading);
-        column.setCellValueFactory(
-                cell -> new ReadOnlyStringWrapper(getter.apply(cell.getValue())));
-        return column;
     }
 
     private static String budgetCategoryLabel(DashboardSnapshot.BudgetActual row)
