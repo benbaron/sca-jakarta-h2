@@ -12,6 +12,7 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -71,6 +72,11 @@ public class JpaDashboardQueryService implements DashboardQueryService
                         loadReconciliations(em, normalizedGroupCode, asOfDate);
                 List<DashboardSnapshot.BudgetActual> budgetActuals =
                         loadBudgetActuals(em, asOfDate);
+                DashboardSnapshot.OrganizationSummary organization =
+                        loadOrganization(em, normalizedGroupCode);
+                DashboardSnapshot.PeriodSummary period = loadPeriod(em, asOfDate);
+                List<DashboardSnapshot.MonthlyResult> monthlyResults =
+                        loadMonthlyResults(em, asOfDate);
 
                 em.getTransaction().commit();
                 return new DashboardSnapshot(
@@ -84,7 +90,10 @@ public class JpaDashboardQueryService implements DashboardQueryService
                         List.copyOf(recentTransactions),
                         openItems,
                         List.copyOf(reconciliations),
-                        List.copyOf(budgetActuals));
+                        List.copyOf(budgetActuals),
+                        organization,
+                        period,
+                        List.copyOf(monthlyResults));
             }
             catch (RuntimeException ex)
             {
@@ -197,40 +206,89 @@ public class JpaDashboardQueryService implements DashboardQueryService
                     string(row[3])));
         }
 
-        if (!accumulators.isEmpty())
+        if (accumulators.isEmpty())
         {
-            List<Object[]> splitRows = em.createQuery("""
-                    select s.txn.id, a.code, a.name, a.normalBalance,
-                           f.code, f.name, s.amountSigned
-                    from TxnSplit s
-                    join s.account a
-                    join s.fund f
-                    where s.txn.id in :transactionIds
-                    order by s.txn.id desc, s.id
-                    """, Object[].class)
-                    .setParameter("transactionIds", new ArrayList<>(accumulators.keySet()))
-                    .getResultList();
+            return List.of();
+        }
 
-            for (Object[] row : splitRows)
+        List<Object[]> splitRows = em.createQuery("""
+                select s.txn.id, a.code, a.name, a.normalBalance, a.accountType,
+                       f.code, f.name, s.amountSigned, bc.id
+                from TxnSplit s
+                join s.account a
+                join s.fund f
+                left join s.budgetCategory bc
+                where s.txn.id in :transactionIds
+                order by s.txn.txnDate, s.txn.id, s.id
+                """, Object[].class)
+                .setParameter("transactionIds", new ArrayList<>(accumulators.keySet()))
+                .getResultList();
+
+        for (Object[] row : splitRows)
+        {
+            long transactionId = ((Number) row[0]).longValue();
+            RecentAccumulator accumulator = accumulators.get(transactionId);
+            if (accumulator != null)
             {
-                long transactionId = ((Number) row[0]).longValue();
-                RecentAccumulator accumulator = accumulators.get(transactionId);
-                if (accumulator != null)
-                {
-                    accumulator.addSplit(
-                            string(row[1]),
-                            string(row[2]),
-                            (NormalBalance) row[3],
-                            string(row[4]),
-                            string(row[5]),
-                            decimal(row[6]));
-                }
+                accumulator.addSplit(
+                        string(row[1]),
+                        string(row[2]),
+                        (NormalBalance) row[3],
+                        (AccountType) row[4],
+                        string(row[5]),
+                        string(row[6]),
+                        decimal(row[7]),
+                        row[8] != null);
             }
         }
 
+        assignRunningBankBalances(em, accumulators);
         return accumulators.values().stream()
                 .map(RecentAccumulator::toSnapshot)
                 .toList();
+    }
+
+    private static void assignRunningBankBalances(
+            EntityManager em,
+            Map<Long, RecentAccumulator> accumulators)
+    {
+        long bankAccountCount = em.createQuery("""
+                select count(a)
+                from Account a
+                where a.accountType = :bankType
+                """, Long.class)
+                .setParameter("bankType", AccountType.BANK)
+                .getSingleResult();
+        if (bankAccountCount == 0)
+        {
+            return;
+        }
+
+        List<RecentAccumulator> chronological = accumulators.values().stream()
+                .sorted(Comparator
+                        .comparing(RecentAccumulator::transactionDate)
+                        .thenComparingLong(RecentAccumulator::transactionId))
+                .toList();
+        RecentAccumulator first = chronological.get(0);
+
+        BigDecimal runningBalance = decimal(em.createQuery("""
+                select coalesce(sum(s.amountSigned), 0)
+                from TxnSplit s
+                where s.txn.status = 'ENTERED'
+                  and s.account.accountType = :bankType
+                  and (s.txn.txnDate < :firstDate
+                       or (s.txn.txnDate = :firstDate and s.txn.id < :firstId))
+                """, BigDecimal.class)
+                .setParameter("bankType", AccountType.BANK)
+                .setParameter("firstDate", first.transactionDate())
+                .setParameter("firstId", first.transactionId())
+                .getSingleResult());
+
+        for (RecentAccumulator accumulator : chronological)
+        {
+            runningBalance = runningBalance.add(accumulator.bankDelta());
+            accumulator.setRunningBankBalance(runningBalance);
+        }
     }
 
     private static DashboardSnapshot.OpenItemSummary loadOpenItems(
@@ -240,12 +298,16 @@ public class JpaDashboardQueryService implements DashboardQueryService
     {
         if (groupCode.isBlank())
         {
-            return new DashboardSnapshot.OpenItemSummary(Map.of(), 0L);
+            return new DashboardSnapshot.OpenItemSummary(
+                    Map.of(),
+                    Map.of(),
+                    0L,
+                    BigDecimal.ZERO);
         }
 
         @SuppressWarnings("unchecked")
         List<Object[]> rows = em.createNativeQuery("""
-                SELECT item_kind, COUNT(*)
+                SELECT item_kind, COUNT(*), COALESCE(SUM(open_amount), 0)
                 FROM open_item_snapshot
                 WHERE group_code = ?1
                   AND last_updated_on <= ?2
@@ -258,14 +320,24 @@ public class JpaDashboardQueryService implements DashboardQueryService
                 .getResultList();
 
         Map<String, Long> counts = new LinkedHashMap<>();
-        long total = 0L;
+        Map<String, BigDecimal> amounts = new LinkedHashMap<>();
+        long totalCount = 0L;
+        BigDecimal totalAmount = BigDecimal.ZERO;
         for (Object[] row : rows)
         {
+            String itemKind = string(row[0]);
             long count = ((Number) row[1]).longValue();
-            counts.put(string(row[0]), count);
-            total += count;
+            BigDecimal amount = decimal(row[2]);
+            counts.put(itemKind, count);
+            amounts.put(itemKind, amount);
+            totalCount += count;
+            totalAmount = totalAmount.add(amount);
         }
-        return new DashboardSnapshot.OpenItemSummary(Map.copyOf(counts), total);
+        return new DashboardSnapshot.OpenItemSummary(
+                Map.copyOf(counts),
+                Map.copyOf(amounts),
+                totalCount,
+                totalAmount);
     }
 
     private static List<DashboardSnapshot.ReconciliationStatus> loadReconciliations(
@@ -333,6 +405,105 @@ public class JpaDashboardQueryService implements DashboardQueryService
                 .toList();
     }
 
+    private static DashboardSnapshot.OrganizationSummary loadOrganization(
+            EntityManager em,
+            String groupCode)
+    {
+        if (groupCode.isBlank())
+        {
+            return DashboardSnapshot.OrganizationSummary.unavailable(groupCode);
+        }
+
+        List<Object[]> rows = em.createQuery("""
+                select c.code, c.displayName, coalesce(c.branchType, ''),
+                       coalesce(c.parentOrganization, ''), c.active, c.defaultCurrency
+                from Company c
+                where c.code = :code
+                """, Object[].class)
+                .setParameter("code", groupCode)
+                .setMaxResults(1)
+                .getResultList();
+        if (rows.isEmpty())
+        {
+            return DashboardSnapshot.OrganizationSummary.unavailable(groupCode);
+        }
+
+        Object[] row = rows.get(0);
+        return new DashboardSnapshot.OrganizationSummary(
+                string(row[0]),
+                string(row[1]),
+                string(row[2]),
+                string(row[3]),
+                Boolean.TRUE.equals(row[4]),
+                string(row[5]));
+    }
+
+    private static DashboardSnapshot.PeriodSummary loadPeriod(
+            EntityManager em,
+            LocalDate asOfDate)
+    {
+        List<Object[]> rows = em.createQuery("""
+                select p.fiscalYear, p.periodNumber, p.startDate, p.endDate, p.status
+                from AccountingPeriod p
+                where p.startDate <= :asOf
+                  and p.endDate >= :asOf
+                order by p.startDate desc
+                """, Object[].class)
+                .setParameter("asOf", asOfDate)
+                .setMaxResults(1)
+                .getResultList();
+        if (rows.isEmpty())
+        {
+            return DashboardSnapshot.PeriodSummary.unavailable();
+        }
+
+        Object[] row = rows.get(0);
+        return new DashboardSnapshot.PeriodSummary(
+                Optional.of(((Number) row[0]).intValue()),
+                Optional.of(((Number) row[1]).intValue()),
+                Optional.of(localDate(row[2])),
+                Optional.of(localDate(row[3])),
+                string(row[4]));
+    }
+
+    private static List<DashboardSnapshot.MonthlyResult> loadMonthlyResults(
+            EntityManager em,
+            LocalDate asOfDate)
+    {
+        List<Object[]> rows = em.createQuery("""
+                select month(s.txn.txnDate),
+                       coalesce(sum(case
+                           when s.account.accountType = :incomeType then -s.amountSigned
+                           when s.account.accountType = :expenseType then -s.amountSigned
+                           else 0 end), 0)
+                from TxnSplit s
+                where s.txn.txnDate between :start and :asOf
+                  and s.txn.status = 'ENTERED'
+                group by month(s.txn.txnDate)
+                order by month(s.txn.txnDate)
+                """, Object[].class)
+                .setParameter("incomeType", AccountType.INCOME)
+                .setParameter("expenseType", AccountType.EXPENSE)
+                .setParameter("start", LocalDate.of(asOfDate.getYear(), 1, 1))
+                .setParameter("asOf", asOfDate)
+                .getResultList();
+
+        Map<Integer, BigDecimal> byMonth = new LinkedHashMap<>();
+        for (Object[] row : rows)
+        {
+            byMonth.put(((Number) row[0]).intValue(), decimal(row[1]));
+        }
+
+        List<DashboardSnapshot.MonthlyResult> results = new ArrayList<>();
+        for (int month = 1; month <= asOfDate.getMonthValue(); month++)
+        {
+            results.add(new DashboardSnapshot.MonthlyResult(
+                    month,
+                    byMonth.getOrDefault(month, BigDecimal.ZERO)));
+        }
+        return results;
+    }
+
     private static BigDecimal decimal(Object value)
     {
         return value == null ? BigDecimal.ZERO : (BigDecimal) value;
@@ -383,6 +554,10 @@ public class JpaDashboardQueryService implements DashboardQueryService
         private final Set<String> funds = new LinkedHashSet<>();
         private BigDecimal debitTotal = BigDecimal.ZERO;
         private BigDecimal creditTotal = BigDecimal.ZERO;
+        private BigDecimal bankDelta = BigDecimal.ZERO;
+        private Optional<BigDecimal> runningBankBalance = Optional.empty();
+        private boolean affectsBank;
+        private boolean affectsBudget;
 
         private RecentAccumulator(
                 long transactionId,
@@ -396,13 +571,35 @@ public class JpaDashboardQueryService implements DashboardQueryService
             this.status = status;
         }
 
+        private long transactionId()
+        {
+            return transactionId;
+        }
+
+        private LocalDate transactionDate()
+        {
+            return transactionDate;
+        }
+
+        private BigDecimal bankDelta()
+        {
+            return bankDelta;
+        }
+
+        private void setRunningBankBalance(BigDecimal value)
+        {
+            runningBankBalance = Optional.of(value);
+        }
+
         private void addSplit(
                 String accountCode,
                 String accountName,
                 NormalBalance normalBalance,
+                AccountType accountType,
                 String fundCode,
                 String fundName,
-                BigDecimal amountSigned)
+                BigDecimal amountSigned,
+                boolean hasBudgetCategory)
         {
             accounts.add(accountCode + " " + accountName);
             funds.add(fundCode + " " + fundName);
@@ -418,6 +615,19 @@ public class JpaDashboardQueryService implements DashboardQueryService
             {
                 creditTotal = creditTotal.add(amountSigned.abs());
             }
+
+            boolean posted = "ENTERED".equals(status);
+            if (posted && accountType == AccountType.BANK)
+            {
+                affectsBank = true;
+                bankDelta = bankDelta.add(amountSigned);
+            }
+            if (posted
+                    && hasBudgetCategory
+                    && (accountType == AccountType.INCOME || accountType == AccountType.EXPENSE))
+            {
+                affectsBudget = true;
+            }
         }
 
         private DashboardSnapshot.RecentTransaction toSnapshot()
@@ -430,6 +640,9 @@ public class JpaDashboardQueryService implements DashboardQueryService
                     String.join(", ", funds),
                     debitTotal,
                     creditTotal,
+                    runningBankBalance,
+                    affectsBank,
+                    affectsBudget,
                     status);
         }
     }
