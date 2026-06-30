@@ -13,9 +13,10 @@ import org.nonprofitbookkeeping.persistence.Jpa;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 /**
- * Creates, closes, and reopens accounting periods with audit history.
+ * Creates, locates, closes, and reopens accounting periods with audit history.
  */
 @ApplicationScoped
 public class AccountingPeriodService
@@ -32,8 +33,43 @@ public class AccountingPeriodService
     {
         try (EntityManager em = jpa.em())
         {
-            return em.createQuery("from AccountingPeriod p order by p.fiscalYear, p.periodNumber", AccountingPeriod.class)
+            return em.createQuery(
+                            "from AccountingPeriod p order by p.fiscalYear, p.periodNumber",
+                            AccountingPeriod.class)
                     .getResultList();
+        }
+    }
+
+    /**
+     * Finds the single accounting period containing the supplied date.
+     *
+     * @param date date to locate
+     * @return matching period, or empty when no period covers the date
+     */
+    public Optional<AccountingPeriod> findPeriodContaining(LocalDate date)
+    {
+        if (date == null)
+        {
+            throw new IllegalArgumentException("date is required");
+        }
+
+        try (EntityManager em = jpa.em())
+        {
+            List<AccountingPeriod> matches = em.createQuery("""
+                    from AccountingPeriod p
+                    where p.startDate <= :date
+                      and p.endDate >= :date
+                    order by p.fiscalYear, p.periodNumber
+                    """, AccountingPeriod.class)
+                    .setParameter("date", date)
+                    .setMaxResults(2)
+                    .getResultList();
+
+            if (matches.size() > 1)
+            {
+                throw new IllegalStateException("Multiple accounting periods contain date " + date);
+            }
+            return matches.stream().findFirst();
         }
     }
 
@@ -53,6 +89,21 @@ public class AccountingPeriodService
             em.getTransaction().begin();
             try
             {
+                long overlaps = em.createQuery("""
+                        select count(p)
+                        from AccountingPeriod p
+                        where p.startDate <= :endDate
+                          and p.endDate >= :startDate
+                        """, Long.class)
+                        .setParameter("startDate", startDate)
+                        .setParameter("endDate", endDate)
+                        .getSingleResult();
+                if (overlaps > 0)
+                {
+                    throw new IllegalArgumentException(
+                            "Accounting period overlaps an existing period: " + startDate + " through " + endDate);
+                }
+
                 AccountingPeriod period = new AccountingPeriod();
                 period.setFiscalYear(fiscalYear);
                 period.setPeriodNumber(periodNumber);
@@ -79,6 +130,8 @@ public class AccountingPeriodService
             try
             {
                 AccountingPeriod period = requirePeriod(em, periodId);
+                requireStatus(period, AccountingPeriodStatus.OPEN, "close");
+
                 period.setStatus(AccountingPeriodStatus.CLOSED);
                 period.setClosedAt(Instant.now());
                 period.setClosedBy(cleanActor);
@@ -109,14 +162,14 @@ public class AccountingPeriodService
             try
             {
                 AccountingPeriod period = requirePeriod(em, periodId);
-                AccountingPeriodStatus priorStatus = period.getStatus();
+                requireStatus(period, AccountingPeriodStatus.CLOSED, "reopen");
 
                 PeriodReopenEvent event = new PeriodReopenEvent();
                 event.setAccountingPeriod(period);
                 event.setReopenedBy(cleanActor);
                 event.setReason(blankToNull(reason));
                 event.setReopenScope(scope);
-                event.setPriorStatus(priorStatus);
+                event.setPriorStatus(AccountingPeriodStatus.CLOSED);
                 em.persist(event);
 
                 period.setStatus(AccountingPeriodStatus.OPEN);
@@ -144,6 +197,19 @@ public class AccountingPeriodService
             throw new IllegalArgumentException("Unknown accounting period: " + periodId);
         }
         return period;
+    }
+
+    private static void requireStatus(
+            AccountingPeriod period,
+            AccountingPeriodStatus expectedStatus,
+            String action)
+    {
+        if (period.getStatus() != expectedStatus)
+        {
+            throw new IllegalStateException(
+                    "Cannot " + action + " accounting period " + period.getId()
+                            + " while status is " + period.getStatus());
+        }
     }
 
     private static AuditEvent audit(String actor, String action, long periodId, String summary, String reason)

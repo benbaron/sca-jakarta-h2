@@ -17,6 +17,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AccountingPeriodServiceTest
 {
@@ -75,6 +76,64 @@ public class AccountingPeriodServiceTest
             assertThrows(RuntimeException.class, () -> service.createPeriod(2026, 1,
                     LocalDate.of(2026, 2, 1), LocalDate.of(2026, 2, 28)));
             assertEquals(1, service.listPeriods().size());
+        }
+    }
+
+    @Test
+    public void createPeriod_rejectsOverlappingDateRange(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("period-overlap")))
+        {
+            AccountingPeriodService service = new AccountingPeriodService(jpa);
+            service.createPeriod(2026, 1,
+                    LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31));
+
+            assertThrows(IllegalArgumentException.class, () -> service.createPeriod(2026, 2,
+                    LocalDate.of(2026, 1, 31), LocalDate.of(2026, 2, 28)));
+            assertEquals(1, service.listPeriods().size());
+        }
+    }
+
+    @Test
+    public void closeAndReopen_rejectInvalidStateTransitionsWithoutAudit(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("period-transitions")))
+        {
+            AccountingPeriodService service = new AccountingPeriodService(jpa);
+            AccountingPeriod period = service.createPeriod(2026, 1,
+                    LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31));
+
+            assertThrows(IllegalStateException.class, () -> service.reopenPeriod(
+                    period.getId(), "treasurer", ReopenScope.CURRENT_SESSION, null));
+
+            service.closePeriod(period.getId(), "treasurer");
+            assertThrows(IllegalStateException.class, () -> service.closePeriod(period.getId(), "treasurer"));
+
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals(1L, em.createQuery("select count(a) from AuditEvent a", Long.class)
+                        .getSingleResult());
+                assertEquals(0L, em.createQuery("select count(e) from PeriodReopenEvent e", Long.class)
+                        .getSingleResult());
+            }
+        }
+    }
+
+    @Test
+    public void findPeriodContaining_returnsMatchingPeriodOrEmpty(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("period-lookup")))
+        {
+            AccountingPeriodService service = new AccountingPeriodService(jpa);
+            AccountingPeriod january = service.createPeriod(2026, 1,
+                    LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31));
+            service.createPeriod(2026, 2,
+                    LocalDate.of(2026, 2, 1), LocalDate.of(2026, 2, 28));
+
+            assertEquals(january.getId(), service.findPeriodContaining(LocalDate.of(2026, 1, 15))
+                    .orElseThrow().getId());
+            assertTrue(service.findPeriodContaining(LocalDate.of(2026, 3, 1)).isEmpty());
+            assertThrows(IllegalArgumentException.class, () -> service.findPeriodContaining(null));
         }
     }
 }
