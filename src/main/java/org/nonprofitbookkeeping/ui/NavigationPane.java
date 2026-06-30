@@ -1,10 +1,13 @@
 package org.nonprofitbookkeeping.ui;
 
-import javafx.scene.control.TreeCell;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeView;
-import javafx.scene.input.KeyCode;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.input.MouseButton;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 import java.util.EnumMap;
@@ -14,138 +17,118 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/**
- * Represents the NavigationPane component in the nonprofit bookkeeping application.
- */
+/** Icon-led navigation rail matching the production dashboard reference. */
 public class NavigationPane extends VBox
 {
-    private final TreeView<NavItem> tree;
-    private final Map<AppPanelId, TreeItem<NavItem>> index = new EnumMap<>(AppPanelId.class);
+    private final Map<AppPanelId, Button> index = new EnumMap<>(AppPanelId.class);
     private final Consumer<AppPanelId> openPanel;
     private final BiConsumer<String, String> openInspector;
     private final Supplier<InspectorContext> inspectorContextSupplier;
+    private AppPanelId highlightedPanel;
 
-    public NavigationPane(Consumer<AppPanelId> openPanel,
-                          BiConsumer<String, String> openInspector,
-                          Supplier<InspectorContext> inspectorContextSupplier)
+    public NavigationPane(
+            Consumer<AppPanelId> openPanel,
+            BiConsumer<String, String> openInspector,
+            Supplier<InspectorContext> inspectorContextSupplier)
     {
         this.openPanel = openPanel;
         this.openInspector = openInspector;
         this.inspectorContextSupplier = inspectorContextSupplier;
 
-        getStyleClass().add("nav");
+        getStyleClass().addAll("navigation-pane", "nav");
+        setMinWidth(0);
+        setPrefWidth(222);
 
-        TreeItem<NavItem> root = new TreeItem<>(new NavItem(null, "Root"));
-        root.setExpanded(true);
+        Label applicationName = new Label("SCA Ledger");
+        applicationName.getStyleClass().add("navigation-brand");
+        Label applicationCaption = new Label("Nonprofit Bookkeeping");
+        applicationCaption.getStyleClass().add("navigation-brand-caption");
+        VBox brand = new VBox(1, applicationName, applicationCaption);
+        brand.setPadding(new Insets(4, 8, 12, 8));
 
-        TreeItem<NavItem> ops = group(root, "Operations");
-        add(ops, AppPanelId.DASHBOARD, "Dashboard");
+        VBox content = new VBox(2);
+        content.getStyleClass().add("navigation-content");
+        addItem(content, AppPanelId.DASHBOARD, "Dashboard", UiIcons.Glyph.DASHBOARD);
 
-        TreeItem<NavItem> ledger = group(ops, "Ledger");
-        add(ledger, AppPanelId.LEDGER_REGISTER, "Ledger Register");
-        add(ledger, AppPanelId.TXN_EDITOR, "Transaction Editor");
+        section(content, "TRANSACTIONS");
+        addItem(content, AppPanelId.LEDGER_REGISTER, "Ledger Register", UiIcons.Glyph.LEDGER);
+        addItem(content, AppPanelId.TXN_EDITOR, "New Transaction", UiIcons.Glyph.ADD);
+        addItem(content, AppPanelId.SCHEDULES, "Scheduled Transactions", UiIcons.Glyph.CALENDAR);
 
-        add(ops, AppPanelId.SCHEDULES, "Outstanding / Schedules");
+        section(content, "BUDGETING");
+        addItem(content, AppPanelId.BUDGET_EDITOR, "Budget Editor", UiIcons.Glyph.BUDGET);
+        addItem(content, AppPanelId.BUDGET_VS_ACTUAL, "Budget vs Actual", UiIcons.Glyph.CHART);
 
-        TreeItem<NavItem> budget = group(ops, "Budget");
-        add(budget, AppPanelId.BUDGET_EDITOR, "Budget Editor");
-        add(budget, AppPanelId.BUDGET_VS_ACTUAL, "Budget vs Actual");
+        section(content, "ASSETS");
+        addItem(content, AppPanelId.ASSETS_REGISTER, "Asset Register", UiIcons.Glyph.ACCOUNTS);
+        addItem(content, AppPanelId.DEPRECIATION_RUNS, "Depreciation Runs", UiIcons.Glyph.CALENDAR);
+        addItem(content, AppPanelId.INVENTORY, "Inventory", UiIcons.Glyph.FUNDS);
 
-        TreeItem<NavItem> assets = group(ops, "Assets");
-        add(assets, AppPanelId.ASSETS_REGISTER, "Asset Register");
-        add(assets, AppPanelId.DEPRECIATION_RUNS, "Depreciation Runs");
-        add(assets, AppPanelId.INVENTORY, "Inventory");
+        section(content, "BANKING");
+        addItem(content, AppPanelId.RECONCILIATION_RUNS, "Reconciliation", UiIcons.Glyph.BANK);
+        addItem(content, AppPanelId.BANK_TRANSACTIONS, "Bank Transactions", UiIcons.Glyph.CREDIT_CARD);
+        addItem(content, AppPanelId.PERIOD_CLOSE_RUNS, "Period Close", UiIcons.Glyph.CLOCK);
 
-        TreeItem<NavItem> workflows = group(root, "Workflows");
-        add(workflows, AppPanelId.RECONCILIATION_RUNS, "Reconciliation Runs");
-        add(workflows, AppPanelId.PERIOD_CLOSE_RUNS, "Period Close Runs");
-        add(workflows, AppPanelId.IMPORT_PREVIEW, "Import Preview");
-        add(workflows, AppPanelId.APPROVAL_AUDIT, "Approval Audit");
-        add(workflows, AppPanelId.IMPORT_EXPORT_JOBS, "Import / Export Jobs");
-        add(workflows, AppPanelId.BANK_TRANSACTIONS, "Bank Transactions");
+        section(content, "REPORTS");
+        addItem(content, AppPanelId.REPORT_LIBRARY, "Report Library", UiIcons.Glyph.REPORT);
 
-        TreeItem<NavItem> outputs = group(root, "Outputs");
-        add(outputs, AppPanelId.REPORT_LIBRARY, "Reports Library");
+        section(content, "ADMINISTRATION");
+        addItem(content, AppPanelId.CHART_OF_ACCOUNTS, "Chart of Accounts", UiIcons.Glyph.ACCOUNTS);
+        addItem(content, AppPanelId.FUNDS, "Funds", UiIcons.Glyph.FUNDS);
+        addItem(content, AppPanelId.IMPORT_PREVIEW, "Import Preview", UiIcons.Glyph.IMPORT);
+        addItem(content, AppPanelId.APPROVAL_AUDIT, "Approval Audit", UiIcons.Glyph.CHECK);
+        addItem(content, AppPanelId.IMPORT_EXPORT_JOBS, "Import / Export Jobs", UiIcons.Glyph.IMPORT);
+        addItem(content, AppPanelId.SETTINGS, "Settings", UiIcons.Glyph.SETTINGS);
 
-        TreeItem<NavItem> ref = group(root, "Reference");
-        add(ref, AppPanelId.CHART_OF_ACCOUNTS, "Chart of Accounts");
-        add(ref, AppPanelId.FUNDS, "Funds");
+        section(content, "SYSTEM");
+        addItem(content, AppPanelId.DIAGNOSTICS, "Diagnostics", UiIcons.Glyph.DIAGNOSTICS);
+        addItem(content, AppPanelId.HELP, "Help", UiIcons.Glyph.HELP);
 
-        TreeItem<NavItem> admin = group(root, "Administration");
-        add(admin, AppPanelId.SETTINGS, "Settings / Admin");
+        ScrollPane scrollPane = new ScrollPane(content);
+        scrollPane.getStyleClass().add("navigation-scroll");
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+        getChildren().addAll(brand, scrollPane);
+        highlight(AppPanelId.DASHBOARD);
+    }
 
-        TreeItem<NavItem> sys = group(root, "System");
-        add(sys, AppPanelId.DIAGNOSTICS, "Diagnostics");
-        add(sys, AppPanelId.HELP, "Help");
-
-        tree = new TreeView<>(root);
-        tree.setShowRoot(false);
-
-        tree.setCellFactory(tv -> new TreeCell<>()
+    public void highlight(AppPanelId id)
+    {
+        if (highlightedPanel != null)
         {
-            @Override
-            protected void updateItem(NavItem item, boolean empty)
+            Button previous = index.get(highlightedPanel);
+            if (previous != null)
             {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.label());
+                previous.getStyleClass().remove("navigation-item-selected");
             }
-        });
-
-        tree.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) ->
+        }
+        highlightedPanel = id;
+        Button selected = index.get(id);
+        if (selected != null && !selected.getStyleClass().contains("navigation-item-selected"))
         {
-            if (newSel == null || newSel.getValue() == null || newSel.getValue().panelId() == null)
-            {
-                return;
-            }
-            openPanel.accept(newSel.getValue().panelId());
-        });
-
-        tree.setOnMouseClicked(e ->
-        {
-            TreeItem<NavItem> sel = tree.getSelectionModel().getSelectedItem();
-            if (sel == null || sel.getValue() == null)
-            {
-                return;
-            }
-
-            if (e.getButton() == MouseButton.SECONDARY)
-            {
-                tree.getSelectionModel().select(sel);
-                NavItem v = sel.getValue();
-                openInspector.accept("Details: " + v.label(), inspectorBody(v, inspectorContextSupplier.get()));
-            }
-        });
-
-        tree.setOnKeyPressed(e ->
-        {
-            if (e.getCode() != KeyCode.ENTER)
-            {
-                return;
-            }
-
-            TreeItem<NavItem> sel = tree.getSelectionModel().getSelectedItem();
-            if (sel == null || sel.getValue() == null || sel.getValue().panelId() == null)
-            {
-                return;
-            }
-            openPanel.accept(sel.getValue().panelId());
-        });
-
-        getChildren().add(tree);
+            selected.getStyleClass().add("navigation-item-selected");
+        }
     }
 
     static String inspectorBody(NavItem item)
     {
-        return inspectorBody(item, new InspectorContext("(unknown)", String.valueOf(DateRangeContext.get()), "(unspecified)"));
+        return inspectorBody(
+                item,
+                new InspectorContext(
+                        "(unknown)",
+                        String.valueOf(DateRangeContext.get()),
+                        "(unspecified)"));
     }
 
     static String inspectorBody(NavItem item, InspectorContext context)
     {
         if (item == null || item.panelId() == null)
         {
-            return InspectorPresentationModel.navigationGroupBody(context.activeCompany(), context.dateRange());
+            return InspectorPresentationModel.navigationGroupBody(
+                    context.activeCompany(),
+                    context.dateRange());
         }
-
         return InspectorPresentationModel.panelBody(
                 item.label(),
                 item.panelId().name(),
@@ -156,38 +139,58 @@ public class NavigationPane extends VBox
                 "use toolbar Find/Journal for cross-panel queries.");
     }
 
-    public void highlight(AppPanelId id)
-    {
-        TreeItem<NavItem> ti = index.get(id);
-        if (ti != null)
-        {
-            tree.getSelectionModel().select(ti);
-            tree.scrollTo(tree.getRow(ti));
-        }
-    }
-
-    private TreeItem<NavItem> group(TreeItem<NavItem> parent, String label)
-    {
-        TreeItem<NavItem> g = new TreeItem<>(new NavItem(null, label));
-        g.setExpanded(true);
-        parent.getChildren().add(g);
-        return g;
-    }
-
-
     EnumSet<AppPanelId> indexedPanelIds()
     {
         return EnumSet.copyOf(index.keySet());
     }
 
-    private void add(TreeItem<NavItem> parent, AppPanelId id, String label)
+    private void section(VBox parent, String text)
     {
-        TreeItem<NavItem> ti = new TreeItem<>(new NavItem(id, label));
-        parent.getChildren().add(ti);
-        index.put(id, ti);
+        Label label = new Label(text);
+        label.getStyleClass().add("navigation-section");
+        parent.getChildren().add(label);
     }
 
-    public record NavItem(AppPanelId panelId, String label) {}
+    private void addItem(
+            VBox parent,
+            AppPanelId panelId,
+            String label,
+            UiIcons.Glyph glyph)
+    {
+        Button button = new Button(label, UiIcons.icon(glyph, 16, "navigation-icon"));
+        button.setMaxWidth(Double.MAX_VALUE);
+        button.setAlignment(Pos.CENTER_LEFT);
+        button.setContentDisplay(ContentDisplay.LEFT);
+        button.setGraphicTextGap(10);
+        button.getStyleClass().add("navigation-item");
+        button.setOnAction(event ->
+        {
+            highlight(panelId);
+            openPanel.accept(panelId);
+        });
+        button.setOnMouseClicked(event ->
+        {
+            if (event.getButton() == MouseButton.SECONDARY)
+            {
+                NavItem item = new NavItem(panelId, label);
+                openInspector.accept(
+                        "Details: " + label,
+                        inspectorBody(item, inspectorContextSupplier.get()));
+                event.consume();
+            }
+        });
+        index.put(panelId, button);
+        parent.getChildren().add(button);
+    }
 
-    public record InspectorContext(String activeCompany, String dateRange, String panelCapabilities) {}
+    public record NavItem(AppPanelId panelId, String label)
+    {
+    }
+
+    public record InspectorContext(
+            String activeCompany,
+            String dateRange,
+            String panelCapabilities)
+    {
+    }
 }
