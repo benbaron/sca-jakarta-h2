@@ -1,6 +1,5 @@
 package org.nonprofitbookkeeping.ui;
 
-import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -13,7 +12,6 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
-import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -29,15 +27,13 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
  * Greenfield production dashboard built from the approved visual reference.
- * The panel owns no SQL and displays only values supplied by dashboard services.
+ * The panel owns no SQL and displays only database-backed service projections.
  */
 public final class DashboardWorkspacePanel implements AppPanel
 {
@@ -48,24 +44,22 @@ public final class DashboardWorkspacePanel implements AppPanel
     private final DashboardQueryService dashboardQueryService;
     private final Supplier<LocalDate> asOfDateSupplier;
     private final Supplier<String> groupCodeSupplier;
-    private final Consumer<DashboardSnapshot> snapshotConsumer;
 
     private final BorderPane root = new BorderPane();
-    private final GridPane dashboardGrid = new GridPane();
+    private final GridPane grid = new GridPane();
     private final Label loadMessage = new Label();
 
-    private final Label cashTotal = amountLabel();
-    private final VBox bankAccountRows = new VBox(6);
+    private final Label cashAmount = amountLabel();
+    private final VBox bankRows = new VBox(5);
     private final Label surplusAmount = amountLabel();
     private final Label surplusStatus = new Label();
-    private final Label surplusBudget = new Label();
-    private final Label surplusVariance = new Label();
-    private final DashboardSparkline surplusSparkline = new DashboardSparkline();
-
-    private final DashboardDonutChart budgetDonut = new DashboardDonutChart();
-    private final Label budgetOnTrackCount = new Label("0");
-    private final Label budgetUnderCount = new Label("0");
-    private final Label budgetOverCount = new Label("0");
+    private final Label budgetValue = new Label();
+    private final Label varianceValue = new Label();
+    private final DashboardSparkline sparkline = new DashboardSparkline();
+    private final DashboardDonutChart donut = new DashboardDonutChart();
+    private final Label onTrackCount = new Label("0");
+    private final Label underCount = new Label("0");
+    private final Label overCount = new Label("0");
 
     private final Label receivableCount = new Label("0");
     private final Label receivableAmount = new Label();
@@ -73,11 +67,11 @@ public final class DashboardWorkspacePanel implements AppPanel
     private final Label payableAmount = new Label();
     private final Label timingCount = new Label("0");
     private final Label timingAmount = new Label();
-    private final Label outstandingBankCount = new Label("0");
-    private final Label outstandingBankAmount = new Label();
+    private final Label bankItemCount = new Label("0");
+    private final Label bankItemAmount = new Label();
 
-    private final TableView<DashboardSnapshot.RecentTransaction> recentTransactions = new TableView<>();
-    private final VBox reconciliationRows = new VBox(8);
+    private final TableView<DashboardSnapshot.RecentTransaction> transactions = new TableView<>();
+    private final VBox reconciliationRows = new VBox(7);
     private final TableView<DashboardSnapshot.BudgetActual> budgetActuals = new TableView<>();
 
     public DashboardWorkspacePanel()
@@ -85,8 +79,7 @@ public final class DashboardWorkspacePanel implements AppPanel
         this(
                 UiServiceRegistry.dashboardQuery(),
                 ActivePeriodContext::get,
-                () -> MainWindow.sharedSessionState().multiCompany().activeCompanyCode(),
-                snapshot -> { });
+                () -> MainWindow.sharedSessionState().multiCompany().activeCompanyCode());
         ActivePeriodContext.activeDateProperty().addListener(
                 (observable, oldDate, newDate) -> reload());
     }
@@ -94,13 +87,11 @@ public final class DashboardWorkspacePanel implements AppPanel
     DashboardWorkspacePanel(
             DashboardQueryService dashboardQueryService,
             Supplier<LocalDate> asOfDateSupplier,
-            Supplier<String> groupCodeSupplier,
-            Consumer<DashboardSnapshot> snapshotConsumer)
+            Supplier<String> groupCodeSupplier)
     {
         this.dashboardQueryService = dashboardQueryService;
         this.asOfDateSupplier = asOfDateSupplier;
         this.groupCodeSupplier = groupCodeSupplier;
-        this.snapshotConsumer = snapshotConsumer;
         buildLayout();
         reload();
     }
@@ -127,32 +118,31 @@ public final class DashboardWorkspacePanel implements AppPanel
 
     void reload()
     {
-        setLoadMessage("Loading dashboard data...", false);
-        LocalDate asOfDate = asOfDateSupplier.get();
-        String groupCode = groupCodeSupplier.get();
-
+        showMessage("Loading dashboard data...", false);
         UiAsync.run(
-                "dashboard-workspace-load",
-                () -> dashboardQueryService.load(groupCode, asOfDate, RECENT_TRANSACTION_LIMIT),
+                "dashboard-reference-load",
+                () -> dashboardQueryService.load(
+                        groupCodeSupplier.get(),
+                        asOfDateSupplier.get(),
+                        RECENT_TRANSACTION_LIMIT),
                 snapshot ->
                 {
                     applySnapshot(snapshot);
-                    snapshotConsumer.accept(snapshot);
-                    setLoadMessage("", false);
+                    showMessage("", false);
                 },
-                ex -> setLoadMessage(
+                ex -> showMessage(
                         "Dashboard data could not be loaded: " + UiErrors.safeMessage(ex),
                         true));
     }
 
     void applySnapshot(DashboardSnapshot snapshot)
     {
-        cashTotal.setText(DashboardValueFormatter.money(snapshot.bookCash()));
-        applyBankAccounts(snapshot.bankAccounts());
+        cashAmount.setText(DashboardValueFormatter.money(snapshot.bookCash()));
+        applyBankRows(snapshot.bankAccounts());
         applySurplus(snapshot);
         applyBudgetPerformance(snapshot.budgetActuals());
         applyOpenItems(snapshot.openItems());
-        recentTransactions.getItems().setAll(snapshot.recentTransactions());
+        transactions.getItems().setAll(snapshot.recentTransactions());
         applyReconciliations(snapshot.reconciliations());
         budgetActuals.getItems().setAll(snapshot.budgetActuals());
     }
@@ -161,207 +151,144 @@ public final class DashboardWorkspacePanel implements AppPanel
     {
         root.getStyleClass().add("dashboard-workspace");
         loadMessage.getStyleClass().add("dashboard-load-message");
-        loadMessage.setWrapText(true);
         loadMessage.setManaged(false);
         loadMessage.setVisible(false);
+        loadMessage.setWrapText(true);
         root.setTop(loadMessage);
         root.setCenter(buildDashboard());
     }
 
     private Node buildDashboard()
     {
-        dashboardGrid.getStyleClass().add("dashboard-grid");
-        dashboardGrid.setHgap(12);
-        dashboardGrid.setVgap(12);
-        dashboardGrid.setPadding(new Insets(14));
+        grid.getStyleClass().add("dashboard-grid");
+        grid.setHgap(12);
+        grid.setVgap(12);
+        grid.setPadding(new Insets(14));
         for (int index = 0; index < 4; index++)
         {
             ColumnConstraints column = new ColumnConstraints();
             column.setPercentWidth(25);
             column.setHgrow(Priority.ALWAYS);
-            dashboardGrid.getColumnConstraints().add(column);
+            grid.getColumnConstraints().add(column);
         }
 
-        dashboardGrid.add(buildCashCard(), 0, 0);
-        dashboardGrid.add(buildSurplusCard(), 1, 0);
-        dashboardGrid.add(buildBudgetPerformanceCard(), 2, 0);
-        dashboardGrid.add(buildOpenItemsCard(), 3, 0);
-        dashboardGrid.add(buildRecentTransactionsCard(), 0, 1, 4, 1);
-        dashboardGrid.add(buildReconciliationCard(), 0, 2, 2, 1);
-        dashboardGrid.add(buildBudgetActualCard(), 2, 2);
-        dashboardGrid.add(buildQuickLinksCard(), 3, 2);
+        grid.add(cashCard(), 0, 0);
+        grid.add(surplusCard(), 1, 0);
+        grid.add(performanceCard(), 2, 0);
+        grid.add(openItemsCard(), 3, 0);
+        grid.add(transactionCard(), 0, 1, 4, 1);
+        grid.add(reconciliationCard(), 0, 2, 2, 1);
+        grid.add(budgetCard(), 2, 2);
+        grid.add(quickLinksCard(), 3, 2);
 
-        ScrollPane scrollPane = new ScrollPane(dashboardGrid);
+        ScrollPane scrollPane = new ScrollPane(grid);
         scrollPane.getStyleClass().add("dashboard-scroll");
         scrollPane.setFitToWidth(true);
-        scrollPane.setFitToHeight(false);
         scrollPane.viewportBoundsProperty().addListener(
                 (observable, oldBounds, bounds) ->
-                        DashboardWorkspaceLayoutPolicy.apply(dashboardGrid, bounds.getWidth()));
+                        DashboardWorkspaceLayoutPolicy.apply(grid, bounds.getWidth()));
         return scrollPane;
     }
 
-    private Node buildCashCard()
+    private Node cashCard()
     {
-        cashTotal.getStyleClass().add("dashboard-positive-amount");
-        bankAccountRows.getStyleClass().add("dashboard-key-values");
-        VBox content = new VBox(8, muted("All bank accounts"), cashTotal, bankAccountRows);
-        return card("Cash Balances", UiIcons.Glyph.BANK, "accent-blue", content);
+        cashAmount.getStyleClass().add("dashboard-positive-amount");
+        VBox body = new VBox(7, muted("All bank accounts"), cashAmount, bankRows);
+        return card("Cash Balances", UiIcons.Glyph.BANK, "accent-blue", body, null);
     }
 
-    private Node buildSurplusCard()
+    private Node surplusCard()
     {
         surplusStatus.getStyleClass().add("status-pill");
         HBox amountRow = new HBox(8, surplusAmount, surplusStatus);
         amountRow.setAlignment(Pos.CENTER_LEFT);
 
         GridPane values = new GridPane();
-        values.setHgap(18);
-        values.setVgap(4);
+        values.setHgap(16);
+        values.setVgap(3);
         values.add(muted("Budget"), 0, 0);
-        values.add(surplusBudget, 1, 0);
+        values.add(budgetValue, 1, 0);
         values.add(muted("Variance"), 0, 1);
-        values.add(surplusVariance, 1, 1);
+        values.add(varianceValue, 1, 1);
 
-        VBox content = new VBox(5, muted("All funds"), amountRow, values, surplusSparkline);
-        VBox.setVgrow(surplusSparkline, Priority.ALWAYS);
-        return card("YTD Surplus (Deficit)", UiIcons.Glyph.TREND_UP, "accent-green", content);
+        VBox body = new VBox(4, muted("All funds"), amountRow, values, sparkline);
+        return card("YTD Surplus (Deficit)", UiIcons.Glyph.TREND_UP, "accent-green", body, null);
     }
 
-    private Node buildBudgetPerformanceCard()
+    private Node performanceCard()
     {
         VBox legend = new VBox(
                 5,
-                legendRow("On track", "legend-green", budgetOnTrackCount),
-                legendRow("Under", "legend-amber", budgetUnderCount),
-                legendRow("Over", "legend-red", budgetOverCount));
-        HBox content = new HBox(12, budgetDonut, legend);
-        content.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(legend, Priority.ALWAYS);
-        return card("Budget Performance", UiIcons.Glyph.CHART, "accent-purple", content);
+                legend("On track", "legend-green", onTrackCount),
+                legend("Under", "legend-amber", underCount),
+                legend("Over", "legend-red", overCount));
+        HBox body = new HBox(10, donut, legend);
+        body.setAlignment(Pos.CENTER_LEFT);
+        return card("Budget Performance", UiIcons.Glyph.CHART, "accent-purple", body, null);
     }
 
-    private Node buildOpenItemsCard()
+    private Node openItemsCard()
     {
-        VBox content = new VBox(
-                4,
-                openItemRow(
-                        UiIcons.Glyph.REPORT,
-                        "accent-blue",
-                        "Receivables",
-                        receivableCount,
-                        receivableAmount),
-                openItemRow(
-                        UiIcons.Glyph.CREDIT_CARD,
-                        "accent-red",
-                        "Payables",
-                        payableCount,
-                        payableAmount),
-                openItemRow(
-                        UiIcons.Glyph.CALENDAR,
-                        "accent-purple",
-                        "Prepaids & deferred",
-                        timingCount,
-                        timingAmount),
-                openItemRow(
-                        UiIcons.Glyph.BANK,
-                        "accent-amber",
-                        "Outstanding bank items",
-                        outstandingBankCount,
-                        outstandingBankAmount));
-        return card("Open Items", UiIcons.Glyph.CLOCK, "accent-amber", content);
+        VBox body = new VBox(
+                3,
+                openItem(UiIcons.Glyph.REPORT, "accent-blue", "Receivables", receivableCount, receivableAmount),
+                openItem(UiIcons.Glyph.CREDIT_CARD, "accent-red", "Payables", payableCount, payableAmount),
+                openItem(UiIcons.Glyph.CALENDAR, "accent-purple", "Prepaids & deferred", timingCount, timingAmount),
+                openItem(UiIcons.Glyph.BANK, "accent-amber", "Outstanding bank items", bankItemCount, bankItemAmount));
+        return card("Open Items", UiIcons.Glyph.CLOCK, "accent-amber", body, null);
     }
 
-    private Node buildRecentTransactionsCard()
+    private Node transactionCard()
     {
-        configureRecentTransactions();
-        Button viewAll = textButton("View All", UiIcons.Glyph.CHEVRON_RIGHT, () ->
+        configureTransactions();
+        Button viewAll = textButton("View All", () ->
                 DrillThroughCoordinator.openLedgerWithContext("Dashboard recent transactions"));
-        return card(
-                "Recent Transactions",
-                UiIcons.Glyph.LEDGER,
-                "accent-blue",
-                recentTransactions,
-                viewAll);
+        return card("Recent Transactions", UiIcons.Glyph.LEDGER, "accent-blue", transactions, viewAll);
     }
 
-    private Node buildReconciliationCard()
+    private Node reconciliationCard()
     {
-        reconciliationRows.getStyleClass().add("dashboard-reconciliation-list");
-        Button reconcile = actionButton(
+        Button action = primaryButton(
                 "Reconcile Account",
                 UiIcons.Glyph.BANK,
                 () -> DrillThroughCoordinator.openPanelWithContext(
                         AppPanelId.RECONCILIATION_RUNS,
                         "Dashboard reconciliation action"));
-        VBox content = new VBox(10, reconciliationRows, reconcile);
-        VBox.setVgrow(reconciliationRows, Priority.ALWAYS);
-        return card(
-                "Bank Reconciliation Status",
-                UiIcons.Glyph.BANK,
-                "accent-green",
-                content);
+        VBox body = new VBox(9, reconciliationRows, action);
+        return card("Bank Reconciliation Status", UiIcons.Glyph.BANK, "accent-green", body, null);
     }
 
-    private Node buildBudgetActualCard()
+    private Node budgetCard()
     {
-        configureBudgetActuals();
-        Button details = textButton("View Budget", UiIcons.Glyph.CHEVRON_RIGHT, () ->
+        configureBudgetTable();
+        Button view = textButton("View Budget", () ->
                 DrillThroughCoordinator.openPanelWithContext(
                         AppPanelId.BUDGET_VS_ACTUAL,
                         "Dashboard budget action"));
-        return card(
-                "Budget vs Actual (YTD)",
-                UiIcons.Glyph.BUDGET,
-                "accent-purple",
-                budgetActuals,
-                details);
+        return card("Budget vs Actual (YTD)", UiIcons.Glyph.BUDGET, "accent-purple", budgetActuals, view);
     }
 
-    private Node buildQuickLinksCard()
+    private Node quickLinksCard()
     {
         VBox links = new VBox(
-                4,
-                quickLink(
-                        "New Transaction",
-                        "Record a transaction",
-                        UiIcons.Glyph.ADD,
-                        "accent-blue",
-                        this::onNew),
-                quickLink(
-                        "Enter Journal Entry",
-                        "Post a manual journal",
-                        UiIcons.Glyph.LEDGER,
-                        "accent-purple",
-                        () -> DrillThroughCoordinator.openPanelWithContext(
-                                AppPanelId.TXN_EDITOR,
-                                "Dashboard journal action")),
-                quickLink(
-                        "Import SCLX Workbook",
-                        "Preview and validate import",
-                        UiIcons.Glyph.IMPORT,
-                        "accent-amber",
-                        () -> DrillThroughCoordinator.openPanelWithContext(
-                                AppPanelId.IMPORT_PREVIEW,
-                                "Dashboard import action")),
-                quickLink(
-                        "Reconcile Bank Account",
-                        "Open reconciliation",
-                        UiIcons.Glyph.BANK,
-                        "accent-green",
-                        () -> DrillThroughCoordinator.openPanelWithContext(
-                                AppPanelId.RECONCILIATION_RUNS,
-                                "Dashboard reconcile action")));
-        return card("Quick Links", UiIcons.Glyph.DASHBOARD, "accent-blue", links);
+                3,
+                quickLink("New Transaction", "Record a transaction", UiIcons.Glyph.ADD, "accent-blue", this::onNew),
+                quickLink("Enter Journal Entry", "Post a manual journal", UiIcons.Glyph.LEDGER, "accent-purple", () ->
+                        DrillThroughCoordinator.openPanelWithContext(AppPanelId.TXN_EDITOR, "Dashboard journal action")),
+                quickLink("Import SCLX Workbook", "Preview and validate import", UiIcons.Glyph.IMPORT, "accent-amber", () ->
+                        DrillThroughCoordinator.openPanelWithContext(AppPanelId.IMPORT_PREVIEW, "Dashboard import action")),
+                quickLink("Reconcile Bank Account", "Open reconciliation", UiIcons.Glyph.BANK, "accent-green", () ->
+                        DrillThroughCoordinator.openPanelWithContext(AppPanelId.RECONCILIATION_RUNS, "Dashboard reconcile action")));
+        return card("Quick Links", UiIcons.Glyph.DASHBOARD, "accent-blue", links, null);
     }
 
-    private void configureRecentTransactions()
+    private void configureTransactions()
     {
-        recentTransactions.getStyleClass().add("dashboard-table");
-        recentTransactions.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        recentTransactions.setPrefHeight(224);
-        recentTransactions.setFixedCellSize(30);
-        recentTransactions.getColumns().setAll(
+        transactions.getStyleClass().add("dashboard-table");
+        transactions.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        transactions.setPrefHeight(224);
+        transactions.setFixedCellSize(30);
+        transactions.getColumns().setAll(
                 textColumn("Date", row -> row.transactionDate().toString(), 92),
                 textColumn("Txn #", row -> Long.toString(row.transactionId()), 72),
                 textColumn("Description", DashboardSnapshot.RecentTransaction::description, 180),
@@ -372,24 +299,10 @@ public final class DashboardWorkspacePanel implements AppPanel
                 optionalMoneyColumn("Balance", DashboardSnapshot.RecentTransaction::runningBankBalance, 100),
                 checkColumn("Affects Bank", DashboardSnapshot.RecentTransaction::affectsBank, 94),
                 checkColumn("Affects Budget", DashboardSnapshot.RecentTransaction::affectsBudget, 104));
-        recentTransactions.setPlaceholder(new Label("No transactions through the selected date."));
-        recentTransactions.setRowFactory(table ->
+        transactions.setPlaceholder(new Label("No transactions through the selected date."));
+        transactions.setRowFactory(table ->
         {
-            TableRow<DashboardSnapshot.RecentTransaction> row = new TableRow<>()
-            {
-                @Override
-                protected void updateItem(
-                        DashboardSnapshot.RecentTransaction item,
-                        boolean empty)
-                {
-                    super.updateItem(item, empty);
-                    getStyleClass().remove("dashboard-row-inactive");
-                    if (!empty && item != null && !"ENTERED".equals(item.status()))
-                    {
-                        getStyleClass().add("dashboard-row-inactive");
-                    }
-                }
-            };
+            TableRow<DashboardSnapshot.RecentTransaction> row = new TableRow<>();
             row.setOnMouseClicked(event ->
             {
                 if (event.getClickCount() == 2 && !row.isEmpty())
@@ -402,43 +315,34 @@ public final class DashboardWorkspacePanel implements AppPanel
         });
     }
 
-    private void configureBudgetActuals()
+    private void configureBudgetTable()
     {
         budgetActuals.getStyleClass().add("dashboard-table");
         budgetActuals.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         budgetActuals.setPrefHeight(205);
         budgetActuals.setFixedCellSize(30);
         budgetActuals.getColumns().setAll(
-                textColumn("Category", DashboardWorkspacePanel::budgetCategoryLabel, 145),
+                textColumn("Category", DashboardWorkspacePanel::categoryLabel, 145),
                 optionalMoneyColumn("Budget", DashboardSnapshot.BudgetActual::budget, 88),
                 moneyColumn("Actual", DashboardSnapshot.BudgetActual::actual, 88),
                 optionalMoneyColumn("Variance", DashboardSnapshot.BudgetActual::variance, 90),
                 budgetStatusColumn());
-        budgetActuals.setPlaceholder(
-                new Label("No posted budget-category activity through the selected date."));
+        budgetActuals.setPlaceholder(new Label("No posted budget-category activity."));
     }
 
-    private void applyBankAccounts(List<DashboardSnapshot.BankAccountBalance> bankAccounts)
+    private void applyBankRows(List<DashboardSnapshot.BankAccountBalance> rows)
     {
-        bankAccountRows.getChildren().clear();
-        if (bankAccounts.isEmpty())
+        bankRows.getChildren().clear();
+        if (rows.isEmpty())
         {
-            bankAccountRows.getChildren().add(muted("No bank-account activity"));
+            bankRows.getChildren().add(muted("No bank-account activity"));
             return;
         }
-
-        int visibleRows = Math.min(bankAccounts.size(), 3);
-        for (int index = 0; index < visibleRows; index++)
+        rows.stream().limit(3).forEach(account -> bankRows.getChildren().add(
+                valueRow(account.name(), DashboardValueFormatter.money(account.balance()))));
+        if (rows.size() > 3)
         {
-            DashboardSnapshot.BankAccountBalance account = bankAccounts.get(index);
-            bankAccountRows.getChildren().add(valueRow(
-                    account.name(),
-                    DashboardValueFormatter.money(account.balance())));
-        }
-        if (bankAccounts.size() > visibleRows)
-        {
-            bankAccountRows.getChildren().add(muted(
-                    "+ " + (bankAccounts.size() - visibleRows) + " more bank accounts"));
+            bankRows.getChildren().add(muted("+ " + (rows.size() - 3) + " more bank accounts"));
         }
     }
 
@@ -454,7 +358,6 @@ public final class DashboardWorkspacePanel implements AppPanel
                 "status-success",
                 "status-danger",
                 "status-neutral");
-
         if (surplus.signum() > 0)
         {
             surplusAmount.getStyleClass().add("dashboard-positive-amount");
@@ -474,71 +377,39 @@ public final class DashboardWorkspacePanel implements AppPanel
             surplusStatus.setText("Break even");
         }
 
-        Optional<BigDecimal> totalBudget = snapshot.budgetActuals().stream()
+        Optional<BigDecimal> budget = snapshot.budgetActuals().stream()
                 .map(DashboardSnapshot.BudgetActual::budget)
-                .filter(Optional::isPresent)
-                .map(Optional::orElseThrow)
+                .flatMap(Optional::stream)
                 .reduce(BigDecimal::add);
-        surplusBudget.setText(totalBudget.map(DashboardValueFormatter::money).orElse(""));
-        surplusVariance.setText(totalBudget
-                .map(surplus::subtract)
+        budgetValue.setText(budget.map(DashboardValueFormatter::money).orElse(""));
+        varianceValue.setText(budget.map(surplus::subtract)
                 .map(DashboardValueFormatter::money)
                 .orElse(""));
-        surplusSparkline.setValues(snapshot.monthlyResults().stream()
+        sparkline.setValues(snapshot.monthlyResults().stream()
                 .map(DashboardSnapshot.MonthlyResult::surplus)
                 .toList());
     }
 
     private void applyBudgetPerformance(List<DashboardSnapshot.BudgetActual> rows)
     {
-        long onTrack = 0;
-        long under = 0;
-        long over = 0;
-
-        for (DashboardSnapshot.BudgetActual row : rows)
-        {
-            BudgetStatus status = budgetStatus(row);
-            switch (status)
-            {
-                case ON_TRACK -> onTrack++;
-                case UNDER -> under++;
-                case OVER -> over++;
-                case UNAVAILABLE ->
-                {
-                }
-            }
-        }
-
-        budgetDonut.setValues(onTrack, under, over);
-        budgetOnTrackCount.setText(Long.toString(onTrack));
-        budgetUnderCount.setText(Long.toString(under));
-        budgetOverCount.setText(Long.toString(over));
+        long onTrack = rows.stream().filter(row -> budgetStatus(row) == BudgetStatus.ON_TRACK).count();
+        long under = rows.stream().filter(row -> budgetStatus(row) == BudgetStatus.UNDER).count();
+        long over = rows.stream().filter(row -> budgetStatus(row) == BudgetStatus.OVER).count();
+        donut.setValues(onTrack, under, over);
+        onTrackCount.setText(Long.toString(onTrack));
+        underCount.setText(Long.toString(under));
+        overCount.setText(Long.toString(over));
     }
 
-    private void applyOpenItems(DashboardSnapshot.OpenItemSummary openItems)
+    private void applyOpenItems(DashboardSnapshot.OpenItemSummary items)
     {
-        setOpenItem(
-                receivableCount,
-                receivableAmount,
-                openItems.countFor("RECEIVABLE"),
-                openItems.amountFor("RECEIVABLE"));
-        setOpenItem(
-                payableCount,
-                payableAmount,
-                openItems.countFor("PAYABLE"),
-                openItems.amountFor("PAYABLE"));
-
-        long combinedTimingCount = openItems.countFor("PREPAID_EXPENSE")
-                + openItems.countFor("DEFERRED_REVENUE");
-        BigDecimal combinedTimingAmount = openItems.amountFor("PREPAID_EXPENSE")
-                .add(openItems.amountFor("DEFERRED_REVENUE"));
-        setOpenItem(timingCount, timingAmount, combinedTimingCount, combinedTimingAmount);
-
-        setOpenItem(
-                outstandingBankCount,
-                outstandingBankAmount,
-                openItems.countFor("OUTSTANDING_BANK_ITEM"),
-                openItems.amountFor("OUTSTANDING_BANK_ITEM"));
+        setOpenItem(receivableCount, receivableAmount, items, "RECEIVABLE");
+        setOpenItem(payableCount, payableAmount, items, "PAYABLE");
+        timingCount.setText(Long.toString(
+                items.countFor("PREPAID_EXPENSE") + items.countFor("DEFERRED_REVENUE")));
+        timingAmount.setText(DashboardValueFormatter.money(
+                items.amountFor("PREPAID_EXPENSE").add(items.amountFor("DEFERRED_REVENUE"))));
+        setOpenItem(bankItemCount, bankItemAmount, items, "OUTSTANDING_BANK_ITEM");
     }
 
     private void applyReconciliations(List<DashboardSnapshot.ReconciliationStatus> rows)
@@ -546,109 +417,91 @@ public final class DashboardWorkspacePanel implements AppPanel
         reconciliationRows.getChildren().clear();
         if (rows.isEmpty())
         {
-            reconciliationRows.getChildren().add(muted(
-                    "No reconciliation runs for the active organization."));
+            reconciliationRows.getChildren().add(muted("No reconciliation runs for the active organization."));
             return;
         }
+        rows.forEach(row -> reconciliationRows.getChildren().add(reconciliationRow(row)));
+    }
 
-        for (DashboardSnapshot.ReconciliationStatus row : rows)
-        {
-            Label date = new Label(DATE_FORMAT.format(row.statementEndingOn()));
-            date.getStyleClass().add("dashboard-list-primary");
-            Label details = muted(row.bankFormat() + " · "
-                    + row.importedTransactionCount() + " imported transactions");
-            VBox text = new VBox(1, date, details);
-            HBox.setHgrow(text, Priority.ALWAYS);
-
-            Label status = statusPill(row.status());
-            HBox reconciliation = new HBox(
-                    9,
-                    iconBadge(UiIcons.Glyph.BANK, "accent-green"),
-                    text,
-                    status);
-            reconciliation.setAlignment(Pos.CENTER_LEFT);
-            reconciliation.getStyleClass().add("dashboard-list-row");
-            reconciliationRows.getChildren().add(reconciliation);
-        }
+    private static Node reconciliationRow(DashboardSnapshot.ReconciliationStatus row)
+    {
+        Label date = new Label(DATE_FORMAT.format(row.statementEndingOn()));
+        date.getStyleClass().add("dashboard-list-primary");
+        VBox text = new VBox(1, date, muted(row.bankFormat() + " · "
+                + row.importedTransactionCount() + " imported transactions"));
+        HBox.setHgrow(text, Priority.ALWAYS);
+        HBox line = new HBox(8, iconBadge(UiIcons.Glyph.BANK, "accent-green"), text, statusPill(row.status()));
+        line.setAlignment(Pos.CENTER_LEFT);
+        line.getStyleClass().add("dashboard-list-row");
+        return line;
     }
 
     private static void setOpenItem(
-            Label countLabel,
-            Label amountLabel,
-            long count,
-            BigDecimal amount)
+            Label count,
+            Label amount,
+            DashboardSnapshot.OpenItemSummary items,
+            String kind)
     {
-        countLabel.setText(Long.toString(count));
-        amountLabel.setText(DashboardValueFormatter.money(amount));
+        count.setText(Long.toString(items.countFor(kind)));
+        amount.setText(DashboardValueFormatter.money(items.amountFor(kind)));
     }
 
     private static VBox card(
             String title,
             UiIcons.Glyph glyph,
-            String accentClass,
-            Node content)
-    {
-        return card(title, glyph, accentClass, content, null);
-    }
-
-    private static VBox card(
-            String title,
-            UiIcons.Glyph glyph,
-            String accentClass,
-            Node content,
-            Node trailingAction)
+            String accent,
+            Node body,
+            Node action)
     {
         Label heading = new Label(title);
         heading.getStyleClass().add("dashboard-card-title");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        HBox header = new HBox(8, iconBadge(glyph, accentClass), heading, spacer);
+        HBox header = new HBox(7, iconBadge(glyph, accent), heading, spacer);
         header.setAlignment(Pos.CENTER_LEFT);
-        if (trailingAction != null)
+        if (action != null)
         {
-            header.getChildren().add(trailingAction);
+            header.getChildren().add(action);
         }
-
-        VBox card = new VBox(10, header, content);
+        VBox card = new VBox(9, header, body);
         card.getStyleClass().add("dashboard-card");
         card.setMinWidth(0);
-        VBox.setVgrow(content, Priority.ALWAYS);
+        VBox.setVgrow(body, Priority.ALWAYS);
         return card;
     }
 
-    private static Node iconBadge(UiIcons.Glyph glyph, String accentClass)
+    private static Node iconBadge(UiIcons.Glyph glyph, String accent)
     {
-        HBox badge = new HBox(UiIcons.icon(glyph, 15, accentClass));
+        HBox badge = new HBox(UiIcons.icon(glyph, 15, accent));
         badge.setAlignment(Pos.CENTER);
-        badge.getStyleClass().addAll("dashboard-icon-badge", accentClass);
+        badge.getStyleClass().addAll("dashboard-icon-badge", accent);
         return badge;
     }
 
-    private static Node legendRow(String text, String cueClass, Label count)
+    private static Node legend(String labelText, String cueClass, Label count)
     {
         Region cue = new Region();
         cue.getStyleClass().addAll("dashboard-legend-dot", cueClass);
-        Label label = new Label(text);
+        Label label = new Label(labelText);
         HBox.setHgrow(label, Priority.ALWAYS);
         HBox row = new HBox(7, cue, label, count);
         row.setAlignment(Pos.CENTER_LEFT);
         return row;
     }
 
-    private static Node openItemRow(
+    private static Node openItem(
             UiIcons.Glyph glyph,
-            String accentClass,
-            String text,
+            String accent,
+            String title,
             Label count,
             Label amount)
     {
-        Label name = new Label(text);
+        Label name = new Label(title);
         name.getStyleClass().add("dashboard-list-primary");
         HBox.setHgrow(name, Priority.ALWAYS);
         count.getStyleClass().add("dashboard-count-pill");
         amount.getStyleClass().add("dashboard-open-item-amount");
-        HBox row = new HBox(8, iconBadge(glyph, accentClass), name, count, amount);
+        HBox row = new HBox(7, iconBadge(glyph, accent), name, count, amount);
         row.setAlignment(Pos.CENTER_LEFT);
         row.getStyleClass().add("dashboard-open-item-row");
         return row;
@@ -658,43 +511,37 @@ public final class DashboardWorkspacePanel implements AppPanel
             String title,
             String detail,
             UiIcons.Glyph glyph,
-            String accentClass,
+            String accent,
             Runnable action)
     {
         Label heading = new Label(title);
         heading.getStyleClass().add("quick-link-title");
-        Label description = muted(detail);
-        VBox text = new VBox(1, heading, description);
+        VBox text = new VBox(1, heading, muted(detail));
         HBox.setHgrow(text, Priority.ALWAYS);
-
-        HBox link = new HBox(
-                9,
-                iconBadge(glyph, accentClass),
+        HBox row = new HBox(
+                8,
+                iconBadge(glyph, accent),
                 text,
-                UiIcons.icon(UiIcons.Glyph.CHEVRON_RIGHT, 13, "icon-muted"));
-        link.setAlignment(Pos.CENTER_LEFT);
-        link.getStyleClass().add("quick-link");
-        link.setOnMouseClicked(event -> action.run());
-        return link;
+                UiIcons.icon(UiIcons.Glyph.CHEVRON_RIGHT, 12, "icon-muted"));
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.getStyleClass().add("quick-link");
+        row.setOnMouseClicked(event -> action.run());
+        return row;
     }
 
-    private static Node valueRow(String labelText, String valueText)
+    private static Node valueRow(String title, String value)
     {
-        Label label = new Label(labelText);
-        label.getStyleClass().add("dashboard-list-primary");
-        Label value = new Label(valueText);
-        value.getStyleClass().add("dashboard-key-value");
+        Label name = new Label(title);
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox row = new HBox(8, label, spacer, value);
+        Label amount = new Label(value);
+        amount.getStyleClass().add("dashboard-key-value");
+        HBox row = new HBox(7, name, spacer, amount);
         row.setAlignment(Pos.CENTER_LEFT);
         return row;
     }
 
-    private static Button actionButton(
-            String text,
-            UiIcons.Glyph glyph,
-            Runnable action)
+    private static Button primaryButton(String text, UiIcons.Glyph glyph, Runnable action)
     {
         Button button = new Button(text, UiIcons.icon(glyph, 14, "icon-white"));
         button.getStyleClass().add("dashboard-primary-button");
@@ -703,12 +550,9 @@ public final class DashboardWorkspacePanel implements AppPanel
         return button;
     }
 
-    private static Button textButton(
-            String text,
-            UiIcons.Glyph glyph,
-            Runnable action)
+    private static Button textButton(String text, Runnable action)
     {
-        Button button = new Button(text, UiIcons.icon(glyph, 12, "icon-blue"));
+        Button button = new Button(text, UiIcons.icon(UiIcons.Glyph.CHEVRON_RIGHT, 12, "icon-blue"));
         button.getStyleClass().add("dashboard-text-button");
         button.setContentDisplay(ContentDisplay.RIGHT);
         button.setOnAction(event -> action.run());
@@ -718,11 +562,11 @@ public final class DashboardWorkspacePanel implements AppPanel
     private static <T> TableColumn<T, String> textColumn(
             String title,
             Function<T, String> value,
-            double preferredWidth)
+            double width)
     {
         TableColumn<T, String> column = new TableColumn<>(title);
-        column.setPrefWidth(preferredWidth);
-        column.setMinWidth(Math.min(preferredWidth, 64));
+        column.setPrefWidth(width);
+        column.setMinWidth(Math.min(width, 64));
         column.setCellValueFactory(cell -> new ReadOnlyStringWrapper(value.apply(cell.getValue())));
         return column;
     }
@@ -730,50 +574,87 @@ public final class DashboardWorkspacePanel implements AppPanel
     private static <T> TableColumn<T, String> moneyColumn(
             String title,
             Function<T, BigDecimal> value,
-            double preferredWidth)
+            double width)
     {
         TableColumn<T, String> column = textColumn(
                 title,
                 row -> DashboardValueFormatter.money(value.apply(row)),
-                preferredWidth);
-        column.setCellFactory(ignored -> new RightAlignedCell());
+                width);
+        column.setStyle("-fx-alignment: CENTER-RIGHT;");
         return column;
     }
 
     private static <T> TableColumn<T, String> optionalMoneyColumn(
             String title,
             Function<T, Optional<BigDecimal>> value,
-            double preferredWidth)
+            double width)
     {
         TableColumn<T, String> column = textColumn(
                 title,
                 row -> value.apply(row).map(DashboardValueFormatter::money).orElse(""),
-                preferredWidth);
-        column.setCellFactory(ignored -> new RightAlignedCell());
+                width);
+        column.setStyle("-fx-alignment: CENTER-RIGHT;");
         return column;
     }
 
-    private static <T> TableColumn<T, Boolean> checkColumn(
+    private static <T> TableColumn<T, String> checkColumn(
             String title,
             Function<T, Boolean> value,
-            double preferredWidth)
+            double width)
     {
-        TableColumn<T, Boolean> column = new TableColumn<>(title);
-        column.setPrefWidth(preferredWidth);
-        column.setMinWidth(82);
-        column.setCellValueFactory(cell -> new ReadOnlyObjectWrapper<>(value.apply(cell.getValue())));
-        column.setCellFactory(ignored -> new CheckCell<>());
+        TableColumn<T, String> column = textColumn(
+                title,
+                row -> Boolean.TRUE.equals(value.apply(row)) ? "check" : "",
+                width);
+        column.setCellFactory(ignored -> new TableCell<>()
+        {
+            private final Label check = checkLabel();
+
+            @Override
+            protected void updateItem(String item, boolean empty)
+            {
+                super.updateItem(item, empty);
+                setText(null);
+                setAlignment(Pos.CENTER);
+                setGraphic(!empty && "check".equals(item) ? check : null);
+            }
+        });
         return column;
     }
 
     private static TableColumn<DashboardSnapshot.BudgetActual, String> budgetStatusColumn()
     {
-        TableColumn<DashboardSnapshot.BudgetActual, String> column = new TableColumn<>("Status");
-        column.setMinWidth(80);
-        column.setPrefWidth(90);
-        column.setCellValueFactory(cell -> new ReadOnlyStringWrapper(
-                budgetStatus(cell.getValue()).label));
-        column.setCellFactory(ignored -> new BudgetStatusCell());
+        TableColumn<DashboardSnapshot.BudgetActual, String> column = textColumn(
+                "Status",
+                row -> budgetStatus(row).label,
+                88);
+        column.setCellFactory(ignored -> new TableCell<>()
+        {
+            private final Label pill = new Label();
+
+            @Override
+            protected void updateItem(String item, boolean empty)
+            {
+                super.updateItem(item, empty);
+                setText(null);
+                setAlignment(Pos.CENTER);
+                pill.getStyleClass().setAll("status-pill");
+                if (empty || getTableRow() == null || getTableRow().getItem() == null)
+                {
+                    setGraphic(null);
+                    return;
+                }
+                BudgetStatus status = budgetStatus(getTableRow().getItem());
+                if (status == BudgetStatus.UNAVAILABLE)
+                {
+                    setGraphic(null);
+                    return;
+                }
+                pill.setText(status.label);
+                pill.getStyleClass().add(status.styleClass);
+                setGraphic(pill);
+            }
+        });
         return column;
     }
 
@@ -783,16 +664,10 @@ public final class DashboardWorkspacePanel implements AppPanel
         {
             return BudgetStatus.UNAVAILABLE;
         }
-
         BigDecimal budget = row.budget().orElseThrow();
         BigDecimal variance = row.actual().subtract(budget);
-        BigDecimal denominator = budget.abs().compareTo(BigDecimal.ZERO) == 0
-                ? BigDecimal.ONE
-                : budget.abs();
-        BigDecimal ratio = variance.abs().divide(
-                denominator,
-                8,
-                RoundingMode.HALF_UP);
+        BigDecimal denominator = budget.abs().signum() == 0 ? BigDecimal.ONE : budget.abs();
+        BigDecimal ratio = variance.abs().divide(denominator, 8, RoundingMode.HALF_UP);
         if (ratio.compareTo(ON_TRACK_TOLERANCE) <= 0)
         {
             return BudgetStatus.ON_TRACK;
@@ -800,17 +675,23 @@ public final class DashboardWorkspacePanel implements AppPanel
         return variance.signum() < 0 ? BudgetStatus.UNDER : BudgetStatus.OVER;
     }
 
-    private static Label statusPill(String rawStatus)
+    private static Label checkLabel()
     {
-        String statusText = rawStatus == null || rawStatus.isBlank() ? "Unknown" : titleCase(rawStatus);
-        Label label = new Label(statusText);
-        label.getStyleClass().addAll("status-pill", statusStyle(rawStatus));
+        Label label = new Label("✓");
+        label.getStyleClass().add("dashboard-check-badge");
         return label;
     }
 
-    private static String statusStyle(String status)
+    private static Label statusPill(String status)
     {
         String normalized = status == null ? "" : status.toUpperCase();
+        Label pill = new Label(titleCase(status));
+        pill.getStyleClass().addAll("status-pill", statusClass(normalized));
+        return pill;
+    }
+
+    private static String statusClass(String normalized)
+    {
         if (normalized.contains("COMPLETE") || normalized.contains("OPEN") || normalized.contains("ACTIVE"))
         {
             return "status-success";
@@ -828,24 +709,22 @@ public final class DashboardWorkspacePanel implements AppPanel
 
     private static String titleCase(String value)
     {
-        String normalized = value.toLowerCase().replace('_', ' ');
-        if (normalized.isBlank())
+        if (value == null || value.isBlank())
         {
-            return normalized;
+            return "Unknown";
         }
+        String normalized = value.toLowerCase().replace('_', ' ');
         return Character.toUpperCase(normalized.charAt(0)) + normalized.substring(1);
     }
 
-    private static String budgetCategoryLabel(DashboardSnapshot.BudgetActual row)
+    private static String categoryLabel(DashboardSnapshot.BudgetActual row)
     {
-        if (row.categoryCode() == null || row.categoryCode().isBlank())
-        {
-            return row.categoryName();
-        }
-        return row.categoryCode() + " " + row.categoryName();
+        return row.categoryCode() == null || row.categoryCode().isBlank()
+                ? row.categoryName()
+                : row.categoryCode() + " " + row.categoryName();
     }
 
-    private void setLoadMessage(String message, boolean error)
+    private void showMessage(String message, boolean error)
     {
         loadMessage.setText(message == null ? "" : message);
         loadMessage.getStyleClass().remove("dashboard-load-error");
@@ -887,75 +766,6 @@ public final class DashboardWorkspacePanel implements AppPanel
         {
             this.label = label;
             this.styleClass = styleClass;
-        }
-    }
-
-    private static final class RightAlignedCell extends TableCell<Object, String>
-    {
-        private RightAlignedCell()
-        {
-            setAlignment(Pos.CENTER_RIGHT);
-        }
-
-        @Override
-        protected void updateItem(String item, boolean empty)
-        {
-            super.updateItem(item, empty);
-            setText(empty ? null : item);
-        }
-    }
-
-    private static final class CheckCell<T> extends TableCell<T, Boolean>
-    {
-        private final Node check = UiIcons.icon(UiIcons.Glyph.CHECK, 13, "icon-white");
-        private final HBox badge = new HBox(check);
-
-        private CheckCell()
-        {
-            badge.setAlignment(Pos.CENTER);
-            badge.getStyleClass().add("dashboard-check-badge");
-            setAlignment(Pos.CENTER);
-        }
-
-        @Override
-        protected void updateItem(Boolean item, boolean empty)
-        {
-            super.updateItem(item, empty);
-            setText(null);
-            setGraphic(!empty && Boolean.TRUE.equals(item) ? badge : null);
-        }
-    }
-
-    private static final class BudgetStatusCell
-            extends TableCell<DashboardSnapshot.BudgetActual, String>
-    {
-        private final Label pill = new Label();
-
-        private BudgetStatusCell()
-        {
-            setAlignment(Pos.CENTER);
-            pill.getStyleClass().add("status-pill");
-        }
-
-        @Override
-        protected void updateItem(String item, boolean empty)
-        {
-            super.updateItem(item, empty);
-            pill.getStyleClass().removeAll(
-                    "status-success",
-                    "status-warning",
-                    "status-danger",
-                    "status-neutral");
-            if (empty || item == null || item.isBlank() || getTableRow().getItem() == null)
-            {
-                setGraphic(null);
-                return;
-            }
-
-            BudgetStatus status = budgetStatus(getTableRow().getItem());
-            pill.setText(status.label);
-            pill.getStyleClass().add(status.styleClass);
-            setGraphic(pill);
         }
     }
 }
