@@ -24,7 +24,6 @@ import org.nonprofitbookkeeping.service.dashboard.DashboardSnapshot;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Comparator;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -260,9 +259,13 @@ public class DashboardPanel implements AppPanel
                 quickLink("Ledger Register", "Review entered transactions",
                         () -> DrillThroughCoordinator.openLedgerWithContext("Dashboard quick link")),
                 quickLink("Reconcile Bank Account", "Open reconciliation workspace",
-                        () -> DrillThroughCoordinator.openPanel(AppPanelId.RECONCILIATION_RUNS)),
+                        () -> DrillThroughCoordinator.openPanelWithContext(
+                                AppPanelId.RECONCILIATION_RUNS,
+                                "Dashboard quick link")),
                 quickLink("Reports Center", "Open the report library",
-                        () -> DrillThroughCoordinator.openPanel(AppPanelId.REPORT_LIBRARY)));
+                        () -> DrillThroughCoordinator.openPanelWithContext(
+                                AppPanelId.REPORT_LIBRARY,
+                                "Dashboard quick link")));
     }
 
     private static VBox kpi(String heading, String subtitle, Label value, String note)
