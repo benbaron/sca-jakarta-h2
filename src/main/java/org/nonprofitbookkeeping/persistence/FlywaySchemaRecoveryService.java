@@ -11,7 +11,8 @@ import java.util.Optional;
 
 /**
  * Recovers a complete current application schema whose Flyway history table is
- * missing or empty. Partial schemas are never modified automatically.
+ * missing, empty, or contains only non-versioned and failed migration rows.
+ * Partial schemas are never modified automatically.
  */
 final class FlywaySchemaRecoveryService
 {
@@ -58,10 +59,10 @@ final class FlywaySchemaRecoveryService
             {
                 return Optional.empty();
             }
-            if (historyState == HistoryState.UNUSABLE)
+            if (historyState == HistoryState.MALFORMED)
             {
                 throw new IllegalStateException(
-                        "Flyway history contains rows but no successful versioned migration. "
+                        "Flyway history table has an unexpected structure. "
                                 + "No automatic recovery was attempted.");
             }
 
@@ -69,6 +70,12 @@ final class FlywaySchemaRecoveryService
                     .anyMatch(table -> tableExistsUnchecked(connection, table));
             if (!anyApplicationTable)
             {
+                if (historyState == HistoryState.UNTRACKED_ROWS)
+                {
+                    throw new IllegalStateException(
+                            "Flyway history contains rows but the application schema is absent. "
+                                    + "No automatic recovery was attempted.");
+                }
                 return Optional.empty();
             }
 
@@ -79,9 +86,9 @@ final class FlywaySchemaRecoveryService
                                 + "No tables were deleted or recreated.");
             }
 
-            if (historyState == HistoryState.EMPTY)
+            if (historyState != HistoryState.ABSENT)
             {
-                archiveEmptyHistoryTable(connection);
+                archiveHistoryTable(connection);
             }
             return Optional.of(CURRENT_VERSION);
         }
@@ -129,16 +136,18 @@ final class FlywaySchemaRecoveryService
         String versionColumn = findColumnName(connection, actualHistoryTable, "version");
         if (successColumn == null || versionColumn == null)
         {
-            return HistoryState.UNUSABLE;
+            return HistoryState.MALFORMED;
         }
 
         String sql = "SELECT COUNT(*) FROM " + quoteIdentifier(actualHistoryTable)
                 + " WHERE " + quoteIdentifier(successColumn) + " = TRUE"
                 + " AND " + quoteIdentifier(versionColumn) + " IS NOT NULL";
-        return scalarLong(connection, sql) > 0 ? HistoryState.TRACKED : HistoryState.UNUSABLE;
+        return scalarLong(connection, sql) > 0
+                ? HistoryState.TRACKED
+                : HistoryState.UNTRACKED_ROWS;
     }
 
-    private static void archiveEmptyHistoryTable(Connection connection) throws SQLException
+    private static void archiveHistoryTable(Connection connection) throws SQLException
     {
         String actualHistoryTable = findTableName(connection, HISTORY_TABLE);
         if (actualHistoryTable == null)
@@ -148,12 +157,6 @@ final class FlywaySchemaRecoveryService
 
         long rowCount = scalarLong(connection,
                 "SELECT COUNT(*) FROM " + quoteIdentifier(actualHistoryTable));
-        if (rowCount != 0)
-        {
-            throw new IllegalStateException(
-                    "Flyway history changed while preparing recovery; no automatic recovery was attempted");
-        }
-
         String archivedName = HISTORY_TABLE + "_orphaned_" + System.currentTimeMillis();
         try (Statement statement = connection.createStatement())
         {
@@ -161,7 +164,8 @@ final class FlywaySchemaRecoveryService
                     + " AS SELECT * FROM " + quoteIdentifier(actualHistoryTable));
             statement.execute("DROP TABLE " + quoteIdentifier(actualHistoryTable));
         }
-        System.err.println("[NPBK] Archived empty Flyway history table as " + archivedName + ".");
+        System.err.println("[NPBK] Archived Flyway history table as " + archivedName
+                + " with " + rowCount + " row(s).");
     }
 
     private static long scalarLong(Connection connection, String sql) throws SQLException
@@ -246,7 +250,8 @@ final class FlywaySchemaRecoveryService
         ABSENT,
         EMPTY,
         TRACKED,
-        UNUSABLE
+        UNTRACKED_ROWS,
+        MALFORMED
     }
 
     private record ColumnMarker(String tableName, String columnName)
