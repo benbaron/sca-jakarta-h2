@@ -1,6 +1,6 @@
 # Dashboard UI experiment
 
-This standalone JavaFX module implements the proposed SCA-Jakarta main-screen mockup as an isolated experiment.
+This standalone JavaFX module preserves the original proposed SCA-Jakarta main-screen mockup as an isolated visual reference.
 
 It intentionally uses fictional in-memory data. It does not initialize CDI, JPA, Flyway, or the production H2 database, and therefore cannot modify accounting data.
 
@@ -54,6 +54,12 @@ The launcher constrains the initial window to 90% of the usable display area, ca
 8. Evaluate the information density at 100%, 125%, and 150% display scaling.
 9. Record navigation labels that appear redundant or unclear.
 
-## Integration boundary
+## Production integration
 
-This module is not yet the production application shell. A later focused slice can move the approved shell into the main UI package, connect it to existing panels, and replace sample values with read-only service projections from the SCA-Jakarta database.
+The production dashboard now lives at:
+
+```text
+src/main/java/org/nonprofitbookkeeping/ui/DashboardExperiment.java
+```
+
+The production class retains the experiment's responsive card grid, tables, and quick links, but obtains values from `DashboardQueryService` and the selected H2 database. The standalone module remains deliberately disconnected so it can still be used as a visual reference without touching accounting data.
