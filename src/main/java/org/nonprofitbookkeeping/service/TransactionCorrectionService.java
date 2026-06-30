@@ -3,6 +3,8 @@ package org.nonprofitbookkeeping.service;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import org.nonprofitbookkeeping.model.AccountingPeriod;
+import org.nonprofitbookkeeping.model.AccountingPeriodStatus;
 import org.nonprofitbookkeeping.model.AuditEvent;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
@@ -41,6 +43,9 @@ public class TransactionCorrectionService
             {
                 Txn txn = requireTransaction(em, transactionId);
                 requireEntered(txn);
+                requireOpenPeriodIfConfigured(em, txn.getTxnDate(), "edit transaction");
+                requireOpenPeriodIfConfigured(em, transactionDate, "move transaction");
+
                 String before = snapshot(txn);
                 txn.setTxnDate(transactionDate);
                 txn.setMemo(blankToNull(memo));
@@ -68,6 +73,8 @@ public class TransactionCorrectionService
             {
                 Txn txn = requireTransaction(em, transactionId);
                 requireEntered(txn);
+                requireOpenPeriodIfConfigured(em, txn.getTxnDate(), "delete transaction");
+
                 AuditEvent event = audit(actor, "TRANSACTION_DELETED", txn, snapshot(txn), null, reason);
                 event.setEntityId(Long.toString(transactionId));
                 em.persist(event);
@@ -98,8 +105,11 @@ public class TransactionCorrectionService
             {
                 Txn original = requireTransaction(em, transactionId);
                 requireEntered(original);
+                requireOpenPeriodIfConfigured(em, reversalDate, "create reversal");
+
                 List<TxnSplit> originalSplits = em.createQuery(
-                        "from TxnSplit s where s.txn.id = :id order by s.id", TxnSplit.class)
+                                "from TxnSplit s where s.txn.id = :id order by s.id",
+                                TxnSplit.class)
                         .setParameter("id", transactionId)
                         .getResultList();
                 validateBalanced(originalSplits);
@@ -139,6 +149,28 @@ public class TransactionCorrectionService
                 rollback(em);
                 throw ex;
             }
+        }
+    }
+
+    private static void requireOpenPeriodIfConfigured(EntityManager em, LocalDate date, String operation)
+    {
+        List<AccountingPeriod> periods = em.createQuery("""
+                from AccountingPeriod p
+                where p.startDate <= :date
+                  and p.endDate >= :date
+                order by p.fiscalYear, p.periodNumber
+                """, AccountingPeriod.class)
+                .setParameter("date", date)
+                .setMaxResults(2)
+                .getResultList();
+
+        if (periods.size() > 1)
+        {
+            throw new IllegalStateException("Multiple accounting periods contain date " + date);
+        }
+        if (!periods.isEmpty() && periods.get(0).getStatus() == AccountingPeriodStatus.CLOSED)
+        {
+            throw new ClosedAccountingPeriodException(periods.get(0).getId(), date, operation);
         }
     }
 
