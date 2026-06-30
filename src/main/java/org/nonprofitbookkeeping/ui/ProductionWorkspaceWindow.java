@@ -8,6 +8,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Separator;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.ToolBar;
 import javafx.scene.layout.BorderPane;
@@ -15,8 +16,14 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Production JavaFX workspace shell.
@@ -26,15 +33,43 @@ public class ProductionWorkspaceWindow extends BorderPane
     private static final double LEFT_DIVIDER = 0.20;
     private static final double RIGHT_DIVIDER = 0.80;
 
+    private final AppStateStore stateStore;
+    private final DatabaseSessionController databaseSessionController;
     private final PanelHost panelHost = new PanelHost();
     private final InspectorPane inspectorPane = new InspectorPane();
     private final NavigationPane navigationPane;
     private final SplitPane workspace = new SplitPane();
     private final Label activePanelLabel = new Label();
     private final Label activePeriodLabel = new Label();
+    private final Label activeDatabaseLabel = new Label();
+    private RuntimeException databaseFailure;
 
     public ProductionWorkspaceWindow()
     {
+        this(UserAppStateStore.create(), UiServiceRegistry::reconnectToDatabase);
+    }
+
+    ProductionWorkspaceWindow(
+            AppStateStore stateStore,
+            DatabaseSessionController.Connector connector)
+    {
+        this.stateStore = Objects.requireNonNull(stateStore, "stateStore");
+        this.databaseSessionController = new DatabaseSessionController(
+                MainWindow.sharedSessionState(),
+                stateStore,
+                connector);
+
+        try
+        {
+            databaseSessionController.restorePersistedSelection();
+        }
+        catch (RuntimeException ex)
+        {
+            databaseFailure = ex;
+            System.err.println("[NPBK] Could not restore persisted database selection: "
+                    + ex.getMessage());
+        }
+
         navigationPane = new NavigationPane(
                 this::openPanel,
                 inspectorPane::show,
@@ -42,23 +77,48 @@ public class ProductionWorkspaceWindow extends BorderPane
 
         ActivePeriodContext.activeDateProperty().addListener(
                 (observable, oldDate, newDate) -> updateActivePeriodLabel());
+        MainWindow.sharedSessionState().onDatabaseSelectionChanged(
+                ignored -> updateActiveDatabaseLabel());
 
         setTop(buildTopChrome());
         setCenter(buildWorkspace());
         setBottom(buildStatusBar());
 
-        openPanel(AppPanelId.DASHBOARD);
+        updateActiveDatabaseLabel();
+        showDashboardOrRecovery(databaseFailure);
     }
 
     public void openPanel(AppPanelId panelId)
     {
-        panelHost.show(panelId);
-        activePanelLabel.setText("Workspace: " + panelHost.getActiveTitle());
+        if (databaseFailure != null && panelId != AppPanelId.DASHBOARD)
+        {
+            inspectorPane.show(
+                    "Database unavailable",
+                    "Select, repair, or create a database from the Dashboard or File menu before opening accounting workspaces.");
+            showRecoveryDashboard(databaseFailure);
+            return;
+        }
+
+        try
+        {
+            panelHost.show(panelId);
+            activePanelLabel.setText("Workspace: " + panelHost.getActiveTitle());
+        }
+        catch (RuntimeException ex)
+        {
+            if (panelId == AppPanelId.DASHBOARD)
+            {
+                showRecoveryDashboard(ex);
+                return;
+            }
+            throw ex;
+        }
     }
 
     public void saveActivePanel()
     {
         panelHost.saveActive();
+        stateStore.saveDatabaseSelection(MainWindow.sharedSessionState().databaseSelection());
     }
 
     public void newItemInActivePanel()
@@ -101,6 +161,22 @@ public class ProductionWorkspaceWindow extends BorderPane
         return workspace;
     }
 
+    Path activeDatabasePathForTests()
+    {
+        return databaseSessionController.activeDatabasePath();
+    }
+
+    boolean databaseRecoveryVisibleForTests()
+    {
+        return databaseFailure != null
+                && panelHost.activeRoot() instanceof BorderPane;
+    }
+
+    void connectDatabaseForTests(Path databaseFile)
+    {
+        connectDatabase(databaseFile);
+    }
+
     private VBox buildTopChrome()
     {
         VBox top = new VBox(buildMenuBar(), buildToolBar());
@@ -111,6 +187,12 @@ public class ProductionWorkspaceWindow extends BorderPane
     private MenuBar buildMenuBar()
     {
         Menu file = new Menu("File");
+        MenuItem selectDatabase = new MenuItem("Select Database File…");
+        selectDatabase.setOnAction(event -> selectDatabaseFile());
+        MenuItem createDatabase = new MenuItem("Create New Database…");
+        createDatabase.setOnAction(event -> createNewDatabase());
+        MenuItem repairDatabase = new MenuItem("Retry / Repair Current Database");
+        repairDatabase.setOnAction(event -> repairCurrentDatabase());
         MenuItem save = new MenuItem("Save");
         save.setOnAction(event -> saveActivePanel());
         MenuItem exit = new MenuItem("Exit");
@@ -121,7 +203,13 @@ public class ProductionWorkspaceWindow extends BorderPane
                 getScene().getWindow().hide();
             }
         });
-        file.getItems().addAll(save, exit);
+        file.getItems().addAll(
+                selectDatabase,
+                createDatabase,
+                repairDatabase,
+                new SeparatorMenuItem(),
+                save,
+                exit);
 
         Menu view = new Menu("View");
         MenuItem navigation = new MenuItem("Toggle Navigation");
@@ -183,6 +271,8 @@ public class ProductionWorkspaceWindow extends BorderPane
                 periodPicker,
                 setPeriodButton,
                 spacer,
+                activeDatabaseLabel,
+                new Separator(),
                 activePeriodLabel);
     }
 
@@ -203,17 +293,154 @@ public class ProductionWorkspaceWindow extends BorderPane
         return statusBar;
     }
 
+    private void showDashboardOrRecovery(RuntimeException startupFailure)
+    {
+        if (startupFailure != null)
+        {
+            showRecoveryDashboard(startupFailure);
+            return;
+        }
+
+        try
+        {
+            databaseFailure = null;
+            openPanel(AppPanelId.DASHBOARD);
+        }
+        catch (RuntimeException ex)
+        {
+            showRecoveryDashboard(ex);
+        }
+    }
+
+    private void showRecoveryDashboard(RuntimeException failure)
+    {
+        databaseFailure = failure;
+        DatabaseRecoveryPanel recoveryPanel = new DatabaseRecoveryPanel(
+                databaseSessionController.activeDatabasePath(),
+                failure,
+                this::repairCurrentDatabase,
+                this::selectDatabaseFile,
+                this::createNewDatabase);
+        panelHost.showReplacement(AppPanelId.DASHBOARD, recoveryPanel);
+        activePanelLabel.setText("Workspace: Dashboard — database attention required");
+        inspectorPane.show(
+                "Database attention required",
+                DatabaseRecoveryPanel.safeMessage(failure));
+    }
+
+    private void repairCurrentDatabase()
+    {
+        connectDatabase(databaseSessionController.activeDatabasePath());
+    }
+
+    private void selectDatabaseFile()
+    {
+        chooseOpenDatabaseFile().ifPresent(this::connectDatabase);
+    }
+
+    private void createNewDatabase()
+    {
+        Optional<Path> selected = chooseNewDatabaseFile();
+        if (selected.isEmpty())
+        {
+            return;
+        }
+
+        Path target = normalizeNewDatabasePath(selected.get());
+        if (Files.exists(target))
+        {
+            inspectorPane.show(
+                    "Database not created",
+                    "A file already exists at " + target.toAbsolutePath()
+                            + ". Choose a new file name or select the existing database instead.");
+            return;
+        }
+        connectDatabase(target);
+    }
+
+    private void connectDatabase(Path databaseFile)
+    {
+        try
+        {
+            databaseSessionController.connect(databaseFile);
+            databaseFailure = null;
+            panelHost.reset();
+            updateActiveDatabaseLabel();
+            inspectorPane.show(
+                    "Database connected",
+                    "Active database: " + databaseSessionController.activeDatabasePath().toAbsolutePath());
+            showDashboardOrRecovery(null);
+        }
+        catch (RuntimeException ex)
+        {
+            showRecoveryDashboard(ex);
+        }
+    }
+
+    private Optional<Path> chooseOpenDatabaseFile()
+    {
+        if (getScene() == null || getScene().getWindow() == null)
+        {
+            inspectorPane.show("Database selection unavailable", "The application window is not ready.");
+            return Optional.empty();
+        }
+
+        FileChooser chooser = databaseFileChooser("Select Database File");
+        File selected = chooser.showOpenDialog(getScene().getWindow());
+        return selected == null ? Optional.empty() : Optional.of(selected.toPath());
+    }
+
+    private Optional<Path> chooseNewDatabaseFile()
+    {
+        if (getScene() == null || getScene().getWindow() == null)
+        {
+            inspectorPane.show("Database creation unavailable", "The application window is not ready.");
+            return Optional.empty();
+        }
+
+        FileChooser chooser = databaseFileChooser("Create New Database");
+        chooser.setInitialFileName("sca-ledger.mv.db");
+        File selected = chooser.showSaveDialog(getScene().getWindow());
+        return selected == null ? Optional.empty() : Optional.of(selected.toPath());
+    }
+
+    private static FileChooser databaseFileChooser(String title)
+    {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle(title);
+        chooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("H2 Database Files", "*.mv.db", "*.db"));
+        return chooser;
+    }
+
+    static Path normalizeNewDatabasePath(Path path)
+    {
+        String raw = path.toString();
+        return raw.toLowerCase().endsWith(".mv.db")
+                ? path
+                : Path.of(raw + ".mv.db");
+    }
+
     private void updateActivePeriodLabel()
     {
         activePeriodLabel.setText("Active period: " + ActivePeriodContext.get());
     }
 
+    private void updateActiveDatabaseLabel()
+    {
+        Path path = databaseSessionController.activeDatabasePath();
+        activeDatabaseLabel.setText("DB: " + path.getFileName());
+        activeDatabaseLabel.setTooltip(new javafx.scene.control.Tooltip(path.toAbsolutePath().toString()));
+    }
+
     private NavigationPane.InspectorContext inspectorContext()
     {
         AppPanelId active = panelHost.activePanelId();
-        String capabilities = active == null ? "No active panel" : "Active panel: " + panelHost.getActiveTitle();
+        String capabilities = databaseFailure == null
+                ? (active == null ? "No active panel" : "Active panel: " + panelHost.getActiveTitle())
+                : "Database unavailable: select, repair, or create a database";
         return new NavigationPane.InspectorContext(
-                "Active database",
+                databaseSessionController.activeDatabasePath().toString(),
                 ActivePeriodContext.get().toString(),
                 capabilities);
     }
