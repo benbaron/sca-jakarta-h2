@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -104,7 +105,7 @@ public class DatabaseMigrationRecoveryTest
 
     private static String jdbcUrl(String name)
     {
-        return "jdbc:h2:mem:" + name
+        return "jdbc:h2:mem:" + name + '-' + UUID.randomUUID()
                 + ";MODE=PostgreSQL"
                 + ";DATABASE_TO_LOWER=TRUE"
                 + ";DEFAULT_NULL_ORDERING=HIGH"
