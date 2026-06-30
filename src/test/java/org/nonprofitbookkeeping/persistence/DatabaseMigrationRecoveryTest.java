@@ -39,6 +39,9 @@ public class DatabaseMigrationRecoveryTest
             assertEquals(1L, scalarLong(statement,
                     "SELECT COUNT(*) FROM flyway_schema_history "
                             + "WHERE version = '48' AND type = 'BASELINE' AND success = TRUE"));
+            assertEquals(1L, scalarLong(statement,
+                    "SELECT COUNT(*) FROM information_schema.tables "
+                            + "WHERE lower(table_name) LIKE 'flyway_schema_history_orphaned_%'"));
         }
     }
 
