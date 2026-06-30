@@ -1,6 +1,5 @@
 package org.nonprofitbookkeeping.ui;
 
-import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
@@ -15,7 +14,6 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
@@ -42,7 +40,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-/** Database-backed dashboard home rebuilt from the approved visual reference. */
+/** Database-backed dashboard home rebuilt from the supplied visual reference. */
 public final class DashboardHomePanel implements AppPanel
 {
     private static final int RECENT_TRANSACTION_LIMIT = 25;
@@ -56,7 +54,7 @@ public final class DashboardHomePanel implements AppPanel
     private final GridPane dashboardGrid = new GridPane();
     private final Label loadMessage = new Label();
     private final Label bookCash = moneyLabel();
-    private final Label clearedCash = new Label("Not reconciled");
+    private final Label clearedCash = new Label("Cleared balance not available");
     private final Label cashAsOf = new Label();
     private final Label yearToDateSurplus = moneyLabel();
     private final Label surplusBudget = new Label("Budget not configured");
@@ -128,7 +126,8 @@ public final class DashboardHomePanel implements AppPanel
                     showLoadMessage("", false);
                 },
                 ex -> showLoadMessage(
-                        "Dashboard data could not be loaded: " + UiErrors.safeMessage(ex), true));
+                        "Dashboard data could not be loaded: " + UiErrors.safeMessage(ex),
+                        true));
     }
 
     void applySnapshot(DashboardSnapshot snapshot)
@@ -142,8 +141,10 @@ public final class DashboardHomePanel implements AppPanel
 
         Map<String, Long> counts = snapshot.openItems().countsByKind();
         long genericBankItems = counts.getOrDefault("OUTSTANDING_BANK_ITEM", 0L);
-        outstandingChecks.setText(Long.toString(counts.getOrDefault("OUTSTANDING_CHECK", genericBankItems)));
-        depositsInTransit.setText(Long.toString(counts.getOrDefault("DEPOSIT_IN_TRANSIT", 0L)));
+        outstandingChecks.setText(Long.toString(
+                counts.getOrDefault("OUTSTANDING_CHECK", genericBankItems)));
+        depositsInTransit.setText(Long.toString(
+                counts.getOrDefault("DEPOSIT_IN_TRANSIT", 0L)));
         receivables.setText(Long.toString(counts.getOrDefault("RECEIVABLE", 0L)));
         payables.setText(Long.toString(counts.getOrDefault("PAYABLE", 0L)));
         totalOpenItems.setText(Long.toString(snapshot.openItems().totalOpenItems()));
@@ -155,6 +156,7 @@ public final class DashboardHomePanel implements AppPanel
         recentTransactions.getItems().setAll(snapshot.recentTransactions());
         reconciliations.getItems().setAll(snapshot.reconciliations());
         budgetActuals.getItems().setAll(snapshot.budgetActuals());
+        DashboardSnapshotPublisher.publish(snapshot);
     }
 
     private void buildView()
@@ -197,7 +199,8 @@ public final class DashboardHomePanel implements AppPanel
         scrollPane.setPannable(true);
         scrollPane.getStyleClass().add("dashboard-scroll");
         scrollPane.viewportBoundsProperty().addListener(
-                (observable, oldBounds, bounds) -> DashboardLayoutPolicy.apply(dashboardGrid, bounds.getWidth()));
+                (observable, oldBounds, bounds) ->
+                        DashboardLayoutPolicy.apply(dashboardGrid, bounds.getWidth()));
         return scrollPane;
     }
 
@@ -206,7 +209,12 @@ public final class DashboardHomePanel implements AppPanel
         HBox amountRow = new HBox(12, bookCash, cashTrend);
         amountRow.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(cashTrend, Priority.ALWAYS);
-        VBox body = new VBox(8, muted("All Bank Accounts"), amountRow, clearedCash, mutedNode(cashAsOf));
+        VBox body = new VBox(
+                8,
+                muted("All Bank Accounts"),
+                amountRow,
+                clearedCash,
+                mutedNode(cashAsOf));
         return card("Cash Balances", body, null);
     }
 
@@ -216,7 +224,12 @@ public final class DashboardHomePanel implements AppPanel
         amountRow.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(surplusBars, Priority.ALWAYS);
         surplusComparison.getStyleClass().add("dashboard-emphasis");
-        VBox body = new VBox(8, muted("All Funds"), amountRow, surplusBudget, surplusComparison);
+        VBox body = new VBox(
+                8,
+                muted("All Funds"),
+                amountRow,
+                surplusBudget,
+                surplusComparison);
         return card("YTD Surplus (Deficit)", body, null);
     }
 
@@ -228,7 +241,10 @@ public final class DashboardHomePanel implements AppPanel
         budgetPerformanceEmpty.setWrapText(true);
         budgetPerformanceEmpty.getStyleClass().add("muted");
         StackPane body = new StackPane(budgetPerformance, budgetPerformanceEmpty);
-        return card("Budget Performance", new VBox(5, muted("YTD"), body, muted("Based on Budget Categories")), null);
+        return card(
+                "Budget Performance",
+                new VBox(5, muted("YTD"), body, muted("Based on Budget Categories")),
+                null);
     }
 
     private Node openItemsCard()
@@ -242,7 +258,11 @@ public final class DashboardHomePanel implements AppPanel
         addKeyValue(values, 3, "Payables", payables);
         Region line = new Region();
         line.getStyleClass().add("dashboard-rule");
-        VBox body = new VBox(10, values, line, keyValueRow("Total Open Items", totalOpenItems));
+        VBox body = new VBox(
+                10,
+                values,
+                line,
+                keyValueRow("Total Open Items", totalOpenItems));
         return card("Open Items", body, null);
     }
 
@@ -251,21 +271,34 @@ public final class DashboardHomePanel implements AppPanel
         configureRecentTransactions();
         Label showing = muted("Showing up to " + RECENT_TRANSACTION_LIMIT + " transactions");
         Hyperlink viewLedger = link("View Ledger Register  →", AppPanelId.LEDGER_REGISTER);
-        return card("Recent Transactions", recentTransactions, footer(showing, viewLedger));
+        return card(
+                "Recent Transactions",
+                recentTransactions,
+                footer(showing, viewLedger));
     }
 
     private Node reconciliationCard()
     {
         configureReconciliations();
-        Hyperlink go = link("Go to Banking & Reconciliation  →", AppPanelId.RECONCILIATION_RUNS);
-        return card("Bank Reconciliation Status", reconciliations, footer(new Label(), go));
+        Hyperlink go = link(
+                "Go to Banking & Reconciliation  →",
+                AppPanelId.RECONCILIATION_RUNS);
+        return card(
+                "Bank Reconciliation Status",
+                reconciliations,
+                footer(new Label(), go));
     }
 
     private Node budgetActualCard()
     {
         configureBudgetActuals();
-        Hyperlink go = link("View Budget vs Actual Report  →", AppPanelId.BUDGET_VS_ACTUAL);
-        return card("Budget vs Actual (YTD)", budgetActuals, footer(new Label(), go));
+        Hyperlink go = link(
+                "View Budget vs Actual Report  →",
+                AppPanelId.BUDGET_VS_ACTUAL);
+        return card(
+                "Budget vs Actual (YTD)",
+                budgetActuals,
+                footer(new Label(), go));
     }
 
     private Node quickLinksCard()
@@ -273,11 +306,20 @@ public final class DashboardHomePanel implements AppPanel
         VBox links = new VBox(
                 9,
                 quickLink("▣", "New Transaction", "Record a new transaction", this::onNew),
-                quickLink("▤", "Enter Journal Entry", "Create a manual journal entry",
+                quickLink(
+                        "▤",
+                        "Enter Journal Entry",
+                        "Create a manual journal entry",
                         () -> open(AppPanelId.TXN_EDITOR, "Dashboard: journal entry")),
-                quickLink("⇩", "Import SCLX Workbook", "Import from the bookkeeping workbook",
+                quickLink(
+                        "⇩",
+                        "Import SCLX Workbook",
+                        "Import from the bookkeeping workbook",
                         () -> open(AppPanelId.IMPORT_PREVIEW, "Dashboard: import")),
-                quickLink("✓", "Reconcile Bank Account", "Open reconciliation window",
+                quickLink(
+                        "✓",
+                        "Reconcile Bank Account",
+                        "Open reconciliation window",
                         () -> open(AppPanelId.RECONCILIATION_RUNS, "Dashboard: reconciliation")));
         Hyperlink all = link("All Quick Links  →", AppPanelId.DASHBOARD);
         return card("Quick Links", links, footer(new Label(), all));
@@ -286,22 +328,24 @@ public final class DashboardHomePanel implements AppPanel
     private void configureRecentTransactions()
     {
         recentTransactions.getStyleClass().add("dashboard-table");
-        recentTransactions.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        recentTransactions.setColumnResizePolicy(
+                TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         recentTransactions.setPrefHeight(210);
         recentTransactions.setFixedCellSize(28);
         recentTransactions.getColumns().setAll(
-                textColumn("Date", row -> DISPLAY_DATE.format(row.transactionDate()), 85),
-                textColumn("Txn #", row -> Long.toString(row.transactionId()), 62),
-                textColumn("Description", DashboardSnapshot.RecentTransaction::description, 150),
-                textColumn("Account", DashboardSnapshot.RecentTransaction::accountSummary, 150),
-                textColumn("Fund", DashboardSnapshot.RecentTransaction::fundSummary, 105),
-                amountColumn("Debit", DashboardSnapshot.RecentTransaction::debitTotal, 82),
-                amountColumn("Credit", DashboardSnapshot.RecentTransaction::creditTotal, 82),
-                optionalAmountColumn("Balance", DashboardSnapshot.RecentTransaction::runningBankBalance, 90),
-                booleanColumn("Affects Bank", DashboardSnapshot.RecentTransaction::affectsBank, 82),
-                booleanColumn("Affects Budget", DashboardSnapshot.RecentTransaction::affectsBudget, 92),
-                statusColumn("Status", DashboardSnapshot.RecentTransaction::status, 82));
-        recentTransactions.setPlaceholder(new Label("No transactions through the selected date."));
+                column("Date", row -> DISPLAY_DATE.format(row.transactionDate()), 85),
+                column("Txn #", row -> Long.toString(row.transactionId()), 62),
+                column("Description", DashboardSnapshot.RecentTransaction::description, 150),
+                column("Account", DashboardSnapshot.RecentTransaction::accountSummary, 150),
+                column("Fund", DashboardSnapshot.RecentTransaction::fundSummary, 105),
+                column("Debit", row -> amountText(row.debitTotal()), 82),
+                column("Credit", row -> amountText(row.creditTotal()), 82),
+                column("Balance", row -> optionalAmountText(row.runningBankBalance()), 90),
+                column("Affects Bank", row -> mark(row.affectsBank()), 82),
+                column("Affects Budget", row -> mark(row.affectsBudget()), 92),
+                column("Status", row -> displayStatus(row.status()), 82));
+        recentTransactions.setPlaceholder(
+                new Label("No transactions through the selected date."));
         recentTransactions.setRowFactory(table ->
         {
             TableRow<DashboardSnapshot.RecentTransaction> row = new TableRow<>();
@@ -320,30 +364,46 @@ public final class DashboardHomePanel implements AppPanel
     private void configureReconciliations()
     {
         reconciliations.getStyleClass().add("dashboard-table");
-        reconciliations.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        reconciliations.setColumnResizePolicy(
+                TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         reconciliations.setPrefHeight(155);
         reconciliations.setFixedCellSize(28);
         reconciliations.getColumns().setAll(
-                textColumn("Bank / Format", DashboardSnapshot.ReconciliationStatus::bankFormat, 150),
-                textColumn("Statement Date", row -> DISPLAY_DATE.format(row.statementEndingOn()), 100),
-                statusColumn("Status", DashboardSnapshot.ReconciliationStatus::status, 100),
-                textColumn("Imported", row -> Integer.toString(row.importedTransactionCount()), 70));
-        reconciliations.setPlaceholder(new Label("No reconciliation runs for the active organization."));
+                column(
+                        "Bank / Format",
+                        DashboardSnapshot.ReconciliationStatus::bankFormat,
+                        150),
+                column(
+                        "Statement Date",
+                        row -> DISPLAY_DATE.format(row.statementEndingOn()),
+                        100),
+                column(
+                        "Status",
+                        row -> displayStatus(row.status()),
+                        100),
+                column(
+                        "Imported",
+                        row -> Integer.toString(row.importedTransactionCount()),
+                        70));
+        reconciliations.setPlaceholder(
+                new Label("No reconciliation runs for the active organization."));
     }
 
     private void configureBudgetActuals()
     {
         budgetActuals.getStyleClass().add("dashboard-table");
-        budgetActuals.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        budgetActuals.setColumnResizePolicy(
+                TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         budgetActuals.setPrefHeight(155);
         budgetActuals.setFixedCellSize(28);
         budgetActuals.getColumns().setAll(
-                textColumn("Category", DashboardHomePanel::budgetCategoryLabel, 145),
-                optionalAmountColumn("Budget", DashboardSnapshot.BudgetActual::budget, 90),
-                amountColumn("Actual", DashboardSnapshot.BudgetActual::actual, 90),
-                optionalAmountColumn("Variance", DashboardSnapshot.BudgetActual::variance, 90),
-                percentColumn("%", DashboardSnapshot.BudgetActual::performancePercent, 55));
-        budgetActuals.setPlaceholder(new Label("No posted budget-category activity through the selected date."));
+                column("Category", DashboardHomePanel::budgetCategoryLabel, 145),
+                column("Budget", row -> optionalAmountText(row.budget()), 90),
+                column("Actual", row -> DashboardValueFormatter.money(row.actual()), 90),
+                column("Variance", row -> optionalAmountText(row.variance()), 90),
+                column("%", row -> percentText(row.performancePercent()), 55));
+        budgetActuals.setPlaceholder(
+                new Label("No posted budget-category activity through the selected date."));
     }
 
     private void applyCashTrend(List<DashboardSnapshot.RecentTransaction> transactions)
@@ -356,7 +416,9 @@ public final class DashboardHomePanel implements AppPanel
         {
             if (transaction.runningBankBalance().isPresent())
             {
-                series.getData().add(new XYChart.Data<>(index++, transaction.runningBankBalance().orElseThrow()));
+                series.getData().add(new XYChart.Data<>(
+                        index++,
+                        transaction.runningBankBalance().orElseThrow()));
             }
         }
         cashTrend.getData().setAll(series);
@@ -387,9 +449,13 @@ public final class DashboardHomePanel implements AppPanel
             }
             BigDecimal budget = row.budget().orElseThrow();
             BigDecimal denominator = budget.abs().compareTo(BigDecimal.ZERO) == 0
-                    ? BigDecimal.ONE : budget.abs();
+                    ? BigDecimal.ONE
+                    : budget.abs();
             BigDecimal variance = row.actual().subtract(budget);
-            BigDecimal ratio = variance.abs().divide(denominator, 8, RoundingMode.HALF_UP);
+            BigDecimal ratio = variance.abs().divide(
+                    denominator,
+                    8,
+                    RoundingMode.HALF_UP);
             if (ratio.compareTo(ON_TRACK_TOLERANCE) <= 0)
             {
                 onTrack++;
@@ -403,6 +469,7 @@ public final class DashboardHomePanel implements AppPanel
                 over++;
             }
         }
+
         List<PieChart.Data> slices = new ArrayList<>();
         if (onTrack > 0)
         {
@@ -424,7 +491,9 @@ public final class DashboardHomePanel implements AppPanel
         budgetPerformanceEmpty.setVisible(empty);
     }
 
-    private void applyBudgetComparison(List<DashboardSnapshot.BudgetActual> actuals, BigDecimal surplus)
+    private void applyBudgetComparison(
+            List<DashboardSnapshot.BudgetActual> actuals,
+            BigDecimal surplus)
     {
         BigDecimal totalBudget = actuals.stream()
                 .map(DashboardSnapshot.BudgetActual::budget)
@@ -437,9 +506,11 @@ public final class DashboardHomePanel implements AppPanel
             return;
         }
         surplusBudget.setText("Budget " + DashboardValueFormatter.money(totalBudget));
-        BigDecimal percent = surplus.divide(totalBudget.abs(), 4, RoundingMode.HALF_UP)
+        BigDecimal percent = surplus
+                .divide(totalBudget.abs(), 4, RoundingMode.HALF_UP)
                 .multiply(new BigDecimal("100"));
-        surplusComparison.setText(percent.setScale(1, RoundingMode.HALF_UP) + "% vs Budget");
+        surplusComparison.setText(
+                percent.setScale(1, RoundingMode.HALF_UP) + "% vs Budget");
     }
 
     private static LineChart<Number, Number> createCashTrend()
@@ -502,7 +573,11 @@ public final class DashboardHomePanel implements AppPanel
         return footer;
     }
 
-    private static HBox quickLink(String glyph, String title, String detail, Runnable action)
+    private static HBox quickLink(
+            String glyph,
+            String title,
+            String detail,
+            Runnable action)
     {
         Label icon = new Label(glyph);
         icon.getStyleClass().add("dashboard-quick-icon");
@@ -516,7 +591,11 @@ public final class DashboardHomePanel implements AppPanel
         return link;
     }
 
-    private static void addKeyValue(GridPane grid, int row, String key, Label value)
+    private static void addKeyValue(
+            GridPane grid,
+            int row,
+            String key,
+            Label value)
     {
         grid.add(new Label(key), 0, row);
         grid.add(value, 1, row);
@@ -545,55 +624,14 @@ public final class DashboardHomePanel implements AppPanel
         DrillThroughCoordinator.openPanelWithContext(panelId, context);
     }
 
-    private static <T> TableColumn<T, String> textColumn(String title, Function<T, String> value, double prefWidth)
+    private static <T> TableColumn<T, String> column(
+            String title,
+            Function<T, String> value,
+            double prefWidth)
     {
         TableColumn<T, String> column = new TableColumn<>(title);
-        column.setCellValueFactory(cell -> new ReadOnlyStringWrapper(value.apply(cell.getValue())));
-        column.setPrefWidth(prefWidth);
-        return column;
-    }
-
-    private static <T> TableColumn<T, BigDecimal> amountColumn(String title, Function<T, BigDecimal> value, double prefWidth)
-    {
-        TableColumn<T, BigDecimal> column = new TableColumn<>(title);
-        column.setCellValueFactory(cell -> new ReadOnlyObjectWrapper<>(value.apply(cell.getValue())));
-        column.setCellFactory(ignored -> new AmountCell());
-        column.setPrefWidth(prefWidth);
-        return column;
-    }
-
-    private static <T> TableColumn<T, Optional<BigDecimal>> optionalAmountColumn(
-            String title, Function<T, Optional<BigDecimal>> value, double prefWidth)
-    {
-        TableColumn<T, Optional<BigDecimal>> column = new TableColumn<>(title);
-        column.setCellValueFactory(cell -> new ReadOnlyObjectWrapper<>(value.apply(cell.getValue())));
-        column.setCellFactory(ignored -> new OptionalAmountCell());
-        column.setPrefWidth(prefWidth);
-        return column;
-    }
-
-    private static <T> TableColumn<T, Boolean> booleanColumn(String title, Function<T, Boolean> value, double prefWidth)
-    {
-        TableColumn<T, Boolean> column = new TableColumn<>(title);
-        column.setCellValueFactory(cell -> new ReadOnlyObjectWrapper<>(value.apply(cell.getValue())));
-        column.setCellFactory(ignored -> new BooleanMarkCell());
-        column.setPrefWidth(prefWidth);
-        return column;
-    }
-
-    private static <T> TableColumn<T, String> statusColumn(String title, Function<T, String> value, double prefWidth)
-    {
-        TableColumn<T, String> column = textColumn(title, value, prefWidth);
-        column.setCellFactory(ignored -> new StatusCell());
-        return column;
-    }
-
-    private static <T> TableColumn<T, Optional<BigDecimal>> percentColumn(
-            String title, Function<T, Optional<BigDecimal>> value, double prefWidth)
-    {
-        TableColumn<T, Optional<BigDecimal>> column = new TableColumn<>(title);
-        column.setCellValueFactory(cell -> new ReadOnlyObjectWrapper<>(value.apply(cell.getValue())));
-        column.setCellFactory(ignored -> new PercentCell());
+        column.setCellValueFactory(
+                cell -> new ReadOnlyStringWrapper(value.apply(cell.getValue())));
         column.setPrefWidth(prefWidth);
         return column;
     }
@@ -636,7 +674,49 @@ public final class DashboardHomePanel implements AppPanel
     private static String budgetCategoryLabel(DashboardSnapshot.BudgetActual row)
     {
         return row.categoryCode() == null || row.categoryCode().isBlank()
-                ? row.categoryName() : row.categoryCode() + " " + row.categoryName();
+                ? row.categoryName()
+                : row.categoryCode() + " " + row.categoryName();
+    }
+
+    private static String amountText(BigDecimal value)
+    {
+        return value == null || value.compareTo(BigDecimal.ZERO) == 0
+                ? ""
+                : DashboardValueFormatter.money(value);
+    }
+
+    private static String optionalAmountText(Optional<BigDecimal> value)
+    {
+        return value == null || value.isEmpty()
+                ? "—"
+                : DashboardValueFormatter.money(value.orElseThrow());
+    }
+
+    private static String percentText(Optional<BigDecimal> value)
+    {
+        return value == null || value.isEmpty()
+                ? "—"
+                : value.orElseThrow().setScale(1, RoundingMode.HALF_UP) + "%";
+    }
+
+    private static String mark(boolean value)
+    {
+        return value ? "✓" : "";
+    }
+
+    private static String displayStatus(String status)
+    {
+        if (status == null || status.isBlank())
+        {
+            return "";
+        }
+        if (status.equalsIgnoreCase("ENTERED"))
+        {
+            return "● Posted";
+        }
+        String lower = status.toLowerCase().replace('_', ' ');
+        String display = Character.toUpperCase(lower.charAt(0)) + lower.substring(1);
+        return "● " + display;
     }
 
     private void showLoadMessage(String message, boolean error)
@@ -650,98 +730,5 @@ public final class DashboardHomePanel implements AppPanel
         boolean visible = message != null && !message.isBlank();
         loadMessage.setManaged(visible);
         loadMessage.setVisible(visible);
-    }
-
-    private static final class AmountCell extends TableCell<Object, BigDecimal>
-    {
-        @Override
-        protected void updateItem(BigDecimal item, boolean empty)
-        {
-            super.updateItem(item, empty);
-            setText(empty || item == null || item.compareTo(BigDecimal.ZERO) == 0
-                    ? "" : DashboardValueFormatter.money(item));
-            setAlignment(Pos.CENTER_RIGHT);
-        }
-    }
-
-    private static final class OptionalAmountCell extends TableCell<Object, Optional<BigDecimal>>
-    {
-        @Override
-        protected void updateItem(Optional<BigDecimal> item, boolean empty)
-        {
-            super.updateItem(item, empty);
-            setText(empty || item == null || item.isEmpty()
-                    ? "—" : DashboardValueFormatter.money(item.orElseThrow()));
-            setAlignment(Pos.CENTER_RIGHT);
-        }
-    }
-
-    private static final class PercentCell extends TableCell<Object, Optional<BigDecimal>>
-    {
-        @Override
-        protected void updateItem(Optional<BigDecimal> item, boolean empty)
-        {
-            super.updateItem(item, empty);
-            setText(empty || item == null || item.isEmpty()
-                    ? "—" : item.orElseThrow().setScale(1, RoundingMode.HALF_UP) + "%");
-            setAlignment(Pos.CENTER_RIGHT);
-        }
-    }
-
-    private static final class BooleanMarkCell extends TableCell<Object, Boolean>
-    {
-        @Override
-        protected void updateItem(Boolean item, boolean empty)
-        {
-            super.updateItem(item, empty);
-            setText(empty || !Boolean.TRUE.equals(item) ? "" : "✓");
-            getStyleClass().remove("dashboard-check");
-            if (!empty && Boolean.TRUE.equals(item))
-            {
-                getStyleClass().add("dashboard-check");
-            }
-            setAlignment(Pos.CENTER);
-        }
-    }
-
-    private static final class StatusCell extends TableCell<Object, String>
-    {
-        @Override
-        protected void updateItem(String item, boolean empty)
-        {
-            super.updateItem(item, empty);
-            getStyleClass().removeAll("dashboard-status-positive", "dashboard-status-warning", "dashboard-status-muted");
-            if (empty || item == null)
-            {
-                setText("");
-                return;
-            }
-            String normalized = item.toUpperCase();
-            if (normalized.equals("ENTERED") || normalized.equals("COMPLETED") || normalized.equals("RECONCILED"))
-            {
-                setText("● " + displayStatus(item));
-                getStyleClass().add("dashboard-status-positive");
-            }
-            else if (normalized.contains("PROGRESS") || normalized.equals("OPEN"))
-            {
-                setText("● " + displayStatus(item));
-                getStyleClass().add("dashboard-status-warning");
-            }
-            else
-            {
-                setText("○ " + displayStatus(item));
-                getStyleClass().add("dashboard-status-muted");
-            }
-        }
-
-        private static String displayStatus(String status)
-        {
-            if (status.equalsIgnoreCase("ENTERED"))
-            {
-                return "Posted";
-            }
-            String lower = status.toLowerCase().replace('_', ' ');
-            return Character.toUpperCase(lower.charAt(0)) + lower.substring(1);
-        }
     }
 }
