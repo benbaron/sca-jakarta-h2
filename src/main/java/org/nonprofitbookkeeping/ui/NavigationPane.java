@@ -1,193 +1,186 @@
 package org.nonprofitbookkeeping.ui;
 
-import javafx.scene.control.TreeCell;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeView;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.MouseButton;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/**
- * Represents the NavigationPane component in the nonprofit bookkeeping application.
- */
-public class NavigationPane extends VBox
+/** Collapsible categorized navigation matching the dashboard reference layout. */
+public class NavigationPane extends BorderPane
 {
-    private final TreeView<NavItem> tree;
-    private final Map<AppPanelId, TreeItem<NavItem>> index = new EnumMap<>(AppPanelId.class);
+    private final Map<AppPanelId, Button> buttons = new EnumMap<>(AppPanelId.class);
     private final Consumer<AppPanelId> openPanel;
     private final BiConsumer<String, String> openInspector;
     private final Supplier<InspectorContext> inspectorContextSupplier;
 
-    public NavigationPane(Consumer<AppPanelId> openPanel,
-                          BiConsumer<String, String> openInspector,
-                          Supplier<InspectorContext> inspectorContextSupplier)
+    public NavigationPane(
+            Consumer<AppPanelId> openPanel,
+            BiConsumer<String, String> openInspector,
+            Supplier<InspectorContext> inspectorContextSupplier)
+    {
+        this(openPanel, openInspector, inspectorContextSupplier, () -> { });
+    }
+
+    public NavigationPane(
+            Consumer<AppPanelId> openPanel,
+            BiConsumer<String, String> openInspector,
+            Supplier<InspectorContext> inspectorContextSupplier,
+            Runnable collapseAction)
     {
         this.openPanel = openPanel;
         this.openInspector = openInspector;
         this.inspectorContextSupplier = inspectorContextSupplier;
 
-        getStyleClass().add("nav");
-
-        TreeItem<NavItem> root = new TreeItem<>(new NavItem(null, "Root"));
-        root.setExpanded(true);
-
-        TreeItem<NavItem> ops = group(root, "Operations");
-        add(ops, AppPanelId.DASHBOARD, "Dashboard");
-
-        TreeItem<NavItem> ledger = group(ops, "Ledger");
-        add(ledger, AppPanelId.LEDGER_REGISTER, "Ledger Register");
-        add(ledger, AppPanelId.TXN_EDITOR, "Transaction Editor");
-
-        add(ops, AppPanelId.SCHEDULES, "Outstanding / Schedules");
-
-        TreeItem<NavItem> budget = group(ops, "Budget");
-        add(budget, AppPanelId.BUDGET_EDITOR, "Budget Editor");
-        add(budget, AppPanelId.BUDGET_VS_ACTUAL, "Budget vs Actual");
-
-        TreeItem<NavItem> assets = group(ops, "Assets");
-        add(assets, AppPanelId.ASSETS_REGISTER, "Asset Register");
-        add(assets, AppPanelId.DEPRECIATION_RUNS, "Depreciation Runs");
-        add(assets, AppPanelId.INVENTORY, "Inventory");
-
-        TreeItem<NavItem> workflows = group(root, "Workflows");
-        add(workflows, AppPanelId.RECONCILIATION_RUNS, "Reconciliation Runs");
-        add(workflows, AppPanelId.PERIOD_CLOSE_RUNS, "Period Close Runs");
-        add(workflows, AppPanelId.IMPORT_PREVIEW, "Import Preview");
-        add(workflows, AppPanelId.APPROVAL_AUDIT, "Approval Audit");
-        add(workflows, AppPanelId.IMPORT_EXPORT_JOBS, "Import / Export Jobs");
-        add(workflows, AppPanelId.BANK_TRANSACTIONS, "Bank Transactions");
-
-        TreeItem<NavItem> outputs = group(root, "Outputs");
-        add(outputs, AppPanelId.REPORT_LIBRARY, "Reports Library");
-
-        TreeItem<NavItem> ref = group(root, "Reference");
-        add(ref, AppPanelId.CHART_OF_ACCOUNTS, "Chart of Accounts");
-        add(ref, AppPanelId.FUNDS, "Funds");
-
-        TreeItem<NavItem> admin = group(root, "Administration");
-        add(admin, AppPanelId.SETTINGS, "Settings / Admin");
-
-        TreeItem<NavItem> sys = group(root, "System");
-        add(sys, AppPanelId.DIAGNOSTICS, "Diagnostics");
-        add(sys, AppPanelId.HELP, "Help");
-
-        tree = new TreeView<>(root);
-        tree.setShowRoot(false);
-
-        tree.setCellFactory(tv -> new TreeCell<>()
-        {
-            @Override
-            protected void updateItem(NavItem item, boolean empty)
-            {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.label());
-            }
-        });
-
-        tree.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) ->
-        {
-            if (newSel == null || newSel.getValue() == null || newSel.getValue().panelId() == null)
-            {
-                return;
-            }
-            openPanel.accept(newSel.getValue().panelId());
-        });
-
-        tree.setOnMouseClicked(e ->
-        {
-            TreeItem<NavItem> sel = tree.getSelectionModel().getSelectedItem();
-            if (sel == null || sel.getValue() == null)
-            {
-                return;
-            }
-
-            if (e.getButton() == MouseButton.SECONDARY)
-            {
-                tree.getSelectionModel().select(sel);
-                NavItem v = sel.getValue();
-                openInspector.accept("Details: " + v.label(), inspectorBody(v, inspectorContextSupplier.get()));
-            }
-        });
-
-        tree.setOnKeyPressed(e ->
-        {
-            if (e.getCode() != KeyCode.ENTER)
-            {
-                return;
-            }
-
-            TreeItem<NavItem> sel = tree.getSelectionModel().getSelectedItem();
-            if (sel == null || sel.getValue() == null || sel.getValue().panelId() == null)
-            {
-                return;
-            }
-            openPanel.accept(sel.getValue().panelId());
-        });
-
-        getChildren().add(tree);
+        getStyleClass().add("navigation-pane");
+        setTop(buildHeading());
+        setCenter(buildNavigation());
+        setBottom(buildCollapseButton(collapseAction));
+        select(AppPanelId.DASHBOARD);
     }
 
-    static String inspectorBody(NavItem item)
+    private HBox buildHeading()
     {
-        return inspectorBody(item, new InspectorContext("(unknown)", String.valueOf(DateRangeContext.get()), "(unspecified)"));
+        Label menu = new Label("☰");
+        menu.getStyleClass().add("navigation-heading-icon");
+        Label title = new Label("Workspace");
+        title.getStyleClass().add("navigation-heading");
+        HBox heading = new HBox(10, menu, title);
+        heading.setAlignment(Pos.CENTER_LEFT);
+        heading.setPadding(new Insets(10, 12, 8, 12));
+        return heading;
     }
 
-    static String inspectorBody(NavItem item, InspectorContext context)
+    private ScrollPane buildNavigation()
     {
-        if (item == null || item.panelId() == null)
-        {
-            return InspectorPresentationModel.navigationGroupBody(context.activeCompany(), context.dateRange());
-        }
+        VBox content = new VBox(3);
+        content.setPadding(new Insets(0, 7, 8, 7));
 
-        return InspectorPresentationModel.panelBody(
-                item.label(),
-                item.panelId().name(),
-                context.activeCompany(),
-                context.dateRange(),
-                context.panelCapabilities(),
-                "single-select, Enter, or double-click.",
-                "use toolbar Find/Journal for cross-panel queries.");
+        content.getChildren().add(nav(AppPanelId.DASHBOARD, "⌂", "Dashboard"));
+        addSection(content, "Accounting",
+                item(AppPanelId.LEDGER_REGISTER, "▤", "Ledger Register"),
+                item(AppPanelId.TXN_EDITOR, "✎", "Transaction Editor"),
+                item(AppPanelId.TXN_EDITOR, "▧", "Journal Entry"),
+                item(AppPanelId.RECONCILIATION_RUNS, "⌂", "Banking & Reconciliation"),
+                item(AppPanelId.SCHEDULES, "▣", "Schedules"));
+        addSection(content, "Planning",
+                item(AppPanelId.BUDGET_EDITOR, "▧", "Budget Editor"),
+                item(AppPanelId.BUDGET_VS_ACTUAL, "▥", "Budget vs Actual"));
+        addSection(content, "Assets & Inventory",
+                item(AppPanelId.ASSETS_REGISTER, "⌂", "Fixed Assets"),
+                item(AppPanelId.INVENTORY, "▦", "Inventory"),
+                item(AppPanelId.INVENTORY, "⌘", "Supplies"));
+        addSection(content, "Liabilities & Receivables",
+                item(AppPanelId.SCHEDULES, "◷", "Receivables"),
+                item(AppPanelId.SCHEDULES, "▣", "Payables"),
+                item(AppPanelId.SCHEDULES, "▨", "Prepaids & Deferred"));
+        addSection(content, "Period Close",
+                item(AppPanelId.PERIOD_CLOSE_RUNS, "▣", "Period Close"));
+        addSection(content, "Reports",
+                item(AppPanelId.REPORT_LIBRARY, "▧", "Reports Center"));
+        addSection(content, "Administration",
+                item(AppPanelId.CHART_OF_ACCOUNTS, "▤", "Chart of Accounts"),
+                item(AppPanelId.FUNDS, "▥", "Funds"),
+                item(AppPanelId.SETTINGS, "⚙", "Settings"));
+
+        ScrollPane scrollPane = new ScrollPane(content);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.getStyleClass().add("navigation-scroll");
+        return scrollPane;
     }
 
-    public void highlight(AppPanelId id)
+    private Button buildCollapseButton(Runnable collapseAction)
     {
-        TreeItem<NavItem> ti = index.get(id);
-        if (ti != null)
+        Button collapse = new Button("‹   Collapse");
+        collapse.setMaxWidth(Double.MAX_VALUE);
+        collapse.setAlignment(Pos.CENTER_LEFT);
+        collapse.getStyleClass().add("navigation-collapse");
+        collapse.setOnAction(event -> collapseAction.run());
+        return collapse;
+    }
+
+    private NavDefinition item(AppPanelId panelId, String glyph, String label)
+    {
+        return new NavDefinition(panelId, glyph, label);
+    }
+
+    private void addSection(VBox content, String title, NavDefinition... definitions)
+    {
+        Separator separator = new Separator();
+        separator.getStyleClass().add("navigation-separator");
+        Label heading = new Label(title);
+        heading.getStyleClass().add("navigation-section");
+        content.getChildren().addAll(separator, heading);
+        for (NavDefinition definition : definitions)
         {
-            tree.getSelectionModel().select(ti);
-            tree.scrollTo(tree.getRow(ti));
+            content.getChildren().add(nav(definition.panelId(), definition.glyph(), definition.label()));
         }
     }
 
-    private TreeItem<NavItem> group(TreeItem<NavItem> parent, String label)
+    private Button nav(AppPanelId panelId, String glyph, String label)
     {
-        TreeItem<NavItem> g = new TreeItem<>(new NavItem(null, label));
-        g.setExpanded(true);
-        parent.getChildren().add(g);
-        return g;
+        Label icon = new Label(glyph);
+        icon.getStyleClass().add("navigation-item-icon");
+        Label text = new Label(label);
+        HBox graphic = new HBox(10, icon, text);
+        graphic.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(text, Priority.ALWAYS);
+
+        Button button = new Button();
+        button.setGraphic(graphic);
+        button.setMaxWidth(Double.MAX_VALUE);
+        button.setAlignment(Pos.CENTER_LEFT);
+        button.getStyleClass().add("navigation-item");
+        button.setOnAction(event ->
+        {
+            select(panelId);
+            openPanel.accept(panelId);
+        });
+        button.setOnContextMenuRequested(event ->
+        {
+            InspectorContext context = inspectorContextSupplier.get();
+            openInspector.accept("Details: " + label, inspectorBody(label, context));
+            event.consume();
+        });
+        buttons.putIfAbsent(panelId, button);
+        return button;
     }
 
-
-    EnumSet<AppPanelId> indexedPanelIds()
+    private void select(AppPanelId panelId)
     {
-        return EnumSet.copyOf(index.keySet());
+        buttons.values().forEach(button -> button.getStyleClass().remove("navigation-item-selected"));
+        Button selected = buttons.get(panelId);
+        if (selected != null)
+        {
+            selected.getStyleClass().add("navigation-item-selected");
+        }
     }
 
-    private void add(TreeItem<NavItem> parent, AppPanelId id, String label)
+    private static String inspectorBody(String label, InspectorContext context)
     {
-        TreeItem<NavItem> ti = new TreeItem<>(new NavItem(id, label));
-        parent.getChildren().add(ti);
-        index.put(id, ti);
+        return label
+                + "\n\nDatabase: " + context.databasePath()
+                + "\nPeriod: " + context.activePeriod()
+                + "\n" + context.capabilities();
     }
 
-    public record NavItem(AppPanelId panelId, String label) {}
+    private record NavDefinition(AppPanelId panelId, String glyph, String label)
+    {
+    }
 
-    public record InspectorContext(String activeCompany, String dateRange, String panelCapabilities) {}
+    public record InspectorContext(String databasePath, String activePeriod, String capabilities)
+    {
+    }
 }

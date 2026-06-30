@@ -10,16 +10,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-/**
- * Hosts one reusable workspace tab per panel type.
- */
+/** Hosts one reusable workspace tab per panel type. */
 public class PanelHost extends TabPane
 {
     private static final Map<AppPanelId, Supplier<AppPanel>> FACTORIES = new EnumMap<>(AppPanelId.class);
 
     static
     {
-        FACTORIES.put(AppPanelId.DASHBOARD, DashboardExperiment::new);
         FACTORIES.put(AppPanelId.LEDGER_REGISTER, LedgerRegisterPanel::new);
         FACTORIES.put(AppPanelId.TXN_EDITOR, TransactionEditorPanel::new);
         FACTORIES.put(AppPanelId.SCHEDULES, SchedulesPanel::new);
@@ -42,12 +39,19 @@ public class PanelHost extends TabPane
         FACTORIES.put(AppPanelId.HELP, HelpPanel::new);
     }
 
+    private final Supplier<AppPanel> dashboardFactory;
     private final Map<AppPanelId, AppPanel> panels = new EnumMap<>(AppPanelId.class);
     private final Map<AppPanelId, Tab> tabs = new EnumMap<>(AppPanelId.class);
     private AppPanelId activeId;
 
     public PanelHost()
     {
+        this(DashboardHomePanel::new);
+    }
+
+    PanelHost(Supplier<AppPanel> dashboardFactory)
+    {
+        this.dashboardFactory = Objects.requireNonNull(dashboardFactory, "dashboardFactory");
         setTabClosingPolicy(TabClosingPolicy.SELECTED_TAB);
         getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) ->
         {
@@ -57,7 +61,9 @@ public class PanelHost extends TabPane
 
     public static EnumSet<AppPanelId> supportedPanelIds()
     {
-        return EnumSet.copyOf(FACTORIES.keySet());
+        EnumSet<AppPanelId> ids = EnumSet.copyOf(FACTORIES.keySet());
+        ids.add(AppPanelId.DASHBOARD);
+        return ids;
     }
 
     public void show(AppPanelId id)
@@ -71,23 +77,16 @@ public class PanelHost extends TabPane
         activeId = id;
     }
 
-    /**
-     * Replaces the cached panel for an identifier and selects the replacement.
-     * This is used for recoverable startup states such as an unavailable
-     * database without changing the permanent workspace tab identity.
-     */
     public void showReplacement(AppPanelId id, AppPanel replacement)
     {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(replacement, "replacement");
-
         Tab previous = tabs.remove(id);
         if (previous != null)
         {
             getTabs().remove(previous);
         }
         panels.remove(id);
-
         panels.put(id, replacement);
         Tab tab = createTab(id, replacement);
         tabs.put(id, tab);
@@ -96,7 +95,6 @@ public class PanelHost extends TabPane
         activeId = id;
     }
 
-    /** Clears cached panels after changing the authoritative database. */
     public void reset()
     {
         getTabs().clear();
@@ -173,11 +171,9 @@ public class PanelHost extends TabPane
     public AppPanel.RunCommandResult runCommandActive(AppPanel.RunCommand command)
     {
         AppPanel panel = getActive();
-        if (panel == null)
-        {
-            return new AppPanel.RunCommandResult(false, "No active panel selected.");
-        }
-        return panel.onRunCommand(command);
+        return panel == null
+                ? new AppPanel.RunCommandResult(false, "No active panel selected.")
+                : panel.onRunCommand(command);
     }
 
     public java.util.Optional<AppPanel.JournalSelection> activeJournalSelection()
@@ -223,6 +219,10 @@ public class PanelHost extends TabPane
 
     private AppPanel create(AppPanelId id)
     {
+        if (id == AppPanelId.DASHBOARD)
+        {
+            return dashboardFactory.get();
+        }
         Supplier<AppPanel> factory = FACTORIES.get(id);
         if (factory == null)
         {
