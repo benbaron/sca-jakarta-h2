@@ -12,3 +12,71 @@
 .theme-system { }
 .native-window-enabled { }
 .native-window-disabled { }
+
+.dashboard-experiment-root,
+.dashboard-scroll,
+.dashboard-scroll > .viewport
+{
+    -fx-background-color: #f5f7fa;
+}
+
+.dashboard-header
+{
+    -fx-background-color: white;
+}
+
+.dashboard-card
+{
+    -fx-background-color: white;
+    -fx-background-radius: 7;
+    -fx-border-radius: 7;
+    -fx-border-color: #dfe5ec;
+    -fx-padding: 14;
+    -fx-effect: dropshadow(gaussian, rgba(31, 45, 61, 0.06), 8, 0.15, 0, 2);
+}
+
+.card-title
+{
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.quick-link-title
+{
+    -fx-text-fill: #075fc7;
+    -fx-font-weight: bold;
+}
+
+.muted
+{
+    -fx-text-fill: #64748b;
+}
+
+.amount
+{
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #16863a;
+}
+
+.quick-link
+{
+    -fx-padding: 8;
+    -fx-background-radius: 5;
+}
+
+.quick-link:hover
+{
+    -fx-background-color: #edf4ff;
+}
+
+.dashboard-card .table-view
+{
+    -fx-border-color: #e4e9ef;
+    -fx-background-color: white;
+}
+
+.dashboard-card .table-view .column-header-background
+{
+    -fx-background-color: #f8fafc;
+}
