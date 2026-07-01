@@ -2,249 +2,516 @@ package org.nonprofitbookkeeping.ui;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
+
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.layout.GridPane;
+
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.service.dashboard.DashboardSnapshot;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.Map;
 
-/** Structured right-side inspector matching the dashboard reference. */
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+
+/** Context inspector with dashboard organization, period, balance, and note cards. */
 public class InspectorPane extends VBox
 {
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("MMM d, yyyy");
+    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("MM/dd/yyyy");
+    private static final DateTimeFormatter MONTH = DateTimeFormatter.ofPattern("MMMM yyyy");
 
-    private final Label title = new Label("Inspector");
-    private final VBox content = new VBox(10);
+    private final VBox inspectorContent = new VBox(8);
+    private final VBox alertsContent = new VBox(8);
 
     public InspectorPane()
     {
-        getStyleClass().addAll("inspector-pane", "inspector");
-        setMinWidth(0);
-        setPrefWidth(246);
-        setSpacing(8);
-        setPadding(new Insets(12));
+        getStyleClass().add("inspector-pane");
+        setPadding(Insets.EMPTY);
 
-        title.getStyleClass().add("inspector-title");
-        ScrollPane scrollPane = new ScrollPane(content);
-        scrollPane.getStyleClass().add("inspector-scroll");
-        scrollPane.setFitToWidth(true);
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        VBox.setVgrow(scrollPane, Priority.ALWAYS);
-        getChildren().addAll(title, scrollPane);
+        Tab inspector = new Tab("Inspector", scroll(inspectorContent));
+        Tab alerts = new Tab("Alerts", scroll(alertsContent));
+        inspector.setClosable(false);
+        alerts.setClosable(false);
 
-        ActivePeriodContext.activeDateProperty().addListener(
-                (observable, oldDate, newDate) -> refreshDashboard());
-        MainWindow.sharedSessionState().onMultiCompanyChanged(ignored -> refreshDashboard());
-        refreshDashboard();
+        TabPane tabs = new TabPane(inspector, alerts);
+        tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        tabs.getStyleClass().add("inspector-tabs");
+        VBox.setVgrow(tabs, Priority.ALWAYS);
+        getChildren().add(tabs);
+
+        show("Inspector", "Select an item to see context-aware details.");
+        alertsContent.getChildren().setAll(card("Alerts", new Label("No active alerts.")));
     }
 
-    public void show(String heading, String body)
+    public void show(String title, String body)
     {
-        title.setText(heading == null || heading.isBlank() ? "Inspector" : heading);
-        content.getChildren().setAll(messageCard(body));
+        Label text = new Label(body == null ? "" : body);
+        text.setWrapText(true);
+        inspectorContent.getChildren().setAll(card(title, text));
+    }
+
+    public void showDashboard(String organization, DashboardSnapshot snapshot)
+    {
+        LocalDate asOf = snapshot.asOfDate();
+        YearMonth month = YearMonth.from(asOf);
+        long daysRemaining = Math.max(0, month.atEndOfMonth().toEpochDay() - asOf.toEpochDay());
+
+        inspectorContent.getChildren().setAll(
+                organizationCard(organization),
+                periodCard(asOf, month, daysRemaining),
+                balanceCard(snapshot),
+                notesCard());
+
     }
 
     public void clear()
     {
-        refreshDashboard();
+
+        show("Inspector", "Select an item to see context-aware details.");
     }
 
-    void refreshDashboard()
+    private static ScrollPane scroll(VBox content)
     {
-        title.setText("Inspector");
-        content.getChildren().setAll(loadingCard());
-        UiAsync.run(
-                "dashboard-inspector-load",
-                () -> UiServiceRegistry.dashboardQuery().load(
-                        MainWindow.sharedSessionState().multiCompany().activeCompanyCode(),
-                        ActivePeriodContext.get(),
-                        1),
-                this::showDashboard,
-                ex -> content.getChildren().setAll(messageCard(
-                        "Dashboard details are unavailable until a database is selected or repaired.\n\n"
-                                + UiErrors.safeMessage(ex))));
+        content.setPadding(new Insets(8));
+        ScrollPane scrollPane = new ScrollPane(content);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        return scrollPane;
     }
 
-    void showDashboard(DashboardSnapshot snapshot)
+    private static VBox organizationCard(String organization)
     {
-        title.setText("Inspector");
-        content.getChildren().setAll(
-                organizationCard(snapshot.organization()),
-                periodCard(snapshot.period(), snapshot.asOfDate()),
-                balancesCard(snapshot),
-                notesCard());
+        String name = organization == null || organization.isBlank() ? "Default Organization" : organization;
+        VBox values = new VBox(
+                10,
+                strong(name),
+                new Label("Organization code: " + name),
+                new Label("Fiscal Year: Jan – Dec"),
+                new Label("Currency: USD"));
+        return card("Organization", values);
     }
 
-    private static Node organizationCard(DashboardSnapshot.OrganizationSummary organization)
+    private static VBox periodCard(LocalDate asOf, YearMonth month, long daysRemaining)
     {
-        Label name = new Label(organization.displayName());
-        name.getStyleClass().add("inspector-primary-value");
-        name.setWrapText(true);
-
-        String detail = organization.code();
-        if (organization.branchType() != null && !organization.branchType().isBlank())
-        {
-            detail = organization.branchType() + " · " + detail;
-        }
-        Label metadata = muted(detail);
-        metadata.setWrapText(true);
-
-        Label parent = muted(organization.parentOrganization());
-        parent.setWrapText(true);
-        parent.setManaged(!organization.parentOrganization().isBlank());
-        parent.setVisible(parent.isManaged());
-
-        boolean configured = organizationConfigured(organization);
-        Label status = new Label(configured
-                ? organization.active() ? "Active" : "Inactive"
-                : "Not configured");
-        status.getStyleClass().addAll(
-                "status-pill",
-                configured
-                        ? organization.active() ? "status-success" : "status-danger"
-                        : "status-neutral");
-
-        VBox values = new VBox(3, name, metadata, parent, status);
-        return inspectorCard("Organization", UiIcons.Glyph.ACCOUNTS, "accent-blue", values);
+        GridPane values = new GridPane();
+        values.setVgap(8);
+        values.setHgap(12);
+        add(values, 0, "Current Period", MONTH.format(asOf));
+        add(values, 1, "Period Range", DATE.format(month.atDay(1)) + " – " + DATE.format(month.atEndOfMonth()));
+        add(values, 2, "Status", asOf.isAfter(month.atEndOfMonth()) ? "Closed" : "Open");
+        add(values, 3, "Days Remaining", Long.toString(daysRemaining));
+        return card("Period Information", values);
     }
 
-    private static Node periodCard(
-            DashboardSnapshot.PeriodSummary period,
-            LocalDate asOfDate)
+    private static VBox balanceCard(DashboardSnapshot snapshot)
     {
-        VBox rows = new VBox(6);
-        rows.getChildren().add(valueRow("As of", DATE_FORMAT.format(asOfDate)));
-        period.fiscalYear().ifPresent(year ->
-                rows.getChildren().add(valueRow("Fiscal year", Integer.toString(year))));
-        period.periodNumber().ifPresent(number ->
-                rows.getChildren().add(valueRow("Period", Integer.toString(number))));
-        if (period.startDate().isPresent() && period.endDate().isPresent())
-        {
-            rows.getChildren().add(valueRow(
-                    "Dates",
-                    DATE_FORMAT.format(period.startDate().orElseThrow())
-                            + " – "
-                            + DATE_FORMAT.format(period.endDate().orElseThrow())));
-        }
-
-        Label status = new Label(titleCase(period.status()));
-        status.getStyleClass().addAll(
-                "status-pill",
-                "OPEN".equalsIgnoreCase(period.status())
-                        ? "status-success"
-                        : "CLOSED".equalsIgnoreCase(period.status())
-                                ? "status-danger"
-                                : "status-neutral");
-        rows.getChildren().add(status);
-        return inspectorCard("Period Information", UiIcons.Glyph.CALENDAR, "accent-purple", rows);
+        GridPane values = new GridPane();
+        values.setVgap(8);
+        values.setHgap(12);
+        add(values, 0, "Book Cash", DashboardValueFormatter.money(snapshot.bookCash()));
+        add(values, 1, "Reconciled Cash", snapshot.reconciledCash()
+                .map(DashboardValueFormatter::money)
+                .orElse("Not available"));
+        add(values, 2, "Unreconciled Difference", snapshot.unreconciledDifference()
+                .map(DashboardValueFormatter::money)
+                .orElse("Not available"));
+        add(values, 3, "YTD Surplus (Deficit)", DashboardValueFormatter.money(snapshot.yearToDateSurplus()));
+        return card("Balances (All Funds)", values);
     }
 
-    private static Node balancesCard(DashboardSnapshot snapshot)
+    private static VBox notesCard()
     {
-        Map<String, BigDecimal> totals = snapshot.fundClassTotals();
-        BigDecimal restricted = totals.getOrDefault("TEMP_RESTRICTED", BigDecimal.ZERO)
-                .add(totals.getOrDefault("PERM_RESTRICTED", BigDecimal.ZERO));
-
-        VBox rows = new VBox(
-                6,
-                valueRow("Cash", DashboardValueFormatter.money(snapshot.bookCash())),
-                valueRow(
-                        "Unrestricted",
-                        DashboardValueFormatter.money(
-                                totals.getOrDefault("UNRESTRICTED", BigDecimal.ZERO))),
-                valueRow("Restricted", DashboardValueFormatter.money(restricted)),
-                valueRow(
-                        "Designated",
-                        DashboardValueFormatter.money(
-                                totals.getOrDefault("DESIGNATED", BigDecimal.ZERO))));
-        return inspectorCard("Balances", UiIcons.Glyph.WALLET, "accent-green", rows);
+        Label empty = new Label("No notes for this period.");
+        Button add = new Button("Add Note");
+        add.setDisable(true);
+        return card("Notes", new VBox(10, empty, add));
     }
 
-    private static Node notesCard()
+    private static VBox card(String titleText, javafx.scene.Node content)
     {
-        Label note = muted("No organization notes are available in the current database.");
-        note.setWrapText(true);
-        return inspectorCard("Notes", UiIcons.Glyph.NOTE, "accent-amber", note);
-    }
+        Label title = new Label(titleText);
+        title.getStyleClass().add("inspector-card-title");
+        Separator separator = new Separator();
+        VBox card = new VBox(8, title, separator, content);
 
-    private static Node loadingCard()
-    {
-        return messageCard("Loading organization details...");
-    }
-
-    private static Node messageCard(String body)
-    {
-        Label message = new Label(body == null ? "" : body);
-        message.setWrapText(true);
-        message.getStyleClass().add("muted");
-        return inspectorCard("Details", UiIcons.Glyph.NOTE, "accent-blue", message);
-    }
-
-    private static Node inspectorCard(
-            String heading,
-            UiIcons.Glyph glyph,
-            String accentClass,
-            Node body)
-    {
-        Label label = new Label(heading);
-        label.getStyleClass().add("inspector-card-title");
-        HBox header = new HBox(7, iconBadge(glyph, accentClass), label);
-        header.setAlignment(Pos.CENTER_LEFT);
-        VBox card = new VBox(9, header, body);
         card.getStyleClass().add("inspector-card");
         return card;
     }
 
-    private static Node iconBadge(UiIcons.Glyph glyph, String accentClass)
-    {
-        HBox badge = new HBox(UiIcons.icon(glyph, 14, accentClass));
-        badge.setAlignment(Pos.CENTER);
-        badge.getStyleClass().addAll("dashboard-icon-badge", accentClass);
-        return badge;
-    }
 
-    private static Node valueRow(String heading, String valueText)
+    private static Label strong(String text)
     {
-        Label key = muted(heading);
-        Label value = new Label(valueText == null ? "" : valueText);
-        value.getStyleClass().add("inspector-value");
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox row = new HBox(8, key, spacer, value);
-        row.setAlignment(Pos.CENTER_LEFT);
-        return row;
-    }
-
-    private static Label muted(String text)
-    {
-        Label label = new Label(text == null ? "" : text);
-        label.getStyleClass().add("muted");
+        Label label = new Label(text);
+        label.getStyleClass().add("inspector-strong");
         return label;
     }
 
-    private static boolean organizationConfigured(
-            DashboardSnapshot.OrganizationSummary organization)
+    private static void add(GridPane grid, int row, String key, String value)
     {
-        return !organization.branchType().isBlank()
-                || !organization.parentOrganization().isBlank()
-                || !organization.displayName().equals(organization.code());
+        Label keyLabel = new Label(key);
+        Label valueLabel = new Label(value);
+        valueLabel.setWrapText(true);
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox line = new HBox(8, keyLabel, spacer, valueLabel);
+        line.setAlignment(Pos.CENTER_LEFT);
+        grid.add(line, 0, row);
+
+        show("Inspector", "Select an item to see context-aware details.");
     }
 
-    private static String titleCase(String value)
+    private static ScrollPane scroll(VBox content)
     {
-        if (value == null || value.isBlank())
-        {
-            return "Not configured";
-        }
-        String normalized = value.toLowerCase().replace('_', ' ');
-        return Character.toUpperCase(normalized.charAt(0)) + normalized.substring(1);
+        content.setPadding(new Insets(8));
+        ScrollPane scrollPane = new ScrollPane(content);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        return scrollPane;
+    }
+
+    private static VBox organizationCard(String organization)
+    {
+        String name = organization == null || organization.isBlank() ? "Default Organization" : organization;
+        VBox values = new VBox(
+                10,
+                strong(name),
+                new Label("Organization code: " + name),
+                new Label("Fiscal Year: Jan – Dec"),
+                new Label("Currency: USD"));
+        return card("Organization", values);
+    }
+
+    private static VBox periodCard(LocalDate asOf, YearMonth month, long daysRemaining)
+    {
+        GridPane values = new GridPane();
+        values.setVgap(8);
+        values.setHgap(12);
+        add(values, 0, "Current Period", MONTH.format(asOf));
+        add(values, 1, "Period Range", DATE.format(month.atDay(1)) + " – " + DATE.format(month.atEndOfMonth()));
+        add(values, 2, "Status", asOf.isAfter(month.atEndOfMonth()) ? "Closed" : "Open");
+        add(values, 3, "Days Remaining", Long.toString(daysRemaining));
+        return card("Period Information", values);
+    }
+
+    private static VBox balanceCard(DashboardSnapshot snapshot)
+    {
+        GridPane values = new GridPane();
+        values.setVgap(8);
+        values.setHgap(12);
+        add(values, 0, "Book Cash", DashboardValueFormatter.money(snapshot.bookCash()));
+        add(values, 1, "Reconciled Cash", snapshot.reconciledCash()
+                .map(DashboardValueFormatter::money)
+                .orElse("Not available"));
+        add(values, 2, "Unreconciled Difference", snapshot.unreconciledDifference()
+                .map(DashboardValueFormatter::money)
+                .orElse("Not available"));
+        add(values, 3, "YTD Surplus (Deficit)", DashboardValueFormatter.money(snapshot.yearToDateSurplus()));
+        return card("Balances (All Funds)", values);
+    }
+
+    private static VBox notesCard()
+    {
+        Label empty = new Label("No notes for this period.");
+        Button add = new Button("Add Note");
+        add.setDisable(true);
+        return card("Notes", new VBox(10, empty, add));
+    }
+
+    private static VBox card(String titleText, javafx.scene.Node content)
+    {
+        Label title = new Label(titleText);
+        title.getStyleClass().add("inspector-card-title");
+        Separator separator = new Separator();
+        VBox card = new VBox(8, title, separator, content);
+        card.getStyleClass().add("inspector-card");
+        return card;
+    }
+
+    private static Label strong(String text)
+    {
+        Label label = new Label(text);
+        label.getStyleClass().add("inspector-strong");
+        return label;
+    }
+
+    private static void add(GridPane grid, int row, String key, String value)
+    {
+        Label keyLabel = new Label(key);
+        Label valueLabel = new Label(value);
+        valueLabel.setWrapText(true);
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox line = new HBox(8, keyLabel, spacer, valueLabel);
+        line.setAlignment(Pos.CENTER_LEFT);
+        grid.add(line, 0, row);
+        show("Inspector", "Select an item to see context-aware details.");
+    }
+
+    private static ScrollPane scroll(VBox content)
+    {
+        content.setPadding(new Insets(8));
+        ScrollPane scrollPane = new ScrollPane(content);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        return scrollPane;
+    }
+
+    private static VBox organizationCard(String organization)
+    {
+        String name = organization == null || organization.isBlank() ? "Default Organization" : organization;
+        VBox values = new VBox(
+                10,
+                strong(name),
+                new Label("Organization code: " + name),
+                new Label("Fiscal Year: Jan – Dec"),
+                new Label("Currency: USD"));
+        return card("Organization", values);
+    }
+
+    private static VBox periodCard(LocalDate asOf, YearMonth month, long daysRemaining)
+    {
+        GridPane values = new GridPane();
+        values.setVgap(8);
+        values.setHgap(12);
+        add(values, 0, "Current Period", MONTH.format(asOf));
+        add(values, 1, "Period Range", DATE.format(month.atDay(1)) + " – " + DATE.format(month.atEndOfMonth()));
+        add(values, 2, "Status", asOf.isAfter(month.atEndOfMonth()) ? "Closed" : "Open");
+        add(values, 3, "Days Remaining", Long.toString(daysRemaining));
+        return card("Period Information", values);
+    }
+
+    private static VBox balanceCard(DashboardSnapshot snapshot)
+    {
+        GridPane values = new GridPane();
+        values.setVgap(8);
+        values.setHgap(12);
+        add(values, 0, "Book Cash", DashboardValueFormatter.money(snapshot.bookCash()));
+        add(values, 1, "Reconciled Cash", snapshot.reconciledCash()
+                .map(DashboardValueFormatter::money)
+                .orElse("Not available"));
+        add(values, 2, "Unreconciled Difference", snapshot.unreconciledDifference()
+                .map(DashboardValueFormatter::money)
+                .orElse("Not available"));
+        add(values, 3, "YTD Surplus (Deficit)", DashboardValueFormatter.money(snapshot.yearToDateSurplus()));
+        return card("Balances (All Funds)", values);
+    }
+
+    private static VBox notesCard()
+    {
+        Label empty = new Label("No notes for this period.");
+        Button add = new Button("Add Note");
+        add.setDisable(true);
+        return card("Notes", new VBox(10, empty, add));
+    }
+
+    private static VBox card(String titleText, javafx.scene.Node content)
+    {
+        Label title = new Label(titleText);
+        title.getStyleClass().add("inspector-card-title");
+        Separator separator = new Separator();
+        VBox card = new VBox(8, title, separator, content);
+        card.getStyleClass().add("inspector-card");
+        return card;
+    }
+
+    private static Label strong(String text)
+    {
+        Label label = new Label(text);
+        label.getStyleClass().add("inspector-strong");
+        return label;
+    }
+
+    private static void add(GridPane grid, int row, String key, String value)
+    {
+        Label keyLabel = new Label(key);
+        Label valueLabel = new Label(value);
+        valueLabel.setWrapText(true);
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox line = new HBox(8, keyLabel, spacer, valueLabel);
+        line.setAlignment(Pos.CENTER_LEFT);
+        grid.add(line, 0, row);
+        show("Inspector", "Select an item to see context-aware details.");
+    }
+
+    private static ScrollPane scroll(VBox content)
+    {
+        content.setPadding(new Insets(8));
+        ScrollPane scrollPane = new ScrollPane(content);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        return scrollPane;
+    }
+
+    private static VBox organizationCard(String organization)
+    {
+        String name = organization == null || organization.isBlank() ? "Default Organization" : organization;
+        VBox values = new VBox(
+                10,
+                strong(name),
+                new Label("Organization code: " + name),
+                new Label("Fiscal Year: Jan – Dec"),
+                new Label("Currency: USD"));
+        return card("Organization", values);
+    }
+
+    private static VBox periodCard(LocalDate asOf, YearMonth month, long daysRemaining)
+    {
+        GridPane values = new GridPane();
+        values.setVgap(8);
+        values.setHgap(12);
+        add(values, 0, "Current Period", MONTH.format(asOf));
+        add(values, 1, "Period Range", DATE.format(month.atDay(1)) + " – " + DATE.format(month.atEndOfMonth()));
+        add(values, 2, "Status", asOf.isAfter(month.atEndOfMonth()) ? "Closed" : "Open");
+        add(values, 3, "Days Remaining", Long.toString(daysRemaining));
+        return card("Period Information", values);
+    }
+
+    private static VBox balanceCard(DashboardSnapshot snapshot)
+    {
+        GridPane values = new GridPane();
+        values.setVgap(8);
+        values.setHgap(12);
+        add(values, 0, "Book Cash", DashboardValueFormatter.money(snapshot.bookCash()));
+        add(values, 1, "Reconciled Cash", snapshot.reconciledCash()
+                .map(DashboardValueFormatter::money)
+                .orElse("Not available"));
+        add(values, 2, "Unreconciled Difference", snapshot.unreconciledDifference()
+                .map(DashboardValueFormatter::money)
+                .orElse("Not available"));
+        add(values, 3, "YTD Surplus (Deficit)", DashboardValueFormatter.money(snapshot.yearToDateSurplus()));
+        return card("Balances (All Funds)", values);
+    }
+
+    private static VBox notesCard()
+    {
+        Label empty = new Label("No notes for this period.");
+        Button add = new Button("Add Note");
+        add.setDisable(true);
+        return card("Notes", new VBox(10, empty, add));
+    }
+
+    private static VBox card(String titleText, javafx.scene.Node content)
+    {
+        Label title = new Label(titleText);
+        title.getStyleClass().add("inspector-card-title");
+        Separator separator = new Separator();
+        VBox card = new VBox(8, title, separator, content);
+        card.getStyleClass().add("inspector-card");
+        return card;
+    }
+
+    private static Label strong(String text)
+    {
+        Label label = new Label(text);
+        label.getStyleClass().add("inspector-strong");
+        return label;
+    }
+
+    private static void add(GridPane grid, int row, String key, String value)
+    {
+        Label keyLabel = new Label(key);
+        Label valueLabel = new Label(value);
+        valueLabel.setWrapText(true);
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox line = new HBox(8, keyLabel, spacer, valueLabel);
+        line.setAlignment(Pos.CENTER_LEFT);
+        grid.add(line, 0, row);
+        show("Inspector", "Select an item to see context-aware details.");
+    }
+
+    private static ScrollPane scroll(VBox content)
+    {
+        content.setPadding(new Insets(8));
+        ScrollPane scrollPane = new ScrollPane(content);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        return scrollPane;
+    }
+
+    private static VBox organizationCard(String organization)
+    {
+        String name = organization == null || organization.isBlank() ? "Default Organization" : organization;
+        VBox values = new VBox(
+                10,
+                strong(name),
+                new Label("Organization code: " + name),
+                new Label("Fiscal Year: Jan – Dec"),
+                new Label("Currency: USD"));
+        return card("Organization", values);
+    }
+
+    private static VBox periodCard(LocalDate asOf, YearMonth month, long daysRemaining)
+    {
+        GridPane values = new GridPane();
+        values.setVgap(8);
+        values.setHgap(12);
+        add(values, 0, "Current Period", MONTH.format(asOf));
+        add(values, 1, "Period Range", DATE.format(month.atDay(1)) + " – " + DATE.format(month.atEndOfMonth()));
+        add(values, 2, "Status", asOf.isAfter(month.atEndOfMonth()) ? "Closed" : "Open");
+        add(values, 3, "Days Remaining", Long.toString(daysRemaining));
+        return card("Period Information", values);
+    }
+
+    private static VBox balanceCard(DashboardSnapshot snapshot)
+    {
+        GridPane values = new GridPane();
+        values.setVgap(8);
+        values.setHgap(12);
+        add(values, 0, "Book Cash", DashboardValueFormatter.money(snapshot.bookCash()));
+        add(values, 1, "Reconciled Cash", snapshot.reconciledCash()
+                .map(DashboardValueFormatter::money)
+                .orElse("Not available"));
+        add(values, 2, "Unreconciled Difference", snapshot.unreconciledDifference()
+                .map(DashboardValueFormatter::money)
+                .orElse("Not available"));
+        add(values, 3, "YTD Surplus (Deficit)", DashboardValueFormatter.money(snapshot.yearToDateSurplus()));
+        return card("Balances (All Funds)", values);
+    }
+
+    private static VBox notesCard()
+    {
+        Label empty = new Label("No notes for this period.");
+        Button add = new Button("Add Note");
+        add.setDisable(true);
+        return card("Notes", new VBox(10, empty, add));
+    }
+
+    private static VBox card(String titleText, javafx.scene.Node content)
+    {
+        Label title = new Label(titleText);
+        title.getStyleClass().add("inspector-card-title");
+        Separator separator = new Separator();
+        VBox card = new VBox(8, title, separator, content);
+        card.getStyleClass().add("inspector-card");
+        return card;
+    }
+
+    private static Label strong(String text)
+    {
+        Label label = new Label(text);
+        label.getStyleClass().add("inspector-strong");
+        return label;
+    }
+
+    private static void add(GridPane grid, int row, String key, String value)
+    {
+        Label keyLabel = new Label(key);
+        Label valueLabel = new Label(value);
+        valueLabel.setWrapText(true);
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox line = new HBox(8, keyLabel, spacer, valueLabel);
+        line.setAlignment(Pos.CENTER_LEFT);
+        grid.add(line, 0, row);
     }
 }
