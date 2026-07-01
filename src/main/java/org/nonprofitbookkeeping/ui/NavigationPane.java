@@ -12,6 +12,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -50,6 +51,13 @@ public class NavigationPane extends BorderPane
         select(AppPanelId.DASHBOARD);
     }
 
+    EnumSet<AppPanelId> indexedPanelIds()
+    {
+        return buttons.isEmpty()
+                ? EnumSet.noneOf(AppPanelId.class)
+                : EnumSet.copyOf(buttons.keySet());
+    }
+
     private HBox buildHeading()
     {
         Label menu = new Label("☰");
@@ -71,20 +79,20 @@ public class NavigationPane extends BorderPane
         addSection(content, "Accounting",
                 item(AppPanelId.LEDGER_REGISTER, "▤", "Ledger Register"),
                 item(AppPanelId.TXN_EDITOR, "✎", "Transaction Editor"),
-                item(AppPanelId.TXN_EDITOR, "▧", "Journal Entry"),
                 item(AppPanelId.RECONCILIATION_RUNS, "⌂", "Banking & Reconciliation"),
+                item(AppPanelId.BANK_TRANSACTIONS, "▥", "Bank Transactions"),
                 item(AppPanelId.SCHEDULES, "▣", "Schedules"));
         addSection(content, "Planning",
                 item(AppPanelId.BUDGET_EDITOR, "▧", "Budget Editor"),
                 item(AppPanelId.BUDGET_VS_ACTUAL, "▥", "Budget vs Actual"));
         addSection(content, "Assets & Inventory",
                 item(AppPanelId.ASSETS_REGISTER, "⌂", "Fixed Assets"),
-                item(AppPanelId.INVENTORY, "▦", "Inventory"),
-                item(AppPanelId.INVENTORY, "⌘", "Supplies"));
-        addSection(content, "Liabilities & Receivables",
-                item(AppPanelId.SCHEDULES, "◷", "Receivables"),
-                item(AppPanelId.SCHEDULES, "▣", "Payables"),
-                item(AppPanelId.SCHEDULES, "▨", "Prepaids & Deferred"));
+                item(AppPanelId.DEPRECIATION_RUNS, "▥", "Depreciation Runs"),
+                item(AppPanelId.INVENTORY, "▦", "Inventory"));
+        addSection(content, "Import & Oversight",
+                item(AppPanelId.IMPORT_PREVIEW, "⇩", "Import Preview"),
+                item(AppPanelId.IMPORT_EXPORT_JOBS, "⇅", "Import / Export Jobs"),
+                item(AppPanelId.APPROVAL_AUDIT, "✓", "Approval Audit"));
         addSection(content, "Period Close",
                 item(AppPanelId.PERIOD_CLOSE_RUNS, "▣", "Period Close"));
         addSection(content, "Reports",
@@ -93,6 +101,9 @@ public class NavigationPane extends BorderPane
                 item(AppPanelId.CHART_OF_ACCOUNTS, "▤", "Chart of Accounts"),
                 item(AppPanelId.FUNDS, "▥", "Funds"),
                 item(AppPanelId.SETTINGS, "⚙", "Settings"));
+        addSection(content, "System",
+                item(AppPanelId.DIAGNOSTICS, "◉", "Diagnostics"),
+                item(AppPanelId.HELP, "?", "Help"));
 
         ScrollPane scrollPane = new ScrollPane(content);
         scrollPane.setFitToWidth(true);
@@ -125,7 +136,10 @@ public class NavigationPane extends BorderPane
         content.getChildren().addAll(separator, heading);
         for (NavDefinition definition : definitions)
         {
-            content.getChildren().add(nav(definition.panelId(), definition.glyph(), definition.label()));
+            content.getChildren().add(nav(
+                    definition.panelId(),
+                    definition.glyph(),
+                    definition.label()));
         }
     }
 
@@ -160,7 +174,8 @@ public class NavigationPane extends BorderPane
 
     private void select(AppPanelId panelId)
     {
-        buttons.values().forEach(button -> button.getStyleClass().remove("navigation-item-selected"));
+        buttons.values().forEach(
+                button -> button.getStyleClass().remove("navigation-item-selected"));
         Button selected = buttons.get(panelId);
         if (selected != null)
         {
