@@ -10,16 +10,20 @@ public class MainApp extends Application
     @Override
     public void start(Stage stage)
     {
-        ProductionWorkspaceWindow root = new ProductionWorkspaceWindow();
+        ReferenceWorkspaceWindow root = new ReferenceWorkspaceWindow();
+
 
         Scene scene = new Scene(root, 1440, 900);
+
         scene.getStylesheets().add(getClass().getResource("/ui/styles.css").toExternalForm());
 
         GlobalShortcuts.install(scene, root);
 
+
         stage.setTitle("Nonprofit Accounting (SCA-Jakarta)");
         stage.setMinWidth(1024);
         stage.setMinHeight(700);
+
         stage.setScene(scene);
         stage.show();
     }
