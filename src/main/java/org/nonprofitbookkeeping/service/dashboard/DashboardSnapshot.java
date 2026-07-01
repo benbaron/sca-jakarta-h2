@@ -32,6 +32,9 @@ public record DashboardSnapshot(
             String fundSummary,
             BigDecimal debitTotal,
             BigDecimal creditTotal,
+            Optional<BigDecimal> runningBankBalance,
+            boolean affectsBank,
+            boolean affectsBudget,
             String status)
     {
     }
@@ -61,6 +64,17 @@ public record DashboardSnapshot(
         public Optional<BigDecimal> variance()
         {
             return budget.map(actual::subtract);
+        }
+
+        public Optional<BigDecimal> performancePercent()
+        {
+            if (budget.isEmpty() || budget.orElseThrow().compareTo(BigDecimal.ZERO) == 0)
+            {
+                return Optional.empty();
+            }
+            return Optional.of(actual
+                    .divide(budget.orElseThrow(), 6, java.math.RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal("100")));
         }
     }
 }
