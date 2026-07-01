@@ -10,13 +10,14 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JpaDashboardQueryServiceTest
 {
     @Test
-    public void emptyDatabase_returnsZeroAndNoFictionalValues(@TempDir Path tempDir)
+    public void emptyDatabaseReturnsZeroAndNoFictionalValues(@TempDir Path tempDir)
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("dashboard-empty")))
         {
@@ -30,25 +31,30 @@ public class JpaDashboardQueryServiceTest
             assertTrue(snapshot.bankAccounts().isEmpty());
             assertTrue(snapshot.recentTransactions().isEmpty());
             assertEquals(0L, snapshot.openItems().totalOpenItems());
+            assertEquals(BigDecimal.ZERO, snapshot.openItems().totalOpenAmount());
             assertTrue(snapshot.reconciliations().isEmpty());
             assertTrue(snapshot.budgetActuals().isEmpty());
+            assertEquals("BARONY-RED", snapshot.organization().code());
+            assertEquals("UNCONFIGURED", snapshot.period().status());
+            assertEquals(6, snapshot.monthlyResults().size());
         }
     }
 
     @Test
-    public void load_rejectsMissingDateAndNonPositiveLimit(@TempDir Path tempDir)
+    public void loadRejectsMissingDateAndNonPositiveLimit(@TempDir Path tempDir)
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("dashboard-validation")))
         {
             JpaDashboardQueryService service = new JpaDashboardQueryService(jpa);
 
             assertThrows(IllegalArgumentException.class, () -> service.load(null, 5));
-            assertThrows(IllegalArgumentException.class, () -> service.load(LocalDate.of(2026, 6, 30), 0));
+            assertThrows(IllegalArgumentException.class, () ->
+                    service.load(LocalDate.of(2026, 6, 30), 0));
         }
     }
 
     @Test
-    public void populatedDatabase_projectsEveryExperimentCardFromRealData(@TempDir Path tempDir)
+    public void populatedDatabaseProjectsReferenceDashboardFromRealData(@TempDir Path tempDir)
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("dashboard-populated")))
         {
@@ -70,10 +76,15 @@ public class JpaDashboardQueryServiceTest
             assertTrue(recent.fundSummary().contains("OPERATING Operating"));
             assertEquals(new BigDecimal("50.0000"), recent.debitTotal());
             assertEquals(new BigDecimal("50.0000"), recent.creditTotal());
+            assertEquals(new BigDecimal("250.0000"), recent.runningBankBalance().orElseThrow());
+            assertTrue(recent.affectsBank());
+            assertTrue(recent.affectsBudget());
 
             assertTrue(snapshot.fundClassTotals().containsKey("UNRESTRICTED"));
             assertEquals(1L, snapshot.openItems().countFor("RECEIVABLE"));
+            assertEquals(new BigDecimal("75.0000"), snapshot.openItems().amountFor("RECEIVABLE"));
             assertEquals(1L, snapshot.openItems().totalOpenItems());
+            assertEquals(new BigDecimal("75.0000"), snapshot.openItems().totalOpenAmount());
 
             assertEquals(1, snapshot.reconciliations().size());
             DashboardSnapshot.ReconciliationStatus reconciliation = snapshot.reconciliations().get(0);
@@ -86,11 +97,16 @@ public class JpaDashboardQueryServiceTest
             assertEquals("PROGRAM", budgetActual.categoryCode());
             assertEquals(new BigDecimal("50.0000"), budgetActual.actual());
             assertTrue(budgetActual.budget().isEmpty());
+
+            assertEquals("BARONY-RED", snapshot.organization().code());
+            assertEquals("UNCONFIGURED", snapshot.period().status());
+            assertEquals(new BigDecimal("300.0000"), snapshot.monthlyResults().get(0).surplus());
+            assertEquals(new BigDecimal("-50.0000"), snapshot.monthlyResults().get(1).surplus());
         }
     }
 
     @Test
-    public void reversedTransactions_areExcludedFromBalancesButRemainVisibleInHistory(@TempDir Path tempDir)
+    public void reversedTransactionsAreExcludedFromDerivedIndicators(@TempDir Path tempDir)
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("dashboard-reversed")))
         {
@@ -98,7 +114,8 @@ public class JpaDashboardQueryServiceTest
             try (EntityManager em = jpa.em())
             {
                 em.getTransaction().begin();
-                em.createNativeQuery("UPDATE txn SET status = 'REVERSED' WHERE id = 1").executeUpdate();
+                em.createNativeQuery("UPDATE txn SET status = 'REVERSED' WHERE id = 1")
+                        .executeUpdate();
                 em.getTransaction().commit();
             }
 
@@ -108,6 +125,13 @@ public class JpaDashboardQueryServiceTest
             assertEquals(new BigDecimal("-50.0000"), snapshot.bookCash());
             assertEquals(new BigDecimal("-50.0000"), snapshot.yearToDateSurplus());
             assertEquals(2, snapshot.recentTransactions().size());
+
+            DashboardSnapshot.RecentTransaction reversed = snapshot.recentTransactions().stream()
+                    .filter(row -> row.transactionId() == 1L)
+                    .findFirst()
+                    .orElseThrow();
+            assertFalse(reversed.affectsBank());
+            assertFalse(reversed.affectsBudget());
         }
     }
 
