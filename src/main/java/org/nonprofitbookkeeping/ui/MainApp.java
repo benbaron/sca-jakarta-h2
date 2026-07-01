@@ -12,14 +12,18 @@ public class MainApp extends Application
     {
         ReferenceWorkspaceWindow root = new ReferenceWorkspaceWindow();
 
-        Scene scene = new Scene(root, 1400, 860);
+
+        Scene scene = new Scene(root, 1440, 900);
+
         scene.getStylesheets().add(getClass().getResource("/ui/styles.css").toExternalForm());
 
         GlobalShortcuts.install(scene, root);
 
-        stage.setTitle("SCA Ledger");
-        stage.setMinWidth(980);
-        stage.setMinHeight(680);
+
+        stage.setTitle("Nonprofit Accounting (SCA-Jakarta)");
+        stage.setMinWidth(1024);
+        stage.setMinHeight(700);
+
         stage.setScene(scene);
         stage.show();
     }

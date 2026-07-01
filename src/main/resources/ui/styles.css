@@ -14,8 +14,19 @@
     -fx-background-color: #f4f6f9;
 }
 
+.application-shell,
+.dashboard-home,
+.dashboard-scroll,
+.dashboard-scroll > .viewport
+{
+    -fx-background-color: #f5f7fa;
+}
+
 .menu-bar,
+<<<<<<< HEAD
 .top-chrome,
+=======
+>>>>>>> main
 .tool-bar,
 .main-toolbar
 {
@@ -28,6 +39,7 @@
     -fx-padding: 2 8 2 8;
 }
 
+<<<<<<< HEAD
 .tool-bar,
 .main-toolbar
 {
@@ -36,6 +48,38 @@
 }
 
 .toolbar-icon-button
+=======
+.tool-bar
+{
+    -fx-padding: 7 12 7 12;
+    -fx-spacing: 4;
+}
+
+.toolbar-action,
+.tool-bar .menu-button,
+.user-menu-button
+{
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 6 8 6 8;
+}
+
+.toolbar-action:hover,
+.tool-bar .menu-button:hover,
+.user-menu-button:hover
+{
+    -fx-background-color: #edf4ff;
+}
+
+.company-picker,
+.period-picker
+{
+    -fx-pref-width: 150px;
+}
+
+.workspace-split,
+.split-pane
+>>>>>>> main
 {
     -fx-background-color: transparent;
     -fx-background-radius: 5;
@@ -77,6 +121,7 @@
     -fx-padding: 0 2 0 2;
 }
 
+<<<<<<< HEAD
 .workspace-tabs
 {
     -fx-background-color: #f4f6f9;
@@ -106,12 +151,21 @@
     -fx-background-color: #f4f6f9;
     -fx-border-color: transparent transparent #1268d4 transparent;
     -fx-border-width: 0 0 2 0;
-}
-
-.navigation-pane,
-.nav
+=======
+.navigation-pane
 {
     -fx-background-color: white;
+    -fx-border-color: transparent #dfe5ec transparent transparent;
+    -fx-min-width: 180px;
+    -fx-pref-width: 220px;
+>>>>>>> main
+}
+
+.navigation-scroll,
+.navigation-scroll > .viewport
+{
+    -fx-background-color: white;
+<<<<<<< HEAD
     -fx-border-color: transparent #dfe4ec transparent transparent;
     -fx-padding: 10 8 10 8;
     -fx-min-width: 0;
@@ -173,19 +227,32 @@
 .navigation-item-selected .ui-icon-shape
 {
     -fx-fill: #075fc7;
+=======
+>>>>>>> main
 }
 
-.inspector-pane,
-.inspector
+.navigation-heading
 {
+<<<<<<< HEAD
     -fx-background-color: white;
     -fx-border-color: transparent transparent transparent #dfe4ec;
     -fx-padding: 12;
     -fx-min-width: 0;
+=======
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+>>>>>>> main
 }
 
-.inspector-title
+.navigation-heading-icon,
+.navigation-item-icon
 {
+    -fx-text-fill: #334155;
+}
+
+.navigation-section
+{
+<<<<<<< HEAD
     -fx-font-size: 14px;
     -fx-font-weight: bold;
     -fx-text-fill: #172033;
@@ -207,20 +274,95 @@
 }
 
 .inspector-card-title
+=======
+    -fx-text-fill: #075fc7;
+    -fx-font-weight: bold;
+    -fx-padding: 4 8 2 8;
+}
+
+.navigation-separator
+{
+    -fx-padding: 3 4 2 4;
+}
+
+.navigation-item
+{
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 6 9 6 9;
+    -fx-background-radius: 5;
+}
+
+.navigation-item:hover
+{
+    -fx-background-color: #f1f5f9;
+}
+
+.navigation-item-selected
+>>>>>>> main
 {
     -fx-font-size: 12px;
     -fx-font-weight: bold;
     -fx-text-fill: #253247;
 }
 
+<<<<<<< HEAD
 .inspector-primary-value
+=======
+.navigation-item-selected .label
+{
+    -fx-text-fill: #075fc7;
+}
+
+.navigation-collapse
+{
+    -fx-background-color: white;
+    -fx-border-color: #dfe5ec transparent transparent transparent;
+    -fx-padding: 10 14 10 14;
+}
+
+.inspector-pane
+{
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent transparent #dfe5ec;
+    -fx-min-width: 235px;
+    -fx-pref-width: 255px;
+}
+
+.inspector-tabs > .tab-header-area > .tab-header-background,
+.tab-pane > .tab-header-area > .tab-header-background
+>>>>>>> main
 {
     -fx-font-size: 13px;
     -fx-font-weight: bold;
     -fx-text-fill: #172033;
 }
 
+<<<<<<< HEAD
 .inspector-value
+=======
+.inspector-card
+{
+    -fx-background-color: white;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-border-color: #dfe5ec;
+    -fx-padding: 12;
+}
+
+.inspector-card-title
+{
+    -fx-text-fill: #075fc7;
+    -fx-font-weight: bold;
+}
+
+.inspector-strong
+{
+    -fx-font-weight: bold;
+}
+
+.dashboard-grid
+>>>>>>> main
 {
     -fx-font-weight: bold;
     -fx-text-fill: #26354c;
@@ -234,11 +376,19 @@
 .dashboard-card
 {
     -fx-background-color: white;
+<<<<<<< HEAD
     -fx-background-radius: 8;
     -fx-border-color: #dfe5ed;
     -fx-border-radius: 8;
     -fx-padding: 13;
     -fx-effect: dropshadow(gaussian, rgba(30, 45, 70, 0.07), 9, 0.12, 0, 2);
+=======
+    -fx-background-radius: 7;
+    -fx-border-radius: 7;
+    -fx-border-color: #dfe5ec;
+    -fx-padding: 13;
+    -fx-effect: dropshadow(gaussian, rgba(31, 45, 61, 0.05), 7, 0.12, 0, 1);
+>>>>>>> main
 }
 
 .dashboard-card-title
@@ -248,12 +398,20 @@
     -fx-text-fill: #263247;
 }
 
+<<<<<<< HEAD
 .dashboard-amount
 {
     -fx-font-size: 25px;
+=======
+.dashboard-money
+{
+    -fx-font-size: 24px;
+>>>>>>> main
     -fx-font-weight: bold;
+    -fx-text-fill: #16863a;
 }
 
+<<<<<<< HEAD
 .dashboard-positive-amount
 {
     -fx-text-fill: #118846;
@@ -288,10 +446,52 @@
 }
 
 .dashboard-open-item-row
+=======
+.dashboard-value
+{
+    -fx-font-weight: bold;
+}
+
+.dashboard-link-value,
+.dashboard-link-title,
+.dashboard-footer-link
+{
+    -fx-text-fill: #075fc7;
+    -fx-font-weight: bold;
+}
+
+.dashboard-card-footer
+{
+    -fx-border-color: #e7ecf2 transparent transparent transparent;
+    -fx-padding: 8 0 0 0;
+}
+
+.dashboard-footer-link
+{
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.dashboard-rule
+{
+    -fx-min-height: 1px;
+    -fx-pref-height: 1px;
+    -fx-background-color: #e7ecf2;
+}
+
+.dashboard-quick-link
+{
+    -fx-padding: 5 4 5 4;
+    -fx-background-radius: 5;
+}
+
+.dashboard-quick-link:hover
+>>>>>>> main
 {
     -fx-border-color: transparent transparent #edf0f5 transparent;
 }
 
+<<<<<<< HEAD
 .dashboard-open-item-amount
 {
     -fx-font-weight: bold;
@@ -515,6 +715,25 @@
 }
 
 .dashboard-table .table-row-cell
+=======
+.dashboard-quick-icon
+{
+    -fx-text-fill: #0b78ff;
+    -fx-font-size: 18px;
+}
+
+.dashboard-emphasis
+{
+    -fx-font-weight: bold;
+}
+
+.muted
+{
+    -fx-text-fill: #64748b;
+}
+
+.dashboard-table
+>>>>>>> main
 {
     -fx-background-color: white;
     -fx-border-color: transparent transparent #edf0f4 transparent;
@@ -580,19 +799,54 @@
     -fx-font-weight: bold;
 }
 
+<<<<<<< HEAD
 .muted
+=======
+.dashboard-table .column-header-background
+>>>>>>> main
 {
     -fx-text-fill: #778294;
 }
 
-.dashboard-load-message
+.dashboard-table .column-header,
+.dashboard-table .filler
+{
+    -fx-background-color: #f8fafc;
+    -fx-border-color: transparent transparent #e4e9ef transparent;
+}
+
+.dashboard-table .table-row-cell
+{
+    -fx-border-color: transparent transparent #edf1f5 transparent;
+}
+
+.dashboard-check,
+.dashboard-status-positive,
+.connection-status
+{
+    -fx-text-fill: #16863a;
+    -fx-font-weight: bold;
+}
+
+.dashboard-status-warning
+{
+    -fx-text-fill: #e58a00;
+    -fx-font-weight: bold;
+}
+
+.dashboard-status-muted
+{
+    -fx-text-fill: #64748b;
+}
+
+.dashboard-message
 {
     -fx-background-color: #eaf3ff;
     -fx-border-color: #c8daf1;
     -fx-padding: 7 11 7 11;
 }
 
-.dashboard-load-error,
+.dashboard-message-error,
 .database-error-message
 {
     -fx-text-fill: #b22e28;
@@ -656,11 +910,26 @@
     -fx-text-fill: #b1322d;
 }
 
-.subheader
+.dashboard-sparkline,
+.dashboard-mini-bars
 {
-    -fx-font-weight: bold;
+    -fx-padding: 0;
+    -fx-background-color: transparent;
 }
 
+.dashboard-sparkline .chart-plot-background,
+.dashboard-mini-bars .chart-plot-background
+{
+    -fx-background-color: transparent;
+}
+
+.status-bar
+{
+    -fx-background-color: white;
+    -fx-border-color: #dfe5ec transparent transparent transparent;
+}
+
+<<<<<<< HEAD
 .panel-title
 {
     -fx-font-size: 17px;
@@ -668,9 +937,12 @@
 }
 
 .toolbar-active-panel
+=======
+.panel-title,
+.subheader
+>>>>>>> main
 {
     -fx-font-weight: bold;
-    -fx-opacity: 0.85;
 }
 
 .theme-dark

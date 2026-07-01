@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.service.dashboard;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +47,23 @@ public record DashboardSnapshot(
             boolean affectsBudget,
             String status)
     {
+        /** Running bank balance is not yet part of the authoritative dashboard projection. */
+        public Optional<BigDecimal> runningBankBalance()
+        {
+            return Optional.empty();
+        }
+
+        /** Bank-effect metadata is not yet persisted on the dashboard transaction projection. */
+        public boolean affectsBank()
+        {
+            return false;
+        }
+
+        /** Budget-effect metadata is not yet persisted on the dashboard transaction projection. */
+        public boolean affectsBudget()
+        {
+            return false;
+        }
     }
 
     public record OpenItemSummary(
@@ -82,6 +100,17 @@ public record DashboardSnapshot(
         public Optional<BigDecimal> variance()
         {
             return budget.map(actual::subtract);
+        }
+
+        public Optional<BigDecimal> performancePercent()
+        {
+            if (budget.isEmpty() || budget.orElseThrow().compareTo(BigDecimal.ZERO) == 0)
+            {
+                return Optional.empty();
+            }
+            return Optional.of(actual
+                    .divide(budget.orElseThrow(), 6, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal("100")));
         }
     }
 
