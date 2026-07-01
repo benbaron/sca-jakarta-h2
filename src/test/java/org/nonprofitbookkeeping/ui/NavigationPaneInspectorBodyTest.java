@@ -14,7 +14,8 @@ public class NavigationPaneInspectorBodyTest
     {
         String body = NavigationPane.inspectorBody(
                 new NavigationPane.NavItem(AppPanelId.DIAGNOSTICS, "Diagnostics"),
-                new NavigationPane.InspectorContext("BARONY-RED", "2026-01-01..2026-01-31", "Health checks"));
+                new NavigationPane.InspectorContext("BARONY-RED", 
+                	"2026-01-01..2026-01-31", "Health checks"));
         assertTrue(body.contains("Diagnostics"));
         assertTrue(body.contains("DIAGNOSTICS"));
         assertTrue(body.contains("BARONY-RED"));
