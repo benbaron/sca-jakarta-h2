@@ -2,11 +2,11 @@
 plan_version: 3
 active_phase: P00
 active_slice: P00-S1
-active_status: READY
-active_branch: null
-active_pull_request: null
-active_head: null
-next_action: "Execute P00-S1: create the authoritative interface-operation inventory from current main."
+active_status: VERIFYING
+active_branch: codex/P00-S1-inventory
+active_pull_request: local make_pr record (no git remote configured)
+active_head: HEAD (local commit; no remote available)
+next_action: "Push codex/P00-S1-inventory when a remote is configured, open/attach the PR, and rerun mvn clean verify after Maven can resolve dependencies."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -92,24 +92,20 @@ A phase may begin early only when its required slice has no dependency on an unf
 ### Existing focused documents
 
 - `doc/architecture/production-workspace.md`
-- `doc/dashboard-workspace.md`
+- `doc/architecture/dashboard-workspace.md`
 - `doc/accounting/transaction-lifecycle.md`
 - `doc/accounting/period-and-correction-policy.md`
 - `doc/import/import-review-workflow.md`
 - `doc/testing/production-workspace-test-plan.md`
+- `doc/interface-operation-matrix.md`
+- `doc/persistence-authority-inventory.md`
+- `doc/architecture/union-application-direction.md`
+- `doc/workflow/development-workflow.md`
 
-### Legacy reference to consolidate during P00
+### Legacy reference consolidated during P00
 
-- `docs/union-application-migration-plan.md`
-
-Its still-current decisions include:
-
-- this repository is primary;
-- the JPA/Hibernate model is schema authority;
-- donor features are adapted rather than copied;
-- workbook reports belong in `REPORT_LIBRARY`;
-- Supplies belongs within Inventory;
-- `BudgetCategory` is distinct from `Activity`.
+- `doc/architecture/union-application-direction.md` records the still-current union application direction.
+- The legacy path `docs/union-application-migration-plan.md` was not present in this worktree during P00 inventory.
 
 ### Documents created by later phases
 
@@ -126,7 +122,7 @@ Create only when their owning phase begins:
 - `doc/reporting/report-architecture.md` — P11
 - `doc/ui/editor-guidelines.md` — P03
 - `doc/testing/end-to-end-scenarios.md` — P14
-- `doc/workflow/development-workflow.md` — P00
+- `doc/workflow/development-workflow.md` — P00 (created)
 
 Link every created document from this section.
 
@@ -197,8 +193,11 @@ These apply to every phase unless a focused document deliberately supersedes the
 # P00 — Documentation and implementation inventory
 
 **Selector:** `PHASE=P00`  
-**Status:** READY  
+**Status:** VERIFYING
 **Depends on:** none
+**Branch:** `codex/P00-S1-inventory`
+**Pull request:** local make_pr record only; no git remote is configured in this container.
+**Head:** current local `HEAD`; no remote is available for an immutable pushed SHA in this container.
 
 ## Objective
 
@@ -249,7 +248,7 @@ LocalDate.now()
 
 ### P00-S1 — Interface-operation matrix
 
-Create `doc/interface-operation-matrix.md`.
+Status: VERIFYING. Created `doc/interface-operation-matrix.md`.
 
 For every `AppPanelId` and global command record:
 
@@ -267,7 +266,7 @@ For every `AppPanelId` and global command record:
 
 ### P00-S2 — Model and persistence authority inventory
 
-Document:
+Status: VERIFYING. Created `doc/persistence-authority-inventory.md` documenting:
 
 - duplicate transaction/journal models;
 - duplicate budget models;
@@ -280,10 +279,12 @@ Document:
 
 ### P00-S3 — Documentation consolidation
 
-- create `doc/architecture/union-application-direction.md`;
-- move still-current decisions out of legacy `docs/`;
-- create `doc/workflow/development-workflow.md`;
-- update this plan with a dependency-ordered PR backlog.
+Status: VERIFYING.
+
+- created `doc/architecture/union-application-direction.md`;
+- consolidated still-current legacy `docs/` decisions; the legacy file was absent in this worktree;
+- created `doc/workflow/development-workflow.md`;
+- updated this plan with a dependency-ordered PR backlog and handoff.
 
 ## Forbidden in P00
 
@@ -302,6 +303,33 @@ Document:
 ## Exit gate
 
 P00 is done when the inventory is merged and later phases can identify exact prerequisites without rescanning the entire repository.
+
+
+## P00 handoff and findings (2026-07-02)
+
+- Selected phase/slice: P00 documentation and implementation inventory, covering P00-S1 through P00-S3 because the phase seed prompt requested the full inventory set.
+- Completed deliverables: interface-operation matrix, model/persistence authority inventory, union application direction, development workflow, and this plan update.
+- Required inspection completed: `AppPanelId`, `PanelHost`, `NavigationPane`, `InspectorPane`, workspace/window classes, `UiServiceRegistry`, production panels, entities, repositories, services, migrations, tests, and targeted placeholder/sidecar searches.
+- Repository limitations: no `origin` remote is configured, so `git fetch origin --prune`, `git log origin/main`, GitHub workflow inspection, and remote PR creation could not be completed from this container.
+- Missing reference files: root `README.md`, `docs/`, and `docs/union-application-migration-plan.md` were not present in this worktree.
+- Baseline test status: `mvn -DskipTests compile` failed before project compilation because Maven could not resolve `maven-resources-plugin:3.3.1` from Maven Central (`Network is unreachable`). `mvn clean verify` failed with the same dependency-resolution blocker for `maven-clean-plugin:3.2.0`.
+- Known findings: static/sidecar UI stores exist for budget targets, bank transactions, import/export jobs, schedules, assets, depreciation, and inventory; transaction entry is session-only; report library contains not-implemented report fallback; approval/rejection controls are visible in reconciliation and period-close run panels.
+- Next exact action: configure a git remote, push `codex/P00-S1-inventory`, attach the PR record, rerun `mvn clean verify` with Maven dependency access, then merge P00 before unblocking P01/P02.
+
+## Dependency-ordered PR backlog after P00
+
+1. P01-S1 Shell authority: one production workspace shell, remove duplicate/reference shell behavior from production routes, remove approval-oriented global commands, and replace button-text command discovery with typed commands.
+2. P01-S2 Workspace composition: introduce lifecycle-owned workspace context/services/factory/panel factory so panels no longer use static service lookup as the composition root.
+3. P01-S3 Database switching/recovery: make database migration/service construction atomic and refresh database-bound panels after successful swap.
+4. P01-S4 Geometry/preferences: harden responsive sidebars, divider persistence, and laptop-size layout tests.
+5. P02-S1 Ledger authority: create `doc/accounting/ledger-authority.md` and choose one canonical writable ledger before adding transaction writes.
+6. P02-S2/P02-S4: implement transaction command/query/correction policy on the canonical ledger.
+7. P03: wire ledger register and transaction editor to canonical services; remove session-only transaction save.
+8. P04: replace `BudgetTargetPersistence` with H2 budget plans/lines.
+9. P05/P13: persist accepted bank statement/import-job facts and keep only review staging in memory.
+10. P06/P10: reconcile bank activity and replace approval/rejection UI with factual audit/close/reopen history.
+11. P07/P08/P09: replace runbook sidecars with H2-backed schedules/open items, fixed assets/depreciation, and inventory/supplies.
+12. P11/P12/P14: complete report architecture, company/preferences lifecycle, diagnostics, and end-to-end hardening.
 
 ## Codex seed prompt
 
@@ -329,7 +357,7 @@ Make the approved interface the single production shell and establish lifecycle-
 ## Required reading
 
 - `doc/architecture/production-workspace.md`;
-- `doc/dashboard-workspace.md`;
+- `doc/architecture/dashboard-workspace.md`;
 - P00 operation matrix;
 - `doc/testing/production-workspace-test-plan.md`.
 
