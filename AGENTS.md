@@ -1,52 +1,273 @@
 # AGENTS.md
 
-## Purpose
+## 1. Purpose and scope
 
-This file governs work in the `benbaron/sca-jakarta-h2` repository.
-
-The repository is the production implementation of the SCA Bookkeeping Program. Work must advance a single coherent JavaFX/H2 application rather than create prototypes, parallel persistence systems, or disconnected panels.
-
-These instructions apply to the entire repository unless a more specific `AGENTS.md` exists in a subdirectory. A nested file may refine local practices, but it must not contradict this file or the governing documents under `doc/`.
-
-## Mandatory first step
-
-Before designing, editing, or reviewing code:
-
-1. Open and read [`doc/PLAN.md`](doc/PLAN.md).
-2. Follow the document map in `doc/PLAN.md` and read every document relevant to the requested slice.
-3. Inspect current `main`, including the implementation, migrations, tests, and recently merged pull requests that affect the slice.
-4. Compare the requested change with the current plan and documentation.
-5. If the request conflicts with current implementation or documentation, identify the conflict and resolve it deliberately. Do not silently introduce another architecture.
-
-Do not begin implementation from memory, an obsolete branch, an old pull request, or a donor repository.
-
-## Sources of truth
-
-Use the following order when resolving ambiguity:
-
-1. The user's current explicit request and project instructions.
-2. This `AGENTS.md`.
-3. `doc/PLAN.md`.
-4. Focused governing documents under `doc/`.
-5. Current `main` as the source of truth for what is actually implemented.
-6. Current migrations and tests as evidence of persisted behavior and enforced contracts.
-7. Historical pull requests, old branches, experiments, and donor repositories as reference only.
-
-When two authoritative sources conflict:
-
-- stop the affected design decision;
-- describe the conflict in the pull request or planning document;
-- select one direction explicitly;
-- update the governing documentation in the same slice;
-- do not preserve both behaviors by creating parallel code paths.
-
-## Repository roles
-
-The authoritative production repository is:
+This file is the repository-wide operating contract for Codex and other coding agents working in:
 
 ```text
 https://github.com/benbaron/sca-jakarta-h2
 ```
+
+The repository is the production implementation of the SCA Bookkeeping Program. Work must advance one coherent JavaFX/H2 application. Do not create a second application, a parallel persistence model, a second ledger, or disconnected prototype panels.
+
+These instructions apply to the entire repository unless a more specific `AGENTS.md` exists below the working directory. A nested file may narrow local practices, but it may not contradict this file or the governing documents under `doc/`.
+
+## 2. Codex container bootstrap protocol
+
+Codex must perform this protocol immediately after the task container starts and before editing any file.
+
+### 2.1 Establish repository state
+
+Run:
+
+```bash
+pwd
+git status --short --branch
+git remote -v
+git fetch origin --prune
+git log -1 --oneline origin/main
+java -version
+mvn -version
+```
+
+Then:
+
+1. Confirm that the working directory is the `sca-jakarta-h2` repository.
+2. Inspect all uncommitted and untracked files.
+3. Never discard existing work with `git reset --hard`, `git clean -fd`, checkout-overwrite, or equivalent destructive commands.
+4. If the worktree contains unexplained changes, stop and report them before proceeding.
+5. Treat current `origin/main` as the implementation source of truth.
+6. If Codex starts on an existing task branch, determine whether that branch owns the selected phase and whether it is based on current `origin/main`.
+7. If Codex starts on `main` and the selected phase is ready, create a focused branch named:
+
+```text
+codex/<phase-id>-<slice-id>-<short-description>
+```
+
+Do not reuse a branch whose pull request has already merged.
+
+### 2.2 Read the control documents
+
+Read, in this order:
+
+1. `AGENTS.md`
+2. `doc/PLAN.md`
+3. every document listed by the selected phase under **Required reading**
+4. every current implementation, migration, and test file listed by the selected phase under **Required inspection**
+
+Do not begin from chat memory, an old pull request, an obsolete branch, a donor repository, or an experiment module.
+
+## 3. Phase selection contract
+
+Codex must execute one selected plan phase and one selected slice at a time.
+
+### 3.1 Selection precedence
+
+Determine `SELECTED_PHASE` and `SELECTED_SLICE` using this order:
+
+1. An explicit phase and slice in the user/developer task, for example:
+
+   ```text
+   PHASE=P03
+   SLICE=P03-S2
+   ```
+
+2. An explicit phase in the task. When only a phase is given, select the first incomplete, unblocked slice in that phase.
+3. A task that clearly names work owned by exactly one phase. State the mapping before implementation.
+4. When the task says only “continue,” “proceed,” or equivalent, use the `active_phase` and `active_slice` in the front matter of `doc/PLAN.md`.
+5. If no unambiguous phase can be selected, stop and ask which phase to execute.
+
+The explicit task phase may override `active_phase`, but Codex must still verify its prerequisites.
+
+### 3.2 Phase status rules
+
+Valid statuses are:
+
+```text
+BLOCKED
+READY
+IN_PROGRESS
+VERIFYING
+DONE
+```
+
+Interpret them as follows:
+
+- `BLOCKED`: do not implement. Report the unmet prerequisite.
+- `READY`: start the slice from current `main`.
+- `IN_PROGRESS`: resume the branch and pull request recorded in `doc/PLAN.md`.
+- `VERIFYING`: finish tests, diff review, documentation, and pull-request validation for the recorded branch.
+- `DONE`: do not reimplement. A new request affecting this phase is a corrective slice from current `main`.
+
+A phase is `DONE` only when the behavior is merged into current `main`, the governing documentation is current, and required validation passed. Local code or an open pull request is not `DONE`.
+
+### 3.3 Scope fence
+
+After selecting the phase:
+
+1. Read only enough adjacent-phase material to understand dependencies.
+2. Do not implement later-phase features.
+3. Do not opportunistically rewrite unrelated panels.
+4. Do not add “temporary” parallel models or services for a later phase.
+5. A small prerequisite defect may be repaired in the same pull request only when:
+   - it directly blocks the selected slice;
+   - the repair is narrowly scoped;
+   - the plan and PR explain it;
+   - tests cover it.
+6. If the prerequisite is a substantial independent slice, mark the selected phase blocked and stop.
+
+## 4. Plan advancement protocol
+
+`doc/PLAN.md` is an execution ledger, not merely a wish list.
+
+### At task start
+
+Codex must:
+
+1. verify the plan front matter against current `main`;
+2. verify any recorded branch and pull request;
+3. update the selected phase to `IN_PROGRESS` when beginning a new slice;
+4. record the branch and pull request when they exist;
+5. record newly discovered prerequisites or conflicts.
+
+### Before ending an implementation run
+
+Codex must update `doc/PLAN.md` with:
+
+- actual phase and slice status;
+- branch name;
+- pull-request number or URL;
+- current head commit;
+- completed deliverables;
+- remaining deliverables;
+- test status;
+- known failures;
+- next exact action.
+
+### Advancing to another phase
+
+Do not advance `active_phase` merely because local tests pass.
+
+Advance only after confirming that the previous phase or required slice is merged into current `main`. Then:
+
+1. mark the completed slice and phase as `DONE`;
+2. clear obsolete branch/PR fields;
+3. activate the first unblocked dependent slice;
+4. set its status to `READY`;
+5. update `next_action`.
+
+## 5. Execution loop for the selected phase
+
+### Step 1 — Inspect before design
+
+Inspect:
+
+- current entities and DTOs;
+- repositories and query services;
+- application/domain services;
+- JavaFX panels and workspace wiring;
+- Flyway migrations;
+- existing tests;
+- recent merged PRs affecting the selected area;
+- donor/experiment code only when the phase explicitly lists it as reference.
+
+Identify:
+
+- current behavior;
+- missing behavior;
+- duplicate models;
+- sidecar or static persistence;
+- placeholders;
+- architecture conflicts;
+- migration risks;
+- test gaps.
+
+Record any material conflict in the governing `doc/` file before implementing an alternative.
+
+### Step 2 — Establish baseline
+
+For code phases, run the least expensive useful baseline before editing, normally:
+
+```bash
+mvn -DskipTests compile
+```
+
+For migration, service, or repository work, also run the most relevant existing tests.
+
+If baseline fails for a defect unrelated to the selected phase, report it. Repair it only under the scope-fence rule.
+
+### Step 3 — Implement one coherent slice
+
+A slice must be mergeable and vertically coherent. Where applicable it includes:
+
+- model/entity changes;
+- a new nondestructive migration;
+- repository changes;
+- domain/application services;
+- query projections;
+- JavaFX wiring;
+- tests;
+- documentation.
+
+Do not deliver a visible enabled button before its real operation exists.
+
+### Step 4 — Validate locally
+
+Run focused tests during development. Before completion run:
+
+```bash
+mvn clean verify
+```
+
+If a desktop UI cannot be launched in the container, run headless policy/layout tests and clearly record the required manual visual check. Do not claim visual validation that did not occur.
+
+### Step 5 — Inspect the final result
+
+Before handoff:
+
+```bash
+git status --short
+git diff --stat origin/main...HEAD
+git diff --check origin/main...HEAD
+```
+
+Inspect the complete diff. Confirm that:
+
+- no generated `target/` files are tracked;
+- no user database files are changed;
+- no temporary debug workflow remains;
+- no unrelated formatting churn is present;
+- no conflict markers remain;
+- no placeholder or simulated success path remains in the selected slice.
+
+### Step 6 — GitHub validation
+
+Use the repository workflow to run or inspect `mvn clean verify`.
+
+Read failing logs. Correct every failure. Update the pull-request description with actual results. Never claim that GitHub confirmed a result when it did not.
+
+## 6. Sources of truth
+
+Resolve ambiguity in this order:
+
+1. the current explicit user/developer request;
+2. this `AGENTS.md`;
+3. `doc/PLAN.md`, including the selected phase contract;
+4. focused governing documents under `doc/`;
+5. current `main` for actual implementation state;
+6. migrations and tests as evidence of persisted/enforced behavior;
+7. merged PR history;
+8. donor repositories, experiments, and old branches as reference only.
+
+When authoritative sources conflict:
+
+- stop the affected design decision;
+- describe the conflict;
+- select one direction deliberately;
+- update the governing documentation in the same slice;
+- do not preserve both directions with parallel code.
+
+## 7. Repository and documentation rules
 
 The package namespace remains:
 
@@ -54,66 +275,20 @@ The package namespace remains:
 org.nonprofitbookkeeping
 ```
 
-`benbaron/npbk-javafx-h2` and any `experiments/` modules are donor or visual-reference sources only. They may supply useful behavior, layouts, report definitions, or test cases, but they do not replace this repository's architecture or schema authority.
+`benbaron/npbk-javafx-h2` and `experiments/` are donor/reference sources only.
 
-Adapt useful donor behavior into the established model, services, repositories, panel contracts, and workspace shell. Never copy a donor database bootstrap or create a second application beside the production application.
+The `doc/` directory is the production specification. Detailed architecture, accounting, database, UI, workflow, reporting, migration, and testing decisions belong there.
 
-## Documentation policy
+Required documentation behavior:
 
-The `doc/` directory contains the evolving production specification.
+- start with `doc/PLAN.md`;
+- update the plan in every substantial slice;
+- link every new governing document from the plan;
+- do not hide unresolved product decisions in comments;
+- use concise Javadoc for important public APIs;
+- do not create new planning documents under legacy `docs/`.
 
-### Required behavior
-
-- Start every substantial task with `doc/PLAN.md`.
-- Update `doc/PLAN.md` when a slice begins, changes scope, reveals a prerequisite, or completes.
-- Put detailed architecture, accounting, schema, UI, migration, workflow, and testing decisions in focused Markdown files under `doc/`.
-- Update governing documentation in the same pull request as the implementation it describes.
-- Link new documents from `doc/PLAN.md`.
-- Record unresolved decisions explicitly; do not hide them in code comments.
-- Prefer concise Javadoc for public APIs and durable design rationale in `doc/`.
-
-### Directory convention
-
-Use these areas where applicable:
-
-```text
-doc/
-  PLAN.md
-  accounting/
-  architecture/
-  banking/
-  database/
-  import/
-  reporting/
-  testing/
-  ui/
-  workflow/
-```
-
-Do not create new planning documents under `docs/`. Existing files under `docs/` are legacy references until their still-valid decisions are incorporated into `doc/`.
-
-## Development workflow
-
-For every implementation slice:
-
-1. Fetch current `main`.
-2. Confirm there is no active branch or pull request that already owns the same slice.
-3. Create a focused branch from current `main`.
-4. Implement one coherent, mergeable slice.
-5. Commit logically grouped changes.
-6. Open one focused pull request.
-7. Continue updating that pull request while the slice remains active.
-8. Do not continue committing to a branch after its pull request is merged.
-9. If a merged change needs repair, start a new corrective branch from the new current `main`.
-10. Inspect the final diff and verify that no unintended files changed.
-11. Run or inspect `mvn clean verify` through GitHub Actions.
-12. Read all failing logs and correct the implementation.
-13. Update the pull request description with the actual validation results.
-14. Mark the pull request ready only after checks pass and any required desktop visual validation is complete.
-
-Never claim that code was pushed, tested, fixed, or ready to merge unless GitHub confirms it.
-
-## Technology and project structure
+## 8. Non-negotiable technical rules
 
 Use:
 
@@ -122,17 +297,16 @@ Use:
 - H2;
 - Maven;
 - JUnit 5;
-- the existing JPA/Hibernate persistence model;
-- Flyway migrations;
-- an Eclipse-compatible Maven project structure.
+- the established JPA/Hibernate persistence model;
+- Flyway;
+- an Eclipse-compatible Maven layout;
+- Allman brace style.
 
-Use Allman brace style.
+Prefer constructor injection, focused package boundaries, immutable command/query DTOs where practical, and descriptive names.
 
-Prefer descriptive names, small focused types, constructor injection, immutable command/query DTOs where practical, and Javadoc for important public APIs.
+Do not introduce another UI framework or dependency-injection framework without an explicit documented decision.
 
-Do not add another dependency-injection framework or UI framework without an explicit documented decision.
-
-## Architectural boundaries
+## 9. Architecture boundaries
 
 The intended dependency direction is:
 
@@ -149,222 +323,161 @@ Required boundaries:
 
 - JavaFX panels contain no SQL.
 - Repositories contain no accounting policy.
-- Domain entities and DTOs contain no JavaFX controls or JavaFX properties.
-- Cell factories and event handlers do not calculate authoritative accounting values.
-- Query services return projection DTOs intended for a screen or report.
-- Command services perform validation and write operations inside explicit database transactions.
-- Repositories use prepared statements or JPA parameters.
+- Entities and domain DTOs contain no JavaFX controls/properties.
+- Cell factories do not calculate authoritative accounting values.
+- Query services return screen/report projections.
+- Command services validate and write inside explicit database transactions.
+- Repositories use JPA parameters or prepared statements.
 - Failures roll back completely.
 - Exceptions are not swallowed.
-- Placeholder implementations and unexplained TODOs are not acceptable.
-- Static or sidecar stores are not authoritative accounting persistence.
+- No unexplained TODOs or placeholder implementations.
+- Static collections and sidecar files are not authoritative accounting persistence.
+- Existing architecture is extended, not paralleled.
 
-Extend the established architecture. Do not create parallel service registries, ledgers, budget stores, import stores, or panel frameworks.
+## 10. Accounting rules
 
-## Accounting rules
-
-The H2 database is authoritative for accounting data.
-
-### Double entry
+H2 is authoritative for accounting and operational data accepted into the application.
 
 Every authoritative accounting transaction must:
 
-- contain a header and at least two meaningful lines;
-- have total debits equal total credits;
-- use `BigDecimal` for all monetary values;
-- contain either a debit or a credit on a line, never both;
-- reference accounts, funds, budget categories, and other dimensions by stable database ID;
+- have a header and at least two meaningful lines;
+- balance total debits and credits;
+- use `BigDecimal`;
+- contain either debit or credit on an input line, never both;
+- reference master data by stable database IDs;
 - reject zero-value accounting lines;
 - preserve meaningful history.
 
-Presentation may derive debit and credit from the canonical signed amount only where the governing accounting model explicitly defines that conversion.
+The canonical transaction and correction behavior is governed by the selected phase documents. Do not invent a second writable ledger.
 
-### Transaction lifecycle
+Do not introduce user-facing `POSTED`, `APPROVED`, or `REJECTED` workflows unless the plan is deliberately amended.
 
-The application does not need a separate user-facing posting or approval workflow merely to make a transaction authoritative.
+Closed periods are never bypassed silently. Reopening, adjustment, correction, import acceptance, reconciliation, and material changes are audited as required by governing documents.
 
-The governing transaction and correction rules are defined in:
-
-- `doc/accounting/transaction-lifecycle.md`;
-- `doc/accounting/period-and-correction-policy.md`;
-- any later document linked from `doc/PLAN.md` that deliberately supersedes them.
-
-Retained accounting history must not be silently rewritten. Reversal, replacement, audit history, reconciliation protection, and any narrowly permitted edit or deletion behavior must be implemented through one documented policy and one transaction service.
-
-Do not invent `POSTED`, `APPROVED`, or `REJECTED` states without an explicit change to the governing documents.
-
-### Closed periods
-
-Closed-period behavior must follow the documented policy. The default user experience is warning-based reopening, with stricter reason or adjustment workflows available only where configured.
-
-A closed period is never bypassed silently. Reopening and adjustment actions are audited.
-
-### Nonprofit and fund accounting
-
-Support:
+Support nonprofit and fund accounting, including:
 
 - unrestricted, restricted, and designated funds;
-- budget categories separate from general-ledger accounts and activities;
+- budget categories separate from accounts and activities;
 - fund transfers;
-- bank accounts and reconciliation;
-- receivables;
-- prepaid expenses;
-- payables;
-- deferred revenue;
+- banking and reconciliation;
+- receivables and payables;
+- prepaid expenses and deferred revenue;
 - fixed assets and depreciation;
 - inventory and supplies;
 - assets, liabilities, income, expenses, and net assets.
 
-Financial policies and committee review are organizational controls and reporting context. Do not invent a formal in-application approval role unless the governing plan explicitly adds one.
+Unless the plan is deliberately amended:
 
-### Scope exclusions
-
-Unless `doc/PLAN.md` is deliberately amended:
-
-- transaction approvals are out of scope;
-- formal approval/rejection queues are out of scope;
-- attachments and document storage are out of scope;
+- approval queues are out of scope;
+- formal in-application oversight roles are out of scope;
+- attachments are out of scope;
 - a separate posting workflow is out of scope;
 - fictional production data is forbidden.
 
-Notes and audit history are in scope.
+Notes and factual audit history are in scope.
 
-## Database and migration rules
+## 11. Database and migration rules
 
-Use a normalized H2 schema with:
+Use normalized H2 tables with deliberate:
 
 - primary and foreign keys;
-- deliberate nullability;
-- deliberate delete behavior;
+- nullability;
+- delete behavior;
 - check and unique constraints;
-- indexes for joins, searches, sorting, and reporting;
-- generated identifiers;
-- explicit transactions;
-- rollback on failure.
+- indexes;
+- generated identifiers.
 
-Use file-mode H2 for the application and in-memory H2 for tests.
+Use file-mode H2 in production and in-memory H2 in tests.
 
-Every schema change must use a new, versioned, nondestructive Flyway migration.
+Every schema change uses a new nondestructive Flyway migration.
 
 Never:
 
-- edit a migration that may already have run in a user database;
-- delete or recreate a user database to resolve a migration problem;
+- edit an applied migration;
+- delete or recreate a user database to fix migration history;
 - drop user tables as a recovery shortcut;
-- overwrite user data to make a test pass;
-- infer schema state only from Hibernate entities without inspecting migrations.
+- overwrite user data to satisfy tests;
+- treat Hibernate entity generation as a substitute for migration review.
 
-Migration and recovery logic must preserve existing data and must have regression tests for every reproduced failure.
+Migration and recovery changes require in-memory upgrade tests and a regression test for the reproduced failure.
 
-## JavaFX and workspace rules
+## 12. JavaFX rules
 
-The production interface follows the approved compact white-and-blue reference design.
+The approved compact white-and-blue reference is the visual direction.
 
-The main workspace includes:
+The production workspace includes:
 
-- menu bar;
+- menu;
 - toolbar;
-- collapsible and resizable left navigation;
-- tabbed center workspace;
-- collapsible and resizable right inspector;
+- collapsible/resizable left navigation;
+- tabbed center;
+- collapsible/resizable right inspector;
 - visible draggable dividers;
-- bottom status bar;
-- horizontal and vertical scrolling where required;
+- status bar;
 - external CSS;
-- icons and visual status cues that do not rely on color alone.
+- appropriate scrolling;
+- icons and textual/non-color status meaning.
 
-The application opens at a laptop-friendly size. The center content must never render beneath either sidebar.
+The default window fits a laptop display. Center content never renders beneath a sidebar.
 
-Avoid hard-coded panel minimum widths that force content outside the viewport. Use:
+Avoid hard-coded panel minimum widths that force clipping. Geometry tests must consider child minimum/preferred sizes, viewport behavior, scrolling, divider movement, collapsed sidebars, and scaling.
 
-- responsive `GridPane` constraints;
-- wrapping labels;
-- suitable `TableView` resize policies;
-- zero or low center minimum widths;
-- scroll panes only where the child genuinely needs scrolling;
-- explicit empty, loading, success, warning, and error states.
-
-Spreadsheet-like editors must provide:
+Spreadsheet-like editors provide:
 
 - keyboard navigation;
-- ID-backed combo-box cells;
+- ID-backed combo cells;
 - visible validation;
-- dirty-state indication;
-- add and remove row operations;
-- immediate totals and recalculation;
-- prevention of invalid authoritative writes.
+- dirty state;
+- add/remove rows;
+- immediate totals;
+- prevention of invalid writes.
 
-Every visible command must either perform a genuine operation, navigate to a genuine workflow, or be disabled with an explanation. A label-only success message is not an implementation.
+Every enabled command performs a genuine operation or navigation. Otherwise it is disabled with an explanation.
 
-## Service and model creation
+## 13. Testing requirements
 
-Before adding a model or service:
+Every material slice adds applicable:
 
-1. Search current entities, repositories, services, migrations, and tests for an existing concept.
-2. Check `doc/PLAN.md` and focused documents for the intended ownership and lifecycle.
-3. Reuse and extend the established concept where possible.
-4. If overlapping models exist, select one authority and document the migration path.
-5. Do not make two independently writable representations of the same accounting fact.
-
-Use separate write and read models when beneficial:
-
-- command DTOs for validated changes;
-- domain services for accounting and workflow rules;
-- repository interfaces for persistence;
-- projection DTOs for dashboards, tables, inspectors, and reports.
-
-## Testing requirements
-
-Every material change includes appropriate tests.
-
-Use:
-
-- unit tests for accounting and validation rules;
-- service tests for transactions and workflow behavior;
+- accounting/validation unit tests;
+- service tests;
 - in-memory H2 repository tests;
-- migration upgrade and recovery tests;
-- regression tests for reproduced defects;
-- JavaFX policy and headless layout tests;
-- report and export smoke tests where applicable.
+- migration tests;
+- regression tests;
+- JavaFX policy/layout tests;
+- report/export smoke tests.
 
-A geometry test must consider:
+`mvn clean verify` is the final local and CI gate.
 
-- child minimum and preferred sizes;
-- viewport dimensions;
-- scrolling behavior;
-- divider positions and movement;
-- collapsed and expanded sidebars;
-- content constraints;
-- display scaling assumptions.
+A test that checks only outer sibling rectangles is not a sufficient geometry test.
 
-Do not test only the outer rectangles of sibling panels.
+## 14. Definition of done
 
-## Definition of done
+A selected slice is complete only when:
 
-A slice is complete only when:
-
-- the requested behavior is genuine and database-backed where applicable;
-- no parallel architecture was added;
-- governing documentation is current;
+- its genuine behavior is implemented;
+- no parallel architecture was introduced;
+- governing documentation and plan status are current;
 - accounting and migration invariants are tested;
-- no unintended files changed;
-- GitHub Actions confirms `mvn clean verify`;
-- failures and warnings have been reviewed;
-- the pull request description records actual validation;
-- required desktop visual checks are complete;
-- `doc/PLAN.md` records the resulting status and next dependency.
+- the final diff is intentional;
+- `mvn clean verify` passes;
+- GitHub confirms required checks;
+- the PR description contains actual validation;
+- required desktop visual validation is complete;
+- `doc/PLAN.md` identifies the next action.
 
-## Agent handoff
+## 15. Required handoff
 
-Before ending an unfinished task, update or provide a precise handoff containing:
+When a run ends before merge, leave a precise handoff in `doc/PLAN.md` and the PR description:
 
-- branch and pull request;
-- current head commit;
+- selected phase and slice;
+- branch;
+- PR;
+- head commit;
 - completed work;
 - remaining work;
 - test status;
 - known failures;
-- governing documents changed or still requiring changes;
-- the next exact action from `doc/PLAN.md`.
+- documents changed;
+- next exact command or code action.
 
-Do not leave the next agent to reconstruct the state from chat history.
+Do not require the next Codex container to reconstruct state from chat history.
