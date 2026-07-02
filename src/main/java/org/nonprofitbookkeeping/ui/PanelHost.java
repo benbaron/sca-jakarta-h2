@@ -6,6 +6,7 @@ import javafx.scene.control.TabPane;
 
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -101,6 +102,41 @@ public class PanelHost extends TabPane
         tabs.clear();
         panels.clear();
         activeId = null;
+    }
+
+    /**
+     * Closes every non-permanent workspace tab and selects the Dashboard.
+     *
+     * @return number of tabs closed
+     */
+    public int closeAllClosableTabs()
+    {
+        List<AppPanelId> closableIds = tabs.entrySet().stream()
+                .filter(entry -> entry.getValue().isClosable())
+                .map(Map.Entry::getKey)
+                .toList();
+
+        for (AppPanelId id : closableIds)
+        {
+            Tab tab = tabs.remove(id);
+            panels.remove(id);
+            if (tab != null)
+            {
+                getTabs().remove(tab);
+            }
+        }
+
+        Tab dashboardTab = tabs.get(AppPanelId.DASHBOARD);
+        if (dashboardTab == null || !getTabs().contains(dashboardTab))
+        {
+            show(AppPanelId.DASHBOARD);
+        }
+        else
+        {
+            getSelectionModel().select(dashboardTab);
+            activeId = AppPanelId.DASHBOARD;
+        }
+        return closableIds.size();
     }
 
     public boolean isOpen(AppPanelId id)
