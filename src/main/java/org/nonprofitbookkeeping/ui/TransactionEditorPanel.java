@@ -384,9 +384,9 @@ public class TransactionEditorPanel implements AppPanel
 
 
     @Override
-    public RunCommandResult onRunCommand(RunCommand command)
+    public RunCommandResult onRunCommand(AppCommand command)
     {
-        if (command != RunCommand.POST_VALIDATE)
+        if (command != AppCommand.POST_VALIDATE)
         {
             return new RunCommandResult(false, "Unsupported run command: " + command);
         }

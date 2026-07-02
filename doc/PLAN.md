@@ -2,11 +2,11 @@
 plan_version: 3
 active_phase: P01
 active_slice: P01-S1
-active_status: READY
-active_branch: null
+active_status: IN_PROGRESS
+active_branch: codex/p01-s1-shell-authority
 active_pull_request: null
-active_head: null
-next_action: "Execute P01-S1: establish shell authority now that P00 documentation inventory is validated and merged."
+active_head: 51a27e1
+next_action: "P01-S1 implemented locally; open PR, run mvn clean verify when Maven Central access is available, then complete PR validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -111,7 +111,7 @@ A phase may begin early only when its required slice has no dependency on an unf
 
 Create only when their owning phase begins:
 
-- `doc/architecture/application-composition.md` — P01
+- `doc/architecture/application-composition.md` — P01 (created in P01-S1)
 - `doc/architecture/command-and-query-boundaries.md` — P01
 - `doc/accounting/ledger-authority.md` — P02
 - `doc/accounting/budget-model.md` — P04
@@ -377,6 +377,26 @@ Make the approved interface the single production shell and establish lifecycle-
 ## Slices
 
 ### P01-S1 — Shell authority
+
+Status: VERIFYING. Branch: `codex/p01-s1-shell-authority`. PR: pending local handoff. Head: `51a27e1`.
+
+Completed in this slice:
+
+- selected `ProductionWorkspaceWindow` as the production application launch shell;
+- added typed `AppCommand` routing for global shell commands and panel run commands;
+- renamed global approval-audit navigation to factual audit-history terminology;
+- created `doc/architecture/application-composition.md` documenting the shell authority decision.
+
+Test status:
+
+- `mvn -DskipTests compile` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
+
+Remaining before merge:
+
+- run `mvn clean verify` in an environment that can resolve Maven plugins;
+- complete PR validation and update this handoff with the PR URL.
+
+Original scope:
 
 - select one production workspace class;
 - remove decorator/duplicate shell behavior;

@@ -141,6 +141,40 @@ public class ProductionWorkspaceWindow extends BorderPane
         setInspectorVisible(false);
     }
 
+    public AppPanel.RunCommandResult executeCommand(AppCommand command)
+    {
+        Objects.requireNonNull(command, "command");
+        return switch (command)
+        {
+            case NEW_ACTIVE ->
+            {
+                newItemInActivePanel();
+                yield new AppPanel.RunCommandResult(true, "New command routed to active panel.");
+            }
+            case SAVE_ACTIVE ->
+            {
+                saveActivePanel();
+                yield new AppPanel.RunCommandResult(true, "Save command routed to active panel.");
+            }
+            case COPY_ACTIVE ->
+            {
+                copySelection();
+                yield new AppPanel.RunCommandResult(true, "Copy command routed to active panel.");
+            }
+            case PASTE_ACTIVE ->
+            {
+                paste();
+                yield new AppPanel.RunCommandResult(true, "Paste command routed to active panel.");
+            }
+            case CLOSE_ALL_TABS ->
+            {
+                panelHost.closeAllClosableTabs();
+                yield new AppPanel.RunCommandResult(true, "Closed all non-dashboard tabs.");
+            }
+            case POST_VALIDATE -> panelHost.runCommandActive(command);
+        };
+    }
+
     LocalDate activePeriodDate()
     {
         return ActivePeriodContext.get();
