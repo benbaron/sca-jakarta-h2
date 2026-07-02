@@ -53,7 +53,7 @@ class MainWindowPrivilegeGatingTest
         Map<String, Boolean> viewerMenu = FxTestSupport.onFx(window::gatedToolItemDisabledStatesForTests);
         Map<String, Boolean> viewerToolbar = FxTestSupport.onFx(window::gatedToolbarDisabledStatesForTests);
 
-        assertTrue(viewerMenu.get("Approval Audit…"));
+        assertTrue(viewerMenu.get("Audit History…"));
         assertTrue(viewerMenu.get("Diagnostics…"));
         assertTrue(viewerMenu.get("Preferences…"));
         assertTrue(viewerToolbar.get("New"));
@@ -68,7 +68,7 @@ class MainWindowPrivilegeGatingTest
         Map<String, Boolean> adminMenu = FxTestSupport.onFx(window::gatedToolItemDisabledStatesForTests);
         Map<String, Boolean> adminToolbar = FxTestSupport.onFx(window::gatedToolbarDisabledStatesForTests);
 
-        assertFalse(adminMenu.get("Approval Audit…"));
+        assertFalse(adminMenu.get("Audit History…"));
         assertFalse(adminMenu.get("Diagnostics…"));
         assertFalse(adminMenu.get("Preferences…"));
         assertFalse(adminToolbar.get("New"));

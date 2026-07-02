@@ -26,7 +26,7 @@ import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
 
 /** Applies the approved reference chrome to the production workspace shell. */
-public final class ReferenceWorkspaceWindow extends ProductionWorkspaceWindow
+final class ReferenceWorkspaceWindow extends ProductionWorkspaceWindow
 {
     private static final DateTimeFormatter PERIOD_FORMAT = DateTimeFormatter.ofPattern("MMM yyyy");
 

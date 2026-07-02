@@ -204,7 +204,7 @@ public class PanelHost extends TabPane
         }
     }
 
-    public AppPanel.RunCommandResult runCommandActive(AppPanel.RunCommand command)
+    public AppPanel.RunCommandResult runCommandActive(AppCommand command)
     {
         AppPanel panel = getActive();
         return panel == null

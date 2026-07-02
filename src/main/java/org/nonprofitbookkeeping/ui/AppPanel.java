@@ -9,11 +9,6 @@ import java.util.Optional;
  */
 public interface AppPanel
 {
-    enum RunCommand
-    {
-        POST_VALIDATE
-    }
-
     record RunCommandResult(boolean handled, String message)
     {
     }
@@ -30,7 +25,7 @@ public interface AppPanel
     default void onCopy() {}
     default void onPaste() {}
 
-    default RunCommandResult onRunCommand(RunCommand command)
+    default RunCommandResult onRunCommand(AppCommand command)
     {
         return new RunCommandResult(false, "Run command not available for panel: " + title());
     }
