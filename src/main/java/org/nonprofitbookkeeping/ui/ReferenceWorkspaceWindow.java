@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -10,8 +11,12 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Separator;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -35,7 +40,8 @@ public final class ReferenceWorkspaceWindow extends ProductionWorkspaceWindow
     public ReferenceWorkspaceWindow()
     {
         super();
-        getStyleClass().add("reference-workspace");
+        getStyleClass().addAll("reference-workspace", "production-workspace");
+        configureWorkspaceGeometry();
         installMenuBar();
         installToolbarIcons();
         setBottom(buildReferenceStatusBar());
@@ -58,6 +64,41 @@ public final class ReferenceWorkspaceWindow extends ProductionWorkspaceWindow
         updateConnection();
     }
 
+    /** Closes all user-opened workspace tabs while leaving Dashboard open. */
+    public void closeAllWorkspaceTabs()
+    {
+        panelHost().closeAllClosableTabs();
+        openPanel(AppPanelId.DASHBOARD);
+    }
+
+    private void configureWorkspaceGeometry()
+    {
+        panelHost().setMinWidth(0.0);
+        panelHost().getStyleClass().add("workspace-tabs");
+
+        SplitPane workspace = workspaceForTests();
+        workspace.setMinWidth(0.0);
+        workspace.getStyleClass().add("workspace-split");
+        workspace.getItems().forEach(item ->
+        {
+            if (item instanceof Region region)
+            {
+                region.setMinWidth(0.0);
+            }
+        });
+        Platform.runLater(() ->
+        {
+            double width = workspace.getWidth() > 0.0
+                    ? workspace.getWidth()
+                    : WorkspaceShellLayoutPolicy.FALLBACK_WORKSPACE_WIDTH;
+            WorkspaceShellLayoutPolicy.ShellGeometry geometry =
+                    WorkspaceShellLayoutPolicy.forWidth(width);
+            workspace.setDividerPositions(
+                    geometry.leftDividerPosition(),
+                    geometry.rightDividerPosition());
+        });
+    }
+
     private void installMenuBar()
     {
         if (!(getTop() instanceof VBox top)
@@ -75,6 +116,14 @@ public final class ReferenceWorkspaceWindow extends ProductionWorkspaceWindow
                 item("New Transaction", () -> openPanel(AppPanelId.TXN_EDITOR)),
                 item("Ledger Register", () -> openPanel(AppPanelId.LEDGER_REGISTER)),
                 item("Scheduled Transactions", () -> openPanel(AppPanelId.SCHEDULES)));
+
+        MenuItem closeAllTabs = item("Close All Tabs", this::closeAllWorkspaceTabs);
+        closeAllTabs.setAccelerator(new KeyCodeCombination(
+                KeyCode.W,
+                KeyCombination.CONTROL_DOWN,
+                KeyCombination.SHIFT_DOWN));
+        Menu workspace = menu("Workspace", closeAllTabs);
+
         Menu reports = menu("Reports",
                 item("Report Library", () -> openPanel(AppPanelId.REPORT_LIBRARY)),
                 item("Budget vs Actual", () -> openPanel(AppPanelId.BUDGET_VS_ACTUAL)));
@@ -85,7 +134,14 @@ public final class ReferenceWorkspaceWindow extends ProductionWorkspaceWindow
                 item("Diagnostics", () -> openPanel(AppPanelId.DIAGNOSTICS)));
         Menu help = menu("Help", item("Help", () -> openPanel(AppPanelId.HELP)));
 
-        MenuBar replacement = new MenuBar(file, edit, transactions, reports, tools, help);
+        MenuBar replacement = new MenuBar(
+                file,
+                edit,
+                transactions,
+                workspace,
+                reports,
+                tools,
+                help);
         replacement.getStyleClass().add("reference-menu-bar");
         top.getChildren().set(0, replacement);
     }
