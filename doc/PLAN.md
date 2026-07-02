@@ -1,12 +1,12 @@
 ---
 plan_version: 3
-active_phase: P00
-active_slice: P00-S1
-active_status: VERIFYING
-active_branch: codex/P00-S1-inventory
-active_pull_request: local make_pr record (no git remote configured)
-active_head: HEAD (local commit; no remote available)
-next_action: "Push codex/P00-S1-inventory when a remote is configured, open/attach the PR, and rerun mvn clean verify after Maven can resolve dependencies."
+active_phase: P01
+active_slice: P01-S1
+active_status: READY
+active_branch: null
+active_pull_request: null
+active_head: null
+next_action: "Execute P01-S1: establish shell authority now that P00 documentation inventory is validated and merged."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -64,9 +64,9 @@ When a branch begins, update front matter and the phase section. When a PR is op
 
 | Phase | Name | Depends on | Initial status |
 |---|---|---|---|
-| P00 | Documentation and implementation inventory | none | READY |
-| P01 | Production shell and workspace composition | P00 | BLOCKED |
-| P02 | Canonical ledger and transaction operations | P00 | BLOCKED |
+| P00 | Documentation and implementation inventory | none | DONE |
+| P01 | Production shell and workspace composition | P00 | READY |
+| P02 | Canonical ledger and transaction operations | P00 | READY |
 | P03 | Ledger Register and Transaction Editor | P01, P02 | BLOCKED |
 | P04 | Persistent budgeting | P02 | BLOCKED |
 | P05 | Bank import and statement-line persistence | P02 | BLOCKED |
@@ -193,11 +193,11 @@ These apply to every phase unless a focused document deliberately supersedes the
 # P00 — Documentation and implementation inventory
 
 **Selector:** `PHASE=P00`  
-**Status:** VERIFYING
+**Status:** DONE
 **Depends on:** none
-**Branch:** `codex/P00-S1-inventory`
-**Pull request:** local make_pr record only; no git remote is configured in this container.
-**Head:** current local `HEAD`; no remote is available for an immutable pushed SHA in this container.
+**Branch:** merged
+**Pull request:** P00 documentation inventory was validated and merged by user confirmation.
+**Head:** cleared after merge confirmation.
 
 ## Objective
 
@@ -248,7 +248,7 @@ LocalDate.now()
 
 ### P00-S1 — Interface-operation matrix
 
-Status: VERIFYING. Created `doc/interface-operation-matrix.md`.
+Status: DONE. Created `doc/interface-operation-matrix.md`.
 
 For every `AppPanelId` and global command record:
 
@@ -266,7 +266,7 @@ For every `AppPanelId` and global command record:
 
 ### P00-S2 — Model and persistence authority inventory
 
-Status: VERIFYING. Created `doc/persistence-authority-inventory.md` documenting:
+Status: DONE. Created `doc/persistence-authority-inventory.md` documenting:
 
 - duplicate transaction/journal models;
 - duplicate budget models;
@@ -279,7 +279,7 @@ Status: VERIFYING. Created `doc/persistence-authority-inventory.md` documenting:
 
 ### P00-S3 — Documentation consolidation
 
-Status: VERIFYING.
+Status: DONE.
 
 - created `doc/architecture/union-application-direction.md`;
 - consolidated still-current legacy `docs/` decisions; the legacy file was absent in this worktree;
@@ -312,9 +312,9 @@ P00 is done when the inventory is merged and later phases can identify exact pre
 - Required inspection completed: `AppPanelId`, `PanelHost`, `NavigationPane`, `InspectorPane`, workspace/window classes, `UiServiceRegistry`, production panels, entities, repositories, services, migrations, tests, and targeted placeholder/sidecar searches.
 - Repository limitations: no `origin` remote is configured, so `git fetch origin --prune`, `git log origin/main`, GitHub workflow inspection, and remote PR creation could not be completed from this container.
 - Missing reference files: root `README.md`, `docs/`, and `docs/union-application-migration-plan.md` were not present in this worktree.
-- Baseline test status: `mvn -DskipTests compile` failed before project compilation because Maven could not resolve `maven-resources-plugin:3.3.1` from Maven Central (`Network is unreachable`). `mvn clean verify` failed with the same dependency-resolution blocker for `maven-clean-plugin:3.2.0`.
+- Validation status: P00 was documentation-only and user-confirmed validated/merged. Container Maven checks still cannot resolve plugins from Maven Central (`Network is unreachable`), so local `mvn clean verify` remains environment-blocked here.
 - Known findings: static/sidecar UI stores exist for budget targets, bank transactions, import/export jobs, schedules, assets, depreciation, and inventory; transaction entry is session-only; report library contains not-implemented report fallback; approval/rejection controls are visible in reconciliation and period-close run panels.
-- Next exact action: configure a git remote, push `codex/P00-S1-inventory`, attach the PR record, rerun `mvn clean verify` with Maven dependency access, then merge P00 before unblocking P01/P02.
+- Completion update: user confirmed P00 is documentation-only, validated, and merged. P01/P02 prerequisites from P00 are now unblocked; active work advances to P01-S1.
 
 ## Dependency-ordered PR backlog after P00
 
@@ -347,7 +347,7 @@ Update doc/PLAN.md with actual findings and the next unblocked slice.
 # P01 — Production shell and workspace composition
 
 **Selector:** `PHASE=P01`  
-**Status:** BLOCKED  
+**Status:** READY
 **Depends on:** P00
 
 ## Objective
@@ -450,7 +450,7 @@ Complete the first incomplete P01 slice only, including tests and documentation.
 # P02 — Canonical ledger and transaction operations
 
 **Selector:** `PHASE=P02`  
-**Status:** BLOCKED  
+**Status:** READY
 **Depends on:** P00
 
 ## Objective
