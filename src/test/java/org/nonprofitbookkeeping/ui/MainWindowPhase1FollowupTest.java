@@ -34,7 +34,7 @@ public class MainWindowPhase1FollowupTest
         MainWindow window = FxTestSupport.onFx(MainWindow::new);
         String message = FxTestSupport.onFx(() -> {
             window.openPanel(AppPanelId.TXN_EDITOR);
-            return window.panelHostForTests().runCommandActive(AppPanel.RunCommand.POST_VALIDATE).message();
+            return window.panelHostForTests().runCommandActive(AppCommand.POST_VALIDATE).message();
         });
 
         assertTrue(message.contains("delegated"));

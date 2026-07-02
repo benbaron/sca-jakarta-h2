@@ -21,6 +21,7 @@ public final class GlobalShortcuts
         scene.getAccelerators().put(new KeyCodeCombination(KeyCode.N, KeyCombination.CONTROL_DOWN), window::newItemInActivePanel);
         scene.getAccelerators().put(new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_DOWN), window::copySelection);
         scene.getAccelerators().put(new KeyCodeCombination(KeyCode.V, KeyCombination.CONTROL_DOWN), window::paste);
+        scene.getAccelerators().put(new KeyCodeCombination(KeyCode.W, KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN), () -> window.executeCommand(AppCommand.CLOSE_ALL_TABS));
         scene.getAccelerators().put(new KeyCodeCombination(KeyCode.ESCAPE), window::closeInspector);
     }
 
@@ -30,6 +31,7 @@ public final class GlobalShortcuts
         scene.getAccelerators().put(new KeyCodeCombination(KeyCode.N, KeyCombination.CONTROL_DOWN), window::newItemInActivePanel);
         scene.getAccelerators().put(new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_DOWN), window::copySelection);
         scene.getAccelerators().put(new KeyCodeCombination(KeyCode.V, KeyCombination.CONTROL_DOWN), window::paste);
+        scene.getAccelerators().put(new KeyCodeCombination(KeyCode.W, KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN), () -> window.executeCommand(AppCommand.CLOSE_ALL_TABS));
         scene.getAccelerators().put(new KeyCodeCombination(KeyCode.ESCAPE), window::closeInspector);
     }
 }
