@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -10,6 +11,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Separator;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
@@ -35,7 +37,8 @@ public final class ReferenceWorkspaceWindow extends ProductionWorkspaceWindow
     public ReferenceWorkspaceWindow()
     {
         super();
-        getStyleClass().add("reference-workspace");
+        getStyleClass().addAll("reference-workspace", "production-workspace");
+        configureWorkspaceGeometry();
         installMenuBar();
         installToolbarIcons();
         setBottom(buildReferenceStatusBar());
@@ -56,6 +59,34 @@ public final class ReferenceWorkspaceWindow extends ProductionWorkspaceWindow
         updateCompany();
         updatePeriod();
         updateConnection();
+    }
+
+    private void configureWorkspaceGeometry()
+    {
+        panelHost().setMinWidth(0.0);
+        panelHost().getStyleClass().add("workspace-tabs");
+
+        SplitPane workspace = workspaceForTests();
+        workspace.setMinWidth(0.0);
+        workspace.getStyleClass().add("workspace-split");
+        workspace.getItems().forEach(item ->
+        {
+            if (item instanceof Region region)
+            {
+                region.setMinWidth(0.0);
+            }
+        });
+        Platform.runLater(() ->
+        {
+            double width = workspace.getWidth() > 0.0
+                    ? workspace.getWidth()
+                    : WorkspaceShellLayoutPolicy.FALLBACK_WORKSPACE_WIDTH;
+            WorkspaceShellLayoutPolicy.ShellGeometry geometry =
+                    WorkspaceShellLayoutPolicy.forWidth(width);
+            workspace.setDividerPositions(
+                    geometry.leftDividerPosition(),
+                    geometry.rightDividerPosition());
+        });
     }
 
     private void installMenuBar()
