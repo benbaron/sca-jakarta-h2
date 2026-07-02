@@ -8,21 +8,21 @@ The production dashboard is a read-only operational overview for an SCA nonprofi
 
 The dashboard is separated into three layers:
 
-- `DashboardWorkspacePanel` builds JavaFX controls and binds a completed projection.
+- `DashboardHomePanel` builds the active JavaFX dashboard and binds a completed projection.
 - `DashboardQueryService` defines the read-only query boundary.
 - `JpaDashboardQueryService` obtains authoritative values from H2 inside one explicit read transaction.
 
 The JavaFX panel contains no SQL. Accounting derivation remains in the service layer rather than in cell factories or click handlers.
 
-`DashboardExperiment` remains only as a compatibility entry point and delegates to `DashboardWorkspacePanel`. The earlier experiment-derived production layout and its separate layout policy were removed.
+`DashboardExperiment` remains only as a compatibility entry point. The standalone module under `experiments/dashboard-ui` is a visual and sizing reference, not the production data path.
 
 ## Visual structure
 
 The workspace contains:
 
 1. Cash Balances.
-2. Year-to-date surplus or deficit with a monthly sparkline.
-3. Budget Performance donut chart.
+2. Year-to-date surplus or deficit with a monthly trend.
+3. Budget Performance.
 4. Open Items with counts and monetary totals.
 5. Recent Transactions.
 6. Bank Reconciliation Status.
@@ -31,7 +31,21 @@ The workspace contains:
 
 The left navigation uses vector icons and a blue selected state. The right inspector uses Organization, Period Information, Balances, and Notes cards. Green, amber, red, blue, and neutral gray cues communicate status without relying on color alone; text labels and icons remain present.
 
-All icons are dependency-free JavaFX `SVGPath` graphics created by `UiIcons`. No external font or image resource is required.
+All production icons are dependency-free JavaFX `SVGPath` graphics created by `UiIcons`. No external font or image resource is required.
+
+## Workspace chrome
+
+The application chrome follows the compact white-and-blue reference design:
+
+- Segoe UI is requested on Windows, with the JavaFX platform fallback used elsewhere.
+- Menus and toolbars use white surfaces, subtle gray separators, and flat controls.
+- The navigation pane, center tab workspace, and inspector are independent `SplitPane` children.
+- The center workspace has a zero minimum width so a panel cannot force the inspector outside the window.
+- Initial dividers use compact pixel-oriented sidebar targets rather than fixed 20/80 percentages.
+- Dividers remain visible and draggable after startup.
+- The native operating-system title bar retains the user's Windows accent color.
+
+`WorkspaceWindowSizingPolicy` limits startup to a laptop-friendly size inside the primary screen's visual bounds. A normal desktop opens at no more than 1180 by 760 logical pixels; smaller screens use 90 percent of their usable width and height. The window is centered and its minimum dimensions are also capped to the available screen.
 
 ## Responsive behavior
 
@@ -41,9 +55,9 @@ All icons are dependency-free JavaFX `SVGPath` graphics created by `UiIcons`. No
 - Medium: two KPI columns with lower sections arranged in pairs.
 - Narrow: one vertical card stack.
 
-The dashboard sits in a fit-to-width `ScrollPane`. The transaction table keeps horizontal scrolling available because the reference requires ten operational columns. The navigation and inspector remain resizable through visible `SplitPane` dividers and do not overlay center content.
+The dashboard sits in a fit-to-width `ScrollPane`. The transaction table keeps horizontal scrolling available when its columns need more width. The navigation and inspector remain resizable through visible `SplitPane` dividers and do not overlay center content.
 
-The headless geometry assessment models the center viewport after sidebar and divider widths are applied. It also evaluates KPI-card minimum widths, transaction-table minimum and preferred widths, and whether horizontal or vertical scrolling is required.
+The headless geometry assessments model the center viewport after sidebar and divider widths are applied. They also evaluate startup window bounds, sidebar allocation, KPI-card minimum widths, transaction-table minimum and preferred widths, and whether horizontal or vertical scrolling is required.
 
 ## Derived transaction columns
 
@@ -84,6 +98,6 @@ The schema currently stores budget categories and actual activity but does not p
 Material changes require:
 
 - repository tests for dashboard projections and accounting derivations;
-- responsive layout and full geometry-policy tests;
+- responsive layout, shell allocation, and startup-window geometry tests;
 - `mvn clean verify` through GitHub Actions;
 - a desktop JavaFX visual check at wide, medium, and narrow sizes, including 100%, 125%, and 150% display scaling.
