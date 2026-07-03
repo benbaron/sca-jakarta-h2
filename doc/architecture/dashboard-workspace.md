@@ -42,7 +42,7 @@ The application chrome follows the compact white-and-blue reference design:
 - The navigation pane, center tab workspace, and inspector are independent `SplitPane` children.
 - The center workspace has a zero minimum width so a panel cannot force the inspector outside the window.
 - Initial dividers use compact pixel-oriented sidebar targets rather than fixed 20/80 percentages.
-- Dividers remain visible and draggable after startup.
+- Dividers remain visible and draggable after startup. Safe user-adjusted positions are remembered in the existing app-state file; unsafe remembered positions that would clip sidebars or crowd the center fall back to responsive defaults.
 - The native operating-system title bar retains the user's Windows accent color.
 
 `WorkspaceWindowSizingPolicy` limits startup to a laptop-friendly size inside the primary screen's visual bounds. A normal desktop opens at no more than 1180 by 760 logical pixels; smaller screens use 90 percent of their usable width and height. The window is centered and its minimum dimensions are also capped to the available screen.

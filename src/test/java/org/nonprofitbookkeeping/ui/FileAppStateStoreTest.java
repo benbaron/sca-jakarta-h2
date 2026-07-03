@@ -14,6 +14,7 @@ import org.nonprofitbookkeeping.model.ReopenScope;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
 import org.nonprofitbookkeeping.model.ViewPresetState;
+import org.nonprofitbookkeeping.model.WorkspaceDividerState;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -88,6 +89,27 @@ public class FileAppStateStoreTest
         assertEquals(CorrectionMethod.DIRECT_EDIT, state.correctionMethod());
         assertEquals(ClosedPeriodPolicy.WARN_AND_REOPEN, state.closedPeriodPolicy());
         assertEquals(ReopenScope.UNTIL_MANUALLY_CLOSED, state.defaultReopenScope());
+    }
+
+    @Test
+    public void saveThenLoad_roundTripsWorkspaceDividers(@TempDir Path tempDir)
+    {
+        FileAppStateStore store = new FileAppStateStore(tempDir.resolve("ui-state.properties"));
+        WorkspaceDividerState dividers = new WorkspaceDividerState(0.21, 0.79);
+
+        store.saveWorkspaceDividers(dividers);
+
+        assertEquals(dividers, store.loadWorkspaceDividers().orElseThrow());
+    }
+
+    @Test
+    public void loadWorkspaceDividers_invalidValuesAreIgnored(@TempDir Path tempDir) throws IOException
+    {
+        Path file = tempDir.resolve("ui-state.properties");
+        Files.writeString(file, "workspace.divider.left=0.90\n"
+                + "workspace.divider.right=0.20\n");
+
+        assertTrue(new FileAppStateStore(file).loadWorkspaceDividers().isEmpty());
     }
 
     @Test

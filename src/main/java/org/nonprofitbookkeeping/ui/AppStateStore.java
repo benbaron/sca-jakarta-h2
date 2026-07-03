@@ -4,6 +4,7 @@ import org.nonprofitbookkeeping.model.AppPreferencesState;
 import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.ViewPresetState;
+import org.nonprofitbookkeeping.model.WorkspaceDividerState;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +26,11 @@ public interface AppStateStore
 
     void savePreferences(AppPreferencesState state);
 
+    default Optional<WorkspaceDividerState> loadWorkspaceDividers()
+    {
+        return Optional.empty();
+    }
+
     default List<ViewPresetState> loadViewPresets()
     {
         return List.of();
@@ -32,6 +38,11 @@ public interface AppStateStore
 
 
     void saveMultiCompany(MultiCompanyState state);
+
+
+    default void saveWorkspaceDividers(WorkspaceDividerState state)
+    {
+    }
 
 
     default void saveDatabaseSelection(DatabaseSelectionState state)

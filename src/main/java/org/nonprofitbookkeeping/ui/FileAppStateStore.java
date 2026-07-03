@@ -9,6 +9,7 @@ import org.nonprofitbookkeeping.model.ReopenScope;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
 import org.nonprofitbookkeeping.model.ViewPresetState;
+import org.nonprofitbookkeeping.model.WorkspaceDividerState;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,6 +46,8 @@ public class FileAppStateStore implements AppStateStore
     private static final String K_DB_RECENTS = "database.recents";
 
     private static final String K_VIEW_PRESET_ROWS = "viewPresets.rows";
+    private static final String K_WORKSPACE_LEFT_DIVIDER = "workspace.divider.left";
+    private static final String K_WORKSPACE_RIGHT_DIVIDER = "workspace.divider.right";
 
     private final Path file;
 
@@ -120,6 +123,28 @@ public class FileAppStateStore implements AppStateStore
     }
 
     @Override
+    public Optional<WorkspaceDividerState> loadWorkspaceDividers()
+    {
+        Properties p = read();
+        String leftRaw = p.getProperty(K_WORKSPACE_LEFT_DIVIDER);
+        String rightRaw = p.getProperty(K_WORKSPACE_RIGHT_DIVIDER);
+        if (leftRaw == null || rightRaw == null)
+        {
+            return Optional.empty();
+        }
+        try
+        {
+            return Optional.of(new WorkspaceDividerState(
+                    Double.parseDouble(leftRaw),
+                    Double.parseDouble(rightRaw)));
+        }
+        catch (IllegalArgumentException ex)
+        {
+            return Optional.empty();
+        }
+    }
+
+    @Override
     public List<ViewPresetState> loadViewPresets()
     {
         Properties p = read();
@@ -184,6 +209,15 @@ public class FileAppStateStore implements AppStateStore
         p.setProperty(K_REQUIRE_REOPEN_REASON, Boolean.toString(state.requireReopenReason()));
         p.setProperty(K_REOPEN_SCOPE, state.defaultReopenScope().name());
         p.setProperty(K_CONFIRM_DELETE, Boolean.toString(state.confirmEnteredTransactionDeletion()));
+        write(p);
+    }
+
+    @Override
+    public void saveWorkspaceDividers(WorkspaceDividerState state)
+    {
+        Properties p = read();
+        p.setProperty(K_WORKSPACE_LEFT_DIVIDER, Double.toString(state.leftDividerPosition()));
+        p.setProperty(K_WORKSPACE_RIGHT_DIVIDER, Double.toString(state.rightDividerPosition()));
         write(p);
     }
 

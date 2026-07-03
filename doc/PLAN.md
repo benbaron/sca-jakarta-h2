@@ -1,12 +1,12 @@
 ---
 plan_version: 3
 active_phase: P01
-active_slice: P01-S3
+active_slice: P01-S4
 active_status: VERIFYING
-active_branch: codex/p01-s3-atomic-database-switching
-active_pull_request: null
+active_branch: work
+active_pull_request: pending local make_pr handoff
 active_head: current committed HEAD
-next_action: "P01-S3 implemented locally; run mvn clean verify where Maven Central is reachable, then complete PR validation."
+next_action: "P01-S4 implemented locally; Maven validation is blocked by network access to Maven Central. Run mvn clean verify where plugin dependencies are reachable and complete PR validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -435,7 +435,7 @@ Make database/company/period/connection state observable and explicit.
 
 ### P01-S3 — Atomic database switching and recovery
 
-Status: VERIFYING. Branch: `codex/p01-s3-atomic-database-switching`. PR: pending local handoff. Head: `current committed HEAD`.
+Status: VERIFYING. Branch: `codex/p01-s3-atomic-database-switching`. PR: pending local handoff. Head: current committed HEAD.
 
 Completed in this slice:
 
@@ -466,6 +466,25 @@ Original scope:
 - keep recovery dashboard constructible without accounting services.
 
 ### P01-S4 — Geometry and preferences
+
+Status: VERIFYING. Branch: `work`. PR: pending local handoff. Head: current committed HEAD.
+
+Completed in this slice:
+
+- added persisted workspace divider state to the existing app-state store;
+- restored only safe remembered divider positions and fell back to responsive defaults when a stored position would clip a sidebar or squeeze the center;
+- preserved laptop-friendly startup sizing policy and expanded layout-policy tests for responsive safe-divider behavior.
+
+Test status:
+
+- `mvn -DskipTests compile` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
+
+Remaining before merge:
+
+- run `mvn clean verify` in an environment that can resolve Maven plugins;
+- complete PR validation and update this handoff with the PR URL.
+
+Original scope:
 
 - responsive sidebars;
 - remembered safe divider positions;

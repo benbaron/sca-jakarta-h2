@@ -1,5 +1,7 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.model.WorkspaceDividerState;
+
 /** Calculates initial widths for the navigation, center, and inspector panes. */
 public final class WorkspaceShellLayoutPolicy
 {
@@ -10,6 +12,7 @@ public final class WorkspaceShellLayoutPolicy
     private static final double NAVIGATION_PREFERRED = 210.0;
     private static final double INSPECTOR_MINIMUM = 180.0;
     private static final double INSPECTOR_PREFERRED = 235.0;
+    private static final double CENTER_MINIMUM = 320.0;
 
     private WorkspaceShellLayoutPolicy()
     {
@@ -40,6 +43,28 @@ public final class WorkspaceShellLayoutPolicy
                 (workspaceWidth - inspectorWidth) / workspaceWidth);
     }
 
+    public static WorkspaceDividerState safeDividerState(
+            double workspaceWidth,
+            WorkspaceDividerState requested)
+    {
+        ShellGeometry fallback = forWidth(workspaceWidth);
+        if (requested == null)
+        {
+            return fallback.dividerState();
+        }
+
+        double navigationWidth = requested.leftDividerPosition() * workspaceWidth;
+        double inspectorWidth = (1.0 - requested.rightDividerPosition()) * workspaceWidth;
+        double centerWidth = workspaceWidth - navigationWidth - inspectorWidth;
+        if (navigationWidth < NAVIGATION_MINIMUM
+                || inspectorWidth < INSPECTOR_MINIMUM
+                || centerWidth < CENTER_MINIMUM)
+        {
+            return fallback.dividerState();
+        }
+        return requested;
+    }
+
     private static double clamp(double value, double minimum, double maximum)
     {
         return Math.max(minimum, Math.min(maximum, value));
@@ -52,5 +77,9 @@ public final class WorkspaceShellLayoutPolicy
             double leftDividerPosition,
             double rightDividerPosition)
     {
+        public WorkspaceDividerState dividerState()
+        {
+            return new WorkspaceDividerState(leftDividerPosition, rightDividerPosition);
+        }
     }
 }
