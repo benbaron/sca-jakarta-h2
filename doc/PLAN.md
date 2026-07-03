@@ -151,6 +151,9 @@ These apply to every phase unless a focused document deliberately supersedes the
 - Use external CSS.
 - Show blank/neutral state rather than fictional data.
 
+### Donor Code
+https://github.com/benbaron/NonprofitAccounting.git is available as reference or a donor. Examine the codebase and suggest imports from it when working in a new area of code.
+
 ### Accounting
 
 - Genuine double entry.
