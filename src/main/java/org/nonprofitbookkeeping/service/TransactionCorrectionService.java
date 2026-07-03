@@ -43,6 +43,7 @@ public class TransactionCorrectionService
             {
                 Txn txn = requireTransaction(em, transactionId);
                 requireEntered(txn);
+                requireNotReconciled(em, transactionId, "edit transaction");
                 requireOpenPeriodIfConfigured(em, txn.getTxnDate(), "edit transaction");
                 requireOpenPeriodIfConfigured(em, transactionDate, "move transaction");
 
@@ -73,6 +74,7 @@ public class TransactionCorrectionService
             {
                 Txn txn = requireTransaction(em, transactionId);
                 requireEntered(txn);
+                requireNotReconciled(em, transactionId, "delete transaction");
                 requireOpenPeriodIfConfigured(em, txn.getTxnDate(), "delete transaction");
 
                 AuditEvent event = audit(actor, "TRANSACTION_DELETED", txn, snapshot(txn), null, reason);
@@ -105,6 +107,7 @@ public class TransactionCorrectionService
             {
                 Txn original = requireTransaction(em, transactionId);
                 requireEntered(original);
+                requireNotReconciled(em, transactionId, "reverse transaction");
                 requireOpenPeriodIfConfigured(em, reversalDate, "create reversal");
 
                 List<TxnSplit> originalSplits = em.createQuery(
@@ -149,6 +152,24 @@ public class TransactionCorrectionService
                 rollback(em);
                 throw ex;
             }
+        }
+    }
+
+    private static void requireNotReconciled(EntityManager em, long transactionId, String operation)
+    {
+        Number protectedCount = (Number) em.createNativeQuery("""
+                SELECT COUNT(*)
+                FROM txn_reconciliation_protection p
+                JOIN reconciliation_run r ON r.id = p.reconciliation_run_id
+                WHERE p.txn_id = ?
+                  AND r.status = 'COMPLETED'
+                """)
+                .setParameter(1, transactionId)
+                .getSingleResult();
+        if (protectedCount.longValue() > 0)
+        {
+            throw new IllegalStateException("Cannot " + operation + " because transaction "
+                    + transactionId + " is protected by a completed reconciliation.");
         }
     }
 
