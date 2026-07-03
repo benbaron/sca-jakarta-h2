@@ -65,7 +65,7 @@ When a branch begins, update front matter and the phase section. When a PR is op
 | Phase | Name | Depends on | Initial status |
 |---|---|---|---|
 | P00 | Documentation and implementation inventory | none | DONE |
-| P01 | Production shell and workspace composition | P00 | READY |
+| P01 | Production shell and workspace composition | P00 | DONE |
 | P02 | Canonical ledger and transaction operations | P00 | READY |
 | P03 | Ledger Register and Transaction Editor | P01, P02 | BLOCKED |
 | P04 | Persistent budgeting | P02 | BLOCKED |
@@ -1543,8 +1543,8 @@ Before a PR is ready:
 Execute:
 
 ```text
-PHASE=P00
-SLICE=P00-S1
+PHASE=P02
+SLICE=P02-S1
 ```
 
-Create the authoritative `doc/interface-operation-matrix.md` from current `main`. Do not begin another broad UI or service implementation before P00 establishes the actual dependency map.
+Create `doc/accounting/ledger-authority.md`, choose one canonical writable ledger, and prevent two independently writable ledgers before adding transaction writes.
