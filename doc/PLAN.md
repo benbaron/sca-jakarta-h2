@@ -95,6 +95,7 @@ A phase may begin early only when its required slice has no dependency on an unf
 - `doc/architecture/dashboard-workspace.md`
 - `doc/accounting/transaction-lifecycle.md`
 - `doc/accounting/period-and-correction-policy.md`
+- `doc/accounting/ledger-authority.md`
 - `doc/import/import-review-workflow.md`
 - `doc/testing/production-workspace-test-plan.md`
 - `doc/interface-operation-matrix.md`
@@ -113,7 +114,6 @@ Create only when their owning phase begins:
 
 - `doc/architecture/application-composition.md` — P01 (created in P01-S1)
 - `doc/architecture/command-and-query-boundaries.md` — P01
-- `doc/accounting/ledger-authority.md` — P02
 - `doc/accounting/budget-model.md` — P04
 - `doc/banking/import-and-reconciliation.md` — P05/P06
 - `doc/accounting/open-items-and-schedules.md` — P07
@@ -520,8 +520,11 @@ Complete the first incomplete P01 slice only, including tests and documentation.
 # P02 — Canonical ledger and transaction operations
 
 **Selector:** `PHASE=P02`  
-**Status:** READY
+**Status:** VERIFYING
 **Depends on:** P00
+**Branch:** codex/P02-S1-ledger-authority
+**Pull request:** pending local make_pr handoff
+**Head:** current committed HEAD
 
 ## Objective
 
@@ -551,33 +554,140 @@ Select one authoritative writable ledger and implement genuine transaction entry
 
 ### P02-S1 — Ledger authority decision
 
-Create `doc/accounting/ledger-authority.md`.
+Status: VERIFYING.
 
-Select one canonical writable ledger. Define compatibility/migration treatment for any retained legacy journal tables. Prevent two independently writable ledgers.
+Created `doc/accounting/ledger-authority.md`.
+
+Selected `Txn`/`TxnSplit` backed by `txn`/`txn_split` as the canonical writable ledger. Retained `journal_transaction`/`journal_posting_line` as compatibility/projection tables only, not independently writable accounting truth.
+
+Completed deliverables:
+
+- Documented the canonical ledger decision, compatibility treatment, migration policy, service boundary, and follow-up work for P02-S2/P02-S4.
+- Linked the decision from the governing document list.
+
+Remaining deliverables:
+
+- Run full Maven verification where Maven Central is reachable.
+- Continue with P02-S2 command DTO and validation model after this slice is reviewed.
+
+Known failures:
+
+- `mvn -DskipTests compile` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
+- `mvn clean verify` cannot resolve `maven-clean-plugin:3.2.0` in this container because Maven Central is unreachable.
+
+Next exact action: run `mvn clean verify` in an environment with Maven Central access, then begin P02-S2 from current main after merge.
 
 ### P02-S2 — Command and validation model
 
-Create or complete, without duplication:
+Status: VERIFYING.
 
-- transaction command DTO;
-- line command DTO;
-- validation result;
-- transaction view projection;
-- accounting/journal projection.
+Branch: `codex/P02-S2-command-validation-model`.
+Pull request: pending local make_pr handoff.
+Head: current committed HEAD.
+
+Completed deliverables:
+
+- Added immutable transaction command and line command DTOs with explicit debit/credit input.
+- Added reusable transaction validation result and validator for date, two-line, one-sided, non-zero, required ID, and balance rules.
+- Added transaction view and accounting journal projection records for later services and UI panels.
+- Documented the P02-S2 command/projection boundary in `doc/accounting/ledger-authority.md`.
+
+Remaining deliverables:
+
+- Run full Maven verification where Maven Central is reachable.
+- Continue with P02-S3 transaction entry and query services after this slice is reviewed.
+
+Known failures:
+
+- `mvn -DskipTests compile` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
+- `mvn clean verify` cannot resolve `maven-clean-plugin:3.2.0` in this container because Maven Central is unreachable.
+
+User-visible changes:
+
+- No visible JavaFX workflow changes in P02-S2; this slice adds the shared command and projection model used by later transaction entry/editor work.
+
+Manual testing for user:
+
+- After Maven dependencies are reachable, run `mvn clean verify`. In P02-S3/P03, verify that transaction editor validation messages match the command validation rules before saves are enabled.
+
+Next exact action: run `mvn clean verify` in an environment with Maven Central access, then begin P02-S3 from current main after merge.
 
 ### P02-S3 — Transaction entry and query services
 
-Implement atomic:
+Status: VERIFYING.
 
-- enter;
-- load;
-- search;
-- journal view;
-- update under documented policy.
+Branch: `work`.
+Pull request: pending local make_pr handoff.
+Head: current committed HEAD.
+
+Completed deliverables:
+
+- Added `TransactionEntryService` for canonical `Txn`/`TxnSplit` entry, load, bounded search, journal projection, and narrow `ENTERED` update operations.
+- Converted debit/credit command input to signed split storage by account normal balance while preserving immutable query projections.
+- Resolved payee, bank account, account, fund, budget category, activity, and merchant by stable database ID inside a single JPA write transaction.
+- Added rollback coverage for missing referenced master data so failed writes leave no orphan transaction header or lines.
+- Documented the P02-S3 service boundary and update policy in `doc/accounting/ledger-authority.md`.
+
+Remaining deliverables:
+
+- Run full Maven verification where Maven Central is reachable.
+- Continue with P02-S4 correction, period, reconciliation, and audit behavior after this slice is reviewed.
+
+Known failures:
+
+- `mvn -DskipTests compile` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
+- `mvn clean verify` is expected to be blocked for the same Maven Central plugin-resolution reason in this container.
+- `mvn -Dtest=DatabaseMigrationRecoveryTest test` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
+
+User-visible changes:
+
+- No visible JavaFX workflow changes in P02-S3; this slice adds the transaction service that P03 will wire into the transaction editor and ledger register.
+
+Manual testing for user:
+
+- After Maven dependencies are reachable, run `mvn clean verify`. In P03, enter, save, reload, search, edit an `ENTERED` transaction, and open journal view from the UI to verify service behavior.
+
+Next exact action: run `mvn clean verify` in an environment with Maven Central access, then begin P02-S4 from current main after merge.
 
 ### P02-S4 — Correction, period, reconciliation, and audit behavior
 
-Implement the documented combination of:
+Status: VERIFYING.
+
+Branch: `codex/p02-s4-correction-period-audit`.
+Pull request: pending local make_pr handoff.
+Head: current committed HEAD.
+
+Completed deliverables:
+
+- Added canonical reconciliation protection storage linking `txn` rows to completed `reconciliation_run` records.
+- Made the V49 reconciliation-protection migration idempotent for Flyway recovery after partial failed migration attempts.
+- Extended transaction entry/update and correction paths with closed-period guards, completed-reconciliation protection, factual audit history, and rollback behavior.
+- Preserved direct edit, reversal, optional replacement, and narrow deletion while rejecting protected or closed-period writes before material ledger changes.
+- Added service regression coverage for completed-reconciliation protection across entry-service update, direct edit, deletion, and reversal.
+- Documented P02-S4 correction, period, reconciliation, and audit policy in `doc/accounting/ledger-authority.md`.
+
+Remaining deliverables:
+
+- Run full Maven verification where Maven Central is reachable.
+- Complete PR validation and update this handoff with the PR URL.
+
+Known failures:
+
+- `mvn -DskipTests compile` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
+- `mvn clean verify` is expected to be blocked for the same Maven Central plugin-resolution reason in this container.
+- `mvn -Dtest=DatabaseMigrationRecoveryTest test` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
+
+User-visible changes:
+
+- No visible JavaFX workflow changes in P02-S4; this slice adds the ledger safety rules that P03/P06/P10 UI flows will surface for protected transactions, closed periods, and corrections.
+
+Manual testing for user:
+
+- After Maven dependencies are reachable, run `mvn clean verify`. In later UI phases, save a transaction, close/reopen its period, reconcile it, and verify edit/delete/reverse actions show the documented warnings or protection messages.
+
+Next exact action: run `mvn clean verify` in an environment with Maven Central access, complete PR validation, and then begin P03/P06 dependent UI wiring only after P02 is merged.
+
+Implemented the documented combination of:
 
 - direct edit;
 - reversal;
