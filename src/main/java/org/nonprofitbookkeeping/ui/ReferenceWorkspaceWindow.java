@@ -65,10 +65,10 @@ final class ReferenceWorkspaceWindow extends ProductionWorkspaceWindow
     }
 
     /** Closes all user-opened workspace tabs while leaving Dashboard open. */
-    public void closeAllWorkspaceTabs()
+    @Override
+    public AppPanel.RunCommandResult closeAllWorkspaceTabs()
     {
-        panelHost().closeAllClosableTabs();
-        openPanel(AppPanelId.DASHBOARD);
+        return super.closeAllWorkspaceTabs();
     }
 
     private void configureWorkspaceGeometry()

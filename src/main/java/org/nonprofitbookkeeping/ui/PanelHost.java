@@ -109,6 +109,18 @@ public class PanelHost extends TabPane
      *
      * @return number of tabs closed
      */
+    public List<String> dirtyClosablePanelTitles()
+    {
+        return tabs.entrySet().stream()
+                .filter(entry -> entry.getValue().isClosable())
+                .map(Map.Entry::getKey)
+                .map(panels::get)
+                .filter(Objects::nonNull)
+                .filter(AppPanel::hasUnsavedChanges)
+                .map(AppPanel::title)
+                .toList();
+    }
+
     public int closeAllClosableTabs()
     {
         List<AppPanelId> closableIds = tabs.entrySet().stream()

@@ -46,6 +46,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -1294,9 +1295,43 @@ public class MainWindow extends BorderPane
         return body.toString();
     }
 
+    public AppPanel.RunCommandResult executeCommand(AppCommand command)
+    {
+        Objects.requireNonNull(command, "command");
+        return switch (command)
+        {
+            case CLOSE_ALL_TABS ->
+            {
+                int closed = panelHost.closeAllClosableTabs();
+                yield new AppPanel.RunCommandResult(true, "Closed " + closed + " non-dashboard tab(s). Dashboard remains open.");
+            }
+            case POST_VALIDATE -> panelHost.runCommandActive(command);
+            case NEW_ACTIVE ->
+            {
+                newItemInActivePanel();
+                yield new AppPanel.RunCommandResult(true, "New command routed to active panel.");
+            }
+            case SAVE_ACTIVE ->
+            {
+                saveActivePanel();
+                yield new AppPanel.RunCommandResult(true, "Save command routed to active panel.");
+            }
+            case COPY_ACTIVE ->
+            {
+                copySelection();
+                yield new AppPanel.RunCommandResult(true, "Copy command routed to active panel.");
+            }
+            case PASTE_ACTIVE ->
+            {
+                paste();
+                yield new AppPanel.RunCommandResult(true, "Paste command routed to active panel.");
+            }
+        };
+    }
+
     private void runPostValidate()
     {
-        AppPanel.RunCommandResult result = panelHost.runCommandActive(AppCommand.POST_VALIDATE);
+        AppPanel.RunCommandResult result = executeCommand(AppCommand.POST_VALIDATE);
         info(result.message());
     }
 

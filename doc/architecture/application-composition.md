@@ -7,3 +7,5 @@ P01-S1 establishes `ProductionWorkspaceWindow` as the production shell owner. Th
 Global shell actions use typed `AppCommand` values. The shell and `PanelHost` route commands by enum identity instead of discovering behavior from button text. Panel-local operations continue through the `AppPanel` contract until P01-S2 introduces the lifecycle-owned panel factory.
 
 User-facing global navigation uses factual audit-history terminology. Approval/rejection workflows are not introduced by the production shell.
+
+The production Workspace menu exposes a user-facing `Close All Tabs` command with `Ctrl+Shift+W`. It closes every non-Dashboard tab, keeps the permanent Dashboard tab open, and prompts before discarding any tab-reported unsaved edits.

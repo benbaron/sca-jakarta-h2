@@ -2,11 +2,11 @@
 plan_version: 3
 active_phase: P01
 active_slice: P01-S1
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/p01-s1-shell-authority
 active_pull_request: null
-active_head: 51a27e1
-next_action: "P01-S1 implemented locally; open PR, run mvn clean verify when Maven Central access is available, then complete PR validation."
+active_head: current-branch-HEAD
+next_action: "P01-S1 Close All Tabs follow-up implemented locally; run mvn clean verify where Maven Central is reachable, then complete PR validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -378,18 +378,19 @@ Make the approved interface the single production shell and establish lifecycle-
 
 ### P01-S1 — Shell authority
 
-Status: VERIFYING. Branch: `codex/p01-s1-shell-authority`. PR: pending local handoff. Head: `51a27e1`.
+Status: VERIFYING. Branch: `codex/p01-s1-shell-authority`. PR: pending local handoff. Head: current branch `HEAD`.
 
 Completed in this slice:
 
 - selected `ProductionWorkspaceWindow` as the production application launch shell;
 - added typed `AppCommand` routing for global shell commands and panel run commands;
+- added Workspace → Close All Tabs with Ctrl+Shift+W, permanent Dashboard preservation, and an unsaved-edit discard prompt;
 - renamed global approval-audit navigation to factual audit-history terminology;
 - created `doc/architecture/application-composition.md` documenting the shell authority decision.
 
 Test status:
 
-- `mvn -DskipTests compile` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
+- `mvn -DskipTests compile` and `mvn clean verify` were attempted locally before and after the Close All Tabs follow-up, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
 
 Remaining before merge:
 

@@ -25,6 +25,11 @@ public interface AppPanel
     default void onCopy() {}
     default void onPaste() {}
 
+    default boolean hasUnsavedChanges()
+    {
+        return false;
+    }
+
     default RunCommandResult onRunCommand(AppCommand command)
     {
         return new RunCommandResult(false, "Run command not available for panel: " + title());

@@ -1,7 +1,9 @@
 package org.nonprofitbookkeeping.ui;
 
 import javafx.geometry.Insets;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
@@ -11,6 +13,9 @@ import javafx.scene.control.Separator;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.ToolBar;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -22,6 +27,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -42,6 +48,7 @@ public class ProductionWorkspaceWindow extends BorderPane
     private final Label activePanelLabel = new Label();
     private final Label activePeriodLabel = new Label();
     private final Label activeDatabaseLabel = new Label();
+    private CloseAllTabsPrompt closeAllTabsPrompt = this::confirmCloseAllTabs;
     private RuntimeException databaseFailure;
 
     public ProductionWorkspaceWindow()
@@ -141,6 +148,24 @@ public class ProductionWorkspaceWindow extends BorderPane
         setInspectorVisible(false);
     }
 
+    public AppPanel.RunCommandResult closeAllWorkspaceTabs()
+    {
+        List<String> dirtyTitles = panelHost.dirtyClosablePanelTitles();
+        if (!dirtyTitles.isEmpty() && !closeAllTabsPrompt.confirmDiscard(dirtyTitles))
+        {
+            return new AppPanel.RunCommandResult(false, "Close All Tabs cancelled; unsaved edits remain open.");
+        }
+
+        int closed = panelHost.closeAllClosableTabs();
+        activePanelLabel.setText("Workspace: " + panelHost.getActiveTitle());
+        return new AppPanel.RunCommandResult(true, "Closed " + closed + " non-dashboard tab(s). Dashboard remains open.");
+    }
+
+    void closeAllTabsPromptForTests(CloseAllTabsPrompt prompt)
+    {
+        closeAllTabsPrompt = Objects.requireNonNull(prompt, "prompt");
+    }
+
     public AppPanel.RunCommandResult executeCommand(AppCommand command)
     {
         Objects.requireNonNull(command, "command");
@@ -166,11 +191,7 @@ public class ProductionWorkspaceWindow extends BorderPane
                 paste();
                 yield new AppPanel.RunCommandResult(true, "Paste command routed to active panel.");
             }
-            case CLOSE_ALL_TABS ->
-            {
-                panelHost.closeAllClosableTabs();
-                yield new AppPanel.RunCommandResult(true, "Closed all non-dashboard tabs.");
-            }
+            case CLOSE_ALL_TABS -> closeAllWorkspaceTabs();
             case POST_VALIDATE -> panelHost.runCommandActive(command);
         };
     }
@@ -245,6 +266,15 @@ public class ProductionWorkspaceWindow extends BorderPane
                 save,
                 exit);
 
+        Menu workspaceMenu = new Menu("Workspace");
+        MenuItem closeAllTabs = new MenuItem("Close All Tabs");
+        closeAllTabs.setAccelerator(new KeyCodeCombination(
+                KeyCode.W,
+                KeyCombination.CONTROL_DOWN,
+                KeyCombination.SHIFT_DOWN));
+        closeAllTabs.setOnAction(event -> executeCommand(AppCommand.CLOSE_ALL_TABS));
+        workspaceMenu.getItems().add(closeAllTabs);
+
         Menu view = new Menu("View");
         MenuItem navigation = new MenuItem("Toggle Navigation");
         navigation.setOnAction(event -> setNavigationVisible(!workspace.getItems().contains(navigationPane)));
@@ -252,16 +282,16 @@ public class ProductionWorkspaceWindow extends BorderPane
         inspector.setOnAction(event -> setInspectorVisible(!workspace.getItems().contains(inspectorPane)));
         view.getItems().addAll(navigation, inspector);
 
-        Menu workspaceMenu = new Menu("Workspace");
+        Menu destinationsMenu = new Menu("Destinations");
         MenuItem dashboard = new MenuItem("Dashboard");
         dashboard.setOnAction(event -> openPanel(AppPanelId.DASHBOARD));
         MenuItem ledger = new MenuItem("Ledger Register");
         ledger.setOnAction(event -> openPanel(AppPanelId.LEDGER_REGISTER));
         MenuItem transaction = new MenuItem("Transaction Editor");
         transaction.setOnAction(event -> openPanel(AppPanelId.TXN_EDITOR));
-        workspaceMenu.getItems().addAll(dashboard, ledger, transaction);
+        destinationsMenu.getItems().addAll(dashboard, ledger, transaction);
 
-        return new MenuBar(file, workspaceMenu, view);
+        return new MenuBar(file, workspaceMenu, destinationsMenu, view);
     }
 
     private ToolBar buildToolBar()
@@ -360,6 +390,27 @@ public class ProductionWorkspaceWindow extends BorderPane
         inspectorPane.show(
                 "Database attention required",
                 DatabaseRecoveryPanel.safeMessage(failure));
+    }
+
+    private boolean confirmCloseAllTabs(List<String> dirtyTitles)
+    {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Close All Tabs");
+        alert.setHeaderText("Discard unsaved edits?");
+        alert.setContentText("The following workspace tab(s) report unsaved edits: "
+                + String.join(", ", dirtyTitles)
+                + ". Choose OK to discard those edits and close all non-Dashboard tabs.");
+        if (getScene() != null && getScene().getWindow() != null)
+        {
+            alert.initOwner(getScene().getWindow());
+        }
+        return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
+    }
+
+    @FunctionalInterface
+    interface CloseAllTabsPrompt
+    {
+        boolean confirmDiscard(List<String> dirtyTitles);
     }
 
     private void repairCurrentDatabase()
