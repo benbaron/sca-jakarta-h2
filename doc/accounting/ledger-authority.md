@@ -77,3 +77,9 @@ The command boundary is intentionally debit/credit oriented even though canonica
 - Implement the canonical transaction entry/query service over these command DTOs and projections.
 - Add query projections that read only canonical ledger tables for transaction editor, ledger register, and journal views.
 - Fold period, correction, reconciliation-protection, and audit behavior into the canonical command service.
+
+## Transaction entry and query service
+
+P02-S3 adds `TransactionEntryService` as the canonical application service for entering, loading, searching, journal-viewing, and updating `Txn` transactions. The service validates every `TransactionCommand` with `TransactionCommandValidator` before writing, opens a single resource-local JPA transaction for each write, resolves all master-data references by stable database ID, converts debit/credit input to `TxnSplit.amountSigned` according to each account normal balance, and rolls back the header and all lines if any referenced account, fund, budget category, activity, merchant, payee, or bank account is missing.
+
+The update operation is deliberately narrow for P02-S3: it replaces the header and line set only while the transaction status remains `ENTERED`. Reversal, replacement, closed-period warnings/reopen flow, reconciliation protection, and audit snapshots remain owned by P02-S4. Query methods return immutable `TransactionView` and `AccountingJournalProjection` records derived from the canonical tables; they do not write compatibility journal tables or create a second ledger.
