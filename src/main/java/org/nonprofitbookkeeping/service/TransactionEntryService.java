@@ -4,6 +4,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountingPeriod;
+import org.nonprofitbookkeeping.model.AccountingPeriodStatus;
 import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.BudgetCategory;
 import org.nonprofitbookkeeping.model.Counterparty;
@@ -62,6 +64,10 @@ public class TransactionEntryService
                 {
                     throw new PostingException("Only ENTERED transactions can be updated by the entry service.");
                 }
+                requireNotReconciled(em, transactionId, "update transaction");
+                requireOpenPeriodIfConfigured(em, txn.getTxnDate(), "update transaction");
+                requireOpenPeriodIfConfigured(em, command.date(), "update transaction");
+                String before = snapshot(txn);
 
                 applyHeader(em, txn, command);
                 em.createQuery("delete from TxnSplit s where s.txn = :txn")
@@ -69,6 +75,7 @@ public class TransactionEntryService
                         .executeUpdate();
                 persistLines(em, txn, command.lines());
                 txn.touchUpdatedAt();
+                em.persist(audit("system", "TRANSACTION_UPDATED", txn, before, snapshot(txn), null));
                 em.getTransaction().commit();
                 return load(transactionId);
             }
@@ -142,11 +149,13 @@ public class TransactionEntryService
             em.getTransaction().begin();
             try
             {
+                requireOpenPeriodIfConfigured(em, command.date(), "enter transaction");
                 Txn txn = new Txn();
                 txn.setReplacementFor(replacementFor);
                 applyHeader(em, txn, command);
                 em.persist(txn);
                 persistLines(em, txn, command.lines());
+                em.persist(audit("system", "TRANSACTION_ENTERED", txn, null, snapshot(txn), null));
                 em.getTransaction().commit();
                 return load(txn.getId());
             }
@@ -249,6 +258,65 @@ public class TransactionEntryService
                 payee == null ? null : payee.getDisplayName(), txn.getMemo(),
                 bankAccount == null ? null : bankAccount.getId(), bankAccount == null ? null : bankAccount.getName(),
                 txn.getStatus(), lines);
+    }
+
+    private static void requireNotReconciled(EntityManager em, long transactionId, String operation)
+    {
+        Number protectedCount = (Number) em.createNativeQuery("""
+                SELECT COUNT(*)
+                FROM txn_reconciliation_protection p
+                JOIN reconciliation_run r ON r.id = p.reconciliation_run_id
+                WHERE p.txn_id = ?
+                  AND r.status = 'COMPLETED'
+                """)
+                .setParameter(1, transactionId)
+                .getSingleResult();
+        if (protectedCount.longValue() > 0)
+        {
+            throw new PostingException("Cannot " + operation + " because transaction "
+                    + transactionId + " is protected by a completed reconciliation.");
+        }
+    }
+
+    private static void requireOpenPeriodIfConfigured(EntityManager em, LocalDate date, String operation)
+    {
+        List<AccountingPeriod> periods = em.createQuery("""
+                from AccountingPeriod p
+                where p.startDate <= :date
+                  and p.endDate >= :date
+                order by p.fiscalYear, p.periodNumber
+                """, AccountingPeriod.class)
+                .setParameter("date", date)
+                .setMaxResults(2)
+                .getResultList();
+        if (periods.size() > 1)
+        {
+            throw new PostingException("Multiple accounting periods contain date " + date);
+        }
+        if (!periods.isEmpty() && periods.get(0).getStatus() == AccountingPeriodStatus.CLOSED)
+        {
+            throw new ClosedAccountingPeriodException(periods.get(0).getId(), date, operation);
+        }
+    }
+
+    private static org.nonprofitbookkeeping.model.AuditEvent audit(String actor, String action, Txn txn, String before, String after, String reason)
+    {
+        org.nonprofitbookkeeping.model.AuditEvent event = new org.nonprofitbookkeeping.model.AuditEvent();
+        event.setActor(actor);
+        event.setActionType(action);
+        event.setEntityType("Txn");
+        event.setEntityId(txn.getId() == null ? null : Long.toString(txn.getId()));
+        event.setSummary(action.replace('_', ' ').toLowerCase());
+        event.setBeforeValue(before);
+        event.setAfterValue(after);
+        event.setReason(reason);
+        return event;
+    }
+
+    private static String snapshot(Txn txn)
+    {
+        return "id=" + txn.getId() + ",date=" + txn.getTxnDate() + ",status=" + txn.getStatus()
+                + ",memo=" + (txn.getMemo() == null ? "" : txn.getMemo());
     }
 
     private <T> T required(EntityManager em, Class<T> type, Long id, String label)
