@@ -646,6 +646,7 @@ Known failures:
 
 - `mvn -DskipTests compile` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
 - `mvn clean verify` is expected to be blocked for the same Maven Central plugin-resolution reason in this container.
+- `mvn -Dtest=DatabaseMigrationRecoveryTest test` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
 
 User-visible changes:
 
@@ -668,6 +669,7 @@ Head: current committed HEAD.
 Completed deliverables:
 
 - Added canonical reconciliation protection storage linking `txn` rows to completed `reconciliation_run` records.
+- Made the V49 reconciliation-protection migration idempotent for Flyway recovery after partial failed migration attempts.
 - Extended transaction entry/update and correction paths with closed-period guards, completed-reconciliation protection, factual audit history, and rollback behavior.
 - Preserved direct edit, reversal, optional replacement, and narrow deletion while rejecting protected or closed-period writes before material ledger changes.
 - Added service regression coverage for completed-reconciliation protection across entry-service update, direct edit, deletion, and reversal.
@@ -682,6 +684,7 @@ Known failures:
 
 - `mvn -DskipTests compile` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
 - `mvn clean verify` is expected to be blocked for the same Maven Central plugin-resolution reason in this container.
+- `mvn -Dtest=DatabaseMigrationRecoveryTest test` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
 
 User-visible changes:
 
