@@ -10,6 +10,8 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
+import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -105,22 +107,30 @@ public class TransactionEditorPanel implements AppPanel
 
     private void buildSplitTable()
     {
+        splitTable.setEditable(true);
         splitTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
-        splitTable.getColumns().add(col("Account", SplitRow::account));
-        splitTable.getColumns().add(col("Fund", SplitRow::fund));
-        splitTable.getColumns().add(col("Budget", SplitRow::budgetCategory));
-        splitTable.getColumns().add(col("Debit", SplitRow::debit));
-        splitTable.getColumns().add(col("Credit", SplitRow::credit));
-        splitTable.getColumns().add(col("Activity", SplitRow::activity));
-        splitTable.getColumns().add(col("Merchant", SplitRow::merchant));
-        splitTable.getColumns().add(col("Counterparty", SplitRow::counterparty));
-        splitTable.getColumns().add(col("NMR", SplitRow::nmr));
-        splitTable.getColumns().add(col("Notes", SplitRow::notes));
+        splitTable.getColumns().add(editableCol("Account", SplitRow::account, SplitRow::setAccount));
+        splitTable.getColumns().add(editableCol("Fund", SplitRow::fund, SplitRow::setFund));
+        splitTable.getColumns().add(editableCol("Budget", SplitRow::budgetCategory, SplitRow::setBudgetCategory));
+        splitTable.getColumns().add(editableCol("Debit", SplitRow::debit, SplitRow::setDebit));
+        splitTable.getColumns().add(editableCol("Credit", SplitRow::credit, SplitRow::setCredit));
+        splitTable.getColumns().add(editableCol("Activity", SplitRow::activity, SplitRow::setActivity));
+        splitTable.getColumns().add(editableCol("Merchant", SplitRow::merchant, SplitRow::setMerchant));
+        splitTable.getColumns().add(editableCol("Counterparty", SplitRow::counterparty, SplitRow::setCounterparty));
+        splitTable.getColumns().add(editableCol("NMR", SplitRow::nmr, SplitRow::setNmr));
+        splitTable.getColumns().add(editableCol("Notes", SplitRow::notes, SplitRow::setNotes));
 
         splitTable.getItems().addAll(
                 new SplitRow("", "", "", "", "", "", "", "", "", ""),
                 new SplitRow("", "", "", "", "", "", "", "", "", "")
         );
+        splitTable.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.INSERT)
+            {
+                addEmptySplitRow();
+                event.consume();
+            }
+        });
     }
 
     private Node buildSplitEditor()
@@ -133,10 +143,7 @@ public class TransactionEditorPanel implements AppPanel
         ToolBar tb = new ToolBar(addLine, removeLine);
 
         addLine.setOnAction(e -> {
-            splitTable.getItems().add(new SplitRow("", "", "", "", "", "", "", "", "", ""));
-            lineEditorModel.addRow();
-            dirty = true;
-            refreshTotals();
+            addEmptySplitRow();
         });
         removeLine.setOnAction(e -> {
             int selectedIndex = splitTable.getSelectionModel().getSelectedIndex();
@@ -155,10 +162,31 @@ public class TransactionEditorPanel implements AppPanel
         return box;
     }
 
-    private TableColumn<SplitRow, String> col(String name, java.util.function.Function<SplitRow, String> getter)
+    private void addEmptySplitRow()
+    {
+        SplitRow row = new SplitRow("", "", "", "", "", "", "", "", "", "");
+        splitTable.getItems().add(row);
+        lineEditorModel.addRow();
+        splitTable.getSelectionModel().select(row);
+        splitTable.scrollTo(row);
+        splitTable.edit(splitTable.getItems().indexOf(row), splitTable.getColumns().get(0));
+        status.setText("Added split row. Enter an account code or choose the Account cell to begin editing.");
+        dirty = true;
+        refreshTotals();
+    }
+
+    private TableColumn<SplitRow, String> editableCol(String name,
+                                                      java.util.function.Function<SplitRow, String> getter,
+                                                      java.util.function.BiConsumer<SplitRow, String> setter)
     {
         TableColumn<SplitRow, String> c = new TableColumn<>(name);
         c.setCellValueFactory(v -> new SimpleStringProperty(getter.apply(v.getValue())));
+        c.setCellFactory(TextFieldTableCell.forTableColumn());
+        c.setOnEditCommit(event -> {
+            setter.accept(event.getRowValue(), event.getNewValue());
+            dirty = true;
+            refreshTotals();
+        });
         return c;
     }
 
@@ -457,22 +485,73 @@ public class TransactionEditorPanel implements AppPanel
     {
     }
 
-    public record SplitRow(String account,
-                           String fund,
-                           String budgetCategory,
-                           String debit,
-                           String credit,
-                           String activity,
-                           String merchant,
-                           String counterparty,
-                           String nmr,
-                           String notes)
+    public static class SplitRow
     {
+        private String account;
+        private String fund;
+        private String budgetCategory;
+        private String debit;
+        private String credit;
+        private String activity;
+        private String merchant;
+        private String counterparty;
+        private String nmr;
+        private String notes;
+
         public SplitRow(String account, String fund, String amount, String activity, String merchant, String nmr, String notes)
         {
             this(account, fund, "", amount == null || amount.startsWith("-") ? "" : amount,
                     amount != null && amount.startsWith("-") ? amount.substring(1) : "",
                     activity, merchant, "", nmr, notes);
+        }
+
+        public SplitRow(String account,
+                        String fund,
+                        String budgetCategory,
+                        String debit,
+                        String credit,
+                        String activity,
+                        String merchant,
+                        String counterparty,
+                        String nmr,
+                        String notes)
+        {
+            this.account = value(account);
+            this.fund = value(fund);
+            this.budgetCategory = value(budgetCategory);
+            this.debit = value(debit);
+            this.credit = value(credit);
+            this.activity = value(activity);
+            this.merchant = value(merchant);
+            this.counterparty = value(counterparty);
+            this.nmr = value(nmr);
+            this.notes = value(notes);
+        }
+
+        public String account() { return account; }
+        public void setAccount(String account) { this.account = value(account); }
+        public String fund() { return fund; }
+        public void setFund(String fund) { this.fund = value(fund); }
+        public String budgetCategory() { return budgetCategory; }
+        public void setBudgetCategory(String budgetCategory) { this.budgetCategory = value(budgetCategory); }
+        public String debit() { return debit; }
+        public void setDebit(String debit) { this.debit = value(debit); }
+        public String credit() { return credit; }
+        public void setCredit(String credit) { this.credit = value(credit); }
+        public String activity() { return activity; }
+        public void setActivity(String activity) { this.activity = value(activity); }
+        public String merchant() { return merchant; }
+        public void setMerchant(String merchant) { this.merchant = value(merchant); }
+        public String counterparty() { return counterparty; }
+        public void setCounterparty(String counterparty) { this.counterparty = value(counterparty); }
+        public String nmr() { return nmr; }
+        public void setNmr(String nmr) { this.nmr = value(nmr); }
+        public String notes() { return notes; }
+        public void setNotes(String notes) { this.notes = value(notes); }
+
+        private static String value(String value)
+        {
+            return value == null ? "" : value;
         }
     }
 }
