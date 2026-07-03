@@ -5,7 +5,7 @@ active_slice: P03-S1
 active_status: VERIFYING
 active_branch: codex/p03-s1-shared-line-editor
 active_pull_request: none
-active_head: 062e503 (implementation commit; see latest branch head for plan-only update)
+active_head: 2ea5288 (staged donor adaptation plan update)
 next_action: "P03-S1 implementation is complete; rerun mvn clean verify when Maven Central is reachable, then validate PR checks."
 ---
 
@@ -741,7 +741,7 @@ Implement and test only one canonical writable transaction path.
 **Depends on:** P01, P02
 **Branch:** codex/p03-s1-shared-line-editor
 **Pull request:** pending local make_pr record
-**Head:** 062e503 (implementation commit; see latest branch head for plan-only update)
+**Head:** 2ea5288 (staged donor adaptation plan update)
 
 ## Objective
 
@@ -758,7 +758,7 @@ Replace validation-only/session-only UI with a genuine spreadsheet-like accounti
 
 ### P03-S1 — Shared line editor
 
-Status: VERIFYING. Implemented a reusable `TransactionLineEditorModel`, updated the transaction editor to show separate debit/credit, budget category, and counterparty columns, added live debit/credit totals, documented the shared editor contract in `doc/ui/editor-guidelines.md`, and added focused model tests. Maven validation is blocked in this container because Maven plugin artifacts are not present locally and the network cannot reach Maven Central.
+Status: VERIFYING. Implemented a reusable `TransactionLineEditorModel`, updated the transaction editor to show separate debit/credit, budget category, and counterparty columns, added live debit/credit totals, documented the shared editor contract and donor inspection findings in `doc/ui/editor-guidelines.md`, and added focused model tests. Maven validation is blocked in this container because Maven plugin artifacts are not present locally and the network cannot reach Maven Central.
 
 - ID-backed account, fund, budget category, activity, merchant, and counterparty controls;
 - debit/credit columns;
@@ -781,6 +781,13 @@ Handoff: rerun `mvn clean verify` after dependency resolution is available, then
 - journal preview;
 - unsaved save/discard/cancel.
 
+Staged focused adaptations from donor inspection:
+
+1. **P03-S2A — ID-backed editor choices before save enablement.** Replace remaining free-text account, fund, budget, activity, merchant, and counterparty entry cells with ID-backed choice/combo cells populated from `TransactionLineEditorModel.ReferenceData`. This belongs before broad save enablement because transaction commands must reference stable database IDs rather than labels. Adapt only the donor account-choice interaction pattern; do not import donor `CurrentCompany`, direct JDBC lookup code, or legacy transaction models.
+2. **P03-S2B — Service-backed save and post-save refresh.** Wire the editor's save action to `TransactionEntryService`, then refresh the editor/register context from the saved `TransactionView`. Use donor post-save refresh and validation-copy patterns only as UX guidance; command validation remains native and authoritative.
+3. **P03-S2C — Journal preview after service integration.** Add a journal-preview pane/action that calls `TransactionEntryService.journalView` for saved or loaded transactions. The donor `JournalLine` shape may inform display labels, but the native `AccountingJournalProjection` and P02 service boundary remain the implementation source of truth.
+4. **P03-S2D — Unsaved-work and correction affordances.** After save/load are real, add save/discard/cancel prompts and correction actions for reverse and reverse-and-replace according to the transaction lifecycle policy. Do not introduce a posting/approval workflow.
+
 ### P03-S3 — Ledger Register
 
 - bounded/paged database query;
@@ -789,6 +796,12 @@ Handoff: rerun `mvn clean verify` after dependency resolution is available, then
 - open/correct selected transaction;
 - export filtered view;
 - refresh on writes/context changes.
+
+Staged focused adaptations from donor inspection:
+
+1. **P03-S3A — Register refresh on transaction writes.** Refresh the bounded register query after P03-S2 saves/corrections and preserve the user's filters where practical, following the donor workspace's post-write refresh intent without copying its persistence model.
+2. **P03-S3B — Open selected transaction with native edit policy.** Open a selected register transaction in the P03 editor using native load/edit/correction policy and stable IDs. This is the appropriate place to reuse row-level missing-reference styling if a loaded transaction references inactive or unavailable master data.
+3. **P03-S3C — Export and display refinements.** Add export of the filtered register view and any duplicate-line or warning styling that depends on service-backed persisted transactions; keep these as presentation hints only, not accounting validation.
 
 ## Forbidden in P03
 
