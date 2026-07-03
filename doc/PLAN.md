@@ -2,11 +2,11 @@
 plan_version: 3
 active_phase: P03
 active_slice: P03-S1
-active_status: READY
-active_branch: none
+active_status: VERIFYING
+active_branch: codex/p03-s1-shared-line-editor
 active_pull_request: none
-active_head: none
-next_action: "P01 and P02 are verified and merged by user confirmation; begin P03-S1 shared transaction line editor from current main."
+active_head: 062e503 (implementation commit; see latest branch head for plan-only update)
+next_action: "P03-S1 implementation is complete; rerun mvn clean verify when Maven Central is reachable, then validate PR checks."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -120,7 +120,7 @@ Create only when their owning phase begins:
 - `doc/database/schema-and-migration-policy.md` — first schema-changing phase
 - `doc/database/database-lifecycle.md` — P12
 - `doc/reporting/report-architecture.md` — P11
-- `doc/ui/editor-guidelines.md` — P03
+- `doc/ui/editor-guidelines.md` — P03 (created in P03-S1)
 - `doc/testing/end-to-end-scenarios.md` — P14
 - `doc/workflow/development-workflow.md` — P00 (created)
 
@@ -729,11 +729,11 @@ Implement and test only one canonical writable transaction path.
 # P03 — Ledger Register and Transaction Editor
 
 **Selector:** `PHASE=P03`
-**Status:** READY
+**Status:** VERIFYING
 **Depends on:** P01, P02
-**Branch:** none
-**Pull request:** none
-**Head:** none
+**Branch:** codex/p03-s1-shared-line-editor
+**Pull request:** pending local make_pr record
+**Head:** 062e503 (implementation commit; see latest branch head for plan-only update)
 
 ## Objective
 
@@ -750,6 +750,8 @@ Replace validation-only/session-only UI with a genuine spreadsheet-like accounti
 
 ### P03-S1 — Shared line editor
 
+Status: VERIFYING. Implemented a reusable `TransactionLineEditorModel`, updated the transaction editor to show separate debit/credit, budget category, and counterparty columns, added live debit/credit totals, documented the shared editor contract in `doc/ui/editor-guidelines.md`, and added focused model tests. Maven validation is blocked in this container because Maven plugin artifacts are not present locally and the network cannot reach Maven Central.
+
 - ID-backed account, fund, budget category, activity, merchant, and counterparty controls;
 - debit/credit columns;
 - keyboard navigation;
@@ -757,6 +759,8 @@ Replace validation-only/session-only UI with a genuine spreadsheet-like accounti
 - live totals;
 - row/field validation;
 - dirty state.
+
+Handoff: rerun `mvn clean verify` after dependency resolution is available, then complete PR validation. User testing: open Transaction Editor, confirm Debit/Credit/Budget/Counterparty columns and totals are visible, add a row and verify the Account cell enters edit focus, edit line cells, remove a selected row, enter one debit and one credit, and verify validation feedback blocks both-sided or unbalanced input.
 
 ### P03-S2 — Transaction workflow
 
