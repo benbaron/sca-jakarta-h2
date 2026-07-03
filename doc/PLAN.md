@@ -1,12 +1,12 @@
 ---
 plan_version: 3
 active_phase: P02
-active_slice: P02-S3
+active_slice: P02-S4
 active_status: VERIFYING
-active_branch: work
+active_branch: codex/p02-s4-correction-period-audit
 active_pull_request: pending local make_pr handoff
 active_head: current committed HEAD
-next_action: "P02-S3 transaction entry and query service implemented; run mvn clean verify where Maven Central is reachable, then continue with P02-S4 correction, period, reconciliation, and audit behavior."
+next_action: "P02-S4 correction, period, reconciliation protection, and audit behavior implemented; run mvn clean verify where Maven Central is reachable and complete PR validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -646,6 +646,7 @@ Known failures:
 
 - `mvn -DskipTests compile` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
 - `mvn clean verify` is expected to be blocked for the same Maven Central plugin-resolution reason in this container.
+- `mvn -Dtest=DatabaseMigrationRecoveryTest test` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
 
 User-visible changes:
 
@@ -659,7 +660,43 @@ Next exact action: run `mvn clean verify` in an environment with Maven Central a
 
 ### P02-S4 — Correction, period, reconciliation, and audit behavior
 
-Implement the documented combination of:
+Status: VERIFYING.
+
+Branch: `codex/p02-s4-correction-period-audit`.
+Pull request: pending local make_pr handoff.
+Head: current committed HEAD.
+
+Completed deliverables:
+
+- Added canonical reconciliation protection storage linking `txn` rows to completed `reconciliation_run` records.
+- Made the V49 reconciliation-protection migration idempotent for Flyway recovery after partial failed migration attempts.
+- Extended transaction entry/update and correction paths with closed-period guards, completed-reconciliation protection, factual audit history, and rollback behavior.
+- Preserved direct edit, reversal, optional replacement, and narrow deletion while rejecting protected or closed-period writes before material ledger changes.
+- Added service regression coverage for completed-reconciliation protection across entry-service update, direct edit, deletion, and reversal.
+- Documented P02-S4 correction, period, reconciliation, and audit policy in `doc/accounting/ledger-authority.md`.
+
+Remaining deliverables:
+
+- Run full Maven verification where Maven Central is reachable.
+- Complete PR validation and update this handoff with the PR URL.
+
+Known failures:
+
+- `mvn -DskipTests compile` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
+- `mvn clean verify` is expected to be blocked for the same Maven Central plugin-resolution reason in this container.
+- `mvn -Dtest=DatabaseMigrationRecoveryTest test` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
+
+User-visible changes:
+
+- No visible JavaFX workflow changes in P02-S4; this slice adds the ledger safety rules that P03/P06/P10 UI flows will surface for protected transactions, closed periods, and corrections.
+
+Manual testing for user:
+
+- After Maven dependencies are reachable, run `mvn clean verify`. In later UI phases, save a transaction, close/reopen its period, reconcile it, and verify edit/delete/reverse actions show the documented warnings or protection messages.
+
+Next exact action: run `mvn clean verify` in an environment with Maven Central access, complete PR validation, and then begin P03/P06 dependent UI wiring only after P02 is merged.
+
+Implemented the documented combination of:
 
 - direct edit;
 - reversal;
