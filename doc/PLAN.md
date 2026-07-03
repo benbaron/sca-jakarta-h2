@@ -108,6 +108,11 @@ A phase may begin early only when its required slice has no dependency on an unf
 - `doc/architecture/union-application-direction.md` records the still-current union application direction.
 - The legacy path `docs/union-application-migration-plan.md` was not present in this worktree during P00 inventory.
 
+### Donor/reference repositories
+
+- `https://github.com/benbaron/NonprofitAccounting.git` is available as reference or donor code. When starting work in a new area, examine this donor codebase if accessible and suggest any focused imports or adaptations that fit the current JavaFX/H2/JPA architecture. Donor code remains reference only until deliberately imported through the selected phase scope, tests, and documentation.
+- Access check on 2026-07-03 succeeded with `git ls-remote` and a shallow clone to `/tmp/NonprofitAccounting`. Notable donor areas to inspect before related new work are `PLANS.md`, `AGENTS.md`, `doc/ui/alternate-ui-development-plan.md`, `src/main/java/nonprofitbookkeeping/ui/panels/JournalEntryWorkspaceFX.java` for journal-editor UX patterns, `src/main/java/nonprofitbookkeeping/ui/helpers/FocusCommitTextFieldTableCell.java` for focus-commit table editing, and `src/main/java/org/nonprofitbookkeeping/service/PostingService.java` / `JournalLine.java` for canonical ledger write and journal projection ideas. Suggest imports only as focused adaptations; do not copy legacy package structure or introduce donor-side parallel models.
+
 ### Documents created by later phases
 
 Create only when their owning phase begins:
