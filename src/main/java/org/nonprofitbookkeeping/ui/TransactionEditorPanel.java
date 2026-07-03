@@ -139,11 +139,12 @@ public class TransactionEditorPanel implements AppPanel
             refreshTotals();
         });
         removeLine.setOnAction(e -> {
+            int selectedIndex = splitTable.getSelectionModel().getSelectedIndex();
             SplitRow sel = splitTable.getSelectionModel().getSelectedItem();
             if (sel != null)
             {
                 splitTable.getItems().remove(sel);
-                lineEditorModel.removeRow(Math.max(0, splitTable.getSelectionModel().getSelectedIndex()));
+                lineEditorModel.removeRow(selectedIndex);
                 dirty = true;
                 refreshTotals();
             }
@@ -251,7 +252,7 @@ public class TransactionEditorPanel implements AppPanel
                 + ", debit-credit difference=" + net.toPlainString();
         if (errors == 0 && net.compareTo(BigDecimal.ZERO) == 0)
         {
-            message += " (ready to save)";
+            message += " (ready to post/save)";
         }
         else if (errors == 0)
         {
