@@ -28,8 +28,8 @@ public class TransactionEntryServiceTest
 
             assertEquals(LocalDate.of(2026, 3, 14), entered.date());
             assertEquals("Donation", entered.memo());
-            assertEquals(new BigDecimal("125.00"), entered.debitTotal());
-            assertEquals(new BigDecimal("125.00"), entered.creditTotal());
+            assertEquals(new BigDecimal("125.0000"), entered.debitTotal());
+            assertEquals(new BigDecimal("125.0000"), entered.creditTotal());
             assertEquals(new BigDecimal("125.0000"), storedAmount(jpa, entered.id(), 1L));
             assertEquals(new BigDecimal("125.0000"), storedAmount(jpa, entered.id(), 2L));
 
@@ -38,8 +38,8 @@ public class TransactionEntryServiceTest
             assertEquals(1, service.search(LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31), "donat", 20).size());
 
             AccountingJournalProjection journal = service.journalView(entered.id());
-            assertEquals(new BigDecimal("125.00"), journal.debitTotal());
-            assertEquals(new BigDecimal("125.00"), journal.creditTotal());
+            assertEquals(new BigDecimal("125.0000"), journal.debitTotal());
+            assertEquals(new BigDecimal("125.0000"), journal.creditTotal());
         }
     }
 
@@ -55,8 +55,8 @@ public class TransactionEntryServiceTest
             TransactionView updated = service.update(entered.id(), command("Updated", new BigDecimal("75.00")));
 
             assertEquals("Updated", updated.memo());
-            assertEquals(new BigDecimal("75.00"), updated.debitTotal());
-            assertEquals(new BigDecimal("75.00"), updated.creditTotal());
+            assertEquals(new BigDecimal("75.0000"), updated.debitTotal());
+            assertEquals(new BigDecimal("75.0000"), updated.creditTotal());
             try (EntityManager em = jpa.em())
             {
                 Long splitCount = em.createQuery("select count(s) from TxnSplit s where s.txn.id = :id", Long.class)
