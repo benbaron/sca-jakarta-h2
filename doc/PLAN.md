@@ -1,12 +1,12 @@
 ---
 plan_version: 3
 active_phase: P02
-active_slice: P02-S4
-active_status: VERIFYING
-active_branch: codex/p02-s4-correction-period-audit
-active_pull_request: pending local make_pr handoff
-active_head: current committed HEAD
-next_action: "P02-S4 correction, period, reconciliation protection, and audit behavior implemented; run mvn clean verify where Maven Central is reachable and complete PR validation."
+active_slice: P02-S1
+active_status: READY
+active_branch: null
+active_pull_request: null
+active_head: null
+next_action: "Begin P02-S1 from current main: create doc/accounting/ledger-authority.md and choose one canonical writable ledger before adding transaction writes."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -65,7 +65,7 @@ When a branch begins, update front matter and the phase section. When a PR is op
 | Phase | Name | Depends on | Initial status |
 |---|---|---|---|
 | P00 | Documentation and implementation inventory | none | DONE |
-| P01 | Production shell and workspace composition | P00 | READY |
+| P01 | Production shell and workspace composition | P00 | DONE |
 | P02 | Canonical ledger and transaction operations | P00 | READY |
 | P03 | Ledger Register and Transaction Editor | P01, P02 | BLOCKED |
 | P04 | Persistent budgeting | P02 | BLOCKED |
@@ -347,7 +347,7 @@ Update doc/PLAN.md with actual findings and the next unblocked slice.
 # P01 — Production shell and workspace composition
 
 **Selector:** `PHASE=P01`  
-**Status:** READY
+**Status:** DONE
 **Depends on:** P00
 
 ## Objective
@@ -404,7 +404,7 @@ Original scope:
 
 ### P01-S2 — Workspace composition
 
-Status: VERIFYING. Branch: `codex/p01-s2-workspace-composition`. PR: pending local handoff. Head: current branch `HEAD`.
+Status: DONE. Branch: merged by user confirmation. PR: verified and merged per user instruction. Head: cleared after merge confirmation.
 
 Completed in this slice:
 
@@ -417,10 +417,7 @@ Test status:
 
 - `mvn -DskipTests compile` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
 
-Remaining before merge:
-
-- run `mvn clean verify` in an environment that can resolve Maven plugins;
-- complete PR validation and update this handoff with the PR URL.
+Remaining before merge: none; P01-S2 verified and merged by user confirmation.
 
 Original scope:
 
@@ -435,7 +432,7 @@ Make database/company/period/connection state observable and explicit.
 
 ### P01-S3 — Atomic database switching and recovery
 
-Status: VERIFYING. Branch: `codex/p01-s3-atomic-database-switching`. PR: pending local handoff. Head: current committed HEAD.
+Status: DONE. Branch: merged by user confirmation. PR: verified and merged per user instruction. Head: cleared after merge confirmation.
 
 Completed in this slice:
 
@@ -450,10 +447,7 @@ Test status:
 
 - `mvn -DskipTests compile` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
 
-Remaining before merge:
-
-- run `mvn clean verify` in an environment that can resolve Maven plugins;
-- complete PR validation and update this handoff with the PR URL.
+Remaining before merge: none; P01-S3 verified and merged by user confirmation.
 
 Original scope:
 
@@ -467,7 +461,7 @@ Original scope:
 
 ### P01-S4 — Geometry and preferences
 
-Status: VERIFYING. Branch: `work`. PR: pending local handoff. Head: current committed HEAD.
+Status: DONE. Branch: merged by user confirmation. PR: verified and merged per user instruction. Head: cleared after merge confirmation.
 
 Completed in this slice:
 
@@ -479,10 +473,7 @@ Test status:
 
 - `mvn -DskipTests compile` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
 
-Remaining before merge:
-
-- run `mvn clean verify` in an environment that can resolve Maven plugins;
-- complete PR validation and update this handoff with the PR URL.
+Remaining before merge: none; P01-S4 verified and merged by user confirmation.
 
 Original scope:
 
@@ -1550,8 +1541,8 @@ Before a PR is ready:
 Execute:
 
 ```text
-PHASE=P00
-SLICE=P00-S1
+PHASE=P02
+SLICE=P02-S1
 ```
 
-Create the authoritative `doc/interface-operation-matrix.md` from current `main`. Do not begin another broad UI or service implementation before P00 establishes the actual dependency map.
+Create `doc/accounting/ledger-authority.md`, choose one canonical writable ledger, and prevent two independently writable ledgers before adding transaction writes.
