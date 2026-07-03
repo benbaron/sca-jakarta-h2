@@ -32,3 +32,9 @@ Recommended focused adaptations for upcoming native work:
 2. Add duplicate-line and row-level missing-reference styling only after the base save workflow is wired to `TransactionEntryService`.
 3. Keep native validation at the command boundary; use donor validation wording only as UI copy, not as a second accounting policy.
 4. Add service-backed journal preview after save/load by calling `TransactionEntryService.journalView`, using donor `JournalLine` only as confirmation of the projection shape.
+
+## P03-S2 transaction workflow integration notes
+
+- Transaction Editor relationship cells now use ID-backed option selections for account, fund, budget category, activity, merchant, and counterparty values. The displayed label is only presentation; save mapping uses the selected stable IDs.
+- Runtime reference choices are loaded through a query service and the save action calls `TransactionEntryService.enter(...)`; the editor no longer reports a session-only draft save as success.
+- Journal preview is intentionally available after a successful service save and reads the persisted projection from `TransactionEntryService.journalView(...)`.
