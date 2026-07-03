@@ -1,12 +1,12 @@
 ---
 plan_version: 3
-active_phase: P02
-active_slice: P02-S1
+active_phase: P03
+active_slice: P03-S1
 active_status: READY
-active_branch: null
-active_pull_request: null
-active_head: null
-next_action: "Begin P02-S1 from current main: create doc/accounting/ledger-authority.md and choose one canonical writable ledger before adding transaction writes."
+active_branch: none
+active_pull_request: none
+active_head: none
+next_action: "P01 and P02 are verified and merged by user confirmation; begin P03-S1 shared transaction line editor from current main."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -192,7 +192,7 @@ These apply to every phase unless a focused document deliberately supersedes the
 
 # P00 — Documentation and implementation inventory
 
-**Selector:** `PHASE=P00`  
+**Selector:** `PHASE=P00`
 **Status:** DONE
 **Depends on:** none
 **Branch:** merged
@@ -346,9 +346,12 @@ Update doc/PLAN.md with actual findings and the next unblocked slice.
 
 # P01 — Production shell and workspace composition
 
-**Selector:** `PHASE=P01`  
+**Selector:** `PHASE=P01`
 **Status:** DONE
 **Depends on:** P00
+**Branch:** merged by user confirmation
+**Pull request:** verified and merged per user instruction
+**Head:** cleared after merge confirmation
 
 ## Objective
 
@@ -415,9 +418,11 @@ Completed in this slice:
 
 Test status:
 
-- `mvn -DskipTests compile` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
+- Verified and merged by user confirmation.
 
-Remaining before merge: none; P01-S2 verified and merged by user confirmation.
+Remaining before merge:
+
+- none; slice verified and merged by user confirmation.
 
 Original scope:
 
@@ -445,9 +450,11 @@ Completed in this slice:
 
 Test status:
 
-- `mvn -DskipTests compile` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
+- Verified and merged by user confirmation.
 
-Remaining before merge: none; P01-S3 verified and merged by user confirmation.
+Remaining before merge:
+
+- none; slice verified and merged by user confirmation.
 
 Original scope:
 
@@ -471,9 +478,11 @@ Completed in this slice:
 
 Test status:
 
-- `mvn -DskipTests compile` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
+- Verified and merged by user confirmation.
 
-Remaining before merge: none; P01-S4 verified and merged by user confirmation.
+Remaining before merge:
+
+- none; slice verified and merged by user confirmation.
 
 Original scope:
 
@@ -519,12 +528,12 @@ Complete the first incomplete P01 slice only, including tests and documentation.
 
 # P02 — Canonical ledger and transaction operations
 
-**Selector:** `PHASE=P02`  
-**Status:** VERIFYING
+**Selector:** `PHASE=P02`
+**Status:** DONE
 **Depends on:** P00
-**Branch:** codex/P02-S1-ledger-authority
-**Pull request:** pending local make_pr handoff
-**Head:** current committed HEAD
+**Branch:** merged by user confirmation
+**Pull request:** verified and merged per user instruction
+**Head:** cleared after merge confirmation
 
 ## Objective
 
@@ -554,7 +563,7 @@ Select one authoritative writable ledger and implement genuine transaction entry
 
 ### P02-S1 — Ledger authority decision
 
-Status: VERIFYING.
+Status: DONE.
 
 Created `doc/accounting/ledger-authority.md`.
 
@@ -567,23 +576,21 @@ Completed deliverables:
 
 Remaining deliverables:
 
-- Run full Maven verification where Maven Central is reachable.
-- Continue with P02-S2 command DTO and validation model after this slice is reviewed.
+- None for P02-S1 after user-confirmed P02 verification and merge.
 
 Known failures:
 
-- `mvn -DskipTests compile` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
-- `mvn clean verify` cannot resolve `maven-clean-plugin:3.2.0` in this container because Maven Central is unreachable.
+- None recorded after user-confirmed verification and merge.
 
-Next exact action: run `mvn clean verify` in an environment with Maven Central access, then begin P02-S2 from current main after merge.
+Next exact action: P02-S1 is complete as part of merged P02.
 
 ### P02-S2 — Command and validation model
 
-Status: VERIFYING.
+Status: DONE.
 
-Branch: `codex/P02-S2-command-validation-model`.
-Pull request: pending local make_pr handoff.
-Head: current committed HEAD.
+Branch: merged by user confirmation.
+Pull request: verified and merged per user instruction.
+Head: cleared after merge confirmation.
 
 Completed deliverables:
 
@@ -594,13 +601,11 @@ Completed deliverables:
 
 Remaining deliverables:
 
-- Run full Maven verification where Maven Central is reachable.
-- Continue with P02-S3 transaction entry and query services after this slice is reviewed.
+- None for P02-S2 after user-confirmed P02 verification and merge.
 
 Known failures:
 
-- `mvn -DskipTests compile` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
-- `mvn clean verify` cannot resolve `maven-clean-plugin:3.2.0` in this container because Maven Central is unreachable.
+- None recorded after user-confirmed verification and merge.
 
 User-visible changes:
 
@@ -610,15 +615,15 @@ Manual testing for user:
 
 - After Maven dependencies are reachable, run `mvn clean verify`. In P02-S3/P03, verify that transaction editor validation messages match the command validation rules before saves are enabled.
 
-Next exact action: run `mvn clean verify` in an environment with Maven Central access, then begin P02-S3 from current main after merge.
+Next exact action: P02-S2 is complete as part of merged P02.
 
 ### P02-S3 — Transaction entry and query services
 
-Status: VERIFYING.
+Status: DONE.
 
-Branch: `work`.
-Pull request: pending local make_pr handoff.
-Head: current committed HEAD.
+Branch: merged by user confirmation.
+Pull request: verified and merged per user instruction.
+Head: cleared after merge confirmation.
 
 Completed deliverables:
 
@@ -630,14 +635,11 @@ Completed deliverables:
 
 Remaining deliverables:
 
-- Run full Maven verification where Maven Central is reachable.
-- Continue with P02-S4 correction, period, reconciliation, and audit behavior after this slice is reviewed.
+- None for P02-S3 after user-confirmed P02 verification and merge.
 
 Known failures:
 
-- `mvn -DskipTests compile` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
-- `mvn clean verify` is expected to be blocked for the same Maven Central plugin-resolution reason in this container.
-- `mvn -Dtest=DatabaseMigrationRecoveryTest test` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
+- None recorded after user-confirmed verification and merge.
 
 User-visible changes:
 
@@ -647,15 +649,15 @@ Manual testing for user:
 
 - After Maven dependencies are reachable, run `mvn clean verify`. In P03, enter, save, reload, search, edit an `ENTERED` transaction, and open journal view from the UI to verify service behavior.
 
-Next exact action: run `mvn clean verify` in an environment with Maven Central access, then begin P02-S4 from current main after merge.
+Next exact action: P02-S3 is complete as part of merged P02.
 
 ### P02-S4 — Correction, period, reconciliation, and audit behavior
 
-Status: VERIFYING.
+Status: DONE.
 
-Branch: `codex/p02-s4-correction-period-audit`.
-Pull request: pending local make_pr handoff.
-Head: current committed HEAD.
+Branch: merged by user confirmation.
+Pull request: verified and merged per user instruction.
+Head: cleared after merge confirmation.
 
 Completed deliverables:
 
@@ -668,14 +670,11 @@ Completed deliverables:
 
 Remaining deliverables:
 
-- Run full Maven verification where Maven Central is reachable.
-- Complete PR validation and update this handoff with the PR URL.
+- None for P02-S4 after user-confirmed verification and merge.
 
 Known failures:
 
-- `mvn -DskipTests compile` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
-- `mvn clean verify` is expected to be blocked for the same Maven Central plugin-resolution reason in this container.
-- `mvn -Dtest=DatabaseMigrationRecoveryTest test` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
+- None recorded after user-confirmed verification and merge.
 
 User-visible changes:
 
@@ -685,7 +684,7 @@ Manual testing for user:
 
 - After Maven dependencies are reachable, run `mvn clean verify`. In later UI phases, save a transaction, close/reopen its period, reconcile it, and verify edit/delete/reverse actions show the documented warnings or protection messages.
 
-Next exact action: run `mvn clean verify` in an environment with Maven Central access, complete PR validation, and then begin P03/P06 dependent UI wiring only after P02 is merged.
+Next exact action: return to P01 verification/merge work; P03 remains blocked until P01 and P02 are both merged.
 
 Implemented the documented combination of:
 
@@ -729,9 +728,12 @@ Implement and test only one canonical writable transaction path.
 
 # P03 — Ledger Register and Transaction Editor
 
-**Selector:** `PHASE=P03`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P03`
+**Status:** READY
 **Depends on:** P01, P02
+**Branch:** none
+**Pull request:** none
+**Head:** none
 
 ## Objective
 
@@ -804,8 +806,8 @@ Do not reimplement accounting rules in JavaFX.
 
 # P04 — Persistent budgeting
 
-**Selector:** `PHASE=P04`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P04`
+**Status:** BLOCKED
 **Depends on:** P02
 
 ## Objective
@@ -865,8 +867,8 @@ Preserve BudgetCategory as distinct from Account and Activity.
 
 # P05 — Bank import and statement-line persistence
 
-**Selector:** `PHASE=P05`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P05`
+**Status:** BLOCKED
 **Depends on:** P02
 
 ## Objective
@@ -944,8 +946,8 @@ Preserve in-memory review staging but persist accepted records and durable job f
 
 # P06 — Bank reconciliation
 
-**Selector:** `PHASE=P06`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P06`
+**Status:** BLOCKED
 **Depends on:** P05
 
 ## Objective
@@ -1008,8 +1010,8 @@ Implement the first incomplete reconciliation slice without approval semantics.
 
 # P07 — Schedules and open items
 
-**Selector:** `PHASE=P07`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P07`
+**Status:** BLOCKED
 **Depends on:** P02
 
 ## Objective
@@ -1067,8 +1069,8 @@ Complete one normalized slice and do not create separate state machines for each
 
 # P08 — Fixed assets and depreciation
 
-**Selector:** `PHASE=P08`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P08`
+**Status:** BLOCKED
 **Depends on:** P02
 
 ## Objective
@@ -1112,8 +1114,8 @@ Replace the first incomplete asset/depreciation runbook slice with normalized H2
 
 # P09 — Inventory and supplies
 
-**Selector:** `PHASE=P09`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P09`
+**Status:** BLOCKED
 **Depends on:** P02
 
 ## Objective
@@ -1158,8 +1160,8 @@ Supplies is a subtype/filter within Inventory, never a separate persistence subs
 
 # P10 — Period close, reopening, notes, and audit history
 
-**Selector:** `PHASE=P10`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P10`
+**Status:** BLOCKED
 **Depends on:** P02, P06
 
 ## Objective
@@ -1204,8 +1206,8 @@ Complete the first incomplete close/reopen/audit slice and remove approval seman
 
 # P11 — Report Library
 
-**Selector:** `PHASE=P11`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P11`
+**Status:** BLOCKED
 **Depends on:** P02, P04, P06, P07, P08, P09
 
 ## Objective
@@ -1273,8 +1275,8 @@ Complete the first incomplete report slice without duplicating accounting calcul
 
 # P12 — Administration, company lifecycle, and preferences
 
-**Selector:** `PHASE=P12`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P12`
+**Status:** BLOCKED
 **Depends on:** P01, P02
 
 ## Objective
@@ -1323,8 +1325,8 @@ Use stable IDs and nondestructive database lifecycle rules.
 
 # P13 — Imports, exports, jobs, and diagnostics
 
-**Selector:** `PHASE=P13`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P13`
+**Status:** BLOCKED
 **Depends on:** P02, P05, P12
 
 ## Objective
@@ -1373,8 +1375,8 @@ Keep review staging distinct from durable accepted data.
 
 # P14 — End-to-end hardening
 
-**Selector:** `PHASE=P14`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P14`
+**Status:** BLOCKED
 **Depends on:** P03–P13
 
 ## Objective
