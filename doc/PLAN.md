@@ -1,12 +1,12 @@
 ---
 plan_version: 3
 active_phase: P01
-active_slice: P01-S1
+active_slice: P01-S2
 active_status: VERIFYING
-active_branch: codex/p01-s1-shell-authority
+active_branch: codex/p01-s2-workspace-composition
 active_pull_request: null
 active_head: current-branch-HEAD
-next_action: "P01-S1 Close All Tabs follow-up implemented locally; run mvn clean verify where Maven Central is reachable, then complete PR validation."
+next_action: "P01-S2 implemented locally; run mvn clean verify where Maven Central is reachable, then complete PR validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -378,7 +378,7 @@ Make the approved interface the single production shell and establish lifecycle-
 
 ### P01-S1 — Shell authority
 
-Status: VERIFYING. Branch: `codex/p01-s1-shell-authority`. PR: pending local handoff. Head: current branch `HEAD`.
+Status: DONE. Branch: merged by user confirmation. PR: verified and merged per user instruction. Head: cleared after merge confirmation.
 
 Completed in this slice:
 
@@ -392,10 +392,7 @@ Test status:
 
 - `mvn -DskipTests compile` and `mvn clean verify` were attempted locally before and after the Close All Tabs follow-up, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
 
-Remaining before merge:
-
-- run `mvn clean verify` in an environment that can resolve Maven plugins;
-- complete PR validation and update this handoff with the PR URL.
+Remaining before merge: none; P01-S1 verified and merged by user confirmation.
 
 Original scope:
 
@@ -406,6 +403,26 @@ Original scope:
 - use typed application commands rather than button-text discovery.
 
 ### P01-S2 — Workspace composition
+
+Status: VERIFYING. Branch: `codex/p01-s2-workspace-composition`. PR: pending local handoff. Head: current branch `HEAD`.
+
+Completed in this slice:
+
+- introduced `WorkspaceContext`, `WorkspaceServices`, `WorkspaceServicesFactory`, and `PanelFactory`;
+- made active database, company, period, and database failure state observable through `WorkspaceContext`;
+- made `ProductionWorkspaceWindow` own workspace services and construct `PanelHost` from the lifecycle-owned `PanelFactory`;
+- added composition tests for context synchronization, database connection context refresh, and panel factory ownership.
+
+Test status:
+
+- `mvn -DskipTests compile` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
+
+Remaining before merge:
+
+- run `mvn clean verify` in an environment that can resolve Maven plugins;
+- complete PR validation and update this handoff with the PR URL.
+
+Original scope:
 
 Create or complete:
 

@@ -84,6 +84,20 @@ public final class DashboardHomePanel implements AppPanel
 
     DashboardHomePanel(
             DashboardQueryService dashboardQueryService,
+            WorkspaceContext workspaceContext)
+    {
+        this(
+                dashboardQueryService,
+                workspaceContext::activePeriodDate,
+                workspaceContext::activeCompanyCode);
+        workspaceContext.activePeriodDateProperty().addListener(
+                (observable, oldDate, newDate) -> reload());
+        workspaceContext.activeCompanyCodeProperty().addListener(
+                (observable, oldCode, newCode) -> reload());
+    }
+
+    DashboardHomePanel(
+            DashboardQueryService dashboardQueryService,
             Supplier<LocalDate> asOfDateSupplier,
             Supplier<String> groupCodeSupplier)
     {

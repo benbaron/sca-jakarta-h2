@@ -9,50 +9,23 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 /** Hosts one reusable workspace tab per panel type. */
 public class PanelHost extends TabPane
 {
-    private static final Map<AppPanelId, Supplier<AppPanel>> FACTORIES = new EnumMap<>(AppPanelId.class);
-
-    static
-    {
-        FACTORIES.put(AppPanelId.LEDGER_REGISTER, LedgerRegisterPanel::new);
-        FACTORIES.put(AppPanelId.TXN_EDITOR, TransactionEditorPanel::new);
-        FACTORIES.put(AppPanelId.SCHEDULES, SchedulesPanel::new);
-        FACTORIES.put(AppPanelId.BUDGET_EDITOR, BudgetEditorPanel::new);
-        FACTORIES.put(AppPanelId.BUDGET_VS_ACTUAL, BudgetVsActualPanel::new);
-        FACTORIES.put(AppPanelId.ASSETS_REGISTER, AssetsRegisterPanel::new);
-        FACTORIES.put(AppPanelId.DEPRECIATION_RUNS, DepreciationRunsPanel::new);
-        FACTORIES.put(AppPanelId.INVENTORY, InventoryPanel::new);
-        FACTORIES.put(AppPanelId.RECONCILIATION_RUNS, ReconciliationRunsPanel::new);
-        FACTORIES.put(AppPanelId.PERIOD_CLOSE_RUNS, PeriodCloseRunsPanel::new);
-        FACTORIES.put(AppPanelId.IMPORT_PREVIEW, ImportPreviewPanel::new);
-        FACTORIES.put(AppPanelId.APPROVAL_AUDIT, ApprovalAuditPanel::new);
-        FACTORIES.put(AppPanelId.IMPORT_EXPORT_JOBS, ImportExportJobsPanel::new);
-        FACTORIES.put(AppPanelId.BANK_TRANSACTIONS, BankTransactionsPanel::new);
-        FACTORIES.put(AppPanelId.REPORT_LIBRARY, ReportLibraryPanel::new);
-        FACTORIES.put(AppPanelId.CHART_OF_ACCOUNTS, ChartOfAccountsPanel::new);
-        FACTORIES.put(AppPanelId.FUNDS, FundsPanel::new);
-        FACTORIES.put(AppPanelId.SETTINGS, SettingsPanel::new);
-        FACTORIES.put(AppPanelId.DIAGNOSTICS, DiagnosticsPanel::new);
-        FACTORIES.put(AppPanelId.HELP, HelpPanel::new);
-    }
-
-    private final Supplier<AppPanel> dashboardFactory;
+    private final PanelFactory panelFactory;
     private final Map<AppPanelId, AppPanel> panels = new EnumMap<>(AppPanelId.class);
     private final Map<AppPanelId, Tab> tabs = new EnumMap<>(AppPanelId.class);
     private AppPanelId activeId;
 
     public PanelHost()
     {
-        this(DashboardHomePanel::new);
+        this(new PanelFactory());
     }
 
-    PanelHost(Supplier<AppPanel> dashboardFactory)
+    PanelHost(PanelFactory panelFactory)
     {
-        this.dashboardFactory = Objects.requireNonNull(dashboardFactory, "dashboardFactory");
+        this.panelFactory = Objects.requireNonNull(panelFactory, "panelFactory");
         setTabClosingPolicy(TabClosingPolicy.SELECTED_TAB);
         getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) ->
         {
@@ -62,9 +35,7 @@ public class PanelHost extends TabPane
 
     public static EnumSet<AppPanelId> supportedPanelIds()
     {
-        EnumSet<AppPanelId> ids = EnumSet.copyOf(FACTORIES.keySet());
-        ids.add(AppPanelId.DASHBOARD);
-        return ids;
+        return EnumSet.allOf(AppPanelId.class);
     }
 
     public void show(AppPanelId id)
@@ -267,15 +238,6 @@ public class PanelHost extends TabPane
 
     private AppPanel create(AppPanelId id)
     {
-        if (id == AppPanelId.DASHBOARD)
-        {
-            return dashboardFactory.get();
-        }
-        Supplier<AppPanel> factory = FACTORIES.get(id);
-        if (factory == null)
-        {
-            throw new IllegalArgumentException("Unsupported panel id: " + id);
-        }
-        return factory.get();
+        return panelFactory.create(id);
     }
 }

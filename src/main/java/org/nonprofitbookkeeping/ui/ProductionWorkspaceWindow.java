@@ -40,8 +40,10 @@ public class ProductionWorkspaceWindow extends BorderPane
     private static final double RIGHT_DIVIDER = 0.80;
 
     private final AppStateStore stateStore;
+    private final WorkspaceServices workspaceServices;
+    private final WorkspaceContext workspaceContext;
     private final DatabaseSessionController databaseSessionController;
-    private final PanelHost panelHost = new PanelHost();
+    private final PanelHost panelHost;
     private final InspectorPane inspectorPane = new InspectorPane();
     private final NavigationPane navigationPane;
     private final SplitPane workspace = new SplitPane();
@@ -61,10 +63,13 @@ public class ProductionWorkspaceWindow extends BorderPane
             DatabaseSessionController.Connector connector)
     {
         this.stateStore = Objects.requireNonNull(stateStore, "stateStore");
-        this.databaseSessionController = new DatabaseSessionController(
+        this.workspaceServices = WorkspaceServicesFactory.create(
                 MainWindow.sharedSessionState(),
                 stateStore,
                 connector);
+        this.workspaceContext = workspaceServices.context();
+        this.databaseSessionController = workspaceServices.databaseSessionController();
+        this.panelHost = new PanelHost(workspaceServices.panelFactory());
 
         try
         {
@@ -73,6 +78,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         catch (RuntimeException ex)
         {
             databaseFailure = ex;
+            workspaceContext.setDatabaseFailure(ex);
             System.err.println("[NPBK] Could not restore persisted database selection: "
                     + ex.getMessage());
         }
@@ -82,10 +88,10 @@ public class ProductionWorkspaceWindow extends BorderPane
                 inspectorPane::show,
                 this::inspectorContext);
 
-        ActivePeriodContext.activeDateProperty().addListener(
+        workspaceContext.activePeriodDateProperty().addListener(
                 (observable, oldDate, newDate) -> updateActivePeriodLabel());
-        MainWindow.sharedSessionState().onDatabaseSelectionChanged(
-                ignored -> updateActiveDatabaseLabel());
+        workspaceContext.activeDatabasePathProperty().addListener(
+                (observable, oldPath, newPath) -> updateActiveDatabaseLabel());
 
         setTop(buildTopChrome());
         setCenter(buildWorkspace());
@@ -198,7 +204,7 @@ public class ProductionWorkspaceWindow extends BorderPane
 
     LocalDate activePeriodDate()
     {
-        return ActivePeriodContext.get();
+        return workspaceContext.activePeriodDate();
     }
 
     void setActivePeriodDate(LocalDate date)
@@ -218,7 +224,7 @@ public class ProductionWorkspaceWindow extends BorderPane
 
     Path activeDatabasePathForTests()
     {
-        return databaseSessionController.activeDatabasePath();
+        return workspaceContext.activeDatabasePath();
     }
 
     boolean databaseRecoveryVisibleForTests()
@@ -308,7 +314,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         Button inspectorButton = new Button("Inspector");
         inspectorButton.setOnAction(event -> setInspectorVisible(!workspace.getItems().contains(inspectorPane)));
 
-        DatePicker periodPicker = new DatePicker(ActivePeriodContext.get());
+        DatePicker periodPicker = new DatePicker(workspaceContext.activePeriodDate());
         periodPicker.setPromptText("Active period date");
 
         Button setPeriodButton = new Button("Set Active Period");
@@ -368,6 +374,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         try
         {
             databaseFailure = null;
+            workspaceContext.setDatabaseFailure(null);
             openPanel(AppPanelId.DASHBOARD);
         }
         catch (RuntimeException ex)
@@ -379,8 +386,9 @@ public class ProductionWorkspaceWindow extends BorderPane
     private void showRecoveryDashboard(RuntimeException failure)
     {
         databaseFailure = failure;
+        workspaceContext.setDatabaseFailure(failure);
         DatabaseRecoveryPanel recoveryPanel = new DatabaseRecoveryPanel(
-                databaseSessionController.activeDatabasePath(),
+                workspaceContext.activeDatabasePath(),
                 failure,
                 this::repairCurrentDatabase,
                 this::selectDatabaseFile,
@@ -449,11 +457,12 @@ public class ProductionWorkspaceWindow extends BorderPane
         {
             databaseSessionController.connect(databaseFile);
             databaseFailure = null;
+            workspaceContext.setDatabaseFailure(null);
             panelHost.reset();
             updateActiveDatabaseLabel();
             inspectorPane.show(
                     "Database connected",
-                    "Active database: " + databaseSessionController.activeDatabasePath().toAbsolutePath());
+                    "Active database: " + workspaceContext.activeDatabasePath().toAbsolutePath());
             showDashboardOrRecovery(null);
         }
         catch (RuntimeException ex)
@@ -508,12 +517,12 @@ public class ProductionWorkspaceWindow extends BorderPane
 
     private void updateActivePeriodLabel()
     {
-        activePeriodLabel.setText("Active period: " + ActivePeriodContext.get());
+        activePeriodLabel.setText("Active period: " + workspaceContext.activePeriodDate());
     }
 
     private void updateActiveDatabaseLabel()
     {
-        Path path = databaseSessionController.activeDatabasePath();
+        Path path = workspaceContext.activeDatabasePath();
         activeDatabaseLabel.setText("DB: " + path.getFileName());
         activeDatabaseLabel.setTooltip(new javafx.scene.control.Tooltip(path.toAbsolutePath().toString()));
     }
@@ -525,8 +534,8 @@ public class ProductionWorkspaceWindow extends BorderPane
                 ? (active == null ? "No active panel" : "Active panel: " + panelHost.getActiveTitle())
                 : "Database unavailable: select, repair, or create a database";
         return new NavigationPane.InspectorContext(
-                databaseSessionController.activeDatabasePath().toString(),
-                ActivePeriodContext.get().toString(),
+                workspaceContext.activeDatabasePath().toString(),
+                workspaceContext.activePeriodDate().toString(),
                 capabilities);
     }
 
