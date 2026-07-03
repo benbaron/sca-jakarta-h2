@@ -1,12 +1,12 @@
 ---
 plan_version: 3
 active_phase: P01
-active_slice: P01-S1
-active_status: READY
-active_branch: null
+active_slice: P01-S2
+active_status: VERIFYING
+active_branch: codex/p01-s2-workspace-composition
 active_pull_request: null
-active_head: null
-next_action: "Execute P01-S1: establish shell authority now that P00 documentation inventory is validated and merged."
+active_head: current-branch-HEAD
+next_action: "P01-S2 implemented locally; run mvn clean verify where Maven Central is reachable, then complete PR validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -111,7 +111,7 @@ A phase may begin early only when its required slice has no dependency on an unf
 
 Create only when their owning phase begins:
 
-- `doc/architecture/application-composition.md` — P01
+- `doc/architecture/application-composition.md` — P01 (created in P01-S1)
 - `doc/architecture/command-and-query-boundaries.md` — P01
 - `doc/accounting/ledger-authority.md` — P02
 - `doc/accounting/budget-model.md` — P04
@@ -378,6 +378,24 @@ Make the approved interface the single production shell and establish lifecycle-
 
 ### P01-S1 — Shell authority
 
+Status: DONE. Branch: merged by user confirmation. PR: verified and merged per user instruction. Head: cleared after merge confirmation.
+
+Completed in this slice:
+
+- selected `ProductionWorkspaceWindow` as the production application launch shell;
+- added typed `AppCommand` routing for global shell commands and panel run commands;
+- added Workspace → Close All Tabs with Ctrl+Shift+W, permanent Dashboard preservation, and an unsaved-edit discard prompt;
+- renamed global approval-audit navigation to factual audit-history terminology;
+- created `doc/architecture/application-composition.md` documenting the shell authority decision.
+
+Test status:
+
+- `mvn -DskipTests compile` and `mvn clean verify` were attempted locally before and after the Close All Tabs follow-up, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
+
+Remaining before merge: none; P01-S1 verified and merged by user confirmation.
+
+Original scope:
+
 - select one production workspace class;
 - remove decorator/duplicate shell behavior;
 - preserve menu, toolbar, navigation, tabs, inspector, dividers, and status bar;
@@ -385,6 +403,26 @@ Make the approved interface the single production shell and establish lifecycle-
 - use typed application commands rather than button-text discovery.
 
 ### P01-S2 — Workspace composition
+
+Status: VERIFYING. Branch: `codex/p01-s2-workspace-composition`. PR: pending local handoff. Head: current branch `HEAD`.
+
+Completed in this slice:
+
+- introduced `WorkspaceContext`, `WorkspaceServices`, `WorkspaceServicesFactory`, and `PanelFactory`;
+- made active database, company, period, and database failure state observable through `WorkspaceContext`;
+- made `ProductionWorkspaceWindow` own workspace services and construct `PanelHost` from the lifecycle-owned `PanelFactory`;
+- added composition tests for context synchronization, database connection context refresh, and panel factory ownership.
+
+Test status:
+
+- `mvn -DskipTests compile` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
+
+Remaining before merge:
+
+- run `mvn clean verify` in an environment that can resolve Maven plugins;
+- complete PR validation and update this handoff with the PR URL.
+
+Original scope:
 
 Create or complete:
 

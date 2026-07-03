@@ -1,7 +1,9 @@
 package org.nonprofitbookkeeping.ui;
 
 import javafx.geometry.Insets;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
@@ -11,6 +13,9 @@ import javafx.scene.control.Separator;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.ToolBar;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -22,6 +27,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -34,14 +40,17 @@ public class ProductionWorkspaceWindow extends BorderPane
     private static final double RIGHT_DIVIDER = 0.80;
 
     private final AppStateStore stateStore;
+    private final WorkspaceServices workspaceServices;
+    private final WorkspaceContext workspaceContext;
     private final DatabaseSessionController databaseSessionController;
-    private final PanelHost panelHost = new PanelHost();
+    private final PanelHost panelHost;
     private final InspectorPane inspectorPane = new InspectorPane();
     private final NavigationPane navigationPane;
     private final SplitPane workspace = new SplitPane();
     private final Label activePanelLabel = new Label();
     private final Label activePeriodLabel = new Label();
     private final Label activeDatabaseLabel = new Label();
+    private CloseAllTabsPrompt closeAllTabsPrompt = this::confirmCloseAllTabs;
     private RuntimeException databaseFailure;
 
     public ProductionWorkspaceWindow()
@@ -54,10 +63,13 @@ public class ProductionWorkspaceWindow extends BorderPane
             DatabaseSessionController.Connector connector)
     {
         this.stateStore = Objects.requireNonNull(stateStore, "stateStore");
-        this.databaseSessionController = new DatabaseSessionController(
+        this.workspaceServices = WorkspaceServicesFactory.create(
                 MainWindow.sharedSessionState(),
                 stateStore,
                 connector);
+        this.workspaceContext = workspaceServices.context();
+        this.databaseSessionController = workspaceServices.databaseSessionController();
+        this.panelHost = new PanelHost(workspaceServices.panelFactory());
 
         try
         {
@@ -66,6 +78,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         catch (RuntimeException ex)
         {
             databaseFailure = ex;
+            workspaceContext.setDatabaseFailure(ex);
             System.err.println("[NPBK] Could not restore persisted database selection: "
                     + ex.getMessage());
         }
@@ -75,10 +88,10 @@ public class ProductionWorkspaceWindow extends BorderPane
                 inspectorPane::show,
                 this::inspectorContext);
 
-        ActivePeriodContext.activeDateProperty().addListener(
+        workspaceContext.activePeriodDateProperty().addListener(
                 (observable, oldDate, newDate) -> updateActivePeriodLabel());
-        MainWindow.sharedSessionState().onDatabaseSelectionChanged(
-                ignored -> updateActiveDatabaseLabel());
+        workspaceContext.activeDatabasePathProperty().addListener(
+                (observable, oldPath, newPath) -> updateActiveDatabaseLabel());
 
         setTop(buildTopChrome());
         setCenter(buildWorkspace());
@@ -141,9 +154,57 @@ public class ProductionWorkspaceWindow extends BorderPane
         setInspectorVisible(false);
     }
 
+    public AppPanel.RunCommandResult closeAllWorkspaceTabs()
+    {
+        List<String> dirtyTitles = panelHost.dirtyClosablePanelTitles();
+        if (!dirtyTitles.isEmpty() && !closeAllTabsPrompt.confirmDiscard(dirtyTitles))
+        {
+            return new AppPanel.RunCommandResult(false, "Close All Tabs cancelled; unsaved edits remain open.");
+        }
+
+        int closed = panelHost.closeAllClosableTabs();
+        activePanelLabel.setText("Workspace: " + panelHost.getActiveTitle());
+        return new AppPanel.RunCommandResult(true, "Closed " + closed + " non-dashboard tab(s). Dashboard remains open.");
+    }
+
+    void closeAllTabsPromptForTests(CloseAllTabsPrompt prompt)
+    {
+        closeAllTabsPrompt = Objects.requireNonNull(prompt, "prompt");
+    }
+
+    public AppPanel.RunCommandResult executeCommand(AppCommand command)
+    {
+        Objects.requireNonNull(command, "command");
+        return switch (command)
+        {
+            case NEW_ACTIVE ->
+            {
+                newItemInActivePanel();
+                yield new AppPanel.RunCommandResult(true, "New command routed to active panel.");
+            }
+            case SAVE_ACTIVE ->
+            {
+                saveActivePanel();
+                yield new AppPanel.RunCommandResult(true, "Save command routed to active panel.");
+            }
+            case COPY_ACTIVE ->
+            {
+                copySelection();
+                yield new AppPanel.RunCommandResult(true, "Copy command routed to active panel.");
+            }
+            case PASTE_ACTIVE ->
+            {
+                paste();
+                yield new AppPanel.RunCommandResult(true, "Paste command routed to active panel.");
+            }
+            case CLOSE_ALL_TABS -> closeAllWorkspaceTabs();
+            case POST_VALIDATE -> panelHost.runCommandActive(command);
+        };
+    }
+
     LocalDate activePeriodDate()
     {
-        return ActivePeriodContext.get();
+        return workspaceContext.activePeriodDate();
     }
 
     void setActivePeriodDate(LocalDate date)
@@ -163,7 +224,7 @@ public class ProductionWorkspaceWindow extends BorderPane
 
     Path activeDatabasePathForTests()
     {
-        return databaseSessionController.activeDatabasePath();
+        return workspaceContext.activeDatabasePath();
     }
 
     boolean databaseRecoveryVisibleForTests()
@@ -211,6 +272,15 @@ public class ProductionWorkspaceWindow extends BorderPane
                 save,
                 exit);
 
+        Menu workspaceMenu = new Menu("Workspace");
+        MenuItem closeAllTabs = new MenuItem("Close All Tabs");
+        closeAllTabs.setAccelerator(new KeyCodeCombination(
+                KeyCode.W,
+                KeyCombination.CONTROL_DOWN,
+                KeyCombination.SHIFT_DOWN));
+        closeAllTabs.setOnAction(event -> executeCommand(AppCommand.CLOSE_ALL_TABS));
+        workspaceMenu.getItems().add(closeAllTabs);
+
         Menu view = new Menu("View");
         MenuItem navigation = new MenuItem("Toggle Navigation");
         navigation.setOnAction(event -> setNavigationVisible(!workspace.getItems().contains(navigationPane)));
@@ -218,16 +288,16 @@ public class ProductionWorkspaceWindow extends BorderPane
         inspector.setOnAction(event -> setInspectorVisible(!workspace.getItems().contains(inspectorPane)));
         view.getItems().addAll(navigation, inspector);
 
-        Menu workspaceMenu = new Menu("Workspace");
+        Menu destinationsMenu = new Menu("Destinations");
         MenuItem dashboard = new MenuItem("Dashboard");
         dashboard.setOnAction(event -> openPanel(AppPanelId.DASHBOARD));
         MenuItem ledger = new MenuItem("Ledger Register");
         ledger.setOnAction(event -> openPanel(AppPanelId.LEDGER_REGISTER));
         MenuItem transaction = new MenuItem("Transaction Editor");
         transaction.setOnAction(event -> openPanel(AppPanelId.TXN_EDITOR));
-        workspaceMenu.getItems().addAll(dashboard, ledger, transaction);
+        destinationsMenu.getItems().addAll(dashboard, ledger, transaction);
 
-        return new MenuBar(file, workspaceMenu, view);
+        return new MenuBar(file, workspaceMenu, destinationsMenu, view);
     }
 
     private ToolBar buildToolBar()
@@ -244,7 +314,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         Button inspectorButton = new Button("Inspector");
         inspectorButton.setOnAction(event -> setInspectorVisible(!workspace.getItems().contains(inspectorPane)));
 
-        DatePicker periodPicker = new DatePicker(ActivePeriodContext.get());
+        DatePicker periodPicker = new DatePicker(workspaceContext.activePeriodDate());
         periodPicker.setPromptText("Active period date");
 
         Button setPeriodButton = new Button("Set Active Period");
@@ -304,6 +374,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         try
         {
             databaseFailure = null;
+            workspaceContext.setDatabaseFailure(null);
             openPanel(AppPanelId.DASHBOARD);
         }
         catch (RuntimeException ex)
@@ -315,8 +386,9 @@ public class ProductionWorkspaceWindow extends BorderPane
     private void showRecoveryDashboard(RuntimeException failure)
     {
         databaseFailure = failure;
+        workspaceContext.setDatabaseFailure(failure);
         DatabaseRecoveryPanel recoveryPanel = new DatabaseRecoveryPanel(
-                databaseSessionController.activeDatabasePath(),
+                workspaceContext.activeDatabasePath(),
                 failure,
                 this::repairCurrentDatabase,
                 this::selectDatabaseFile,
@@ -326,6 +398,27 @@ public class ProductionWorkspaceWindow extends BorderPane
         inspectorPane.show(
                 "Database attention required",
                 DatabaseRecoveryPanel.safeMessage(failure));
+    }
+
+    private boolean confirmCloseAllTabs(List<String> dirtyTitles)
+    {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Close All Tabs");
+        alert.setHeaderText("Discard unsaved edits?");
+        alert.setContentText("The following workspace tab(s) report unsaved edits: "
+                + String.join(", ", dirtyTitles)
+                + ". Choose OK to discard those edits and close all non-Dashboard tabs.");
+        if (getScene() != null && getScene().getWindow() != null)
+        {
+            alert.initOwner(getScene().getWindow());
+        }
+        return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
+    }
+
+    @FunctionalInterface
+    interface CloseAllTabsPrompt
+    {
+        boolean confirmDiscard(List<String> dirtyTitles);
     }
 
     private void repairCurrentDatabase()
@@ -364,11 +457,12 @@ public class ProductionWorkspaceWindow extends BorderPane
         {
             databaseSessionController.connect(databaseFile);
             databaseFailure = null;
+            workspaceContext.setDatabaseFailure(null);
             panelHost.reset();
             updateActiveDatabaseLabel();
             inspectorPane.show(
                     "Database connected",
-                    "Active database: " + databaseSessionController.activeDatabasePath().toAbsolutePath());
+                    "Active database: " + workspaceContext.activeDatabasePath().toAbsolutePath());
             showDashboardOrRecovery(null);
         }
         catch (RuntimeException ex)
@@ -423,12 +517,12 @@ public class ProductionWorkspaceWindow extends BorderPane
 
     private void updateActivePeriodLabel()
     {
-        activePeriodLabel.setText("Active period: " + ActivePeriodContext.get());
+        activePeriodLabel.setText("Active period: " + workspaceContext.activePeriodDate());
     }
 
     private void updateActiveDatabaseLabel()
     {
-        Path path = databaseSessionController.activeDatabasePath();
+        Path path = workspaceContext.activeDatabasePath();
         activeDatabaseLabel.setText("DB: " + path.getFileName());
         activeDatabaseLabel.setTooltip(new javafx.scene.control.Tooltip(path.toAbsolutePath().toString()));
     }
@@ -440,8 +534,8 @@ public class ProductionWorkspaceWindow extends BorderPane
                 ? (active == null ? "No active panel" : "Active panel: " + panelHost.getActiveTitle())
                 : "Database unavailable: select, repair, or create a database";
         return new NavigationPane.InspectorContext(
-                databaseSessionController.activeDatabasePath().toString(),
-                ActivePeriodContext.get().toString(),
+                workspaceContext.activeDatabasePath().toString(),
+                workspaceContext.activePeriodDate().toString(),
                 capabilities);
     }
 

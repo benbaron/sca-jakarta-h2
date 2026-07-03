@@ -12,7 +12,7 @@ public class MainApp extends Application
     @Override
     public void start(Stage stage)
     {
-        ReferenceWorkspaceWindow root = new ReferenceWorkspaceWindow();
+        ProductionWorkspaceWindow root = new ProductionWorkspaceWindow();
         Rectangle2D visualBounds = Screen.getPrimary().getVisualBounds();
         WorkspaceWindowSizingPolicy.WindowGeometry geometry =
                 WorkspaceWindowSizingPolicy.forVisualBounds(

@@ -39,6 +39,7 @@ public class TransactionEditorPanel implements AppPanel
     private final TextField payeeField = new TextField();
     private final TextField memoField = new TextField();
     private final TextField bankField = new TextField();
+    private boolean dirty;
 
     public TransactionEditorPanel()
     {
@@ -61,6 +62,11 @@ public class TransactionEditorPanel implements AppPanel
         save.setOnAction(e -> onSave());
         post.setOnAction(e -> validateOrPost());
         journal.setOnAction(e -> showJournal());
+
+        dateField.textProperty().addListener((observable, oldValue, newValue) -> dirty = true);
+        payeeField.textProperty().addListener((observable, oldValue, newValue) -> dirty = true);
+        memoField.textProperty().addListener((observable, oldValue, newValue) -> dirty = true);
+        bankField.textProperty().addListener((observable, oldValue, newValue) -> dirty = true);
     }
 
     private Node buildHeaderForm()
@@ -120,12 +126,16 @@ public class TransactionEditorPanel implements AppPanel
         Button removeLine = new Button("– Remove");
         ToolBar tb = new ToolBar(addLine, removeLine);
 
-        addLine.setOnAction(e -> splitTable.getItems().add(new SplitRow("", "", "", "", "", "", "")));
+        addLine.setOnAction(e -> {
+            splitTable.getItems().add(new SplitRow("", "", "", "", "", "", ""));
+            dirty = true;
+        });
         removeLine.setOnAction(e -> {
             SplitRow sel = splitTable.getSelectionModel().getSelectedItem();
             if (sel != null)
             {
                 splitTable.getItems().remove(sel);
+                dirty = true;
             }
         });
 
@@ -379,14 +389,21 @@ public class TransactionEditorPanel implements AppPanel
         long draftedRows = splitTable.getItems().stream()
                 .filter(r -> !(isBlank(r.account()) && isBlank(r.fund()) && isBlank(r.amount())))
                 .count();
+        dirty = false;
         status.setText("Draft saved in session with " + draftedRows + " populated split row(s). " + postValidateStatusFor(lastValidationResult));
+    }
+
+    @Override
+    public boolean hasUnsavedChanges()
+    {
+        return dirty;
     }
 
 
     @Override
-    public RunCommandResult onRunCommand(RunCommand command)
+    public RunCommandResult onRunCommand(AppCommand command)
     {
-        if (command != RunCommand.POST_VALIDATE)
+        if (command != AppCommand.POST_VALIDATE)
         {
             return new RunCommandResult(false, "Unsupported run command: " + command);
         }

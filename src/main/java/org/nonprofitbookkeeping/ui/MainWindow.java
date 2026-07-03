@@ -46,6 +46,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -195,7 +196,7 @@ public class MainWindow extends BorderPane
                 item("Import Preview…", null, () -> openPanel(AppPanelId.IMPORT_PREVIEW)),
                 item("Import / Export Jobs…", null, () -> openPanel(AppPanelId.IMPORT_EXPORT_JOBS)),
                 item("Bank Transactions…", null, () -> openPanel(AppPanelId.BANK_TRANSACTIONS)),
-                gatedItem("Approval Audit…", null, () -> openPanel(AppPanelId.APPROVAL_AUDIT), UserPrivilegeLevel.MANAGER),
+                gatedItem("Audit History…", null, () -> openPanel(AppPanelId.APPROVAL_AUDIT), UserPrivilegeLevel.MANAGER),
                 gatedItem("Diagnostics…", null, () -> openPanel(AppPanelId.DIAGNOSTICS), UserPrivilegeLevel.ADMIN),
                 gatedItem("Preferences…", null, () -> openPanel(AppPanelId.SETTINGS), UserPrivilegeLevel.ADMIN)
         );
@@ -307,7 +308,7 @@ public class MainWindow extends BorderPane
             case TXN_EDITOR -> "Save, New line edits, Post/Validate run command, Journal preview";
             case LEDGER_REGISTER -> "Refresh, inspect journal, expose active journal selection";
             case IMPORT_PREVIEW -> "Import review and preview workflow";
-            case APPROVAL_AUDIT -> "Audit filters by workflow/decision/actor/date; run-id visibility";
+            case APPROVAL_AUDIT -> "Factual audit filters by workflow/decision/actor/date; run-id visibility";
             case IMPORT_EXPORT_JOBS -> "Unified import/export job history and error tracking";
             case BANK_TRANSACTIONS -> "Imported bank transactions, drill to ledger, export selected";
             case SETTINGS -> "Preferences management";
@@ -347,7 +348,7 @@ public class MainWindow extends BorderPane
             case RECONCILIATION_RUNS -> "Reconciliation Runs";
             case PERIOD_CLOSE_RUNS -> "Period Close Runs";
             case IMPORT_PREVIEW -> "Import Preview";
-            case APPROVAL_AUDIT -> "Approval Audit";
+            case APPROVAL_AUDIT -> "Audit History";
             case IMPORT_EXPORT_JOBS -> "Import / Export Jobs";
             case BANK_TRANSACTIONS -> "Bank Transactions";
             case REPORT_LIBRARY -> "Reports Library";
@@ -1294,9 +1295,43 @@ public class MainWindow extends BorderPane
         return body.toString();
     }
 
+    public AppPanel.RunCommandResult executeCommand(AppCommand command)
+    {
+        Objects.requireNonNull(command, "command");
+        return switch (command)
+        {
+            case CLOSE_ALL_TABS ->
+            {
+                int closed = panelHost.closeAllClosableTabs();
+                yield new AppPanel.RunCommandResult(true, "Closed " + closed + " non-dashboard tab(s). Dashboard remains open.");
+            }
+            case POST_VALIDATE -> panelHost.runCommandActive(command);
+            case NEW_ACTIVE ->
+            {
+                newItemInActivePanel();
+                yield new AppPanel.RunCommandResult(true, "New command routed to active panel.");
+            }
+            case SAVE_ACTIVE ->
+            {
+                saveActivePanel();
+                yield new AppPanel.RunCommandResult(true, "Save command routed to active panel.");
+            }
+            case COPY_ACTIVE ->
+            {
+                copySelection();
+                yield new AppPanel.RunCommandResult(true, "Copy command routed to active panel.");
+            }
+            case PASTE_ACTIVE ->
+            {
+                paste();
+                yield new AppPanel.RunCommandResult(true, "Paste command routed to active panel.");
+            }
+        };
+    }
+
     private void runPostValidate()
     {
-        AppPanel.RunCommandResult result = panelHost.runCommandActive(AppPanel.RunCommand.POST_VALIDATE);
+        AppPanel.RunCommandResult result = executeCommand(AppCommand.POST_VALIDATE);
         info(result.message());
     }
 
