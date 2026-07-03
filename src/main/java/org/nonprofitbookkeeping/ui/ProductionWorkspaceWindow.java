@@ -23,6 +23,8 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 
+import org.nonprofitbookkeeping.model.WorkspaceDividerState;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,9 +38,6 @@ import java.util.Optional;
  */
 public class ProductionWorkspaceWindow extends BorderPane
 {
-    private static final double LEFT_DIVIDER = 0.20;
-    private static final double RIGHT_DIVIDER = 0.80;
-
     private final AppStateStore stateStore;
     private final WorkspaceServices workspaceServices;
     private final WorkspaceContext workspaceContext;
@@ -52,6 +51,8 @@ public class ProductionWorkspaceWindow extends BorderPane
     private final Label activeDatabaseLabel = new Label();
     private CloseAllTabsPrompt closeAllTabsPrompt = this::confirmCloseAllTabs;
     private RuntimeException databaseFailure;
+    private WorkspaceDividerState rememberedDividerState;
+    private boolean restoringDividers;
 
     public ProductionWorkspaceWindow()
     {
@@ -349,7 +350,13 @@ public class ProductionWorkspaceWindow extends BorderPane
     private SplitPane buildWorkspace()
     {
         workspace.getItems().setAll(navigationPane, panelHost, inspectorPane);
-        workspace.setDividerPositions(LEFT_DIVIDER, RIGHT_DIVIDER);
+        rememberedDividerState = stateStore.loadWorkspaceDividers()
+                .orElseGet(() -> WorkspaceShellLayoutPolicy
+                        .forWidth(WorkspaceShellLayoutPolicy.FALLBACK_WORKSPACE_WIDTH)
+                        .dividerState());
+        restoreDividerPositions();
+        workspace.getDividers().forEach(divider -> divider.positionProperty().addListener(
+                (observable, oldValue, newValue) -> rememberCurrentDividerPositions()));
         BorderPane.setMargin(workspace, new Insets(8));
         return workspace;
     }
@@ -571,13 +578,63 @@ public class ProductionWorkspaceWindow extends BorderPane
 
     private void restoreDividerPositions()
     {
-        if (workspace.getItems().size() == 3)
+        double width = workspace.getWidth() > 0.0
+                ? workspace.getWidth()
+                : WorkspaceShellLayoutPolicy.FALLBACK_WORKSPACE_WIDTH;
+        WorkspaceDividerState safe = WorkspaceShellLayoutPolicy.safeDividerState(width, rememberedDividerState);
+        restoringDividers = true;
+        try
         {
-            workspace.setDividerPositions(LEFT_DIVIDER, RIGHT_DIVIDER);
+            if (workspace.getItems().size() == 3)
+            {
+                workspace.setDividerPositions(safe.leftDividerPosition(), safe.rightDividerPosition());
+            }
+            else if (workspace.getItems().size() == 2)
+            {
+                if (workspace.getItems().contains(navigationPane))
+                {
+                    workspace.setDividerPositions(safe.leftDividerPosition());
+                }
+                else
+                {
+                    workspace.setDividerPositions(safe.rightDividerPosition());
+                }
+            }
         }
-        else if (workspace.getItems().size() == 2)
+        finally
         {
-            workspace.setDividerPositions(0.25);
+            restoringDividers = false;
+        }
+    }
+
+    private void rememberCurrentDividerPositions()
+    {
+        if (restoringDividers || workspace.getItems().size() != 3)
+        {
+            return;
+        }
+        double[] positions = workspace.getDividerPositions();
+        if (positions.length != 2)
+        {
+            return;
+        }
+        WorkspaceDividerState candidate;
+        try
+        {
+            candidate = new WorkspaceDividerState(positions[0], positions[1]);
+        }
+        catch (IllegalArgumentException ex)
+        {
+            return;
+        }
+        double width = workspace.getWidth() > 0.0
+                ? workspace.getWidth()
+                : WorkspaceShellLayoutPolicy.FALLBACK_WORKSPACE_WIDTH;
+        WorkspaceDividerState safe = WorkspaceShellLayoutPolicy.safeDividerState(width, candidate);
+        if (safe.equals(candidate))
+        {
+            rememberedDividerState = candidate;
+            stateStore.saveWorkspaceDividers(candidate);
         }
     }
 }

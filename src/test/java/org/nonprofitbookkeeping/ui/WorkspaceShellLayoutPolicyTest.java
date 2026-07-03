@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.ui;
 
 import org.junit.jupiter.api.Test;
+import org.nonprofitbookkeeping.model.WorkspaceDividerState;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -44,6 +45,25 @@ public class WorkspaceShellLayoutPolicyTest
         assertEquals(160.0, geometry.navigationWidth(), TOLERANCE);
         assertEquals(180.0, geometry.inspectorWidth(), TOLERANCE);
         assertEquals(360.0, geometry.centerWidth(), TOLERANCE);
+    }
+
+    @Test
+    public void unsafeRememberedDividersFallBackToResponsiveDefaults()
+    {
+        WorkspaceDividerState state = WorkspaceShellLayoutPolicy.safeDividerState(
+                900.0,
+                new WorkspaceDividerState(0.10, 0.95));
+
+        assertEquals(0.18, state.leftDividerPosition(), TOLERANCE);
+        assertEquals(0.80, state.rightDividerPosition(), TOLERANCE);
+    }
+
+    @Test
+    public void safeRememberedDividersArePreserved()
+    {
+        WorkspaceDividerState requested = new WorkspaceDividerState(0.22, 0.76);
+
+        assertEquals(requested, WorkspaceShellLayoutPolicy.safeDividerState(1180.0, requested));
     }
 
     @Test
