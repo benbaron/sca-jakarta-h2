@@ -1,12 +1,12 @@
 ---
 plan_version: 3
 active_phase: P02
-active_slice: P02-S2
+active_slice: P02-S3
 active_status: VERIFYING
-active_branch: codex/P02-S2-command-validation-model
+active_branch: work
 active_pull_request: pending local make_pr handoff
 active_head: current committed HEAD
-next_action: "P02-S2 command DTO, validation, and projection model implemented; run mvn clean verify where Maven Central is reachable, then continue with P02-S3 transaction entry/query services."
+next_action: "P02-S3 transaction entry and query service implemented; run mvn clean verify where Maven Central is reachable, then continue with P02-S4 correction, period, reconciliation, and audit behavior."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -623,13 +623,39 @@ Next exact action: run `mvn clean verify` in an environment with Maven Central a
 
 ### P02-S3 — Transaction entry and query services
 
-Implement atomic:
+Status: VERIFYING.
 
-- enter;
-- load;
-- search;
-- journal view;
-- update under documented policy.
+Branch: `work`.
+Pull request: pending local make_pr handoff.
+Head: current committed HEAD.
+
+Completed deliverables:
+
+- Added `TransactionEntryService` for canonical `Txn`/`TxnSplit` entry, load, bounded search, journal projection, and narrow `ENTERED` update operations.
+- Converted debit/credit command input to signed split storage by account normal balance while preserving immutable query projections.
+- Resolved payee, bank account, account, fund, budget category, activity, and merchant by stable database ID inside a single JPA write transaction.
+- Added rollback coverage for missing referenced master data so failed writes leave no orphan transaction header or lines.
+- Documented the P02-S3 service boundary and update policy in `doc/accounting/ledger-authority.md`.
+
+Remaining deliverables:
+
+- Run full Maven verification where Maven Central is reachable.
+- Continue with P02-S4 correction, period, reconciliation, and audit behavior after this slice is reviewed.
+
+Known failures:
+
+- `mvn -DskipTests compile` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
+- `mvn clean verify` is expected to be blocked for the same Maven Central plugin-resolution reason in this container.
+
+User-visible changes:
+
+- No visible JavaFX workflow changes in P02-S3; this slice adds the transaction service that P03 will wire into the transaction editor and ledger register.
+
+Manual testing for user:
+
+- After Maven dependencies are reachable, run `mvn clean verify`. In P03, enter, save, reload, search, edit an `ENTERED` transaction, and open journal view from the UI to verify service behavior.
+
+Next exact action: run `mvn clean verify` in an environment with Maven Central access, then begin P02-S4 from current main after merge.
 
 ### P02-S4 — Correction, period, reconciliation, and audit behavior
 
