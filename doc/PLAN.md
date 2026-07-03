@@ -760,7 +760,7 @@ Status: VERIFYING. Implemented a reusable `TransactionLineEditorModel`, updated 
 - row/field validation;
 - dirty state.
 
-Handoff: rerun `mvn clean verify` after dependency resolution is available, then complete PR validation. User testing: open Transaction Editor, confirm Debit/Credit/Budget/Counterparty columns and totals are visible, add a row and verify the Account cell enters edit focus, edit line cells, remove a selected row, enter one debit and one credit, and verify validation feedback blocks both-sided or unbalanced input.
+Handoff: rerun `mvn clean verify` after dependency resolution is available, then complete PR validation. User testing: open Transaction Editor, confirm Debit/Credit/Budget/Counterparty columns and totals are visible, add a row and verify the Account cell enters edit focus, edit line cells and then click away to confirm values persist, remove a selected row, enter one debit and one credit, and verify validation feedback blocks both-sided or unbalanced input.
 
 ### P03-S2 — Transaction workflow
 

@@ -1,16 +1,19 @@
 package org.nonprofitbookkeeping.ui;
 
+import javafx.event.Event;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableColumn.CellEditEvent;
+import javafx.scene.control.TablePosition;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
-import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
@@ -27,6 +30,7 @@ import org.nonprofitbookkeeping.service.LedgerQueryService;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -181,13 +185,124 @@ public class TransactionEditorPanel implements AppPanel
     {
         TableColumn<SplitRow, String> c = new TableColumn<>(name);
         c.setCellValueFactory(v -> new SimpleStringProperty(getter.apply(v.getValue())));
-        c.setCellFactory(TextFieldTableCell.forTableColumn());
+        c.setCellFactory(column -> new FocusCommitTextCell());
         c.setOnEditCommit(event -> {
             setter.accept(event.getRowValue(), event.getNewValue());
             dirty = true;
             refreshTotals();
         });
         return c;
+    }
+
+    private static class FocusCommitTextCell extends TableCell<SplitRow, String>
+    {
+        private TextField editor;
+
+        @Override
+        public void startEdit()
+        {
+            if (!isEditable() || !getTableView().isEditable() || !getTableColumn().isEditable())
+            {
+                return;
+            }
+            super.startEdit();
+            if (editor == null)
+            {
+                editor = new TextField();
+                editor.setOnAction(event -> commitEditorValue());
+                editor.focusedProperty().addListener((observable, wasFocused, isFocused) -> {
+                    if (!isFocused)
+                    {
+                        commitEditorValue();
+                    }
+                });
+            }
+            editor.setText(getItem() == null ? "" : getItem());
+            setText(null);
+            setGraphic(editor);
+            editor.selectAll();
+            editor.requestFocus();
+        }
+
+        @Override
+        public void cancelEdit()
+        {
+            if (editor != null && !Objects.equals(getItem(), editor.getText()))
+            {
+                commitEditorValue();
+                return;
+            }
+            super.cancelEdit();
+            setText(getItem() == null ? "" : getItem());
+            setGraphic(null);
+        }
+
+        @Override
+        public void updateItem(String item, boolean empty)
+        {
+            super.updateItem(item, empty);
+            if (empty)
+            {
+                setText(null);
+                setGraphic(null);
+            }
+            else if (isEditing())
+            {
+                if (editor != null)
+                {
+                    editor.setText(item == null ? "" : item);
+                    setText(null);
+                    setGraphic(editor);
+                }
+            }
+            else
+            {
+                setText(item == null ? "" : item);
+                setGraphic(null);
+            }
+        }
+
+        private void commitEditorValue()
+        {
+            if (editor == null)
+            {
+                return;
+            }
+            String value = editor.getText();
+            if (isEditing())
+            {
+                commitEdit(value);
+            }
+            else
+            {
+                commitValueWhenFocusLossAlreadyCancelled(value);
+            }
+        }
+
+        @Override
+        public void commitEdit(String newValue)
+        {
+            super.commitEdit(newValue);
+            setText(newValue == null ? "" : newValue);
+            setGraphic(null);
+        }
+
+        private void commitValueWhenFocusLossAlreadyCancelled(String value)
+        {
+            TableView<SplitRow> table = getTableView();
+            TableColumn<SplitRow, String> column = getTableColumn();
+            if (table == null || column == null || getIndex() < 0 || getIndex() >= table.getItems().size())
+            {
+                return;
+            }
+            CellEditEvent<SplitRow, String> event = new CellEditEvent<>(
+                    table,
+                    new TablePosition<>(table, getIndex(), column),
+                    TableColumn.editCommitEvent(),
+                    value);
+            Event.fireEvent(column, event);
+            updateItem(value, false);
+        }
     }
 
     private void validateOrPost()
