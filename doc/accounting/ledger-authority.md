@@ -60,9 +60,20 @@ The following are forbidden after this decision:
 - adding UI save actions that write directly to `journal_transaction` or `journal_posting_line` as accounting truth;
 - implementing reports or balances that combine both transaction models as if both were authoritative.
 
+## P02-S2 command and projection model
+
+P02-S2 defines the shared command boundary that later transaction services and UI editors must use:
+
+- `TransactionCommand` carries the transaction date, optional payee and bank-account IDs, memo, and an immutable list of line commands.
+- `TransactionLineCommand` carries stable account and fund IDs, optional budget category, activity, and merchant IDs, explicit debit and credit amounts, NMR flag, and notes.
+- `TransactionCommandValidator` rejects missing dates, fewer than two meaningful lines, missing required account/fund IDs, negative amounts, zero lines, both-sided lines, and unbalanced totals before persistence.
+- `TransactionValidationResult` is the reusable error/warning result for JavaFX panels and command services.
+- `TransactionView` and `AccountingJournalProjection` are read projections for editor/register and journal presentation; they do not create another persistence model.
+
+The command boundary is intentionally debit/credit oriented even though canonical storage remains `TxnSplit.amountSigned`. P02-S3 is responsible for converting validated line input to signed storage using account normal balance inside the canonical write service.
+
 ## Open follow-up for later P02 slices
 
-- Define command DTOs and line DTOs with explicit debit/credit input.
-- Replace signed amount entry at the public command boundary with one-sided debit/credit validation while preserving signed storage in `TxnSplit`.
+- Implement the canonical transaction entry/query service over these command DTOs and projections.
 - Add query projections that read only canonical ledger tables for transaction editor, ledger register, and journal views.
 - Fold period, correction, reconciliation-protection, and audit behavior into the canonical command service.
