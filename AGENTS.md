@@ -246,6 +246,12 @@ Use the repository workflow to run or inspect `mvn clean verify`.
 
 Read failing logs. Correct every failure. Update the pull-request description with actual results. Never claim that GitHub confirmed a result when it did not.
 
+### Step 7 - User testing
+
+Add user testing notes stating:
+- User visible changes.
+- Manual testing for the user to perform.
+
 ## 6. Sources of truth
 
 Resolve ambiguity in this order:
