@@ -1,12 +1,12 @@
 ---
 plan_version: 3
-active_phase: P01
-active_slice: P01-S4
+active_phase: P02
+active_slice: P02-S1
 active_status: VERIFYING
-active_branch: work
+active_branch: codex/P02-S1-ledger-authority
 active_pull_request: pending local make_pr handoff
 active_head: current committed HEAD
-next_action: "P01-S4 implemented locally; Maven validation is blocked by network access to Maven Central. Run mvn clean verify where plugin dependencies are reachable and complete PR validation."
+next_action: "P02-S1 ledger authority decision is implemented; run mvn clean verify where Maven Central is reachable, then continue with P02-S2 command DTO and validation model."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -95,6 +95,7 @@ A phase may begin early only when its required slice has no dependency on an unf
 - `doc/architecture/dashboard-workspace.md`
 - `doc/accounting/transaction-lifecycle.md`
 - `doc/accounting/period-and-correction-policy.md`
+- `doc/accounting/ledger-authority.md`
 - `doc/import/import-review-workflow.md`
 - `doc/testing/production-workspace-test-plan.md`
 - `doc/interface-operation-matrix.md`
@@ -113,7 +114,6 @@ Create only when their owning phase begins:
 
 - `doc/architecture/application-composition.md` — P01 (created in P01-S1)
 - `doc/architecture/command-and-query-boundaries.md` — P01
-- `doc/accounting/ledger-authority.md` — P02
 - `doc/accounting/budget-model.md` — P04
 - `doc/banking/import-and-reconciliation.md` — P05/P06
 - `doc/accounting/open-items-and-schedules.md` — P07
@@ -529,8 +529,11 @@ Complete the first incomplete P01 slice only, including tests and documentation.
 # P02 — Canonical ledger and transaction operations
 
 **Selector:** `PHASE=P02`  
-**Status:** READY
+**Status:** VERIFYING
 **Depends on:** P00
+**Branch:** codex/P02-S1-ledger-authority
+**Pull request:** pending local make_pr handoff
+**Head:** current committed HEAD
 
 ## Objective
 
@@ -560,9 +563,28 @@ Select one authoritative writable ledger and implement genuine transaction entry
 
 ### P02-S1 — Ledger authority decision
 
-Create `doc/accounting/ledger-authority.md`.
+Status: VERIFYING.
 
-Select one canonical writable ledger. Define compatibility/migration treatment for any retained legacy journal tables. Prevent two independently writable ledgers.
+Created `doc/accounting/ledger-authority.md`.
+
+Selected `Txn`/`TxnSplit` backed by `txn`/`txn_split` as the canonical writable ledger. Retained `journal_transaction`/`journal_posting_line` as compatibility/projection tables only, not independently writable accounting truth.
+
+Completed deliverables:
+
+- Documented the canonical ledger decision, compatibility treatment, migration policy, service boundary, and follow-up work for P02-S2/P02-S4.
+- Linked the decision from the governing document list.
+
+Remaining deliverables:
+
+- Run full Maven verification where Maven Central is reachable.
+- Continue with P02-S2 command DTO and validation model after this slice is reviewed.
+
+Known failures:
+
+- `mvn -DskipTests compile` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
+- `mvn clean verify` cannot resolve `maven-clean-plugin:3.2.0` in this container because Maven Central is unreachable.
+
+Next exact action: run `mvn clean verify` in an environment with Maven Central access, then begin P02-S2 from current main after merge.
 
 ### P02-S2 — Command and validation model
 
