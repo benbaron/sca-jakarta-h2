@@ -1,12 +1,12 @@
 ---
 plan_version: 3
 active_phase: P02
-active_slice: P02-S1
+active_slice: P02-S2
 active_status: VERIFYING
-active_branch: codex/P02-S1-ledger-authority
+active_branch: codex/P02-S2-command-validation-model
 active_pull_request: pending local make_pr handoff
 active_head: current committed HEAD
-next_action: "P02-S1 ledger authority decision is implemented; run mvn clean verify where Maven Central is reachable, then continue with P02-S2 command DTO and validation model."
+next_action: "P02-S2 command DTO, validation, and projection model implemented; run mvn clean verify where Maven Central is reachable, then continue with P02-S3 transaction entry/query services."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -588,13 +588,38 @@ Next exact action: run `mvn clean verify` in an environment with Maven Central a
 
 ### P02-S2 — Command and validation model
 
-Create or complete, without duplication:
+Status: VERIFYING.
 
-- transaction command DTO;
-- line command DTO;
-- validation result;
-- transaction view projection;
-- accounting/journal projection.
+Branch: `codex/P02-S2-command-validation-model`.
+Pull request: pending local make_pr handoff.
+Head: current committed HEAD.
+
+Completed deliverables:
+
+- Added immutable transaction command and line command DTOs with explicit debit/credit input.
+- Added reusable transaction validation result and validator for date, two-line, one-sided, non-zero, required ID, and balance rules.
+- Added transaction view and accounting journal projection records for later services and UI panels.
+- Documented the P02-S2 command/projection boundary in `doc/accounting/ledger-authority.md`.
+
+Remaining deliverables:
+
+- Run full Maven verification where Maven Central is reachable.
+- Continue with P02-S3 transaction entry and query services after this slice is reviewed.
+
+Known failures:
+
+- `mvn -DskipTests compile` cannot resolve `maven-resources-plugin:3.3.1` in this container because Maven Central is unreachable.
+- `mvn clean verify` cannot resolve `maven-clean-plugin:3.2.0` in this container because Maven Central is unreachable.
+
+User-visible changes:
+
+- No visible JavaFX workflow changes in P02-S2; this slice adds the shared command and projection model used by later transaction entry/editor work.
+
+Manual testing for user:
+
+- After Maven dependencies are reachable, run `mvn clean verify`. In P02-S3/P03, verify that transaction editor validation messages match the command validation rules before saves are enabled.
+
+Next exact action: run `mvn clean verify` in an environment with Maven Central access, then begin P02-S3 from current main after merge.
 
 ### P02-S3 — Transaction entry and query services
 
