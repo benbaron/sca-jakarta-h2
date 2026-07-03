@@ -20,3 +20,24 @@ P01-S2 introduces explicit shell-owned composition objects:
 - `PanelFactory` is the one panel construction boundary used by `PanelHost`; production `PanelHost` instances no longer own a static panel factory map.
 
 Existing panels may still call legacy static lookup helpers internally until their owning feature phases replace those service lookups with constructor-injected command/query services. New production shell code should receive panels through `PanelFactory` rather than constructing panels directly.
+
+## Atomic database switching
+
+P01-S3 makes database selection a candidate-swap operation. The selected
+database path is not persisted to session state until the candidate database
+has migrated and the replacement service bundle has been constructed
+successfully. If candidate construction fails, the prior selection remains the
+active database and the recovery dashboard is shown with the failure details.
+
+`UiServiceRegistry.reconnectToDatabase` builds the replacement JPA-backed
+service bundle before assigning it as the active bundle. The previous JPA
+resources stay open until the replacement is ready, then they are closed after
+the swap. If candidate service construction fails after opening a candidate JPA
+resource, the candidate resource is closed before the failure is reported.
+
+After a successful swap, `PanelHost.refreshOpenPanels` recreates every open
+workspace panel through the lifecycle-owned `PanelFactory` while preserving the
+open destinations and active tab. This prevents database-bound panels from
+retaining stale service references after an organization/database switch. The
+recovery dashboard remains a replacement dashboard panel and is constructed
+without requiring accounting query services from the failed candidate database.

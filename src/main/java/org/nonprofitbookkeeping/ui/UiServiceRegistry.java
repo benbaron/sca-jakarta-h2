@@ -167,7 +167,16 @@ public final class UiServiceRegistry
             System.err.println("[NPBK] UiServiceRegistry reconnecting to database: " + resolved.toAbsolutePath());
             ServiceBundle oldServices = services;
             Jpa nextJpa = new Jpa(resolved);
-            ServiceBundle nextServices = buildServices(nextJpa);
+            ServiceBundle nextServices;
+            try
+            {
+                nextServices = buildServices(nextJpa);
+            }
+            catch (RuntimeException ex)
+            {
+                nextJpa.close();
+                throw ex;
+            }
             services = nextServices;
             lastInitializationFailure = null;
             if (oldServices != null)

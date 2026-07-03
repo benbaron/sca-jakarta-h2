@@ -76,6 +76,33 @@ public class PanelHost extends TabPane
     }
 
     /**
+     * Recreates every open panel from the current panel factory while preserving
+     * the open destinations and active tab. Database-bound panels use this after
+     * an atomic database swap so they cannot keep stale service references.
+     */
+    public void refreshOpenPanels()
+    {
+        List<AppPanelId> openIds = tabs.keySet().stream().toList();
+        AppPanelId previouslyActive = activeId;
+
+        getTabs().clear();
+        tabs.clear();
+        panels.clear();
+        activeId = null;
+
+        for (AppPanelId id : openIds)
+        {
+            show(id);
+        }
+
+        if (previouslyActive != null && tabs.containsKey(previouslyActive))
+        {
+            getSelectionModel().select(tabs.get(previouslyActive));
+            activeId = previouslyActive;
+        }
+    }
+
+    /**
      * Closes every non-permanent workspace tab and selects the Dashboard.
      *
      * @return number of tabs closed
