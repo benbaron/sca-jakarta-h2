@@ -1,12 +1,12 @@
 ---
 plan_version: 3
 active_phase: P01
-active_slice: P01-S2
+active_slice: P01-S3
 active_status: VERIFYING
-active_branch: codex/p01-s2-workspace-composition
+active_branch: codex/p01-s3-atomic-database-switching
 active_pull_request: null
-active_head: current-branch-HEAD
-next_action: "P01-S2 implemented locally; run mvn clean verify where Maven Central is reachable, then complete PR validation."
+active_head: current committed HEAD
+next_action: "P01-S3 implemented locally; run mvn clean verify where Maven Central is reachable, then complete PR validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -434,6 +434,28 @@ Create or complete:
 Make database/company/period/connection state observable and explicit.
 
 ### P01-S3 — Atomic database switching and recovery
+
+Status: VERIFYING. Branch: `codex/p01-s3-atomic-database-switching`. PR: pending local handoff. Head: `current committed HEAD`.
+
+Completed in this slice:
+
+- preserved candidate database validation/migration and service construction before session selection persistence;
+- retained the old database selection on failed connection attempts;
+- made replacement service-bundle construction close failed candidate JPA resources and close old JPA resources only after a successful swap;
+- refreshed open workspace panels through the lifecycle-owned panel factory after a successful database swap;
+- documented the atomic switching/recovery behavior in `doc/architecture/application-composition.md`;
+- added a panel-host regression test proving database-switch refresh preserves open destinations and the active tab while recreating stale panels.
+
+Test status:
+
+- `mvn -DskipTests compile` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
+
+Remaining before merge:
+
+- run `mvn clean verify` in an environment that can resolve Maven plugins;
+- complete PR validation and update this handoff with the PR URL.
+
+Original scope:
 
 - validate/migrate candidate database;
 - construct candidate services;

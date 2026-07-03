@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -62,6 +63,26 @@ public class PanelHostBehaviorTest
 
             assertEquals(AppPanelId.DASHBOARD, host.activePanelId());
             assertEquals("Dashboard", host.getActiveTitle());
+            return null;
+        });
+    }
+
+    @Test
+    public void refreshOpenPanelsPreservesOpenDestinationsAndActivePanel()
+    {
+        FxTestSupport.onFx(() -> {
+            PanelHost host = new PanelHost();
+            host.show(AppPanelId.DASHBOARD);
+            host.show(AppPanelId.HELP);
+            Tab originalHelpTab = host.getSelectionModel().getSelectedItem();
+
+            host.refreshOpenPanels();
+
+            assertEquals(2, host.openPanelCount());
+            assertTrue(host.isOpen(AppPanelId.DASHBOARD));
+            assertTrue(host.isOpen(AppPanelId.HELP));
+            assertEquals(AppPanelId.HELP, host.activePanelId());
+            assertNotSame(originalHelpTab, host.getSelectionModel().getSelectedItem());
             return null;
         });
     }

@@ -458,7 +458,7 @@ public class ProductionWorkspaceWindow extends BorderPane
             databaseSessionController.connect(databaseFile);
             databaseFailure = null;
             workspaceContext.setDatabaseFailure(null);
-            panelHost.reset();
+            panelHost.refreshOpenPanels();
             updateActiveDatabaseLabel();
             inspectorPane.show(
                     "Database connected",
