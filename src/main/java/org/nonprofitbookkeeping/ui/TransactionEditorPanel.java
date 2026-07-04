@@ -1,15 +1,21 @@
 package org.nonprofitbookkeeping.ui;
 
+import javafx.event.Event;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableColumn.CellEditEvent;
+import javafx.scene.control.TablePosition;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -114,19 +120,38 @@ public class TransactionEditorPanel implements AppPanel
 
     private void buildSplitTable()
     {
+        splitTable.setEditable(true);
         splitTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
-        splitTable.getColumns().add(col("Account", SplitRow::account));
-        splitTable.getColumns().add(col("Fund", SplitRow::fund));
-        splitTable.getColumns().add(col("Amount", SplitRow::amount));
-        splitTable.getColumns().add(col("Activity", SplitRow::activity));
-        splitTable.getColumns().add(col("Merchant", SplitRow::merchant));
-        splitTable.getColumns().add(col("NMR", SplitRow::nmr));
-        splitTable.getColumns().add(col("Notes", SplitRow::notes));
+        splitTable.getColumns().add(optionCol("Account", TransactionLineEditorModel.ReferenceData::accounts, SplitRow::account, SplitRow::setAccount));
+        splitTable.getColumns().add(optionCol("Fund", TransactionLineEditorModel.ReferenceData::funds, SplitRow::fund, SplitRow::setFund));
+        splitTable.getColumns().add(optionCol("Budget", TransactionLineEditorModel.ReferenceData::budgetCategories, SplitRow::budgetCategory, SplitRow::setBudgetCategory));
+        splitTable.getColumns().add(editableCol("Debit", SplitRow::debit, SplitRow::setDebit));
+        splitTable.getColumns().add(editableCol("Credit", SplitRow::credit, SplitRow::setCredit));
+        splitTable.getColumns().add(optionCol("Activity", TransactionLineEditorModel.ReferenceData::activities, SplitRow::activity, SplitRow::setActivity));
+        splitTable.getColumns().add(optionCol("Merchant", TransactionLineEditorModel.ReferenceData::merchants, SplitRow::merchant, SplitRow::setMerchant));
+        splitTable.getColumns().add(optionCol("Counterparty", TransactionLineEditorModel.ReferenceData::counterparties, SplitRow::counterparty, SplitRow::setCounterparty));
+        splitTable.getColumns().add(editableCol("NMR", SplitRow::nmr, SplitRow::setNmr));
+        splitTable.getColumns().add(editableCol("Notes", SplitRow::notes, SplitRow::setNotes));
 
         splitTable.getItems().addAll(
-                new SplitRow("", "", "", "", "", "", ""),
-                new SplitRow("", "", "", "", "", "", "")
+                new SplitRow("", "", "", "", "", "", "", "", "", ""),
+                new SplitRow("", "", "", "", "", "", "", "", "", "")
         );
+        UiAsync.run("txn-editor-reference-data", () -> UiServiceRegistry.transactionReferenceData().loadActiveReferenceData(),
+                referenceData -> {
+                    lineEditorModel.replaceOptions(referenceData);
+                    splitTable.getProperties().put("referenceData", referenceData);
+                    splitTable.refresh();
+                },
+                ex -> status.setText("Reference choices unavailable: " + UiErrors.safeMessage(ex)));
+
+        splitTable.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.INSERT)
+            {
+                addEmptySplitRow();
+                event.consume();
+            }
+        });
     }
 
     private Node buildSplitEditor()
@@ -139,53 +164,321 @@ public class TransactionEditorPanel implements AppPanel
         ToolBar tb = new ToolBar(addLine, removeLine);
 
         addLine.setOnAction(e -> {
-            splitTable.getItems().add(new SplitRow("", "", "", "", "", "", ""));
-            dirty = true;
+            addEmptySplitRow();
         });
         removeLine.setOnAction(e -> {
+            int selectedIndex = splitTable.getSelectionModel().getSelectedIndex();
             SplitRow sel = splitTable.getSelectionModel().getSelectedItem();
-            if (sel != null)
+            if (sel != null && lineEditorModel.removeRow(selectedIndex))
             {
                 splitTable.getItems().remove(sel);
                 dirty = true;
+                refreshTotals();
+            }
+            else
+            {
+                status.setText("At least two split rows are required for a balanced transaction.");
             }
         });
 
-        VBox box = new VBox(6, lbl, tb, splitTable);
+        VBox box = new VBox(6, lbl, tb, splitTable, totals);
         VBox.setVgrow(splitTable, Priority.ALWAYS);
         return box;
     }
 
-    private TableColumn<SplitRow, String> col(String name, java.util.function.Function<SplitRow, String> getter)
+    private void addEmptySplitRow()
+    {
+        SplitRow row = new SplitRow("", "", "", "", "", "", "", "", "", "");
+        splitTable.getItems().add(row);
+        lineEditorModel.addRow();
+        splitTable.getSelectionModel().select(row);
+        splitTable.scrollTo(row);
+        splitTable.edit(splitTable.getItems().indexOf(row), splitTable.getColumns().get(0));
+        status.setText("Added split row. Enter an account code or choose the Account cell to begin editing.");
+        dirty = true;
+        refreshTotals();
+    }
+
+
+    private TableColumn<SplitRow, String> optionCol(String name,
+                                                     java.util.function.Function<TransactionLineEditorModel.ReferenceData, List<TransactionLineEditorModel.Option>> options,
+                                                     java.util.function.Function<SplitRow, String> labelGetter,
+                                                     RowOptionSetter setter)
+    {
+        TableColumn<SplitRow, String> c = new TableColumn<>(name);
+        c.setCellValueFactory(v -> new SimpleStringProperty(labelGetter.apply(v.getValue())));
+        c.setCellFactory(column -> new OptionCommitCell(options));
+        c.setOnEditCommit(event -> {
+            TransactionLineEditorModel.Option option = optionByLabel(options, event.getNewValue());
+            setter.accept(event.getRowValue(), option);
+            syncModelRow(event.getTablePosition().getRow(), event.getRowValue());
+            dirty = true;
+            refreshTotals();
+        });
+        return c;
+    }
+
+    private TransactionLineEditorModel.Option optionByLabel(java.util.function.Function<TransactionLineEditorModel.ReferenceData, List<TransactionLineEditorModel.Option>> options,
+                                                            String label)
+    {
+        TransactionLineEditorModel.ReferenceData data = currentReferenceData();
+        if (data == null || label == null || label.isBlank())
+        {
+            return null;
+        }
+        return options.apply(data).stream()
+                .filter(option -> option.label().equals(label))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private TransactionLineEditorModel.ReferenceData currentReferenceData()
+    {
+        Object data = splitTable.getProperties().get("referenceData");
+        return data instanceof TransactionLineEditorModel.ReferenceData referenceData ? referenceData : null;
+    }
+
+    private final class OptionCommitCell extends TableCell<SplitRow, String>
+    {
+        private final java.util.function.Function<TransactionLineEditorModel.ReferenceData, List<TransactionLineEditorModel.Option>> options;
+        private ComboBox<String> editor;
+
+        private OptionCommitCell(java.util.function.Function<TransactionLineEditorModel.ReferenceData, List<TransactionLineEditorModel.Option>> options)
+        {
+            this.options = options;
+        }
+
+        @Override
+        public void startEdit()
+        {
+            if (!isEditable() || !getTableView().isEditable() || !getTableColumn().isEditable())
+            {
+                return;
+            }
+            super.startEdit();
+            if (editor == null)
+            {
+                editor = new ComboBox<>();
+                editor.setMaxWidth(Double.MAX_VALUE);
+                editor.setOnAction(event -> commitEdit(editor.getValue()));
+                editor.focusedProperty().addListener((observable, wasFocused, isFocused) -> {
+                    if (!isFocused)
+                    {
+                        commitEdit(editor.getValue());
+                    }
+                });
+            }
+            TransactionLineEditorModel.ReferenceData data = currentReferenceData();
+            editor.getItems().setAll(data == null ? List.of() : options.apply(data).stream().map(TransactionLineEditorModel.Option::label).toList());
+            editor.setValue(getItem() == null ? "" : getItem());
+            setText(null);
+            setGraphic(editor);
+            editor.show();
+        }
+
+        @Override
+        public void updateItem(String item, boolean empty)
+        {
+            super.updateItem(item, empty);
+            if (empty)
+            {
+                setText(null);
+                setGraphic(null);
+            }
+            else if (isEditing())
+            {
+                setText(null);
+                setGraphic(editor);
+            }
+            else
+            {
+                setText(item == null ? "" : item);
+                setGraphic(null);
+            }
+        }
+    }
+
+    @FunctionalInterface
+    private interface RowOptionSetter
+    {
+        void accept(SplitRow row, TransactionLineEditorModel.Option option);
+    }
+
+    private TableColumn<SplitRow, String> editableCol(String name,
+                                                      java.util.function.Function<SplitRow, String> getter,
+                                                      java.util.function.BiConsumer<SplitRow, String> setter)
     {
         TableColumn<SplitRow, String> c = new TableColumn<>(name);
         c.setCellValueFactory(v -> new SimpleStringProperty(getter.apply(v.getValue())));
+        c.setCellFactory(column -> new FocusCommitTextCell());
+        c.setOnEditCommit(event -> {
+            setter.accept(event.getRowValue(), event.getNewValue());
+            syncModelRow(event.getTablePosition().getRow(), event.getRowValue());
+            dirty = true;
+            refreshTotals();
+        });
         return c;
+    }
+
+    private static class FocusCommitTextCell extends TableCell<SplitRow, String>
+    {
+        private TextField editor;
+
+        @Override
+        public void startEdit()
+        {
+            if (!isEditable() || !getTableView().isEditable() || !getTableColumn().isEditable())
+            {
+                return;
+            }
+            super.startEdit();
+            if (editor == null)
+            {
+                editor = new TextField();
+                editor.setOnAction(event -> commitEditorValue());
+                editor.focusedProperty().addListener((observable, wasFocused, isFocused) -> {
+                    if (!isFocused)
+                    {
+                        commitEditorValue();
+                    }
+                });
+            }
+            editor.setText(getItem() == null ? "" : getItem());
+            setText(null);
+            setGraphic(editor);
+            editor.selectAll();
+            editor.requestFocus();
+        }
+
+        @Override
+        public void cancelEdit()
+        {
+            if (editor != null && !Objects.equals(getItem(), editor.getText()))
+            {
+                commitEditorValue();
+                return;
+            }
+            super.cancelEdit();
+            setText(getItem() == null ? "" : getItem());
+            setGraphic(null);
+        }
+
+        @Override
+        public void updateItem(String item, boolean empty)
+        {
+            super.updateItem(item, empty);
+            if (empty)
+            {
+                setText(null);
+                setGraphic(null);
+            }
+            else if (isEditing())
+            {
+                if (editor != null)
+                {
+                    editor.setText(item == null ? "" : item);
+                    setText(null);
+                    setGraphic(editor);
+                }
+            }
+            else
+            {
+                setText(item == null ? "" : item);
+                setGraphic(null);
+            }
+        }
+
+        private void commitEditorValue()
+        {
+            if (editor == null)
+            {
+                return;
+            }
+            String value = editor.getText();
+            if (isEditing())
+            {
+                commitEdit(value);
+            }
+            else
+            {
+                commitValueWhenFocusLossAlreadyCancelled(value);
+            }
+        }
+
+        @Override
+        public void commitEdit(String newValue)
+        {
+            super.commitEdit(newValue);
+            setText(newValue == null ? "" : newValue);
+            setGraphic(null);
+        }
+
+        private void commitValueWhenFocusLossAlreadyCancelled(String value)
+        {
+            TableView<SplitRow> table = getTableView();
+            TableColumn<SplitRow, String> column = getTableColumn();
+            if (table == null || column == null || getIndex() < 0 || getIndex() >= table.getItems().size())
+            {
+                return;
+            }
+            CellEditEvent<SplitRow, String> event = new CellEditEvent<>(
+                    table,
+                    new TablePosition<>(table, getIndex(), column),
+                    TableColumn.editCommitEvent(),
+                    value);
+            Event.fireEvent(column, event);
+            updateItem(value, false);
+        }
     }
 
     private void validateOrPost()
     {
-        status.setText("Validating split rows against current account/fund catalogs...");
-        UiAsync.run("txn-editor-validate", this::validateAgainstReferenceData,
-                result -> {
-                    lastValidationResult = result;
-                    status.setText(result.message());
-                },
-                ex -> status.setText("Validation failed: " + UiErrors.safeMessage(ex)));
+        TransactionValidationResult result = lineEditorModel.validate(parseDateOrNull(dateField.getText()), null, memoField.getText(), null);
+        lastValidationResult = new ValidationResult(
+                result.valid() ? "Validation result: ready to save through the transaction service."
+                        : "Validation result: " + String.join(" ", result.errors()),
+                lineEditorModel.toCommand(parseDateOrNull(dateField.getText()), null, memoField.getText(), null).lines().size(),
+                result.valid() ? lineEditorModel.toCommand(parseDateOrNull(dateField.getText()), null, memoField.getText(), null).lines().size() : 0,
+                result.valid() ? 0 : result.errors().size(),
+                lineEditorModel.totals().difference());
+        status.setText(lastValidationResult.message());
     }
 
-    private ValidationResult validateAgainstReferenceData()
+    private static LocalDate parseDateOrNull(String value)
     {
-        Set<String> accountCodes = UiServiceRegistry.accountLookup().listActivePostingAccounts()
-                .stream()
-                .map(Account::getCode)
-                .collect(java.util.stream.Collectors.toSet());
-        Set<String> fundCodes = UiServiceRegistry.fundLookup().listActiveFunds()
-                .stream()
-                .map(Fund::getCode)
-                .collect(java.util.stream.Collectors.toSet());
-        return validateSplits(splitTable.getItems(), accountCodes, fundCodes);
+        if (isBlank(value))
+        {
+            return null;
+        }
+        try
+        {
+            return LocalDate.parse(value.trim());
+        }
+        catch (RuntimeException ex)
+        {
+            return null;
+        }
     }
+
+    private void syncModelRow(int index, SplitRow splitRow)
+    {
+        if (index < 0 || index >= lineEditorModel.rows().size())
+        {
+            return;
+        }
+        TransactionLineEditorModel.Row row = lineEditorModel.rows().get(index);
+        row.setAccountId(splitRow.accountId());
+        row.setFundId(splitRow.fundId());
+        row.setBudgetCategoryId(splitRow.budgetCategoryId());
+        row.setActivityId(splitRow.activityId());
+        row.setMerchantId(splitRow.merchantId());
+        row.setCounterpartyId(splitRow.counterpartyId());
+        row.setDebit(parseOptionalAmount(splitRow.debit()));
+        row.setCredit(parseOptionalAmount(splitRow.credit()));
+        row.setNmr(Boolean.parseBoolean(splitRow.nmr()));
+        row.setNotes(splitRow.notes());
+    }
+
 
     static ValidationResult validateSplits(List<SplitRow> rows, Set<String> accountCodes, Set<String> fundCodes)
     {
@@ -196,7 +489,7 @@ public class TransactionEditorPanel implements AppPanel
 
         for (SplitRow row : rows)
         {
-            boolean hasData = !(isBlank(row.account()) && isBlank(row.fund()) && isBlank(row.amount()));
+            boolean hasData = !(isBlank(row.account()) && isBlank(row.fund()) && isBlank(row.debit()) && isBlank(row.credit()));
             if (!hasData)
             {
                 continue;
@@ -204,23 +497,34 @@ public class TransactionEditorPanel implements AppPanel
             nonEmpty++;
 
             boolean rowValid = true;
-            if (isBlank(row.account()) || !accountCodes.contains(row.account().trim()))
+            String accountToken = row.account().contains(" — ") ? row.account().substring(0, row.account().indexOf(" — ")) : row.account();
+            String fundToken = row.fund().contains(" — ") ? row.fund().substring(0, row.fund().indexOf(" — ")) : row.fund();
+            if (isBlank(accountToken) || !accountCodes.contains(accountToken.trim()))
             {
                 rowValid = false;
             }
-            if (isBlank(row.fund()) || !fundCodes.contains(row.fund().trim()))
+            if (isBlank(fundToken) || !fundCodes.contains(fundToken.trim()))
             {
                 rowValid = false;
             }
 
-            BigDecimal amount = parseAmount(row.amount());
-            if (amount == null)
+            BigDecimal debit = parseOptionalAmount(row.debit());
+            BigDecimal credit = parseOptionalAmount(row.credit());
+            if (debit == null || credit == null)
+            {
+                rowValid = false;
+            }
+            else if (debit.signum() < 0 || credit.signum() < 0 || (debit.signum() > 0 && credit.signum() > 0))
+            {
+                rowValid = false;
+            }
+            else if (debit.signum() == 0 && credit.signum() == 0)
             {
                 rowValid = false;
             }
             else
             {
-                net = net.add(amount);
+                net = net.add(debit).subtract(credit);
             }
 
             if (rowValid)
@@ -241,7 +545,7 @@ public class TransactionEditorPanel implements AppPanel
         String message = "Validation result: rows=" + nonEmpty
                 + ", valid=" + valid
                 + ", errors=" + errors
-                + ", net=" + net.toPlainString();
+                + ", debit-credit difference=" + net.toPlainString();
         if (errors == 0 && net.compareTo(BigDecimal.ZERO) == 0)
         {
             message += " (ready to save)";
@@ -258,11 +562,11 @@ public class TransactionEditorPanel implements AppPanel
         return value == null || value.isBlank();
     }
 
-    private static BigDecimal parseAmount(String value)
+    private static BigDecimal parseOptionalAmount(String value)
     {
         if (isBlank(value))
         {
-            return null;
+            return BigDecimal.ZERO;
         }
         try
         {
@@ -272,6 +576,28 @@ public class TransactionEditorPanel implements AppPanel
         {
             return null;
         }
+    }
+
+    private void refreshTotals()
+    {
+        BigDecimal debit = BigDecimal.ZERO;
+        BigDecimal credit = BigDecimal.ZERO;
+        for (SplitRow row : splitTable.getItems())
+        {
+            BigDecimal rowDebit = parseOptionalAmount(row.debit());
+            BigDecimal rowCredit = parseOptionalAmount(row.credit());
+            if (rowDebit != null)
+            {
+                debit = debit.add(rowDebit);
+            }
+            if (rowCredit != null)
+            {
+                credit = credit.add(rowCredit);
+            }
+        }
+        totals.setText("Debits=" + debit.toPlainString()
+                + " Credits=" + credit.toPlainString()
+                + " Difference=" + debit.subtract(credit).toPlainString());
     }
 
 
@@ -294,78 +620,39 @@ public class TransactionEditorPanel implements AppPanel
 
     private void showJournal()
     {
-        status.setText("Loading journal preview for current transaction context...");
-        UiAsync.run("txn-editor-journal-preview", this::buildJournalPreviewForCurrentContext,
-                preview -> status.setText(preview),
+        if (savedTransactionId == null)
+        {
+            status.setText("Journal preview unavailable until the transaction has been saved through the transaction service.");
+            return;
+        }
+        status.setText("Loading journal preview for saved transaction #" + savedTransactionId + "...");
+        UiAsync.run("txn-editor-journal-preview", () -> UiServiceRegistry.transactionEntry().journalView(savedTransactionId),
+                preview -> status.setText(renderJournalPreview(preview)),
                 ex -> status.setText("Journal preview failed: " + UiErrors.safeMessage(ex)));
     }
 
-    String buildJournalPreviewForCurrentContext()
-    {
-        LedgerQueryService ledger = UiServiceRegistry.ledgerQuery();
-        List<LedgerQueryService.LedgerRow> recent = ledger.listRecent(250);
-        List<LedgerQueryService.LedgerRow> matches = findContextMatches(
-                recent,
-                dateField.getText(),
-                payeeField.getText(),
-                memoField.getText(),
-                bankField.getText());
-
-        if (matches.isEmpty())
-        {
-            return "Journal preview: no posted transaction matched current date/payee/memo/bank context.";
-        }
-
-        LedgerQueryService.LedgerRow match = matches.get(0);
-        List<JournalLine> lines = ledger.journalForTxn(match.id());
-        return renderContextJournalPreview(match, lines);
-    }
-
-    static List<LedgerQueryService.LedgerRow> findContextMatches(List<LedgerQueryService.LedgerRow> rows,
-                                                                  String date,
-                                                                  String payee,
-                                                                  String memo,
-                                                                  String bank)
-    {
-        String dateQuery = normalizeToken(date);
-        String payeeQuery = normalizeToken(payee);
-        String memoQuery = normalizeToken(memo);
-        String bankQuery = normalizeToken(bank);
-
-        return rows.stream()
-                .filter(row -> matches(dateQuery, row.date() == null ? "" : row.date().toString()))
-                .filter(row -> matches(payeeQuery, row.payee()))
-                .filter(row -> matches(memoQuery, row.memo()))
-                .filter(row -> matches(bankQuery, row.bank()))
-                .toList();
-    }
-
-    static String renderContextJournalPreview(LedgerQueryService.LedgerRow row, List<JournalLine> lines)
+    static String renderJournalPreview(AccountingJournalProjection projection)
     {
         StringBuilder body = new StringBuilder();
-        body.append("Journal preview: matched Txn #")
-                .append(row.id())
+        body.append("Journal preview: Txn #")
+                .append(projection.transactionId())
                 .append(" on ")
-                .append(row.date())
-                .append(" (splits: ")
-                .append(row.splitCount())
+                .append(projection.date())
+                .append(" (lines: ")
+                .append(projection.lines().size())
                 .append(")");
-
-        if (lines.isEmpty())
+        if (!projection.lines().isEmpty())
         {
-            body.append(" | journal lines: none");
-            return body.toString();
+            AccountingJournalProjection.Line first = projection.lines().get(0);
+            body.append(" | first line ")
+                    .append(first.accountCode())
+                    .append("/")
+                    .append(first.fundCode() == null ? "" : first.fundCode())
+                    .append(" DR=")
+                    .append(first.debit().toPlainString())
+                    .append(" CR=")
+                    .append(first.credit().toPlainString());
         }
-
-        JournalLine first = lines.get(0);
-        body.append(" | first line ")
-                .append(first.getAccountCode())
-                .append("/")
-                .append(first.getFundCode() == null ? "" : first.getFundCode())
-                .append(" DR=")
-                .append(first.getDebit().toPlainString())
-                .append(" CR=")
-                .append(first.getCredit().toPlainString());
         return body.toString();
     }
 
@@ -539,7 +826,130 @@ public class TransactionEditorPanel implements AppPanel
     {
     }
 
-    public record SplitRow(String account, String fund, String amount, String activity, String merchant, String nmr, String notes)
+    public static class SplitRow
     {
+        private Long accountId;
+        private Long fundId;
+        private Long budgetCategoryId;
+        private Long activityId;
+        private Long merchantId;
+        private Long counterpartyId;
+        private String account;
+        private String fund;
+        private String budgetCategory;
+        private String debit;
+        private String credit;
+        private String activity;
+        private String merchant;
+        private String counterparty;
+        private String nmr;
+        private String notes;
+
+        public SplitRow(String account, String fund, String amount, String activity, String merchant, String nmr, String notes)
+        {
+            this(account, fund, "", amount == null || amount.startsWith("-") ? "" : amount,
+                    amount != null && amount.startsWith("-") ? amount.substring(1) : "",
+                    activity, merchant, "", nmr, notes);
+        }
+
+        public SplitRow(String account,
+                        String fund,
+                        String budgetCategory,
+                        String debit,
+                        String credit,
+                        String activity,
+                        String merchant,
+                        String counterparty,
+                        String nmr,
+                        String notes)
+        {
+            this.account = value(account);
+            this.fund = value(fund);
+            this.budgetCategory = value(budgetCategory);
+            this.debit = value(debit);
+            this.credit = value(credit);
+            this.activity = value(activity);
+            this.merchant = value(merchant);
+            this.counterparty = value(counterparty);
+            this.nmr = value(nmr);
+            this.notes = value(notes);
+        }
+
+        static SplitRow fromViewLine(TransactionView.Line line)
+        {
+            SplitRow row = new SplitRow(
+                    label(line.accountCode(), line.accountName()),
+                    label(line.fundCode(), line.fundName()),
+                    "",
+                    line.debit().signum() == 0 ? "" : line.debit().toPlainString(),
+                    line.credit().signum() == 0 ? "" : line.credit().toPlainString(),
+                    "",
+                    "",
+                    "",
+                    Boolean.toString(line.nmr()),
+                    line.notes());
+            row.accountId = line.accountId();
+            row.fundId = line.fundId();
+            row.budgetCategoryId = line.budgetCategoryId();
+            row.activityId = line.activityId();
+            row.merchantId = line.merchantId();
+            return row;
+        }
+
+        public Long accountId() { return accountId; }
+        public Long fundId() { return fundId; }
+        public Long budgetCategoryId() { return budgetCategoryId; }
+        public Long activityId() { return activityId; }
+        public Long merchantId() { return merchantId; }
+        public Long counterpartyId() { return counterpartyId; }
+
+        public String account() { return account; }
+        public void setAccount(String account) { this.account = value(account); }
+        public void setAccount(TransactionLineEditorModel.Option option) { this.accountId = id(option); this.account = label(option); }
+        public String fund() { return fund; }
+        public void setFund(String fund) { this.fund = value(fund); }
+        public void setFund(TransactionLineEditorModel.Option option) { this.fundId = id(option); this.fund = label(option); }
+        public String budgetCategory() { return budgetCategory; }
+        public void setBudgetCategory(String budgetCategory) { this.budgetCategory = value(budgetCategory); }
+        public void setBudgetCategory(TransactionLineEditorModel.Option option) { this.budgetCategoryId = id(option); this.budgetCategory = label(option); }
+        public String debit() { return debit; }
+        public void setDebit(String debit) { this.debit = value(debit); }
+        public String credit() { return credit; }
+        public void setCredit(String credit) { this.credit = value(credit); }
+        public String activity() { return activity; }
+        public void setActivity(String activity) { this.activity = value(activity); }
+        public void setActivity(TransactionLineEditorModel.Option option) { this.activityId = id(option); this.activity = label(option); }
+        public String merchant() { return merchant; }
+        public void setMerchant(String merchant) { this.merchant = value(merchant); }
+        public void setMerchant(TransactionLineEditorModel.Option option) { this.merchantId = id(option); this.merchant = label(option); }
+        public String counterparty() { return counterparty; }
+        public void setCounterparty(String counterparty) { this.counterparty = value(counterparty); }
+        public void setCounterparty(TransactionLineEditorModel.Option option) { this.counterpartyId = id(option); this.counterparty = label(option); }
+        public String nmr() { return nmr; }
+        public void setNmr(String nmr) { this.nmr = value(nmr); }
+        public String notes() { return notes; }
+        public void setNotes(String notes) { this.notes = value(notes); }
+
+        private static Long id(TransactionLineEditorModel.Option option)
+        {
+            return option == null ? null : option.id();
+        }
+
+        private static String label(TransactionLineEditorModel.Option option)
+        {
+            return option == null ? "" : option.label();
+        }
+
+        private static String label(String code, String name)
+        {
+            String safeCode = code == null ? "" : code;
+            String safeName = name == null ? "" : name;
+            return (safeCode + " — " + safeName).trim();
+        }
+
+        private static String value(String value)
+        {
+            return value == null ? "" : value;
+        }
     }
 }
