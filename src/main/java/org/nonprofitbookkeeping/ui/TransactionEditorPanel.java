@@ -33,6 +33,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Represents the TransactionEditorPanel component in the nonprofit bookkeeping application.
@@ -41,9 +43,7 @@ public class TransactionEditorPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
     private final TableView<SplitRow> splitTable = new TableView<>();
-    private final TransactionLineEditorModel lineEditorModel = new TransactionLineEditorModel(new TransactionCommandValidator());
-    private final Label status = new Label("Prepare debit and credit split lines, then validate before saving.");
-    private final Label totals = new Label("Debits=0 Credits=0 Difference=0");
+    private final Label status = new Label("Prepare split lines, then save to the canonical ledger.");
     private ValidationResult lastValidationResult;
     private final TextField dateField = new TextField();
     private final TextField payeeField = new TextField();
@@ -60,7 +60,7 @@ public class TransactionEditorPanel implements AppPanel
         title.getStyleClass().add("panel-title");
 
         Button save = new Button("Save");
-        Button post = new Button("Validate Lines");
+        Button post = new Button("Validate");
         Button journal = new Button("Journal View");
         HBox actions = new HBox(8, save, post, journal);
 
@@ -541,7 +541,7 @@ public class TransactionEditorPanel implements AppPanel
                 + ", debit-credit difference=" + net.toPlainString();
         if (errors == 0 && net.compareTo(BigDecimal.ZERO) == 0)
         {
-            message += " (ready to post/save)";
+            message += " (ready to save)";
         }
         else if (errors == 0)
         {
@@ -598,17 +598,17 @@ public class TransactionEditorPanel implements AppPanel
     {
         if (result == null)
         {
-            return "Line validation completed: run validation first to review row readiness.";
+            return "Validate completed: run validation first to review row readiness.";
         }
         if (result.errorCount() > 0)
         {
-            return "Line validation blocked: fix validation errors before saving.";
+            return "Validate blocked: fix validation errors before posting.";
         }
         if (result.netAmount().compareTo(BigDecimal.ZERO) != 0)
         {
-            return "Line validation blocked: split rows are not balanced (difference=" + result.netAmount().toPlainString() + ").";
+            return "Validate blocked: split rows are not balanced (net=" + result.netAmount().toPlainString() + ").";
         }
-        return "Line validation accepted: transaction is balanced and ready to save.";
+        return "Validate accepted: transaction is balanced and ready to save.";
     }
 
     private void showJournal()
@@ -734,7 +734,7 @@ public class TransactionEditorPanel implements AppPanel
             return new RunCommandResult(false, "Unsupported run command: " + command);
         }
         validateOrPost();
-        return new RunCommandResult(true, "Validate Lines command delegated to Transaction Editor validation.");
+        return new RunCommandResult(true, "Validate command delegated to Transaction Editor validation.");
     }
 
     record ValidationResult(String message, int rowCount, int validCount, int errorCount, BigDecimal netAmount)
