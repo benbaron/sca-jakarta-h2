@@ -779,21 +779,21 @@ Completed deliverables in this run:
 - loaded ID-backed account, fund, budget category, activity, merchant, and counterparty choices for the editor from `TransactionLineEditorModel.ReferenceData`;
 - wired Transaction Editor save through `TransactionEntryService.enter(...)` and refreshed the editor from the saved `TransactionView`;
 - switched journal preview to `TransactionEntryService.journalView(...)` for the saved transaction;
+- repaired P03-S2 compile regressions by restoring the editor model/totals fields, removing duplicate panel lifecycle/save methods, keeping a single UI registry `transactionEntry()` accessor, and enabling the saved-ledger action from the surviving service-backed save path;
+- repaired the command-mapping compile regression by restoring `TransactionEditorPanel.toTransactionCommand(...)` with the required `TransactionCommand`/`TransactionLineCommand` imports for focused mapping tests;
 - recorded P03-S2 editor workflow behavior in `doc/ui/editor-guidelines.md`;
 - added focused unit-test coverage for ID-backed split-row selection, the retained `SplitRow.amount()` compatibility helper, and saved journal preview rendering.
 
 Remaining deliverables before merge:
 
-- wired Transaction Editor Save to the canonical `TransactionEntryService` instead of session-only draft success;
-- added UI service registry access to the canonical transaction entry service;
-- mapped editor rows from account/fund codes to stable database IDs before building `TransactionCommand`;
-- converted signed row amounts into explicit debit/credit command input;
-- added command-mapping coverage for stable IDs and debit/credit conversion;
-- added a post-save Open Saved in Ledger action that opens the ledger register with saved transaction context.
+- rerun Maven compile, focused tests, and `mvn clean verify` when Maven Central/plugin artifacts are reachable;
+- complete manual desktop validation for Transaction Editor save, post-save journal preview, and Open Saved in Ledger behavior;
+- confirm unsaved-work prompts and correction actions are either finalized in P03-S2D or deliberately scheduled as the next focused slice before P03-S3.
 
 Known failures:
 
 - `mvn -Dtest=TransactionEditorPanelCommandMappingTest,TransactionEditorPanelSavedLedgerContextTest test` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
+- `mvn -DskipTests compile` and `mvn clean verify` were retried on 2026-07-04 after the compile-regression repairs, but Maven plugin resolution is still environment-blocked by `Network is unreachable` to Maven Central before Java compilation begins.
 - `git diff --check` passed locally.
 
 User-visible changes:
@@ -808,7 +808,7 @@ Manual testing for user:
 - Confirm invalid date, missing account/fund, one-sided, both-sided, zero-value, and unbalanced rows remain blocked by service validation.
 - Confirm unsaved-work prompts and correction actions still require the remaining P03-S2D refinement if not accepted for this slice.
 
-Next exact action: restore Maven dependency access, run `mvn clean verify`, complete manual desktop validation, and either finalize P03-S2D affordances or explicitly schedule them as the next focused slice before P03-S3.
+Next exact action: restore Maven dependency access, rerun `mvn -DskipTests compile` and `mvn clean verify`, complete manual desktop validation, and either finalize P03-S2D affordances or explicitly schedule them as the next focused slice before P03-S3.
 
 Original scope reminders:
 

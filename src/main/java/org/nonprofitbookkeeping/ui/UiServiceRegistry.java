@@ -59,7 +59,6 @@ public final class UiServiceRegistry
     public static TransactionReferenceDataService transactionReferenceData() { return services().transactionReferenceData(); }
     public static FinancialReportService financialReports() { return services().financialReports(); }
     public static DashboardQueryService dashboardQuery() { return services().dashboardQuery(); }
-    public static TransactionEntryService transactionEntry() { return services().transactionEntry(); }
 
     private static ServiceBundle services()
     {
