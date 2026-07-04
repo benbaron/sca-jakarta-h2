@@ -27,7 +27,7 @@ public class TransactionEditorPanelValidationTest
         assertEquals(2, result.validCount());
         assertEquals(0, result.errorCount());
         assertEquals("0", result.netAmount().toPlainString());
-        assertTrue(result.message().contains("ready to post"));
+        assertTrue(result.message().contains("ready to save"));
     }
 
     @Test

@@ -22,6 +22,7 @@ import org.nonprofitbookkeeping.service.LedgerQueryService;
 import org.nonprofitbookkeeping.service.PeriodCloseService;
 import org.nonprofitbookkeeping.service.ReconciliationService;
 import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
+import org.nonprofitbookkeeping.service.TransactionEntryService;
 import org.nonprofitbookkeeping.service.UserAdminService;
 import org.nonprofitbookkeeping.service.dashboard.DashboardQueryService;
 import org.nonprofitbookkeeping.service.dashboard.JpaDashboardQueryService;
@@ -55,6 +56,7 @@ public final class UiServiceRegistry
     public static LedgerQueryService ledgerQuery() { return services().ledgerQuery(); }
     public static FinancialReportService financialReports() { return services().financialReports(); }
     public static DashboardQueryService dashboardQuery() { return services().dashboardQuery(); }
+    public static TransactionEntryService transactionEntry() { return services().transactionEntry(); }
 
     private static ServiceBundle services()
     {
@@ -125,6 +127,7 @@ public final class UiServiceRegistry
                 new FundBalanceService(jpa),
                 new ScheduleEligibilityService(jpa),
                 new LedgerQueryService(jpa),
+                new TransactionEntryService(jpa),
                 new FinancialReportService(jpa),
                 new JpaDashboardQueryService(jpa));
     }
@@ -200,6 +203,7 @@ public final class UiServiceRegistry
             FundBalanceService fundBalance,
             ScheduleEligibilityService schedules,
             LedgerQueryService ledgerQuery,
+            TransactionEntryService transactionEntry,
             FinancialReportService financialReports,
             DashboardQueryService dashboardQuery)
     {

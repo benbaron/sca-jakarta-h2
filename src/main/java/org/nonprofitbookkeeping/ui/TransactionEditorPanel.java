@@ -20,11 +20,19 @@ import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.service.JournalLine;
 import org.nonprofitbookkeeping.service.LedgerQueryService;
+import org.nonprofitbookkeeping.service.TransactionCommand;
+import org.nonprofitbookkeeping.service.TransactionLineCommand;
+import org.nonprofitbookkeeping.service.TransactionView;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Represents the TransactionEditorPanel component in the nonprofit bookkeeping application.
@@ -33,12 +41,14 @@ public class TransactionEditorPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
     private final TableView<SplitRow> splitTable = new TableView<>();
-    private final Label status = new Label("Prepare split lines, then validate before posting.");
+    private final Label status = new Label("Prepare split lines, then save to the canonical ledger.");
     private ValidationResult lastValidationResult;
     private final TextField dateField = new TextField();
     private final TextField payeeField = new TextField();
     private final TextField memoField = new TextField();
     private final TextField bankField = new TextField();
+    private final Button openSavedInLedger = new Button("Open Saved in Ledger");
+    private Long lastSavedTransactionId;
     private boolean dirty;
 
     public TransactionEditorPanel()
@@ -49,9 +59,10 @@ public class TransactionEditorPanel implements AppPanel
         title.getStyleClass().add("panel-title");
 
         Button save = new Button("Save");
-        Button post = new Button("Post / Validate");
+        Button post = new Button("Validate");
         Button journal = new Button("Journal View");
-        HBox actions = new HBox(8, save, post, journal);
+        openSavedInLedger.setDisable(true);
+        HBox actions = new HBox(8, save, post, journal, openSavedInLedger);
 
         VBox top = new VBox(6, title, actions, status, new Separator(), buildHeaderForm());
         root.setTop(top);
@@ -62,6 +73,7 @@ public class TransactionEditorPanel implements AppPanel
         save.setOnAction(e -> onSave());
         post.setOnAction(e -> validateOrPost());
         journal.setOnAction(e -> showJournal());
+        openSavedInLedger.setOnAction(e -> openSavedTransactionInLedger());
 
         dateField.textProperty().addListener((observable, oldValue, newValue) -> dirty = true);
         payeeField.textProperty().addListener((observable, oldValue, newValue) -> dirty = true);
@@ -232,7 +244,7 @@ public class TransactionEditorPanel implements AppPanel
                 + ", net=" + net.toPlainString();
         if (errors == 0 && net.compareTo(BigDecimal.ZERO) == 0)
         {
-            message += " (ready to post)";
+            message += " (ready to save)";
         }
         else if (errors == 0)
         {
@@ -267,17 +279,17 @@ public class TransactionEditorPanel implements AppPanel
     {
         if (result == null)
         {
-            return "Post / Validate completed: run validation first to review row readiness.";
+            return "Validate completed: run validation first to review row readiness.";
         }
         if (result.errorCount() > 0)
         {
-            return "Post / Validate blocked: fix validation errors before posting.";
+            return "Validate blocked: fix validation errors before posting.";
         }
         if (result.netAmount().compareTo(BigDecimal.ZERO) != 0)
         {
-            return "Post / Validate blocked: split rows are not balanced (net=" + result.netAmount().toPlainString() + ").";
+            return "Validate blocked: split rows are not balanced (net=" + result.netAmount().toPlainString() + ").";
         }
-        return "Post / Validate accepted: transaction is balanced and ready to post.";
+        return "Validate accepted: transaction is balanced and ready to save.";
     }
 
     private void showJournal()
@@ -371,6 +383,98 @@ public class TransactionEditorPanel implements AppPanel
         return value != null && value.toLowerCase(Locale.ROOT).contains(query);
     }
 
+    private TransactionView saveToCanonicalLedger()
+    {
+        List<Account> accounts = UiServiceRegistry.accountLookup().listActivePostingAccounts();
+        List<Fund> funds = UiServiceRegistry.fundLookup().listActiveFunds();
+        TransactionCommand command = toTransactionCommand(
+                dateField.getText(),
+                memoField.getText(),
+                splitTable.getItems(),
+                accounts,
+                funds);
+        return UiServiceRegistry.transactionEntry().enter(command);
+    }
+
+    static TransactionCommand toTransactionCommand(String date,
+                                                   String memo,
+                                                   List<SplitRow> rows,
+                                                   List<Account> accounts,
+                                                   List<Fund> funds)
+    {
+        LocalDate parsedDate = parseDate(date);
+        Map<String, Account> accountsByCode = accounts.stream()
+                .collect(Collectors.toMap(a -> normalizeCode(a.getCode()), Function.identity(), (left, right) -> left));
+        Map<String, Fund> fundsByCode = funds.stream()
+                .collect(Collectors.toMap(f -> normalizeCode(f.getCode()), Function.identity(), (left, right) -> left));
+
+        List<TransactionLineCommand> lines = rows.stream()
+                .filter(row -> !(isBlank(row.account()) && isBlank(row.fund()) && isBlank(row.amount())))
+                .map(row -> toLineCommand(row, accountsByCode, fundsByCode))
+                .toList();
+        return new TransactionCommand(parsedDate, null, blankToNull(memo), null, lines);
+    }
+
+    private static TransactionLineCommand toLineCommand(SplitRow row,
+                                                        Map<String, Account> accountsByCode,
+                                                        Map<String, Fund> fundsByCode)
+    {
+        Account account = accountsByCode.get(normalizeCode(row.account()));
+        if (account == null)
+        {
+            throw new IllegalArgumentException("Unknown account code: " + row.account());
+        }
+        Fund fund = fundsByCode.get(normalizeCode(row.fund()));
+        if (fund == null)
+        {
+            throw new IllegalArgumentException("Unknown fund code: " + row.fund());
+        }
+        BigDecimal amount = parseAmount(row.amount());
+        if (amount == null)
+        {
+            throw new IllegalArgumentException("Invalid amount for account " + row.account());
+        }
+        BigDecimal debit = amount.compareTo(BigDecimal.ZERO) > 0 ? amount : BigDecimal.ZERO;
+        BigDecimal credit = amount.compareTo(BigDecimal.ZERO) < 0 ? amount.abs() : BigDecimal.ZERO;
+        return new TransactionLineCommand(
+                account.getId(),
+                fund.getId(),
+                null,
+                null,
+                null,
+                debit,
+                credit,
+                Boolean.parseBoolean(row.nmr()),
+                blankToNull(row.notes()));
+    }
+
+    private static LocalDate parseDate(String date)
+    {
+        if (isBlank(date))
+        {
+            throw new IllegalArgumentException("Date is required");
+        }
+        try
+        {
+            return LocalDate.parse(date.trim());
+        }
+        catch (DateTimeParseException ex)
+        {
+            throw new IllegalArgumentException("Date must use ISO format yyyy-mm-dd", ex);
+        }
+    }
+
+    private static String normalizeCode(String value)
+    {
+        return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private static String blankToNull(String value)
+    {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+
     @Override
     public String title()
     {
@@ -386,12 +490,32 @@ public class TransactionEditorPanel implements AppPanel
     @Override
     public void onSave()
     {
-        long draftedRows = splitTable.getItems().stream()
-                .filter(r -> !(isBlank(r.account()) && isBlank(r.fund()) && isBlank(r.amount())))
-                .count();
-        dirty = false;
-        status.setText("Draft saved in session with " + draftedRows + " populated split row(s). " + postValidateStatusFor(lastValidationResult));
+        status.setText("Saving transaction to the canonical ledger...");
+        UiAsync.run("txn-editor-save", this::saveToCanonicalLedger,
+                saved -> {
+                    dirty = false;
+                    lastSavedTransactionId = saved.id();
+                    openSavedInLedger.setDisable(false);
+                    status.setText("Saved Txn #" + saved.id() + " to the canonical ledger with "
+                            + saved.lines().size() + " split line(s). Use Open Saved in Ledger to review it.");
+                },
+                ex -> status.setText("Save failed: " + UiErrors.safeMessage(ex)));
     }
+    private void openSavedTransactionInLedger()
+    {
+        if (lastSavedTransactionId == null)
+        {
+            status.setText("Save a transaction before opening it in the ledger register.");
+            return;
+        }
+        DrillThroughCoordinator.openLedgerWithContext(savedLedgerContext(lastSavedTransactionId));
+    }
+
+    static String savedLedgerContext(long transactionId)
+    {
+        return "Saved transaction Txn #" + transactionId;
+    }
+
 
     @Override
     public boolean hasUnsavedChanges()
@@ -408,7 +532,7 @@ public class TransactionEditorPanel implements AppPanel
             return new RunCommandResult(false, "Unsupported run command: " + command);
         }
         validateOrPost();
-        return new RunCommandResult(true, "Post / Validate command delegated to Transaction Editor validation.");
+        return new RunCommandResult(true, "Validate command delegated to Transaction Editor validation.");
     }
 
     record ValidationResult(String message, int rowCount, int validCount, int errorCount, BigDecimal netAmount)
