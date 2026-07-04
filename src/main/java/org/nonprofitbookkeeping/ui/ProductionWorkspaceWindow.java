@@ -22,6 +22,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import org.nonprofitbookkeeping.service.SampleCompanyService;
 
 import org.nonprofitbookkeeping.model.WorkspaceDividerState;
 
@@ -255,6 +256,8 @@ public class ProductionWorkspaceWindow extends BorderPane
         createDatabase.setOnAction(event -> createNewDatabase());
         MenuItem repairDatabase = new MenuItem("Retry / Repair Current Database");
         repairDatabase.setOnAction(event -> repairCurrentDatabase());
+        MenuItem sampleCompany = new MenuItem("Create / Refresh Sample Company Data");
+        sampleCompany.setOnAction(event -> createOrRefreshSampleCompany());
         MenuItem save = new MenuItem("Save");
         save.setOnAction(event -> saveActivePanel());
         MenuItem exit = new MenuItem("Exit");
@@ -269,6 +272,7 @@ public class ProductionWorkspaceWindow extends BorderPane
                 selectDatabase,
                 createDatabase,
                 repairDatabase,
+                sampleCompany,
                 new SeparatorMenuItem(),
                 save,
                 exit);
@@ -456,6 +460,28 @@ public class ProductionWorkspaceWindow extends BorderPane
             return;
         }
         connectDatabase(target);
+    }
+
+    private void createOrRefreshSampleCompany()
+    {
+        try
+        {
+            SampleCompanyService.SampleCompanySummary summary = UiServiceRegistry.sampleCompany().createOrRefresh();
+            panelHost.refreshOpenPanels();
+            inspectorPane.show(
+                    "Sample company ready",
+                    "Created or refreshed explicit sample data in the active database. "
+                            + "Chart ID " + summary.chartId()
+                            + " now has " + summary.accountCount() + " sample account(s), "
+                            + summary.fundCount() + " active fund(s), and transaction editor reference choices.");
+            activePanelLabel.setText("Workspace: sample company data refreshed");
+        }
+        catch (RuntimeException ex)
+        {
+            inspectorPane.show(
+                    "Sample company failed",
+                    UiErrors.safeMessage(ex));
+        }
     }
 
     private void connectDatabase(Path databaseFile)
