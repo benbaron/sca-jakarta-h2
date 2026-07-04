@@ -480,7 +480,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         {
             inspectorPane.show(
                     "Sample company failed",
-                    UiErrors.userFacingMessage(ex));
+                    UiErrors.safeMessage(ex));
         }
     }
 
