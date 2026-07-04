@@ -23,7 +23,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.service.AccountingJournalProjection;
-import org.nonprofitbookkeeping.service.TransactionCommandValidator;
 import org.nonprofitbookkeeping.service.TransactionEntryService;
 import org.nonprofitbookkeeping.service.TransactionValidationResult;
 import org.nonprofitbookkeeping.service.TransactionView;
@@ -33,8 +32,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Represents the TransactionEditorPanel component in the nonprofit bookkeeping application.
@@ -44,6 +41,8 @@ public class TransactionEditorPanel implements AppPanel
     private final BorderPane root = new BorderPane();
     private final TableView<SplitRow> splitTable = new TableView<>();
     private final Label status = new Label("Prepare split lines, then save to the canonical ledger.");
+    private final TransactionLineEditorModel lineEditorModel = new TransactionLineEditorModel();
+    private final Label totals = new Label("Debits=0.00 Credits=0.00 Difference=0.00");
     private ValidationResult lastValidationResult;
     private final TextField dateField = new TextField();
     private final TextField payeeField = new TextField();
@@ -684,6 +683,7 @@ public class TransactionEditorPanel implements AppPanel
                     applySavedView(view);
                     dirty = false;
                     lineEditorModel.markClean();
+                    openSavedInLedger.setDisable(false);
                     status.setText("Saved transaction #" + view.id() + " through TransactionEntryService with "
                             + view.lines().size() + " split line(s). Use Journal View to preview the persisted journal.");
                 },
@@ -705,6 +705,7 @@ public class TransactionEditorPanel implements AppPanel
         {
             syncModelRow(i, splitTable.getItems().get(i));
         }
+        refreshTotals();
         for (int i = splitTable.getItems().size(); i < lineEditorModel.rows().size(); i++)
         {
             TransactionLineEditorModel.Row row = lineEditorModel.rows().get(i);
@@ -721,43 +722,6 @@ public class TransactionEditorPanel implements AppPanel
         }
     }
 
-    private static String normalizeCode(String value)
-    {
-        return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
-    }
-
-    private static String blankToNull(String value)
-    {
-        return value == null || value.isBlank() ? null : value.trim();
-    }
-
-
-    @Override
-    public String title()
-    {
-        return "Transaction Editor";
-    }
-
-    @Override
-    public Node root()
-    {
-        return root;
-    }
-
-    @Override
-    public void onSave()
-    {
-        status.setText("Saving transaction to the canonical ledger...");
-        UiAsync.run("txn-editor-save", this::saveToCanonicalLedger,
-                saved -> {
-                    dirty = false;
-                    lastSavedTransactionId = saved.id();
-                    openSavedInLedger.setDisable(false);
-                    status.setText("Saved Txn #" + saved.id() + " to the canonical ledger with "
-                            + saved.lines().size() + " split line(s). Use Open Saved in Ledger to review it.");
-                },
-                ex -> status.setText("Save failed: " + UiErrors.safeMessage(ex)));
-    }
     private void openSavedTransactionInLedger()
     {
         if (lastSavedTransactionId == null)
