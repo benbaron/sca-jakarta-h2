@@ -737,7 +737,7 @@ Implement and test only one canonical writable transaction path.
 # P03 — Ledger Register and Transaction Editor
 
 **Selector:** `PHASE=P03`
-**Status:** IN_PROGRESS
+**Status:** READY
 **Depends on:** P01, P02
 **Branch:** work
 **Pull request:** pending local make_pr record

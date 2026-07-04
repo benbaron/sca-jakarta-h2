@@ -181,8 +181,9 @@ Identify:
 - architecture conflicts;
 - migration risks;
 - test gaps.
-
 Record any material conflict in the governing `doc/` file before implementing an alternative.
+
+
 
 ### Step 2 — Establish baseline
 
@@ -210,6 +211,13 @@ A slice must be mergeable and vertically coherent. Where applicable it includes:
 - documentation.
 
 Do not deliver a visible enabled button before its real operation exists.
+
+Design methodology and Donor Code:
+
+https://github.com/benbaron/NonprofitAccounting.git is available as reference or a donor. 
+Examine the donor codebase and consider imports or design choices from it when working in a new area of code.
+Record any design choices made and add a slice to PLAN.md when a feature is discovered that is a candidate for a
+mergeable and vertically coherent slice.
 
 ### Step 4 — Validate locally
 
