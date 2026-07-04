@@ -1,12 +1,12 @@
 ---
 plan_version: 3
 active_phase: P03
-active_slice: P03-S00
+active_slice: P03-S3
 active_status: VERIFYING
 active_branch: work
 active_pull_request: pending local make_pr record
-active_head: HEAD (P03-S00 sample company seeding commit)
-next_action: "Restore Maven plugin access, run focused SampleCompanyServiceTest and mvn clean verify, complete manual sample-company desktop validation, then return to P03-S3 Ledger Register verification."
+active_head: HEAD (P03-S00 completion and P03-S3 validation handoff)
+next_action: "Continue P03-S3 Ledger Register verification: restore Maven dependency access, rerun mvn -DskipTests compile, focused P03 tests, and mvn clean verify, then complete manual desktop validation for sample-company data and register/editor navigation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -830,7 +830,7 @@ Staged focused adaptations from donor inspection:
 
 ### P03-S00 — Sample company and chart for system testing
 
-Status: VERIFYING. Branch: work. PR: pending local make_pr record. Head: HEAD (P03-S00 sample company seeding commit).
+Status: DONE for local slice scheduling by user direction on 2026-07-04. Branch: work. PR: pending local make_pr record. Head: 95f8432 before documentation handoff update.
 
 Completed deliverables in this run:
 
@@ -842,13 +842,14 @@ Completed deliverables in this run:
 
 Remaining deliverables before merge:
 
-- rerun focused `SampleCompanyServiceTest` and `mvn clean verify` when a Java/Maven runtime is available in the container or CI;
-- manually create a disposable database, run the sample-company action, confirm Transaction Editor choices, save a balanced transaction, and refresh Ledger Register.
+- P03-S00 is complete for scheduling and may be carried by the broader P03 verification handoff; rerun focused `SampleCompanyServiceTest` and `mvn clean verify` when Maven plugin artifacts are reachable;
+- manually create a disposable database, run the sample-company action, confirm Transaction Editor choices, save a balanced transaction, and refresh Ledger Register as part of P03-S3 desktop validation.
 
 Known failures:
 
 - bootstrap `git fetch origin --prune` failed because this worktree has no `origin` remote configured;
-- focused `mvn -Dtest=SampleCompanyServiceTest test` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central before Java compilation begins.
+- focused `mvn -Dtest=SampleCompanyServiceTest test` was retried on 2026-07-04, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central before Java compilation begins;
+- `mvn clean verify` remains blocked by the same Maven plugin resolution failure until dependency access is restored.
 
 User-visible changes:
 
@@ -859,7 +860,7 @@ Manual testing for user:
 
 - Create a new disposable database from the File menu, run **File -> Create / Refresh Sample Company Data**, open Transaction Editor, verify reference choices, save a balanced sample transaction, and refresh Ledger Register.
 
-Next exact action: restore Java/Maven availability, run `mvn -Dtest=SampleCompanyServiceTest test` and `mvn clean verify`, then complete the manual desktop validation above.
+Next exact action: P03-S00 is complete for scheduling; continue P03-S3 Ledger Register verification and carry the sample-company manual validation into that desktop pass.
 
 Purpose: provide a deliberate, explicit sample-company database for P03 Transaction Editor and Ledger Register system testing without treating fictional records as production seed data.
 
@@ -907,7 +908,7 @@ Validation and handoff requirements:
 
 ### P03-S3 — Ledger Register
 
-Status: VERIFYING. Branch: work. PR: pending local make_pr record. Head: HEAD (P03-S3 ledger register integration commit).
+Status: VERIFYING. Branch: work. PR: pending local make_pr record. Head: HEAD (P03-S00 completion and P03-S3 validation handoff).
 
 Completed deliverables in this run:
 
@@ -927,7 +928,9 @@ Remaining deliverables before merge:
 
 Known failures:
 
-- `mvn -DskipTests compile` was attempted on 2026-07-04 before edits and remains environment-blocked by `Network is unreachable` resolving `maven-resources-plugin:3.3.1` from Maven Central.
+- `mvn -DskipTests compile` was attempted on 2026-07-04 before edits and remains environment-blocked by `Network is unreachable` resolving `maven-resources-plugin:3.3.1` from Maven Central;
+- `mvn -Dtest=SampleCompanyServiceTest test` was retried after marking P03-S00 complete for scheduling and is blocked by the same Maven plugin resolution failure;
+- `mvn clean verify` is required before merge but cannot start until Maven plugin artifacts are reachable.
 
 User-visible changes:
 
@@ -940,7 +943,7 @@ Manual testing for user:
 - Filter by date range and memo/payee text, then clear filters and refresh.
 - Double-click a register row or click Open Selected in Editor, confirm Transaction Editor loads the persisted transaction, edit a memo or line, save, and refresh the register.
 
-Next exact action: restore Maven dependency access, rerun `mvn -DskipTests compile`, focused P03 tests, and `mvn clean verify`; complete the manual desktop validation above.
+Next exact action: restore Maven dependency access, rerun `mvn -DskipTests compile`, focused P03 tests including `mvn -Dtest=SampleCompanyServiceTest test`, and `mvn clean verify`; complete manual desktop validation for sample-company setup, Ledger Register filtering, refresh after save, double-click/open-selected navigation, and native edit save behavior.
 
 - bounded/paged database query;
 - filters;
