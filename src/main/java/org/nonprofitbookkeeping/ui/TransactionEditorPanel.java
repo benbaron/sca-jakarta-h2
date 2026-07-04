@@ -47,7 +47,7 @@ public class TransactionEditorPanel implements AppPanel
     private final BorderPane root = new BorderPane();
     private final TableView<SplitRow> splitTable = new TableView<>();
     private final Label status = new Label("Prepare split lines, then save to the canonical ledger.");
-    private final TransactionLineEditorModel lineEditorModel = new TransactionLineEditorModel();
+    private final TransactionLineEditorModel lineEditorModel = new TransactionLineEditorModel(null);
     private final Label totals = new Label("Debits=0.00 Credits=0.00 Difference=0.00");
     private ValidationResult lastValidationResult;
     private final TextField dateField = new TextField();
@@ -743,23 +743,6 @@ public class TransactionEditorPanel implements AppPanel
         return "Saved transaction Txn #" + transactionId;
     }
 
-    static TransactionCommand toTransactionCommand(String date,
-                                                   String memo,
-                                                   List<SplitRow> rows,
-                                                   List<Account> accounts,
-                                                   List<Fund> funds)
-    {
-        Map<String, Account> accountByCode = accounts.stream()
-                .collect(Collectors.toMap(account -> normalizeCode(account.getCode()), Function.identity(), (left, right) -> left));
-        Map<String, Fund> fundByCode = funds.stream()
-                .collect(Collectors.toMap(fund -> normalizeCode(fund.getCode()), Function.identity(), (left, right) -> left));
-
-        List<TransactionLineCommand> lines = rows.stream()
-                .filter(row -> !(isBlank(row.account()) && isBlank(row.fund()) && isBlank(row.debit()) && isBlank(row.credit())))
-                .map(row -> toLineCommand(row, accountByCode, fundByCode))
-                .toList();
-        return new TransactionCommand(parseDateOrNull(date), null, memo, null, lines);
-    }
 
     private static TransactionLineCommand toLineCommand(SplitRow row, Map<String, Account> accountByCode, Map<String, Fund> fundByCode)
     {
