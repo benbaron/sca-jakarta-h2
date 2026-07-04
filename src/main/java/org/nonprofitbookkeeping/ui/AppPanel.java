@@ -25,6 +25,8 @@ public interface AppPanel
     default void onCopy() {}
     default void onPaste() {}
 
+    default void onPanelShown() {}
+
     default boolean hasUnsavedChanges()
     {
         return false;

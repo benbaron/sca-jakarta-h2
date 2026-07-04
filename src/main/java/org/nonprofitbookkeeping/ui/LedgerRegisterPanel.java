@@ -11,13 +11,16 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.service.JournalLine;
 import org.nonprofitbookkeeping.service.LedgerQueryService;
+import org.nonprofitbookkeeping.service.TransactionView;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -30,6 +33,9 @@ public class LedgerRegisterPanel implements AppPanel
     private final Label status = new Label();
     private final Label drillContext = new Label();
     private final TextArea details = new TextArea();
+    private final TextField fromDate = new TextField();
+    private final TextField toDate = new TextField();
+    private final TextField searchText = new TextField();
 
     public LedgerRegisterPanel()
     {
@@ -42,9 +48,14 @@ public class LedgerRegisterPanel implements AppPanel
 
         Button refresh = new Button("Refresh");
         Button inspect = new Button("Inspect Journal");
-        HBox actions = new HBox(8, refresh, inspect);
+        Button openEditor = new Button("Open Selected in Editor");
+        fromDate.setPromptText("From YYYY-MM-DD");
+        toDate.setPromptText("To YYYY-MM-DD");
+        searchText.setPromptText("Memo or payee");
+        HBox filters = new HBox(8, new Label("From"), fromDate, new Label("To"), toDate, new Label("Search"), searchText);
+        HBox actions = new HBox(8, refresh, inspect, openEditor);
 
-        VBox header = new VBox(6, title, range, actions, drillContext, status, new Separator());
+        VBox header = new VBox(6, title, range, filters, actions, drillContext, status, new Separator());
         root.setTop(header);
 
         buildTable();
@@ -59,6 +70,7 @@ public class LedgerRegisterPanel implements AppPanel
 
         refresh.setOnAction(e -> reload());
         inspect.setOnAction(e -> inspectSelected());
+        openEditor.setOnAction(e -> openSelectedInEditor());
 
         txnTable.setRowFactory(tv -> {
             TableRow<Row> r = new TableRow<>();
@@ -69,7 +81,7 @@ public class LedgerRegisterPanel implements AppPanel
                 }
                 if (e.getClickCount() == 2 && e.getButton() == javafx.scene.input.MouseButton.PRIMARY)
                 {
-                    inspectRow(r.getItem());
+                    openRowInEditor(r.getItem());
                 }
             });
             return r;
@@ -103,7 +115,7 @@ public class LedgerRegisterPanel implements AppPanel
         drillContext.setText(context.isBlank() ? "" : context);
         status.setText("Loading ledger transactions...");
         UiAsync.run("ledger-register-load",
-                () -> UiServiceRegistry.ledgerQuery().listRecent(250),
+                () -> UiServiceRegistry.transactionEntry().search(parseDateOrNull(fromDate.getText()), parseDateOrNull(toDate.getText()), searchText.getText(), 250),
                 rows -> {
                     txnTable.getItems().setAll(rows.stream().map(LedgerRegisterPanel::toRow).toList());
                     status.setText("Loaded " + rows.size() + " transaction(s).");
@@ -127,6 +139,18 @@ public class LedgerRegisterPanel implements AppPanel
                 "Posted");
     }
 
+    static Row toRow(TransactionView view)
+    {
+        return new Row(
+                view.id(),
+                String.valueOf(view.date()),
+                blankToNone(view.payeeName()),
+                blankToNone(view.memo()),
+                blankToNone(view.bankAccountName()),
+                String.valueOf(view.lines().size()),
+                view.status() == null || view.status().isBlank() ? "ENTERED" : view.status());
+    }
+
     private void inspectSelected()
     {
         Row sel = txnTable.getSelectionModel().getSelectedItem();
@@ -134,6 +158,40 @@ public class LedgerRegisterPanel implements AppPanel
         {
             inspectRow(sel);
         }
+    }
+
+    private void openSelectedInEditor()
+    {
+        Row sel = txnTable.getSelectionModel().getSelectedItem();
+        if (sel != null)
+        {
+            openRowInEditor(sel);
+        }
+    }
+
+    private void openRowInEditor(Row row)
+    {
+        DrillThroughCoordinator.openTransactionEditorWithContext(editorContext(row.id()));
+        status.setText("Opening Txn #" + row.id() + " in Transaction Editor.");
+    }
+
+    static String editorContext(long transactionId)
+    {
+        return "Load transaction Txn #" + transactionId;
+    }
+
+    private static LocalDate parseDateOrNull(String value)
+    {
+        if (value == null || value.isBlank())
+        {
+            return null;
+        }
+        return LocalDate.parse(value.trim());
+    }
+
+    private static String blankToNone(String value)
+    {
+        return value == null || value.isBlank() ? "(none)" : value;
     }
 
     private void inspectRow(Row row)

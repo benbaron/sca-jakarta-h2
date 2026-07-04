@@ -15,7 +15,7 @@ P03 introduces one shared spreadsheet-like line editor for transaction entry sur
 
 - The editor model maps UI rows to the canonical P02 `TransactionCommand`/`TransactionLineCommand` boundary.
 - Controls do not calculate authoritative accounting balances; they only present immediate row totals and validation feedback.
-- Save, reverse, replace, and load/edit policy belong to later P03 slices and must continue through `TransactionEntryService` and correction services.
+- Save, load/edit, reverse, and replace policy must continue through `TransactionEntryService` and correction services; JavaFX panels only route commands and present validation or protection results.
 
 ## Donor inspection findings for native transaction entry
 
@@ -38,3 +38,11 @@ Recommended focused adaptations for upcoming native work:
 - Transaction Editor relationship cells now use ID-backed option selections for account, fund, budget category, activity, merchant, and counterparty values. The displayed label is only presentation; save mapping uses the selected stable IDs.
 - Runtime reference choices are loaded through a query service and the save action calls `TransactionEntryService.enter(...)`; the editor no longer reports a session-only draft save as success.
 - Journal preview is intentionally available after a successful service save and reads the persisted projection from `TransactionEntryService.journalView(...)`.
+
+
+## P03-S3 ledger register integration notes
+
+- Ledger Register refreshes through the canonical `TransactionEntryService.search(...)` query boundary so filters and rows use the same `TransactionView` projection as Transaction Editor loads.
+- The register exposes date and memo/payee filters, keeps bounded results to avoid unbounded UI loads, and shows persisted `ENTERED` status rather than a UI-only posted label.
+- Double-clicking or choosing **Open Selected in Editor** passes the stable transaction ID to Transaction Editor, which loads the transaction through `TransactionEntryService.load(...)` and saves subsequent edits through `TransactionEntryService.update(...)`.
+- Register-to-editor navigation is an editor context handoff only; it does not create a second ledger cache or calculate accounting values in table cells.

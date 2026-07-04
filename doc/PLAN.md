@@ -1,12 +1,12 @@
 ---
 plan_version: 3
 active_phase: P03
-active_slice: P03-S2
+active_slice: P03-S3
 active_status: VERIFYING
 active_branch: work
 active_pull_request: none
-active_head: HEAD (P03-S2 transaction workflow commit)
-next_action: "After dependency access is restored, run mvn clean verify and manually verify Transaction Editor save, post-save journal preview, unsaved prompt expectations, and correction affordance gaps before advancing to P03-S3."
+active_head: HEAD (P03-S3 ledger register integration commit)
+next_action: "After dependency access is restored, rerun mvn -DskipTests compile and mvn clean verify, then manually verify Ledger Register filtering, refresh after transaction writes, and opening selected transactions in Transaction Editor."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -741,7 +741,7 @@ Implement and test only one canonical writable transaction path.
 **Depends on:** P01, P02
 **Branch:** work
 **Pull request:** pending local make_pr record
-**Head:** HEAD (P03-S2 transaction workflow commit)
+**Head:** HEAD (P03-S3 ledger register integration commit)
 
 ## Objective
 
@@ -772,7 +772,7 @@ Completion note: P03-S1 is considered complete for scheduling and P03-S2 may pro
 
 ### P03-S2 — Transaction workflow
 
-Status: VERIFYING. P03-S1 has been marked complete for scheduling; this slice now owns the transaction workflow integration and remaining full-suite/PR validation.
+Status: DONE for local slice scheduling by user direction on 2026-07-04. P03-S1 has been marked complete for scheduling; this slice owns the transaction workflow integration and remaining full-suite validation notes were carried into P03-S3 because Maven plugin resolution is still environment-blocked.
 
 Completed deliverables in this run:
 
@@ -786,9 +786,9 @@ Completed deliverables in this run:
 
 Remaining deliverables before merge:
 
-- rerun Maven compile, focused tests, and `mvn clean verify` when Maven Central/plugin artifacts are reachable;
-- complete manual desktop validation for Transaction Editor save, post-save journal preview, and Open Saved in Ledger behavior;
-- confirm unsaved-work prompts and correction actions are either finalized in P03-S2D or deliberately scheduled as the next focused slice before P03-S3.
+- P03-S2 implementation is complete for scheduling; rerun Maven compile, focused tests, and `mvn clean verify` when Maven Central/plugin artifacts are reachable;
+- manual desktop validation remains required for Transaction Editor save, post-save journal preview, and Open Saved in Ledger behavior;
+- unsaved-work prompts and correction actions remain a focused follow-up before broad hardening, not a blocker to P03-S3 by user direction.
 
 Known failures:
 
@@ -808,7 +808,7 @@ Manual testing for user:
 - Confirm invalid date, missing account/fund, one-sided, both-sided, zero-value, and unbalanced rows remain blocked by service validation.
 - Confirm unsaved-work prompts and correction actions still require the remaining P03-S2D refinement if not accepted for this slice.
 
-Next exact action: restore Maven dependency access, rerun `mvn -DskipTests compile` and `mvn clean verify`, complete manual desktop validation, and either finalize P03-S2D affordances or explicitly schedule them as the next focused slice before P03-S3.
+Next exact action: continue P03-S3 Ledger Register integration and carry the Maven/manual validation requirements into the P03 handoff.
 
 Original scope reminders:
 
@@ -829,6 +829,41 @@ Staged focused adaptations from donor inspection:
 4. **P03-S2D — Unsaved-work and correction affordances.** After save/load are real, add save/discard/cancel prompts and correction actions for reverse and reverse-and-replace according to the transaction lifecycle policy. Do not introduce a posting/approval workflow.
 
 ### P03-S3 — Ledger Register
+
+Status: VERIFYING. Branch: work. PR: pending local make_pr record. Head: HEAD (P03-S3 ledger register integration commit).
+
+Completed deliverables in this run:
+
+- switched Ledger Register refresh to the canonical `TransactionEntryService.search(...)` projection with bounded results;
+- added date and memo/payee filters while preserving the existing refresh affordance;
+- changed register rows to display persisted transaction status and split counts from `TransactionView`;
+- added **Open Selected in Editor** and double-click navigation that passes the stable transaction ID to Transaction Editor;
+- made Transaction Editor load selected register transactions through `TransactionEntryService.load(...)` and save loaded transactions through `TransactionEntryService.update(...)`;
+- documented the register-to-editor integration in `doc/ui/editor-guidelines.md`;
+- added focused mapping/navigation tests for service-backed register rows and editor context parsing.
+
+Remaining deliverables before merge:
+
+- rerun Maven compile, focused tests, and `mvn clean verify` when Maven Central/plugin artifacts are reachable;
+- manually verify Ledger Register filtering, refresh after saving a transaction, double-click/open-selected editor navigation, and native edit save behavior in a desktop JavaFX session;
+- confirm export/display refinements remain a presentation follow-up and do not block this core register/editor handoff.
+
+Known failures:
+
+- `mvn -DskipTests compile` was attempted on 2026-07-04 before edits and remains environment-blocked by `Network is unreachable` resolving `maven-resources-plugin:3.3.1` from Maven Central.
+
+User-visible changes:
+
+- Ledger Register now has From/To/Search filters and refreshes from the canonical transaction query service.
+- Users can open a selected register row in Transaction Editor and save subsequent edits through the native transaction update policy.
+
+Manual testing for user:
+
+- Save a balanced transaction in Transaction Editor, open Ledger Register, click Refresh, and verify the row appears with split count and status.
+- Filter by date range and memo/payee text, then clear filters and refresh.
+- Double-click a register row or click Open Selected in Editor, confirm Transaction Editor loads the persisted transaction, edit a memo or line, save, and refresh the register.
+
+Next exact action: restore Maven dependency access, rerun `mvn -DskipTests compile`, focused P03 tests, and `mvn clean verify`; complete the manual desktop validation above.
 
 - bounded/paged database query;
 - filters;
