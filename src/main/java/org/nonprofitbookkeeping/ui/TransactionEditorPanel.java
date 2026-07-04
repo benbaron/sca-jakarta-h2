@@ -26,6 +26,7 @@ import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.service.AccountingJournalProjection;
 import org.nonprofitbookkeeping.service.TransactionCommand;
+import org.nonprofitbookkeeping.service.TransactionCommandValidator;
 import org.nonprofitbookkeeping.service.TransactionEntryService;
 import org.nonprofitbookkeeping.service.TransactionLineCommand;
 import org.nonprofitbookkeeping.service.TransactionValidationResult;
@@ -47,7 +48,7 @@ public class TransactionEditorPanel implements AppPanel
     private final BorderPane root = new BorderPane();
     private final TableView<SplitRow> splitTable = new TableView<>();
     private final Label status = new Label("Prepare split lines, then save to the canonical ledger.");
-    private final TransactionLineEditorModel lineEditorModel = new TransactionLineEditorModel(null);
+    private final TransactionLineEditorModel lineEditorModel = new TransactionLineEditorModel(new TransactionCommandValidator());
     private final Label totals = new Label("Debits=0.00 Credits=0.00 Difference=0.00");
     private ValidationResult lastValidationResult;
     private final TextField dateField = new TextField();
