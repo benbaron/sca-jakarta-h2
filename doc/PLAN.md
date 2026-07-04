@@ -1,12 +1,12 @@
 ---
 plan_version: 3
 active_phase: P03
-active_slice: P03-S3
-active_status: VERIFYING
+active_slice: P03-S00
+active_status: READY
 active_branch: work
-active_pull_request: none
-active_head: HEAD (P03-S3 ledger register integration commit)
-next_action: "After dependency access is restored, rerun mvn -DskipTests compile and mvn clean verify, then manually verify Ledger Register filtering, refresh after transaction writes, and opening selected transactions in Transaction Editor."
+active_pull_request: pending local make_pr record
+active_head: HEAD (planning slice for P03-S00 sample company)
+next_action: "Implement P03-S00 by adding the explicit sample-company service, lifecycle action, nonprofit chart/fund/reference seeding, focused service tests, and testing documentation before resuming P03-S3 verification."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -741,7 +741,7 @@ Implement and test only one canonical writable transaction path.
 **Depends on:** P01, P02
 **Branch:** work
 **Pull request:** pending local make_pr record
-**Head:** HEAD (P03-S3 ledger register integration commit)
+**Head:** HEAD (planning slice for P03-S00 sample company)
 
 ## Objective
 
@@ -827,6 +827,54 @@ Staged focused adaptations from donor inspection:
 2. **P03-S2B — Service-backed save and post-save refresh.** Wire the editor's save action to `TransactionEntryService`, then refresh the editor/register context from the saved `TransactionView`. Use donor post-save refresh and validation-copy patterns only as UX guidance; command validation remains native and authoritative.
 3. **P03-S2C — Journal preview after service integration.** Add a journal-preview pane/action that calls `TransactionEntryService.journalView` for saved or loaded transactions. The donor `JournalLine` shape may inform display labels, but the native `AccountingJournalProjection` and P02 service boundary remain the implementation source of truth.
 4. **P03-S2D — Unsaved-work and correction affordances.** After save/load are real, add save/discard/cancel prompts and correction actions for reverse and reverse-and-replace according to the transaction lifecycle policy. Do not introduce a posting/approval workflow.
+
+### P03-S00 — Sample company and chart for system testing
+
+Status: READY. Branch: work. PR: pending local make_pr record. Head: HEAD (planning slice for P03-S00 sample company).
+
+Purpose: provide a deliberate, explicit sample-company database for P03 Transaction Editor and Ledger Register system testing without treating fictional records as production seed data.
+
+Scope:
+
+- Add a dedicated sample-data service rather than Flyway seed data.
+- Add an explicit sample-company database lifecycle action so users/testers intentionally create or refresh sample data.
+- Seed a compact nonprofit chart of accounts for system testing.
+- Seed funds and transaction reference data required by Transaction Editor system testing.
+
+Implementation steps:
+
+1. Add `src/main/java/org/nonprofitbookkeeping/service/SampleCompanyService.java`.
+2. Make seeding idempotent by detecting an existing sample chart/company marker before creating records.
+3. Create an active `ChartOfAccounts` named `SCA Sample Chart` or another clearly labeled sample-company chart name.
+4. Seed compact nonprofit accounts covering bank/cash, receivables, prepaids, fixed assets, liabilities, net assets, income, and expenses.
+5. Use existing application boundaries where available:
+   - `AccountAdminService` for accounts after an active chart exists;
+   - `FundAdminService` for funds;
+   - existing JPA entities or future admin services for counterparties, merchants, activities, and budget categories.
+6. Do not add sample data to Flyway migrations under `src/main/resources/db/migration`.
+7. Add tests under `src/test/java/org/nonprofitbookkeeping/service/` proving:
+   - seeding is idempotent;
+   - an active chart exists;
+   - required account, fund, and reference choices exist;
+   - `TransactionReferenceDataService.loadActiveReferenceData()` returns usable choices for Transaction Editor.
+8. Update `doc/ui/editor-guidelines.md` or a focused testing document to state that P03 system testing uses the explicit sample database, not production seed data.
+9. Leave P03-S3 as the following slice after P03-S00 completes.
+
+Required inspection:
+
+- `src/main/java/org/nonprofitbookkeeping/service/AccountAdminService.java`;
+- `src/main/java/org/nonprofitbookkeeping/service/FundAdminService.java`;
+- `src/main/java/org/nonprofitbookkeeping/service/TransactionReferenceDataService.java`;
+- current chart, account, fund, counterparty, merchant, activity, and budget-category entities/repositories;
+- database lifecycle/startup wiring that can expose an explicit sample-company action without automatic production seeding;
+- `src/main/resources/db/migration` to confirm no sample data is added there.
+
+Validation and handoff requirements:
+
+- Run focused `SampleCompanyService` and `TransactionReferenceDataService` tests.
+- Run `mvn clean verify` before merge when dependency access is available.
+- User testing notes must identify the explicit sample-company lifecycle action and the Transaction Editor reference choices it enables.
+- After P03-S00 is complete, return to P03-S3 Ledger Register verification as the next slice.
 
 ### P03-S3 — Ledger Register
 
