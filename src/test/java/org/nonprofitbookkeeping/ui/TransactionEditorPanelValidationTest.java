@@ -60,6 +60,7 @@ public class TransactionEditorPanelValidationTest
         assertEquals(20L, row.fundId());
         assertEquals("25.00", row.debit());
         assertEquals("", row.credit());
+        assertEquals("25.00", row.amount());
         assertEquals("Entered from editable table cell", row.notes());
     }
 

@@ -23,6 +23,7 @@ import org.nonprofitbookkeeping.service.PeriodCloseService;
 import org.nonprofitbookkeeping.service.ReconciliationService;
 import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
 import org.nonprofitbookkeeping.service.TransactionEntryService;
+import org.nonprofitbookkeeping.service.TransactionReferenceDataService;
 import org.nonprofitbookkeeping.service.UserAdminService;
 import org.nonprofitbookkeeping.service.dashboard.DashboardQueryService;
 import org.nonprofitbookkeeping.service.dashboard.JpaDashboardQueryService;
@@ -130,6 +131,7 @@ public final class UiServiceRegistry
                 new ScheduleEligibilityService(jpa),
                 new LedgerQueryService(jpa),
                 new TransactionEntryService(jpa),
+                new TransactionReferenceDataService(jpa),
                 new FinancialReportService(jpa),
                 new JpaDashboardQueryService(jpa));
     }
@@ -206,6 +208,7 @@ public final class UiServiceRegistry
             ScheduleEligibilityService schedules,
             LedgerQueryService ledgerQuery,
             TransactionEntryService transactionEntry,
+            TransactionReferenceDataService transactionReferenceData,
             FinancialReportService financialReports,
             DashboardQueryService dashboardQuery)
     {

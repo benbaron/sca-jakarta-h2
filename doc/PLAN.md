@@ -1,12 +1,12 @@
 ---
 plan_version: 3
 active_phase: P03
-active_slice: P03-S2D
+active_slice: P03-S2
 active_status: VERIFYING
 active_branch: work
-active_pull_request: pending local make_pr handoff
-active_head: current committed HEAD
-next_action: "P03-S2D canonical transaction save wiring implemented; run full mvn clean verify where Maven Central is reachable, then continue P03 register/editor hardening."
+active_pull_request: none
+active_head: HEAD (P03-S2 transaction workflow commit)
+next_action: "After dependency access is restored, run mvn clean verify and manually verify Transaction Editor save, post-save journal preview, unsaved prompt expectations, and correction affordance gaps before advancing to P03-S3."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -739,9 +739,9 @@ Implement and test only one canonical writable transaction path.
 **Selector:** `PHASE=P03`
 **Status:** READY
 **Depends on:** P01, P02
-**Branch:** none
-**Pull request:** none
-**Head:** none
+**Branch:** work
+**Pull request:** pending local make_pr record
+**Head:** HEAD (P03-S2 transaction workflow commit)
 
 ## Objective
 
@@ -772,31 +772,41 @@ Completion note: P03-S1 is considered complete for scheduling and P03-S2 may pro
 
 ### P03-S2 — Transaction workflow
 
-Status: VERIFYING. Branch: `work`. PR: pending local make_pr handoff. Head: current committed HEAD.
+Status: VERIFYING. P03-S1 has been marked complete for scheduling; this slice now owns the transaction workflow integration and remaining full-suite/PR validation.
 
-Approved sub-slices:
+Completed deliverables in this run:
 
-- S2A through S2C are approved by user confirmation.
+- loaded ID-backed account, fund, budget category, activity, merchant, and counterparty choices for the editor from `TransactionLineEditorModel.ReferenceData`;
+- wired Transaction Editor save through `TransactionEntryService.enter(...)` and refreshed the editor from the saved `TransactionView`;
+- switched journal preview to `TransactionEntryService.journalView(...)` for the saved transaction;
+- recorded P03-S2 editor workflow behavior in `doc/ui/editor-guidelines.md`;
+- added focused unit-test coverage for ID-backed split-row selection, the retained `SplitRow.amount()` compatibility helper, and saved journal preview rendering.
 
-P03-S2D completed deliverables:
+Remaining deliverables before merge:
 
-- wired Transaction Editor Save to the canonical `TransactionEntryService` instead of session-only draft success;
-- added UI service registry access to the canonical transaction entry service;
-- mapped editor rows from account/fund codes to stable database IDs before building `TransactionCommand`;
-- converted signed row amounts into explicit debit/credit command input;
-- added command-mapping coverage for stable IDs and debit/credit conversion.
+- complete local `mvn clean verify` once Maven plugin artifacts are reachable;
+- perform desktop manual validation of save, post-save refresh, journal preview, and unsaved-work/correction affordance gaps;
+- update the pull request with actual validation results.
 
-Test status:
+Known failures:
 
-- `mvn -Dtest=TransactionEditorPanelCommandMappingTest test` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
-- `git diff --check` passed locally.
+- `mvn -DskipTests compile`, `mvn -o -DskipTests compile`, and `mvn clean verify` are blocked in this container because required Maven plugin artifacts are not locally cached and Maven Central is unreachable. A follow-up review pass also confirmed `TransactionReferenceDataService`, `AccountingJournalProjection`, `lineEditorModel`, `totals`, `Objects`, and a single `UiServiceRegistry.transactionEntry()` accessor are present in source.
 
-Remaining deliverables:
+User-visible changes:
 
-- run full Maven verification where Maven Central can resolve plugins;
-- continue later P03 work for load/edit, reverse, reverse-and-replace, reference/check number, and full ID-backed selector controls.
+- Transaction Editor relationship cells now present database-backed choices instead of free-text identity values.
+- Save now attempts a genuine canonical ledger write through the transaction service and reports the persisted transaction ID.
+- Journal View previews the persisted saved transaction.
 
-Original scope:
+Manual testing for user:
+
+- Open Transaction Editor, choose ID-backed account/fund values, enter balanced debit/credit lines, save, confirm the saved transaction ID appears, and click Journal View to confirm persisted line totals.
+- Confirm invalid date, missing account/fund, one-sided, both-sided, zero-value, and unbalanced rows remain blocked by service validation.
+- Confirm unsaved-work prompts and correction actions still require the remaining P03-S2D refinement if not accepted for this slice.
+
+Next exact action: restore Maven dependency access, run `mvn clean verify`, complete manual desktop validation, and either finalize P03-S2D affordances or explicitly schedule them as the next focused slice before P03-S3.
+
+Original scope reminders:
 
 - enter/save through transaction service;
 - load/edit under documented policy;
