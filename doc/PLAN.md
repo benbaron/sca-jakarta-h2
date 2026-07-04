@@ -65,7 +65,7 @@ When a branch begins, update front matter and the phase section. When a PR is op
 | Phase | Name | Depends on | Initial status |
 |---|---|---|---|
 | P00 | Documentation and implementation inventory | none | DONE |
-| P01 | Production shell and workspace composition | P00 | READY |
+| P01 | Production shell and workspace composition | P00 | DONE |
 | P02 | Canonical ledger and transaction operations | P00 | READY |
 | P03 | Ledger Register and Transaction Editor | P01, P02 | BLOCKED |
 | P04 | Persistent budgeting | P02 | BLOCKED |
@@ -108,6 +108,11 @@ A phase may begin early only when its required slice has no dependency on an unf
 - `doc/architecture/union-application-direction.md` records the still-current union application direction.
 - The legacy path `docs/union-application-migration-plan.md` was not present in this worktree during P00 inventory.
 
+### Donor/reference repositories
+
+- `https://github.com/benbaron/NonprofitAccounting.git` is available as reference or donor code. When starting work in a new area, examine this donor codebase if accessible and suggest any focused imports or adaptations that fit the current JavaFX/H2/JPA architecture. Donor code remains reference only until deliberately imported through the selected phase scope, tests, and documentation.
+- Access check on 2026-07-03 succeeded with `git ls-remote` and a shallow clone to `/tmp/NonprofitAccounting`. Notable donor areas to inspect before related new work are `PLANS.md`, `AGENTS.md`, `doc/ui/alternate-ui-development-plan.md`, `src/main/java/nonprofitbookkeeping/ui/panels/JournalEntryWorkspaceFX.java` for journal-editor UX patterns, `src/main/java/nonprofitbookkeeping/ui/helpers/FocusCommitTextFieldTableCell.java` for focus-commit table editing, and `src/main/java/org/nonprofitbookkeeping/service/PostingService.java` / `JournalLine.java` for canonical ledger write and journal projection ideas. Suggest imports only as focused adaptations; do not copy legacy package structure or introduce donor-side parallel models.
+
 ### Documents created by later phases
 
 Create only when their owning phase begins:
@@ -120,7 +125,7 @@ Create only when their owning phase begins:
 - `doc/database/schema-and-migration-policy.md` — first schema-changing phase
 - `doc/database/database-lifecycle.md` — P12
 - `doc/reporting/report-architecture.md` — P11
-- `doc/ui/editor-guidelines.md` — P03
+- `doc/ui/editor-guidelines.md` — P03 (created in P03-S1)
 - `doc/testing/end-to-end-scenarios.md` — P14
 - `doc/workflow/development-workflow.md` — P00 (created)
 
@@ -150,6 +155,9 @@ These apply to every phase unless a focused document deliberately supersedes the
 - Never render center content beneath a sidebar.
 - Use external CSS.
 - Show blank/neutral state rather than fictional data.
+
+### Donor Code
+https://github.com/benbaron/NonprofitAccounting.git is available as reference or a donor. Examine the codebase and suggest imports from it when working in a new area of code.
 
 ### Accounting
 
@@ -750,6 +758,8 @@ Replace validation-only/session-only UI with a genuine spreadsheet-like accounti
 
 ### P03-S1 — Shared line editor
 
+Status: DONE for local slice scheduling by user direction on 2026-07-03. Implemented a reusable `TransactionLineEditorModel`, updated the transaction editor to show separate debit/credit, budget category, and counterparty columns, added live debit/credit totals, documented the shared editor contract and donor inspection findings in `doc/ui/editor-guidelines.md`, and added focused model tests. Remaining global validation is tracked in P03-S2 because Maven validation is blocked in this container when Maven plugin artifacts are not present locally or Maven Central is unreachable.
+
 - ID-backed account, fund, budget category, activity, merchant, and counterparty controls;
 - debit/credit columns;
 - keyboard navigation;
@@ -757,6 +767,8 @@ Replace validation-only/session-only UI with a genuine spreadsheet-like accounti
 - live totals;
 - row/field validation;
 - dirty state.
+
+Completion note: P03-S1 is considered complete for scheduling and P03-S2 may proceed. Preserve the P03-S1 manual regression checks in P03-S2: open Transaction Editor, confirm Debit/Credit/Budget/Counterparty columns and totals are visible, add a row and verify the Account cell enters edit focus, edit line cells and then click away to confirm values persist, remove a selected row, enter one debit and one credit, and verify validation feedback blocks both-sided or unbalanced input.
 
 ### P03-S2 — Transaction workflow
 
@@ -795,6 +807,13 @@ Original scope:
 - journal preview;
 - unsaved save/discard/cancel.
 
+Staged focused adaptations from donor inspection:
+
+1. **P03-S2A — ID-backed editor choices before save enablement.** Replace remaining free-text account, fund, budget, activity, merchant, and counterparty entry cells with ID-backed choice/combo cells populated from `TransactionLineEditorModel.ReferenceData`. This belongs before broad save enablement because transaction commands must reference stable database IDs rather than labels. Adapt only the donor account-choice interaction pattern; do not import donor `CurrentCompany`, direct JDBC lookup code, or legacy transaction models.
+2. **P03-S2B — Service-backed save and post-save refresh.** Wire the editor's save action to `TransactionEntryService`, then refresh the editor/register context from the saved `TransactionView`. Use donor post-save refresh and validation-copy patterns only as UX guidance; command validation remains native and authoritative.
+3. **P03-S2C — Journal preview after service integration.** Add a journal-preview pane/action that calls `TransactionEntryService.journalView` for saved or loaded transactions. The donor `JournalLine` shape may inform display labels, but the native `AccountingJournalProjection` and P02 service boundary remain the implementation source of truth.
+4. **P03-S2D — Unsaved-work and correction affordances.** After save/load are real, add save/discard/cancel prompts and correction actions for reverse and reverse-and-replace according to the transaction lifecycle policy. Do not introduce a posting/approval workflow.
+
 ### P03-S3 — Ledger Register
 
 - bounded/paged database query;
@@ -803,6 +822,12 @@ Original scope:
 - open/correct selected transaction;
 - export filtered view;
 - refresh on writes/context changes.
+
+Staged focused adaptations from donor inspection:
+
+1. **P03-S3A — Register refresh on transaction writes.** Refresh the bounded register query after P03-S2 saves/corrections and preserve the user's filters where practical, following the donor workspace's post-write refresh intent without copying its persistence model.
+2. **P03-S3B — Open selected transaction with native edit policy.** Open a selected register transaction in the P03 editor using native load/edit/correction policy and stable IDs. This is the appropriate place to reuse row-level missing-reference styling if a loaded transaction references inactive or unavailable master data.
+3. **P03-S3C — Export and display refinements.** Add export of the filtered register view and any duplicate-line or warning styling that depends on service-backed persisted transactions; keep these as presentation hints only, not accounting validation.
 
 ## Forbidden in P03
 
@@ -1569,8 +1594,8 @@ Before a PR is ready:
 Execute:
 
 ```text
-PHASE=P00
-SLICE=P00-S1
+PHASE=P02
+SLICE=P02-S1
 ```
 
-Create the authoritative `doc/interface-operation-matrix.md` from current `main`. Do not begin another broad UI or service implementation before P00 establishes the actual dependency map.
+Create `doc/accounting/ledger-authority.md`, choose one canonical writable ledger, and prevent two independently writable ledgers before adding transaction writes.

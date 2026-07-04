@@ -54,6 +54,8 @@ public final class UiServiceRegistry
     public static FundBalanceService fundBalance() { return services().fundBalance(); }
     public static ScheduleEligibilityService schedules() { return services().schedules(); }
     public static LedgerQueryService ledgerQuery() { return services().ledgerQuery(); }
+    public static TransactionEntryService transactionEntry() { return services().transactionEntry(); }
+    public static TransactionReferenceDataService transactionReferenceData() { return services().transactionReferenceData(); }
     public static FinancialReportService financialReports() { return services().financialReports(); }
     public static DashboardQueryService dashboardQuery() { return services().dashboardQuery(); }
     public static TransactionEntryService transactionEntry() { return services().transactionEntry(); }
