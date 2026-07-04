@@ -49,6 +49,7 @@ public class TransactionEditorPanel implements AppPanel
     private final TextField payeeField = new TextField();
     private final TextField memoField = new TextField();
     private final TextField bankField = new TextField();
+    private final Button openSavedInLedger = new Button("Open Saved in Ledger");
     private Long lastSavedTransactionId;
     private boolean dirty;
 
@@ -62,7 +63,8 @@ public class TransactionEditorPanel implements AppPanel
         Button save = new Button("Save");
         Button post = new Button("Validate");
         Button journal = new Button("Journal View");
-        HBox actions = new HBox(8, save, post, journal);
+        openSavedInLedger.setDisable(true);
+        HBox actions = new HBox(8, save, post, journal, openSavedInLedger);
 
         VBox top = new VBox(6, title, actions, status, new Separator(), buildHeaderForm());
         root.setTop(top);
@@ -73,6 +75,7 @@ public class TransactionEditorPanel implements AppPanel
         save.setOnAction(e -> onSave());
         post.setOnAction(e -> validateOrPost());
         journal.setOnAction(e -> showJournal());
+        openSavedInLedger.setOnAction(e -> openSavedTransactionInLedger());
 
         dateField.textProperty().addListener((observable, oldValue, newValue) -> dirty = true);
         payeeField.textProperty().addListener((observable, oldValue, newValue) -> dirty = true);
@@ -716,8 +719,60 @@ public class TransactionEditorPanel implements AppPanel
             row.setNmr(false);
             row.setNotes("");
         }
-        refreshTotals();
     }
+
+    private static String normalizeCode(String value)
+    {
+        return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private static String blankToNull(String value)
+    {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+
+    @Override
+    public String title()
+    {
+        return "Transaction Editor";
+    }
+
+    @Override
+    public Node root()
+    {
+        return root;
+    }
+
+    @Override
+    public void onSave()
+    {
+        status.setText("Saving transaction to the canonical ledger...");
+        UiAsync.run("txn-editor-save", this::saveToCanonicalLedger,
+                saved -> {
+                    dirty = false;
+                    lastSavedTransactionId = saved.id();
+                    openSavedInLedger.setDisable(false);
+                    status.setText("Saved Txn #" + saved.id() + " to the canonical ledger with "
+                            + saved.lines().size() + " split line(s). Use Open Saved in Ledger to review it.");
+                },
+                ex -> status.setText("Save failed: " + UiErrors.safeMessage(ex)));
+    }
+    private void openSavedTransactionInLedger()
+    {
+        if (lastSavedTransactionId == null)
+        {
+            status.setText("Save a transaction before opening it in the ledger register.");
+            return;
+        }
+        DrillThroughCoordinator.openLedgerWithContext(savedLedgerContext(lastSavedTransactionId));
+    }
+
+    static String savedLedgerContext(long transactionId)
+    {
+        return "Saved transaction Txn #" + transactionId;
+    }
+
 
     @Override
     public boolean hasUnsavedChanges()

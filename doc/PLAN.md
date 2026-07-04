@@ -784,13 +784,17 @@ Completed deliverables in this run:
 
 Remaining deliverables before merge:
 
-- complete local `mvn clean verify` once Maven plugin artifacts are reachable;
-- perform desktop manual validation of save, post-save refresh, journal preview, and unsaved-work/correction affordance gaps;
-- update the pull request with actual validation results.
+- wired Transaction Editor Save to the canonical `TransactionEntryService` instead of session-only draft success;
+- added UI service registry access to the canonical transaction entry service;
+- mapped editor rows from account/fund codes to stable database IDs before building `TransactionCommand`;
+- converted signed row amounts into explicit debit/credit command input;
+- added command-mapping coverage for stable IDs and debit/credit conversion;
+- added a post-save Open Saved in Ledger action that opens the ledger register with saved transaction context.
 
 Known failures:
 
-- `mvn -DskipTests compile`, `mvn -o -DskipTests compile`, and `mvn clean verify` are blocked in this container because required Maven plugin artifacts are not locally cached and Maven Central is unreachable. A follow-up review pass also confirmed `TransactionReferenceDataService`, `AccountingJournalProjection`, `lineEditorModel`, `totals`, `Objects`, and a single `UiServiceRegistry.transactionEntry()` accessor are present in source.
+- `mvn -Dtest=TransactionEditorPanelCommandMappingTest,TransactionEditorPanelSavedLedgerContextTest test` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
+- `git diff --check` passed locally.
 
 User-visible changes:
 
