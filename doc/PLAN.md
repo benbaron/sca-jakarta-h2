@@ -784,9 +784,12 @@ Completed deliverables in this run:
 
 Remaining deliverables before merge:
 
-- complete local `mvn clean verify` once Maven plugin artifacts are reachable;
-- perform desktop manual validation of save, post-save refresh, journal preview, and unsaved-work/correction affordance gaps;
-- update the pull request with actual validation results.
+- wired Transaction Editor Save to the canonical `TransactionEntryService` instead of session-only draft success;
+- added UI service registry access to the canonical transaction entry service;
+- mapped editor rows from account/fund codes to stable database IDs before building `TransactionCommand`;
+- converted signed row amounts into explicit debit/credit command input;
+- added command-mapping coverage for stable IDs and debit/credit conversion;
+- added a post-save Open Saved in Ledger action that opens the ledger register with saved transaction context.
 
 Known failures:
 
