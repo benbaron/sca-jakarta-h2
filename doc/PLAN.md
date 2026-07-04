@@ -793,8 +793,7 @@ Remaining deliverables before merge:
 
 Known failures:
 
-- `mvn -Dtest=TransactionEditorPanelCommandMappingTest,TransactionEditorPanelSavedLedgerContextTest test` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
-- `git diff --check` passed locally.
+- `mvn -DskipTests compile`, `mvn -o -DskipTests compile`, and `mvn clean verify` are blocked in this container because required Maven plugin artifacts are not locally cached and Maven Central is unreachable. A follow-up review pass also confirmed `TransactionReferenceDataService`, `AccountingJournalProjection`, `lineEditorModel`, `totals`, `Objects`, and a single `UiServiceRegistry.transactionEntry()` accessor are present in source. The review response also restored the legacy `toTransactionCommand(...)` command-mapping helper, made save async inference explicit with `UiAsync.<TransactionView>run(...)`, and changed `ValidationResult` from a record to an explicit class for Eclipse/JDT compatibility.
 
 User-visible changes:
 

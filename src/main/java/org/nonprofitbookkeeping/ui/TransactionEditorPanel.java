@@ -22,8 +22,12 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.service.AccountingJournalProjection;
+import org.nonprofitbookkeeping.service.TransactionCommand;
 import org.nonprofitbookkeeping.service.TransactionCommandValidator;
+import org.nonprofitbookkeeping.service.TransactionLineCommand;
 import org.nonprofitbookkeeping.service.TransactionEntryService;
 import org.nonprofitbookkeeping.service.TransactionValidationResult;
 import org.nonprofitbookkeeping.service.TransactionView;
@@ -678,7 +682,7 @@ public class TransactionEditorPanel implements AppPanel
             syncModelRow(i, splitTable.getItems().get(i));
         }
         TransactionEntryService service = UiServiceRegistry.transactionEntry();
-        UiAsync.run("txn-editor-save", () -> service.enter(lineEditorModel.toCommand(date, null, memoField.getText(), null)),
+        UiAsync.<TransactionView>run("txn-editor-save", () -> service.enter(lineEditorModel.toCommand(date, null, memoField.getText(), null)),
                 view -> {
                     lastSavedTransactionId = view.id();
                     applySavedView(view);
@@ -792,8 +796,89 @@ public class TransactionEditorPanel implements AppPanel
         return new RunCommandResult(true, "Validate command delegated to Transaction Editor validation.");
     }
 
-    record ValidationResult(String message, int rowCount, int validCount, int errorCount, BigDecimal netAmount)
+
+    static TransactionCommand toTransactionCommand(String date,
+                                                   String memo,
+                                                   List<SplitRow> rows,
+                                                   List<Account> accounts,
+                                                   List<Fund> funds)
     {
+        List<TransactionLineCommand> lines = rows.stream()
+                .filter(row -> !(isBlank(row.account()) && isBlank(row.fund()) && isBlank(row.debit()) && isBlank(row.credit())))
+                .map(row -> new TransactionLineCommand(
+                        resolveAccountId(row, accounts),
+                        resolveFundId(row, funds),
+                        row.budgetCategoryId(),
+                        row.activityId(),
+                        row.merchantId(),
+                        parseOptionalAmount(row.debit()),
+                        parseOptionalAmount(row.credit()),
+                        Boolean.parseBoolean(row.nmr()),
+                        row.notes()))
+                .toList();
+        return new TransactionCommand(parseDateOrNull(date), null, memo, null, lines);
+    }
+
+    private static Long resolveAccountId(SplitRow row, List<Account> accounts)
+    {
+        if (row.accountId() != null)
+        {
+            return row.accountId();
+        }
+        String code = codeToken(row.account());
+        return accounts.stream()
+                .filter(account -> code.equals(account.getCode()))
+                .map(Account::getId)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static Long resolveFundId(SplitRow row, List<Fund> funds)
+    {
+        if (row.fundId() != null)
+        {
+            return row.fundId();
+        }
+        String code = codeToken(row.fund());
+        return funds.stream()
+                .filter(fund -> code.equals(fund.getCode()))
+                .map(Fund::getId)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static String codeToken(String label)
+    {
+        if (label == null)
+        {
+            return "";
+        }
+        int separator = label.indexOf(" — ");
+        return (separator < 0 ? label : label.substring(0, separator)).trim();
+    }
+
+    static final class ValidationResult
+    {
+        private final String message;
+        private final int rowCount;
+        private final int validCount;
+        private final int errorCount;
+        private final BigDecimal netAmount;
+
+        ValidationResult(String message, int rowCount, int validCount, int errorCount, BigDecimal netAmount)
+        {
+            this.message = message;
+            this.rowCount = rowCount;
+            this.validCount = validCount;
+            this.errorCount = errorCount;
+            this.netAmount = netAmount == null ? BigDecimal.ZERO : netAmount;
+        }
+
+        String message() { return message; }
+        int rowCount() { return rowCount; }
+        int validCount() { return validCount; }
+        int errorCount() { return errorCount; }
+        BigDecimal netAmount() { return netAmount; }
     }
 
     public static class SplitRow
