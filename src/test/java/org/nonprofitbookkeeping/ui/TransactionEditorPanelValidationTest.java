@@ -48,16 +48,19 @@ public class TransactionEditorPanelValidationTest
     {
         TransactionEditorPanel.SplitRow row = new TransactionEditorPanel.SplitRow("", "", "", "", "", "", "", "", "", "");
 
-        row.setAccount("1000");
-        row.setFund("F01");
+        row.setAccount(TransactionLineEditorModel.option(10L, "1000", "Cash"));
+        row.setFund(TransactionLineEditorModel.option(20L, "F01", "General"));
         row.setDebit("25.00");
         row.setCredit("");
         row.setNotes("Entered from editable table cell");
 
-        assertEquals("1000", row.account());
-        assertEquals("F01", row.fund());
+        assertEquals("1000 — Cash", row.account());
+        assertEquals(10L, row.accountId());
+        assertEquals("F01 — General", row.fund());
+        assertEquals(20L, row.fundId());
         assertEquals("25.00", row.debit());
         assertEquals("", row.credit());
+        assertEquals("25.00", row.amount());
         assertEquals("Entered from editable table cell", row.notes());
     }
 
