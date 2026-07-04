@@ -22,17 +22,23 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import org.nonprofitbookkeeping.service.AccountingJournalProjection;
-import org.nonprofitbookkeeping.service.TransactionCommandValidator;
-import org.nonprofitbookkeeping.service.TransactionEntryService;
-import org.nonprofitbookkeeping.service.TransactionValidationResult;
+import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.Fund;
+import org.nonprofitbookkeeping.service.JournalLine;
+import org.nonprofitbookkeeping.service.LedgerQueryService;
+import org.nonprofitbookkeeping.service.TransactionCommand;
+import org.nonprofitbookkeeping.service.TransactionLineCommand;
 import org.nonprofitbookkeeping.service.TransactionView;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Represents the TransactionEditorPanel component in the nonprofit bookkeeping application.
@@ -41,9 +47,7 @@ public class TransactionEditorPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
     private final TableView<SplitRow> splitTable = new TableView<>();
-    private final TransactionLineEditorModel lineEditorModel = new TransactionLineEditorModel(new TransactionCommandValidator());
-    private final Label status = new Label("Prepare debit and credit split lines, then validate before saving.");
-    private final Label totals = new Label("Debits=0 Credits=0 Difference=0");
+    private final Label status = new Label("Prepare split lines, then save to the canonical ledger.");
     private ValidationResult lastValidationResult;
     private final TextField dateField = new TextField();
     private final TextField payeeField = new TextField();
@@ -60,7 +64,7 @@ public class TransactionEditorPanel implements AppPanel
         title.getStyleClass().add("panel-title");
 
         Button save = new Button("Save");
-        Button post = new Button("Validate Lines");
+        Button post = new Button("Validate");
         Button journal = new Button("Journal View");
         HBox actions = new HBox(8, save, post, journal);
 
@@ -541,7 +545,7 @@ public class TransactionEditorPanel implements AppPanel
                 + ", debit-credit difference=" + net.toPlainString();
         if (errors == 0 && net.compareTo(BigDecimal.ZERO) == 0)
         {
-            message += " (ready to post/save)";
+            message += " (ready to save)";
         }
         else if (errors == 0)
         {
@@ -598,17 +602,17 @@ public class TransactionEditorPanel implements AppPanel
     {
         if (result == null)
         {
-            return "Line validation completed: run validation first to review row readiness.";
+            return "Validate completed: run validation first to review row readiness.";
         }
         if (result.errorCount() > 0)
         {
-            return "Line validation blocked: fix validation errors before saving.";
+            return "Validate blocked: fix validation errors before posting.";
         }
         if (result.netAmount().compareTo(BigDecimal.ZERO) != 0)
         {
-            return "Line validation blocked: split rows are not balanced (difference=" + result.netAmount().toPlainString() + ").";
+            return "Validate blocked: split rows are not balanced (net=" + result.netAmount().toPlainString() + ").";
         }
-        return "Line validation accepted: transaction is balanced and ready to save.";
+        return "Validate accepted: transaction is balanced and ready to save.";
     }
 
     private void showJournal()
@@ -649,6 +653,112 @@ public class TransactionEditorPanel implements AppPanel
         return body.toString();
     }
 
+    private static String normalizeToken(String value)
+    {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static boolean matches(String query, String value)
+    {
+        if (query.isBlank())
+        {
+            return true;
+        }
+        return value != null && value.toLowerCase(Locale.ROOT).contains(query);
+    }
+
+    private TransactionView saveToCanonicalLedger()
+    {
+        List<Account> accounts = UiServiceRegistry.accountLookup().listActivePostingAccounts();
+        List<Fund> funds = UiServiceRegistry.fundLookup().listActiveFunds();
+        TransactionCommand command = toTransactionCommand(
+                dateField.getText(),
+                memoField.getText(),
+                splitTable.getItems(),
+                accounts,
+                funds);
+        return UiServiceRegistry.transactionEntry().enter(command);
+    }
+
+    static TransactionCommand toTransactionCommand(String date,
+                                                   String memo,
+                                                   List<SplitRow> rows,
+                                                   List<Account> accounts,
+                                                   List<Fund> funds)
+    {
+        LocalDate parsedDate = parseDate(date);
+        Map<String, Account> accountsByCode = accounts.stream()
+                .collect(Collectors.toMap(a -> normalizeCode(a.getCode()), Function.identity(), (left, right) -> left));
+        Map<String, Fund> fundsByCode = funds.stream()
+                .collect(Collectors.toMap(f -> normalizeCode(f.getCode()), Function.identity(), (left, right) -> left));
+
+        List<TransactionLineCommand> lines = rows.stream()
+                .filter(row -> !(isBlank(row.account()) && isBlank(row.fund()) && isBlank(row.amount())))
+                .map(row -> toLineCommand(row, accountsByCode, fundsByCode))
+                .toList();
+        return new TransactionCommand(parsedDate, null, blankToNull(memo), null, lines);
+    }
+
+    private static TransactionLineCommand toLineCommand(SplitRow row,
+                                                        Map<String, Account> accountsByCode,
+                                                        Map<String, Fund> fundsByCode)
+    {
+        Account account = accountsByCode.get(normalizeCode(row.account()));
+        if (account == null)
+        {
+            throw new IllegalArgumentException("Unknown account code: " + row.account());
+        }
+        Fund fund = fundsByCode.get(normalizeCode(row.fund()));
+        if (fund == null)
+        {
+            throw new IllegalArgumentException("Unknown fund code: " + row.fund());
+        }
+        BigDecimal amount = parseAmount(row.amount());
+        if (amount == null)
+        {
+            throw new IllegalArgumentException("Invalid amount for account " + row.account());
+        }
+        BigDecimal debit = amount.compareTo(BigDecimal.ZERO) > 0 ? amount : BigDecimal.ZERO;
+        BigDecimal credit = amount.compareTo(BigDecimal.ZERO) < 0 ? amount.abs() : BigDecimal.ZERO;
+        return new TransactionLineCommand(
+                account.getId(),
+                fund.getId(),
+                null,
+                null,
+                null,
+                debit,
+                credit,
+                Boolean.parseBoolean(row.nmr()),
+                blankToNull(row.notes()));
+    }
+
+    private static LocalDate parseDate(String date)
+    {
+        if (isBlank(date))
+        {
+            throw new IllegalArgumentException("Date is required");
+        }
+        try
+        {
+            return LocalDate.parse(date.trim());
+        }
+        catch (DateTimeParseException ex)
+        {
+            throw new IllegalArgumentException("Date must use ISO format yyyy-mm-dd", ex);
+        }
+    }
+
+    private static String normalizeCode(String value)
+    {
+        return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private static String blankToNull(String value)
+    {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+
     @Override
     public String title()
     {
@@ -664,59 +774,14 @@ public class TransactionEditorPanel implements AppPanel
     @Override
     public void onSave()
     {
-        LocalDate date = parseDateOrNull(dateField.getText());
-        if (date == null)
-        {
-            status.setText("Save blocked: enter a transaction date as YYYY-MM-DD.");
-            return;
-        }
-        for (int i = 0; i < splitTable.getItems().size(); i++)
-        {
-            syncModelRow(i, splitTable.getItems().get(i));
-        }
-        TransactionEntryService service = UiServiceRegistry.transactionEntry();
-        UiAsync.run("txn-editor-save", () -> service.enter(lineEditorModel.toCommand(date, null, memoField.getText(), null)),
-                view -> {
-                    savedTransactionId = view.id();
-                    applySavedView(view);
+        status.setText("Saving transaction to the canonical ledger...");
+        UiAsync.run("txn-editor-save", this::saveToCanonicalLedger,
+                saved -> {
                     dirty = false;
-                    lineEditorModel.markClean();
-                    status.setText("Saved transaction #" + view.id() + " through TransactionEntryService with "
-                            + view.lines().size() + " split line(s). Use Journal View to preview the persisted journal.");
+                    status.setText("Saved Txn #" + saved.id() + " to the canonical ledger with "
+                            + saved.lines().size() + " split line(s).");
                 },
                 ex -> status.setText("Save failed: " + UiErrors.safeMessage(ex)));
-    }
-
-    private void applySavedView(TransactionView view)
-    {
-        dateField.setText(view.date() == null ? "" : view.date().toString());
-        memoField.setText(view.memo() == null ? "" : view.memo());
-        payeeField.setText(view.payeeName() == null ? "" : view.payeeName());
-        bankField.setText(view.bankAccountName() == null ? "" : view.bankAccountName());
-        splitTable.getItems().setAll(view.lines().stream().map(SplitRow::fromViewLine).toList());
-        while (lineEditorModel.rows().size() < splitTable.getItems().size())
-        {
-            lineEditorModel.addRow();
-        }
-        for (int i = 0; i < splitTable.getItems().size(); i++)
-        {
-            syncModelRow(i, splitTable.getItems().get(i));
-        }
-        for (int i = splitTable.getItems().size(); i < lineEditorModel.rows().size(); i++)
-        {
-            TransactionLineEditorModel.Row row = lineEditorModel.rows().get(i);
-            row.setAccountId(null);
-            row.setFundId(null);
-            row.setBudgetCategoryId(null);
-            row.setActivityId(null);
-            row.setMerchantId(null);
-            row.setCounterpartyId(null);
-            row.setDebit(BigDecimal.ZERO);
-            row.setCredit(BigDecimal.ZERO);
-            row.setNmr(false);
-            row.setNotes("");
-        }
-        refreshTotals();
     }
 
     @Override
@@ -734,7 +799,7 @@ public class TransactionEditorPanel implements AppPanel
             return new RunCommandResult(false, "Unsupported run command: " + command);
         }
         validateOrPost();
-        return new RunCommandResult(true, "Validate Lines command delegated to Transaction Editor validation.");
+        return new RunCommandResult(true, "Validate command delegated to Transaction Editor validation.");
     }
 
     record ValidationResult(String message, int rowCount, int validCount, int errorCount, BigDecimal netAmount)
