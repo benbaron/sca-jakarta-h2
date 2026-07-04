@@ -47,6 +47,11 @@ public class PanelHost extends TabPane
         }
         getSelectionModel().select(tab);
         activeId = id;
+        AppPanel panel = panels.get(id);
+        if (panel != null)
+        {
+            panel.onPanelShown();
+        }
     }
 
     public void showReplacement(AppPanelId id, AppPanel replacement)

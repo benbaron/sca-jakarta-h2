@@ -29,6 +29,11 @@ final class DrillThroughCoordinator
         openPanelWithContext(AppPanelId.LEDGER_REGISTER, context);
     }
 
+    static void openTransactionEditorWithContext(String context)
+    {
+        openPanelWithContext(AppPanelId.TXN_EDITOR, context);
+    }
+
     static void openPanelWithContext(AppPanelId panelId, String context)
     {
         if (panelId == null)

@@ -3,6 +3,7 @@ package org.nonprofitbookkeeping.ui;
 import org.junit.jupiter.api.Test;
 import org.nonprofitbookkeeping.service.JournalLine;
 import org.nonprofitbookkeeping.service.LedgerQueryService;
+import org.nonprofitbookkeeping.service.TransactionView;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -36,6 +37,42 @@ public class LedgerRegisterPanelTest
         assertEquals("(none)", row.bank());
         assertEquals("3", row.splitCount());
         assertEquals("Posted", row.status());
+    }
+
+    @Test
+    public void toRow_mapsTransactionViewForServiceBackedRegister()
+    {
+        TransactionView view = new TransactionView(
+                202L,
+                LocalDate.of(2026, 4, 5),
+                null,
+                "",
+                "Donation",
+                null,
+                null,
+                "ENTERED",
+                List.of(
+                        new TransactionView.Line(1L, 10L, "1000", "Cash", 20L, "GEN", "General", null, null, null,
+                                new BigDecimal("25.00"), BigDecimal.ZERO, false, ""),
+                        new TransactionView.Line(2L, 11L, "4000", "Income", 20L, "GEN", "General", null, null, null,
+                                BigDecimal.ZERO, new BigDecimal("25.00"), false, "")));
+
+        LedgerRegisterPanel.Row row = LedgerRegisterPanel.toRow(view);
+
+        assertEquals(202L, row.id());
+        assertEquals("2026-04-05", row.date());
+        assertEquals("(none)", row.payee());
+        assertEquals("Donation", row.memo());
+        assertEquals("(none)", row.bank());
+        assertEquals("2", row.splitCount());
+        assertEquals("ENTERED", row.status());
+    }
+
+    @Test
+    public void editorContextUsesStableTransactionId()
+    {
+        assertEquals("Load transaction Txn #202", LedgerRegisterPanel.editorContext(202L));
+        assertEquals(202L, TransactionEditorPanel.transactionIdFromContext("Load transaction Txn #202"));
     }
 
     @Test

@@ -86,6 +86,7 @@ public class TransactionEditorPanel implements AppPanel
         payeeField.textProperty().addListener((observable, oldValue, newValue) -> dirty = true);
         memoField.textProperty().addListener((observable, oldValue, newValue) -> dirty = true);
         bankField.textProperty().addListener((observable, oldValue, newValue) -> dirty = true);
+
     }
 
     private Node buildHeaderForm()
@@ -683,14 +684,19 @@ public class TransactionEditorPanel implements AppPanel
             syncModelRow(i, splitTable.getItems().get(i));
         }
         TransactionEntryService service = UiServiceRegistry.transactionEntry();
-        UiAsync.<TransactionView>run("txn-editor-save", () -> service.enter(lineEditorModel.toCommand(date, null, memoField.getText(), null)),
+        Long transactionIdToUpdate = lastSavedTransactionId;
+        UiAsync.<TransactionView>run("txn-editor-save", () -> {
+                    TransactionCommand command = lineEditorModel.toCommand(date, null, memoField.getText(), null);
+                    return transactionIdToUpdate == null ? service.enter(command) : service.update(transactionIdToUpdate, command);
+                },
                 view -> {
                     lastSavedTransactionId = view.id();
                     applySavedView(view);
                     dirty = false;
                     lineEditorModel.markClean();
                     openSavedInLedger.setDisable(false);
-                    status.setText("Saved transaction #" + view.id() + " through TransactionEntryService with "
+                    status.setText("Saved transaction #" + view.id() + " through TransactionEntryService "
+                            + (transactionIdToUpdate == null ? "as a new entry" : "using the native edit policy") + " with "
                             + view.lines().size() + " split line(s). Use Journal View to preview the persisted journal.");
                 },
                 ex -> status.setText("Save failed: " + UiErrors.safeMessage(ex)));
@@ -743,6 +749,37 @@ public class TransactionEditorPanel implements AppPanel
         return "Saved transaction Txn #" + transactionId;
     }
 
+    private void consumeLedgerRegisterContext()
+    {
+        Long transactionId = transactionIdFromContext(DrillThroughCoordinator.consumeContext(AppPanelId.TXN_EDITOR));
+        if (transactionId == null)
+        {
+            return;
+        }
+        status.setText("Loading transaction #" + transactionId + " from the ledger register...");
+        UiAsync.run("txn-editor-load-" + transactionId,
+                () -> UiServiceRegistry.transactionEntry().load(transactionId),
+                view -> {
+                    lastSavedTransactionId = view.id();
+                    applySavedView(view);
+                    dirty = false;
+                    lineEditorModel.markClean();
+                    openSavedInLedger.setDisable(false);
+                    status.setText("Loaded transaction #" + view.id() + " from the ledger register. Save uses the native edit policy.");
+                },
+                ex -> status.setText("Could not load transaction #" + transactionId + ": " + UiErrors.safeMessage(ex)));
+    }
+
+    static Long transactionIdFromContext(String context)
+    {
+        if (context == null || context.isBlank())
+        {
+            return null;
+        }
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("Txn #(\\d+)").matcher(context);
+        return matcher.find() ? Long.parseLong(matcher.group(1)) : null;
+    }
+
 
     private static TransactionLineCommand toLineCommand(SplitRow row, Map<String, Account> accountByCode, Map<String, Fund> fundByCode)
     {
@@ -781,6 +818,12 @@ public class TransactionEditorPanel implements AppPanel
     public boolean hasUnsavedChanges()
     {
         return dirty;
+    }
+
+    @Override
+    public void onPanelShown()
+    {
+        consumeLedgerRegisterContext();
     }
 
 
