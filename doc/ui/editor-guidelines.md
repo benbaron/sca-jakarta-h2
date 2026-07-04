@@ -46,3 +46,16 @@ Recommended focused adaptations for upcoming native work:
 - The register exposes date and memo/payee filters, keeps bounded results to avoid unbounded UI loads, and shows persisted `ENTERED` status rather than a UI-only posted label.
 - Double-clicking or choosing **Open Selected in Editor** passes the stable transaction ID to Transaction Editor, which loads the transaction through `TransactionEntryService.load(...)` and saves subsequent edits through `TransactionEntryService.update(...)`.
 - Register-to-editor navigation is an editor context handoff only; it does not create a second ledger cache or calculate accounting values in table cells.
+
+## P03-S00 sample-company system testing
+
+P03 Transaction Editor and Ledger Register system testing uses an explicit sample-company lifecycle action, not automatic production seed data. Testers create or select a disposable database, then choose **File -> Create / Refresh Sample Company Data** to run `SampleCompanyService` against the active database. The service is idempotent: it creates or refreshes the clearly labeled `SCA Sample Chart`, a compact nonprofit chart of accounts, unrestricted/restricted/designated funds, and the budget category, activity, merchant, and counterparty reference records needed by ID-backed Transaction Editor choices.
+
+Do not add fictional sample records to Flyway migrations or production startup. The sample action is intentionally user-triggered so production databases remain free of fictional chart and reference data unless a tester explicitly chooses to create a sample database.
+
+Manual P03 system-test setup:
+
+1. Create a new disposable database from the File menu.
+2. Run **File -> Create / Refresh Sample Company Data**.
+3. Open Transaction Editor and confirm account, fund, budget category, activity, merchant, and counterparty choices are populated.
+4. Enter a balanced debit/credit transaction with the sample choices, save it, and refresh Ledger Register to confirm the persisted transaction appears.

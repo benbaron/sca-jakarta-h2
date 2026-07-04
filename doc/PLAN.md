@@ -2,11 +2,11 @@
 plan_version: 3
 active_phase: P03
 active_slice: P03-S00
-active_status: READY
+active_status: VERIFYING
 active_branch: work
 active_pull_request: pending local make_pr record
-active_head: HEAD (planning slice for P03-S00 sample company)
-next_action: "Implement P03-S00 by adding the explicit sample-company service, lifecycle action, nonprofit chart/fund/reference seeding, focused service tests, and testing documentation before resuming P03-S3 verification."
+active_head: HEAD (P03-S00 sample company seeding commit)
+next_action: "Restore Maven plugin access, run focused SampleCompanyServiceTest and mvn clean verify, complete manual sample-company desktop validation, then return to P03-S3 Ledger Register verification."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -830,7 +830,36 @@ Staged focused adaptations from donor inspection:
 
 ### P03-S00 — Sample company and chart for system testing
 
-Status: READY. Branch: work. PR: pending local make_pr record. Head: HEAD (planning slice for P03-S00 sample company).
+Status: VERIFYING. Branch: work. PR: pending local make_pr record. Head: HEAD (P03-S00 sample company seeding commit).
+
+Completed deliverables in this run:
+
+- added `SampleCompanyService` as an explicit, idempotent sample-data service instead of Flyway seed data;
+- seeded the clearly labeled `SCA Sample Chart`, compact nonprofit account coverage, funds, budget categories, activities, merchants, and counterparties for Transaction Editor system testing;
+- exposed **File -> Create / Refresh Sample Company Data** as the deliberate lifecycle action for the active database;
+- added focused service coverage for idempotency, active chart creation, required reference data, and Transaction Editor reference-choice loading;
+- documented sample-company testing in `doc/ui/editor-guidelines.md`.
+
+Remaining deliverables before merge:
+
+- rerun focused `SampleCompanyServiceTest` and `mvn clean verify` when a Java/Maven runtime is available in the container or CI;
+- manually create a disposable database, run the sample-company action, confirm Transaction Editor choices, save a balanced transaction, and refresh Ledger Register.
+
+Known failures:
+
+- bootstrap `git fetch origin --prune` failed because this worktree has no `origin` remote configured;
+- focused `mvn -Dtest=SampleCompanyServiceTest test` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central before Java compilation begins.
+
+User-visible changes:
+
+- the File menu now includes an explicit sample-company refresh action for tester-created databases;
+- Transaction Editor system testing can populate ID-backed choices without fictional production seed data.
+
+Manual testing for user:
+
+- Create a new disposable database from the File menu, run **File -> Create / Refresh Sample Company Data**, open Transaction Editor, verify reference choices, save a balanced sample transaction, and refresh Ledger Register.
+
+Next exact action: restore Java/Maven availability, run `mvn -Dtest=SampleCompanyServiceTest test` and `mvn clean verify`, then complete the manual desktop validation above.
 
 Purpose: provide a deliberate, explicit sample-company database for P03 Transaction Editor and Ledger Register system testing without treating fictional records as production seed data.
 
