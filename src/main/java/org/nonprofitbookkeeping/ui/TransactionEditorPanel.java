@@ -22,20 +22,16 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import org.nonprofitbookkeeping.model.Account;
-import org.nonprofitbookkeeping.model.Fund;
-import org.nonprofitbookkeeping.service.JournalLine;
-import org.nonprofitbookkeeping.service.LedgerQueryService;
-import org.nonprofitbookkeeping.service.TransactionCommand;
-import org.nonprofitbookkeeping.service.TransactionLineCommand;
+import org.nonprofitbookkeeping.service.AccountingJournalProjection;
+import org.nonprofitbookkeeping.service.TransactionCommandValidator;
+import org.nonprofitbookkeeping.service.TransactionEntryService;
+import org.nonprofitbookkeeping.service.TransactionValidationResult;
 import org.nonprofitbookkeeping.service.TransactionView;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -620,13 +616,13 @@ public class TransactionEditorPanel implements AppPanel
 
     private void showJournal()
     {
-        if (savedTransactionId == null)
+        if (lastSavedTransactionId == null)
         {
             status.setText("Journal preview unavailable until the transaction has been saved through the transaction service.");
             return;
         }
-        status.setText("Loading journal preview for saved transaction #" + savedTransactionId + "...");
-        UiAsync.run("txn-editor-journal-preview", () -> UiServiceRegistry.transactionEntry().journalView(savedTransactionId),
+        status.setText("Loading journal preview for saved transaction #" + lastSavedTransactionId + "...");
+        UiAsync.run("txn-editor-journal-preview", () -> UiServiceRegistry.transactionEntry().journalView(lastSavedTransactionId),
                 preview -> status.setText(renderJournalPreview(preview)),
                 ex -> status.setText("Journal preview failed: " + UiErrors.safeMessage(ex)));
     }
@@ -656,98 +652,72 @@ public class TransactionEditorPanel implements AppPanel
         return body.toString();
     }
 
-    private static String normalizeToken(String value)
+    @Override
+    public String title()
     {
-        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+        return "Transaction Editor";
     }
 
-    private static boolean matches(String query, String value)
+    @Override
+    public Node root()
     {
-        if (query.isBlank())
-        {
-            return true;
-        }
-        return value != null && value.toLowerCase(Locale.ROOT).contains(query);
+        return root;
     }
 
-    private TransactionView saveToCanonicalLedger()
+    @Override
+    public void onSave()
     {
-        List<Account> accounts = UiServiceRegistry.accountLookup().listActivePostingAccounts();
-        List<Fund> funds = UiServiceRegistry.fundLookup().listActiveFunds();
-        TransactionCommand command = toTransactionCommand(
-                dateField.getText(),
-                memoField.getText(),
-                splitTable.getItems(),
-                accounts,
-                funds);
-        return UiServiceRegistry.transactionEntry().enter(command);
+        LocalDate date = parseDateOrNull(dateField.getText());
+        if (date == null)
+        {
+            status.setText("Save blocked: enter a transaction date as YYYY-MM-DD.");
+            return;
+        }
+        for (int i = 0; i < splitTable.getItems().size(); i++)
+        {
+            syncModelRow(i, splitTable.getItems().get(i));
+        }
+        TransactionEntryService service = UiServiceRegistry.transactionEntry();
+        UiAsync.run("txn-editor-save", () -> service.enter(lineEditorModel.toCommand(date, null, memoField.getText(), null)),
+                view -> {
+                    lastSavedTransactionId = view.id();
+                    applySavedView(view);
+                    dirty = false;
+                    lineEditorModel.markClean();
+                    status.setText("Saved transaction #" + view.id() + " through TransactionEntryService with "
+                            + view.lines().size() + " split line(s). Use Journal View to preview the persisted journal.");
+                },
+                ex -> status.setText("Save failed: " + UiErrors.safeMessage(ex)));
     }
 
-    static TransactionCommand toTransactionCommand(String date,
-                                                   String memo,
-                                                   List<SplitRow> rows,
-                                                   List<Account> accounts,
-                                                   List<Fund> funds)
+    private void applySavedView(TransactionView view)
     {
-        LocalDate parsedDate = parseDate(date);
-        Map<String, Account> accountsByCode = accounts.stream()
-                .collect(Collectors.toMap(a -> normalizeCode(a.getCode()), Function.identity(), (left, right) -> left));
-        Map<String, Fund> fundsByCode = funds.stream()
-                .collect(Collectors.toMap(f -> normalizeCode(f.getCode()), Function.identity(), (left, right) -> left));
-
-        List<TransactionLineCommand> lines = rows.stream()
-                .filter(row -> !(isBlank(row.account()) && isBlank(row.fund()) && isBlank(row.amount())))
-                .map(row -> toLineCommand(row, accountsByCode, fundsByCode))
-                .toList();
-        return new TransactionCommand(parsedDate, null, blankToNull(memo), null, lines);
-    }
-
-    private static TransactionLineCommand toLineCommand(SplitRow row,
-                                                        Map<String, Account> accountsByCode,
-                                                        Map<String, Fund> fundsByCode)
-    {
-        Account account = accountsByCode.get(normalizeCode(row.account()));
-        if (account == null)
+        dateField.setText(view.date() == null ? "" : view.date().toString());
+        memoField.setText(view.memo() == null ? "" : view.memo());
+        payeeField.setText(view.payeeName() == null ? "" : view.payeeName());
+        bankField.setText(view.bankAccountName() == null ? "" : view.bankAccountName());
+        splitTable.getItems().setAll(view.lines().stream().map(SplitRow::fromViewLine).toList());
+        while (lineEditorModel.rows().size() < splitTable.getItems().size())
         {
-            throw new IllegalArgumentException("Unknown account code: " + row.account());
+            lineEditorModel.addRow();
         }
-        Fund fund = fundsByCode.get(normalizeCode(row.fund()));
-        if (fund == null)
+        for (int i = 0; i < splitTable.getItems().size(); i++)
         {
-            throw new IllegalArgumentException("Unknown fund code: " + row.fund());
+            syncModelRow(i, splitTable.getItems().get(i));
         }
-        BigDecimal amount = parseAmount(row.amount());
-        if (amount == null)
+        for (int i = splitTable.getItems().size(); i < lineEditorModel.rows().size(); i++)
         {
-            throw new IllegalArgumentException("Invalid amount for account " + row.account());
-        }
-        BigDecimal debit = amount.compareTo(BigDecimal.ZERO) > 0 ? amount : BigDecimal.ZERO;
-        BigDecimal credit = amount.compareTo(BigDecimal.ZERO) < 0 ? amount.abs() : BigDecimal.ZERO;
-        return new TransactionLineCommand(
-                account.getId(),
-                fund.getId(),
-                null,
-                null,
-                null,
-                debit,
-                credit,
-                Boolean.parseBoolean(row.nmr()),
-                blankToNull(row.notes()));
-    }
-
-    private static LocalDate parseDate(String date)
-    {
-        if (isBlank(date))
-        {
-            throw new IllegalArgumentException("Date is required");
-        }
-        try
-        {
-            return LocalDate.parse(date.trim());
-        }
-        catch (DateTimeParseException ex)
-        {
-            throw new IllegalArgumentException("Date must use ISO format yyyy-mm-dd", ex);
+            TransactionLineEditorModel.Row row = lineEditorModel.rows().get(i);
+            row.setAccountId(null);
+            row.setFundId(null);
+            row.setBudgetCategoryId(null);
+            row.setActivityId(null);
+            row.setMerchantId(null);
+            row.setCounterpartyId(null);
+            row.setDebit(BigDecimal.ZERO);
+            row.setCredit(BigDecimal.ZERO);
+            row.setNmr(false);
+            row.setNotes("");
         }
     }
 
@@ -916,6 +886,7 @@ public class TransactionEditorPanel implements AppPanel
         public void setDebit(String debit) { this.debit = value(debit); }
         public String credit() { return credit; }
         public void setCredit(String credit) { this.credit = value(credit); }
+        public String amount() { return debit.isBlank() ? credit : debit; }
         public String activity() { return activity; }
         public void setActivity(String activity) { this.activity = value(activity); }
         public void setActivity(TransactionLineEditorModel.Option option) { this.activityId = id(option); this.activity = label(option); }
