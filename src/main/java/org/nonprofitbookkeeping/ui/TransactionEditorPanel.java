@@ -25,13 +25,17 @@ import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.service.AccountingJournalProjection;
+import org.nonprofitbookkeeping.service.TransactionCommand;
 import org.nonprofitbookkeeping.service.TransactionEntryService;
+import org.nonprofitbookkeeping.service.TransactionLineCommand;
 import org.nonprofitbookkeeping.service.TransactionValidationResult;
 import org.nonprofitbookkeeping.service.TransactionView;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -739,6 +743,56 @@ public class TransactionEditorPanel implements AppPanel
         return "Saved transaction Txn #" + transactionId;
     }
 
+    static TransactionCommand toTransactionCommand(String date,
+                                                   String memo,
+                                                   List<SplitRow> rows,
+                                                   List<Account> accounts,
+                                                   List<Fund> funds)
+    {
+        Map<String, Account> accountByCode = accounts.stream()
+                .collect(Collectors.toMap(account -> normalizeCode(account.getCode()), Function.identity(), (left, right) -> left));
+        Map<String, Fund> fundByCode = funds.stream()
+                .collect(Collectors.toMap(fund -> normalizeCode(fund.getCode()), Function.identity(), (left, right) -> left));
+
+        List<TransactionLineCommand> lines = rows.stream()
+                .filter(row -> !(isBlank(row.account()) && isBlank(row.fund()) && isBlank(row.debit()) && isBlank(row.credit())))
+                .map(row -> toLineCommand(row, accountByCode, fundByCode))
+                .toList();
+        return new TransactionCommand(parseDateOrNull(date), null, memo, null, lines);
+    }
+
+    private static TransactionLineCommand toLineCommand(SplitRow row, Map<String, Account> accountByCode, Map<String, Fund> fundByCode)
+    {
+        Account account = accountByCode.get(normalizeCode(optionCode(row.account())));
+        Fund fund = fundByCode.get(normalizeCode(optionCode(row.fund())));
+        BigDecimal debit = parseOptionalAmount(row.debit());
+        BigDecimal credit = parseOptionalAmount(row.credit());
+        return new TransactionLineCommand(
+                account == null ? row.accountId() : account.getId(),
+                fund == null ? row.fundId() : fund.getId(),
+                row.budgetCategoryId(),
+                row.activityId(),
+                row.merchantId(),
+                debit == null ? BigDecimal.ZERO : debit,
+                credit == null ? BigDecimal.ZERO : credit,
+                Boolean.parseBoolean(row.nmr()),
+                row.notes());
+    }
+
+    private static String optionCode(String value)
+    {
+        if (value == null)
+        {
+            return "";
+        }
+        int separator = value.indexOf(" — ");
+        return separator < 0 ? value : value.substring(0, separator);
+    }
+
+    private static String normalizeCode(String value)
+    {
+        return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
+    }
 
     @Override
     public boolean hasUnsavedChanges()

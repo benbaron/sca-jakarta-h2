@@ -780,6 +780,7 @@ Completed deliverables in this run:
 - wired Transaction Editor save through `TransactionEntryService.enter(...)` and refreshed the editor from the saved `TransactionView`;
 - switched journal preview to `TransactionEntryService.journalView(...)` for the saved transaction;
 - repaired P03-S2 compile regressions by restoring the editor model/totals fields, removing duplicate panel lifecycle/save methods, keeping a single UI registry `transactionEntry()` accessor, and enabling the saved-ledger action from the surviving service-backed save path;
+- repaired the command-mapping compile regression by restoring `TransactionEditorPanel.toTransactionCommand(...)` with the required `TransactionCommand`/`TransactionLineCommand` imports for focused mapping tests;
 - recorded P03-S2 editor workflow behavior in `doc/ui/editor-guidelines.md`;
 - added focused unit-test coverage for ID-backed split-row selection, the retained `SplitRow.amount()` compatibility helper, and saved journal preview rendering.
 
@@ -792,7 +793,7 @@ Remaining deliverables before merge:
 Known failures:
 
 - `mvn -Dtest=TransactionEditorPanelCommandMappingTest,TransactionEditorPanelSavedLedgerContextTest test` and `mvn clean verify` were attempted locally, but Maven plugin resolution is environment-blocked by `Network is unreachable` to Maven Central.
-- `mvn -DskipTests compile` and `mvn clean verify` were retried on 2026-07-04 after the compile-regression repair, but Maven plugin resolution is still environment-blocked by `Network is unreachable` to Maven Central before Java compilation begins.
+- `mvn -DskipTests compile` and `mvn clean verify` were retried on 2026-07-04 after the compile-regression repairs, but Maven plugin resolution is still environment-blocked by `Network is unreachable` to Maven Central before Java compilation begins.
 - `git diff --check` passed locally.
 
 User-visible changes:
