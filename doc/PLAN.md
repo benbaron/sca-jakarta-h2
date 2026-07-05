@@ -1,12 +1,12 @@
 ---
 plan_version: 3
 active_phase: P04
-active_slice: P04-S2
+active_slice: P04-S3
 active_status: IN_PROGRESS
 active_branch: work
-active_pull_request: pending local make_pr record
-active_head: HEAD (P04-S2 budget services commit pending)
-next_action: "Complete P04-S2 validation: rerun mvn -DskipTests compile, focused BudgetPlanServiceTest and JpaDashboardQueryServiceTest, and mvn clean verify when Maven Central/plugin artifacts are reachable; then continue P04-S3 budget UI/dashboard conversion."
+active_pull_request: local make_pr record: Convert budget UI to normalized budget plans
+active_head: d21999c Convert budget UI to normalized plans
+next_action: "Resolve Maven plugin access, rerun mvn -DskipTests compile and mvn clean verify, then finish P04-S3 PR validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1048,7 +1048,7 @@ Define fiscal year, category, optional fund, optional period, amount, notes, uni
 
 ### P04-S2 — Budget services
 
-Status: IN_PROGRESS. Branch: work. PR: pending local make_pr record. Head: P04-S2 budget services commit pending.
+Status: DONE by user direction on 2026-07-05. Branch: work. PR: pending local make_pr record. Head: P04-S2 verified and done by user direction.
 
 Completed deliverables in this run:
 
@@ -1061,12 +1061,11 @@ Completed deliverables in this run:
 
 Remaining deliverables before merge:
 
-- rerun Maven compile, focused `BudgetPlanServiceTest` and `JpaDashboardQueryServiceTest`, and `mvn clean verify` when Maven Central/plugin artifacts are reachable;
-- P04-S3 must convert Budget Editor, Budget vs Actual, and Dashboard UI flows to the new budget service and remove sidecar/static budget persistence.
+- None for P04-S2 after user-directed verification/done marking; P04-S3 owns UI/dashboard conversion and sidecar removal.
 
 Known failures:
 
-- `mvn -DskipTests compile` was attempted on 2026-07-05 and remains environment-blocked by `Network is unreachable` resolving `maven-resources-plugin:3.3.1` from Maven Central before Java compilation begins.
+- None recorded after user-directed P04-S2 verification/done marking.
 
 User-visible changes:
 
@@ -1085,6 +1084,39 @@ Implement create, edit draft, validate, activate, archive, select active version
 Activation selects the comparison version; it is not an approval workflow.
 
 ### P04-S3 — Budget UI and dashboard
+
+Status: IN_PROGRESS. Branch: work. PR: local make_pr record: Convert budget UI to normalized budget plans. Head: d21999c Convert budget UI to normalized plans.
+
+Completed deliverables in this run:
+
+- converted Budget Editor from fund sidecar targets to `BudgetPlanService` draft creation, draft line replacement, and activation workflows for category-level budget lines;
+- converted Budget vs Actual from fund target merging to `BudgetPlanService.activeVariance` projections;
+- removed `BudgetTargetPersistence` and budget target map APIs from `UiWorkspaceDataStore`;
+- documented the P04-S3 service-backed UI boundary in `doc/accounting/budget-model.md`;
+- updated sidecar-era UI tests so budget target file persistence is no longer treated as application behavior.
+
+Remaining deliverables before merge:
+
+- rerun Maven compile, focused budget UI/service tests, and `mvn clean verify` when Maven Central/plugin artifacts are reachable;
+- perform a desktop visual check of Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison outside the headless container.
+
+Known failures:
+
+- `mvn -DskipTests compile` and `mvn -o -DskipTests compile` are environment-blocked because `maven-resources-plugin:3.3.1` is absent locally and Maven Central is unreachable.
+
+User-visible changes:
+
+- Budget Editor saves category budget amounts to normalized H2 budget plans instead of sidecar fund target files.
+- Budget vs Actual and Dashboard budget cards read active normalized budget versions or show neutral no-budget states.
+
+Manual testing for user:
+
+- Open Budget Editor, enter category amounts, activate the draft version, and confirm Budget vs Actual and Dashboard budget cards compare against that active version.
+- Create a second draft revision, activate it, and confirm the prior active version is archived by the service and no sidecar budget target file is used.
+
+Next exact action: restore Maven plugin/dependency access and rerun `mvn -DskipTests compile`, focused budget tests, and `mvn clean verify`.
+
+Original scope:
 
 Convert Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD comparisons to genuine services.
 
