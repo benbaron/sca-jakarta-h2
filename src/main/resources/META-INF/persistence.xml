@@ -27,6 +27,8 @@
     <class>org.nonprofitbookkeeping.model.FundAlias</class>
     <class>org.nonprofitbookkeeping.model.BudgetCategory</class>
     <class>org.nonprofitbookkeeping.model.BudgetCategoryAlias</class>
+    <class>org.nonprofitbookkeeping.model.BudgetPlan</class>
+    <class>org.nonprofitbookkeeping.model.BudgetLine</class>
 
     <class>org.nonprofitbookkeeping.model.Counterparty</class>
     <class>org.nonprofitbookkeeping.model.Merchant</class>
