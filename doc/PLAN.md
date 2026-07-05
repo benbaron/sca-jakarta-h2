@@ -5,8 +5,8 @@ active_slice: P03-S3-corrective
 active_status: VERIFYING
 active_branch: work
 active_pull_request: pending local make_pr record for Transaction Editor and Ledger Register corrective UX wiring
-active_head: pending implementation commit for production workspace JavaFX test plan
-next_action: "Run the production workspace JavaFX behavior checks under a desktop display or xvfb and continue adding TestFX robot workflows for high-value UI paths."
+active_head: pending commit for removing checked-in Maven proxy settings
+next_action: "Run CI with the no-proxy Maven settings file and continue JavaFX workflow validation under a desktop display or xvfb."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -947,6 +947,7 @@ Completed deliverables in this corrective run:
 - revisited completed phases in the plan and `doc/ui_design_rules.md`, applying the design rules as retroactive obligations for P00 inventory, P01 shell/preferences, P02 service precision boundaries, P03 ledger/editor surfaces, and completed local P04 budget UI slices.
 - documented the user-directed JavaFX testing method in `doc/testing/production-workspace-test-plan.md` and added the TestFX JUnit 5 test dependency for future robot workflow tests.
 - implemented the first production workspace JavaFX behavior checks from `doc/testing/production-workspace-test-plan.md`, covering dashboard permanence, reusable destination tabs, dirty-tab reporting, ledger-before-editor tab order, and common line-editor model reuse.
+- removed the checked-in Codex-only Maven proxy definitions from `.mvn/settings.xml` so GitHub Actions and other CI runners do not try to resolve a non-existent `proxy` host while downloading plugins.
 - added **Delete Current Line** to Ledger Register, routed through `TransactionCorrectionService` for direct-delete audit behavior or non-direct reversing-entry behavior, with selection/confirmation/status handling.
 - kept **Open Selected in Editor** wired through the drill-through coordinator and added an explicit no-selection status message so selected rows are recalled into Transaction Editor rather than failing silently.
 - changed Transaction Editor save so loaded/recalled entries are used as source data for a new appended transaction; save now always calls `TransactionEntryService.enter(...)` instead of overwriting the loaded transaction.
@@ -961,6 +962,7 @@ Known failures:
 - desktop JavaFX manual validation remains outstanding in this non-interactive container.
 - future JavaFX UI slices must follow the documented three-level testing split: non-FX service/model tests, JavaFX Application Thread component tests, and focused sequential TestFX workflow tests with stable control IDs.
 - this container still lacks a desktop display, so JavaFX component checks that require the toolkit are assumption-skipped locally unless run under a display or xvfb.
+- Maven proxy configuration is now intentionally environment-local; CI should use `.mvn/settings.xml` without repository-checked proxy hosts, while local developers needing a proxy should configure it in user-level Maven settings or command-line properties.
 
 Validation completed on 2026-07-05:
 
