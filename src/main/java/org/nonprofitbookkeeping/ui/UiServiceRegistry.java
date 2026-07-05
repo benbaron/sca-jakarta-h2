@@ -25,6 +25,7 @@ import org.nonprofitbookkeeping.service.ReconciliationService;
 import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
 import org.nonprofitbookkeeping.service.SampleCompanyService;
 import org.nonprofitbookkeeping.service.TransactionEntryService;
+import org.nonprofitbookkeeping.service.TransactionCorrectionService;
 import org.nonprofitbookkeeping.service.TransactionReferenceDataService;
 import org.nonprofitbookkeeping.service.UserAdminService;
 import org.nonprofitbookkeeping.service.dashboard.DashboardQueryService;
@@ -59,6 +60,7 @@ public final class UiServiceRegistry
     public static ScheduleEligibilityService schedules() { return services().schedules(); }
     public static LedgerQueryService ledgerQuery() { return services().ledgerQuery(); }
     public static TransactionEntryService transactionEntry() { return services().transactionEntry(); }
+    public static TransactionCorrectionService transactionCorrection() { return services().transactionCorrection(); }
     public static TransactionReferenceDataService transactionReferenceData() { return services().transactionReferenceData(); }
     public static SampleCompanyService sampleCompany() { return services().sampleCompany(); }
     public static FinancialReportService financialReports() { return services().financialReports(); }
@@ -135,6 +137,7 @@ public final class UiServiceRegistry
                 new ScheduleEligibilityService(jpa),
                 new LedgerQueryService(jpa),
                 new TransactionEntryService(jpa),
+                new TransactionCorrectionService(jpa),
                 new TransactionReferenceDataService(jpa),
                 new SampleCompanyService(jpa),
                 new FinancialReportService(jpa),
@@ -214,6 +217,7 @@ public final class UiServiceRegistry
             ScheduleEligibilityService schedules,
             LedgerQueryService ledgerQuery,
             TransactionEntryService transactionEntry,
+            TransactionCorrectionService transactionCorrection,
             TransactionReferenceDataService transactionReferenceData,
             SampleCompanyService sampleCompany,
             FinancialReportService financialReports,
