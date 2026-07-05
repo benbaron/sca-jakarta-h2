@@ -8,6 +8,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellEditEvent;
@@ -16,6 +17,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.KeyCode;
+import javafx.geometry.Orientation;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -67,8 +69,12 @@ public class TransactionEditorPanel implements AppPanel
         title.getStyleClass().add("panel-title");
 
         Button save = new Button("Save");
+        save.setId("transactionEditorSaveButton");
         Button post = new Button("Validate");
+        post.setId("transactionEditorValidateButton");
         Button journal = new Button("Journal View");
+        journal.setId("transactionEditorJournalViewButton");
+        openSavedInLedger.setId("transactionEditorOpenSavedInLedgerButton");
         openSavedInLedger.setDisable(true);
         HBox actions = new HBox(8, save, post, journal, openSavedInLedger);
 
@@ -82,6 +88,14 @@ public class TransactionEditorPanel implements AppPanel
         post.setOnAction(e -> validateOrPost());
         journal.setOnAction(e -> showJournal());
         openSavedInLedger.setOnAction(e -> openSavedTransactionInLedger());
+
+        splitTable.setId("transactionEditorSplitTable");
+        status.setId("transactionEditorStatusLabel");
+        totals.setId("transactionEditorTotalsLabel");
+        dateField.setId("transactionEditorDateField");
+        payeeField.setId("transactionEditorPayeeField");
+        memoField.setId("transactionEditorMemoField");
+        bankField.setId("transactionEditorBankField");
 
         dateField.textProperty().addListener((observable, oldValue, newValue) -> dirty = true);
         payeeField.textProperty().addListener((observable, oldValue, newValue) -> dirty = true);
@@ -124,7 +138,7 @@ public class TransactionEditorPanel implements AppPanel
     private void buildSplitTable()
     {
         splitTable.setEditable(true);
-        splitTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
+        splitTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         splitTable.getColumns().add(optionCol("Account", TransactionLineEditorModel.ReferenceData::accounts, SplitRow::account, SplitRow::setAccount));
         splitTable.getColumns().add(optionCol("Fund", TransactionLineEditorModel.ReferenceData::funds, SplitRow::fund, SplitRow::setFund));
         splitTable.getColumns().add(optionCol("Budget", TransactionLineEditorModel.ReferenceData::budgetCategories, SplitRow::budgetCategory, SplitRow::setBudgetCategory));
@@ -184,8 +198,17 @@ public class TransactionEditorPanel implements AppPanel
             }
         });
 
-        VBox box = new VBox(6, lbl, tb, splitTable, totals);
+        VBox tableRegion = new VBox(6, splitTable);
         VBox.setVgrow(splitTable, Priority.ALWAYS);
+        VBox totalsRegion = new VBox(6, totals);
+        SplitPane splitPane = new SplitPane(tableRegion, totalsRegion);
+        splitPane.setId("transactionEditorSplitEditorSplitPane");
+        splitPane.setOrientation(Orientation.VERTICAL);
+        splitPane.setDividerPositions(0.88);
+        VBox.setVgrow(splitPane, Priority.ALWAYS);
+
+        VBox box = new VBox(6, lbl, tb, splitPane);
+        VBox.setVgrow(box, Priority.ALWAYS);
         return box;
     }
 

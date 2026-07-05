@@ -51,9 +51,19 @@ public class LedgerRegisterPanel implements AppPanel
         title.getStyleClass().add("panel-title");
 
         Button refresh = new Button("Refresh");
+        refresh.setId("ledgerRegisterRefreshButton");
         Button inspect = new Button("Inspect Journal");
+        inspect.setId("ledgerRegisterInspectJournalButton");
         Button openEditor = new Button("Open Selected in Editor");
+        openEditor.setId("ledgerRegisterOpenSelectedInEditorButton");
         Button deleteCurrent = new Button("Delete Current Line");
+        deleteCurrent.setId("ledgerRegisterDeleteCurrentLineButton");
+        txnTable.setId("ledgerRegisterTransactionTable");
+        status.setId("ledgerRegisterStatusLabel");
+        details.setId("ledgerRegisterJournalDetails");
+        fromDate.setId("ledgerRegisterFromDateField");
+        toDate.setId("ledgerRegisterToDateField");
+        searchText.setId("ledgerRegisterSearchTextField");
         fromDate.setPromptText("From YYYY-MM-DD");
         toDate.setPromptText("To YYYY-MM-DD");
         searchText.setPromptText("Memo or payee");
@@ -74,6 +84,7 @@ public class LedgerRegisterPanel implements AppPanel
         VBox journalPane = new VBox(6, new Label("Transaction journal details"), details);
         VBox.setVgrow(details, Priority.ALWAYS);
         SplitPane middle = new SplitPane(registerPane, journalPane);
+        middle.setId("ledgerRegisterMiddleSplitPane");
         middle.setOrientation(Orientation.VERTICAL);
         middle.setDividerPositions(0.72);
         root.setCenter(middle);
@@ -103,7 +114,7 @@ public class LedgerRegisterPanel implements AppPanel
 
     private void buildTable()
     {
-        txnTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
+        txnTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         txnTable.getColumns().add(col("Date", Row::date));
         txnTable.getColumns().add(col("Payee", Row::payee));
         txnTable.getColumns().add(col("Memo", Row::memo));

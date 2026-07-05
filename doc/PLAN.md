@@ -5,8 +5,8 @@ active_slice: P03-S3-corrective
 active_status: VERIFYING
 active_branch: work
 active_pull_request: pending local make_pr record for Transaction Editor and Ledger Register corrective UX wiring
-active_head: pending commit for removing checked-in Maven proxy settings
-next_action: "Run CI with the no-proxy Maven settings file and continue JavaFX workflow validation under a desktop display or xvfb."
+active_head: HEAD (Add TestFX design rule coverage)
+next_action: "Run xvfb-backed TestFX design-rule workflow tests and mvn clean verify once Maven plugin dependencies are reachable."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -951,10 +951,15 @@ Completed deliverables in this corrective run:
 - added **Delete Current Line** to Ledger Register, routed through `TransactionCorrectionService` for direct-delete audit behavior or non-direct reversing-entry behavior, with selection/confirmation/status handling.
 - kept **Open Selected in Editor** wired through the drill-through coordinator and added an explicit no-selection status message so selected rows are recalled into Transaction Editor rather than failing silently.
 - changed Transaction Editor save so loaded/recalled entries are used as source data for a new appended transaction; save now always calls `TransactionEntryService.enter(...)` instead of overwriting the loaded transaction.
+- added stable automation IDs to the Ledger Register and Transaction Editor controls needed by TestFX workflow coverage.
+- changed Ledger Register and Transaction Editor tables to unconstrained resize policy so horizontal scrolling remains available instead of forcing clipped constrained columns.
+- wrapped the Transaction Editor split table and totals in a vertical split pane so table content has a resizable region boundary under `doc/ui_design_rules.md`.
+- added TestFX design-rule workflow tests covering P03 table column behavior, split-pane boundaries, stable control IDs, the transaction delete affordance, and the production shell period/range control.
 
 Remaining deliverables before merge:
 
-- complete desktop JavaFX manual validation for save reset, cross-panel tab raising/focus, inspect-journal details, the top chrome period selector, the vertical middle-pane resize bar, Delete Current Line, and append-only Transaction Editor saves.
+- run the new TestFX design-rule workflow tests under xvfb or a desktop display once Maven plugin dependencies are reachable;
+- complete desktop JavaFX manual validation for save reset, cross-panel tab raising/focus, inspect-journal details, the top chrome period selector, the vertical middle-pane resize bar, Delete Current Line, append-only Transaction Editor saves, Ledger Register horizontal scrolling, and Transaction Editor split-table resizing.
 
 Known failures:
 
@@ -968,7 +973,8 @@ Validation completed on 2026-07-05:
 
 - `mvn -DskipTests compile` passed;
 - `mvn -Dtest=LedgerRegisterPanelTest,TransactionEditorPanelSavedLedgerContextTest test` passed;
-- `mvn clean verify` passed with 240 tests run, 0 failures, 0 errors, and 1 skipped test.
+- `mvn clean verify` passed with 240 tests run, 0 failures, 0 errors, and 1 skipped test before the TestFX design-rule test additions;
+- `mvn -DskipTests compile` and `mvn -Dtest=ProductionDesignRulesTestFxTest test` were attempted after the TestFX additions but are environment-blocked by Maven plugin resolution to Maven Central (`Network is unreachable` for `maven-resources-plugin:3.3.1`).
 
 User-visible changes:
 
@@ -981,6 +987,7 @@ User-visible changes:
 - **Open Selected in Editor** recalls the selected transaction into Transaction Editor and raises/focuses that workspace tab.
 - Saving in Transaction Editor appends a new entry even when the form was populated from a recalled ledger transaction, avoiding accidental overwrite of the selected ledger entry.
 - the top chrome now selects an accounting period rather than a date; Settings controls the day-of-month used to calculate the selected period's start date.
+- Ledger Register and Transaction Editor expose stable TestFX IDs and table/split-pane geometry needed to enforce `doc/ui_design_rules.md`;
 - table, money, date, and accounting-period display/editing rules are now centralized in `doc/ui_design_rules.md` for future implementation slices.
 - completed UI phases now have explicit retrofit obligations when their delivered surfaces are touched by corrective work.
 
@@ -993,8 +1000,9 @@ Manual testing for user:
 - Click **Open Selected in Editor** and confirm Transaction Editor is raised/focused and loads the selected transaction.
 - With the recalled transaction visible in Transaction Editor, click **Save** and confirm a new transaction is appended rather than overwriting the recalled transaction.
 - In Ledger Register, select an entered transaction and click **Delete Current Line**; confirm direct-delete behavior when Settings -> Correction method is `DIRECT_EDIT`, and confirm reversing-entry behavior when Settings uses a non-direct correction method.
+- Run the TestFX design-rule suite under `xvfb-run -a mvn -Dtest=ProductionDesignRulesTestFxTest test` and confirm the Ledger Register and Transaction Editor table/split-pane checks pass.
 
-Next exact action: open the desktop JavaFX app and manually validate save reset, cross-panel tab raising/focus, inspect-journal details, the top chrome period selector, the vertical middle-pane resize bar, Delete Current Line, and append-only Transaction Editor saves before merge.
+Next exact action: run `xvfb-run -a mvn -Dtest=ProductionDesignRulesTestFxTest test` once Maven plugin dependencies are reachable, then open the desktop JavaFX app and manually validate save reset, cross-panel tab raising/focus, inspect-journal details, the top chrome period selector, the vertical middle-pane resize bar, Delete Current Line, append-only Transaction Editor saves, Ledger Register horizontal scrolling, and Transaction Editor split-table resizing before merge.
 
 Completed deliverables in this run:
 
