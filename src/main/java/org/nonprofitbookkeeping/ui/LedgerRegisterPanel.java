@@ -4,7 +4,9 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 import javafx.scene.control.SplitPane;
@@ -21,6 +23,7 @@ import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.service.LedgerQueryService;
 import org.nonprofitbookkeeping.service.AccountingJournalProjection;
 import org.nonprofitbookkeeping.service.TransactionView;
+import org.nonprofitbookkeeping.model.CorrectionMethod;
 
 import java.time.LocalDate;
 
@@ -50,11 +53,12 @@ public class LedgerRegisterPanel implements AppPanel
         Button refresh = new Button("Refresh");
         Button inspect = new Button("Inspect Journal");
         Button openEditor = new Button("Open Selected in Editor");
+        Button deleteCurrent = new Button("Delete Current Line");
         fromDate.setPromptText("From YYYY-MM-DD");
         toDate.setPromptText("To YYYY-MM-DD");
         searchText.setPromptText("Memo or payee");
         HBox filters = new HBox(8, new Label("From"), fromDate, new Label("To"), toDate, new Label("Search"), searchText);
-        HBox actions = new HBox(8, refresh, inspect, openEditor);
+        HBox actions = new HBox(8, refresh, inspect, openEditor, deleteCurrent);
 
         VBox header = new VBox(6, title, range, filters, actions, drillContext, status, new Separator());
         root.setTop(header);
@@ -77,6 +81,7 @@ public class LedgerRegisterPanel implements AppPanel
         refresh.setOnAction(e -> reload());
         inspect.setOnAction(e -> inspectSelected());
         openEditor.setOnAction(e -> openSelectedInEditor());
+        deleteCurrent.setOnAction(e -> deleteSelectedLine());
 
         txnTable.setRowFactory(tv -> {
             TableRow<Row> r = new TableRow<>();
@@ -181,6 +186,68 @@ public class LedgerRegisterPanel implements AppPanel
         {
             openRowInEditor(sel);
         }
+        else
+        {
+            status.setText("Select a ledger transaction before opening it in Transaction Editor.");
+        }
+    }
+
+    private void deleteSelectedLine()
+    {
+        Row sel = txnTable.getSelectionModel().getSelectedItem();
+        if (sel == null)
+        {
+            status.setText("Select a ledger transaction before deleting the current line.");
+            return;
+        }
+
+        CorrectionMethod method = MainWindow.sharedSessionState().preferences().correctionMethod();
+        if (method == CorrectionMethod.DIRECT_EDIT)
+        {
+            if (!confirm("Delete transaction #" + sel.id() + "?",
+                    "This removes the selected entered transaction after period and reconciliation checks and writes an audit snapshot."))
+            {
+                status.setText("Delete cancelled for Txn #" + sel.id() + ".");
+                return;
+            }
+            status.setText("Deleting Txn #" + sel.id() + "...");
+            UiAsync.run("ledger-register-delete-" + sel.id(), () -> {
+                        UiServiceRegistry.transactionCorrection().delete(sel.id(), "ui", "Deleted from Ledger Register");
+                        return sel.id();
+                    },
+                    id -> {
+                        status.setText("Deleted Txn #" + id + ".");
+                        details.clear();
+                        reload();
+                    },
+                    ex -> status.setText("Delete failed for Txn #" + sel.id() + ": " + UiErrors.safeMessage(ex)));
+        }
+        else
+        {
+            if (!confirm("Reverse transaction #" + sel.id() + "?",
+                    "Current correction settings do not allow hard deletion. A reversing entry will be created using the active period date."))
+            {
+                status.setText("Reversal cancelled for Txn #" + sel.id() + ".");
+                return;
+            }
+            status.setText("Creating reversing entry for Txn #" + sel.id() + "...");
+            UiAsync.run("ledger-register-reverse-" + sel.id(),
+                    () -> UiServiceRegistry.transactionCorrection().reverse(sel.id(), ActivePeriodContext.get(), "ui", "Reversed from Ledger Register delete action", false),
+                    result -> {
+                        status.setText("Created reversing Txn #" + result.reversalTransactionId() + " for original Txn #" + sel.id() + ".");
+                        details.clear();
+                        reload();
+                    },
+                    ex -> status.setText("Reversal failed for Txn #" + sel.id() + ": " + UiErrors.safeMessage(ex)));
+        }
+    }
+
+    private boolean confirm(String header, String content)
+    {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, content, ButtonType.OK, ButtonType.CANCEL);
+        alert.setTitle("Confirm ledger action");
+        alert.setHeaderText(header);
+        return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
     }
 
     private void openRowInEditor(Row row)

@@ -685,10 +685,9 @@ public class TransactionEditorPanel implements AppPanel
             syncModelRow(i, splitTable.getItems().get(i));
         }
         TransactionEntryService service = UiServiceRegistry.transactionEntry();
-        Long transactionIdToUpdate = lastSavedTransactionId;
         UiAsync.<TransactionView>run("txn-editor-save", () -> {
                     TransactionCommand command = lineEditorModel.toCommand(date, null, memoField.getText(), null);
-                    return transactionIdToUpdate == null ? service.enter(command) : service.update(transactionIdToUpdate, command);
+                    return service.enter(command);
                 },
                 view -> {
                     lastSavedTransactionId = view.id();
@@ -696,9 +695,8 @@ public class TransactionEditorPanel implements AppPanel
                     dirty = false;
                     lineEditorModel.markClean();
                     openSavedInLedger.setDisable(false);
-                    status.setText("Saved transaction #" + view.id() + " through TransactionEntryService "
-                            + (transactionIdToUpdate == null ? "as a new entry" : "using the native edit policy") + " with "
-                            + view.lines().size() + " split line(s). The editor is ready for a new transaction.");
+                    status.setText("Saved transaction #" + view.id() + " through TransactionEntryService as a new entry with "
+                            + view.lines().size() + " split line(s). The editor is ready for the next appended transaction.");
                 },
                 ex -> status.setText("Save failed: " + UiErrors.safeMessage(ex)));
     }
@@ -783,7 +781,7 @@ public class TransactionEditorPanel implements AppPanel
                     dirty = false;
                     lineEditorModel.markClean();
                     openSavedInLedger.setDisable(false);
-                    status.setText("Loaded transaction #" + view.id() + " from the ledger register. Save uses the native edit policy.");
+                    status.setText("Loaded transaction #" + view.id() + " from the ledger register. Save appends a new transaction and does not overwrite the loaded entry.");
                 },
                 ex -> status.setText("Could not load transaction #" + transactionId + ": " + UiErrors.safeMessage(ex)));
     }

@@ -5,8 +5,8 @@ active_slice: P03-S3-corrective
 active_status: VERIFYING
 active_branch: work
 active_pull_request: pending local make_pr record for Transaction Editor and Ledger Register corrective UX wiring
-active_head: dec7072 Finalize P03 corrective UX handoff
-next_action: "Merge the corrective P03-S3 UX/design-rules PR after Maven plugin access and desktop JavaFX manual validation are available, or rerun the listed Maven commands in an environment with Maven Central access."
+active_head: this corrective commit for ledger register delete and append-only editor append-only save
+next_action: "Open the desktop app and manually validate Ledger Register Delete Current Line, Open Selected in Editor focus/load, and Transaction Editor append-only save behavior before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -931,7 +931,7 @@ Validation and handoff requirements:
 
 Status: DONE by user direction on 2026-07-04. Branch: work. PR: pending local make_pr record. Head: verified P03-S3 handoff accepted by user direction.
 
-Corrective UX slice on 2026-07-05: VERIFYING on branch `work`; PR pending local make_pr record; head `dec7072` (`Finalize P03 corrective UX handoff`).
+Corrective UX slice on 2026-07-05: VERIFYING on branch `work`; PR pending local make_pr record; head this corrective commit for ledger register delete and append-only editor append-only save.
 
 Completed deliverables in this corrective run:
 
@@ -945,19 +945,24 @@ Completed deliverables in this corrective run:
 - changed the production top chrome active-period control from a day picker to a period selector, added a Settings-defined period start day, and calculate active period start dates from the selected period plus that configured day.
 - added `doc/ui_design_rules.md` as the governing UI design rules document for per-company preferences, table sort/resize/reorder state, table scroll/split requirements, money display/edit correction, date display/edit correction, and accounting-period display wording.
 - revisited completed phases in the plan and `doc/ui_design_rules.md`, applying the design rules as retroactive obligations for P00 inventory, P01 shell/preferences, P02 service precision boundaries, P03 ledger/editor surfaces, and completed local P04 budget UI slices.
+- added **Delete Current Line** to Ledger Register, routed through `TransactionCorrectionService` for direct-delete audit behavior or non-direct reversing-entry behavior, with selection/confirmation/status handling.
+- kept **Open Selected in Editor** wired through the drill-through coordinator and added an explicit no-selection status message so selected rows are recalled into Transaction Editor rather than failing silently.
+- changed Transaction Editor save so loaded/recalled entries are used as source data for a new appended transaction; save now always calls `TransactionEntryService.enter(...)` instead of overwriting the loaded transaction.
 
 Remaining deliverables before merge:
 
-- rerun Maven compile, focused tests, and `mvn clean verify` in an environment where Maven Central/plugin artifacts are reachable;
-- complete desktop JavaFX manual validation for save reset, cross-panel tab raising/focus, inspect-journal details, the top chrome period selector, and the vertical middle-pane resize bar.
+- complete desktop JavaFX manual validation for save reset, cross-panel tab raising/focus, inspect-journal details, the top chrome period selector, the vertical middle-pane resize bar, Delete Current Line, and append-only Transaction Editor saves.
 
 Known failures:
 
 - bootstrap `git fetch origin --prune` failed because this worktree has no `origin` remote configured;
-- `mvn -DskipTests compile` was retried on 2026-07-05 and remains environment-blocked by `Network is unreachable` resolving `maven-resources-plugin:3.3.1` from Maven Central before Java compilation begins;
-- `mvn -Dtest=LedgerRegisterPanelTest,TransactionEditorPanelSavedLedgerContextTest test` was retried on 2026-07-05 and is blocked by the same `maven-resources-plugin:3.3.1` Maven Central network failure before Java compilation begins;
-- `mvn -Dtest=ActivePeriodContextTest,FileAppStateStoreTest,AppStateContractsTest test` was retried on 2026-07-05 and is blocked by the same `maven-resources-plugin:3.3.1` Maven Central network failure before Java compilation begins;
-- `mvn clean verify` was retried on 2026-07-05 and is blocked by `Network is unreachable` resolving `maven-clean-plugin:3.2.0` from Maven Central before Java compilation begins.
+- desktop JavaFX manual validation remains outstanding in this non-interactive container.
+
+Validation completed on 2026-07-05:
+
+- `mvn -DskipTests compile` passed;
+- `mvn -Dtest=LedgerRegisterPanelTest,TransactionEditorPanelSavedLedgerContextTest test` passed;
+- `mvn clean verify` passed with 240 tests run, 0 failures, 0 errors, and 1 skipped test.
 
 User-visible changes:
 
@@ -966,6 +971,9 @@ User-visible changes:
 - Ledger Register users can resize the register and journal-details regions and inspect selected journal details from canonical transaction projections;
 - future local UI work is governed by the clarified split-pane and dual-scrollbar rule for pane portions that can hide default-size text.
 - future durable-record functions are governed by the clarified Delete requirement, including the transaction-specific direct-delete versus reversing-entry behavior.
+- Ledger Register exposes **Delete Current Line** for the selected transaction, using direct delete under `DIRECT_EDIT` or a reversing entry when correction settings require non-direct correction.
+- **Open Selected in Editor** recalls the selected transaction into Transaction Editor and raises/focuses that workspace tab.
+- Saving in Transaction Editor appends a new entry even when the form was populated from a recalled ledger transaction, avoiding accidental overwrite of the selected ledger entry.
 - the top chrome now selects an accounting period rather than a date; Settings controls the day-of-month used to calculate the selected period's start date.
 - table, money, date, and accounting-period display/editing rules are now centralized in `doc/ui_design_rules.md` for future implementation slices.
 - completed UI phases now have explicit retrofit obligations when their delivered surfaces are touched by corrective work.
@@ -977,8 +985,10 @@ Manual testing for user:
 - In Ledger Register, select the saved row, click **Inspect Journal**, and verify line details and debit/credit totals appear in the journal details subpanel.
 - Drag the horizontal divider between the register table and journal details to confirm both subpanels resize.
 - Click **Open Selected in Editor** and confirm Transaction Editor is raised/focused and loads the selected transaction.
+- With the recalled transaction visible in Transaction Editor, click **Save** and confirm a new transaction is appended rather than overwriting the recalled transaction.
+- In Ledger Register, select an entered transaction and click **Delete Current Line**; confirm direct-delete behavior when Settings -> Correction method is `DIRECT_EDIT`, and confirm reversing-entry behavior when Settings uses a non-direct correction method.
 
-Next exact action: merge after rerunning `mvn -DskipTests compile`, `mvn -Dtest=LedgerRegisterPanelTest,TransactionEditorPanelSavedLedgerContextTest test`, `mvn -Dtest=ActivePeriodContextTest,FileAppStateStoreTest,AppStateContractsTest test`, and `mvn clean verify` in an environment with Maven Central access, then completing the listed desktop JavaFX manual validation.
+Next exact action: open the desktop JavaFX app and manually validate save reset, cross-panel tab raising/focus, inspect-journal details, the top chrome period selector, the vertical middle-pane resize bar, Delete Current Line, and append-only Transaction Editor saves before merge.
 
 Completed deliverables in this run:
 
