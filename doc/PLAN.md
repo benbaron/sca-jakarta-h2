@@ -1,12 +1,12 @@
 ---
 plan_version: 3
-active_phase: P03
-active_slice: P03-S3
-active_status: VERIFYING
+active_phase: P04
+active_slice: P04-S1
+active_status: IN_PROGRESS
 active_branch: work
 active_pull_request: pending local make_pr record
-active_head: HEAD (P03-S00 completion and P03-S3 validation handoff)
-next_action: "Continue P03-S3 Ledger Register verification: restore Maven dependency access, rerun mvn -DskipTests compile, focused P03 tests, and mvn clean verify, then complete manual desktop validation for sample-company data and register/editor navigation."
+active_head: HEAD (P04-S1 budget model migration commit)
+next_action: "Complete P04-S1 Budget model and migration validation: rerun mvn -DskipTests compile, focused BudgetPlanMigrationTest, DatabaseMigrationRecoveryTest, and mvn clean verify when Maven Central/plugin artifacts are reachable."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -66,9 +66,9 @@ When a branch begins, update front matter and the phase section. When a PR is op
 |---|---|---|---|
 | P00 | Documentation and implementation inventory | none | DONE |
 | P01 | Production shell and workspace composition | P00 | DONE |
-| P02 | Canonical ledger and transaction operations | P00 | READY |
-| P03 | Ledger Register and Transaction Editor | P01, P02 | BLOCKED |
-| P04 | Persistent budgeting | P02 | BLOCKED |
+| P02 | Canonical ledger and transaction operations | P00 | DONE |
+| P03 | Ledger Register and Transaction Editor | P01, P02 | DONE |
+| P04 | Persistent budgeting | P02 | IN_PROGRESS |
 | P05 | Bank import and statement-line persistence | P02 | BLOCKED |
 | P06 | Bank reconciliation | P05 | BLOCKED |
 | P07 | Schedules and open items | P02 | BLOCKED |
@@ -119,7 +119,7 @@ Create only when their owning phase begins:
 
 - `doc/architecture/application-composition.md` — P01 (created in P01-S1)
 - `doc/architecture/command-and-query-boundaries.md` — P01
-- `doc/accounting/budget-model.md` — P04
+- `doc/accounting/budget-model.md` — P04 (created in P04-S1)
 - `doc/banking/import-and-reconciliation.md` — P05/P06
 - `doc/accounting/open-items-and-schedules.md` — P07
 - `doc/database/schema-and-migration-policy.md` — first schema-changing phase
@@ -737,11 +737,11 @@ Implement and test only one canonical writable transaction path.
 # P03 — Ledger Register and Transaction Editor
 
 **Selector:** `PHASE=P03`
-**Status:** READY
+**Status:** DONE
 **Depends on:** P01, P02
 **Branch:** work
 **Pull request:** pending local make_pr record
-**Head:** HEAD (planning slice for P03-S00 sample company)
+**Head:** P03-S3 verified complete by user direction on 2026-07-04
 
 ## Objective
 
@@ -908,7 +908,7 @@ Validation and handoff requirements:
 
 ### P03-S3 — Ledger Register
 
-Status: VERIFYING. Branch: work. PR: pending local make_pr record. Head: HEAD (P03-S00 completion and P03-S3 validation handoff).
+Status: DONE by user direction on 2026-07-04. Branch: work. PR: pending local make_pr record. Head: verified P03-S3 handoff accepted by user direction.
 
 Completed deliverables in this run:
 
@@ -943,7 +943,7 @@ Manual testing for user:
 - Filter by date range and memo/payee text, then clear filters and refresh.
 - Double-click a register row or click Open Selected in Editor, confirm Transaction Editor loads the persisted transaction, edit a memo or line, save, and refresh the register.
 
-Next exact action: restore Maven dependency access, rerun `mvn -DskipTests compile`, focused P03 tests including `mvn -Dtest=SampleCompanyServiceTest test`, and `mvn clean verify`; complete manual desktop validation for sample-company setup, Ledger Register filtering, refresh after save, double-click/open-selected navigation, and native edit save behavior.
+Next exact action: P03-S3 is verified and done by user direction; continue P04-S1 persistent budget model and migration work.
 
 - bounded/paged database query;
 - filters;
@@ -987,8 +987,11 @@ Do not reimplement accounting rules in JavaFX.
 # P04 — Persistent budgeting
 
 **Selector:** `PHASE=P04`
-**Status:** BLOCKED
+**Status:** IN_PROGRESS
 **Depends on:** P02
+**Branch:** work
+**Pull request:** pending local make_pr record
+**Head:** HEAD (P04-S1 budget model migration commit)
 
 ## Objective
 
@@ -1006,6 +1009,35 @@ Replace sidecar budget targets with normalized H2-backed budget plans and lines.
 ## Slices
 
 ### P04-S1 — Budget model and migration
+
+Status: IN_PROGRESS. Branch: work. PR: pending local make_pr record. Head: HEAD (P04-S1 budget model migration commit).
+
+Completed deliverables in this run:
+
+- added `BudgetPlan` and `BudgetLine` JPA entities for versioned fiscal-year budget targets;
+- added nondestructive migration `V50__budget_plan_and_line.sql` with plan status, period, uniqueness, foreign-key, and amount constraints;
+- registered the new entities with the production persistence unit;
+- documented the persistent budget model in `doc/accounting/budget-model.md`;
+- added focused migration coverage for plan/version uniqueness and line-scope uniqueness.
+
+Remaining deliverables before merge:
+
+- rerun Maven compile, focused migration/recovery tests, and `mvn clean verify` when Maven Central/plugin artifacts are reachable;
+- P04-S2 must implement service workflows before UI budget values become authoritative.
+
+Known failures:
+
+- baseline `mvn -DskipTests compile` was attempted on 2026-07-04 and remains environment-blocked by `Network is unreachable` resolving `maven-resources-plugin:3.3.1` from Maven Central.
+
+User-visible changes:
+
+- No enabled UI behavior changes in P04-S1; this slice adds the database model used by later budget services and panels.
+
+Manual testing for user:
+
+- After P04-S2/P04-S3 wire services and panels, create a draft budget, activate it, and confirm Budget Editor, Budget vs Actual, and Dashboard compare against the activated version.
+
+Next exact action: restore Maven dependency access, rerun `mvn -DskipTests compile`, `mvn -Dtest=BudgetPlanMigrationTest,DatabaseMigrationRecoveryTest test`, and `mvn clean verify`; then continue P04-S2 budget services.
 
 Add only missing concepts, such as:
 

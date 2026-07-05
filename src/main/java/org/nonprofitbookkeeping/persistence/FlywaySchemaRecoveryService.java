@@ -18,7 +18,7 @@ final class FlywaySchemaRecoveryService
 {
     private static final String SCHEMA_NAME = "PUBLIC";
     private static final String HISTORY_TABLE = "flyway_schema_history";
-    private static final String CURRENT_VERSION = "48";
+    private static final String CURRENT_VERSION = "50";
 
     private static final List<String> REQUIRED_TABLES = List.of(
             "chart_of_accounts",
@@ -32,6 +32,8 @@ final class FlywaySchemaRecoveryService
             "reconciliation_run",
             "approval_audit_record",
             "budget_category",
+            "budget_plan",
+            "budget_line",
             "company",
             "app_user",
             "accounting_period",
@@ -44,7 +46,11 @@ final class FlywaySchemaRecoveryService
             new ColumnMarker("txn", "status"),
             new ColumnMarker("txn", "reversal_of_txn_id"),
             new ColumnMarker("txn", "replacement_for_txn_id"),
-            new ColumnMarker("txn", "correction_note"));
+            new ColumnMarker("txn", "correction_note"),
+            new ColumnMarker("budget_plan", "fiscal_year"),
+            new ColumnMarker("budget_plan", "version_code"),
+            new ColumnMarker("budget_line", "budget_category_id"),
+            new ColumnMarker("budget_line", "period_month"));
 
     private FlywaySchemaRecoveryService()
     {
