@@ -2,11 +2,11 @@
 plan_version: 3
 active_phase: P03
 active_slice: P03-S3-corrective
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: work
 active_pull_request: pending local make_pr record for Transaction Editor and Ledger Register corrective UX wiring
-active_head: current work branch HEAD for this corrective slice
-next_action: "Rerun mvn -DskipTests compile and mvn clean verify when Maven Central/plugin artifacts are reachable; manually verify save reset, cross-panel focus, journal inspection, and the ledger middle-pane resize bar."
+active_head: dec7072 Finalize P03 corrective UX handoff
+next_action: "Merge the corrective P03-S3 UX/design-rules PR after Maven plugin access and desktop JavaFX manual validation are available, or rerun the listed Maven commands in an environment with Maven Central access."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -931,7 +931,7 @@ Validation and handoff requirements:
 
 Status: DONE by user direction on 2026-07-04. Branch: work. PR: pending local make_pr record. Head: verified P03-S3 handoff accepted by user direction.
 
-Corrective UX slice on 2026-07-05: IN_PROGRESS on branch `work`; PR pending local make_pr record; head is current work branch HEAD for this corrective slice.
+Corrective UX slice on 2026-07-05: VERIFYING on branch `work`; PR pending local make_pr record; head `dec7072` (`Finalize P03 corrective UX handoff`).
 
 Completed deliverables in this corrective run:
 
@@ -948,15 +948,16 @@ Completed deliverables in this corrective run:
 
 Remaining deliverables before merge:
 
-- rerun Maven compile, focused tests, and `mvn clean verify` when Maven Central/plugin artifacts are reachable;
-- manually verify save reset, cross-panel tab raising/focus, inspect-journal details, and the vertical middle-pane resize bar in a desktop JavaFX session.
+- rerun Maven compile, focused tests, and `mvn clean verify` in an environment where Maven Central/plugin artifacts are reachable;
+- complete desktop JavaFX manual validation for save reset, cross-panel tab raising/focus, inspect-journal details, the top chrome period selector, and the vertical middle-pane resize bar.
 
 Known failures:
 
 - bootstrap `git fetch origin --prune` failed because this worktree has no `origin` remote configured;
-- `mvn -DskipTests compile` remains environment-blocked by `Network is unreachable` resolving `maven-resources-plugin:3.3.1` from Maven Central before Java compilation begins;
-- `mvn -Dtest=LedgerRegisterPanelTest,TransactionEditorPanelSavedLedgerContextTest test` and `mvn -Dtest=ActivePeriodContextTest,FileAppStateStoreTest test` are blocked by the same `maven-resources-plugin:3.3.1` Maven Central network failure before Java compilation begins;
-- `mvn clean verify` is blocked by `Network is unreachable` resolving `maven-clean-plugin:3.2.0` from Maven Central before Java compilation begins.
+- `mvn -DskipTests compile` was retried on 2026-07-05 and remains environment-blocked by `Network is unreachable` resolving `maven-resources-plugin:3.3.1` from Maven Central before Java compilation begins;
+- `mvn -Dtest=LedgerRegisterPanelTest,TransactionEditorPanelSavedLedgerContextTest test` was retried on 2026-07-05 and is blocked by the same `maven-resources-plugin:3.3.1` Maven Central network failure before Java compilation begins;
+- `mvn -Dtest=ActivePeriodContextTest,FileAppStateStoreTest,AppStateContractsTest test` was retried on 2026-07-05 and is blocked by the same `maven-resources-plugin:3.3.1` Maven Central network failure before Java compilation begins;
+- `mvn clean verify` was retried on 2026-07-05 and is blocked by `Network is unreachable` resolving `maven-clean-plugin:3.2.0` from Maven Central before Java compilation begins.
 
 User-visible changes:
 
@@ -977,7 +978,7 @@ Manual testing for user:
 - Drag the horizontal divider between the register table and journal details to confirm both subpanels resize.
 - Click **Open Selected in Editor** and confirm Transaction Editor is raised/focused and loads the selected transaction.
 
-Next exact action: rerun `mvn -DskipTests compile`, focused `mvn -Dtest=LedgerRegisterPanelTest,TransactionEditorPanelSavedLedgerContextTest test`, and `mvn clean verify` when dependency/plugin access is available, then complete desktop manual validation.
+Next exact action: merge after rerunning `mvn -DskipTests compile`, `mvn -Dtest=LedgerRegisterPanelTest,TransactionEditorPanelSavedLedgerContextTest test`, `mvn -Dtest=ActivePeriodContextTest,FileAppStateStoreTest,AppStateContractsTest test`, and `mvn clean verify` in an environment with Maven Central access, then completing the listed desktop JavaFX manual validation.
 
 Completed deliverables in this run:
 
