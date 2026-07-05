@@ -44,7 +44,8 @@ public class FileAppStateStoreTest
                 ClosedPeriodPolicy.REQUIRE_REASON,
                 true,
                 ReopenScope.CURRENT_SESSION,
-                false);
+                false,
+                4);
         MultiCompanyState company = new MultiCompanyState("BARONY-BLUE", List.of("BARONY-BLUE", "BARONY-RED"));
         DatabaseSelectionState db = new DatabaseSelectionState("/data/barony-blue.mv.db", List.of("/data/barony-blue.mv.db", "/data/barony-red.mv.db"));
 
@@ -73,6 +74,7 @@ public class FileAppStateStoreTest
         assertFalse(state.requireReopenReason());
         assertEquals(ReopenScope.UNTIL_MANUALLY_CLOSED, state.defaultReopenScope());
         assertTrue(state.confirmEnteredTransactionDeletion());
+        assertEquals(1, state.periodStartDayOfMonth());
     }
 
     @Test
@@ -82,13 +84,15 @@ public class FileAppStateStoreTest
         Files.writeString(file, "preferences.theme=LIGHT\n"
                 + "preferences.correctionMethod=UNKNOWN\n"
                 + "preferences.closedPeriodPolicy=UNKNOWN\n"
-                + "preferences.defaultReopenScope=UNKNOWN\n");
+                + "preferences.defaultReopenScope=UNKNOWN\n"
+                + "preferences.periodStartDayOfMonth=99\n");
 
         AppPreferencesState state = new FileAppStateStore(file).loadPreferences().orElseThrow();
 
         assertEquals(CorrectionMethod.DIRECT_EDIT, state.correctionMethod());
         assertEquals(ClosedPeriodPolicy.WARN_AND_REOPEN, state.closedPeriodPolicy());
         assertEquals(ReopenScope.UNTIL_MANUALLY_CLOSED, state.defaultReopenScope());
+        assertEquals(1, state.periodStartDayOfMonth());
     }
 
     @Test

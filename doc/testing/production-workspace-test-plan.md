@@ -74,6 +74,12 @@ Verify:
 
 Tests must consider child minimum and preferred sizes, viewport behavior, scrolling, divider behavior, sidebar collapse, and center-content constraints. They must verify that center content never renders beneath either sidebar at supported window sizes and display scaling.
 
+Any pane section whose default-size text or tabular values can be hidden must have geometry coverage for a visible `SplitPane` divider plus both vertical and horizontal scroll-bar access. Tests should fail layouts that solve clipping by increasing minimum widths, hiding overflow, or wrapping text without a horizontal path to the full value.
+
+Table tests must cover the rules in `doc/ui_design_rules.md`: sortable, resizable, and reorderable columns; per-company persistence of sort/width/order state; vertical and horizontal scroll-bar access; and separation of each table in its own split-pane region from surrounding data. Formatter tests must cover company preference-based money symbols/print formats, two displayed decimal numerals, permissive money entry correction, preference-based date display, day/month/year ordering preference, permissive date entry correction, and period wording in days, quarters, or years as appropriate.
+
+When a completed-phase panel is touched by corrective work, add or update tests for the applicable `doc/ui_design_rules.md` requirements rather than limiting coverage to the new behavior. If a rule cannot be implemented in the same corrective slice, document the skipped rule and the follow-up slice in `doc/PLAN.md`.
+
 ## Final validation
 
 Before the PR is ready:

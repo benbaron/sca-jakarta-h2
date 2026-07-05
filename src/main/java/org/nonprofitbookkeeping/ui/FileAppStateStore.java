@@ -38,6 +38,7 @@ public class FileAppStateStore implements AppStateStore
     private static final String K_REQUIRE_REOPEN_REASON = "preferences.requireReopenReason";
     private static final String K_REOPEN_SCOPE = "preferences.defaultReopenScope";
     private static final String K_CONFIRM_DELETE = "preferences.confirmEnteredTransactionDeletion";
+    private static final String K_PERIOD_START_DAY = "preferences.periodStartDayOfMonth";
 
     private static final String K_ACTIVE_COMPANY = "multiCompany.active";
     private static final String K_RECENTS = "multiCompany.recents";
@@ -74,6 +75,7 @@ public class FileAppStateStore implements AppStateStore
         boolean requireReason = Boolean.parseBoolean(p.getProperty(K_REQUIRE_REOPEN_REASON, "false"));
         ReopenScope reopenScope = enumValue(p, K_REOPEN_SCOPE, ReopenScope.UNTIL_MANUALLY_CLOSED);
         boolean confirmDelete = Boolean.parseBoolean(p.getProperty(K_CONFIRM_DELETE, "true"));
+        int periodStartDay = intValue(p, K_PERIOD_START_DAY, 1, 1, 28);
 
         return Optional.of(new AppPreferencesState(
                 theme,
@@ -84,7 +86,8 @@ public class FileAppStateStore implements AppStateStore
                 closedPeriod,
                 requireReason,
                 reopenScope,
-                confirmDelete));
+                confirmDelete,
+                periodStartDay));
     }
 
     @Override
@@ -209,6 +212,7 @@ public class FileAppStateStore implements AppStateStore
         p.setProperty(K_REQUIRE_REOPEN_REASON, Boolean.toString(state.requireReopenReason()));
         p.setProperty(K_REOPEN_SCOPE, state.defaultReopenScope().name());
         p.setProperty(K_CONFIRM_DELETE, Boolean.toString(state.confirmEnteredTransactionDeletion()));
+        p.setProperty(K_PERIOD_START_DAY, Integer.toString(state.periodStartDayOfMonth()));
         write(p);
     }
 
@@ -251,6 +255,24 @@ public class FileAppStateStore implements AppStateStore
             return Enum.valueOf(fallback.getDeclaringClass(), raw);
         }
         catch (IllegalArgumentException ex)
+        {
+            return fallback;
+        }
+    }
+
+    private static int intValue(Properties properties, String key, int fallback, int min, int max)
+    {
+        String raw = properties.getProperty(key);
+        if (raw == null || raw.isBlank())
+        {
+            return fallback;
+        }
+        try
+        {
+            int parsed = Integer.parseInt(raw.trim());
+            return parsed < min || parsed > max ? fallback : parsed;
+        }
+        catch (NumberFormatException ex)
         {
             return fallback;
         }

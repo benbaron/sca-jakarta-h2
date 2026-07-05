@@ -33,6 +33,7 @@ public class AppStateContractsTest
         assertEquals(true, state.useNativeWindowDecorations());
         assertEquals(true, state.rememberWindowState());
         assertEquals(UserPrivilegeLevel.MANAGER, state.defaultPrivilege());
+        assertEquals(1, state.periodStartDayOfMonth());
     }
 
     @Test

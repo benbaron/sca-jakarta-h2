@@ -10,7 +10,7 @@ Entered -> Reversed
 
 There is no separate posting or approval state. Direct editing is the default correction policy. A user preference may instead require reversal and replacement. A reversal uses a user-selected date that defaults to the active accounting period and remains linked to the original and optional replacement.
 
-Entered transactions may be deleted when the user chooses that correction method. Deletion must first check reconciliation and period state and must create an audit snapshot inside the same database transaction.
+Entered transactions may be deleted only when Settings -> Correction method is `DIRECT_EDIT`. Deletion must first check reconciliation and period state and must create an audit snapshot inside the same database transaction. If the active correction method is not `DIRECT_EDIT`, the Delete affordance becomes a correction prompt: ask whether to auto-fill and perform a reversing entry using the active period as the default reversal date. Confirming performs the reversal through the correction service; declining leaves the original transaction unchanged.
 
 ## Unsaved work
 

@@ -882,7 +882,13 @@ public class MainWindow extends BorderPane
                 themePreference,
                 current.useNativeWindowDecorations(),
                 current.rememberWindowState(),
-                current.defaultPrivilege()));
+                current.defaultPrivilege(),
+                current.correctionMethod(),
+                current.closedPeriodPolicy(),
+                current.requireReopenReason(),
+                current.defaultReopenScope(),
+                current.confirmEnteredTransactionDeletion(),
+                current.periodStartDayOfMonth()));
         info("Applied theme: " + themePreference);
     }
 

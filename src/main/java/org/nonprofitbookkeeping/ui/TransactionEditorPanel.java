@@ -692,15 +692,31 @@ public class TransactionEditorPanel implements AppPanel
                 },
                 view -> {
                     lastSavedTransactionId = view.id();
-                    applySavedView(view);
+                    resetForNewEntry();
                     dirty = false;
                     lineEditorModel.markClean();
                     openSavedInLedger.setDisable(false);
                     status.setText("Saved transaction #" + view.id() + " through TransactionEntryService "
                             + (transactionIdToUpdate == null ? "as a new entry" : "using the native edit policy") + " with "
-                            + view.lines().size() + " split line(s). Use Journal View to preview the persisted journal.");
+                            + view.lines().size() + " split line(s). The editor is ready for a new transaction.");
                 },
                 ex -> status.setText("Save failed: " + UiErrors.safeMessage(ex)));
+    }
+
+    private void resetForNewEntry()
+    {
+        dateField.clear();
+        payeeField.clear();
+        memoField.clear();
+        bankField.clear();
+        splitTable.getItems().setAll(
+                new SplitRow("", "", "", "", "", "", "", "", "", ""),
+                new SplitRow("", "", "", "", "", "", "", "", "", "")
+        );
+        lineEditorModel.rows().clear();
+        lineEditorModel.addRow();
+        lineEditorModel.addRow();
+        refreshTotals();
     }
 
     private void applySavedView(TransactionView view)
@@ -743,6 +759,7 @@ public class TransactionEditorPanel implements AppPanel
             return;
         }
         DrillThroughCoordinator.openLedgerWithContext(savedLedgerContext(lastSavedTransactionId));
+        status.setText("Opened saved transaction #" + lastSavedTransactionId + " in Ledger Register.");
     }
 
     static String savedLedgerContext(long transactionId)

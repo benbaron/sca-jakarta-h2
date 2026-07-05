@@ -2,7 +2,7 @@
 
 ## Active period
 
-The global toolbar period is the active accounting period for transaction entry. Browsing reports or historical activity does not change it. The active period changes only through an explicit Set Active Period action.
+The global toolbar period is the active accounting period for transaction entry. The toolbar selects a period, not an individual day. The active period start date is calculated from the selected year/month and the period start day configured in Settings. Browsing reports or historical activity does not change it. The active period changes only through an explicit Set Active Period action.
 
 ## Closed-period behavior
 
@@ -33,7 +33,12 @@ Reversal creates an opposite transaction linked to the original. The reversal da
 
 ## Deletion
 
-Entered transactions may be deleted when the active correction policy permits it. Deletion must:
+Every durable maintenance function should expose Delete or explain why deletion is not available. Transaction Delete is governed by the active correction method:
+
+- `DIRECT_EDIT`: Delete may remove the entered transaction after the checks below and must write the audit snapshot in the same transaction.
+- Any non-direct correction method: Delete must not hard-delete the entered transaction. The UI must ask whether the user wants to auto-fill a reversing entry, default the reversal date from the active accounting period, and perform the reversal if the user confirms. If the user declines, no ledger change is made.
+
+Entered transactions may be deleted only when the active correction policy permits hard deletion. Deletion must:
 
 - verify that the transaction is not protected by a completed reconciliation;
 - handle any closed-period warning or reopening first;

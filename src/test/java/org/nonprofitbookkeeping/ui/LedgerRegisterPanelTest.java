@@ -1,8 +1,8 @@
 package org.nonprofitbookkeeping.ui;
 
 import org.junit.jupiter.api.Test;
-import org.nonprofitbookkeeping.service.JournalLine;
 import org.nonprofitbookkeeping.service.LedgerQueryService;
+import org.nonprofitbookkeeping.service.AccountingJournalProjection;
 import org.nonprofitbookkeeping.service.TransactionView;
 
 import java.math.BigDecimal;
@@ -87,19 +87,23 @@ public class LedgerRegisterPanelTest
                 "2",
                 "Posted");
 
-        List<JournalLine> lines = List.of(
-                new JournalLine(LocalDate.of(2026, 3, 13), 77L, "Office supplies", "Acme",
-                        "6100-EXP", "Supplies Expense", "GEN", "General",
-                        new BigDecimal("25.00"), BigDecimal.ZERO),
-                new JournalLine(LocalDate.of(2026, 3, 13), 77L, "Office supplies", "Acme",
-                        "1000-BANK", "Operating Bank", "GEN", "General",
-                        BigDecimal.ZERO, new BigDecimal("25.00")));
+        AccountingJournalProjection projection = new AccountingJournalProjection(
+                77L,
+                LocalDate.of(2026, 3, 13),
+                "Acme",
+                "Office supplies",
+                List.of(
+                        new AccountingJournalProjection.Line("6100-EXP", "Supplies Expense", "GEN", "General",
+                                new BigDecimal("25.00"), BigDecimal.ZERO, ""),
+                        new AccountingJournalProjection.Line("1000-BANK", "Operating Bank", "GEN", "General",
+                                BigDecimal.ZERO, new BigDecimal("25.00"), "")));
 
-        String rendered = LedgerRegisterPanel.renderJournal(row, lines);
+        String rendered = LedgerRegisterPanel.renderJournal(row, projection);
 
         assertTrue(rendered.contains("Txn #77 | Date 2026-03-13 | Payee Acme"));
         assertTrue(rendered.contains("Memo: Office supplies"));
         assertTrue(rendered.contains("6100-EXP Supplies Expense | Fund GEN | DR 25.00 | CR 0"));
         assertTrue(rendered.contains("1000-BANK Operating Bank | Fund GEN | DR 0 | CR 25.00"));
+        assertTrue(rendered.contains("Debits=25.00 Credits=25.00"));
     }
 }

@@ -22,6 +22,14 @@ Status: P00 inventory of current main. This document records visible operations 
 | Import/Export | main-window file actions | CSV/OFX/QIF services and session state | `UiWorkspaceDataStore` job/bank caches; some COA import writes H2 | partially | mixed | job log and bank transactions are session/static, not canonical import persistence | P05/P13 |
 | Database wizard/switch | main-window database actions | `DatabaseLocationService`, `DatabaseMigrationService`, `UiServiceRegistry` | H2 file/JPA resources | yes | yes after successful switch | switching and recovery need atomic composition review | P01/P12 |
 
+## Delete operation rule
+
+Every panel that creates or maintains durable records must expose Delete or a visible explanation for why Delete is unavailable. Delete must delegate to the authoritative service for that record type and must not be implemented as a table-only row removal. For transactions, Delete follows Settings -> Correction method: `DIRECT_EDIT` delegates to audited transaction deletion after period and reconciliation checks; non-direct correction methods ask whether to auto-fill and perform a reversing entry using the active accounting period as the default reversal date.
+
+## Completed-phase UI design-rule updates
+
+`doc/ui_design_rules.md` applies to every panel listed below, including panels delivered by completed phases. For future inventory passes, record whether each table-bearing panel has sortable/resizable/reorderable columns, per-company saved table state, vertical and horizontal scroll bars, a split-pane boundary from surrounding data, company-preference money/date formatting, and a Delete affordance or visible unavailable reason. Any noncompliance found in a completed phase becomes a focused corrective slice rather than a wholesale phase reopening.
+
 ## Panel matrix
 
 | `AppPanelId` | Panel/class | Visible controls | Query source | Write source | Survives restart | H2 authoritative | Dependencies | Simulated/placeholder/sidecar behavior | Missing work | Owning phase |
