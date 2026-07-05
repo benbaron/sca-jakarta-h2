@@ -19,4 +19,4 @@ P04 replaces sidecar budget targets with normalized H2 persistence. Budget value
 
 ## Service and UI follow-up
 
-P04-S1 establishes the model and migration only. P04-S2 owns draft editing, validation, activation, archive, active-version selection, and actual/variance queries. P04-S3 converts Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD comparisons to those services and removes sidecar budget storage.
+P04-S1 established the model and migration. P04-S2 adds `BudgetPlanService` as the application boundary for draft creation, draft line replacement, validation, activation, archive, active-version selection, and actual/variance queries. Activation makes exactly one budget version active for a fiscal year and archives the prior active version; it is not an approval workflow. P04-S3 converts Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD comparisons to those services and removes sidecar budget storage.
