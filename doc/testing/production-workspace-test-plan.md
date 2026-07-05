@@ -70,6 +70,25 @@ Verify:
 - ledger register appears above its editor;
 - Journal Entry reuses the common line editor.
 
+
+## JavaFX test strategy
+
+Use a three-level JavaFX testing approach for production UI work:
+
+1. Keep business logic, validation, persistence, calculations, and durable state transitions in ordinary services or view models that can be tested with standard JUnit tests without starting JavaFX.
+2. Component-test controllers, panels, and view models on the JavaFX Application Thread when scene-graph behavior, bindings, sizing, or control state must be verified. Use deterministic JavaFX synchronization helpers rather than arbitrary sleeps.
+3. Add a small number of TestFX workflow tests for important user interactions such as navigation, editing, validation feedback, save/reload, table selection, dialogs, keyboard traversal, and persistence-visible behavior.
+
+Production JavaFX tests must prefer stable control IDs and CSS lookup selectors such as `#transactionEditorSaveButton` over visible text lookups, because labels can change for wording, accessibility, or localization. Any new or materially changed workflow surface should assign IDs to important fields, buttons, tables, menus, status labels, and dialog controls that need automation coverage.
+
+TestFX interaction tests use `org.testfx:testfx-junit5` with JUnit 5. They should initialize the displayed stage through the TestFX JUnit extension, drive the UI with `FxRobot`, and assert observable state with TestFX/JUnit assertions. Reserve full robot workflows for high-value paths; continue putting most coverage in service, repository, model, view-model, and focused component tests.
+
+All JavaFX scene-graph mutations in tests must respect the JavaFX Application Thread. Use JavaFX/TestFX synchronization, for example `WaitForAsyncUtils.asyncFx(...).get()`, `WaitForAsyncUtils.waitForFxEvents()`, or condition-based waits. Do not use `Thread.sleep(...)` as a synchronization mechanism for UI assertions.
+
+UI tests must not run concurrently with each other. JavaFX tests share the JavaFX runtime, windows, focus, mouse, and keyboard. Mark TestFX classes for same-thread execution when JUnit parallelism is enabled, and close any dialog or secondary stage opened by a test.
+
+Headless CI should run JavaFX/TestFX tests under a virtual display such as `xvfb-run -a mvn test` unless a later documented Monocle configuration is proven stable for the repository's Java and JavaFX versions. In local non-display containers, component tests may use assumptions to skip when no display is available, but final PR validation must record whether JavaFX workflow tests were run under a display or skipped for an environment limitation.
+
 ## Geometry tests
 
 Tests must consider child minimum and preferred sizes, viewport behavior, scrolling, divider behavior, sidebar collapse, and center-content constraints. They must verify that center content never renders beneath either sidebar at supported window sizes and display scaling.
