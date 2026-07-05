@@ -26,6 +26,7 @@ public class PanelHost extends TabPane
     PanelHost(PanelFactory panelFactory)
     {
         this.panelFactory = Objects.requireNonNull(panelFactory, "panelFactory");
+        setId("productionPanelHost");
         setTabClosingPolicy(TabClosingPolicy.SELECTED_TAB);
         getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) ->
         {
