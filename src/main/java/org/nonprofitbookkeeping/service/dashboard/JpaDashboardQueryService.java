@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.AccountType;
+import org.nonprofitbookkeeping.model.BudgetPlan;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
@@ -388,7 +389,37 @@ public class JpaDashboardQueryService implements DashboardQueryService
             EntityManager em,
             LocalDate asOfDate)
     {
-        List<Object[]> rows = em.createQuery("""
+        Map<String, BudgetActualAccumulator> accumulators = new LinkedHashMap<>();
+        List<Long> activePlanIds = em.createQuery("""
+                select p.id from BudgetPlan p
+                where p.fiscalYear = :year and p.status = :status
+                order by p.activatedAt desc, p.id desc
+                """, Long.class)
+                .setParameter("year", asOfDate.getYear())
+                .setParameter("status", BudgetPlan.Status.ACTIVE)
+                .setMaxResults(1)
+                .getResultList();
+        if (!activePlanIds.isEmpty())
+        {
+            List<Object[]> budgetRows = em.createQuery("""
+                    select bc.code, bc.name, coalesce(sum(l.amount), 0)
+                    from BudgetLine l
+                    join l.budgetCategory bc
+                    where l.budgetPlan.id = :planId
+                      and (l.periodMonth is null or l.periodMonth <= :period)
+                    group by bc.code, bc.name
+                    order by bc.code
+                    """, Object[].class)
+                    .setParameter("planId", activePlanIds.get(0))
+                    .setParameter("period", java.time.YearMonth.from(asOfDate).toString())
+                    .getResultList();
+            for (Object[] row : budgetRows)
+            {
+                accumulator(accumulators, row).budget = Optional.of(decimal(row[2]));
+            }
+        }
+
+        List<Object[]> actualRows = em.createQuery("""
                 select bc.code, bc.name,
                        coalesce(sum(case
                            when a.accountType = :incomeType then -s.amountSigned
@@ -407,14 +438,20 @@ public class JpaDashboardQueryService implements DashboardQueryService
                 .setParameter("start", LocalDate.of(asOfDate.getYear(), 1, 1))
                 .setParameter("asOf", asOfDate)
                 .getResultList();
+        for (Object[] row : actualRows)
+        {
+            accumulator(accumulators, row).actual = decimal(row[2]);
+        }
 
-        return rows.stream()
-                .map(row -> new DashboardSnapshot.BudgetActual(
-                        string(row[0]),
-                        string(row[1]),
-                        Optional.empty(),
-                        decimal(row[2])))
+        return accumulators.values().stream()
+                .map(BudgetActualAccumulator::toSnapshot)
                 .toList();
+    }
+
+    private static BudgetActualAccumulator accumulator(Map<String, BudgetActualAccumulator> rows, Object[] row)
+    {
+        String code = string(row[0]);
+        return rows.computeIfAbsent(code, ignored -> new BudgetActualAccumulator(code, string(row[1])));
     }
 
     private static DashboardSnapshot.OrganizationSummary loadOrganization(
@@ -554,6 +591,25 @@ public class JpaDashboardQueryService implements DashboardQueryService
             return payee;
         }
         return payee + " — " + memo;
+    }
+
+    private static final class BudgetActualAccumulator
+    {
+        private final String categoryCode;
+        private final String categoryName;
+        private Optional<BigDecimal> budget = Optional.empty();
+        private BigDecimal actual = BigDecimal.ZERO;
+
+        private BudgetActualAccumulator(String categoryCode, String categoryName)
+        {
+            this.categoryCode = categoryCode;
+            this.categoryName = categoryName;
+        }
+
+        private DashboardSnapshot.BudgetActual toSnapshot()
+        {
+            return new DashboardSnapshot.BudgetActual(categoryCode, categoryName, budget, actual);
+        }
     }
 
     private static final class RecentAccumulator
