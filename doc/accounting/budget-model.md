@@ -17,6 +17,8 @@ P04 replaces sidecar budget targets with normalized H2 persistence. Budget value
 - Activation selects the comparison version; it is not an approval workflow.
 - Sidecar/static budget persistence is deprecated and must not remain authoritative after P04-S3.
 
-## Service and UI follow-up
+## Service and UI boundary
 
-P04-S1 established the model and migration. P04-S2 adds `BudgetPlanService` as the application boundary for draft creation, draft line replacement, validation, activation, archive, active-version selection, and actual/variance queries. Activation makes exactly one budget version active for a fiscal year and archives the prior active version; it is not an approval workflow. P04-S3 converts Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD comparisons to those services and removes sidecar budget storage.
+P04-S1 established the model and migration. P04-S2 adds `BudgetPlanService` as the application boundary for draft creation, draft line replacement, validation, activation, archive, active-version selection, and actual/variance queries. Activation makes exactly one budget version active for a fiscal year and archives the prior active version; it is not an approval workflow.
+
+P04-S3 converts the Budget Editor and Budget vs Actual panels to `BudgetPlanService`. The Budget Editor creates a draft fiscal-year version when no active version exists, saves organization-wide category amounts into draft `BudgetLine` rows, and activates the selected version through the service. Budget vs Actual reads `activeVariance` rows from the active version. Dashboard budget cards already consume `DashboardQueryService`, whose budget comparison projection reads active normalized budget plans; dashboard UI widgets therefore display normalized H2 budget values or a neutral no-budget state. The legacy sidecar `BudgetTargetPersistence` file store has been removed and `UiWorkspaceDataStore` no longer exposes budget target maps.

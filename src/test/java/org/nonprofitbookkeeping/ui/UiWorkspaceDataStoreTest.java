@@ -7,7 +7,6 @@ import org.nonprofitbookkeeping.service.BankTransactionRecord;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -59,18 +58,6 @@ public class UiWorkspaceDataStoreTest
 
         assertEquals(1, UiWorkspaceDataStore.bankTransactions().size());
         assertEquals(0, UiWorkspaceDataStore.jobs().size());
-    }
-
-    @Test
-    public void store_tracksBudgetTargetsByFundCode()
-    {
-        UiWorkspaceDataStore.clearForTests();
-
-        UiWorkspaceDataStore.upsertBudgetTarget("GEN", BigDecimal.valueOf(2500));
-        UiWorkspaceDataStore.upsertBudgetTarget("PROJ", BigDecimal.valueOf(900));
-        UiWorkspaceDataStore.removeBudgetTarget("PROJ");
-
-        assertEquals(Map.of("GEN", BigDecimal.valueOf(2500)), UiWorkspaceDataStore.budgetTargetsByFundCode());
     }
 
     @Test
