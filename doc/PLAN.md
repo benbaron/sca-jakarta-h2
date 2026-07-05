@@ -1,12 +1,12 @@
 ---
 plan_version: 3
 active_phase: P04
-active_slice: P04-S1
+active_slice: P04-S2
 active_status: IN_PROGRESS
 active_branch: work
 active_pull_request: pending local make_pr record
-active_head: HEAD (P04-S1 budget model migration commit)
-next_action: "Complete P04-S1 Budget model and migration validation: rerun mvn -DskipTests compile, focused BudgetPlanMigrationTest, DatabaseMigrationRecoveryTest, and mvn clean verify when Maven Central/plugin artifacts are reachable."
+active_head: HEAD (P04-S2 budget services commit pending)
+next_action: "Complete P04-S2 validation: rerun mvn -DskipTests compile, focused BudgetPlanServiceTest and JpaDashboardQueryServiceTest, and mvn clean verify when Maven Central/plugin artifacts are reachable; then continue P04-S3 budget UI/dashboard conversion."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1010,7 +1010,7 @@ Replace sidecar budget targets with normalized H2-backed budget plans and lines.
 
 ### P04-S1 — Budget model and migration
 
-Status: IN_PROGRESS. Branch: work. PR: pending local make_pr record. Head: HEAD (P04-S1 budget model migration commit).
+Status: DONE by user direction on 2026-07-05. Branch: work. PR: pending local make_pr record. Head: P04-S1 verified and done by user direction.
 
 Completed deliverables in this run:
 
@@ -1022,12 +1022,11 @@ Completed deliverables in this run:
 
 Remaining deliverables before merge:
 
-- rerun Maven compile, focused migration/recovery tests, and `mvn clean verify` when Maven Central/plugin artifacts are reachable;
-- P04-S2 must implement service workflows before UI budget values become authoritative.
+- None for P04-S1 after user-directed verification/done marking; P04-S2 must implement service workflows before UI budget values become authoritative.
 
 Known failures:
 
-- baseline `mvn -DskipTests compile` was attempted on 2026-07-04 and remains environment-blocked by `Network is unreachable` resolving `maven-resources-plugin:3.3.1` from Maven Central.
+- None recorded after user-directed P04-S1 verification/done marking.
 
 User-visible changes:
 
@@ -1037,7 +1036,7 @@ Manual testing for user:
 
 - After P04-S2/P04-S3 wire services and panels, create a draft budget, activate it, and confirm Budget Editor, Budget vs Actual, and Dashboard compare against the activated version.
 
-Next exact action: restore Maven dependency access, rerun `mvn -DskipTests compile`, `mvn -Dtest=BudgetPlanMigrationTest,DatabaseMigrationRecoveryTest test`, and `mvn clean verify`; then continue P04-S2 budget services.
+Next exact action: continue P04-S2 budget services.
 
 Add only missing concepts, such as:
 
@@ -1048,6 +1047,38 @@ Add only missing concepts, such as:
 Define fiscal year, category, optional fund, optional period, amount, notes, uniqueness, and history.
 
 ### P04-S2 — Budget services
+
+Status: IN_PROGRESS. Branch: work. PR: pending local make_pr record. Head: P04-S2 budget services commit pending.
+
+Completed deliverables in this run:
+
+- added `BudgetPlanService` for creating draft budgets, replacing draft lines, validating line scopes/periods, activating one fiscal-year comparison version, archiving versions, loading active versions, and calculating active budget actual/variance rows;
+- added immutable budget plan, line, and variance command/projection records;
+- wired the service into the UI service bundle for P04-S3 panel conversion;
+- changed dashboard budget actual projection to read active `BudgetPlan`/`BudgetLine` values instead of always returning neutral no-budget values when an active budget exists;
+- documented the P04-S2 service boundary in `doc/accounting/budget-model.md`;
+- added focused service and dashboard tests for draft line replacement, activation archiving, draft-only editing, duplicate-scope rejection, active variance calculation, and dashboard active-budget comparison.
+
+Remaining deliverables before merge:
+
+- rerun Maven compile, focused `BudgetPlanServiceTest` and `JpaDashboardQueryServiceTest`, and `mvn clean verify` when Maven Central/plugin artifacts are reachable;
+- P04-S3 must convert Budget Editor, Budget vs Actual, and Dashboard UI flows to the new budget service and remove sidecar/static budget persistence.
+
+Known failures:
+
+- `mvn -DskipTests compile` was attempted on 2026-07-05 and remains environment-blocked by `Network is unreachable` resolving `maven-resources-plugin:3.3.1` from Maven Central before Java compilation begins.
+
+User-visible changes:
+
+- Dashboard budget comparisons can now show amounts from an active normalized budget version when one exists; budget editing panels are not yet converted in P04-S2.
+
+Manual testing for user:
+
+- After P04-S3 wires the panels, create two draft budget versions for the same fiscal year, activate each in turn, and confirm the prior active version is archived and Dashboard/Budget vs Actual compare against the newly active version.
+
+Next exact action: continue P04-S3 budget UI/dashboard conversion after Maven dependencies are reachable for P04-S2 validation.
+
+Original scope:
 
 Implement create, edit draft, validate, activate, archive, select active version, and calculate actual/variance.
 

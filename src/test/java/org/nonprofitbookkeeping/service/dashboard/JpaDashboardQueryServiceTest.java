@@ -135,6 +135,29 @@ public class JpaDashboardQueryServiceTest
         }
     }
 
+    @Test
+    public void activeBudgetPlanSuppliesDashboardBudgetComparison(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("dashboard-budget")))
+        {
+            seed(jpa);
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                em.createNativeQuery("INSERT INTO budget_plan (id, name, fiscal_year, version_code, status, period_start, period_end, activated_at) VALUES (1, 'FY2026', 2026, 'active', 'ACTIVE', DATE '2026-01-01', DATE '2026-12-31', CURRENT_TIMESTAMP)").executeUpdate();
+                em.createNativeQuery("INSERT INTO budget_line (id, budget_plan_id, budget_category_id, fund_id, period_month, amount) VALUES (1, 1, 1, NULL, NULL, 75.0000)").executeUpdate();
+                em.getTransaction().commit();
+            }
+
+            DashboardSnapshot snapshot = new JpaDashboardQueryService(jpa)
+                    .load("BARONY-RED", LocalDate.of(2026, 6, 30), 10);
+
+            DashboardSnapshot.BudgetActual budgetActual = snapshot.budgetActuals().get(0);
+            assertEquals(new BigDecimal("75.0000"), budgetActual.budget().orElseThrow());
+            assertEquals(new BigDecimal("50.0000"), budgetActual.actual());
+        }
+    }
+
     private static void seed(Jpa jpa)
     {
         try (EntityManager em = jpa.em())

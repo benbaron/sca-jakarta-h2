@@ -13,6 +13,7 @@ import org.nonprofitbookkeeping.service.AccountLookupService;
 import org.nonprofitbookkeeping.service.ApprovalAuditService;
 import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
 import org.nonprofitbookkeeping.service.BudgetCategoryLookupService;
+import org.nonprofitbookkeeping.service.BudgetPlanService;
 import org.nonprofitbookkeeping.service.CompanyAdminService;
 import org.nonprofitbookkeeping.service.FinancialReportService;
 import org.nonprofitbookkeeping.service.FundAdminService;
@@ -51,6 +52,7 @@ public final class UiServiceRegistry
     public static AccountAdminService accountAdmin() { return services().accountAdmin(); }
     public static FundAdminService fundAdmin() { return services().fundAdmin(); }
     public static BudgetCategoryAdminService budgetCategoryAdmin() { return services().budgetCategoryAdmin(); }
+    public static BudgetPlanService budgetPlan() { return services().budgetPlan(); }
     public static CompanyAdminService companyAdmin() { return services().companyAdmin(); }
     public static UserAdminService userAdmin() { return services().userAdmin(); }
     public static FundBalanceService fundBalance() { return services().fundBalance(); }
@@ -126,6 +128,7 @@ public final class UiServiceRegistry
                 new AccountAdminService(jpa),
                 new FundAdminService(jpa),
                 new BudgetCategoryAdminService(jpa),
+                new BudgetPlanService(jpa),
                 new CompanyAdminService(jpa),
                 new UserAdminService(jpa),
                 new FundBalanceService(jpa),
@@ -204,6 +207,7 @@ public final class UiServiceRegistry
             AccountAdminService accountAdmin,
             FundAdminService fundAdmin,
             BudgetCategoryAdminService budgetCategoryAdmin,
+            BudgetPlanService budgetPlan,
             CompanyAdminService companyAdmin,
             UserAdminService userAdmin,
             FundBalanceService fundBalance,
