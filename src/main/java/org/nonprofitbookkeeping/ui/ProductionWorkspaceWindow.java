@@ -4,7 +4,7 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.DatePicker;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -30,6 +30,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -214,6 +215,24 @@ public class ProductionWorkspaceWindow extends BorderPane
         ActivePeriodContext.set(date);
     }
 
+    void setActivePeriod(YearMonth period)
+    {
+        setActivePeriodDate(ActivePeriodContext.periodStartFor(
+                period,
+                MainWindow.sharedSessionState().preferences().periodStartDayOfMonth()));
+    }
+
+    static List<YearMonth> periodChoicesFor(LocalDate anchorDate)
+    {
+        YearMonth anchor = YearMonth.from(Objects.requireNonNull(anchorDate, "anchorDate"));
+        java.util.ArrayList<YearMonth> choices = new java.util.ArrayList<>();
+        for (int offset = -12; offset <= 12; offset++)
+        {
+            choices.add(anchor.plusMonths(offset));
+        }
+        return choices;
+    }
+
     PanelHost panelHost()
     {
         return panelHost;
@@ -319,15 +338,17 @@ public class ProductionWorkspaceWindow extends BorderPane
         Button inspectorButton = new Button("Inspector");
         inspectorButton.setOnAction(event -> setInspectorVisible(!workspace.getItems().contains(inspectorPane)));
 
-        DatePicker periodPicker = new DatePicker(workspaceContext.activePeriodDate());
-        periodPicker.setPromptText("Active period date");
+        ComboBox<YearMonth> periodSelector = new ComboBox<>();
+        periodSelector.getItems().setAll(periodChoicesFor(workspaceContext.activePeriodDate()));
+        periodSelector.getSelectionModel().select(YearMonth.from(workspaceContext.activePeriodDate()));
+        periodSelector.setPromptText("Active period");
 
         Button setPeriodButton = new Button("Set Active Period");
         setPeriodButton.setOnAction(event ->
         {
-            if (periodPicker.getValue() != null)
+            if (periodSelector.getValue() != null)
             {
-                setActivePeriodDate(periodPicker.getValue());
+                setActivePeriod(periodSelector.getValue());
             }
         });
 
@@ -343,7 +364,7 @@ public class ProductionWorkspaceWindow extends BorderPane
                 inspectorButton,
                 new Separator(),
                 new Label("Period:"),
-                periodPicker,
+                periodSelector,
                 setPeriodButton,
                 spacer,
                 activeDatabaseLabel,
@@ -550,7 +571,9 @@ public class ProductionWorkspaceWindow extends BorderPane
 
     private void updateActivePeriodLabel()
     {
-        activePeriodLabel.setText("Active period: " + workspaceContext.activePeriodDate());
+        activePeriodLabel.setText("Active period: "
+                + YearMonth.from(workspaceContext.activePeriodDate())
+                + " starts " + workspaceContext.activePeriodDate());
     }
 
     private void updateActiveDatabaseLabel()

@@ -436,7 +436,11 @@ The production workspace includes:
 
 The default window fits a laptop display. Center content never renders beneath a sidebar.
 
-Avoid hard-coded panel minimum widths that force clipping. Geometry tests must consider child minimum/preferred sizes, viewport behavior, scrolling, divider movement, collapsed sidebars, and scaling.
+The top chrome active-period control selects an accounting period, not an arbitrary calendar day. The period start date is derived from the selected period and the Settings-defined period start day.
+
+Avoid hard-coded panel minimum widths that force clipping. When default-size text or tabular content can be hidden by the available pane size, that pane portion must be independently resizable with a `SplitPane` divider and must expose both vertical and horizontal scrolling rather than relying on clipping, wrapping-only behavior, or an enlarged minimum width. Geometry tests must consider child minimum/preferred sizes, viewport behavior, both vertical and horizontal scrolling, divider movement, collapsed sidebars, and scaling.
+
+Detailed table, money, date, and accounting-period display/editing rules are governed by `doc/ui_design_rules.md`. Preferences described there are per-company and saved with the active company.
 
 Spreadsheet-like editors provide:
 
@@ -453,6 +457,8 @@ Spreadsheet-like editors provide:
 - prevention of invalid writes.
 
 Every enabled command performs a genuine operation or navigation. Otherwise it is disabled with an explanation.
+
+Every production function that creates or maintains a durable business record must expose a Delete action or an explicit, visible explanation for why the record cannot be deleted. Delete actions are real operations, not placeholders: they must route through the authoritative service boundary, confirm destructive effects when configured, respect reconciliation and closed-period protection, write required audit history, and roll back completely on failure. Transaction deletion follows the configured Settings -> Correction method: when the method is `DIRECT_EDIT`, Delete may remove the entered transaction through the transaction correction service after required checks; when the method is not `DIRECT_EDIT`, Delete must not hard-delete the transaction and must instead ask whether to auto-fill and perform a reversing entry using the active period as the default reversal date.
 
 ## 13. Testing requirements
 

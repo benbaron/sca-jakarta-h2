@@ -1,12 +1,12 @@
 ---
 plan_version: 3
-active_phase: P04
-active_slice: P04-S3
+active_phase: P03
+active_slice: P03-S3-corrective
 active_status: IN_PROGRESS
 active_branch: work
-active_pull_request: local make_pr record: Convert budget UI to normalized budget plans
-active_head: d21999c Convert budget UI to normalized plans
-next_action: "Resolve Maven plugin access, rerun mvn -DskipTests compile and mvn clean verify, then finish P04-S3 PR validation."
+active_pull_request: pending local make_pr record for Transaction Editor and Ledger Register corrective UX wiring
+active_head: current work branch HEAD for this corrective slice
+next_action: "Rerun mvn -DskipTests compile and mvn clean verify when Maven Central/plugin artifacts are reachable; manually verify save reset, cross-panel focus, journal inspection, and the ledger middle-pane resize bar."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -82,6 +82,18 @@ When a branch begins, update front matter and the phase section. When a PR is op
 
 A phase may begin early only when its required slice has no dependency on an unfinished prerequisite and the plan is updated to explain the deliberate exception.
 
+## 4.1 Completed-phase design-rule retrofit
+
+The design rules in `doc/ui_design_rules.md` apply retroactively to completed UI phases. Completed phases are not reopened wholesale, but corrective slices that touch completed surfaces must either bring that surface into compliance or record a focused follow-up slice here.
+
+Completed-phase updates to apply:
+
+- **P00 documentation inventory:** keep `doc/interface-operation-matrix.md` and `doc/persistence-authority-inventory.md` current when a completed panel is found to lack sortable/resizable/reorderable table state, per-company preference storage, money/date formatting correction, Delete behavior, or split-pane/scroll behavior.
+- **P01 production shell:** shell preferences that affect company data display must move from global user state to per-company saved state; workspace geometry tests must include the table/split-pane/scroll requirements.
+- **P02 canonical ledger services:** continue preserving internal money precision and date types; UI display/edit correction must remain outside authoritative service storage.
+- **P03 Ledger Register and Transaction Editor:** retrofit table column state, money/date format correction, Delete/correction prompts, and split-pane/scroll behavior as P03 corrective slices when those surfaces are touched.
+- **P04 budget UI slices already completed locally:** table-heavy budget panels must adopt the table state and formatting rules before P04 is considered design-rule complete.
+
 ## 5. Governing documents
 
 ### Always read
@@ -102,6 +114,7 @@ A phase may begin early only when its required slice has no dependency on an unf
 - `doc/persistence-authority-inventory.md`
 - `doc/architecture/union-application-direction.md`
 - `doc/workflow/development-workflow.md`
+- `doc/ui_design_rules.md`
 
 ### Legacy reference consolidated during P00
 
@@ -917,6 +930,54 @@ Validation and handoff requirements:
 ### P03-S3 — Ledger Register
 
 Status: DONE by user direction on 2026-07-04. Branch: work. PR: pending local make_pr record. Head: verified P03-S3 handoff accepted by user direction.
+
+Corrective UX slice on 2026-07-05: IN_PROGRESS on branch `work`; PR pending local make_pr record; head is current work branch HEAD for this corrective slice.
+
+Completed deliverables in this corrective run:
+
+- reset Transaction Editor to a blank two-line new-entry form after a successful service save while retaining the saved transaction ID for the **Open Saved in Ledger** drill-through action;
+- made **Open Saved in Ledger** and **Open Selected in Editor** use the existing workspace drill-through opener so the destination tab is raised and focused after the action;
+- replaced the Ledger Register middle content stack with a vertical split pane so users can resize between the register table and transaction journal details;
+- connected Ledger Register **Inspect Journal** to the canonical `TransactionEntryService.journalView(...)` projection and render debit/credit totals in the details pane;
+- added focused rendering coverage for the service-backed journal projection;
+- clarified local UI layout rules in `AGENTS.md`, `doc/architecture/production-workspace.md`, `doc/testing/production-workspace-test-plan.md`, and `doc/ui/editor-guidelines.md`: pane portions that can hide default-size text must be split-pane resizable and expose both vertical and horizontal scrolling.
+- clarified delete design rules in `AGENTS.md`, `doc/architecture/production-workspace.md`, `doc/interface-operation-matrix.md`, `doc/accounting/period-and-correction-policy.md`, `doc/accounting/transaction-lifecycle.md`, and `doc/ui/editor-guidelines.md`: durable-record functions must expose Delete or a visible unavailable reason; transaction Delete hard-deletes only under `DIRECT_EDIT`, otherwise it prompts to auto-fill and perform a reversing entry.
+- changed the production top chrome active-period control from a day picker to a period selector, added a Settings-defined period start day, and calculate active period start dates from the selected period plus that configured day.
+- added `doc/ui_design_rules.md` as the governing UI design rules document for per-company preferences, table sort/resize/reorder state, table scroll/split requirements, money display/edit correction, date display/edit correction, and accounting-period display wording.
+- revisited completed phases in the plan and `doc/ui_design_rules.md`, applying the design rules as retroactive obligations for P00 inventory, P01 shell/preferences, P02 service precision boundaries, P03 ledger/editor surfaces, and completed local P04 budget UI slices.
+
+Remaining deliverables before merge:
+
+- rerun Maven compile, focused tests, and `mvn clean verify` when Maven Central/plugin artifacts are reachable;
+- manually verify save reset, cross-panel tab raising/focus, inspect-journal details, and the vertical middle-pane resize bar in a desktop JavaFX session.
+
+Known failures:
+
+- bootstrap `git fetch origin --prune` failed because this worktree has no `origin` remote configured;
+- `mvn -DskipTests compile` remains environment-blocked by `Network is unreachable` resolving `maven-resources-plugin:3.3.1` from Maven Central before Java compilation begins;
+- `mvn -Dtest=LedgerRegisterPanelTest,TransactionEditorPanelSavedLedgerContextTest test` and `mvn -Dtest=ActivePeriodContextTest,FileAppStateStoreTest test` are blocked by the same `maven-resources-plugin:3.3.1` Maven Central network failure before Java compilation begins;
+- `mvn clean verify` is blocked by `Network is unreachable` resolving `maven-clean-plugin:3.2.0` from Maven Central before Java compilation begins.
+
+User-visible changes:
+
+- saving a Transaction Editor entry leaves the editor ready for the next transaction instead of leaving the just-saved transaction loaded for editing;
+- ledger/editor drill-through actions now raise the destination workspace tab;
+- Ledger Register users can resize the register and journal-details regions and inspect selected journal details from canonical transaction projections;
+- future local UI work is governed by the clarified split-pane and dual-scrollbar rule for pane portions that can hide default-size text.
+- future durable-record functions are governed by the clarified Delete requirement, including the transaction-specific direct-delete versus reversing-entry behavior.
+- the top chrome now selects an accounting period rather than a date; Settings controls the day-of-month used to calculate the selected period's start date.
+- table, money, date, and accounting-period display/editing rules are now centralized in `doc/ui_design_rules.md` for future implementation slices.
+- completed UI phases now have explicit retrofit obligations when their delivered surfaces are touched by corrective work.
+
+Manual testing for user:
+
+- Save a balanced transaction in Transaction Editor and confirm the editor fields and split lines reset for a new transaction while **Open Saved in Ledger** remains available for the saved transaction.
+- Click **Open Saved in Ledger** and confirm Ledger Register is raised/focused with the saved-transaction context.
+- In Ledger Register, select the saved row, click **Inspect Journal**, and verify line details and debit/credit totals appear in the journal details subpanel.
+- Drag the horizontal divider between the register table and journal details to confirm both subpanels resize.
+- Click **Open Selected in Editor** and confirm Transaction Editor is raised/focused and loads the selected transaction.
+
+Next exact action: rerun `mvn -DskipTests compile`, focused `mvn -Dtest=LedgerRegisterPanelTest,TransactionEditorPanelSavedLedgerContextTest test`, and `mvn clean verify` when dependency/plugin access is available, then complete desktop manual validation.
 
 Completed deliverables in this run:
 

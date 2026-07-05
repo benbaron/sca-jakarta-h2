@@ -7,21 +7,22 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.geometry.Orientation;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import org.nonprofitbookkeeping.service.JournalLine;
 import org.nonprofitbookkeeping.service.LedgerQueryService;
+import org.nonprofitbookkeeping.service.AccountingJournalProjection;
 import org.nonprofitbookkeeping.service.TransactionView;
 
 import java.time.LocalDate;
-import java.util.List;
 
 /**
  * Represents the LedgerRegisterPanel component in the nonprofit bookkeeping application.
@@ -64,9 +65,14 @@ public class LedgerRegisterPanel implements AppPanel
         details.setWrapText(false);
         details.setPrefRowCount(8);
 
-        VBox center = new VBox(8, txnTable, new Label("Transaction journal details"), details);
+        VBox registerPane = new VBox(6, txnTable);
         VBox.setVgrow(txnTable, Priority.ALWAYS);
-        root.setCenter(center);
+        VBox journalPane = new VBox(6, new Label("Transaction journal details"), details);
+        VBox.setVgrow(details, Priority.ALWAYS);
+        SplitPane middle = new SplitPane(registerPane, journalPane);
+        middle.setOrientation(Orientation.VERTICAL);
+        middle.setDividerPositions(0.72);
+        root.setCenter(middle);
 
         refresh.setOnAction(e -> reload());
         inspect.setOnAction(e -> inspectSelected());
@@ -112,7 +118,10 @@ public class LedgerRegisterPanel implements AppPanel
     private void reload()
     {
         String context = DrillThroughCoordinator.consumeContext();
-        drillContext.setText(context.isBlank() ? "" : context);
+        if (!context.isBlank())
+        {
+            drillContext.setText(context);
+        }
         status.setText("Loading ledger transactions...");
         UiAsync.run("ledger-register-load",
                 () -> UiServiceRegistry.transactionEntry().search(parseDateOrNull(fromDate.getText()), parseDateOrNull(toDate.getText()), searchText.getText(), 250),
@@ -158,6 +167,11 @@ public class LedgerRegisterPanel implements AppPanel
         {
             inspectRow(sel);
         }
+        else
+        {
+            status.setText("Select a ledger transaction before inspecting its journal.");
+            details.setText("No transaction selected.");
+        }
     }
 
     private void openSelectedInEditor()
@@ -172,7 +186,7 @@ public class LedgerRegisterPanel implements AppPanel
     private void openRowInEditor(Row row)
     {
         DrillThroughCoordinator.openTransactionEditorWithContext(editorContext(row.id()));
-        status.setText("Opening Txn #" + row.id() + " in Transaction Editor.");
+        status.setText("Opened Txn #" + row.id() + " in Transaction Editor.");
     }
 
     static String editorContext(long transactionId)
@@ -196,13 +210,20 @@ public class LedgerRegisterPanel implements AppPanel
 
     private void inspectRow(Row row)
     {
+        status.setText("Loading journal details for Txn #" + row.id() + "...");
         UiAsync.run("ledger-journal-inspect-" + row.id(),
-                () -> UiServiceRegistry.ledgerQuery().journalForTxn(row.id()),
-                lines -> details.setText(LedgerRegisterPanel.renderJournal(row, lines)),
-                ex -> details.setText("Could not load journal for txn " + row.id() + ": " + UiErrors.safeMessage(ex)));
+                () -> UiServiceRegistry.transactionEntry().journalView(row.id()),
+                projection -> {
+                    details.setText(LedgerRegisterPanel.renderJournal(row, projection));
+                    status.setText("Loaded journal details for Txn #" + row.id() + ".");
+                },
+                ex -> {
+                    details.setText("Could not load journal for txn " + row.id() + ": " + UiErrors.safeMessage(ex));
+                    status.setText("Journal inspection failed for Txn #" + row.id() + ".");
+                });
     }
 
-    static String renderJournal(Row row, List<JournalLine> lines)
+    static String renderJournal(Row row, AccountingJournalProjection projection)
     {
         StringBuilder sb = new StringBuilder();
         sb.append("Txn #").append(row.id())
@@ -211,19 +232,23 @@ public class LedgerRegisterPanel implements AppPanel
                 .append("\nMemo: ").append(row.memo())
                 .append("\n\n");
 
-        for (JournalLine line : lines)
+        for (AccountingJournalProjection.Line line : projection.lines())
         {
-            sb.append(line.getAccountCode())
+            sb.append(line.accountCode())
                     .append(" ")
-                    .append(line.getAccountName())
+                    .append(line.accountName())
                     .append(" | Fund ")
-                    .append(line.getFundCode())
+                    .append(line.fundCode())
                     .append(" | DR ")
-                    .append(line.getDebit().toPlainString())
+                    .append(line.debit().toPlainString())
                     .append(" | CR ")
-                    .append(line.getCredit().toPlainString())
+                    .append(line.credit().toPlainString())
                     .append("\n");
         }
+        sb.append("\nDebits=")
+                .append(projection.debitTotal().toPlainString())
+                .append(" Credits=")
+                .append(projection.creditTotal().toPlainString());
         return sb.toString();
     }
 
@@ -245,6 +270,17 @@ public class LedgerRegisterPanel implements AppPanel
     public void onNew()
     {
         details.setText("Use Transaction Editor to post a new transaction, then click Refresh here to load it.");
+    }
+
+    @Override
+    public void onPanelShown()
+    {
+        String context = DrillThroughCoordinator.consumeContext();
+        if (!context.isBlank())
+        {
+            drillContext.setText(context);
+            reload();
+        }
     }
 
     public record Row(Long id, String date, String payee, String memo, String bank, String splitCount, String status) {}

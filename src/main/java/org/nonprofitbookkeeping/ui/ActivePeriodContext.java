@@ -5,6 +5,7 @@ import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Objects;
 
 /**
@@ -27,6 +28,16 @@ public final class ActivePeriodContext
     public static void set(LocalDate date)
     {
         activeDate.set(Objects.requireNonNull(date, "date is required"));
+    }
+
+    public static LocalDate periodStartFor(YearMonth period, int configuredStartDay)
+    {
+        Objects.requireNonNull(period, "period is required");
+        if (configuredStartDay < 1 || configuredStartDay > 28)
+        {
+            throw new IllegalArgumentException("configuredStartDay must be between 1 and 28");
+        }
+        return period.atDay(configuredStartDay);
     }
 
     public static ReadOnlyObjectProperty<LocalDate> activeDateProperty()

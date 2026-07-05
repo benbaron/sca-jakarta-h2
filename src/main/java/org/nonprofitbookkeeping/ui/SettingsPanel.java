@@ -7,6 +7,8 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.BorderPane;
@@ -41,6 +43,7 @@ public class SettingsPanel implements AppPanel
     private final ComboBox<ClosedPeriodPolicy> closedPeriodPolicy = new ComboBox<>();
     private final CheckBox requireReopenReason = new CheckBox("Require a reason when reopening a closed period");
     private final ComboBox<ReopenScope> defaultReopenScope = new ComboBox<>();
+    private final Spinner<Integer> periodStartDay = new Spinner<>();
     private final CheckBox confirmDeletion = new CheckBox("Confirm before deleting an entered transaction");
     private final ComboBox<String> activeCompany = new ComboBox<>();
     private final ComboBox<String> activeDatabase = new ComboBox<>();
@@ -91,6 +94,8 @@ public class SettingsPanel implements AppPanel
         correctionMethod.getItems().addAll(CorrectionMethod.values());
         closedPeriodPolicy.getItems().addAll(ClosedPeriodPolicy.values());
         defaultReopenScope.getItems().addAll(ReopenScope.values());
+        periodStartDay.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 28, 1));
+        periodStartDay.setEditable(true);
 
         activeCompany.setEditable(true);
         activeCompany.getItems().addAll(session.multiCompany().recentCompanyCodes());
@@ -118,6 +123,9 @@ public class SettingsPanel implements AppPanel
 
         grid.add(new Label("Default reopening scope"), 0, row);
         grid.add(defaultReopenScope, 1, row++);
+
+        grid.add(new Label("Period start day"), 0, row);
+        grid.add(periodStartDay, 1, row++);
 
         grid.add(confirmDeletion, 0, row++, 2, 1);
 
@@ -150,6 +158,7 @@ public class SettingsPanel implements AppPanel
         closedPeriodPolicy.getSelectionModel().select(p.closedPeriodPolicy());
         requireReopenReason.setSelected(p.requireReopenReason());
         defaultReopenScope.getSelectionModel().select(p.defaultReopenScope());
+        periodStartDay.getValueFactory().setValue(p.periodStartDayOfMonth());
         confirmDeletion.setSelected(p.confirmEnteredTransactionDeletion());
 
         activeCompany.getItems().setAll(c.recentCompanyCodes());
@@ -186,7 +195,8 @@ public class SettingsPanel implements AppPanel
                 closedPeriodPolicy.getValue() == null ? ClosedPeriodPolicy.WARN_AND_REOPEN : closedPeriodPolicy.getValue(),
                 requireReopenReason.isSelected(),
                 defaultReopenScope.getValue() == null ? ReopenScope.UNTIL_MANUALLY_CLOSED : defaultReopenScope.getValue(),
-                confirmDeletion.isSelected());
+                confirmDeletion.isSelected(),
+                periodStartDay.getValue() == null ? 1 : periodStartDay.getValue());
     }
 
     MultiCompanyState readMultiCompany()

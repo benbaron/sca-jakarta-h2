@@ -11,8 +11,17 @@ public record AppPreferencesState(UiThemePreference themePreference,
                                   ClosedPeriodPolicy closedPeriodPolicy,
                                   boolean requireReopenReason,
                                   ReopenScope defaultReopenScope,
-                                  boolean confirmEnteredTransactionDeletion)
+                                  boolean confirmEnteredTransactionDeletion,
+                                  int periodStartDayOfMonth)
 {
+    public AppPreferencesState
+    {
+        if (periodStartDayOfMonth < 1 || periodStartDayOfMonth > 28)
+        {
+            throw new IllegalArgumentException("periodStartDayOfMonth must be between 1 and 28");
+        }
+    }
+
     public AppPreferencesState(UiThemePreference themePreference,
                                boolean useNativeWindowDecorations,
                                boolean rememberWindowState,
@@ -26,6 +35,7 @@ public record AppPreferencesState(UiThemePreference themePreference,
                 ClosedPeriodPolicy.WARN_AND_REOPEN,
                 false,
                 ReopenScope.UNTIL_MANUALLY_CLOSED,
-                true);
+                true,
+                1);
     }
 }

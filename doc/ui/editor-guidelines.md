@@ -16,6 +16,8 @@ P03 introduces one shared spreadsheet-like line editor for transaction entry sur
 - The editor model maps UI rows to the canonical P02 `TransactionCommand`/`TransactionLineCommand` boundary.
 - Controls do not calculate authoritative accounting balances; they only present immediate row totals and validation feedback.
 - Save, load/edit, reverse, and replace policy must continue through `TransactionEntryService` and correction services; JavaFX panels only route commands and present validation or protection results.
+- Editor and register regions that can hide default-size text must remain user-resizable and scrollable: use a visible `SplitPane` when a region shares space with another pane, and provide both vertical and horizontal scrolling for hidden rows, columns, or long values instead of increasing minimum widths or relying only on wrapping.
+- Editors for durable records must include Delete or a visible reason Delete is unavailable. Transaction Editor Delete may hard-delete only when Settings -> Correction method is `DIRECT_EDIT`; otherwise it must ask whether to auto-fill and perform a reversing entry, defaulting the reversal date from the active period, and route the confirmed reversal through the correction service.
 
 ## Donor inspection findings for native transaction entry
 
@@ -44,7 +46,9 @@ Recommended focused adaptations for upcoming native work:
 
 - Ledger Register refreshes through the canonical `TransactionEntryService.search(...)` query boundary so filters and rows use the same `TransactionView` projection as Transaction Editor loads.
 - The register exposes date and memo/payee filters, keeps bounded results to avoid unbounded UI loads, and shows persisted `ENTERED` status rather than a UI-only posted label.
+- The register table and transaction journal details are separated by a vertical `SplitPane`, giving users a horizontal divider to resize the middle pane. Table/detail content must preserve vertical and horizontal scroll access whenever default-size values do not fit.
 - Double-clicking or choosing **Open Selected in Editor** passes the stable transaction ID to Transaction Editor, which loads the transaction through `TransactionEntryService.load(...)` and saves subsequent edits through `TransactionEntryService.update(...)`.
+- A register-level Delete for a selected transaction must delegate to Transaction Editor/correction services rather than deleting table rows. Under non-direct correction settings, the selected transaction's Delete flow asks to auto-fill and perform a reversing entry instead of hard deletion.
 - Register-to-editor navigation is an editor context handoff only; it does not create a second ledger cache or calculate accounting values in table cells.
 
 ## P03-S00 sample-company system testing
