@@ -754,7 +754,15 @@ Replace validation-only/session-only UI with a genuine spreadsheet-like accounti
 - transaction lifecycle and period policy;
 - `doc/testing/production-workspace-test-plan.md`.
 
+### Donor/reference repositories
+
+- `https://github.com/benbaron/NonprofitAccounting.git` is available as reference or donor code. When starting work in a new area, examine this donor codebase if accessible and suggest any focused imports or adaptations that fit the current JavaFX/H2/JPA architecture. Donor code remains reference only until deliberately imported through the selected phase scope, tests, and documentation.
+
 ## Slices
+
+### Donor/reference repositories
+
+- `https://github.com/benbaron/NonprofitAccounting.git` is available as reference or donor code. When starting work in a new area, examine this donor codebase if accessible and suggest any focused imports or adaptations that fit the current JavaFX/H2/JPA architecture. Donor code remains reference only until deliberately imported through the selected phase scope, tests, and documentation.
 
 ### P03-S1 — Shared line editor
 
@@ -1008,6 +1016,13 @@ Replace sidecar budget targets with normalized H2-backed budget plans and lines.
 
 ## Slices
 
+
+
+## For each Slice do:
+### Donor/reference repositories
+
+- `https://github.com/benbaron/NonprofitAccounting.git` is available as reference or donor code. When starting work in a new area, examine this donor codebase if accessible and suggest any focused imports or adaptations that fit the current JavaFX/H2/JPA architecture. Donor code remains reference only until deliberately imported through the selected phase scope, tests, and documentation.
+
 ### P04-S1 — Budget model and migration
 
 Status: DONE by user direction on 2026-07-05. Branch: work. PR: pending local make_pr record. Head: P04-S1 verified and done by user direction.
@@ -1126,6 +1141,11 @@ Persist accepted bank statement lines and import-job facts safely and idempotent
 
 ## Slices
 
+## For each Slice do:
+### Donor/reference repositories
+
+- `https://github.com/benbaron/NonprofitAccounting.git` is available as reference or donor code. When starting work in a new area, examine this donor codebase if accessible and suggest any focused imports or adaptations that fit the current JavaFX/H2/JPA architecture. Donor code remains reference only until deliberately imported through the selected phase scope, tests, and documentation.
+
 ### P05-S1 — Import batch/line model
 
 Add or complete:
@@ -1199,6 +1219,11 @@ Implement genuine reconciliation between bank statement lines and authoritative 
 
 ## Slices
 
+## For each Slice do:
+### Donor/reference repositories
+
+- `https://github.com/benbaron/NonprofitAccounting.git` is available as reference or donor code. When starting work in a new area, examine this donor codebase if accessible and suggest any focused imports or adaptations that fit the current JavaFX/H2/JPA architecture. Donor code remains reference only until deliberately imported through the selected phase scope, tests, and documentation.
+
 ### P06-S1 — Reconciliation model and services
 
 Add or complete sessions, matches, states, notes, and history without duplicating existing models.
@@ -1263,6 +1288,12 @@ Use one normalized architecture for receivables, prepaid expenses, payables, def
 
 ## Slices
 
+
+## For each Slice do:
+### Donor/reference repositories
+
+- `https://github.com/benbaron/NonprofitAccounting.git` is available as reference or donor code. When starting work in a new area, examine this donor codebase if accessible and suggest any focused imports or adaptations that fit the current JavaFX/H2/JPA architecture. Donor code remains reference only until deliberately imported through the selected phase scope, tests, and documentation.
+
 ### P07-S1 — Authority and model
 
 Reconcile existing open-item snapshot/transition tables and schedule concepts. Avoid parallel state machines.
@@ -1322,6 +1353,11 @@ Replace runbook persistence with genuine fixed-asset records and accounting-gene
 
 ## Slices
 
+## For each Slice do:
+### Donor/reference repositories
+
+- `https://github.com/benbaron/NonprofitAccounting.git` is available as reference or donor code. When starting work in a new area, examine this donor codebase if accessible and suggest any focused imports or adaptations that fit the current JavaFX/H2/JPA architecture. Donor code remains reference only until deliberately imported through the selected phase scope, tests, and documentation.
+
 ### P08-S1 — Fixed-asset model
 
 Asset, acquisition link, cost, dates, salvage, useful life, method, status, notes.
@@ -1361,11 +1397,21 @@ Replace the first incomplete asset/depreciation runbook slice with normalized H2
 **Status:** BLOCKED
 **Depends on:** P02
 
+## For each Slice do:
+### Donor/reference repositories
+
+- `https://github.com/benbaron/NonprofitAccounting.git` is available as reference or donor code. When starting work in a new area, examine this donor codebase if accessible and suggest any focused imports or adaptations that fit the current JavaFX/H2/JPA architecture. Donor code remains reference only until deliberately imported through the selected phase scope, tests, and documentation.
+
 ## Objective
 
 Make Inventory the single H2-backed home for equipment, regalia, supplies, consumables, and other items.
 
 ## Slices
+
+## For each Slice do:
+### Donor/reference repositories
+
+- `https://github.com/benbaron/NonprofitAccounting.git` is available as reference or donor code. When starting work in a new area, examine this donor codebase if accessible and suggest any focused imports or adaptations that fit the current JavaFX/H2/JPA architecture. Donor code remains reference only until deliberately imported through the selected phase scope, tests, and documentation.
 
 ### P09-S1 — Item and movement model
 
@@ -1382,6 +1428,12 @@ All items and filtered Supplies/durable/regalia/custodian views.
 ### P09-S4 — Cleanup and reports
 
 Remove runbook persistence; add inventory reports and audit history.
+
+
+## For each Slice do:
+### Donor/reference repositories
+
+- `https://github.com/benbaron/NonprofitAccounting.git` is available as reference or donor code. When starting work in a new area, examine this donor codebase if accessible and suggest any focused imports or adaptations that fit the current JavaFX/H2/JPA architecture. Donor code remains reference only until deliberately imported through the selected phase scope, tests, and documentation.
 
 ## Validation
 
@@ -1411,7 +1463,13 @@ Supplies is a subtype/filter within Inventory, never a separate persistence subs
 
 Replace approval-oriented period controls with documented close/reopen policy, notes, and factual audit history.
 
+
 ## Slices
+
+## For each Slice do:
+### Donor/reference repositories
+
+- `https://github.com/benbaron/NonprofitAccounting.git` is available as reference or donor code. When starting work in a new area, examine this donor codebase if accessible and suggest any focused imports or adaptations that fit the current JavaFX/H2/JPA architecture. Donor code remains reference only until deliberately imported through the selected phase scope, tests, and documentation.
 
 ### P10-S1 — Pre-close checks and service
 
@@ -1475,6 +1533,10 @@ Provide genuine read-only reports through one Report Library.
 
 ## Slices
 
+## For each Slice do:
+### Donor/reference repositories
+
+- `https://github.com/benbaron/NonprofitAccounting.git` is available as reference or donor code. When starting work in a new area, examine this donor codebase if accessible and suggest any focused imports or adaptations that fit the current JavaFX/H2/JPA architecture. Donor code remains reference only until deliberately imported through the selected phase scope, tests, and documentation.
 ### P11-S1 — Report architecture and shared projections
 
 Semantic embedded definitions, value providers, filters, preview contract.
@@ -1528,6 +1590,10 @@ Complete master-data administration, company/database operations, and persisted 
 
 ## Slices
 
+## For each Slice do:
+### Donor/reference repositories
+
+- `https://github.com/benbaron/NonprofitAccounting.git` is available as reference or donor code. When starting work in a new area, examine this donor codebase if accessible and suggest any focused imports or adaptations that fit the current JavaFX/H2/JPA architecture. Donor code remains reference only until deliberately imported through the selected phase scope, tests, and documentation.
 ### P12-S1 — Master data
 
 Chart of Accounts, Funds, Budget Categories, Counterparties, Merchants, Activities.
@@ -1578,6 +1644,10 @@ Persist durable job facts, complete supported imports/exports, and provide safe 
 
 ## Slices
 
+## For each Slice do:
+### Donor/reference repositories
+
+- `https://github.com/benbaron/NonprofitAccounting.git` is available as reference or donor code. When starting work in a new area, examine this donor codebase if accessible and suggest any focused imports or adaptations that fit the current JavaFX/H2/JPA architecture. Donor code remains reference only until deliberately imported through the selected phase scope, tests, and documentation.
 ### P13-S1 — Job and issue persistence
 
 Import batch/job metadata, export job metadata, row-level issues where appropriate, retry rules.
@@ -1627,6 +1697,9 @@ Keep review staging distinct from durable accepted data.
 Remove remaining simulated behavior and prove the complete application across persistence, accounting, UI, reports, and database lifecycle.
 
 ## Slices
+
+## For each Slice do:
+### Donor/reference repositories
 
 ### P14-S1 — Simulation cleanup
 

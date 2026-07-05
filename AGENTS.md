@@ -221,6 +221,8 @@ mergeable and vertically coherent slice.
 
 ### Step 4 — Validate locally
 
+Create focused tests to increase test coverage for the new slice's behaviors.
+
 Run focused tests during development. Before completion run:
 
 ```bash
@@ -444,6 +446,10 @@ Spreadsheet-like editors provide:
 - dirty state;
 - add/remove rows;
 - immediate totals;
+- commit/preserve data on focus lost in a cell.
+- tool tip on hover
+- double click to select
+- right mouse click to raise context-appropriate select
 - prevention of invalid writes.
 
 Every enabled command performs a genuine operation or navigation. Otherwise it is disabled with an explanation.
