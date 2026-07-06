@@ -790,11 +790,16 @@ public class TransactionEditorPanel implements AppPanel
 
     private void consumeLedgerRegisterContext()
     {
-        Long transactionId = transactionIdFromContext(DrillThroughCoordinator.consumeContext(AppPanelId.TXN_EDITOR));
+        String context = DrillThroughCoordinator.consumeContext(AppPanelId.TXN_EDITOR);
+        System.err.println("[NPBK][transaction-editor] Panel shown with drill-through context '" + context + "'.");
+        Long transactionId = transactionIdFromContext(context);
         if (transactionId == null)
         {
+            System.err.println("[NPBK][transaction-editor] No transaction id found in drill-through context.");
             return;
         }
+        System.err.println("[NPBK][transaction-editor] Loading transaction id " + transactionId
+                + " from drill-through context.");
         status.setText("Loading transaction #" + transactionId + " from the ledger register...");
         UiAsync.run("txn-editor-load-" + transactionId,
                 () -> UiServiceRegistry.transactionEntry().load(transactionId),

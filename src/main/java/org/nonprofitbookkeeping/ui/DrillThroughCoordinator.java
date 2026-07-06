@@ -21,11 +21,13 @@ final class DrillThroughCoordinator
     static void configureOpener(Consumer<AppPanelId> panelOpener)
     {
         opener = panelOpener == null ? (id -> {}) : panelOpener;
+        debug("Configured opener: " + (panelOpener == null ? "no-op" : panelOpener));
     }
 
     static void openLedgerWithContext(String context)
     {
         CONTEXT.set(context == null ? "" : context);
+        debug("Stored legacy ledger context '" + safeContext(context) + "'.");
         openPanelWithContext(AppPanelId.LEDGER_REGISTER, context);
     }
 
@@ -38,10 +40,14 @@ final class DrillThroughCoordinator
     {
         if (panelId == null)
         {
+            debug("Ignored open request with null panel id and context '" + safeContext(context) + "'.");
             return;
         }
-        PANEL_CONTEXT.put(panelId, context == null ? "" : context);
+        String normalizedContext = context == null ? "" : context;
+        PANEL_CONTEXT.put(panelId, normalizedContext);
+        debug("Opening " + panelId + " with context '" + safeContext(normalizedContext) + "'.");
         opener.accept(panelId);
+        debug("Open request dispatched for " + panelId + ".");
     }
 
     static String consumeContext(AppPanelId panelId)
@@ -51,12 +57,24 @@ final class DrillThroughCoordinator
             return "";
         }
         String context = PANEL_CONTEXT.remove(panelId);
+        debug("Consumed context for " + panelId + ": '" + safeContext(context) + "'.");
         return context == null ? "" : context;
     }
 
     static String consumeContext()
     {
         String context = CONTEXT.getAndSet("");
+        debug("Consumed legacy context: '" + safeContext(context) + "'.");
+        return context == null ? "" : context;
+    }
+
+    private static void debug(String message)
+    {
+        System.err.println("[NPBK][drill-through] " + message);
+    }
+
+    private static String safeContext(String context)
+    {
         return context == null ? "" : context;
     }
 }

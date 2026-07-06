@@ -263,7 +263,10 @@ public class LedgerRegisterPanel implements AppPanel
 
     private void openRowInEditor(Row row)
     {
-        DrillThroughCoordinator.openTransactionEditorWithContext(editorContext(row.id()));
+        String context = editorContext(row.id());
+        System.err.println("[NPBK][ledger-register] Open Selected in Editor requested for Txn #"
+                + row.id() + " with context '" + context + "'.");
+        DrillThroughCoordinator.openTransactionEditorWithContext(context);
         status.setText("Opened Txn #" + row.id() + " in Transaction Editor.");
     }
 
