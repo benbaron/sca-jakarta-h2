@@ -311,6 +311,14 @@ Status: READY.
 
 Implement and document:
 
+Always: read and follow 
+- doc/interface-operation-matrix.md 
+- doc/ui_design_rules.md
+- doc/ui/editor-guidelines.md 
+and apply them to the following work items:
+
+If this requires major redesign then remark this in documentation.
+
 - Transaction Editor **New** mode creates a new transaction.
 - Transaction Editor **Edit** mode updates an existing transaction by caller-provided ID when policy allows.
 - Rename any remaining upsert language to update/edit.
@@ -326,6 +334,14 @@ Implement and document:
 Status: READY after P03-C1.
 
 Implement and document:
+
+Always: read and follow 
+- doc/interface-operation-matrix.md 
+- doc/ui_design_rules.md
+- doc/ui/editor-guidelines.md 
+and apply them to the following work items:
+
+If this requires major redesign beyond this slice, propose a solution then remark this in documentation.
 
 - Add first-class Journal Pane with its own `AppPanelId`.
 - Left Navigation under Accounting has **Inspect Journal**.
@@ -347,6 +363,7 @@ Implement and document:
 ## Validation
 
 Add tests for mode routing, disabled Open Selected state, prefill context mapping, Journal Pane navigation, selected-transaction centering, and journal-to-editor handoff.
+Review code to ensure compliance with all design documents.
 
 ## Codex seed prompt
 
@@ -373,6 +390,11 @@ Maintain normalized H2-backed budget plans and lines.
 - Preserve `BudgetCategory` as distinct from Account and Activity.
 - Apply `doc/ui_design_rules.md` table, money, date, and per-company preference rules to budget panels.
 
+Always: read and follow 
+- doc/interface-operation-matrix.md 
+- doc/ui_design_rules.md
+- doc/ui/editor-guidelines.md 
+and apply them to the following work items. If this requires major redesign then remark this in documentation.
 ---
 
 # P05 — Banking configuration and statement import
@@ -421,6 +443,11 @@ Each Bank Account record links one Bank to one Chart of Accounts account and sto
 - active/inactive status.
 
 The linked chart-of-accounts account must have account type `BANK`, normal balance `DEBIT`, and financial statement class `CASH`.
+Always: read and follow 
+- doc/interface-operation-matrix.md 
+- doc/ui_design_rules.md
+- doc/ui/editor-guidelines.md 
+and apply them to the following work items. If this requires major redesign then remark this in documentation.
 
 ### P05-S2 — Banking panel under Accounting
 
@@ -430,14 +457,29 @@ The Banking panel appears under Accounting in the Left Navigation Pane and lets 
 - edit Bank records;
 - create the linked Chart of Accounts bank account automatically; or
 - select an existing qualifying Chart of Accounts account.
+Always: read and follow 
+- doc/interface-operation-matrix.md 
+- doc/ui_design_rules.md
+- doc/ui/editor-guidelines.md 
+and apply them to the following work items. If this requires major redesign then remark this in documentation.
 
 ### P05-S3 — Statement import normalization and matching
 
 Support manual entry, CSV, OFX, and QIF statement sources. Preserve current SCLX import idempotency rules where applicable.
+Always: read and follow 
+- doc/interface-operation-matrix.md 
+- doc/ui_design_rules.md
+- doc/ui/editor-guidelines.md 
+and apply them to the following work items. If this requires major redesign then remark this in documentation.
 
 ### P05-S4 — Cleared-state mapping to ledger bank lines
 
 Imported bank statement records propose matches to internal ledger lines. Cleared state is stored on the ledger transaction line involving the bank account, not as authoritative accounting state in the imported statement row.
+Always: read and follow 
+- doc/interface-operation-matrix.md 
+- doc/ui_design_rules.md
+- doc/ui/editor-guidelines.md 
+and apply them to the following work items. If this requires major redesign then remark this in documentation.
 
 ## Forbidden in P05
 
@@ -464,6 +506,12 @@ Banking belongs under Accounting, not Administration.
 ## Objective
 
 Implement reconciliation for configured bank accounts using ledger-line cleared state and statement comparison.
+
+Always: read and follow 
+- doc/interface-operation-matrix.md 
+- doc/ui_design_rules.md
+- doc/ui/editor-guidelines.md 
+and apply them to the following work items. If this requires major redesign then remark this in documentation.
 
 ## Required behavior
 
@@ -517,6 +565,11 @@ Underlying receivable, prepaid, payable, deferred revenue, and other supplementa
 Implement Asset Register add/edit and depreciation behavior through H2-backed records and canonical accounting transactions.
 
 ## Required behavior
+Always: read and follow 
+- doc/interface-operation-matrix.md 
+- doc/ui_design_rules.md
+- doc/ui/editor-guidelines.md 
+and apply them to the following work items. If this requires major redesign then remark this in documentation.
 
 - Assets are separate from Inventory items.
 - Asset Register supports add and edit.
@@ -548,6 +601,11 @@ Depreciation runs create canonical accounting transactions.
 Implement Inventory items and quantity movements as genuine records, eliminating the Inventory Runbook subpane.
 
 ## Required behavior
+Always: read and follow 
+- doc/interface-operation-matrix.md 
+- doc/ui_design_rules.md
+- doc/ui/editor-guidelines.md 
+and apply them to the following work items. If this requires major redesign then remark this in documentation.
 
 - Inventory Runbook subpane is removed.
 - User can add inventory items.
@@ -579,6 +637,11 @@ Remove the runbook subpane and use canonical transactions where financially rele
 Implement simplified calculated period close while preserving factual Audit History.
 
 ## Required behavior
+Always: read and follow 
+- doc/interface-operation-matrix.md 
+- doc/ui_design_rules.md
+- doc/ui/editor-guidelines.md 
+and apply them to the following work items. If this requires major redesign then remark this in documentation.
 
 - Period Close supports selecting a named/calculated open period and selecting a through-date or custom date range.
 - There is no accounting-period table as the authority for open periods.
@@ -618,6 +681,12 @@ Deliver genuine read-only reports through one Report Library.
 - Remove dependencies on eliminated Schedules phase.
 - Include reports for Banking/Reconciliation, Inventory, Assets/Depreciation, Funds, Period Close, and factual Audit History as those domains become available.
 
+Always: read and follow 
+- doc/interface-operation-matrix.md 
+- doc/ui_design_rules.md
+- doc/ui/editor-guidelines.md 
+and apply them to the following work items. If this requires major redesign then remark this in documentation.
+
 ---
 
 # P12 — Administration, company lifecycle, preferences, and Funds edit
@@ -631,6 +700,11 @@ Deliver genuine read-only reports through one Report Library.
 Complete master-data administration, company/database operations, preferences, and clarified Funds editing behavior.
 
 ## Funds Panel requirements
+Always: read and follow 
+- doc/interface-operation-matrix.md 
+- doc/ui_design_rules.md
+- doc/ui/editor-guidelines.md 
+and apply them to the following work items. If this requires major redesign then remark this in documentation.
 
 Funds edit supports:
 
@@ -664,6 +738,11 @@ Implement Funds edit/delete/deactivate rules and company/preferences lifecycle w
 Implement necessary data exchange and diagnostics without a generic Import/Export Jobs panel or persistent generic job-tracking function.
 
 ## Required behavior
+Always: read and follow 
+- doc/interface-operation-matrix.md 
+- doc/ui_design_rules.md
+- doc/ui/editor-guidelines.md 
+and apply them to the following work items. If this requires major redesign then remark this in documentation.
 
 - Import/export feedback may be immediate UI feedback, produced files, diagnostics, or domain-specific durable records required by another feature.
 - Do not reintroduce `IMPORT_EXPORT_JOBS` as an `AppPanelId` or navigation item.
@@ -689,7 +768,13 @@ Implement necessary data exchange and diagnostics without a generic Import/Expor
 
 Remove remaining simulated behavior and prove the complete application across persistence, accounting, UI, reports, and database lifecycle.
 
+
 ## Clarified cleanup checklist
+Always: read and follow 
+- doc/interface-operation-matrix.md 
+- doc/ui_design_rules.md
+- doc/ui/editor-guidelines.md 
+and apply them to the following work items. If this requires major redesign then remark this in documentation.
 
 - Remove Schedules as a product function.
 - Remove Import/Export Jobs as a product function.
@@ -737,6 +822,7 @@ Before a PR is ready:
 - PR description records actual validation;
 - required desktop visual check is complete;
 - branch/PR/head/test/next-action handoff is recorded here.
+- code is reviewed to ensure compliance with design documents.
 
 ## 10. Current next action
 
