@@ -2,11 +2,11 @@
 plan_version: 3
 active_phase: P05
 active_slice: P05-S1
-active_status: READY
-active_branch: null
-active_pull_request: null
-active_head: null
-next_action: "Start P05-S1 from current main: inspect import-review workflow, ledger authority, current import panels/services, migrations, and donor import references before adding the bank import batch/statement-line model."
+active_status: VERIFYING
+active_branch: work
+active_pull_request: pending local make_pr record
+active_head: current HEAD (Add P05 bank import persistence model)
+next_action: "Review and merge P05-S1 bank import persistence model after local verification and unavailable remote/GitHub validation are resolved."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -133,7 +133,7 @@ Create only when their owning phase begins:
 - `doc/architecture/application-composition.md` — P01 (created in P01-S1)
 - `doc/architecture/command-and-query-boundaries.md` — P01
 - `doc/accounting/budget-model.md` — P04 (created in P04-S1)
-- `doc/banking/import-and-reconciliation.md` — P05/P06
+- `doc/banking/import-and-reconciliation.md` — P05/P06 (created in P05-S1)
 - `doc/accounting/open-items-and-schedules.md` — P07
 - `doc/database/schema-and-migration-policy.md` — first schema-changing phase
 - `doc/database/database-lifecycle.md` — P12
@@ -1267,8 +1267,11 @@ Preserve BudgetCategory as distinct from Account and Activity.
 # P05 — Bank import and statement-line persistence
 
 **Selector:** `PHASE=P05`
-**Status:** READY
+**Status:** VERIFYING
 **Depends on:** P02
+**Branch:** work
+**Pull request:** pending local make_pr record
+**Head:** current HEAD (Add P05 bank import persistence model)
 
 ## Objective
 
@@ -1288,6 +1291,45 @@ Persist accepted bank statement lines and import-job facts safely and idempotent
 - `https://github.com/benbaron/NonprofitAccounting.git` is available as reference or donor code. When starting work in a new area, examine this donor codebase if accessible and suggest any focused imports or adaptations that fit the current JavaFX/H2/JPA architecture. Donor code remains reference only until deliberately imported through the selected phase scope, tests, and documentation.
 
 ### P05-S1 — Import batch/line model
+
+Status: VERIFYING on branch `work`. PR: pending local make_pr record. Head: current HEAD (Add P05 bank import persistence model).
+
+Completed deliverables in this run:
+
+- added `BankImportBatch`, `BankStatementLine`, and `ImportIssue` JPA entities for durable reviewed import batches, statement lines, and row/batch issues;
+- added nondestructive migration `V51__bank_import_batch_and_statement_line.sql` with format/status checks, row/fingerprint uniqueness, nonzero statement amounts, disposition constraints, foreign keys, and indexes;
+- registered the import entities with the production persistence unit;
+- created `doc/banking/import-and-reconciliation.md` to document that in-memory review staging remains separate from durable reviewed import facts and the canonical `txn` ledger;
+- added focused migration coverage for batch/line/issue creation and key constraints.
+
+Remaining deliverables before merge:
+
+- remote/GitHub validation is unavailable in this worktree because no `origin` remote is configured; review the local PR record and run CI once a remote is available.
+
+Known failures:
+
+- bootstrap `git fetch origin --prune` failed because this worktree has no `origin` remote configured.
+
+Validation completed on 2026-07-06:
+
+- `mvn -DskipTests compile` passed;
+- `mvn -Dtest=BankImportMigrationTest test` passed with 1 test run, 0 failures, 0 errors, and 0 skipped tests;
+- initial `mvn clean verify` failed because the schema-recovery baseline still pointed to version 50 after adding V51;
+- `mvn -Dtest=DatabaseMigrationRecoveryTest,BankImportMigrationTest test` passed with 5 tests run, 0 failures, 0 errors, and 0 skipped tests after updating the recovery baseline to version 51;
+- `mvn clean verify` passed with 254 tests run, 0 failures, 0 errors, and 9 skipped tests;
+- `git diff --check` passed.
+
+User-visible changes:
+
+- No enabled UI behavior changes in P05-S1; this slice adds the H2 model used by later import normalization, duplicate detection, and review acceptance workflows.
+
+Manual testing for user:
+
+- After P05-S2/P05-S3 wire normalization and review acceptance, import an OFX/QFX/CSV/SCLX source, accept/reject/match rows, restart the app, and confirm reviewed batch facts and accepted canonical transactions remain available.
+
+Next exact action: continue P05-S2 normalization and duplicate detection after P05-S1 is reviewed/merged.
+
+Original scope:
 
 Add or complete:
 
