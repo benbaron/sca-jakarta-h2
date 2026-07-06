@@ -58,6 +58,8 @@ public class TransactionEditorPanel implements AppPanel
     private final TextField memoField = new TextField();
     private final TextField bankField = new TextField();
     private final Button openSavedInLedger = new Button("Open Saved in Ledger");
+    private EditorMode editorMode = EditorMode.NEW;
+    private Long editTransactionId;
     private Long lastSavedTransactionId;
     private boolean dirty;
 
@@ -65,7 +67,8 @@ public class TransactionEditorPanel implements AppPanel
     {
         root.setPadding(new Insets(8));
 
-        Label title = new Label("Transaction Editor");
+        Label title = new Label("Transaction Editor — New");
+        title.setId("transactionEditorTitleLabel");
         title.getStyleClass().add("panel-title");
 
         Button save = new Button("Save");
@@ -726,17 +729,21 @@ public class TransactionEditorPanel implements AppPanel
                 + " command line(s).");
         UiAsync.<TransactionView>run("txn-editor-save", () -> {
                     TransactionCommand command = lineEditorModel.toCommand(date, null, memoField.getText(), null);
-                    return service.enter(command);
+                    return editorMode == EditorMode.EDIT
+                            ? service.update(editTransactionId, command)
+                            : service.enter(command);
                 },
                 view -> {
                     lastSavedTransactionId = view.id();
+                    Long savedEditId = editTransactionId;
                     resetForNewEntry();
                     dirty = false;
                     lineEditorModel.markClean();
                     openSavedInLedger.setDisable(false);
-                    status.setText("Saved transaction #" + view.id() + " through TransactionEntryService as a new entry with "
-                            + view.lines().size() + " split line(s). The editor is ready for the next appended transaction.");
-                    UiDebug.log("transaction-editor", "Save completed as Txn #" + view.id()
+                    status.setText((savedEditId == null ? "Saved new transaction #" : "Updated transaction #") + view.id()
+                            + " through TransactionEntryService with " + view.lines().size()
+                            + " split line(s). The editor is ready for the next new transaction.");
+                    UiDebug.log("transaction-editor", "Save completed for Txn #" + view.id()
                             + " with " + view.lines().size() + " split line(s).");
                 },
                 ex -> {
@@ -747,7 +754,9 @@ public class TransactionEditorPanel implements AppPanel
 
     private void resetForNewEntry()
     {
-        UiDebug.log("transaction-editor", "Resetting editor for a new appended entry.");
+        UiDebug.log("transaction-editor", "Resetting editor for a new entry.");
+        editorMode = EditorMode.NEW;
+        editTransactionId = null;
         dateField.clear();
         payeeField.clear();
         memoField.clear();
@@ -831,11 +840,13 @@ public class TransactionEditorPanel implements AppPanel
                 () -> UiServiceRegistry.transactionEntry().load(transactionId),
                 view -> {
                     lastSavedTransactionId = view.id();
+                    editorMode = EditorMode.EDIT;
+                    editTransactionId = view.id();
                     applySavedView(view);
                     dirty = false;
                     lineEditorModel.markClean();
                     openSavedInLedger.setDisable(false);
-                    status.setText("Loaded transaction #" + view.id() + " from the ledger register. Save appends a new transaction and does not overwrite the loaded entry.");
+                    status.setText("Loaded transaction #" + view.id() + " in Edit mode. Save updates this transaction by ID when policy allows.");
                 },
                 ex -> {
                     status.setText("Could not load transaction #" + transactionId + ": " + UiErrors.safeMessage(ex));
@@ -996,6 +1007,12 @@ public class TransactionEditorPanel implements AppPanel
         int validCount() { return validCount; }
         int errorCount() { return errorCount; }
         BigDecimal netAmount() { return netAmount; }
+    }
+
+    private enum EditorMode
+    {
+        NEW,
+        EDIT
     }
 
     public static class SplitRow

@@ -1,5 +1,7 @@
 package org.nonprofitbookkeeping.ui;
 
+import javafx.scene.control.Button;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.nonprofitbookkeeping.service.LedgerQueryService;
 import org.nonprofitbookkeeping.service.AccountingJournalProjection;
@@ -17,6 +19,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class LedgerRegisterPanelTest
 {
+    @BeforeAll
+    static void setupFx()
+    {
+        FxTestSupport.initToolkitOrSkip();
+    }
+
     @Test
     public void toRow_mapsBlanksToNoneAndPreservesSplitCount()
     {
@@ -71,8 +79,25 @@ public class LedgerRegisterPanelTest
     @Test
     public void editorContextUsesStableTransactionId()
     {
-        assertEquals("Load transaction Txn #202", LedgerRegisterPanel.editorContext(202L));
+        assertEquals("Edit transaction Txn #202", LedgerRegisterPanel.editorContext(202L));
         assertEquals(202L, TransactionEditorPanel.transactionIdFromContext("Load transaction Txn #202"));
+    }
+
+    @Test
+    public void registerPrimaryButtonsExposeNewAndDisabledOpenSelected()
+    {
+        LedgerRegisterPanel panel = FxTestSupport.onFx(LedgerRegisterPanel::new);
+
+        FxTestSupport.onFx(() -> {
+            Button newButton = (Button) panel.root().lookup("#ledgerRegisterNewButton");
+            Button openSelected = (Button) panel.root().lookup("#ledgerRegisterOpenSelectedButton");
+
+            assertEquals("New", newButton.getText());
+            assertEquals("Open Selected", openSelected.getText());
+            assertTrue(openSelected.isDisabled());
+            assertEquals("New transaction", LedgerRegisterPanel.newEditorContext());
+            return null;
+        });
     }
 
     @Test
