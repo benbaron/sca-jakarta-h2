@@ -2,11 +2,11 @@
 plan_version: 4
 active_phase: P03
 active_slice: P03-C1
-active_status: READY
-active_branch: null
-active_pull_request: null
-active_head: null
-next_action: "Execute P03-C1: implement Transaction Editor New/Edit modes and Ledger Register New/Open Selected behavior, then P03-C2 Journal Pane."
+active_status: VERIFYING
+active_branch: codex/P03-P03-C1-transaction-editor-register-modes
+active_pull_request: pending
+active_head: HEAD
+next_action: "Finish P03-C1 verification and PR, then execute P03-C2 Journal Pane."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -209,8 +209,8 @@ After those focused documents exist, link them from this section.
 
 # P00 — Documentation and implementation inventory
 
-**Selector:** `PHASE=P00`  
-**Status:** DONE, with clarification updates as touched  
+**Selector:** `PHASE=P00`
+**Status:** DONE, with clarification updates as touched
 **Depends on:** none
 
 ## Objective
@@ -240,8 +240,8 @@ Do not change production behavior.
 
 # P01 — Production shell and workspace composition
 
-**Selector:** `PHASE=P01`  
-**Status:** DONE, retrofit as touched  
+**Selector:** `PHASE=P01`
+**Status:** DONE, retrofit as touched
 **Depends on:** P00
 
 ## Objective
@@ -263,8 +263,8 @@ One shell and one composition root own all production panels and database-bound 
 
 # P02 — Canonical ledger and transaction operations
 
-**Selector:** `PHASE=P02`  
-**Status:** DONE, retain  
+**Selector:** `PHASE=P02`
+**Status:** DONE, retain
 **Depends on:** P00
 
 ## Objective
@@ -286,8 +286,8 @@ All authoritative accounting writes flow through one documented transaction serv
 
 # P03 — Transaction Editor, Ledger Register, and Journal Pane
 
-**Selector:** `PHASE=P03`  
-**Status:** READY for corrective/new slices  
+**Selector:** `PHASE=P03`
+**Status:** READY for corrective/new slices
 **Depends on:** P01, P02
 
 ## Objective
@@ -301,13 +301,22 @@ Apply the clarified transaction-entry and journal requirements.
 - `doc/accounting/transaction-lifecycle.md`
 - `doc/accounting/period-and-correction-policy.md`
 - `doc/ui_design_rules.md`
-- `doc/accounting/transaction-editor-and-journal.md` once created
+- `doc/accounting/transaction-editor-and-journal.md`
 
 ## Slices
 
 ### P03-C1 — Transaction Editor modes and Ledger Register buttons
 
-Status: READY.
+Status: VERIFYING.
+
+Branch: `codex/P03-P03-C1-transaction-editor-register-modes`
+Pull request: pending
+Head commit: `HEAD`
+Completed deliverables: Transaction Editor New/Edit routing, Ledger Register New/Open Selected buttons, read-only selected-ID edit routing, and governing documentation.
+Remaining deliverables: create PR, record PR details, and perform any available remote PR validation.
+Test status: Baseline `mvn -DskipTests compile` passed; focused `mvn -Dtest=LedgerRegisterPanelTest test` passed but Surefire reported 0 tests executed for that class in this environment; full `mvn clean verify` passed with 255 tests run and 9 skipped.
+Known failures: none.
+Next exact action: create the pull request for P03-C1 and then proceed to P03-C2 after PR validation/merge.
 
 Implement and document:
 
@@ -377,8 +386,8 @@ Do not implement Banking or Reconciliation in this slice.
 
 # P04 — Persistent budgeting
 
-**Selector:** `PHASE=P04`  
-**Status:** DONE, retrofit as touched  
+**Selector:** `PHASE=P04`
+**Status:** DONE, retrofit as touched
 **Depends on:** P02
 
 ## Objective
@@ -399,8 +408,8 @@ and apply them to the following work items. If this requires major redesign then
 
 # P05 — Banking configuration and statement import
 
-**Selector:** `PHASE=P05`  
-**Status:** READY after P03-C1 unless the selected slice is strictly model-only  
+**Selector:** `PHASE=P05`
+**Status:** READY after P03-C1 unless the selected slice is strictly model-only
 **Depends on:** P02 and clarified P03 navigation/mode rules
 
 ## Objective
@@ -499,8 +508,8 @@ Banking belongs under Accounting, not Administration.
 
 # P06 — Bank reconciliation and cleared-state comparison
 
-**Selector:** `PHASE=P06`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P06`
+**Status:** BLOCKED
 **Depends on:** P05
 
 ## Objective
@@ -539,7 +548,7 @@ Do not implement approve/reject reconciliation semantics.
 
 # P07 — Eliminated former Schedules phase
 
-**Selector:** `PHASE=P07`  
+**Selector:** `PHASE=P07`
 **Status:** ELIMINATED
 
 The Schedules function is eliminated entirely as:
@@ -556,8 +565,8 @@ Underlying receivable, prepaid, payable, deferred revenue, and other supplementa
 
 # P08 — Asset Register and depreciation
 
-**Selector:** `PHASE=P08`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P08`
+**Status:** BLOCKED
 **Depends on:** P02
 
 ## Objective
@@ -592,8 +601,8 @@ Depreciation runs create canonical accounting transactions.
 
 # P09 — Inventory and supplies
 
-**Selector:** `PHASE=P09`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P09`
+**Status:** BLOCKED
 **Depends on:** P02
 
 ## Objective
@@ -628,8 +637,8 @@ Remove the runbook subpane and use canonical transactions where financially rele
 
 # P10 — Period close, reopening, and factual audit history
 
-**Selector:** `PHASE=P10`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P10`
+**Status:** BLOCKED
 **Depends on:** P02, P06
 
 ## Objective
@@ -668,8 +677,8 @@ Do not remove Audit History and do not implement approval/rejection workflow.
 
 # P11 — Report Library
 
-**Selector:** `PHASE=P11`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P11`
+**Status:** BLOCKED
 **Depends on:** P02, P04, P06, P08, P09, P10
 
 ## Objective
@@ -691,8 +700,8 @@ and apply them to the following work items. If this requires major redesign then
 
 # P12 — Administration, company lifecycle, preferences, and Funds edit
 
-**Selector:** `PHASE=P12`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P12`
+**Status:** BLOCKED
 **Depends on:** P01, P02
 
 ## Objective
@@ -729,8 +738,8 @@ Implement Funds edit/delete/deactivate rules and company/preferences lifecycle w
 
 # P13 — Data exchange and diagnostics without Import/Export Jobs
 
-**Selector:** `PHASE=P13`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P13`
+**Status:** BLOCKED
 **Depends on:** P02, P05, P12
 
 ## Objective
@@ -760,8 +769,8 @@ Implement necessary data exchange and diagnostics without a generic Import/Expor
 
 # P14 — End-to-end hardening
 
-**Selector:** `PHASE=P14`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P14`
+**Status:** BLOCKED
 **Depends on:** P03-P13 except eliminated P07
 
 ## Objective
