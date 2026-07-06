@@ -1,12 +1,12 @@
 ---
 plan_version: 3
-active_phase: P03
-active_slice: P03-S3-corrective
+active_phase: P04
+active_slice: P04-S3
 active_status: VERIFYING
 active_branch: work
-active_pull_request: pending local make_pr record for Transaction Editor and Ledger Register corrective UX wiring
-active_head: HEAD (P03-S3 corrective TestFX validation handoff)
-next_action: "Open the desktop JavaFX app and manually validate save reset, cross-panel tab raising/focus, inspect-journal details, the top chrome period selector, the vertical middle-pane resize bar, Delete Current Line, append-only Transaction Editor saves, Ledger Register horizontal scrolling, and Transaction Editor split-table resizing before merge."
+active_pull_request: local make_pr record: Convert budget UI to normalized budget plans
+active_head: HEAD (Record P04 budget validation handoff)
+next_action: "Open the desktop JavaFX app and visually check Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1201,7 +1201,7 @@ Activation selects the comparison version; it is not an approval workflow.
 
 ### P04-S3 — Budget UI and dashboard
 
-Status: IN_PROGRESS. Branch: work. PR: local make_pr record: Convert budget UI to normalized budget plans. Head: d21999c Convert budget UI to normalized plans.
+Status: VERIFYING. Branch: work. PR: local make_pr record: Convert budget UI to normalized budget plans. Head: HEAD (Record P04 budget validation handoff).
 
 Completed deliverables in this run:
 
@@ -1213,12 +1213,19 @@ Completed deliverables in this run:
 
 Remaining deliverables before merge:
 
-- rerun Maven compile, focused budget UI/service tests, and `mvn clean verify` when Maven Central/plugin artifacts are reachable;
 - perform a desktop visual check of Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison outside the headless container.
 
 Known failures:
 
-- `mvn -DskipTests compile` and `mvn -o -DskipTests compile` are environment-blocked because `maven-resources-plugin:3.3.1` is absent locally and Maven Central is unreachable.
+- bootstrap `git fetch origin --prune` failed because this worktree has no `origin` remote configured;
+- desktop visual validation of the P04 budget screens remains outstanding in this non-interactive container.
+
+Validation completed on 2026-07-06:
+
+- `mvn -DskipTests compile` passed;
+- after installing `xvfb`, `libgtk-3-0`, and related GTK/X11 runtime libraries, `xvfb-run -a mvn -Dtest=ProductionDesignRulesTestFxTest test` passed with 3 tests run, 0 failures, 0 errors, and 0 skipped tests;
+- `mvn clean verify` passed with 252 tests run, 0 failures, 0 errors, and 8 skipped tests;
+- focused `mvn -Dtest=BudgetPlanMigrationTest,BudgetPlanServiceTest,JpaDashboardQueryServiceTest,BudgetEditorPanelTest test` passed with 12 tests run, 0 failures, 0 errors, and 0 skipped tests.
 
 User-visible changes:
 
@@ -1230,7 +1237,7 @@ Manual testing for user:
 - Open Budget Editor, enter category amounts, activate the draft version, and confirm Budget vs Actual and Dashboard budget cards compare against that active version.
 - Create a second draft revision, activate it, and confirm the prior active version is archived by the service and no sidecar budget target file is used.
 
-Next exact action: restore Maven plugin/dependency access and rerun `mvn -DskipTests compile`, focused budget tests, and `mvn clean verify`.
+Next exact action: open the desktop JavaFX app and visually check Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison before merge.
 
 Original scope:
 
