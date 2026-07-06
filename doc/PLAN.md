@@ -5,7 +5,7 @@ active_slice: P03-S3-corrective
 active_status: VERIFYING
 active_branch: work
 active_pull_request: pending local make_pr record for Transaction Editor and Ledger Register corrective UX wiring
-active_head: HEAD (Expand dashboard ledger editor debug logging)
+active_head: HEAD (Add selective UI debug toggles)
 next_action: "Run TestFX design-rule workflow tests under a desktop display or xvfb; xvfb-run is not installed in this container, so robot tests are currently skipped without DISPLAY."
 ---
 
@@ -953,6 +953,7 @@ Completed deliverables in this corrective run:
 - fixed the production JavaFX shell to configure the shared drill-through opener, repairing the runnable app path where Ledger Register **Open Selected in Editor** stored context but did not open or focus Transaction Editor.
 - added temporary-style diagnostic stderr logging for the Ledger Register -> DrillThroughCoordinator -> ProductionWorkspaceWindow -> TransactionEditorPanel path so desktop testers can see which stage receives, dispatches, opens, and consumes the selected transaction context.
 - expanded diagnostic logging across Dashboard reload/actions/snapshot application, Ledger Register reload/selection/inspect/delete operations, and Transaction Editor validate/save/journal/load/reset operations so desktop troubleshooting can compare the behavior of all three surfaces.
+- added global and per-area UI debug toggles so diagnostics can be disabled with `-Dsca.ui.debug=false` / `SCA_UI_DEBUG=false` or selectively controlled with area keys such as `-Dsca.ui.debug.ledger-register=false` / `SCA_UI_DEBUG_LEDGER_REGISTER=false`.
 - changed Transaction Editor save so loaded/recalled entries are used as source data for a new appended transaction; save now always calls `TransactionEntryService.enter(...)` instead of overwriting the loaded transaction.
 - added stable automation IDs to the Ledger Register and Transaction Editor controls needed by TestFX workflow coverage.
 - changed Ledger Register and Transaction Editor tables to unconstrained resize policy so horizontal scrolling remains available instead of forcing clipped constrained columns.
@@ -985,7 +986,9 @@ Validation completed on 2026-07-05:
 - after restoring the Codex Maven proxy entries, `mvn clean verify` passed with 248 tests run, 0 failures, 0 errors, and 8 skipped tests;
 - on 2026-07-06, `mvn clean verify` passed after the production-shell drill-through fix with 248 tests run, 0 failures, 0 errors, and 8 skipped tests;
 - on 2026-07-06, `mvn -DskipTests compile` and focused `mvn -Dtest=DashboardHomePanelTest,DrillThroughCoordinatorTest,LedgerRegisterPanelTest,TransactionEditorPanelValidationTest,TransactionEditorPanelJournalPreviewTest test` passed after expanding dashboard, ledger register, and transaction editor debug logging;
-- on 2026-07-06, `mvn clean verify` passed after expanding debug logging with 248 tests run, 0 failures, 0 errors, and 8 skipped tests.
+- on 2026-07-06, `mvn clean verify` passed after expanding debug logging with 248 tests run, 0 failures, 0 errors, and 8 skipped tests;
+- on 2026-07-06, focused `mvn -Dtest=UiDebugTest test` passed after adding selective debug toggles;
+- on 2026-07-06, `mvn clean verify` passed after adding selective debug toggles with 252 tests run, 0 failures, 0 errors, and 8 skipped tests.
 
 User-visible changes:
 
@@ -995,7 +998,7 @@ User-visible changes:
 - future local UI work is governed by the clarified split-pane and dual-scrollbar rule for pane portions that can hide default-size text.
 - future durable-record functions are governed by the clarified Delete requirement, including the transaction-specific direct-delete versus reversing-entry behavior.
 - Ledger Register exposes **Delete Current Line** for the selected transaction, using direct delete under `DIRECT_EDIT` or a reversing entry when correction settings require non-direct correction.
-- **Open Selected in Editor** recalls the selected transaction into Transaction Editor and raises/focuses that workspace tab in the production shell; diagnostic stderr messages now show dashboard, ledger, editor, workspace, and coordinator operation stages for troubleshooting.
+- **Open Selected in Editor** recalls the selected transaction into Transaction Editor and raises/focuses that workspace tab in the production shell; diagnostic stderr messages now show dashboard, ledger, editor, workspace, and coordinator operation stages for troubleshooting and can be disabled globally or by area.
 - Saving in Transaction Editor appends a new entry even when the form was populated from a recalled ledger transaction, avoiding accidental overwrite of the selected ledger entry.
 - the top chrome now selects an accounting period rather than a date; Settings controls the day-of-month used to calculate the selected period's start date.
 - Ledger Register and Transaction Editor expose stable TestFX IDs and table/split-pane geometry needed to enforce `doc/ui_design_rules.md`;
