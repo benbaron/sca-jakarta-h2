@@ -109,6 +109,22 @@ public class ProductionWorkspaceCommandRoutingTest
         assertTrue(result.message().contains("delegated"));
     }
 
+    @Test
+    public void productionShellConfiguresDrillThroughCoordinatorForTransactionEditor()
+    {
+        ProductionWorkspaceWindow window = FxTestSupport.onFx(ProductionWorkspaceCommandRoutingTest::newWindow);
+
+        FxTestSupport.onFx(() -> {
+            window.openPanel(AppPanelId.LEDGER_REGISTER);
+
+            DrillThroughCoordinator.openTransactionEditorWithContext(LedgerRegisterPanel.editorContext(909L));
+
+            assertTrue(window.panelHost().isOpen(AppPanelId.TXN_EDITOR));
+            assertEquals(AppPanelId.TXN_EDITOR, window.panelHost().activePanelId());
+            return null;
+        });
+    }
+
     private static ProductionWorkspaceWindow newWindow()
     {
         return new ProductionWorkspaceWindow(
