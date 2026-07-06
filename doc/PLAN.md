@@ -1,12 +1,12 @@
 ---
 plan_version: 3
-active_phase: P04
-active_slice: P04-S3
-active_status: VERIFYING
-active_branch: work
-active_pull_request: local make_pr record: Convert budget UI to normalized budget plans
-active_head: HEAD (Record P04 budget validation handoff)
-next_action: "Open the desktop JavaFX app and visually check Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison before merge."
+active_phase: P05
+active_slice: P05-S1
+active_status: READY
+active_branch: null
+active_pull_request: null
+active_head: null
+next_action: "Start P05-S1 from current main: inspect import-review workflow, ledger authority, current import panels/services, migrations, and donor import references before adding the bank import batch/statement-line model."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -68,8 +68,8 @@ When a branch begins, update front matter and the phase section. When a PR is op
 | P01 | Production shell and workspace composition | P00 | DONE |
 | P02 | Canonical ledger and transaction operations | P00 | DONE |
 | P03 | Ledger Register and Transaction Editor | P01, P02 | DONE |
-| P04 | Persistent budgeting | P02 | IN_PROGRESS |
-| P05 | Bank import and statement-line persistence | P02 | BLOCKED |
+| P04 | Persistent budgeting | P02 | DONE |
+| P05 | Bank import and statement-line persistence | P02 | READY |
 | P06 | Bank reconciliation | P05 | BLOCKED |
 | P07 | Schedules and open items | P02 | BLOCKED |
 | P08 | Fixed assets and depreciation | P02 | BLOCKED |
@@ -1096,11 +1096,11 @@ Do not reimplement accounting rules in JavaFX.
 # P04 — Persistent budgeting
 
 **Selector:** `PHASE=P04`
-**Status:** IN_PROGRESS
+**Status:** DONE
 **Depends on:** P02
-**Branch:** work
-**Pull request:** pending local make_pr record
-**Head:** HEAD (P04-S1 budget model migration commit)
+**Branch:** merged by user approval on 2026-07-06
+**Pull request:** local make_pr record approved by user on 2026-07-06
+**Head:** cleared after user approval
 
 ## Objective
 
@@ -1201,7 +1201,7 @@ Activation selects the comparison version; it is not an approval workflow.
 
 ### P04-S3 — Budget UI and dashboard
 
-Status: VERIFYING. Branch: work. PR: local make_pr record: Convert budget UI to normalized budget plans. Head: HEAD (Record P04 budget validation handoff).
+Status: DONE by user approval on 2026-07-06. Branch: work. PR: local make_pr record approved by user. Head: 0196373 Add UI IDs and TestFX coverage for P04 budget UI; update docs to reflect normalized budget persistence.
 
 Completed deliverables in this run:
 
@@ -1213,19 +1213,20 @@ Completed deliverables in this run:
 
 Remaining deliverables before merge:
 
-- perform a desktop visual check of Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison outside the headless container.
+- None after user approval on 2026-07-06.
 
 Known failures:
 
-- bootstrap `git fetch origin --prune` failed because this worktree has no `origin` remote configured;
-- desktop visual validation of the P04 budget screens remains outstanding in this non-interactive container.
+- bootstrap `git fetch origin --prune` failed because this worktree has no `origin` remote configured; remote/GitHub validation was unavailable locally, and the user approved the local PR record on 2026-07-06.
 
 Validation completed on 2026-07-06:
 
 - `mvn -DskipTests compile` passed;
 - after installing `xvfb`, `libgtk-3-0`, and related GTK/X11 runtime libraries, `xvfb-run -a mvn -Dtest=ProductionDesignRulesTestFxTest test` passed with 3 tests run, 0 failures, 0 errors, and 0 skipped tests;
 - `mvn clean verify` passed with 252 tests run, 0 failures, 0 errors, and 8 skipped tests;
-- focused `mvn -Dtest=BudgetPlanMigrationTest,BudgetPlanServiceTest,JpaDashboardQueryServiceTest,BudgetEditorPanelTest test` passed with 12 tests run, 0 failures, 0 errors, and 0 skipped tests.
+- focused `mvn -Dtest=BudgetPlanMigrationTest,BudgetPlanServiceTest,JpaDashboardQueryServiceTest,BudgetEditorPanelTest test` passed with 12 tests run, 0 failures, 0 errors, and 0 skipped tests;
+- `xvfb-run -a mvn -Dtest=ProductionDesignRulesTestFxTest test` passed with 4 tests run, 0 failures, 0 errors, and 0 skipped tests after adding the budget visual smoke coverage for Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison;
+- `mvn clean verify` passed with 253 tests run, 0 failures, 0 errors, and 9 skipped tests.
 
 User-visible changes:
 
@@ -1237,7 +1238,7 @@ Manual testing for user:
 - Open Budget Editor, enter category amounts, activate the draft version, and confirm Budget vs Actual and Dashboard budget cards compare against that active version.
 - Create a second draft revision, activate it, and confirm the prior active version is archived by the service and no sidecar budget target file is used.
 
-Next exact action: open the desktop JavaFX app and visually check Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison before merge.
+Next exact action: start P05-S1 from current main: inspect import-review workflow, ledger authority, current import panels/services, migrations, and donor import references before adding the bank import batch/statement-line model.
 
 Original scope:
 
@@ -1266,7 +1267,7 @@ Preserve BudgetCategory as distinct from Account and Activity.
 # P05 — Bank import and statement-line persistence
 
 **Selector:** `PHASE=P05`
-**Status:** BLOCKED
+**Status:** READY
 **Depends on:** P02
 
 ## Objective

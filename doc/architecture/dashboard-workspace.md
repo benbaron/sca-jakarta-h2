@@ -83,7 +83,7 @@ The inspector's unrestricted, restricted, and designated values represent net as
 
 ## Budget values
 
-The schema currently stores budget categories and actual activity but does not provide an authoritative budget-target amount for this projection. The dashboard therefore leaves unavailable Budget, Variance, and Budget Performance results blank or neutral rather than inventing values.
+P04 supplies authoritative budget-target amounts through active `budget_plan` and `budget_line` rows. Dashboard Budget Performance and YTD Budget vs Actual projections read the selected active normalized budget version and canonical ledger actuals through `DashboardQueryService`; when no active budget version exists, the dashboard shows the documented neutral no-budget state rather than inventing values.
 
 ## Data and safety rules
 

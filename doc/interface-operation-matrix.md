@@ -1,6 +1,6 @@
 # Interface operation matrix
 
-Status: P00 inventory of current main. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
+Status: P00 inventory of current main, updated through P04 budget persistence. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
 
 ## Scope and evidence
 
@@ -9,7 +9,7 @@ Status: P00 inventory of current main. This document records visible operations 
 - `NavigationPane` exposes the same panel set in grouped left navigation.
 - Global commands route from `MainWindow`/toolbar/menu through `PanelHost` to `AppPanel` hooks (`onNew`, `onSave`, `onCopy`, `onPaste`, `onRunCommand`).
 - `UiServiceRegistry` creates JPA-backed lookup/admin/report services, plus JDBC repositories for reconciliation, period-close, and approval audit run panels.
-- Search evidence: `UiWorkspaceDataStore`, `RunbookPersistence`, and `BudgetTargetPersistence` are active sidecar/static stores; searches for “saved in session”, “not implemented”, “Approve”, “Reject”, and `LocalDate.now()` identify non-authoritative UI paths.
+- Search evidence: `UiWorkspaceDataStore` and `RunbookPersistence` remain active sidecar/static stores; the former `BudgetTargetPersistence` budget sidecar was removed in P04. Searches for “saved in session”, “not implemented”, “Approve”, “Reject”, and `LocalDate.now()` identify remaining non-authoritative UI paths.
 
 ## Global commands
 
@@ -38,8 +38,8 @@ Every panel that creates or maintains durable records must expose Delete or a vi
 | `LEDGER_REGISTER` | `LedgerRegisterPanel` | table, refresh/search/open editor actions | `LedgerQueryService` | navigation to editor | yes | reads current ledger query model | `Txn`/`TxnSplit`, ledger query service | no independent write | canonical ledger authority not yet documented | P02/P03 |
 | `TXN_EDITOR` | `TransactionEditorPanel` | header fields, split table, validate/save/run commands | lookup services | UI draft only/current save path | no for draft | no | account/fund/budget lookups | “Draft saved in session”; no canonical persisted transaction entry | real transaction command service and editor wiring | P02/P03 |
 | `SCHEDULES` | `SchedulesPanel` | kind selector, eligibility list, runbook list, add action | `ScheduleEligibilityService` plus sidecar runbook | `UiWorkspaceDataStore.appendScheduleRunbookEntry` / `RunbookPersistence` | yes, sidecar file | no | account schedule metadata, sidecar runbook | sidecar runbook is not H2 accounting truth | schedules/open-item model | P07 |
-| `BUDGET_EDITOR` | `BudgetEditorPanel` | fund budget table, target editor, save/remove | fund balances + `UiWorkspaceDataStore.budgetTargetsByFundCode` | `BudgetTargetPersistence` sidecar | yes, sidecar file | no | fund balance service, sidecar budget targets | duplicate/non-authoritative budget target store | persistent budget model | P04 |
-| `BUDGET_VS_ACTUAL` | `BudgetVsActualPanel` | table, refresh | fund balances + sidecar targets | none | sidecar-dependent | actuals yes; budgets no | fund balance service, budget target sidecar | budget variance uses sidecar targets | persistent budget reporting | P04/P11 |
+| `BUDGET_EDITOR` | `BudgetEditorPanel` | category budget table, amount editor, save draft, activate version | `BudgetPlanService`, active budget categories | `BudgetPlanService` draft line replacement and activation | yes, H2 | yes for normalized budget plans/lines | `budget_plan`/`budget_line`, budget category lookup | no sidecar budget target authority after P04 | table-state/preference hardening remains a design-rule follow-up | P04 |
+| `BUDGET_VS_ACTUAL` | `BudgetVsActualPanel` | active budget variance table, run/refresh | `BudgetPlanService.activeVariance` | none | yes for queried H2 data | yes for active budget and actual ledger data | active `budget_plan`/`budget_line`, canonical ledger actuals | neutral state when no active budget version exists | report-library expansion remains P11 | P04/P11 |
 | `ASSETS_REGISTER` | `AssetsRegisterPanel` | asset table, lifecycle log, add lifecycle action | schedule eligibility + sidecar lifecycle | `UiWorkspaceDataStore.appendAssetLifecycleEntry` | yes, sidecar file | no | schedule/account services, sidecar runbook | lifecycle log is sidecar text | fixed-asset register/depreciation authority | P08 |
 | `DEPRECIATION_RUNS` | `DepreciationRunsPanel` | run table/log, record run action | schedule/fixed-asset candidates + sidecar | `UiWorkspaceDataStore.appendDepreciationRunEntry` | yes, sidecar file | no | schedule services, sidecar runbook | depreciation run is sidecar text | depreciation service and ledger integration | P08 |
 | `INVENTORY` | `InventoryPanel` | item/movement inputs, movement log | schedule eligibility + sidecar movements | `UiWorkspaceDataStore.appendInventoryMovementEntry` | yes, sidecar file | no | schedule services, sidecar runbook | inventory movements are sidecar text | inventory/supplies model and accounting | P09 |
@@ -66,5 +66,5 @@ Every panel that creates or maintains durable records must expose Delete or a vi
 
 1. P01 must replace static panel factories and global text dispatch with lifecycle-owned workspace services and typed commands.
 2. P02/P03 must provide a canonical transaction command service before enabling transaction-editor persistence.
-3. P04/P05/P07/P08/P09 must remove sidecar/static stores from authoritative budget, bank, schedule, asset, depreciation, and inventory operations.
+3. P04 removed the budget sidecar from authoritative budget operations; P05/P07/P08/P09 must still remove sidecar/static stores from bank, schedule, asset, depreciation, and inventory operations.
 4. P10/P12 must remove approval/rejection terminology from user-facing production workflows unless the plan is amended.
