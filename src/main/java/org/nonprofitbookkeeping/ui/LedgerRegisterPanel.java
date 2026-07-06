@@ -95,7 +95,7 @@ public class LedgerRegisterPanel implements AppPanel
 
         refresh.setOnAction(e -> reload());
         newTransaction.setOnAction(e -> openNewTransaction());
-        inspect.setOnAction(e -> inspectSelected());
+        inspect.setOnAction(e -> openJournalPane());
         openEditor.setOnAction(e -> openSelectedInEditor());
         deleteCurrent.setOnAction(e -> deleteSelectedLine());
 
@@ -184,6 +184,19 @@ public class LedgerRegisterPanel implements AppPanel
                 blankToNone(view.bankAccountName()),
                 String.valueOf(view.lines().size()),
                 view.status() == null || view.status().isBlank() ? "ENTERED" : view.status());
+    }
+
+    private void openJournalPane()
+    {
+        Row sel = txnTable.getSelectionModel().getSelectedItem();
+        String context = sel == null
+                ? "Inspect journal from Ledger Register"
+                : JournalPane.centeredContext(sel.id(), "Ledger Register");
+        UiDebug.log("ledger-register", "Opening Journal Pane with context '" + context + "'.");
+        DrillThroughCoordinator.openPanelWithContext(AppPanelId.JOURNAL_PANE, context);
+        status.setText(sel == null
+                ? "Opened Journal Pane without filters."
+                : "Opened Journal Pane centered at Txn #" + sel.id() + ".");
     }
 
     private void inspectSelected()

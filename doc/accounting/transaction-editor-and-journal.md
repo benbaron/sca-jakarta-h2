@@ -62,7 +62,7 @@ The Journal Pane presents transactions in traditional accounting general-journal
 - credit;
 - line memo/details where applicable.
 
-The Journal Pane opens unfiltered by default but may be centered at a supplied transaction ID. It includes filters that can be applied on the fly.
+The Journal Pane opens unfiltered by default but may be centered at a supplied transaction ID. It includes date and text filters that can be applied on the fly against canonical transaction projections.
 
 Sources:
 
@@ -71,7 +71,7 @@ Sources:
 
 ## Editing from the Journal Pane
 
-Users do not edit directly in the journal grid.
+Users do not edit directly in the journal grid. The grid is read-only and each displayed line is a flattened view of the canonical transaction journal projection, not an independent ledger model.
 
 When the user chooses to edit an existing journal transaction, the Journal Pane opens Transaction Editor in Edit mode with the transaction ID.
 
@@ -89,3 +89,8 @@ The Journal Pane and Transaction Editor must make provision for supplemental tra
 - bank clearing/reconciliation detail.
 
 Supplemental records must be persisted through the owning domain service and linked to the canonical transaction or transaction line by stable IDs.
+
+
+## P03-C2 implementation note
+
+P03-C2 adds `JOURNAL_PANE` as a first-class workspace panel. Left Navigation under Accounting exposes **Inspect Journal**, and Ledger Register **Inspect Journal** opens that same pane, centered at the selected transaction when one is selected. The Journal Pane queries `TransactionEntryService.search(...)` and `TransactionEntryService.journalView(...)`, flattens canonical journal projections for display, and routes New/Edit actions back to Transaction Editor mode contexts. The journal table uses sortable, resizable, reorderable columns; persists column widths, order, and sort state under the active company key; keeps the table in a visible `SplitPane`; and formats debit/credit displays with a currency symbol and two decimals while leaving canonical `BigDecimal` values unchanged. Supplemental transaction record display remains a provisioned design area for the owning future Inventory, Asset, Open Item, Deferral, Banking, or Reconciliation slice; P03-C2 does not create a parallel supplemental persistence model.
