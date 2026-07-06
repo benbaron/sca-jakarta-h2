@@ -6,7 +6,7 @@ active_status: VERIFYING
 active_branch: work
 active_pull_request: pending
 active_head: HEAD
-next_action: "Create the P03-C2 PR, record PR validation, and manually verify the Journal Pane in a desktop JavaFX run."
+next_action: "Commit P03-C2 review corrections, update the PR, record validation, and manually verify the Journal Pane in a desktop JavaFX run."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -345,11 +345,11 @@ Status: VERIFYING.
 Branch: `work`
 Pull request: pending
 Head commit: `HEAD`
-Completed deliverables: Added first-class Journal Pane panel ID, factory, navigation item under Accounting, Ledger Register Inspect Journal navigation, canonical journal projection flattening, on-the-fly filters, centered transaction context, and journal-to-Transaction Editor New/Edit handoff.
+Completed deliverables: Added first-class Journal Pane panel ID, factory, navigation item under Accounting, Ledger Register Inspect Journal navigation, canonical journal projection flattening, on-the-fly filters, centered transaction context, journal-to-Transaction Editor New/Edit handoff, split-pane supplemental-record provision area, sortable/resizable/reorderable journal columns, active-company-keyed table state persistence, and two-decimal currency display for debit/credit columns.
 Remaining deliverables: create PR, record PR details, and perform any available remote PR validation.
-Test status: Baseline `mvn -DskipTests compile` passed before edits; focused `mvn -Dtest=JournalPaneTest,ProductionWorkspaceCommandRoutingTest test` passed with 2 tests run while the JavaFX command-routing class was skipped/reported as 0 tests in this environment; `mvn clean verify` passed with 257 tests run and 9 skipped.
+Test status: Baseline `mvn -DskipTests compile` passed before edits; focused `mvn -Dtest=JournalPaneTest test` passed with 2 tests run after design-rule corrections; previous focused `mvn -Dtest=JournalPaneTest,ProductionWorkspaceCommandRoutingTest test` passed with 2 tests run while the JavaFX command-routing class was skipped/reported as 0 tests in this environment; final `mvn clean verify` passed with 257 tests run and 9 skipped after review corrections.
 Known failures: none. Desktop visual validation still requires a local JavaFX run because this container has no interactive display.
-Next exact action: commit, create the PR, record PR validation, and manually verify the Journal Pane in a desktop JavaFX run.
+Next exact action: commit review corrections, update the PR, record PR validation, and manually verify the Journal Pane in a desktop JavaFX run.
 
 Implement and document:
 

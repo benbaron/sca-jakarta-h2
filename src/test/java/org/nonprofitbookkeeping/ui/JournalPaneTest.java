@@ -43,8 +43,8 @@ public class JournalPaneTest
         assertEquals("Reference memo", rows.get(0).memo());
         assertEquals("1000 Operating Bank", rows.get(0).account());
         assertEquals("GEN General", rows.get(0).fund());
-        assertEquals("25.00", rows.get(0).debit());
-        assertEquals("0", rows.get(0).credit());
+        assertEquals("$25.00", rows.get(0).debit());
+        assertEquals("$0.00", rows.get(0).credit());
         assertEquals("deposit", rows.get(0).lineDetails());
     }
 }
