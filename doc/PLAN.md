@@ -1,12 +1,12 @@
 ---
 plan_version: 4
 active_phase: P03
-active_slice: P03-C1
+active_slice: P03-C2
 active_status: VERIFYING
-active_branch: codex/P03-P03-C1-transaction-editor-register-modes
+active_branch: work
 active_pull_request: pending
 active_head: HEAD
-next_action: "Finish P03-C1 verification and PR, then execute P03-C2 Journal Pane."
+next_action: "Create the P03-C2 PR, record PR validation, and manually verify the Journal Pane in a desktop JavaFX run."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -340,7 +340,16 @@ If this requires major redesign then remark this in documentation.
 
 ### P03-C2 — Journal Pane and Inspect Journal navigation
 
-Status: READY after P03-C1.
+Status: VERIFYING.
+
+Branch: `work`
+Pull request: pending
+Head commit: `HEAD`
+Completed deliverables: Added first-class Journal Pane panel ID, factory, navigation item under Accounting, Ledger Register Inspect Journal navigation, canonical journal projection flattening, on-the-fly filters, centered transaction context, and journal-to-Transaction Editor New/Edit handoff.
+Remaining deliverables: create PR, record PR details, and perform any available remote PR validation.
+Test status: Baseline `mvn -DskipTests compile` passed before edits; focused `mvn -Dtest=JournalPaneTest,ProductionWorkspaceCommandRoutingTest test` passed with 2 tests run while the JavaFX command-routing class was skipped/reported as 0 tests in this environment; `mvn clean verify` passed with 257 tests run and 9 skipped.
+Known failures: none. Desktop visual validation still requires a local JavaFX run because this container has no interactive display.
+Next exact action: commit, create the PR, record PR validation, and manually verify the Journal Pane in a desktop JavaFX run.
 
 Implement and document:
 

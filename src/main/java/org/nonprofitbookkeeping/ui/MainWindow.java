@@ -339,6 +339,7 @@ public class MainWindow extends BorderPane
             case DASHBOARD -> "Dashboard";
             case LEDGER_REGISTER -> "Ledger Register";
             case TXN_EDITOR -> "Transaction Editor";
+            case JOURNAL_PANE -> "Inspect Journal";
             case SCHEDULES -> "Outstanding / Schedules";
             case BUDGET_EDITOR -> "Budget Editor";
             case BUDGET_VS_ACTUAL -> "Budget vs Actual";
