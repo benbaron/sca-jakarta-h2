@@ -90,6 +90,7 @@ public class ProductionWorkspaceWindow extends BorderPane
                 this::openPanel,
                 inspectorPane::show,
                 this::inspectorContext);
+        DrillThroughCoordinator.configureOpener(this::openPanel);
 
         workspaceContext.activePeriodDateProperty().addListener(
                 (observable, oldDate, newDate) -> updateActivePeriodLabel());

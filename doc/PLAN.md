@@ -5,7 +5,7 @@ active_slice: P03-S3-corrective
 active_status: VERIFYING
 active_branch: work
 active_pull_request: pending local make_pr record for Transaction Editor and Ledger Register corrective UX wiring
-active_head: HEAD (Add TestFX design rule coverage and Codex Maven proxy settings)
+active_head: HEAD (Fix ledger register editor drill-through)
 next_action: "Run TestFX design-rule workflow tests under a desktop display or xvfb; xvfb-run is not installed in this container, so robot tests are currently skipped without DISPLAY."
 ---
 
@@ -950,6 +950,7 @@ Completed deliverables in this corrective run:
 - removed the checked-in Codex-only Maven proxy definitions from `.mvn/settings.xml` so GitHub Actions and other CI runners do not try to resolve a non-existent `proxy` host while downloading plugins.
 - added **Delete Current Line** to Ledger Register, routed through `TransactionCorrectionService` for direct-delete audit behavior or non-direct reversing-entry behavior, with selection/confirmation/status handling.
 - kept **Open Selected in Editor** wired through the drill-through coordinator and added an explicit no-selection status message so selected rows are recalled into Transaction Editor rather than failing silently.
+- fixed the production JavaFX shell to configure the shared drill-through opener, repairing the runnable app path where Ledger Register **Open Selected in Editor** stored context but did not open or focus Transaction Editor.
 - changed Transaction Editor save so loaded/recalled entries are used as source data for a new appended transaction; save now always calls `TransactionEntryService.enter(...)` instead of overwriting the loaded transaction.
 - added stable automation IDs to the Ledger Register and Transaction Editor controls needed by TestFX workflow coverage.
 - changed Ledger Register and Transaction Editor tables to unconstrained resize policy so horizontal scrolling remains available instead of forcing clipped constrained columns.
@@ -975,10 +976,12 @@ Validation completed on 2026-07-05:
 - `mvn -DskipTests compile` passed;
 - `mvn -Dtest=LedgerRegisterPanelTest,TransactionEditorPanelSavedLedgerContextTest test` passed;
 - `mvn clean verify` passed with 240 tests run, 0 failures, 0 errors, and 1 skipped test before the TestFX design-rule test additions;
+- focused `mvn -Dtest=ProductionWorkspaceCommandRoutingTest,LedgerRegisterPanelTest test` passed for non-FX Ledger Register coverage; the JavaFX command-routing class was assumption-skipped without `DISPLAY` in this container;
 - after restoring the Codex Maven proxy entries, `mvn -DskipTests compile` passed;
 - `mvn -Dtest=ProductionDesignRulesTestFxTest test` passed at the Maven/JUnit level with 3 tests skipped because `DISPLAY` is absent;
 - `xvfb-run -a mvn -Dtest=ProductionDesignRulesTestFxTest test` could not run because `xvfb-run` is not installed in this container;
-- after restoring the Codex Maven proxy entries, `mvn clean verify` passed with 248 tests run, 0 failures, 0 errors, and 8 skipped tests.
+- after restoring the Codex Maven proxy entries, `mvn clean verify` passed with 248 tests run, 0 failures, 0 errors, and 8 skipped tests;
+- on 2026-07-06, `mvn clean verify` passed after the production-shell drill-through fix with 248 tests run, 0 failures, 0 errors, and 8 skipped tests.
 
 User-visible changes:
 
@@ -988,7 +991,7 @@ User-visible changes:
 - future local UI work is governed by the clarified split-pane and dual-scrollbar rule for pane portions that can hide default-size text.
 - future durable-record functions are governed by the clarified Delete requirement, including the transaction-specific direct-delete versus reversing-entry behavior.
 - Ledger Register exposes **Delete Current Line** for the selected transaction, using direct delete under `DIRECT_EDIT` or a reversing entry when correction settings require non-direct correction.
-- **Open Selected in Editor** recalls the selected transaction into Transaction Editor and raises/focuses that workspace tab.
+- **Open Selected in Editor** recalls the selected transaction into Transaction Editor and raises/focuses that workspace tab in the production shell.
 - Saving in Transaction Editor appends a new entry even when the form was populated from a recalled ledger transaction, avoiding accidental overwrite of the selected ledger entry.
 - the top chrome now selects an accounting period rather than a date; Settings controls the day-of-month used to calculate the selected period's start date.
 - Ledger Register and Transaction Editor expose stable TestFX IDs and table/split-pane geometry needed to enforce `doc/ui_design_rules.md`;
