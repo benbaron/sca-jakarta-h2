@@ -41,11 +41,18 @@ public class BudgetEditorPanel implements AppPanel
         Label title = new Label("Budget Editor");
         title.getStyleClass().add("panel-title");
 
+        status.setId("budgetEditorStatus");
+        table.setId("budgetEditorCategoryTable");
+        amountField.setId("budgetEditorAmountField");
+
         Button refresh = new Button("Refresh Budget");
+        refresh.setId("budgetEditorRefreshButton");
         refresh.setOnAction(e -> reload());
         Button saveTarget = new Button("Save Draft Amount");
+        saveTarget.setId("budgetEditorSaveDraftAmountButton");
         saveTarget.setOnAction(e -> saveTarget());
         Button activate = new Button("Activate Version");
+        activate.setId("budgetEditorActivateVersionButton");
         activate.setOnAction(e -> activatePlan());
 
         amountField.setPromptText("Budget amount");
