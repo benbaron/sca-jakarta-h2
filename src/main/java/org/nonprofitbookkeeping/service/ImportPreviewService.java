@@ -17,6 +17,7 @@ import java.util.Map;
 public class ImportPreviewService
 {
     private final ImportExportOrchestrationService orchestrationService;
+    private final BankImportNormalizationService bankImportNormalizationService;
     public ImportPreviewService()
     {
         this(new ImportExportOrchestrationService());
@@ -24,7 +25,14 @@ public class ImportPreviewService
 
     public ImportPreviewService(ImportExportOrchestrationService orchestrationService)
     {
+        this(orchestrationService, new BankImportNormalizationService());
+    }
+
+    public ImportPreviewService(ImportExportOrchestrationService orchestrationService,
+                                BankImportNormalizationService bankImportNormalizationService)
+    {
         this.orchestrationService = orchestrationService;
+        this.bankImportNormalizationService = bankImportNormalizationService;
     }
 
     public CoaPreviewResult previewCoaCsv(Path path)
@@ -114,6 +122,20 @@ public class ImportPreviewService
     {
         ImportExportOrchestrationService.BankImportResult result = orchestrationService.importBankDataFile(path);
         return new BankPreviewResult(path.getFileName().toString(), result.format(), result.transactionCount(), result.transactions());
+    }
+
+    public NormalizedBankPreviewResult previewNormalizedBankStatement(Path path,
+                                                                      BankImportNormalizationService.DuplicateContext duplicateContext)
+    {
+        ImportExportOrchestrationService.BankImportResult result = orchestrationService.importBankDataFile(path);
+        BankImportNormalizationService.BankImportNormalizationResult normalized = bankImportNormalizationService.normalize(
+                result.transactions(),
+                duplicateContext);
+        return new NormalizedBankPreviewResult(
+                path.getFileName().toString(),
+                result.format(),
+                result.transactionCount(),
+                normalized.lines());
     }
 
 
@@ -344,5 +366,16 @@ public class ImportPreviewService
                                     int transactionCount,
                                     List<BankTransactionRecord> transactions)
     {
+    }
+
+    public record NormalizedBankPreviewResult(String sourceName,
+                                              BankingDataFormat format,
+                                              int transactionCount,
+                                              List<BankImportNormalizationService.NormalizedBankStatementLine> lines)
+    {
+        public NormalizedBankPreviewResult
+        {
+            lines = lines == null ? List.of() : List.copyOf(lines);
+        }
     }
 }

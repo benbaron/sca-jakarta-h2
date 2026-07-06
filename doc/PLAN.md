@@ -1,12 +1,12 @@
 ---
 plan_version: 3
 active_phase: P05
-active_slice: P05-S1
+active_slice: P05-S2
 active_status: VERIFYING
 active_branch: work
 active_pull_request: pending local make_pr record
 active_head: current HEAD (Add P05 bank import persistence model)
-next_action: "Review and merge P05-S1 bank import persistence model after local verification and unavailable remote/GitHub validation are resolved."
+next_action: "Review P05-S2 normalization/duplicate detection, run remote/GitHub validation when an origin remote is available, then continue P05-S3 review and acceptance workflow after merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1292,7 +1292,7 @@ Persist accepted bank statement lines and import-job facts safely and idempotent
 
 ### P05-S1 — Import batch/line model
 
-Status: VERIFYING on branch `work`. PR: pending local make_pr record. Head: current HEAD (Add P05 bank import persistence model).
+Status: DONE by user direction on 2026-07-06. Branch: work. PR: local make_pr record approved by user. Head: current HEAD includes P05-S1 and P05-S2 follow-up work.
 
 Completed deliverables in this run:
 
@@ -1304,7 +1304,7 @@ Completed deliverables in this run:
 
 Remaining deliverables before merge:
 
-- remote/GitHub validation is unavailable in this worktree because no `origin` remote is configured; review the local PR record and run CI once a remote is available.
+- None for P05-S1 after user-directed verified/done marking; P05-S2 owns normalization and duplicate detection follow-up.
 
 Known failures:
 
@@ -1327,7 +1327,7 @@ Manual testing for user:
 
 - After P05-S2/P05-S3 wire normalization and review acceptance, import an OFX/QFX/CSV/SCLX source, accept/reject/match rows, restart the app, and confirm reviewed batch facts and accepted canonical transactions remain available.
 
-Next exact action: continue P05-S2 normalization and duplicate detection after P05-S1 is reviewed/merged.
+Next exact action: P05-S1 is complete by user direction; continue P05-S2 normalization and duplicate detection.
 
 Original scope:
 
@@ -1339,6 +1339,46 @@ Add or complete:
 - accepted import-job metadata.
 
 ### P05-S2 — Normalization and duplicate detection
+
+Status: VERIFYING on branch `work`. PR: pending local make_pr record. Head: current HEAD (Add P05 bank import normalization).
+
+Completed deliverables in this run:
+
+- added `BankImportNormalizationService` to normalize extracted bank rows before durable review persistence;
+- normalized stable source IDs and parsed posted dates into date projections while preserving separate transaction and posted date fields;
+- added deterministic SHA-256 fingerprint fallback when a stable external source ID is absent;
+- added exact duplicate detection across the in-memory batch and caller-supplied known persisted external IDs/fingerprints;
+- added probable duplicate warning support using caller-supplied date/amount/payee/memo candidates;
+- added row-level error handling for invalid/missing dates, zero/missing amounts, and exact duplicates without discarding neighboring rows;
+- exposed normalized bank preview results through `ImportPreviewService.previewNormalizedBankStatement(...)`;
+- documented the P05-S2 normalization boundary in `doc/banking/import-and-reconciliation.md`;
+- added focused unit coverage for stable IDs, fingerprints, exact duplicates, probable duplicates, invalid rows, and normalized preview integration.
+
+Remaining deliverables before merge:
+
+- remote/GitHub validation is unavailable in this worktree because no `origin` remote is configured; review the local PR record and run CI once a remote is available.
+
+Known failures:
+
+- bootstrap `git fetch origin --prune` failed because this worktree has no `origin` remote configured.
+
+Validation completed on 2026-07-06:
+
+- `mvn -Dtest=BankImportNormalizationServiceTest,ImportPreviewServiceTest test` passed with 12 tests run, 0 failures, 0 errors, and 0 skipped tests;
+- `mvn clean verify` passed with 259 tests run, 0 failures, 0 errors, and 9 skipped tests;
+- `git diff --check` passed.
+
+User-visible changes:
+
+- No enabled UI behavior changes in P05-S2; normalized bank preview data and duplicate/error classifications are ready for the later review workflow.
+
+Manual testing for user:
+
+- After P05-S3 wires the review UI, import a bank file containing repeated FITIDs, repeated no-FITID rows, zero-amount rows, and near-date duplicate candidates to verify exact errors and probable warnings remain visible for disposition.
+
+Next exact action: run full verification for P05-S2, then continue P05-S3 review and acceptance workflow after review/merge.
+
+Original scope:
 
 - stable external IDs;
 - deterministic fingerprint fallback;
