@@ -18,7 +18,7 @@ final class FlywaySchemaRecoveryService
 {
     private static final String SCHEMA_NAME = "PUBLIC";
     private static final String HISTORY_TABLE = "flyway_schema_history";
-    private static final String CURRENT_VERSION = "50";
+    private static final String CURRENT_VERSION = "51";
 
     private static final List<String> REQUIRED_TABLES = List.of(
             "chart_of_accounts",

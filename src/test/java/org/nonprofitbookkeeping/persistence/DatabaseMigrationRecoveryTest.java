@@ -41,7 +41,7 @@ public class DatabaseMigrationRecoveryTest
                     "SELECT COUNT(*) FROM chart_of_accounts WHERE name = 'Recovery sentinel'"));
             assertEquals(1L, scalarLong(statement,
                     "SELECT COUNT(*) FROM flyway_schema_history "
-                            + "WHERE version = '50' AND type = 'BASELINE' AND success = TRUE"));
+                            + "WHERE version = '51' AND type = 'BASELINE' AND success = TRUE"));
             assertEquals(0L, archivedHistoryRowCount(connection));
         }
     }
@@ -86,7 +86,7 @@ public class DatabaseMigrationRecoveryTest
                     "SELECT COUNT(*) FROM chart_of_accounts WHERE name = 'Failed-history sentinel'"));
             assertEquals(1L, scalarLong(statement,
                     "SELECT COUNT(*) FROM flyway_schema_history "
-                            + "WHERE version = '50' AND type = 'BASELINE' AND success = TRUE"));
+                            + "WHERE version = '51' AND type = 'BASELINE' AND success = TRUE"));
             assertEquals(2L, archivedHistoryRowCount(connection));
         }
     }
@@ -103,7 +103,7 @@ public class DatabaseMigrationRecoveryTest
         {
             assertEquals(1L, scalarLong(statement,
                     "SELECT COUNT(*) FROM flyway_schema_history "
-                            + "WHERE version = '50' AND success = TRUE"));
+                            + "WHERE version = '51' AND success = TRUE"));
             assertEquals(1L, scalarLong(statement,
                     "SELECT COUNT(*) FROM information_schema.columns "
                             + "WHERE lower(table_name) = 'budget_line' AND lower(column_name) = 'amount'"));
