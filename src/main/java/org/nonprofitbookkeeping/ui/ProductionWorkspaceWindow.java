@@ -107,8 +107,10 @@ public class ProductionWorkspaceWindow extends BorderPane
 
     public void openPanel(AppPanelId panelId)
     {
+        UiDebug.log("workspace", "openPanel requested for " + panelId + ".");
         if (databaseFailure != null && panelId != AppPanelId.DASHBOARD)
         {
+            UiDebug.log("workspace", "openPanel blocked by database failure for " + panelId + ".");
             inspectorPane.show(
                     "Database unavailable",
                     "Select, repair, or create a database from the Dashboard or File menu before opening accounting workspaces.");
@@ -120,6 +122,8 @@ public class ProductionWorkspaceWindow extends BorderPane
         {
             panelHost.show(panelId);
             activePanelLabel.setText("Workspace: " + panelHost.getActiveTitle());
+            UiDebug.log("workspace", "openPanel completed for " + panelId
+                    + "; active panel is " + panelHost.activePanelId() + ".");
         }
         catch (RuntimeException ex)
         {

@@ -123,6 +123,7 @@ public final class DashboardHomePanel implements AppPanel
     @Override
     public void onNew()
     {
+        UiDebug.log("dashboard", "New action requested; opening Transaction Editor.");
         open(AppPanelId.TXN_EDITOR, "Dashboard: new transaction");
     }
 
@@ -131,21 +132,33 @@ public final class DashboardHomePanel implements AppPanel
         showLoadMessage("Loading dashboard data…", false);
         LocalDate asOfDate = asOfDateSupplier.get();
         String groupCode = groupCodeSupplier.get();
+        UiDebug.log("dashboard", "Reload requested for group '" + groupCode
+                + "' as of " + asOfDate + " with limit " + RECENT_TRANSACTION_LIMIT + ".");
         UiAsync.run(
                 "dashboard-home-load",
                 () -> dashboardQueryService.load(groupCode, asOfDate, RECENT_TRANSACTION_LIMIT),
                 snapshot ->
                 {
+                    UiDebug.log("dashboard", "Reload succeeded for group '"
+                            + snapshot.organization().code() + "' as of " + snapshot.asOfDate() + ".");
                     applySnapshot(snapshot);
                     showLoadMessage("", false);
                 },
-                ex -> showLoadMessage(
-                        "Dashboard data could not be loaded: " + UiErrors.safeMessage(ex),
-                        true));
+                ex -> {
+                    UiDebug.log("dashboard", "Reload failed: " + UiErrors.safeMessage(ex));
+                    showLoadMessage(
+                            "Dashboard data could not be loaded: " + UiErrors.safeMessage(ex),
+                            true);
+                });
     }
 
     void applySnapshot(DashboardSnapshot snapshot)
     {
+        UiDebug.log("dashboard", "Applying snapshot with "
+                + snapshot.recentTransactions().size() + " recent transaction(s), "
+                + snapshot.reconciliations().size() + " reconciliation row(s), "
+                + snapshot.budgetActuals().size() + " budget row(s), and "
+                + snapshot.openItems().totalOpenItems() + " open item(s).");
         bookCash.setText(DashboardValueFormatter.money(snapshot.bookCash()));
         clearedCash.setText(snapshot.reconciledCash()
                 .map(value -> "Cleared " + DashboardValueFormatter.money(value))
@@ -635,6 +648,7 @@ public final class DashboardHomePanel implements AppPanel
 
     private static void open(AppPanelId panelId, String context)
     {
+        UiDebug.log("dashboard", "Opening " + panelId + " with context '" + context + "'.");
         DrillThroughCoordinator.openPanelWithContext(panelId, context);
     }
 

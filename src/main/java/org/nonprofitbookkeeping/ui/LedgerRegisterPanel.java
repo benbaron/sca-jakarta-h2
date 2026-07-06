@@ -137,18 +137,23 @@ public class LedgerRegisterPanel implements AppPanel
         if (!context.isBlank())
         {
             drillContext.setText(context);
+            UiDebug.log("ledger-register", "Reload received drill-through context '" + context + "'.");
         }
         status.setText("Loading ledger transactions...");
+        UiDebug.log("ledger-register", "Reload requested with from='" + fromDate.getText()
+                + "', to='" + toDate.getText() + "', search='" + searchText.getText() + "'.");
         UiAsync.run("ledger-register-load",
                 () -> UiServiceRegistry.transactionEntry().search(parseDateOrNull(fromDate.getText()), parseDateOrNull(toDate.getText()), searchText.getText(), 250),
                 rows -> {
                     txnTable.getItems().setAll(rows.stream().map(LedgerRegisterPanel::toRow).toList());
                     status.setText("Loaded " + rows.size() + " transaction(s).");
                     details.clear();
+                    UiDebug.log("ledger-register", "Reload loaded " + rows.size() + " transaction(s).");
                 },
                 ex -> {
                     status.setText("Failed to load ledger transactions: " + UiErrors.safeMessage(ex));
                     details.clear();
+                    UiDebug.log("ledger-register", "Reload failed: " + UiErrors.safeMessage(ex));
                 });
     }
 
@@ -187,6 +192,7 @@ public class LedgerRegisterPanel implements AppPanel
         {
             status.setText("Select a ledger transaction before inspecting its journal.");
             details.setText("No transaction selected.");
+            UiDebug.log("ledger-register", "Inspect Journal requested without a selected row.");
         }
     }
 
@@ -200,6 +206,7 @@ public class LedgerRegisterPanel implements AppPanel
         else
         {
             status.setText("Select a ledger transaction before opening it in Transaction Editor.");
+            UiDebug.log("ledger-register", "Open Selected in Editor requested without a selected row.");
         }
     }
 
@@ -209,16 +216,20 @@ public class LedgerRegisterPanel implements AppPanel
         if (sel == null)
         {
             status.setText("Select a ledger transaction before deleting the current line.");
+            UiDebug.log("ledger-register", "Delete Current Line requested without a selected row.");
             return;
         }
 
         CorrectionMethod method = MainWindow.sharedSessionState().preferences().correctionMethod();
+        UiDebug.log("ledger-register", "Delete Current Line requested for Txn #" + sel.id()
+                + " using correction method " + method + ".");
         if (method == CorrectionMethod.DIRECT_EDIT)
         {
             if (!confirm("Delete transaction #" + sel.id() + "?",
                     "This removes the selected entered transaction after period and reconciliation checks and writes an audit snapshot."))
             {
                 status.setText("Delete cancelled for Txn #" + sel.id() + ".");
+                UiDebug.log("ledger-register", "Direct delete cancelled for Txn #" + sel.id() + ".");
                 return;
             }
             status.setText("Deleting Txn #" + sel.id() + "...");
@@ -229,9 +240,14 @@ public class LedgerRegisterPanel implements AppPanel
                     id -> {
                         status.setText("Deleted Txn #" + id + ".");
                         details.clear();
+                        UiDebug.log("ledger-register", "Direct delete completed for Txn #" + id + ".");
                         reload();
                     },
-                    ex -> status.setText("Delete failed for Txn #" + sel.id() + ": " + UiErrors.safeMessage(ex)));
+                    ex -> {
+                        status.setText("Delete failed for Txn #" + sel.id() + ": " + UiErrors.safeMessage(ex));
+                        UiDebug.log("ledger-register", "Direct delete failed for Txn #" + sel.id()
+                                + ": " + UiErrors.safeMessage(ex));
+                    });
         }
         else
         {
@@ -239,6 +255,7 @@ public class LedgerRegisterPanel implements AppPanel
                     "Current correction settings do not allow hard deletion. A reversing entry will be created using the active period date."))
             {
                 status.setText("Reversal cancelled for Txn #" + sel.id() + ".");
+                UiDebug.log("ledger-register", "Reversal cancelled for Txn #" + sel.id() + ".");
                 return;
             }
             status.setText("Creating reversing entry for Txn #" + sel.id() + "...");
@@ -247,9 +264,15 @@ public class LedgerRegisterPanel implements AppPanel
                     result -> {
                         status.setText("Created reversing Txn #" + result.reversalTransactionId() + " for original Txn #" + sel.id() + ".");
                         details.clear();
+                        UiDebug.log("ledger-register", "Reversal completed for Txn #" + sel.id()
+                                + " with reversal Txn #" + result.reversalTransactionId() + ".");
                         reload();
                     },
-                    ex -> status.setText("Reversal failed for Txn #" + sel.id() + ": " + UiErrors.safeMessage(ex)));
+                    ex -> {
+                        status.setText("Reversal failed for Txn #" + sel.id() + ": " + UiErrors.safeMessage(ex));
+                        UiDebug.log("ledger-register", "Reversal failed for Txn #" + sel.id()
+                                + ": " + UiErrors.safeMessage(ex));
+                    });
         }
     }
 
@@ -263,7 +286,10 @@ public class LedgerRegisterPanel implements AppPanel
 
     private void openRowInEditor(Row row)
     {
-        DrillThroughCoordinator.openTransactionEditorWithContext(editorContext(row.id()));
+        String context = editorContext(row.id());
+        UiDebug.log("ledger-register", "Open Selected in Editor requested for Txn #"
+                + row.id() + " with context '" + context + "'.");
+        DrillThroughCoordinator.openTransactionEditorWithContext(context);
         status.setText("Opened Txn #" + row.id() + " in Transaction Editor.");
     }
 
@@ -289,15 +315,20 @@ public class LedgerRegisterPanel implements AppPanel
     private void inspectRow(Row row)
     {
         status.setText("Loading journal details for Txn #" + row.id() + "...");
+        UiDebug.log("ledger-register", "Inspect Journal requested for Txn #" + row.id() + ".");
         UiAsync.run("ledger-journal-inspect-" + row.id(),
                 () -> UiServiceRegistry.transactionEntry().journalView(row.id()),
                 projection -> {
                     details.setText(LedgerRegisterPanel.renderJournal(row, projection));
                     status.setText("Loaded journal details for Txn #" + row.id() + ".");
+                    UiDebug.log("ledger-register", "Inspect Journal loaded " + projection.lines().size()
+                            + " line(s) for Txn #" + row.id() + ".");
                 },
                 ex -> {
                     details.setText("Could not load journal for txn " + row.id() + ": " + UiErrors.safeMessage(ex));
                     status.setText("Journal inspection failed for Txn #" + row.id() + ".");
+                    UiDebug.log("ledger-register", "Inspect Journal failed for Txn #" + row.id()
+                            + ": " + UiErrors.safeMessage(ex));
                 });
     }
 
