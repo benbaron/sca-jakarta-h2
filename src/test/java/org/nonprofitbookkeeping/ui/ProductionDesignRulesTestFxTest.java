@@ -5,6 +5,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -88,6 +89,31 @@ public class ProductionDesignRulesTestFxTest
         assertNotNull(robot.lookup("#transactionEditorTotalsLabel").query());
     }
 
+
+    @Test
+    public void budgetPanelsAndDashboardBudgetCardsAreReachableForVisualValidation(FxRobot robot)
+    {
+        robot.interact(() -> mainWindow.openPanel(AppPanelId.DASHBOARD));
+        WaitForAsyncUtils.waitForFxEvents();
+        assertTrue(containsText(robot, "Budget Performance"));
+        assertTrue(containsText(robot, "Budget vs Actual (YTD)"));
+        assertTrue(containsText(robot, "YTD Surplus (Deficit)"));
+
+        robot.interact(() -> mainWindow.openPanel(AppPanelId.BUDGET_EDITOR));
+        WaitForAsyncUtils.waitForFxEvents();
+        assertNotNull(lookupAs(robot, "#budgetEditorCategoryTable", TableView.class));
+        assertNotNull(lookupAs(robot, "#budgetEditorAmountField", javafx.scene.control.TextField.class));
+        assertNotNull(lookupAs(robot, "#budgetEditorSaveDraftAmountButton", Button.class));
+        assertNotNull(lookupAs(robot, "#budgetEditorActivateVersionButton", Button.class));
+        assertNotNull(lookupAs(robot, "#budgetEditorStatus", Label.class));
+
+        robot.interact(() -> mainWindow.openPanel(AppPanelId.BUDGET_VS_ACTUAL));
+        WaitForAsyncUtils.waitForFxEvents();
+        assertNotNull(lookupAs(robot, "#budgetVsActualTable", TableView.class));
+        assertNotNull(lookupAs(robot, "#budgetVsActualRunButton", Button.class));
+        assertNotNull(lookupAs(robot, "#budgetVsActualStatus", Label.class));
+    }
+
     @Test
     public void productionShellUsesStableIdsAndPeriodSelectorWorkflow(FxRobot robot)
     {
@@ -123,6 +149,13 @@ public class ProductionDesignRulesTestFxTest
             return parent.getChildrenUnmodifiable().stream().anyMatch(child -> contains(child, target));
         }
         return false;
+    }
+
+    private static boolean containsText(FxRobot robot, String text)
+    {
+        return !robot.lookup(node -> node instanceof javafx.scene.text.Text textNode
+                && text.equals(textNode.getText())
+                || node instanceof Label label && text.equals(label.getText())).queryAll().isEmpty();
     }
 
     private static <T> T lookupAs(FxRobot robot, String selector, Class<T> type)

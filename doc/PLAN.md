@@ -1,12 +1,12 @@
 ---
 plan_version: 3
-active_phase: P04
-active_slice: P04-S3
+active_phase: P05
+active_slice: P05-S2
 active_status: VERIFYING
 active_branch: work
-active_pull_request: local make_pr record: Convert budget UI to normalized budget plans
-active_head: HEAD (Record P04 budget validation handoff)
-next_action: "Open the desktop JavaFX app and visually check Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison before merge."
+active_pull_request: pending local make_pr record
+active_head: current HEAD (Add P05 bank import persistence model)
+next_action: "Review P05-S2 normalization/duplicate detection, run remote/GitHub validation when an origin remote is available, then continue P05-S3 review and acceptance workflow after merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -68,8 +68,8 @@ When a branch begins, update front matter and the phase section. When a PR is op
 | P01 | Production shell and workspace composition | P00 | DONE |
 | P02 | Canonical ledger and transaction operations | P00 | DONE |
 | P03 | Ledger Register and Transaction Editor | P01, P02 | DONE |
-| P04 | Persistent budgeting | P02 | IN_PROGRESS |
-| P05 | Bank import and statement-line persistence | P02 | BLOCKED |
+| P04 | Persistent budgeting | P02 | DONE |
+| P05 | Bank import and statement-line persistence | P02 | READY |
 | P06 | Bank reconciliation | P05 | BLOCKED |
 | P07 | Schedules and open items | P02 | BLOCKED |
 | P08 | Fixed assets and depreciation | P02 | BLOCKED |
@@ -133,7 +133,7 @@ Create only when their owning phase begins:
 - `doc/architecture/application-composition.md` — P01 (created in P01-S1)
 - `doc/architecture/command-and-query-boundaries.md` — P01
 - `doc/accounting/budget-model.md` — P04 (created in P04-S1)
-- `doc/banking/import-and-reconciliation.md` — P05/P06
+- `doc/banking/import-and-reconciliation.md` — P05/P06 (created in P05-S1)
 - `doc/accounting/open-items-and-schedules.md` — P07
 - `doc/database/schema-and-migration-policy.md` — first schema-changing phase
 - `doc/database/database-lifecycle.md` — P12
@@ -1096,11 +1096,11 @@ Do not reimplement accounting rules in JavaFX.
 # P04 — Persistent budgeting
 
 **Selector:** `PHASE=P04`
-**Status:** IN_PROGRESS
+**Status:** DONE
 **Depends on:** P02
-**Branch:** work
-**Pull request:** pending local make_pr record
-**Head:** HEAD (P04-S1 budget model migration commit)
+**Branch:** merged by user approval on 2026-07-06
+**Pull request:** local make_pr record approved by user on 2026-07-06
+**Head:** cleared after user approval
 
 ## Objective
 
@@ -1201,7 +1201,7 @@ Activation selects the comparison version; it is not an approval workflow.
 
 ### P04-S3 — Budget UI and dashboard
 
-Status: VERIFYING. Branch: work. PR: local make_pr record: Convert budget UI to normalized budget plans. Head: HEAD (Record P04 budget validation handoff).
+Status: DONE by user approval on 2026-07-06. Branch: work. PR: local make_pr record approved by user. Head: 0196373 Add UI IDs and TestFX coverage for P04 budget UI; update docs to reflect normalized budget persistence.
 
 Completed deliverables in this run:
 
@@ -1213,19 +1213,20 @@ Completed deliverables in this run:
 
 Remaining deliverables before merge:
 
-- perform a desktop visual check of Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison outside the headless container.
+- None after user approval on 2026-07-06.
 
 Known failures:
 
-- bootstrap `git fetch origin --prune` failed because this worktree has no `origin` remote configured;
-- desktop visual validation of the P04 budget screens remains outstanding in this non-interactive container.
+- bootstrap `git fetch origin --prune` failed because this worktree has no `origin` remote configured; remote/GitHub validation was unavailable locally, and the user approved the local PR record on 2026-07-06.
 
 Validation completed on 2026-07-06:
 
 - `mvn -DskipTests compile` passed;
 - after installing `xvfb`, `libgtk-3-0`, and related GTK/X11 runtime libraries, `xvfb-run -a mvn -Dtest=ProductionDesignRulesTestFxTest test` passed with 3 tests run, 0 failures, 0 errors, and 0 skipped tests;
 - `mvn clean verify` passed with 252 tests run, 0 failures, 0 errors, and 8 skipped tests;
-- focused `mvn -Dtest=BudgetPlanMigrationTest,BudgetPlanServiceTest,JpaDashboardQueryServiceTest,BudgetEditorPanelTest test` passed with 12 tests run, 0 failures, 0 errors, and 0 skipped tests.
+- focused `mvn -Dtest=BudgetPlanMigrationTest,BudgetPlanServiceTest,JpaDashboardQueryServiceTest,BudgetEditorPanelTest test` passed with 12 tests run, 0 failures, 0 errors, and 0 skipped tests;
+- `xvfb-run -a mvn -Dtest=ProductionDesignRulesTestFxTest test` passed with 4 tests run, 0 failures, 0 errors, and 0 skipped tests after adding the budget visual smoke coverage for Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison;
+- `mvn clean verify` passed with 253 tests run, 0 failures, 0 errors, and 9 skipped tests.
 
 User-visible changes:
 
@@ -1237,7 +1238,7 @@ Manual testing for user:
 - Open Budget Editor, enter category amounts, activate the draft version, and confirm Budget vs Actual and Dashboard budget cards compare against that active version.
 - Create a second draft revision, activate it, and confirm the prior active version is archived by the service and no sidecar budget target file is used.
 
-Next exact action: open the desktop JavaFX app and visually check Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison before merge.
+Next exact action: start P05-S1 from current main: inspect import-review workflow, ledger authority, current import panels/services, migrations, and donor import references before adding the bank import batch/statement-line model.
 
 Original scope:
 
@@ -1266,8 +1267,11 @@ Preserve BudgetCategory as distinct from Account and Activity.
 # P05 — Bank import and statement-line persistence
 
 **Selector:** `PHASE=P05`
-**Status:** BLOCKED
+**Status:** VERIFYING
 **Depends on:** P02
+**Branch:** work
+**Pull request:** pending local make_pr record
+**Head:** current HEAD (Add P05 bank import persistence model)
 
 ## Objective
 
@@ -1288,6 +1292,45 @@ Persist accepted bank statement lines and import-job facts safely and idempotent
 
 ### P05-S1 — Import batch/line model
 
+Status: DONE by user direction on 2026-07-06. Branch: work. PR: local make_pr record approved by user. Head: current HEAD includes P05-S1 and P05-S2 follow-up work.
+
+Completed deliverables in this run:
+
+- added `BankImportBatch`, `BankStatementLine`, and `ImportIssue` JPA entities for durable reviewed import batches, statement lines, and row/batch issues;
+- added nondestructive migration `V51__bank_import_batch_and_statement_line.sql` with format/status checks, row/fingerprint uniqueness, nonzero statement amounts, disposition constraints, foreign keys, and indexes;
+- registered the import entities with the production persistence unit;
+- created `doc/banking/import-and-reconciliation.md` to document that in-memory review staging remains separate from durable reviewed import facts and the canonical `txn` ledger;
+- added focused migration coverage for batch/line/issue creation and key constraints.
+
+Remaining deliverables before merge:
+
+- None for P05-S1 after user-directed verified/done marking; P05-S2 owns normalization and duplicate detection follow-up.
+
+Known failures:
+
+- bootstrap `git fetch origin --prune` failed because this worktree has no `origin` remote configured.
+
+Validation completed on 2026-07-06:
+
+- `mvn -DskipTests compile` passed;
+- `mvn -Dtest=BankImportMigrationTest test` passed with 1 test run, 0 failures, 0 errors, and 0 skipped tests;
+- initial `mvn clean verify` failed because the schema-recovery baseline still pointed to version 50 after adding V51;
+- `mvn -Dtest=DatabaseMigrationRecoveryTest,BankImportMigrationTest test` passed with 5 tests run, 0 failures, 0 errors, and 0 skipped tests after updating the recovery baseline to version 51;
+- `mvn clean verify` passed with 254 tests run, 0 failures, 0 errors, and 9 skipped tests;
+- `git diff --check` passed.
+
+User-visible changes:
+
+- No enabled UI behavior changes in P05-S1; this slice adds the H2 model used by later import normalization, duplicate detection, and review acceptance workflows.
+
+Manual testing for user:
+
+- After P05-S2/P05-S3 wire normalization and review acceptance, import an OFX/QFX/CSV/SCLX source, accept/reject/match rows, restart the app, and confirm reviewed batch facts and accepted canonical transactions remain available.
+
+Next exact action: P05-S1 is complete by user direction; continue P05-S2 normalization and duplicate detection.
+
+Original scope:
+
 Add or complete:
 
 - `BankImportBatch`;
@@ -1296,6 +1339,46 @@ Add or complete:
 - accepted import-job metadata.
 
 ### P05-S2 — Normalization and duplicate detection
+
+Status: VERIFYING on branch `work`. PR: pending local make_pr record. Head: current HEAD (Add P05 bank import normalization).
+
+Completed deliverables in this run:
+
+- added `BankImportNormalizationService` to normalize extracted bank rows before durable review persistence;
+- normalized stable source IDs and parsed posted dates into date projections while preserving separate transaction and posted date fields;
+- added deterministic SHA-256 fingerprint fallback when a stable external source ID is absent;
+- added exact duplicate detection across the in-memory batch and caller-supplied known persisted external IDs/fingerprints;
+- added probable duplicate warning support using caller-supplied date/amount/payee/memo candidates;
+- added row-level error handling for invalid/missing dates, zero/missing amounts, and exact duplicates without discarding neighboring rows;
+- exposed normalized bank preview results through `ImportPreviewService.previewNormalizedBankStatement(...)`;
+- documented the P05-S2 normalization boundary in `doc/banking/import-and-reconciliation.md`;
+- added focused unit coverage for stable IDs, fingerprints, exact duplicates, probable duplicates, invalid rows, and normalized preview integration.
+
+Remaining deliverables before merge:
+
+- remote/GitHub validation is unavailable in this worktree because no `origin` remote is configured; review the local PR record and run CI once a remote is available.
+
+Known failures:
+
+- bootstrap `git fetch origin --prune` failed because this worktree has no `origin` remote configured.
+
+Validation completed on 2026-07-06:
+
+- `mvn -Dtest=BankImportNormalizationServiceTest,ImportPreviewServiceTest test` passed with 12 tests run, 0 failures, 0 errors, and 0 skipped tests;
+- `mvn clean verify` passed with 259 tests run, 0 failures, 0 errors, and 9 skipped tests;
+- `git diff --check` passed.
+
+User-visible changes:
+
+- No enabled UI behavior changes in P05-S2; normalized bank preview data and duplicate/error classifications are ready for the later review workflow.
+
+Manual testing for user:
+
+- After P05-S3 wires the review UI, import a bank file containing repeated FITIDs, repeated no-FITID rows, zero-amount rows, and near-date duplicate candidates to verify exact errors and probable warnings remain visible for disposition.
+
+Next exact action: run full verification for P05-S2, then continue P05-S3 review and acceptance workflow after review/merge.
+
+Original scope:
 
 - stable external IDs;
 - deterministic fingerprint fallback;
