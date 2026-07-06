@@ -70,7 +70,7 @@ final class DrillThroughCoordinator
 
     private static void debug(String message)
     {
-        System.err.println("[NPBK][drill-through] " + message);
+        UiDebug.log("drill-through", message);
     }
 
     private static String safeContext(String context)

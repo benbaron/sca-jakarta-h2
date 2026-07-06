@@ -459,6 +459,8 @@ public class TransactionEditorPanel implements AppPanel
 
     private void validateOrPost()
     {
+        UiDebug.log("transaction-editor", "Validate requested with "
+                + splitTable.getItems().size() + " visible split row(s).");
         TransactionValidationResult result = lineEditorModel.validate(parseDateOrNull(dateField.getText()), null, memoField.getText(), null);
         lastValidationResult = new ValidationResult(
                 result.valid() ? "Validation result: ready to save through the transaction service."
@@ -468,6 +470,7 @@ public class TransactionEditorPanel implements AppPanel
                 result.valid() ? 0 : result.errors().size(),
                 lineEditorModel.totals().difference());
         status.setText(lastValidationResult.message());
+        UiDebug.log("transaction-editor", lastValidationResult.message());
     }
 
     private static LocalDate parseDateOrNull(String value)
@@ -649,12 +652,21 @@ public class TransactionEditorPanel implements AppPanel
         if (lastSavedTransactionId == null)
         {
             status.setText("Journal preview unavailable until the transaction has been saved through the transaction service.");
+            UiDebug.log("transaction-editor", "Journal View requested without a saved transaction id.");
             return;
         }
         status.setText("Loading journal preview for saved transaction #" + lastSavedTransactionId + "...");
+        UiDebug.log("transaction-editor", "Journal View requested for saved transaction #" + lastSavedTransactionId + ".");
         UiAsync.run("txn-editor-journal-preview", () -> UiServiceRegistry.transactionEntry().journalView(lastSavedTransactionId),
-                preview -> status.setText(renderJournalPreview(preview)),
-                ex -> status.setText("Journal preview failed: " + UiErrors.safeMessage(ex)));
+                preview -> {
+                    status.setText(renderJournalPreview(preview));
+                    UiDebug.log("transaction-editor", "Journal View loaded " + preview.lines().size()
+                            + " line(s) for Txn #" + preview.transactionId() + ".");
+                },
+                ex -> {
+                    status.setText("Journal preview failed: " + UiErrors.safeMessage(ex));
+                    UiDebug.log("transaction-editor", "Journal View failed: " + UiErrors.safeMessage(ex));
+                });
     }
 
     static String renderJournalPreview(AccountingJournalProjection projection)
@@ -701,6 +713,7 @@ public class TransactionEditorPanel implements AppPanel
         if (date == null)
         {
             status.setText("Save blocked: enter a transaction date as YYYY-MM-DD.");
+            UiDebug.log("transaction-editor", "Save blocked because transaction date is invalid or blank.");
             return;
         }
         for (int i = 0; i < splitTable.getItems().size(); i++)
@@ -708,6 +721,9 @@ public class TransactionEditorPanel implements AppPanel
             syncModelRow(i, splitTable.getItems().get(i));
         }
         TransactionEntryService service = UiServiceRegistry.transactionEntry();
+        UiDebug.log("transaction-editor", "Save requested for date " + date
+                + " with " + lineEditorModel.toCommand(date, null, memoField.getText(), null).lines().size()
+                + " command line(s).");
         UiAsync.<TransactionView>run("txn-editor-save", () -> {
                     TransactionCommand command = lineEditorModel.toCommand(date, null, memoField.getText(), null);
                     return service.enter(command);
@@ -720,12 +736,18 @@ public class TransactionEditorPanel implements AppPanel
                     openSavedInLedger.setDisable(false);
                     status.setText("Saved transaction #" + view.id() + " through TransactionEntryService as a new entry with "
                             + view.lines().size() + " split line(s). The editor is ready for the next appended transaction.");
+                    UiDebug.log("transaction-editor", "Save completed as Txn #" + view.id()
+                            + " with " + view.lines().size() + " split line(s).");
                 },
-                ex -> status.setText("Save failed: " + UiErrors.safeMessage(ex)));
+                ex -> {
+                    status.setText("Save failed: " + UiErrors.safeMessage(ex));
+                    UiDebug.log("transaction-editor", "Save failed: " + UiErrors.safeMessage(ex));
+                });
     }
 
     private void resetForNewEntry()
     {
+        UiDebug.log("transaction-editor", "Resetting editor for a new appended entry.");
         dateField.clear();
         payeeField.clear();
         memoField.clear();
@@ -742,6 +764,8 @@ public class TransactionEditorPanel implements AppPanel
 
     private void applySavedView(TransactionView view)
     {
+        UiDebug.log("transaction-editor", "Applying saved view for Txn #" + view.id()
+                + " with " + view.lines().size() + " split line(s).");
         dateField.setText(view.date() == null ? "" : view.date().toString());
         memoField.setText(view.memo() == null ? "" : view.memo());
         payeeField.setText(view.payeeName() == null ? "" : view.payeeName());
@@ -777,8 +801,10 @@ public class TransactionEditorPanel implements AppPanel
         if (lastSavedTransactionId == null)
         {
             status.setText("Save a transaction before opening it in the ledger register.");
+            UiDebug.log("transaction-editor", "Open Saved in Ledger requested without a saved transaction id.");
             return;
         }
+        UiDebug.log("transaction-editor", "Open Saved in Ledger requested for Txn #" + lastSavedTransactionId + ".");
         DrillThroughCoordinator.openLedgerWithContext(savedLedgerContext(lastSavedTransactionId));
         status.setText("Opened saved transaction #" + lastSavedTransactionId + " in Ledger Register.");
     }
@@ -791,14 +817,14 @@ public class TransactionEditorPanel implements AppPanel
     private void consumeLedgerRegisterContext()
     {
         String context = DrillThroughCoordinator.consumeContext(AppPanelId.TXN_EDITOR);
-        System.err.println("[NPBK][transaction-editor] Panel shown with drill-through context '" + context + "'.");
+        UiDebug.log("transaction-editor", "Panel shown with drill-through context '" + context + "'.");
         Long transactionId = transactionIdFromContext(context);
         if (transactionId == null)
         {
-            System.err.println("[NPBK][transaction-editor] No transaction id found in drill-through context.");
+            UiDebug.log("transaction-editor", "No transaction id found in drill-through context.");
             return;
         }
-        System.err.println("[NPBK][transaction-editor] Loading transaction id " + transactionId
+        UiDebug.log("transaction-editor", "Loading transaction id " + transactionId
                 + " from drill-through context.");
         status.setText("Loading transaction #" + transactionId + " from the ledger register...");
         UiAsync.run("txn-editor-load-" + transactionId,
@@ -811,7 +837,11 @@ public class TransactionEditorPanel implements AppPanel
                     openSavedInLedger.setDisable(false);
                     status.setText("Loaded transaction #" + view.id() + " from the ledger register. Save appends a new transaction and does not overwrite the loaded entry.");
                 },
-                ex -> status.setText("Could not load transaction #" + transactionId + ": " + UiErrors.safeMessage(ex)));
+                ex -> {
+                    status.setText("Could not load transaction #" + transactionId + ": " + UiErrors.safeMessage(ex));
+                    UiDebug.log("transaction-editor", "Could not load transaction #" + transactionId
+                            + ": " + UiErrors.safeMessage(ex));
+                });
     }
 
     static Long transactionIdFromContext(String context)
@@ -867,6 +897,7 @@ public class TransactionEditorPanel implements AppPanel
     @Override
     public void onPanelShown()
     {
+        UiDebug.log("transaction-editor", "Panel shown; checking for ledger-register context.");
         consumeLedgerRegisterContext();
     }
 
