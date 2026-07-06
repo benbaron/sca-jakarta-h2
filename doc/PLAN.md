@@ -5,8 +5,8 @@ active_slice: P03-S3-corrective
 active_status: VERIFYING
 active_branch: work
 active_pull_request: pending local make_pr record for Transaction Editor and Ledger Register corrective UX wiring
-active_head: HEAD (Add selective UI debug toggles)
-next_action: "Run TestFX design-rule workflow tests under a desktop display or xvfb; xvfb-run is not installed in this container, so robot tests are currently skipped without DISPLAY."
+active_head: HEAD (P03-S3 corrective TestFX validation handoff)
+next_action: "Open the desktop JavaFX app and manually validate save reset, cross-panel tab raising/focus, inspect-journal details, the top chrome period selector, the vertical middle-pane resize bar, Delete Current Line, append-only Transaction Editor saves, Ledger Register horizontal scrolling, and Transaction Editor split-table resizing before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -963,7 +963,6 @@ Completed deliverables in this corrective run:
 
 Remaining deliverables before merge:
 
-- run the new TestFX design-rule workflow tests under xvfb or a desktop display; this container has no `xvfb-run`, so the TestFX class is compiling but skipped without `DISPLAY`;
 - complete desktop JavaFX manual validation for save reset, cross-panel tab raising/focus, inspect-journal details, the top chrome period selector, the vertical middle-pane resize bar, Delete Current Line, append-only Transaction Editor saves, Ledger Register horizontal scrolling, and Transaction Editor split-table resizing.
 
 Known failures:
@@ -972,7 +971,7 @@ Known failures:
 - desktop JavaFX manual validation remains outstanding in this non-interactive container.
 - future JavaFX UI slices must follow the documented three-level testing split: non-FX service/model tests, JavaFX Application Thread component tests, and focused sequential TestFX workflow tests with stable control IDs.
 - this container still lacks a desktop display, so JavaFX component checks that require the toolkit are assumption-skipped locally unless run under a display or xvfb.
-- `xvfb-run` is not installed in this container, so display-backed TestFX execution could not be performed here; `mvn` runs compile and the full suite successfully through the restored Codex proxy settings, with TestFX tests skipped because `DISPLAY` is absent.
+- this container initially lacked `xvfb-run` and GTK runtime libraries; installing `xvfb`, `libgtk-3-0`, and related packages enabled display-backed TestFX execution.
 
 Validation completed on 2026-07-05:
 
@@ -988,7 +987,9 @@ Validation completed on 2026-07-05:
 - on 2026-07-06, `mvn -DskipTests compile` and focused `mvn -Dtest=DashboardHomePanelTest,DrillThroughCoordinatorTest,LedgerRegisterPanelTest,TransactionEditorPanelValidationTest,TransactionEditorPanelJournalPreviewTest test` passed after expanding dashboard, ledger register, and transaction editor debug logging;
 - on 2026-07-06, `mvn clean verify` passed after expanding debug logging with 248 tests run, 0 failures, 0 errors, and 8 skipped tests;
 - on 2026-07-06, focused `mvn -Dtest=UiDebugTest test` passed after adding selective debug toggles;
-- on 2026-07-06, `mvn clean verify` passed after adding selective debug toggles with 252 tests run, 0 failures, 0 errors, and 8 skipped tests.
+- on 2026-07-06, `mvn clean verify` passed after adding selective debug toggles with 252 tests run, 0 failures, 0 errors, and 8 skipped tests;
+- on 2026-07-06, after installing xvfb and GTK runtime libraries, `xvfb-run -a mvn -Dtest=ProductionDesignRulesTestFxTest test` passed with 3 tests run, 0 failures, 0 errors, and 0 skipped tests;
+- on 2026-07-06, `mvn clean verify` passed with 252 tests run, 0 failures, 0 errors, and 8 skipped tests.
 
 User-visible changes:
 
@@ -1014,9 +1015,9 @@ Manual testing for user:
 - Click **Open Selected in Editor** and confirm Transaction Editor is raised/focused and loads the selected transaction.
 - With the recalled transaction visible in Transaction Editor, click **Save** and confirm a new transaction is appended rather than overwriting the recalled transaction.
 - In Ledger Register, select an entered transaction and click **Delete Current Line**; confirm direct-delete behavior when Settings -> Correction method is `DIRECT_EDIT`, and confirm reversing-entry behavior when Settings uses a non-direct correction method.
-- Run the TestFX design-rule suite under `xvfb-run -a mvn -Dtest=ProductionDesignRulesTestFxTest test` or a desktop `DISPLAY` and confirm the Ledger Register and Transaction Editor table/split-pane checks execute rather than skip.
+- Open the desktop JavaFX app and manually validate save reset, cross-panel tab raising/focus, inspect-journal details, the top chrome period selector, the vertical middle-pane resize bar, Delete Current Line, append-only Transaction Editor saves, Ledger Register horizontal scrolling, and Transaction Editor split-table resizing before merge.
 
-Next exact action: run `xvfb-run -a mvn -Dtest=ProductionDesignRulesTestFxTest test` in an environment with xvfb installed or run `mvn -Dtest=ProductionDesignRulesTestFxTest test` with a desktop `DISPLAY`, then open the desktop JavaFX app and manually validate save reset, cross-panel tab raising/focus, inspect-journal details, the top chrome period selector, the vertical middle-pane resize bar, Delete Current Line, append-only Transaction Editor saves, Ledger Register horizontal scrolling, and Transaction Editor split-table resizing before merge.
+Next exact action: open the desktop JavaFX app and manually validate save reset, cross-panel tab raising/focus, inspect-journal details, the top chrome period selector, the vertical middle-pane resize bar, Delete Current Line, append-only Transaction Editor saves, Ledger Register horizontal scrolling, and Transaction Editor split-table resizing before merge.
 
 Completed deliverables in this run:
 
