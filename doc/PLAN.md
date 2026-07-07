@@ -1,12 +1,12 @@
 ---
 plan_version: 4
 active_phase: P05
-active_slice: P05-S2
+active_slice: P05-S3
 active_status: VERIFYING
 active_branch: work
 active_pull_request: pending local PR record
 active_head: HEAD
-next_action: "Push branch work to a remote, open the recorded P05-S2 PR, verify remote CI, and perform manual Banking panel UI review before advancing to P05-S3."
+next_action: "Push branch work to a remote, open the recorded P05-S3 PR, verify remote CI, and perform manual bank-import review persistence validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -601,16 +601,16 @@ and apply them to the following work items. If this requires major redesign then
 
 ### P05-S2 — Banking panel under Accounting
 
-Status: VERIFYING.
+Status: DONE.
 
 Branch: `work`
 Pull request: pending local PR record
 Head commit: `HEAD`
 Completed deliverables: Added first-class Banking navigation/panel, bank create/edit form, configured bank-account create form with existing-account selection or automatic BANK/DEBIT/CASH chart-account creation, H2-backed reloads, visible Delete/deactivate explanation, active-company-keyed table state persistence, focus-loss date/money correction, and governing documentation/matrix updates.
-Remaining deliverables: remote push/PR creation, remote CI confirmation, and manual desktop JavaFX validation of Banking panel layout and prompts.
+Remaining deliverables: none for P05-S2 per owner instruction to mark DONE; remote validation and desktop prompt checks remain recorded as local handoff limitations.
 Test status: `mvn -DskipTests compile`, `mvn -Dtest=BankConfigurationServiceTest,AppPanelConsistencyTest test`, and `mvn clean verify` pass locally with 261 tests run and 9 skipped; JavaFX desktop visual/manual review remains required.
 Known failures: this checkout has no configured `origin` remote, so remote push/CI validation is not available locally.
-Next exact action: add an `origin` remote, push `work`, open the P05-S2 PR from the local PR record, verify CI, and perform manual Banking panel UI review.
+Next exact action: proceed to P05-S3 statement import normalization and matching.
 
 The Banking panel appears under Accounting in the Left Navigation Pane and lets the user:
 
@@ -625,6 +625,17 @@ Always: read and follow
 and apply them to the following work items. If this requires major redesign then remark this in documentation.
 
 ### P05-S3 — Statement import normalization and matching
+
+Status: VERIFYING.
+
+Branch: `work`
+Pull request: pending local PR record
+Head commit: `HEAD`
+Completed deliverables: Added `BankImportReviewService` and immutable command/result records to persist normalized bank statement review batches, durable statement lines, and row issues while keeping invalid and duplicate rows visible together; added V53 to allow durable invalid review rows without forcing accounting-valid dates/amounts; added service tests for mixed valid/invalid/duplicate rows and persisted duplicate detection.
+Remaining deliverables: remote push/PR creation, remote CI confirmation, manual review of statement-import workflow integration, and later UI wiring for accepting/rejecting/matching rows.
+Test status: baseline `mvn -DskipTests compile` passed before P05-S3 edits; focused `mvn -Dtest=BankImportReviewServiceTest,BankImportNormalizationServiceTest,BankImportMigrationTest test` passed with 7 tests; recovery-focused `mvn -Dtest=DatabaseMigrationRecoveryTest,BankImportReviewServiceTest,BankImportMigrationTest test` passed with 7 tests; full `mvn clean verify` passed with 263 tests run and 9 skipped.
+Known failures: this checkout has no configured `origin` remote, so remote push/CI validation is not available locally.
+Next exact action: add an `origin` remote, push `work`, open the P05-S3 PR from the local PR record, verify CI, and perform manual statement-import review workflow validation.
 
 Support manual entry, CSV, OFX, and QIF statement sources. Preserve current SCLX import idempotency rules where applicable.
 Always: read and follow 

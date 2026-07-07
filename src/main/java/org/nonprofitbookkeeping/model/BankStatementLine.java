@@ -62,13 +62,13 @@ public class BankStatementLine
     @Column(name = "statement_account_identifier", length = 160)
     private String statementAccountIdentifier;
 
-    @Column(name = "transaction_date", nullable = false)
+    @Column(name = "transaction_date")
     private LocalDate transactionDate;
 
     @Column(name = "posted_date")
     private LocalDate postedDate;
 
-    @Column(nullable = false, precision = 19, scale = 4)
+    @Column(precision = 19, scale = 4)
     private BigDecimal amount;
 
     @Column(name = "transaction_type", length = 40)
