@@ -3,6 +3,7 @@ package org.nonprofitbookkeeping.ui;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.chart.PieChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -112,6 +113,62 @@ public class ProductionDesignRulesTestFxTest
         assertNotNull(lookupAs(robot, "#budgetVsActualTable", TableView.class));
         assertNotNull(lookupAs(robot, "#budgetVsActualRunButton", Button.class));
         assertNotNull(lookupAs(robot, "#budgetVsActualStatus", Label.class));
+    }
+
+    @Test
+    public void budgetEditorFollowsP04TableAndVisualWorkflowRules(FxRobot robot)
+    {
+        robot.interact(() -> mainWindow.openPanel(AppPanelId.BUDGET_EDITOR));
+        WaitForAsyncUtils.waitForFxEvents();
+
+        TableView<?> table = lookupAs(robot, "#budgetEditorCategoryTable", TableView.class);
+        SplitPane splitPane = lookupAs(robot, "#budgetEditorSplitPane", SplitPane.class);
+
+        assertSame(TableView.UNCONSTRAINED_RESIZE_POLICY, table.getColumnResizePolicy());
+        assertColumnContract(table);
+        assertEquals(Orientation.VERTICAL, splitPane.getOrientation());
+        assertEquals(2, splitPane.getItems().size());
+        assertTrue(splitPane.getItems().stream().anyMatch(item -> contains(item, table)));
+        assertNotNull(robot.lookup("#budgetEditorAmountField").query());
+        assertNotNull(robot.lookup("#budgetEditorSaveDraftAmountButton").query());
+        assertNotNull(robot.lookup("#budgetEditorActivateVersionButton").query());
+        assertNotNull(robot.lookup("#budgetEditorStatusLabel").query());
+    }
+
+    @Test
+    public void budgetVsActualFollowsP04TableAndVisualWorkflowRules(FxRobot robot)
+    {
+        robot.interact(() -> mainWindow.openPanel(AppPanelId.BUDGET_VS_ACTUAL));
+        WaitForAsyncUtils.waitForFxEvents();
+
+        TableView<?> table = lookupAs(robot, "#budgetVsActualTable", TableView.class);
+        SplitPane splitPane = lookupAs(robot, "#budgetVsActualSplitPane", SplitPane.class);
+
+        assertSame(TableView.UNCONSTRAINED_RESIZE_POLICY, table.getColumnResizePolicy());
+        assertColumnContract(table);
+        assertEquals(Orientation.VERTICAL, splitPane.getOrientation());
+        assertEquals(2, splitPane.getItems().size());
+        assertTrue(splitPane.getItems().stream().anyMatch(item -> contains(item, table)));
+        assertNotNull(robot.lookup("#budgetVsActualRunButton").query());
+        assertNotNull(robot.lookup("#budgetVsActualStatusLabel").query());
+    }
+
+    @Test
+    public void dashboardExposesBudgetPerformanceAndYtdBudgetComparisonSurfaces(FxRobot robot)
+    {
+        robot.interact(() -> mainWindow.openPanel(AppPanelId.DASHBOARD));
+        WaitForAsyncUtils.waitForFxEvents();
+
+        TableView<?> budgetActuals = lookupAs(robot, "#dashboardBudgetActualsTable", TableView.class);
+        PieChart budgetPerformance = lookupAs(robot, "#dashboardBudgetPerformanceChart", PieChart.class);
+        Label surplusBudget = lookupAs(robot, "#dashboardSurplusBudgetLabel", Label.class);
+
+        assertSame(TableView.UNCONSTRAINED_RESIZE_POLICY, budgetActuals.getColumnResizePolicy());
+        assertColumnContract(budgetActuals);
+        assertNotNull(budgetPerformance);
+        assertFalse(surplusBudget.getText().isBlank(), "YTD surplus card must state either the active budget comparison or the neutral no-budget state.");
+        assertNotNull(robot.lookup("#dashboardBudgetPerformanceEmptyLabel").query());
+        assertNotNull(robot.lookup("#dashboardSurplusComparisonLabel").query());
     }
 
     @Test

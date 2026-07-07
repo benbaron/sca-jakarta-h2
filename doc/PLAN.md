@@ -1,12 +1,12 @@
 ---
-plan_version: 4
-active_phase: P03
-active_slice: P03-C3
+plan_version: 3
+active_phase: P04
+active_slice: P04-S3
 active_status: VERIFYING
 active_branch: work
-active_pull_request: local make_pr record created 2026-07-07
-active_head: HEAD
-next_action: "When an origin remote is configured, push branch work and verify remote checks; manually verify Transaction Editor Delete/Reversal prompts in a desktop JavaFX run before merge."
+active_pull_request: local make_pr record: Convert budget UI to normalized budget plans
+active_head: HEAD (Add P04 budget UI design-rule validation)
+next_action: "Push the P04-S3 branch/PR where a GitHub remote is available, run required GitHub checks, and complete user desktop review before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -426,8 +426,109 @@ Maintain normalized H2-backed budget plans and lines.
 
 ## Clarification updates required when touched
 
-- Preserve `BudgetCategory` as distinct from Account and Activity.
-- Apply `doc/ui_design_rules.md` table, money, date, and per-company preference rules to budget panels.
+Completed deliverables in this run:
+
+- added `BudgetPlanService` for creating draft budgets, replacing draft lines, validating line scopes/periods, activating one fiscal-year comparison version, archiving versions, loading active versions, and calculating active budget actual/variance rows;
+- added immutable budget plan, line, and variance command/projection records;
+- wired the service into the UI service bundle for P04-S3 panel conversion;
+- changed dashboard budget actual projection to read active `BudgetPlan`/`BudgetLine` values instead of always returning neutral no-budget values when an active budget exists;
+- documented the P04-S2 service boundary in `doc/accounting/budget-model.md`;
+- added focused service and dashboard tests for draft line replacement, activation archiving, draft-only editing, duplicate-scope rejection, active variance calculation, and dashboard active-budget comparison.
+
+Remaining deliverables before merge:
+
+- None for P04-S2 after user-directed verification/done marking; P04-S3 owns UI/dashboard conversion and sidecar removal.
+
+Known failures:
+
+- None recorded after user-directed P04-S2 verification/done marking.
+
+User-visible changes:
+
+- Dashboard budget comparisons can now show amounts from an active normalized budget version when one exists; budget editing panels are not yet converted in P04-S2.
+
+Manual testing for user:
+
+- After P04-S3 wires the panels, create two draft budget versions for the same fiscal year, activate each in turn, and confirm the prior active version is archived and Dashboard/Budget vs Actual compare against the newly active version.
+
+Next exact action: continue P04-S3 budget UI/dashboard conversion after Maven dependencies are reachable for P04-S2 validation.
+
+Original scope:
+
+Implement create, edit draft, validate, activate, archive, select active version, and calculate actual/variance.
+
+Activation selects the comparison version; it is not an approval workflow.
+
+### P04-S3 — Budget UI and dashboard
+
+Status: VERIFYING. Branch: work. PR: local make_pr record: Convert budget UI to normalized budget plans. Head: HEAD (Add P04 budget UI design-rule validation).
+
+Completed deliverables in this run:
+
+- converted Budget Editor from fund sidecar targets to `BudgetPlanService` draft creation, draft line replacement, and activation workflows for category-level budget lines;
+- converted Budget vs Actual from fund target merging to `BudgetPlanService.activeVariance` projections;
+- removed `BudgetTargetPersistence` and budget target map APIs from `UiWorkspaceDataStore`;
+- documented the P04-S3 service-backed UI boundary in `doc/accounting/budget-model.md`;
+- updated sidecar-era UI tests so budget target file persistence is no longer treated as application behavior;
+- brought P04 budget UI surfaces into the table/split-pane/TestFX design-rule path by adding stable IDs, unconstrained table column sizing, split-pane boundaries for Budget Editor and Budget vs Actual, and display-backed TestFX checks for Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison.
+
+Remaining deliverables before merge:
+
+- push the branch/PR in an environment with a configured GitHub remote and verify required GitHub checks;
+- complete user desktop review of Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison before merge.
+
+Known failures:
+
+- bootstrap `git fetch origin --prune` failed because this worktree has no `origin` remote configured;
+- GitHub validation could not be run from this worktree because no `origin` remote is configured;
+- final user desktop review remains outstanding even though display-backed TestFX validation ran successfully under `xvfb`.
+
+Validation completed on 2026-07-06:
+
+- `mvn -DskipTests compile` passed;
+- after installing `xvfb`, `libgtk-3-0`, and related GTK/X11 runtime libraries, `xvfb-run -a mvn -Dtest=ProductionDesignRulesTestFxTest test` passed with 3 tests run, 0 failures, 0 errors, and 0 skipped tests;
+- `mvn clean verify` passed with 252 tests run, 0 failures, 0 errors, and 8 skipped tests;
+- focused `mvn -Dtest=BudgetPlanMigrationTest,BudgetPlanServiceTest,JpaDashboardQueryServiceTest,BudgetEditorPanelTest test` passed with 12 tests run, 0 failures, 0 errors, and 0 skipped tests;
+- on 2026-07-07, `mvn -DskipTests compile` passed after the P04 UI design-rule updates;
+- on 2026-07-07, after installing `xvfb`, `libgtk-3-0`, and related GTK/X11 runtime libraries, `xvfb-run -a mvn -Dtest=ProductionDesignRulesTestFxTest test` passed with 6 tests run, 0 failures, 0 errors, and 0 skipped tests;
+- on 2026-07-07, focused `mvn -Dtest=BudgetPlanMigrationTest,BudgetPlanServiceTest,JpaDashboardQueryServiceTest,BudgetEditorPanelTest test` passed with 12 tests run, 0 failures, 0 errors, and 0 skipped tests;
+- on 2026-07-07, `mvn clean verify` passed with 255 tests run, 0 failures, 0 errors, and 11 skipped tests.
+
+User-visible changes:
+
+- Budget Editor saves category budget amounts to normalized H2 budget plans instead of sidecar fund target files.
+- Budget Editor and Budget vs Actual now expose resizable split-pane table regions and horizontal table scrolling instead of constrained column clipping.
+- Budget vs Actual and Dashboard budget cards read active normalized budget versions or show neutral no-budget states.
+- Dashboard budget performance and YTD comparison controls expose stable automation IDs for display-backed workflow checks.
+
+Manual testing for user:
+
+- Open Budget Editor, enter category amounts, activate the draft version, and confirm Budget vs Actual and Dashboard budget cards compare against that active version.
+- Create a second draft revision, activate it, and confirm the prior active version is archived by the service and no sidecar budget target file is used.
+
+Next exact action: push the P04-S3 branch/PR where a GitHub remote is available, run required GitHub checks, and complete user desktop review before merge.
+
+Original scope:
+
+Convert Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD comparisons to genuine services.
+
+Remove sidecar/static budget persistence.
+
+## Validation
+
+Migration, uniqueness, `BigDecimal`, atomic save, historical version, actual calculation, neutral no-budget state, and dashboard tests.
+
+## Exit gate
+
+Every displayed/stored budget value comes from normalized H2 data or authoritative accounting projections.
+
+## Codex seed prompt
+
+```text
+Execute PHASE=P04 from doc/PLAN.md.
+Replace the first incomplete sidecar-backed budget slice with normalized H2 models and services.
+Preserve BudgetCategory as distinct from Account and Activity.
+```
 
 Always: read and follow 
 - doc/interface-operation-matrix.md 

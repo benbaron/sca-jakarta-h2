@@ -2,10 +2,12 @@ package org.nonprofitbookkeeping.ui;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.BorderPane;
@@ -34,6 +36,8 @@ public class BudgetVsActualPanel implements AppPanel
         Button run = new Button("Run");
         run.setId("budgetVsActualRunButton");
         run.setOnAction(e -> reload());
+        table.setId("budgetVsActualTable");
+        status.setId("budgetVsActualStatusLabel");
         root.setTop(new VBox(6, title, new HBox(8, run), status, new Separator()));
 
         TableColumn<BudgetVarianceView, String> category = new TableColumn<>("Budget Category");
@@ -47,9 +51,16 @@ public class BudgetVsActualPanel implements AppPanel
         TableColumn<BudgetVarianceView, String> variance = new TableColumn<>("Variance (Actual-Budget)");
         variance.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().variance().toPlainString()));
         table.getColumns().addAll(category, fund, budget, actual, variance);
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
+        table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         table.setPlaceholder(new Label("No active budget version is selected for comparison."));
-        root.setCenter(table);
+        Label explanation = new Label("Compares actual activity through the active period against the active normalized budget version.");
+        explanation.setId("budgetVsActualExplanation");
+        explanation.setWrapText(true);
+        SplitPane splitPane = new SplitPane(table, explanation);
+        splitPane.setId("budgetVsActualSplitPane");
+        splitPane.setOrientation(Orientation.VERTICAL);
+        splitPane.setDividerPositions(0.82);
+        root.setCenter(splitPane);
         reload();
     }
 
