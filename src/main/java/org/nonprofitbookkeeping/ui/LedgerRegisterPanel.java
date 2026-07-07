@@ -52,10 +52,12 @@ public class LedgerRegisterPanel implements AppPanel
 
         Button refresh = new Button("Refresh");
         refresh.setId("ledgerRegisterRefreshButton");
+        Button newTransaction = new Button("New");
+        newTransaction.setId("ledgerRegisterNewButton");
         Button inspect = new Button("Inspect Journal");
         inspect.setId("ledgerRegisterInspectJournalButton");
-        Button openEditor = new Button("Open Selected in Editor");
-        openEditor.setId("ledgerRegisterOpenSelectedInEditorButton");
+        Button openEditor = new Button("Open Selected");
+        openEditor.setId("ledgerRegisterOpenSelectedButton");
         Button deleteCurrent = new Button("Delete Current Line");
         deleteCurrent.setId("ledgerRegisterDeleteCurrentLineButton");
         txnTable.setId("ledgerRegisterTransactionTable");
@@ -68,7 +70,7 @@ public class LedgerRegisterPanel implements AppPanel
         toDate.setPromptText("To YYYY-MM-DD");
         searchText.setPromptText("Memo or payee");
         HBox filters = new HBox(8, new Label("From"), fromDate, new Label("To"), toDate, new Label("Search"), searchText);
-        HBox actions = new HBox(8, refresh, inspect, openEditor, deleteCurrent);
+        HBox actions = new HBox(8, refresh, newTransaction, openEditor, inspect, deleteCurrent);
 
         VBox header = new VBox(6, title, range, filters, actions, drillContext, status, new Separator());
         root.setTop(header);
@@ -89,8 +91,11 @@ public class LedgerRegisterPanel implements AppPanel
         middle.setDividerPositions(0.72);
         root.setCenter(middle);
 
+        openEditor.disableProperty().bind(Bindings.size(txnTable.getSelectionModel().getSelectedItems()).isNotEqualTo(1));
+
         refresh.setOnAction(e -> reload());
-        inspect.setOnAction(e -> inspectSelected());
+        newTransaction.setOnAction(e -> openNewTransaction());
+        inspect.setOnAction(e -> openJournalPane());
         openEditor.setOnAction(e -> openSelectedInEditor());
         deleteCurrent.setOnAction(e -> deleteSelectedLine());
 
@@ -181,6 +186,19 @@ public class LedgerRegisterPanel implements AppPanel
                 view.status() == null || view.status().isBlank() ? "ENTERED" : view.status());
     }
 
+    private void openJournalPane()
+    {
+        Row sel = txnTable.getSelectionModel().getSelectedItem();
+        String context = sel == null
+                ? "Inspect journal from Ledger Register"
+                : JournalPane.centeredContext(sel.id(), "Ledger Register");
+        UiDebug.log("ledger-register", "Opening Journal Pane with context '" + context + "'.");
+        DrillThroughCoordinator.openPanelWithContext(AppPanelId.JOURNAL_PANE, context);
+        status.setText(sel == null
+                ? "Opened Journal Pane without filters."
+                : "Opened Journal Pane centered at Txn #" + sel.id() + ".");
+    }
+
     private void inspectSelected()
     {
         Row sel = txnTable.getSelectionModel().getSelectedItem();
@@ -196,6 +214,13 @@ public class LedgerRegisterPanel implements AppPanel
         }
     }
 
+    private void openNewTransaction()
+    {
+        UiDebug.log("ledger-register", "New requested; opening Transaction Editor in New mode.");
+        DrillThroughCoordinator.openTransactionEditorWithContext(newEditorContext());
+        status.setText("Opened Transaction Editor in New mode.");
+    }
+
     private void openSelectedInEditor()
     {
         Row sel = txnTable.getSelectionModel().getSelectedItem();
@@ -206,7 +231,7 @@ public class LedgerRegisterPanel implements AppPanel
         else
         {
             status.setText("Select a ledger transaction before opening it in Transaction Editor.");
-            UiDebug.log("ledger-register", "Open Selected in Editor requested without a selected row.");
+            UiDebug.log("ledger-register", "Open Selected requested without exactly one selected row.");
         }
     }
 
@@ -287,7 +312,7 @@ public class LedgerRegisterPanel implements AppPanel
     private void openRowInEditor(Row row)
     {
         String context = editorContext(row.id());
-        UiDebug.log("ledger-register", "Open Selected in Editor requested for Txn #"
+        UiDebug.log("ledger-register", "Open Selected requested for Txn #"
                 + row.id() + " with context '" + context + "'.");
         DrillThroughCoordinator.openTransactionEditorWithContext(context);
         status.setText("Opened Txn #" + row.id() + " in Transaction Editor.");
@@ -295,7 +320,12 @@ public class LedgerRegisterPanel implements AppPanel
 
     static String editorContext(long transactionId)
     {
-        return "Load transaction Txn #" + transactionId;
+        return "Edit transaction Txn #" + transactionId;
+    }
+
+    static String newEditorContext()
+    {
+        return "New transaction";
     }
 
     private static LocalDate parseDateOrNull(String value)

@@ -31,6 +31,8 @@ public class BudgetVsActualPanel implements AppPanel
         root.setPadding(new Insets(8));
         Label title = new Label("Budget vs Actual");
         title.getStyleClass().add("panel-title");
+        status.setId("budgetVsActualStatus");
+        table.setId("budgetVsActualTable");
         Button run = new Button("Run");
         run.setId("budgetVsActualRunButton");
         run.setOnAction(e -> reload());

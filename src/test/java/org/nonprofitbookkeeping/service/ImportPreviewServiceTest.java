@@ -129,6 +129,27 @@ public class ImportPreviewServiceTest
         assertEquals(BankingDataFormat.OFX, result.format());
         assertEquals(1, result.transactionCount());
     }
+
+    @Test
+    public void previewNormalizedBankStatement_returnsNormalizedRowsAndDuplicateIssues() throws Exception
+    {
+        Path ofx = Files.createTempFile("bank-preview-normalized", ".ofx");
+        Files.writeString(ofx, """
+                <OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><BANKTRANLIST>
+                <STMTTRN><TRNTYPE>DEBIT</TRNTYPE><DTPOSTED>20260301000000</DTPOSTED><TRNAMT>-5.00</TRNAMT><FITID>FIT-1</FITID><NAME>Fee</NAME><MEMO>x</MEMO></STMTTRN>
+                <STMTTRN><TRNTYPE>DEBIT</TRNTYPE><DTPOSTED>20260301000000</DTPOSTED><TRNAMT>-5.00</TRNAMT><FITID>fit-1</FITID><NAME>Fee</NAME><MEMO>x</MEMO></STMTTRN>
+                </BANKTRANLIST></STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>
+                """);
+
+        ImportPreviewService.NormalizedBankPreviewResult result = service.previewNormalizedBankStatement(
+                ofx,
+                BankImportNormalizationService.DuplicateContext.empty());
+
+        assertEquals(BankingDataFormat.OFX, result.format());
+        assertEquals(2, result.transactionCount());
+        assertEquals("FIT-1", result.lines().get(0).sourceTransactionId());
+        assertTrue(result.lines().get(1).exactDuplicate());
+    }
     @Test
     public void commitAcceptedCoaRows_reportsCommittedAndFailedCounts()
     {

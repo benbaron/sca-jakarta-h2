@@ -43,6 +43,10 @@ public class BudgetEditorPanel implements AppPanel
         Label title = new Label("Budget Editor");
         title.getStyleClass().add("panel-title");
 
+        status.setId("budgetEditorStatus");
+        table.setId("budgetEditorCategoryTable");
+        amountField.setId("budgetEditorAmountField");
+
         Button refresh = new Button("Refresh Budget");
         refresh.setId("budgetEditorRefreshButton");
         refresh.setOnAction(e -> reload());

@@ -125,6 +125,20 @@ public class ProductionWorkspaceCommandRoutingTest
         });
     }
 
+    @Test
+    public void ledgerRegisterCanOpenJournalPaneThroughDrillThroughCoordinator()
+    {
+        ProductionWorkspaceWindow window = FxTestSupport.onFx(ProductionWorkspaceCommandRoutingTest::newWindow);
+
+        FxTestSupport.onFx(() -> {
+            DrillThroughCoordinator.openPanelWithContext(AppPanelId.JOURNAL_PANE, JournalPane.centeredContext(909L, "test"));
+
+            assertTrue(window.panelHost().isOpen(AppPanelId.JOURNAL_PANE));
+            assertEquals(AppPanelId.JOURNAL_PANE, window.panelHost().activePanelId());
+            return null;
+        });
+    }
+
     private static ProductionWorkspaceWindow newWindow()
     {
         return new ProductionWorkspaceWindow(
