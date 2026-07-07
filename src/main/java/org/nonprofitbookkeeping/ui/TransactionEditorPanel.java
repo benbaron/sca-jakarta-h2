@@ -4,7 +4,9 @@ import javafx.event.Event;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
@@ -27,6 +29,7 @@ import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.service.AccountingJournalProjection;
+import org.nonprofitbookkeeping.model.CorrectionMethod;
 import org.nonprofitbookkeeping.service.TransactionCommand;
 import org.nonprofitbookkeeping.service.TransactionCommandValidator;
 import org.nonprofitbookkeeping.service.TransactionEntryService;
@@ -58,6 +61,7 @@ public class TransactionEditorPanel implements AppPanel
     private final TextField memoField = new TextField();
     private final TextField bankField = new TextField();
     private final Button openSavedInLedger = new Button("Open Saved in Ledger");
+    private final Button deleteTransaction = new Button("Delete");
     private EditorMode editorMode = EditorMode.NEW;
     private Long editTransactionId;
     private Long lastSavedTransactionId;
@@ -79,7 +83,10 @@ public class TransactionEditorPanel implements AppPanel
         journal.setId("transactionEditorJournalViewButton");
         openSavedInLedger.setId("transactionEditorOpenSavedInLedgerButton");
         openSavedInLedger.setDisable(true);
-        HBox actions = new HBox(8, save, post, journal, openSavedInLedger);
+        deleteTransaction.setId("transactionEditorDeleteButton");
+        deleteTransaction.setText(deleteActionLabel(MainWindow.sharedSessionState().preferences().correctionMethod()));
+        deleteTransaction.setDisable(true);
+        HBox actions = new HBox(8, save, post, journal, openSavedInLedger, deleteTransaction);
 
         VBox top = new VBox(6, title, actions, status, new Separator(), buildHeaderForm());
         root.setTop(top);
@@ -91,6 +98,7 @@ public class TransactionEditorPanel implements AppPanel
         post.setOnAction(e -> validateOrPost());
         journal.setOnAction(e -> showJournal());
         openSavedInLedger.setOnAction(e -> openSavedTransactionInLedger());
+        deleteTransaction.setOnAction(e -> deleteCurrentTransaction());
 
         splitTable.setId("transactionEditorSplitTable");
         status.setId("transactionEditorStatusLabel");
@@ -757,6 +765,7 @@ public class TransactionEditorPanel implements AppPanel
         UiDebug.log("transaction-editor", "Resetting editor for a new entry.");
         editorMode = EditorMode.NEW;
         editTransactionId = null;
+        deleteTransaction.setDisable(true);
         dateField.clear();
         payeeField.clear();
         memoField.clear();
@@ -805,6 +814,109 @@ public class TransactionEditorPanel implements AppPanel
         }
     }
 
+
+    private void deleteCurrentTransaction()
+    {
+        Long transactionId = editTransactionId == null ? lastSavedTransactionId : editTransactionId;
+        if (transactionId == null)
+        {
+            status.setText("Delete unavailable until an existing transaction is loaded or saved.");
+            UiDebug.log("transaction-editor", "Delete requested without an existing transaction id.");
+            return;
+        }
+
+        CorrectionMethod method = MainWindow.sharedSessionState().preferences().correctionMethod();
+        if (method == CorrectionMethod.DIRECT_EDIT)
+        {
+            if (!confirmDeleteAction(deleteConfirmationHeader(transactionId), directDeleteConfirmationBody()))
+            {
+                status.setText("Delete cancelled for Txn #" + transactionId + ".");
+                UiDebug.log("transaction-editor", "Direct delete cancelled for Txn #" + transactionId + ".");
+                return;
+            }
+            status.setText("Deleting Txn #" + transactionId + "...");
+            UiAsync.run("txn-editor-delete-" + transactionId, () -> {
+                        UiServiceRegistry.transactionCorrection().delete(transactionId, "ui", "Deleted from Transaction Editor");
+                        return transactionId;
+                    },
+                    deletedId -> {
+                        resetForNewEntry();
+                        lastSavedTransactionId = null;
+                        openSavedInLedger.setDisable(true);
+                        dirty = false;
+                        lineEditorModel.markClean();
+                        status.setText("Deleted Txn #" + deletedId + ". The editor is ready for a new transaction.");
+                        UiDebug.log("transaction-editor", "Direct delete completed for Txn #" + deletedId + ".");
+                    },
+                    ex -> {
+                        status.setText("Delete failed for Txn #" + transactionId + ": " + UiErrors.safeMessage(ex));
+                        UiDebug.log("transaction-editor", "Direct delete failed for Txn #" + transactionId
+                                + ": " + UiErrors.safeMessage(ex));
+                    });
+        }
+        else
+        {
+            if (!confirmDeleteAction(reversalConfirmationHeader(transactionId), reversalConfirmationBody()))
+            {
+                status.setText("Reversal cancelled for Txn #" + transactionId + ".");
+                UiDebug.log("transaction-editor", "Delete-as-reversal cancelled for Txn #" + transactionId + ".");
+                return;
+            }
+            status.setText("Creating reversing entry for Txn #" + transactionId + "...");
+            UiAsync.run("txn-editor-reverse-" + transactionId,
+                    () -> UiServiceRegistry.transactionCorrection().reverse(transactionId, ActivePeriodContext.get(), "ui", "Reversed from Transaction Editor delete action", false),
+                    result -> {
+                        resetForNewEntry();
+                        lastSavedTransactionId = result.reversalTransactionId();
+                        openSavedInLedger.setDisable(false);
+                        dirty = false;
+                        lineEditorModel.markClean();
+                        status.setText("Created reversing Txn #" + result.reversalTransactionId()
+                                + " for original Txn #" + transactionId + ". The editor is ready for a new transaction.");
+                        UiDebug.log("transaction-editor", "Delete-as-reversal completed for Txn #" + transactionId
+                                + " with reversal Txn #" + result.reversalTransactionId() + ".");
+                    },
+                    ex -> {
+                        status.setText("Reversal failed for Txn #" + transactionId + ": " + UiErrors.safeMessage(ex));
+                        UiDebug.log("transaction-editor", "Delete-as-reversal failed for Txn #" + transactionId
+                                + ": " + UiErrors.safeMessage(ex));
+                    });
+        }
+    }
+
+    private boolean confirmDeleteAction(String header, String content)
+    {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, content, ButtonType.OK, ButtonType.CANCEL);
+        alert.setTitle("Confirm transaction delete");
+        alert.setHeaderText(header);
+        return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
+    }
+
+    static String deleteActionLabel(CorrectionMethod method)
+    {
+        return method == CorrectionMethod.DIRECT_EDIT ? "Delete" : "Reverse instead of deleting";
+    }
+
+    static String deleteConfirmationHeader(long transactionId)
+    {
+        return "Delete transaction #" + transactionId + "?";
+    }
+
+    static String directDeleteConfirmationBody()
+    {
+        return "This removes the entered transaction after period and reconciliation checks and writes an audit snapshot.";
+    }
+
+    static String reversalConfirmationHeader(long transactionId)
+    {
+        return "Reverse transaction #" + transactionId + " instead of deleting?";
+    }
+
+    static String reversalConfirmationBody()
+    {
+        return "Current correction settings do not allow hard deletion. A reversing entry will be created using the active period date.";
+    }
+
     private void openSavedTransactionInLedger()
     {
         if (lastSavedTransactionId == null)
@@ -842,6 +954,7 @@ public class TransactionEditorPanel implements AppPanel
                     lastSavedTransactionId = view.id();
                     editorMode = EditorMode.EDIT;
                     editTransactionId = view.id();
+                    deleteTransaction.setDisable(false);
                     applySavedView(view);
                     dirty = false;
                     lineEditorModel.markClean();

@@ -1,12 +1,14 @@
 package org.nonprofitbookkeeping.ui;
 
 import org.junit.jupiter.api.Test;
+import org.nonprofitbookkeeping.model.CorrectionMethod;
 import org.nonprofitbookkeeping.service.TransactionCommand;
 
 import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * TransactionEditorPanelCommandMappingTest component.
@@ -39,4 +41,15 @@ public class TransactionEditorPanelCommandMappingTest
         assertEquals(2L, command.lines().get(1).accountId());
         assertEquals("125.00", command.lines().get(1).credit().toPlainString());
     }
+    @Test
+    public void deleteConfirmationText_followsCorrectionMethodPolicy()
+    {
+        assertEquals("Delete", TransactionEditorPanel.deleteActionLabel(CorrectionMethod.DIRECT_EDIT));
+        assertEquals("Reverse instead of deleting", TransactionEditorPanel.deleteActionLabel(CorrectionMethod.REVERSAL_AND_REPLACEMENT));
+        assertEquals("Delete transaction #42?", TransactionEditorPanel.deleteConfirmationHeader(42L));
+        assertTrue(TransactionEditorPanel.directDeleteConfirmationBody().contains("audit snapshot"));
+        assertEquals("Reverse transaction #42 instead of deleting?", TransactionEditorPanel.reversalConfirmationHeader(42L));
+        assertTrue(TransactionEditorPanel.reversalConfirmationBody().contains("active period date"));
+    }
+
 }
