@@ -11,7 +11,6 @@ import javafx.scene.control.TableView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import org.nonprofitbookkeeping.repository.ApprovalDecision;
 import org.nonprofitbookkeeping.model.BankingDataFormat;
 import org.nonprofitbookkeeping.repository.ReconciliationRunRecord;
 
@@ -25,7 +24,6 @@ public class ReconciliationRunsPanel implements AppPanel
     private final BorderPane root = new BorderPane();
     private final TableView<ReconciliationRunRecord> table = new TableView<>();
     private final Label status = new Label();
-    private final Label auditSummary = new Label();
 
     public ReconciliationRunsPanel()
     {
@@ -41,14 +39,10 @@ public class ReconciliationRunsPanel implements AppPanel
         start.setOnAction(e -> recordRunWithStatus(org.nonprofitbookkeeping.repository.WorkflowRunStatus.STARTED, "Started from UI workspace"));
         Button fail = new Button("Record Failed");
         fail.setOnAction(e -> recordRunWithStatus(org.nonprofitbookkeeping.repository.WorkflowRunStatus.FAILED, "Failed from UI workspace"));
-        Button approve = new Button("Approve Selected");
-        approve.setOnAction(e -> recordApproval(ApprovalDecision.APPROVED));
-        Button reject = new Button("Reject Selected");
-        reject.setOnAction(e -> recordApproval(ApprovalDecision.REJECTED));
-        Button viewAudit = new Button("View Approval Audit");
-        viewAudit.setOnAction(e -> openApprovalAudit());
+        Label workflowNote = new Label("Reconciliation is a comparison workflow; approve/reject decisions are not part of this panel.");
+        workflowNote.getStyleClass().add("help-text");
 
-        root.setTop(new VBox(6, title, new HBox(8, refresh, start, record, fail, approve, reject, viewAudit), status, auditSummary, new Separator()));
+        root.setTop(new VBox(6, title, new HBox(8, refresh, start, record, fail), workflowNote, status, new Separator()));
 
         TableColumn<ReconciliationRunRecord, String> when = new TableColumn<>("Statement End");
         when.setCellValueFactory(v -> new SimpleStringProperty(String.valueOf(v.getValue().statementEndingOn())));
@@ -123,55 +117,8 @@ public class ReconciliationRunsPanel implements AppPanel
                     .findByGroupAndDateRange(group, LocalDate.now().minusYears(1), LocalDate.now().plusDays(1));
         }, rows -> {
             table.getItems().setAll(rows);
-            reloadAuditSummary();
-            status.setText("Loaded " + rows.size() +" reconciliation run(s) for active company.");
+            status.setText("Loaded " + rows.size() +" reconciliation comparison run(s) for active company.");
         }, ex -> status.setText("Could not load reconciliation runs: " + UiErrors.safeMessage(ex)));
     }
 
-    private void openApprovalAudit()
-    {
-        Object selected = table.getSelectionModel().getSelectedItem();
-        if (selected == null)
-        {
-            DrillThroughCoordinator.openPanelWithContext(AppPanelId.APPROVAL_AUDIT, "RECONCILIATION");
-            return;
-        }
-        java.util.UUID runId = ((ReconciliationRunRecord) selected).id();
-        DrillThroughCoordinator.openPanelWithContext(AppPanelId.APPROVAL_AUDIT, "RECONCILIATION::" + runId);
-    }
-
-    private void reloadAuditSummary()
-    {
-        UiAsync.run("reconciliation-audit-summary", () -> {
-            String group = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
-            java.util.List<org.nonprofitbookkeeping.repository.ApprovalAuditRecord> rows = UiServiceRegistry.approvalAuditService().listRecent(group, 500);
-            long approvals = rows.stream().filter(r -> "RECONCILIATION".equals(r.workflowType()) && r.decision() == ApprovalDecision.APPROVED).count();
-            long rejections = rows.stream().filter(r -> "RECONCILIATION".equals(r.workflowType()) && r.decision() == ApprovalDecision.REJECTED).count();
-            return "Approval history: approvals=" + approvals + ", rejections=" + rejections;
-        },
-                auditSummary::setText,
-                ex -> auditSummary.setText("Approval history unavailable: " + UiErrors.safeMessage(ex)));
-    }
-
-    private void recordApproval(ApprovalDecision decision)
-    {
-        ReconciliationRunRecord selected = table.getSelectionModel().getSelectedItem();
-        if (selected == null)
-        {
-            status.setText("Select a reconciliation run before recording an approval decision.");
-            return;
-        }
-
-        UiAsync.run("recon-approval-record", () -> {
-            String group = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
-            return UiServiceRegistry.approvalAuditService().recordDecision(
-                    group,
-                    "RECONCILIATION",
-                    selected.id(),
-                    decision,
-                    "ui-operator",
-                    "Recorded from Reconciliation Runs workspace");
-        }, auditId -> status.setText("Recorded " + decision.name() + " decision under audit id " + auditId + "."),
-                ex -> status.setText("Could not record approval decision: " + UiErrors.safeMessage(ex)));
-    }
 }

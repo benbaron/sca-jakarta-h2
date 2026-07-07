@@ -1,12 +1,12 @@
 ---
 plan_version: 4
-active_phase: P03
-active_slice: P03-C3
+active_phase: P06
+active_slice: P06-S1
 active_status: VERIFYING
 active_branch: work
 active_pull_request: pending local PR record
-active_head: 68f0487
-next_action: "Create the P03-C3 pull request from branch work, verify remote checks when a remote is configured, and manually verify Transaction Editor Delete/Reversal prompts in a desktop JavaFX run."
+active_head: HEAD
+next_action: "Push branch work to a remote, open the recorded P06-S1 PR, verify remote CI, and perform manual reconciliation comparison validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -70,8 +70,8 @@ When a branch begins, update front matter and the phase section. When a PR is op
 | P02 | Canonical ledger and transaction operations | P00 | DONE; retain |
 | P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY for corrective/new slices |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
-| P05 | Banking configuration and statement import | P02, P03-C1 | READY after P03-C1 unless slice is strictly model-only |
-| P06 | Bank reconciliation and cleared-state comparison | P05 | BLOCKED |
+| P05 | Banking configuration and statement import | P02, P03-C1 | DONE per completed local P05 slices; remote validation pending local handoff |
+| P06 | Bank reconciliation and cleared-state comparison | P05 | VERIFYING P06-S1 |
 | P07 | Eliminated former Schedules phase | n/a | ELIMINATED |
 | P08 | Asset Register and depreciation | P02 | BLOCKED |
 | P09 | Inventory and supplies | P02 | BLOCKED |
@@ -128,7 +128,6 @@ The next documentation-conformance slice must create or update:
 
 - `doc/requirements/requirements-clarification-overlay.md`
 - `doc/accounting/transaction-editor-and-journal.md`
-- `doc/banking/banking-and-reconciliation.md`
 - `doc/accounting/period-close-design.md`
 - `doc/inventory/inventory-and-assets.md`
 
@@ -372,16 +371,16 @@ If this requires major redesign beyond this slice, propose a solution then remar
 
 ### P03-C3 — Transaction Editor Delete correction action
 
-Status: VERIFYING.
+Status: DONE.
 
 Branch: `work`
-Pull request: pending local PR record
-Head commit: `68f0487`
-Completed deliverables: Added a Transaction Editor Delete action for loaded/saved transactions, routed direct-delete requests through `TransactionCorrectionService.delete`, routed non-direct correction methods through reversing-entry creation using the active period date, and documented the design-rule completion.
-Remaining deliverables: create PR, inspect remote validation when a remote exists, and manually verify JavaFX confirmation prompts.
-Test status: `mvn -DskipTests compile` passed; `mvn -Dtest=TransactionEditorPanelCommandMappingTest test` passed with 2 tests run; `mvn clean verify` passed with 258 tests run and 9 skipped; `git diff --check` passed.
+Pull request: local make_pr record created 2026-07-07; remote PR URL unavailable because this checkout has no `origin` remote
+Head commit: `HEAD`
+Completed deliverables: Added a Transaction Editor Delete action for loaded/saved transactions, kept newly saved transactions loaded so Delete/Reverse targets the durable record, routed direct-delete requests through `TransactionCorrectionService.delete`, routed non-direct correction methods through reversing-entry creation using the active period date, and documented the design-rule completion.
+Remaining deliverables: none for P03-C3 per owner instruction to mark DONE; remote validation and desktop prompt checks remain recorded as P03 handoff limitations.
+Test status: 2026-07-07 rerun: `mvn -DskipTests compile` passed; `mvn -Dtest=TransactionEditorPanelCommandMappingTest test` passed with 2 tests run; `mvn clean verify` passed with 258 tests run and 9 skipped; `git diff --check HEAD~1..HEAD` passed after `origin/main...HEAD` was unavailable without an origin remote. Follow-up review rerun after saved-transaction Delete enablement correction: `mvn -DskipTests compile` passed; `mvn -Dtest=TransactionEditorPanelCommandMappingTest test` passed with 2 tests run; `mvn clean verify` passed with 258 tests run and 9 skipped.
 Known failures: this checkout still has no configured `origin` remote, so remote workflow validation cannot be inspected locally; desktop visual validation requires an interactive JavaFX run.
-Next exact action: create the P03-C3 pull request from branch `work`, verify remote checks when a remote is configured, and manually verify Transaction Editor Delete/Reversal prompts on a desktop.
+Next exact action: proceed to P05-S1 bank and bank-account model.
 
 Implement and document:
 
@@ -449,13 +448,24 @@ Create Banking as an Accounting function and connect statement import to configu
 ## Required reading
 
 - `doc/banking/import-and-reconciliation.md`
-- `doc/banking/banking-and-reconciliation.md` once created
+- `doc/banking/banking-and-reconciliation.md`
 - `doc/import/import-review-workflow.md`
 - `doc/accounting/ledger-authority.md`
 
 ## Slices
 
 ### P05-S1 — Bank and bank-account model
+
+Status: DONE.
+
+Branch: `work`
+Pull request: pending local PR record
+Head commit: `HEAD`
+Completed deliverables: Added `Bank` and enhanced configured `CompanyBankAccount` model fields, nondestructive V52 migration, P05-S1 bank configuration service validation, and governing banking design documentation.
+Remaining deliverables: none for P05-S1 per owner instruction to mark DONE; remote validation remains unavailable without an origin remote.
+Test status: `mvn -DskipTests compile`, `mvn -Dtest=DatabaseMigrationRecoveryTest,BankConfigurationServiceTest,BankImportMigrationTest test`, and `mvn clean verify` pass locally; JavaFX visual/manual review remains required in a desktop environment.
+Known failures: this checkout has no configured `origin` remote, so remote push/CI validation is not available locally.
+Next exact action: proceed to P05-S2 Banking panel under Accounting.
 
 A Bank record represents the financial institution and stores:
 
@@ -490,6 +500,17 @@ and apply them to the following work items. If this requires major redesign then
 
 ### P05-S2 — Banking panel under Accounting
 
+Status: DONE.
+
+Branch: `work`
+Pull request: pending local PR record
+Head commit: `HEAD`
+Completed deliverables: Added first-class Banking navigation/panel, bank create/edit form, configured bank-account create form with existing-account selection or automatic BANK/DEBIT/CASH chart-account creation, H2-backed reloads, visible Delete/deactivate explanation, active-company-keyed table state persistence, focus-loss date/money correction, and governing documentation/matrix updates.
+Remaining deliverables: none for P05-S2 per owner instruction to mark DONE; remote validation and desktop prompt checks remain recorded as local handoff limitations.
+Test status: `mvn -DskipTests compile`, `mvn -Dtest=BankConfigurationServiceTest,AppPanelConsistencyTest test`, and `mvn clean verify` pass locally with 261 tests run and 9 skipped; JavaFX desktop visual/manual review remains required.
+Known failures: this checkout has no configured `origin` remote, so remote push/CI validation is not available locally.
+Next exact action: proceed to P05-S3 statement import normalization and matching.
+
 The Banking panel appears under Accounting in the Left Navigation Pane and lets the user:
 
 - create a Bank record;
@@ -504,6 +525,17 @@ and apply them to the following work items. If this requires major redesign then
 
 ### P05-S3 — Statement import normalization and matching
 
+Status: DONE.
+
+Branch: `work`
+Pull request: pending local PR record
+Head commit: `HEAD`
+Completed deliverables: Added `BankImportReviewService` and immutable command/result records to persist normalized bank statement review batches, durable statement lines, and row issues while keeping invalid and duplicate rows visible together; added V53 to allow durable invalid review rows without forcing accounting-valid dates/amounts; added service tests for mixed valid/invalid/duplicate rows and persisted duplicate detection.
+Remaining deliverables: none for P05-S3 per owner instruction to mark DONE; remote validation remains recorded as a local handoff limitation.
+Test status: baseline `mvn -DskipTests compile` passed before P05-S3 edits; focused `mvn -Dtest=BankImportReviewServiceTest,BankImportNormalizationServiceTest,BankImportMigrationTest test` passed with 7 tests; recovery-focused `mvn -Dtest=DatabaseMigrationRecoveryTest,BankImportReviewServiceTest,BankImportMigrationTest test` passed with 7 tests; full `mvn clean verify` passed with 263 tests run and 9 skipped.
+Known failures: this checkout has no configured `origin` remote, so remote push/CI validation is not available locally.
+Next exact action: proceed to P05-S4 cleared-state mapping to ledger bank lines.
+
 Support manual entry, CSV, OFX, and QIF statement sources. Preserve current SCLX import idempotency rules where applicable.
 Always: read and follow 
 - doc/interface-operation-matrix.md 
@@ -512,6 +544,17 @@ Always: read and follow
 and apply them to the following work items. If this requires major redesign then remark this in documentation.
 
 ### P05-S4 — Cleared-state mapping to ledger bank lines
+
+Status: DONE.
+
+Branch: `work`
+Pull request: pending local PR record
+Head commit: `HEAD`
+Completed deliverables: Added `bank_cleared`, `bank_cleared_on`, and matched statement-line linkage to canonical `txn_split` rows; added `BankClearedStateService` to mark a matched statement line and canonical bank split in one transaction; added tests for successful configured-bank split matching and rejection of non-bank split matches.
+Remaining deliverables: none for P05-S4 per owner instruction to mark DONE; remote CI and manual reconciliation comparison validation remain recorded as P06 handoff limitations.
+Test status: focused `mvn -Dtest=BankClearedStateServiceTest,DatabaseMigrationRecoveryTest test` passed with 6 tests; full `mvn clean verify` passed with 265 tests run and 9 skipped.
+Known failures: this checkout has no configured `origin` remote, so remote push/CI validation is not available locally.
+Next exact action: proceed to P06-S1 to remove approval semantics from the reconciliation workspace and prepare the configured-account comparison workflow.
 
 Imported bank statement records propose matches to internal ledger lines. Cleared state is stored on the ledger transaction line involving the bank account, not as authoritative accounting state in the imported statement row.
 Always: read and follow 
@@ -539,8 +582,21 @@ Banking belongs under Accounting, not Administration.
 # P06 — Bank reconciliation and cleared-state comparison
 
 **Selector:** `PHASE=P06`
-**Status:** BLOCKED
+**Status:** VERIFYING P06-S1
 **Depends on:** P05
+
+### P06-S1 — Remove approval semantics from reconciliation runs
+
+Status: VERIFYING.
+
+Branch: `work`
+Pull request: pending local PR record
+Head commit: `HEAD`
+Completed deliverables: Removed user-facing approve/reject reconciliation actions and approval-audit summary from the Reconciliation Runs panel; added an explicit comparison-workflow note; updated the interface matrix and governing banking documentation so P06 starts from a non-approval reconciliation surface.
+Remaining deliverables: remote push/PR creation, remote CI confirmation, manual desktop verification of the reconciliation panel, and later configured-account comparison/edit workflow implementation.
+Test status: focused `mvn -Dtest=ReconciliationRunsPanelTest,ReconciliationRunsPanelSourceTest test` passed with 1 source-policy test executed and the JavaFX fixture test class skipped by headless toolkit setup; full `mvn clean verify` passed with 266 tests run and 9 skipped.
+Known failures: this checkout has no configured `origin` remote, so remote push/CI validation is not available locally.
+Next exact action: add an `origin` remote, push `work`, open the P06-S1 PR from the local PR record, verify remote CI, and perform manual desktop verification of the reconciliation panel.
 
 ## Objective
 

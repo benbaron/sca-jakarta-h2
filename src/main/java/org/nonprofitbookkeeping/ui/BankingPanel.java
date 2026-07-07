@@ -1,0 +1,549 @@
+package org.nonprofitbookkeeping.ui;
+
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.geometry.Insets;
+import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountSubtype;
+import org.nonprofitbookkeeping.model.AccountType;
+import org.nonprofitbookkeeping.model.Bank;
+import org.nonprofitbookkeeping.model.BankingDataFormat;
+import org.nonprofitbookkeeping.model.CompanyBankAccount;
+import org.nonprofitbookkeeping.model.NormalBalance;
+import org.nonprofitbookkeeping.service.BankAccountCommand;
+import org.nonprofitbookkeeping.service.BankCommand;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.prefs.Preferences;
+
+/** Banking configuration panel for P05-S2. */
+public class BankingPanel implements AppPanel
+{
+    private static final Preferences TABLE_STATE = Preferences.userNodeForPackage(BankingPanel.class).node("banking-table-state");
+    private boolean restoringTableState;
+    private final BorderPane root = new BorderPane();
+    private final TableView<Bank> banks = new TableView<>();
+    private final TableView<CompanyBankAccount> bankAccounts = new TableView<>();
+    private final ComboBox<Bank> bankSelector = new ComboBox<>();
+    private final ComboBox<Account> existingAccountSelector = new ComboBox<>();
+    private final ComboBox<BankingDataFormat> importFormat = new ComboBox<>();
+    private final ToggleGroup accountMode = new ToggleGroup();
+    private final RadioButton useExistingAccount = new RadioButton("Select existing qualifying Chart of Accounts bank account");
+    private final RadioButton createAccount = new RadioButton("Create linked Chart of Accounts bank account");
+    private final TextField bankName = new TextField();
+    private final TextField routingNumber = new TextField();
+    private final TextField address = new TextField();
+    private final TextField website = new TextField();
+    private final TextField contactName = new TextField();
+    private final TextField contactPhone = new TextField();
+    private final TextField contactEmail = new TextField();
+    private final TextField bankNotes = new TextField();
+    private final CheckBox bankActive = new CheckBox("Bank active");
+    private final TextField accountCode = new TextField();
+    private final TextField accountName = new TextField();
+    private final TextField maskedAccount = new TextField();
+    private final TextField nickname = new TextField();
+    private final TextField openingDate = new TextField();
+    private final TextField openingBalance = new TextField();
+    private final TextField ofxBankId = new TextField();
+    private final TextField ofxAccountId = new TextField();
+    private final TextField accountNotes = new TextField();
+    private final CheckBox accountActive = new CheckBox("Account active");
+    private final Button saveBank = new Button("Save Bank");
+    private final Button newBank = new Button("New Bank");
+    private final Button deleteBank = new Button("Delete Bank unavailable — deactivate to preserve history");
+    private final Button saveAccount = new Button("Save Bank Account");
+    private final Button refresh = new Button("Refresh");
+    private final Label status = new Label();
+    private Long editingBankId;
+
+    public BankingPanel()
+    {
+        root.setPadding(new Insets(8));
+        Label title = new Label("Banking");
+        title.getStyleClass().add("panel-title");
+        deleteBank.setDisable(true);
+        deleteBank.setOnAction(event -> status.setText("Bank deletion is disabled in P05-S2; clear Active to preserve statement and reconciliation history."));
+        newBank.setOnAction(event -> clearBankForm());
+        saveBank.setOnAction(event -> saveBank());
+        saveAccount.setOnAction(event -> saveBankAccount());
+        refresh.setOnAction(event -> reload());
+
+        SplitPane split = new SplitPane(bankListPane(), bankAccountPane());
+        split.setDividerPositions(0.45);
+        root.setTop(new VBox(6, title, new HBox(8, newBank, saveBank, deleteBank, refresh), status, new Separator()));
+        root.setCenter(split);
+
+        configureBankTable();
+        configureBankAccountTable();
+        configureForms();
+        installTableStatePersistence(banks, "banks");
+        installTableStatePersistence(bankAccounts, "accounts");
+        installFormatCorrection();
+        clearBankForm();
+        reload();
+    }
+
+    @Override public String title() { return "Banking"; }
+    @Override public Node root() { return root; }
+
+    @Override
+    public void onNew()
+    {
+        clearBankForm();
+        status.setText("Create mode: enter a Bank, then save linked bank-account configuration.");
+    }
+
+    FormState formStateForTests()
+    {
+        return new FormState(
+                saveBank.isDisable(),
+                deleteBank.isDisable(),
+                useExistingAccount.isSelected(),
+                createAccount.isSelected(),
+                banks.getItems().size(),
+                bankAccounts.getItems().size(),
+                status.getText());
+    }
+
+    private Node bankListPane()
+    {
+        VBox pane = new VBox(8, new Label("Financial institutions"), banks, bankForm());
+        pane.setPadding(new Insets(8));
+        return pane;
+    }
+
+    private Node bankAccountPane()
+    {
+        VBox pane = new VBox(8, new Label("Configured bank accounts"), bankAccounts, accountForm());
+        pane.setPadding(new Insets(8));
+        return pane;
+    }
+
+    private Node bankForm()
+    {
+        GridPane form = new GridPane();
+        form.setHgap(8);
+        form.setVgap(8);
+        int row = 0;
+        form.add(new Label("Bank name"), 0, row); form.add(bankName, 1, row++);
+        form.add(new Label("Routing number"), 0, row); form.add(routingNumber, 1, row++);
+        form.add(new Label("Address"), 0, row); form.add(address, 1, row++);
+        form.add(new Label("Website"), 0, row); form.add(website, 1, row++);
+        form.add(new Label("Contact name"), 0, row); form.add(contactName, 1, row++);
+        form.add(new Label("Contact phone"), 0, row); form.add(contactPhone, 1, row++);
+        form.add(new Label("Contact email"), 0, row); form.add(contactEmail, 1, row++);
+        form.add(new Label("Notes"), 0, row); form.add(bankNotes, 1, row++);
+        form.add(bankActive, 1, row);
+        ScrollPane scroll = new ScrollPane(form);
+        scroll.setFitToWidth(true);
+        return scroll;
+    }
+
+    private Node accountForm()
+    {
+        useExistingAccount.setToggleGroup(accountMode);
+        createAccount.setToggleGroup(accountMode);
+        useExistingAccount.setSelected(true);
+        GridPane form = new GridPane();
+        form.setHgap(8);
+        form.setVgap(8);
+        int row = 0;
+        form.add(new Label("Bank"), 0, row); form.add(bankSelector, 1, row++);
+        form.add(useExistingAccount, 0, row, 2, 1); row++;
+        form.add(new Label("Existing account"), 0, row); form.add(existingAccountSelector, 1, row++);
+        form.add(createAccount, 0, row, 2, 1); row++;
+        form.add(new Label("New account code"), 0, row); form.add(accountCode, 1, row++);
+        form.add(new Label("New account name"), 0, row); form.add(accountName, 1, row++);
+        form.add(new Label("Masked account #"), 0, row); form.add(maskedAccount, 1, row++);
+        form.add(new Label("Nickname"), 0, row); form.add(nickname, 1, row++);
+        form.add(new Label("Opening date (yyyy-mm-dd)"), 0, row); form.add(openingDate, 1, row++);
+        form.add(new Label("Opening balance"), 0, row); form.add(openingBalance, 1, row++);
+        form.add(new Label("Import format"), 0, row); form.add(importFormat, 1, row++);
+        form.add(new Label("OFX bank ID"), 0, row); form.add(ofxBankId, 1, row++);
+        form.add(new Label("OFX account ID"), 0, row); form.add(ofxAccountId, 1, row++);
+        form.add(new Label("Notes"), 0, row); form.add(accountNotes, 1, row++);
+        form.add(accountActive, 1, row++);
+        form.add(saveAccount, 1, row);
+        ScrollPane scroll = new ScrollPane(form);
+        scroll.setFitToWidth(true);
+        return scroll;
+    }
+
+    private void configureBankTable()
+    {
+        banks.setPlaceholder(new Label("No banks configured. Use the form below to create a financial institution."));
+        TableColumn<Bank, String> name = new TableColumn<>("Bank");
+        name.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().getName()));
+        TableColumn<Bank, String> routing = new TableColumn<>("Routing");
+        routing.setCellValueFactory(v -> new SimpleStringProperty(nullToBlank(v.getValue().getRoutingNumber())));
+        TableColumn<Bank, String> active = new TableColumn<>("Active");
+        active.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().isActive() ? "Y" : "N"));
+        banks.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        banks.getColumns().addAll(name, routing, active);
+        configureColumn(name, "bankName", 220);
+        configureColumn(routing, "routing", 120);
+        configureColumn(active, "active", 84);
+        restoreTableState(banks, "banks");
+        banks.getSelectionModel().selectedItemProperty().addListener((obs, oldRow, newRow) -> loadBank(newRow));
+    }
+
+    private void configureBankAccountTable()
+    {
+        bankAccounts.setPlaceholder(new Label("No configured bank accounts."));
+        TableColumn<CompanyBankAccount, String> bank = new TableColumn<>("Bank");
+        bank.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().getBank() == null ? "" : v.getValue().getBank().getName()));
+        TableColumn<CompanyBankAccount, String> account = new TableColumn<>("Chart account");
+        account.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().getAccount() == null ? "" : v.getValue().getAccount().getCode() + " " + v.getValue().getAccount().getName()));
+        TableColumn<CompanyBankAccount, String> nick = new TableColumn<>("Nickname");
+        nick.setCellValueFactory(v -> new SimpleStringProperty(nullToBlank(v.getValue().getNickname())));
+        TableColumn<CompanyBankAccount, String> format = new TableColumn<>("Format");
+        format.setCellValueFactory(v -> new SimpleStringProperty(String.valueOf(v.getValue().getStatementImportFormat())));
+        bankAccounts.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        bankAccounts.getColumns().addAll(bank, account, nick, format);
+        configureColumn(bank, "bank", 180);
+        configureColumn(account, "account", 240);
+        configureColumn(nick, "nickname", 180);
+        configureColumn(format, "format", 100);
+        restoreTableState(bankAccounts, "accounts");
+    }
+
+    private void configureForms()
+    {
+        bankSelector.setConverter(new javafx.util.StringConverter<>()
+        {
+            @Override public String toString(Bank bank) { return bank == null ? "" : bank.getName(); }
+            @Override public Bank fromString(String string) { return null; }
+        });
+        existingAccountSelector.setConverter(new javafx.util.StringConverter<>()
+        {
+            @Override public String toString(Account account) { return account == null ? "" : account.getCode() + " — " + account.getName(); }
+            @Override public Account fromString(String string) { return null; }
+        });
+        importFormat.getItems().setAll(BankingDataFormat.values());
+        importFormat.setValue(BankingDataFormat.OFX);
+        accountActive.setSelected(true);
+    }
+
+    private static void configureColumn(TableColumn<?, ?> column, String key, double prefWidth)
+    {
+        column.setId(key);
+        column.setUserData(key);
+        column.setPrefWidth(prefWidth);
+        column.setMinWidth(72);
+        column.setSortable(true);
+        column.setResizable(true);
+        column.setReorderable(true);
+    }
+
+    private void installFormatCorrection()
+    {
+        openingDate.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
+            if (!isFocused && !openingDate.getText().isBlank())
+            {
+                try
+                {
+                    openingDate.setText(parseDate(openingDate.getText()).format(DateTimeFormatter.ISO_LOCAL_DATE));
+                }
+                catch (RuntimeException ex)
+                {
+                    status.setText("Opening date needs a valid date such as yyyy-mm-dd or m/d/yyyy.");
+                }
+            }
+        });
+        openingBalance.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
+            if (!isFocused)
+            {
+                try
+                {
+                    openingBalance.setText(parseMoney(openingBalance.getText()).setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
+                }
+                catch (RuntimeException ex)
+                {
+                    status.setText("Opening balance needs a valid money amount.");
+                }
+            }
+        });
+    }
+
+    private void installTableStatePersistence(TableView<?> table, String tableKey)
+    {
+        table.getColumns().addListener((ListChangeListener<TableColumn<?, ?>>) change -> saveTableState(table, tableKey));
+        table.getSortOrder().addListener((ListChangeListener<TableColumn<?, ?>>) change -> saveTableState(table, tableKey));
+        for (TableColumn<?, ?> column : table.getColumns())
+        {
+            column.widthProperty().addListener((obs, oldWidth, newWidth) -> saveTableState(table, tableKey));
+            column.sortTypeProperty().addListener((obs, oldSort, newSort) -> saveTableState(table, tableKey));
+        }
+    }
+
+    private void restoreTableState(TableView<?> table, String tableKey)
+    {
+        restoringTableState = true;
+        try
+        {
+            String prefix = tableStatePrefix(tableKey);
+            for (TableColumn<?, ?> column : table.getColumns())
+            {
+                column.setPrefWidth(TABLE_STATE.getDouble(prefix + columnKey(column) + ".width", column.getPrefWidth()));
+                String sort = TABLE_STATE.get(prefix + columnKey(column) + ".sort", "");
+                if ("ASCENDING".equals(sort))
+                {
+                    column.setSortType(TableColumn.SortType.ASCENDING);
+                }
+                else if ("DESCENDING".equals(sort))
+                {
+                    column.setSortType(TableColumn.SortType.DESCENDING);
+                }
+            }
+            restoreColumnOrder(table, prefix);
+            restoreSortOrder(table, prefix);
+        }
+        finally
+        {
+            restoringTableState = false;
+        }
+    }
+
+    private void saveTableState(TableView<?> table, String tableKey)
+    {
+        if (restoringTableState)
+        {
+            return;
+        }
+        String prefix = tableStatePrefix(tableKey);
+        TABLE_STATE.put(prefix + "order", String.join(",", table.getColumns().stream().map(BankingPanel::columnKey).toList()));
+        TABLE_STATE.put(prefix + "sortOrder", String.join(",", table.getSortOrder().stream().map(BankingPanel::columnKey).toList()));
+        for (TableColumn<?, ?> column : table.getColumns())
+        {
+            TABLE_STATE.putDouble(prefix + columnKey(column) + ".width", column.getWidth() > 0 ? column.getWidth() : column.getPrefWidth());
+            TABLE_STATE.put(prefix + columnKey(column) + ".sort", column.getSortType() == null ? "" : column.getSortType().name());
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static void restoreColumnOrder(TableView table, String prefix)
+    {
+        String order = TABLE_STATE.get(prefix + "order", "");
+        if (order.isBlank())
+        {
+            return;
+        }
+        List<String> keys = List.of(order.split(","));
+        List<TableColumn> ordered = (List<TableColumn>) table.getColumns().stream()
+                .sorted(java.util.Comparator.comparingInt(column -> {
+                    int index = keys.indexOf(columnKey((TableColumn<?, ?>) column));
+                    return index < 0 ? Integer.MAX_VALUE : index;
+                }))
+                .toList();
+        table.getColumns().setAll(ordered);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static void restoreSortOrder(TableView table, String prefix)
+    {
+        String sortOrder = TABLE_STATE.get(prefix + "sortOrder", "");
+        if (sortOrder.isBlank())
+        {
+            return;
+        }
+        List<String> keys = List.of(sortOrder.split(","));
+        table.getSortOrder().setAll((java.util.Collection) table.getColumns().stream()
+                .filter(column -> keys.contains(columnKey((TableColumn<?, ?>) column)))
+                .sorted(java.util.Comparator.comparingInt(column -> keys.indexOf(columnKey((TableColumn<?, ?>) column))))
+                .toList());
+    }
+
+    private static String columnKey(TableColumn<?, ?> column)
+    {
+        Object key = column.getUserData();
+        return key == null ? column.getText().replaceAll("\\W+", "_") : key.toString();
+    }
+
+    private static String tableStatePrefix(String tableKey)
+    {
+        return activeCompanyCode().replaceAll("[^A-Za-z0-9_.-]", "_") + "." + tableKey + ".";
+    }
+
+    private void reload()
+    {
+        String company = activeCompanyCode();
+        try
+        {
+            List<Bank> bankRows = UiServiceRegistry.bankConfiguration().listBanks(company);
+            List<CompanyBankAccount> accountRows = UiServiceRegistry.bankConfiguration().listBankAccounts(company);
+            List<Account> qualifying = UiServiceRegistry.accountLookup().listPostingAccountsIncludingInactive().stream()
+                    .filter(BankingPanel::isQualifyingBankAccount)
+                    .toList();
+            banks.setItems(FXCollections.observableArrayList(bankRows));
+            bankSelector.setItems(FXCollections.observableArrayList(bankRows));
+            bankAccounts.setItems(FXCollections.observableArrayList(accountRows));
+            existingAccountSelector.setItems(FXCollections.observableArrayList(qualifying));
+            status.setText("Loaded " + bankRows.size() + " bank(s), " + accountRows.size() + " configured bank account(s). Delete is intentionally unavailable; deactivate records to preserve history.");
+        }
+        catch (RuntimeException ex)
+        {
+            status.setText("Could not load Banking configuration: " + UiErrors.safeMessage(ex));
+        }
+    }
+
+    private void saveBank()
+    {
+        try
+        {
+            BankCommand command = new BankCommand(activeCompanyCode(), bankName.getText(), routingNumber.getText(), address.getText(), website.getText(), contactName.getText(), contactPhone.getText(), contactEmail.getText(), bankNotes.getText(), bankActive.isSelected());
+            Bank saved = editingBankId == null
+                    ? UiServiceRegistry.bankConfiguration().createBank(command)
+                    : UiServiceRegistry.bankConfiguration().updateBank(editingBankId, command);
+            editingBankId = saved.getId();
+            status.setText("Saved bank " + saved.getName() + ".");
+            reload();
+        }
+        catch (RuntimeException ex)
+        {
+            status.setText("Could not save bank: " + UiErrors.safeMessage(ex));
+        }
+    }
+
+    private void saveBankAccount()
+    {
+        try
+        {
+            Bank selectedBank = bankSelector.getValue();
+            if (selectedBank == null)
+            {
+                throw new IllegalArgumentException("Bank is required.");
+            }
+            Account account = useExistingAccount.isSelected()
+                    ? existingAccountSelector.getValue()
+                    : UiServiceRegistry.accountAdmin().upsert(accountCode.getText(), accountName.getText(), AccountType.BANK, NormalBalance.DEBIT, AccountSubtype.CASH, null, true);
+            if (account == null)
+            {
+                throw new IllegalArgumentException("Chart-of-accounts bank account is required.");
+            }
+            CompanyBankAccount saved = UiServiceRegistry.bankConfiguration().createBankAccount(new BankAccountCommand(
+                    activeCompanyCode(), selectedBank.getId(), account.getId(), maskedAccount.getText(), nickname.getText(), parseDate(openingDate.getText()), parseMoney(openingBalance.getText()), importFormat.getValue(), ofxBankId.getText(), ofxAccountId.getText(), accountNotes.getText(), accountActive.isSelected()));
+            status.setText("Saved configured bank account " + saved.getName() + ".");
+            reload();
+        }
+        catch (RuntimeException ex)
+        {
+            status.setText("Could not save bank account: " + UiErrors.safeMessage(ex));
+        }
+    }
+
+    private void loadBank(Bank bank)
+    {
+        if (bank == null)
+        {
+            return;
+        }
+        editingBankId = bank.getId();
+        bankName.setText(bank.getName());
+        routingNumber.setText(nullToBlank(bank.getRoutingNumber()));
+        address.setText(nullToBlank(bank.getAddress()));
+        website.setText(nullToBlank(bank.getWebsite()));
+        contactName.setText(nullToBlank(bank.getContactName()));
+        contactPhone.setText(nullToBlank(bank.getContactPhone()));
+        contactEmail.setText(nullToBlank(bank.getContactEmail()));
+        bankNotes.setText(nullToBlank(bank.getNotes()));
+        bankActive.setSelected(bank.isActive());
+        bankSelector.setValue(bank);
+        status.setText("Edit mode for bank " + bank.getName() + ".");
+    }
+
+    private void clearBankForm()
+    {
+        editingBankId = null;
+        banks.getSelectionModel().clearSelection();
+        bankName.clear();
+        routingNumber.clear();
+        address.clear();
+        website.clear();
+        contactName.clear();
+        contactPhone.clear();
+        contactEmail.clear();
+        bankNotes.clear();
+        bankActive.setSelected(true);
+    }
+
+    private static boolean isQualifyingBankAccount(Account account)
+    {
+        return account.getAccountType() == AccountType.BANK
+                && account.getNormalBalance() == NormalBalance.DEBIT
+                && account.getSubtype() == AccountSubtype.CASH;
+    }
+
+    private static String activeCompanyCode()
+    {
+        return MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
+    }
+
+    private static LocalDate parseDate(String value)
+    {
+        if (value == null || value.isBlank())
+        {
+            return null;
+        }
+        String trimmed = value.trim();
+        for (DateTimeFormatter formatter : List.of(
+                DateTimeFormatter.ISO_LOCAL_DATE,
+                DateTimeFormatter.ofPattern("M/d/uuuu"),
+                DateTimeFormatter.ofPattern("M-d-uuuu"),
+                DateTimeFormatter.ofPattern("MM/dd/uuuu"),
+                DateTimeFormatter.ofPattern("MM-dd-uuuu")))
+        {
+            try
+            {
+                return LocalDate.parse(trimmed, formatter);
+            }
+            catch (DateTimeParseException ignored)
+            {
+                // Try the next accepted UI date format.
+            }
+        }
+        throw new IllegalArgumentException("Opening date must be a valid date.");
+    }
+
+    private static BigDecimal parseMoney(String value)
+    {
+        return value == null || value.isBlank() ? BigDecimal.ZERO : new BigDecimal(value.trim().replace("$", "").replace(",", ""));
+    }
+
+    private static String nullToBlank(String value)
+    {
+        return value == null ? "" : value;
+    }
+
+    record FormState(boolean saveBankDisabled,
+                     boolean deleteBankDisabled,
+                     boolean useExistingAccountSelected,
+                     boolean createAccountSelected,
+                     int bankCount,
+                     int bankAccountCount,
+                     String statusText)
+    {
+    }
+}
