@@ -216,8 +216,12 @@ mvn clean verify
 If a desktop UI cannot be launched in the container, run headless policy/layout tests and clearly record the required manual visual check. Do not claim visual validation that did not occur.
 
 ### Step 5 — Inspect the final result
-
-
+All UI designs must consult these UI design rules:
+doc/interface-operation-matrix.md
+doc/ui_design_rules.md
+doc/ui/editor-guidelines.md
+architecture/dashboard-composition.md
+Schedule or make any changes needed to conform with these requirements. If there are changes, this returns to Step 3.
 
 ### Step 6 — GitHub validation
 
