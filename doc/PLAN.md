@@ -1,12 +1,12 @@
 ---
 plan_version: 3
-active_phase: P03
-active_slice: P03-S3-corrective
+active_phase: P04
+active_slice: P04-S3
 active_status: VERIFYING
 active_branch: work
-active_pull_request: pending local make_pr record for Transaction Editor and Ledger Register corrective UX wiring
-active_head: HEAD (P03-S3 corrective TestFX validation handoff)
-next_action: "Open the desktop JavaFX app and manually validate save reset, cross-panel tab raising/focus, inspect-journal details, the top chrome period selector, the vertical middle-pane resize bar, Delete Current Line, append-only Transaction Editor saves, Ledger Register horizontal scrolling, and Transaction Editor split-table resizing before merge."
+active_pull_request: local make_pr record: Convert budget UI to normalized budget plans
+active_head: HEAD (Add P04 budget UI design-rule validation)
+next_action: "Push the P04-S3 branch/PR where a GitHub remote is available, run required GitHub checks, and complete user desktop review before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1201,7 +1201,7 @@ Activation selects the comparison version; it is not an approval workflow.
 
 ### P04-S3 — Budget UI and dashboard
 
-Status: IN_PROGRESS. Branch: work. PR: local make_pr record: Convert budget UI to normalized budget plans. Head: d21999c Convert budget UI to normalized plans.
+Status: VERIFYING. Branch: work. PR: local make_pr record: Convert budget UI to normalized budget plans. Head: HEAD (Add P04 budget UI design-rule validation).
 
 Completed deliverables in this run:
 
@@ -1209,28 +1209,44 @@ Completed deliverables in this run:
 - converted Budget vs Actual from fund target merging to `BudgetPlanService.activeVariance` projections;
 - removed `BudgetTargetPersistence` and budget target map APIs from `UiWorkspaceDataStore`;
 - documented the P04-S3 service-backed UI boundary in `doc/accounting/budget-model.md`;
-- updated sidecar-era UI tests so budget target file persistence is no longer treated as application behavior.
+- updated sidecar-era UI tests so budget target file persistence is no longer treated as application behavior;
+- brought P04 budget UI surfaces into the table/split-pane/TestFX design-rule path by adding stable IDs, unconstrained table column sizing, split-pane boundaries for Budget Editor and Budget vs Actual, and display-backed TestFX checks for Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison.
 
 Remaining deliverables before merge:
 
-- rerun Maven compile, focused budget UI/service tests, and `mvn clean verify` when Maven Central/plugin artifacts are reachable;
-- perform a desktop visual check of Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison outside the headless container.
+- push the branch/PR in an environment with a configured GitHub remote and verify required GitHub checks;
+- complete user desktop review of Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison before merge.
 
 Known failures:
 
-- `mvn -DskipTests compile` and `mvn -o -DskipTests compile` are environment-blocked because `maven-resources-plugin:3.3.1` is absent locally and Maven Central is unreachable.
+- bootstrap `git fetch origin --prune` failed because this worktree has no `origin` remote configured;
+- GitHub validation could not be run from this worktree because no `origin` remote is configured;
+- final user desktop review remains outstanding even though display-backed TestFX validation ran successfully under `xvfb`.
+
+Validation completed on 2026-07-06:
+
+- `mvn -DskipTests compile` passed;
+- after installing `xvfb`, `libgtk-3-0`, and related GTK/X11 runtime libraries, `xvfb-run -a mvn -Dtest=ProductionDesignRulesTestFxTest test` passed with 3 tests run, 0 failures, 0 errors, and 0 skipped tests;
+- `mvn clean verify` passed with 252 tests run, 0 failures, 0 errors, and 8 skipped tests;
+- focused `mvn -Dtest=BudgetPlanMigrationTest,BudgetPlanServiceTest,JpaDashboardQueryServiceTest,BudgetEditorPanelTest test` passed with 12 tests run, 0 failures, 0 errors, and 0 skipped tests;
+- on 2026-07-07, `mvn -DskipTests compile` passed after the P04 UI design-rule updates;
+- on 2026-07-07, after installing `xvfb`, `libgtk-3-0`, and related GTK/X11 runtime libraries, `xvfb-run -a mvn -Dtest=ProductionDesignRulesTestFxTest test` passed with 6 tests run, 0 failures, 0 errors, and 0 skipped tests;
+- on 2026-07-07, focused `mvn -Dtest=BudgetPlanMigrationTest,BudgetPlanServiceTest,JpaDashboardQueryServiceTest,BudgetEditorPanelTest test` passed with 12 tests run, 0 failures, 0 errors, and 0 skipped tests;
+- on 2026-07-07, `mvn clean verify` passed with 255 tests run, 0 failures, 0 errors, and 11 skipped tests.
 
 User-visible changes:
 
 - Budget Editor saves category budget amounts to normalized H2 budget plans instead of sidecar fund target files.
+- Budget Editor and Budget vs Actual now expose resizable split-pane table regions and horizontal table scrolling instead of constrained column clipping.
 - Budget vs Actual and Dashboard budget cards read active normalized budget versions or show neutral no-budget states.
+- Dashboard budget performance and YTD comparison controls expose stable automation IDs for display-backed workflow checks.
 
 Manual testing for user:
 
 - Open Budget Editor, enter category amounts, activate the draft version, and confirm Budget vs Actual and Dashboard budget cards compare against that active version.
 - Create a second draft revision, activate it, and confirm the prior active version is archived by the service and no sidecar budget target file is used.
 
-Next exact action: restore Maven plugin/dependency access and rerun `mvn -DskipTests compile`, focused budget tests, and `mvn clean verify`.
+Next exact action: push the P04-S3 branch/PR where a GitHub remote is available, run required GitHub checks, and complete user desktop review before merge.
 
 Original scope:
 
