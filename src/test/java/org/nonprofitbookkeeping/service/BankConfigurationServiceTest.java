@@ -63,6 +63,24 @@ public class BankConfigurationServiceTest
         }
     }
 
+    @Test
+    public void updateBankAndListConfigurationRows(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("bank-config-list")))
+        {
+            seedCompanyAndAccounts(jpa);
+            BankConfigurationService service = new BankConfigurationService(jpa);
+            Bank bank = service.createBank(new BankCommand("SCA", "Old Bank", null, null, null, null, null, null, null, true));
+
+            service.updateBank(bank.getId(), new BankCommand("SCA", "Updated Bank", "987654321", null, null, null, null, null, null, false));
+            service.createBankAccount(new BankAccountCommand("SCA", bank.getId(), 101L, "9999", "Reserve", null, BigDecimal.ZERO, BankingDataFormat.QIF, null, null, null, true));
+
+            assertEquals("Updated Bank", service.listBanks("SCA").get(0).getName());
+            assertEquals(false, service.listBanks("SCA").get(0).isActive());
+            assertEquals(1, service.listBankAccounts("SCA").size());
+        }
+    }
+
     private static void seedCompanyAndAccounts(Jpa jpa)
     {
         try (var em = jpa.em())

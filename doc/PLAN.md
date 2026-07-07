@@ -1,12 +1,12 @@
 ---
 plan_version: 4
 active_phase: P05
-active_slice: P05-S1
+active_slice: P05-S2
 active_status: VERIFYING
 active_branch: work
 active_pull_request: pending local PR record
 active_head: HEAD
-next_action: "Push branch work to a remote, open the recorded P05-S1 PR, verify remote CI, and perform manual Banking configuration UI review before advancing to P05-S2."
+next_action: "Push branch work to a remote, open the recorded P05-S2 PR, verify remote CI, and perform manual Banking panel UI review before advancing to P05-S3."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -557,16 +557,16 @@ Create Banking as an Accounting function and connect statement import to configu
 
 ### P05-S1 — Bank and bank-account model
 
-Status: VERIFYING.
+Status: DONE.
 
 Branch: `work`
 Pull request: pending local PR record
 Head commit: `HEAD`
 Completed deliverables: Added `Bank` and enhanced configured `CompanyBankAccount` model fields, nondestructive V52 migration, P05-S1 bank configuration service validation, and governing banking design documentation.
-Remaining deliverables: remote push/PR creation, remote CI confirmation, and manual Banking configuration UI review before any P05-S2 implementation.
+Remaining deliverables: none for P05-S1 per owner instruction to mark DONE; remote validation remains unavailable without an origin remote.
 Test status: `mvn -DskipTests compile`, `mvn -Dtest=DatabaseMigrationRecoveryTest,BankConfigurationServiceTest,BankImportMigrationTest test`, and `mvn clean verify` pass locally; JavaFX visual/manual review remains required in a desktop environment.
 Known failures: this checkout has no configured `origin` remote, so remote push/CI validation is not available locally.
-Next exact action: add an `origin` remote, push `work`, open the P05-S1 PR from the local PR record, verify CI, and perform manual Banking configuration UI review.
+Next exact action: proceed to P05-S2 Banking panel under Accounting.
 
 A Bank record represents the financial institution and stores:
 
@@ -600,6 +600,17 @@ Always: read and follow
 and apply them to the following work items. If this requires major redesign then remark this in documentation.
 
 ### P05-S2 — Banking panel under Accounting
+
+Status: VERIFYING.
+
+Branch: `work`
+Pull request: pending local PR record
+Head commit: `HEAD`
+Completed deliverables: Added first-class Banking navigation/panel, bank create/edit form, configured bank-account create form with existing-account selection or automatic BANK/DEBIT/CASH chart-account creation, H2-backed reloads, visible Delete/deactivate explanation, active-company-keyed table state persistence, focus-loss date/money correction, and governing documentation/matrix updates.
+Remaining deliverables: remote push/PR creation, remote CI confirmation, and manual desktop JavaFX validation of Banking panel layout and prompts.
+Test status: `mvn -DskipTests compile`, `mvn -Dtest=BankConfigurationServiceTest,AppPanelConsistencyTest test`, and `mvn clean verify` pass locally with 261 tests run and 9 skipped; JavaFX desktop visual/manual review remains required.
+Known failures: this checkout has no configured `origin` remote, so remote push/CI validation is not available locally.
+Next exact action: add an `origin` remote, push `work`, open the P05-S2 PR from the local PR record, verify CI, and perform manual Banking panel UI review.
 
 The Banking panel appears under Accounting in the Left Navigation Pane and lets the user:
 

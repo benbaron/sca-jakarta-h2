@@ -11,8 +11,9 @@ import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.math.BigDecimal;
+import java.util.List;
 
-/** Service boundary for P05-S1 bank and bank-account configuration. */
+/** Service boundary for P05 bank and bank-account configuration. */
 public class BankConfigurationService
 {
     private final Jpa jpa;
@@ -20,6 +21,40 @@ public class BankConfigurationService
     public BankConfigurationService(Jpa jpa)
     {
         this.jpa = jpa;
+    }
+
+    public List<Bank> listBanks(String companyCode)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            Company company = companyByCode(em, companyCode);
+            return em.createQuery("""
+                            select b
+                            from Bank b
+                            where b.company = :company
+                            order by b.name
+                            """, Bank.class)
+                    .setParameter("company", company)
+                    .getResultList();
+        }
+    }
+
+    public List<CompanyBankAccount> listBankAccounts(String companyCode)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            Company company = companyByCode(em, companyCode);
+            return em.createQuery("""
+                            select cba
+                            from CompanyBankAccount cba
+                            left join fetch cba.bank
+                            left join fetch cba.account
+                            where cba.company = :company
+                            order by cba.name
+                            """, CompanyBankAccount.class)
+                    .setParameter("company", company)
+                    .getResultList();
+        }
     }
 
     public Bank createBank(BankCommand command)
@@ -36,26 +71,45 @@ public class BankConfigurationService
             {
                 Company company = companyByCode(em, command.companyCode());
                 Bank bank = new Bank();
-                bank.setCompany(company);
-                bank.setName(command.name().trim());
-                bank.setRoutingNumber(blankToNull(command.routingNumber()));
-                bank.setAddress(blankToNull(command.address()));
-                bank.setWebsite(blankToNull(command.website()));
-                bank.setContactName(blankToNull(command.contactName()));
-                bank.setContactPhone(blankToNull(command.contactPhone()));
-                bank.setContactEmail(blankToNull(command.contactEmail()));
-                bank.setNotes(blankToNull(command.notes()));
-                bank.setActive(command.active());
+                applyBankCommand(bank, command, company);
                 em.persist(bank);
                 tx.commit();
                 return bank;
             }
             catch (RuntimeException ex)
             {
-                if (tx.isActive())
+                rollback(tx);
+                throw ex;
+            }
+        }
+    }
+
+    public Bank updateBank(long bankId, BankCommand command)
+    {
+        if (isBlank(command.name()))
+        {
+            throw new IllegalArgumentException("Bank name is required.");
+        }
+        try (EntityManager em = jpa.em())
+        {
+            var tx = em.getTransaction();
+            tx.begin();
+            try
+            {
+                Company company = companyByCode(em, command.companyCode());
+                Bank bank = em.find(Bank.class, bankId);
+                if (bank == null || !bank.getCompany().getId().equals(company.getId()))
                 {
-                    tx.rollback();
+                    throw new IllegalArgumentException("Bank does not exist for company: " + bankId + ".");
                 }
+                applyBankCommand(bank, command, company);
+                bank.touchUpdatedAt();
+                tx.commit();
+                return bank;
+            }
+            catch (RuntimeException ex)
+            {
+                rollback(tx);
                 throw ex;
             }
         }
@@ -102,10 +156,7 @@ public class BankConfigurationService
             }
             catch (RuntimeException ex)
             {
-                if (tx.isActive())
-                {
-                    tx.rollback();
-                }
+                rollback(tx);
                 throw ex;
             }
         }
@@ -122,6 +173,28 @@ public class BankConfigurationService
                 || account.getSubtype() != AccountSubtype.CASH)
         {
             throw new IllegalArgumentException("Linked chart account must be BANK / DEBIT / CASH.");
+        }
+    }
+
+    private static void applyBankCommand(Bank bank, BankCommand command, Company company)
+    {
+        bank.setCompany(company);
+        bank.setName(command.name().trim());
+        bank.setRoutingNumber(blankToNull(command.routingNumber()));
+        bank.setAddress(blankToNull(command.address()));
+        bank.setWebsite(blankToNull(command.website()));
+        bank.setContactName(blankToNull(command.contactName()));
+        bank.setContactPhone(blankToNull(command.contactPhone()));
+        bank.setContactEmail(blankToNull(command.contactEmail()));
+        bank.setNotes(blankToNull(command.notes()));
+        bank.setActive(command.active());
+    }
+
+    private static void rollback(jakarta.persistence.EntityTransaction tx)
+    {
+        if (tx.isActive())
+        {
+            tx.rollback();
         }
     }
 
