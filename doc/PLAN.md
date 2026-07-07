@@ -307,7 +307,7 @@ Apply the clarified transaction-entry and journal requirements.
 
 ### P03-C1 — Transaction Editor modes and Ledger Register buttons
 
-Status: VERIFYING.
+Status: DONE.
 
 Branch: `codex/P03-P03-C1-transaction-editor-register-modes`
 Pull request: pending
