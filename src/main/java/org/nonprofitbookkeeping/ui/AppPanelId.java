@@ -10,8 +10,6 @@ public enum AppPanelId
     JOURNAL_PANE,
     BANKING,
 
-    SCHEDULES,
-
     BUDGET_EDITOR,
     BUDGET_VS_ACTUAL,
 
