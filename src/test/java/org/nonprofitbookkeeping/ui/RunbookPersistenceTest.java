@@ -8,23 +8,36 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/**
- * RunbookPersistenceTest component.
- */
 class RunbookPersistenceTest
 {
     @TempDir
     Path tempDir;
 
     @Test
-    void saveThenLoadScheduleEntries_roundTrips()
+    void saveThenLoadAssetEntries_roundTrips()
     {
         RunbookPersistence.setDirectoryForTests(tempDir);
         try
         {
             List<String> rows = List.of("a", "b");
-            RunbookPersistence.saveScheduleEntries(rows);
-            assertEquals(rows, RunbookPersistence.loadScheduleEntries());
+            RunbookPersistence.saveAssetEntries(rows);
+            assertEquals(rows, RunbookPersistence.loadAssetEntries());
+        }
+        finally
+        {
+            RunbookPersistence.clearDirectoryOverrideForTests();
+        }
+    }
+
+    @Test
+    void saveThenLoadInventoryEntries_roundTrips()
+    {
+        RunbookPersistence.setDirectoryForTests(tempDir);
+        try
+        {
+            List<String> rows = List.of("i", "j");
+            RunbookPersistence.saveInventoryEntries(rows);
+            assertEquals(rows, RunbookPersistence.loadInventoryEntries());
         }
         finally
         {
