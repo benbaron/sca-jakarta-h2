@@ -127,18 +127,47 @@ public class NavigationPane extends VBox
                 previous.getStyleClass().remove("navigation-item-selected");
             }
         }
+
         highlightedPanel = id;
-        Button next = index.get(id);
-        if (next != null)
+        Button selected = index.get(id);
+        if (selected != null
+                && !selected.getStyleClass().contains("navigation-item-selected"))
         {
-            next.getStyleClass().add("navigation-item-selected");
+            selected.getStyleClass().add("navigation-item-selected");
         }
     }
 
     /** Returns the panel ids currently exposed by navigation. */
     public EnumSet<AppPanelId> visiblePanels()
     {
-        return EnumSet.copyOf(index.keySet());
+        return index.isEmpty()
+                ? EnumSet.noneOf(AppPanelId.class)
+                : EnumSet.copyOf(index.keySet());
+    }
+
+    EnumSet<AppPanelId> indexedPanelIds()
+    {
+        return visiblePanels();
+    }
+
+    static String inspectorBody(NavItem item, InspectorContext context)
+    {
+        Objects.requireNonNull(item, "item");
+        Objects.requireNonNull(context, "context");
+        if (item.panelId() == null)
+        {
+            return InspectorPresentationModel.navigationGroupBody(
+                    context.activeCompany(),
+                    context.dateRange());
+        }
+        return InspectorPresentationModel.panelBody(
+                item.label(),
+                item.panelId().name(),
+                context.activeCompany(),
+                context.dateRange(),
+                context.panelCapabilities(),
+                "single-select, Enter, or double-click.",
+                "use toolbar Find/Journal for cross-panel queries.");
     }
 
     private void addItem(VBox target, AppPanelId id, String label, UiIcons.Glyph glyph)
@@ -148,15 +177,18 @@ public class NavigationPane extends VBox
         button.setAlignment(Pos.CENTER_LEFT);
         button.setContentDisplay(ContentDisplay.LEFT);
         button.getStyleClass().add("navigation-item");
-        button.setOnAction(event -> openPanel.accept(id));
+        button.setOnAction(event -> {
+            highlight(id);
+            openPanel.accept(id);
+        });
         button.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.SECONDARY)
             {
-                InspectorContext ctx = inspectorContextSupplier.get();
-                if (ctx != null)
-                {
-                    openInspector.accept(label, ctx.describe());
-                }
+                NavItem item = new NavItem(id, label);
+                openInspector.accept(
+                        "Details: " + label,
+                        inspectorBody(item, inspectorContextSupplier.get()));
+                event.consume();
             }
         });
         index.put(id, button);
@@ -169,5 +201,16 @@ public class NavigationPane extends VBox
         section.getStyleClass().add("navigation-section");
         section.setPadding(new Insets(10, 8, 2, 8));
         target.getChildren().add(section);
+    }
+
+    public record NavItem(AppPanelId panelId, String label)
+    {
+    }
+
+    public record InspectorContext(
+            String activeCompany,
+            String dateRange,
+            String panelCapabilities)
+    {
     }
 }
