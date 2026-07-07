@@ -150,13 +150,11 @@ The linked chart account must be a posting cash-bank ledger account with `Accoun
 
 This model is configuration metadata only; it does not create accepted accounting transactions and does not act as a second ledger. P05-S2 owns the JavaFX Banking panel under Accounting, P05-S3 owns import normalization and review wiring, and P05-S4 owns cleared-state mapping from reviewed bank statement facts to canonical ledger bank lines.
 
-
 ## P05-S2 implementation note — Banking panel
 
 P05-S2 adds a first-class Banking panel under Accounting. The panel loads bank and configured bank-account rows from H2 through `BankConfigurationService`, saves Bank create/edit operations through that service, and creates configured bank accounts either from a selected qualifying Chart of Accounts account or by first creating a BANK/DEBIT/CASH account through `AccountAdminService`.
 
 The panel exposes a disabled Delete explanation instead of a destructive delete operation in this slice: bank configuration records can be deactivated to preserve statement import and reconciliation history until a later audited delete/deactivate policy is specified. Its tables use sortable, resizable, reorderable columns with active-company-keyed column width, order, and sort persistence, and its date and money entry fields accept common input forms and normalize display on focus loss.
-
 
 ## P05-S4 implementation note — cleared state on ledger bank lines
 
@@ -165,3 +163,9 @@ P05-S4 adds cleared-state columns to canonical `txn_split` rows. A matched impor
 ## P06-S1 reconciliation workflow note
 
 P06 starts by removing approval/rejection semantics from the Reconciliation Runs workspace. Reconciliation remains a comparison workflow over configured bank accounts, imported/manual statement facts, and canonical ledger bank lines; it does not create an approve/reject queue or write approval decisions. The current run list may record started/completed/failed run facts while later P06 slices add configured-account comparison, mismatch resolution, and saved unresolved reconciliation reports.
+
+## P06-S2 configured-account comparison note
+
+P06-S2 adds `ReconciliationComparisonService`, which validates that reconciliation uses an active configured bank account linked to both a Bank record and a BANK/DEBIT/CASH chart account. The service reads canonical `TxnSplit` bank lines and reviewed `BankStatementLine` facts, calculates beginning balance, activity, ending book balance, and cleared-only balance, and produces comparison lines for exact matches, unmatched ledger lines, unmatched statement lines, amount mismatches, date mismatches, and cleared-state mismatches.
+
+The Bank Reconciliation panel now exposes a configured-account selector, from date, statement ending date, and a comparison table. When requested, unresolved comparison summaries are saved as factual reconciliation run records. Saving an unresolved report is not an approval or rejection workflow; it records the comparison result so a later workflow can reopen or resolve it.

@@ -22,6 +22,7 @@ import org.nonprofitbookkeeping.service.FundBalanceService;
 import org.nonprofitbookkeeping.service.FundLookupService;
 import org.nonprofitbookkeeping.service.LedgerQueryService;
 import org.nonprofitbookkeeping.service.PeriodCloseService;
+import org.nonprofitbookkeeping.service.ReconciliationComparisonService;
 import org.nonprofitbookkeeping.service.ReconciliationService;
 import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
 import org.nonprofitbookkeeping.service.SampleCompanyService;
@@ -160,6 +161,11 @@ public final class UiServiceRegistry
     public static ReconciliationService reconciliationService()
     {
         return new ReconciliationService(reconciliationRunRepository());
+    }
+
+    public static ReconciliationComparisonService reconciliationComparison()
+    {
+        return new ReconciliationComparisonService(services().jpa(), reconciliationService());
     }
 
     public static PeriodCloseService periodCloseService()
