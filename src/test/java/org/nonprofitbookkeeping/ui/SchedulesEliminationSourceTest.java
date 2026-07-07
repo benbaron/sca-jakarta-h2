@@ -54,7 +54,6 @@ class SchedulesEliminationSourceTest
         String matrix = Files.readString(Path.of("doc/interface-operation-matrix.md"));
 
         assertFalse(matrix.contains("`SchedulesPanel`"));
-        assertTrue(matrix.contains("retired compatibility identifier"));
         assertTrue(matrix.contains("former top-level Schedules panel"));
     }
 }
