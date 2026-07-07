@@ -37,6 +37,7 @@ public class UiWorkspaceDataStoreTest
         assertEquals(1, UiWorkspaceDataStore.jobs().size());
         assertEquals("IMPORT_BANK", UiWorkspaceDataStore.jobs().get(0).operation());
     }
+
     @Test
     public void clearJobsForTests_keepsBankTransactions()
     {
@@ -61,19 +62,16 @@ public class UiWorkspaceDataStoreTest
     }
 
     @Test
-    public void store_tracksOperationalRunbookEntriesAcrossPanels()
+    public void store_tracksRemainingOperationalRunbookEntriesAcrossPanels()
     {
         UiWorkspaceDataStore.clearForTests();
 
-        UiWorkspaceDataStore.appendScheduleRunbookEntry("s1");
         UiWorkspaceDataStore.appendAssetLifecycleEntry("a1");
         UiWorkspaceDataStore.appendDepreciationRunEntry("d1");
         UiWorkspaceDataStore.appendInventoryMovementEntry("i1");
 
-        assertEquals(List.of("s1"), UiWorkspaceDataStore.scheduleRunbookEntries());
         assertEquals(List.of("a1"), UiWorkspaceDataStore.assetLifecycleEntries());
         assertEquals(List.of("d1"), UiWorkspaceDataStore.depreciationRunEntries());
         assertEquals(List.of("i1"), UiWorkspaceDataStore.inventoryMovementEntries());
     }
-
 }
