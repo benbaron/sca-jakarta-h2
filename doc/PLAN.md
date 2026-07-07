@@ -1,54 +1,23 @@
 ---
-plan_version: 5
-active_phase: P06
-active_slice: P06-S2
+plan_version: 6
+active_phase: P07
+active_slice: P07-S1
 active_status: VERIFYING
-active_branch: codex/P06-P06-S2-reconciliation-comparison
-active_pull_request: "#138"
-active_head: fc9ceac7316cae03a3dfa7099ae9130fbb9c6b63
-next_action: "Run mvn -Dtest=ReconciliationComparisonServiceTest test, then mvn clean verify, fix any failures, perform desktop Bank Reconciliation comparison review, and update PR #138 with actual validation."
+active_branch: codex/P07-remove-schedules-function
+active_pull_request: pending
+active_head: pending
+next_action: "Open P07-S1 PR, run mvn -Dtest=SchedulesEliminationSourceTest,OperationalRunbookFormattingTest test, then mvn clean verify, and merge after validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ## 1. Purpose
 
-This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`.
+This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-Codex must not treat this as a general backlog. On container startup it selects one phase and one slice using `AGENTS.md`, executes only that scope, and updates this file with actual state.
+This revision records that P06-S2 was merged and is DONE, then starts P07-S1 to remove the eliminated top-level Schedules function from production UI routing and documentation.
 
-This revision incorporates the owner's clarification answers from `answers.docx`, the merged P05/P06 groundwork in PR #137, the owner's 2026-07-07 instruction that P06-S1 is verified and done, and the P06-S2 draft PR handoff.
-
-## 2. How to invoke Codex
-
-Preferred explicit invocation:
-
-```text
-Execute PHASE=P03, SLICE=P03-C1 from doc/PLAN.md.
-Follow AGENTS.md.
-Use current main.
-Proceed through implementation, tests, documentation, and PR validation.
-```
-
-To resume recorded work:
-
-```text
-Continue the active phase and slice from doc/PLAN.md.
-Follow AGENTS.md and the recorded branch/PR handoff.
-```
-
-To request a phase without a slice:
-
-```text
-Execute PHASE=P05 from doc/PLAN.md.
-Select the first incomplete unblocked slice in that phase.
-```
-
-Codex must verify prerequisites even when the task names a later phase.
-
-## 3. Status and state rules
-
-Valid status values:
+## 2. Status values
 
 - `BLOCKED`
 - `READY`
@@ -59,9 +28,7 @@ Valid status values:
 
 Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase or function is no longer part of the product plan and must not be reintroduced without a new requirements decision.
 
-When a branch begins, update front matter and the phase section. When a PR is open, record it. When validation remains, use `VERIFYING`. After merge is confirmed on current `main`, mark `DONE` and advance the active phase.
-
-## 4. Phase index after requirements clarification
+## 3. Phase index after requirements clarification
 
 | Phase | Name | Depends on | Status |
 |---|---|---|---|
@@ -71,8 +38,8 @@ When a branch begins, update front matter and the phase section. When a PR is op
 | P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY for corrective/new slices |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
 | P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137 |
-| P06 | Bank reconciliation and cleared-state comparison | P05 | VERIFYING P06-S2 |
-| P07 | Eliminated former Schedules phase | n/a | ELIMINATED |
+| P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138 |
+| P07 | Eliminated former Schedules phase | n/a | VERIFYING P07-S1 |
 | P08 | Asset Register and depreciation | P02 | BLOCKED |
 | P09 | Inventory and supplies | P02 | BLOCKED |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | BLOCKED |
@@ -81,66 +48,30 @@ When a branch begins, update front matter and the phase section. When a PR is op
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
-A phase may begin early only when its required slice has no dependency on an unfinished prerequisite and the plan is updated to explain the deliberate exception.
+## 4. Governing documents
 
-## 4.1 Completed-phase design-rule retrofit
-
-The design rules in `doc/ui_design_rules.md` apply retroactively to completed UI phases. Completed phases are not reopened wholesale, but corrective slices that touch completed surfaces must either bring that surface into compliance or record a focused follow-up slice here.
-
-Completed-phase updates to apply:
-
-- **P00 documentation inventory:** keep `doc/interface-operation-matrix.md` and `doc/persistence-authority-inventory.md` current when a completed panel lacks sortable/resizable/reorderable table state, per-company preference storage, money/date formatting correction, record removal behavior, or split-pane/scroll behavior.
-- **P01 production shell:** shell preferences that affect company data display must move from global user state to per-company saved state; workspace geometry tests must include the table/split-pane/scroll requirements.
-- **P02 canonical ledger services:** continue preserving internal money precision and date types; UI money/date correction remains outside authoritative service storage.
-- **P03 transaction surfaces:** retrofit Transaction Editor, Ledger Register, and Journal Pane to the clarified New/Edit, read-only register, and journal navigation requirements.
-- **P04 budget surfaces:** table-heavy budget panels must adopt the table-state and formatting rules before those panels are considered design-rule complete.
-
-## 5. Governing documents
-
-### Always read
+Always read:
 
 - `AGENTS.md`
 - `doc/PLAN.md`
 
-### Current focused documents
+Focused documents for current UI/accounting work:
 
-- `doc/architecture/dashboard-workspace.md`
-- `doc/architecture/application-composition.md`
-- `doc/accounting/transaction-lifecycle.md`
-- `doc/accounting/period-and-correction-policy.md`
-- `doc/accounting/ledger-authority.md`
-- `doc/import/import-review-workflow.md`
-- `doc/testing/production-workspace-test-plan.md`
 - `doc/interface-operation-matrix.md`
 - `doc/persistence-authority-inventory.md`
-- `doc/architecture/union-application-direction.md`
-- `doc/workflow/development-workflow.md`
-- `doc/ui/editor-guidelines.md`
 - `doc/ui_design_rules.md`
-- `doc/banking/import-and-reconciliation.md`
-- `doc/banking/banking-and-reconciliation.md`
-- `doc/accounting/budget-model.md`
+- `doc/ui/editor-guidelines.md`
 - `doc/requirements/requirements-clarification-overlay.md`
+- `doc/banking/banking-and-reconciliation.md`
+- `doc/accounting/ledger-authority.md`
+- `doc/accounting/transaction-lifecycle.md`
+- `doc/accounting/period-and-correction-policy.md`
 - `doc/accounting/transaction-editor-and-journal.md`
+- `doc/workflow/development-workflow.md`
 
 `doc/architecture/production-workspace.md` was removed. Do not re-add it or list it as required reading.
 
-### Clarification documents to create or update
-
-The next documentation-conformance slice must create or update if still absent or stale:
-
-- `doc/accounting/period-close-design.md`
-- `doc/inventory/inventory-and-assets.md`
-
-After those focused documents exist, link them from this section.
-
-### Donor/reference repositories
-
-- `https://github.com/benbaron/NonprofitAccounting.git` is available as reference or donor code. When starting work in a new area, examine this donor codebase if accessible and suggest focused imports or adaptations that fit the current JavaFX/H2/JPA architecture. Donor code remains reference only until deliberately imported through the selected phase scope, tests, and documentation.
-
-## 6. Established product decisions after clarification
-
-### Product and architecture
+## 5. Established product decisions after clarification
 
 - One production JavaFX application.
 - H2 is authoritative for accepted operational/accounting data.
@@ -149,295 +80,68 @@ After those focused documents exist, link them from this section.
 - Write services own validation and transactions.
 - Query services return projections for panels and reports.
 - Constructor injection is preferred.
-
-### Interface
-
-- Follow the approved compact white-and-blue reference.
-- Omit numbered drawing annotations.
-- Preserve icons and green/amber/red/gray/blue cues with textual/symbolic meaning.
-- Use menu, toolbar, left navigation, center tabs, right inspector, visible dividers, and status bar.
-- Fit a laptop display.
-- Never render center content beneath a sidebar.
-- Use external CSS.
-- Show blank/neutral state rather than fictional data.
 - Left Navigation under Accounting must include Banking and Inspect Journal.
 - Left Navigation must not include Schedules.
 - Left Navigation must not include Import/Export Jobs as a separate function.
-
-### Accounting
-
-- Genuine double entry.
-- `BigDecimal` money.
-- Stable IDs.
-- At least two meaningful lines.
-- Debit equals credit.
-- One-sided debit/credit input.
-- Zero-value accounting lines rejected.
-- Funds include unrestricted, restricted, and designated.
-- Budget categories are separate from accounts and activities.
-- Closed periods are never silently bypassed.
-- Material actions are audited.
-- Audit History remains in scope as factual audit history.
-
-### Clarified scope
-
 - No approval queue or formal approval/rejection workflow.
 - Reconciliation approve/reject semantics are replaced by saved comparison/reconciliation state.
-- No formal in-application oversight role.
-- No attachment/document-storage feature.
 - Notes and factual audit history are in scope.
-- Supplies belongs in Inventory.
 - Reports belong in `REPORT_LIBRARY`.
 - The former Schedules function is eliminated.
 - Import/Export Jobs is eliminated as both a panel and generic durable job-tracking function.
 
-### Import behavior
+## 6. Completed phases and slices
 
-- Review staging remains in memory until accepted.
-- Valid and invalid rows remain together.
-- Exact duplicate detection uses source ID or deterministic fingerprint.
-- Probable duplicates are warnings.
-- Matched imports may be discarded, saved as a copy, or left for review.
-- Accepted accounting activity uses the canonical transaction service.
-- Stable SCLX IDs must be idempotent.
-- Zero-value/non-posting SCLX annotations are not accounting transactions.
-- Raw SCLX source documents are not retained as accounting truth.
+### P00 — Documentation and implementation inventory
 
-## 7. Phase contracts
+Status: DONE, with clarification updates as touched.
 
----
+### P01 — Production shell and workspace composition
 
-# P00 — Documentation and implementation inventory
+Status: DONE, retrofit as touched.
 
-**Selector:** `PHASE=P00`
-**Status:** DONE, with clarification updates as touched
-**Depends on:** none
+### P02 — Canonical ledger and transaction operations
 
-## Objective
+Status: DONE, retain.
 
-Maintain an authoritative inventory of current `main` so later phases can replace placeholders without rescanning the whole UI.
+### P03 — Transaction Editor, Ledger Register, and Journal Pane
 
-## Clarification updates required when touched
+Status: READY for corrective/new slices.
 
-- Add Journal Pane and Banking to `doc/interface-operation-matrix.md`.
-- Remove Schedules and Import/Export Jobs as product functions.
-- Preserve Audit History as factual audit history.
-- Update `doc/persistence-authority-inventory.md` so former schedule concepts become domain-specific supplemental transaction records rather than a Schedules phase.
+Completed slices:
 
-## Exit gate
+- P03-C1 Transaction Editor modes and Ledger Register buttons: DONE.
+- P03-C2 Journal Pane and Inspect Journal navigation: DONE.
+- P03-C3 Transaction Editor Delete correction action: DONE.
 
-The inventory reflects the clarified navigation and phase ownership.
+### P04 — Persistent budgeting
 
----
+Status: DONE, retrofit as touched.
 
-# P01 — Production shell and workspace composition
+### P05 — Banking configuration and statement import
 
-**Selector:** `PHASE=P01`
-**Status:** DONE, retrofit as touched
-**Depends on:** P00
+Status: DONE through PR #137.
 
-## Objective
+Completed slices:
 
-Maintain the single production workspace shell and lifecycle-owned composition root.
+- P05-S1 Bank and bank-account model: DONE.
+- P05-S2 Banking panel under Accounting: DONE.
+- P05-S3 Statement import normalization and matching: DONE.
+- P05-S4 Cleared-state mapping to ledger bank lines: DONE.
 
-## Clarification updates required when touched
-
-- Do not reference `doc/architecture/production-workspace.md`.
-- The production shell must expose Accounting navigation for Banking and Inspect Journal.
-- The production shell must remove Schedules and Import/Export Jobs navigation entries when their implementation slices run.
-- The shell must route Journal Pane through a first-class `AppPanelId` and typed command, not a text-command shortcut.
-
-## Exit gate
-
-One shell and one composition root own all production panels and database-bound service lifecycles.
-
----
-
-# P02 — Canonical ledger and transaction operations
-
-**Selector:** `PHASE=P02`
-**Status:** DONE, retain
-**Depends on:** P00
-
-## Objective
-
-Maintain one authoritative writable ledger and canonical transaction service.
-
-## Clarification updates required when touched
-
-- Transaction Editor Edit mode updates an existing transaction identified by caller-provided ID when policy allows.
-- Transaction Editor New mode creates a new transaction and may prefill from any relevant context.
-- Edit is not upsert and must not match likely duplicates by date/payee/reference/amount.
-- Supplemental transaction records may be linked to transaction or split IDs for inventory, assets, bank clearing, and open-item/deferral detail.
-
-## Exit gate
-
-All authoritative accounting writes flow through one documented transaction service and one canonical persistence model.
-
----
-
-# P03 — Transaction Editor, Ledger Register, and Journal Pane
-
-**Selector:** `PHASE=P03`
-**Status:** READY for corrective/new slices
-**Depends on:** P01, P02
-
-## Objective
-
-Apply the clarified transaction-entry and journal requirements.
-
-## Required reading
-
-- `doc/ui/editor-guidelines.md`
-- `doc/accounting/ledger-authority.md`
-- `doc/accounting/transaction-lifecycle.md`
-- `doc/accounting/period-and-correction-policy.md`
-- `doc/ui_design_rules.md`
-- `doc/accounting/transaction-editor-and-journal.md`
-
-## Slices
-
-### P03-C1 — Transaction Editor modes and Ledger Register buttons
-
-Status: DONE.
-
-Completed deliverables: Transaction Editor New/Edit routing, Ledger Register New/Open Selected buttons, read-only selected-ID edit routing, and governing documentation.
-Test status: historical local `mvn clean verify` passed with 255 tests run and 9 skipped.
-Known failures: none recorded.
-
-### P03-C2 — Journal Pane and Inspect Journal navigation
-
-Status: DONE.
-
-Completed deliverables: First-class Journal Pane panel ID, factory, navigation item under Accounting, Ledger Register Inspect Journal navigation, canonical journal projection flattening, filters, transaction centering, journal-to-Transaction Editor handoff, supplemental-record provision area, and table-state behavior.
-Known failures: none recorded for merged P03-C2.
-
-### P03-C3 — Transaction Editor Delete correction action
-
-Status: DONE.
-
-Completed deliverables: Transaction Editor Delete for loaded/saved transactions, newly saved transactions remain loaded as durable Delete/Reverse targets, direct delete routes through `TransactionCorrectionService.delete`, and non-direct correction methods route through reversing-entry creation using the active period date.
-Test status: historical focused tests and `mvn clean verify` passed with 258 tests run and 9 skipped.
-Known failures: desktop visual validation requires an interactive JavaFX run.
-
-## Forbidden in P03
-
-- Free-text relationship identity.
-- Label-only save success.
-- Direct editing in the journal grid.
-- Upsert or likely-duplicate matching for Transaction Editor Edit mode.
-- Accounting calculations in JavaFX controls.
-
-## Validation
-
-Add tests for mode routing, disabled Open Selected state, prefill context mapping, Journal Pane navigation, selected-transaction centering, and journal-to-editor handoff.
-Review code to ensure compliance with all design documents.
-
----
-
-# P04 — Persistent budgeting
-
-**Selector:** `PHASE=P04`
-**Status:** DONE, retrofit as touched
-**Depends on:** P02
-
-## Objective
-
-Maintain normalized H2-backed budget plans and lines.
-
-## Completed deliverables
-
-- `BudgetPlanService` for draft budget creation, line replacement, validation, activation, archiving, active-version loading, and actual/variance rows.
-- Immutable budget plan, line, and variance command/projection records.
-- Dashboard and Budget vs Actual surfaces read active normalized budget data or neutral no-budget states.
-- Budget sidecar target authority removed from production budget behavior.
-- Budget UI surfaces brought into split-pane/table-state/TestFX design-rule path.
-
-## Known follow-up
-
-- Table-state/preference hardening remains a completed-phase design-rule follow-up as touched.
-- Desktop visual review remains required for budget screens if changed.
-
-## Exit gate
-
-Every displayed/stored budget value comes from normalized H2 data or authoritative accounting projections.
-
----
-
-# P05 — Banking configuration and statement import
-
-**Selector:** `PHASE=P05`
-**Status:** DONE through PR #137
-**Depends on:** P02 and clarified P03 navigation/mode rules
-
-## Objective
-
-Create Banking as an Accounting function and connect statement import to configured bank accounts and canonical ledger lines.
-
-## Required reading
-
-- `doc/banking/import-and-reconciliation.md`
-- `doc/banking/banking-and-reconciliation.md`
-- `doc/import/import-review-workflow.md`
-- `doc/accounting/ledger-authority.md`
-
-## Slices
-
-### P05-S1 — Bank and bank-account model
-
-Status: DONE.
-
-Completed deliverables: `Bank` entity, enhanced configured `CompanyBankAccount` model fields, nondestructive migration, bank configuration service validation, and governing banking design documentation.
-
-### P05-S2 — Banking panel under Accounting
-
-Status: DONE.
-
-Completed deliverables: First-class Banking navigation/panel, bank create/edit form, configured bank-account create form with existing-account selection or automatic BANK/DEBIT/CASH chart-account creation, H2-backed reloads, visible Delete/deactivate explanation, active-company-keyed table state persistence, focus-loss date/money correction, and documentation/matrix updates.
-
-### P05-S3 — Statement import normalization and matching
-
-Status: DONE.
-
-Completed deliverables: `BankImportReviewService` and immutable command/result records for normalized bank statement review batches, durable statement lines, and row issues while keeping invalid and duplicate rows visible together.
-
-### P05-S4 — Cleared-state mapping to ledger bank lines
-
-Status: DONE.
-
-Completed deliverables: `bank_cleared`, `bank_cleared_on`, and matched statement-line linkage on canonical `txn_split` rows; `BankClearedStateService` for marking a matched statement line and canonical bank split in one transaction.
-
-## PR and validation record
-
-Pull request: #137, merged 2026-07-07.
-Merge commit: `468e6c5836b6d727ac4d921269a7f0e8f18d8087`.
 Validation recorded in PR #137: focused banking/import/reconciliation tests and full local `mvn clean verify` passed with 266 tests run and 9 skipped. No GitHub workflow runs were available for the merge commit.
 
-## Forbidden in P05
-
-- Treating every account with type `BANK` as configured for reconciliation unless it is linked to a Bank record.
-- Creating accounting transactions without explicit acceptance.
-- Reintroducing generic Import/Export Jobs tracking.
-
----
+## 7. Active and recent phase contracts
 
 # P06 — Bank reconciliation and cleared-state comparison
 
 **Selector:** `PHASE=P06`
-**Status:** VERIFYING P06-S2
+**Status:** DONE through PR #138
 **Depends on:** P05
 
 ## Objective
 
 Implement reconciliation for configured bank accounts using ledger-line cleared state and statement comparison.
-
-Always: read and follow 
-- doc/interface-operation-matrix.md 
-- doc/ui_design_rules.md
-- doc/ui/editor-guidelines.md 
-and apply them to the following work items. If this requires major redesign then remark this in documentation.
-
-## Slices
 
 ### P06-S1 — Remove approval semantics from reconciliation runs
 
@@ -445,67 +149,45 @@ Status: DONE.
 
 Branch: `codex/execute-action-from-plan.md`
 Pull request: #137
-Head commit: `aca3f50155e8a903e01b0ac168ed06da24ed70f7`
 Merge commit: `468e6c5836b6d727ac4d921269a7f0e8f18d8087`
-Completed deliverables: Removed user-facing approve/reject reconciliation actions and approval-audit summary from the Reconciliation Runs panel; added an explicit comparison-workflow note; updated the interface matrix and governing banking documentation so P06 starts from a non-approval reconciliation surface.
-Remaining deliverables: none for P06-S1. Owner verified and directed that P06-S1 be marked done on 2026-07-07.
-Test status: PR #137 records focused `ReconciliationRunsPanelTest`/`ReconciliationRunsPanelSourceTest` and full local `mvn clean verify` passing with 266 tests run and 9 skipped.
-Known failures: no GitHub workflow runs were available for merge commit `468e6c5836b6d727ac4d921269a7f0e8f18d8087`; desktop visual validation remains a manual user activity when a JavaFX desktop is available.
-Next exact action: proceed to P06-S2 configured-account reconciliation comparison.
+Completed deliverables: Removed user-facing approve/reject reconciliation actions and approval-audit summary from the Reconciliation Runs panel; added explicit comparison-workflow note; updated matrix and banking documentation.
 
 ### P06-S2 — Configured-account reconciliation comparison and unresolved reports
 
-Status: VERIFYING.
+Status: DONE.
 
 Branch: `codex/P06-P06-S2-reconciliation-comparison`
 Pull request: #138
-Head commit: `fc9ceac7316cae03a3dfa7099ae9130fbb9c6b63`
-Completed deliverables: Added `ReconciliationComparisonService` and command/report/line projections; the Bank Reconciliation panel now selects configured bank accounts, runs date-bounded comparisons, displays matched and mismatch lines, and can save unresolved report summaries as reconciliation run records; updated `UiServiceRegistry`, `doc/banking/banking-and-reconciliation.md`, and `doc/interface-operation-matrix.md`; added `ReconciliationComparisonServiceTest`.
-Remaining deliverables: run focused and full Maven validation, inspect and fix any failures, perform desktop JavaFX review of the Bank Reconciliation comparison workflow, update PR #138 with actual validation, and then mark ready for review.
-Test status: not run in this connector-only environment because the container cannot resolve github.com to clone/build the repository. Recommended first validation: `mvn -Dtest=ReconciliationComparisonServiceTest test`; final validation: `mvn clean verify`.
-Known failures: validation is pending; desktop visual validation is pending.
-Next exact action: run `mvn -Dtest=ReconciliationComparisonServiceTest test`, fix any compile/test failures, then run `mvn clean verify`.
-
-## Required behavior
-
-- User selects from configured bank accounts only.
-- Reconciliation reads all ledger transactions involving the selected bank account.
-- From the most recent period close before the statement date through the given date, calculate beginning balance, activity, and ending book balance.
-- Show one balance using all relevant transactions and one using only transactions whose bank ledger line is marked cleared.
-- Accept statement data by manual entry, CSV, OFX, or QIF.
-- Compare imported/manual statement entries to ledger lines using matching rules.
-- On cleared-state mismatch, offer four options: warn only, overwrite ledger cleared state, never overwrite and require manual resolution, or choose per imported line.
-- Report unmatched ledger transactions, unmatched statement entries, amount mismatches, date mismatches, duplicate possible matches, cleared-state mismatches, beginning/ending balance differences, and record-detail differences.
-- User may save an unresolved reconciliation report.
-- A new reconciliation may start new or edit an existing reconciliation at user option.
-- Replace the current approve/reject run model entirely.
-
-## Codex seed prompt
-
-```text
-Execute PHASE=P06, SLICE=P06-S2 from doc/PLAN.md.
-Use configured Bank-linked accounts from P05 and canonical ledger bank lines from P02.
-Implement reconciliation comparison and saved unresolved reports without approve/reject semantics.
-```
-
----
+Merge commit: `d6519b1186182d6df6494bc6bcf09b48c44227b6`
+Completed deliverables: Added `ReconciliationComparisonService` and command/report/line projections; Bank Reconciliation panel selects configured bank accounts, runs date-bounded comparisons, displays matched and mismatch lines, and can save unresolved report summaries as reconciliation run records; updated `UiServiceRegistry`, banking documentation, operation matrix, and tests.
+Known follow-up: per-line cleared-state resolution choices and edit-existing reconciliation workflow remain later P06/P10/P11 work.
 
 # P07 — Eliminated former Schedules phase
 
 **Selector:** `PHASE=P07`
-**Status:** ELIMINATED
+**Status:** VERIFYING P07-S1
 
 The Schedules function is eliminated entirely as:
 
 - `AppPanelId`;
 - left navigation item;
-- `PanelHost` route;
+- `PanelHost`/`PanelFactory` route;
+- production panel class;
+- sidecar schedule runbook storage;
 - documentation concept;
 - future phase plan.
 
 Underlying receivable, prepaid, payable, deferred revenue, and other supplemental transaction-detail concepts may remain, but they are not a Schedules panel or phase. They must be assigned to their owning domain phases as supplemental transaction records.
 
----
+### P07-S1 — Remove Schedules top-level function
+
+Status: VERIFYING.
+
+Branch: `codex/P07-remove-schedules-function`
+Pull request: pending
+Completed deliverables in branch: removed `AppPanelId.SCHEDULES`; removed `SchedulesPanel` factory and navigation item; deleted `SchedulesPanel.java`; removed schedule runbook sidecar methods from `UiWorkspaceDataStore` and `RunbookPersistence`; removed schedule runbook formatting test; added `SchedulesEliminationSourceTest`; updated `doc/interface-operation-matrix.md` and `doc/persistence-authority-inventory.md`.
+Remaining deliverables: open PR, run focused tests and full Maven verification, review diff, and merge.
+Next exact action: open P07-S1 PR.
 
 # P08 — Asset Register and depreciation
 
@@ -513,36 +195,7 @@ Underlying receivable, prepaid, payable, deferred revenue, and other supplementa
 **Status:** BLOCKED
 **Depends on:** P02
 
-## Objective
-
-Implement Asset Register add/edit and depreciation behavior through H2-backed records and canonical accounting transactions.
-
-## Required behavior
-
-Always: read and follow 
-- doc/interface-operation-matrix.md 
-- doc/ui_design_rules.md
-- doc/ui/editor-guidelines.md 
-and apply them to the following work items. If this requires major redesign then remark this in documentation.
-
-- Assets are separate from Inventory items.
-- Asset Register supports add and edit.
-- Required fields: asset name, asset account, acquisition date, acquisition cost, salvage value, useful life, depreciation method, accumulated depreciation, current book value, status, and notes.
-- User may enter opening accumulated depreciation.
-- Show accumulated depreciation for each asset.
-- Depreciation schedules support straight-line 3-year, 5-year, and 7-year schedules.
-- Adding a depreciation schedule defines calculation only; it does not create future entries immediately.
-- Running depreciation creates actual accounting transactions through the canonical transaction service.
-
-## Codex seed prompt
-
-```text
-Execute PHASE=P08 from doc/PLAN.md.
-Implement Asset Register add/edit and straight-line 3/5/7 year depreciation scheduling.
-Depreciation runs create canonical accounting transactions.
-```
-
----
+Required behavior: implement Asset Register add/edit and depreciation behavior through H2-backed records and canonical accounting transactions. Assets are separate from Inventory items. Depreciation schedules define calculation only; running depreciation creates actual accounting transactions through the canonical transaction service.
 
 # P09 — Inventory and supplies
 
@@ -550,36 +203,7 @@ Depreciation runs create canonical accounting transactions.
 **Status:** BLOCKED
 **Depends on:** P02
 
-## Objective
-
-Implement Inventory items and quantity movements as genuine records, eliminating the Inventory Runbook subpane.
-
-## Required behavior
-
-Always: read and follow 
-- doc/interface-operation-matrix.md 
-- doc/ui_design_rules.md
-- doc/ui/editor-guidelines.md 
-and apply them to the following work items. If this requires major redesign then remark this in documentation.
-
-- Inventory Runbook subpane is removed.
-- User can add inventory items.
-- Required fields: item name, item type, quantity, unit, value, acquisition date, custodian, storage location, condition, notes, and active/disposed status.
-- Adding certain inventory items creates accounting transactions.
-- The transaction receives a supplemental inventory detail record with inventory-specific facts.
-- Quantity movements are supported after item creation.
-- Quantity movements create transactions when financially relevant.
-- Historical movements are shown in another table, not in the eliminated runbook subpane.
-
-## Codex seed prompt
-
-```text
-Execute PHASE=P09 from doc/PLAN.md.
-Implement genuine Inventory item add and movement history.
-Remove the runbook subpane and use canonical transactions where financially relevant.
-```
-
----
+Required behavior: implement genuine Inventory item add and movement history; remove runbook subpane; use canonical transactions when financially relevant.
 
 # P10 — Period close, reopening, and factual audit history
 
@@ -587,40 +211,7 @@ Remove the runbook subpane and use canonical transactions where financially rele
 **Status:** BLOCKED
 **Depends on:** P02, P06
 
-## Objective
-
-Implement simplified calculated period close while preserving factual Audit History.
-
-## Required behavior
-
-Always: read and follow 
-- doc/interface-operation-matrix.md 
-- doc/ui_design_rules.md
-- doc/ui/editor-guidelines.md 
-and apply them to the following work items. If this requires major redesign then remark this in documentation.
-
-- Period Close supports selecting a named/calculated open period and selecting a through-date or custom date range.
-- There is no accounting-period table as the authority for open periods.
-- Periods are calculated from Settings.
-- Settings supports monthly, fiscal quarter, fiscal year, and custom date.
-- Custom date supports a one-time custom open and close date.
-- Closing a period closes only the selected period/date range and leaves all other dates alone.
-- Provide a way to reopen a closed period, either in the Period Close panel or a related subpanel.
-- New company setup has period state open, beginning date, and beginning balance setup.
-- Beginning balances are entered through a wizard that creates balanced opening entries.
-- Period close does not create immutable period-balance snapshots. Balances are recalculated from the ledger.
-- Audit History is kept and remains factual.
-- Approval/rejection semantics are removed from period close.
-
-## Codex seed prompt
-
-```text
-Execute PHASE=P10 from doc/PLAN.md.
-Implement calculated period close/reopen and keep factual Audit History.
-Do not remove Audit History and do not implement approval/rejection workflow.
-```
-
----
+Required behavior: implement calculated period close/reopen while keeping factual Audit History and no approval/rejection workflow.
 
 # P11 — Report Library
 
@@ -628,61 +219,11 @@ Do not remove Audit History and do not implement approval/rejection workflow.
 **Status:** BLOCKED
 **Depends on:** P02, P04, P06, P08, P09, P10
 
-## Objective
-
-Deliver genuine read-only reports through one Report Library.
-
-## Clarification updates required when touched
-
-- Remove dependencies on eliminated Schedules phase.
-- Include reports for Banking/Reconciliation, Inventory, Assets/Depreciation, Funds, Period Close, and factual Audit History as those domains become available.
-
-Always: read and follow 
-- doc/interface-operation-matrix.md 
-- doc/ui_design_rules.md
-- doc/ui/editor-guidelines.md 
-and apply them to the following work items. If this requires major redesign then remark this in documentation.
-
----
-
 # P12 — Administration, company lifecycle, preferences, and Funds edit
 
 **Selector:** `PHASE=P12`
 **Status:** BLOCKED
 **Depends on:** P01, P02
-
-## Objective
-
-Complete master-data administration, company/database operations, preferences, and clarified Funds editing behavior.
-
-## Funds Panel requirements
-
-Always: read and follow 
-- doc/interface-operation-matrix.md 
-- doc/ui_design_rules.md
-- doc/ui/editor-guidelines.md 
-and apply them to the following work items. If this requires major redesign then remark this in documentation.
-
-Funds edit supports:
-
-- fund name;
-- fund code;
-- fund type/classification;
-- active/inactive status;
-- notes.
-
-Fund code is immutable while the fund is referenced by current ledger entries. Usage is determined by auditing the present ledger state. If ledger entries containing the fund are removed under an allowed correction policy and no references remain, deletion or code edit may be allowed under the final service policy.
-
-Deleting a fund is allowed only when unused; otherwise the user deactivates it.
-
-## Codex seed prompt
-
-```text
-Execute PHASE=P12 from doc/PLAN.md.
-Implement Funds edit/delete/deactivate rules and company/preferences lifecycle without reintroducing Import/Export Jobs.
-```
-
----
 
 # P13 — Data exchange and diagnostics without Import/Export Jobs
 
@@ -690,59 +231,11 @@ Implement Funds edit/delete/deactivate rules and company/preferences lifecycle w
 **Status:** BLOCKED
 **Depends on:** P02, P05, P12
 
-## Objective
-
-Implement necessary data exchange and diagnostics without a generic Import/Export Jobs panel or persistent generic job-tracking function.
-
-## Required behavior
-
-Always: read and follow 
-- doc/interface-operation-matrix.md 
-- doc/ui_design_rules.md
-- doc/ui/editor-guidelines.md 
-and apply them to the following work items. If this requires major redesign then remark this in documentation.
-
-- Import/export feedback may be immediate UI feedback, produced files, diagnostics, or domain-specific durable records required by another feature.
-- Do not reintroduce `IMPORT_EXPORT_JOBS` as an `AppPanelId` or navigation item.
-- Do not create a generic durable job-tracking subsystem unless the plan is explicitly amended.
-- Domain-specific import facts required by Banking/Reconciliation remain allowed.
-
-## Codex seed prompt
-
-```text
-Execute PHASE=P13 from doc/PLAN.md.
-Implement necessary data exchange and diagnostics without a generic Import/Export Jobs panel or durable generic job log.
-```
-
----
-
 # P14 — End-to-end hardening
 
 **Selector:** `PHASE=P14`
 **Status:** BLOCKED
 **Depends on:** P03-P13 except eliminated P07
-
-## Objective
-
-Remove remaining simulated behavior and prove the complete application across persistence, accounting, UI, reports, and database lifecycle.
-
-## Clarified cleanup checklist
-
-Always: read and follow 
-- doc/interface-operation-matrix.md 
-- doc/ui_design_rules.md
-- doc/ui/editor-guidelines.md 
-and apply them to the following work items. If this requires major redesign then remark this in documentation.
-
-- Remove Schedules as a product function.
-- Remove Import/Export Jobs as a product function.
-- Preserve factual Audit History.
-- Verify Journal Pane, Banking, Reconciliation, Period Close, Funds edit, Inventory, and Assets/depreciation workflows.
-- Verify no obsolete `doc/architecture/production-workspace.md` references remain.
-
-## Validation
-
-Full `mvn clean verify`, GitHub checks, final diff, migration upgrade matrix, desktop screenshots, and manual scenario review.
 
 ## 8. Cross-cutting validation matrix
 
@@ -787,8 +280,8 @@ Before a PR is ready:
 Execute validation for:
 
 ```text
-PHASE=P06
-SLICE=P06-S2
+PHASE=P07
+SLICE=P07-S1
 ```
 
-Run `mvn -Dtest=ReconciliationComparisonServiceTest test`, fix any compile/test failures, then run `mvn clean verify` and update PR #138 with actual validation.
+Open the PR, run `mvn -Dtest=SchedulesEliminationSourceTest,OperationalRunbookFormattingTest test`, fix any compile/test failures, then run `mvn clean verify`.
