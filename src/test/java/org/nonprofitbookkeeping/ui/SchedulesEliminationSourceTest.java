@@ -18,17 +18,20 @@ class SchedulesEliminationSourceTest
     }
 
     @Test
-    void schedulesIsNotAnAppPanelIdFactoryOrNavigationItem() throws Exception
+    void schedulesHasNoFactoryNavigationOrReferenceMenuRoute() throws Exception
     {
         String appPanelId = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/AppPanelId.java"));
         String panelFactory = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/PanelFactory.java"));
         String navigationPane = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/NavigationPane.java"));
+        String referenceWorkspace = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/ReferenceWorkspaceWindow.java"));
 
-        assertFalse(appPanelId.contains("SCHEDULES"));
+        assertTrue(appPanelId.contains("Retired compatibility identifier"));
         assertFalse(panelFactory.contains("SchedulesPanel"));
         assertFalse(panelFactory.contains("AppPanelId.SCHEDULES"));
         assertFalse(navigationPane.contains("AppPanelId.SCHEDULES"));
         assertFalse(navigationPane.contains("\"Schedules\""));
+        assertFalse(referenceWorkspace.contains("AppPanelId.SCHEDULES"));
+        assertFalse(referenceWorkspace.contains("Scheduled Transactions"));
     }
 
     @Test
@@ -50,8 +53,8 @@ class SchedulesEliminationSourceTest
     {
         String matrix = Files.readString(Path.of("doc/interface-operation-matrix.md"));
 
-        assertFalse(matrix.contains("`SCHEDULES`"));
         assertFalse(matrix.contains("`SchedulesPanel`"));
+        assertTrue(matrix.contains("retired compatibility identifier"));
         assertTrue(matrix.contains("former top-level Schedules panel"));
     }
 }
