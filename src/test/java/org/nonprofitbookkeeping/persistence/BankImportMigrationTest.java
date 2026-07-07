@@ -47,10 +47,11 @@ public class BankImportMigrationTest
                     INSERT INTO bank_statement_line (batch_id, company_id, source_row_number, deterministic_fingerprint, transaction_date, amount)
                     VALUES (1, 1, 2, 'fp-1', DATE '2026-03-15', 10.0000)
                     """));
-            assertThrows(Exception.class, () -> statement.executeUpdate("""
-                    INSERT INTO bank_statement_line (batch_id, company_id, source_row_number, deterministic_fingerprint, transaction_date, amount)
-                    VALUES (1, 1, 3, 'fp-3', DATE '2026-03-15', 0.0000)
-                    """));
+            statement.executeUpdate("""
+                    INSERT INTO bank_statement_line (batch_id, company_id, source_row_number, deterministic_fingerprint, transaction_date, amount, status)
+                    VALUES (1, 1, 3, 'fp-3', NULL, 0.0000, 'ERROR')
+                    """);
+            assertEquals(1L, scalarLong(statement, "SELECT COUNT(*) FROM bank_statement_line WHERE source_row_number = 3 AND transaction_date IS NULL AND amount = 0.0000 AND status = 'ERROR'"));
             assertThrows(Exception.class, () -> statement.executeUpdate("""
                     INSERT INTO import_issue (batch_id, source_row_number, severity, code, message)
                     VALUES (1, 2, 'BLOCKER', 'BAD', 'bad severity')
