@@ -2,11 +2,11 @@
 plan_version: 5
 active_phase: P06
 active_slice: P06-S2
-active_status: READY
-active_branch: pending
-active_pull_request: pending
-active_head: main@468e6c5836b6d727ac4d921269a7f0e8f18d8087
-next_action: "Execute PHASE=P06, SLICE=P06-S2 to implement configured-bank-account reconciliation comparison and saved unresolved reconciliation reports."
+active_status: VERIFYING
+active_branch: codex/P06-P06-S2-reconciliation-comparison
+active_pull_request: "#138"
+active_head: fc9ceac7316cae03a3dfa7099ae9130fbb9c6b63
+next_action: "Run mvn -Dtest=ReconciliationComparisonServiceTest test, then mvn clean verify, fix any failures, perform desktop Bank Reconciliation comparison review, and update PR #138 with actual validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -17,7 +17,7 @@ This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2
 
 Codex must not treat this as a general backlog. On container startup it selects one phase and one slice using `AGENTS.md`, executes only that scope, and updates this file with actual state.
 
-This revision incorporates the owner's clarification answers from `answers.docx`, the merged P05/P06 groundwork in PR #137, and the owner's 2026-07-07 instruction that P06-S1 is verified and done.
+This revision incorporates the owner's clarification answers from `answers.docx`, the merged P05/P06 groundwork in PR #137, the owner's 2026-07-07 instruction that P06-S1 is verified and done, and the P06-S2 draft PR handoff.
 
 ## 2. How to invoke Codex
 
@@ -71,7 +71,7 @@ When a branch begins, update front matter and the phase section. When a PR is op
 | P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY for corrective/new slices |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
 | P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137 |
-| P06 | Bank reconciliation and cleared-state comparison | P05 | READY P06-S2 |
+| P06 | Bank reconciliation and cleared-state comparison | P05 | VERIFYING P06-S2 |
 | P07 | Eliminated former Schedules phase | n/a | ELIMINATED |
 | P08 | Asset Register and depreciation | P02 | BLOCKED |
 | P09 | Inventory and supplies | P02 | BLOCKED |
@@ -424,7 +424,7 @@ Validation recorded in PR #137: focused banking/import/reconciliation tests and 
 # P06 — Bank reconciliation and cleared-state comparison
 
 **Selector:** `PHASE=P06`
-**Status:** READY P06-S2
+**Status:** VERIFYING P06-S2
 **Depends on:** P05
 
 ## Objective
@@ -455,16 +455,16 @@ Next exact action: proceed to P06-S2 configured-account reconciliation compariso
 
 ### P06-S2 — Configured-account reconciliation comparison and unresolved reports
 
-Status: READY.
+Status: VERIFYING.
 
-Branch: pending
-Pull request: pending
-Head commit: current `main` after PR #137 merge
-Completed deliverables: none yet.
-Remaining deliverables: select configured bank accounts only; read canonical ledger transactions involving the selected bank account; calculate beginning balance, activity, ending book balance, and cleared-only balance; accept manual/CSV/OFX/QIF statement facts through existing import/review boundaries; compare statement entries to ledger bank lines; surface mismatch categories; save unresolved reconciliation reports; allow starting new or editing an existing reconciliation.
-Test status: pending.
-Known failures: none yet for this slice.
-Next exact action: create a focused branch such as `codex/P06-P06-S2-reconciliation-comparison`, inspect P05 bank configuration/import services, reconciliation repositories, canonical transaction services, migrations, and UI design rules, then implement the configured-account comparison workflow with tests.
+Branch: `codex/P06-P06-S2-reconciliation-comparison`
+Pull request: #138
+Head commit: `fc9ceac7316cae03a3dfa7099ae9130fbb9c6b63`
+Completed deliverables: Added `ReconciliationComparisonService` and command/report/line projections; the Bank Reconciliation panel now selects configured bank accounts, runs date-bounded comparisons, displays matched and mismatch lines, and can save unresolved report summaries as reconciliation run records; updated `UiServiceRegistry`, `doc/banking/banking-and-reconciliation.md`, and `doc/interface-operation-matrix.md`; added `ReconciliationComparisonServiceTest`.
+Remaining deliverables: run focused and full Maven validation, inspect and fix any failures, perform desktop JavaFX review of the Bank Reconciliation comparison workflow, update PR #138 with actual validation, and then mark ready for review.
+Test status: not run in this connector-only environment because the container cannot resolve github.com to clone/build the repository. Recommended first validation: `mvn -Dtest=ReconciliationComparisonServiceTest test`; final validation: `mvn clean verify`.
+Known failures: validation is pending; desktop visual validation is pending.
+Next exact action: run `mvn -Dtest=ReconciliationComparisonServiceTest test`, fix any compile/test failures, then run `mvn clean verify`.
 
 ## Required behavior
 
@@ -784,11 +784,11 @@ Before a PR is ready:
 
 ## 10. Current next action
 
-Execute:
+Execute validation for:
 
 ```text
 PHASE=P06
 SLICE=P06-S2
 ```
 
-Implement configured-bank-account reconciliation comparison and saved unresolved reconciliation reports without reintroducing approve/reject semantics.
+Run `mvn -Dtest=ReconciliationComparisonServiceTest test`, fix any compile/test failures, then run `mvn clean verify` and update PR #138 with actual validation.
