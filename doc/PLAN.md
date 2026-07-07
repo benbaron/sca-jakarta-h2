@@ -1,12 +1,12 @@
 ---
 plan_version: 4
-active_phase: P05
-active_slice: P05-S4
+active_phase: P06
+active_slice: P06-S1
 active_status: VERIFYING
 active_branch: work
 active_pull_request: pending local PR record
 active_head: HEAD
-next_action: "Push branch work to a remote, open the recorded P05-S4 PR, verify remote CI, and perform manual cleared-state mapping validation."
+next_action: "Push branch work to a remote, open the recorded P06-S1 PR, verify remote CI, and perform manual reconciliation comparison validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -70,8 +70,8 @@ When a branch begins, update front matter and the phase section. When a PR is op
 | P02 | Canonical ledger and transaction operations | P00 | DONE; retain |
 | P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY for corrective/new slices |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
-| P05 | Banking configuration and statement import | P02, P03-C1 | READY after P03-C1 unless slice is strictly model-only |
-| P06 | Bank reconciliation and cleared-state comparison | P05 | BLOCKED |
+| P05 | Banking configuration and statement import | P02, P03-C1 | DONE per completed local P05 slices; remote validation pending local handoff |
+| P06 | Bank reconciliation and cleared-state comparison | P05 | VERIFYING P06-S1 |
 | P07 | Eliminated former Schedules phase | n/a | ELIMINATED |
 | P08 | Asset Register and depreciation | P02 | BLOCKED |
 | P09 | Inventory and supplies | P02 | BLOCKED |
@@ -646,16 +646,16 @@ and apply them to the following work items. If this requires major redesign then
 
 ### P05-S4 — Cleared-state mapping to ledger bank lines
 
-Status: VERIFYING.
+Status: DONE.
 
 Branch: `work`
 Pull request: pending local PR record
 Head commit: `HEAD`
 Completed deliverables: Added `bank_cleared`, `bank_cleared_on`, and matched statement-line linkage to canonical `txn_split` rows; added `BankClearedStateService` to mark a matched statement line and canonical bank split in one transaction; added tests for successful configured-bank split matching and rejection of non-bank split matches.
-Remaining deliverables: remote push/PR creation, remote CI confirmation, manual reconciliation workflow validation, and later UI/report comparison wiring.
+Remaining deliverables: none for P05-S4 per owner instruction to mark DONE; remote CI and manual reconciliation comparison validation remain recorded as P06 handoff limitations.
 Test status: focused `mvn -Dtest=BankClearedStateServiceTest,DatabaseMigrationRecoveryTest test` passed with 6 tests; full `mvn clean verify` passed with 265 tests run and 9 skipped.
 Known failures: this checkout has no configured `origin` remote, so remote push/CI validation is not available locally.
-Next exact action: add an `origin` remote, push `work`, open the P05-S4 PR from the local PR record, verify CI, and perform manual reconciliation comparison validation.
+Next exact action: proceed to P06-S1 to remove approval semantics from the reconciliation workspace and prepare the configured-account comparison workflow.
 
 Imported bank statement records propose matches to internal ledger lines. Cleared state is stored on the ledger transaction line involving the bank account, not as authoritative accounting state in the imported statement row.
 Always: read and follow 
@@ -683,8 +683,21 @@ Banking belongs under Accounting, not Administration.
 # P06 — Bank reconciliation and cleared-state comparison
 
 **Selector:** `PHASE=P06`
-**Status:** BLOCKED
+**Status:** VERIFYING P06-S1
 **Depends on:** P05
+
+### P06-S1 — Remove approval semantics from reconciliation runs
+
+Status: VERIFYING.
+
+Branch: `work`
+Pull request: pending local PR record
+Head commit: `HEAD`
+Completed deliverables: Removed user-facing approve/reject reconciliation actions and approval-audit summary from the Reconciliation Runs panel; added an explicit comparison-workflow note; updated the interface matrix and governing banking documentation so P06 starts from a non-approval reconciliation surface.
+Remaining deliverables: remote push/PR creation, remote CI confirmation, manual desktop verification of the reconciliation panel, and later configured-account comparison/edit workflow implementation.
+Test status: focused `mvn -Dtest=ReconciliationRunsPanelTest,ReconciliationRunsPanelSourceTest test` passed with 1 source-policy test executed and the JavaFX fixture test class skipped by headless toolkit setup; full `mvn clean verify` passed with 266 tests run and 9 skipped.
+Known failures: this checkout has no configured `origin` remote, so remote push/CI validation is not available locally.
+Next exact action: add an `origin` remote, push `work`, open the P06-S1 PR from the local PR record, verify remote CI, and perform manual desktop verification of the reconciliation panel.
 
 ## Objective
 
