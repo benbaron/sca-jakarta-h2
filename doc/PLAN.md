@@ -4,9 +4,9 @@ active_phase: P03
 active_slice: P03-C3
 active_status: VERIFYING
 active_branch: work
-active_pull_request: pending local PR record
-active_head: 68f0487
-next_action: "Create the P03-C3 pull request from branch work, verify remote checks when a remote is configured, and manually verify Transaction Editor Delete/Reversal prompts in a desktop JavaFX run."
+active_pull_request: local make_pr record created 2026-07-07
+active_head: HEAD
+next_action: "When an origin remote is configured, push branch work and verify remote checks; manually verify Transaction Editor Delete/Reversal prompts in a desktop JavaFX run before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -375,13 +375,13 @@ If this requires major redesign beyond this slice, propose a solution then remar
 Status: VERIFYING.
 
 Branch: `work`
-Pull request: pending local PR record
-Head commit: `68f0487`
-Completed deliverables: Added a Transaction Editor Delete action for loaded/saved transactions, routed direct-delete requests through `TransactionCorrectionService.delete`, routed non-direct correction methods through reversing-entry creation using the active period date, and documented the design-rule completion.
-Remaining deliverables: create PR, inspect remote validation when a remote exists, and manually verify JavaFX confirmation prompts.
-Test status: `mvn -DskipTests compile` passed; `mvn -Dtest=TransactionEditorPanelCommandMappingTest test` passed with 2 tests run; `mvn clean verify` passed with 258 tests run and 9 skipped; `git diff --check` passed.
+Pull request: local make_pr record created 2026-07-07; remote PR URL unavailable because this checkout has no `origin` remote
+Head commit: `HEAD`
+Completed deliverables: Added a Transaction Editor Delete action for loaded/saved transactions, kept newly saved transactions loaded so Delete/Reverse targets the durable record, routed direct-delete requests through `TransactionCorrectionService.delete`, routed non-direct correction methods through reversing-entry creation using the active period date, and documented the design-rule completion.
+Remaining deliverables: push/create the remote PR when an `origin` remote is configured, inspect remote validation when available, and manually verify JavaFX confirmation prompts.
+Test status: 2026-07-07 rerun: `mvn -DskipTests compile` passed; `mvn -Dtest=TransactionEditorPanelCommandMappingTest test` passed with 2 tests run; `mvn clean verify` passed with 258 tests run and 9 skipped; `git diff --check HEAD~1..HEAD` passed after `origin/main...HEAD` was unavailable without an origin remote. Follow-up review rerun after saved-transaction Delete enablement correction: `mvn -DskipTests compile` passed; `mvn -Dtest=TransactionEditorPanelCommandMappingTest test` passed with 2 tests run; `mvn clean verify` passed with 258 tests run and 9 skipped.
 Known failures: this checkout still has no configured `origin` remote, so remote workflow validation cannot be inspected locally; desktop visual validation requires an interactive JavaFX run.
-Next exact action: create the P03-C3 pull request from branch `work`, verify remote checks when a remote is configured, and manually verify Transaction Editor Delete/Reversal prompts on a desktop.
+Next exact action: configure/add `origin`, push branch `work`, verify remote checks, and manually verify Transaction Editor Delete/Reversal prompts on a desktop before merge.
 
 Implement and document:
 
