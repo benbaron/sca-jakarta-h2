@@ -14,8 +14,6 @@ The dashboard is separated into three layers:
 
 The JavaFX panel contains no SQL. Accounting derivation remains in the service layer rather than in cell factories or click handlers.
 
-`DashboardExperiment` remains only as a compatibility entry point. The standalone module under `experiments/dashboard-ui` is a visual and sizing reference, not the production data path.
-
 ## Visual structure
 
 The workspace contains:
