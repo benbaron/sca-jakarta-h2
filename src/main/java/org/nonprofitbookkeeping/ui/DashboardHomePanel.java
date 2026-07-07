@@ -188,6 +188,12 @@ public final class DashboardHomePanel implements AppPanel
 
     private void buildView()
     {
+        root.setId("dashboardHomeRoot");
+        budgetPerformance.setId("dashboardBudgetPerformanceChart");
+        budgetPerformanceEmpty.setId("dashboardBudgetPerformanceEmptyLabel");
+        budgetActuals.setId("dashboardBudgetActualsTable");
+        surplusBudget.setId("dashboardSurplusBudgetLabel");
+        surplusComparison.setId("dashboardSurplusComparisonLabel");
         root.getStyleClass().add("dashboard-home");
         loadMessage.getStyleClass().add("dashboard-message");
         loadMessage.setWrapText(true);
@@ -222,6 +228,7 @@ public final class DashboardHomePanel implements AppPanel
         dashboardGrid.add(quickLinksCard(), 3, 2);
 
         ScrollPane scrollPane = new ScrollPane(dashboardGrid);
+        scrollPane.setId("dashboardHomeScrollPane");
         scrollPane.setFitToWidth(true);
         scrollPane.setPannable(true);
         scrollPane.getStyleClass().add("dashboard-scroll");
@@ -419,8 +426,7 @@ public final class DashboardHomePanel implements AppPanel
     private void configureBudgetActuals()
     {
         budgetActuals.getStyleClass().add("dashboard-table");
-        budgetActuals.setColumnResizePolicy(
-                TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        budgetActuals.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         budgetActuals.setPrefHeight(155);
         budgetActuals.setFixedCellSize(28);
         budgetActuals.getColumns().setAll(
