@@ -1,12 +1,12 @@
 ---
 plan_version: 4
 active_phase: P03
-active_slice: P03-C2
+active_slice: P03-C3
 active_status: VERIFYING
 active_branch: work
 active_pull_request: pending local PR record
-active_head: 9905cb1
-next_action: "Publish or link the P03-C2 pull request from branch work in the remote hosting system, verify remote checks when a remote is configured, and manually verify the Journal Pane in a desktop JavaFX run."
+active_head: 68f0487
+next_action: "Create the P03-C3 pull request from branch work, verify remote checks when a remote is configured, and manually verify Transaction Editor Delete/Reversal prompts in a desktop JavaFX run."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -340,16 +340,16 @@ If this requires major redesign then remark this in documentation.
 
 ### P03-C2 — Journal Pane and Inspect Journal navigation
 
-Status: VERIFYING.
+Status: DONE.
 
 Branch: `work`
-Pull request: pending local PR record
-Head commit: `9905cb1`
+Pull request: merged before P03-C3
+Head commit: merged
 Completed deliverables: Added first-class Journal Pane panel ID, factory, navigation item under Accounting, Ledger Register Inspect Journal navigation, canonical journal projection flattening, on-the-fly filters, centered transaction context, journal-to-Transaction Editor New/Edit handoff, split-pane supplemental-record provision area, sortable/resizable/reorderable journal columns, active-company-keyed table state persistence, and two-decimal currency display for debit/credit columns.
-Remaining deliverables: publish or link the pull request in the remote hosting system, inspect remote workflow results when available, and manually verify Journal Pane behavior in a desktop JavaFX run.
-Test status: Re-verified on 2026-07-07: `mvn -DskipTests compile` passed; `mvn -Dtest=JournalPaneTest,ProductionWorkspaceCommandRoutingTest test` passed with JournalPaneTest 2 tests run and the JavaFX command-routing class reported as 0 tests in this container; `mvn clean verify` passed with 257 tests run and 9 skipped. Remote workflow validation could not be inspected because this checkout has no configured `origin` remote.
-Known failures: none. Remote PR validation could not be inspected because this checkout has no configured `origin` remote; desktop visual validation still requires a local JavaFX run because this container has no interactive display.
-Next exact action: publish or link the P03-C2 pull request from branch `work` in the remote hosting system, verify remote checks when a remote is configured, and manually verify the Journal Pane in a desktop JavaFX run.
+Remaining deliverables: none for P03-C2.
+Test status: merged before P03-C3 per owner instruction.
+Known failures: none recorded for merged P03-C2.
+Next exact action: proceed to P03-C3.
 
 Implement and document:
 
@@ -369,6 +369,27 @@ If this requires major redesign beyond this slice, propose a solution then remar
 - Journal Pane provides filters that can be applied on the fly.
 - Users do not edit directly in the journal grid; edit/new actions open Transaction Editor in Edit/New mode.
 - Journal Pane makes provision for supplemental transaction records attached to a journal entry.
+
+### P03-C3 — Transaction Editor Delete correction action
+
+Status: VERIFYING.
+
+Branch: `work`
+Pull request: pending local PR record
+Head commit: `68f0487`
+Completed deliverables: Added a Transaction Editor Delete action for loaded/saved transactions, routed direct-delete requests through `TransactionCorrectionService.delete`, routed non-direct correction methods through reversing-entry creation using the active period date, and documented the design-rule completion.
+Remaining deliverables: create PR, inspect remote validation when a remote exists, and manually verify JavaFX confirmation prompts.
+Test status: `mvn -DskipTests compile` passed; `mvn -Dtest=TransactionEditorPanelCommandMappingTest test` passed with 2 tests run; `mvn clean verify` passed with 258 tests run and 9 skipped; `git diff --check` passed.
+Known failures: this checkout still has no configured `origin` remote, so remote workflow validation cannot be inspected locally; desktop visual validation requires an interactive JavaFX run.
+Next exact action: create the P03-C3 pull request from branch `work`, verify remote checks when a remote is configured, and manually verify Transaction Editor Delete/Reversal prompts on a desktop.
+
+Implement and document:
+
+- Transaction Editor exposes a Delete action for an existing loaded or saved transaction.
+- Delete delegates to the authoritative transaction correction service.
+- When Settings -> Correction method is `DIRECT_EDIT`, Delete asks for confirmation and hard-deletes only after period/reconciliation checks and audit snapshot creation.
+- When the correction method is not `DIRECT_EDIT`, Delete asks whether to create a reversing entry using the active period date instead of hard-deleting.
+- New-mode transactions keep Delete disabled because no durable transaction exists yet.
 
 ## Forbidden in P03
 
