@@ -4,9 +4,9 @@ active_phase: P04
 active_slice: P04-S3
 active_status: VERIFYING
 active_branch: work
-active_pull_request: local make_pr record: Convert budget UI to normalized budget plans
-active_head: HEAD (Add P04 budget UI design-rule validation)
-next_action: "Push the P04-S3 branch/PR where a GitHub remote is available, run required GitHub checks, and complete user desktop review before merge."
+active_pull_request: local make_pr record created 2026-07-07
+active_head: HEAD
+next_action: "When an origin remote is configured, push branch work and verify remote checks; manually verify Transaction Editor Delete/Reversal prompts in a desktop JavaFX run before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -377,9 +377,9 @@ Status: VERIFYING.
 Branch: `work`
 Pull request: local make_pr record created 2026-07-07; remote PR URL unavailable because this checkout has no `origin` remote
 Head commit: `HEAD`
-Completed deliverables: Added a Transaction Editor Delete action for loaded/saved transactions, routed direct-delete requests through `TransactionCorrectionService.delete`, routed non-direct correction methods through reversing-entry creation using the active period date, and documented the design-rule completion.
+Completed deliverables: Added a Transaction Editor Delete action for loaded/saved transactions, kept newly saved transactions loaded so Delete/Reverse targets the durable record, routed direct-delete requests through `TransactionCorrectionService.delete`, routed non-direct correction methods through reversing-entry creation using the active period date, and documented the design-rule completion.
 Remaining deliverables: push/create the remote PR when an `origin` remote is configured, inspect remote validation when available, and manually verify JavaFX confirmation prompts.
-Test status: 2026-07-07 rerun: `mvn -DskipTests compile` passed; `mvn -Dtest=TransactionEditorPanelCommandMappingTest test` passed with 2 tests run; `mvn clean verify` passed with 258 tests run and 9 skipped; `git diff --check HEAD~1..HEAD` passed after `origin/main...HEAD` was unavailable without an origin remote.
+Test status: 2026-07-07 rerun: `mvn -DskipTests compile` passed; `mvn -Dtest=TransactionEditorPanelCommandMappingTest test` passed with 2 tests run; `mvn clean verify` passed with 258 tests run and 9 skipped; `git diff --check HEAD~1..HEAD` passed after `origin/main...HEAD` was unavailable without an origin remote. Follow-up review rerun after saved-transaction Delete enablement correction: `mvn -DskipTests compile` passed; `mvn -Dtest=TransactionEditorPanelCommandMappingTest test` passed with 2 tests run; `mvn clean verify` passed with 258 tests run and 9 skipped.
 Known failures: this checkout still has no configured `origin` remote, so remote workflow validation cannot be inspected locally; desktop visual validation requires an interactive JavaFX run.
 Next exact action: configure/add `origin`, push branch `work`, verify remote checks, and manually verify Transaction Editor Delete/Reversal prompts on a desktop before merge.
 
