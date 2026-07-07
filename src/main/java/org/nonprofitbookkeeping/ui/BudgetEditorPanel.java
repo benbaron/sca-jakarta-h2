@@ -2,10 +2,12 @@ package org.nonprofitbookkeeping.ui;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
@@ -55,6 +57,9 @@ public class BudgetEditorPanel implements AppPanel
         activate.setId("budgetEditorActivateVersionButton");
         activate.setOnAction(e -> activatePlan());
 
+        table.setId("budgetEditorCategoryTable");
+        status.setId("budgetEditorStatusLabel");
+        amountField.setId("budgetEditorAmountField");
         amountField.setPromptText("Budget amount");
         root.setTop(new VBox(6, title, new HBox(8, refresh, new Label("Amount"), amountField, saveTarget, activate), status, new Separator()));
 
@@ -66,7 +71,7 @@ public class BudgetEditorPanel implements AppPanel
         budgetTarget.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().budgetAmount().toPlainString()));
 
         table.getColumns().addAll(code, name, budgetTarget);
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
+        table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         table.setPlaceholder(new Label("No active budget categories are available."));
         table.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
             if (newV != null)
@@ -75,7 +80,14 @@ public class BudgetEditorPanel implements AppPanel
             }
         });
 
-        root.setCenter(table);
+        Label details = new Label("Select a row, enter an amount, save the draft amount, then activate the budget version when ready.");
+        details.setId("budgetEditorWorkflowHint");
+        details.setWrapText(true);
+        SplitPane splitPane = new SplitPane(table, details);
+        splitPane.setId("budgetEditorSplitPane");
+        splitPane.setOrientation(Orientation.VERTICAL);
+        splitPane.setDividerPositions(0.82);
+        root.setCenter(splitPane);
         reload();
     }
 

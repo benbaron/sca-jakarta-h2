@@ -66,6 +66,16 @@ public class TxnSplit
     @Column(name = "amount_signed", nullable = false, precision = 19, scale = 4)
     private BigDecimal amountSigned;
 
+    @Column(name = "bank_cleared", nullable = false)
+    private boolean bankCleared = false;
+
+    @Column(name = "bank_cleared_on")
+    private LocalDate bankClearedOn;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "matched_bank_statement_line_id")
+    private BankStatementLine matchedBankStatementLine;
+
     public Long getId() { return id; }
     public Txn getTxn() { return txn; }
     public void setTxn(Txn txn) { this.txn = txn; }
@@ -85,4 +95,10 @@ public class TxnSplit
     public void setNotes(String notes) { this.notes = notes; }
     public BigDecimal getAmountSigned() { return amountSigned; }
     public void setAmountSigned(BigDecimal amountSigned) { this.amountSigned = amountSigned; }
+    public boolean isBankCleared() { return bankCleared; }
+    public void setBankCleared(boolean bankCleared) { this.bankCleared = bankCleared; }
+    public LocalDate getBankClearedOn() { return bankClearedOn; }
+    public void setBankClearedOn(LocalDate bankClearedOn) { this.bankClearedOn = bankClearedOn; }
+    public BankStatementLine getMatchedBankStatementLine() { return matchedBankStatementLine; }
+    public void setMatchedBankStatementLine(BankStatementLine matchedBankStatementLine) { this.matchedBankStatementLine = matchedBankStatementLine; }
 }

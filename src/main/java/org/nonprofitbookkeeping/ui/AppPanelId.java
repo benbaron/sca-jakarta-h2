@@ -7,6 +7,8 @@ public enum AppPanelId
 
     LEDGER_REGISTER,
     TXN_EDITOR,
+    JOURNAL_PANE,
+    BANKING,
 
     SCHEDULES,
 

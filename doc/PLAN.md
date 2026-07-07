@@ -1,12 +1,12 @@
 ---
 plan_version: 4
-active_phase: P03
-active_slice: P03-C1
-active_status: READY
-active_branch: null
-active_pull_request: null
-active_head: null
-next_action: "Execute P03-C1: implement Transaction Editor New/Edit modes and Ledger Register New/Open Selected behavior, then P03-C2 Journal Pane."
+active_phase: P06
+active_slice: P06-S1
+active_status: VERIFYING
+active_branch: work
+active_pull_request: pending local PR record
+active_head: HEAD
+next_action: "Push branch work to a remote, open the recorded P06-S1 PR, verify remote CI, and perform manual reconciliation comparison validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -70,8 +70,8 @@ When a branch begins, update front matter and the phase section. When a PR is op
 | P02 | Canonical ledger and transaction operations | P00 | DONE; retain |
 | P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY for corrective/new slices |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
-| P05 | Banking configuration and statement import | P02, P03-C1 | READY after P03-C1 unless slice is strictly model-only |
-| P06 | Bank reconciliation and cleared-state comparison | P05 | BLOCKED |
+| P05 | Banking configuration and statement import | P02, P03-C1 | DONE per completed local P05 slices; remote validation pending local handoff |
+| P06 | Bank reconciliation and cleared-state comparison | P05 | VERIFYING P06-S1 |
 | P07 | Eliminated former Schedules phase | n/a | ELIMINATED |
 | P08 | Asset Register and depreciation | P02 | BLOCKED |
 | P09 | Inventory and supplies | P02 | BLOCKED |
@@ -128,7 +128,6 @@ The next documentation-conformance slice must create or update:
 
 - `doc/requirements/requirements-clarification-overlay.md`
 - `doc/accounting/transaction-editor-and-journal.md`
-- `doc/banking/banking-and-reconciliation.md`
 - `doc/accounting/period-close-design.md`
 - `doc/inventory/inventory-and-assets.md`
 
@@ -209,8 +208,8 @@ After those focused documents exist, link them from this section.
 
 # P00 — Documentation and implementation inventory
 
-**Selector:** `PHASE=P00`  
-**Status:** DONE, with clarification updates as touched  
+**Selector:** `PHASE=P00`
+**Status:** DONE, with clarification updates as touched
 **Depends on:** none
 
 ## Objective
@@ -240,8 +239,8 @@ Do not change production behavior.
 
 # P01 — Production shell and workspace composition
 
-**Selector:** `PHASE=P01`  
-**Status:** DONE, retrofit as touched  
+**Selector:** `PHASE=P01`
+**Status:** DONE, retrofit as touched
 **Depends on:** P00
 
 ## Objective
@@ -263,8 +262,8 @@ One shell and one composition root own all production panels and database-bound 
 
 # P02 — Canonical ledger and transaction operations
 
-**Selector:** `PHASE=P02`  
-**Status:** DONE, retain  
+**Selector:** `PHASE=P02`
+**Status:** DONE, retain
 **Depends on:** P00
 
 ## Objective
@@ -286,8 +285,8 @@ All authoritative accounting writes flow through one documented transaction serv
 
 # P03 — Transaction Editor, Ledger Register, and Journal Pane
 
-**Selector:** `PHASE=P03`  
-**Status:** READY for corrective/new slices  
+**Selector:** `PHASE=P03`
+**Status:** READY for corrective/new slices
 **Depends on:** P01, P02
 
 ## Objective
@@ -301,13 +300,22 @@ Apply the clarified transaction-entry and journal requirements.
 - `doc/accounting/transaction-lifecycle.md`
 - `doc/accounting/period-and-correction-policy.md`
 - `doc/ui_design_rules.md`
-- `doc/accounting/transaction-editor-and-journal.md` once created
+- `doc/accounting/transaction-editor-and-journal.md`
 
 ## Slices
 
 ### P03-C1 — Transaction Editor modes and Ledger Register buttons
 
-Status: READY.
+Status: DONE.
+
+Branch: `codex/P03-P03-C1-transaction-editor-register-modes`
+Pull request: pending
+Head commit: `HEAD`
+Completed deliverables: Transaction Editor New/Edit routing, Ledger Register New/Open Selected buttons, read-only selected-ID edit routing, and governing documentation.
+Remaining deliverables: create PR, record PR details, and perform any available remote PR validation.
+Test status: Baseline `mvn -DskipTests compile` passed; focused `mvn -Dtest=LedgerRegisterPanelTest test` passed but Surefire reported 0 tests executed for that class in this environment; full `mvn clean verify` passed with 255 tests run and 9 skipped.
+Known failures: none.
+Next exact action: create the pull request for P03-C1 and then proceed to P03-C2 after PR validation/merge.
 
 Implement and document:
 
@@ -331,7 +339,16 @@ If this requires major redesign then remark this in documentation.
 
 ### P03-C2 — Journal Pane and Inspect Journal navigation
 
-Status: READY after P03-C1.
+Status: DONE.
+
+Branch: `work`
+Pull request: merged before P03-C3
+Head commit: merged
+Completed deliverables: Added first-class Journal Pane panel ID, factory, navigation item under Accounting, Ledger Register Inspect Journal navigation, canonical journal projection flattening, on-the-fly filters, centered transaction context, journal-to-Transaction Editor New/Edit handoff, split-pane supplemental-record provision area, sortable/resizable/reorderable journal columns, active-company-keyed table state persistence, and two-decimal currency display for debit/credit columns.
+Remaining deliverables: none for P03-C2.
+Test status: merged before P03-C3 per owner instruction.
+Known failures: none recorded for merged P03-C2.
+Next exact action: proceed to P03-C3.
 
 Implement and document:
 
@@ -351,6 +368,27 @@ If this requires major redesign beyond this slice, propose a solution then remar
 - Journal Pane provides filters that can be applied on the fly.
 - Users do not edit directly in the journal grid; edit/new actions open Transaction Editor in Edit/New mode.
 - Journal Pane makes provision for supplemental transaction records attached to a journal entry.
+
+### P03-C3 — Transaction Editor Delete correction action
+
+Status: DONE.
+
+Branch: `work`
+Pull request: local make_pr record created 2026-07-07; remote PR URL unavailable because this checkout has no `origin` remote
+Head commit: `HEAD`
+Completed deliverables: Added a Transaction Editor Delete action for loaded/saved transactions, kept newly saved transactions loaded so Delete/Reverse targets the durable record, routed direct-delete requests through `TransactionCorrectionService.delete`, routed non-direct correction methods through reversing-entry creation using the active period date, and documented the design-rule completion.
+Remaining deliverables: none for P03-C3 per owner instruction to mark DONE; remote validation and desktop prompt checks remain recorded as P03 handoff limitations.
+Test status: 2026-07-07 rerun: `mvn -DskipTests compile` passed; `mvn -Dtest=TransactionEditorPanelCommandMappingTest test` passed with 2 tests run; `mvn clean verify` passed with 258 tests run and 9 skipped; `git diff --check HEAD~1..HEAD` passed after `origin/main...HEAD` was unavailable without an origin remote. Follow-up review rerun after saved-transaction Delete enablement correction: `mvn -DskipTests compile` passed; `mvn -Dtest=TransactionEditorPanelCommandMappingTest test` passed with 2 tests run; `mvn clean verify` passed with 258 tests run and 9 skipped.
+Known failures: this checkout still has no configured `origin` remote, so remote workflow validation cannot be inspected locally; desktop visual validation requires an interactive JavaFX run.
+Next exact action: proceed to P05-S1 bank and bank-account model.
+
+Implement and document:
+
+- Transaction Editor exposes a Delete action for an existing loaded or saved transaction.
+- Delete delegates to the authoritative transaction correction service.
+- When Settings -> Correction method is `DIRECT_EDIT`, Delete asks for confirmation and hard-deletes only after period/reconciliation checks and audit snapshot creation.
+- When the correction method is not `DIRECT_EDIT`, Delete asks whether to create a reversing entry using the active period date instead of hard-deleting.
+- New-mode transactions keep Delete disabled because no durable transaction exists yet.
 
 ## Forbidden in P03
 
@@ -377,8 +415,8 @@ Do not implement Banking or Reconciliation in this slice.
 
 # P04 — Persistent budgeting
 
-**Selector:** `PHASE=P04`  
-**Status:** DONE, retrofit as touched  
+**Selector:** `PHASE=P04`
+**Status:** DONE, retrofit as touched
 **Depends on:** P02
 
 ## Objective
@@ -387,8 +425,109 @@ Maintain normalized H2-backed budget plans and lines.
 
 ## Clarification updates required when touched
 
-- Preserve `BudgetCategory` as distinct from Account and Activity.
-- Apply `doc/ui_design_rules.md` table, money, date, and per-company preference rules to budget panels.
+Completed deliverables in this run:
+
+- added `BudgetPlanService` for creating draft budgets, replacing draft lines, validating line scopes/periods, activating one fiscal-year comparison version, archiving versions, loading active versions, and calculating active budget actual/variance rows;
+- added immutable budget plan, line, and variance command/projection records;
+- wired the service into the UI service bundle for P04-S3 panel conversion;
+- changed dashboard budget actual projection to read active `BudgetPlan`/`BudgetLine` values instead of always returning neutral no-budget values when an active budget exists;
+- documented the P04-S2 service boundary in `doc/accounting/budget-model.md`;
+- added focused service and dashboard tests for draft line replacement, activation archiving, draft-only editing, duplicate-scope rejection, active variance calculation, and dashboard active-budget comparison.
+
+Remaining deliverables before merge:
+
+- None for P04-S2 after user-directed verification/done marking; P04-S3 owns UI/dashboard conversion and sidecar removal.
+
+Known failures:
+
+- None recorded after user-directed P04-S2 verification/done marking.
+
+User-visible changes:
+
+- Dashboard budget comparisons can now show amounts from an active normalized budget version when one exists; budget editing panels are not yet converted in P04-S2.
+
+Manual testing for user:
+
+- After P04-S3 wires the panels, create two draft budget versions for the same fiscal year, activate each in turn, and confirm the prior active version is archived and Dashboard/Budget vs Actual compare against the newly active version.
+
+Next exact action: continue P04-S3 budget UI/dashboard conversion after Maven dependencies are reachable for P04-S2 validation.
+
+Original scope:
+
+Implement create, edit draft, validate, activate, archive, select active version, and calculate actual/variance.
+
+Activation selects the comparison version; it is not an approval workflow.
+
+### P04-S3 — Budget UI and dashboard
+
+Status: VERIFYING. Branch: work. PR: local make_pr record: Convert budget UI to normalized budget plans. Head: HEAD (Add P04 budget UI design-rule validation).
+
+Completed deliverables in this run:
+
+- converted Budget Editor from fund sidecar targets to `BudgetPlanService` draft creation, draft line replacement, and activation workflows for category-level budget lines;
+- converted Budget vs Actual from fund target merging to `BudgetPlanService.activeVariance` projections;
+- removed `BudgetTargetPersistence` and budget target map APIs from `UiWorkspaceDataStore`;
+- documented the P04-S3 service-backed UI boundary in `doc/accounting/budget-model.md`;
+- updated sidecar-era UI tests so budget target file persistence is no longer treated as application behavior;
+- brought P04 budget UI surfaces into the table/split-pane/TestFX design-rule path by adding stable IDs, unconstrained table column sizing, split-pane boundaries for Budget Editor and Budget vs Actual, and display-backed TestFX checks for Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison.
+
+Remaining deliverables before merge:
+
+- push the branch/PR in an environment with a configured GitHub remote and verify required GitHub checks;
+- complete user desktop review of Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD budget comparison before merge.
+
+Known failures:
+
+- bootstrap `git fetch origin --prune` failed because this worktree has no `origin` remote configured;
+- GitHub validation could not be run from this worktree because no `origin` remote is configured;
+- final user desktop review remains outstanding even though display-backed TestFX validation ran successfully under `xvfb`.
+
+Validation completed on 2026-07-06:
+
+- `mvn -DskipTests compile` passed;
+- after installing `xvfb`, `libgtk-3-0`, and related GTK/X11 runtime libraries, `xvfb-run -a mvn -Dtest=ProductionDesignRulesTestFxTest test` passed with 3 tests run, 0 failures, 0 errors, and 0 skipped tests;
+- `mvn clean verify` passed with 252 tests run, 0 failures, 0 errors, and 8 skipped tests;
+- focused `mvn -Dtest=BudgetPlanMigrationTest,BudgetPlanServiceTest,JpaDashboardQueryServiceTest,BudgetEditorPanelTest test` passed with 12 tests run, 0 failures, 0 errors, and 0 skipped tests;
+- on 2026-07-07, `mvn -DskipTests compile` passed after the P04 UI design-rule updates;
+- on 2026-07-07, after installing `xvfb`, `libgtk-3-0`, and related GTK/X11 runtime libraries, `xvfb-run -a mvn -Dtest=ProductionDesignRulesTestFxTest test` passed with 6 tests run, 0 failures, 0 errors, and 0 skipped tests;
+- on 2026-07-07, focused `mvn -Dtest=BudgetPlanMigrationTest,BudgetPlanServiceTest,JpaDashboardQueryServiceTest,BudgetEditorPanelTest test` passed with 12 tests run, 0 failures, 0 errors, and 0 skipped tests;
+- on 2026-07-07, `mvn clean verify` passed with 255 tests run, 0 failures, 0 errors, and 11 skipped tests.
+
+User-visible changes:
+
+- Budget Editor saves category budget amounts to normalized H2 budget plans instead of sidecar fund target files.
+- Budget Editor and Budget vs Actual now expose resizable split-pane table regions and horizontal table scrolling instead of constrained column clipping.
+- Budget vs Actual and Dashboard budget cards read active normalized budget versions or show neutral no-budget states.
+- Dashboard budget performance and YTD comparison controls expose stable automation IDs for display-backed workflow checks.
+
+Manual testing for user:
+
+- Open Budget Editor, enter category amounts, activate the draft version, and confirm Budget vs Actual and Dashboard budget cards compare against that active version.
+- Create a second draft revision, activate it, and confirm the prior active version is archived by the service and no sidecar budget target file is used.
+
+Next exact action: push the P04-S3 branch/PR where a GitHub remote is available, run required GitHub checks, and complete user desktop review before merge.
+
+Original scope:
+
+Convert Budget Editor, Budget vs Actual, Dashboard Budget Performance, and YTD comparisons to genuine services.
+
+Remove sidecar/static budget persistence.
+
+## Validation
+
+Migration, uniqueness, `BigDecimal`, atomic save, historical version, actual calculation, neutral no-budget state, and dashboard tests.
+
+## Exit gate
+
+Every displayed/stored budget value comes from normalized H2 data or authoritative accounting projections.
+
+## Codex seed prompt
+
+```text
+Execute PHASE=P04 from doc/PLAN.md.
+Replace the first incomplete sidecar-backed budget slice with normalized H2 models and services.
+Preserve BudgetCategory as distinct from Account and Activity.
+```
 
 Always: read and follow 
 - doc/interface-operation-matrix.md 
@@ -399,8 +538,8 @@ and apply them to the following work items. If this requires major redesign then
 
 # P05 — Banking configuration and statement import
 
-**Selector:** `PHASE=P05`  
-**Status:** READY after P03-C1 unless the selected slice is strictly model-only  
+**Selector:** `PHASE=P05`
+**Status:** READY after P03-C1 unless the selected slice is strictly model-only
 **Depends on:** P02 and clarified P03 navigation/mode rules
 
 ## Objective
@@ -410,13 +549,24 @@ Create Banking as an Accounting function and connect statement import to configu
 ## Required reading
 
 - `doc/banking/import-and-reconciliation.md`
-- `doc/banking/banking-and-reconciliation.md` once created
+- `doc/banking/banking-and-reconciliation.md`
 - `doc/import/import-review-workflow.md`
 - `doc/accounting/ledger-authority.md`
 
 ## Slices
 
 ### P05-S1 — Bank and bank-account model
+
+Status: DONE.
+
+Branch: `work`
+Pull request: pending local PR record
+Head commit: `HEAD`
+Completed deliverables: Added `Bank` and enhanced configured `CompanyBankAccount` model fields, nondestructive V52 migration, P05-S1 bank configuration service validation, and governing banking design documentation.
+Remaining deliverables: none for P05-S1 per owner instruction to mark DONE; remote validation remains unavailable without an origin remote.
+Test status: `mvn -DskipTests compile`, `mvn -Dtest=DatabaseMigrationRecoveryTest,BankConfigurationServiceTest,BankImportMigrationTest test`, and `mvn clean verify` pass locally; JavaFX visual/manual review remains required in a desktop environment.
+Known failures: this checkout has no configured `origin` remote, so remote push/CI validation is not available locally.
+Next exact action: proceed to P05-S2 Banking panel under Accounting.
 
 A Bank record represents the financial institution and stores:
 
@@ -451,6 +601,17 @@ and apply them to the following work items. If this requires major redesign then
 
 ### P05-S2 — Banking panel under Accounting
 
+Status: DONE.
+
+Branch: `work`
+Pull request: pending local PR record
+Head commit: `HEAD`
+Completed deliverables: Added first-class Banking navigation/panel, bank create/edit form, configured bank-account create form with existing-account selection or automatic BANK/DEBIT/CASH chart-account creation, H2-backed reloads, visible Delete/deactivate explanation, active-company-keyed table state persistence, focus-loss date/money correction, and governing documentation/matrix updates.
+Remaining deliverables: none for P05-S2 per owner instruction to mark DONE; remote validation and desktop prompt checks remain recorded as local handoff limitations.
+Test status: `mvn -DskipTests compile`, `mvn -Dtest=BankConfigurationServiceTest,AppPanelConsistencyTest test`, and `mvn clean verify` pass locally with 261 tests run and 9 skipped; JavaFX desktop visual/manual review remains required.
+Known failures: this checkout has no configured `origin` remote, so remote push/CI validation is not available locally.
+Next exact action: proceed to P05-S3 statement import normalization and matching.
+
 The Banking panel appears under Accounting in the Left Navigation Pane and lets the user:
 
 - create a Bank record;
@@ -465,6 +626,17 @@ and apply them to the following work items. If this requires major redesign then
 
 ### P05-S3 — Statement import normalization and matching
 
+Status: DONE.
+
+Branch: `work`
+Pull request: pending local PR record
+Head commit: `HEAD`
+Completed deliverables: Added `BankImportReviewService` and immutable command/result records to persist normalized bank statement review batches, durable statement lines, and row issues while keeping invalid and duplicate rows visible together; added V53 to allow durable invalid review rows without forcing accounting-valid dates/amounts; added service tests for mixed valid/invalid/duplicate rows and persisted duplicate detection.
+Remaining deliverables: none for P05-S3 per owner instruction to mark DONE; remote validation remains recorded as a local handoff limitation.
+Test status: baseline `mvn -DskipTests compile` passed before P05-S3 edits; focused `mvn -Dtest=BankImportReviewServiceTest,BankImportNormalizationServiceTest,BankImportMigrationTest test` passed with 7 tests; recovery-focused `mvn -Dtest=DatabaseMigrationRecoveryTest,BankImportReviewServiceTest,BankImportMigrationTest test` passed with 7 tests; full `mvn clean verify` passed with 263 tests run and 9 skipped.
+Known failures: this checkout has no configured `origin` remote, so remote push/CI validation is not available locally.
+Next exact action: proceed to P05-S4 cleared-state mapping to ledger bank lines.
+
 Support manual entry, CSV, OFX, and QIF statement sources. Preserve current SCLX import idempotency rules where applicable.
 Always: read and follow 
 - doc/interface-operation-matrix.md 
@@ -473,6 +645,17 @@ Always: read and follow
 and apply them to the following work items. If this requires major redesign then remark this in documentation.
 
 ### P05-S4 — Cleared-state mapping to ledger bank lines
+
+Status: DONE.
+
+Branch: `work`
+Pull request: pending local PR record
+Head commit: `HEAD`
+Completed deliverables: Added `bank_cleared`, `bank_cleared_on`, and matched statement-line linkage to canonical `txn_split` rows; added `BankClearedStateService` to mark a matched statement line and canonical bank split in one transaction; added tests for successful configured-bank split matching and rejection of non-bank split matches.
+Remaining deliverables: none for P05-S4 per owner instruction to mark DONE; remote CI and manual reconciliation comparison validation remain recorded as P06 handoff limitations.
+Test status: focused `mvn -Dtest=BankClearedStateServiceTest,DatabaseMigrationRecoveryTest test` passed with 6 tests; full `mvn clean verify` passed with 265 tests run and 9 skipped.
+Known failures: this checkout has no configured `origin` remote, so remote push/CI validation is not available locally.
+Next exact action: proceed to P06-S1 to remove approval semantics from the reconciliation workspace and prepare the configured-account comparison workflow.
 
 Imported bank statement records propose matches to internal ledger lines. Cleared state is stored on the ledger transaction line involving the bank account, not as authoritative accounting state in the imported statement row.
 Always: read and follow 
@@ -499,9 +682,22 @@ Banking belongs under Accounting, not Administration.
 
 # P06 — Bank reconciliation and cleared-state comparison
 
-**Selector:** `PHASE=P06`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P06`
+**Status:** VERIFYING P06-S1
 **Depends on:** P05
+
+### P06-S1 — Remove approval semantics from reconciliation runs
+
+Status: VERIFYING.
+
+Branch: `work`
+Pull request: pending local PR record
+Head commit: `HEAD`
+Completed deliverables: Removed user-facing approve/reject reconciliation actions and approval-audit summary from the Reconciliation Runs panel; added an explicit comparison-workflow note; updated the interface matrix and governing banking documentation so P06 starts from a non-approval reconciliation surface.
+Remaining deliverables: remote push/PR creation, remote CI confirmation, manual desktop verification of the reconciliation panel, and later configured-account comparison/edit workflow implementation.
+Test status: focused `mvn -Dtest=ReconciliationRunsPanelTest,ReconciliationRunsPanelSourceTest test` passed with 1 source-policy test executed and the JavaFX fixture test class skipped by headless toolkit setup; full `mvn clean verify` passed with 266 tests run and 9 skipped.
+Known failures: this checkout has no configured `origin` remote, so remote push/CI validation is not available locally.
+Next exact action: add an `origin` remote, push `work`, open the P06-S1 PR from the local PR record, verify remote CI, and perform manual desktop verification of the reconciliation panel.
 
 ## Objective
 
@@ -539,7 +735,7 @@ Do not implement approve/reject reconciliation semantics.
 
 # P07 — Eliminated former Schedules phase
 
-**Selector:** `PHASE=P07`  
+**Selector:** `PHASE=P07`
 **Status:** ELIMINATED
 
 The Schedules function is eliminated entirely as:
@@ -556,8 +752,8 @@ Underlying receivable, prepaid, payable, deferred revenue, and other supplementa
 
 # P08 — Asset Register and depreciation
 
-**Selector:** `PHASE=P08`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P08`
+**Status:** BLOCKED
 **Depends on:** P02
 
 ## Objective
@@ -592,8 +788,8 @@ Depreciation runs create canonical accounting transactions.
 
 # P09 — Inventory and supplies
 
-**Selector:** `PHASE=P09`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P09`
+**Status:** BLOCKED
 **Depends on:** P02
 
 ## Objective
@@ -628,8 +824,8 @@ Remove the runbook subpane and use canonical transactions where financially rele
 
 # P10 — Period close, reopening, and factual audit history
 
-**Selector:** `PHASE=P10`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P10`
+**Status:** BLOCKED
 **Depends on:** P02, P06
 
 ## Objective
@@ -668,8 +864,8 @@ Do not remove Audit History and do not implement approval/rejection workflow.
 
 # P11 — Report Library
 
-**Selector:** `PHASE=P11`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P11`
+**Status:** BLOCKED
 **Depends on:** P02, P04, P06, P08, P09, P10
 
 ## Objective
@@ -691,8 +887,8 @@ and apply them to the following work items. If this requires major redesign then
 
 # P12 — Administration, company lifecycle, preferences, and Funds edit
 
-**Selector:** `PHASE=P12`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P12`
+**Status:** BLOCKED
 **Depends on:** P01, P02
 
 ## Objective
@@ -729,8 +925,8 @@ Implement Funds edit/delete/deactivate rules and company/preferences lifecycle w
 
 # P13 — Data exchange and diagnostics without Import/Export Jobs
 
-**Selector:** `PHASE=P13`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P13`
+**Status:** BLOCKED
 **Depends on:** P02, P05, P12
 
 ## Objective
@@ -760,8 +956,8 @@ Implement necessary data exchange and diagnostics without a generic Import/Expor
 
 # P14 — End-to-end hardening
 
-**Selector:** `PHASE=P14`  
-**Status:** BLOCKED  
+**Selector:** `PHASE=P14`
+**Status:** BLOCKED
 **Depends on:** P03-P13 except eliminated P07
 
 ## Objective
