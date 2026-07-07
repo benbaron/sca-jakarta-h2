@@ -1,12 +1,12 @@
 ---
 plan_version: 4
 active_phase: P05
-active_slice: P05-S3
+active_slice: P05-S4
 active_status: VERIFYING
 active_branch: work
 active_pull_request: pending local PR record
 active_head: HEAD
-next_action: "Push branch work to a remote, open the recorded P05-S3 PR, verify remote CI, and perform manual bank-import review persistence validation."
+next_action: "Push branch work to a remote, open the recorded P05-S4 PR, verify remote CI, and perform manual cleared-state mapping validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -626,16 +626,16 @@ and apply them to the following work items. If this requires major redesign then
 
 ### P05-S3 — Statement import normalization and matching
 
-Status: VERIFYING.
+Status: DONE.
 
 Branch: `work`
 Pull request: pending local PR record
 Head commit: `HEAD`
 Completed deliverables: Added `BankImportReviewService` and immutable command/result records to persist normalized bank statement review batches, durable statement lines, and row issues while keeping invalid and duplicate rows visible together; added V53 to allow durable invalid review rows without forcing accounting-valid dates/amounts; added service tests for mixed valid/invalid/duplicate rows and persisted duplicate detection.
-Remaining deliverables: remote push/PR creation, remote CI confirmation, manual review of statement-import workflow integration, and later UI wiring for accepting/rejecting/matching rows.
+Remaining deliverables: none for P05-S3 per owner instruction to mark DONE; remote validation remains recorded as a local handoff limitation.
 Test status: baseline `mvn -DskipTests compile` passed before P05-S3 edits; focused `mvn -Dtest=BankImportReviewServiceTest,BankImportNormalizationServiceTest,BankImportMigrationTest test` passed with 7 tests; recovery-focused `mvn -Dtest=DatabaseMigrationRecoveryTest,BankImportReviewServiceTest,BankImportMigrationTest test` passed with 7 tests; full `mvn clean verify` passed with 263 tests run and 9 skipped.
 Known failures: this checkout has no configured `origin` remote, so remote push/CI validation is not available locally.
-Next exact action: add an `origin` remote, push `work`, open the P05-S3 PR from the local PR record, verify CI, and perform manual statement-import review workflow validation.
+Next exact action: proceed to P05-S4 cleared-state mapping to ledger bank lines.
 
 Support manual entry, CSV, OFX, and QIF statement sources. Preserve current SCLX import idempotency rules where applicable.
 Always: read and follow 
@@ -645,6 +645,17 @@ Always: read and follow
 and apply them to the following work items. If this requires major redesign then remark this in documentation.
 
 ### P05-S4 — Cleared-state mapping to ledger bank lines
+
+Status: VERIFYING.
+
+Branch: `work`
+Pull request: pending local PR record
+Head commit: `HEAD`
+Completed deliverables: Added `bank_cleared`, `bank_cleared_on`, and matched statement-line linkage to canonical `txn_split` rows; added `BankClearedStateService` to mark a matched statement line and canonical bank split in one transaction; added tests for successful configured-bank split matching and rejection of non-bank split matches.
+Remaining deliverables: remote push/PR creation, remote CI confirmation, manual reconciliation workflow validation, and later UI/report comparison wiring.
+Test status: focused `mvn -Dtest=BankClearedStateServiceTest,DatabaseMigrationRecoveryTest test` passed with 6 tests; full `mvn clean verify` passed with 265 tests run and 9 skipped.
+Known failures: this checkout has no configured `origin` remote, so remote push/CI validation is not available locally.
+Next exact action: add an `origin` remote, push `work`, open the P05-S4 PR from the local PR record, verify CI, and perform manual reconciliation comparison validation.
 
 Imported bank statement records propose matches to internal ledger lines. Cleared state is stored on the ledger transaction line involving the bank account, not as authoritative accounting state in the imported statement row.
 Always: read and follow 

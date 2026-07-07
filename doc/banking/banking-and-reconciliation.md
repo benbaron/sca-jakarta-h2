@@ -156,3 +156,8 @@ This model is configuration metadata only; it does not create accepted accountin
 P05-S2 adds a first-class Banking panel under Accounting. The panel loads bank and configured bank-account rows from H2 through `BankConfigurationService`, saves Bank create/edit operations through that service, and creates configured bank accounts either from a selected qualifying Chart of Accounts account or by first creating a BANK/DEBIT/CASH account through `AccountAdminService`.
 
 The panel exposes a disabled Delete explanation instead of a destructive delete operation in this slice: bank configuration records can be deactivated to preserve statement import and reconciliation history until a later audited delete/deactivate policy is specified. Its tables use sortable, resizable, reorderable columns with active-company-keyed column width, order, and sort persistence, and its date and money entry fields accept common input forms and normalize display on focus loss.
+
+
+## P05-S4 implementation note — cleared state on ledger bank lines
+
+P05-S4 adds cleared-state columns to canonical `txn_split` rows. A matched imported statement line may mark only the split whose account equals the configured bank account's linked Chart of Accounts account. The imported statement row records the matched transaction for traceability, but the cleared flag and cleared date live on the ledger split.
