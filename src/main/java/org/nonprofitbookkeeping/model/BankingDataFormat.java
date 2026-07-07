@@ -6,5 +6,7 @@ package org.nonprofitbookkeeping.model;
 public enum BankingDataFormat
 {
     OFX,
-    QFX
+    QFX,
+    QIF,
+    CSV
 }
