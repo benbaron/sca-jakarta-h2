@@ -18,20 +18,6 @@ Codex must perform this protocol immediately after the task container starts and
 
 ### 2.1 Establish repository state
 
-Run:
-
-```bash
-pwd
-git status --short --branch
-git remote -v
-git fetch origin --prune
-git log -1 --oneline origin/main
-java -version
-mvn -version
-```
-
-Then:
-
 1. Confirm that the working directory is the `sca-jakarta-h2` repository.
 2. Inspect all uncommitted and untracked files.
 3. Never discard existing work with `git reset --hard`, `git clean -fd`, checkout-overwrite, or equivalent destructive commands.
@@ -183,8 +169,6 @@ Identify:
 - test gaps.
 Record any material conflict in the governing `doc/` file before implementing an alternative.
 
-
-
 ### Step 2 — Establish baseline
 
 For code phases, run the least expensive useful baseline before editing, normally:
@@ -233,22 +217,7 @@ If a desktop UI cannot be launched in the container, run headless policy/layout 
 
 ### Step 5 — Inspect the final result
 
-Before handoff:
 
-```bash
-git status --short
-git diff --stat origin/main...HEAD
-git diff --check origin/main...HEAD
-```
-
-Inspect the complete diff. Confirm that:
-
-- no generated `target/` files are tracked;
-- no user database files are changed;
-- no temporary debug workflow remains;
-- no unrelated formatting churn is present;
-- no conflict markers remain;
-- no placeholder or simulated success path remains in the selected slice.
 
 ### Step 6 — GitHub validation
 
@@ -290,9 +259,6 @@ The package namespace remains:
 ```text
 org.nonprofitbookkeeping
 ```
-
-`benbaron/npbk-javafx-h2` and `experiments/` are donor/reference sources only.
-
 The `doc/` directory is the production specification. Detailed architecture, accounting, database, UI, workflow, reporting, migration, and testing decisions belong there.
 
 Required documentation behavior:
@@ -418,6 +384,13 @@ Never:
 Migration and recovery changes require in-memory upgrade tests and a regression test for the reproduced failure.
 
 ## 12. JavaFX rules
+
+Always: 
+All UI designs must consult these UI design rules:
+doc/interface-operation-matrix.md
+doc/ui_design_rules.md
+doc/ui/editor-guidelines.md
+architecture/dashboard-composition.md
 
 The approved compact white-and-blue reference is the visual direction.
 
