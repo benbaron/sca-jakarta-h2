@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS inventory_item (
     name VARCHAR(200) NOT NULL,
     item_type VARCHAR(120) NOT NULL,
     quantity DECIMAL(19,4) NOT NULL,
-    unit VARCHAR(40) NOT NULL,
+    unit_name VARCHAR(40) NOT NULL,
     unit_value DECIMAL(19,4) NOT NULL DEFAULT 0,
     acquisition_date DATE NOT NULL,
     custodian VARCHAR(200),
