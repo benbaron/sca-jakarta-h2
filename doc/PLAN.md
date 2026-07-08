@@ -4,9 +4,9 @@ active_phase: P01
 active_slice: P01-C1
 active_status: VERIFYING
 active_branch: codex/P01-full-text-tooltips
-active_pull_request: pending
-active_head: pending
-next_action: "Run mvn -Dtest=FullTextTooltipInstallerTest test, then mvn clean verify, fix failures, and open a draft PR."
+active_pull_request: "#141"
+active_head: fc3e628e2710a98a55fdde3f878a1a6a74f293a8
+next_action: "Inspect GitHub Actions after this plan update, then perform desktop hover validation before marking PR ready."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -104,7 +104,7 @@ Status: DONE, retrofit as touched.
 
 Corrective slices:
 
-- P01-C1 Full-text hover tooltips for production widgets: VERIFYING on `codex/P01-full-text-tooltips`.
+- P01-C1 Full-text hover tooltips for production widgets: VERIFYING on PR #141.
 
 ### P02 — Canonical ledger and transaction operations
 
@@ -177,10 +177,11 @@ Completed deliverables: V55 fixed asset/depreciation-run migration; `FixedAsset`
 Required behavior: install a production-shell JavaFX tooltip policy so non-text-box controls with visible display text expose the full text on hover without hand-editing each panel.
 
 Branch: `codex/P01-full-text-tooltips`
-Pull request: pending
+Pull request: #141
 Completed deliverables in branch: `FullTextTooltipInstaller` utility; production `MainApp` installation; UI design-rule documentation; focused JavaFX tests.
-Remaining deliverables: run focused `FullTextTooltipInstallerTest`, run `mvn clean verify`, inspect PR checks, perform desktop visual review.
-Next exact action: run focused tests and open draft PR.
+Validation: GitHub Actions Maven PR Tests run 28915696111 completed successfully for implementation head `fc3e628e2710a98a55fdde3f878a1a6a74f293a8`.
+Remaining deliverables: inspect GitHub Actions after this plan update, perform desktop visual review, and mark the draft PR ready when satisfied.
+Next exact action: launch the desktop app and hover representative toolbar buttons, navigation labels, table cells, combo boxes, and labels.
 
 # P09 — Inventory and supplies
 
@@ -269,4 +270,4 @@ PHASE=P01
 SLICE=P01-C1
 ```
 
-Run `mvn -Dtest=FullTextTooltipInstallerTest test`, fix any failures, then run or verify `mvn clean verify`.
+Inspect GitHub Actions after this plan update, then perform desktop hover validation before marking PR ready.
