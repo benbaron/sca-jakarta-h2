@@ -105,10 +105,6 @@ final class FullTextTooltipInstaller
         else if (node instanceof ComboBoxBase<?> comboBoxBase)
         {
             comboBoxBase.valueProperty().addListener((observable, oldValue, newValue) -> refresh(node));
-            if (comboBoxBase.getEditor() != null)
-            {
-                comboBoxBase.getEditor().textProperty().addListener((observable, oldText, newText) -> refresh(node));
-            }
         }
         if (node instanceof ChoiceBox<?> choiceBox)
         {
@@ -200,18 +196,7 @@ final class FullTextTooltipInstaller
         if (node instanceof ComboBoxBase<?> comboBoxBase)
         {
             Object value = comboBoxBase.getValue();
-            if (value == null)
-            {
-                return "";
-            }
-            String editorText = comboBoxBase.getEditor() == null
-                    ? ""
-                    : normalized(comboBoxBase.getEditor().getText());
-            if (!editorText.isBlank())
-            {
-                return editorText;
-            }
-            return normalized(String.valueOf(value));
+            return value == null ? "" : normalized(String.valueOf(value));
         }
         if (node instanceof ChoiceBox<?> choiceBox)
         {
