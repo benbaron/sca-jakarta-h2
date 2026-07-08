@@ -1,12 +1,12 @@
 ---
-plan_version: 8
-active_phase: P01
-active_slice: P01-C1
+plan_version: 9
+active_phase: P09
+active_slice: P09-S1
 active_status: VERIFYING
-active_branch: codex/P01-full-text-tooltips
-active_pull_request: "#141"
-active_head: fc3e628e2710a98a55fdde3f878a1a6a74f293a8
-next_action: "Inspect GitHub Actions after this plan update, then perform desktop hover validation before marking PR ready."
+active_branch: codex/P09-S1-h2-inventory
+active_pull_request: pending
+active_head: pending
+next_action: "Open P09-S1 PR, run mvn -Dtest=InventoryServiceTest test, then mvn clean verify, fix failures, and update this plan with validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Inspect GitHub Actions after this plan update, then perform deskto
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records merged P08-S1 completion and starts P01-C1 as a focused production-shell UI corrective slice for full-text hover tooltips.
+This revision records merged P08-S1 and P01-C1 completion, then starts P09-S1 for H2-backed inventory items and movements.
 
 ## 2. Status values
 
@@ -33,7 +33,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | Phase | Name | Depends on | Status |
 |---|---|---|---|
 | P00 | Documentation and implementation inventory | none | DONE; update matrices as touched |
-| P01 | Production shell and workspace composition | P00 | DONE; corrective P01-C1 VERIFYING |
+| P01 | Production shell and workspace composition | P00 | DONE; corrective P01-C1 DONE through PR #141 |
 | P02 | Canonical ledger and transaction operations | P00 | DONE; retain |
 | P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY for corrective/new slices |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
@@ -41,7 +41,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138 |
 | P07 | Eliminated former Schedules phase | n/a | DONE through PR #139 |
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140 |
-| P09 | Inventory and supplies | P02 | BLOCKED |
+| P09 | Inventory and supplies | P02 | VERIFYING P09-S1 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | BLOCKED |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | BLOCKED |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | BLOCKED |
@@ -90,6 +90,7 @@ Focused documents for current UI/accounting work:
 - The former Schedules function is eliminated.
 - Import/Export Jobs is eliminated as both a panel and generic durable job-tracking function.
 - Fixed assets are distinct from inventory and require H2-backed asset/depreciation records.
+- Inventory/supplies are distinct from fixed assets and require H2-backed item/movement records.
 - Production widgets with visible non-blank display text should expose their full text on hover, except text boxes and custom-help tooltip cases.
 
 ## 6. Completed phases and slices
@@ -104,7 +105,7 @@ Status: DONE, retrofit as touched.
 
 Corrective slices:
 
-- P01-C1 Full-text hover tooltips for production widgets: VERIFYING on PR #141.
+- P01-C1 Full-text hover tooltips for production widgets: DONE through PR #141.
 
 ### P02 — Canonical ledger and transaction operations
 
@@ -172,24 +173,27 @@ Completed deliverables: V55 fixed asset/depreciation-run migration; `FixedAsset`
 # P01-C1 — Full-text hover tooltips
 
 **Selector:** `PHASE=P01`
-**Status:** VERIFYING
+**Status:** DONE through PR #141
 
-Required behavior: install a production-shell JavaFX tooltip policy so non-text-box controls with visible display text expose the full text on hover without hand-editing each panel.
-
-Branch: `codex/P01-full-text-tooltips`
-Pull request: #141
-Completed deliverables in branch: `FullTextTooltipInstaller` utility; production `MainApp` installation; UI design-rule documentation; focused JavaFX tests.
-Validation: GitHub Actions Maven PR Tests run 28915696111 completed successfully for implementation head `fc3e628e2710a98a55fdde3f878a1a6a74f293a8`.
-Remaining deliverables: inspect GitHub Actions after this plan update, perform desktop visual review, and mark the draft PR ready when satisfied.
-Next exact action: launch the desktop app and hover representative toolbar buttons, navigation labels, table cells, combo boxes, and labels.
+Completed deliverables: `FullTextTooltipInstaller` utility; production `MainApp` installation; UI design-rule documentation; focused JavaFX tests.
 
 # P09 — Inventory and supplies
 
 **Selector:** `PHASE=P09`
-**Status:** BLOCKED
+**Status:** VERIFYING P09-S1
 **Depends on:** P02
 
 Required behavior: implement genuine Inventory item add and movement history; remove runbook subpane; use canonical transactions when financially relevant.
+
+### P09-S1 — H2 inventory items and movement history
+
+Status: VERIFYING.
+
+Branch: `codex/P09-S1-h2-inventory`
+Pull request: pending
+Completed deliverables in branch: V56 inventory item/movement migration; `InventoryItem` and `InventoryMovement` JPA entities; `InventoryService` create/update/list/movement behavior; `InventoryPanel` reads/writes through `InventoryService`; inventory text runbook sidecar removed from `UiWorkspaceDataStore` and `RunbookPersistence`; focused service tests and docs added/updated.
+Remaining deliverables: open draft PR, run focused `InventoryServiceTest`, run `mvn clean verify`, fix failures, perform desktop visual review, and update this plan.
+Next exact action: open draft PR and inspect GitHub Actions output.
 
 # P10 — Period close, reopening, and factual audit history
 
@@ -266,8 +270,8 @@ Before a PR is ready:
 Execute validation for:
 
 ```text
-PHASE=P01
-SLICE=P01-C1
+PHASE=P09
+SLICE=P09-S1
 ```
 
-Inspect GitHub Actions after this plan update, then perform desktop hover validation before marking PR ready.
+Open a draft PR for `codex/P09-S1-h2-inventory`, inspect GitHub Actions output, and fix any failures.
