@@ -199,6 +199,11 @@ final class FullTextTooltipInstaller
         }
         if (node instanceof ComboBoxBase<?> comboBoxBase)
         {
+            Object value = comboBoxBase.getValue();
+            if (value == null)
+            {
+                return "";
+            }
             String editorText = comboBoxBase.getEditor() == null
                     ? ""
                     : normalized(comboBoxBase.getEditor().getText());
@@ -206,7 +211,7 @@ final class FullTextTooltipInstaller
             {
                 return editorText;
             }
-            return normalized(String.valueOf(comboBoxBase.getValue()));
+            return normalized(String.valueOf(value));
         }
         if (node instanceof ChoiceBox<?> choiceBox)
         {
@@ -214,7 +219,8 @@ final class FullTextTooltipInstaller
         }
         if (node instanceof Spinner<?> spinner)
         {
-            return normalized(String.valueOf(spinner.getValue()));
+            Object value = spinner.getValue();
+            return value == null ? "" : normalized(String.valueOf(value));
         }
         return "";
     }
