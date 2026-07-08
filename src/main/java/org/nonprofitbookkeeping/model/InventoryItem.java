@@ -69,7 +69,7 @@ public class InventoryItem
     @Column(nullable = false, precision = 19, scale = 4)
     private BigDecimal quantity = BigDecimal.ZERO;
 
-    @Column(nullable = false, length = 40)
+    @Column(name = "unit_name", nullable = false, length = 40)
     private String unit;
 
     @Column(name = "unit_value", nullable = false, precision = 19, scale = 4)
