@@ -1,12 +1,12 @@
 ---
-plan_version: 9
+plan_version: 10
 active_phase: P09
-active_slice: P09-S1
+active_slice: P09-C1
 active_status: VERIFYING
-active_branch: codex/P09-S1-h2-inventory
-active_pull_request: "#142"
-active_head: "see PR #142 latest head"
-next_action: "Inspect the full Maven error for GitHub Actions run 28958507387 or the latest rerun, fix the remaining failure, then run or verify mvn clean verify."
+active_branch: codex/P09-C1-inventory-ui-rules
+active_pull_request: pending
+active_head: pending
+next_action: "Open a draft PR for P09-C1, inspect GitHub Actions, fix failures, then perform desktop visual validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Inspect the full Maven error for GitHub Actions run 28958507387 or
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records merged P08-S1 and P01-C1 completion, then starts P09-S1 for H2-backed inventory items and movements.
+This revision records merged P09-S1 completion and starts P09-C1 for Inventory UI design-rule corrections and removal of disabled Delete placeholder buttons.
 
 ## 2. Status values
 
@@ -41,7 +41,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138 |
 | P07 | Eliminated former Schedules phase | n/a | DONE through PR #139 |
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140 |
-| P09 | Inventory and supplies | P02 | VERIFYING P09-S1 |
+| P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 VERIFYING |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | BLOCKED |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | BLOCKED |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | BLOCKED |
@@ -92,6 +92,7 @@ Focused documents for current UI/accounting work:
 - Fixed assets are distinct from inventory and require H2-backed asset/depreciation records.
 - Inventory/supplies are distinct from fixed assets and require H2-backed item/movement records.
 - Production widgets with visible non-blank display text should expose their full text on hover, except text boxes and custom-help tooltip cases.
+- Disabled placeholder Delete buttons are not part of the UI contract; a Delete button must perform a real supported operation.
 
 ## 6. Completed phases and slices
 
@@ -180,22 +181,26 @@ Completed deliverables: `FullTextTooltipInstaller` utility; production `MainApp`
 # P09 — Inventory and supplies
 
 **Selector:** `PHASE=P09`
-**Status:** VERIFYING P09-S1
+**Status:** DONE through PR #142; corrective P09-C1 VERIFYING
 **Depends on:** P02
 
 Required behavior: implement genuine Inventory item add and movement history; remove runbook subpane; use canonical transactions when financially relevant.
 
 ### P09-S1 — H2 inventory items and movement history
 
+Status: DONE through PR #142.
+
+Completed deliverables: V56 inventory item/movement migration; `InventoryItem` and `InventoryMovement` JPA entities; `InventoryService` create/update/list/movement behavior; `InventoryPanel` reads/writes through `InventoryService`; inventory text runbook sidecar removed from `UiWorkspaceDataStore` and `RunbookPersistence`; focused service tests and docs added/updated.
+
+### P09-C1 — Inventory UI design-rule correction and disabled Delete cleanup
+
 Status: VERIFYING.
 
-Branch: `codex/P09-S1-h2-inventory`
-Pull request: #142
-Head: see PR #142 latest head.
-Completed deliverables in branch: V56 inventory item/movement migration; `InventoryItem` and `InventoryMovement` JPA entities; `InventoryService` create/update/list/movement behavior; `InventoryPanel` reads/writes through `InventoryService`; inventory text runbook sidecar removed from `UiWorkspaceDataStore` and `RunbookPersistence`; focused service tests and docs added/updated.
-Validation: GitHub Actions Maven PR Tests failed on run 28958507387. The connector log output is truncated before the Maven error section; likely stale runbook and H2/test-isolation issues have already been patched in branch.
-Remaining deliverables: inspect the full Maven error, fix the remaining failure, perform desktop visual review, and update this plan.
-Next exact action: inspect the full Maven failure output for run 28958507387 or the latest rerun and patch the remaining red-build cause.
+Branch: `codex/P09-C1-inventory-ui-rules`
+Pull request: pending
+Completed deliverables in branch: Inventory global New/Save hooks; dirty-state tracking; validation highlighting; common money/date parsing and formatting; unconstrained inventory tables; per-company table-state persistence; disabled Delete placeholder buttons removed from Banking, Asset Register, Depreciation Runs, Inventory, and Reconciliation; docs and source guardrail tests updated.
+Remaining deliverables: open draft PR, inspect GitHub Actions, fix failures, perform desktop visual review, and update this plan.
+Next exact action: open draft PR and inspect GitHub Actions output.
 
 # P10 — Period close, reopening, and factual audit history
 
@@ -273,7 +278,7 @@ Execute validation for:
 
 ```text
 PHASE=P09
-SLICE=P09-S1
+SLICE=P09-C1
 ```
 
-Inspect the full Maven failure output for run 28958507387 or the latest rerun and patch the remaining red-build cause.
+Open a draft PR for `codex/P09-C1-inventory-ui-rules`, inspect GitHub Actions output, and fix any failures.
