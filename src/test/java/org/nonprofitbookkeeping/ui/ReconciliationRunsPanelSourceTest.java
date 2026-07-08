@@ -36,7 +36,6 @@ public class ReconciliationRunsPanelSourceTest
         assertFalse(source.contains("TableView.CONSTRAINED_RESIZE_POLICY"));
         assertTrue(source.contains("installTableStatePersistence(table, \"runs\")"));
         assertTrue(source.contains("installTableStatePersistence(comparisonTable, \"comparison\")"));
-        assertTrue(source.contains("Delete unavailable"));
-        assertTrue(source.contains("reconciliation records are factual history"));
+        assertFalse(source.contains("Delete unavailable"));
     }
 }
