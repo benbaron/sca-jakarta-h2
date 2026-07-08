@@ -4,9 +4,9 @@ active_phase: P09
 active_slice: P09-S1
 active_status: VERIFYING
 active_branch: codex/P09-S1-h2-inventory
-active_pull_request: pending
-active_head: pending
-next_action: "Open P09-S1 PR, run mvn -Dtest=InventoryServiceTest test, then mvn clean verify, fix failures, and update this plan with validation."
+active_pull_request: "#142"
+active_head: 887a5f1a17b6d9d14897d8562fc207a2ecefeec0
+next_action: "Inspect GitHub Actions Maven PR Tests run 28957998072, fix failures, then run or verify mvn clean verify."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -190,10 +190,11 @@ Required behavior: implement genuine Inventory item add and movement history; re
 Status: VERIFYING.
 
 Branch: `codex/P09-S1-h2-inventory`
-Pull request: pending
+Pull request: #142
+Head: `887a5f1a17b6d9d14897d8562fc207a2ecefeec0`
 Completed deliverables in branch: V56 inventory item/movement migration; `InventoryItem` and `InventoryMovement` JPA entities; `InventoryService` create/update/list/movement behavior; `InventoryPanel` reads/writes through `InventoryService`; inventory text runbook sidecar removed from `UiWorkspaceDataStore` and `RunbookPersistence`; focused service tests and docs added/updated.
-Remaining deliverables: open draft PR, run focused `InventoryServiceTest`, run `mvn clean verify`, fix failures, perform desktop visual review, and update this plan.
-Next exact action: open draft PR and inspect GitHub Actions output.
+Remaining deliverables: inspect GitHub Actions run 28957998072, fix failures, perform desktop visual review, and update this plan.
+Next exact action: inspect GitHub Actions output and fix any failures.
 
 # P10 — Period close, reopening, and factual audit history
 
@@ -274,4 +275,4 @@ PHASE=P09
 SLICE=P09-S1
 ```
 
-Open a draft PR for `codex/P09-S1-h2-inventory`, inspect GitHub Actions output, and fix any failures.
+Inspect GitHub Actions run 28957998072, then fix any failures before marking the draft PR ready.
