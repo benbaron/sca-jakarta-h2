@@ -17,6 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class InventoryServiceTest
 {
+    private static final String COMPANY_CODE = "INVCO";
+    private static final String FUND_CODE = "INVFUND";
     private static final long CHART_ID = 20_001L;
     private static final long COMPANY_ID = 20_001L;
     private static final long FUND_ID = 20_001L;
@@ -37,9 +39,9 @@ public class InventoryServiceTest
             assertEquals("Loaner Feast Kit", item.name());
             assertEquals(new BigDecimal("3.0000"), item.quantity());
             assertEquals(new BigDecimal("15.0000"), item.totalValue());
-            assertEquals(1, service.listItems("SCA").size());
-            assertEquals(1, service.listMovements("SCA").size());
-            assertEquals(InventoryMovement.MovementType.RECEIPT, service.listMovements("SCA").get(0).movementType());
+            assertEquals(1, service.listItems(COMPANY_CODE).size());
+            assertEquals(1, service.listMovements(COMPANY_CODE).size());
+            assertEquals(InventoryMovement.MovementType.RECEIPT, service.listMovements(COMPANY_CODE).get(0).movementType());
         }
     }
 
@@ -70,7 +72,7 @@ public class InventoryServiceTest
 
             assertEquals(new BigDecimal("7.0000"), adjustment.resultingQuantity());
             assertEquals(new BigDecimal("7.0000"), service.load(item.id()).quantity());
-            assertEquals(4, service.listMovements("SCA").size());
+            assertEquals(4, service.listMovements(COMPANY_CODE).size());
         }
     }
 
@@ -100,7 +102,7 @@ public class InventoryServiceTest
             InventoryService service = new InventoryService(jpa);
 
             InventoryItemCommand bad = new InventoryItemCommand(
-                    "SCA",
+                    COMPANY_CODE,
                     CASH_ACCOUNT_ID,
                     FUND_ID,
                     "Invalid",
@@ -122,7 +124,7 @@ public class InventoryServiceTest
     private static InventoryItemCommand itemCommand(String name, BigDecimal quantity)
     {
         return new InventoryItemCommand(
-                "SCA",
+                COMPANY_CODE,
                 INVENTORY_ACCOUNT_ID,
                 FUND_ID,
                 name,
@@ -146,12 +148,14 @@ public class InventoryServiceTest
             em.createNativeQuery("INSERT INTO chart_of_accounts (id, name, version, status) VALUES (?, 'SCA Inventory Chart', '1', 'ACTIVE')")
                     .setParameter(1, CHART_ID)
                     .executeUpdate();
-            em.createNativeQuery("INSERT INTO company (id, code, display_name, active_chart_of_accounts_id) VALUES (?, 'SCA', 'SCA Branch', ?)")
+            em.createNativeQuery("INSERT INTO company (id, code, display_name, active_chart_of_accounts_id) VALUES (?, ?, 'SCA Branch', ?)")
                     .setParameter(1, COMPANY_ID)
-                    .setParameter(2, CHART_ID)
+                    .setParameter(2, COMPANY_CODE)
+                    .setParameter(3, CHART_ID)
                     .executeUpdate();
-            em.createNativeQuery("INSERT INTO fund (id, code, name, fund_type) VALUES (?, 'OPERATING', 'Operating', 'UNRESTRICTED')")
+            em.createNativeQuery("INSERT INTO fund (id, code, name, fund_type) VALUES (?, ?, 'Inventory Test Fund', 'UNRESTRICTED')")
                     .setParameter(1, FUND_ID)
+                    .setParameter(2, FUND_CODE)
                     .executeUpdate();
             em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, subtype, normal_balance) VALUES (?, ?, '1300', 'Inventory', 'ASSET', 'INVENTORY', 'DEBIT')")
                     .setParameter(1, INVENTORY_ACCOUNT_ID)
