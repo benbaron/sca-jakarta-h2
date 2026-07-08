@@ -164,7 +164,7 @@ Status: VERIFYING.
 
 Branch: `codex/P08-S1-h2-fixed-assets`
 Pull request: pending
-Completed deliverables in branch: V49 fixed asset/depreciation-run migration; `FixedAsset` and `FixedAssetDepreciationRun` JPA entities; `FixedAssetService` create/update/list/depreciation-run behavior; depreciation runs create canonical `Txn`/`TxnSplit` rows; Asset Register and Depreciation Runs panels read/write through `FixedAssetService`; asset/depreciation runbook sidecars removed; docs and focused tests added/updated.
+Completed deliverables in branch: V50 fixed asset/depreciation-run migration; `FixedAsset` and `FixedAssetDepreciationRun` JPA entities; `FixedAssetService` create/update/list/depreciation-run behavior; depreciation runs create canonical `Txn`/`TxnSplit` rows; Asset Register and Depreciation Runs panels read/write through `FixedAssetService`; asset/depreciation runbook sidecars removed; docs and focused tests added/updated.
 Remaining deliverables: open PR, run focused `FixedAssetServiceTest`, run `mvn clean verify`, fix failures, perform desktop visual review, update PR and this plan.
 Next exact action: open P08-S1 PR.
 
