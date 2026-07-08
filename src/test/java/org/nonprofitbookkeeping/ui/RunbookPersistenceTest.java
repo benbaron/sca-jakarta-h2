@@ -14,22 +14,6 @@ class RunbookPersistenceTest
     Path tempDir;
 
     @Test
-    void saveThenLoadAssetEntries_roundTrips()
-    {
-        RunbookPersistence.setDirectoryForTests(tempDir);
-        try
-        {
-            List<String> rows = List.of("a", "b");
-            RunbookPersistence.saveAssetEntries(rows);
-            assertEquals(rows, RunbookPersistence.loadAssetEntries());
-        }
-        finally
-        {
-            RunbookPersistence.clearDirectoryOverrideForTests();
-        }
-    }
-
-    @Test
     void saveThenLoadInventoryEntries_roundTrips()
     {
         RunbookPersistence.setDirectoryForTests(tempDir);

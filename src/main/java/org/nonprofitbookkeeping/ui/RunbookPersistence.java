@@ -19,26 +19,6 @@ final class RunbookPersistence
     {
     }
 
-    static List<String> loadAssetEntries()
-    {
-        return load("assets.log");
-    }
-
-    static void saveAssetEntries(List<String> lines)
-    {
-        save("assets.log", lines);
-    }
-
-    static List<String> loadDepreciationEntries()
-    {
-        return load("depreciation.log");
-    }
-
-    static void saveDepreciationEntries(List<String> lines)
-    {
-        save("depreciation.log", lines);
-    }
-
     static List<String> loadInventoryEntries()
     {
         return load("inventory.log");

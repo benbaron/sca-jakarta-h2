@@ -17,6 +17,7 @@ import org.nonprofitbookkeeping.service.BudgetCategoryLookupService;
 import org.nonprofitbookkeeping.service.BudgetPlanService;
 import org.nonprofitbookkeeping.service.CompanyAdminService;
 import org.nonprofitbookkeeping.service.FinancialReportService;
+import org.nonprofitbookkeeping.service.FixedAssetService;
 import org.nonprofitbookkeeping.service.FundAdminService;
 import org.nonprofitbookkeeping.service.FundBalanceService;
 import org.nonprofitbookkeeping.service.FundLookupService;
@@ -57,6 +58,7 @@ public final class UiServiceRegistry
     public static BudgetCategoryAdminService budgetCategoryAdmin() { return services().budgetCategoryAdmin(); }
     public static BudgetPlanService budgetPlan() { return services().budgetPlan(); }
     public static BankConfigurationService bankConfiguration() { return services().bankConfiguration(); }
+    public static FixedAssetService fixedAssets() { return services().fixedAssets(); }
     public static CompanyAdminService companyAdmin() { return services().companyAdmin(); }
     public static UserAdminService userAdmin() { return services().userAdmin(); }
     public static FundBalanceService fundBalance() { return services().fundBalance(); }
@@ -125,6 +127,7 @@ public final class UiServiceRegistry
     private static ServiceBundle buildServices(Jpa jpa)
     {
         System.err.println("[NPBK] Building UI service bundle.");
+        TransactionEntryService transactionEntry = new TransactionEntryService(jpa);
         return new ServiceBundle(
                 jpa,
                 new AccountLookupService(jpa),
@@ -135,12 +138,13 @@ public final class UiServiceRegistry
                 new BudgetCategoryAdminService(jpa),
                 new BudgetPlanService(jpa),
                 new BankConfigurationService(jpa),
+                new FixedAssetService(jpa, transactionEntry),
                 new CompanyAdminService(jpa),
                 new UserAdminService(jpa),
                 new FundBalanceService(jpa),
                 new ScheduleEligibilityService(jpa),
                 new LedgerQueryService(jpa),
-                new TransactionEntryService(jpa),
+                transactionEntry,
                 new TransactionCorrectionService(jpa),
                 new TransactionReferenceDataService(jpa),
                 new SampleCompanyService(jpa),
@@ -221,6 +225,7 @@ public final class UiServiceRegistry
             BudgetCategoryAdminService budgetCategoryAdmin,
             BudgetPlanService budgetPlan,
             BankConfigurationService bankConfiguration,
+            FixedAssetService fixedAssets,
             CompanyAdminService companyAdmin,
             UserAdminService userAdmin,
             FundBalanceService fundBalance,

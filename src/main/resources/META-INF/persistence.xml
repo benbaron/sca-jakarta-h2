@@ -33,6 +33,8 @@
     <class>org.nonprofitbookkeeping.model.BankImportBatch</class>
     <class>org.nonprofitbookkeeping.model.BankStatementLine</class>
     <class>org.nonprofitbookkeeping.model.ImportIssue</class>
+    <class>org.nonprofitbookkeeping.model.FixedAsset</class>
+    <class>org.nonprofitbookkeeping.model.FixedAssetDepreciationRun</class>
 
     <class>org.nonprofitbookkeeping.model.Counterparty</class>
     <class>org.nonprofitbookkeeping.model.Merchant</class>

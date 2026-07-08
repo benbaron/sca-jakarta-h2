@@ -15,8 +15,6 @@ final class UiWorkspaceDataStore
     private static final Object LOCK = new Object();
     private static List<BankTransactionRecord> bankTransactions = List.of();
     private static final List<ImportExportJob> jobs = new ArrayList<>();
-    private static final List<String> assetLifecycleEntries = new ArrayList<>(RunbookPersistence.loadAssetEntries());
-    private static final List<String> depreciationRunEntries = new ArrayList<>(RunbookPersistence.loadDepreciationEntries());
     private static final List<String> inventoryMovementEntries = new ArrayList<>(RunbookPersistence.loadInventoryEntries());
 
     private UiWorkspaceDataStore()
@@ -63,40 +61,6 @@ final class UiWorkspaceDataStore
         }
     }
 
-    static void appendAssetLifecycleEntry(String line)
-    {
-        synchronized (LOCK)
-        {
-            assetLifecycleEntries.add(0, line);
-            RunbookPersistence.saveAssetEntries(assetLifecycleEntries);
-        }
-    }
-
-    static List<String> assetLifecycleEntries()
-    {
-        synchronized (LOCK)
-        {
-            return List.copyOf(assetLifecycleEntries);
-        }
-    }
-
-    static void appendDepreciationRunEntry(String line)
-    {
-        synchronized (LOCK)
-        {
-            depreciationRunEntries.add(0, line);
-            RunbookPersistence.saveDepreciationEntries(depreciationRunEntries);
-        }
-    }
-
-    static List<String> depreciationRunEntries()
-    {
-        synchronized (LOCK)
-        {
-            return List.copyOf(depreciationRunEntries);
-        }
-    }
-
     static void appendInventoryMovementEntry(String line)
     {
         synchronized (LOCK)
@@ -120,8 +84,6 @@ final class UiWorkspaceDataStore
         {
             bankTransactions = List.of();
             jobs.clear();
-            assetLifecycleEntries.clear();
-            depreciationRunEntries.clear();
             inventoryMovementEntries.clear();
         }
     }
