@@ -1,6 +1,6 @@
 # Model and persistence authority inventory
 
-Status: P00 inventory of current main, updated through P04 budget persistence. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
+Status: P00 inventory of current main, updated through P07 Schedules elimination. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
 
 ## Current persistence map
 
@@ -13,8 +13,8 @@ Status: P00 inventory of current main, updated through P04 budget persistence. T
 | Budget targets | `BudgetPlan`/`BudgetLine` JPA entities and `budget_plan`/`budget_line` tables | yes | version activation must remain through `BudgetPlanService`; no sidecar target store remains | P04 persistent budget model |
 | Import preview | `ImportPreviewService` in-memory accepted/rejected rows | no by design until acceptance | acceptable staging, but accepted writes must use canonical services | P05/P13 |
 | Bank transactions | P05-S1 `bank_import_batch`, `bank_statement_line`, and `import_issue`; current `UiWorkspaceDataStore.bankTransactions` static/session list | H2 schema exists for reviewed import facts; current panel remains unwired | parser normalization, duplicate detection, and review acceptance are still pending | P05 |
-| Reconciliation runs | JDBC `ReconciliationRunRepository`, V6/V7 style workflow tables | yes for run records | approve/reject workflow language conflicts with no approval queue | P06/P10 |
-| Open items/schedules | schedule entities/defaults and JDBC open-item snapshots | partially | multiple item state enums/repositories need one authority | P07 |
+| Reconciliation runs | JDBC `ReconciliationRunRepository`, V6/V7 style workflow tables | yes for run records and P06-S2 unresolved report summaries | remaining mismatch-resolution/edit workflow is incomplete | P06/P10 |
+| Former Schedules panel | top-level panel, route, navigation item, and schedule runbook sidecar removed in P07 | no active top-level persistence remains | historical V2 schedule/open-item tables remain until a later migration decision | future domain-specific supplemental transaction records, not a Schedules function |
 | Fixed assets/depreciation | UI sidecar lifecycle/depreciation text lists | no | no stable H2 asset/depreciation authority | P08 |
 | Inventory/supplies | UI sidecar movement text list | no | no stable H2 inventory/supplies authority | P09 |
 | Audit/approval | `ApprovalAuditRecord`/repository and approval UI | H2 records exist | approval/rejection semantics conflict with product decision | P10/P12 factual audit history |
@@ -39,22 +39,24 @@ Status: P00 inventory of current main, updated through P04 budget persistence. T
 - Accepted COA imports may write through admin services today; accepted bank/accounting activity must not write static `UiWorkspaceDataStore` rows as accounting truth.
 - P05 must persist statement lines and route accepted accounting effects through the P02 canonical transaction service.
 
-## Reconciliation, open item, and schedule authority
+## Reconciliation, open item, and former schedule authority
 
-- Reconciliation run records are durable, but current UI includes approve/reject controls that should be removed or reworded.
-- Open-item snapshot repositories and domain state enums exist before the canonical transaction authority is settled.
-- P07 should attach open-item state to the canonical ledger rather than a separate posting model.
+- Reconciliation run records are durable comparison facts after P06-S2, not an approval queue.
+- The former Schedules top-level function and schedule runbook sidecar are removed.
+- Open-item and deferral concepts must return only as domain-specific supplemental transaction records linked to canonical transaction/split IDs.
+- Open-item snapshot repositories and domain state enums exist before the canonical transaction authority is fully settled and must not become a second ledger.
 
 ## Migration risks
 
 1. V1 plus V45/V47/V48 establish JPA accounting tables for companies, funds, accounts, transactions, periods, audit, and corrections.
 2. V4/V5 add journal/open-item tables that overlap transaction semantics.
 3. V6/V7/V8 add workflow/approval records that conflict with the plan’s no-approval-queue decision if surfaced as approval workflow.
-4. Any later schema change needs a new nondestructive migration and in-memory upgrade test.
-5. Hibernate generation must not be treated as a substitute for Flyway review.
+4. V2 schedule tables remain as historical schema until a deliberate nondestructive migration retires or remaps them.
+5. Any later schema change needs a new nondestructive migration and in-memory upgrade test.
+6. Hibernate generation must not be treated as a substitute for Flyway review.
 
 ## Sidecar/static stores to eliminate or confine
 
-- `UiWorkspaceDataStore`: bank transactions, jobs, and runbook lists.
-- `RunbookPersistence`: schedule, asset, depreciation, and inventory text files.
+- `UiWorkspaceDataStore`: bank transactions, jobs, asset lifecycle, depreciation run, and inventory movement lists.
+- `RunbookPersistence`: asset, depreciation, and inventory text files. The former schedule text file path is no longer referenced by production code after P07.
 - Session draft in `TransactionEditorPanel`: useful as UI dirty state only, not accepted accounting persistence.

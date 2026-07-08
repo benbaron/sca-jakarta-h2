@@ -10,6 +10,10 @@ public enum AppPanelId
     JOURNAL_PANE,
     BANKING,
 
+    /**
+     * Retired compatibility identifier.
+     * The former Schedules panel has no factory route and is not exposed in navigation.
+     */
     SCHEDULES,
 
     BUDGET_EDITOR,

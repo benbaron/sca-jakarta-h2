@@ -19,16 +19,6 @@ final class RunbookPersistence
     {
     }
 
-    static List<String> loadScheduleEntries()
-    {
-        return load("schedules.log");
-    }
-
-    static void saveScheduleEntries(List<String> lines)
-    {
-        save("schedules.log", lines);
-    }
-
     static List<String> loadAssetEntries()
     {
         return load("assets.log");

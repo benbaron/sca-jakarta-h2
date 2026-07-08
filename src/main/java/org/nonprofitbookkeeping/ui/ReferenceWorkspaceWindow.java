@@ -114,8 +114,7 @@ final class ReferenceWorkspaceWindow extends ProductionWorkspaceWindow
                 item("Paste", this::paste));
         Menu transactions = menu("Transactions",
                 item("New Transaction", () -> openPanel(AppPanelId.TXN_EDITOR)),
-                item("Ledger Register", () -> openPanel(AppPanelId.LEDGER_REGISTER)),
-                item("Scheduled Transactions", () -> openPanel(AppPanelId.SCHEDULES)));
+                item("Ledger Register", () -> openPanel(AppPanelId.LEDGER_REGISTER)));
 
         MenuItem closeAllTabs = item("Close All Tabs", this::closeAllWorkspaceTabs);
         closeAllTabs.setAccelerator(new KeyCodeCombination(

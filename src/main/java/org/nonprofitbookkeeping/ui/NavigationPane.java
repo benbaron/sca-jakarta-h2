@@ -68,7 +68,6 @@ public class NavigationPane extends VBox
         addItem(content, AppPanelId.TXN_EDITOR, "Transaction Editor", UiIcons.Glyph.ADD);
         addItem(content, AppPanelId.JOURNAL_PANE, "Inspect Journal", UiIcons.Glyph.REPORT);
         addItem(content, AppPanelId.BANKING, "Banking", UiIcons.Glyph.BANK);
-        addItem(content, AppPanelId.SCHEDULES, "Schedules", UiIcons.Glyph.CALENDAR);
         addItem(content, AppPanelId.RECONCILIATION_RUNS, "Bank Reconciliation", UiIcons.Glyph.BANK);
         addItem(content, AppPanelId.BANK_TRANSACTIONS, "Bank Transactions", UiIcons.Glyph.CREDIT_CARD);
 
@@ -138,11 +137,17 @@ public class NavigationPane extends VBox
         }
     }
 
-    EnumSet<AppPanelId> indexedPanelIds()
+    /** Returns the panel ids currently exposed by navigation. */
+    public EnumSet<AppPanelId> visiblePanels()
     {
         return index.isEmpty()
                 ? EnumSet.noneOf(AppPanelId.class)
                 : EnumSet.copyOf(index.keySet());
+    }
+
+    EnumSet<AppPanelId> indexedPanelIds()
+    {
+        return visiblePanels();
     }
 
     static String inspectorBody(NavItem item, InspectorContext context)
@@ -165,43 +170,37 @@ public class NavigationPane extends VBox
                 "use toolbar Find/Journal for cross-panel queries.");
     }
 
-    private void section(VBox parent, String text)
+    private void addItem(VBox target, AppPanelId id, String label, UiIcons.Glyph glyph)
     {
-        Label label = new Label(text);
-        label.getStyleClass().add("navigation-section");
-        parent.getChildren().add(label);
-    }
-
-    private void addItem(
-            VBox parent,
-            AppPanelId panelId,
-            String label,
-            UiIcons.Glyph glyph)
-    {
-        Button button = new Button(label, UiIcons.icon(glyph, 16, "navigation-icon"));
+        Button button = new Button(label, UiIcons.icon(glyph, 16));
         button.setMaxWidth(Double.MAX_VALUE);
         button.setAlignment(Pos.CENTER_LEFT);
         button.setContentDisplay(ContentDisplay.LEFT);
-        button.setGraphicTextGap(10);
         button.getStyleClass().add("navigation-item");
-        button.setOnAction(event ->
-        {
-            highlight(panelId);
-            openPanel.accept(panelId);
+        button.setOnAction(event -> {
+            highlight(id);
+            openPanel.accept(id);
         });
-        button.setOnMouseClicked(event ->
-        {
+        button.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.SECONDARY)
             {
-                NavItem item = new NavItem(panelId, label);
+                NavItem item = new NavItem(id, label);
                 openInspector.accept(
                         "Details: " + label,
                         inspectorBody(item, inspectorContextSupplier.get()));
                 event.consume();
             }
         });
-        index.put(panelId, button);
-        parent.getChildren().add(button);
+        index.put(id, button);
+        target.getChildren().add(button);
+    }
+
+    private static void section(VBox target, String title)
+    {
+        Label section = new Label(title);
+        section.getStyleClass().add("navigation-section");
+        section.setPadding(new Insets(10, 8, 2, 8));
+        target.getChildren().add(section);
     }
 
     public record NavItem(AppPanelId panelId, String label)

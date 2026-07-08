@@ -12,15 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class OperationalRunbookFormattingTest
 {
     @Test
-    void scheduleRunbookFormatting_includesActionAndScheduleKind()
-    {
-        String line = SchedulesPanel.formatRunbookEntry("OPEN", "RECEIVABLE", "1100", "Accounts Receivable", LocalDateTime.of(2026, 3, 15, 12, 30));
-        assertTrue(line.contains("OPEN"));
-        assertTrue(line.contains("RECEIVABLE"));
-        assertTrue(line.contains("1100"));
-    }
-
-    @Test
     void assetsLifecycleFormatting_includesAccountAndAction()
     {
         String line = AssetsRegisterPanel.formatLifecycleEntry("ACQUIRED", "1500", "Equipment", LocalDateTime.of(2026, 3, 15, 12, 30));
