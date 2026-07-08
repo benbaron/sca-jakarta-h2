@@ -25,6 +25,7 @@ public class MainApp extends Application
         scene.getStylesheets().add(
                 getClass().getResource("/ui/styles.css").toExternalForm());
 
+        FullTextTooltipInstaller.install(root);
         GlobalShortcuts.install(scene, root);
 
         stage.setTitle("Nonprofit Accounting (SCA-Jakarta)");
