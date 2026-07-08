@@ -4,9 +4,9 @@ active_phase: P09
 active_slice: P09-C1
 active_status: VERIFYING
 active_branch: codex/P09-C1-inventory-ui-rules
-active_pull_request: pending
-active_head: pending
-next_action: "Open a draft PR for P09-C1, inspect GitHub Actions, fix failures, then perform desktop visual validation."
+active_pull_request: "#143"
+active_head: bfa895a20fc10badabb4ca0a52fcaad1bf6f5eaf
+next_action: "Inspect GitHub Actions Maven PR Tests run 28973999345, fix failures, then perform desktop visual validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -197,10 +197,11 @@ Completed deliverables: V56 inventory item/movement migration; `InventoryItem` a
 Status: VERIFYING.
 
 Branch: `codex/P09-C1-inventory-ui-rules`
-Pull request: pending
+Pull request: #143
+Head: `bfa895a20fc10badabb4ca0a52fcaad1bf6f5eaf`
 Completed deliverables in branch: Inventory global New/Save hooks; dirty-state tracking; validation highlighting; common money/date parsing and formatting; unconstrained inventory tables; per-company table-state persistence; disabled Delete placeholder buttons removed from Banking, Asset Register, Depreciation Runs, Inventory, and Reconciliation; docs and source guardrail tests updated.
-Remaining deliverables: open draft PR, inspect GitHub Actions, fix failures, perform desktop visual review, and update this plan.
-Next exact action: open draft PR and inspect GitHub Actions output.
+Remaining deliverables: inspect GitHub Actions run 28973999345, fix failures, perform desktop visual review, and update this plan.
+Next exact action: inspect GitHub Actions output.
 
 # P10 — Period close, reopening, and factual audit history
 
@@ -281,4 +282,4 @@ PHASE=P09
 SLICE=P09-C1
 ```
 
-Open a draft PR for `codex/P09-C1-inventory-ui-rules`, inspect GitHub Actions output, and fix any failures.
+Inspect GitHub Actions run 28973999345, then fix any failures before marking the draft PR ready.
