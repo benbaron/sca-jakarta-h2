@@ -65,9 +65,6 @@ public class ReconciliationRunsPanel implements AppPanel
         start.setOnAction(e -> recordRunWithStatus(WorkflowRunStatus.STARTED, "Started from UI workspace"));
         Button fail = new Button("Record Failed");
         fail.setOnAction(e -> recordRunWithStatus(WorkflowRunStatus.FAILED, "Failed from UI workspace"));
-        Button deleteUnavailable = new Button("Delete unavailable — reconciliation records are factual history");
-        deleteUnavailable.setDisable(true);
-        deleteUnavailable.setOnAction(event -> status.setText("Reconciliation run deletion is intentionally unavailable; saved comparison records preserve factual history."));
         Label workflowNote = new Label("Reconciliation is a comparison workflow; approve/reject decisions are not part of this panel.");
         workflowNote.getStyleClass().add("help-text");
 
@@ -83,7 +80,7 @@ public class ReconciliationRunsPanel implements AppPanel
 
         root.setTop(new VBox(6,
                 title,
-                new HBox(8, refresh, start, record, fail, deleteUnavailable),
+                new HBox(8, refresh, start, record, fail),
                 workflowNote,
                 comparisonControls,
                 comparisonSummary,
