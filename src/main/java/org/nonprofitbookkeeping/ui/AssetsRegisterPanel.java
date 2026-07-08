@@ -219,10 +219,10 @@ public class AssetsRegisterPanel implements AppPanel
         usefulLifeMonths.getSelectionModel().select(Integer.valueOf(asset.usefulLifeMonths()));
         statusChoice.getSelectionModel().select(asset.status());
         notes.setText(asset.notes());
-        selectById(assetAccount, asset.assetAccountId());
-        selectById(accumulatedDepreciationAccount, asset.accumulatedDepreciationAccountId());
-        selectById(depreciationExpenseAccount, asset.depreciationExpenseAccountId());
-        selectById(fund, asset.fundId());
+        selectAccountById(assetAccount, asset.assetAccountId());
+        selectAccountById(accumulatedDepreciationAccount, asset.accumulatedDepreciationAccountId());
+        selectAccountById(depreciationExpenseAccount, asset.depreciationExpenseAccountId());
+        selectFundById(fund, asset.fundId());
     }
 
     private void clearForm()
@@ -255,12 +255,12 @@ public class AssetsRegisterPanel implements AppPanel
         return new BigDecimal(raw == null || raw.isBlank() ? "0" : raw.trim());
     }
 
-    private static void selectById(ComboBox<Account> comboBox, Long id)
+    private static void selectAccountById(ComboBox<Account> comboBox, Long id)
     {
         comboBox.getItems().stream().filter(a -> a.getId().equals(id)).findFirst().ifPresent(comboBox.getSelectionModel()::select);
     }
 
-    private static void selectById(ComboBox<Fund> comboBox, Long id)
+    private static void selectFundById(ComboBox<Fund> comboBox, Long id)
     {
         comboBox.getItems().stream().filter(f -> f.getId().equals(id)).findFirst().ifPresent(comboBox.getSelectionModel()::select);
     }
