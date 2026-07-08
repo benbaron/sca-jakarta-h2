@@ -49,12 +49,15 @@ Historical movements are tracked and displayed in a table. The old runbook subpa
 
 Asset items are separate from Inventory items.
 
-The Asset Register supports adding and editing assets.
+The Asset Register supports adding and editing assets through H2-backed fixed asset records, not text runbook entries.
 
 Required asset fields:
 
 - asset name;
 - asset account;
+- accumulated depreciation account;
+- depreciation expense account;
+- fund;
 - acquisition date;
 - acquisition cost;
 - salvage value;
@@ -67,7 +70,7 @@ Required asset fields:
 
 Accumulated depreciation may be entered by the user as an opening accumulated depreciation amount.
 
-The Asset Register shows accumulated depreciation for each item.
+The Asset Register shows accumulated depreciation for each item as opening accumulated depreciation plus completed depreciation runs.
 
 Depreciation schedules support straight-line depreciation over:
 
@@ -77,4 +80,11 @@ Depreciation schedules support straight-line depreciation over:
 
 Adding a depreciation schedule defines how depreciation runs calculate entries. It does not automatically create future scheduled entries.
 
-When depreciation entries are run, they create actual accounting transactions through the canonical transaction service.
+When depreciation entries are run, they create actual accounting transactions through the canonical transaction service. Each completed run stores a durable H2 depreciation-run record linked to the fixed asset and to the created transaction.
+
+P08-S1 implementation notes:
+
+- `fixed_asset` stores the asset register, account/fund links, straight-line life, status, notes, and opening accumulated depreciation.
+- `fixed_asset_depreciation_run` stores completed depreciation runs and links each run to the canonical `txn` row created by the run.
+- `FixedAssetService` validates fixed asset account type/subtype, depreciation expense account type, useful-life limits, nonnegative cost/salvage/opening-depreciation values, and remaining depreciable basis.
+- `AssetsRegisterPanel` and `DepreciationRunsPanel` read/write through `FixedAssetService`; their old asset/depreciation runbook sidecars are removed.
