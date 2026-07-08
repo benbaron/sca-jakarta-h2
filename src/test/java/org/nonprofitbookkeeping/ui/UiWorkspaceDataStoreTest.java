@@ -62,16 +62,12 @@ public class UiWorkspaceDataStoreTest
     }
 
     @Test
-    public void store_tracksRemainingOperationalRunbookEntriesAcrossPanels()
+    public void store_tracksRemainingInventoryRunbookEntriesOnly()
     {
         UiWorkspaceDataStore.clearForTests();
 
-        UiWorkspaceDataStore.appendAssetLifecycleEntry("a1");
-        UiWorkspaceDataStore.appendDepreciationRunEntry("d1");
         UiWorkspaceDataStore.appendInventoryMovementEntry("i1");
 
-        assertEquals(List.of("a1"), UiWorkspaceDataStore.assetLifecycleEntries());
-        assertEquals(List.of("d1"), UiWorkspaceDataStore.depreciationRunEntries());
         assertEquals(List.of("i1"), UiWorkspaceDataStore.inventoryMovementEntries());
     }
 }
