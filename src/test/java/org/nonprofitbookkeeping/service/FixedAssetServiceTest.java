@@ -17,6 +17,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FixedAssetServiceTest
 {
+    private static final long CHART_ID = 10_001L;
+    private static final long COMPANY_ID = 10_001L;
+    private static final long FUND_ID = 10_001L;
+    private static final long ASSET_ACCOUNT_ID = 10_001L;
+    private static final long ACCUMULATED_DEPRECIATION_ACCOUNT_ID = 10_002L;
+    private static final long CHECKING_ACCOUNT_ID = 10_003L;
+    private static final long DEPRECIATION_EXPENSE_ACCOUNT_ID = 10_004L;
+
     @Test
     public void createAssetCalculatesAccumulatedDepreciationAndBookValue(@TempDir Path tempDir)
     {
@@ -67,10 +75,10 @@ public class FixedAssetServiceTest
 
             FixedAssetCommand bad = new FixedAssetCommand(
                     "SCA",
-                    103L,
-                    102L,
-                    201L,
-                    1L,
+                    CHECKING_ACCOUNT_ID,
+                    ACCUMULATED_DEPRECIATION_ACCOUNT_ID,
+                    DEPRECIATION_EXPENSE_ACCOUNT_ID,
+                    FUND_ID,
                     "Invalid",
                     LocalDate.of(2026, 1, 1),
                     new BigDecimal("100.0000"),
@@ -89,10 +97,10 @@ public class FixedAssetServiceTest
     {
         return new FixedAssetCommand(
                 "SCA",
-                101L,
-                102L,
-                201L,
-                1L,
+                ASSET_ACCOUNT_ID,
+                ACCUMULATED_DEPRECIATION_ACCOUNT_ID,
+                DEPRECIATION_EXPENSE_ACCOUNT_ID,
+                FUND_ID,
                 name,
                 LocalDate.of(2026, 1, 1),
                 cost,
@@ -109,13 +117,32 @@ public class FixedAssetServiceTest
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
-            em.createNativeQuery("INSERT INTO chart_of_accounts (id, name, version, status) VALUES (101, 'SCA Chart', '1', 'ACTIVE')").executeUpdate();
-            em.createNativeQuery("INSERT INTO company (id, code, display_name, active_chart_of_accounts_id) VALUES (1, 'SCA', 'SCA Branch', 101)").executeUpdate();
-            em.createNativeQuery("INSERT INTO fund (id, code, name, fund_type) VALUES (1, 'OPERATING', 'Operating', 'UNRESTRICTED')").executeUpdate();
-            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, subtype, normal_balance) VALUES (101, 101, '1500', 'Equipment', 'ASSET', 'FIXED_ASSET', 'DEBIT')").executeUpdate();
-            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, subtype, normal_balance) VALUES (102, 101, '1590', 'Accumulated Depreciation', 'ASSET', 'FIXED_ASSET', 'CREDIT')").executeUpdate();
-            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, subtype, normal_balance) VALUES (103, 101, '1000', 'Checking', 'BANK', 'CASH', 'DEBIT')").executeUpdate();
-            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (201, 101, '6100', 'Depreciation Expense', 'EXPENSE', 'DEBIT')").executeUpdate();
+            em.createNativeQuery("INSERT INTO chart_of_accounts (id, name, version, status) VALUES (?, 'SCA Chart', '1', 'ACTIVE')")
+                    .setParameter(1, CHART_ID)
+                    .executeUpdate();
+            em.createNativeQuery("INSERT INTO company (id, code, display_name, active_chart_of_accounts_id) VALUES (?, 'SCA', 'SCA Branch', ?)")
+                    .setParameter(1, COMPANY_ID)
+                    .setParameter(2, CHART_ID)
+                    .executeUpdate();
+            em.createNativeQuery("INSERT INTO fund (id, code, name, fund_type) VALUES (?, 'OPERATING', 'Operating', 'UNRESTRICTED')")
+                    .setParameter(1, FUND_ID)
+                    .executeUpdate();
+            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, subtype, normal_balance) VALUES (?, ?, '1500', 'Equipment', 'ASSET', 'FIXED_ASSET', 'DEBIT')")
+                    .setParameter(1, ASSET_ACCOUNT_ID)
+                    .setParameter(2, CHART_ID)
+                    .executeUpdate();
+            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, subtype, normal_balance) VALUES (?, ?, '1590', 'Accumulated Depreciation', 'ASSET', 'FIXED_ASSET', 'CREDIT')")
+                    .setParameter(1, ACCUMULATED_DEPRECIATION_ACCOUNT_ID)
+                    .setParameter(2, CHART_ID)
+                    .executeUpdate();
+            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, subtype, normal_balance) VALUES (?, ?, '1000', 'Checking', 'BANK', 'CASH', 'DEBIT')")
+                    .setParameter(1, CHECKING_ACCOUNT_ID)
+                    .setParameter(2, CHART_ID)
+                    .executeUpdate();
+            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (?, ?, '6100', 'Depreciation Expense', 'EXPENSE', 'DEBIT')")
+                    .setParameter(1, DEPRECIATION_EXPENSE_ACCOUNT_ID)
+                    .setParameter(2, CHART_ID)
+                    .executeUpdate();
             em.getTransaction().commit();
         }
     }
@@ -130,11 +157,13 @@ public class FixedAssetServiceTest
             Number splitCount = (Number) em.createNativeQuery("SELECT COUNT(*) FROM txn_split WHERE txn_id = ?")
                     .setParameter(1, txnId)
                     .getSingleResult();
-            BigDecimal expense = (BigDecimal) em.createNativeQuery("SELECT amount_signed FROM txn_split WHERE txn_id = ? AND account_id = 201")
+            BigDecimal expense = (BigDecimal) em.createNativeQuery("SELECT amount_signed FROM txn_split WHERE txn_id = ? AND account_id = ?")
                     .setParameter(1, txnId)
+                    .setParameter(2, DEPRECIATION_EXPENSE_ACCOUNT_ID)
                     .getSingleResult();
-            BigDecimal accumulated = (BigDecimal) em.createNativeQuery("SELECT amount_signed FROM txn_split WHERE txn_id = ? AND account_id = 102")
+            BigDecimal accumulated = (BigDecimal) em.createNativeQuery("SELECT amount_signed FROM txn_split WHERE txn_id = ? AND account_id = ?")
                     .setParameter(1, txnId)
+                    .setParameter(2, ACCUMULATED_DEPRECIATION_ACCOUNT_ID)
                     .getSingleResult();
 
             assertEquals(1L, txnCount.longValue());
