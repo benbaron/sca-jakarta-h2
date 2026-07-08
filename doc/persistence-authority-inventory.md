@@ -15,7 +15,7 @@ Status: P00 inventory of current main, updated through P08-S1 fixed asset/deprec
 | Bank transactions | P05-S1 `bank_import_batch`, `bank_statement_line`, and `import_issue`; current `UiWorkspaceDataStore.bankTransactions` static/session list | H2 schema exists for reviewed import facts; current panel remains unwired | parser normalization, duplicate detection, and review acceptance are still pending | P05 |
 | Reconciliation runs | JDBC `ReconciliationRunRepository`, V6/V7 style workflow tables | yes for run records and P06-S2 unresolved report summaries | remaining mismatch-resolution/edit workflow is incomplete | P06/P10 |
 | Former Schedules panel | top-level panel, route, navigation item, and schedule runbook sidecar removed in P07 | no active top-level persistence remains | historical V2 schedule/open-item tables remain until a later migration decision | future domain-specific supplemental transaction records, not a Schedules function |
-| Fixed assets/depreciation | `FixedAsset` and `FixedAssetDepreciationRun` JPA entities with V49 tables; depreciation runs create canonical `Txn` rows | yes for P08-S1 asset records and completed depreciation runs | old asset/depreciation text sidecars removed from production paths | later hardening: richer disposal/impairment workflows, visual polish, and reports |
+| Fixed assets/depreciation | `FixedAsset` and `FixedAssetDepreciationRun` JPA entities with V50 tables; depreciation runs create canonical `Txn` rows | yes for P08-S1 asset records and completed depreciation runs | old asset/depreciation text sidecars removed from production paths | later hardening: richer disposal/impairment workflows, visual polish, and reports |
 | Inventory/supplies | UI sidecar movement text list | no | no stable H2 inventory/supplies authority | P09 |
 | Audit/approval | `ApprovalAuditRecord`/repository and approval UI | H2 records exist | approval/rejection semantics conflict with product decision | P10/P12 factual audit history |
 | Preferences/app state | `FileAppStateStore`, `UserAppStateStore`, session state | sidecar/user file | not company-scoped H2 preferences | P12 |
@@ -59,7 +59,7 @@ Status: P00 inventory of current main, updated through P08-S1 fixed asset/deprec
 2. V4/V5 add journal/open-item tables that overlap transaction semantics.
 3. V6/V7/V8 add workflow/approval records that conflict with the plan’s no-approval-queue decision if surfaced as approval workflow.
 4. V2 schedule tables remain as historical schema until a deliberate nondestructive migration retires or remaps them.
-5. V49 adds fixed asset/depreciation tables and must remain nondestructive.
+5. V49 adds reconciliation protection; V50 adds fixed asset/depreciation tables. Both must remain nondestructive.
 6. Any later schema change needs a new nondestructive migration and in-memory upgrade test.
 7. Hibernate generation must not be treated as a substitute for Flyway review.
 
