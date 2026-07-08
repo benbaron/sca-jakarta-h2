@@ -18,6 +18,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.util.StringConverter;
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
@@ -134,6 +135,37 @@ public class AssetsRegisterPanel implements AppPanel
 
     private void configureChoices()
     {
+        StringConverter<Account> accountConverter = new StringConverter<>()
+        {
+            @Override
+            public String toString(Account account)
+            {
+                return account == null ? "" : accountLabel(account);
+            }
+
+            @Override
+            public Account fromString(String string)
+            {
+                return null;
+            }
+        };
+        assetAccount.setConverter(accountConverter);
+        accumulatedDepreciationAccount.setConverter(accountConverter);
+        depreciationExpenseAccount.setConverter(accountConverter);
+        fund.setConverter(new StringConverter<>()
+        {
+            @Override
+            public String toString(Fund selectedFund)
+            {
+                return selectedFund == null ? "" : fundLabel(selectedFund);
+            }
+
+            @Override
+            public Fund fromString(String string)
+            {
+                return null;
+            }
+        });
         usefulLifeMonths.setItems(FXCollections.observableArrayList(36, 60, 84));
         usefulLifeMonths.getSelectionModel().select(Integer.valueOf(60));
         statusChoice.setItems(FXCollections.observableArrayList(FixedAsset.Status.values()));
@@ -261,6 +293,20 @@ public class AssetsRegisterPanel implements AppPanel
     private static void selectFundById(ComboBox<Fund> comboBox, Long id)
     {
         comboBox.getItems().stream().filter(f -> f.getId().equals(id)).findFirst().ifPresent(comboBox.getSelectionModel()::select);
+    }
+
+    static String accountLabel(Account account)
+    {
+        String code = account.getCode() == null ? "" : account.getCode();
+        String name = account.getName() == null ? "" : account.getName();
+        return code.isBlank() ? name : code + " — " + name;
+    }
+
+    static String fundLabel(Fund selectedFund)
+    {
+        String code = selectedFund.getCode() == null ? "" : selectedFund.getCode();
+        String name = selectedFund.getName() == null ? "" : selectedFund.getName();
+        return code.isBlank() ? name : code + " — " + name;
     }
 
     private static String activeCompanyCode()

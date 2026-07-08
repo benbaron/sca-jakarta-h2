@@ -1,13 +1,13 @@
 ---
-plan_version: 11
-active_phase: P09
-active_slice: P09-C1
+plan_version: 12
+active_phase: P08
+active_slice: P08-C1
 active_status: VERIFYING
-active_branch: codex/P09-C1-inventory-ui-rules
-active_pull_request: "#143"
-active_head: 5006a25c93ceef79c1770c8e537cd7ca8705ae82
+active_branch: codex/P08-C1-asset-selector-labels
+active_pull_request: "#144"
+active_head: 0152d490bbe882e972c3ff05f901ba840de47987
 queued_next_slice: P06-C1
-next_action: "Inspect GitHub Actions Maven PR Tests run 28975722099, fix failures, perform desktop visual validation, then implement queued slice P06-C1."
+next_action: "Inspect GitHub Actions for PR #144, fix failures, perform desktop visual validation of Asset Register selectors, then implement queued slice P06-C1."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -16,7 +16,7 @@ next_action: "Inspect GitHub Actions Maven PR Tests run 28975722099, fix failure
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records merged P09-S1 completion, starts P09-C1 for Inventory UI design-rule corrections and removal of disabled Delete placeholder buttons, and queues P06-C1 as the next implementation slice for the full Bank Reconciliation workspace.
+This revision records merged P09-C1 completion, opens P08-C1 to correct Asset Register selector labels, and keeps P06-C1 queued as the next implementation slice for the full Bank Reconciliation workspace.
 
 ## 2. Status values
 
@@ -39,10 +39,10 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY for corrective/new slices |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
 | P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137 |
-| P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 READY after P09-C1 |
+| P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 READY after P08-C1 |
 | P07 | Eliminated former Schedules phase | n/a | DONE through PR #139 |
-| P08 | Asset Register and depreciation | P02 | DONE through PR #140 |
-| P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 VERIFYING |
+| P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 VERIFYING |
+| P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | BLOCKED |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | BLOCKED |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | BLOCKED |
@@ -146,7 +146,7 @@ Validation recorded in PR #137: focused banking/import/reconciliation tests and 
 # P06 — Bank reconciliation and cleared-state comparison
 
 **Selector:** `PHASE=P06`
-**Status:** DONE through PR #138; corrective P06-C1 READY after P09-C1
+**Status:** DONE through PR #138; corrective P06-C1 READY after P08-C1
 **Depends on:** P05
 
 Completed deliverables: removed approval semantics; added configured-account reconciliation comparison; added unresolved report summaries backed by H2 run records.
@@ -154,7 +154,7 @@ Known follow-up: per-line cleared-state resolution choices and edit-existing rec
 
 ### P06-C1 — Full Bank Reconciliation workspace
 
-Status: READY, queued after P09-C1.
+Status: READY, queued after P08-C1.
 
 Purpose: replace the partial comparison-only surface with the requirements-driven Bank Reconciliation workspace.
 
@@ -195,7 +195,7 @@ Completed deliverables: removed `SchedulesPanel`, production factory route, navi
 # P08 — Asset Register and depreciation
 
 **Selector:** `PHASE=P08`
-**Status:** DONE through PR #140
+**Status:** DONE through PR #140; corrective P08-C1 VERIFYING
 **Depends on:** P02
 
 Required behavior: implement Asset Register add/edit and depreciation behavior through H2-backed records and canonical accounting transactions. Assets are separate from Inventory items. Depreciation schedules define calculation only; running depreciation creates actual accounting transactions through the canonical transaction service.
@@ -205,6 +205,17 @@ Required behavior: implement Asset Register add/edit and depreciation behavior t
 Status: DONE through PR #140.
 
 Completed deliverables: V55 fixed asset/depreciation-run migration; `FixedAsset` and `FixedAssetDepreciationRun` JPA entities; `FixedAssetService` create/update/list/depreciation-run behavior; depreciation runs create canonical `Txn`/`TxnSplit` rows; Asset Register and Depreciation Runs panels read/write through `FixedAssetService`; asset/depreciation runbook sidecars removed; docs and focused tests added/updated, including a Flyway migration-version uniqueness guardrail.
+
+### P08-C1 — Asset Register selector display labels
+
+Status: VERIFYING.
+
+Branch: `codex/P08-C1-asset-selector-labels`
+Pull request: #144
+Head: `0152d490bbe882e972c3ff05f901ba840de47987`
+Completed deliverables in branch: Added account and fund `StringConverter` display labels for Asset Register selectors so combo boxes show `code — name` instead of Java object identity strings; added focused source-level label-format test.
+Remaining deliverables: inspect GitHub Actions for PR #144, fix failures, perform desktop visual validation of Asset Register selectors, and update this plan.
+Next exact action: inspect GitHub Actions output.
 
 # P01-C1 — Full-text hover tooltips
 
@@ -216,7 +227,7 @@ Completed deliverables: `FullTextTooltipInstaller` utility; production `MainApp`
 # P09 — Inventory and supplies
 
 **Selector:** `PHASE=P09`
-**Status:** DONE through PR #142; corrective P09-C1 VERIFYING
+**Status:** DONE through PR #142; corrective P09-C1 DONE through PR #143
 **Depends on:** P02
 
 Required behavior: implement genuine Inventory item add and movement history; remove runbook subpane; use canonical transactions when financially relevant.
@@ -229,14 +240,9 @@ Completed deliverables: V56 inventory item/movement migration; `InventoryItem` a
 
 ### P09-C1 — Inventory UI design-rule correction and disabled Delete cleanup
 
-Status: VERIFYING.
+Status: DONE through PR #143.
 
-Branch: `codex/P09-C1-inventory-ui-rules`
-Pull request: #143
-Head: `5006a25c93ceef79c1770c8e537cd7ca8705ae82`
-Completed deliverables in branch: Inventory global New/Save hooks; item-editor subpanel navigation from New Item, Edit Selected, and table double-click; dirty-state tracking; validation highlighting; common money/date parsing and formatting; unconstrained inventory tables; per-company table-state persistence; disabled Delete placeholder buttons removed from Banking, Asset Register, Depreciation Runs, Inventory, and Reconciliation; docs and source guardrail tests updated.
-Remaining deliverables: inspect GitHub Actions run 28975722099, fix failures, perform desktop visual review, and update this plan.
-Next exact action: inspect GitHub Actions output.
+Completed deliverables: Inventory global New/Save hooks; item-editor subpanel navigation from New Item, Edit Selected, and table double-click; dirty-state tracking; validation highlighting; common money/date parsing and formatting; unconstrained inventory tables; per-company table-state persistence; disabled Delete placeholder buttons removed from Banking, Asset Register, Depreciation Runs, Inventory, and Reconciliation; docs and source guardrail tests updated.
 
 # P10 — Period close, reopening, and factual audit history
 
@@ -313,8 +319,8 @@ Before a PR is ready:
 Execute validation for:
 
 ```text
-PHASE=P09
-SLICE=P09-C1
+PHASE=P08
+SLICE=P08-C1
 ```
 
-Inspect GitHub Actions run 28975722099, then fix any failures before marking the draft PR ready. After P09-C1 is merged, implement queued slice P06-C1.
+Inspect GitHub Actions for PR #144, then fix any failures before marking the draft PR ready. After P08-C1 is merged, implement queued slice P06-C1.
