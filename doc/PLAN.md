@@ -5,8 +5,8 @@ active_slice: P09-S1
 active_status: VERIFYING
 active_branch: codex/P09-S1-h2-inventory
 active_pull_request: "#142"
-active_head: 8282821795ee687aa7ccbc0617920d3cfbf435cb
-next_action: "Inspect the full Maven error for GitHub Actions run 28958507387, fix the remaining failure, then run or verify mvn clean verify."
+active_head: "see PR #142 latest head"
+next_action: "Inspect the full Maven error for GitHub Actions run 28958507387 or the latest rerun, fix the remaining failure, then run or verify mvn clean verify."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -191,11 +191,11 @@ Status: VERIFYING.
 
 Branch: `codex/P09-S1-h2-inventory`
 Pull request: #142
-Head: `8282821795ee687aa7ccbc0617920d3cfbf435cb`
+Head: see PR #142 latest head.
 Completed deliverables in branch: V56 inventory item/movement migration; `InventoryItem` and `InventoryMovement` JPA entities; `InventoryService` create/update/list/movement behavior; `InventoryPanel` reads/writes through `InventoryService`; inventory text runbook sidecar removed from `UiWorkspaceDataStore` and `RunbookPersistence`; focused service tests and docs added/updated.
 Validation: GitHub Actions Maven PR Tests failed on run 28958507387. The connector log output is truncated before the Maven error section; likely stale runbook and H2/test-isolation issues have already been patched in branch.
 Remaining deliverables: inspect the full Maven error, fix the remaining failure, perform desktop visual review, and update this plan.
-Next exact action: inspect the full Maven failure output for run 28958507387 and patch the remaining red-build cause.
+Next exact action: inspect the full Maven failure output for run 28958507387 or the latest rerun and patch the remaining red-build cause.
 
 # P10 — Period close, reopening, and factual audit history
 
@@ -276,4 +276,4 @@ PHASE=P09
 SLICE=P09-S1
 ```
 
-Inspect the full Maven failure output for run 28958507387 and patch the remaining red-build cause.
+Inspect the full Maven failure output for run 28958507387 or the latest rerun and patch the remaining red-build cause.
