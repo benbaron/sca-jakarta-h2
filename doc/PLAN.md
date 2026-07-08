@@ -6,7 +6,7 @@ active_status: VERIFYING
 active_branch: codex/P08-S1-h2-fixed-assets
 active_pull_request: pending
 active_head: pending
-next_action: "Open P08-S1 PR, run mvn -Dtest=FixedAssetServiceTest test, then mvn clean verify, fix failures, and update this plan with validation."
+next_action: "Open P08-S1 PR, run mvn -Dtest=FixedAssetServiceTest,FlywayMigrationVersionUniquenessTest test, then mvn clean verify, fix failures, and update this plan with validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -164,9 +164,9 @@ Status: VERIFYING.
 
 Branch: `codex/P08-S1-h2-fixed-assets`
 Pull request: pending
-Completed deliverables in branch: V51 fixed asset/depreciation-run migration; `FixedAsset` and `FixedAssetDepreciationRun` JPA entities; `FixedAssetService` create/update/list/depreciation-run behavior; depreciation runs create canonical `Txn`/`TxnSplit` rows; Asset Register and Depreciation Runs panels read/write through `FixedAssetService`; asset/depreciation runbook sidecars removed; docs and focused tests added/updated.
-Remaining deliverables: open PR, run focused `FixedAssetServiceTest`, run `mvn clean verify`, fix failures, perform desktop visual review, update PR and this plan.
-Next exact action: open P08-S1 PR.
+Completed deliverables in branch: V55 fixed asset/depreciation-run migration; `FixedAsset` and `FixedAssetDepreciationRun` JPA entities; `FixedAssetService` create/update/list/depreciation-run behavior; depreciation runs create canonical `Txn`/`TxnSplit` rows; Asset Register and Depreciation Runs panels read/write through `FixedAssetService`; asset/depreciation runbook sidecars removed; docs and focused tests added/updated, including a Flyway migration-version uniqueness guardrail.
+Remaining deliverables: run focused `FixedAssetServiceTest` and `FlywayMigrationVersionUniquenessTest`, run `mvn clean verify`, fix failures, perform desktop visual review, update PR and this plan.
+Next exact action: inspect GitHub Actions run for the V55 branch head.
 
 # P09 — Inventory and supplies
 
@@ -255,4 +255,4 @@ PHASE=P08
 SLICE=P08-S1
 ```
 
-Open the PR, run `mvn -Dtest=FixedAssetServiceTest test`, fix any failures, then run `mvn clean verify`.
+Inspect GitHub Actions for the V55 branch head, fix any failures, then run or verify `mvn clean verify`.
