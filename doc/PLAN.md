@@ -1,12 +1,12 @@
 ---
-plan_version: 6
-active_phase: P07
-active_slice: P07-S1
+plan_version: 7
+active_phase: P08
+active_slice: P08-S1
 active_status: VERIFYING
-active_branch: codex/P07-remove-schedules-function
+active_branch: codex/P08-S1-h2-fixed-assets
 active_pull_request: pending
 active_head: pending
-next_action: "Open P07-S1 PR, run mvn -Dtest=SchedulesEliminationSourceTest,OperationalRunbookFormattingTest test, then mvn clean verify, and merge after validation."
+next_action: "Open P08-S1 PR, run mvn -Dtest=FixedAssetServiceTest test, then mvn clean verify, fix failures, and update this plan with validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Open P07-S1 PR, run mvn -Dtest=SchedulesEliminationSourceTest,Oper
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records that P06-S2 was merged and is DONE, then starts P07-S1 to remove the eliminated top-level Schedules function from production UI routing and documentation.
+This revision records merged P07 completion and starts P08-S1 for H2-backed fixed assets and depreciation.
 
 ## 2. Status values
 
@@ -39,8 +39,8 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
 | P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137 |
 | P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138 |
-| P07 | Eliminated former Schedules phase | n/a | VERIFYING P07-S1 |
-| P08 | Asset Register and depreciation | P02 | BLOCKED |
+| P07 | Eliminated former Schedules phase | n/a | DONE through PR #139 |
+| P08 | Asset Register and depreciation | P02 | VERIFYING P08-S1 |
 | P09 | Inventory and supplies | P02 | BLOCKED |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | BLOCKED |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | BLOCKED |
@@ -62,7 +62,7 @@ Focused documents for current UI/accounting work:
 - `doc/ui_design_rules.md`
 - `doc/ui/editor-guidelines.md`
 - `doc/requirements/requirements-clarification-overlay.md`
-- `doc/banking/banking-and-reconciliation.md`
+- `doc/inventory/inventory-and-assets.md`
 - `doc/accounting/ledger-authority.md`
 - `doc/accounting/transaction-lifecycle.md`
 - `doc/accounting/period-and-correction-policy.md`
@@ -89,6 +89,7 @@ Focused documents for current UI/accounting work:
 - Reports belong in `REPORT_LIBRARY`.
 - The former Schedules function is eliminated.
 - Import/Export Jobs is eliminated as both a panel and generic durable job-tracking function.
+- Fixed assets are distinct from inventory and require H2-backed asset/depreciation records.
 
 ## 6. Completed phases and slices
 
@@ -139,63 +140,33 @@ Validation recorded in PR #137: focused banking/import/reconciliation tests and 
 **Status:** DONE through PR #138
 **Depends on:** P05
 
-## Objective
-
-Implement reconciliation for configured bank accounts using ledger-line cleared state and statement comparison.
-
-### P06-S1 — Remove approval semantics from reconciliation runs
-
-Status: DONE.
-
-Branch: `codex/execute-action-from-plan.md`
-Pull request: #137
-Merge commit: `468e6c5836b6d727ac4d921269a7f0e8f18d8087`
-Completed deliverables: Removed user-facing approve/reject reconciliation actions and approval-audit summary from the Reconciliation Runs panel; added explicit comparison-workflow note; updated matrix and banking documentation.
-
-### P06-S2 — Configured-account reconciliation comparison and unresolved reports
-
-Status: DONE.
-
-Branch: `codex/P06-P06-S2-reconciliation-comparison`
-Pull request: #138
-Merge commit: `d6519b1186182d6df6494bc6bcf09b48c44227b6`
-Completed deliverables: Added `ReconciliationComparisonService` and command/report/line projections; Bank Reconciliation panel selects configured bank accounts, runs date-bounded comparisons, displays matched and mismatch lines, and can save unresolved report summaries as reconciliation run records; updated `UiServiceRegistry`, banking documentation, operation matrix, and tests.
+Completed deliverables: removed approval semantics; added configured-account reconciliation comparison; added unresolved report summaries backed by H2 run records.
 Known follow-up: per-line cleared-state resolution choices and edit-existing reconciliation workflow remain later P06/P10/P11 work.
 
 # P07 — Eliminated former Schedules phase
 
 **Selector:** `PHASE=P07`
-**Status:** VERIFYING P07-S1
+**Status:** DONE through PR #139
 
-The Schedules function is eliminated entirely as:
-
-- `AppPanelId`;
-- left navigation item;
-- `PanelHost`/`PanelFactory` route;
-- production panel class;
-- sidecar schedule runbook storage;
-- documentation concept;
-- future phase plan.
-
-Underlying receivable, prepaid, payable, deferred revenue, and other supplemental transaction-detail concepts may remain, but they are not a Schedules panel or phase. They must be assigned to their owning domain phases as supplemental transaction records.
-
-### P07-S1 — Remove Schedules top-level function
-
-Status: VERIFYING.
-
-Branch: `codex/P07-remove-schedules-function`
-Pull request: pending
-Completed deliverables in branch: removed `AppPanelId.SCHEDULES`; removed `SchedulesPanel` factory and navigation item; deleted `SchedulesPanel.java`; removed schedule runbook sidecar methods from `UiWorkspaceDataStore` and `RunbookPersistence`; removed schedule runbook formatting test; added `SchedulesEliminationSourceTest`; updated `doc/interface-operation-matrix.md` and `doc/persistence-authority-inventory.md`.
-Remaining deliverables: open PR, run focused tests and full Maven verification, review diff, and merge.
-Next exact action: open P07-S1 PR.
+Completed deliverables: removed `SchedulesPanel`, production factory route, navigation item, schedule runbook sidecar methods, schedule runbook formatting tests, and related operation-matrix/persistence-inventory references. `AppPanelId.SCHEDULES` remains only as a retired compatibility enum value for legacy switch/preset paths; it has no product route.
 
 # P08 — Asset Register and depreciation
 
 **Selector:** `PHASE=P08`
-**Status:** BLOCKED
+**Status:** VERIFYING P08-S1
 **Depends on:** P02
 
 Required behavior: implement Asset Register add/edit and depreciation behavior through H2-backed records and canonical accounting transactions. Assets are separate from Inventory items. Depreciation schedules define calculation only; running depreciation creates actual accounting transactions through the canonical transaction service.
+
+### P08-S1 — H2 fixed asset register and depreciation runs
+
+Status: VERIFYING.
+
+Branch: `codex/P08-S1-h2-fixed-assets`
+Pull request: pending
+Completed deliverables in branch: V49 fixed asset/depreciation-run migration; `FixedAsset` and `FixedAssetDepreciationRun` JPA entities; `FixedAssetService` create/update/list/depreciation-run behavior; depreciation runs create canonical `Txn`/`TxnSplit` rows; Asset Register and Depreciation Runs panels read/write through `FixedAssetService`; asset/depreciation runbook sidecars removed; docs and focused tests added/updated.
+Remaining deliverables: open PR, run focused `FixedAssetServiceTest`, run `mvn clean verify`, fix failures, perform desktop visual review, update PR and this plan.
+Next exact action: open P08-S1 PR.
 
 # P09 — Inventory and supplies
 
@@ -280,8 +251,8 @@ Before a PR is ready:
 Execute validation for:
 
 ```text
-PHASE=P07
-SLICE=P07-S1
+PHASE=P08
+SLICE=P08-S1
 ```
 
-Open the PR, run `mvn -Dtest=SchedulesEliminationSourceTest,OperationalRunbookFormattingTest test`, fix any compile/test failures, then run `mvn clean verify`.
+Open the PR, run `mvn -Dtest=FixedAssetServiceTest test`, fix any failures, then run `mvn clean verify`.
