@@ -4,8 +4,8 @@ active_phase: P06
 active_slice: P06-C1
 active_status: IN_PROGRESS
 active_branch: codex/P06-C1-bank-reconciliation-workspace
-active_pull_request: pending
-active_head: pending
+active_pull_request: "#145"
+active_head: 148dec7bfbcb2314bc9178cccaea511dc223bf15
 next_action: "Inspect current reconciliation, statement import, cleared-state, ledger-line, and period-close code, then implement the full Bank Reconciliation workspace."
 ---
 
@@ -155,7 +155,7 @@ Known follow-up: per-line cleared-state resolution choices and edit-existing rec
 
 Status: IN_PROGRESS.
 Branch: `codex/P06-C1-bank-reconciliation-workspace`
-Pull request: pending
+Pull request: #145
 
 Purpose: replace the partial comparison-only surface with the requirements-driven Bank Reconciliation workspace.
 
