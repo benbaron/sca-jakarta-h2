@@ -1,6 +1,6 @@
 # Model and persistence authority inventory
 
-Status: P00 inventory of current main, updated through P07 Schedules elimination. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
+Status: P00 inventory of current main, updated through P08-S1 fixed asset/depreciation persistence. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
 
 ## Current persistence map
 
@@ -15,7 +15,7 @@ Status: P00 inventory of current main, updated through P07 Schedules elimination
 | Bank transactions | P05-S1 `bank_import_batch`, `bank_statement_line`, and `import_issue`; current `UiWorkspaceDataStore.bankTransactions` static/session list | H2 schema exists for reviewed import facts; current panel remains unwired | parser normalization, duplicate detection, and review acceptance are still pending | P05 |
 | Reconciliation runs | JDBC `ReconciliationRunRepository`, V6/V7 style workflow tables | yes for run records and P06-S2 unresolved report summaries | remaining mismatch-resolution/edit workflow is incomplete | P06/P10 |
 | Former Schedules panel | top-level panel, route, navigation item, and schedule runbook sidecar removed in P07 | no active top-level persistence remains | historical V2 schedule/open-item tables remain until a later migration decision | future domain-specific supplemental transaction records, not a Schedules function |
-| Fixed assets/depreciation | UI sidecar lifecycle/depreciation text lists | no | no stable H2 asset/depreciation authority | P08 |
+| Fixed assets/depreciation | `FixedAsset` and `FixedAssetDepreciationRun` JPA entities with V49 tables; depreciation runs create canonical `Txn` rows | yes for P08-S1 asset records and completed depreciation runs | old asset/depreciation text sidecars removed from production paths | later hardening: richer disposal/impairment workflows, visual polish, and reports |
 | Inventory/supplies | UI sidecar movement text list | no | no stable H2 inventory/supplies authority | P09 |
 | Audit/approval | `ApprovalAuditRecord`/repository and approval UI | H2 records exist | approval/rejection semantics conflict with product decision | P10/P12 factual audit history |
 | Preferences/app state | `FileAppStateStore`, `UserAppStateStore`, session state | sidecar/user file | not company-scoped H2 preferences | P12 |
@@ -46,17 +46,25 @@ Status: P00 inventory of current main, updated through P07 Schedules elimination
 - Open-item and deferral concepts must return only as domain-specific supplemental transaction records linked to canonical transaction/split IDs.
 - Open-item snapshot repositories and domain state enums exist before the canonical transaction authority is fully settled and must not become a second ledger.
 
+## Fixed asset and depreciation authority
+
+- `FixedAsset` records are the H2 authority for asset-register facts.
+- `FixedAssetDepreciationRun` records are the H2 authority for completed depreciation runs.
+- Depreciation runs use `TransactionEntryService` to create the canonical accounting transaction and then store the run-to-transaction link.
+- The old asset lifecycle and depreciation text runbooks are no longer referenced by production code after P08-S1.
+
 ## Migration risks
 
 1. V1 plus V45/V47/V48 establish JPA accounting tables for companies, funds, accounts, transactions, periods, audit, and corrections.
 2. V4/V5 add journal/open-item tables that overlap transaction semantics.
 3. V6/V7/V8 add workflow/approval records that conflict with the plan’s no-approval-queue decision if surfaced as approval workflow.
 4. V2 schedule tables remain as historical schema until a deliberate nondestructive migration retires or remaps them.
-5. Any later schema change needs a new nondestructive migration and in-memory upgrade test.
-6. Hibernate generation must not be treated as a substitute for Flyway review.
+5. V49 adds fixed asset/depreciation tables and must remain nondestructive.
+6. Any later schema change needs a new nondestructive migration and in-memory upgrade test.
+7. Hibernate generation must not be treated as a substitute for Flyway review.
 
 ## Sidecar/static stores to eliminate or confine
 
-- `UiWorkspaceDataStore`: bank transactions, jobs, asset lifecycle, depreciation run, and inventory movement lists.
-- `RunbookPersistence`: asset, depreciation, and inventory text files. The former schedule text file path is no longer referenced by production code after P07.
+- `UiWorkspaceDataStore`: bank transactions, jobs, and inventory movement lists.
+- `RunbookPersistence`: inventory text file only after P08-S1; asset/depreciation text file paths are no longer referenced by production code.
 - Session draft in `TransactionEditorPanel`: useful as UI dirty state only, not accepted accounting persistence.
