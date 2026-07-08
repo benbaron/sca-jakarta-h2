@@ -38,14 +38,18 @@ class SchedulesEliminationSourceTest
     void scheduleRunbookSidecarIsNotReferenced() throws Exception
     {
         String workspaceStore = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/UiWorkspaceDataStore.java"));
-        String runbookPersistence = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/RunbookPersistence.java"));
+        Path runbookPersistencePath = Path.of("src/main/java/org/nonprofitbookkeeping/ui/RunbookPersistence.java");
 
         assertFalse(workspaceStore.contains("scheduleRunbookEntries"));
         assertFalse(workspaceStore.contains("appendScheduleRunbookEntry"));
         assertFalse(workspaceStore.contains("scheduleRunbookEntries()"));
-        assertFalse(runbookPersistence.contains("schedules.log"));
-        assertFalse(runbookPersistence.contains("loadScheduleEntries"));
-        assertFalse(runbookPersistence.contains("saveScheduleEntries"));
+        if (Files.exists(runbookPersistencePath))
+        {
+            String runbookPersistence = Files.readString(runbookPersistencePath);
+            assertFalse(runbookPersistence.contains("schedules.log"));
+            assertFalse(runbookPersistence.contains("loadScheduleEntries"));
+            assertFalse(runbookPersistence.contains("saveScheduleEntries"));
+        }
     }
 
     @Test

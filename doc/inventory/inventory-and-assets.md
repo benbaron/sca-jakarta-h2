@@ -25,7 +25,7 @@ Deletion:
 
 The Inventory Runbook subpane is eliminated.
 
-Inventory items are genuine records with required fields:
+Inventory items are genuine H2-backed records with required fields:
 
 - item name;
 - item type;
@@ -44,6 +44,16 @@ Adding certain inventory items creates accounting transactions. The transaction 
 Inventory supports quantity movements after creation. Quantity movements create transactions when financially relevant and show inventory changes.
 
 Historical movements are tracked and displayed in a table. The old runbook subpane is not retained.
+
+P09-S1 implementation notes:
+
+- `inventory_item` stores the inventory register, inventory account/fund links, item facts, quantity, value, condition, status, and notes.
+- `inventory_movement` stores receipt, issue, and adjustment history for each inventory item. It has a nullable canonical `txn` link reserved for financially relevant movement transactions.
+- `InventoryService` validates inventory account type/subtype, required item fields, nonnegative item quantity/value, positive movement quantities, active item movement eligibility, and no-negative-result movement rules.
+- Creating an item records an initial receipt movement when initial quantity is greater than zero.
+- Receiving quantity adds to the item count, issuing subtracts from it, and adjustment treats the entered quantity as the corrected count.
+- Financially relevant movement-to-ledger automation is not completed in P09-S1; the schema and service boundary leave a transaction link for the later P09 hardening slice.
+- `InventoryPanel` reads/writes through `InventoryService`; the old inventory text runbook and `RunbookPersistence` path are removed.
 
 ## Asset Register
 

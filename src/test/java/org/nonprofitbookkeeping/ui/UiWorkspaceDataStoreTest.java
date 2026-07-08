@@ -60,14 +60,4 @@ public class UiWorkspaceDataStoreTest
         assertEquals(1, UiWorkspaceDataStore.bankTransactions().size());
         assertEquals(0, UiWorkspaceDataStore.jobs().size());
     }
-
-    @Test
-    public void store_tracksRemainingInventoryRunbookEntriesOnly()
-    {
-        UiWorkspaceDataStore.clearForTests();
-
-        UiWorkspaceDataStore.appendInventoryMovementEntry("i1");
-
-        assertEquals(List.of("i1"), UiWorkspaceDataStore.inventoryMovementEntries());
-    }
 }
