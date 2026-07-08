@@ -2,6 +2,12 @@
 
 This document records cross-cutting UI display and interaction rules for the production SCA bookkeeping application. It applies to every production pane unless a more specific governing document narrows the behavior for a particular domain.
 
+## Full text hover tooltips
+
+Every production JavaFX widget with visible non-blank display text should expose that full text in a hover tooltip so clipped, abbreviated, or partially hidden labels remain readable. This applies to labels, buttons, check boxes, radio buttons, menu buttons, table/list/tree cells, combo boxes, choice boxes, date pickers, spinners, and similar non-text-entry controls.
+
+Text boxes and other `TextInputControl` instances are excluded so user-entered or potentially sensitive typed text is not automatically repeated in a tooltip. Controls that already define a custom tooltip may keep it when the tooltip carries more specific help text.
+
 ## Preference storage scope
 
 Any preference mentioned in this document is a per-company preference. It must be saved with that company and restored when that company is active. User-interface state that changes how company data is displayed or edited must not be stored only as a global user preference when the behavior is company-specific.
@@ -49,8 +55,8 @@ Accounting periods must be stated in days, quarters, or years as appropriate for
 
 These rules apply retroactively to UI surfaces delivered by completed phases. A completed phase is not reopened wholesale, but any corrective slice that touches an existing surface must bring that surface into conformance with this document or record a visible follow-up in `doc/PLAN.md`.
 
-- P00 documentation inventories must identify panels whose table state, money/date formatting, period display, Delete behavior, or split-pane/scroll behavior is not yet compliant.
+- P00 documentation inventories must identify panels whose table state, money/date formatting, period display, Delete behavior, split-pane/scroll behavior, or full-text hover tooltip behavior is not yet compliant.
 - P01 shell and workspace surfaces must store qualifying preferences per company and must not keep company-specific display behavior only in global user state.
 - P02 services remain the authority for accounting data and internal precision; UI money/date format correction must never alter service command precision, entity precision, or persisted date types.
-- P03 Ledger Register and Transaction Editor must use the table, money, date, Delete, split-pane, and period rules when their controls are next changed.
+- P03 Ledger Register and Transaction Editor must use the table, money, date, Delete, split-pane, period, and tooltip rules when their controls are next changed.
 - P04 budget surfaces and later table-heavy panels must implement sortable/resizable/reorderable table columns with per-company saved state before those panels are considered design-rule complete.
