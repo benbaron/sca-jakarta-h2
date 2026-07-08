@@ -8,8 +8,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
@@ -41,10 +41,11 @@ public class FixedAssetDepreciationRun
     @Column(name = "depreciation_amount", nullable = false, precision = 19, scale = 4)
     private BigDecimal depreciationAmount = BigDecimal.ZERO;
 
-    @OneToOne(optional = false, fetch = FetchType.LAZY)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "transaction_id", nullable = false)
     private Txn transaction;
 
+    @Lob
     @Column
     private String notes;
 
