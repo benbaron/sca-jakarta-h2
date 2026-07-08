@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
@@ -89,6 +90,7 @@ public class FixedAsset
     @Column(nullable = false, length = 40)
     private Status status = Status.ACTIVE;
 
+    @Lob
     @Column
     private String notes;
 
