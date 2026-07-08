@@ -1,13 +1,12 @@
 ---
-plan_version: 12
-active_phase: P08
-active_slice: P08-C1
-active_status: VERIFYING
-active_branch: codex/P08-C1-asset-selector-labels
-active_pull_request: "#144"
-active_head: 0152d490bbe882e972c3ff05f901ba840de47987
-queued_next_slice: P06-C1
-next_action: "Inspect GitHub Actions for PR #144, fix failures, perform desktop visual validation of Asset Register selectors, then implement queued slice P06-C1."
+plan_version: 13
+active_phase: P06
+active_slice: P06-C1
+active_status: IN_PROGRESS
+active_branch: codex/P06-C1-bank-reconciliation-workspace
+active_pull_request: pending
+active_head: pending
+next_action: "Inspect current reconciliation, statement import, cleared-state, ledger-line, and period-close code, then implement the full Bank Reconciliation workspace."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -16,7 +15,7 @@ next_action: "Inspect GitHub Actions for PR #144, fix failures, perform desktop 
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records merged P09-C1 completion, opens P08-C1 to correct Asset Register selector labels, and keeps P06-C1 queued as the next implementation slice for the full Bank Reconciliation workspace.
+This revision records P08-C1 as DONE through PR #144 and activates P06-C1 for the full Bank Reconciliation workspace.
 
 ## 2. Status values
 
@@ -39,9 +38,9 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY for corrective/new slices |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
 | P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137 |
-| P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 READY after P08-C1 |
+| P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 IN_PROGRESS |
 | P07 | Eliminated former Schedules phase | n/a | DONE through PR #139 |
-| P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 VERIFYING |
+| P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 DONE through PR #144 |
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | BLOCKED |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | BLOCKED |
@@ -146,7 +145,7 @@ Validation recorded in PR #137: focused banking/import/reconciliation tests and 
 # P06 — Bank reconciliation and cleared-state comparison
 
 **Selector:** `PHASE=P06`
-**Status:** DONE through PR #138; corrective P06-C1 READY after P08-C1
+**Status:** DONE through PR #138; corrective P06-C1 IN_PROGRESS
 **Depends on:** P05
 
 Completed deliverables: removed approval semantics; added configured-account reconciliation comparison; added unresolved report summaries backed by H2 run records.
@@ -154,7 +153,9 @@ Known follow-up: per-line cleared-state resolution choices and edit-existing rec
 
 ### P06-C1 — Full Bank Reconciliation workspace
 
-Status: READY, queued after P08-C1.
+Status: IN_PROGRESS.
+Branch: `codex/P06-C1-bank-reconciliation-workspace`
+Pull request: pending
 
 Purpose: replace the partial comparison-only surface with the requirements-driven Bank Reconciliation workspace.
 
@@ -195,7 +196,7 @@ Completed deliverables: removed `SchedulesPanel`, production factory route, navi
 # P08 — Asset Register and depreciation
 
 **Selector:** `PHASE=P08`
-**Status:** DONE through PR #140; corrective P08-C1 VERIFYING
+**Status:** DONE through PR #140; corrective P08-C1 DONE through PR #144
 **Depends on:** P02
 
 Required behavior: implement Asset Register add/edit and depreciation behavior through H2-backed records and canonical accounting transactions. Assets are separate from Inventory items. Depreciation schedules define calculation only; running depreciation creates actual accounting transactions through the canonical transaction service.
@@ -208,14 +209,9 @@ Completed deliverables: V55 fixed asset/depreciation-run migration; `FixedAsset`
 
 ### P08-C1 — Asset Register selector display labels
 
-Status: VERIFYING.
+Status: DONE through PR #144.
 
-Branch: `codex/P08-C1-asset-selector-labels`
-Pull request: #144
-Head: `0152d490bbe882e972c3ff05f901ba840de47987`
-Completed deliverables in branch: Added account and fund `StringConverter` display labels for Asset Register selectors so combo boxes show `code — name` instead of Java object identity strings; added focused source-level label-format test.
-Remaining deliverables: inspect GitHub Actions for PR #144, fix failures, perform desktop visual validation of Asset Register selectors, and update this plan.
-Next exact action: inspect GitHub Actions output.
+Completed deliverables: Added account and fund `StringConverter` display labels for Asset Register selectors so combo boxes show `code — name` instead of Java object identity strings; added focused source-level label-format test.
 
 # P01-C1 — Full-text hover tooltips
 
@@ -316,11 +312,11 @@ Before a PR is ready:
 
 ## 10. Current next action
 
-Execute validation for:
+Execute implementation for:
 
 ```text
-PHASE=P08
-SLICE=P08-C1
+PHASE=P06
+SLICE=P06-C1
 ```
 
-Inspect GitHub Actions for PR #144, then fix any failures before marking the draft PR ready. After P08-C1 is merged, implement queued slice P06-C1.
+Inspect current reconciliation, statement import, cleared-state, ledger-line, and period-close code, then implement the full Bank Reconciliation workspace.
