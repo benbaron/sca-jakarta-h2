@@ -1,12 +1,15 @@
 package org.nonprofitbookkeeping.ui;
 
 import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
@@ -30,25 +33,35 @@ import org.nonprofitbookkeeping.service.InventoryMovementCommand;
 import org.nonprofitbookkeeping.service.InventoryMovementView;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.function.Function;
+import java.util.prefs.Preferences;
 
 /** H2-backed Inventory panel. */
 public class InventoryPanel implements AppPanel
 {
+    private static final Preferences TABLE_STATE = Preferences.userNodeForPackage(InventoryPanel.class).node("inventory-table-state");
+    private static final String INVALID_FIELD_STYLE = "field-invalid";
+
     private final BorderPane root = new BorderPane();
+    private final VBox listPanel = new VBox(8);
+    private final VBox itemEditorPanel = new VBox(8);
     private final TableView<InventoryItemView> itemTable = new TableView<>();
     private final TableView<InventoryMovementView> movementTable = new TableView<>();
     private final Label status = new Label();
+    private final Label editorTitle = new Label("Inventory Item");
 
     private final ComboBox<Account> inventoryAccount = new ComboBox<>();
     private final ComboBox<Fund> fund = new ComboBox<>();
     private final TextField name = new TextField();
     private final TextField itemType = new TextField();
-    private final TextField quantity = new TextField("0.0000");
+    private final TextField quantity = new TextField("0.00");
     private final TextField unit = new TextField("each");
-    private final TextField unitValue = new TextField("0.0000");
+    private final TextField unitValue = new TextField("0.00");
     private final DatePicker acquisitionDate = new DatePicker(LocalDate.now());
     private final TextField custodian = new TextField();
     private final TextField storageLocation = new TextField();
@@ -59,70 +72,141 @@ public class InventoryPanel implements AppPanel
     private final DatePicker movementDate = new DatePicker(LocalDate.now());
     private final TextField movementNotes = new TextField();
 
+    private boolean restoringTableState;
+    private boolean suppressDirty;
+    private boolean dirty;
+    private boolean editorOpen;
+    private Long editingItemId;
+
     public InventoryPanel()
     {
         root.setPadding(new Insets(8));
         Label title = new Label("Inventory");
         title.getStyleClass().add("panel-title");
+        root.setTop(new VBox(6, title, status, new Separator()));
 
+        configureSelectors();
+        configureItemTable();
+        configureMovementTable();
+        installTableStatePersistence(itemTable, "items");
+        installTableStatePersistence(movementTable, "movements");
+        configureListPanel();
+        configureItemEditorPanel();
+        installFormatCorrection();
+        installDirtyTracking();
+        reload();
+        resetEditorFields();
+        showListPanel("Loaded inventory workspace.");
+    }
+
+    @Override
+    public void onNew()
+    {
+        openNewItemEditor();
+    }
+
+    @Override
+    public void onSave()
+    {
+        if (editorOpen)
+        {
+            saveItem();
+        }
+        else
+        {
+            status.setText("Open New Item or Edit Selected before using Save for inventory items.");
+        }
+    }
+
+    @Override
+    public boolean hasUnsavedChanges()
+    {
+        return dirty;
+    }
+
+    private void configureListPanel()
+    {
         Button refresh = new Button("Refresh");
         refresh.setOnAction(e -> reload());
         Button newItem = new Button("New Item");
-        newItem.setOnAction(e -> clearForm());
-        Button save = new Button("Save Item");
-        save.setOnAction(e -> saveItem());
+        newItem.setOnAction(e -> openNewItemEditor());
+        Button editItem = new Button("Edit Selected");
+        editItem.setOnAction(e -> openEditItemEditor());
         Button receive = new Button("Receive Quantity");
         receive.setOnAction(e -> recordMovement(InventoryMovement.MovementType.RECEIPT));
         Button issue = new Button("Issue Quantity");
         issue.setOnAction(e -> recordMovement(InventoryMovement.MovementType.ISSUE));
         Button adjust = new Button("Adjust Count To Quantity");
         adjust.setOnAction(e -> recordMovement(InventoryMovement.MovementType.ADJUSTMENT));
-        Button deleteUnavailable = new Button("Delete unavailable — deactivate or dispose inventory item");
-        deleteUnavailable.setDisable(true);
 
-        HBox actions = new HBox(8, refresh, newItem, save, receive, issue, adjust, deleteUnavailable);
-        VBox header = new VBox(6, title, actions, status, new Separator());
-        root.setTop(header);
+        HBox itemActions = new HBox(8, refresh, newItem, editItem);
+        HBox movementActions = new HBox(8,
+                new Label("Movement qty"), movementQuantity,
+                new Label("Movement date"), movementDate,
+                new Label("Movement notes"), movementNotes,
+                receive, issue, adjust);
+        movementQuantity.setPrefWidth(90);
+        movementDate.setPrefWidth(130);
+        movementNotes.setPrefWidth(240);
 
-        configureItemTable();
-        configureMovementTable();
         SplitPane split = new SplitPane(new VBox(6, new Label("Inventory Items"), itemTable), new VBox(6, new Label("Movement History"), movementTable));
-        split.setOrientation(javafx.geometry.Orientation.VERTICAL);
+        split.setOrientation(Orientation.VERTICAL);
         split.setDividerPositions(0.58);
-        root.setCenter(split);
-        root.setRight(form());
+        VBox.setVgrow(itemTable, Priority.ALWAYS);
+        VBox.setVgrow(movementTable, Priority.ALWAYS);
+        VBox.setVgrow(split, Priority.ALWAYS);
+        listPanel.getChildren().setAll(itemActions, movementActions, split);
+    }
 
-        itemTable.getSelectionModel().selectedItemProperty().addListener((observable, oldSelection, selected) -> fillForm(selected));
-        configureSelectors();
-        reload();
-        clearForm();
+    private void configureItemEditorPanel()
+    {
+        editorTitle.getStyleClass().add("panel-title");
+        Button save = new Button("Save Item");
+        save.setOnAction(e -> saveItem());
+        Button cancel = new Button("Cancel");
+        cancel.setOnAction(e -> cancelItemEditor());
+        HBox actions = new HBox(8, save, cancel);
+        ScrollPane editorScroll = new ScrollPane(form());
+        editorScroll.setFitToWidth(true);
+        VBox.setVgrow(editorScroll, Priority.ALWAYS);
+        itemEditorPanel.getChildren().setAll(editorTitle, actions, editorScroll);
     }
 
     private void configureItemTable()
     {
+        itemTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         addItemColumn("Name", InventoryItemView::name, 180);
-        addItemColumn("Type", InventoryItemView::itemType, 100);
-        addItemColumn("Qty", v -> v.quantity().toPlainString(), 90);
-        addItemColumn("Unit", InventoryItemView::unit, 70);
-        addItemColumn("Value", v -> v.unitValue().toPlainString(), 90);
-        addItemColumn("Total", v -> v.totalValue().toPlainString(), 100);
-        addItemColumn("Custodian", InventoryItemView::custodian, 120);
-        addItemColumn("Location", InventoryItemView::storageLocation, 130);
-        addItemColumn("Status", v -> v.status().name(), 90);
-        itemTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
+        addItemColumn("Type", InventoryItemView::itemType, 120);
+        addItemColumn("Qty", v -> formatQuantity(v.quantity()), 90);
+        addItemColumn("Unit", InventoryItemView::unit, 80);
+        addItemColumn("Value", v -> formatMoney(v.unitValue()), 110);
+        addItemColumn("Total", v -> formatMoney(v.totalValue()), 120);
+        addItemColumn("Custodian", InventoryItemView::custodian, 140);
+        addItemColumn("Location", InventoryItemView::storageLocation, 160);
+        addItemColumn("Acquired", v -> formatDate(v.acquisitionDate()), 120);
+        addItemColumn("Status", v -> v.status().name(), 100);
+        restoreTableState(itemTable, "items");
         itemTable.setPlaceholder(new Label("No inventory items found."));
+        itemTable.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2 && itemTable.getSelectionModel().getSelectedItem() != null)
+            {
+                openEditItemEditor();
+            }
+        });
     }
 
     private void configureMovementTable()
     {
-        addMovementColumn("Date", v -> String.valueOf(v.movementDate()), 100);
-        addMovementColumn("Item", InventoryMovementView::inventoryItemName, 160);
-        addMovementColumn("Type", v -> v.movementType().name(), 110);
-        addMovementColumn("Change", v -> v.quantityChange().toPlainString(), 90);
-        addMovementColumn("Result", v -> v.resultingQuantity().toPlainString(), 90);
-        addMovementColumn("Txn", v -> v.transactionId() == null ? "" : String.valueOf(v.transactionId()), 70);
-        addMovementColumn("Notes", InventoryMovementView::notes, 180);
-        movementTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
+        movementTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        addMovementColumn("Date", v -> formatDate(v.movementDate()), 120);
+        addMovementColumn("Item", InventoryMovementView::inventoryItemName, 180);
+        addMovementColumn("Type", v -> v.movementType().name(), 120);
+        addMovementColumn("Change", v -> formatQuantity(v.quantityChange()), 100);
+        addMovementColumn("Result", v -> formatQuantity(v.resultingQuantity()), 100);
+        addMovementColumn("Unit Value", v -> formatMoney(v.unitValue()), 120);
+        addMovementColumn("Txn", v -> v.transactionId() == null ? "" : String.valueOf(v.transactionId()), 80);
+        addMovementColumn("Notes", InventoryMovementView::notes, 220);
+        restoreTableState(movementTable, "movements");
         movementTable.setPlaceholder(new Label("No inventory movements recorded."));
     }
 
@@ -132,6 +216,7 @@ public class InventoryPanel implements AppPanel
         GridPane grid = new GridPane();
         grid.setHgap(6);
         grid.setVgap(6);
+        grid.setPadding(new Insets(4));
         int row = 0;
         row = addRow(grid, row, "Inventory account", inventoryAccount);
         row = addRow(grid, row, "Fund", fund);
@@ -145,13 +230,9 @@ public class InventoryPanel implements AppPanel
         row = addRow(grid, row, "Storage", storageLocation);
         row = addRow(grid, row, "Condition", condition);
         row = addRow(grid, row, "Status", itemStatus);
-        row = addRow(grid, row, "Movement qty", movementQuantity);
-        row = addRow(grid, row, "Movement date", movementDate);
-        row = addRow(grid, row, "Movement notes", movementNotes);
         row = addRow(grid, row, "Notes", notes);
-        VBox box = new VBox(8, new Label("Inventory Item"), grid);
-        box.setPadding(new Insets(0, 0, 0, 10));
-        box.setPrefWidth(360);
+        VBox box = new VBox(8, new Label("Inventory Item Details"), grid);
+        box.setPadding(new Insets(8));
         return box;
     }
 
@@ -171,6 +252,10 @@ public class InventoryPanel implements AppPanel
         else if (editor instanceof ComboBox<?> comboBox)
         {
             comboBox.setMaxWidth(Double.MAX_VALUE);
+        }
+        else if (editor instanceof DatePicker datePicker)
+        {
+            datePicker.setMaxWidth(Double.MAX_VALUE);
         }
         return row + 1;
     }
@@ -201,8 +286,13 @@ public class InventoryPanel implements AppPanel
                     .toList();
             inventoryAccount.getItems().setAll(inventoryAccounts);
             fund.getItems().setAll(UiServiceRegistry.fundLookup().listActiveFunds());
+            Long selectedId = selectedItemId();
             itemTable.getItems().setAll(UiServiceRegistry.inventory().listItems(activeCompanyCode()));
             movementTable.getItems().setAll(UiServiceRegistry.inventory().listMovements(activeCompanyCode()));
+            if (selectedId != null)
+            {
+                selectItem(selectedId);
+            }
             status.setText("Loaded " + itemTable.getItems().size() + " inventory item(s) and " + movementTable.getItems().size() + " movement record(s).");
         }
         catch (RuntimeException ex)
@@ -211,18 +301,69 @@ public class InventoryPanel implements AppPanel
         }
     }
 
+    private void openNewItemEditor()
+    {
+        itemTable.getSelectionModel().clearSelection();
+        editingItemId = null;
+        resetEditorFields();
+        editorTitle.setText("New Inventory Item");
+        dirty = false;
+        showEditorPanel("Enter inventory item details, then Save Item.");
+    }
+
+    private void openEditItemEditor()
+    {
+        InventoryItemView selected = itemTable.getSelectionModel().getSelectedItem();
+        if (selected == null)
+        {
+            status.setText("Select an inventory item before choosing Edit Selected.");
+            return;
+        }
+        loadEditor(selected);
+        editorTitle.setText("Edit Inventory Item — " + selected.name());
+        dirty = false;
+        showEditorPanel("Editing inventory item " + selected.name() + ".");
+    }
+
+    private void cancelItemEditor()
+    {
+        resetEditorFields();
+        showListPanel("Inventory item edit cancelled.");
+    }
+
+    private void showListPanel(String message)
+    {
+        editorOpen = false;
+        dirty = false;
+        root.setCenter(listPanel);
+        status.setText(message);
+    }
+
+    private void showEditorPanel(String message)
+    {
+        editorOpen = true;
+        root.setCenter(itemEditorPanel);
+        status.setText(message);
+    }
+
     private void saveItem()
     {
+        if (!editorOpen)
+        {
+            status.setText("Open New Item or Edit Selected before saving an inventory item.");
+            return;
+        }
         try
         {
-            InventoryItemView selected = itemTable.getSelectionModel().getSelectedItem();
             InventoryItemCommand command = commandFromForm();
-            InventoryItemView saved = selected == null
+            InventoryItemView saved = editingItemId == null
                     ? UiServiceRegistry.inventory().create(command)
-                    : UiServiceRegistry.inventory().update(selected.id(), command);
+                    : UiServiceRegistry.inventory().update(editingItemId, command);
+            editingItemId = saved.id();
             reload();
             selectItem(saved.id());
-            status.setText("Saved inventory item " + saved.name() + ".");
+            dirty = false;
+            showListPanel("Saved inventory item " + saved.name() + ".");
         }
         catch (RuntimeException ex)
         {
@@ -240,10 +381,11 @@ public class InventoryPanel implements AppPanel
         }
         try
         {
+            clearValidation();
             UiServiceRegistry.inventory().recordMovement(selected.id(), new InventoryMovementCommand(
                     type,
-                    parseMoney(movementQuantity),
-                    movementDate.getValue(),
+                    parseQuantityField(movementQuantity, "Movement quantity"),
+                    requiredDate(movementDate, "Movement date"),
                     movementNotes.getText()));
             reload();
             selectItem(selected.id());
@@ -257,16 +399,17 @@ public class InventoryPanel implements AppPanel
 
     private InventoryItemCommand commandFromForm()
     {
+        clearValidation();
         return new InventoryItemCommand(
                 activeCompanyCode(),
-                inventoryAccount.getValue() == null ? null : inventoryAccount.getValue().getId(),
-                fund.getValue() == null ? null : fund.getValue().getId(),
-                name.getText(),
-                itemType.getText(),
-                parseMoney(quantity),
-                unit.getText(),
-                parseMoney(unitValue),
-                acquisitionDate.getValue(),
+                requireSelected(inventoryAccount, "inventory account").getId(),
+                requireSelected(fund, "fund").getId(),
+                requiredText(name, "Item name"),
+                requiredText(itemType, "Item type"),
+                parseQuantityField(quantity, "Quantity"),
+                requiredText(unit, "Unit"),
+                parseMoneyField(unitValue, "Value"),
+                requiredDate(acquisitionDate, "Acquisition date"),
                 custodian.getText(),
                 storageLocation.getText(),
                 condition.getValue(),
@@ -274,46 +417,236 @@ public class InventoryPanel implements AppPanel
                 notes.getText());
     }
 
-    private void clearForm()
+    private void resetEditorFields()
     {
-        itemTable.getSelectionModel().clearSelection();
-        inventoryAccount.getSelectionModel().clearSelection();
-        fund.getSelectionModel().clearSelection();
-        name.clear();
-        itemType.clear();
-        quantity.setText("0.0000");
-        unit.setText("each");
-        unitValue.setText("0.0000");
-        acquisitionDate.setValue(LocalDate.now());
-        custodian.clear();
-        storageLocation.clear();
-        condition.setValue(InventoryItem.Condition.UNKNOWN);
-        itemStatus.setValue(InventoryItem.Status.ACTIVE);
-        notes.clear();
-        movementQuantity.setText("1.0000");
-        movementDate.setValue(LocalDate.now());
-        movementNotes.clear();
+        suppressDirty = true;
+        try
+        {
+            editingItemId = null;
+            inventoryAccount.getSelectionModel().clearSelection();
+            fund.getSelectionModel().clearSelection();
+            name.clear();
+            itemType.clear();
+            quantity.setText("0.0000");
+            unit.setText("each");
+            unitValue.setText("$0.00");
+            acquisitionDate.setValue(LocalDate.now());
+            custodian.clear();
+            storageLocation.clear();
+            condition.setValue(InventoryItem.Condition.UNKNOWN);
+            itemStatus.setValue(InventoryItem.Status.ACTIVE);
+            notes.clear();
+            clearValidation();
+            dirty = false;
+        }
+        finally
+        {
+            suppressDirty = false;
+        }
     }
 
-    private void fillForm(InventoryItemView item)
+    private void loadEditor(InventoryItemView item)
     {
-        if (item == null)
+        suppressDirty = true;
+        try
+        {
+            editingItemId = item.id();
+            selectAccountById(inventoryAccount, item.inventoryAccountId());
+            selectFundById(fund, item.fundId());
+            name.setText(item.name());
+            itemType.setText(item.itemType());
+            quantity.setText(formatQuantity(item.quantity()));
+            unit.setText(item.unit());
+            unitValue.setText(formatMoney(item.unitValue()));
+            acquisitionDate.setValue(item.acquisitionDate());
+            custodian.setText(item.custodian());
+            storageLocation.setText(item.storageLocation());
+            condition.setValue(item.condition());
+            itemStatus.setValue(item.status());
+            notes.setText(item.notes());
+            clearValidation();
+            dirty = false;
+        }
+        finally
+        {
+            suppressDirty = false;
+        }
+    }
+
+    private void installDirtyTracking()
+    {
+        for (TextField field : List.of(name, itemType, quantity, unit, unitValue, custodian, storageLocation))
+        {
+            field.textProperty().addListener((observable, oldValue, newValue) -> markDirty());
+        }
+        notes.textProperty().addListener((observable, oldValue, newValue) -> markDirty());
+        for (ComboBox<?> comboBox : List.of(inventoryAccount, fund, condition, itemStatus))
+        {
+            comboBox.valueProperty().addListener((observable, oldValue, newValue) -> markDirty());
+        }
+        acquisitionDate.valueProperty().addListener((observable, oldValue, newValue) -> markDirty());
+    }
+
+    private void markDirty()
+    {
+        if (!suppressDirty && editorOpen)
+        {
+            dirty = true;
+        }
+    }
+
+    private void installFormatCorrection()
+    {
+        installDecimalCorrection(quantity, false);
+        installDecimalCorrection(movementQuantity, false);
+        installDecimalCorrection(unitValue, true);
+        installDateCorrection(acquisitionDate);
+        installDateCorrection(movementDate);
+    }
+
+    private void installDecimalCorrection(TextField field, boolean money)
+    {
+        field.focusedProperty().addListener((observable, wasFocused, isFocused) -> {
+            if (!isFocused && !field.getText().isBlank())
+            {
+                try
+                {
+                    field.setText(money ? formatMoney(parseMoney(field.getText())) : formatQuantity(parseQuantity(field.getText())));
+                    clearInvalid(field);
+                }
+                catch (RuntimeException ex)
+                {
+                    markInvalid(field);
+                    status.setText((money ? "Money" : "Quantity") + " fields need a valid number.");
+                }
+            }
+        });
+    }
+
+    private void installDateCorrection(DatePicker picker)
+    {
+        picker.getEditor().focusedProperty().addListener((observable, wasFocused, isFocused) -> {
+            if (!isFocused && !picker.getEditor().getText().isBlank())
+            {
+                try
+                {
+                    LocalDate parsed = parseDate(picker.getEditor().getText());
+                    picker.setValue(parsed);
+                    picker.getEditor().setText(formatDate(parsed));
+                    clearInvalid(picker);
+                }
+                catch (RuntimeException ex)
+                {
+                    markInvalid(picker);
+                    status.setText("Date fields need a valid date such as yyyy-mm-dd or m/d/yyyy.");
+                }
+            }
+        });
+    }
+
+    private void installTableStatePersistence(TableView<?> table, String tableKey)
+    {
+        table.getColumns().addListener((ListChangeListener<TableColumn<?, ?>>) change -> saveTableState(table, tableKey));
+        table.getSortOrder().addListener((ListChangeListener<TableColumn<?, ?>>) change -> saveTableState(table, tableKey));
+        for (TableColumn<?, ?> column : table.getColumns())
+        {
+            column.widthProperty().addListener((obs, oldWidth, newWidth) -> saveTableState(table, tableKey));
+            column.sortTypeProperty().addListener((obs, oldSort, newSort) -> saveTableState(table, tableKey));
+        }
+    }
+
+    private void restoreTableState(TableView<?> table, String tableKey)
+    {
+        restoringTableState = true;
+        try
+        {
+            String prefix = tableStatePrefix(tableKey);
+            for (TableColumn<?, ?> column : table.getColumns())
+            {
+                column.setPrefWidth(TABLE_STATE.getDouble(prefix + columnKey(column) + ".width", column.getPrefWidth()));
+                String sort = TABLE_STATE.get(prefix + columnKey(column) + ".sort", "");
+                if ("ASCENDING".equals(sort))
+                {
+                    column.setSortType(TableColumn.SortType.ASCENDING);
+                }
+                else if ("DESCENDING".equals(sort))
+                {
+                    column.setSortType(TableColumn.SortType.DESCENDING);
+                }
+            }
+            restoreColumnOrder(table, prefix);
+            restoreSortOrder(table, prefix);
+        }
+        finally
+        {
+            restoringTableState = false;
+        }
+    }
+
+    private void saveTableState(TableView<?> table, String tableKey)
+    {
+        if (restoringTableState)
         {
             return;
         }
-        selectAccountById(inventoryAccount, item.inventoryAccountId());
-        selectFundById(fund, item.fundId());
-        name.setText(item.name());
-        itemType.setText(item.itemType());
-        quantity.setText(item.quantity().toPlainString());
-        unit.setText(item.unit());
-        unitValue.setText(item.unitValue().toPlainString());
-        acquisitionDate.setValue(item.acquisitionDate());
-        custodian.setText(item.custodian());
-        storageLocation.setText(item.storageLocation());
-        condition.setValue(item.condition());
-        itemStatus.setValue(item.status());
-        notes.setText(item.notes());
+        String prefix = tableStatePrefix(tableKey);
+        TABLE_STATE.put(prefix + "order", String.join(",", table.getColumns().stream().map(InventoryPanel::columnKey).toList()));
+        TABLE_STATE.put(prefix + "sortOrder", String.join(",", table.getSortOrder().stream().map(InventoryPanel::columnKey).toList()));
+        for (TableColumn<?, ?> column : table.getColumns())
+        {
+            TABLE_STATE.putDouble(prefix + columnKey(column) + ".width", column.getWidth() > 0 ? column.getWidth() : column.getPrefWidth());
+            TABLE_STATE.put(prefix + columnKey(column) + ".sort", column.getSortType() == null ? "" : column.getSortType().name());
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static void restoreColumnOrder(TableView table, String prefix)
+    {
+        String order = TABLE_STATE.get(prefix + "order", "");
+        if (order.isBlank())
+        {
+            return;
+        }
+        List<String> keys = List.of(order.split(","));
+        List<TableColumn> ordered = (List<TableColumn>) table.getColumns().stream()
+                .sorted(java.util.Comparator.comparingInt(column -> {
+                    int index = keys.indexOf(columnKey((TableColumn<?, ?>) column));
+                    return index < 0 ? Integer.MAX_VALUE : index;
+                }))
+                .toList();
+        table.getColumns().setAll(ordered);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static void restoreSortOrder(TableView table, String prefix)
+    {
+        String sortOrder = TABLE_STATE.get(prefix + "sortOrder", "");
+        if (sortOrder.isBlank())
+        {
+            return;
+        }
+        List<String> keys = List.of(sortOrder.split(","));
+        table.getSortOrder().setAll((java.util.Collection) table.getColumns().stream()
+                .filter(column -> keys.contains(columnKey((TableColumn<?, ?>) column)))
+                .sorted(java.util.Comparator.comparingInt(column -> keys.indexOf(columnKey((TableColumn<?, ?>) column))))
+                .toList());
+    }
+
+    private static String columnKey(TableColumn<?, ?> column)
+    {
+        Object key = column.getUserData();
+        return key == null ? column.getText().replaceAll("\\W+", "_") : key.toString();
+    }
+
+    private static String tableStatePrefix(String tableKey)
+    {
+        return activeCompanyCode().replaceAll("[^A-Za-z0-9_.-]", "_") + "." + tableKey + ".";
+    }
+
+    private Long selectedItemId()
+    {
+        InventoryItemView selected = itemTable.getSelectionModel().getSelectedItem();
+        return selected == null ? null : selected.id();
     }
 
     private void selectItem(Long id)
@@ -334,9 +667,158 @@ public class InventoryPanel implements AppPanel
         box.getItems().stream().filter(item -> item.getId().equals(id)).findFirst().ifPresent(box::setValue);
     }
 
-    private static BigDecimal parseMoney(TextField field)
+    private <T> T requireSelected(ComboBox<T> box, String label)
     {
-        return new BigDecimal(field.getText().trim());
+        T selected = box.getValue();
+        if (selected == null)
+        {
+            markInvalid(box);
+            throw new IllegalArgumentException("Select " + label + ".");
+        }
+        clearInvalid(box);
+        return selected;
+    }
+
+    private String requiredText(TextField field, String label)
+    {
+        String value = field.getText() == null ? "" : field.getText().trim();
+        if (value.isBlank())
+        {
+            markInvalid(field);
+            throw new IllegalArgumentException(label + " is required.");
+        }
+        clearInvalid(field);
+        return value;
+    }
+
+    private BigDecimal parseMoneyField(TextField field, String label)
+    {
+        try
+        {
+            BigDecimal parsed = parseMoney(field.getText());
+            field.setText(formatMoney(parsed));
+            clearInvalid(field);
+            return parsed;
+        }
+        catch (RuntimeException ex)
+        {
+            markInvalid(field);
+            throw new IllegalArgumentException(label + " needs a valid money amount.");
+        }
+    }
+
+    private BigDecimal parseQuantityField(TextField field, String label)
+    {
+        try
+        {
+            BigDecimal parsed = parseQuantity(field.getText());
+            field.setText(formatQuantity(parsed));
+            clearInvalid(field);
+            return parsed;
+        }
+        catch (RuntimeException ex)
+        {
+            markInvalid(field);
+            throw new IllegalArgumentException(label + " needs a valid quantity.");
+        }
+    }
+
+    private LocalDate requiredDate(DatePicker picker, String label)
+    {
+        try
+        {
+            LocalDate value = picker.getValue() == null && !picker.getEditor().getText().isBlank()
+                    ? parseDate(picker.getEditor().getText())
+                    : picker.getValue();
+            if (value == null)
+            {
+                markInvalid(picker);
+                throw new IllegalArgumentException(label + " is required.");
+            }
+            picker.setValue(value);
+            picker.getEditor().setText(formatDate(value));
+            clearInvalid(picker);
+            return value;
+        }
+        catch (RuntimeException ex)
+        {
+            markInvalid(picker);
+            throw new IllegalArgumentException(label + " needs a valid date.");
+        }
+    }
+
+    private void clearValidation()
+    {
+        for (Node node : List.of(inventoryAccount, fund, name, itemType, quantity, unit, unitValue, acquisitionDate, condition, itemStatus, movementQuantity, movementDate))
+        {
+            clearInvalid(node);
+        }
+    }
+
+    private static void markInvalid(Node node)
+    {
+        if (!node.getStyleClass().contains(INVALID_FIELD_STYLE))
+        {
+            node.getStyleClass().add(INVALID_FIELD_STYLE);
+        }
+    }
+
+    private static void clearInvalid(Node node)
+    {
+        node.getStyleClass().remove(INVALID_FIELD_STYLE);
+    }
+
+    private static String formatMoney(BigDecimal value)
+    {
+        return value == null ? "" : "$" + value.setScale(2, RoundingMode.HALF_UP).toPlainString();
+    }
+
+    private static BigDecimal parseMoney(String raw)
+    {
+        String normalized = raw == null ? "" : raw.trim().replace("$", "").replace(",", "");
+        return normalized.isBlank() ? BigDecimal.ZERO : new BigDecimal(normalized).setScale(4, RoundingMode.HALF_UP);
+    }
+
+    private static String formatQuantity(BigDecimal value)
+    {
+        return value == null ? "" : value.setScale(4, RoundingMode.HALF_UP).toPlainString();
+    }
+
+    private static BigDecimal parseQuantity(String raw)
+    {
+        String normalized = raw == null ? "" : raw.trim().replace(",", "");
+        return normalized.isBlank() ? BigDecimal.ZERO : new BigDecimal(normalized).setScale(4, RoundingMode.HALF_UP);
+    }
+
+    private static String formatDate(LocalDate value)
+    {
+        return value == null ? "" : value.format(DateTimeFormatter.ISO_LOCAL_DATE);
+    }
+
+    private static LocalDate parseDate(String value)
+    {
+        if (value == null || value.isBlank())
+        {
+            return null;
+        }
+        String trimmed = value.trim();
+        for (DateTimeFormatter formatter : List.of(
+                DateTimeFormatter.ISO_LOCAL_DATE,
+                DateTimeFormatter.ofPattern("M/d/uuuu"),
+                DateTimeFormatter.ofPattern("M-d-uuuu"),
+                DateTimeFormatter.ofPattern("MM/dd/uuuu"),
+                DateTimeFormatter.ofPattern("MM-dd-uuuu")))
+        {
+            try
+            {
+                return LocalDate.parse(trimmed, formatter);
+            }
+            catch (DateTimeParseException ignored)
+            {
+                // Try the next accepted UI date format.
+            }
+        }
+        throw new IllegalArgumentException("Date must be valid.");
     }
 
     private static String activeCompanyCode()
@@ -347,16 +829,28 @@ public class InventoryPanel implements AppPanel
     private void addItemColumn(String title, Function<InventoryItemView, String> extractor, double width)
     {
         TableColumn<InventoryItemView, String> column = new TableColumn<>(title);
+        column.setId(title.replaceAll("\\W+", "_"));
+        column.setUserData(column.getId());
         column.setCellValueFactory(row -> new SimpleStringProperty(extractor.apply(row.getValue())));
         column.setPrefWidth(width);
+        column.setMinWidth(72);
+        column.setSortable(true);
+        column.setResizable(true);
+        column.setReorderable(true);
         itemTable.getColumns().add(column);
     }
 
     private void addMovementColumn(String title, Function<InventoryMovementView, String> extractor, double width)
     {
         TableColumn<InventoryMovementView, String> column = new TableColumn<>(title);
+        column.setId(title.replaceAll("\\W+", "_"));
+        column.setUserData(column.getId());
         column.setCellValueFactory(row -> new SimpleStringProperty(extractor.apply(row.getValue())));
         column.setPrefWidth(width);
+        column.setMinWidth(72);
+        column.setSortable(true);
+        column.setResizable(true);
+        column.setReorderable(true);
         movementTable.getColumns().add(column);
     }
 

@@ -47,6 +47,10 @@ All date fields in all data views and editors must follow the active company's d
 4. On commit or focus loss, the UI corrects the displayed date to the configured default date format rather than refusing otherwise valid date input.
 5. These rules affect edit and display formatting only. They do not change the authoritative internal storage format.
 
+## Delete controls
+
+Do not add disabled placeholder Delete buttons. A Delete button should be present only when it performs a real supported delete or correction operation through the authoritative service. Non-deletable records should be explained through status/help text or the applicable inactive, disposed, reversal, or correction workflow.
+
 ## Accounting period display
 
 Accounting periods must be stated in days, quarters, or years as appropriate for the screen, report, or workflow. The start of each fiscal year or period is calculated from the active company's configured start preference. The top chrome active-period selector chooses an accounting period, not an arbitrary day, and the active period start date is derived from the selected period plus the configured period start day.

@@ -38,9 +38,7 @@ public class DepreciationRunsPanel implements AppPanel
         refresh.setOnAction(e -> reload());
         Button run = new Button("Run Monthly Depreciation");
         run.setOnAction(e -> runDepreciation());
-        Button deleteUnavailable = new Button("Delete unavailable — depreciation runs preserve ledger history");
-        deleteUnavailable.setDisable(true);
-        HBox actions = new HBox(8, refresh, new Label("Run date"), runDate, new Label("Notes"), notes, run, deleteUnavailable);
+        HBox actions = new HBox(8, refresh, new Label("Run date"), runDate, new Label("Notes"), notes, run);
 
         root.setTop(new VBox(6, title, actions, status, new Separator()));
         configureAssetTable();

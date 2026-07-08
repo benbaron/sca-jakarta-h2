@@ -17,7 +17,7 @@ P03 introduces one shared spreadsheet-like line editor for transaction entry sur
 - Controls do not calculate authoritative accounting balances; they only present immediate row totals and validation feedback.
 - Save, load/edit, reverse, and replace policy must continue through `TransactionEntryService` and correction services; JavaFX panels only route commands and present validation or protection results.
 - Editor and register regions that can hide default-size text must remain user-resizable and scrollable: use a visible `SplitPane` when a region shares space with another pane, and provide both vertical and horizontal scrolling for hidden rows, columns, or long values instead of increasing minimum widths or relying only on wrapping.
-- Editors for durable records must include Delete or a visible reason Delete is unavailable. Transaction Editor Delete may hard-delete only when Settings -> Correction method is `DIRECT_EDIT`; otherwise it must ask whether to auto-fill and perform a reversing entry, defaulting the reversal date from the active period, and route the confirmed reversal through the correction service.
+- Editors for durable records must not show disabled placeholder Delete buttons. Transaction Editor Delete may hard-delete only when Settings -> Correction method is `DIRECT_EDIT`; otherwise it must ask whether to auto-fill and perform a reversing entry, defaulting the reversal date from the active period, and route the confirmed reversal through the correction service.
 
 ## Donor inspection findings for native transaction entry
 

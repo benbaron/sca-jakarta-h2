@@ -61,9 +61,7 @@ public class AssetsRegisterPanel implements AppPanel
         newAsset.setOnAction(e -> clearForm());
         Button save = new Button("Save Asset");
         save.setOnAction(e -> saveAsset());
-        Button deleteUnavailable = new Button("Delete unavailable — dispose or deactivate asset");
-        deleteUnavailable.setDisable(true);
-        HBox actions = new HBox(8, refresh, newAsset, save, deleteUnavailable);
+        HBox actions = new HBox(8, refresh, newAsset, save);
 
         root.setTop(new VBox(6, title, actions, status, new Separator()));
         root.setCenter(new VBox(8, buildForm(), table));

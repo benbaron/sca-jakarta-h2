@@ -73,7 +73,6 @@ public class BankingPanel implements AppPanel
     private final CheckBox accountActive = new CheckBox("Account active");
     private final Button saveBank = new Button("Save Bank");
     private final Button newBank = new Button("New Bank");
-    private final Button deleteBank = new Button("Delete Bank unavailable — deactivate to preserve history");
     private final Button saveAccount = new Button("Save Bank Account");
     private final Button refresh = new Button("Refresh");
     private final Label status = new Label();
@@ -84,8 +83,6 @@ public class BankingPanel implements AppPanel
         root.setPadding(new Insets(8));
         Label title = new Label("Banking");
         title.getStyleClass().add("panel-title");
-        deleteBank.setDisable(true);
-        deleteBank.setOnAction(event -> status.setText("Bank deletion is disabled in P05-S2; clear Active to preserve statement and reconciliation history."));
         newBank.setOnAction(event -> clearBankForm());
         saveBank.setOnAction(event -> saveBank());
         saveAccount.setOnAction(event -> saveBankAccount());
@@ -93,7 +90,7 @@ public class BankingPanel implements AppPanel
 
         SplitPane split = new SplitPane(bankListPane(), bankAccountPane());
         split.setDividerPositions(0.45);
-        root.setTop(new VBox(6, title, new HBox(8, newBank, saveBank, deleteBank, refresh), status, new Separator()));
+        root.setTop(new VBox(6, title, new HBox(8, newBank, saveBank, refresh), status, new Separator()));
         root.setCenter(split);
 
         configureBankTable();
@@ -120,7 +117,6 @@ public class BankingPanel implements AppPanel
     {
         return new FormState(
                 saveBank.isDisable(),
-                deleteBank.isDisable(),
                 useExistingAccount.isSelected(),
                 createAccount.isSelected(),
                 banks.getItems().size(),
@@ -401,7 +397,7 @@ public class BankingPanel implements AppPanel
             bankSelector.setItems(FXCollections.observableArrayList(bankRows));
             bankAccounts.setItems(FXCollections.observableArrayList(accountRows));
             existingAccountSelector.setItems(FXCollections.observableArrayList(qualifying));
-            status.setText("Loaded " + bankRows.size() + " bank(s), " + accountRows.size() + " configured bank account(s). Delete is intentionally unavailable; deactivate records to preserve history.");
+            status.setText("Loaded " + bankRows.size() + " bank(s), " + accountRows.size() + " configured bank account(s). Deactivate records to preserve statement and reconciliation history.");
         }
         catch (RuntimeException ex)
         {
@@ -538,7 +534,6 @@ public class BankingPanel implements AppPanel
     }
 
     record FormState(boolean saveBankDisabled,
-                     boolean deleteBankDisabled,
                      boolean useExistingAccountSelected,
                      boolean createAccountSelected,
                      int bankCount,

@@ -1,12 +1,13 @@
 ---
-plan_version: 9
+plan_version: 11
 active_phase: P09
-active_slice: P09-S1
+active_slice: P09-C1
 active_status: VERIFYING
-active_branch: codex/P09-S1-h2-inventory
-active_pull_request: "#142"
-active_head: "see PR #142 latest head"
-next_action: "Inspect the full Maven error for GitHub Actions run 28958507387 or the latest rerun, fix the remaining failure, then run or verify mvn clean verify."
+active_branch: codex/P09-C1-inventory-ui-rules
+active_pull_request: "#143"
+active_head: 5006a25c93ceef79c1770c8e537cd7ca8705ae82
+queued_next_slice: P06-C1
+next_action: "Inspect GitHub Actions Maven PR Tests run 28975722099, fix failures, perform desktop visual validation, then implement queued slice P06-C1."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +16,7 @@ next_action: "Inspect the full Maven error for GitHub Actions run 28958507387 or
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records merged P08-S1 and P01-C1 completion, then starts P09-S1 for H2-backed inventory items and movements.
+This revision records merged P09-S1 completion, starts P09-C1 for Inventory UI design-rule corrections and removal of disabled Delete placeholder buttons, and queues P06-C1 as the next implementation slice for the full Bank Reconciliation workspace.
 
 ## 2. Status values
 
@@ -38,10 +39,10 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY for corrective/new slices |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
 | P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137 |
-| P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138 |
+| P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 READY after P09-C1 |
 | P07 | Eliminated former Schedules phase | n/a | DONE through PR #139 |
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140 |
-| P09 | Inventory and supplies | P02 | VERIFYING P09-S1 |
+| P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 VERIFYING |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | BLOCKED |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | BLOCKED |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | BLOCKED |
@@ -92,6 +93,8 @@ Focused documents for current UI/accounting work:
 - Fixed assets are distinct from inventory and require H2-backed asset/depreciation records.
 - Inventory/supplies are distinct from fixed assets and require H2-backed item/movement records.
 - Production widgets with visible non-blank display text should expose their full text on hover, except text boxes and custom-help tooltip cases.
+- Disabled placeholder Delete buttons are not part of the UI contract; a Delete button must perform a real supported operation.
+- Bank Reconciliation must become a full statement-to-ledger matching workspace, not only a saved comparison table.
 
 ## 6. Completed phases and slices
 
@@ -143,11 +146,44 @@ Validation recorded in PR #137: focused banking/import/reconciliation tests and 
 # P06 — Bank reconciliation and cleared-state comparison
 
 **Selector:** `PHASE=P06`
-**Status:** DONE through PR #138
+**Status:** DONE through PR #138; corrective P06-C1 READY after P09-C1
 **Depends on:** P05
 
 Completed deliverables: removed approval semantics; added configured-account reconciliation comparison; added unresolved report summaries backed by H2 run records.
 Known follow-up: per-line cleared-state resolution choices and edit-existing reconciliation workflow remain later P06/P10/P11 work.
+
+### P06-C1 — Full Bank Reconciliation workspace
+
+Status: READY, queued after P09-C1.
+
+Purpose: replace the partial comparison-only surface with the requirements-driven Bank Reconciliation workspace.
+
+Required behavior:
+
+- Show only configured bank accounts linked through the Banking panel, not every chart account of type BANK.
+- Read transactions for the selected configured bank account.
+- Calculate beginning balance from the most recent closed period ending before the statement date, activity after that close through the statement date, and ending book balance at the statement date.
+- Show balance cards for beginning balance, book balance at statement date for all transactions, book balance at statement date for cleared-only transactions, statement ending balance, and difference.
+- Store cleared state on the ledger transaction line involving the bank account.
+- Treat transactions with multiple bank-account lines by reconciling each bank-account ledger line independently.
+- Support statement sources for manual entry, CSV import, OFX import, and QIF import.
+- Match imported/manual statement entries to internal ledger bank-account lines using statement matching rules.
+- Provide all four cleared-state mismatch policies: warn only; overwrite ledger cleared state; never overwrite and require manual resolution; decide per imported line.
+- Provide a two-table matching workspace with imported/manual statement entries on one side and ledger bank-account lines on the other.
+- Provide matching actions: auto match, match selected, unmatch, mark cleared, and resolve difference.
+- Report unmatched ledger transactions, unmatched statement entries, amount mismatches, date mismatches, duplicate possible matches, cleared-state mismatches, beginning balance differences, and ending balance differences.
+- Allow users to save unresolved reconciliation reports.
+- Allow users to start a new reconciliation or edit an existing reconciliation.
+- Replace the current started/completed/failed run model and any approve/reject semantics with the new reconciliation session and report workflow.
+
+Definition of done for P06-C1:
+
+- JavaFX panel layout matches the approved Bank Reconciliation layout direction, excluding external annotation callouts.
+- UI uses service/query boundaries and contains no SQL.
+- Durable reconciliation sessions, statement entries, match decisions, mismatch resolutions, and saved reports are H2-backed through nondestructive migrations.
+- Cleared-state updates route through the canonical ledger service boundary and apply the selected overwrite/warn/manual policy.
+- Tests cover configured-account filtering, balance calculations from last close through statement date, matching categories, mismatch policy behavior, save-unresolved, edit-existing, and no approval/rejection workflow.
+- `doc/interface-operation-matrix.md` is updated to mark the old partial surface replaced.
 
 # P07 — Eliminated former Schedules phase
 
@@ -180,22 +216,27 @@ Completed deliverables: `FullTextTooltipInstaller` utility; production `MainApp`
 # P09 — Inventory and supplies
 
 **Selector:** `PHASE=P09`
-**Status:** VERIFYING P09-S1
+**Status:** DONE through PR #142; corrective P09-C1 VERIFYING
 **Depends on:** P02
 
 Required behavior: implement genuine Inventory item add and movement history; remove runbook subpane; use canonical transactions when financially relevant.
 
 ### P09-S1 — H2 inventory items and movement history
 
+Status: DONE through PR #142.
+
+Completed deliverables: V56 inventory item/movement migration; `InventoryItem` and `InventoryMovement` JPA entities; `InventoryService` create/update/list/movement behavior; `InventoryPanel` reads/writes through `InventoryService`; inventory text runbook sidecar removed from `UiWorkspaceDataStore` and `RunbookPersistence`; focused service tests and docs added/updated.
+
+### P09-C1 — Inventory UI design-rule correction and disabled Delete cleanup
+
 Status: VERIFYING.
 
-Branch: `codex/P09-S1-h2-inventory`
-Pull request: #142
-Head: see PR #142 latest head.
-Completed deliverables in branch: V56 inventory item/movement migration; `InventoryItem` and `InventoryMovement` JPA entities; `InventoryService` create/update/list/movement behavior; `InventoryPanel` reads/writes through `InventoryService`; inventory text runbook sidecar removed from `UiWorkspaceDataStore` and `RunbookPersistence`; focused service tests and docs added/updated.
-Validation: GitHub Actions Maven PR Tests failed on run 28958507387. The connector log output is truncated before the Maven error section; likely stale runbook and H2/test-isolation issues have already been patched in branch.
-Remaining deliverables: inspect the full Maven error, fix the remaining failure, perform desktop visual review, and update this plan.
-Next exact action: inspect the full Maven failure output for run 28958507387 or the latest rerun and patch the remaining red-build cause.
+Branch: `codex/P09-C1-inventory-ui-rules`
+Pull request: #143
+Head: `5006a25c93ceef79c1770c8e537cd7ca8705ae82`
+Completed deliverables in branch: Inventory global New/Save hooks; item-editor subpanel navigation from New Item, Edit Selected, and table double-click; dirty-state tracking; validation highlighting; common money/date parsing and formatting; unconstrained inventory tables; per-company table-state persistence; disabled Delete placeholder buttons removed from Banking, Asset Register, Depreciation Runs, Inventory, and Reconciliation; docs and source guardrail tests updated.
+Remaining deliverables: inspect GitHub Actions run 28975722099, fix failures, perform desktop visual review, and update this plan.
+Next exact action: inspect GitHub Actions output.
 
 # P10 — Period close, reopening, and factual audit history
 
@@ -273,7 +314,7 @@ Execute validation for:
 
 ```text
 PHASE=P09
-SLICE=P09-S1
+SLICE=P09-C1
 ```
 
-Inspect the full Maven failure output for run 28958507387 or the latest rerun and patch the remaining red-build cause.
+Inspect GitHub Actions run 28975722099, then fix any failures before marking the draft PR ready. After P09-C1 is merged, implement queued slice P06-C1.
