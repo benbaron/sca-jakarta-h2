@@ -5,8 +5,8 @@ active_slice: P09-S1
 active_status: VERIFYING
 active_branch: codex/P09-S1-h2-inventory
 active_pull_request: "#142"
-active_head: 887a5f1a17b6d9d14897d8562fc207a2ecefeec0
-next_action: "Inspect GitHub Actions Maven PR Tests run 28957998072, fix failures, then run or verify mvn clean verify."
+active_head: 8282821795ee687aa7ccbc0617920d3cfbf435cb
+next_action: "Inspect the full Maven error for GitHub Actions run 28958507387, fix the remaining failure, then run or verify mvn clean verify."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -191,10 +191,11 @@ Status: VERIFYING.
 
 Branch: `codex/P09-S1-h2-inventory`
 Pull request: #142
-Head: `887a5f1a17b6d9d14897d8562fc207a2ecefeec0`
+Head: `8282821795ee687aa7ccbc0617920d3cfbf435cb`
 Completed deliverables in branch: V56 inventory item/movement migration; `InventoryItem` and `InventoryMovement` JPA entities; `InventoryService` create/update/list/movement behavior; `InventoryPanel` reads/writes through `InventoryService`; inventory text runbook sidecar removed from `UiWorkspaceDataStore` and `RunbookPersistence`; focused service tests and docs added/updated.
-Remaining deliverables: inspect GitHub Actions run 28957998072, fix failures, perform desktop visual review, and update this plan.
-Next exact action: inspect GitHub Actions output and fix any failures.
+Validation: GitHub Actions Maven PR Tests failed on run 28958507387. The connector log output is truncated before the Maven error section; likely stale runbook and H2/test-isolation issues have already been patched in branch.
+Remaining deliverables: inspect the full Maven error, fix the remaining failure, perform desktop visual review, and update this plan.
+Next exact action: inspect the full Maven failure output for run 28958507387 and patch the remaining red-build cause.
 
 # P10 — Period close, reopening, and factual audit history
 
@@ -275,4 +276,4 @@ PHASE=P09
 SLICE=P09-S1
 ```
 
-Inspect GitHub Actions run 28957998072, then fix any failures before marking the draft PR ready.
+Inspect the full Maven failure output for run 28958507387 and patch the remaining red-build cause.
