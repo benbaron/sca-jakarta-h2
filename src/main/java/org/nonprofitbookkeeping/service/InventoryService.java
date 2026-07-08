@@ -118,7 +118,7 @@ public class InventoryService
                     .setParameter("companyCode", normalizeCompanyCode(companyCode))
                     .getResultList()
                     .stream()
-                    .map(this::toView)
+                    .map(InventoryService::toView)
                     .toList();
         }
     }
@@ -185,7 +185,7 @@ public class InventoryService
                     .setParameter("companyCode", normalizeCompanyCode(companyCode))
                     .getResultList()
                     .stream()
-                    .map(this::toMovementView)
+                    .map(InventoryService::toMovementView)
                     .toList();
         }
     }
