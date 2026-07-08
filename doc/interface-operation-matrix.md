@@ -1,6 +1,6 @@
 # Interface operation matrix
 
-Status: P00 inventory of current main, updated through P08-S1 fixed asset/depreciation persistence. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
+Status: P00 inventory of current main, updated through P09-S1 inventory persistence. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
 
 ## Scope and evidence
 
@@ -9,7 +9,7 @@ Status: P00 inventory of current main, updated through P08-S1 fixed asset/deprec
 - `NavigationPane` exposes the same panel set in grouped left navigation.
 - Global commands route from `MainWindow`/toolbar/menu through `PanelHost` to `AppPanel` hooks (`onNew`, `onSave`, `onCopy`, `onPaste`, `onRunCommand`).
 - `UiServiceRegistry` creates JPA-backed lookup/admin/report services, plus JDBC repositories for reconciliation, period-close, and approval audit run panels.
-- Search evidence: `UiWorkspaceDataStore` and `RunbookPersistence` remain active sidecar/static stores for unfinished inventory, import/export, and bank-transaction surfaces; the former top-level Schedules panel and the asset/depreciation runbook sidecars were removed in P07/P08-S1.
+- Search evidence: `UiWorkspaceDataStore` and sidecar/static stores remain active for unfinished import/export and bank-transaction surfaces; the former top-level Schedules panel, asset/depreciation runbook sidecars, and inventory runbook sidecar were removed in P07/P08-S1/P09-S1.
 
 ## Global commands
 
@@ -43,7 +43,7 @@ Every panel that creates or maintains durable records must expose Delete or a vi
 | `BUDGET_VS_ACTUAL` | `BudgetVsActualPanel` | active budget variance table, run/refresh | `BudgetPlanService.activeVariance` | none | yes for queried H2 data | yes for active budget and actual ledger data | active `budget_plan`/`budget_line`, canonical ledger actuals | neutral state when no active budget version exists | report-library expansion remains P11 | P04/P11 |
 | `ASSETS_REGISTER` | `AssetsRegisterPanel` | H2 asset table, asset form, account/fund selectors, save/new, disabled Delete explanation | `FixedAssetService`, account/fund lookup services | `FixedAssetService.create/update` | yes | yes | `fixed_asset`, chart accounts, funds | old lifecycle runbook removed | disposal/impairment specialization and table-state polish | P08 |
 | `DEPRECIATION_RUNS` | `DepreciationRunsPanel` | depreciation basis table, run date/notes, run monthly depreciation, completed run table, disabled Delete explanation | `FixedAssetService` | `FixedAssetService.runMonthlyDepreciation` creates canonical `Txn` and `fixed_asset_depreciation_run` | yes | yes | `fixed_asset`, `fixed_asset_depreciation_run`, canonical `Txn`/`TxnSplit` | old depreciation runbook removed | richer period batching and report integration | P08 |
-| `INVENTORY` | `InventoryPanel` | item/movement inputs, movement log | schedule eligibility + sidecar movements | `UiWorkspaceDataStore.appendInventoryMovementEntry` | yes, sidecar file | no | schedule eligibility services, sidecar runbook | inventory movements are sidecar text | inventory/supplies model and accounting | P09 |
+| `INVENTORY` | `InventoryPanel` | inventory item table, movement-history table, item form, account/fund selectors, save/new, receipt/issue/adjustment buttons, disabled Delete explanation | `InventoryService`, account/fund lookup services | `InventoryService.create/update/recordMovement` | yes | yes | `inventory_item`, `inventory_movement`, chart accounts, funds | old inventory runbook removed | financially relevant movement-to-ledger automation, reports, and table-state polish | P09 |
 | `RECONCILIATION_RUNS` | `ReconciliationRunsPanel` | configured-account selector, date range, comparison run/save controls, comparison table, saved run table, record started/completed/failed buttons, comparison-workflow note | `BankConfigurationService`, `ReconciliationComparisonService`, reconciliation run repository | `ReconciliationComparisonService` saves unresolved reports through reconciliation run records; run buttons write reconciliation run records | yes | partially; run/report summaries are H2 and comparison reads canonical H2 ledger/import facts | configured `Bank`/`CompanyBankAccount`, canonical `Txn`/`TxnSplit`, `BankStatementLine`, reconciliation run repository | comparison uses real H2 records; mismatch resolution choices and report edit/reopen remain later work | per-line cleared-state resolution choices and edit existing reconciliation workflow | P06 |
 | `PERIOD_CLOSE_RUNS` | `PeriodCloseRunsPanel` | run table, close/reopen/approve/reject buttons | `PeriodCloseService`/JDBC repository | period close run repository | yes | partially; run records are H2 | period-close repository, approval audit | approve/reject controls conflict with policy | close/reopen and audit policy alignment | P10 |
 | `IMPORT_PREVIEW` | `ImportPreviewPanel` | preview buttons, accepted/rejected tables | `ImportPreviewService` | preview only except external import actions | no for staged rows | no until accepted elsewhere | CSV parser/import preview service | staging is in-memory by design | accepted import through canonical transaction service | P05 |
@@ -67,6 +67,6 @@ Every panel that creates or maintains durable records must expose Delete or a vi
 
 1. P01 must replace static panel factories and global text dispatch with lifecycle-owned workspace services and typed commands.
 2. P02/P03 must provide a canonical transaction command service before enabling transaction-editor persistence.
-3. P09 must still remove sidecar/static stores from inventory operations.
+3. P09 must still add financially relevant movement-to-ledger automation and inventory reporting.
 4. P06 must finish per-line cleared-state resolution choices and edit existing reconciliation workflow.
 5. P10/P12 must remove approval/rejection terminology from user-facing production workflows unless the plan is amended.
