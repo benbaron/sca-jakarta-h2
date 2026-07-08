@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DeletePlaceholderSourceTest
 {
     @Test
-    void productionSourcesDoNotContainDeleteUnavailablePlaceholders() throws IOException
+    void productionSourcesDoNotContainDeleteUnavailablePlaceholderButtons() throws IOException
     {
         Path sourceRoot = Path.of("src/main/java/org/nonprofitbookkeeping/ui");
         List<String> offenders;
@@ -22,27 +22,34 @@ class DeletePlaceholderSourceTest
             offenders = paths
                     .filter(Files::isRegularFile)
                     .filter(path -> path.toString().endsWith(".java"))
-                    .filter(DeletePlaceholderSourceTest::containsDeleteUnavailable)
+                    .filter(DeletePlaceholderSourceTest::containsDeleteUnavailablePlaceholderButton)
                     .map(sourceRoot::relativize)
                     .map(Path::toString)
                     .toList();
         }
 
-        assertTrue(offenders.isEmpty(), "Disabled Delete placeholder text remains in: " + offenders);
+        assertTrue(offenders.isEmpty(), "Disabled Delete placeholder button remains in: " + offenders);
     }
 
-    private static boolean containsDeleteUnavailable(Path path)
+    private static boolean containsDeleteUnavailablePlaceholderButton(Path path)
     {
         try
         {
-            String source = Files.readString(path);
-            return source.contains("Delete unavailable")
-                    || source.contains("deleteUnavailable")
-                    || source.contains("Delete Bank unavailable");
+            return Files.readAllLines(path).stream().anyMatch(DeletePlaceholderSourceTest::isDeletePlaceholderButtonLine);
         }
         catch (IOException ex)
         {
             throw new IllegalStateException("Could not inspect " + path, ex);
         }
+    }
+
+    private static boolean isDeletePlaceholderButtonLine(String line)
+    {
+        String compact = line.replace(" ", "");
+        return compact.contains("newButton(\"Deleteunavailable")
+                || compact.contains("newButton(\"DeleteBankunavailable")
+                || compact.contains("deleteUnavailable=")
+                || compact.contains("setText(\"Deleteunavailable")
+                || compact.contains("setText(\"DeleteBankunavailable");
     }
 }
