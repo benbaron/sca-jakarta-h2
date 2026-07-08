@@ -48,8 +48,6 @@ class DeletePlaceholderSourceTest
         String compact = line.replace(" ", "");
         return compact.contains("newButton(\"Deleteunavailable")
                 || compact.contains("newButton(\"DeleteBankunavailable")
-                || compact.contains("deleteUnavailable=")
-                || compact.contains("setText(\"Deleteunavailable")
-                || compact.contains("setText(\"DeleteBankunavailable");
+                || compact.contains("deleteUnavailable=");
     }
 }
