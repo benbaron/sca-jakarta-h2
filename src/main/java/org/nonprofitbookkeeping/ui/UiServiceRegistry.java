@@ -12,6 +12,7 @@ import org.nonprofitbookkeeping.service.AccountAdminService;
 import org.nonprofitbookkeeping.service.AccountLookupService;
 import org.nonprofitbookkeeping.service.ApprovalAuditService;
 import org.nonprofitbookkeeping.service.BankConfigurationService;
+import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService;
 import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
 import org.nonprofitbookkeeping.service.BudgetCategoryLookupService;
 import org.nonprofitbookkeeping.service.BudgetPlanService;
@@ -72,6 +73,7 @@ public final class UiServiceRegistry
     public static SampleCompanyService sampleCompany() { return services().sampleCompany(); }
     public static FinancialReportService financialReports() { return services().financialReports(); }
     public static DashboardQueryService dashboardQuery() { return services().dashboardQuery(); }
+    public static BankReconciliationWorkspaceService bankReconciliationWorkspace() { return services().bankReconciliationWorkspace(); }
 
     private static ServiceBundle services()
     {
@@ -152,7 +154,8 @@ public final class UiServiceRegistry
                 new TransactionReferenceDataService(jpa),
                 new SampleCompanyService(jpa),
                 new FinancialReportService(jpa),
-                new JpaDashboardQueryService(jpa));
+                new JpaDashboardQueryService(jpa),
+                new BankReconciliationWorkspaceService(jpa));
     }
 
     public static ReconciliationRunRepository reconciliationRunRepository()
@@ -240,7 +243,8 @@ public final class UiServiceRegistry
             TransactionReferenceDataService transactionReferenceData,
             SampleCompanyService sampleCompany,
             FinancialReportService financialReports,
-            DashboardQueryService dashboardQuery)
+            DashboardQueryService dashboardQuery,
+            BankReconciliationWorkspaceService bankReconciliationWorkspace)
     {
         void close()
         {
