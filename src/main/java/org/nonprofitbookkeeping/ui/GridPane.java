@@ -1,6 +1,9 @@
 package org.nonprofitbookkeeping.ui;
 
-/** Local alias so TransactionEditorPanel can use GridPane without an explicit import. */
-final class GridPane extends javafx.scene.layout.GridPane
+/** Retired placeholder left package-private to avoid source deletion churn. */
+final class GridPaneAlias
 {
+    private GridPaneAlias()
+    {
+    }
 }
