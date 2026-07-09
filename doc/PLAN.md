@@ -1,12 +1,12 @@
 ---
-plan_version: 16
-active_phase: P05
-active_slice: P05-C5
-active_status: VERIFYING
-active_branch: codex/P05-C5-banking-horizontal-split
-active_pull_request: "#148"
-active_head: 1ceeb637ba4ab417ebc35701dd7e4c86c0941d6a
-next_action: "Inspect GitHub Actions for PR #148 and perform laptop-width desktop visual validation of the Banking top/bottom split."
+plan_version: 17
+active_phase: P03
+active_slice: P03-C4
+active_status: READY
+active_branch: pending
+active_pull_request: pending
+active_head: pending
+next_action: "Start P03-C4 from current main: create codex/P03-C4-transaction-editor-table-state, inspect TransactionEditorPanel and related tests, then implement table-state hardening for Transaction Editor tables."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Inspect GitHub Actions for PR #148 and perform laptop-width deskto
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P06-C2 as DONE through PR #147 and opens P05-C5 to correct the Banking panel layout so Financial Institutions and Configured Bank Accounts are split top/bottom rather than left/right.
+This revision records P05-C5 as DONE through PR #148 and activates P03-C4 as the next unblocked corrective slice for Transaction Editor table-state hardening.
 
 ## 2. Status values
 
@@ -35,9 +35,9 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P00 | Documentation and implementation inventory | none | DONE; update matrices as touched |
 | P01 | Production shell and workspace composition | P00 | DONE; corrective P01-C1 DONE through PR #141 |
 | P02 | Canonical ledger and transaction operations | P00 | DONE; retain |
-| P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY for corrective/new slices |
+| P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY; corrective P03-C4 READY |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
-| P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137; corrective P05-C5 VERIFYING |
+| P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137; corrective P05-C5 DONE through PR #148 |
 | P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 DONE through PR #146; corrective P06-C2 DONE through PR #147 |
 | P07 | Eliminated former Schedules phase | n/a | DONE through PR #139 |
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 DONE through PR #144 |
@@ -115,7 +115,7 @@ Status: DONE, retain.
 
 ### P03 — Transaction Editor, Ledger Register, and Journal Pane
 
-Status: READY for corrective/new slices.
+Status: READY; corrective P03-C4 READY.
 
 Completed slices:
 
@@ -123,13 +123,31 @@ Completed slices:
 - P03-C2 Journal Pane and Inspect Journal navigation: DONE.
 - P03-C3 Transaction Editor Delete correction action: DONE.
 
+### P03-C4 — Transaction Editor table-state hardening
+
+Status: READY.
+Branch: pending
+Pull request: pending
+
+Purpose: bring Transaction Editor table-bearing regions into the current UI design-rule contract for sortable/resizable/reorderable columns with active-company table-state persistence.
+
+Required behavior:
+
+- Inspect `TransactionEditorPanel`, related editor table models/cells, and existing P03 tests from current `main`.
+- Preserve all existing transaction-entry behavior and service boundaries.
+- Add or reuse per-company table-state persistence for Transaction Editor tables.
+- Keep JavaFX panels free of SQL and route persistence through existing UI/session preference mechanisms only where appropriate.
+- Add focused tests or source/layout guardrails proving the table-state contract is wired.
+
+Next exact action: create `codex/P03-C4-transaction-editor-table-state` from current `main`, inspect the Transaction Editor implementation, and implement the focused corrective slice.
+
 ### P04 — Persistent budgeting
 
 Status: DONE, retrofit as touched.
 
 ### P05 — Banking configuration and statement import
 
-Status: DONE through PR #137; corrective P05-C5 VERIFYING.
+Status: DONE through PR #137; corrective P05-C5 DONE through PR #148.
 
 Completed slices:
 
@@ -142,22 +160,11 @@ Validation recorded in PR #137: focused banking/import/reconciliation tests and 
 
 ### P05-C5 — Banking panel horizontal master-panel layout correction
 
-Status: VERIFYING.
-Branch: `codex/P05-C5-banking-horizontal-split`
-Pull request: #148
-Head: `1ceeb637ba4ab417ebc35701dd7e4c86c0941d6a`
+Status: DONE through PR #148.
 
-Purpose: improve Banking panel usability on laptop-width workspaces by changing the main Financial Institutions / Configured Bank Accounts split from side-by-side panes to top/bottom panes separated by a horizontal splitter.
+Completed deliverables: Banking panel main `SplitPane` now uses `Orientation.VERTICAL`, placing Financial Institutions above Configured Bank Accounts; existing Banking behavior, persistence, buttons, selectors, editor forms, and service boundaries are preserved; bank and configured-account tables grow within their sections; `BankingPanelSourceTest` guards the top/bottom split contract.
 
-Implemented in branch:
-
-- Banking panel main `SplitPane` now uses `Orientation.VERTICAL`, placing Financial Institutions above Configured Bank Accounts.
-- Existing Banking behavior, persistence, buttons, selectors, editor forms, and service boundaries are preserved.
-- Bank and configured-account tables are allowed to grow within their sections.
-- Added `BankingPanelSourceTest` guardrail for the intended top/bottom split contract.
-
-Remaining deliverables: inspect GitHub Actions for PR #148 and perform desktop visual validation at laptop width.
-Next exact action: inspect GitHub Actions output.
+Validation: Maven PR Tests run 29030312409 completed successfully, and laptop-width desktop visual validation was approved by the user.
 
 ## 7. Active and recent phase contracts
 
@@ -200,7 +207,7 @@ Required behavior: implement Asset Register add/edit and depreciation behavior t
 
 Status: DONE through PR #140.
 
-Completed deliverables: V55 fixed asset/depreciation-run migration; `FixedAsset` and `FixedAssetDepreciationRun` JPA entities; `FixedAssetService` create/update/list/depreciation-run behavior; depreciation runs create canonical `Txn`/`TxnSplit` rows; Asset Register and Depreciation Runs panels read/write through `FixedAssetService`; asset/depreciation runbook sidecars removed; docs and focused tests added/updated, including a Flyway migration-version uniqueness guardrail.
+Completed deliverables: V55 fixed asset/depreciation-run migration; `FixedAsset` and `FixedAssetDepreciationRun` JPA entities; `FixedAssetService` create/update/list/depreciation-run behavior; depreciation runs create canonical `Txn` and `TxnSplit` rows; Asset Register and Depreciation Runs panels read/write through `FixedAssetService`; asset/depreciation runbook sidecars removed; docs and focused tests added/updated, including a Flyway migration-version uniqueness guardrail.
 
 ### P08-C1 — Asset Register selector display labels
 
@@ -307,11 +314,11 @@ Before a PR is ready:
 
 ## 10. Current next action
 
-Execute validation for:
+Begin implementation for:
 
 ```text
-PHASE=P05
-SLICE=P05-C5
+PHASE=P03
+SLICE=P03-C4
 ```
 
-Inspect GitHub Actions for PR #148 and perform laptop-width desktop visual validation of the Banking top/bottom split.
+Create `codex/P03-C4-transaction-editor-table-state` from current `main`, inspect `TransactionEditorPanel` and related tests, then implement Transaction Editor table-state hardening.
