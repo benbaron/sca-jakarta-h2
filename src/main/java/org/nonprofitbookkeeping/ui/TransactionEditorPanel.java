@@ -3,7 +3,6 @@ package org.nonprofitbookkeeping.ui;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
 import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -31,6 +30,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -670,8 +670,8 @@ public class TransactionEditorPanel implements AppPanel
                 if ("ASCENDING".equals(sort)) column.setSortType(TableColumn.SortType.ASCENDING);
                 else if ("DESCENDING".equals(sort)) column.setSortType(TableColumn.SortType.DESCENDING);
             }
-            restoreColumnOrder(prefix, splitTable);
-            restoreSortOrder(prefix, splitTable);
+            restoreSplitColumnOrder(prefix);
+            restoreSplitSortOrder(prefix);
         }
         finally
         {
@@ -692,30 +692,30 @@ public class TransactionEditorPanel implements AppPanel
         }
     }
 
-    private void restoreColumnOrder(String prefix, TableView<?> table)
+    private void restoreSplitColumnOrder(String prefix)
     {
         String order = TABLE_STATE.get(prefix + "order", "");
         if (order.isBlank()) return;
         List<String> keys = List.of(order.split(","));
-        List<TableColumn<?, ?>> columns = new ArrayList<>(table.getColumns());
+        List<TableColumn<SplitRow, ?>> columns = new ArrayList<>(splitTable.getColumns());
         columns.sort(Comparator.comparingInt(column -> {
             int index = keys.indexOf(columnKey(column));
             return index < 0 ? Integer.MAX_VALUE : index;
         }));
-        table.getColumns().setAll(columns);
+        splitTable.getColumns().setAll(columns);
     }
 
-    private void restoreSortOrder(String prefix, TableView<?> table)
+    private void restoreSplitSortOrder(String prefix)
     {
         String sortOrder = TABLE_STATE.get(prefix + "sortOrder", "");
         if (sortOrder.isBlank()) return;
         List<String> keys = List.of(sortOrder.split(","));
-        List<TableColumn<?, ?>> restored = new ArrayList<>();
+        List<TableColumn<SplitRow, ?>> restored = new ArrayList<>();
         for (String key : keys)
         {
-            table.getColumns().stream().filter(column -> Objects.equals(columnKey(column), key)).findFirst().ifPresent(restored::add);
+            splitTable.getColumns().stream().filter(column -> Objects.equals(columnKey(column), key)).findFirst().ifPresent(restored::add);
         }
-        table.getSortOrder().setAll(restored);
+        splitTable.getSortOrder().setAll(restored);
     }
 
     private void installSupplementalTableStatePersistence(SupplementalKind kind, TableView<SupplementalRow> table)
@@ -735,7 +735,38 @@ public class TransactionEditorPanel implements AppPanel
         for (TableColumn<SupplementalRow, ?> column : table.getColumns())
         {
             column.setPrefWidth(SUPPLEMENTAL_TABLE_STATE.getDouble(prefix + columnKey(column) + ".width", column.getPrefWidth()));
+            String sort = SUPPLEMENTAL_TABLE_STATE.get(prefix + columnKey(column) + ".sort", "");
+            if ("ASCENDING".equals(sort)) column.setSortType(TableColumn.SortType.ASCENDING);
+            else if ("DESCENDING".equals(sort)) column.setSortType(TableColumn.SortType.DESCENDING);
         }
+        restoreSupplementalColumnOrder(prefix, table);
+        restoreSupplementalSortOrder(prefix, table);
+    }
+
+    private void restoreSupplementalColumnOrder(String prefix, TableView<SupplementalRow> table)
+    {
+        String order = SUPPLEMENTAL_TABLE_STATE.get(prefix + "order", "");
+        if (order.isBlank()) return;
+        List<String> keys = List.of(order.split(","));
+        List<TableColumn<SupplementalRow, ?>> columns = new ArrayList<>(table.getColumns());
+        columns.sort(Comparator.comparingInt(column -> {
+            int index = keys.indexOf(columnKey(column));
+            return index < 0 ? Integer.MAX_VALUE : index;
+        }));
+        table.getColumns().setAll(columns);
+    }
+
+    private void restoreSupplementalSortOrder(String prefix, TableView<SupplementalRow> table)
+    {
+        String sortOrder = SUPPLEMENTAL_TABLE_STATE.get(prefix + "sortOrder", "");
+        if (sortOrder.isBlank()) return;
+        List<String> keys = List.of(sortOrder.split(","));
+        List<TableColumn<SupplementalRow, ?>> restored = new ArrayList<>();
+        for (String key : keys)
+        {
+            table.getColumns().stream().filter(column -> Objects.equals(columnKey(column), key)).findFirst().ifPresent(restored::add);
+        }
+        table.getSortOrder().setAll(restored);
     }
 
     private void saveSupplementalTableState(SupplementalKind kind, TableView<SupplementalRow> table)
