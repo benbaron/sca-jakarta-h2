@@ -1,12 +1,12 @@
 ---
-plan_version: 19
+plan_version: 20
 active_phase: P03
 active_slice: P03-C4
 active_status: VERIFYING
 active_branch: codex/P03-C4-transaction-editor-table-state-plan
 active_pull_request: "#149"
-active_head: 50fdab8d52ca7a8e61f28a33b8a0cb8c19a57c24
-next_action: "Perform desktop visual validation of Transaction Editor and Journal Pane on laptop-width workspace, then retry the editor-guidelines documentation update if still required."
+active_head: dddfa92d52580970296c785f1333b2853ed843c7
+next_action: "Perform desktop visual validation of Transaction Editor and Journal Pane on laptop-width workspace."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -129,7 +129,7 @@ Completed slices:
 Status: VERIFYING.
 Branch: `codex/P03-C4-transaction-editor-table-state-plan`
 Pull request: #149
-Head: `50fdab8d52ca7a8e61f28a33b8a0cb8c19a57c24`
+Head: `dddfa92d52580970296c785f1333b2853ed843c7`
 
 Purpose: redesign the Transaction Editor and Journal Pane for usable, laptop-width transaction entry and review, using the legacy `benbaron/NonprofitAccounting` JavaFX UI package only as a design reference.
 
@@ -144,16 +144,16 @@ Implemented in branch:
 - `JournalPane` now groups journal projections into transaction-level rows with Date, Account Title and Description, Fund, Cleared, Debit, Credit, Transaction ID, Supplemental, and Memo/Details regions.
 - Journal Pane adds New, Edit, Delete, and Refresh actions. Delete routes through the current correction policy and `TransactionCorrectionService` rather than deleting table rows.
 - `TransactionEditorRedesignSourceTest` and updated `JournalPaneTest` guard the redesign structure, grouped-journal behavior, table-state wiring, and absence of reintroduced generic Schedules navigation/class usage.
-- `doc/interface-operation-matrix.md` is updated for the new Transaction Editor and Journal Pane behavior.
+- `doc/interface-operation-matrix.md` and `doc/ui/editor-guidelines.md` are updated for the new Transaction Editor and Journal Pane behavior.
 
 Validation so far:
 
 - Maven PR Tests run 29039185959 completed successfully for head `50fdab8d52ca7a8e61f28a33b8a0cb8c19a57c24`.
+- Maven PR Tests run 29039394914 completed successfully for head `dddfa92d52580970296c785f1333b2853ed843c7` after the editor-guidelines documentation update.
 
-Remaining deliverables before DONE:
+Remaining deliverable before DONE:
 
 - Desktop visual validation of Transaction Editor and Journal Pane at laptop width.
-- Retry or otherwise complete the `doc/ui/editor-guidelines.md` update; the first connector attempt to update that full file was blocked by the connector safety layer.
 
 ## 7. Active and recent phase contracts
 
@@ -310,4 +310,4 @@ PHASE=P03
 SLICE=P03-C4
 ```
 
-Perform desktop visual validation of Transaction Editor and Journal Pane on a laptop-width workspace, then complete the remaining editor-guidelines documentation update if possible.
+Perform desktop visual validation of Transaction Editor and Journal Pane on a laptop-width workspace.
