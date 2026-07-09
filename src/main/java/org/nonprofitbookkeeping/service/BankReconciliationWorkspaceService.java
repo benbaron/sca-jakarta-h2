@@ -12,6 +12,7 @@ import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -23,7 +24,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -122,6 +122,7 @@ public class BankReconciliationWorkspaceService
                            List<SessionSummary> savedSessions) { }
 
     private static final Pattern OFX_TRANSACTION = Pattern.compile("<STMTTRN>(.*?)</STMTTRN>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+
     private final Jpa jpa;
 
     public BankReconciliationWorkspaceService(Jpa jpa)
@@ -147,8 +148,8 @@ public class BankReconciliationWorkspaceService
                     .setParameter("company", company)
                     .getResultList()
                     .stream()
-                    .peek(account -> BankConfigurationService.validateBankLedgerAccount(account.getAccount()))
-                    .map(account -> new BankAccountOption(account.getId(), bankAccountLabel(account)))
+                    .peek(bankAccount -> BankConfigurationService.validateBankLedgerAccount(bankAccount.getAccount()))
+                    .map(bankAccount -> new BankAccountOption(bankAccount.getId(), bankAccountLabel(bankAccount)))
                     .toList();
         }
     }
@@ -184,24 +185,25 @@ public class BankReconciliationWorkspaceService
             try
             {
                 Company company = companyByCode(em, command.companyCode());
-                CompanyBankAccount account = configuredBankAccount(em, command.bankAccountId(), company);
-                LocalDate startDate = reconciliationStartDate(em, company.getCode(), account, command.statementEndDate());
+                CompanyBankAccount bankAccount = configuredBankAccount(em, command.bankAccountId(), company);
+                LocalDate startDate = reconciliationStartDate(em, company.getCode(), bankAccount, command.statementEndDate());
                 sessionId = positiveId();
                 em.createNativeQuery("""
                         insert into bank_reconciliation_session
-                        (id, company_id, bank_account_id, statement_start_date, statement_end_date, statement_ending_balance, mismatch_policy, status, notes)
+                            (id, company_id, bank_account_id, statement_start_date, statement_end_date,
+                             statement_ending_balance, mismatch_policy, status, notes)
                         values (?, ?, ?, ?, ?, ?, ?, 'IN_PROGRESS', ?)
                         """)
                         .setParameter(1, sessionId)
                         .setParameter(2, company.getId())
-                        .setParameter(3, account.getId())
+                        .setParameter(3, bankAccount.getId())
                         .setParameter(4, startDate)
                         .setParameter(5, command.statementEndDate())
                         .setParameter(6, amount(command.statementEndingBalance()))
                         .setParameter(7, policy(command.policy()).name())
                         .setParameter(8, blankToNull(command.notes()))
                         .executeUpdate();
-                recalculateBalances(em, sessionId, account, startDate, command.statementEndDate(), command.statementEndingBalance());
+                recalculateBalances(em, sessionId, bankAccount, startDate, command.statementEndDate(), command.statementEndingBalance());
                 tx.commit();
             }
             catch (RuntimeException ex)
@@ -224,7 +226,7 @@ public class BankReconciliationWorkspaceService
 
     public Snapshot addManualLine(ManualStatementLineCommand command)
     {
-        if (command == null || command.date() == null || command.amount() == null || command.amount().compareTo(BigDecimal.ZERO) == 0)
+        if (command == null || command.date() == null || command.amount() == null || compare(command.amount(), BigDecimal.ZERO) == 0)
         {
             throw new IllegalArgumentException("Manual statement date and nonzero amount are required.");
         }
@@ -236,7 +238,10 @@ public class BankReconciliationWorkspaceService
             {
                 SessionRow session = session(em, command.sessionId());
                 CompanyBankAccount bankAccount = configuredBankAccount(em, session.bankAccountId(), session.company());
-                persistStatementLines(em, session.company(), bankAccount, BankImportBatch.SourceFormat.OTHER,
+                persistStatementLines(em,
+                        session.company(),
+                        bankAccount,
+                        BankImportBatch.SourceFormat.OTHER,
                         "Manual reconciliation entry",
                         List.of(new ParsedStatementLine(command.date(), command.amount(), command.description(), command.reference())));
                 tx.commit();
@@ -269,8 +274,12 @@ public class BankReconciliationWorkspaceService
             {
                 SessionRow session = session(em, command.sessionId());
                 CompanyBankAccount bankAccount = configuredBankAccount(em, session.bankAccountId(), session.company());
-                persistStatementLines(em, session.company(), bankAccount, sourceFormat(command.source()),
-                        isBlank(command.sourceName()) ? command.source().name() + " statement import" : command.sourceName(), parsed);
+                persistStatementLines(em,
+                        session.company(),
+                        bankAccount,
+                        sourceFormat(command.source()),
+                        isBlank(command.sourceName()) ? command.source().name() + " statement import" : command.sourceName(),
+                        parsed);
                 tx.commit();
             }
             catch (RuntimeException ex)
@@ -290,16 +299,16 @@ public class BankReconciliationWorkspaceService
             tx.begin();
             try
             {
-                Snapshot snapshot = snapshot(em, sessionId);
+                Snapshot current = snapshot(em, sessionId);
                 Set<Long> usedStatements = matchedStatementIds(em, sessionId);
                 Set<Long> usedSplits = matchedSplitIds(em, sessionId);
-                for (LedgerLineView ledger : snapshot.ledgerLines())
+                for (LedgerLineView ledger : current.ledgerLines())
                 {
                     if (usedSplits.contains(ledger.splitId()))
                     {
                         continue;
                     }
-                    List<StatementEntryView> candidates = snapshot.statementEntries().stream()
+                    List<StatementEntryView> candidates = current.statementEntries().stream()
                             .filter(statement -> !usedStatements.contains(statement.statementLineId()))
                             .filter(statement -> Objects.equals(statement.date(), ledger.date()))
                             .filter(statement -> compare(statement.amount(), ledger.amount()) == 0)
@@ -448,8 +457,10 @@ public class BankReconciliationWorkspaceService
 
     public Snapshot save(long sessionId, boolean finalize)
     {
-        Snapshot snapshot = load(sessionId);
-        SessionStatus status = finalize && isBalanced(snapshot) ? SessionStatus.FINALIZED : (isBalanced(snapshot) ? SessionStatus.BALANCED : SessionStatus.UNRESOLVED);
+        Snapshot current = load(sessionId);
+        SessionStatus status = finalize && isBalanced(current)
+                ? SessionStatus.FINALIZED
+                : (isBalanced(current) ? SessionStatus.BALANCED : SessionStatus.UNRESOLVED);
         try (EntityManager em = jpa.em())
         {
             EntityTransaction tx = em.getTransaction();
@@ -474,17 +485,17 @@ public class BankReconciliationWorkspaceService
     private Snapshot snapshot(EntityManager em, long sessionId)
     {
         SessionRow session = session(em, sessionId);
-        CompanyBankAccount account = configuredBankAccount(em, session.bankAccountId(), session.company());
-        List<TxnSplit> ledger = ledgerLines(em, account.getAccount(), session.startDate(), session.endDate());
-        List<BankStatementLine> statements = statementLines(em, account, session.startDate(), session.endDate());
+        CompanyBankAccount bankAccount = configuredBankAccount(em, session.bankAccountId(), session.company());
+        List<TxnSplit> ledger = ledgerLines(em, bankAccount.getAccount(), session.startDate(), session.endDate());
+        List<BankStatementLine> statements = statementLines(em, bankAccount, session.startDate(), session.endDate());
         Map<Long, MatchRow> statementMatches = statementMatches(em, sessionId);
         Map<Long, MatchRow> splitMatches = splitMatches(em, sessionId);
         List<DifferenceView> differences = differences(ledger, statements, statementMatches, splitMatches, session);
         return new Snapshot(
                 session.id(),
                 session.company().getCode(),
-                account.getId(),
-                bankAccountLabel(account),
+                bankAccount.getId(),
+                bankAccountLabel(bankAccount),
                 session.startDate(),
                 session.endDate(),
                 session.policy(),
@@ -499,7 +510,7 @@ public class BankReconciliationWorkspaceService
     private static boolean isBalanced(Snapshot snapshot)
     {
         return compare(snapshot.balances().difference(), BigDecimal.ZERO) == 0
-                && snapshot.differences().stream().noneMatch(d -> unresolved(d.category()));
+                && snapshot.differences().stream().noneMatch(difference -> unresolved(difference.category()));
     }
 
     private void recalculateBalances(long sessionId)
@@ -511,8 +522,8 @@ public class BankReconciliationWorkspaceService
             try
             {
                 SessionRow session = session(em, sessionId);
-                CompanyBankAccount account = configuredBankAccount(em, session.bankAccountId(), session.company());
-                recalculateBalances(em, sessionId, account, session.startDate(), session.endDate(), session.statementEndingBalance());
+                CompanyBankAccount bankAccount = configuredBankAccount(em, session.bankAccountId(), session.company());
+                recalculateBalances(em, sessionId, bankAccount, session.startDate(), session.endDate(), session.statementEndingBalance());
                 tx.commit();
             }
             catch (RuntimeException ex)
@@ -528,12 +539,12 @@ public class BankReconciliationWorkspaceService
         SessionRow session = session(em, sessionId);
         BankStatementLine statement = required(em, BankStatementLine.class, statementLineId, "Statement line");
         TxnSplit split = required(em, TxnSplit.class, splitId, "Ledger line");
-        CompanyBankAccount account = configuredBankAccount(em, session.bankAccountId(), session.company());
-        if (statement.getBankAccount() == null || !Objects.equals(statement.getBankAccount().getId(), account.getId()))
+        CompanyBankAccount bankAccount = configuredBankAccount(em, session.bankAccountId(), session.company());
+        if (statement.getBankAccount() == null || !Objects.equals(statement.getBankAccount().getId(), bankAccount.getId()))
         {
             throw new IllegalArgumentException("Statement line does not belong to the reconciliation bank account.");
         }
-        if (split.getAccount() == null || !Objects.equals(split.getAccount().getId(), account.getAccount().getId()))
+        if (split.getAccount() == null || !Objects.equals(split.getAccount().getId(), bankAccount.getAccount().getId()))
         {
             throw new IllegalArgumentException("Ledger line does not belong to the reconciliation bank account.");
         }
@@ -578,69 +589,120 @@ public class BankReconciliationWorkspaceService
                     .toList();
             if (exact.size() > 1)
             {
-                output.add(new DifferenceView(DifferenceCategory.DUPLICATE_POSSIBLE, split.getTxn().getTxnDate(), exact.get(0).getTransactionDate(), amount(split.getAmountSigned()), amount(exact.get(0).getAmount()), "Multiple statement lines could match this ledger line."));
+                output.add(new DifferenceView(DifferenceCategory.DUPLICATE_POSSIBLE,
+                        split.getTxn().getTxnDate(), exact.get(0).getTransactionDate(),
+                        amount(split.getAmountSigned()), amount(exact.get(0).getAmount()),
+                        "Multiple statement lines could match this ledger line."));
             }
             else if (exact.isEmpty())
             {
-                Optional<BankStatementLine> sameDate = statements.stream().filter(line -> !statementMatches.containsKey(line.getId())).filter(line -> Objects.equals(line.getTransactionDate(), split.getTxn().getTxnDate())).findFirst();
-                Optional<BankStatementLine> sameAmount = statements.stream().filter(line -> !statementMatches.containsKey(line.getId())).filter(line -> compare(line.getAmount(), split.getAmountSigned()) == 0).findFirst();
-                if (sameDate.isPresent())
+                BankStatementLine sameDate = statements.stream()
+                        .filter(line -> !statementMatches.containsKey(line.getId()))
+                        .filter(line -> Objects.equals(line.getTransactionDate(), split.getTxn().getTxnDate()))
+                        .findFirst()
+                        .orElse(null);
+                BankStatementLine sameAmount = statements.stream()
+                        .filter(line -> !statementMatches.containsKey(line.getId()))
+                        .filter(line -> compare(line.getAmount(), split.getAmountSigned()) == 0)
+                        .findFirst()
+                        .orElse(null);
+                if (sameDate != null)
                 {
-                    BankStatementLine line = sameDate.get();
-                    output.add(new DifferenceView(DifferenceCategory.AMOUNT_MISMATCH, split.getTxn().getTxnDate(), line.getTransactionDate(), amount(split.getAmountSigned()), amount(line.getAmount()), "Ledger and statement dates match, but amounts differ."));
+                    output.add(new DifferenceView(DifferenceCategory.AMOUNT_MISMATCH,
+                            split.getTxn().getTxnDate(), sameDate.getTransactionDate(),
+                            amount(split.getAmountSigned()), amount(sameDate.getAmount()),
+                            "Ledger and statement dates match, but amounts differ."));
                 }
-                else if (sameAmount.isPresent())
+                else if (sameAmount != null)
                 {
-                    BankStatementLine line = sameAmount.get();
-                    output.add(new DifferenceView(DifferenceCategory.DATE_MISMATCH, split.getTxn().getTxnDate(), line.getTransactionDate(), amount(split.getAmountSigned()), amount(line.getAmount()), "Ledger and statement amounts match, but dates differ."));
+                    output.add(new DifferenceView(DifferenceCategory.DATE_MISMATCH,
+                            split.getTxn().getTxnDate(), sameAmount.getTransactionDate(),
+                            amount(split.getAmountSigned()), amount(sameAmount.getAmount()),
+                            "Ledger and statement amounts match, but dates differ."));
                 }
                 else
                 {
-                    output.add(new DifferenceView(DifferenceCategory.UNMATCHED_LEDGER, split.getTxn().getTxnDate(), null, amount(split.getAmountSigned()), null, "Ledger bank-account line has no matching statement entry."));
+                    output.add(new DifferenceView(DifferenceCategory.UNMATCHED_LEDGER,
+                            split.getTxn().getTxnDate(), null,
+                            amount(split.getAmountSigned()), null,
+                            "Ledger bank-account line has no matching statement entry."));
                 }
             }
             if (!split.isBankCleared() && split.getMatchedBankStatementLine() != null)
             {
-                output.add(new DifferenceView(DifferenceCategory.CLEARED_STATE_MISMATCH, split.getTxn().getTxnDate(), split.getMatchedBankStatementLine().getTransactionDate(), amount(split.getAmountSigned()), amount(split.getMatchedBankStatementLine().getAmount()), "Ledger line is matched but not marked cleared."));
+                output.add(new DifferenceView(DifferenceCategory.CLEARED_STATE_MISMATCH,
+                        split.getTxn().getTxnDate(), split.getMatchedBankStatementLine().getTransactionDate(),
+                        amount(split.getAmountSigned()), amount(split.getMatchedBankStatementLine().getAmount()),
+                        "Ledger line is matched but not marked cleared."));
             }
         }
         for (BankStatementLine line : statements)
         {
             if (!statementMatches.containsKey(line.getId()))
             {
-                output.add(new DifferenceView(DifferenceCategory.UNMATCHED_STATEMENT, null, line.getTransactionDate(), null, amount(line.getAmount()), "Statement entry has no matching ledger bank-account line."));
+                output.add(new DifferenceView(DifferenceCategory.UNMATCHED_STATEMENT,
+                        null, line.getTransactionDate(), null, amount(line.getAmount()),
+                        "Statement entry has no matching ledger bank-account line."));
             }
         }
         if (session.statementEndingBalance() != null && compare(session.difference(), BigDecimal.ZERO) != 0)
         {
-            output.add(new DifferenceView(DifferenceCategory.ENDING_BALANCE_DIFFERENCE, null, session.endDate(), session.bookCleared(), session.statementEndingBalance(), "Statement ending balance and cleared book balance differ."));
+            output.add(new DifferenceView(DifferenceCategory.ENDING_BALANCE_DIFFERENCE,
+                    null, session.endDate(), session.bookCleared(), session.statementEndingBalance(),
+                    "Statement ending balance and cleared book balance differ."));
         }
         return output;
     }
 
     private static StatementEntryView statementView(BankStatementLine line, MatchRow match)
     {
-        return new StatementEntryView(line.getId(), line.getTransactionDate(), firstNonBlank(line.getName(), line.getMemo(), line.getTransactionType(), "Statement line " + line.getId()), firstNonBlank(line.getReference(), line.getCheckNumber(), line.getSourceTransactionId(), ""), amount(line.getAmount()), line.getStatus() == BankStatementLine.Status.MATCHED ? "matched" : "not cleared", match == null ? DifferenceCategory.UNMATCHED_STATEMENT : match.status(), match == null ? null : match.splitId(), match == null ? "" : match.note());
+        return new StatementEntryView(
+                line.getId(),
+                line.getTransactionDate(),
+                firstNonBlank(line.getName(), line.getMemo(), line.getTransactionType(), "Statement line " + line.getId()),
+                firstNonBlank(line.getReference(), line.getCheckNumber(), line.getSourceTransactionId(), ""),
+                amount(line.getAmount()),
+                line.getStatus() == BankStatementLine.Status.MATCHED ? "matched" : "not cleared",
+                match == null ? DifferenceCategory.UNMATCHED_STATEMENT : match.status(),
+                match == null ? null : match.splitId(),
+                match == null ? "" : match.note());
     }
 
     private static LedgerLineView ledgerView(TxnSplit split, MatchRow match)
     {
-        return new LedgerLineView(split.getId(), split.getTxn().getId(), split.getTxn().getTxnDate(), firstNonBlank(split.getTxn().getMemo(), split.getNotes(), "Transaction " + split.getTxn().getId()), String.valueOf(split.getTxn().getId()), amount(split.getAmountSigned()), split.isBankCleared(), match == null ? (split.getMatchedBankStatementLine() == null ? null : split.getMatchedBankStatementLine().getId()) : match.statementLineId(), match == null ? DifferenceCategory.UNMATCHED_LEDGER : match.status());
+        return new LedgerLineView(
+                split.getId(),
+                split.getTxn().getId(),
+                split.getTxn().getTxnDate(),
+                firstNonBlank(split.getTxn().getMemo(), split.getNotes(), "Transaction " + split.getTxn().getId()),
+                String.valueOf(split.getTxn().getId()),
+                amount(split.getAmountSigned()),
+                split.isBankCleared(),
+                match == null ? (split.getMatchedBankStatementLine() == null ? null : split.getMatchedBankStatementLine().getId()) : match.statementLineId(),
+                match == null ? DifferenceCategory.UNMATCHED_LEDGER : match.status());
     }
 
-    private void recalculateBalances(EntityManager em, long sessionId, CompanyBankAccount account, LocalDate start, LocalDate end, BigDecimal statementEndingBalance)
+    private void recalculateBalances(EntityManager em, long sessionId, CompanyBankAccount bankAccount, LocalDate start, LocalDate end, BigDecimal statementEndingBalance)
     {
-        List<TxnSplit> lines = ledgerLinesThrough(em, account.getAccount(), end);
-        BigDecimal beginning = amount(account.getOpeningBalance());
+        BigDecimal beginning = amount(bankAccount.getOpeningBalance());
         BigDecimal periodActivity = BigDecimal.ZERO;
-        BigDecimal cleared = amount(account.getOpeningBalance());
-        for (TxnSplit split : lines)
+        BigDecimal cleared = amount(bankAccount.getOpeningBalance());
+        for (TxnSplit split : ledgerLinesThrough(em, bankAccount.getAccount(), end))
         {
-            LocalDate txnDate = split.getTxn().getTxnDate();
+            LocalDate transactionDate = split.getTxn().getTxnDate();
             BigDecimal signed = amount(split.getAmountSigned());
-            if (txnDate.isBefore(start)) beginning = beginning.add(signed);
-            else if (!txnDate.isAfter(end)) periodActivity = periodActivity.add(signed);
-            if (split.isBankCleared() && !txnDate.isAfter(end)) cleared = cleared.add(signed);
+            if (transactionDate.isBefore(start))
+            {
+                beginning = beginning.add(signed);
+            }
+            else if (!transactionDate.isAfter(end))
+            {
+                periodActivity = periodActivity.add(signed);
+            }
+            if (split.isBankCleared() && !transactionDate.isAfter(end))
+            {
+                cleared = cleared.add(signed);
+            }
         }
         BigDecimal all = beginning.add(periodActivity);
         BigDecimal difference = statementEndingBalance == null ? BigDecimal.ZERO : amount(statementEndingBalance).subtract(cleared);
@@ -675,7 +737,7 @@ public class BankReconciliationWorkspaceService
             line.setBankAccount(bankAccount);
             line.setSourceRowNumber(row);
             line.setSourceTransactionId(firstNonBlank(parsed.reference(), sourceName + "-" + row));
-            line.setDeterministicFingerprint(UUID.nameUUIDFromBytes((sourceName + row + parsed.date() + parsed.amount() + parsed.description()).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString());
+            line.setDeterministicFingerprint(UUID.nameUUIDFromBytes((sourceName + row + parsed.date() + parsed.amount() + parsed.description()).getBytes(StandardCharsets.UTF_8)).toString());
             line.setStatementAccountIdentifier(bankAccount.getMaskedAccountNumber());
             line.setTransactionDate(parsed.date());
             line.setPostedDate(parsed.date());
@@ -690,7 +752,8 @@ public class BankReconciliationWorkspaceService
 
     private SessionRow session(EntityManager em, long sessionId)
     {
-        Object[] row = (Object[]) em.createNativeQuery("""
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = em.createNativeQuery("""
                 select s.id, s.company_id, s.bank_account_id, s.statement_start_date, s.statement_end_date,
                        s.statement_ending_balance, s.mismatch_policy, s.status, s.beginning_balance,
                        s.book_balance_all, s.book_balance_cleared, s.difference_amount
@@ -698,16 +761,37 @@ public class BankReconciliationWorkspaceService
                  where s.id = ?
                 """)
                 .setParameter(1, sessionId)
-                .getResultStream()
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Reconciliation session does not exist: " + sessionId));
+                .getResultList();
+        if (rows.isEmpty())
+        {
+            throw new IllegalArgumentException("Reconciliation session does not exist: " + sessionId);
+        }
+        Object[] row = rows.get(0);
         Company company = em.find(Company.class, ((Number) row[1]).longValue());
-        return new SessionRow(((Number) row[0]).longValue(), company, ((Number) row[2]).longValue(), date(row[3]), date(row[4]), amountOrNull(row[5]), ClearedStatePolicy.valueOf((String) row[6]), SessionStatus.valueOf((String) row[7]), amount(row[8]), amount(row[9]), amount(row[10]), amount(row[11]));
+        return new SessionRow(
+                ((Number) row[0]).longValue(),
+                company,
+                ((Number) row[2]).longValue(),
+                date(row[3]),
+                date(row[4]),
+                amountOrNull(row[5]),
+                ClearedStatePolicy.valueOf((String) row[6]),
+                SessionStatus.valueOf((String) row[7]),
+                amount(row[8]),
+                amount(row[9]),
+                amount(row[10]),
+                amount(row[11]));
     }
 
     private static SessionSummary sessionSummary(Object[] row)
     {
-        return new SessionSummary(((Number) row[0]).longValue(), (row[2] == null ? "" : String.valueOf(row[2]) + " — ") + row[1], date(row[3]), date(row[4]), SessionStatus.valueOf((String) row[5]), amount(row[6]));
+        return new SessionSummary(
+                ((Number) row[0]).longValue(),
+                (row[2] == null ? "" : String.valueOf(row[2]) + " — ") + row[1],
+                date(row[3]),
+                date(row[4]),
+                SessionStatus.valueOf((String) row[5]),
+                amount(row[6]));
     }
 
     private Map<Long, MatchRow> statementMatches(EntityManager em, long sessionId)
@@ -726,19 +810,29 @@ public class BankReconciliationWorkspaceService
         List<Object[]> rows = em.createNativeQuery("select statement_line_id, txn_split_id, match_status, resolution_note from bank_reconciliation_match where session_id = ? order by id")
                 .setParameter(1, sessionId)
                 .getResultList();
-        Map<Long, MatchRow> map = new LinkedHashMap<>();
+        Map<Long, MatchRow> output = new LinkedHashMap<>();
         for (Object[] row : rows)
         {
             Long statementId = row[0] == null ? null : ((Number) row[0]).longValue();
             Long splitId = row[1] == null ? null : ((Number) row[1]).longValue();
             Long key = byStatement ? statementId : splitId;
-            if (key != null) map.put(key, new MatchRow(statementId, splitId, DifferenceCategory.valueOf((String) row[2]), row[3] == null ? "" : String.valueOf(row[3])));
+            if (key != null)
+            {
+                output.put(key, new MatchRow(statementId, splitId, DifferenceCategory.valueOf((String) row[2]), row[3] == null ? "" : String.valueOf(row[3])));
+            }
         }
-        return map;
+        return output;
     }
 
-    private Set<Long> matchedStatementIds(EntityManager em, long sessionId) { return new HashSet<>(statementMatches(em, sessionId).keySet()); }
-    private Set<Long> matchedSplitIds(EntityManager em, long sessionId) { return new HashSet<>(splitMatches(em, sessionId).keySet()); }
+    private Set<Long> matchedStatementIds(EntityManager em, long sessionId)
+    {
+        return new HashSet<>(statementMatches(em, sessionId).keySet());
+    }
+
+    private Set<Long> matchedSplitIds(EntityManager em, long sessionId)
+    {
+        return new HashSet<>(splitMatches(em, sessionId).keySet());
+    }
 
     private void insertMatch(EntityManager em, long sessionId, Long statementLineId, Long splitId, DifferenceCategory status, String note)
     {
@@ -758,7 +852,9 @@ public class BankReconciliationWorkspaceService
                 join fetch s.txn t
                 join fetch s.account a
                 left join fetch s.matchedBankStatementLine
-                where a = :account and t.txnDate >= :start and t.txnDate <= :end
+                where a = :account
+                  and t.txnDate >= :start
+                  and t.txnDate <= :end
                 order by t.txnDate, s.id
                 """, TxnSplit.class)
                 .setParameter("account", account)
@@ -774,7 +870,8 @@ public class BankReconciliationWorkspaceService
                 join fetch s.txn t
                 join fetch s.account a
                 left join fetch s.matchedBankStatementLine
-                where a = :account and t.txnDate <= :end
+                where a = :account
+                  and t.txnDate <= :end
                 order by t.txnDate, s.id
                 """, TxnSplit.class)
                 .setParameter("account", account)
@@ -786,7 +883,10 @@ public class BankReconciliationWorkspaceService
     {
         return em.createQuery("""
                 select l from BankStatementLine l
-                where l.bankAccount = :bankAccount and l.transactionDate >= :start and l.transactionDate <= :end and l.status not in (:excluded)
+                where l.bankAccount = :bankAccount
+                  and l.transactionDate >= :start
+                  and l.transactionDate <= :end
+                  and l.status not in (:excluded)
                 order by l.transactionDate, l.id
                 """, BankStatementLine.class)
                 .setParameter("bankAccount", bankAccount)
@@ -796,46 +896,62 @@ public class BankReconciliationWorkspaceService
                 .getResultList();
     }
 
-    private LocalDate reconciliationStartDate(EntityManager em, String companyCode, CompanyBankAccount account, LocalDate statementEnd)
+    private LocalDate reconciliationStartDate(EntityManager em, String companyCode, CompanyBankAccount bankAccount, LocalDate statementEnd)
     {
         Object close = em.createNativeQuery("select max(close_date) from period_close_run where group_code = ? and status = 'COMPLETED' and close_date < ?")
                 .setParameter(1, companyCode)
                 .setParameter(2, statementEnd)
                 .getSingleResult();
         LocalDate closeDate = dateOrNull(close);
-        if (closeDate != null) return closeDate.plusDays(1);
-        return account.getOpeningDate() == null ? statementEnd.withDayOfMonth(1) : account.getOpeningDate();
+        if (closeDate != null)
+        {
+            return closeDate.plusDays(1);
+        }
+        return bankAccount.getOpeningDate() == null ? statementEnd.withDayOfMonth(1) : bankAccount.getOpeningDate();
     }
 
     private CompanyBankAccount configuredBankAccount(EntityManager em, Long id, Company company)
     {
-        CompanyBankAccount account = em.createQuery("""
+        CompanyBankAccount bankAccount = em.createQuery("""
                 select cba from CompanyBankAccount cba
                 left join fetch cba.bank
                 left join fetch cba.account
-                where cba.id = :id and cba.company = :company
+                where cba.id = :id
+                  and cba.company = :company
                 """, CompanyBankAccount.class)
                 .setParameter("id", id)
                 .setParameter("company", company)
                 .getResultStream()
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Configured bank account does not exist for company: " + id));
-        if (!account.isActive() || account.getBank() == null || account.getAccount() == null) throw new IllegalArgumentException("Reconciliation requires an active configured bank account linked to a Bank and chart account.");
-        BankConfigurationService.validateBankLedgerAccount(account.getAccount());
-        return account;
+        if (!bankAccount.isActive() || bankAccount.getBank() == null || bankAccount.getAccount() == null)
+        {
+            throw new IllegalArgumentException("Reconciliation requires an active configured bank account linked to a Bank and chart account.");
+        }
+        BankConfigurationService.validateBankLedgerAccount(bankAccount.getAccount());
+        return bankAccount;
     }
 
     private static <T> T required(EntityManager em, Class<T> type, Long id, String label)
     {
-        if (id == null) throw new IllegalArgumentException(label + " is required.");
+        if (id == null)
+        {
+            throw new IllegalArgumentException(label + " is required.");
+        }
         T value = em.find(type, id);
-        if (value == null) throw new IllegalArgumentException(label + " does not exist: " + id);
+        if (value == null)
+        {
+            throw new IllegalArgumentException(label + " does not exist: " + id);
+        }
         return value;
     }
 
     private static Company companyByCode(EntityManager em, String code)
     {
-        if (isBlank(code)) throw new IllegalArgumentException("Company code is required.");
+        if (isBlank(code))
+        {
+            throw new IllegalArgumentException("Company code is required.");
+        }
         return em.createQuery("select c from Company c where c.code = :code", Company.class)
                 .setParameter("code", code.trim())
                 .getResultStream()
@@ -857,7 +973,10 @@ public class BankReconciliationWorkspaceService
     private static List<ParsedStatementLine> parseCsv(String text)
     {
         List<String> lines = text.lines().filter(line -> !line.isBlank()).toList();
-        if (lines.isEmpty()) return List.of();
+        if (lines.isEmpty())
+        {
+            return List.of();
+        }
         String[] header = splitCsv(lines.get(0));
         boolean hasHeader = contains(header, "date") && contains(header, "amount");
         Map<String, Integer> index = hasHeader ? headerIndex(header) : Map.of();
@@ -881,7 +1000,11 @@ public class BankReconciliationWorkspaceService
         while (matcher.find())
         {
             String block = matcher.group(1);
-            output.add(new ParsedStatementLine(parseOfxDate(tag(block, "DTPOSTED")), parseAmount(tag(block, "TRNAMT")), firstNonBlank(tag(block, "NAME"), tag(block, "MEMO"), tag(block, "TRNTYPE")), firstNonBlank(tag(block, "FITID"), tag(block, "CHECKNUM"))));
+            output.add(new ParsedStatementLine(
+                    parseOfxDate(tag(block, "DTPOSTED")),
+                    parseAmount(tag(block, "TRNAMT")),
+                    firstNonBlank(tag(block, "NAME"), tag(block, "MEMO"), tag(block, "TRNTYPE")),
+                    firstNonBlank(tag(block, "FITID"), tag(block, "CHECKNUM"))));
         }
         return output;
     }
@@ -899,18 +1022,36 @@ public class BankReconciliationWorkspaceService
             String line = raw.trim();
             if (line.equals("^"))
             {
-                if (date != null && amount != null) output.add(new ParsedStatementLine(date, amount, firstNonBlank(payee, memo), reference));
+                if (date != null && amount != null)
+                {
+                    output.add(new ParsedStatementLine(date, amount, firstNonBlank(payee, memo), reference));
+                }
                 date = null;
                 amount = null;
                 payee = "";
                 memo = "";
                 reference = "";
             }
-            else if (line.startsWith("D")) date = parseDate(line.substring(1));
-            else if (line.startsWith("T")) amount = parseAmount(line.substring(1));
-            else if (line.startsWith("P")) payee = line.substring(1);
-            else if (line.startsWith("M")) memo = line.substring(1);
-            else if (line.startsWith("N")) reference = line.substring(1);
+            else if (line.startsWith("D"))
+            {
+                date = parseDate(line.substring(1));
+            }
+            else if (line.startsWith("T"))
+            {
+                amount = parseAmount(line.substring(1));
+            }
+            else if (line.startsWith("P"))
+            {
+                payee = line.substring(1);
+            }
+            else if (line.startsWith("M"))
+            {
+                memo = line.substring(1);
+            }
+            else if (line.startsWith("N"))
+            {
+                reference = line.substring(1);
+            }
         }
         return output;
     }
@@ -926,50 +1067,214 @@ public class BankReconciliationWorkspaceService
         };
     }
 
-    private static String[] splitCsv(String line) { return line.split(",", -1); }
-    private static boolean contains(String[] values, String text) { for (String value : values) if (value.trim().equalsIgnoreCase(text)) return true; return false; }
-    private static Map<String, Integer> headerIndex(String[] header) { Map<String, Integer> map = new HashMap<>(); for (int i = 0; i < header.length; i++) map.put(header[i].trim().toLowerCase(Locale.ROOT), i); return map; }
-    private static String cell(String[] cells, int index) { return index >= 0 && index < cells.length ? cells[index].trim().replaceAll("^\"|\"$", "") : ""; }
-    private static String tag(String block, String tag) { Matcher matcher = Pattern.compile("<" + tag + ">(.*?)(?=<[A-Z/]|$)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(block); return matcher.find() ? matcher.group(1).replaceAll("<.*", "").trim() : ""; }
-    private static LocalDate parseOfxDate(String raw) { String digits = raw == null ? "" : raw.replaceAll("[^0-9]", ""); if (digits.length() < 8) throw new IllegalArgumentException("OFX date is missing or invalid."); return LocalDate.parse(digits.substring(0, 8), DateTimeFormatter.BASIC_ISO_DATE); }
+    private static String[] splitCsv(String line)
+    {
+        return line.split(",", -1);
+    }
+
+    private static boolean contains(String[] values, String text)
+    {
+        for (String value : values)
+        {
+            if (value.trim().equalsIgnoreCase(text))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static Map<String, Integer> headerIndex(String[] header)
+    {
+        Map<String, Integer> output = new HashMap<>();
+        for (int i = 0; i < header.length; i++)
+        {
+            output.put(header[i].trim().toLowerCase(Locale.ROOT), i);
+        }
+        return output;
+    }
+
+    private static String cell(String[] cells, int index)
+    {
+        return index >= 0 && index < cells.length ? cells[index].trim().replaceAll("^\"|\"$", "") : "";
+    }
+
+    private static String tag(String block, String tag)
+    {
+        Matcher matcher = Pattern.compile("<" + tag + ">(.*?)(?=<[A-Z/]|$)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(block);
+        return matcher.find() ? matcher.group(1).replaceAll("<.*", "").trim() : "";
+    }
+
+    private static LocalDate parseOfxDate(String raw)
+    {
+        String digits = raw == null ? "" : raw.replaceAll("[^0-9]", "");
+        if (digits.length() < 8)
+        {
+            throw new IllegalArgumentException("OFX date is missing or invalid.");
+        }
+        return LocalDate.parse(digits.substring(0, 8), DateTimeFormatter.BASIC_ISO_DATE);
+    }
 
     private static LocalDate parseDate(String raw)
     {
-        if (isBlank(raw)) throw new IllegalArgumentException("Statement date is required.");
-        for (DateTimeFormatter formatter : List.of(DateTimeFormatter.ISO_LOCAL_DATE, DateTimeFormatter.ofPattern("M/d/uuuu"), DateTimeFormatter.ofPattern("M-d-uuuu"), DateTimeFormatter.ofPattern("MM/dd/uuuu"), DateTimeFormatter.ofPattern("MM-dd-uuuu")))
+        if (isBlank(raw))
         {
-            try { return LocalDate.parse(raw.trim(), formatter); }
-            catch (DateTimeParseException ignored) { }
+            throw new IllegalArgumentException("Statement date is required.");
+        }
+        for (DateTimeFormatter formatter : List.of(DateTimeFormatter.ISO_LOCAL_DATE,
+                DateTimeFormatter.ofPattern("M/d/uuuu"),
+                DateTimeFormatter.ofPattern("M-d-uuuu"),
+                DateTimeFormatter.ofPattern("MM/dd/uuuu"),
+                DateTimeFormatter.ofPattern("MM-dd-uuuu")))
+        {
+            try
+            {
+                return LocalDate.parse(raw.trim(), formatter);
+            }
+            catch (DateTimeParseException ignored)
+            {
+                // Try the next common bank statement date format.
+            }
         }
         throw new IllegalArgumentException("Statement date is invalid: " + raw);
     }
 
     private static BigDecimal parseAmount(String raw)
     {
-        if (isBlank(raw)) throw new IllegalArgumentException("Statement amount is required.");
+        if (isBlank(raw))
+        {
+            throw new IllegalArgumentException("Statement amount is required.");
+        }
         return amount(new BigDecimal(raw.trim().replace("$", "").replace(",", "")));
     }
 
     private static void validateStart(StartCommand command)
     {
-        if (command == null || isBlank(command.companyCode()) || command.bankAccountId() == null || command.statementEndDate() == null) throw new IllegalArgumentException("Company, configured bank account, and statement ending date are required.");
+        if (command == null || isBlank(command.companyCode()) || command.bankAccountId() == null || command.statementEndDate() == null)
+        {
+            throw new IllegalArgumentException("Company, configured bank account, and statement ending date are required.");
+        }
     }
 
-    private static ClearedStatePolicy policy(ClearedStatePolicy value) { return value == null ? ClearedStatePolicy.WARN_ONLY : value; }
-    private static boolean unresolved(DifferenceCategory category) { return category != DifferenceCategory.MATCHED && category != DifferenceCategory.RESOLVED; }
-    private static BigDecimal amount(Object value) { if (value == null) return BigDecimal.ZERO.setScale(4, RoundingMode.HALF_UP); if (value instanceof BigDecimal bd) return bd.setScale(4, RoundingMode.HALF_UP); if (value instanceof Number number) return BigDecimal.valueOf(number.doubleValue()).setScale(4, RoundingMode.HALF_UP); return new BigDecimal(String.valueOf(value)).setScale(4, RoundingMode.HALF_UP); }
-    private static BigDecimal amountOrNull(Object value) { return value == null ? null : amount(value); }
-    private static int compare(BigDecimal a, BigDecimal b) { return amount(a).compareTo(amount(b)); }
-    private static LocalDate date(Object value) { LocalDate date = dateOrNull(value); if (date == null) throw new IllegalArgumentException("Date value is required."); return date; }
-    private static LocalDate dateOrNull(Object value) { if (value == null) return null; if (value instanceof LocalDate localDate) return localDate; if (value instanceof java.sql.Date sqlDate) return sqlDate.toLocalDate(); return LocalDate.parse(String.valueOf(value)); }
-    private static long positiveId() { long value = UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE; return value == 0 ? 1 : value; }
-    private static String bankAccountLabel(CompanyBankAccount account) { String chart = account.getAccount() == null ? "" : " — " + account.getAccount().getCode(); String bank = account.getBank() == null ? "" : account.getBank().getName() + " • "; return bank + account.getName() + chart; }
-    private static String firstNonBlank(String... values) { for (String value : values) if (!isBlank(value)) return value.trim(); return ""; }
-    private static String blankToNull(String value) { return isBlank(value) ? null : value.trim(); }
-    private static boolean isBlank(String value) { return value == null || value.isBlank(); }
-    private static void rollback(EntityTransaction tx) { if (tx.isActive()) tx.rollback(); }
+    private static ClearedStatePolicy policy(ClearedStatePolicy value)
+    {
+        return value == null ? ClearedStatePolicy.WARN_ONLY : value;
+    }
+
+    private static boolean unresolved(DifferenceCategory category)
+    {
+        return category != DifferenceCategory.MATCHED && category != DifferenceCategory.RESOLVED;
+    }
+
+    private static BigDecimal amount(Object value)
+    {
+        if (value == null)
+        {
+            return BigDecimal.ZERO.setScale(4, RoundingMode.HALF_UP);
+        }
+        if (value instanceof BigDecimal bd)
+        {
+            return bd.setScale(4, RoundingMode.HALF_UP);
+        }
+        if (value instanceof Number number)
+        {
+            return BigDecimal.valueOf(number.doubleValue()).setScale(4, RoundingMode.HALF_UP);
+        }
+        return new BigDecimal(String.valueOf(value)).setScale(4, RoundingMode.HALF_UP);
+    }
+
+    private static BigDecimal amountOrNull(Object value)
+    {
+        return value == null ? null : amount(value);
+    }
+
+    private static int compare(BigDecimal a, BigDecimal b)
+    {
+        return amount(a).compareTo(amount(b));
+    }
+
+    private static LocalDate date(Object value)
+    {
+        LocalDate date = dateOrNull(value);
+        if (date == null)
+        {
+            throw new IllegalArgumentException("Date value is required.");
+        }
+        return date;
+    }
+
+    private static LocalDate dateOrNull(Object value)
+    {
+        if (value == null)
+        {
+            return null;
+        }
+        if (value instanceof LocalDate localDate)
+        {
+            return localDate;
+        }
+        if (value instanceof java.sql.Date sqlDate)
+        {
+            return sqlDate.toLocalDate();
+        }
+        return LocalDate.parse(String.valueOf(value));
+    }
+
+    private static long positiveId()
+    {
+        long value = UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE;
+        return value == 0 ? 1 : value;
+    }
+
+    private static String bankAccountLabel(CompanyBankAccount bankAccount)
+    {
+        String bank = bankAccount.getBank() == null ? "" : bankAccount.getBank().getName() + " • ";
+        String chart = bankAccount.getAccount() == null ? "" : " — " + bankAccount.getAccount().getCode();
+        return bank + bankAccount.getName() + chart;
+    }
+
+    private static String firstNonBlank(String... values)
+    {
+        for (String value : values)
+        {
+            if (!isBlank(value))
+            {
+                return value.trim();
+            }
+        }
+        return "";
+    }
+
+    private static String blankToNull(String value)
+    {
+        return isBlank(value) ? null : value.trim();
+    }
+
+    private static boolean isBlank(String value)
+    {
+        return value == null || value.isBlank();
+    }
+
+    private static void rollback(EntityTransaction tx)
+    {
+        if (tx.isActive())
+        {
+            tx.rollback();
+        }
+    }
 
     private record ParsedStatementLine(LocalDate date, BigDecimal amount, String description, String reference) { }
     private record MatchRow(Long statementLineId, Long splitId, DifferenceCategory status, String note) { }
-    private record SessionRow(long id, Company company, long bankAccountId, LocalDate startDate, LocalDate endDate, BigDecimal statementEndingBalance, ClearedStatePolicy policy, SessionStatus status, BigDecimal beginning, BigDecimal bookAll, BigDecimal bookCleared, BigDecimal difference) { }
+    private record SessionRow(long id,
+                              Company company,
+                              long bankAccountId,
+                              LocalDate startDate,
+                              LocalDate endDate,
+                              BigDecimal statementEndingBalance,
+                              ClearedStatePolicy policy,
+                              SessionStatus status,
+                              BigDecimal beginning,
+                              BigDecimal bookAll,
+                              BigDecimal bookCleared,
+                              BigDecimal difference) { }
 }
