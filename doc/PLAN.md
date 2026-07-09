@@ -5,8 +5,8 @@ active_slice: P06-C1
 active_status: VERIFYING
 active_branch: codex/P06-C1-bank-reconciliation-implementation
 active_pull_request: "#146"
-active_head: a3e6e5cba9ca0e7d9650650c34f3a20c915b49e5
-next_action: "Inspect GitHub Actions Maven PR Tests run 28988230712, fix failures, update docs/tests, and perform desktop visual validation."
+active_head: 14c59470ff7375d7a23ff67efb55c89a08741288
+next_action: "Inspect GitHub Actions Maven PR Tests run 28988634155, fix the remaining failure, update docs/tests, and perform desktop visual validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -156,7 +156,7 @@ Known follow-up: per-line cleared-state resolution choices and edit-existing rec
 Status: VERIFYING.
 Branch: `codex/P06-C1-bank-reconciliation-implementation`
 Pull request: #146
-Head: `a3e6e5cba9ca0e7d9650650c34f3a20c915b49e5`
+Head: `14c59470ff7375d7a23ff67efb55c89a08741288`
 
 Purpose: replace the partial comparison-only surface with the requirements-driven Bank Reconciliation workspace.
 
@@ -165,9 +165,10 @@ Implemented in branch:
 - V57 H2 tables for durable reconciliation sessions and match/resolution rows.
 - `BankReconciliationWorkspaceService` for configured-account filtering, session start/load/list, balance calculations, statement-line import/manual entry, matching, unmatching, mark-cleared, resolve-difference, save-unresolved, and finalize.
 - JavaFX Reconciliation panel with configured-account selector, session controls, four cleared-state policies, balance cards, manual/CSV/OFX/QIF statement sources, statement and ledger matching tables, matching actions, comparison report, and saved reconciliation table.
+- Updated stale reconciliation panel source and visible-control tests away from the old started/completed/failed run model.
 
-Remaining deliverables: inspect CI, fix failures, add focused tests, update interface matrix to mark the partial surface replaced, and perform desktop visual validation.
-Next exact action: inspect Maven PR Tests run 28988230712.
+Remaining deliverables: CI is still failing with logs truncated before the Maven error in the connector; inspect full Maven error, fix it, add focused service tests, update interface matrix to mark the partial surface replaced, and perform desktop visual validation.
+Next exact action: inspect Maven PR Tests run 28988634155.
 
 # P07 — Eliminated former Schedules phase
 
@@ -302,4 +303,4 @@ PHASE=P06
 SLICE=P06-C1
 ```
 
-Inspect GitHub Actions Maven PR Tests run 28988230712, then fix failures before adding focused tests and marking the draft PR ready.
+Inspect GitHub Actions Maven PR Tests run 28988634155, then fix failures before adding focused tests and marking the draft PR ready.
