@@ -1,12 +1,12 @@
 ---
-plan_version: 16
-active_phase: P05
-active_slice: P05-C5
+plan_version: 20
+active_phase: P03
+active_slice: P03-C4
 active_status: VERIFYING
-active_branch: codex/P05-C5-banking-horizontal-split
-active_pull_request: "#148"
-active_head: 1ceeb637ba4ab417ebc35701dd7e4c86c0941d6a
-next_action: "Inspect GitHub Actions for PR #148 and perform laptop-width desktop visual validation of the Banking top/bottom split."
+active_branch: codex/P03-C4-transaction-editor-table-state-plan
+active_pull_request: "#149"
+active_head: dddfa92d52580970296c785f1333b2853ed843c7
+next_action: "Perform desktop visual validation of Transaction Editor and Journal Pane on laptop-width workspace."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Inspect GitHub Actions for PR #148 and perform laptop-width deskto
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P06-C2 as DONE through PR #147 and opens P05-C5 to correct the Banking panel layout so Financial Institutions and Configured Bank Accounts are split top/bottom rather than left/right.
+This revision records P05-C5 as DONE through PR #148 and advances P03-C4 to VERIFYING. P03-C4 is the Transaction Editor and Journal Pane redesign, using `benbaron/NonprofitAccounting` `src/main/java/nonprofitbookkeeping/ui` only as a design reference.
 
 ## 2. Status values
 
@@ -35,9 +35,9 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P00 | Documentation and implementation inventory | none | DONE; update matrices as touched |
 | P01 | Production shell and workspace composition | P00 | DONE; corrective P01-C1 DONE through PR #141 |
 | P02 | Canonical ledger and transaction operations | P00 | DONE; retain |
-| P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY for corrective/new slices |
+| P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY; corrective P03-C4 VERIFYING |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
-| P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137; corrective P05-C5 VERIFYING |
+| P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137; corrective P05-C5 DONE through PR #148 |
 | P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 DONE through PR #146; corrective P06-C2 DONE through PR #147 |
 | P07 | Eliminated former Schedules phase | n/a | DONE through PR #139 |
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 DONE through PR #144 |
@@ -94,6 +94,7 @@ Focused documents for current UI/accounting work:
 - Production widgets with visible non-blank display text should expose their full text on hover, except text boxes and custom-help tooltip cases.
 - Disabled placeholder Delete buttons are not part of the UI contract; a Delete button must perform a real supported operation.
 - Bank Reconciliation must become a full statement-to-ledger matching workspace, not only a saved comparison table.
+- Transaction supplemental schedule/detail panels are not the eliminated generic Schedules function; they are per-transaction detail editors and viewers.
 
 ## 6. Completed phases and slices
 
@@ -115,7 +116,7 @@ Status: DONE, retain.
 
 ### P03 — Transaction Editor, Ledger Register, and Journal Pane
 
-Status: READY for corrective/new slices.
+Status: READY; corrective P03-C4 VERIFYING.
 
 Completed slices:
 
@@ -123,41 +124,36 @@ Completed slices:
 - P03-C2 Journal Pane and Inspect Journal navigation: DONE.
 - P03-C3 Transaction Editor Delete correction action: DONE.
 
-### P04 — Persistent budgeting
-
-Status: DONE, retrofit as touched.
-
-### P05 — Banking configuration and statement import
-
-Status: DONE through PR #137; corrective P05-C5 VERIFYING.
-
-Completed slices:
-
-- P05-S1 Bank and bank-account model: DONE.
-- P05-S2 Banking panel under Accounting: DONE.
-- P05-S3 Statement import normalization and matching: DONE.
-- P05-S4 Cleared-state mapping to ledger bank lines: DONE.
-
-Validation recorded in PR #137: focused banking/import/reconciliation tests and full local `mvn clean verify` passed with 266 tests run and 9 skipped. No GitHub workflow runs were available for the merge commit.
-
-### P05-C5 — Banking panel horizontal master-panel layout correction
+### P03-C4 — Transaction Editor and Journal Pane redesign
 
 Status: VERIFYING.
-Branch: `codex/P05-C5-banking-horizontal-split`
-Pull request: #148
-Head: `1ceeb637ba4ab417ebc35701dd7e4c86c0941d6a`
+Branch: `codex/P03-C4-transaction-editor-table-state-plan`
+Pull request: #149
+Head: `dddfa92d52580970296c785f1333b2853ed843c7`
 
-Purpose: improve Banking panel usability on laptop-width workspaces by changing the main Financial Institutions / Configured Bank Accounts split from side-by-side panes to top/bottom panes separated by a horizontal splitter.
+Purpose: redesign the Transaction Editor and Journal Pane for usable, laptop-width transaction entry and review, using the legacy `benbaron/NonprofitAccounting` JavaFX UI package only as a design reference.
 
 Implemented in branch:
 
-- Banking panel main `SplitPane` now uses `Orientation.VERTICAL`, placing Financial Institutions above Configured Bank Accounts.
-- Existing Banking behavior, persistence, buttons, selectors, editor forms, and service boundaries are preserved.
-- Bank and configured-account tables are allowed to grow within their sections.
-- Added `BankingPanelSourceTest` guardrail for the intended top/bottom split contract.
+- `TransactionEditorPanel` is reorganized into task-sized tabs: Header, Entry Lines, Additional Details, Donation Subschedule, and Supplemental Details.
+- Header tab includes journal-entry title, date, memo, debit total, credit total, difference, balanced/needs-attention status, and validation text.
+- Entry Lines tab includes the editable entry-line table, Add Line, Duplicate, Remove, one-sided Debit/Credit behavior, blank row behavior, and active-company table-state persistence.
+- Additional Details tab groups Party / Document, Bank / Reconciliation, and Budget / Fund details.
+- Donation Subschedule tab exposes donation ID, donor ID, donor name, and a disabled donor-edit action with a clear explanation because no H2 donor editing service is in this slice.
+- Supplemental Details tab exposes Receivable, Payable, Prepaid Expense, Deferred Revenue, Other Asset, and Other Liability panels as transaction-local detail panels. Unsupported Add/Remove actions are disabled with explanatory tooltips.
+- `JournalPane` now groups journal projections into transaction-level rows with Date, Account Title and Description, Fund, Cleared, Debit, Credit, Transaction ID, Supplemental, and Memo/Details regions.
+- Journal Pane adds New, Edit, Delete, and Refresh actions. Delete routes through the current correction policy and `TransactionCorrectionService` rather than deleting table rows.
+- `TransactionEditorRedesignSourceTest` and updated `JournalPaneTest` guard the redesign structure, grouped-journal behavior, table-state wiring, and absence of reintroduced generic Schedules navigation/class usage.
+- `doc/interface-operation-matrix.md` and `doc/ui/editor-guidelines.md` are updated for the new Transaction Editor and Journal Pane behavior.
 
-Remaining deliverables: inspect GitHub Actions for PR #148 and perform desktop visual validation at laptop width.
-Next exact action: inspect GitHub Actions output.
+Validation so far:
+
+- Maven PR Tests run 29039185959 completed successfully for head `50fdab8d52ca7a8e61f28a33b8a0cb8c19a57c24`.
+- Maven PR Tests run 29039394914 completed successfully for head `dddfa92d52580970296c785f1333b2853ed843c7` after the editor-guidelines documentation update.
+
+Remaining deliverable before DONE:
+
+- Desktop visual validation of Transaction Editor and Journal Pane at laptop width.
 
 ## 7. Active and recent phase contracts
 
@@ -200,7 +196,7 @@ Required behavior: implement Asset Register add/edit and depreciation behavior t
 
 Status: DONE through PR #140.
 
-Completed deliverables: V55 fixed asset/depreciation-run migration; `FixedAsset` and `FixedAssetDepreciationRun` JPA entities; `FixedAssetService` create/update/list/depreciation-run behavior; depreciation runs create canonical `Txn`/`TxnSplit` rows; Asset Register and Depreciation Runs panels read/write through `FixedAssetService`; asset/depreciation runbook sidecars removed; docs and focused tests added/updated, including a Flyway migration-version uniqueness guardrail.
+Completed deliverables: V55 fixed asset/depreciation-run migration; `FixedAsset` and `FixedAssetDepreciationRun` JPA entities; `FixedAssetService` create/update/list/depreciation-run behavior; depreciation runs create canonical `Txn` and `TxnSplit` rows; Asset Register and Depreciation Runs panels read/write through `FixedAssetService`; asset/depreciation runbook sidecars removed; docs and focused tests added/updated, including a Flyway migration-version uniqueness guardrail.
 
 ### P08-C1 — Asset Register selector display labels
 
@@ -307,11 +303,11 @@ Before a PR is ready:
 
 ## 10. Current next action
 
-Execute validation for:
+Continue validation for:
 
 ```text
-PHASE=P05
-SLICE=P05-C5
+PHASE=P03
+SLICE=P03-C4
 ```
 
-Inspect GitHub Actions for PR #148 and perform laptop-width desktop visual validation of the Banking top/bottom split.
+Perform desktop visual validation of Transaction Editor and Journal Pane on a laptop-width workspace.

@@ -1,6 +1,6 @@
 # Transaction editor guidelines
 
-P03 introduces one shared spreadsheet-like line editor for transaction entry surfaces.
+P03 introduces one shared spreadsheet-like line editor for transaction entry surfaces. P03-C4 reorganizes the Transaction Editor into task-sized pages and updates Journal Pane toward grouped transaction review.
 
 ## Shared line editor contract
 
@@ -19,21 +19,24 @@ P03 introduces one shared spreadsheet-like line editor for transaction entry sur
 - Editor and register regions that can hide default-size text must remain user-resizable and scrollable: use a visible `SplitPane` when a region shares space with another pane, and provide both vertical and horizontal scrolling for hidden rows, columns, or long values instead of increasing minimum widths or relying only on wrapping.
 - Editors for durable records must not show disabled placeholder Delete buttons. Transaction Editor Delete may hard-delete only when Settings -> Correction method is `DIRECT_EDIT`; otherwise it must ask whether to auto-fill and perform a reversing entry, defaulting the reversal date from the active period, and route the confirmed reversal through the correction service.
 
-## Donor inspection findings for native transaction entry
+## P03-C4 page and journal contract
 
-The `benbaron/NonprofitAccounting` archive was inspected from a shallow clone at `/tmp/NonprofitAccounting` on 2026-07-03. The following donor areas can inform native P03 transaction panels and services without becoming a parallel application model:
+- Transaction Editor is organized into task-sized pages: Header, Entry Lines, Additional Details, Donation Subschedule, and Supplemental Details.
+- Header contains the transaction title, date, memo, debit total, credit total, difference, balanced/needs-attention status, and validation message.
+- Entry Lines contains Add Line, Duplicate, Remove, the entry-line table, one-sided Debit/Credit behavior, blank-row behavior, and active-company table-state persistence.
+- Additional Details groups Party / Document, Bank / Reconciliation, and Budget / Fund fields. Only fields supported by `TransactionCommand` are authoritative on save until their owning services exist.
+- Donation and Supplemental Details are transaction-local detail panels. They must not reintroduce the eliminated generic Schedules panel, schedule runbook sidecar, or Schedules navigation item.
+- Supplemental detail panels cover Receivable, Payable, Prepaid Expense, Deferred Revenue, Other Asset, and Other Liability. Unsupported Add/Remove actions must be absent or disabled with clear explanation.
+- Journal Pane reviews whole transactions as grouped rows when the current projection supports it. A grouped row should expose Date, Account Title and Description, Fund, Cleared, Debit, Credit, Transaction ID, Supplemental, and Memo/Details regions.
+- Journal New, Edit, Delete, and Refresh actions are valid only when they route to the current Transaction Editor or correction services.
 
-- `src/main/java/nonprofitbookkeeping/ui/panels/JournalEntryWorkspaceFX.java` contributes UX patterns for transaction entry: a single add/duplicate/remove line workspace, account choices backed by a chart lookup, one-sided debit/credit edit commits, immediate total recalculation, blank-line skipping, and explicit validation messages before save. Native adoption should keep the P03 `TransactionLineEditorModel` and map selected IDs to `TransactionCommand`; do not import the donor's `CurrentCompany`, legacy `AccountingTransaction`, or direct JDBC metadata behavior.
-- `src/main/java/nonprofitbookkeeping/ui/helpers/FocusCommitTextFieldTableCell.java` confirms the focus-loss commit behavior needed by spreadsheet-style cells. Native adoption should keep the local focus-commit cell or extract a small JavaFX utility after tests prove Enter, tab, click-away, and invalid-number behavior; avoid copying donor logging-to-stderr behavior.
-- `src/main/java/org/nonprofitbookkeeping/service/PostingService.java` and `JournalLine.java` reinforce the canonical `Txn`/`TxnSplit` ledger, normal-balance debit/credit projection, and journal-view DTO shape already implemented by `TransactionEntryService`, `TransactionView`, and `AccountingJournalProjection`. Native P03-S2 should use `TransactionEntryService` rather than reintroducing donor `PostingService`, but can adapt donor-style post-save journal refresh and clear validation messages.
-- Donor supplemental/donation schedule tabs show a possible later pattern for related sub-schedules, but those are outside P03-S1/P03-S2 unless the plan deliberately opens schedules or donations work. They should not be imported into the transaction editor slice.
+## Design-reference findings for native transaction entry
 
-Recommended focused adaptations for upcoming native work:
+The `benbaron/NonprofitAccounting` UI package can inform native P03 panels without becoming a parallel model:
 
-1. Replace free-text account/fund cells with ID-backed combo cells whose displayed labels come from `TransactionLineEditorModel.ReferenceData`, following the donor's account-choice pattern but resolving to stable database IDs.
-2. Add duplicate-line and row-level missing-reference styling only after the base save workflow is wired to `TransactionEntryService`.
-3. Keep native validation at the command boundary; use donor validation wording only as UI copy, not as a second accounting policy.
-4. Add service-backed journal preview after save/load by calling `TransactionEntryService.journalView`, using donor `JournalLine` only as confirmation of the projection shape.
+- `JournalEntryWorkspaceFX` contributes UX patterns for add/duplicate/remove entry lines, one-sided debit/credit editing, immediate total recalculation, explicit validation messages, additional detail cards, donation details, and supplemental tabs. Native adoption must keep `TransactionLineEditorModel` and `TransactionCommand`.
+- `JournalPanelFX` contributes a grouped transaction-block journal display with transaction-level selection/navigation and supplemental detail viewing. Native adoption must keep `TransactionEntryService.search(...)` and `journalView(...)` as projection sources.
+- Focus-commit table-cell behavior is appropriate for spreadsheet-style cells, but native code should keep or extract a local utility rather than porting legacy application services.
 
 ## P03-S2 transaction workflow integration notes
 
