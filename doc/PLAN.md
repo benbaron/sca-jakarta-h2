@@ -1,12 +1,12 @@
 ---
-plan_version: 15
-active_phase: P06
-active_slice: P06-C2
-active_status: VERIFYING
-active_branch: codex/P06-C2-reconciliation-wizard-layout
-active_pull_request: "#147"
-active_head: 38b3294377156eb41f018804d8a999eed6b4c9bc
-next_action: "Inspect GitHub Actions for PR #147 and perform desktop visual validation on laptop-width Bank Reconciliation workflow tabs."
+plan_version: 16
+active_phase: P05
+active_slice: P05-C5
+active_status: IN_PROGRESS
+active_branch: codex/P05-C5-banking-horizontal-split
+active_pull_request: pending
+active_head: pending
+next_action: "Implement Banking panel top/bottom Financial Institutions and Configured Bank Accounts split, then open PR and validate."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Inspect GitHub Actions for PR #147 and perform desktop visual vali
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P06-C1 as DONE through PR #146 and opens P06-C2 to correct the Bank Reconciliation layout so it is usable on laptop-width workspaces.
+This revision records P06-C2 as DONE through PR #147 and opens P05-C5 to correct the Banking panel layout so Financial Institutions and Configured Bank Accounts are split top/bottom rather than left/right.
 
 ## 2. Status values
 
@@ -37,8 +37,8 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P02 | Canonical ledger and transaction operations | P00 | DONE; retain |
 | P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY for corrective/new slices |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
-| P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137 |
-| P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 DONE through PR #146; corrective P06-C2 VERIFYING |
+| P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137; corrective P05-C5 IN_PROGRESS |
+| P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 DONE through PR #146; corrective P06-C2 DONE through PR #147 |
 | P07 | Eliminated former Schedules phase | n/a | DONE through PR #139 |
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 DONE through PR #144 |
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
@@ -129,7 +129,7 @@ Status: DONE, retrofit as touched.
 
 ### P05 — Banking configuration and statement import
 
-Status: DONE through PR #137.
+Status: DONE through PR #137; corrective P05-C5 IN_PROGRESS.
 
 Completed slices:
 
@@ -140,12 +140,36 @@ Completed slices:
 
 Validation recorded in PR #137: focused banking/import/reconciliation tests and full local `mvn clean verify` passed with 266 tests run and 9 skipped. No GitHub workflow runs were available for the merge commit.
 
+### P05-C5 — Banking panel horizontal master-panel layout correction
+
+Status: IN_PROGRESS.
+Branch: `codex/P05-C5-banking-horizontal-split`
+Pull request: pending
+
+Purpose: improve Banking panel usability on laptop-width workspaces by changing the main Financial Institutions / Configured Bank Accounts split from side-by-side panes to top/bottom panes separated by a horizontal splitter.
+
+Required behavior:
+
+- The top section contains Financial Institutions.
+- The bottom section contains Configured Bank Accounts.
+- The two sections are separated by a horizontal splitter, not a left/right vertical divider.
+- Existing Banking behavior, persistence, buttons, selectors, editor forms, and service boundaries are preserved.
+- Tables and forms remain independently scrollable and resizeable under the current UI design rules.
+
+Definition of done for P05-C5:
+
+- `BankingPanel` opens with Financial Institutions above Configured Bank Accounts.
+- No Banking operations are removed or changed in meaning.
+- The panel no longer creates the cramped side-by-side effect on laptop-width screens.
+- Focused source/layout guardrail verifies the main Banking split orientation.
+- `doc/PLAN.md` records the branch, PR, validation status, and next action.
+
 ## 7. Active and recent phase contracts
 
 # P06 — Bank reconciliation and cleared-state comparison
 
 **Selector:** `PHASE=P06`
-**Status:** DONE through PR #138; corrective P06-C1 DONE through PR #146; corrective P06-C2 VERIFYING
+**Status:** DONE through PR #138; corrective P06-C1 DONE through PR #146; corrective P06-C2 DONE through PR #147
 **Depends on:** P05
 
 Completed deliverables: removed approval semantics; added configured-account reconciliation comparison; added unresolved report summaries backed by H2 run records.
@@ -158,22 +182,9 @@ Completed deliverables: V57 H2 tables for durable reconciliation sessions and ma
 
 ### P06-C2 — Bank Reconciliation laptop layout correction
 
-Status: VERIFYING.
-Branch: `codex/P06-C2-reconciliation-wizard-layout`
-Pull request: #147
-Head: `38b3294377156eb41f018804d8a999eed6b4c9bc`
+Status: DONE through PR #147.
 
-Purpose: reduce crowding in the P06-C1 Bank Reconciliation panel by splitting the workflow into task-sized subpanels instead of one overloaded screen.
-
-Implemented in branch:
-
-- Replaced the one-page reconciliation canvas with workflow tabs: Setup, Statement, Match, and Review / Save.
-- Moved configured-account/session/policy controls to Setup.
-- Moved manual/CSV/OFX/QIF statement entry and import controls to Statement.
-- Moved statement and ledger tables plus match/unmatch/mark-cleared/resolve controls to Match.
-- Moved balance cards, comparison report, and save/finalize controls to Review / Save.
-
-Remaining deliverables: inspect GitHub Actions and perform desktop visual validation at laptop width.
+Completed deliverables: Replaced the one-page reconciliation canvas with workflow tabs: Setup, Statement, Match, and Review / Save; moved configured-account/session/policy controls to Setup; moved manual/CSV/OFX/QIF statement entry and import controls to Statement; moved statement and ledger tables plus match/unmatch/mark-cleared/resolve controls to Match; moved balance cards, comparison report, and save/finalize controls to Review / Save.
 
 # P07 — Eliminated former Schedules phase
 
@@ -301,11 +312,11 @@ Before a PR is ready:
 
 ## 10. Current next action
 
-Execute validation for:
+Execute implementation for:
 
 ```text
-PHASE=P06
-SLICE=P06-C2
+PHASE=P05
+SLICE=P05-C5
 ```
 
-Inspect GitHub Actions for PR #147 and perform desktop visual validation at laptop width.
+Implement the Banking panel top/bottom split, add a focused guardrail test, open a PR, and perform laptop-width desktop visual validation.
