@@ -1,12 +1,12 @@
 ---
-plan_version: 14
+plan_version: 15
 active_phase: P06
-active_slice: P06-C1
+active_slice: P06-C2
 active_status: VERIFYING
-active_branch: codex/P06-C1-bank-reconciliation-implementation
-active_pull_request: "#146"
-active_head: 14c59470ff7375d7a23ff67efb55c89a08741288
-next_action: "Inspect GitHub Actions Maven PR Tests run 28988634155, fix the remaining failure, update docs/tests, and perform desktop visual validation."
+active_branch: codex/P06-C2-reconciliation-wizard-layout
+active_pull_request: pending
+active_head: 95f64a6e4138f736104b5e76a73a68f78b1fb3fc
+next_action: "Open PR for P06-C2, inspect GitHub Actions, and perform desktop visual validation on laptop-width Bank Reconciliation workflow tabs."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Inspect GitHub Actions Maven PR Tests run 28988634155, fix the rem
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision continues P06-C1 for the full Bank Reconciliation workspace after PR #145 activated the slice.
+This revision records P06-C1 as DONE through PR #146 and opens P06-C2 to correct the Bank Reconciliation layout so it is usable on laptop-width workspaces.
 
 ## 2. Status values
 
@@ -38,7 +38,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY for corrective/new slices |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
 | P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137 |
-| P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 VERIFYING |
+| P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 DONE through PR #146; corrective P06-C2 VERIFYING |
 | P07 | Eliminated former Schedules phase | n/a | DONE through PR #139 |
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 DONE through PR #144 |
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
@@ -145,30 +145,35 @@ Validation recorded in PR #137: focused banking/import/reconciliation tests and 
 # P06 — Bank reconciliation and cleared-state comparison
 
 **Selector:** `PHASE=P06`
-**Status:** DONE through PR #138; corrective P06-C1 VERIFYING
+**Status:** DONE through PR #138; corrective P06-C1 DONE through PR #146; corrective P06-C2 VERIFYING
 **Depends on:** P05
 
 Completed deliverables: removed approval semantics; added configured-account reconciliation comparison; added unresolved report summaries backed by H2 run records.
-Known follow-up: per-line cleared-state resolution choices and edit-existing reconciliation workflow remain later P06/P10/P11 work.
 
 ### P06-C1 — Full Bank Reconciliation workspace
 
-Status: VERIFYING.
-Branch: `codex/P06-C1-bank-reconciliation-implementation`
-Pull request: #146
-Head: `14c59470ff7375d7a23ff67efb55c89a08741288`
+Status: DONE through PR #146.
 
-Purpose: replace the partial comparison-only surface with the requirements-driven Bank Reconciliation workspace.
+Completed deliverables: V57 H2 tables for durable reconciliation sessions and match/resolution rows; `BankReconciliationWorkspaceService`; configured-account filtering; session start/load/list; balance calculations; manual statement-line entry; CSV/OFX/QIF import parsing; matching, unmatching, mark-cleared, resolve-difference, save-unresolved, and finalize; JavaFX reconciliation workspace with configured-account selector, session controls, four cleared-state policies, balance cards, statement source tabs, matching tables, comparison report, and saved reconciliation table.
+
+### P06-C2 — Bank Reconciliation laptop layout correction
+
+Status: VERIFYING.
+Branch: `codex/P06-C2-reconciliation-wizard-layout`
+Pull request: pending
+Head: `95f64a6e4138f736104b5e76a73a68f78b1fb3fc`
+
+Purpose: reduce crowding in the P06-C1 Bank Reconciliation panel by splitting the workflow into task-sized subpanels instead of one overloaded screen.
 
 Implemented in branch:
 
-- V57 H2 tables for durable reconciliation sessions and match/resolution rows.
-- `BankReconciliationWorkspaceService` for configured-account filtering, session start/load/list, balance calculations, statement-line import/manual entry, matching, unmatching, mark-cleared, resolve-difference, save-unresolved, and finalize.
-- JavaFX Reconciliation panel with configured-account selector, session controls, four cleared-state policies, balance cards, manual/CSV/OFX/QIF statement sources, statement and ledger matching tables, matching actions, comparison report, and saved reconciliation table.
-- Updated stale reconciliation panel source and visible-control tests away from the old started/completed/failed run model.
+- Replaced the one-page reconciliation canvas with workflow tabs: Setup, Statement, Match, and Review / Save.
+- Moved configured-account/session/policy controls to Setup.
+- Moved manual/CSV/OFX/QIF statement entry and import controls to Statement.
+- Moved statement and ledger tables plus match/unmatch/mark-cleared/resolve controls to Match.
+- Moved balance cards, comparison report, and save/finalize controls to Review / Save.
 
-Remaining deliverables: CI is still failing with logs truncated before the Maven error in the connector; inspect full Maven error, fix it, add focused service tests, update interface matrix to mark the partial surface replaced, and perform desktop visual validation.
-Next exact action: inspect Maven PR Tests run 28988634155.
+Remaining deliverables: open PR, inspect GitHub Actions, and perform desktop visual validation at laptop width.
 
 # P07 — Eliminated former Schedules phase
 
@@ -300,7 +305,7 @@ Execute validation for:
 
 ```text
 PHASE=P06
-SLICE=P06-C1
+SLICE=P06-C2
 ```
 
-Inspect GitHub Actions Maven PR Tests run 28988634155, then fix failures before adding focused tests and marking the draft PR ready.
+Open a PR for `codex/P06-C2-reconciliation-wizard-layout`, inspect GitHub Actions, and perform desktop visual validation at laptop width.
