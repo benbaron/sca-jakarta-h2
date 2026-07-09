@@ -29,7 +29,13 @@ class TransactionEditorRedesignSourceTest
         assertTrue(source.contains("Deferred Revenue"));
         assertTrue(source.contains("Other Liability"));
         assertTrue(source.contains("TABLE_STATE"));
+        assertTrue(source.contains("SUPPLEMENTAL_TABLE_STATE"));
         assertTrue(source.contains("setReorderable(true)"));
+        assertTrue(source.contains("setEditable(true)"));
+        assertTrue(source.contains("add.setOnAction(event -> addSupplementalRow(kind))"));
+        assertTrue(source.contains("remove.setOnAction(event -> removeSupplementalRow(kind))"));
+        assertTrue(source.contains("validateSupplementalRows"));
+        assertFalse(source.contains("Supplemental detail persistence for"));
         assertFalse(source.contains("open_subwindow_schedules"));
         assertFalse(source.contains("SchedulesPanel"));
     }
