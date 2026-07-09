@@ -44,8 +44,10 @@ class TransactionEditorRedesignSourceTest
         assertTrue(source.contains("Supplemental"));
         assertTrue(source.contains("Schedules (0)"));
         assertTrue(source.contains("transaction-local details"));
+        assertTrue(source.contains("not the eliminated generic Schedules module"));
         assertTrue(source.contains("Delete"));
         assertTrue(source.contains("Refresh"));
-        assertFalse(source.contains("generic Schedules module"));
+        assertFalse(source.contains("open_subwindow_schedules"));
+        assertFalse(source.contains("SchedulesPanel"));
     }
 }
