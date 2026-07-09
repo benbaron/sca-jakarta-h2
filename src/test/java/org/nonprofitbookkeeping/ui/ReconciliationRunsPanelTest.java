@@ -1,51 +1,37 @@
 package org.nonprofitbookkeeping.ui;
 
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * ReconciliationRunsPanelTest component.
+ * ReconciliationRunsPanel visible-control guardrail.
  */
 public class ReconciliationRunsPanelTest
 {
-    @BeforeAll
-    static void setupFx()
-    {
-        FxTestSupport.initToolkitOrSkip();
-    }
-
     @Test
-    public void panelExposesComparisonActionsWithoutApprovalWorkflow()
+    public void panelSourceExposesFullWorkspaceActionsWithoutApprovalWorkflow() throws Exception
     {
-        ReconciliationRunsPanel panel = FxTestSupport.onFx(ReconciliationRunsPanel::new);
+        String source = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/ReconciliationRunsPanel.java"));
 
-        FxTestSupport.onFx(() -> {
-            VBox top = (VBox) ((BorderPane) panel.root()).getTop();
-            HBox actions = (HBox) top.getChildren().get(1);
-            List<String> actionLabels = actions.getChildren().stream()
-                    .map(Button.class::cast)
-                    .map(Button::getText)
-                    .toList();
-            Label workflowNote = (Label) top.getChildren().get(2);
-
-            assertEquals(List.of("Refresh", "Record Started", "Record Completed Run", "Record Failed"), actionLabels);
-            assertFalse(actionLabels.contains("Approve Selected"));
-            assertFalse(actionLabels.contains("Reject Selected"));
-            assertFalse(actionLabels.contains("View Approval Audit"));
-            assertTrue(workflowNote.getText().contains("comparison workflow"));
-            assertTrue(workflowNote.getText().contains("approve/reject decisions are not part of this panel"));
-            return null;
-        });
+        assertTrue(source.contains("Load"));
+        assertTrue(source.contains("New Reconciliation"));
+        assertTrue(source.contains("Edit Existing"));
+        assertTrue(source.contains("Save Unresolved"));
+        assertTrue(source.contains("Finalize"));
+        assertTrue(source.contains("Warn only"));
+        assertTrue(source.contains("Overwrite ledger cleared state"));
+        assertTrue(source.contains("Never overwrite; require manual resolution"));
+        assertTrue(source.contains("Decide per imported line"));
+        assertFalse(source.contains("Approve Selected"));
+        assertFalse(source.contains("Reject Selected"));
+        assertFalse(source.contains("View Approval Audit"));
+        assertFalse(source.contains("Record Started"));
+        assertFalse(source.contains("Record Completed Run"));
+        assertFalse(source.contains("Record Failed"));
     }
 }

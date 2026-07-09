@@ -1,12 +1,12 @@
 ---
-plan_version: 13
+plan_version: 14
 active_phase: P06
 active_slice: P06-C1
-active_status: IN_PROGRESS
-active_branch: codex/P06-C1-bank-reconciliation-workspace
-active_pull_request: "#145"
-active_head: 148dec7bfbcb2314bc9178cccaea511dc223bf15
-next_action: "Inspect current reconciliation, statement import, cleared-state, ledger-line, and period-close code, then implement the full Bank Reconciliation workspace."
+active_status: VERIFYING
+active_branch: codex/P06-C1-bank-reconciliation-implementation
+active_pull_request: "#146"
+active_head: 14c59470ff7375d7a23ff67efb55c89a08741288
+next_action: "Inspect GitHub Actions Maven PR Tests run 28988634155, fix the remaining failure, update docs/tests, and perform desktop visual validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Inspect current reconciliation, statement import, cleared-state, l
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P08-C1 as DONE through PR #144 and activates P06-C1 for the full Bank Reconciliation workspace.
+This revision continues P06-C1 for the full Bank Reconciliation workspace after PR #145 activated the slice.
 
 ## 2. Status values
 
@@ -38,7 +38,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY for corrective/new slices |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
 | P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137 |
-| P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 IN_PROGRESS |
+| P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 VERIFYING |
 | P07 | Eliminated former Schedules phase | n/a | DONE through PR #139 |
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 DONE through PR #144 |
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
@@ -145,7 +145,7 @@ Validation recorded in PR #137: focused banking/import/reconciliation tests and 
 # P06 — Bank reconciliation and cleared-state comparison
 
 **Selector:** `PHASE=P06`
-**Status:** DONE through PR #138; corrective P06-C1 IN_PROGRESS
+**Status:** DONE through PR #138; corrective P06-C1 VERIFYING
 **Depends on:** P05
 
 Completed deliverables: removed approval semantics; added configured-account reconciliation comparison; added unresolved report summaries backed by H2 run records.
@@ -153,38 +153,22 @@ Known follow-up: per-line cleared-state resolution choices and edit-existing rec
 
 ### P06-C1 — Full Bank Reconciliation workspace
 
-Status: IN_PROGRESS.
-Branch: `codex/P06-C1-bank-reconciliation-workspace`
-Pull request: #145
+Status: VERIFYING.
+Branch: `codex/P06-C1-bank-reconciliation-implementation`
+Pull request: #146
+Head: `14c59470ff7375d7a23ff67efb55c89a08741288`
 
 Purpose: replace the partial comparison-only surface with the requirements-driven Bank Reconciliation workspace.
 
-Required behavior:
+Implemented in branch:
 
-- Show only configured bank accounts linked through the Banking panel, not every chart account of type BANK.
-- Read transactions for the selected configured bank account.
-- Calculate beginning balance from the most recent closed period ending before the statement date, activity after that close through the statement date, and ending book balance at the statement date.
-- Show balance cards for beginning balance, book balance at statement date for all transactions, book balance at statement date for cleared-only transactions, statement ending balance, and difference.
-- Store cleared state on the ledger transaction line involving the bank account.
-- Treat transactions with multiple bank-account lines by reconciling each bank-account ledger line independently.
-- Support statement sources for manual entry, CSV import, OFX import, and QIF import.
-- Match imported/manual statement entries to internal ledger bank-account lines using statement matching rules.
-- Provide all four cleared-state mismatch policies: warn only; overwrite ledger cleared state; never overwrite and require manual resolution; decide per imported line.
-- Provide a two-table matching workspace with imported/manual statement entries on one side and ledger bank-account lines on the other.
-- Provide matching actions: auto match, match selected, unmatch, mark cleared, and resolve difference.
-- Report unmatched ledger transactions, unmatched statement entries, amount mismatches, date mismatches, duplicate possible matches, cleared-state mismatches, beginning balance differences, and ending balance differences.
-- Allow users to save unresolved reconciliation reports.
-- Allow users to start a new reconciliation or edit an existing reconciliation.
-- Replace the current started/completed/failed run model and any approve/reject semantics with the new reconciliation session and report workflow.
+- V57 H2 tables for durable reconciliation sessions and match/resolution rows.
+- `BankReconciliationWorkspaceService` for configured-account filtering, session start/load/list, balance calculations, statement-line import/manual entry, matching, unmatching, mark-cleared, resolve-difference, save-unresolved, and finalize.
+- JavaFX Reconciliation panel with configured-account selector, session controls, four cleared-state policies, balance cards, manual/CSV/OFX/QIF statement sources, statement and ledger matching tables, matching actions, comparison report, and saved reconciliation table.
+- Updated stale reconciliation panel source and visible-control tests away from the old started/completed/failed run model.
 
-Definition of done for P06-C1:
-
-- JavaFX panel layout matches the approved Bank Reconciliation layout direction, excluding external annotation callouts.
-- UI uses service/query boundaries and contains no SQL.
-- Durable reconciliation sessions, statement entries, match decisions, mismatch resolutions, and saved reports are H2-backed through nondestructive migrations.
-- Cleared-state updates route through the canonical ledger service boundary and apply the selected overwrite/warn/manual policy.
-- Tests cover configured-account filtering, balance calculations from last close through statement date, matching categories, mismatch policy behavior, save-unresolved, edit-existing, and no approval/rejection workflow.
-- `doc/interface-operation-matrix.md` is updated to mark the old partial surface replaced.
+Remaining deliverables: CI is still failing with logs truncated before the Maven error in the connector; inspect full Maven error, fix it, add focused service tests, update interface matrix to mark the partial surface replaced, and perform desktop visual validation.
+Next exact action: inspect Maven PR Tests run 28988634155.
 
 # P07 — Eliminated former Schedules phase
 
@@ -312,11 +296,11 @@ Before a PR is ready:
 
 ## 10. Current next action
 
-Execute implementation for:
+Execute validation for:
 
 ```text
 PHASE=P06
 SLICE=P06-C1
 ```
 
-Inspect current reconciliation, statement import, cleared-state, ledger-line, and period-close code, then implement the full Bank Reconciliation workspace.
+Inspect GitHub Actions Maven PR Tests run 28988634155, then fix failures before adding focused tests and marking the draft PR ready.
