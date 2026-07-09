@@ -9,6 +9,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JournalPaneTest
 {
@@ -22,7 +23,7 @@ public class JournalPaneTest
     }
 
     @Test
-    public void rowsFor_flattensJournalProjectionIntoTraditionalJournalLines()
+    public void rowsFor_groupsJournalProjectionIntoTransactionBlock()
     {
         AccountingJournalProjection projection = new AccountingJournalProjection(
                 77L,
@@ -37,14 +38,16 @@ public class JournalPaneTest
 
         List<JournalPane.JournalRow> rows = JournalPane.rowsFor(projection);
 
-        assertEquals(2, rows.size());
+        assertEquals(1, rows.size());
         assertEquals(77L, rows.get(0).transactionId());
         assertEquals("2026-07-06", rows.get(0).date());
-        assertEquals("Reference memo", rows.get(0).memo());
-        assertEquals("1000 Operating Bank", rows.get(0).account());
-        assertEquals("GEN General", rows.get(0).fund());
-        assertEquals("$25.00", rows.get(0).debit());
-        assertEquals("$0.00", rows.get(0).credit());
-        assertEquals("deposit", rows.get(0).lineDetails());
+        assertTrue(rows.get(0).account().contains("1000 Operating Bank"));
+        assertTrue(rows.get(0).account().contains("4000 Contributions"));
+        assertTrue(rows.get(0).fund().contains("GEN General"));
+        assertTrue(rows.get(0).debit().contains("$25.00"));
+        assertTrue(rows.get(0).credit().contains("$25.00"));
+        assertTrue(rows.get(0).memo().contains("Memo: Reference memo"));
+        assertTrue(rows.get(0).memo().contains("Payee: Sample Payee"));
+        assertEquals("Schedules (0)", rows.get(0).supplemental());
     }
 }
