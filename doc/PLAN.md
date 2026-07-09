@@ -2,11 +2,11 @@
 plan_version: 16
 active_phase: P05
 active_slice: P05-C5
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P05-C5-banking-horizontal-split
-active_pull_request: pending
-active_head: pending
-next_action: "Implement Banking panel top/bottom Financial Institutions and Configured Bank Accounts split, then open PR and validate."
+active_pull_request: "#148"
+active_head: 1ceeb637ba4ab417ebc35701dd7e4c86c0941d6a
+next_action: "Inspect GitHub Actions for PR #148 and perform laptop-width desktop visual validation of the Banking top/bottom split."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,7 +37,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P02 | Canonical ledger and transaction operations | P00 | DONE; retain |
 | P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY for corrective/new slices |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
-| P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137; corrective P05-C5 IN_PROGRESS |
+| P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137; corrective P05-C5 VERIFYING |
 | P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 DONE through PR #146; corrective P06-C2 DONE through PR #147 |
 | P07 | Eliminated former Schedules phase | n/a | DONE through PR #139 |
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 DONE through PR #144 |
@@ -129,7 +129,7 @@ Status: DONE, retrofit as touched.
 
 ### P05 — Banking configuration and statement import
 
-Status: DONE through PR #137; corrective P05-C5 IN_PROGRESS.
+Status: DONE through PR #137; corrective P05-C5 VERIFYING.
 
 Completed slices:
 
@@ -142,27 +142,22 @@ Validation recorded in PR #137: focused banking/import/reconciliation tests and 
 
 ### P05-C5 — Banking panel horizontal master-panel layout correction
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 Branch: `codex/P05-C5-banking-horizontal-split`
-Pull request: pending
+Pull request: #148
+Head: `1ceeb637ba4ab417ebc35701dd7e4c86c0941d6a`
 
 Purpose: improve Banking panel usability on laptop-width workspaces by changing the main Financial Institutions / Configured Bank Accounts split from side-by-side panes to top/bottom panes separated by a horizontal splitter.
 
-Required behavior:
+Implemented in branch:
 
-- The top section contains Financial Institutions.
-- The bottom section contains Configured Bank Accounts.
-- The two sections are separated by a horizontal splitter, not a left/right vertical divider.
+- Banking panel main `SplitPane` now uses `Orientation.VERTICAL`, placing Financial Institutions above Configured Bank Accounts.
 - Existing Banking behavior, persistence, buttons, selectors, editor forms, and service boundaries are preserved.
-- Tables and forms remain independently scrollable and resizeable under the current UI design rules.
+- Bank and configured-account tables are allowed to grow within their sections.
+- Added `BankingPanelSourceTest` guardrail for the intended top/bottom split contract.
 
-Definition of done for P05-C5:
-
-- `BankingPanel` opens with Financial Institutions above Configured Bank Accounts.
-- No Banking operations are removed or changed in meaning.
-- The panel no longer creates the cramped side-by-side effect on laptop-width screens.
-- Focused source/layout guardrail verifies the main Banking split orientation.
-- `doc/PLAN.md` records the branch, PR, validation status, and next action.
+Remaining deliverables: inspect GitHub Actions for PR #148 and perform desktop visual validation at laptop width.
+Next exact action: inspect GitHub Actions output.
 
 ## 7. Active and recent phase contracts
 
@@ -312,11 +307,11 @@ Before a PR is ready:
 
 ## 10. Current next action
 
-Execute implementation for:
+Execute validation for:
 
 ```text
 PHASE=P05
 SLICE=P05-C5
 ```
 
-Implement the Banking panel top/bottom split, add a focused guardrail test, open a PR, and perform laptop-width desktop visual validation.
+Inspect GitHub Actions for PR #148 and perform laptop-width desktop visual validation of the Banking top/bottom split.
