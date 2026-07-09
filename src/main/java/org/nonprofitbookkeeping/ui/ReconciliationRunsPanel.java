@@ -47,6 +47,7 @@ import java.time.LocalDate;
 public class ReconciliationRunsPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
+    private final TabPane workflowTabs = new TabPane();
     private final ComboBox<BankAccountOption> bankAccountSelect = new ComboBox<>();
     private final DatePicker statementEndDate = new DatePicker(LocalDate.now());
     private final TextField statementEndingBalance = new TextField("0.00");
@@ -66,6 +67,7 @@ public class ReconciliationRunsPanel implements AppPanel
     private final Label difference = balanceLabel();
     private final Label dateRange = new Label("No reconciliation loaded.");
     private final Label result = new Label("Result: not run");
+    private final Label sessionSummary = new Label("No reconciliation session loaded.");
 
     private final TableView<StatementEntryView> statementTable = new TableView<>();
     private final TableView<LedgerLineView> ledgerTable = new TableView<>();
@@ -88,75 +90,149 @@ public class ReconciliationRunsPanel implements AppPanel
         root.setPadding(new Insets(8));
         Label title = new Label("Bank Reconciliation");
         title.getStyleClass().add("panel-title");
-        Label subtitle = new Label("Compare imported or manually entered statement activity to cleared ledger activity for a configured bank account.");
+        Label subtitle = new Label("Work through setup, statement entry, matching, and final review without crowding the laptop workspace.");
         subtitle.getStyleClass().add("help-text");
         configureSelectors();
         configureTables();
         configureStatementSources();
+        configureWorkflowTabs();
         warnOnly.setSelected(true);
-        root.setTop(new VBox(6, title, subtitle, topControls(), policyBox(), balances(), status, new Separator()));
-        root.setCenter(workspace());
+        root.setTop(new VBox(6, title, subtitle, sessionSummary, status, new Separator()));
+        root.setCenter(workflowTabs);
         loadBankAccountsAndSessions();
     }
 
     @Override public String title() { return "Bank Reconciliation"; }
     @Override public Node root() { return root; }
 
-    private HBox topControls()
+    private void configureWorkflowTabs()
     {
+        workflowTabs.getTabs().setAll(
+                workflowTab("1. Setup", setupPane()),
+                workflowTab("2. Statement", statementPane()),
+                workflowTab("3. Match", matchPane()),
+                workflowTab("4. Review / Save", reviewPane()));
+    }
+
+    private Tab workflowTab(String title, Node content)
+    {
+        Tab tab = new Tab(title, content);
+        tab.setClosable(false);
+        return tab;
+    }
+
+    private Node setupPane()
+    {
+        GridPane form = new GridPane();
+        form.setHgap(8);
+        form.setVgap(8);
+        form.setPadding(new Insets(8));
+        bankAccountSelect.setPrefWidth(420);
+        sessionSelect.setPrefWidth(420);
+        statementEndingBalance.setPrefWidth(150);
+        notes.setPrefWidth(420);
+        form.addRow(0, new Label("Configured Bank Account"), bankAccountSelect);
+        form.addRow(1, new Label("Statement Through Date"), statementEndDate);
+        form.addRow(2, new Label("Statement Ending Balance"), statementEndingBalance);
+        form.addRow(3, new Label("Saved Session"), sessionSelect);
+        form.addRow(4, new Label("Notes"), notes);
+        form.addRow(5, new Label("Cleared-State Mismatch Policy"), policyChoices());
+
         Button load = new Button("Load");
         load.setOnAction(e -> reloadSnapshot());
         Button startNew = new Button("New Reconciliation");
         startNew.setOnAction(e -> startNewSession());
         Button editExisting = new Button("Edit Existing");
         editExisting.setOnAction(e -> editExistingSession());
+        HBox actions = new HBox(8, load, startNew, editExisting, nextButton("Next: Statement", 1));
+
+        VBox sessions = new VBox(6, new Label("Saved Reconciliations"), sessionTable);
+        VBox.setVgrow(sessionTable, Priority.ALWAYS);
+        VBox pane = new VBox(10, new Label("Setup"), form, actions, sessions);
+        pane.setPadding(new Insets(8));
+        VBox.setVgrow(sessions, Priority.ALWAYS);
+        return pane;
+    }
+
+    private HBox policyChoices()
+    {
+        return new HBox(10, warnOnly, overwrite, neverOverwrite, perLine);
+    }
+
+    private Node statementPane()
+    {
+        VBox pane = new VBox(8,
+                new Label("Statement Source"),
+                new Label("Add manual statement lines or import statement text from CSV, OFX, or QIF before moving to matching."),
+                sourceTabs,
+                sourceActions(),
+                new HBox(8, backButton("Back: Setup", 0), nextButton("Next: Match", 2)));
+        pane.setPadding(new Insets(8));
+        VBox.setVgrow(sourceTabs, Priority.ALWAYS);
+        return pane;
+    }
+
+    private Node matchPane()
+    {
+        VBox statementPane = new VBox(6, new Label("Statement Entries"), statementTable);
+        VBox ledgerPane = new VBox(6, new Label("Ledger Bank-Account Lines"), ledgerTable);
+        VBox.setVgrow(statementTable, Priority.ALWAYS);
+        VBox.setVgrow(ledgerTable, Priority.ALWAYS);
+        SplitPane split = new SplitPane(statementPane, ledgerPane);
+        split.setDividerPositions(0.50);
+        VBox pane = new VBox(8,
+                new Label("Match Statement Entries to Ledger Lines"),
+                matchingActions(),
+                split,
+                new HBox(8, backButton("Back: Statement", 1), nextButton("Next: Review", 3)));
+        pane.setPadding(new Insets(8));
+        VBox.setVgrow(split, Priority.ALWAYS);
+        return pane;
+    }
+
+    private Node reviewPane()
+    {
+        VBox reportPane = new VBox(6, new Label("Comparison Report"), differenceTable);
+        VBox.setVgrow(differenceTable, Priority.ALWAYS);
         Button saveUnresolved = new Button("Save Unresolved");
         saveUnresolved.setOnAction(e -> save(false));
         Button finalize = new Button("Finalize");
         finalize.setOnAction(e -> save(true));
-        statementEndingBalance.setPrefWidth(110);
-        notes.setPrefWidth(220);
-        bankAccountSelect.setPrefWidth(340);
-        sessionSelect.setPrefWidth(250);
-        return new HBox(8,
-                new Label("Configured Bank Account"), bankAccountSelect,
-                new Label("Statement Through Date"), statementEndDate,
-                new Label("Statement Ending Balance"), statementEndingBalance,
-                new Label("Session"), sessionSelect,
-                load, startNew, editExisting, saveUnresolved, finalize);
+        VBox pane = new VBox(10,
+                new Label("Review and Save"),
+                balances(),
+                reportPane,
+                new HBox(8, backButton("Back: Match", 2), saveUnresolved, finalize));
+        pane.setPadding(new Insets(8));
+        VBox.setVgrow(reportPane, Priority.ALWAYS);
+        return pane;
     }
 
-    private HBox policyBox()
+    private Button backButton(String text, int tabIndex)
     {
-        return new HBox(10, new Label("Cleared-State Mismatch Policy"), warnOnly, overwrite, neverOverwrite, perLine, new Label("Notes"), notes);
+        Button button = new Button(text);
+        button.setOnAction(e -> workflowTabs.getSelectionModel().select(tabIndex));
+        return button;
+    }
+
+    private Button nextButton(String text, int tabIndex)
+    {
+        Button button = new Button(text);
+        button.setOnAction(e -> workflowTabs.getSelectionModel().select(tabIndex));
+        return button;
     }
 
     private HBox balances()
     {
-        return new HBox(12,
+        HBox cards = new HBox(12,
                 card("Beginning Balance", startBalance),
                 card("Book Balance — All Transactions", bookAll),
                 card("Book Balance — Cleared Only", bookCleared),
                 card("Statement Ending Balance", statementBalance),
                 card("Difference", difference),
                 new VBox(4, dateRange, result));
-    }
-
-    private Node workspace()
-    {
-        VBox statementPane = new VBox(6, new Label("Statement Source"), sourceTabs, sourceActions(), new Label("Imported / Statement Entries"), statementTable);
-        VBox ledgerPane = new VBox(6, matchingActions(), new Label("Ledger Bank-Account Lines"), ledgerTable);
-        VBox reportPane = new VBox(6, new Label("Comparison Report"), differenceTable, new Label("Saved Reconciliations"), sessionTable);
-        VBox.setVgrow(statementTable, Priority.ALWAYS);
-        VBox.setVgrow(ledgerTable, Priority.ALWAYS);
-        VBox.setVgrow(differenceTable, Priority.ALWAYS);
-        VBox.setVgrow(sessionTable, Priority.ALWAYS);
-        SplitPane top = new SplitPane(statementPane, ledgerPane);
-        top.setDividerPositions(0.50);
-        SplitPane all = new SplitPane(top, reportPane);
-        all.setOrientation(Orientation.VERTICAL);
-        all.setDividerPositions(0.68);
-        return all;
+        cards.setMinHeight(80);
+        return cards;
     }
 
     private HBox sourceActions()
@@ -208,7 +284,7 @@ public class ReconciliationRunsPanel implements AppPanel
 
     private Node importTab(String helper, TextArea area)
     {
-        area.setPrefRowCount(6);
+        area.setPrefRowCount(16);
         return new VBox(6, new Label(helper), area);
     }
 
@@ -254,7 +330,7 @@ public class ReconciliationRunsPanel implements AppPanel
         column(differenceTable, "Description", DifferenceView::description, 460);
         sessionTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         column(sessionTable, "Session", v -> String.valueOf(v.id()), 100);
-        column(sessionTable, "Account", SessionSummary::bankAccountLabel, 220);
+        column(sessionTable, "Account", SessionSummary::bankAccountLabel, 260);
         column(sessionTable, "Through Date", v -> string(v.statementEndDate()), 120);
         column(sessionTable, "Status", v -> v.status().name(), 110);
         column(sessionTable, "Difference", v -> money(v.difference()), 120);
@@ -300,6 +376,7 @@ public class ReconciliationRunsPanel implements AppPanel
             return;
         }
         runAction(() -> service().start(new StartCommand(activeCompanyCode(), account.id(), statementEndDate.getValue(), parseMoney(statementEndingBalance.getText()), selectedPolicy(), notes.getText())), "Started new reconciliation.");
+        workflowTabs.getSelectionModel().select(1);
     }
 
     private void editExistingSession()
@@ -311,6 +388,7 @@ public class ReconciliationRunsPanel implements AppPanel
             return;
         }
         runAction(() -> service().load(selected.id()), "Loaded reconciliation session " + selected.id() + ".");
+        workflowTabs.getSelectionModel().select(1);
     }
 
     private void reloadSnapshot()
@@ -392,6 +470,7 @@ public class ReconciliationRunsPanel implements AppPanel
         difference.setText(money(next.balances().difference()));
         dateRange.setText("Period: " + next.statementStartDate() + " – " + next.statementEndDate());
         result.setText(next.differences().isEmpty() && next.balances().difference().compareTo(BigDecimal.ZERO) == 0 ? "Result: Balances Match" : "Result: Unresolved Differences");
+        sessionSummary.setText("Session " + next.sessionId() + " • " + next.bankAccountLabel() + " • " + next.statementStartDate() + " – " + next.statementEndDate() + " • " + next.status());
     }
 
     private long requireSession()
