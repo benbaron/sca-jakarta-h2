@@ -76,7 +76,9 @@ public class ReconciliationRunsPanel implements AppPanel
     private final TextField manualDescription = new TextField();
     private final TextField manualReference = new TextField();
     private final TextField manualAmount = new TextField();
-    private final TextArea importPreview = new TextArea();
+    private final TextArea csvImportText = new TextArea();
+    private final TextArea ofxImportText = new TextArea();
+    private final TextArea qifImportText = new TextArea();
     private final TabPane sourceTabs = new TabPane();
 
     private Snapshot snapshot;
@@ -97,17 +99,8 @@ public class ReconciliationRunsPanel implements AppPanel
         loadBankAccountsAndSessions();
     }
 
-    @Override
-    public String title()
-    {
-        return "Bank Reconciliation";
-    }
-
-    @Override
-    public Node root()
-    {
-        return root;
-    }
+    @Override public String title() { return "Bank Reconciliation"; }
+    @Override public Node root() { return root; }
 
     private HBox topControls()
     {
@@ -170,13 +163,15 @@ public class ReconciliationRunsPanel implements AppPanel
     {
         Button addManual = new Button("Add Manual Line");
         addManual.setOnAction(e -> addManualLine());
+        Button importPasted = new Button("Import Pasted Text");
+        importPasted.setOnAction(e -> importPastedText());
         Button importFile = new Button("Import File");
         importFile.setOnAction(e -> importFile());
         Button validate = new Button("Validate");
         validate.setOnAction(e -> reloadSnapshot());
         Button clearPreview = new Button("Clear Imported Lines");
-        clearPreview.setOnAction(e -> importPreview.clear());
-        return new HBox(8, addManual, importFile, validate, clearPreview);
+        clearPreview.setOnAction(e -> selectedImportText().clear());
+        return new HBox(8, addManual, importPasted, importFile, validate, clearPreview);
     }
 
     private HBox matchingActions()
@@ -205,16 +200,16 @@ public class ReconciliationRunsPanel implements AppPanel
         manual.addRow(3, new Label("Amount"), manualAmount);
         sourceTabs.getTabs().setAll(
                 new Tab("Manual Entry", manual),
-                new Tab("CSV Import", importTab("Paste CSV with date, amount, description, reference columns.")),
-                new Tab("OFX Import", importTab("Paste OFX/QFX statement text or import a file.")),
-                new Tab("QIF Import", importTab("Paste QIF statement text or import a file.")));
+                new Tab("CSV Import", importTab("Paste CSV with date, amount, description, reference columns.", csvImportText)),
+                new Tab("OFX Import", importTab("Paste OFX/QFX statement text or import a file.", ofxImportText)),
+                new Tab("QIF Import", importTab("Paste QIF statement text or import a file.", qifImportText)));
         sourceTabs.getTabs().forEach(tab -> tab.setClosable(false));
     }
 
-    private Node importTab(String helper)
+    private Node importTab(String helper, TextArea area)
     {
-        importPreview.setPrefRowCount(6);
-        return new VBox(6, new Label(helper), importPreview);
+        area.setPrefRowCount(6);
+        return new VBox(6, new Label(helper), area);
     }
 
     private void configureSelectors()
@@ -242,7 +237,6 @@ public class ReconciliationRunsPanel implements AppPanel
         column(statementTable, "Match Status", v -> v.matchStatus().name(), 150);
         column(statementTable, "Matched Ledger Line", v -> string(v.matchedLedgerSplitId()), 130);
         column(statementTable, "Resolution", StatementEntryView::resolution, 220);
-
         ledgerTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         column(ledgerTable, "Date", v -> string(v.date()), 110);
         column(ledgerTable, "Payee / Memo", LedgerLineView::memo, 240);
@@ -251,7 +245,6 @@ public class ReconciliationRunsPanel implements AppPanel
         column(ledgerTable, "Cleared", v -> v.cleared() ? "Y" : "N", 80);
         column(ledgerTable, "Match Status", v -> v.matchStatus().name(), 150);
         column(ledgerTable, "Statement Ref", v -> string(v.matchedStatementLineId()), 120);
-
         differenceTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         column(differenceTable, "Category", v -> v.category().name(), 210);
         column(differenceTable, "Ledger Date", v -> string(v.ledgerDate()), 120);
@@ -259,7 +252,6 @@ public class ReconciliationRunsPanel implements AppPanel
         column(differenceTable, "Ledger Amount", v -> money(v.ledgerAmount()), 130);
         column(differenceTable, "Statement Amount", v -> money(v.statementAmount()), 140);
         column(differenceTable, "Description", DifferenceView::description, 460);
-
         sessionTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         column(sessionTable, "Session", v -> String.valueOf(v.id()), 100);
         column(sessionTable, "Account", SessionSummary::bankAccountLabel, 220);
@@ -336,6 +328,11 @@ public class ReconciliationRunsPanel implements AppPanel
         runAction(() -> service().addManualLine(new ManualStatementLineCommand(requireSession(), LocalDate.parse(manualDate.getText().trim()), parseMoney(manualAmount.getText()), manualDescription.getText(), manualReference.getText())), "Manual statement line added.");
     }
 
+    private void importPastedText()
+    {
+        runAction(() -> service().importStatementText(new BankReconciliationWorkspaceService.ImportStatementCommand(requireSession(), selectedSource(), selectedSource().name() + " pasted statement", selectedImportText().getText())), "Pasted statement text imported.");
+    }
+
     private void importFile()
     {
         if (snapshot == null)
@@ -353,7 +350,7 @@ public class ReconciliationRunsPanel implements AppPanel
                 return;
             }
             String text = Files.readString(file.toPath(), StandardCharsets.UTF_8);
-            importPreview.setText(text);
+            selectedImportText().setText(text);
             runAction(() -> service().importStatementText(new BankReconciliationWorkspaceService.ImportStatementCommand(requireSession(), selectedSource(), file.getName(), text)), "Statement file imported.");
         }
         catch (RuntimeException | java.io.IOException ex)
@@ -416,6 +413,16 @@ public class ReconciliationRunsPanel implements AppPanel
     {
         LedgerLineView selected = ledgerTable.getSelectionModel().getSelectedItem();
         return selected == null ? null : selected.splitId();
+    }
+
+    private TextArea selectedImportText()
+    {
+        return switch (sourceTabs.getSelectionModel().getSelectedIndex())
+        {
+            case 2 -> ofxImportText;
+            case 3 -> qifImportText;
+            default -> csvImportText;
+        };
     }
 
     private StatementSource selectedSource()
