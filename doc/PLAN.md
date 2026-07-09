@@ -4,9 +4,9 @@ active_phase: P06
 active_slice: P06-C2
 active_status: VERIFYING
 active_branch: codex/P06-C2-reconciliation-wizard-layout
-active_pull_request: pending
-active_head: 95f64a6e4138f736104b5e76a73a68f78b1fb3fc
-next_action: "Open PR for P06-C2, inspect GitHub Actions, and perform desktop visual validation on laptop-width Bank Reconciliation workflow tabs."
+active_pull_request: "#147"
+active_head: 38b3294377156eb41f018804d8a999eed6b4c9bc
+next_action: "Inspect GitHub Actions for PR #147 and perform desktop visual validation on laptop-width Bank Reconciliation workflow tabs."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -160,8 +160,8 @@ Completed deliverables: V57 H2 tables for durable reconciliation sessions and ma
 
 Status: VERIFYING.
 Branch: `codex/P06-C2-reconciliation-wizard-layout`
-Pull request: pending
-Head: `95f64a6e4138f736104b5e76a73a68f78b1fb3fc`
+Pull request: #147
+Head: `38b3294377156eb41f018804d8a999eed6b4c9bc`
 
 Purpose: reduce crowding in the P06-C1 Bank Reconciliation panel by splitting the workflow into task-sized subpanels instead of one overloaded screen.
 
@@ -173,7 +173,7 @@ Implemented in branch:
 - Moved statement and ledger tables plus match/unmatch/mark-cleared/resolve controls to Match.
 - Moved balance cards, comparison report, and save/finalize controls to Review / Save.
 
-Remaining deliverables: open PR, inspect GitHub Actions, and perform desktop visual validation at laptop width.
+Remaining deliverables: inspect GitHub Actions and perform desktop visual validation at laptop width.
 
 # P07 — Eliminated former Schedules phase
 
@@ -308,4 +308,4 @@ PHASE=P06
 SLICE=P06-C2
 ```
 
-Open a PR for `codex/P06-C2-reconciliation-wizard-layout`, inspect GitHub Actions, and perform desktop visual validation at laptop width.
+Inspect GitHub Actions for PR #147 and perform desktop visual validation at laptop width.
