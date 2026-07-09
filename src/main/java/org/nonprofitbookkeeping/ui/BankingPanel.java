@@ -4,6 +4,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -20,6 +21,7 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.AccountSubtype;
@@ -89,7 +91,8 @@ public class BankingPanel implements AppPanel
         refresh.setOnAction(event -> reload());
 
         SplitPane split = new SplitPane(bankListPane(), bankAccountPane());
-        split.setDividerPositions(0.45);
+        split.setOrientation(Orientation.VERTICAL);
+        split.setDividerPositions(0.50);
         root.setTop(new VBox(6, title, new HBox(8, newBank, saveBank, refresh), status, new Separator()));
         root.setCenter(split);
 
@@ -126,15 +129,19 @@ public class BankingPanel implements AppPanel
 
     private Node bankListPane()
     {
-        VBox pane = new VBox(8, new Label("Financial institutions"), banks, bankForm());
+        Node form = bankForm();
+        VBox pane = new VBox(8, new Label("Financial institutions"), banks, form);
         pane.setPadding(new Insets(8));
+        VBox.setVgrow(banks, Priority.ALWAYS);
         return pane;
     }
 
     private Node bankAccountPane()
     {
-        VBox pane = new VBox(8, new Label("Configured bank accounts"), bankAccounts, accountForm());
+        Node form = accountForm();
+        VBox pane = new VBox(8, new Label("Configured bank accounts"), bankAccounts, form);
         pane.setPadding(new Insets(8));
+        VBox.setVgrow(bankAccounts, Priority.ALWAYS);
         return pane;
     }
 
