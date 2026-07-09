@@ -1,12 +1,12 @@
 ---
-plan_version: 17
+plan_version: 18
 active_phase: P03
 active_slice: P03-C4
 active_status: READY
 active_branch: pending
 active_pull_request: pending
 active_head: pending
-next_action: "Start P03-C4 from current main: create codex/P03-C4-transaction-editor-table-state, inspect TransactionEditorPanel and related tests, then implement table-state hardening for Transaction Editor tables."
+next_action: "Start P03-C4 from current main: create codex/P03-C4-transaction-editor-journal-redesign, inspect current TransactionEditorPanel and Journal/Inspect Journal panes plus the legacy NonprofitAccounting UI design reference, then implement the redesigned Transaction Editor and Journal panes."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Start P03-C4 from current main: create codex/P03-C4-transaction-ed
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P05-C5 as DONE through PR #148 and activates P03-C4 as the next unblocked corrective slice for Transaction Editor table-state hardening.
+This revision records P05-C5 as DONE through PR #148 and activates P03-C4 as the next unblocked corrective slice. P03-C4 is expanded from Transaction Editor table-state hardening into a Transaction Editor and Journal Pane redesign, using `benbaron/NonprofitAccounting` `src/main/java/nonprofitbookkeeping/ui` only as a design reference.
 
 ## 2. Status values
 
@@ -94,6 +94,7 @@ Focused documents for current UI/accounting work:
 - Production widgets with visible non-blank display text should expose their full text on hover, except text boxes and custom-help tooltip cases.
 - Disabled placeholder Delete buttons are not part of the UI contract; a Delete button must perform a real supported operation.
 - Bank Reconciliation must become a full statement-to-ledger matching workspace, not only a saved comparison table.
+- Transaction supplemental schedule/detail panels are not the eliminated generic Schedules function; they are per-transaction detail editors and viewers.
 
 ## 6. Completed phases and slices
 
@@ -123,23 +124,97 @@ Completed slices:
 - P03-C2 Journal Pane and Inspect Journal navigation: DONE.
 - P03-C3 Transaction Editor Delete correction action: DONE.
 
-### P03-C4 — Transaction Editor table-state hardening
+### P03-C4 — Transaction Editor and Journal Pane redesign
 
 Status: READY.
 Branch: pending
 Pull request: pending
 
-Purpose: bring Transaction Editor table-bearing regions into the current UI design-rule contract for sortable/resizable/reorderable columns with active-company table-state persistence.
+Purpose: redesign the Transaction Editor and Journal Pane for usable, laptop-width transaction entry and review, using the legacy `benbaron/NonprofitAccounting` JavaFX UI package only as a design reference. This slice replaces the narrow table-state-only scope formerly recorded for P03-C4.
 
-Required behavior:
+Design-reference rules:
 
-- Inspect `TransactionEditorPanel`, related editor table models/cells, and existing P03 tests from current `main`.
-- Preserve all existing transaction-entry behavior and service boundaries.
-- Add or reuse per-company table-state persistence for Transaction Editor tables.
-- Keep JavaFX panels free of SQL and route persistence through existing UI/session preference mechanisms only where appropriate.
-- Add focused tests or source/layout guardrails proving the table-state contract is wired.
+- Inspect `benbaron/NonprofitAccounting` `src/main/java/nonprofitbookkeeping/ui` for layout and interaction ideas only.
+- Do not port the legacy persistence, model, static services, SQL access, or sidecar behavior.
+- Keep `sca-jakarta-h2` H2/JPA, service/query/domain/repository boundaries authoritative.
+- JavaFX panels must not contain SQL and must not become the accounting authority.
 
-Next exact action: create `codex/P03-C4-transaction-editor-table-state` from current `main`, inspect the Transaction Editor implementation, and implement the focused corrective slice.
+Required Transaction Editor behavior:
+
+- Preserve existing transaction-entry behavior, service boundaries, validation, and canonical transaction persistence.
+- Replace the overcrowded single scrollable transaction editor with separate pages, tabs, or subpanels so the editor is usable on laptop-width workspaces.
+- Provide a header/setup page or subpanel containing:
+  - New/Edit Journal Entry title;
+  - transaction date;
+  - memo;
+  - live Debit total;
+  - live Credit total;
+  - live Difference;
+  - status badge such as balanced/needs attention;
+  - validation message such as transaction not balanced.
+- Provide an Entry Lines page or subpanel containing:
+  - entry-line table;
+  - Add Line;
+  - Duplicate;
+  - Remove;
+  - account selector/display;
+  - one-sided Debit and Credit money entry;
+  - blank-entry-row behavior where appropriate;
+  - per-company table-state persistence for column width/order/sort;
+  - sortable, resizable, reorderable columns unless a column must be fixed for editor-cell correctness.
+- Provide an Additional Details page or subpanel containing cards or grouped sections for:
+  - Party / Document: To / From and Check #;
+  - Bank / Reconciliation: Bank, Clearing Bank, and Reconciled state;
+  - Budget / Fund: Budget Tracking and Fund Name.
+- Provide a Donation Subschedule page or subpanel containing:
+  - Use Donation Schedule toggle;
+  - Donation ID;
+  - Donor ID;
+  - Donor Name;
+  - Edit Selected Donor action if donor editing is currently supported by H2/service boundaries, otherwise disabled with a clear explanation.
+- Provide Supplemental Schedule/detail pages or subpanels for:
+  - Receivable;
+  - Payable;
+  - Prepaid Expense;
+  - Deferred Revenue;
+  - Other Asset;
+  - Other Liability.
+- Treat supplemental schedules as transaction supplemental detail panels, not as the eliminated generic Schedules module.
+- Each supplemental detail table must provide only real supported actions. Unsupported actions must be absent or disabled with clear explanation.
+- Do not reintroduce the eliminated Schedules navigation item, old schedule runbook sidecars, or generic durable job/schedule tracking.
+
+Required Journal Pane behavior:
+
+- Change the Journal Pane as part of P03-C4, not in a later slice.
+- Display transactions as grouped journal-entry blocks rather than isolated raw split rows when practical with current projections.
+- Each journal transaction block should show all posting lines in stored order, with debit and credit line amounts aligned in separate columns.
+- Journal display should support the following visible columns/regions where data exists:
+  - Date;
+  - Account Title and Description;
+  - Fund;
+  - Cleared;
+  - Debit;
+  - Credit;
+  - Transaction ID;
+  - Supplemental.
+- Transaction ID should navigate to the transaction in the appropriate editor/register path if supported by current routing.
+- Supplemental indicator/button such as `Schedules (n)` may be used only as a transaction supplemental detail viewer, not as the eliminated generic Schedules feature.
+- Journal toolbar/actions should include New, Edit, Delete, and Refresh only where each action performs a real operation through current services. Delete must continue to route through the supported correction/delete policy and must not be a placeholder.
+- Journal display must retain horizontal scrolling where needed and avoid clipping on laptop-width screens.
+
+Definition of done for P03-C4:
+
+- `TransactionEditorPanel` is reorganized into task-sized pages/subpanels and no longer appears as one overcrowded vertical scroll.
+- Transaction Editor includes header, entry lines, additional details, donation subschedule, and supplemental detail panels as described above.
+- Journal Pane is updated to grouped transaction/journal-entry presentation and supports the required visible regions/actions where current data projections permit.
+- Existing transaction save/correction behavior is preserved and remains service-backed.
+- Existing Ledger Register and Inspect Journal routing remains coherent after the redesign.
+- All tables touched by the redesign meet UI table rules for scrollability and table-state persistence where feasible.
+- Focused source/layout/unit tests or guardrails cover the new page/subpanel structure, journal grouping contract, table-state wiring, and absence of reintroduced generic Schedules behavior.
+- `doc/interface-operation-matrix.md`, `doc/ui/editor-guidelines.md`, and this plan are updated to reflect the final implemented UI.
+- Desktop visual validation confirms Transaction Editor and Journal Pane usability on laptop-width workspaces.
+
+Next exact action: create `codex/P03-C4-transaction-editor-journal-redesign` from current `main`, inspect the current Transaction Editor and Journal/Inspect Journal panes, inspect the legacy design-reference UI files, then implement the redesigned Transaction Editor and Journal panes.
 
 ### P04 — Persistent budgeting
 
@@ -321,4 +396,4 @@ PHASE=P03
 SLICE=P03-C4
 ```
 
-Create `codex/P03-C4-transaction-editor-table-state` from current `main`, inspect `TransactionEditorPanel` and related tests, then implement Transaction Editor table-state hardening.
+Create `codex/P03-C4-transaction-editor-journal-redesign` from current `main`, inspect current `TransactionEditorPanel` and Journal/Inspect Journal panes, inspect the legacy design-reference UI files, then implement the redesigned Transaction Editor and Journal panes.
