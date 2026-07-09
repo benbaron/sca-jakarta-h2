@@ -1,108 +1,100 @@
 package org.nonprofitbookkeeping.ui;
 
 import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.Separator;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import org.nonprofitbookkeeping.model.BankingDataFormat;
-import org.nonprofitbookkeeping.model.CompanyBankAccount;
-import org.nonprofitbookkeeping.repository.ReconciliationRunRecord;
-import org.nonprofitbookkeeping.repository.WorkflowRunStatus;
-import org.nonprofitbookkeeping.service.ReconciliationComparisonCommand;
-import org.nonprofitbookkeeping.service.ReconciliationComparisonLine;
-import org.nonprofitbookkeeping.service.ReconciliationComparisonReport;
+import javafx.stage.FileChooser;
+import javafx.util.StringConverter;
+import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService;
+import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.BankAccountOption;
+import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.ClearedStatePolicy;
+import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.DifferenceView;
+import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.LedgerLineView;
+import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.ManualStatementLineCommand;
+import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.SessionSummary;
+import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.Snapshot;
+import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.StartCommand;
+import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.StatementEntryView;
+import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.StatementSource;
 
+import java.io.File;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Locale;
-import java.util.prefs.Preferences;
 
-/**
- * Bank reconciliation comparison workspace.
- */
+/** Full bank statement-to-ledger reconciliation workspace. */
 public class ReconciliationRunsPanel implements AppPanel
 {
-    private static final Preferences TABLE_STATE = Preferences.userNodeForPackage(ReconciliationRunsPanel.class).node("reconciliation-table-state");
-
     private final BorderPane root = new BorderPane();
-    private final TableView<ReconciliationRunRecord> table = new TableView<>();
-    private final TableView<ReconciliationComparisonLine> comparisonTable = new TableView<>();
-    private final ComboBox<CompanyBankAccount> bankAccountSelect = new ComboBox<>();
-    private final DatePicker fromDate = new DatePicker(LocalDate.now().withDayOfMonth(1));
-    private final DatePicker statementDate = new DatePicker(LocalDate.now());
-    private final CheckBox saveUnresolvedReport = new CheckBox("Save unresolved report");
+    private final ComboBox<BankAccountOption> bankAccountSelect = new ComboBox<>();
+    private final DatePicker statementEndDate = new DatePicker(LocalDate.now());
+    private final TextField statementEndingBalance = new TextField("0.00");
+    private final TextField notes = new TextField();
+    private final ComboBox<SessionSummary> sessionSelect = new ComboBox<>();
+    private final ToggleGroup policyGroup = new ToggleGroup();
+    private final RadioButton warnOnly = policy("Warn only", ClearedStatePolicy.WARN_ONLY);
+    private final RadioButton overwrite = policy("Overwrite ledger cleared state", ClearedStatePolicy.OVERWRITE_LEDGER_CLEARED_STATE);
+    private final RadioButton neverOverwrite = policy("Never overwrite; require manual resolution", ClearedStatePolicy.NEVER_OVERWRITE_REQUIRE_MANUAL);
+    private final RadioButton perLine = policy("Decide per imported line", ClearedStatePolicy.DECIDE_PER_IMPORTED_LINE);
+
     private final Label status = new Label();
-    private final Label comparisonSummary = new Label("Select a configured bank account and run comparison.");
-    private boolean restoringTableState;
+    private final Label startBalance = balanceLabel();
+    private final Label bookAll = balanceLabel();
+    private final Label bookCleared = balanceLabel();
+    private final Label statementBalance = balanceLabel();
+    private final Label difference = balanceLabel();
+    private final Label dateRange = new Label("No reconciliation loaded.");
+    private final Label result = new Label("Result: not run");
+
+    private final TableView<StatementEntryView> statementTable = new TableView<>();
+    private final TableView<LedgerLineView> ledgerTable = new TableView<>();
+    private final TableView<DifferenceView> differenceTable = new TableView<>();
+    private final TableView<SessionSummary> sessionTable = new TableView<>();
+
+    private final TextField manualDate = new TextField();
+    private final TextField manualDescription = new TextField();
+    private final TextField manualReference = new TextField();
+    private final TextField manualAmount = new TextField();
+    private final TextArea importPreview = new TextArea();
+    private final TabPane sourceTabs = new TabPane();
+
+    private Snapshot snapshot;
 
     public ReconciliationRunsPanel()
     {
         root.setPadding(new Insets(8));
         Label title = new Label("Bank Reconciliation");
         title.getStyleClass().add("panel-title");
-
-        Button refresh = new Button("Refresh Runs");
-        refresh.setOnAction(e -> reload());
-        Button record = new Button("Record Completed Run");
-        record.setOnAction(e -> recordRun());
-        Button start = new Button("Record Started");
-        start.setOnAction(e -> recordRunWithStatus(WorkflowRunStatus.STARTED, "Started from UI workspace"));
-        Button fail = new Button("Record Failed");
-        fail.setOnAction(e -> recordRunWithStatus(WorkflowRunStatus.FAILED, "Failed from UI workspace"));
-        Label workflowNote = new Label("Reconciliation is a comparison workflow; approve/reject decisions are not part of this panel.");
-        workflowNote.getStyleClass().add("help-text");
-
-        configureBankAccountSelect();
-        Button compare = new Button("Run Comparison");
-        compare.setOnAction(e -> runComparison());
-        HBox comparisonControls = new HBox(8,
-                new Label("Configured account:"), bankAccountSelect,
-                new Label("From:"), fromDate,
-                new Label("Statement end:"), statementDate,
-                saveUnresolvedReport,
-                compare);
-
-        root.setTop(new VBox(6,
-                title,
-                new HBox(8, refresh, start, record, fail),
-                workflowNote,
-                comparisonControls,
-                comparisonSummary,
-                status,
-                new Separator()));
-
-        configureRunTable();
-        configureComparisonTable();
-        installTableStatePersistence(table, "runs");
-        installTableStatePersistence(comparisonTable, "comparison");
-
-        VBox savedRunsPane = new VBox(6, new Label("Saved Reconciliation Runs"), table);
-        VBox comparisonPane = new VBox(6, new Label("Comparison Report"), comparisonTable);
-        VBox.setVgrow(table, Priority.ALWAYS);
-        VBox.setVgrow(comparisonTable, Priority.ALWAYS);
-        SplitPane split = new SplitPane(savedRunsPane, comparisonPane);
-        split.setOrientation(Orientation.VERTICAL);
-        split.setDividerPositions(0.35);
-        root.setCenter(split);
-
-        loadBankAccounts();
-        reload();
+        Label subtitle = new Label("Compare imported or manually entered statement activity to cleared ledger activity for a configured bank account.");
+        subtitle.getStyleClass().add("help-text");
+        configureSelectors();
+        configureTables();
+        configureStatementSources();
+        warnOnly.setSelected(true);
+        root.setTop(new VBox(6, title, subtitle, topControls(), policyBox(), balances(), status, new Separator()));
+        root.setCenter(workspace());
+        loadBankAccountsAndSessions();
     }
 
     @Override
@@ -117,261 +109,375 @@ public class ReconciliationRunsPanel implements AppPanel
         return root;
     }
 
-    private void configureBankAccountSelect()
+    private HBox topControls()
     {
-        bankAccountSelect.setPrefWidth(260);
-        bankAccountSelect.setCellFactory(cb -> new ListCell<>()
+        Button load = new Button("Load");
+        load.setOnAction(e -> reloadSnapshot());
+        Button startNew = new Button("New Reconciliation");
+        startNew.setOnAction(e -> startNewSession());
+        Button editExisting = new Button("Edit Existing");
+        editExisting.setOnAction(e -> editExistingSession());
+        Button saveUnresolved = new Button("Save Unresolved");
+        saveUnresolved.setOnAction(e -> save(false));
+        Button finalize = new Button("Finalize");
+        finalize.setOnAction(e -> save(true));
+        statementEndingBalance.setPrefWidth(110);
+        notes.setPrefWidth(220);
+        bankAccountSelect.setPrefWidth(340);
+        sessionSelect.setPrefWidth(250);
+        return new HBox(8,
+                new Label("Configured Bank Account"), bankAccountSelect,
+                new Label("Statement Through Date"), statementEndDate,
+                new Label("Statement Ending Balance"), statementEndingBalance,
+                new Label("Session"), sessionSelect,
+                load, startNew, editExisting, saveUnresolved, finalize);
+    }
+
+    private HBox policyBox()
+    {
+        return new HBox(10, new Label("Cleared-State Mismatch Policy"), warnOnly, overwrite, neverOverwrite, perLine, new Label("Notes"), notes);
+    }
+
+    private HBox balances()
+    {
+        return new HBox(12,
+                card("Beginning Balance", startBalance),
+                card("Book Balance — All Transactions", bookAll),
+                card("Book Balance — Cleared Only", bookCleared),
+                card("Statement Ending Balance", statementBalance),
+                card("Difference", difference),
+                new VBox(4, dateRange, result));
+    }
+
+    private Node workspace()
+    {
+        VBox statementPane = new VBox(6, new Label("Statement Source"), sourceTabs, sourceActions(), new Label("Imported / Statement Entries"), statementTable);
+        VBox ledgerPane = new VBox(6, matchingActions(), new Label("Ledger Bank-Account Lines"), ledgerTable);
+        VBox reportPane = new VBox(6, new Label("Comparison Report"), differenceTable, new Label("Saved Reconciliations"), sessionTable);
+        VBox.setVgrow(statementTable, Priority.ALWAYS);
+        VBox.setVgrow(ledgerTable, Priority.ALWAYS);
+        VBox.setVgrow(differenceTable, Priority.ALWAYS);
+        VBox.setVgrow(sessionTable, Priority.ALWAYS);
+        SplitPane top = new SplitPane(statementPane, ledgerPane);
+        top.setDividerPositions(0.50);
+        SplitPane all = new SplitPane(top, reportPane);
+        all.setOrientation(Orientation.VERTICAL);
+        all.setDividerPositions(0.68);
+        return all;
+    }
+
+    private HBox sourceActions()
+    {
+        Button addManual = new Button("Add Manual Line");
+        addManual.setOnAction(e -> addManualLine());
+        Button importFile = new Button("Import File");
+        importFile.setOnAction(e -> importFile());
+        Button validate = new Button("Validate");
+        validate.setOnAction(e -> reloadSnapshot());
+        Button clearPreview = new Button("Clear Imported Lines");
+        clearPreview.setOnAction(e -> importPreview.clear());
+        return new HBox(8, addManual, importFile, validate, clearPreview);
+    }
+
+    private HBox matchingActions()
+    {
+        Button autoMatch = new Button("Auto Match");
+        autoMatch.setOnAction(e -> runAction(() -> service().autoMatch(requireSession()), "Auto match complete."));
+        Button match = new Button("Match Selected");
+        match.setOnAction(e -> runAction(() -> service().matchSelected(requireSession(), selectedStatementId(), selectedSplitId(), perLine.isSelected() || overwrite.isSelected()), "Selected lines matched."));
+        Button unmatch = new Button("Unmatch");
+        unmatch.setOnAction(e -> runAction(() -> service().unmatchSelected(requireSession(), selectedStatementId(), selectedSplitId()), "Selected match removed."));
+        Button markCleared = new Button("Mark Cleared");
+        markCleared.setOnAction(e -> runAction(() -> service().markCleared(requireSession(), selectedSplitId()), "Ledger line marked cleared."));
+        Button resolve = new Button("Resolve Difference");
+        resolve.setOnAction(e -> runAction(() -> service().resolveDifference(requireSession(), selectedStatementId(), selectedSplitId(), "Resolved from reconciliation workspace."), "Difference resolved."));
+        return new HBox(8, autoMatch, match, unmatch, markCleared, resolve);
+    }
+
+    private void configureStatementSources()
+    {
+        GridPane manual = new GridPane();
+        manual.setHgap(6);
+        manual.setVgap(6);
+        manual.addRow(0, new Label("Date"), manualDate);
+        manual.addRow(1, new Label("Description"), manualDescription);
+        manual.addRow(2, new Label("Reference"), manualReference);
+        manual.addRow(3, new Label("Amount"), manualAmount);
+        sourceTabs.getTabs().setAll(
+                new Tab("Manual Entry", manual),
+                new Tab("CSV Import", importTab("Paste CSV with date, amount, description, reference columns.")),
+                new Tab("OFX Import", importTab("Paste OFX/QFX statement text or import a file.")),
+                new Tab("QIF Import", importTab("Paste QIF statement text or import a file.")));
+        sourceTabs.getTabs().forEach(tab -> tab.setClosable(false));
+    }
+
+    private Node importTab(String helper)
+    {
+        importPreview.setPrefRowCount(6);
+        return new VBox(6, new Label(helper), importPreview);
+    }
+
+    private void configureSelectors()
+    {
+        bankAccountSelect.setConverter(new StringConverter<>()
         {
-            @Override
-            protected void updateItem(CompanyBankAccount item, boolean empty)
-            {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : bankAccountLabel(item));
-            }
+            @Override public String toString(BankAccountOption option) { return option == null ? "" : option.label(); }
+            @Override public BankAccountOption fromString(String string) { return null; }
         });
-        bankAccountSelect.setButtonCell(bankAccountSelect.getCellFactory().call(null));
+        sessionSelect.setConverter(new StringConverter<>()
+        {
+            @Override public String toString(SessionSummary summary) { return summary == null ? "Start New" : summary.id() + " • " + summary.bankAccountLabel() + " • " + summary.statementEndDate() + " • " + summary.status(); }
+            @Override public SessionSummary fromString(String string) { return null; }
+        });
     }
 
-    private void configureRunTable()
+    private void configureTables()
     {
-        TableColumn<ReconciliationRunRecord, String> when = new TableColumn<>("Statement End");
-        when.setCellValueFactory(v -> new SimpleStringProperty(String.valueOf(v.getValue().statementEndingOn())));
-        TableColumn<ReconciliationRunRecord, String> format = new TableColumn<>("Format");
-        format.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().bankFormat().name()));
-        TableColumn<ReconciliationRunRecord, String> txns = new TableColumn<>("Statement Lines");
-        txns.setCellValueFactory(v -> new SimpleStringProperty(String.valueOf(v.getValue().importedTransactionCount())));
-        TableColumn<ReconciliationRunRecord, String> statusCol = new TableColumn<>("Status");
-        statusCol.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().status().name()));
-        TableColumn<ReconciliationRunRecord, String> notes = new TableColumn<>("Notes");
-        notes.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().notes() == null ? "" : v.getValue().notes()));
+        statementTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        column(statementTable, "Date", v -> string(v.date()), 110);
+        column(statementTable, "Description", StatementEntryView::description, 220);
+        column(statementTable, "Reference", StatementEntryView::reference, 120);
+        column(statementTable, "Amount", v -> money(v.amount()), 100);
+        column(statementTable, "Cleared?", StatementEntryView::clearedState, 100);
+        column(statementTable, "Match Status", v -> v.matchStatus().name(), 150);
+        column(statementTable, "Matched Ledger Line", v -> string(v.matchedLedgerSplitId()), 130);
+        column(statementTable, "Resolution", StatementEntryView::resolution, 220);
 
-        table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        table.getColumns().setAll(when, format, txns, statusCol, notes);
-        configureColumn(when, "statementEnd", 140);
-        configureColumn(format, "format", 90);
-        configureColumn(txns, "statementLines", 130);
-        configureColumn(statusCol, "status", 110);
-        configureColumn(notes, "notes", 420);
-        restoreTableState(table, "runs");
-        table.setPlaceholder(new Label("No reconciliation runs found for active company."));
+        ledgerTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        column(ledgerTable, "Date", v -> string(v.date()), 110);
+        column(ledgerTable, "Payee / Memo", LedgerLineView::memo, 240);
+        column(ledgerTable, "Transaction #", LedgerLineView::transactionNumber, 120);
+        column(ledgerTable, "Amount", v -> money(v.amount()), 100);
+        column(ledgerTable, "Cleared", v -> v.cleared() ? "Y" : "N", 80);
+        column(ledgerTable, "Match Status", v -> v.matchStatus().name(), 150);
+        column(ledgerTable, "Statement Ref", v -> string(v.matchedStatementLineId()), 120);
+
+        differenceTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        column(differenceTable, "Category", v -> v.category().name(), 210);
+        column(differenceTable, "Ledger Date", v -> string(v.ledgerDate()), 120);
+        column(differenceTable, "Statement Date", v -> string(v.statementDate()), 130);
+        column(differenceTable, "Ledger Amount", v -> money(v.ledgerAmount()), 130);
+        column(differenceTable, "Statement Amount", v -> money(v.statementAmount()), 140);
+        column(differenceTable, "Description", DifferenceView::description, 460);
+
+        sessionTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        column(sessionTable, "Session", v -> String.valueOf(v.id()), 100);
+        column(sessionTable, "Account", SessionSummary::bankAccountLabel, 220);
+        column(sessionTable, "Through Date", v -> string(v.statementEndDate()), 120);
+        column(sessionTable, "Status", v -> v.status().name(), 110);
+        column(sessionTable, "Difference", v -> money(v.difference()), 120);
     }
 
-    private void configureComparisonTable()
+    private <T> void column(TableView<T> table, String title, java.util.function.Function<T, String> extractor, double width)
     {
-        TableColumn<ReconciliationComparisonLine, String> kind = new TableColumn<>("Issue");
-        kind.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().kind().name()));
-        TableColumn<ReconciliationComparisonLine, String> ledgerDate = new TableColumn<>("Ledger Date");
-        ledgerDate.setCellValueFactory(v -> new SimpleStringProperty(string(v.getValue().ledgerDate())));
-        TableColumn<ReconciliationComparisonLine, String> statementDateColumn = new TableColumn<>("Statement Date");
-        statementDateColumn.setCellValueFactory(v -> new SimpleStringProperty(string(v.getValue().statementDate())));
-        TableColumn<ReconciliationComparisonLine, String> ledgerAmount = new TableColumn<>("Ledger Amount");
-        ledgerAmount.setCellValueFactory(v -> new SimpleStringProperty(money(v.getValue().ledgerAmount())));
-        TableColumn<ReconciliationComparisonLine, String> statementAmount = new TableColumn<>("Statement Amount");
-        statementAmount.setCellValueFactory(v -> new SimpleStringProperty(money(v.getValue().statementAmount())));
-        TableColumn<ReconciliationComparisonLine, String> description = new TableColumn<>("Description");
-        description.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().description()));
-
-        comparisonTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        comparisonTable.getColumns().setAll(kind, ledgerDate, statementDateColumn, ledgerAmount, statementAmount, description);
-        configureColumn(kind, "kind", 170);
-        configureColumn(ledgerDate, "ledgerDate", 130);
-        configureColumn(statementDateColumn, "statementDate", 140);
-        configureColumn(ledgerAmount, "ledgerAmount", 130);
-        configureColumn(statementAmount, "statementAmount", 150);
-        configureColumn(description, "description", 520);
-        restoreTableState(comparisonTable, "comparison");
-        comparisonTable.setPlaceholder(new Label("No comparison has been run."));
-    }
-
-    private static void configureColumn(TableColumn<?, ?> column, String key, double prefWidth)
-    {
-        column.setId(key);
-        column.setUserData(key);
-        column.setPrefWidth(prefWidth);
+        TableColumn<T, String> column = new TableColumn<>(title);
+        column.setCellValueFactory(row -> new SimpleStringProperty(extractor.apply(row.getValue())));
+        column.setPrefWidth(width);
         column.setMinWidth(72);
         column.setSortable(true);
         column.setResizable(true);
         column.setReorderable(true);
+        table.getColumns().add(column);
     }
 
-    private void installTableStatePersistence(TableView<?> targetTable, String tableKey)
+    private void loadBankAccountsAndSessions()
     {
-        targetTable.getColumns().addListener((ListChangeListener<TableColumn<?, ?>>) change -> saveTableState(targetTable, tableKey));
-        targetTable.getSortOrder().addListener((ListChangeListener<TableColumn<?, ?>>) change -> saveTableState(targetTable, tableKey));
-        for (TableColumn<?, ?> column : targetTable.getColumns())
-        {
-            column.widthProperty().addListener((obs, oldWidth, newWidth) -> saveTableState(targetTable, tableKey));
-            column.sortTypeProperty().addListener((obs, oldSort, newSort) -> saveTableState(targetTable, tableKey));
-        }
-    }
-
-    private void restoreTableState(TableView<?> targetTable, String tableKey)
-    {
-        restoringTableState = true;
         try
         {
-            String prefix = tableStatePrefix(tableKey);
-            for (TableColumn<?, ?> column : targetTable.getColumns())
+            bankAccountSelect.getItems().setAll(service().listConfiguredBankAccounts(activeCompanyCode()));
+            if (!bankAccountSelect.getItems().isEmpty())
             {
-                column.setPrefWidth(TABLE_STATE.getDouble(prefix + columnKey(column) + ".width", column.getPrefWidth()));
-                String sort = TABLE_STATE.get(prefix + columnKey(column) + ".sort", "");
-                if ("ASCENDING".equals(sort))
-                {
-                    column.setSortType(TableColumn.SortType.ASCENDING);
-                }
-                else if ("DESCENDING".equals(sort))
-                {
-                    column.setSortType(TableColumn.SortType.DESCENDING);
-                }
+                bankAccountSelect.getSelectionModel().selectFirst();
             }
-            restoreColumnOrder(targetTable, prefix);
-            restoreSortOrder(targetTable, prefix);
+            sessionSelect.getItems().setAll(service().listSessions(activeCompanyCode()));
+            sessionTable.getItems().setAll(sessionSelect.getItems());
+            status.setText("Loaded configured bank accounts and saved reconciliations.");
         }
-        finally
+        catch (RuntimeException ex)
         {
-            restoringTableState = false;
+            status.setText("Could not load bank reconciliation data: " + UiErrors.safeMessage(ex));
         }
     }
 
-    private void saveTableState(TableView<?> targetTable, String tableKey)
+    private void startNewSession()
     {
-        if (restoringTableState)
+        BankAccountOption account = bankAccountSelect.getValue();
+        if (account == null)
         {
+            status.setText("Select a configured bank account first.");
             return;
         }
-        String prefix = tableStatePrefix(tableKey);
-        TABLE_STATE.put(prefix + "order", String.join(",", targetTable.getColumns().stream().map(ReconciliationRunsPanel::columnKey).toList()));
-        TABLE_STATE.put(prefix + "sortOrder", String.join(",", targetTable.getSortOrder().stream().map(ReconciliationRunsPanel::columnKey).toList()));
-        for (TableColumn<?, ?> column : targetTable.getColumns())
-        {
-            TABLE_STATE.putDouble(prefix + columnKey(column) + ".width", column.getWidth() > 0 ? column.getWidth() : column.getPrefWidth());
-            TABLE_STATE.put(prefix + columnKey(column) + ".sort", column.getSortType() == null ? "" : column.getSortType().name());
-        }
+        runAction(() -> service().start(new StartCommand(activeCompanyCode(), account.id(), statementEndDate.getValue(), parseMoney(statementEndingBalance.getText()), selectedPolicy(), notes.getText())), "Started new reconciliation.");
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private static void restoreColumnOrder(TableView targetTable, String prefix)
+    private void editExistingSession()
     {
-        String order = TABLE_STATE.get(prefix + "order", "");
-        if (order.isBlank())
-        {
-            return;
-        }
-        List<String> keys = List.of(order.split(","));
-        List<TableColumn> ordered = (List<TableColumn>) targetTable.getColumns().stream()
-                .sorted(java.util.Comparator.comparingInt(column -> {
-                    int index = keys.indexOf(columnKey((TableColumn<?, ?>) column));
-                    return index < 0 ? Integer.MAX_VALUE : index;
-                }))
-                .toList();
-        targetTable.getColumns().setAll(ordered);
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private static void restoreSortOrder(TableView targetTable, String prefix)
-    {
-        String sortOrder = TABLE_STATE.get(prefix + "sortOrder", "");
-        if (sortOrder.isBlank())
-        {
-            return;
-        }
-        List<String> keys = List.of(sortOrder.split(","));
-        targetTable.getSortOrder().setAll((java.util.Collection) targetTable.getColumns().stream()
-                .filter(column -> keys.contains(columnKey((TableColumn<?, ?>) column)))
-                .sorted(java.util.Comparator.comparingInt(column -> keys.indexOf(columnKey((TableColumn<?, ?>) column))))
-                .toList());
-    }
-
-    private static String columnKey(TableColumn<?, ?> column)
-    {
-        Object key = column.getUserData();
-        return key == null ? column.getText().replaceAll("\\W+", "_") : key.toString();
-    }
-
-    private static String tableStatePrefix(String tableKey)
-    {
-        return activeCompanyCode().replaceAll("[^A-Za-z0-9_.-]", "_") + "." + tableKey + ".";
-    }
-
-    private void loadBankAccounts()
-    {
-        UiAsync.run("recon-bank-accounts-load", () -> UiServiceRegistry.bankConfiguration().listBankAccounts(activeCompanyCode()).stream()
-                .filter(account -> account.isActive() && account.getBank() != null && account.getAccount() != null)
-                .toList(), accounts -> {
-            bankAccountSelect.getItems().setAll(accounts);
-            if (!accounts.isEmpty())
-            {
-                bankAccountSelect.getSelectionModel().select(0);
-            }
-        }, ex -> status.setText("Could not load configured bank accounts: " + UiErrors.safeMessage(ex)));
-    }
-
-    private void runComparison()
-    {
-        CompanyBankAccount selected = bankAccountSelect.getSelectionModel().getSelectedItem();
+        SessionSummary selected = sessionSelect.getValue() == null ? sessionTable.getSelectionModel().getSelectedItem() : sessionSelect.getValue();
         if (selected == null)
         {
-            status.setText("Select a configured bank account before running reconciliation comparison.");
+            status.setText("Select a saved reconciliation session first.");
             return;
         }
-        if (statementDate.getValue() == null)
+        runAction(() -> service().load(selected.id()), "Loaded reconciliation session " + selected.id() + ".");
+    }
+
+    private void reloadSnapshot()
+    {
+        if (snapshot == null)
         {
-            status.setText("Select a statement ending date before running reconciliation comparison.");
+            loadBankAccountsAndSessions();
             return;
         }
-        ReconciliationComparisonCommand command = new ReconciliationComparisonCommand(
-                activeCompanyCode(),
-                selected.getId(),
-                fromDate.getValue(),
-                statementDate.getValue(),
-                saveUnresolvedReport.isSelected());
-        status.setText("Running reconciliation comparison...");
-        UiAsync.run("recon-comparison", () -> UiServiceRegistry.reconciliationComparison().compare(command), report -> {
-            comparisonTable.getItems().setAll(report.lines());
-            comparisonSummary.setText(summary(report));
-            status.setText(report.savedRunId() == null
-                    ? "Comparison complete. No unresolved report was saved."
-                    : "Comparison complete. Saved unresolved reconciliation report " + report.savedRunId() + ".");
-            reload();
-        }, ex -> status.setText("Could not run comparison: " + UiErrors.safeMessage(ex)));
+        runAction(() -> service().load(snapshot.sessionId()), "Reconciliation reloaded.");
     }
 
-    private void recordRun()
+    private void addManualLine()
     {
-        UiAsync.run("recon-record-run", () -> UiServiceRegistry.reconciliationService()
-                .recordCompletedRun(activeCompanyCode(), LocalDate.now(), BankingDataFormat.OFX, 0, "Recorded from UI workspace"), run -> {
-            status.setText("Recorded run for " + run.groupCode() + " ending " + run.statementEndingOn() + ".");
-            reload();
-        }, ex -> status.setText("Could not record run: " + UiErrors.safeMessage(ex)));
+        runAction(() -> service().addManualLine(new ManualStatementLineCommand(requireSession(), LocalDate.parse(manualDate.getText().trim()), parseMoney(manualAmount.getText()), manualDescription.getText(), manualReference.getText())), "Manual statement line added.");
     }
 
-    private void recordRunWithStatus(WorkflowRunStatus statusValue, String notes)
+    private void importFile()
     {
-        UiAsync.run("recon-record-run-" + statusValue.name().toLowerCase(Locale.ROOT), () -> {
-            ReconciliationRunRecord run = new ReconciliationRunRecord(
-                    java.util.UUID.randomUUID(),
-                    activeCompanyCode(),
-                    LocalDate.now(),
-                    BankingDataFormat.OFX,
-                    0,
-                    statusValue,
-                    notes);
-            UiServiceRegistry.reconciliationRunRepository().append(run);
-            return run;
-        }, run -> {
-            status.setText("Recorded " + run.status().name() + " run for " + run.groupCode() + " ending " + run.statementEndingOn() + ".");
-            reload();
-        }, ex -> status.setText("Could not record " + statusValue.name() + " run: " + UiErrors.safeMessage(ex)));
+        if (snapshot == null)
+        {
+            status.setText("Start or load a reconciliation session before importing statement lines.");
+            return;
+        }
+        try
+        {
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Import bank statement");
+            File file = chooser.showOpenDialog(root.getScene() == null ? null : root.getScene().getWindow());
+            if (file == null)
+            {
+                return;
+            }
+            String text = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+            importPreview.setText(text);
+            runAction(() -> service().importStatementText(new BankReconciliationWorkspaceService.ImportStatementCommand(requireSession(), selectedSource(), file.getName(), text)), "Statement file imported.");
+        }
+        catch (RuntimeException | java.io.IOException ex)
+        {
+            status.setText("Could not import statement file: " + UiErrors.safeMessage(ex));
+        }
     }
 
-    private void reload()
+    private void save(boolean finalize)
     {
-        status.setText("Loading reconciliation runs...");
-        UiAsync.run("recon-runs-load", () -> UiServiceRegistry.reconciliationRunRepository()
-                .findByGroupAndDateRange(activeCompanyCode(), LocalDate.now().minusYears(1), LocalDate.now().plusDays(1)), rows -> {
-            table.getItems().setAll(rows);
-            status.setText("Loaded " + rows.size() + " reconciliation comparison run(s) for active company.");
-        }, ex -> status.setText("Could not load reconciliation runs: " + UiErrors.safeMessage(ex)));
+        runAction(() -> service().save(requireSession(), finalize), finalize ? "Reconciliation finalized if balanced." : "Unresolved reconciliation saved.");
+    }
+
+    private void runAction(java.util.function.Supplier<Snapshot> action, String success)
+    {
+        try
+        {
+            apply(action.get());
+            status.setText(success);
+        }
+        catch (RuntimeException ex)
+        {
+            status.setText(UiErrors.safeMessage(ex));
+        }
+    }
+
+    private void apply(Snapshot next)
+    {
+        snapshot = next;
+        statementTable.getItems().setAll(next.statementEntries());
+        ledgerTable.getItems().setAll(next.ledgerLines());
+        differenceTable.getItems().setAll(next.differences());
+        sessionTable.getItems().setAll(next.savedSessions());
+        sessionSelect.getItems().setAll(next.savedSessions());
+        startBalance.setText(money(next.balances().beginningBalance()));
+        bookAll.setText(money(next.balances().bookBalanceAllTransactions()));
+        bookCleared.setText(money(next.balances().bookBalanceClearedOnly()));
+        statementBalance.setText(money(next.balances().statementEndingBalance()));
+        difference.setText(money(next.balances().difference()));
+        dateRange.setText("Period: " + next.statementStartDate() + " – " + next.statementEndDate());
+        result.setText(next.differences().isEmpty() && next.balances().difference().compareTo(BigDecimal.ZERO) == 0 ? "Result: Balances Match" : "Result: Unresolved Differences");
+    }
+
+    private long requireSession()
+    {
+        if (snapshot == null)
+        {
+            throw new IllegalArgumentException("Start or edit a reconciliation session first.");
+        }
+        return snapshot.sessionId();
+    }
+
+    private Long selectedStatementId()
+    {
+        StatementEntryView selected = statementTable.getSelectionModel().getSelectedItem();
+        return selected == null ? null : selected.statementLineId();
+    }
+
+    private Long selectedSplitId()
+    {
+        LedgerLineView selected = ledgerTable.getSelectionModel().getSelectedItem();
+        return selected == null ? null : selected.splitId();
+    }
+
+    private StatementSource selectedSource()
+    {
+        int index = sourceTabs.getSelectionModel().getSelectedIndex();
+        return switch (index)
+        {
+            case 1 -> StatementSource.CSV;
+            case 2 -> StatementSource.OFX;
+            case 3 -> StatementSource.QIF;
+            default -> StatementSource.MANUAL;
+        };
+    }
+
+    private ClearedStatePolicy selectedPolicy()
+    {
+        RadioButton selected = (RadioButton) policyGroup.getSelectedToggle();
+        return selected == null ? ClearedStatePolicy.WARN_ONLY : (ClearedStatePolicy) selected.getUserData();
+    }
+
+    private RadioButton policy(String label, ClearedStatePolicy policy)
+    {
+        RadioButton button = new RadioButton(label);
+        button.setToggleGroup(policyGroup);
+        button.setUserData(policy);
+        return button;
+    }
+
+    private Node card(String title, Label value)
+    {
+        Label label = new Label(title);
+        label.getStyleClass().add("help-text");
+        VBox card = new VBox(3, label, value);
+        card.getStyleClass().add("dashboard-card");
+        card.setPrefWidth(180);
+        return card;
+    }
+
+    private static Label balanceLabel()
+    {
+        Label label = new Label("$0.00");
+        label.getStyleClass().add("dashboard-value");
+        return label;
+    }
+
+    private static String money(BigDecimal value)
+    {
+        return value == null ? "" : "$" + value.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
+    }
+
+    private static BigDecimal parseMoney(String raw)
+    {
+        if (raw == null || raw.isBlank())
+        {
+            return BigDecimal.ZERO;
+        }
+        return new BigDecimal(raw.trim().replace("$", "").replace(",", ""));
+    }
+
+    private static String string(Object value)
+    {
+        return value == null ? "" : String.valueOf(value);
     }
 
     private static String activeCompanyCode()
@@ -379,31 +485,8 @@ public class ReconciliationRunsPanel implements AppPanel
         return MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
     }
 
-    private static String bankAccountLabel(CompanyBankAccount account)
+    private static BankReconciliationWorkspaceService service()
     {
-        String accountCode = account.getAccount() == null ? "" : " — " + account.getAccount().getCode();
-        return account.getName() + accountCode;
-    }
-
-    private static String summary(ReconciliationComparisonReport report)
-    {
-        return "Beginning " + money(report.beginningBalance())
-                + " | Activity " + money(report.activity())
-                + " | Ending " + money(report.endingBookBalance())
-                + " | Cleared " + money(report.clearedBookBalance())
-                + " | Ledger lines " + report.ledgerLineCount()
-                + " | Statement lines " + report.statementLineCount()
-                + " | Matched " + report.matchedLineCount()
-                + " | Unresolved " + report.unresolvedCount();
-    }
-
-    private static String money(BigDecimal value)
-    {
-        return value == null ? "" : value.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
-    }
-
-    private static String string(Object value)
-    {
-        return value == null ? "" : value.toString();
+        return UiServiceRegistry.bankReconciliationWorkspace();
     }
 }
