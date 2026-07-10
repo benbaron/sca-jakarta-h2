@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Source and routing guardrails for P03-C6. */
+/** Source and routing guardrails for P03-C6 and P03-C7. */
 class JournalWorkspacePortSourceTest
 {
     @Test
@@ -51,6 +51,11 @@ class JournalWorkspacePortSourceTest
         assertTrue(source.contains("journalWorkspaceOuterSplit"));
         assertTrue(source.contains("journalWorkspaceEditorSplit"));
         assertTrue(source.contains("journalWorkspaceDetailSplit"));
+        assertTrue(source.contains("journalWorkspaceEditorScroll"));
+        assertTrue(source.contains("setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED)"));
+        assertTrue(source.contains("journalWorkspaceJournalTableSplit"));
+        assertTrue(source.contains("journalWorkspaceEntryLineTableSplit"));
+        assertTrue(source.contains("TableSplit"));
         assertTrue(source.contains("setOrientation(Orientation.VERTICAL)"));
         assertTrue(source.contains("setOrientation(Orientation.HORIZONTAL)"));
         assertTrue(source.contains("installDividerState"));
@@ -62,6 +67,9 @@ class JournalWorkspacePortSourceTest
         assertTrue(source.contains("TransactionSupplementalLineCommand"));
         assertTrue(source.contains("TableView.UNCONSTRAINED_RESIZE_POLICY"));
         assertTrue(source.contains("setReorderable(true)"));
+        assertTrue(source.contains("CompanyUiFormat"));
+        assertTrue(source.contains("CompanyUiPreferencesService"));
+        assertFalse(source.contains("java.util.prefs.Preferences"));
         assertFalse(source.contains("CurrentCompany"));
         assertFalse(source.contains("nonprofitbookkeeping.persistence"));
     }
