@@ -1,12 +1,12 @@
 ---
-plan_version: 21
+plan_version: 22
 active_phase: P03
-active_slice: P03-C5
-active_status: VERIFYING
-active_branch: codex/P03-C5-editable-supplemental-details
-active_pull_request: "#150"
-active_head: bfb3a522975986dd5b800e8a468dbfccff6afbc0
-next_action: "Perform desktop visual validation that persisted supplemental detail rows save, reload, and remain editable."
+active_slice: P03-C6
+active_status: IN_PROGRESS
+active_branch: codex/P03-C6-journal-workspace-port
+active_pull_request: null
+active_head: e8c8c127e31567a28108989caceb56e2f5310c7b
+next_action: "Port the NonprofitAccounting Journal* interaction model into one H2-backed Journal workspace and replace the three former P03 navigation destinations."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Perform desktop visual validation that persisted supplemental deta
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P05-C5 as DONE through PR #148, P03-C4 as merged through PR #149, and opens P03-C5 to persist Transaction Editor supplemental detail rows in H2.
+This revision records P03-C5 as merged through PR #150 and opens P03-C6 to replace the separate Ledger Register, Transaction Editor, and Inspect Journal surfaces with one Journal-based workspace derived from `benbaron/NonprofitAccounting` `Journal*` UI classes.
 
 ## 2. Status values
 
@@ -35,7 +35,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P00 | Documentation and implementation inventory | none | DONE; update matrices as touched |
 | P01 | Production shell and workspace composition | P00 | DONE; corrective P01-C1 DONE through PR #141 |
 | P02 | Canonical ledger and transaction operations | P00 | DONE; retain |
-| P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY; corrective P03-C5 VERIFYING |
+| P03 | Journal workspace and canonical transaction operations | P01, P02 | READY; corrective P03-C6 IN_PROGRESS |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
 | P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137; corrective P05-C5 DONE through PR #148 |
 | P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 DONE through PR #146; corrective P06-C2 DONE through PR #147 |
@@ -80,7 +80,7 @@ Focused documents for current UI/accounting work:
 - Write services own validation and transactions.
 - Query services return projections for panels and reports.
 - Constructor injection is preferred.
-- Left Navigation under Accounting must include Banking and Inspect Journal.
+- Left Navigation under Accounting must expose one Journal destination rather than separate Ledger Register, Transaction Editor, and Inspect Journal destinations.
 - Left Navigation must not include Schedules.
 - Left Navigation must not include Import/Export Jobs as a separate function.
 - No approval queue or formal approval/rejection workflow.
@@ -114,52 +114,54 @@ Corrective slices:
 
 Status: DONE, retain.
 
-### P03 — Transaction Editor, Ledger Register, and Journal Pane
+### P03 — Journal workspace and canonical transaction operations
 
-Status: READY; corrective P03-C5 VERIFYING.
+Status: READY; corrective P03-C6 IN_PROGRESS.
 
 Completed slices:
 
 - P03-C1 Transaction Editor modes and Ledger Register buttons: DONE.
 - P03-C2 Journal Pane and Inspect Journal navigation: DONE.
 - P03-C3 Transaction Editor Delete correction action: DONE.
-- P03-C4 Transaction Editor and Journal Pane redesign: merged through PR #149; final desktop visual validation remains part of user acceptance.
+- P03-C4 Transaction Editor and Journal Pane redesign: DONE through PR #149.
+- P03-C5 Persisted Transaction Editor supplemental details: DONE through PR #150.
 
-### P03-C5 — Persisted Transaction Editor supplemental details
+### P03-C6 — Unified Journal workspace port
 
-Status: VERIFYING.
-Branch: `codex/P03-C5-editable-supplemental-details`
-Pull request: #150
-Head: `bfb3a522975986dd5b800e8a468dbfccff6afbc0`
+Status: IN_PROGRESS.
+Branch: `codex/P03-C6-journal-workspace-port`
+Pull request: not opened yet.
+Head: `e8c8c127e31567a28108989caceb56e2f5310c7b`
 
-Purpose: make Supplemental Details in Transaction Editor editable and persisted through H2 as transaction-attached detail rows.
+Purpose: use the interaction and visual structure of the donor repository's `JournalPanelFX`, `JournalEntryWorkspaceFX`, and `JournalShellNavigation` as the basis for one native Journal workspace, while retaining the current H2 schema, `TransactionEntryService`, `TransactionLineEditorModel`, correction service, and persisted supplemental details.
 
-Implemented in branch:
+Required deliverables:
 
-- V58 migration adds `txn_supplemental_line` with transaction foreign key, row order, kind, visible supplemental fields, date constraints, amount constraint, and indexes.
-- `TxnSupplementalLine` JPA entity is registered in `persistence.xml`.
-- `TransactionCommand` and `TransactionView` now carry supplemental line command/view DTOs while preserving old constructor compatibility.
-- `TransactionEntryService.enter(...)` persists supplemental rows atomically with new transactions.
-- `TransactionEntryService.update(...)` replaces supplemental rows atomically with edited transactions and accounting lines.
-- `TransactionEntryService.load(...)` returns supplemental rows for editor repopulation.
-- Transaction Editor supplemental tabs now map visible rows into `TransactionSupplementalLineCommand` objects and repopulate from `TransactionSupplementalLineView` rows after save/load.
-- Focused tests cover supplemental row persistence, update replacement, validation/rollback, and source-level UI persistence wiring.
-- `doc/interface-operation-matrix.md` and `doc/accounting/transaction-editor-and-journal.md` are updated for H2-backed transaction supplemental details.
+- Replace the three visible Accounting destinations Ledger Register, Transaction Editor, and Inspect Journal with one Journal destination.
+- Keep the former panel IDs only as compatibility redirects so drill-through and saved workspace paths open the same Journal tab rather than creating duplicate tabs.
+- Present one grouped transaction journal row per canonical transaction, with posting lines, date, account title/description, fund, cleared state, debit, credit, transaction ID, supplemental count, and memo/detail lines.
+- Provide real New, Edit, Save, Delete/Reverse, Refresh, filter, and selection operations through current services.
+- Place the journal register, editor header, entry-line table, additional details, and supplemental details in nested `SplitPane` regions with visible draggable resize bars.
+- Preserve stable-ID account/fund/reference selections, one-sided debit/credit editing, live totals, validation, dirty-state handling, table-state persistence, and H2 supplemental-line persistence.
+- Update navigation, panel factory/routing, drill-through compatibility, governing documents, and focused tests.
 
-Validation so far:
+Required donor inspection:
 
-- Maven PR Tests passed for the editable-only head `ba9647616bb360058b663eb8a31283782e53eae4` before the persistence commits.
-- Maven PR Tests run 29064948926 passed for persistence/documentation head `015c8193d1f967d92f1a6290d8d3d51005f42ea2`.
-- Maven PR Tests run 29065039831 passed for plan-update head `f1cec3e3f8cfc4fe2467a4269b61d74966b9a11b`.
-- Maven PR Tests run 29065107411 passed for head `04b1c54381cf7f07e6e1259ed4b12cb7025d987b`.
-- Maven PR Tests run 29065164150 passed for head `04b04595311205ca146ec4550ab00b8936d878f6`.
-- Maven PR Tests run 29065221848 passed for head `762dbf0047a88f14786567f09f3969af01370bba`.
-- Maven PR Tests run 29065287028 passed for head `002e1b71acc16c382a9e7fff7fadeb12085cb4ad`.
-- Maven PR Tests run 29065359977 passed for latest head `bfb3a522975986dd5b800e8a468dbfccff6afbc0`.
+- `benbaron/NonprofitAccounting/src/main/java/nonprofitbookkeeping/ui/JournalShellNavigation.java`
+- `benbaron/NonprofitAccounting/src/main/java/nonprofitbookkeeping/ui/panels/JournalPanelFX.java`
+- `benbaron/NonprofitAccounting/src/main/java/nonprofitbookkeeping/ui/panels/JournalEntryWorkspaceFX.java`
+- `benbaron/NonprofitAccounting/src/main/java/nonprofitbookkeeping/ui/panels/GeneralJournalEntryPanelFX.java`
 
-Remaining deliverables before DONE:
+Current design decision:
 
-- Perform desktop visual validation that saved supplemental rows survive reload/edit.
+- Port the donor Journal interaction model and layout concepts only. Do not port `CurrentCompany`, static persistence, donor repositories, donor JDBC, or alternate ledger models.
+- The canonical panel ID remains `JOURNAL_PANE` for compatibility. `LEDGER_REGISTER` and `TXN_EDITOR` become retired aliases normalized to the same Journal workspace.
+
+Validation required:
+
+- Focused source and JavaFX behavior tests for one Journal navigation destination, compatibility normalization, split-pane geometry, and service routing.
+- `mvn clean verify` through GitHub Actions.
+- Desktop visual validation at laptop width, including divider movement and horizontal/vertical scrolling.
 
 ## 7. Active and recent phase contracts
 
