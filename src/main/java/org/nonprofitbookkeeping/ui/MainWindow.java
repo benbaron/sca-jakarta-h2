@@ -99,7 +99,7 @@ public class MainWindow extends BorderPane
         applyDatabaseSelection(SESSION_STATE.databaseSelection());
 
         DrillThroughCoordinator.configureOpener(this::openPanel);
-        openPanel(AppPanelId.LEDGER_REGISTER);
+        openPanel(AppPanelId.JOURNAL_PANE);
     }
 
     static UiSessionState sharedSessionState()
@@ -284,6 +284,10 @@ public class MainWindow extends BorderPane
         List<PaletteEntry> entries = new ArrayList<>();
         for (AppPanelId id : AppPanelId.values())
         {
+            if (id == AppPanelId.SCHEDULES || AppPanelId.canonical(id) != id)
+            {
+                continue;
+            }
             entries.add(new PaletteEntry(id, panelLabel(id)));
         }
         entries.sort(Comparator.comparing(PaletteEntry::label));
@@ -303,10 +307,10 @@ public class MainWindow extends BorderPane
 
     static String panelCapabilities(AppPanelId id)
     {
-        return switch (id)
+        AppPanelId canonicalId = AppPanelId.canonical(id);
+        return switch (canonicalId)
         {
-            case TXN_EDITOR -> "Save, New line edits, Post/Validate run command, Journal preview";
-            case LEDGER_REGISTER -> "Refresh, inspect journal, expose active journal selection";
+            case JOURNAL_PANE -> "Grouped journal review, New/Edit/Save, Delete/Reverse, validation, and supplemental details";
             case IMPORT_PREVIEW -> "Import review and preview workflow";
             case APPROVAL_AUDIT -> "Factual audit filters by workflow/decision/actor/date; run-id visibility";
             case IMPORT_EXPORT_JOBS -> "Unified import/export job history and error tracking";
@@ -337,11 +341,9 @@ public class MainWindow extends BorderPane
         return switch (id)
         {
             case DASHBOARD -> "Dashboard";
-            case LEDGER_REGISTER -> "Ledger Register";
-            case TXN_EDITOR -> "Transaction Editor";
-            case JOURNAL_PANE -> "Inspect Journal";
+            case LEDGER_REGISTER, TXN_EDITOR, JOURNAL_PANE -> "Journal";
             case BANKING -> "Banking";
-            case SCHEDULES -> "Outstanding / Schedules";
+            case SCHEDULES -> "Retired Schedules";
             case BUDGET_EDITOR -> "Budget Editor";
             case BUDGET_VS_ACTUAL -> "Budget vs Actual";
             case ASSETS_REGISTER -> "Asset Register";
@@ -401,7 +403,7 @@ public class MainWindow extends BorderPane
             try
             {
                 String key = normalizePresetName(state.name());
-                AppPanelId panelId = AppPanelId.valueOf(state.panelId());
+                AppPanelId panelId = AppPanelId.canonical(AppPanelId.valueOf(state.panelId()));
                 DateRange range = parseDateRange(state.startDateIso(), state.endDateIso());
                 viewPresets.put(key, new ViewPreset(panelId, range));
             }
@@ -1048,14 +1050,15 @@ public class MainWindow extends BorderPane
     // --- hooks ---
     public void openPanel(AppPanelId id)
     {
+        AppPanelId canonicalId = AppPanelId.canonical(id);
         UserPrivilegeLevel privilege = SESSION_STATE.preferences().defaultPrivilege();
-        if (!canAccessPanelForPrivilege(id, privilege))
+        if (!canAccessPanelForPrivilege(canonicalId, privilege))
         {
-            info("Access denied: " + panelLabel(id) + " requires " + requiredPrivilegeForPanel(id) + " privilege.");
+            info("Access denied: " + panelLabel(canonicalId) + " requires " + requiredPrivilegeForPanel(canonicalId) + " privilege.");
             return;
         }
-        panelHost.show(id);
-        nav.highlight(id);
+        panelHost.show(canonicalId);
+        nav.highlight(canonicalId);
         if (activePanelLabel != null)
         {
             activePanelLabel.setText("Panel: " + panelHost.getActiveTitle());
@@ -1207,10 +1210,17 @@ public class MainWindow extends BorderPane
 
     public void openInspectorJournal()
     {
-        inspectorPane.show("Journal View", "Loading journal context...");
-        UiAsync.run("journal-inspector", this::buildJournalInspectorPreview,
-                body -> inspectorPane.show("Journal View", body),
-                ex -> inspectorPane.show("Journal View", "Could not load journal preview: " + UiErrors.safeMessage(ex)));
+        Optional<AppPanel.JournalSelection> selected = panelHost.activeJournalSelection();
+        if (selected.isPresent())
+        {
+            DrillThroughCoordinator.openPanelWithContext(
+                    AppPanelId.JOURNAL_PANE,
+                    "Txn #" + selected.get().txnId());
+        }
+        else
+        {
+            openPanel(AppPanelId.JOURNAL_PANE);
+        }
     }
 
     String buildJournalInspectorPreviewForTests()
