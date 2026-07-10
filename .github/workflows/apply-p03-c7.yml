@@ -26,7 +26,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          mvn -Djava.awt.headless=true -Dtestfx.headless=true clean test > /tmp/p03-c7-maven.log 2>&1
+          mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository > /tmp/p03-c7-maven.log 2>&1
           status=$?
           echo "$status" > /tmp/p03-c7-maven-status
           exit 0
