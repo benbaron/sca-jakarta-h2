@@ -5,9 +5,15 @@ public enum AppPanelId
 {
     DASHBOARD,
 
+    /** Retired compatibility alias normalized to {@link #JOURNAL_PANE}. */
     LEDGER_REGISTER,
+
+    /** Retired compatibility alias normalized to {@link #JOURNAL_PANE}. */
     TXN_EDITOR,
+
+    /** Canonical identifier for the unified Journal workspace. */
     JOURNAL_PANE,
+
     BANKING,
 
     /**
