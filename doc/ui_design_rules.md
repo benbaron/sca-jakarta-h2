@@ -27,6 +27,16 @@ Table layout requirements:
 - Every table is separated in its own `SplitPane` region from any surrounding data in the table's major pane.
 - Tables must not rely on clipping, oversized minimum widths, or wrapping-only behavior to hide unavailable content.
 
+### Unified Journal implementation
+
+The production Journal is created through `JournalWorkspaceCompliancePanel`, which decorates the service-backed `JournalWorkspacePanel` without replacing its accounting services. The compliance layer must preserve the following behavior:
+
+- the complete editor region is wrapped in one `journalWorkspaceEditorScroll` vertical `ScrollPane`;
+- the Journal/editor, editor subsections, and additional/supplemental detail regions retain draggable `SplitPane` dividers;
+- every Journal, entry-line, and supplemental table uses unconstrained resizing, sortable/resizable/reorderable columns, independent table scrolling, and a dedicated table `SplitPane` region;
+- column width, order, sort direction, sort priority, and divider positions are stored through company-owned UI preference state rather than Java global user preferences;
+- money and date display/edit behavior uses the active company's `CompanyUiPreferences` through `CompanyUiFormat`.
+
 ## Money display and editing
 
 All money amounts in all data views and editors must follow the active company's money display preferences:
@@ -62,5 +72,5 @@ These rules apply retroactively to UI surfaces delivered by completed phases. A 
 - P00 documentation inventories must identify panels whose table state, money/date formatting, period display, Delete behavior, split-pane/scroll behavior, or full-text hover tooltip behavior is not yet compliant.
 - P01 shell and workspace surfaces must store qualifying preferences per company and must not keep company-specific display behavior only in global user state.
 - P02 services remain the authority for accounting data and internal precision; UI money/date format correction must never alter service command precision, entity precision, or persisted date types.
-- P03 Ledger Register and Transaction Editor must use the table, money, date, Delete, split-pane, period, and tooltip rules when their controls are next changed.
+- P03 Journal workspace uses the table, money, date, Delete, split-pane, period, and tooltip rules through its production compliance layer.
 - P04 budget surfaces and later table-heavy panels must implement sortable/resizable/reorderable table columns with per-company saved state before those panels are considered design-rule complete.
