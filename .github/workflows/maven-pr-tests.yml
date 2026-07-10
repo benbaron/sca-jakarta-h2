@@ -28,4 +28,11 @@ jobs:
           cache: maven
 
       - name: Run tests
-        run: mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository > maven-test.log 2>&1; then
+            tail -n 240 maven-test.log
+            exit 1
+          fi
+          tail -n 80 maven-test.log
