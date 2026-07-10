@@ -1,13 +1,13 @@
 # Model and persistence authority inventory
 
-Status: P00 inventory of current main, updated through P09-S1 inventory persistence. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
+Status: P00 inventory of current main, updated through P03-C6 unified Journal workspace. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
 
 ## Current persistence map
 
 | Area | Current model/storage | H2 authoritative today? | Duplicate/sidecar risk | Later decision |
 |---|---|---|---|---|
-| Legacy ledger | `Txn` and `TxnSplit` JPA entities, ledger query service | yes for existing ledger queries | competes with journal transaction tables | P02 selects canonical writable ledger |
-| Journal/open-item core | `JournalTransaction`, `PostingLine`, JDBC journal/open-item repositories, V4/V5 migrations | partially; repository exists but is separate from `Txn`/`TxnSplit` | second transaction model can become a parallel ledger | P02 compatibility/migration treatment |
+| Canonical ledger and Journal workspace | `Txn` and `TxnSplit` JPA entities, `txn_supplemental_line`, `TransactionEntryService`, unified `JournalWorkspacePanel` | yes for accepted transaction headers, lines, and supplemental details | the older `JournalTransaction`/`PostingLine` path remains a parallel-model hazard but is not used by the Journal workspace | preserve P02 authority and retire/remap overlapping journal/open-item tables deliberately |
+| Journal/open-item compatibility core | `JournalTransaction`, `PostingLine`, JDBC journal/open-item repositories, V4/V5 migrations | partially; repository exists but is separate from `Txn`/`TxnSplit` | second transaction model can become a parallel ledger | do not add independent writes; later compatibility/migration treatment |
 | Corrections/periods | accounting-period/audit/correction entities and V47/V48 | yes where wired | must not bypass canonical ledger or reconciliation protection | P02/P10 |
 | Budget categories | `BudgetCategory` JPA plus V45 | yes for categories | categories are not budget targets | P04 |
 | Budget targets | `BudgetPlan`/`BudgetLine` JPA entities and `budget_plan`/`budget_line` tables | yes | version activation must remain through `BudgetPlanService`; no sidecar target store remains | P04 persistent budget model |
@@ -23,9 +23,18 @@ Status: P00 inventory of current main, updated through P09-S1 inventory persiste
 
 ## Duplicate transaction and journal models
 
-- `Txn`/`TxnSplit` are the JPA ledger model used by current financial reports and ledger queries.
-- `JournalTransaction`/`PostingLine` and JDBC journal repositories provide a separate domain/repository path introduced for open-item and schedule work.
-- P02 must prevent two independently writable ledgers. The safest near-term rule is: do not add writes to the journal path until `doc/accounting/ledger-authority.md` selects canonical authority and compatibility handling.
+- `Txn`/`TxnSplit` are the canonical JPA ledger model used by financial reports, transaction entry, correction operations, and the unified Journal workspace.
+- `txn_supplemental_line` is authoritative for transaction-attached Receivable, Payable, Prepaid Expense, Deferred Revenue, Other Asset, and Other Liability details.
+- `JournalTransaction`/`PostingLine` and JDBC journal repositories remain a separate compatibility path introduced for open-item and schedule work.
+- P03-C6 does not use or write the compatibility path. No second writable ledger is introduced.
+
+## Unified Journal authority
+
+- `JournalWorkspacePanel` queries `TransactionEntryService.search(...)` and `load(...)`.
+- New and edited entries write through `TransactionEntryService.enter(...)` and `update(...)`.
+- Delete and reverse operations write through `TransactionCorrectionService` and retain period/reconciliation protection.
+- The panel stores only UI preferences such as divider positions and table state outside H2; unsaved editor rows are dirty UI state, not accepted accounting data.
+- `LEDGER_REGISTER` and `TXN_EDITOR` are compatibility destination aliases only. They do not identify separate data stores or panels.
 
 ## Budget model authority
 
@@ -43,8 +52,8 @@ Status: P00 inventory of current main, updated through P09-S1 inventory persiste
 
 - Reconciliation run records are durable comparison facts after P06-S2, not an approval queue.
 - The former Schedules top-level function and schedule runbook sidecar are removed.
-- Open-item and deferral concepts must return only as domain-specific supplemental transaction records linked to canonical transaction/split IDs.
-- Open-item snapshot repositories and domain state enums exist before the canonical transaction authority is fully settled and must not become a second ledger.
+- Open-item and deferral concepts return only as domain-specific supplemental transaction records linked to canonical transaction/split IDs.
+- Open-item snapshot repositories and domain state enums must not become a second ledger.
 
 ## Fixed asset and depreciation authority
 
@@ -67,11 +76,11 @@ Status: P00 inventory of current main, updated through P09-S1 inventory persiste
 2. V4/V5 add journal/open-item tables that overlap transaction semantics.
 3. V6/V7/V8 add workflow/approval records that conflict with the plan’s no-approval-queue decision if surfaced as approval workflow.
 4. V2 schedule tables remain as historical schema until a deliberate nondestructive migration retires or remaps them.
-5. V49 through V54 are occupied by reconciliation, budget, bank import, and related migrations already on main; V55 adds fixed asset/depreciation tables; V56 adds inventory item/movement tables. These migrations must remain nondestructive.
+5. V49 through V58 are occupied by reconciliation, budget, bank import, fixed asset, inventory, and transaction-supplemental migrations. These migrations must remain nondestructive.
 6. Any later schema change needs a new nondestructive migration and in-memory upgrade test.
 7. Hibernate generation must not be treated as a substitute for Flyway review.
 
 ## Sidecar/static stores to eliminate or confine
 
 - `UiWorkspaceDataStore`: bank transactions and import/export jobs remain sidecar/static session lists.
-- Session draft in `TransactionEditorPanel`: useful as UI dirty state only, not accepted accounting persistence.
+- Unified Journal draft state: acceptable only as unsaved UI state; accepted headers, lines, and supplemental details must be written through `TransactionEntryService` to H2.
