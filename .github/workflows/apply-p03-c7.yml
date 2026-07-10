@@ -1,8 +1,9 @@
 name: Apply P03-C7 patch
 
 on:
-  push:
-    branches: [ "codex/P03-C7-journal-ui-compliance" ]
+  pull_request:
+    branches: [ "main" ]
+    types: [ opened, reopened, synchronize ]
 
 permissions:
   contents: write
