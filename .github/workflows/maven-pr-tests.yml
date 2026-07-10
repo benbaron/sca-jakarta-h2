@@ -29,3 +29,11 @@ jobs:
 
       - name: Run tests
         run: mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository
+
+      - name: Upload MainWindow source for exact patch
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: main-window-source
+          path: src/main/java/org/nonprofitbookkeeping/ui/MainWindow.java
+          retention-days: 1
