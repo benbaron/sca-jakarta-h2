@@ -20,8 +20,14 @@ jobs:
         shell: bash
         run: |
           set +e
-          python tools/apply_p03_c7.py > /tmp/p03-c7-patch.log 2>&1
-          status=$?
+          python tools/fix_p03_c7_patch_script.py > /tmp/p03-c7-patch.log 2>&1
+          fix_status=$?
+          if [ "$fix_status" = "0" ]; then
+            python tools/apply_p03_c7.py >> /tmp/p03-c7-patch.log 2>&1
+            status=$?
+          else
+            status=$fix_status
+          fi
           echo "$status" > /tmp/p03-c7-patch-status
           exit 0
 
