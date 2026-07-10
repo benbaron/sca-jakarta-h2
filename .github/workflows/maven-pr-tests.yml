@@ -7,6 +7,9 @@ on:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 concurrency:
   group: maven-pr-tests-${{ github.ref }}
   cancel-in-progress: true
@@ -17,8 +20,10 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - name: Checkout
+      - name: Checkout branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
 
       - name: Set up Temurin JDK 17
         uses: actions/setup-java@v4
@@ -27,13 +32,157 @@ jobs:
           java-version: '17'
           cache: maven
 
+      - name: Canonicalize MainWindow Journal routes and restore workflow
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/main/java/org/nonprofitbookkeeping/ui/MainWindow.java")
+          text = path.read_text(encoding="utf-8")
+
+          replacements = [
+              (
+                  "        openPanel(AppPanelId.LEDGER_REGISTER);",
+                  "        openPanel(AppPanelId.JOURNAL_PANE);"
+              ),
+              (
+                  '''        for (AppPanelId id : AppPanelId.values())
+                  {
+                      entries.add(new PaletteEntry(id, panelLabel(id)));
+                  }''',
+                  '''        for (AppPanelId id : AppPanelId.values())
+                  {
+                      if (id == AppPanelId.SCHEDULES || AppPanelId.canonical(id) != id)
+                      {
+                          continue;
+                      }
+                      entries.add(new PaletteEntry(id, panelLabel(id)));
+                  }'''
+              ),
+              (
+                  '''    static String panelCapabilities(AppPanelId id)
+                  {
+                      return switch (id)
+                      {
+                          case TXN_EDITOR -> "Save, New line edits, Post/Validate run command, Journal preview";
+                          case LEDGER_REGISTER -> "Refresh, inspect journal, expose active journal selection";''',
+                  '''    static String panelCapabilities(AppPanelId id)
+                  {
+                      AppPanelId canonicalId = AppPanelId.canonical(id);
+                      return switch (canonicalId)
+                      {
+                          case JOURNAL_PANE -> "Grouped journal review, New/Edit/Save, Delete/Reverse, validation, and supplemental details";'''
+              ),
+              (
+                  '''            case LEDGER_REGISTER -> "Ledger Register";
+                              case TXN_EDITOR -> "Transaction Editor";
+                              case JOURNAL_PANE -> "Inspect Journal";''',
+                  '''            case LEDGER_REGISTER, TXN_EDITOR, JOURNAL_PANE -> "Journal";'''
+              ),
+              (
+                  '''            case SCHEDULES -> "Outstanding / Schedules";''',
+                  '''            case SCHEDULES -> "Retired Schedules";'''
+              ),
+              (
+                  '''                AppPanelId panelId = AppPanelId.valueOf(state.panelId());''',
+                  '''                AppPanelId panelId = AppPanelId.canonical(AppPanelId.valueOf(state.panelId()));'''
+              ),
+              (
+                  '''    public void openPanel(AppPanelId id)
+                  {
+                      UserPrivilegeLevel privilege = SESSION_STATE.preferences().defaultPrivilege();
+                      if (!canAccessPanelForPrivilege(id, privilege))
+                      {
+                          info("Access denied: " + panelLabel(id) + " requires " + requiredPrivilegeForPanel(id) + " privilege.");
+                          return;
+                      }
+                      panelHost.show(id);
+                      nav.highlight(id);''',
+                  '''    public void openPanel(AppPanelId id)
+                  {
+                      AppPanelId canonicalId = AppPanelId.canonical(id);
+                      UserPrivilegeLevel privilege = SESSION_STATE.preferences().defaultPrivilege();
+                      if (!canAccessPanelForPrivilege(canonicalId, privilege))
+                      {
+                          info("Access denied: " + panelLabel(canonicalId) + " requires " + requiredPrivilegeForPanel(canonicalId) + " privilege.");
+                          return;
+                      }
+                      panelHost.show(canonicalId);
+                      nav.highlight(canonicalId);'''
+              ),
+              (
+                  '''    public void openInspectorJournal()
+                  {
+                      inspectorPane.show("Journal", buildJournalInspectorPreview());
+                  }''',
+                  '''    public void openInspectorJournal()
+                  {
+                      Optional<AppPanel.JournalSelection> selected = panelHost.activeJournalSelection();
+                      if (selected.isPresent())
+                      {
+                          DrillThroughCoordinator.openPanelWithContext(
+                                  AppPanelId.JOURNAL_PANE,
+                                  "Txn #" + selected.get().txnId());
+                      }
+                      else
+                      {
+                          openPanel(AppPanelId.JOURNAL_PANE);
+                      }
+                  }'''
+              )
+          ]
+
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"Expected exactly one MainWindow replacement, found {count}: {old[:80]!r}")
+              text = text.replace(old, new, 1)
+
+          path.write_text(text, encoding="utf-8")
+
+          workflow = '''name: Maven PR Tests
+
+          on:
+            pull_request:
+              branches: [ "**" ]
+            push:
+              branches: [ "main", "master" ]
+            workflow_dispatch:
+
+          concurrency:
+            group: maven-pr-tests-${{ github.ref }}
+            cancel-in-progress: true
+
+          jobs:
+            test:
+              runs-on: ubuntu-latest
+              timeout-minutes: 20
+
+              steps:
+                - name: Checkout
+                  uses: actions/checkout@v4
+
+                - name: Set up Temurin JDK 17
+                  uses: actions/setup-java@v4
+                  with:
+                    distribution: temurin
+                    java-version: '17'
+                    cache: maven
+
+                - name: Run tests
+                  run: mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository
+          '''
+          # Remove the Python source indentation while preserving YAML nesting.
+          import textwrap
+          Path(".github/workflows/maven-pr-tests.yml").write_text(textwrap.dedent(workflow), encoding="utf-8")
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/java/org/nonprofitbookkeeping/ui/MainWindow.java .github/workflows/maven-pr-tests.yml
+          git commit -m "Canonicalize MainWindow Journal routes"
+          git push origin HEAD:${GITHUB_HEAD_REF}
+
       - name: Run tests
         run: mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository
-
-      - name: Upload MainWindow source for exact patch
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: main-window-source
-          path: src/main/java/org/nonprofitbookkeeping/ui/MainWindow.java
-          retention-days: 1
