@@ -37,6 +37,7 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import textwrap
 
           path = Path("src/main/java/org/nonprofitbookkeeping/ui/MainWindow.java")
           text = path.read_text(encoding="utf-8")
@@ -114,7 +115,10 @@ jobs:
               (
                   '''    public void openInspectorJournal()
                   {
-                      inspectorPane.show("Journal", buildJournalInspectorPreview());
+                      inspectorPane.show("Journal View", "Loading journal context...");
+                      UiAsync.run("journal-inspector", this::buildJournalInspectorPreview,
+                              body -> inspectorPane.show("Journal View", body),
+                              ex -> inspectorPane.show("Journal View", "Could not load journal preview: " + UiErrors.safeMessage(ex)));
                   }''',
                   '''    public void openInspectorJournal()
                   {
@@ -173,8 +177,6 @@ jobs:
                 - name: Run tests
                   run: mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository
           '''
-          # Remove the Python source indentation while preserving YAML nesting.
-          import textwrap
           Path(".github/workflows/maven-pr-tests.yml").write_text(textwrap.dedent(workflow), encoding="utf-8")
           PY
 
