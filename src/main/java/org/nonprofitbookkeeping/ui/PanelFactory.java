@@ -58,7 +58,7 @@ public final class PanelFactory
 
     public AppPanel create(AppPanelId id)
     {
-        AppPanelId canonicalId = PanelHost.canonicalPanelId(Objects.requireNonNull(id, "id"));
+        AppPanelId canonicalId = AppPanelId.canonical(Objects.requireNonNull(id, "id"));
         Supplier<AppPanel> factory = factories.get(canonicalId);
         if (factory == null)
         {
