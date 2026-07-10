@@ -64,9 +64,7 @@ public class NavigationPane extends VBox
         addItem(content, AppPanelId.DASHBOARD, "Dashboard", UiIcons.Glyph.DASHBOARD);
 
         section(content, "ACCOUNTING");
-        addItem(content, AppPanelId.LEDGER_REGISTER, "Ledger Register", UiIcons.Glyph.LEDGER);
-        addItem(content, AppPanelId.TXN_EDITOR, "Transaction Editor", UiIcons.Glyph.ADD);
-        addItem(content, AppPanelId.JOURNAL_PANE, "Inspect Journal", UiIcons.Glyph.REPORT);
+        addItem(content, AppPanelId.JOURNAL_PANE, "Journal", UiIcons.Glyph.LEDGER);
         addItem(content, AppPanelId.BANKING, "Banking", UiIcons.Glyph.BANK);
         addItem(content, AppPanelId.RECONCILIATION_RUNS, "Bank Reconciliation", UiIcons.Glyph.BANK);
         addItem(content, AppPanelId.BANK_TRANSACTIONS, "Bank Transactions", UiIcons.Glyph.CREDIT_CARD);
@@ -119,6 +117,7 @@ public class NavigationPane extends VBox
     /** Selects the navigation item that corresponds to the active workspace panel. */
     public void highlight(AppPanelId id)
     {
+        AppPanelId canonicalId = PanelHost.canonicalPanelId(id);
         if (highlightedPanel != null)
         {
             Button previous = index.get(highlightedPanel);
@@ -128,8 +127,8 @@ public class NavigationPane extends VBox
             }
         }
 
-        highlightedPanel = id;
-        Button selected = index.get(id);
+        highlightedPanel = canonicalId;
+        Button selected = index.get(canonicalId);
         if (selected != null
                 && !selected.getStyleClass().contains("navigation-item-selected"))
         {
