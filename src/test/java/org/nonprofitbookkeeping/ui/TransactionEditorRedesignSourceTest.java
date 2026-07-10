@@ -8,7 +8,6 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Source-level guardrails for the P03-C4 Transaction Editor and Journal redesign. */
 class TransactionEditorRedesignSourceTest
 {
     @Test
@@ -35,6 +34,9 @@ class TransactionEditorRedesignSourceTest
         assertTrue(source.contains("add.setOnAction(event -> addSupplementalRow(kind))"));
         assertTrue(source.contains("remove.setOnAction(event -> removeSupplementalRow(kind))"));
         assertTrue(source.contains("validateSupplementalRows"));
+        assertTrue(source.contains("supplementalLineCommands"));
+        assertTrue(source.contains("applySupplementalLines(view.supplementalLines())"));
+        assertTrue(source.contains("TransactionSupplementalLineCommand"));
         assertFalse(source.contains("Supplemental detail persistence for"));
         assertFalse(source.contains("open_subwindow_schedules"));
         assertFalse(source.contains("SchedulesPanel"));
