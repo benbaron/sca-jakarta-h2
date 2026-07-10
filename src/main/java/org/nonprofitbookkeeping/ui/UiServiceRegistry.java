@@ -4,6 +4,7 @@ import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
 import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.repository.ApprovalAuditRepository;
 import org.nonprofitbookkeeping.repository.JdbcApprovalAuditRepository;
+import org.nonprofitbookkeeping.repository.JdbcCompanyUiPreferenceRepository;
 import org.nonprofitbookkeeping.repository.JdbcPeriodCloseRunRepository;
 import org.nonprofitbookkeeping.repository.JdbcReconciliationRunRepository;
 import org.nonprofitbookkeeping.repository.PeriodCloseRunRepository;
@@ -17,6 +18,7 @@ import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
 import org.nonprofitbookkeeping.service.BudgetCategoryLookupService;
 import org.nonprofitbookkeeping.service.BudgetPlanService;
 import org.nonprofitbookkeeping.service.CompanyAdminService;
+import org.nonprofitbookkeeping.service.CompanyUiPreferencesService;
 import org.nonprofitbookkeeping.service.FinancialReportService;
 import org.nonprofitbookkeeping.service.FixedAssetService;
 import org.nonprofitbookkeeping.service.FundAdminService;
@@ -63,6 +65,11 @@ public final class UiServiceRegistry
     public static FixedAssetService fixedAssets() { return services().fixedAssets(); }
     public static InventoryService inventory() { return services().inventory(); }
     public static CompanyAdminService companyAdmin() { return services().companyAdmin(); }
+    public static CompanyUiPreferencesService companyUiPreferences()
+    {
+        return new CompanyUiPreferencesService(
+                new JdbcCompanyUiPreferenceRepository(UiDataSources.forCurrentSessionDatabase()));
+    }
     public static UserAdminService userAdmin() { return services().userAdmin(); }
     public static FundBalanceService fundBalance() { return services().fundBalance(); }
     public static ScheduleEligibilityService schedules() { return services().schedules(); }
