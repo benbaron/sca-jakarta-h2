@@ -22,6 +22,9 @@ jobs:
           java-version: '17'
           cache: maven
 
+      - name: Apply adapter compile fix
+        run: python tools/fix_p03_c7_adapter.py
+
       - name: Run Maven and capture output
         shell: bash
         run: |
@@ -31,12 +34,13 @@ jobs:
           echo "$status" > /tmp/p03-c7-maven-status
           exit 0
 
-      - name: Upload Maven diagnostics
+      - name: Upload corrected adapter and Maven diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: p03-c7-maven-diagnostics
+          name: p03-c7-adapter-diagnostics
           path: |
+            src/main/java/org/nonprofitbookkeeping/ui/JournalWorkspaceCompliancePanel.java
             /tmp/p03-c7-maven.log
             /tmp/p03-c7-maven-status
 
