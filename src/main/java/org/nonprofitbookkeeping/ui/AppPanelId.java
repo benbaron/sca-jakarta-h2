@@ -42,5 +42,15 @@ public enum AppPanelId
     FUNDS,
     SETTINGS,
     DIAGNOSTICS,
-    HELP
+    HELP;
+
+    /** Returns the production destination for a stable or retired panel id. */
+    public static AppPanelId canonical(AppPanelId id)
+    {
+        if (id == LEDGER_REGISTER || id == TXN_EDITOR)
+        {
+            return JOURNAL_PANE;
+        }
+        return id;
+    }
 }
