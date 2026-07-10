@@ -44,4 +44,20 @@ public class MainWindowCommandPaletteTest
         List<String> sorted = labels.stream().sorted().toList();
         assertEquals(sorted, labels);
     }
+
+    @Test
+    public void commandPaletteEntries_useOneCanonicalJournalDestination()
+    {
+        List<MainWindow.PaletteEntry> entries = MainWindow.commandPaletteEntriesForTests();
+
+        assertEquals(1L, entries.stream()
+                .filter(entry -> entry.panelId() == AppPanelId.JOURNAL_PANE)
+                .count());
+        assertTrue(entries.stream().anyMatch(entry ->
+                entry.panelId() == AppPanelId.JOURNAL_PANE && "Journal".equals(entry.label())));
+        assertTrue(entries.stream().noneMatch(entry ->
+                entry.panelId() == AppPanelId.LEDGER_REGISTER
+                        || entry.panelId() == AppPanelId.TXN_EDITOR
+                        || entry.panelId() == AppPanelId.SCHEDULES));
+    }
 }
