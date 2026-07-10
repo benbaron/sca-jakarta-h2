@@ -1,12 +1,12 @@
 ---
-plan_version: 23
+plan_version: 24
 active_phase: P03
 active_slice: P03-C6
 active_status: VERIFYING
 active_branch: codex/P03-C6-journal-workspace-port
 active_pull_request: "#151"
-active_head: e9429ebc56e3d533ec7d57e8c507603e0e34b60d
-next_action: "Complete final GitHub Actions validation for PR #151, then perform desktop laptop-width validation of every Journal divider, scroll region, save/reload path, and legacy navigation redirect."
+active_head: d9ea41c5469976297de7e757cf8ecf1f11b9d742
+next_action: "Perform desktop laptop-width validation of every Journal divider, scroll region, save/reload path, and legacy navigation redirect; then merge PR #151 and mark P03-C6 DONE."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -131,7 +131,7 @@ Completed slices:
 Status: VERIFYING.
 Branch: `codex/P03-C6-journal-workspace-port`
 Pull request: #151
-Head recorded before this plan update: `e9429ebc56e3d533ec7d57e8c507603e0e34b60d`
+Head recorded before this plan update: `d9ea41c5469976297de7e757cf8ecf1f11b9d742`
 
 Purpose: use the interaction and visual structure of the donor repository's `JournalPanelFX`, `JournalEntryWorkspaceFX`, `GeneralJournalEntryPanelFX`, and `JournalShellNavigation` as the basis for one native Journal workspace, while retaining the current H2 schema, `TransactionEntryService`, `TransactionLineEditorModel`, correction service, and persisted supplemental details.
 
@@ -153,15 +153,14 @@ Known limitation recorded for follow-up:
 
 - `TransactionView.Line` does not yet expose the authoritative line-level cleared flag. The Journal does not claim authoritative mixed cleared/uncleared transaction detail; an explicit line-level projection remains a later corrective slice.
 
-Validation so far:
+Validation:
 
 - Maven PR Tests run `29111210478` completed successfully for implementation head `695a13442c30723dc8e2543e904afcdf3fc27c0f`.
-- Subsequent shell-catalog and command-palette changes are awaiting final GitHub Actions validation on the final documentation head.
+- Maven PR Tests run `29112708165` completed successfully under the restored standard workflow for final implementation/documentation head `d9ea41c5469976297de7e757cf8ecf1f11b9d742`.
 - Desktop visual validation has not yet been performed in this environment.
 
 Remaining deliverables before DONE:
 
-- Confirm final GitHub Actions success for PR #151 with the restored standard workflow.
 - Perform desktop visual validation at laptop width: move every divider, verify independent scrolling, create/save/reload/edit a transaction with supplemental details, and confirm legacy Ledger Register/Transaction Editor/Inspect Journal paths all select the same Journal tab.
 - Merge PR #151 into current `main`, then mark P03-C6 DONE.
 
