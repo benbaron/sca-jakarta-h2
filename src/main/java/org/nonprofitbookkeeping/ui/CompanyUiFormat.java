@@ -4,13 +4,11 @@ import javafx.scene.control.DatePicker;
 import javafx.util.StringConverter;
 import org.nonprofitbookkeeping.model.CompanyUiPreferences;
 import org.nonprofitbookkeeping.model.DateDisplayFormat;
-import org.nonprofitbookkeeping.model.MoneyPrintFormat;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.text.ParsePosition;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -64,12 +62,26 @@ public final class CompanyUiFormat
 
     public BigDecimal parseMoney(String value)
     {
+        return parseMoneyLenient(value, preferences.currencySymbol());
+    }
+
+    public static BigDecimal parseMoneyLenient(String value)
+    {
+        return parseMoneyLenient(value, "");
+    }
+
+    private static BigDecimal parseMoneyLenient(String value, String configuredSymbol)
+    {
         if (value == null || value.isBlank())
         {
             return BigDecimal.ZERO;
         }
-        String normalized = value.trim()
-                .replace(preferences.currencySymbol(), "")
+        String normalized = value.trim();
+        if (configuredSymbol != null && !configuredSymbol.isBlank())
+        {
+            normalized = normalized.replace(configuredSymbol, "");
+        }
+        normalized = normalized
                 .replace("$", "")
                 .replace("€", "")
                 .replace("£", "")
