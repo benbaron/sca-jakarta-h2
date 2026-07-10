@@ -27,7 +27,7 @@ public final class PanelFactory
     private void registerFactories(Supplier<AppPanel> dashboardFactory)
     {
         factories.put(AppPanelId.DASHBOARD, dashboardFactory);
-        factories.put(AppPanelId.JOURNAL_PANE, JournalWorkspacePanel::new);
+        factories.put(AppPanelId.JOURNAL_PANE, JournalWorkspaceCompliancePanel::new);
         factories.put(AppPanelId.BANKING, BankingPanel::new);
         factories.put(AppPanelId.BUDGET_EDITOR, BudgetEditorPanel::new);
         factories.put(AppPanelId.BUDGET_VS_ACTUAL, BudgetVsActualPanel::new);

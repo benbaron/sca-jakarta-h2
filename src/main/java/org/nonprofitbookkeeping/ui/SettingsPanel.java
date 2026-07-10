@@ -11,15 +11,19 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.AppPreferencesState;
 import org.nonprofitbookkeeping.model.ClosedPeriodPolicy;
+import org.nonprofitbookkeeping.model.CompanyUiPreferences;
+import org.nonprofitbookkeeping.model.DateDisplayFormat;
 import org.nonprofitbookkeeping.model.CorrectionMethod;
 import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
+import org.nonprofitbookkeeping.model.MoneyPrintFormat;
 import org.nonprofitbookkeeping.model.ReopenScope;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
@@ -45,6 +49,9 @@ public class SettingsPanel implements AppPanel
     private final ComboBox<ReopenScope> defaultReopenScope = new ComboBox<>();
     private final Spinner<Integer> periodStartDay = new Spinner<>();
     private final CheckBox confirmDeletion = new CheckBox("Confirm before deleting an entered transaction");
+    private final TextField currencySymbol = new TextField();
+    private final ComboBox<MoneyPrintFormat> moneyPrintFormat = new ComboBox<>();
+    private final ComboBox<DateDisplayFormat> dateDisplayFormat = new ComboBox<>();
     private final ComboBox<String> activeCompany = new ComboBox<>();
     private final ComboBox<String> activeDatabase = new ComboBox<>();
 
@@ -96,9 +103,14 @@ public class SettingsPanel implements AppPanel
         defaultReopenScope.getItems().addAll(ReopenScope.values());
         periodStartDay.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 28, 1));
         periodStartDay.setEditable(true);
+        currencySymbol.setPromptText("$");
+        currencySymbol.setPrefColumnCount(5);
+        moneyPrintFormat.getItems().setAll(MoneyPrintFormat.values());
+        dateDisplayFormat.getItems().setAll(DateDisplayFormat.values());
 
         activeCompany.setEditable(true);
         activeCompany.getItems().addAll(session.multiCompany().recentCompanyCodes());
+        activeCompany.setOnAction(event -> loadCompanyUiPreferences(activeCompany.getEditor().getText()));
 
         activeDatabase.setEditable(true);
         activeDatabase.getItems().addAll(session.databaseSelection().recentDatabasePaths());
@@ -126,6 +138,15 @@ public class SettingsPanel implements AppPanel
 
         grid.add(new Label("Period start day"), 0, row);
         grid.add(periodStartDay, 1, row++);
+
+        grid.add(new Label("Money symbol"), 0, row);
+        grid.add(currencySymbol, 1, row++);
+
+        grid.add(new Label("Money print format"), 0, row);
+        grid.add(moneyPrintFormat, 1, row++);
+
+        grid.add(new Label("Date display format"), 0, row);
+        grid.add(dateDisplayFormat, 1, row++);
 
         grid.add(confirmDeletion, 0, row++, 2, 1);
 
@@ -167,6 +188,7 @@ public class SettingsPanel implements AppPanel
             activeCompany.getItems().add(c.activeCompanyCode());
         }
         activeCompany.getSelectionModel().select(c.activeCompanyCode());
+        loadCompanyUiPreferences(c.activeCompanyCode());
 
         activeDatabase.getItems().setAll(d.recentDatabasePaths());
         if (!d.recentDatabasePaths().contains(d.activeDatabasePath()))
@@ -181,7 +203,40 @@ public class SettingsPanel implements AppPanel
         session.setPreferences(readPreferences());
         session.setMultiCompany(readMultiCompany());
         session.setDatabaseSelection(readDatabaseSelection());
-        status.setText("Applied settings to current session.");
+        saveCompanyUiPreferences(session.multiCompany().activeCompanyCode());
+        status.setText("Applied settings and company display preferences to the current session.");
+    }
+
+    CompanyUiPreferences readCompanyUiPreferences()
+    {
+        return new CompanyUiPreferences(
+                currencySymbol.getText(),
+                moneyPrintFormat.getValue() == null ? MoneyPrintFormat.SYMBOL_PREFIX : moneyPrintFormat.getValue(),
+                dateDisplayFormat.getValue() == null ? DateDisplayFormat.MONTH_DAY_YEAR : dateDisplayFormat.getValue());
+    }
+
+    private void loadCompanyUiPreferences(String companyCode)
+    {
+        try
+        {
+            CompanyUiPreferences preferences = UiServiceRegistry.companyUiPreferences().load(companyCode);
+            currencySymbol.setText(preferences.currencySymbol());
+            moneyPrintFormat.setValue(preferences.moneyPrintFormat());
+            dateDisplayFormat.setValue(preferences.dateDisplayFormat());
+        }
+        catch (RuntimeException ex)
+        {
+            CompanyUiPreferences defaults = CompanyUiPreferences.defaults();
+            currencySymbol.setText(defaults.currencySymbol());
+            moneyPrintFormat.setValue(defaults.moneyPrintFormat());
+            dateDisplayFormat.setValue(defaults.dateDisplayFormat());
+            status.setText("Could not load company display preferences: " + UiErrors.safeMessage(ex));
+        }
+    }
+
+    private void saveCompanyUiPreferences(String companyCode)
+    {
+        UiServiceRegistry.companyUiPreferences().save(companyCode, readCompanyUiPreferences());
     }
 
     AppPreferencesState readPreferences()
@@ -253,7 +308,7 @@ public class SettingsPanel implements AppPanel
     public void onSave()
     {
         applyToSession();
-        status.setText("Saved settings. They will be restored on next startup.");
+        status.setText("Saved settings and company display preferences. They will be restored for the active company.");
     }
 
     @Override
