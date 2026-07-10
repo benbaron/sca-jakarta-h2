@@ -1,12 +1,12 @@
 ---
-plan_version: 22
+plan_version: 23
 active_phase: P03
 active_slice: P03-C6
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P03-C6-journal-workspace-port
-active_pull_request: null
-active_head: e8c8c127e31567a28108989caceb56e2f5310c7b
-next_action: "Port the NonprofitAccounting Journal* interaction model into one H2-backed Journal workspace and replace the three former P03 navigation destinations."
+active_pull_request: "#151"
+active_head: e9429ebc56e3d533ec7d57e8c507603e0e34b60d
+next_action: "Complete final GitHub Actions validation for PR #151, then perform desktop laptop-width validation of every Journal divider, scroll region, save/reload path, and legacy navigation redirect."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Port the NonprofitAccounting Journal* interaction model into one H
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P03-C5 as merged through PR #150 and opens P03-C6 to replace the separate Ledger Register, Transaction Editor, and Inspect Journal surfaces with one Journal-based workspace derived from `benbaron/NonprofitAccounting` `Journal*` UI classes.
+This revision records P03-C5 as merged through PR #150 and P03-C6 as VERIFYING in PR #151. P03-C6 replaces the separate Ledger Register, Transaction Editor, and Inspect Journal surfaces with one Journal-based workspace derived from `benbaron/NonprofitAccounting` `Journal*` UI classes.
 
 ## 2. Status values
 
@@ -35,7 +35,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P00 | Documentation and implementation inventory | none | DONE; update matrices as touched |
 | P01 | Production shell and workspace composition | P00 | DONE; corrective P01-C1 DONE through PR #141 |
 | P02 | Canonical ledger and transaction operations | P00 | DONE; retain |
-| P03 | Journal workspace and canonical transaction operations | P01, P02 | READY; corrective P03-C6 IN_PROGRESS |
+| P03 | Journal workspace and canonical transaction operations | P01, P02 | READY; corrective P03-C6 VERIFYING |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
 | P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137; corrective P05-C5 DONE through PR #148 |
 | P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 DONE through PR #146; corrective P06-C2 DONE through PR #147 |
@@ -80,7 +80,7 @@ Focused documents for current UI/accounting work:
 - Write services own validation and transactions.
 - Query services return projections for panels and reports.
 - Constructor injection is preferred.
-- Left Navigation under Accounting must expose one Journal destination rather than separate Ledger Register, Transaction Editor, and Inspect Journal destinations.
+- Left Navigation under Accounting exposes one Journal destination rather than separate Ledger Register, Transaction Editor, and Inspect Journal destinations.
 - Left Navigation must not include Schedules.
 - Left Navigation must not include Import/Export Jobs as a separate function.
 - No approval queue or formal approval/rejection workflow.
@@ -116,7 +116,7 @@ Status: DONE, retain.
 
 ### P03 — Journal workspace and canonical transaction operations
 
-Status: READY; corrective P03-C6 IN_PROGRESS.
+Status: READY; corrective P03-C6 VERIFYING.
 
 Completed slices:
 
@@ -128,40 +128,42 @@ Completed slices:
 
 ### P03-C6 — Unified Journal workspace port
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 Branch: `codex/P03-C6-journal-workspace-port`
-Pull request: not opened yet.
-Head: `e8c8c127e31567a28108989caceb56e2f5310c7b`
+Pull request: #151
+Head recorded before this plan update: `e9429ebc56e3d533ec7d57e8c507603e0e34b60d`
 
-Purpose: use the interaction and visual structure of the donor repository's `JournalPanelFX`, `JournalEntryWorkspaceFX`, and `JournalShellNavigation` as the basis for one native Journal workspace, while retaining the current H2 schema, `TransactionEntryService`, `TransactionLineEditorModel`, correction service, and persisted supplemental details.
+Purpose: use the interaction and visual structure of the donor repository's `JournalPanelFX`, `JournalEntryWorkspaceFX`, `GeneralJournalEntryPanelFX`, and `JournalShellNavigation` as the basis for one native Journal workspace, while retaining the current H2 schema, `TransactionEntryService`, `TransactionLineEditorModel`, correction service, and persisted supplemental details.
 
-Required deliverables:
+Implemented in branch:
 
-- Replace the three visible Accounting destinations Ledger Register, Transaction Editor, and Inspect Journal with one Journal destination.
-- Keep the former panel IDs only as compatibility redirects so drill-through and saved workspace paths open the same Journal tab rather than creating duplicate tabs.
-- Present one grouped transaction journal row per canonical transaction, with posting lines, date, account title/description, fund, cleared state, debit, credit, transaction ID, supplemental count, and memo/detail lines.
-- Provide real New, Edit, Save, Delete/Reverse, Refresh, filter, and selection operations through current services.
-- Place the journal register, editor header, entry-line table, additional details, and supplemental details in nested `SplitPane` regions with visible draggable resize bars.
-- Preserve stable-ID account/fund/reference selections, one-sided debit/credit editing, live totals, validation, dirty-state handling, table-state persistence, and H2 supplemental-line persistence.
-- Update navigation, panel factory/routing, drill-through compatibility, governing documents, and focused tests.
+- Added `JournalWorkspacePanel` as the single production P03 workspace.
+- Replaced the three visible Accounting destinations Ledger Register, Transaction Editor, and Inspect Journal with one **Journal** destination.
+- Retained `LEDGER_REGISTER` and `TXN_EDITOR` only as stable compatibility aliases normalized to `JOURNAL_PANE` by `AppPanelId`, `PanelHost`, `PanelFactory`, `NavigationPane`, and `DrillThroughCoordinator`.
+- Canonicalized startup, command-palette entries, toolbar Journal behavior, search destinations, and persisted view presets so they open the same Journal tab and preserve transaction context.
+- Added a grouped one-row-per-transaction journal table with date/text filters, posting lines, accounts, funds, debit/credit displays, transaction ID, supplemental count, and memo/detail text.
+- Added integrated New/Edit entry with real New, Edit Selected, Save Entry, Delete/Reverse, Refresh, validation, and selection operations through current H2-backed services.
+- Added nested draggable `SplitPane` dividers between journal/editor, header/entry-lines/details, and additional/supplemental details. Divider positions are remembered per active company.
+- Preserved stable-ID reference selectors, one-sided debit/credit editing, blank-row behavior, live totals, validation, dirty state, per-company table state, horizontal/vertical table scrolling, and H2 supplemental-line persistence.
+- Updated `doc/interface-operation-matrix.md`, `doc/persistence-authority-inventory.md`, `doc/ui/editor-guidelines.md`, and `doc/accounting/transaction-editor-and-journal.md`.
+- Added focused routing, navigation, command-palette, source-structure, and JavaFX consistency tests.
+- Did not port donor `CurrentCompany`, static persistence, donor JDBC/repositories, or alternate ledger models.
 
-Required donor inspection:
+Known limitation recorded for follow-up:
 
-- `benbaron/NonprofitAccounting/src/main/java/nonprofitbookkeeping/ui/JournalShellNavigation.java`
-- `benbaron/NonprofitAccounting/src/main/java/nonprofitbookkeeping/ui/panels/JournalPanelFX.java`
-- `benbaron/NonprofitAccounting/src/main/java/nonprofitbookkeeping/ui/panels/JournalEntryWorkspaceFX.java`
-- `benbaron/NonprofitAccounting/src/main/java/nonprofitbookkeeping/ui/panels/GeneralJournalEntryPanelFX.java`
+- `TransactionView.Line` does not yet expose the authoritative line-level cleared flag. The Journal does not claim authoritative mixed cleared/uncleared transaction detail; an explicit line-level projection remains a later corrective slice.
 
-Current design decision:
+Validation so far:
 
-- Port the donor Journal interaction model and layout concepts only. Do not port `CurrentCompany`, static persistence, donor repositories, donor JDBC, or alternate ledger models.
-- The canonical panel ID remains `JOURNAL_PANE` for compatibility. `LEDGER_REGISTER` and `TXN_EDITOR` become retired aliases normalized to the same Journal workspace.
+- Maven PR Tests run `29111210478` completed successfully for implementation head `695a13442c30723dc8e2543e904afcdf3fc27c0f`.
+- Subsequent shell-catalog and command-palette changes are awaiting final GitHub Actions validation on the final documentation head.
+- Desktop visual validation has not yet been performed in this environment.
 
-Validation required:
+Remaining deliverables before DONE:
 
-- Focused source and JavaFX behavior tests for one Journal navigation destination, compatibility normalization, split-pane geometry, and service routing.
-- `mvn clean verify` through GitHub Actions.
-- Desktop visual validation at laptop width, including divider movement and horizontal/vertical scrolling.
+- Confirm final GitHub Actions success for PR #151 with the restored standard workflow.
+- Perform desktop visual validation at laptop width: move every divider, verify independent scrolling, create/save/reload/edit a transaction with supplemental details, and confirm legacy Ledger Register/Transaction Editor/Inspect Journal paths all select the same Journal tab.
+- Merge PR #151 into current `main`, then mark P03-C6 DONE.
 
 ## 7. Active and recent phase contracts
 
