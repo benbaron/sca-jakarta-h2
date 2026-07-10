@@ -1,109 +1,127 @@
-# Transaction Editor, Ledger Register, and Journal Pane design
+# Unified Journal workspace design
 
 ## Purpose
 
-This document records the clarified requirements for transaction entry, ledger-register navigation, the Journal Pane, and transaction-attached supplemental detail records.
+The Journal workspace is the single production surface for reviewing canonical transactions and entering or editing journal entries. P03-C6 replaces the separate Ledger Register, Transaction Editor, and Inspect Journal surfaces with one resizable Journal workspace.
 
-## Transaction Editor modes
+The user-visible interaction model is based on the donor repository's `JournalPanelFX`, `JournalEntryWorkspaceFX`, `GeneralJournalEntryPanelFX`, and `JournalShellNavigation`. The production implementation continues to use the current H2 schema and service boundaries; donor repositories, static persistence, and alternate ledger models are not imported.
 
-The Transaction Editor has two modes: **New** and **Edit**.
+## One Journal destination
+
+Left Navigation under Accounting exposes one **Journal** item. The canonical panel identifier is `JOURNAL_PANE`.
+
+`LEDGER_REGISTER` and `TXN_EDITOR` remain retired compatibility aliases. Existing callers, saved destination references, dashboard actions, and drill-through paths normalize to `JOURNAL_PANE` and select the same existing Journal tab. They do not create duplicate tabs or independent transaction caches.
+
+## Journal review region
+
+The upper Journal region is read-only and displays one grouped row per canonical transaction. Each row presents:
+
+- transaction date;
+- account titles and descriptions in journal-line order;
+- funds;
+- debit and credit lines;
+- transaction ID;
+- supplemental-detail count;
+- memo, payee, bank, and line-detail text where available.
+
+Date and text filters query `TransactionEntryService.search(...)`. A row may be selected and opened for editing by **Edit Selected** or double-click. The selection is a transaction-level selection, never an independently editable ledger line.
+
+The current aggregate transaction projection does not yet expose every `TxnSplit.bankCleared` value. Until a line-level cleared-state projection is added, the Journal must not pretend to distinguish mixed cleared and uncleared lines authoritatively.
+
+## Integrated New and Edit modes
+
+The lower editor uses the same surface for New and Edit modes.
 
 ### New mode
 
-New mode creates a new transaction.
-
-The opener may prefill fields from any relevant context, including:
-
-- a selected ledger row;
-- a selected bank-import or bank-statement row;
-- selected account, fund, or budget filters;
-- active period;
-- selected journal context;
-- selected inventory, asset, open-item, or reconciliation context.
-
-Prefill is only an editor convenience. The transaction is not authoritative until saved through the canonical transaction service.
+New mode creates a transaction only when **Save Entry** successfully calls `TransactionEntryService.enter(...)`. Prefill from active period or drill-through context is only an editor convenience and is not authoritative.
 
 ### Edit mode
 
-Edit mode updates an existing transaction.
+Edit mode loads one transaction by stable ID through `TransactionEntryService.load(...)` and saves through `TransactionEntryService.update(...)`. It is not an upsert and must not infer identity from date, memo, payee, reference, or amount.
 
-The opener must provide the transaction ID. Edit mode is not an upsert and must not match likely duplicates by date, payee, reference, or amount.
+The integrated editor contains:
 
-When policy allows direct editing, Edit mode modifies the existing `Txn`/`TxnSplit` records through the canonical transaction service. When policy or state protection prevents direct editing, the UI must surface the documented correction path.
+- transaction date and memo;
+- live debit, credit, and difference totals;
+- balanced/needs-attention and validation messages;
+- ID-backed payee and bank-account selectors;
+- editable accounting lines;
+- persisted supplemental-detail tabs.
 
-## Ledger Register
+## Accounting lines
 
-The Ledger Register is read-only. Editing is done through Transaction Editor or by opening the Journal Pane.
+Accounting line editing follows the canonical P02 contract:
 
-The Ledger Register has exactly these primary transaction actions:
+- stable database IDs for account, fund, budget category, activity, and merchant;
+- separate Debit and Credit fields;
+- no line may contain both debit and credit;
+- no negative or zero-value accounting lines;
+- at least two meaningful lines;
+- total debits must equal total credits;
+- blank editor rows are not persisted;
+- `BigDecimal` remains authoritative internally.
 
-- **New**
-- **Open Selected**
+The JavaFX table provides Add Line, Duplicate Line, and Remove Line. Immediate totals and field validation are presentation behavior only; `TransactionCommandValidator` and `TransactionEntryService` enforce authoritative rules.
 
-Behavior:
+## Additional details
 
-- **New** opens Transaction Editor in New mode.
-- **Open Selected** opens Transaction Editor in Edit mode for the selected transaction ID.
-- **Open Selected** is disabled unless exactly one transaction is selected.
-
-The Ledger Register also provides **Inspect Journal**, which opens the separate Journal Pane.
-
-## Journal Pane
-
-The Journal Pane is a separate workspace tab with its own `AppPanelId`.
-
-The Journal Pane presents transactions in traditional accounting general-journal form:
-
-- transaction date;
-- transaction number or ID;
-- transaction memo/reference;
-- account lines;
-- debit;
-- credit;
-- line memo/details where applicable.
-
-The Journal Pane opens unfiltered by default but may be centered at a supplied transaction ID. It includes date and text filters that can be applied on the fly against canonical transaction projections.
-
-Sources:
-
-- Ledger Register → Inspect Journal opens the entire journal, centered on the selected transaction.
-- Left Navigation → Accounting → Inspect Journal opens the Journal Pane in the same general form, unfiltered by default.
-
-## Editing from the Journal Pane
-
-Users do not edit directly in the journal grid. The grid is read-only and each displayed line is a flattened view of the canonical transaction journal projection, not an independent ledger model.
-
-When the user chooses to edit an existing journal transaction, the Journal Pane opens Transaction Editor in Edit mode with the transaction ID.
-
-When the user chooses to create a new transaction from the Journal Pane, it opens Transaction Editor in New mode, optionally prefilled from the current journal filter/context.
-
-All validation and saving remains through the canonical transaction service.
+The Additional Details region shows only fields supported by current authoritative services. Unsupported donor fields such as legacy check/reference, clearing-bank text, or budget-tracking text must not appear as enabled fake-save fields. New fields require a deliberate H2/service slice before becoming editable production data.
 
 ## Supplemental transaction records
 
-The Journal Pane and Transaction Editor must make provision for supplemental transaction records attached to a journal entry. These records are not the eliminated Schedules panel. They are domain-specific details connected to the transaction, such as:
+Receivable, Payable, Prepaid Expense, Deferred Revenue, Other Asset, and Other Liability rows are persisted in `txn_supplemental_line` and linked to canonical `txn` records by stable ID.
 
-- inventory movement detail;
-- open-item or deferral detail;
-- asset acquisition or depreciation detail;
-- bank clearing/reconciliation detail.
+The canonical transaction command/view types carry supplemental line DTOs. `TransactionEntryService.enter(...)` persists them atomically with a new transaction, `update(...)` replaces them atomically with the edited transaction, and `load(...)` returns them for editor repopulation.
 
-Supplemental records must be persisted through an authoritative H2 service boundary and linked to the canonical transaction or transaction line by stable IDs.
+The service rejects:
 
-### P03-C5 implementation note
+- unsupported kinds;
+- missing descriptions;
+- negative amounts;
+- unpaired start/end dates;
+- start dates after end dates.
 
-P03-C5 adds the first transaction-attached supplemental detail persistence layer. The Transaction Editor saves Receivable, Payable, Prepaid Expense, Deferred Revenue, Other Asset, and Other Liability detail rows through `TransactionEntryService` with the same transaction save/update operation as the canonical `Txn` and `TxnSplit` rows.
+These rows are transaction-attached details, not a reintroduction of the eliminated generic Schedules module or a sidecar ledger.
 
-The persisted table is `txn_supplemental_line`. Each row is linked to the canonical transaction by `txn_id`, ordered by `line_order`, categorized by `kind`, and stores the visible supplemental fields: entry reference, counterparty, description, reference, amount, due date, start date, end date, and notes.
+## Correction operations
 
-The canonical transaction command/view types carry supplemental line DTOs. `TransactionEntryService.enter(...)` persists them atomically with a new transaction, `update(...)` replaces them atomically with the edited transaction, and `load(...)` returns them so the editor can repopulate the supplemental tabs. The service rejects unsupported kinds, missing descriptions, negative amounts, unpaired start/end dates, and start dates after end dates.
+The Journal exposes a real correction action only for a selected or loaded durable transaction.
 
-This is a transaction-attached supplemental detail layer, not a reintroduction of the eliminated generic Schedules module. Later domain services may add richer, domain-owned records for inventory, asset, open-item, deferral, banking, or reconciliation workflows, but they must continue to link to the canonical transaction or transaction line rather than maintain a sidecar ledger.
+- Under `DIRECT_EDIT`, the action is labeled **Delete**, requires confirmation, and calls `TransactionCorrectionService.delete(...)`.
+- Under other correction policies, the action is labeled **Reverse**, requires confirmation, and calls `TransactionCorrectionService.reverse(...)` using the active period date.
+- Period and reconciliation protections remain enforced by the service.
 
-## P03-C2 implementation note
+There is no disabled placeholder Delete control for an unsaved record; action availability follows whether a durable transaction is selected or loaded.
 
-P03-C2 adds `JOURNAL_PANE` as a first-class workspace panel. Left Navigation under Accounting exposes **Inspect Journal**, and Ledger Register **Inspect Journal** opens that same pane, centered at the selected transaction when one is selected. The Journal Pane queries `TransactionEntryService.search(...)` and `TransactionEntryService.journalView(...)`, flattens canonical journal projections for display, and routes New/Edit actions back to Transaction Editor mode contexts. The journal table uses sortable, resizable, reorderable columns; persists column widths, order, and sort state under the active company key; keeps the table in a visible `SplitPane`; and formats debit/credit displays with a currency symbol and two decimals while leaving canonical `BigDecimal` values unchanged. Supplemental transaction record display remains a provisioned design area for the owning future Inventory, Asset, Open Item, Deferral, Banking, or Reconciliation slice; P03-C2 does not create a parallel supplemental persistence model.
+## Resizable layout
 
-## P03-C3 implementation note
+The Journal workspace uses nested visible `SplitPane` dividers between:
 
-P03-C3 adds a Transaction Editor **Delete** affordance for durable transactions loaded in Edit mode or just saved through the canonical service. The button is disabled in unsaved New mode because no authoritative record exists yet; after a successful save, the saved transaction remains loaded as the durable Delete/Reverse target. Direct-edit correction policy confirms and delegates to `TransactionCorrectionService.delete`, which performs period/reconciliation checks and audit snapshot work inside the authoritative service boundary. Non-direct correction policy confirms a reversing entry instead, using the active accounting period date as the default reversal date through `TransactionCorrectionService.reverse`.
+1. the grouped Journal and the integrated editor;
+2. editor header, entry-line table, and detail region;
+3. Additional Details and Supplemental Details.
+
+Divider positions are remembered for the active company. Journal, accounting-line, and supplemental tables use unconstrained column resizing, sortable/resizable/reorderable columns, per-company table state, and both horizontal and vertical scrolling when content exceeds the viewport.
+
+## Global command behavior
+
+When Journal is active:
+
+- global **New** starts a new integrated journal entry;
+- global **Save** saves the current New/Edit entry;
+- global **Post / Validate** performs validation without introducing a separate posting workflow;
+- Journal toolbar actions and global actions call the same methods.
+
+## Persistence authority
+
+The dependency direction remains:
+
+```text
+JournalWorkspacePanel
+    -> TransactionEntryService / TransactionCorrectionService / reference-data service
+        -> JPA/domain validation
+            -> H2
+```
+
+The Journal panel contains no SQL, no static authoritative transaction collection, and no alternate transaction model.
