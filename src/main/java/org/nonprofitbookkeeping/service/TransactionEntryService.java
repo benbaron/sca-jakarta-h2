@@ -14,12 +14,15 @@ import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
+import org.nonprofitbookkeeping.model.TxnSupplementalLine;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Canonical command/query service for the authoritative Txn ledger.
@@ -27,6 +30,9 @@ import java.util.List;
 @ApplicationScoped
 public class TransactionEntryService
 {
+    private static final Set<String> SUPPLEMENTAL_KINDS = Set.of(
+            "RECEIVABLE", "PAYABLE", "PREPAID_EXPENSE", "DEFERRED_REVENUE", "OTHER_ASSET", "OTHER_LIABILITY");
+
     private final Jpa jpa;
     private final TransactionCommandValidator validator;
 
@@ -70,10 +76,14 @@ public class TransactionEntryService
                 String before = snapshot(txn);
 
                 applyHeader(em, txn, command);
+                em.createQuery("delete from TxnSupplementalLine s where s.txn = :txn")
+                        .setParameter("txn", txn)
+                        .executeUpdate();
                 em.createQuery("delete from TxnSplit s where s.txn = :txn")
                         .setParameter("txn", txn)
                         .executeUpdate();
                 persistLines(em, txn, command.lines());
+                persistSupplementalLines(em, txn, command.supplementalLines());
                 txn.touchUpdatedAt();
                 em.persist(audit("system", "TRANSACTION_UPDATED", txn, before, snapshot(txn), null));
                 em.getTransaction().commit();
@@ -155,6 +165,7 @@ public class TransactionEntryService
                 applyHeader(em, txn, command);
                 em.persist(txn);
                 persistLines(em, txn, command.lines());
+                persistSupplementalLines(em, txn, command.supplementalLines());
                 em.persist(audit("system", "TRANSACTION_ENTERED", txn, null, snapshot(txn), null));
                 em.getTransaction().commit();
                 return load(txn.getId());
@@ -173,6 +184,37 @@ public class TransactionEntryService
         if (!result.valid())
         {
             throw new PostingException(String.join(" ", result.errors()));
+        }
+        validateSupplementalLines(command.supplementalLines());
+    }
+
+    private void validateSupplementalLines(List<TransactionSupplementalLineCommand> supplementalLines)
+    {
+        int row = 0;
+        for (TransactionSupplementalLineCommand command : supplementalLines)
+        {
+            row++;
+            String label = "Supplemental detail row " + row;
+            if (command.kind() == null || !SUPPLEMENTAL_KINDS.contains(command.kind()))
+            {
+                throw new PostingException(label + " has an unsupported kind.");
+            }
+            if (command.description() == null || command.description().isBlank())
+            {
+                throw new PostingException(label + " requires a description.");
+            }
+            if (command.amount() == null || command.amount().signum() < 0)
+            {
+                throw new PostingException(label + " requires a non-negative amount.");
+            }
+            if ((command.startDate() == null) != (command.endDate() == null))
+            {
+                throw new PostingException(label + " requires both start and end dates or neither.");
+            }
+            if (command.startDate() != null && command.startDate().isAfter(command.endDate()))
+            {
+                throw new PostingException(label + " start date must be on or before end date.");
+            }
         }
     }
 
@@ -201,6 +243,28 @@ public class TransactionEntryService
             split.setNotes(command.notes());
             split.setAmountSigned(toSignedAmount(account, command));
             em.persist(split);
+        }
+    }
+
+    private void persistSupplementalLines(EntityManager em, Txn txn, List<TransactionSupplementalLineCommand> lines)
+    {
+        int order = 0;
+        for (TransactionSupplementalLineCommand command : lines)
+        {
+            TxnSupplementalLine line = new TxnSupplementalLine();
+            line.setTxn(txn);
+            line.setLineOrder(order++);
+            line.setKind(command.kind());
+            line.setEntryRef(blankToNull(command.entryRef()));
+            line.setCounterparty(blankToNull(command.counterparty()));
+            line.setDescription(command.description().trim());
+            line.setReference(blankToNull(command.reference()));
+            line.setAmount(command.amount().setScale(4, RoundingMode.HALF_UP));
+            line.setDueDate(command.dueDate());
+            line.setStartDate(command.startDate());
+            line.setEndDate(command.endDate());
+            line.setNotes(blankToNull(command.notes()));
+            em.persist(line);
         }
     }
 
@@ -251,13 +315,24 @@ public class TransactionEntryService
                     split.getMerchant() == null ? null : split.getMerchant().getId(),
                     debit, credit, split.isNmr(), split.getNotes()));
         }
+        List<TxnSupplementalLine> supplementalEntities = em.createQuery(
+                        "from TxnSupplementalLine l where l.txn = :txn order by l.lineOrder, l.id", TxnSupplementalLine.class)
+                .setParameter("txn", txn)
+                .getResultList();
+        List<TransactionSupplementalLineView> supplementalLines = new ArrayList<>();
+        for (TxnSupplementalLine line : supplementalEntities)
+        {
+            supplementalLines.add(new TransactionSupplementalLineView(
+                    line.getId(), line.getKind(), line.getEntryRef(), line.getCounterparty(), line.getDescription(),
+                    line.getReference(), line.getAmount(), line.getDueDate(), line.getStartDate(), line.getEndDate(), line.getNotes()));
+        }
         Counterparty payee = txn.getPayee();
         Account bankAccount = txn.getBankAccount();
         return new TransactionView(
                 txn.getId(), txn.getTxnDate(), payee == null ? null : payee.getId(),
                 payee == null ? null : payee.getDisplayName(), txn.getMemo(),
                 bankAccount == null ? null : bankAccount.getId(), bankAccount == null ? null : bankAccount.getName(),
-                txn.getStatus(), lines);
+                txn.getStatus(), lines, supplementalLines);
     }
 
     private static void requireNotReconciled(EntityManager em, long transactionId, String operation)
@@ -317,6 +392,11 @@ public class TransactionEntryService
     {
         return "id=" + txn.getId() + ",date=" + txn.getTxnDate() + ",status=" + txn.getStatus()
                 + ",memo=" + (txn.getMemo() == null ? "" : txn.getMemo());
+    }
+
+    private static String blankToNull(String value)
+    {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private <T> T required(EntityManager em, Class<T> type, Long id, String label)

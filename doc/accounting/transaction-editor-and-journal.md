@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document records the clarified requirements for transaction entry, ledger-register navigation, and the new Journal Pane.
+This document records the clarified requirements for transaction entry, ledger-register navigation, the Journal Pane, and transaction-attached supplemental detail records.
 
 ## Transaction Editor modes
 
@@ -88,8 +88,17 @@ The Journal Pane and Transaction Editor must make provision for supplemental tra
 - asset acquisition or depreciation detail;
 - bank clearing/reconciliation detail.
 
-Supplemental records must be persisted through the owning domain service and linked to the canonical transaction or transaction line by stable IDs.
+Supplemental records must be persisted through an authoritative H2 service boundary and linked to the canonical transaction or transaction line by stable IDs.
 
+### P03-C5 implementation note
+
+P03-C5 adds the first transaction-attached supplemental detail persistence layer. The Transaction Editor saves Receivable, Payable, Prepaid Expense, Deferred Revenue, Other Asset, and Other Liability detail rows through `TransactionEntryService` with the same transaction save/update operation as the canonical `Txn` and `TxnSplit` rows.
+
+The persisted table is `txn_supplemental_line`. Each row is linked to the canonical transaction by `txn_id`, ordered by `line_order`, categorized by `kind`, and stores the visible supplemental fields: entry reference, counterparty, description, reference, amount, due date, start date, end date, and notes.
+
+The canonical transaction command/view types carry supplemental line DTOs. `TransactionEntryService.enter(...)` persists them atomically with a new transaction, `update(...)` replaces them atomically with the edited transaction, and `load(...)` returns them so the editor can repopulate the supplemental tabs. The service rejects unsupported kinds, missing descriptions, negative amounts, unpaired start/end dates, and start dates after end dates.
+
+This is a transaction-attached supplemental detail layer, not a reintroduction of the eliminated generic Schedules module. Later domain services may add richer, domain-owned records for inventory, asset, open-item, deferral, banking, or reconciliation workflows, but they must continue to link to the canonical transaction or transaction line rather than maintain a sidecar ledger.
 
 ## P03-C2 implementation note
 

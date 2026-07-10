@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.ui;
 
 import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.event.Event;
 import javafx.geometry.Insets;
@@ -13,6 +14,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableCell;
@@ -27,6 +29,7 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -39,6 +42,8 @@ import org.nonprofitbookkeeping.service.TransactionCommand;
 import org.nonprofitbookkeeping.service.TransactionCommandValidator;
 import org.nonprofitbookkeeping.service.TransactionEntryService;
 import org.nonprofitbookkeeping.service.TransactionLineCommand;
+import org.nonprofitbookkeeping.service.TransactionSupplementalLineCommand;
+import org.nonprofitbookkeeping.service.TransactionSupplementalLineView;
 import org.nonprofitbookkeeping.service.TransactionValidationResult;
 import org.nonprofitbookkeeping.service.TransactionView;
 
@@ -47,6 +52,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -61,6 +67,9 @@ public class TransactionEditorPanel implements AppPanel
     private static final Preferences TABLE_STATE = Preferences.userNodeForPackage(TransactionEditorPanel.class)
             .node("company-table-state")
             .node(SPLIT_TABLE_ID);
+    private static final Preferences SUPPLEMENTAL_TABLE_STATE = Preferences.userNodeForPackage(TransactionEditorPanel.class)
+            .node("company-table-state")
+            .node("transactionEditorSupplementalTables");
 
     private final BorderPane root = new BorderPane();
     private final TabPane workspaceTabs = new TabPane();
@@ -89,6 +98,9 @@ public class TransactionEditorPanel implements AppPanel
     private final Button editDonor = new Button("Edit Selected Donor");
     private final Button openSavedInLedger = new Button("Open Saved in Ledger");
     private final Button deleteTransaction = new Button("Delete");
+    private final Map<SupplementalKind, CheckBox> supplementalSelections = new EnumMap<>(SupplementalKind.class);
+    private final Map<SupplementalKind, Tab> supplementalTabs = new EnumMap<>(SupplementalKind.class);
+    private final Map<SupplementalKind, TableView<SupplementalRow>> supplementalTables = new EnumMap<>(SupplementalKind.class);
     private ValidationResult lastValidationResult;
     private EditorMode editorMode = EditorMode.NEW;
     private Long editTransactionId;
@@ -205,9 +217,17 @@ public class TransactionEditorPanel implements AppPanel
         addLine.setOnAction(e -> addEmptySplitRow());
         duplicate.setOnAction(e -> duplicateSelectedSplitRow());
         removeLine.setOnAction(e -> removeSelectedSplitRow());
-        VBox tablePane = new VBox(8, new Label("Entry Lines"), toolbar, splitTable, totals);
+
+        VBox totalsPane = new VBox(6, totals);
+        totalsPane.setPadding(new Insets(4));
+        SplitPane splitPane = new SplitPane(splitTable, totalsPane);
+        splitPane.setId("transactionEditorEntryLinesSplitPane");
+        splitPane.setOrientation(Orientation.VERTICAL);
+        splitPane.setDividerPositions(0.88);
+        VBox.setVgrow(splitPane, Priority.ALWAYS);
+
+        VBox tablePane = new VBox(8, new Label("Entry Lines"), toolbar, splitPane);
         tablePane.setPadding(new Insets(8));
-        VBox.setVgrow(splitTable, Priority.ALWAYS);
         return tablePane;
     }
 
@@ -280,57 +300,271 @@ public class TransactionEditorPanel implements AppPanel
     private Node supplementalDetailsPage()
     {
         TabPane tabs = new TabPane();
-        tabs.getTabs().setAll(
-                supplementalTab("Receivable"),
-                supplementalTab("Payable"),
-                supplementalTab("Prepaid Expense"),
-                supplementalTab("Deferred Revenue"),
-                supplementalTab("Other Asset"),
-                supplementalTab("Other Liability"));
-        VBox page = new VBox(8, new Label("Supplemental Schedule Details"),
-                new Label("These are transaction supplemental detail panels, not the eliminated generic Schedules module."), tabs);
+        FlowPane toggles = new FlowPane(8, 8);
+        toggles.setId("transactionEditorSupplementalToggles");
+        for (SupplementalKind kind : SupplementalKind.values())
+        {
+            CheckBox checkBox = new CheckBox(kind.toggleLabel());
+            checkBox.setOnAction(event -> {
+                dirty = true;
+                updateSupplementalTabAvailability();
+            });
+            supplementalSelections.put(kind, checkBox);
+            toggles.getChildren().add(checkBox);
+            Tab tab = supplementalTab(kind);
+            supplementalTabs.put(kind, tab);
+            tabs.getTabs().add(tab);
+        }
+        updateSupplementalTabAvailability();
+        VBox page = new VBox(8, new Label("Supplemental Schedule Details"), toggles,
+                new Label("These editable transaction-local detail panels follow the NonprofitAccounting supplemental schedule design reference. They are not the eliminated generic Schedules module."), tabs);
         page.setPadding(new Insets(8));
         VBox.setVgrow(tabs, Priority.ALWAYS);
         return page;
     }
 
-    private Tab supplementalTab(String title)
+    private Tab supplementalTab(SupplementalKind kind)
     {
         TableView<SupplementalRow> table = new TableView<>();
+        table.setId("transactionEditorSupplemental" + kind.name() + "Table");
+        table.setEditable(true);
         table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        table.getColumns().add(supplementalColumn("Link to Entry", SupplementalRow::linkToEntry, 150));
-        table.getColumns().add(supplementalColumn("Counterparty", SupplementalRow::counterparty, 180));
-        table.getColumns().add(supplementalColumn("Description", SupplementalRow::description, 260));
-        table.getColumns().add(supplementalColumn("Reference", SupplementalRow::reference, 160));
-        table.getColumns().add(supplementalColumn("Amount", SupplementalRow::amount, 120));
-        table.getColumns().add(supplementalColumn("Due Date", SupplementalRow::dueDate, 120));
-        table.setPlaceholder(new Label("No " + title.toLowerCase(Locale.ROOT) + " supplemental details for this transaction."));
+        table.setItems(FXCollections.observableArrayList());
+        table.getColumns().add(supplementalColumn("Link to Entry", "entry", SupplementalRow::linkToEntry, SupplementalRow::setLinkToEntry, 150));
+        table.getColumns().add(supplementalColumn("Counterparty", "counterparty", SupplementalRow::counterparty, SupplementalRow::setCounterparty, 180));
+        table.getColumns().add(supplementalColumn("Description", "description", SupplementalRow::description, SupplementalRow::setDescription, 260));
+        table.getColumns().add(supplementalColumn("Reference", "reference", SupplementalRow::reference, SupplementalRow::setReference, 160));
+        table.getColumns().add(supplementalColumn("Amount", "amount", SupplementalRow::amount, (row, value) -> row.setAmount(formatAmountInput(value)), 120));
+        if (kind.showDueDate())
+        {
+            table.getColumns().add(supplementalColumn("Due Date", "dueDate", SupplementalRow::dueDate, (row, value) -> row.setDueDate(formatDateInput(value)), 120));
+        }
+        if (kind.showStartEnd())
+        {
+            table.getColumns().add(supplementalColumn("Start Date", "startDate", SupplementalRow::startDate, (row, value) -> row.setStartDate(formatDateInput(value)), 120));
+            table.getColumns().add(supplementalColumn("End Date", "endDate", SupplementalRow::endDate, (row, value) -> row.setEndDate(formatDateInput(value)), 120));
+        }
+        table.getColumns().add(supplementalColumn("Notes", "notes", SupplementalRow::notes, SupplementalRow::setNotes, 260));
+        table.setPlaceholder(new Label("No " + kind.tabTitle().toLowerCase(Locale.ROOT) + " supplemental details for this transaction."));
+        restoreSupplementalTableState(kind, table);
+        installSupplementalTableStatePersistence(kind, table);
+        supplementalTables.put(kind, table);
+
         Button add = new Button("Add");
         Button remove = new Button("Remove");
-        add.setDisable(true);
-        remove.setDisable(true);
-        Tooltip tooltip = new Tooltip("Supplemental detail persistence for " + title + " is not yet backed by a P03 H2 service.");
-        add.setTooltip(tooltip);
-        remove.setTooltip(tooltip);
-        VBox content = new VBox(8, new HBox(8, add, remove), table);
-        VBox.setVgrow(table, Priority.ALWAYS);
-        Tab tab = new Tab(title, content);
+        add.setOnAction(event -> addSupplementalRow(kind));
+        remove.disableProperty().bind(table.getSelectionModel().selectedItemProperty().isNull());
+        remove.setOnAction(event -> removeSupplementalRow(kind));
+        Label validation = new Label("Description and non-negative amount are required for rows that contain supplemental detail data.");
+        validation.setWrapText(true);
+        VBox validationPane = new VBox(6, validation);
+        validationPane.setPadding(new Insets(4));
+        SplitPane splitPane = new SplitPane(table, validationPane);
+        splitPane.setId("transactionEditorSupplemental" + kind.name() + "SplitPane");
+        splitPane.setOrientation(Orientation.VERTICAL);
+        splitPane.setDividerPositions(0.86);
+        VBox.setVgrow(splitPane, Priority.ALWAYS);
+        VBox content = new VBox(8, new HBox(8, add, remove), splitPane);
+        VBox.setVgrow(content, Priority.ALWAYS);
+        Tab tab = new Tab(kind.tabTitle(), content);
         tab.setClosable(false);
         return tab;
     }
 
     private TableColumn<SupplementalRow, String> supplementalColumn(String title,
+                                                                    String key,
                                                                     java.util.function.Function<SupplementalRow, String> getter,
+                                                                    java.util.function.BiConsumer<SupplementalRow, String> setter,
                                                                     double width)
     {
         TableColumn<SupplementalRow, String> column = new TableColumn<>(title);
+        column.setId(key);
+        column.setUserData(key);
         column.setPrefWidth(width);
         column.setMinWidth(80);
         column.setResizable(true);
         column.setReorderable(true);
         column.setSortable(true);
         column.setCellValueFactory(value -> new SimpleStringProperty(getter.apply(value.getValue())));
+        column.setCellFactory(c -> new SupplementalFocusCommitTextCell());
+        column.setOnEditCommit(event -> {
+            setter.accept(event.getRowValue(), event.getNewValue());
+            dirty = true;
+            validateSupplementalRows();
+            event.getTableView().refresh();
+        });
         return column;
+    }
+
+    private void addSupplementalRow(SupplementalKind kind)
+    {
+        TableView<SupplementalRow> table = supplementalTables.get(kind);
+        CheckBox selection = supplementalSelections.get(kind);
+        if (selection != null && !selection.isSelected())
+        {
+            selection.setSelected(true);
+            updateSupplementalTabAvailability();
+        }
+        SupplementalRow row = new SupplementalRow();
+        table.getItems().add(row);
+        table.getSelectionModel().select(row);
+        table.scrollTo(row);
+        if (!table.getColumns().isEmpty())
+        {
+            table.edit(table.getItems().indexOf(row), table.getColumns().get(0));
+        }
+        dirty = true;
+        status.setText("Added " + kind.tabTitle() + " supplemental detail row.");
+    }
+
+    private void removeSupplementalRow(SupplementalKind kind)
+    {
+        TableView<SupplementalRow> table = supplementalTables.get(kind);
+        SupplementalRow selected = table.getSelectionModel().getSelectedItem();
+        if (selected != null)
+        {
+            table.getItems().remove(selected);
+            dirty = true;
+            status.setText("Removed " + kind.tabTitle() + " supplemental detail row.");
+            validateSupplementalRows();
+        }
+    }
+
+    private void updateSupplementalTabAvailability()
+    {
+        for (SupplementalKind kind : SupplementalKind.values())
+        {
+            Tab tab = supplementalTabs.get(kind);
+            CheckBox checkBox = supplementalSelections.get(kind);
+            if (tab != null && checkBox != null)
+            {
+                tab.setDisable(!checkBox.isSelected());
+            }
+        }
+    }
+
+    private List<String> validateSupplementalRows()
+    {
+        List<String> errors = new ArrayList<>();
+        for (SupplementalKind kind : SupplementalKind.values())
+        {
+            CheckBox enabled = supplementalSelections.get(kind);
+            if (enabled == null || !enabled.isSelected())
+            {
+                continue;
+            }
+            TableView<SupplementalRow> table = supplementalTables.get(kind);
+            if (table == null)
+            {
+                continue;
+            }
+            int rowNo = 0;
+            for (SupplementalRow row : table.getItems())
+            {
+                rowNo++;
+                if (!row.hasAnyInput())
+                {
+                    continue;
+                }
+                if (row.description().isBlank())
+                {
+                    errors.add(kind.tabTitle() + " row " + rowNo + ": Description is required.");
+                }
+                BigDecimal amount = parseOptionalAmount(row.amount());
+                if (amount == null)
+                {
+                    errors.add(kind.tabTitle() + " row " + rowNo + ": Amount must be numeric.");
+                }
+                else if (amount.signum() < 0)
+                {
+                    errors.add(kind.tabTitle() + " row " + rowNo + ": Amount must be >= 0.");
+                }
+                if (kind.showStartEnd())
+                {
+                    LocalDate start = parseDateOrNull(row.startDate());
+                    LocalDate end = parseDateOrNull(row.endDate());
+                    if ((!row.startDate().isBlank() && start == null) || (!row.endDate().isBlank() && end == null))
+                    {
+                        errors.add(kind.tabTitle() + " row " + rowNo + ": Start and End dates must be YYYY-MM-DD.");
+                    }
+                    else if ((start == null) != (end == null))
+                    {
+                        errors.add(kind.tabTitle() + " row " + rowNo + ": Start and End date must both be set.");
+                    }
+                    else if (start != null && start.isAfter(end))
+                    {
+                        errors.add(kind.tabTitle() + " row " + rowNo + ": Start date must be <= End date.");
+                    }
+                }
+                if (kind.showDueDate() && !row.dueDate().isBlank() && parseDateOrNull(row.dueDate()) == null)
+                {
+                    errors.add(kind.tabTitle() + " row " + rowNo + ": Due Date must be YYYY-MM-DD.");
+                }
+            }
+        }
+        if (!errors.isEmpty())
+        {
+            status.setText(String.join(" ", errors));
+        }
+        return errors;
+    }
+
+    private List<TransactionSupplementalLineCommand> supplementalLineCommands()
+    {
+        List<TransactionSupplementalLineCommand> commands = new ArrayList<>();
+        for (SupplementalKind kind : SupplementalKind.values())
+        {
+            CheckBox enabled = supplementalSelections.get(kind);
+            if (enabled == null || !enabled.isSelected())
+            {
+                continue;
+            }
+            TableView<SupplementalRow> table = supplementalTables.get(kind);
+            if (table == null)
+            {
+                continue;
+            }
+            for (SupplementalRow row : table.getItems())
+            {
+                if (!row.hasAnyInput())
+                {
+                    continue;
+                }
+                commands.add(new TransactionSupplementalLineCommand(
+                        kind.name(), row.linkToEntry(), row.counterparty(), row.description(), row.reference(),
+                        parseOptionalAmount(row.amount()), parseDateOrNull(row.dueDate()), parseDateOrNull(row.startDate()),
+                        parseDateOrNull(row.endDate()), row.notes()));
+            }
+        }
+        return commands;
+    }
+
+    private void applySupplementalLines(List<TransactionSupplementalLineView> views)
+    {
+        clearSupplementalRows();
+        if (views == null || views.isEmpty())
+        {
+            return;
+        }
+        for (TransactionSupplementalLineView view : views)
+        {
+            SupplementalKind kind = SupplementalKind.fromName(view.kind());
+            if (kind == null)
+            {
+                continue;
+            }
+            CheckBox selection = supplementalSelections.get(kind);
+            if (selection != null)
+            {
+                selection.setSelected(true);
+            }
+            TableView<SupplementalRow> table = supplementalTables.get(kind);
+            if (table != null)
+            {
+                table.getItems().add(SupplementalRow.fromView(view));
+            }
+        }
+        updateSupplementalTabAvailability();
     }
 
     private GridPane detailGrid()
@@ -381,14 +615,14 @@ public class TransactionEditorPanel implements AppPanel
         splitTable.getColumns().add(optionCol("Fund", "fund", 180, TransactionLineEditorModel.ReferenceData::funds, SplitRow::fund, SplitRow::setFund));
         splitTable.getColumns().add(optionCol("Budget", "budget", 160, TransactionLineEditorModel.ReferenceData::budgetCategories, SplitRow::budgetCategory, SplitRow::setBudgetCategory));
         splitTable.getColumns().add(editableCol("Debit", "debit", 120, SplitRow::debit, (row, value) -> {
-            row.setDebit(value);
+            row.setDebit(formatAmountInput(value));
             if (!isBlank(value) && parseOptionalAmount(value) != null && parseOptionalAmount(value).signum() > 0)
             {
                 row.setCredit("");
             }
         }));
         splitTable.getColumns().add(editableCol("Credit", "credit", 120, SplitRow::credit, (row, value) -> {
-            row.setCredit(value);
+            row.setCredit(formatAmountInput(value));
             if (!isBlank(value) && parseOptionalAmount(value) != null && parseOptionalAmount(value).signum() > 0)
             {
                 row.setDebit("");
@@ -496,8 +730,8 @@ public class TransactionEditorPanel implements AppPanel
                 if ("ASCENDING".equals(sort)) column.setSortType(TableColumn.SortType.ASCENDING);
                 else if ("DESCENDING".equals(sort)) column.setSortType(TableColumn.SortType.DESCENDING);
             }
-            restoreColumnOrder(prefix);
-            restoreSortOrder(prefix);
+            restoreSplitColumnOrder(prefix);
+            restoreSplitSortOrder(prefix);
         }
         finally
         {
@@ -518,7 +752,7 @@ public class TransactionEditorPanel implements AppPanel
         }
     }
 
-    private void restoreColumnOrder(String prefix)
+    private void restoreSplitColumnOrder(String prefix)
     {
         String order = TABLE_STATE.get(prefix + "order", "");
         if (order.isBlank()) return;
@@ -531,7 +765,7 @@ public class TransactionEditorPanel implements AppPanel
         splitTable.getColumns().setAll(columns);
     }
 
-    private void restoreSortOrder(String prefix)
+    private void restoreSplitSortOrder(String prefix)
     {
         String sortOrder = TABLE_STATE.get(prefix + "sortOrder", "");
         if (sortOrder.isBlank()) return;
@@ -542,6 +776,69 @@ public class TransactionEditorPanel implements AppPanel
             splitTable.getColumns().stream().filter(column -> Objects.equals(columnKey(column), key)).findFirst().ifPresent(restored::add);
         }
         splitTable.getSortOrder().setAll(restored);
+    }
+
+    private void installSupplementalTableStatePersistence(SupplementalKind kind, TableView<SupplementalRow> table)
+    {
+        table.getColumns().addListener((ListChangeListener<TableColumn<SupplementalRow, ?>>) change -> saveSupplementalTableState(kind, table));
+        table.getSortOrder().addListener((ListChangeListener<TableColumn<SupplementalRow, ?>>) change -> saveSupplementalTableState(kind, table));
+        for (TableColumn<SupplementalRow, ?> column : table.getColumns())
+        {
+            column.widthProperty().addListener((obs, oldWidth, newWidth) -> saveSupplementalTableState(kind, table));
+            column.sortTypeProperty().addListener((obs, oldType, newType) -> saveSupplementalTableState(kind, table));
+        }
+    }
+
+    private void restoreSupplementalTableState(SupplementalKind kind, TableView<SupplementalRow> table)
+    {
+        String prefix = tableStatePrefix() + kind.name() + ".";
+        for (TableColumn<SupplementalRow, ?> column : table.getColumns())
+        {
+            column.setPrefWidth(SUPPLEMENTAL_TABLE_STATE.getDouble(prefix + columnKey(column) + ".width", column.getPrefWidth()));
+            String sort = SUPPLEMENTAL_TABLE_STATE.get(prefix + columnKey(column) + ".sort", "");
+            if ("ASCENDING".equals(sort)) column.setSortType(TableColumn.SortType.ASCENDING);
+            else if ("DESCENDING".equals(sort)) column.setSortType(TableColumn.SortType.DESCENDING);
+        }
+        restoreSupplementalColumnOrder(prefix, table);
+        restoreSupplementalSortOrder(prefix, table);
+    }
+
+    private void restoreSupplementalColumnOrder(String prefix, TableView<SupplementalRow> table)
+    {
+        String order = SUPPLEMENTAL_TABLE_STATE.get(prefix + "order", "");
+        if (order.isBlank()) return;
+        List<String> keys = List.of(order.split(","));
+        List<TableColumn<SupplementalRow, ?>> columns = new ArrayList<>(table.getColumns());
+        columns.sort(Comparator.comparingInt(column -> {
+            int index = keys.indexOf(columnKey(column));
+            return index < 0 ? Integer.MAX_VALUE : index;
+        }));
+        table.getColumns().setAll(columns);
+    }
+
+    private void restoreSupplementalSortOrder(String prefix, TableView<SupplementalRow> table)
+    {
+        String sortOrder = SUPPLEMENTAL_TABLE_STATE.get(prefix + "sortOrder", "");
+        if (sortOrder.isBlank()) return;
+        List<String> keys = List.of(sortOrder.split(","));
+        List<TableColumn<SupplementalRow, ?>> restored = new ArrayList<>();
+        for (String key : keys)
+        {
+            table.getColumns().stream().filter(column -> Objects.equals(columnKey(column), key)).findFirst().ifPresent(restored::add);
+        }
+        table.getSortOrder().setAll(restored);
+    }
+
+    private void saveSupplementalTableState(SupplementalKind kind, TableView<SupplementalRow> table)
+    {
+        String prefix = tableStatePrefix() + kind.name() + ".";
+        SUPPLEMENTAL_TABLE_STATE.put(prefix + "order", String.join(",", table.getColumns().stream().map(TransactionEditorPanel::columnKey).toList()));
+        SUPPLEMENTAL_TABLE_STATE.put(prefix + "sortOrder", String.join(",", table.getSortOrder().stream().map(TransactionEditorPanel::columnKey).toList()));
+        for (TableColumn<SupplementalRow, ?> column : table.getColumns())
+        {
+            SUPPLEMENTAL_TABLE_STATE.putDouble(prefix + columnKey(column) + ".width", column.getWidth() > 0 ? column.getWidth() : column.getPrefWidth());
+            SUPPLEMENTAL_TABLE_STATE.put(prefix + columnKey(column) + ".sort", column.getSortType() == null ? "" : column.getSortType().name());
+        }
     }
 
     private String tableStatePrefix()
@@ -637,11 +934,15 @@ public class TransactionEditorPanel implements AppPanel
     {
         for (int i = 0; i < splitTable.getItems().size(); i++) syncModelRow(i, splitTable.getItems().get(i));
         TransactionValidationResult result = lineEditorModel.validate(parseDateOrNull(dateField.getText()), null, memoField.getText(), null);
-        lastValidationResult = new ValidationResult(
-                result.valid() ? "Validation result: ready to save through the transaction service." : "Validation result: " + String.join(" ", result.errors()),
+        List<String> supplementalErrors = validateSupplementalRows();
+        int errorCount = result.valid() ? supplementalErrors.size() : result.errors().size() + supplementalErrors.size();
+        String message = result.valid() && supplementalErrors.isEmpty()
+                ? "Validation result: ready to save through the transaction service."
+                : "Validation result: " + String.join(" ", result.errors()) + " " + String.join(" ", supplementalErrors);
+        lastValidationResult = new ValidationResult(message.trim(),
                 lineEditorModel.toCommand(parseDateOrNull(dateField.getText()), null, memoField.getText(), null).lines().size(),
-                result.valid() ? lineEditorModel.toCommand(parseDateOrNull(dateField.getText()), null, memoField.getText(), null).lines().size() : 0,
-                result.valid() ? 0 : result.errors().size(),
+                errorCount == 0 ? lineEditorModel.toCommand(parseDateOrNull(dateField.getText()), null, memoField.getText(), null).lines().size() : 0,
+                errorCount,
                 lineEditorModel.totals().difference());
         status.setText(lastValidationResult.message());
         validationMessage.setText(lastValidationResult.message());
@@ -722,10 +1023,17 @@ public class TransactionEditorPanel implements AppPanel
             status.setText("Save blocked: enter a transaction date as YYYY-MM-DD.");
             return;
         }
+        List<String> supplementalErrors = validateSupplementalRows();
+        if (!supplementalErrors.isEmpty())
+        {
+            status.setText("Save blocked: " + String.join(" ", supplementalErrors));
+            return;
+        }
         for (int i = 0; i < splitTable.getItems().size(); i++) syncModelRow(i, splitTable.getItems().get(i));
         TransactionEntryService service = UiServiceRegistry.transactionEntry();
         UiAsync.<TransactionView>run("txn-editor-save", () -> {
-                    TransactionCommand command = lineEditorModel.toCommand(date, null, memoField.getText(), null);
+                    TransactionCommand baseCommand = lineEditorModel.toCommand(date, null, memoField.getText(), null);
+                    TransactionCommand command = new TransactionCommand(baseCommand.date(), baseCommand.payeeId(), baseCommand.memo(), baseCommand.bankAccountId(), baseCommand.lines(), supplementalLineCommands());
                     return editorMode == EditorMode.EDIT ? service.update(editTransactionId, command) : service.enter(command);
                 },
                 view -> {
@@ -738,7 +1046,7 @@ public class TransactionEditorPanel implements AppPanel
                     lineEditorModel.markClean();
                     openSavedInLedger.setDisable(false);
                     deleteTransaction.setDisable(false);
-                    status.setText((wasNew ? "Saved new transaction #" : "Updated transaction #") + view.id() + " through TransactionEntryService with " + view.lines().size() + " split line(s).");
+                    status.setText((wasNew ? "Saved new transaction #" : "Updated transaction #") + view.id() + " through TransactionEntryService with " + view.lines().size() + " split line(s) and " + view.supplementalLines().size() + " persisted supplemental detail row(s).");
                 },
                 ex -> status.setText("Save failed: " + UiErrors.safeMessage(ex)));
     }
@@ -760,11 +1068,25 @@ public class TransactionEditorPanel implements AppPanel
         donationIdField.clear();
         donorIdField.clear();
         donorNameField.clear();
+        clearSupplementalRows();
         splitTable.getItems().setAll(new SplitRow("", "", "", "", "", "", "", "", "", ""), new SplitRow("", "", "", "", "", "", "", "", "", ""));
         lineEditorModel.rows().clear();
         lineEditorModel.addRow();
         lineEditorModel.addRow();
         refreshTotals();
+    }
+
+    private void clearSupplementalRows()
+    {
+        for (TableView<SupplementalRow> table : supplementalTables.values())
+        {
+            table.getItems().clear();
+        }
+        for (CheckBox checkBox : supplementalSelections.values())
+        {
+            checkBox.setSelected(false);
+        }
+        updateSupplementalTabAvailability();
     }
 
     private void applySavedView(TransactionView view)
@@ -781,6 +1103,7 @@ public class TransactionEditorPanel implements AppPanel
             TransactionLineEditorModel.Row row = lineEditorModel.rows().get(i);
             row.setAccountId(null); row.setFundId(null); row.setBudgetCategoryId(null); row.setActivityId(null); row.setMerchantId(null); row.setCounterpartyId(null); row.setDebit(BigDecimal.ZERO); row.setCredit(BigDecimal.ZERO); row.setNmr(false); row.setNotes("");
         }
+        applySupplementalLines(view.supplementalLines());
         refreshTotals();
     }
 
@@ -980,6 +1303,18 @@ public class TransactionEditorPanel implements AppPanel
         catch (NumberFormatException ex) { return null; }
     }
 
+    private static String formatAmountInput(String value)
+    {
+        BigDecimal amount = parseOptionalAmount(value);
+        return amount == null ? (value == null ? "" : value.trim()) : amount.setScale(2, RoundingMode.HALF_UP).toPlainString();
+    }
+
+    private static String formatDateInput(String value)
+    {
+        LocalDate date = parseDateOrNull(value);
+        return date == null ? (value == null ? "" : value.trim()) : date.toString();
+    }
+
     private static String money(BigDecimal value)
     {
         BigDecimal amount = value == null ? BigDecimal.ZERO : value;
@@ -1075,6 +1410,56 @@ public class TransactionEditorPanel implements AppPanel
         }
     }
 
+    private static class SupplementalFocusCommitTextCell extends TableCell<SupplementalRow, String>
+    {
+        private TextField editor;
+        @Override public void startEdit()
+        {
+            if (!isEditable() || !getTableView().isEditable() || !getTableColumn().isEditable()) return;
+            super.startEdit();
+            if (editor == null)
+            {
+                editor = new TextField();
+                editor.setOnAction(event -> commitEditorValue());
+                editor.focusedProperty().addListener((observable, wasFocused, isFocused) -> { if (!isFocused) commitEditorValue(); });
+            }
+            editor.setText(getItem() == null ? "" : getItem());
+            setText(null);
+            setGraphic(editor);
+            editor.selectAll();
+            editor.requestFocus();
+        }
+        @Override public void updateItem(String item, boolean empty)
+        {
+            super.updateItem(item, empty);
+            if (empty) { setText(null); setGraphic(null); }
+            else if (isEditing() && editor != null) { editor.setText(item == null ? "" : item); setText(null); setGraphic(editor); }
+            else { setText(item == null ? "" : item); setGraphic(null); }
+        }
+        private void commitEditorValue()
+        {
+            if (editor == null) return;
+            String value = editor.getText();
+            if (isEditing()) commitEdit(value);
+            else commitValueWhenFocusLossAlreadyCancelled(value);
+        }
+        @Override public void commitEdit(String newValue)
+        {
+            super.commitEdit(newValue);
+            setText(newValue == null ? "" : newValue);
+            setGraphic(null);
+        }
+        private void commitValueWhenFocusLossAlreadyCancelled(String value)
+        {
+            TableView<SupplementalRow> table = getTableView();
+            TableColumn<SupplementalRow, String> column = getTableColumn();
+            if (table == null || column == null || getIndex() < 0 || getIndex() >= table.getItems().size()) return;
+            CellEditEvent<SupplementalRow, String> event = new CellEditEvent<>(table, new TablePosition<>(table, getIndex(), column), TableColumn.editCommitEvent(), value);
+            Event.fireEvent(column, event);
+            updateItem(value, false);
+        }
+    }
+
     @FunctionalInterface
     private interface RowOptionSetter { void accept(SplitRow row, TransactionLineEditorModel.Option option); }
 
@@ -1102,7 +1487,94 @@ public class TransactionEditorPanel implements AppPanel
 
     private enum EditorMode { NEW, EDIT }
 
-    private record SupplementalRow(String linkToEntry, String counterparty, String description, String reference, String amount, String dueDate) { }
+    private enum SupplementalKind
+    {
+        RECEIVABLE("Receivable", "Receivables", true, false),
+        PAYABLE("Payable", "Payables", true, false),
+        PREPAID_EXPENSE("Prepaid Expense", "Prepaid Expenses", false, true),
+        DEFERRED_REVENUE("Deferred Revenue", "Deferred Revenue", false, true),
+        OTHER_ASSET("Other Asset", "Other Assets", false, false),
+        OTHER_LIABILITY("Other Liability", "Other Liabilities", true, false);
+
+        private final String toggleLabel;
+        private final String tabTitle;
+        private final boolean showDueDate;
+        private final boolean showStartEnd;
+
+        SupplementalKind(String toggleLabel, String tabTitle, boolean showDueDate, boolean showStartEnd)
+        {
+            this.toggleLabel = toggleLabel;
+            this.tabTitle = tabTitle;
+            this.showDueDate = showDueDate;
+            this.showStartEnd = showStartEnd;
+        }
+
+        String toggleLabel() { return toggleLabel; }
+        String tabTitle() { return tabTitle; }
+        boolean showDueDate() { return showDueDate; }
+        boolean showStartEnd() { return showStartEnd; }
+
+        static SupplementalKind fromName(String name)
+        {
+            if (name == null || name.isBlank()) return null;
+            try { return SupplementalKind.valueOf(name); }
+            catch (IllegalArgumentException ex) { return null; }
+        }
+    }
+
+    public static final class SupplementalRow
+    {
+        private String linkToEntry = "";
+        private String counterparty = "";
+        private String description = "";
+        private String reference = "";
+        private String amount = "0.00";
+        private String dueDate = "";
+        private String startDate = "";
+        private String endDate = "";
+        private String notes = "";
+
+        static SupplementalRow fromView(TransactionSupplementalLineView view)
+        {
+            SupplementalRow row = new SupplementalRow();
+            row.setLinkToEntry(view.entryRef());
+            row.setCounterparty(view.counterparty());
+            row.setDescription(view.description());
+            row.setReference(view.reference());
+            row.setAmount(view.amount() == null ? "0.00" : view.amount().setScale(2, RoundingMode.HALF_UP).toPlainString());
+            row.setDueDate(view.dueDate() == null ? "" : view.dueDate().toString());
+            row.setStartDate(view.startDate() == null ? "" : view.startDate().toString());
+            row.setEndDate(view.endDate() == null ? "" : view.endDate().toString());
+            row.setNotes(view.notes());
+            return row;
+        }
+
+        public String linkToEntry() { return linkToEntry; }
+        public void setLinkToEntry(String value) { linkToEntry = value(value); }
+        public String counterparty() { return counterparty; }
+        public void setCounterparty(String value) { counterparty = value(value); }
+        public String description() { return description; }
+        public void setDescription(String value) { description = value(value); }
+        public String reference() { return reference; }
+        public void setReference(String value) { reference = value(value); }
+        public String amount() { return amount; }
+        public void setAmount(String value) { amount = value(value); }
+        public String dueDate() { return dueDate; }
+        public void setDueDate(String value) { dueDate = value(value); }
+        public String startDate() { return startDate; }
+        public void setStartDate(String value) { startDate = value(value); }
+        public String endDate() { return endDate; }
+        public void setEndDate(String value) { endDate = value(value); }
+        public String notes() { return notes; }
+        public void setNotes(String value) { notes = value(value); }
+
+        boolean hasAnyInput()
+        {
+            return !(linkToEntry.isBlank() && counterparty.isBlank() && description.isBlank() && reference.isBlank()
+                    && (amount.isBlank() || "0.00".equals(amount) || "0".equals(amount))
+                    && dueDate.isBlank() && startDate.isBlank() && endDate.isBlank() && notes.isBlank());
+        }
+    }
 
     public static class SplitRow
     {
@@ -1177,5 +1649,10 @@ public class TransactionEditorPanel implements AppPanel
         private static String label(TransactionLineEditorModel.Option option) { return option == null ? "" : option.label(); }
         private static String label(String code, String name) { String safeCode = code == null ? "" : code; String safeName = name == null ? "" : name; return (safeCode + " — " + safeName).trim(); }
         private static String value(String value) { return value == null ? "" : value; }
+    }
+
+    private static String value(String value)
+    {
+        return value == null ? "" : value;
     }
 }

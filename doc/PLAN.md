@@ -1,12 +1,12 @@
 ---
-plan_version: 20
+plan_version: 21
 active_phase: P03
-active_slice: P03-C4
+active_slice: P03-C5
 active_status: VERIFYING
-active_branch: codex/P03-C4-transaction-editor-table-state-plan
-active_pull_request: "#149"
-active_head: dddfa92d52580970296c785f1333b2853ed843c7
-next_action: "Perform desktop visual validation of Transaction Editor and Journal Pane on laptop-width workspace."
+active_branch: codex/P03-C5-editable-supplemental-details
+active_pull_request: "#150"
+active_head: bfb3a522975986dd5b800e8a468dbfccff6afbc0
+next_action: "Perform desktop visual validation that persisted supplemental detail rows save, reload, and remain editable."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Perform desktop visual validation of Transaction Editor and Journa
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P05-C5 as DONE through PR #148 and advances P03-C4 to VERIFYING. P03-C4 is the Transaction Editor and Journal Pane redesign, using `benbaron/NonprofitAccounting` `src/main/java/nonprofitbookkeeping/ui` only as a design reference.
+This revision records P05-C5 as DONE through PR #148, P03-C4 as merged through PR #149, and opens P03-C5 to persist Transaction Editor supplemental detail rows in H2.
 
 ## 2. Status values
 
@@ -35,7 +35,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P00 | Documentation and implementation inventory | none | DONE; update matrices as touched |
 | P01 | Production shell and workspace composition | P00 | DONE; corrective P01-C1 DONE through PR #141 |
 | P02 | Canonical ledger and transaction operations | P00 | DONE; retain |
-| P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY; corrective P03-C4 VERIFYING |
+| P03 | Transaction Editor, Ledger Register, and Journal Pane | P01, P02 | READY; corrective P03-C5 VERIFYING |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
 | P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137; corrective P05-C5 DONE through PR #148 |
 | P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 DONE through PR #146; corrective P06-C2 DONE through PR #147 |
@@ -116,44 +116,50 @@ Status: DONE, retain.
 
 ### P03 — Transaction Editor, Ledger Register, and Journal Pane
 
-Status: READY; corrective P03-C4 VERIFYING.
+Status: READY; corrective P03-C5 VERIFYING.
 
 Completed slices:
 
 - P03-C1 Transaction Editor modes and Ledger Register buttons: DONE.
 - P03-C2 Journal Pane and Inspect Journal navigation: DONE.
 - P03-C3 Transaction Editor Delete correction action: DONE.
+- P03-C4 Transaction Editor and Journal Pane redesign: merged through PR #149; final desktop visual validation remains part of user acceptance.
 
-### P03-C4 — Transaction Editor and Journal Pane redesign
+### P03-C5 — Persisted Transaction Editor supplemental details
 
 Status: VERIFYING.
-Branch: `codex/P03-C4-transaction-editor-table-state-plan`
-Pull request: #149
-Head: `dddfa92d52580970296c785f1333b2853ed843c7`
+Branch: `codex/P03-C5-editable-supplemental-details`
+Pull request: #150
+Head: `bfb3a522975986dd5b800e8a468dbfccff6afbc0`
 
-Purpose: redesign the Transaction Editor and Journal Pane for usable, laptop-width transaction entry and review, using the legacy `benbaron/NonprofitAccounting` JavaFX UI package only as a design reference.
+Purpose: make Supplemental Details in Transaction Editor editable and persisted through H2 as transaction-attached detail rows.
 
 Implemented in branch:
 
-- `TransactionEditorPanel` is reorganized into task-sized tabs: Header, Entry Lines, Additional Details, Donation Subschedule, and Supplemental Details.
-- Header tab includes journal-entry title, date, memo, debit total, credit total, difference, balanced/needs-attention status, and validation text.
-- Entry Lines tab includes the editable entry-line table, Add Line, Duplicate, Remove, one-sided Debit/Credit behavior, blank row behavior, and active-company table-state persistence.
-- Additional Details tab groups Party / Document, Bank / Reconciliation, and Budget / Fund details.
-- Donation Subschedule tab exposes donation ID, donor ID, donor name, and a disabled donor-edit action with a clear explanation because no H2 donor editing service is in this slice.
-- Supplemental Details tab exposes Receivable, Payable, Prepaid Expense, Deferred Revenue, Other Asset, and Other Liability panels as transaction-local detail panels. Unsupported Add/Remove actions are disabled with explanatory tooltips.
-- `JournalPane` now groups journal projections into transaction-level rows with Date, Account Title and Description, Fund, Cleared, Debit, Credit, Transaction ID, Supplemental, and Memo/Details regions.
-- Journal Pane adds New, Edit, Delete, and Refresh actions. Delete routes through the current correction policy and `TransactionCorrectionService` rather than deleting table rows.
-- `TransactionEditorRedesignSourceTest` and updated `JournalPaneTest` guard the redesign structure, grouped-journal behavior, table-state wiring, and absence of reintroduced generic Schedules navigation/class usage.
-- `doc/interface-operation-matrix.md` and `doc/ui/editor-guidelines.md` are updated for the new Transaction Editor and Journal Pane behavior.
+- V58 migration adds `txn_supplemental_line` with transaction foreign key, row order, kind, visible supplemental fields, date constraints, amount constraint, and indexes.
+- `TxnSupplementalLine` JPA entity is registered in `persistence.xml`.
+- `TransactionCommand` and `TransactionView` now carry supplemental line command/view DTOs while preserving old constructor compatibility.
+- `TransactionEntryService.enter(...)` persists supplemental rows atomically with new transactions.
+- `TransactionEntryService.update(...)` replaces supplemental rows atomically with edited transactions and accounting lines.
+- `TransactionEntryService.load(...)` returns supplemental rows for editor repopulation.
+- Transaction Editor supplemental tabs now map visible rows into `TransactionSupplementalLineCommand` objects and repopulate from `TransactionSupplementalLineView` rows after save/load.
+- Focused tests cover supplemental row persistence, update replacement, validation/rollback, and source-level UI persistence wiring.
+- `doc/interface-operation-matrix.md` and `doc/accounting/transaction-editor-and-journal.md` are updated for H2-backed transaction supplemental details.
 
 Validation so far:
 
-- Maven PR Tests run 29039185959 completed successfully for head `50fdab8d52ca7a8e61f28a33b8a0cb8c19a57c24`.
-- Maven PR Tests run 29039394914 completed successfully for head `dddfa92d52580970296c785f1333b2853ed843c7` after the editor-guidelines documentation update.
+- Maven PR Tests passed for the editable-only head `ba9647616bb360058b663eb8a31283782e53eae4` before the persistence commits.
+- Maven PR Tests run 29064948926 passed for persistence/documentation head `015c8193d1f967d92f1a6290d8d3d51005f42ea2`.
+- Maven PR Tests run 29065039831 passed for plan-update head `f1cec3e3f8cfc4fe2467a4269b61d74966b9a11b`.
+- Maven PR Tests run 29065107411 passed for head `04b1c54381cf7f07e6e1259ed4b12cb7025d987b`.
+- Maven PR Tests run 29065164150 passed for head `04b04595311205ca146ec4550ab00b8936d878f6`.
+- Maven PR Tests run 29065221848 passed for head `762dbf0047a88f14786567f09f3969af01370bba`.
+- Maven PR Tests run 29065287028 passed for head `002e1b71acc16c382a9e7fff7fadeb12085cb4ad`.
+- Maven PR Tests run 29065359977 passed for latest head `bfb3a522975986dd5b800e8a468dbfccff6afbc0`.
 
-Remaining deliverable before DONE:
+Remaining deliverables before DONE:
 
-- Desktop visual validation of Transaction Editor and Journal Pane at laptop width.
+- Perform desktop visual validation that saved supplemental rows survive reload/edit.
 
 ## 7. Active and recent phase contracts
 
@@ -218,96 +224,3 @@ Completed deliverables: `FullTextTooltipInstaller` utility; production `MainApp`
 **Depends on:** P02
 
 Required behavior: implement genuine Inventory item add and movement history; remove runbook subpane; use canonical transactions when financially relevant.
-
-### P09-S1 — H2 inventory items and movement history
-
-Status: DONE through PR #142.
-
-Completed deliverables: V56 inventory item/movement migration; `InventoryItem` and `InventoryMovement` JPA entities; `InventoryService` create/update/list/movement behavior; `InventoryPanel` reads/writes through `InventoryService`; inventory text runbook sidecar removed from `UiWorkspaceDataStore` and `RunbookPersistence`; focused service tests and docs added/updated.
-
-### P09-C1 — Inventory UI design-rule correction and disabled Delete cleanup
-
-Status: DONE through PR #143.
-
-Completed deliverables: Inventory global New/Save hooks; item-editor subpanel navigation from New Item, Edit Selected, and table double-click; dirty-state tracking; validation highlighting; common money/date parsing and formatting; unconstrained inventory tables; per-company table-state persistence; disabled Delete placeholder buttons removed from Banking, Asset Register, Depreciation Runs, Inventory, and Reconciliation; docs and source guardrail tests updated.
-
-# P10 — Period close, reopening, and factual audit history
-
-**Selector:** `PHASE=P10`
-**Status:** BLOCKED
-**Depends on:** P02, P06
-
-Required behavior: implement calculated period close/reopen while keeping factual Audit History and no approval/rejection workflow.
-
-# P11 — Report Library
-
-**Selector:** `PHASE=P11`
-**Status:** BLOCKED
-**Depends on:** P02, P04, P06, P08, P09, P10
-
-# P12 — Administration, company lifecycle, preferences, and Funds edit
-
-**Selector:** `PHASE=P12`
-**Status:** BLOCKED
-**Depends on:** P01, P02
-
-# P13 — Data exchange and diagnostics without Import/Export Jobs
-
-**Selector:** `PHASE=P13`
-**Status:** BLOCKED
-**Depends on:** P02, P05, P12
-
-# P14 — End-to-end hardening
-
-**Selector:** `PHASE=P14`
-**Status:** BLOCKED
-**Depends on:** P03-P13 except eliminated P07
-
-## 8. Cross-cutting validation matrix
-
-Every phase adds applicable tests:
-
-- accounting invariants;
-- validation;
-- state transitions;
-- service transaction rollback;
-- in-memory H2 repositories;
-- migrations;
-- JavaFX layout and command routing;
-- TestFX workflow checks where UI behavior is central;
-- report/export smoke tests.
-
-## 9. Pull-request completion checklist
-
-Before a PR is ready:
-
-- selected phase/slice is recorded;
-- branch started from then-current `main`;
-- scope is one coherent slice;
-- relevant `doc/` files and this plan are updated;
-- final diff inspected;
-- no unintended/generated/user-data files changed;
-- no placeholders or swallowed exceptions;
-- no SQL in JavaFX panels;
-- no accounting policy in repositories;
-- no JavaFX controls in models;
-- no sidecar/static store used as authoritative persistence;
-- new migrations are nondestructive;
-- applicable unit/service/H2/migration/regression/layout tests exist;
-- `mvn clean verify` passes;
-- GitHub confirms required checks when workflows exist;
-- PR description records actual validation;
-- required desktop visual check is complete;
-- branch/PR/head/test/next-action handoff is recorded here;
-- code is reviewed to ensure compliance with design documents.
-
-## 10. Current next action
-
-Continue validation for:
-
-```text
-PHASE=P03
-SLICE=P03-C4
-```
-
-Perform desktop visual validation of Transaction Editor and Journal Pane on a laptop-width workspace.

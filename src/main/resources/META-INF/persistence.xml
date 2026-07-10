@@ -44,6 +44,7 @@
 
     <class>org.nonprofitbookkeeping.model.Txn</class>
     <class>org.nonprofitbookkeeping.model.TxnSplit</class>
+    <class>org.nonprofitbookkeeping.model.TxnSupplementalLine</class>
     <class>org.nonprofitbookkeeping.model.FundTransfer</class>
 
     <class>org.nonprofitbookkeeping.model.AccountingPeriod</class>

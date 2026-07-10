@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Read projection for a canonical transaction and its lines.
+ * Read projection for a canonical transaction, its accounting lines, and supplemental details.
  */
 public record TransactionView(Long id,
                               LocalDate date,
@@ -15,11 +15,26 @@ public record TransactionView(Long id,
                               Long bankAccountId,
                               String bankAccountName,
                               String status,
-                              List<Line> lines)
+                              List<Line> lines,
+                              List<TransactionSupplementalLineView> supplementalLines)
 {
+    public TransactionView(Long id,
+                           LocalDate date,
+                           Long payeeId,
+                           String payeeName,
+                           String memo,
+                           Long bankAccountId,
+                           String bankAccountName,
+                           String status,
+                           List<Line> lines)
+    {
+        this(id, date, payeeId, payeeName, memo, bankAccountId, bankAccountName, status, lines, List.of());
+    }
+
     public TransactionView
     {
         lines = lines == null ? List.of() : List.copyOf(lines);
+        supplementalLines = supplementalLines == null ? List.of() : List.copyOf(supplementalLines);
     }
 
     public BigDecimal debitTotal()
