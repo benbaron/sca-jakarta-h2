@@ -39,8 +39,21 @@ public class PanelHost extends TabPane
         return EnumSet.allOf(AppPanelId.class);
     }
 
-    public void show(AppPanelId id)
+    /**
+     * Maps retired P03 destinations to the one canonical Journal workspace.
+     */
+    static AppPanelId canonicalPanelId(AppPanelId id)
     {
+        if (id == AppPanelId.LEDGER_REGISTER || id == AppPanelId.TXN_EDITOR)
+        {
+            return AppPanelId.JOURNAL_PANE;
+        }
+        return id;
+    }
+
+    public void show(AppPanelId requestedId)
+    {
+        AppPanelId id = canonicalPanelId(Objects.requireNonNull(requestedId, "requestedId"));
         Tab tab = tabs.computeIfAbsent(id, this::createTab);
         if (!getTabs().contains(tab))
         {
@@ -55,9 +68,9 @@ public class PanelHost extends TabPane
         }
     }
 
-    public void showReplacement(AppPanelId id, AppPanel replacement)
+    public void showReplacement(AppPanelId requestedId, AppPanel replacement)
     {
-        Objects.requireNonNull(id, "id");
+        AppPanelId id = canonicalPanelId(Objects.requireNonNull(requestedId, "requestedId"));
         Objects.requireNonNull(replacement, "replacement");
         Tab previous = tabs.remove(id);
         if (previous != null)
@@ -109,9 +122,7 @@ public class PanelHost extends TabPane
     }
 
     /**
-     * Closes every non-permanent workspace tab and selects the Dashboard.
-     *
-     * @return number of tabs closed
+     * Returns dirty closable panel titles.
      */
     public List<String> dirtyClosablePanelTitles()
     {
@@ -157,7 +168,7 @@ public class PanelHost extends TabPane
 
     public boolean isOpen(AppPanelId id)
     {
-        Tab tab = tabs.get(id);
+        Tab tab = tabs.get(canonicalPanelId(id));
         return tab != null && getTabs().contains(tab);
     }
 
@@ -174,7 +185,7 @@ public class PanelHost extends TabPane
 
     public boolean isClosable(AppPanelId id)
     {
-        Tab tab = tabs.get(id);
+        Tab tab = tabs.get(canonicalPanelId(id));
         return tab != null && tab.isClosable();
     }
 
