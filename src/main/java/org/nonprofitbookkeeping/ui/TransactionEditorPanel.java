@@ -42,6 +42,8 @@ import org.nonprofitbookkeeping.service.TransactionCommand;
 import org.nonprofitbookkeeping.service.TransactionCommandValidator;
 import org.nonprofitbookkeeping.service.TransactionEntryService;
 import org.nonprofitbookkeeping.service.TransactionLineCommand;
+import org.nonprofitbookkeeping.service.TransactionSupplementalLineCommand;
+import org.nonprofitbookkeeping.service.TransactionSupplementalLineView;
 import org.nonprofitbookkeeping.service.TransactionValidationResult;
 import org.nonprofitbookkeeping.service.TransactionView;
 
@@ -505,6 +507,64 @@ public class TransactionEditorPanel implements AppPanel
             status.setText(String.join(" ", errors));
         }
         return errors;
+    }
+
+    private List<TransactionSupplementalLineCommand> supplementalLineCommands()
+    {
+        List<TransactionSupplementalLineCommand> commands = new ArrayList<>();
+        for (SupplementalKind kind : SupplementalKind.values())
+        {
+            CheckBox enabled = supplementalSelections.get(kind);
+            if (enabled == null || !enabled.isSelected())
+            {
+                continue;
+            }
+            TableView<SupplementalRow> table = supplementalTables.get(kind);
+            if (table == null)
+            {
+                continue;
+            }
+            for (SupplementalRow row : table.getItems())
+            {
+                if (!row.hasAnyInput())
+                {
+                    continue;
+                }
+                commands.add(new TransactionSupplementalLineCommand(
+                        kind.name(), row.linkToEntry(), row.counterparty(), row.description(), row.reference(),
+                        parseOptionalAmount(row.amount()), parseDateOrNull(row.dueDate()), parseDateOrNull(row.startDate()),
+                        parseDateOrNull(row.endDate()), row.notes()));
+            }
+        }
+        return commands;
+    }
+
+    private void applySupplementalLines(List<TransactionSupplementalLineView> views)
+    {
+        clearSupplementalRows();
+        if (views == null || views.isEmpty())
+        {
+            return;
+        }
+        for (TransactionSupplementalLineView view : views)
+        {
+            SupplementalKind kind = SupplementalKind.fromName(view.kind());
+            if (kind == null)
+            {
+                continue;
+            }
+            CheckBox selection = supplementalSelections.get(kind);
+            if (selection != null)
+            {
+                selection.setSelected(true);
+            }
+            TableView<SupplementalRow> table = supplementalTables.get(kind);
+            if (table != null)
+            {
+                table.getItems().add(SupplementalRow.fromView(view));
+            }
+        }
+        updateSupplementalTabAvailability();
     }
 
     private GridPane detailGrid()
@@ -972,7 +1032,8 @@ public class TransactionEditorPanel implements AppPanel
         for (int i = 0; i < splitTable.getItems().size(); i++) syncModelRow(i, splitTable.getItems().get(i));
         TransactionEntryService service = UiServiceRegistry.transactionEntry();
         UiAsync.<TransactionView>run("txn-editor-save", () -> {
-                    TransactionCommand command = lineEditorModel.toCommand(date, null, memoField.getText(), null);
+                    TransactionCommand baseCommand = lineEditorModel.toCommand(date, null, memoField.getText(), null);
+                    TransactionCommand command = new TransactionCommand(baseCommand.date(), baseCommand.payeeId(), baseCommand.memo(), baseCommand.bankAccountId(), baseCommand.lines(), supplementalLineCommands());
                     return editorMode == EditorMode.EDIT ? service.update(editTransactionId, command) : service.enter(command);
                 },
                 view -> {
@@ -985,7 +1046,7 @@ public class TransactionEditorPanel implements AppPanel
                     lineEditorModel.markClean();
                     openSavedInLedger.setDisable(false);
                     deleteTransaction.setDisable(false);
-                    status.setText((wasNew ? "Saved new transaction #" : "Updated transaction #") + view.id() + " through TransactionEntryService with " + view.lines().size() + " split line(s). Supplemental detail rows remain editable transaction-local fields for this editor session until their H2 service is implemented.");
+                    status.setText((wasNew ? "Saved new transaction #" : "Updated transaction #") + view.id() + " through TransactionEntryService with " + view.lines().size() + " split line(s) and " + view.supplementalLines().size() + " persisted supplemental detail row(s).");
                 },
                 ex -> status.setText("Save failed: " + UiErrors.safeMessage(ex)));
     }
@@ -1042,6 +1103,7 @@ public class TransactionEditorPanel implements AppPanel
             TransactionLineEditorModel.Row row = lineEditorModel.rows().get(i);
             row.setAccountId(null); row.setFundId(null); row.setBudgetCategoryId(null); row.setActivityId(null); row.setMerchantId(null); row.setCounterpartyId(null); row.setDebit(BigDecimal.ZERO); row.setCredit(BigDecimal.ZERO); row.setNmr(false); row.setNotes("");
         }
+        applySupplementalLines(view.supplementalLines());
         refreshTotals();
     }
 
@@ -1451,6 +1513,13 @@ public class TransactionEditorPanel implements AppPanel
         String tabTitle() { return tabTitle; }
         boolean showDueDate() { return showDueDate; }
         boolean showStartEnd() { return showStartEnd; }
+
+        static SupplementalKind fromName(String name)
+        {
+            if (name == null || name.isBlank()) return null;
+            try { return SupplementalKind.valueOf(name); }
+            catch (IllegalArgumentException ex) { return null; }
+        }
     }
 
     public static final class SupplementalRow
@@ -1464,6 +1533,21 @@ public class TransactionEditorPanel implements AppPanel
         private String startDate = "";
         private String endDate = "";
         private String notes = "";
+
+        static SupplementalRow fromView(TransactionSupplementalLineView view)
+        {
+            SupplementalRow row = new SupplementalRow();
+            row.setLinkToEntry(view.entryRef());
+            row.setCounterparty(view.counterparty());
+            row.setDescription(view.description());
+            row.setReference(view.reference());
+            row.setAmount(view.amount() == null ? "0.00" : view.amount().setScale(2, RoundingMode.HALF_UP).toPlainString());
+            row.setDueDate(view.dueDate() == null ? "" : view.dueDate().toString());
+            row.setStartDate(view.startDate() == null ? "" : view.startDate().toString());
+            row.setEndDate(view.endDate() == null ? "" : view.endDate().toString());
+            row.setNotes(view.notes());
+            return row;
+        }
 
         public String linkToEntry() { return linkToEntry; }
         public void setLinkToEntry(String value) { linkToEntry = value(value); }
