@@ -1,10 +1,39 @@
-name: Retired P03-C7 patch helper
+name: Build P03-C7 patch artifact
 
 on:
-  workflow_dispatch:
+  pull_request:
+    branches: [ "main" ]
+    types: [ synchronize ]
+
+permissions:
+  contents: read
 
 jobs:
-  retired:
+  patch-artifact:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Temporary helper disabled before pull-request creation."
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Apply source patch
+        run: python tools/apply_p03_c7.py
+
+      - name: Package patched files
+        run: |
+          mkdir -p /tmp/p03-c7-patched
+          cp --parents \
+            src/main/java/org/nonprofitbookkeeping/ui/JournalWorkspacePanel.java \
+            src/main/java/org/nonprofitbookkeeping/ui/UiServiceRegistry.java \
+            src/main/java/org/nonprofitbookkeeping/ui/SettingsPanel.java \
+            src/test/java/org/nonprofitbookkeeping/ui/JournalWorkspacePortSourceTest.java \
+            doc/PLAN.md \
+            doc/ui/editor-guidelines.md \
+            doc/interface-operation-matrix.md \
+            doc/persistence-authority-inventory.md \
+            /tmp/p03-c7-patched/
+
+      - name: Upload patched files
+        uses: actions/upload-artifact@v4
+        with:
+          name: p03-c7-patched-files
+          path: /tmp/p03-c7-patched
