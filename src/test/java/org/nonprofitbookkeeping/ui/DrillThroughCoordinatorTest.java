@@ -7,22 +7,35 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * DrillThroughCoordinatorTest component.
- */
+/** Tests canonical Journal context routing. */
 public class DrillThroughCoordinatorTest
 {
     @Test
-    public void openLedgerWithContext_invokesOpenerAndExposesContextOnce()
+    public void openLedgerWithContext_routesToJournalAndExposesContextOnce()
     {
         AtomicReference<AppPanelId> opened = new AtomicReference<>();
         DrillThroughCoordinator.configureOpener(opened::set);
 
         DrillThroughCoordinator.openLedgerWithContext("Report drill-through: Balance Sheet");
 
-        assertEquals(AppPanelId.LEDGER_REGISTER, opened.get());
+        assertEquals(AppPanelId.JOURNAL_PANE, opened.get());
         assertEquals("Report drill-through: Balance Sheet", DrillThroughCoordinator.consumeContext());
+        assertEquals("Report drill-through: Balance Sheet", DrillThroughCoordinator.consumeContext(AppPanelId.JOURNAL_PANE));
+        assertEquals("", DrillThroughCoordinator.consumeContext(AppPanelId.JOURNAL_PANE));
         assertEquals("", DrillThroughCoordinator.consumeContext());
+    }
+
+    @Test
+    public void transactionEditorAliasStoresContextUnderJournal()
+    {
+        AtomicReference<AppPanelId> opened = new AtomicReference<>();
+        DrillThroughCoordinator.configureOpener(opened::set);
+
+        DrillThroughCoordinator.openPanelWithContext(AppPanelId.TXN_EDITOR, "Edit Txn #41");
+
+        assertEquals(AppPanelId.JOURNAL_PANE, opened.get());
+        assertEquals("Edit Txn #41", DrillThroughCoordinator.consumeContext(AppPanelId.LEDGER_REGISTER));
+        assertEquals("", DrillThroughCoordinator.consumeContext(AppPanelId.JOURNAL_PANE));
     }
 
     @Test
