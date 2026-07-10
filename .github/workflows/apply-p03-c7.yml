@@ -16,24 +16,43 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Apply source patch
-        run: python tools/apply_p03_c7.py
+        id: patch
+        shell: bash
+        run: |
+          set +e
+          python tools/apply_p03_c7.py > /tmp/p03-c7-patch.log 2>&1
+          status=$?
+          echo "$status" > /tmp/p03-c7-patch-status
+          exit 0
 
       - name: Package patched files
+        if: always()
         run: |
           mkdir -p /tmp/p03-c7-patched
-          cp --parents \
-            src/main/java/org/nonprofitbookkeeping/ui/JournalWorkspacePanel.java \
-            src/main/java/org/nonprofitbookkeeping/ui/UiServiceRegistry.java \
-            src/main/java/org/nonprofitbookkeeping/ui/SettingsPanel.java \
-            src/test/java/org/nonprofitbookkeeping/ui/JournalWorkspacePortSourceTest.java \
-            doc/PLAN.md \
-            doc/ui/editor-guidelines.md \
-            doc/interface-operation-matrix.md \
-            doc/persistence-authority-inventory.md \
-            /tmp/p03-c7-patched/
+          cp /tmp/p03-c7-patch.log /tmp/p03-c7-patched/patch.log
+          cp /tmp/p03-c7-patch-status /tmp/p03-c7-patched/patch-status
+          if [ "$(cat /tmp/p03-c7-patch-status)" = "0" ]; then
+            cp --parents \
+              src/main/java/org/nonprofitbookkeeping/ui/JournalWorkspacePanel.java \
+              src/main/java/org/nonprofitbookkeeping/ui/UiServiceRegistry.java \
+              src/main/java/org/nonprofitbookkeeping/ui/SettingsPanel.java \
+              src/test/java/org/nonprofitbookkeeping/ui/JournalWorkspacePortSourceTest.java \
+              doc/PLAN.md \
+              doc/ui/editor-guidelines.md \
+              doc/interface-operation-matrix.md \
+              doc/persistence-authority-inventory.md \
+              /tmp/p03-c7-patched/
+          fi
 
-      - name: Upload patched files
+      - name: Upload patch artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: p03-c7-patched-files
           path: /tmp/p03-c7-patched
+
+      - name: Fail when patch failed
+        if: always()
+        run: |
+          cat /tmp/p03-c7-patch.log
+          test "$(cat /tmp/p03-c7-patch-status)" = "0"
