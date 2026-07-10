@@ -27,9 +27,7 @@ public final class PanelFactory
     private void registerFactories(Supplier<AppPanel> dashboardFactory)
     {
         factories.put(AppPanelId.DASHBOARD, dashboardFactory);
-        factories.put(AppPanelId.LEDGER_REGISTER, LedgerRegisterPanel::new);
-        factories.put(AppPanelId.TXN_EDITOR, TransactionEditorPanel::new);
-        factories.put(AppPanelId.JOURNAL_PANE, JournalPane::new);
+        factories.put(AppPanelId.JOURNAL_PANE, JournalWorkspacePanel::new);
         factories.put(AppPanelId.BANKING, BankingPanel::new);
         factories.put(AppPanelId.BUDGET_EDITOR, BudgetEditorPanel::new);
         factories.put(AppPanelId.BUDGET_VS_ACTUAL, BudgetVsActualPanel::new);
@@ -52,12 +50,16 @@ public final class PanelFactory
 
     public EnumSet<AppPanelId> supportedPanelIds()
     {
-        return EnumSet.copyOf(factories.keySet());
+        EnumSet<AppPanelId> result = EnumSet.copyOf(factories.keySet());
+        result.add(AppPanelId.LEDGER_REGISTER);
+        result.add(AppPanelId.TXN_EDITOR);
+        return result;
     }
 
     public AppPanel create(AppPanelId id)
     {
-        Supplier<AppPanel> factory = factories.get(Objects.requireNonNull(id, "id"));
+        AppPanelId canonicalId = AppPanelId.canonical(Objects.requireNonNull(id, "id"));
+        Supplier<AppPanel> factory = factories.get(canonicalId);
         if (factory == null)
         {
             throw new IllegalArgumentException("Unsupported panel id: " + id);

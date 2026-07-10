@@ -5,9 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-/**
- * DrillThroughCoordinator component.
- */
+/** Coordinates cross-panel navigation and one-time context handoff. */
 final class DrillThroughCoordinator
 {
     private static final AtomicReference<String> CONTEXT = new AtomicReference<>();
@@ -28,21 +26,22 @@ final class DrillThroughCoordinator
     {
         CONTEXT.set(context == null ? "" : context);
         debug("Stored legacy ledger context '" + safeContext(context) + "'.");
-        openPanelWithContext(AppPanelId.LEDGER_REGISTER, context);
+        openPanelWithContext(AppPanelId.JOURNAL_PANE, context);
     }
 
     static void openTransactionEditorWithContext(String context)
     {
-        openPanelWithContext(AppPanelId.TXN_EDITOR, context);
+        openPanelWithContext(AppPanelId.JOURNAL_PANE, context);
     }
 
-    static void openPanelWithContext(AppPanelId panelId, String context)
+    static void openPanelWithContext(AppPanelId requestedPanelId, String context)
     {
-        if (panelId == null)
+        if (requestedPanelId == null)
         {
             debug("Ignored open request with null panel id and context '" + safeContext(context) + "'.");
             return;
         }
+        AppPanelId panelId = AppPanelId.canonical(requestedPanelId);
         String normalizedContext = context == null ? "" : context;
         PANEL_CONTEXT.put(panelId, normalizedContext);
         debug("Opening " + panelId + " with context '" + safeContext(normalizedContext) + "'.");
@@ -50,12 +49,13 @@ final class DrillThroughCoordinator
         debug("Open request dispatched for " + panelId + ".");
     }
 
-    static String consumeContext(AppPanelId panelId)
+    static String consumeContext(AppPanelId requestedPanelId)
     {
-        if (panelId == null)
+        if (requestedPanelId == null)
         {
             return "";
         }
+        AppPanelId panelId = AppPanelId.canonical(requestedPanelId);
         String context = PANEL_CONTEXT.remove(panelId);
         debug("Consumed context for " + panelId + ": '" + safeContext(context) + "'.");
         return context == null ? "" : context;

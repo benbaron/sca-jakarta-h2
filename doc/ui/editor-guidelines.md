@@ -1,6 +1,6 @@
-# Transaction editor guidelines
+# Journal workspace editor guidelines
 
-P03 introduces one shared spreadsheet-like line editor for transaction entry surfaces. P03-C4 reorganizes the Transaction Editor into task-sized pages and updates Journal Pane toward grouped transaction review.
+P03 provides one spreadsheet-like transaction editor inside the unified Journal workspace. P03-C6 replaces the separate Ledger Register, Transaction Editor, and Inspect Journal destinations with one Journal surface derived from the interaction model of the donor repository's `Journal*` classes.
 
 ## Shared line editor contract
 
@@ -9,60 +9,71 @@ P03 introduces one shared spreadsheet-like line editor for transaction entry sur
 - Blank rows are editor affordances only and are not converted to `TransactionLineCommand` instances.
 - Live totals show debit total, credit total, and debit-minus-credit difference before any save attempt.
 - Row validation rejects missing account/fund IDs, negative values, zero-value accounting rows, both-sided rows, fewer than two meaningful rows, and unbalanced totals.
-- Dirty state is owned by the editor model and is cleared only after the containing panel deliberately saves or discards work.
+- Dirty state belongs to the unified Journal editor and is cleared only after a deliberate save or discard.
 
-## Scope boundaries
+## Service and authority boundaries
 
-- The editor model maps UI rows to the canonical P02 `TransactionCommand`/`TransactionLineCommand` boundary.
-- Controls do not calculate authoritative accounting balances; they only present immediate row totals and validation feedback.
-- Save, load/edit, reverse, and replace policy must continue through `TransactionEntryService` and correction services; JavaFX panels only route commands and present validation or protection results.
-- Editor and register regions that can hide default-size text must remain user-resizable and scrollable: use a visible `SplitPane` when a region shares space with another pane, and provide both vertical and horizontal scrolling for hidden rows, columns, or long values instead of increasing minimum widths or relying only on wrapping.
-- Editors for durable records must not show disabled placeholder Delete buttons. Transaction Editor Delete may hard-delete only when Settings -> Correction method is `DIRECT_EDIT`; otherwise it must ask whether to auto-fill and perform a reversing entry, defaulting the reversal date from the active period, and route the confirmed reversal through the correction service.
+- The editor maps UI rows to canonical `TransactionCommand`, `TransactionLineCommand`, and `TransactionSupplementalLineCommand` values.
+- Controls calculate only immediate presentation totals and validation feedback; authoritative accounting behavior remains in services.
+- New, load/edit, save, delete, and reverse operations route through `TransactionEntryService` and `TransactionCorrectionService`.
+- The JavaFX panel contains no SQL and does not import donor persistence, static company state, or an alternate ledger.
+- Transaction supplemental details remain H2-backed rows linked to the canonical transaction.
+- Fields that current services cannot persist are omitted or clearly described; they must not appear as enabled fake-save fields.
 
-## P03-C4 page and journal contract
+## P03-C6 unified Journal layout contract
 
-- Transaction Editor is organized into task-sized pages: Header, Entry Lines, Additional Details, Donation Subschedule, and Supplemental Details.
-- Header contains the transaction title, date, memo, debit total, credit total, difference, balanced/needs-attention status, and validation message.
-- Entry Lines contains Add Line, Duplicate, Remove, the entry-line table, one-sided Debit/Credit behavior, blank-row behavior, and active-company table-state persistence.
-- Additional Details groups Party / Document, Bank / Reconciliation, and Budget / Fund fields. Only fields supported by `TransactionCommand` are authoritative on save until their owning services exist.
-- Donation and Supplemental Details are transaction-local detail panels. They must not reintroduce the eliminated generic Schedules panel, schedule runbook sidecar, or Schedules navigation item.
-- Supplemental detail panels cover Receivable, Payable, Prepaid Expense, Deferred Revenue, Other Asset, and Other Liability. Unsupported Add/Remove actions must be absent or disabled with clear explanation.
-- Journal Pane reviews whole transactions as grouped rows when the current projection supports it. A grouped row should expose Date, Account Title and Description, Fund, Cleared, Debit, Credit, Transaction ID, Supplemental, and Memo/Details regions.
-- Journal New, Edit, Delete, and Refresh actions are valid only when they route to the current Transaction Editor or correction services.
+The production Accounting navigation exposes one **Journal** destination. `LEDGER_REGISTER` and `TXN_EDITOR` remain stable compatibility identifiers but normalize to the canonical `JOURNAL_PANE` destination.
 
-## Design-reference findings for native transaction entry
+The Journal workspace contains:
 
-The `benbaron/NonprofitAccounting` UI package can inform native P03 panels without becoming a parallel model:
+1. A grouped transaction journal with date and text filters. One row represents one complete canonical transaction and displays account lines, funds, debit and credit lines, transaction ID, supplemental count, and memo/details.
+2. An integrated New/Edit header with date, memo, transaction identity/status, live debit/credit/difference totals, and validation text.
+3. An editable entry-line table with Add Line, Duplicate Line, Remove Line, stable-ID reference selectors, one-sided Debit/Credit behavior, NMR, notes, and per-company table state.
+4. An Additional Details region containing only transaction fields currently backed by H2 services.
+5. Persisted supplemental-detail regions for Receivable, Payable, Prepaid Expense, Deferred Revenue, Other Asset, and Other Liability.
 
-- `JournalEntryWorkspaceFX` contributes UX patterns for add/duplicate/remove entry lines, one-sided debit/credit editing, immediate total recalculation, explicit validation messages, additional detail cards, donation details, and supplemental tabs. Native adoption must keep `TransactionLineEditorModel` and `TransactionCommand`.
-- `JournalPanelFX` contributes a grouped transaction-block journal display with transaction-level selection/navigation and supplemental detail viewing. Native adoption must keep `TransactionEntryService.search(...)` and `journalView(...)` as projection sources.
-- Focus-commit table-cell behavior is appropriate for spreadsheet-style cells, but native code should keep or extract a local utility rather than porting legacy application services.
+The major regions are separated by visible draggable `SplitPane` dividers:
 
-## P03-S2 transaction workflow integration notes
+- journal register versus transaction editor;
+- editor header versus entry lines versus details;
+- additional details versus supplemental details.
 
-- Transaction Editor relationship cells now use ID-backed option selections for account, fund, budget category, activity, merchant, and counterparty values. The displayed label is only presentation; save mapping uses the selected stable IDs.
-- Runtime reference choices are loaded through a query service and the save action calls `TransactionEntryService.enter(...)`; the editor no longer reports a session-only draft save as success.
-- Journal preview is intentionally available after a successful service save and reads the persisted projection from `TransactionEntryService.journalView(...)`.
+Divider positions and qualifying table state are remembered for the active company. Each table uses unconstrained resizing and exposes horizontal and vertical scrolling when content exceeds its viewport.
 
+## Operations
 
-## P03-S3 ledger register integration notes
+- **New Entry** clears the integrated editor after any required dirty-state confirmation.
+- **Edit Selected** or journal-row double-click loads the selected transaction by stable ID through `TransactionEntryService.load(...)`.
+- **Save Entry** calls `enter(...)` in New mode and `update(...)` in Edit mode.
+- **Delete** is offered only as a real action under direct-edit correction policy. Other correction policies label the action **Reverse** and route to `TransactionCorrectionService.reverse(...)`.
+- **Refresh** and filter operations query `TransactionEntryService.search(...)`.
+- Global New, Save, and Post/Validate commands delegate to the same integrated editor operations.
 
-- Ledger Register refreshes through the canonical `TransactionEntryService.search(...)` query boundary so filters and rows use the same `TransactionView` projection as Transaction Editor loads.
-- The register exposes date and memo/payee filters, keeps bounded results to avoid unbounded UI loads, and shows persisted `ENTERED` status rather than a UI-only posted label.
-- The register table and transaction journal details are separated by a vertical `SplitPane`, giving users a horizontal divider to resize the middle pane. Table/detail content must preserve vertical and horizontal scroll access whenever default-size values do not fit.
-- Double-clicking or choosing **Open Selected in Editor** passes the stable transaction ID to Transaction Editor, which loads the transaction through `TransactionEntryService.load(...)` and saves subsequent edits through `TransactionEntryService.update(...)`.
-- A register-level Delete for a selected transaction must delegate to Transaction Editor/correction services rather than deleting table rows. Under non-direct correction settings, the selected transaction's Delete flow asks to auto-fill and perform a reversing entry instead of hard deletion.
-- Register-to-editor navigation is an editor context handoff only; it does not create a second ledger cache or calculate accounting values in table cells.
+## Donor-reference decisions
 
-## P03-S00 sample-company system testing
+The following concepts are deliberately adapted from `benbaron/NonprofitAccounting`:
 
-P03 Transaction Editor and Ledger Register system testing uses an explicit sample-company lifecycle action, not automatic production seed data. Testers create or select a disposable database, then choose **File -> Create / Refresh Sample Company Data** to run `SampleCompanyService` against the active database. The service is idempotent: it creates or refreshes the clearly labeled `SCA Sample Chart`, a compact nonprofit chart of accounts, unrestricted/restricted/designated funds, and the budget category, activity, merchant, and counterparty reference records needed by ID-backed Transaction Editor choices.
+- `JournalPanelFX`: grouped one-row-per-transaction journal presentation and transaction-level selection.
+- `JournalEntryWorkspaceFX`: integrated New/Edit workflow, add/duplicate/remove lines, immediate totals, validation, additional details, and supplemental tabs.
+- `JournalShellNavigation`: one Journal destination for new, edit, and review work.
+- `GeneralJournalEntryPanelFX`: traditional account/debit/credit visual ordering.
 
-Do not add fictional sample records to Flyway migrations or production startup. The sample action is intentionally user-triggered so production databases remain free of fictional chart and reference data unless a tester explicitly chooses to create a sample database.
+The donor's `CurrentCompany`, repositories, JDBC/static persistence, and alternate transaction models are not ported.
 
-Manual P03 system-test setup:
+## Historical compatibility
 
-1. Create a new disposable database from the File menu.
+Older P03 callers may still request Ledger Register or Transaction Editor. `AppPanelId.canonical(...)`, `PanelHost`, and `DrillThroughCoordinator` normalize those requests to the existing Journal tab and preserve one-time New/Edit transaction context. They must not create duplicate panels or a second ledger cache.
+
+## Sample-company system testing
+
+P03 system testing uses an explicit sample-company lifecycle action, not automatic production seed data. Testers create or select a disposable database, then choose **File -> Create / Refresh Sample Company Data** to run `SampleCompanyService` against the active database.
+
+Manual validation:
+
+1. Create or select a disposable database.
 2. Run **File -> Create / Refresh Sample Company Data**.
-3. Open Transaction Editor and confirm account, fund, budget category, activity, merchant, and counterparty choices are populated.
-4. Enter a balanced debit/credit transaction with the sample choices, save it, and refresh Ledger Register to confirm the persisted transaction appears.
+3. Open **Journal** and confirm account, fund, budget category, activity, merchant, and counterparty choices are populated.
+4. Move every divider and confirm each major section can be resized on a laptop-width window.
+5. Enter and save a balanced transaction with supplemental details.
+6. Refresh the Journal, select the transaction, choose Edit Selected, and confirm all accounting and supplemental rows reload.
+7. Confirm horizontal and vertical scrolling remains available in journal, entry-line, and supplemental tables.
