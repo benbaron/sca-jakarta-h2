@@ -41,7 +41,7 @@ final class DrillThroughCoordinator
             debug("Ignored open request with null panel id and context '" + safeContext(context) + "'.");
             return;
         }
-        AppPanelId panelId = PanelHost.canonicalPanelId(requestedPanelId);
+        AppPanelId panelId = AppPanelId.canonical(requestedPanelId);
         String normalizedContext = context == null ? "" : context;
         PANEL_CONTEXT.put(panelId, normalizedContext);
         debug("Opening " + panelId + " with context '" + safeContext(normalizedContext) + "'.");
@@ -55,7 +55,7 @@ final class DrillThroughCoordinator
         {
             return "";
         }
-        AppPanelId panelId = PanelHost.canonicalPanelId(requestedPanelId);
+        AppPanelId panelId = AppPanelId.canonical(requestedPanelId);
         String context = PANEL_CONTEXT.remove(panelId);
         debug("Consumed context for " + panelId + ": '" + safeContext(context) + "'.");
         return context == null ? "" : context;
