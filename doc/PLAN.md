@@ -5,7 +5,7 @@ active_slice: P03-C5
 active_status: VERIFYING
 active_branch: codex/P03-C5-editable-supplemental-details
 active_pull_request: "#150"
-active_head: 04b04595311205ca146ec4550ab00b8936d878f6
+active_head: 762dbf0047a88f14786567f09f3969af01370bba
 next_action: "Perform desktop visual validation that persisted supplemental detail rows save, reload, and remain editable."
 ---
 
@@ -130,7 +130,7 @@ Completed slices:
 Status: VERIFYING.
 Branch: `codex/P03-C5-editable-supplemental-details`
 Pull request: #150
-Head: `04b04595311205ca146ec4550ab00b8936d878f6`
+Head: `762dbf0047a88f14786567f09f3969af01370bba`
 
 Purpose: make Supplemental Details in Transaction Editor editable and persisted through H2 as transaction-attached detail rows.
 
@@ -152,7 +152,8 @@ Validation so far:
 - Maven PR Tests run 29064948926 passed for persistence/documentation head `015c8193d1f967d92f1a6290d8d3d51005f42ea2`.
 - Maven PR Tests run 29065039831 passed for plan-update head `f1cec3e3f8cfc4fe2467a4269b61d74966b9a11b`.
 - Maven PR Tests run 29065107411 passed for head `04b1c54381cf7f07e6e1259ed4b12cb7025d987b`.
-- Maven PR Tests run 29065164150 passed for latest head `04b04595311205ca146ec4550ab00b8936d878f6`.
+- Maven PR Tests run 29065164150 passed for head `04b04595311205ca146ec4550ab00b8936d878f6`.
+- Maven PR Tests run 29065221848 passed for latest head `762dbf0047a88f14786567f09f3969af01370bba`.
 
 Remaining deliverables before DONE:
 
