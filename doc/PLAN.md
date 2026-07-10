@@ -5,8 +5,8 @@ active_slice: P03-C5
 active_status: VERIFYING
 active_branch: codex/P03-C5-editable-supplemental-details
 active_pull_request: "#150"
-active_head: 4e2ebba9bb32f14ca30b24fbe2f837b016cf9edd
-next_action: "Inspect GitHub Actions for PR #150 after supplemental persistence commits and perform desktop visual validation of persisted supplemental details."
+active_head: 015c8193d1f967d92f1a6290d8d3d51005f42ea2
+next_action: "Perform desktop visual validation that persisted supplemental detail rows save, reload, and remain editable."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -130,7 +130,7 @@ Completed slices:
 Status: VERIFYING.
 Branch: `codex/P03-C5-editable-supplemental-details`
 Pull request: #150
-Head: `4e2ebba9bb32f14ca30b24fbe2f837b016cf9edd`
+Head: `015c8193d1f967d92f1a6290d8d3d51005f42ea2`
 
 Purpose: make Supplemental Details in Transaction Editor editable and persisted through H2 as transaction-attached detail rows.
 
@@ -149,11 +149,10 @@ Implemented in branch:
 Validation so far:
 
 - Maven PR Tests passed for the editable-only head `ba9647616bb360058b663eb8a31283782e53eae4` before the persistence commits.
-- GitHub Actions is pending for the current persistence/documentation head.
+- Maven PR Tests run 29064948926 passed for persistence/documentation head `015c8193d1f967d92f1a6290d8d3d51005f42ea2`.
 
 Remaining deliverables before DONE:
 
-- Inspect GitHub Actions for PR #150 after the persistence commits.
 - Perform desktop visual validation that saved supplemental rows survive reload/edit.
 
 ## 7. Active and recent phase contracts
