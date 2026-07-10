@@ -1,0 +1,33 @@
+name: Apply P03-C7 patch
+
+on:
+  push:
+    branches: [ "codex/P03-C7-journal-ui-compliance" ]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P03-C7-journal-ui-compliance
+
+      - name: Apply source patch
+        run: python tools/apply_p03_c7.py
+
+      - name: Commit patched sources
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/java src/test/java doc
+          if git diff --cached --quiet; then
+            echo "No patch changes to commit."
+            exit 0
+          fi
+          git commit -m "Apply P03-C7 Journal UI compliance"
+          git push origin HEAD:codex/P03-C7-journal-ui-compliance
