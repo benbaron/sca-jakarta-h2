@@ -44,25 +44,101 @@ public class TransactionEntryServiceTest
     }
 
     @Test
-    public void update_replacesHeaderAndLinesUnderEnteredPolicy(@TempDir Path tempDir)
+    public void enterAndLoad_persistsSupplementalDetailRows(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("transaction-supplemental")))
+        {
+            seedMasterData(jpa);
+            TransactionEntryService service = new TransactionEntryService(jpa, new TransactionCommandValidator());
+
+            TransactionCommand command = new TransactionCommand(
+                    LocalDate.of(2026, 3, 14), 1L, "Invoice with receivable", 1L,
+                    balancedLines(new BigDecimal("250.00")),
+                    List.of(
+                            new TransactionSupplementalLineCommand(
+                                    "RECEIVABLE", "line 1", "Donor", "Pledge receivable", "INV-100",
+                                    new BigDecimal("250.00"), LocalDate.of(2026, 4, 15), null, null, "Expected payment"),
+                            new TransactionSupplementalLineCommand(
+                                    "DEFERRED_REVENUE", "line 2", "Donor", "Registration deferred revenue", "REG-1",
+                                    new BigDecimal("50.00"), null, LocalDate.of(2026, 3, 1), LocalDate.of(2026, 5, 31), "Recognize over event period")));
+
+            TransactionView entered = service.enter(command);
+            TransactionView loaded = service.load(entered.id());
+
+            assertEquals(2, loaded.supplementalLines().size());
+            TransactionSupplementalLineView receivable = loaded.supplementalLines().get(0);
+            assertEquals("RECEIVABLE", receivable.kind());
+            assertEquals("line 1", receivable.entryRef());
+            assertEquals("Pledge receivable", receivable.description());
+            assertEquals(new BigDecimal("250.0000"), receivable.amount());
+            assertEquals(LocalDate.of(2026, 4, 15), receivable.dueDate());
+            assertEquals("Expected payment", receivable.notes());
+
+            TransactionSupplementalLineView deferred = loaded.supplementalLines().get(1);
+            assertEquals("DEFERRED_REVENUE", deferred.kind());
+            assertEquals(LocalDate.of(2026, 3, 1), deferred.startDate());
+            assertEquals(LocalDate.of(2026, 5, 31), deferred.endDate());
+        }
+    }
+
+    @Test
+    public void update_replacesHeaderLinesAndSupplementalRowsUnderEnteredPolicy(@TempDir Path tempDir)
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("transaction-update")))
         {
             seedMasterData(jpa);
             TransactionEntryService service = new TransactionEntryService(jpa, new TransactionCommandValidator());
-            TransactionView entered = service.enter(command("Original", new BigDecimal("100.00")));
+            TransactionView entered = service.enter(new TransactionCommand(
+                    LocalDate.of(2026, 3, 14), 1L, "Original", 1L,
+                    balancedLines(new BigDecimal("100.00")),
+                    List.of(new TransactionSupplementalLineCommand(
+                            "PAYABLE", "old", "Vendor", "Old payable", "BILL-1", new BigDecimal("100.00"), LocalDate.of(2026, 3, 31), null, null, null))));
 
-            TransactionView updated = service.update(entered.id(), command("Updated", new BigDecimal("75.00")));
+            TransactionView updated = service.update(entered.id(), new TransactionCommand(
+                    LocalDate.of(2026, 3, 14), 1L, "Updated", 1L,
+                    balancedLines(new BigDecimal("75.00")),
+                    List.of(new TransactionSupplementalLineCommand(
+                            "OTHER_ASSET", "new", "Custodian", "Updated other asset", "OA-1", new BigDecimal("75.00"), null, null, null, "replacement"))));
 
             assertEquals("Updated", updated.memo());
             assertEquals(new BigDecimal("75.0000"), updated.debitTotal());
             assertEquals(new BigDecimal("75.0000"), updated.creditTotal());
+            assertEquals(1, updated.supplementalLines().size());
+            assertEquals("OTHER_ASSET", updated.supplementalLines().get(0).kind());
+            assertEquals("Updated other asset", updated.supplementalLines().get(0).description());
             try (EntityManager em = jpa.em())
             {
                 Long splitCount = em.createQuery("select count(s) from TxnSplit s where s.txn.id = :id", Long.class)
                         .setParameter("id", entered.id())
                         .getSingleResult();
+                Long supplementalCount = em.createQuery("select count(s) from TxnSupplementalLine s where s.txn.id = :id", Long.class)
+                        .setParameter("id", entered.id())
+                        .getSingleResult();
                 assertEquals(2L, splitCount);
+                assertEquals(1L, supplementalCount);
+            }
+        }
+    }
+
+    @Test
+    public void enter_rejectsInvalidSupplementalRows(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("transaction-supplemental-validation")))
+        {
+            seedMasterData(jpa);
+            TransactionEntryService service = new TransactionEntryService(jpa, new TransactionCommandValidator());
+            TransactionCommand command = new TransactionCommand(
+                    LocalDate.of(2026, 3, 14), 1L, "Bad supplemental", 1L,
+                    balancedLines(new BigDecimal("25.00")),
+                    List.of(new TransactionSupplementalLineCommand(
+                            "PAYABLE", "line 1", "Vendor", "", "BILL-1", new BigDecimal("25.00"), null, null, null, null)));
+
+            PostingException ex = assertThrows(PostingException.class, () -> service.enter(command));
+            assertTrue(ex.getMessage().contains("requires a description"));
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals(0L, em.createQuery("select count(t) from Txn t", Long.class).getSingleResult());
+                assertEquals(0L, em.createQuery("select count(s) from TxnSupplementalLine s", Long.class).getSingleResult());
             }
         }
     }
@@ -94,9 +170,14 @@ public class TransactionEntryServiceTest
     {
         return new TransactionCommand(
                 LocalDate.of(2026, 3, 14), 1L, memo, 1L,
-                List.of(
-                        new TransactionLineCommand(1L, 1L, null, null, null, amount, BigDecimal.ZERO, false, "cash"),
-                        new TransactionLineCommand(2L, 1L, null, null, null, BigDecimal.ZERO, amount, false, "income")));
+                balancedLines(amount));
+    }
+
+    private static List<TransactionLineCommand> balancedLines(BigDecimal amount)
+    {
+        return List.of(
+                new TransactionLineCommand(1L, 1L, null, null, null, amount, BigDecimal.ZERO, false, "cash"),
+                new TransactionLineCommand(2L, 1L, null, null, null, BigDecimal.ZERO, amount, false, "income"));
     }
 
     private static BigDecimal storedAmount(Jpa jpa, Long txnId, Long accountId)
