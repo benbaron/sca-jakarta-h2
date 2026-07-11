@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Source and routing guardrails for P03-C6 and P03-C7. */
+/** Source and routing guardrails for the unified Journal and its P03-C7 compliance layer. */
 class JournalWorkspacePortSourceTest
 {
     @Test
@@ -33,43 +33,52 @@ class JournalWorkspacePortSourceTest
     }
 
     @Test
-    void factoryRoutesOnlyCanonicalJournalWorkspace() throws Exception
+    void factoryRoutesCanonicalJournalToCompliancePanel() throws Exception
     {
         String source = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/PanelFactory.java"));
 
-        assertTrue(source.contains("factories.put(AppPanelId.JOURNAL_PANE, JournalWorkspacePanel::new)"));
+        assertTrue(source.contains("factories.put(AppPanelId.JOURNAL_PANE, JournalWorkspaceCompliancePanel::new)"));
         assertFalse(source.contains("LedgerRegisterPanel::new"));
         assertFalse(source.contains("TransactionEditorPanel::new"));
         assertFalse(source.contains("JournalPane::new"));
     }
 
     @Test
-    void journalWorkspaceUsesResizableServiceBackedSections() throws Exception
+    void complianceLayerProvidesOverallEditorScrollAndTableContract() throws Exception
+    {
+        String source = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/JournalWorkspaceCompliancePanel.java"));
+
+        assertTrue(source.contains("installOverallEditorScroll"));
+        assertTrue(source.contains("journalWorkspaceEditorScroll"));
+        assertTrue(source.contains("setFitToWidth(true)"));
+        assertTrue(source.contains("setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED)"));
+        assertTrue(source.contains("installTableCompliance"));
+        assertTrue(source.contains("TableView.UNCONSTRAINED_RESIZE_POLICY"));
+        assertTrue(source.contains("column.setSortable(true)"));
+        assertTrue(source.contains("column.setResizable(true)"));
+        assertTrue(source.contains("column.setReorderable(true)"));
+        assertTrue(source.contains("restoreTableState"));
+        assertTrue(source.contains("installTableStatePersistence"));
+        assertTrue(source.contains("wrapTableInSplitRegion"));
+        assertTrue(source.contains("new SplitPane(table, note)"));
+        assertTrue(source.contains("installDividerState"));
+        assertTrue(source.contains("CompanyUiFormat"));
+        assertTrue(source.contains("CompanyUiPreferencesService"));
+        assertFalse(source.contains("java.util.prefs.Preferences"));
+        assertFalse(source.contains("CurrentCompany"));
+    }
+
+    @Test
+    void journalDelegateRemainsServiceBacked() throws Exception
     {
         String source = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/JournalWorkspacePanel.java"));
 
-        assertTrue(source.contains("journalWorkspaceOuterSplit"));
-        assertTrue(source.contains("journalWorkspaceEditorSplit"));
-        assertTrue(source.contains("journalWorkspaceDetailSplit"));
-        assertTrue(source.contains("journalWorkspaceEditorScroll"));
-        assertTrue(source.contains("setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED)"));
-        assertTrue(source.contains("journalWorkspaceJournalTableSplit"));
-        assertTrue(source.contains("journalWorkspaceEntryLineTableSplit"));
-        assertTrue(source.contains("TableSplit"));
-        assertTrue(source.contains("setOrientation(Orientation.VERTICAL)"));
-        assertTrue(source.contains("setOrientation(Orientation.HORIZONTAL)"));
-        assertTrue(source.contains("installDividerState"));
         assertTrue(source.contains("TransactionEntryService"));
         assertTrue(source.contains("service.enter(command)"));
         assertTrue(source.contains("service.update(targetId, command)"));
         assertTrue(source.contains("transactionCorrection().delete"));
         assertTrue(source.contains("transactionCorrection().reverse"));
         assertTrue(source.contains("TransactionSupplementalLineCommand"));
-        assertTrue(source.contains("TableView.UNCONSTRAINED_RESIZE_POLICY"));
-        assertTrue(source.contains("setReorderable(true)"));
-        assertTrue(source.contains("CompanyUiFormat"));
-        assertTrue(source.contains("CompanyUiPreferencesService"));
-        assertFalse(source.contains("java.util.prefs.Preferences"));
         assertFalse(source.contains("CurrentCompany"));
         assertFalse(source.contains("nonprofitbookkeeping.persistence"));
     }

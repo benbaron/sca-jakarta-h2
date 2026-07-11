@@ -1,6 +1,6 @@
 # Journal workspace editor guidelines
 
-P03 provides one spreadsheet-like transaction editor inside the unified Journal workspace. P03-C6 replaces the separate Ledger Register, Transaction Editor, and Inspect Journal destinations with one Journal surface derived from the interaction model of the donor repository's `Journal*` classes.
+P03 provides one spreadsheet-like transaction editor inside the unified Journal workspace. P03-C6 replaces the separate Ledger Register, Transaction Editor, and Inspect Journal destinations with one Journal surface derived from the interaction model of the donor repository's `Journal*` classes. P03-C7 adds the production `JournalWorkspaceCompliancePanel`, which applies the cross-cutting scrolling, table-state, money/date-formatting, and company-owned UI-state contract without duplicating accounting behavior.
 
 ## Shared line editor contract
 
@@ -19,8 +19,9 @@ P03 provides one spreadsheet-like transaction editor inside the unified Journal 
 - The JavaFX panel contains no SQL and does not import donor persistence, static company state, or an alternate ledger.
 - Transaction supplemental details remain H2-backed rows linked to the canonical transaction.
 - Fields that current services cannot persist are omitted or clearly described; they must not appear as enabled fake-save fields.
+- `JournalWorkspaceCompliancePanel` may adjust the JavaFX composition and formatting of the delegate workspace, but it must not add a second transaction model, ledger cache, or save path.
 
-## P03-C6 unified Journal layout contract
+## Unified Journal layout contract
 
 The production Accounting navigation exposes one **Journal** destination. `LEDGER_REGISTER` and `TXN_EDITOR` remain stable compatibility identifiers but normalize to the canonical `JOURNAL_PANE` destination.
 
@@ -36,9 +37,14 @@ The major regions are separated by visible draggable `SplitPane` dividers:
 
 - journal register versus transaction editor;
 - editor header versus entry lines versus details;
-- additional details versus supplemental details.
+- additional details versus supplemental details;
+- every table versus the surrounding controls/help in that table's major region.
 
-Divider positions and qualifying table state are remembered for the active company. Each table uses unconstrained resizing and exposes horizontal and vertical scrolling when content exceeds its viewport.
+The complete middle/editor region is wrapped in a single vertical `ScrollPane` identified as `journalWorkspaceEditorScroll`. The nested resize bars remain inside that scrollable editor. Journal, entry-line, and supplemental `TableView` controls keep their own horizontal and vertical scrolling and must not expand to their complete row count.
+
+Divider positions and table state are remembered for the active company through `CompanyUiPreferencesService`. Table state includes column width, column order, sort direction, and multi-column sort priority. Every table uses unconstrained resizing and every column remains sortable, resizable, and reorderable.
+
+Money and date controls use `CompanyUiFormat` and the active company's `CompanyUiPreferences`. Formatting changes presentation and accepted input only; it does not change canonical service values or H2 precision/types.
 
 ## Operations
 
@@ -73,7 +79,8 @@ Manual validation:
 1. Create or select a disposable database.
 2. Run **File -> Create / Refresh Sample Company Data**.
 3. Open **Journal** and confirm account, fund, budget category, activity, merchant, and counterparty choices are populated.
-4. Move every divider and confirm each major section can be resized on a laptop-width window.
-5. Enter and save a balanced transaction with supplemental details.
-6. Refresh the Journal, select the transaction, choose Edit Selected, and confirm all accounting and supplemental rows reload.
-7. Confirm horizontal and vertical scrolling remains available in journal, entry-line, and supplemental tables.
+4. At laptop width, confirm the complete editor has one overall vertical scrollbar and move every nested divider.
+5. Confirm Journal, entry-line, and every supplemental table scroll independently in both directions when content exceeds the viewport.
+6. Reorder and resize columns, apply single- and multi-column sorts, reopen the company, and confirm the state is restored.
+7. Enter and save a balanced transaction with supplemental details.
+8. Refresh the Journal, select the transaction, choose Edit Selected, and confirm all accounting and supplemental rows reload.

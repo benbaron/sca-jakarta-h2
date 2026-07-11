@@ -382,7 +382,7 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
             table.getColumns().stream()
                     .filter(column -> Objects.equals(columnKey((TableColumn<?, ?>) column), key))
                     .findFirst()
-                    .ifPresent(restored::add);
+                    .ifPresent(column -> restored.add((javafx.scene.control.TableColumn) column));
         }
         table.getSortOrder().setAll(restored);
     }

@@ -1,12 +1,12 @@
 ---
-plan_version: 24
+plan_version: 25
 active_phase: P03
-active_slice: P03-C6
+active_slice: P03-C8
 active_status: VERIFYING
-active_branch: codex/P03-C6-journal-workspace-port
-active_pull_request: "#151"
-active_head: d9ea41c5469976297de7e757cf8ecf1f11b9d742
-next_action: "Perform desktop laptop-width validation of every Journal divider, scroll region, save/reload path, and legacy navigation redirect; then merge PR #151 and mark P03-C6 DONE."
+active_branch: codex/P03-C8-journal-compliance-cleanup
+active_pull_request: "#153"
+active_head: 3d5d3380637119ccd6197ec17fda233ab3237f96
+next_action: "Perform desktop laptop-width validation of the overall Journal editor scrollbar, every nested divider, independent table scrolling, and restored table state; then merge PR #153 and mark P03-C8 DONE."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Perform desktop laptop-width validation of every Journal divider, 
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P03-C5 as merged through PR #150 and P03-C6 as VERIFYING in PR #151. P03-C6 replaces the separate Ledger Register, Transaction Editor, and Inspect Journal surfaces with one Journal-based workspace derived from `benbaron/NonprofitAccounting` `Journal*` UI classes.
+This revision records P03-C6 as merged through PR #151 and P03-C7 as merged through PR #152. P03-C8 removes temporary implementation machinery left by P03-C7, commits the production compile correction that had previously existed only in a diagnostics script, repairs the source guardrails to inspect the actual compliance adapter, and aligns the governing UI documents with current `main`.
 
 ## 2. Status values
 
@@ -35,7 +35,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P00 | Documentation and implementation inventory | none | DONE; update matrices as touched |
 | P01 | Production shell and workspace composition | P00 | DONE; corrective P01-C1 DONE through PR #141 |
 | P02 | Canonical ledger and transaction operations | P00 | DONE; retain |
-| P03 | Journal workspace and canonical transaction operations | P01, P02 | READY; corrective P03-C6 VERIFYING |
+| P03 | Journal workspace and canonical transaction operations | P01, P02 | READY; corrective P03-C8 VERIFYING |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
 | P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137; corrective P05-C5 DONE through PR #148 |
 | P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 DONE through PR #146; corrective P06-C2 DONE through PR #147 |
@@ -116,7 +116,7 @@ Status: DONE, retain.
 
 ### P03 — Journal workspace and canonical transaction operations
 
-Status: READY; corrective P03-C6 VERIFYING.
+Status: READY; corrective P03-C8 VERIFYING.
 
 Completed slices:
 
@@ -125,44 +125,45 @@ Completed slices:
 - P03-C3 Transaction Editor Delete correction action: DONE.
 - P03-C4 Transaction Editor and Journal Pane redesign: DONE through PR #149.
 - P03-C5 Persisted Transaction Editor supplemental details: DONE through PR #150.
+- P03-C6 Unified Journal workspace port: DONE through PR #151.
+- P03-C7 Journal UI design-rule compliance: DONE through PR #152.
 
-### P03-C6 — Unified Journal workspace port
+### P03-C8 — Journal compliance cleanup and verification
 
 Status: VERIFYING.
-Branch: `codex/P03-C6-journal-workspace-port`
-Pull request: #151
-Head recorded before this plan update: `d9ea41c5469976297de7e757cf8ecf1f11b9d742`
+Branch: `codex/P03-C8-journal-compliance-cleanup`
+Pull request: #153
+Head recorded before this plan update: `3d5d3380637119ccd6197ec17fda233ab3237f96`
 
-Purpose: use the interaction and visual structure of the donor repository's `JournalPanelFX`, `JournalEntryWorkspaceFX`, `GeneralJournalEntryPanelFX`, and `JournalShellNavigation` as the basis for one native Journal workspace, while retaining the current H2 schema, `TransactionEntryService`, `TransactionLineEditorModel`, correction service, and persisted supplemental details.
+Purpose: preserve the merged P03-C7 runtime behavior while removing temporary patch/diagnostic machinery, committing its missing source correction, correcting source guardrails to inspect the production `JournalWorkspaceCompliancePanel`, and aligning the plan and UI documents with current `main`.
 
-Implemented in branch:
+Completed deliverables:
 
-- Added `JournalWorkspacePanel` as the single production P03 workspace.
-- Replaced the three visible Accounting destinations Ledger Register, Transaction Editor, and Inspect Journal with one **Journal** destination.
-- Retained `LEDGER_REGISTER` and `TXN_EDITOR` only as stable compatibility aliases normalized to `JOURNAL_PANE` by `AppPanelId`, `PanelHost`, `PanelFactory`, `NavigationPane`, and `DrillThroughCoordinator`.
-- Canonicalized startup, command-palette entries, toolbar Journal behavior, search destinations, and persisted view presets so they open the same Journal tab and preserve transaction context.
-- Added a grouped one-row-per-transaction journal table with date/text filters, posting lines, accounts, funds, debit/credit displays, transaction ID, supplemental count, and memo/detail text.
-- Added integrated New/Edit entry with real New, Edit Selected, Save Entry, Delete/Reverse, Refresh, validation, and selection operations through current H2-backed services.
-- Added nested draggable `SplitPane` dividers between journal/editor, header/entry-lines/details, and additional/supplemental details. Divider positions are remembered per active company.
-- Preserved stable-ID reference selectors, one-sided debit/credit editing, blank-row behavior, live totals, validation, dirty state, per-company table state, horizontal/vertical table scrolling, and H2 supplemental-line persistence.
-- Updated `doc/interface-operation-matrix.md`, `doc/persistence-authority-inventory.md`, `doc/ui/editor-guidelines.md`, and `doc/accounting/transaction-editor-and-journal.md`.
-- Added focused routing, navigation, command-palette, source-structure, and JavaFX consistency tests.
-- Did not port donor `CurrentCompany`, static persistence, donor JDBC/repositories, or alternate ledger models.
-
-Known limitation recorded for follow-up:
-
-- `TransactionView.Line` does not yet expose the authoritative line-level cleared flag. The Journal does not claim authoritative mixed cleared/uncleared transaction detail; an explicit line-level projection remains a later corrective slice.
+- Removed `.github/workflows/apply-p03-c7.yml`, temporary P03-C7 patch scripts, and trigger files.
+- Removed the subsequently added P03-C8 one-shot source-fix workflow and script; no diagnostic or source-patching workflow remains in the branch.
+- Committed the generic cast required by `restoreSortOrder(...)` directly in `JournalWorkspaceCompliancePanel`.
+- Preserved the overall `journalWorkspaceEditorScroll` vertical scrollbar and nested Journal resize bars.
+- Preserved sortable, resizable, reorderable, unconstrained, independently scrollable Journal, entry-line, and supplemental tables with company-owned table state.
+- Preserved a dedicated `SplitPane` region for every table.
+- Corrected `JournalWorkspacePortSourceTest` to verify the production compliance adapter and factory route rather than stale pre-C7 source strings.
+- Updated `doc/ui_design_rules.md`, `doc/ui/editor-guidelines.md`, and `doc/interface-operation-matrix.md` to identify the actual production panel and completed P03-C7 behavior.
 
 Validation:
 
-- Maven PR Tests run `29111210478` completed successfully for implementation head `695a13442c30723dc8e2543e904afcdf3fc27c0f`.
-- Maven PR Tests run `29112708165` completed successfully under the restored standard workflow for final implementation/documentation head `d9ea41c5469976297de7e757cf8ecf1f11b9d742`.
-- Desktop visual validation has not yet been performed in this environment.
+- Maven PR Tests run `29131408388` completed successfully for head `3d5d3380637119ccd6197ec17fda233ab3237f96`.
+- Desktop visual validation has not been performed in this environment.
 
-Remaining deliverables before DONE:
+Remaining before DONE:
 
-- Perform desktop visual validation at laptop width: move every divider, verify independent scrolling, create/save/reload/edit a transaction with supplemental details, and confirm legacy Ledger Register/Transaction Editor/Inspect Journal paths all select the same Journal tab.
-- Merge PR #151 into current `main`, then mark P03-C6 DONE.
+- At laptop width, verify the complete editor has one overall vertical scrollbar.
+- Move every nested divider and confirm each section remains usable.
+- Confirm Journal, entry-line, and all supplemental tables scroll independently in both directions when content exceeds their viewport.
+- Reorder/resize columns, apply sorts, reopen the company, and confirm company-owned table state is restored.
+- Merge PR #153, then mark P03-C8 DONE.
+
+Known remaining functional limitation:
+
+- `TransactionView.Line` does not yet expose the authoritative line-level cleared flag. The Journal does not claim authoritative mixed cleared/uncleared transaction detail; an explicit line-level projection remains a later corrective slice.
 
 ## 7. Active and recent phase contracts
 
