@@ -23,15 +23,15 @@ class PeriodCloseRangeServiceTest
             try (EntityManager em = jpa.em())
             {
                 em.getTransaction().begin();
-                em.createNativeQuery("""
+                String insert = """
                         INSERT INTO period_close_range
                             (id, company_code, start_date, end_date, range_kind, status,
                              closed_by, close_reason)
-                        VALUES (CAST('""" + id + """' AS UUID), 'DEFAULT',
+                        VALUES (CAST('%s' AS UUID), 'DEFAULT',
                                 DATE '2026-04-01', DATE '2026-04-30',
                                 'CUSTOM', 'CLOSED', 'treasurer', 'Manual insert')
-                        """)
-                        .executeUpdate();
+                        """.formatted(id);
+                em.createNativeQuery(insert).executeUpdate();
                 em.getTransaction().commit();
             }
 
