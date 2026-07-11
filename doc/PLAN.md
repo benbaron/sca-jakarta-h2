@@ -1,12 +1,12 @@
 ---
-plan_version: 27
+plan_version: 28
 active_phase: P10
 active_slice: P10-S1
-active_status: IN_PROGRESS
-active_branch: codex/P10-S1-calculated-period-close
-active_pull_request: "#155"
-active_head: e33fdce927c4b492e76e68754b7e23a3f71e6681
-next_action: "Inspect current period-close entities, repositories, transaction enforcement, audit history, migrations, panel, and tests; then implement calculated close ranges, reopening, and factual audit history without approval/rejection semantics or accounting-period-table authority."
+active_status: VERIFYING
+active_branch: codex/P10-S1-period-close-implementation
+active_pull_request: "#156"
+active_head: 0945381f1d0427915f5487624ada854d9a716ba7
+next_action: "Run final Maven PR Tests on the documentation head, perform desktop validation of the Period Close workspace, then merge PR #156 and mark P10-S1 DONE."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Inspect current period-close entities, repositories, transaction e
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P03-C9 as DONE through merged PR #154 and activates P10-S1, the first unblocked slice for calculated period close, reopening, and factual audit history.
+This revision records P03-C9 as DONE through merged PR #154 and records the implemented P10-S1 authoritative period-close range slice on PR #156. Plan-only PR #155 activated P10-S1 but contained no implementation.
 
 ## 2. Status values
 
@@ -42,7 +42,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P07 | Eliminated former Schedules phase | n/a | DONE through PR #139 |
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 DONE through PR #144 |
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
-| P10 | Period close, reopening, and factual audit history | P02, P06 | IN_PROGRESS; P10-S1 active |
+| P10 | Period close, reopening, and factual audit history | P02, P06 | VERIFYING; P10-S1 on PR #156 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | BLOCKED by P10 |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | READY after P10 selection |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
@@ -137,42 +137,46 @@ Known remaining P03 limitation:
 
 ### P10 — Period close, reopening, and factual audit history
 
-Status: IN_PROGRESS; P10-S1 active.
+Status: VERIFYING; P10-S1 active on PR #156.
 
 #### P10-S1 — Calculated period close and reopen service
 
-Branch: `codex/P10-S1-calculated-period-close`
-Pull request: #155
-Head before this plan update: `e33fdce927c4b492e76e68754b7e23a3f71e6681`
+Branch: `codex/P10-S1-period-close-implementation`
+Pull request: #156
+Head before this plan update: `0945381f1d0427915f5487624ada854d9a716ba7`
 
-Purpose: replace the current run-record/approval-oriented placeholder with authoritative calculated or custom date-range close state, reopening, and factual audit history while preserving the canonical ledger and transaction-service boundaries.
+Purpose: replace the run-record/approval-oriented placeholder with authoritative calculated or custom date-range close state, reopening, and factual audit history while preserving canonical ledger, reconciliation protection, and transaction-service boundaries.
 
-Required inspection:
+Completed deliverables:
 
-- `AccountingPeriod`, `AccountingPeriodService`, and closed-period transaction enforcement.
-- `PeriodCloseService`, `PeriodCloseRunRepository`, `PeriodCloseRunRecord`, and related migrations.
-- `PeriodCloseRunsPanel`, `ApprovalAuditPanel`, `UiServiceRegistry`, and navigation wiring.
-- Existing accounting-period, period-close, correction-policy, and integration tests.
+- Added nondestructive V60 H2 tables `period_close_range` and `period_close_event`, scoped by company and date range.
+- Added `PeriodCloseRangeService` close, overlap validation, list, lookup, reopen-policy, and factual event/audit operations.
+- Kept legacy `PeriodCloseService`/run records separate as compatibility-only data instead of mixing two authorities in one service.
+- Added company-scoped `ClosedPeriodRangeException` and read projections for close ranges and events.
+- Wired `TransactionEntryService` and `TransactionCorrectionService` to authoritative range checks inside canonical ledger transactions.
+- Preserved completed-reconciliation protection and allowed reversal of a prior-period transaction into an open destination date.
+- Replaced `PeriodCloseRunsPanel` run/approval controls with calculated/custom Close Range, Reopen Selected, Refresh, range-state table, and factual event-history table.
+- Removed approval/rejection and direct repository-write behavior from the production Period Close workspace.
+- Added service restart/history/company/policy tests, transaction entry enforcement tests, correction rollback/reversal tests, migration uniqueness coverage, and UI source guardrails.
+- Updated the operation matrix, persistence authority inventory, and period/correction policy.
 
-Required deliverables:
+Validation:
 
-- Define a nondestructive H2 persistence model for closed date ranges and reopen events scoped to the active company.
-- Make calculated fiscal periods and custom one-time date ranges closeable without treating `accounting_period` rows as the business authority.
-- Provide service operations to list close state, close a range, and reopen a closed range under the configured policy.
-- Record close and reopen actions as factual audit history in the same transaction as the state change.
-- Enforce closed-range behavior from canonical transaction entry/correction services, including warn/reopen, required-reason, and formal-adjustment policies.
-- Replace `PeriodCloseRunsPanel` approval/rejection/run-status controls with real close, reopen, history, and status operations.
-- Remove P10 approval/rejection terminology and direct UI repository writes.
-- Add focused migration, service, transaction-enforcement, UI-source, and integration tests.
-- Update the operation matrix, persistence inventory, period/correction policy, and PLAN handoff.
+- Maven PR Tests run `29164587670` passed for authoritative range service, persistence, restart, and audit behavior.
+- Maven PR Tests run `29164655355` passed after canonical transaction-entry/correction enforcement.
+- Maven PR Tests run `29164725119` passed after JavaFX runtime wiring and Period Close workspace replacement.
+- Final Maven PR Tests are required on the documentation/test head.
 
-Definition of done:
+Remaining before DONE:
 
-- Close and reopen survive restart and are authoritative in H2.
-- Transaction writes consistently honor the active closed-range policy.
-- The panel performs only real service-backed operations and exposes factual history without approval/rejection semantics.
-- Existing canonical ledger, reconciliation protection, and correction behavior remain intact.
-- Maven PR Tests pass and desktop visual validation requirements are recorded or completed.
+- Run final Maven PR Tests on the current branch head.
+- Perform desktop validation at laptop width: calculated/custom dates, close, refresh, reopen policies/reasons, both tables, scrolling, sorting, resizing, and divider behavior.
+- Merge PR #156, then mark P10-S1 DONE.
+
+Known follow-up:
+
+- `AccountingPeriod`/`AccountingPeriodService` and legacy period-close run artifacts remain compatibility structures. Their deliberate retirement or migration is a later nondestructive cleanup slice; they are not the P10 close authority.
+- `REQUIRE_FORMAL_ADJUSTMENT` correctly blocks direct reopen, but the formal adjustment workflow itself remains a later P10 slice.
 
 ## 7. Active and recent phase contracts
 
