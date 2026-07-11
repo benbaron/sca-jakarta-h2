@@ -4,8 +4,8 @@ active_phase: P10
 active_slice: P10-S1
 active_status: IN_PROGRESS
 active_branch: codex/P10-S1-calculated-period-close
-active_pull_request: pending
-active_head: pending
+active_pull_request: "#155"
+active_head: e33fdce927c4b492e76e68754b7e23a3f71e6681
 next_action: "Inspect current period-close entities, repositories, transaction enforcement, audit history, migrations, panel, and tests; then implement calculated close ranges, reopening, and factual audit history without approval/rejection semantics or accounting-period-table authority."
 ---
 
@@ -142,8 +142,8 @@ Status: IN_PROGRESS; P10-S1 active.
 #### P10-S1 — Calculated period close and reopen service
 
 Branch: `codex/P10-S1-calculated-period-close`
-Pull request: pending
-Head: pending
+Pull request: #155
+Head before this plan update: `e33fdce927c4b492e76e68754b7e23a3f71e6681`
 
 Purpose: replace the current run-record/approval-oriented placeholder with authoritative calculated or custom date-range close state, reopening, and factual audit history while preserving the canonical ledger and transaction-service boundaries.
 
