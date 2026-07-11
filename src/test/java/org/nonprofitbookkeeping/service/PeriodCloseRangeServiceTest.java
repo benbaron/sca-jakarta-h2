@@ -48,7 +48,7 @@ class PeriodCloseRangeServiceTest
                     LocalDate.of(2026, 4, 15),
                     "CUSTOM",
                     "treasurer",
-                    null));
+                    "Overlap"));
 
             try (EntityManager em = jpa.em())
             {
@@ -112,7 +112,7 @@ class PeriodCloseRangeServiceTest
                     LocalDate.of(2026, 4, 30),
                     "CUSTOM",
                     "treasurer",
-                    null);
+                    "Company close");
 
             assertTrue(service.findClosedRange("OTHER", LocalDate.of(2026, 4, 10)).isPresent());
             assertFalse(service.findClosedRange("DEFAULT", LocalDate.of(2026, 4, 10)).isPresent());
@@ -132,7 +132,7 @@ class PeriodCloseRangeServiceTest
                     LocalDate.of(2026, 6, 30),
                     "CUSTOM",
                     "treasurer",
-                    null);
+                    "June close");
 
             assertThrows(IllegalStateException.class, () -> service.reopenRange(
                     range.id(),
