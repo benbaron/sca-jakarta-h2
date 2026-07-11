@@ -31,8 +31,8 @@ import org.nonprofitbookkeeping.service.ReconciliationComparisonService;
 import org.nonprofitbookkeeping.service.ReconciliationService;
 import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
 import org.nonprofitbookkeeping.service.SampleCompanyService;
-import org.nonprofitbookkeeping.service.TransactionEntryService;
 import org.nonprofitbookkeeping.service.TransactionCorrectionService;
+import org.nonprofitbookkeeping.service.TransactionEntryService;
 import org.nonprofitbookkeeping.service.TransactionReferenceDataService;
 import org.nonprofitbookkeeping.service.UserAdminService;
 import org.nonprofitbookkeeping.service.dashboard.DashboardQueryService;
@@ -81,6 +81,7 @@ public final class UiServiceRegistry
     public static FinancialReportService financialReports() { return services().financialReports(); }
     public static DashboardQueryService dashboardQuery() { return services().dashboardQuery(); }
     public static BankReconciliationWorkspaceService bankReconciliationWorkspace() { return services().bankReconciliationWorkspace(); }
+    public static PeriodCloseService periodCloseService() { return services().periodCloseService(); }
 
     private static ServiceBundle services()
     {
@@ -138,7 +139,8 @@ public final class UiServiceRegistry
     private static ServiceBundle buildServices(Jpa jpa)
     {
         System.err.println("[NPBK] Building UI service bundle.");
-        TransactionEntryService transactionEntry = new TransactionEntryService(jpa);
+        TransactionEntryService transactionEntry = new TransactionEntryService(jpa, UiServiceRegistry::activeCompanyCode);
+        PeriodCloseService periodClose = new PeriodCloseService(jpa);
         return new ServiceBundle(
                 jpa,
                 new AccountLookupService(jpa),
@@ -157,12 +159,19 @@ public final class UiServiceRegistry
                 new ScheduleEligibilityService(jpa),
                 new LedgerQueryService(jpa),
                 transactionEntry,
-                new TransactionCorrectionService(jpa),
+                new TransactionCorrectionService(jpa, UiServiceRegistry::activeCompanyCode),
                 new TransactionReferenceDataService(jpa),
                 new SampleCompanyService(jpa),
                 new FinancialReportService(jpa),
                 new JpaDashboardQueryService(jpa),
-                new BankReconciliationWorkspaceService(jpa));
+                new BankReconciliationWorkspaceService(jpa),
+                periodClose);
+    }
+
+    private static String activeCompanyCode()
+    {
+        String company = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
+        return company == null || company.isBlank() ? "DEFAULT" : company.trim();
     }
 
     public static ReconciliationRunRepository reconciliationRunRepository()
@@ -170,6 +179,8 @@ public final class UiServiceRegistry
         return new JdbcReconciliationRunRepository(UiDataSources.forCurrentSessionDatabase());
     }
 
+    /** Retained only for compatibility with old repository-level tests. */
+    @Deprecated
     public static PeriodCloseRunRepository periodCloseRunRepository()
     {
         return new JdbcPeriodCloseRunRepository(UiDataSources.forCurrentSessionDatabase());
@@ -183,11 +194,6 @@ public final class UiServiceRegistry
     public static ReconciliationComparisonService reconciliationComparison()
     {
         return new ReconciliationComparisonService(services().jpa(), reconciliationService());
-    }
-
-    public static PeriodCloseService periodCloseService()
-    {
-        return new PeriodCloseService(periodCloseRunRepository());
     }
 
     public static ApprovalAuditRepository approvalAuditRepository()
@@ -251,7 +257,8 @@ public final class UiServiceRegistry
             SampleCompanyService sampleCompany,
             FinancialReportService financialReports,
             DashboardQueryService dashboardQuery,
-            BankReconciliationWorkspaceService bankReconciliationWorkspace)
+            BankReconciliationWorkspaceService bankReconciliationWorkspace,
+            PeriodCloseService periodCloseService)
     {
         void close()
         {
