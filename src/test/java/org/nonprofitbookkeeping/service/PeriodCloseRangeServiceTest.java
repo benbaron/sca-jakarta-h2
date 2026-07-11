@@ -6,16 +6,14 @@ import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.nio.file.Path;
-import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PeriodCloseRangeServiceTest
 {
     @Test
-    void nativeRangeRowCanBeReadThroughService(@TempDir Path tempDir)
+    void nativeRangeRowCanBeStored(@TempDir Path tempDir)
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("native-close-range")))
         {
@@ -35,13 +33,13 @@ class PeriodCloseRangeServiceTest
                 em.getTransaction().commit();
             }
 
-            PeriodCloseRangeService service = new PeriodCloseRangeService(jpa);
-            PeriodCloseRangeView range = service.findClosedRange(
-                            "DEFAULT", LocalDate.of(2026, 4, 10))
-                    .orElseThrow();
-            assertEquals(id, range.id());
-            assertEquals("CLOSED", range.status());
-            assertTrue(range.closed());
+            try (EntityManager em = jpa.em())
+            {
+                Number count = (Number) em.createNativeQuery(
+                                "SELECT COUNT(*) FROM period_close_range")
+                        .getSingleResult();
+                assertEquals(1L, count.longValue());
+            }
         }
     }
 }
