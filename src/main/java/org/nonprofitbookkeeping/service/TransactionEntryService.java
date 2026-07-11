@@ -4,8 +4,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.Account;
-import org.nonprofitbookkeeping.model.AccountingPeriod;
-import org.nonprofitbookkeeping.model.AccountingPeriodStatus;
 import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.BudgetCategory;
 import org.nonprofitbookkeeping.model.Counterparty;
@@ -22,7 +20,9 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Canonical command/query service for the authoritative Txn ledger.
@@ -35,17 +35,32 @@ public class TransactionEntryService
 
     private final Jpa jpa;
     private final TransactionCommandValidator validator;
+    private final Supplier<String> companyCodeSupplier;
 
     @Inject
     public TransactionEntryService(Jpa jpa)
     {
-        this(jpa, new TransactionCommandValidator());
+        this(jpa, new TransactionCommandValidator(), () -> "DEFAULT");
     }
 
     public TransactionEntryService(Jpa jpa, TransactionCommandValidator validator)
     {
-        this.jpa = jpa;
-        this.validator = validator;
+        this(jpa, validator, () -> "DEFAULT");
+    }
+
+    public TransactionEntryService(Jpa jpa, Supplier<String> companyCodeSupplier)
+    {
+        this(jpa, new TransactionCommandValidator(), companyCodeSupplier);
+    }
+
+    public TransactionEntryService(
+            Jpa jpa,
+            TransactionCommandValidator validator,
+            Supplier<String> companyCodeSupplier)
+    {
+        this.jpa = Objects.requireNonNull(jpa, "jpa");
+        this.validator = Objects.requireNonNull(validator, "validator");
+        this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
     }
 
     public TransactionView enter(TransactionCommand command)
@@ -71,8 +86,8 @@ public class TransactionEntryService
                     throw new PostingException("Only ENTERED transactions can be updated by the entry service.");
                 }
                 requireNotReconciled(em, transactionId, "update transaction");
-                requireOpenPeriodIfConfigured(em, txn.getTxnDate(), "update transaction");
-                requireOpenPeriodIfConfigured(em, command.date(), "update transaction");
+                requireOpenRange(em, txn.getTxnDate(), "update transaction");
+                requireOpenRange(em, command.date(), "update transaction");
                 String before = snapshot(txn);
 
                 applyHeader(em, txn, command);
@@ -159,7 +174,7 @@ public class TransactionEntryService
             em.getTransaction().begin();
             try
             {
-                requireOpenPeriodIfConfigured(em, command.date(), "enter transaction");
+                requireOpenRange(em, command.date(), "enter transaction");
                 Txn txn = new Txn();
                 txn.setReplacementFor(replacementFor);
                 applyHeader(em, txn, command);
@@ -299,13 +314,25 @@ public class TransactionEntryService
             BigDecimal signed = split.getAmountSigned();
             if (split.getAccount().getNormalBalance() == NormalBalance.DEBIT)
             {
-                if (signed.compareTo(BigDecimal.ZERO) >= 0) debit = signed;
-                else credit = signed.abs();
+                if (signed.compareTo(BigDecimal.ZERO) >= 0)
+                {
+                    debit = signed;
+                }
+                else
+                {
+                    credit = signed.abs();
+                }
             }
             else
             {
-                if (signed.compareTo(BigDecimal.ZERO) >= 0) credit = signed;
-                else debit = signed.abs();
+                if (signed.compareTo(BigDecimal.ZERO) >= 0)
+                {
+                    credit = signed;
+                }
+                else
+                {
+                    debit = signed.abs();
+                }
             }
             lines.add(new TransactionView.Line(
                     split.getId(), split.getAccount().getId(), split.getAccount().getCode(), split.getAccount().getName(),
@@ -353,28 +380,18 @@ public class TransactionEntryService
         }
     }
 
-    private static void requireOpenPeriodIfConfigured(EntityManager em, LocalDate date, String operation)
+    private void requireOpenRange(EntityManager em, LocalDate date, String operation)
     {
-        List<AccountingPeriod> periods = em.createQuery("""
-                from AccountingPeriod p
-                where p.startDate <= :date
-                  and p.endDate >= :date
-                order by p.fiscalYear, p.periodNumber
-                """, AccountingPeriod.class)
-                .setParameter("date", date)
-                .setMaxResults(2)
-                .getResultList();
-        if (periods.size() > 1)
-        {
-            throw new PostingException("Multiple accounting periods contain date " + date);
-        }
-        if (!periods.isEmpty() && periods.get(0).getStatus() == AccountingPeriodStatus.CLOSED)
-        {
-            throw new ClosedAccountingPeriodException(periods.get(0).getId(), date, operation);
-        }
+        PeriodCloseRangeService.requireOpen(em, companyCodeSupplier.get(), date, operation);
     }
 
-    private static org.nonprofitbookkeeping.model.AuditEvent audit(String actor, String action, Txn txn, String before, String after, String reason)
+    private static org.nonprofitbookkeeping.model.AuditEvent audit(
+            String actor,
+            String action,
+            Txn txn,
+            String before,
+            String after,
+            String reason)
     {
         org.nonprofitbookkeeping.model.AuditEvent event = new org.nonprofitbookkeeping.model.AuditEvent();
         event.setActor(actor);
