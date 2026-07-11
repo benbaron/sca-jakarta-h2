@@ -1,12 +1,12 @@
 ---
-plan_version: 26
-active_phase: P03
-active_slice: P03-C9
-active_status: VERIFYING
-active_branch: codex/P03-C9-remove-journal-commentary
-active_pull_request: "#154"
-active_head: 86820cd514dc00fb71e9d1f3fdd224cb9adb6103
-next_action: "Visually confirm the Journal tables no longer show explanatory commentary and retain their scrolling, split-region, formatting, and saved-state behavior; then merge PR #154 and mark P03-C9 DONE."
+plan_version: 27
+active_phase: P10
+active_slice: P10-S1
+active_status: IN_PROGRESS
+active_branch: codex/P10-S1-calculated-period-close
+active_pull_request: "#155"
+active_head: e33fdce927c4b492e76e68754b7e23a3f71e6681
+next_action: "Inspect current period-close entities, repositories, transaction enforcement, audit history, migrations, panel, and tests; then implement calculated close ranges, reopening, and factual audit history without approval/rejection semantics or accounting-period-table authority."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Visually confirm the Journal tables no longer show explanatory com
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P03-C6 through P03-C8 as merged through PRs #151–#153. P03-C9 removes visible implementation commentary from Journal table regions while preserving the overall editor scrollbar, table `SplitPane` wrappers, table interaction behavior, company-owned state, company-aware formatting, and canonical accounting services.
+This revision records P03-C9 as DONE through merged PR #154 and activates P10-S1, the first unblocked slice for calculated period close, reopening, and factual audit history.
 
 ## 2. Status values
 
@@ -35,17 +35,17 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P00 | Documentation and implementation inventory | none | DONE; update matrices as touched |
 | P01 | Production shell and workspace composition | P00 | DONE; corrective P01-C1 DONE through PR #141 |
 | P02 | Canonical ledger and transaction operations | P00 | DONE; retain |
-| P03 | Journal workspace and canonical transaction operations | P01, P02 | READY; corrective P03-C9 VERIFYING |
+| P03 | Journal workspace and canonical transaction operations | P01, P02 | DONE through corrective P03-C9 / PR #154 |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
 | P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137; corrective P05-C5 DONE through PR #148 |
 | P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 DONE through PR #146; corrective P06-C2 DONE through PR #147 |
 | P07 | Eliminated former Schedules phase | n/a | DONE through PR #139 |
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 DONE through PR #144 |
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
-| P10 | Period close, reopening, and factual audit history | P02, P06 | BLOCKED |
-| P11 | Report Library | P02, P04, P06, P08, P09, P10 | BLOCKED |
-| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | BLOCKED |
-| P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED |
+| P10 | Period close, reopening, and factual audit history | P02, P06 | IN_PROGRESS; P10-S1 active |
+| P11 | Report Library | P02, P04, P06, P08, P09, P10 | BLOCKED by P10 |
+| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | READY after P10 selection |
+| P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
 ## 4. Governing documents
@@ -62,11 +62,10 @@ Focused documents for current UI/accounting work:
 - `doc/ui_design_rules.md`
 - `doc/ui/editor-guidelines.md`
 - `doc/requirements/requirements-clarification-overlay.md`
-- `doc/inventory/inventory-and-assets.md`
+- `doc/requirements/phase-remap-after-clarification.md`
 - `doc/accounting/ledger-authority.md`
 - `doc/accounting/transaction-lifecycle.md`
 - `doc/accounting/period-and-correction-policy.md`
-- `doc/accounting/transaction-editor-and-journal.md`
 - `doc/workflow/development-workflow.md`
 
 `doc/architecture/production-workspace.md` was removed. Do not re-add it or list it as required reading.
@@ -93,8 +92,10 @@ Focused documents for current UI/accounting work:
 - Inventory/supplies are distinct from fixed assets and require H2-backed item/movement records.
 - Production widgets with visible non-blank display text should expose their full text on hover, except text boxes and custom-help tooltip cases.
 - Disabled placeholder Delete buttons are not part of the UI contract; a Delete button must perform a real supported operation.
-- Bank Reconciliation must become a full statement-to-ledger matching workspace, not only a saved comparison table.
+- Bank Reconciliation must be a full statement-to-ledger matching workspace, not only a saved comparison table.
 - Transaction supplemental schedule/detail panels are not the eliminated generic Schedules function; they are per-transaction detail editors and viewers.
+- Period close uses calculated or custom date ranges rather than an accounting-period table as the business authority.
+- Reopening is supported and creates factual audit history; P10 must not expose approval/rejection semantics.
 
 ## 6. Completed phases and slices
 
@@ -116,7 +117,7 @@ Status: DONE, retain.
 
 ### P03 — Journal workspace and canonical transaction operations
 
-Status: READY; corrective P03-C9 VERIFYING.
+Status: DONE through corrective P03-C9 / PR #154.
 
 Completed slices:
 
@@ -128,33 +129,50 @@ Completed slices:
 - P03-C6 Unified Journal workspace port: DONE through PR #151.
 - P03-C7 Journal UI design-rule compliance: DONE through PR #152.
 - P03-C8 Journal compliance cleanup and verification: DONE through PR #153.
+- P03-C9 Remove visible Journal table commentary: DONE through PR #154; Maven PR Tests runs `29132445663` and `29132508479` passed before merge.
 
-### P03-C9 — Remove visible Journal table commentary
-
-Status: VERIFYING.
-Branch: `codex/P03-C9-remove-journal-commentary`
-Pull request: #154
-Head before this plan update: `86820cd514dc00fb71e9d1f3fdd224cb9adb6103`
-
-Purpose: remove visible implementation commentary from the Journal table regions without removing the actual table behavior or layout contract.
-
-Completed deliverables:
-
-- Removed the label text stating that columns are sortable, resizable, rearrangeable, and independently scrollable.
-- Retained each table inside its dedicated `SplitPane` wrapper without adding an empty commentary pane.
-- Preserved the overall Journal editor vertical scrollbar, nested major-section dividers, unconstrained table resize policy, sortable/resizable/reorderable columns, company-owned table state, company-aware date/money formatting, and service-backed Journal operations.
-- Updated `JournalWorkspacePortSourceTest` to require the table wrapper and prohibit the removed commentary text.
-- Maven PR Tests run `29132445663` completed successfully for head `86820cd514dc00fb71e9d1f3fdd224cb9adb6103`.
-
-Remaining before DONE:
-
-- Visually confirm at laptop width that no table commentary labels remain.
-- Confirm the Journal, entry-line, and supplemental tables still scroll and resize normally.
-- Merge PR #154, then mark P03-C9 DONE.
-
-Known remaining functional limitation:
+Known remaining P03 limitation:
 
 - `TransactionView.Line` does not yet expose the authoritative line-level cleared flag. The Journal does not claim authoritative mixed cleared/uncleared transaction detail; an explicit line-level projection remains a later corrective slice.
+
+### P10 — Period close, reopening, and factual audit history
+
+Status: IN_PROGRESS; P10-S1 active.
+
+#### P10-S1 — Calculated period close and reopen service
+
+Branch: `codex/P10-S1-calculated-period-close`
+Pull request: #155
+Head before this plan update: `e33fdce927c4b492e76e68754b7e23a3f71e6681`
+
+Purpose: replace the current run-record/approval-oriented placeholder with authoritative calculated or custom date-range close state, reopening, and factual audit history while preserving the canonical ledger and transaction-service boundaries.
+
+Required inspection:
+
+- `AccountingPeriod`, `AccountingPeriodService`, and closed-period transaction enforcement.
+- `PeriodCloseService`, `PeriodCloseRunRepository`, `PeriodCloseRunRecord`, and related migrations.
+- `PeriodCloseRunsPanel`, `ApprovalAuditPanel`, `UiServiceRegistry`, and navigation wiring.
+- Existing accounting-period, period-close, correction-policy, and integration tests.
+
+Required deliverables:
+
+- Define a nondestructive H2 persistence model for closed date ranges and reopen events scoped to the active company.
+- Make calculated fiscal periods and custom one-time date ranges closeable without treating `accounting_period` rows as the business authority.
+- Provide service operations to list close state, close a range, and reopen a closed range under the configured policy.
+- Record close and reopen actions as factual audit history in the same transaction as the state change.
+- Enforce closed-range behavior from canonical transaction entry/correction services, including warn/reopen, required-reason, and formal-adjustment policies.
+- Replace `PeriodCloseRunsPanel` approval/rejection/run-status controls with real close, reopen, history, and status operations.
+- Remove P10 approval/rejection terminology and direct UI repository writes.
+- Add focused migration, service, transaction-enforcement, UI-source, and integration tests.
+- Update the operation matrix, persistence inventory, period/correction policy, and PLAN handoff.
+
+Definition of done:
+
+- Close and reopen survive restart and are authoritative in H2.
+- Transaction writes consistently honor the active closed-range policy.
+- The panel performs only real service-backed operations and exposes factual history without approval/rejection semantics.
+- Existing canonical ledger, reconciliation protection, and correction behavior remain intact.
+- Maven PR Tests pass and desktop visual validation requirements are recorded or completed.
 
 ## 7. Active and recent phase contracts
 
