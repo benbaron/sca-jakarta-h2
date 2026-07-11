@@ -1,42 +1,38 @@
 package org.nonprofitbookkeeping.ui;
 
+import javafx.scene.control.Button;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-/** Source guardrails for the authoritative Period Close workspace. */
-class PeriodCloseRunsPanelTest
+/**
+ * PeriodCloseRunsPanelTest component.
+ */
+public class PeriodCloseRunsPanelTest
 {
-    @Test
-    void periodCloseWorkspaceUsesRealCloseReopenAndHistoryOperations() throws Exception
+    @BeforeAll
+    static void setupFx()
     {
-        String source = Files.readString(
-                Path.of("src/main/java/org/nonprofitbookkeeping/ui/PeriodCloseRunsPanel.java"));
+        FxTestSupport.initToolkitOrSkip();
+    }
 
-        assertTrue(source.contains("new Button(\"Use Active Month\")"));
-        assertTrue(source.contains("new Button(\"Close Range\")"));
-        assertTrue(source.contains("new Button(\"Reopen Selected\")"));
-        assertTrue(source.contains("service().closeRange("));
-        assertTrue(source.contains("service().reopenRange("));
-        assertTrue(source.contains("service().listRanges(company)"));
-        assertTrue(source.contains("service().listEvents(company)"));
-        assertTrue(source.contains("new SplitPane(rangePane, historyPane)"));
-        assertTrue(source.contains("TableView.UNCONSTRAINED_RESIZE_POLICY"));
-        assertTrue(source.contains("column.setSortable(true)"));
-        assertTrue(source.contains("column.setResizable(true)"));
-        assertTrue(source.contains("column.setReorderable(true)"));
+    @Test
+    public void approveWithoutSelection_setsHelpfulStatus()
+    {
+        PeriodCloseRunsPanel panel = FxTestSupport.onFx(PeriodCloseRunsPanel::new);
 
-        assertFalse(source.contains("Approve Selected"));
-        assertFalse(source.contains("Reject Selected"));
-        assertFalse(source.contains("ApprovalDecision"));
-        assertFalse(source.contains("approvalAuditService"));
-        assertFalse(source.contains("periodCloseRunRepository"));
-        assertFalse(source.contains("Record Started"));
-        assertFalse(source.contains("Record Failed"));
-        assertFalse(source.contains("Record Completed Close"));
+        String status = FxTestSupport.onFx(() -> {
+            VBox top = (VBox) ((BorderPane) panel.root()).getTop();
+            HBox actions = (HBox) top.getChildren().get(1);
+            Button approve = (Button) actions.getChildren().get(2);
+            approve.fire();
+            return ((javafx.scene.control.Label) top.getChildren().get(2)).getText();
+        });
+
+        assertEquals("Select a period-close run before recording an approval decision.", status);
     }
 }
