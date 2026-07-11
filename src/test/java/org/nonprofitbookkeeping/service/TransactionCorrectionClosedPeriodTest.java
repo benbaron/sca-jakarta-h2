@@ -3,7 +3,7 @@ package org.nonprofitbookkeeping.service;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.nonprofitbookkeeping.model.AccountingPeriod;
+import org.nonprofitbookkeeping.model.ClosedPeriodPolicy;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
@@ -17,28 +17,29 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class TransactionCorrectionClosedPeriodTest
 {
     @Test
-    public void closedOriginalPeriod_blocksDirectEditAndDeleteWithoutTransactionAudit(@TempDir Path tempDir)
+    public void closedOriginalRange_blocksDirectEditAndDeleteWithoutTransactionAudit(@TempDir Path tempDir)
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("closed-original")))
         {
             seedBalancedTransaction(jpa);
-            AccountingPeriodService periods = new AccountingPeriodService(jpa);
-            AccountingPeriod january = periods.createPeriod(
-                    2026,
-                    1,
+            PeriodCloseService periods = new PeriodCloseService(jpa);
+            periods.closeRange(
+                    "DEFAULT",
                     LocalDate.of(2026, 1, 1),
-                    LocalDate.of(2026, 1, 31));
-            periods.closePeriod(january.getId(), "treasurer");
+                    LocalDate.of(2026, 1, 31),
+                    "CALCULATED",
+                    "treasurer",
+                    "January close");
 
             TransactionCorrectionService service = new TransactionCorrectionService(jpa);
 
-            assertThrows(ClosedAccountingPeriodException.class, () -> service.directEdit(
+            assertThrows(ClosedPeriodRangeException.class, () -> service.directEdit(
                     1L,
                     LocalDate.of(2026, 1, 15),
                     "Changed",
                     "Attempted edit",
                     "treasurer"));
-            assertThrows(ClosedAccountingPeriodException.class, () -> service.delete(
+            assertThrows(ClosedPeriodRangeException.class, () -> service.delete(
                     1L,
                     "treasurer",
                     "Attempted delete"));
@@ -58,34 +59,30 @@ public class TransactionCorrectionClosedPeriodTest
     }
 
     @Test
-    public void closedDestinationPeriod_blocksMoveAndReversalWithRollback(@TempDir Path tempDir)
+    public void closedDestinationRange_blocksMoveAndReversalWithRollback(@TempDir Path tempDir)
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("closed-destination")))
         {
             seedBalancedTransaction(jpa);
-            AccountingPeriodService periods = new AccountingPeriodService(jpa);
-            periods.createPeriod(
-                    2026,
-                    1,
-                    LocalDate.of(2026, 1, 1),
-                    LocalDate.of(2026, 1, 31));
-            AccountingPeriod february = periods.createPeriod(
-                    2026,
-                    2,
+            PeriodCloseService periods = new PeriodCloseService(jpa);
+            periods.closeRange(
+                    "DEFAULT",
                     LocalDate.of(2026, 2, 1),
-                    LocalDate.of(2026, 2, 28));
-            periods.closePeriod(february.getId(), "treasurer");
+                    LocalDate.of(2026, 2, 28),
+                    "CALCULATED",
+                    "treasurer",
+                    "February close");
 
             TransactionCorrectionService service = new TransactionCorrectionService(jpa);
             LocalDate closedDate = LocalDate.of(2026, 2, 10);
 
-            assertThrows(ClosedAccountingPeriodException.class, () -> service.directEdit(
+            assertThrows(ClosedPeriodRangeException.class, () -> service.directEdit(
                     1L,
                     closedDate,
                     "Moved",
                     null,
                     "treasurer"));
-            assertThrows(ClosedAccountingPeriodException.class, () -> service.reverse(
+            assertThrows(ClosedPeriodRangeException.class, () -> service.reverse(
                     1L,
                     closedDate,
                     "treasurer",
@@ -109,23 +106,19 @@ public class TransactionCorrectionClosedPeriodTest
     }
 
     @Test
-    public void closedOriginalPeriod_canBeReversedIntoOpenPeriod(@TempDir Path tempDir)
+    public void closedOriginalRange_canBeReversedIntoOpenRange(@TempDir Path tempDir)
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("closed-original-reversal")))
         {
             seedBalancedTransaction(jpa);
-            AccountingPeriodService periods = new AccountingPeriodService(jpa);
-            AccountingPeriod january = periods.createPeriod(
-                    2026,
-                    1,
+            PeriodCloseService periods = new PeriodCloseService(jpa);
+            PeriodCloseRangeView january = periods.closeRange(
+                    "DEFAULT",
                     LocalDate.of(2026, 1, 1),
-                    LocalDate.of(2026, 1, 31));
-            periods.createPeriod(
-                    2026,
-                    2,
-                    LocalDate.of(2026, 2, 1),
-                    LocalDate.of(2026, 2, 28));
-            periods.closePeriod(january.getId(), "treasurer");
+                    LocalDate.of(2026, 1, 31),
+                    "CALCULATED",
+                    "treasurer",
+                    "January close");
 
             TransactionCorrectionService service = new TransactionCorrectionService(jpa);
             TransactionCorrectionService.CorrectionResult result = service.reverse(
@@ -142,6 +135,14 @@ public class TransactionCorrectionClosedPeriodTest
                 Txn reversal = em.find(Txn.class, result.reversalTransactionId());
                 assertEquals(LocalDate.of(2026, 2, 10), reversal.getTxnDate());
             }
+
+            periods.reopenRange(
+                    january.id(),
+                    "treasurer",
+                    null,
+                    ClosedPeriodPolicy.WARN_AND_REOPEN,
+                    false);
+            assertEquals("REOPENED", periods.loadRange(january.id()).status());
         }
     }
 
