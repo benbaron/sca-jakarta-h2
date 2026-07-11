@@ -24,7 +24,7 @@ public class TransactionCorrectionClosedPeriodTest
         try (Jpa jpa = new Jpa(tempDir.resolve("closed-original")))
         {
             seedBalancedTransaction(jpa);
-            PeriodCloseService periods = new PeriodCloseService(jpa);
+            PeriodCloseRangeService periods = new PeriodCloseRangeService(jpa);
             periods.closeRange(
                     "DEFAULT",
                     LocalDate.of(2026, 1, 1),
@@ -66,7 +66,7 @@ public class TransactionCorrectionClosedPeriodTest
         try (Jpa jpa = new Jpa(tempDir.resolve("closed-destination")))
         {
             seedBalancedTransaction(jpa);
-            PeriodCloseService periods = new PeriodCloseService(jpa);
+            PeriodCloseRangeService periods = new PeriodCloseRangeService(jpa);
             periods.closeRange(
                     "DEFAULT",
                     LocalDate.of(2026, 2, 1),
@@ -113,7 +113,7 @@ public class TransactionCorrectionClosedPeriodTest
         try (Jpa jpa = new Jpa(tempDir.resolve("closed-original-reversal")))
         {
             seedBalancedTransaction(jpa);
-            PeriodCloseService periods = new PeriodCloseService(jpa);
+            PeriodCloseRangeService periods = new PeriodCloseRangeService(jpa);
             PeriodCloseRangeView january = periods.closeRange(
                     "DEFAULT",
                     LocalDate.of(2026, 1, 1),
