@@ -1,0 +1,190 @@
+package org.nonprofitbookkeeping.service;
+
+import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.nonprofitbookkeeping.model.ClosedPeriodPolicy;
+import org.nonprofitbookkeeping.persistence.Jpa;
+
+import java.math.BigDecimal;
+import java.nio.file.Path;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class PeriodCloseRangeServiceTest
+{
+    @Test
+    void closeAndReopenPersistWithFactualHistory(@TempDir Path tempDir)
+    {
+        Path database = tempDir.resolve("period-close");
+        UUID rangeId;
+
+        try (Jpa jpa = new Jpa(database))
+        {
+            PeriodCloseService service = new PeriodCloseService(jpa);
+            PeriodCloseRangeView closed = service.closeRange(
+                    "sca",
+                    LocalDate.of(2026, 3, 1),
+                    LocalDate.of(2026, 3, 31),
+                    "CALCULATED",
+                    "treasurer",
+                    "March close");
+            rangeId = closed.id();
+
+            assertEquals("SCA", closed.companyCode());
+            assertEquals("CLOSED", closed.status());
+            assertTrue(service.findClosedRange("SCA", LocalDate.of(2026, 3, 15)).isPresent());
+            assertEquals(1, service.listEvents("SCA").size());
+            assertEquals("CLOSED", service.listEvents("SCA").get(0).eventType());
+            assertThrows(IllegalArgumentException.class, () -> service.closeRange(
+                    "SCA",
+                    LocalDate.of(2026, 3, 15),
+                    LocalDate.of(2026, 4, 15),
+                    "CUSTOM",
+                    "treasurer",
+                    null));
+
+            try (EntityManager em = jpa.em())
+            {
+                assertThrows(ClosedPeriodRangeException.class, () ->
+                        PeriodCloseService.requireOpen(
+                                em,
+                                "SCA",
+                                LocalDate.of(2026, 3, 20),
+                                "enter transaction"));
+                assertEquals(1L, em.createQuery("""
+                        select count(a)
+                        from AuditEvent a
+                        where a.entityType = 'PeriodCloseRange'
+                          and a.actionType = 'PERIOD_RANGE_CLOSED'
+                        """, Long.class).getSingleResult());
+            }
+        }
+
+        try (Jpa reopenedJpa = new Jpa(database))
+        {
+            PeriodCloseService service = new PeriodCloseService(reopenedJpa);
+            assertEquals("CLOSED", service.loadRange(rangeId).status());
+            assertThrows(IllegalArgumentException.class, () -> service.reopenRange(
+                    rangeId,
+                    "treasurer",
+                    null,
+                    ClosedPeriodPolicy.REQUIRE_REASON,
+                    false));
+
+            PeriodCloseRangeView reopened = service.reopenRange(
+                    rangeId,
+                    "treasurer",
+                    "Corrected after review",
+                    ClosedPeriodPolicy.REQUIRE_REASON,
+                    false);
+            assertEquals("REOPENED", reopened.status());
+            assertFalse(service.findClosedRange("SCA", LocalDate.of(2026, 3, 15)).isPresent());
+            assertEquals(2, service.listEvents("SCA").size());
+            assertEquals("REOPENED", service.listEvents("SCA").get(0).eventType());
+
+            try (EntityManager em = reopenedJpa.em())
+            {
+                assertEquals(2L, em.createQuery("""
+                        select count(a)
+                        from AuditEvent a
+                        where a.entityType = 'PeriodCloseRange'
+                        """, Long.class).getSingleResult());
+            }
+        }
+    }
+
+    @Test
+    void transactionEntryUsesActiveCompanyCloseRanges(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("transaction-entry-close")))
+        {
+            seedReferenceData(jpa);
+            PeriodCloseService closeService = new PeriodCloseService(jpa);
+            closeService.closeRange(
+                    "OTHER",
+                    LocalDate.of(2026, 4, 1),
+                    LocalDate.of(2026, 4, 30),
+                    "CUSTOM",
+                    "treasurer",
+                    null);
+
+            TransactionEntryService defaultCompany = new TransactionEntryService(jpa, () -> "DEFAULT");
+            TransactionView entered = defaultCompany.enter(command(LocalDate.of(2026, 4, 10)));
+            assertEquals(LocalDate.of(2026, 4, 10), entered.date());
+
+            closeService.closeRange(
+                    "DEFAULT",
+                    LocalDate.of(2026, 5, 1),
+                    LocalDate.of(2026, 5, 31),
+                    "CALCULATED",
+                    "treasurer",
+                    "May close");
+            assertThrows(ClosedPeriodRangeException.class, () ->
+                    defaultCompany.enter(command(LocalDate.of(2026, 5, 10))));
+        }
+    }
+
+    @Test
+    void formalAdjustmentPolicyPreventsDirectReopen(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("formal-adjustment")))
+        {
+            PeriodCloseService service = new PeriodCloseService(jpa);
+            PeriodCloseRangeView range = service.closeRange(
+                    "DEFAULT",
+                    LocalDate.of(2026, 6, 1),
+                    LocalDate.of(2026, 6, 30),
+                    "CUSTOM",
+                    "treasurer",
+                    null);
+
+            assertThrows(IllegalStateException.class, () -> service.reopenRange(
+                    range.id(),
+                    "treasurer",
+                    "Adjustment needed",
+                    ClosedPeriodPolicy.REQUIRE_FORMAL_ADJUSTMENT,
+                    false));
+            assertEquals("CLOSED", service.loadRange(range.id()).status());
+        }
+    }
+
+    private static TransactionCommand command(LocalDate date)
+    {
+        return new TransactionCommand(
+                date,
+                null,
+                "Test transaction",
+                null,
+                List.of(
+                        new TransactionLineCommand(
+                                1L, 1L, null, null, null,
+                                new BigDecimal("25.00"), BigDecimal.ZERO, false, null),
+                        new TransactionLineCommand(
+                                2L, 1L, null, null, null,
+                                BigDecimal.ZERO, new BigDecimal("25.00"), false, null)));
+    }
+
+    private static void seedReferenceData(Jpa jpa)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            em.getTransaction().begin();
+            em.createNativeQuery("INSERT INTO chart_of_accounts (id, name, version, status) VALUES (1, 'Test', '1', 'ACTIVE')")
+                    .executeUpdate();
+            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (1, 1, '1000', 'Cash', 'ASSET', 'DEBIT')")
+                    .executeUpdate();
+            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (2, 1, '4000', 'Income', 'INCOME', 'CREDIT')")
+                    .executeUpdate();
+            em.createNativeQuery("INSERT INTO fund (id, code, name, fund_type) VALUES (1, 'OPERATING', 'Operating', 'UNRESTRICTED')")
+                    .executeUpdate();
+            em.getTransaction().commit();
+        }
+    }
+}
