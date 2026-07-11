@@ -1,12 +1,12 @@
 ---
-plan_version: 28
+plan_version: 29
 active_phase: P10
 active_slice: P10-S1
 active_status: VERIFYING
 active_branch: codex/P10-S1-period-close-implementation
 active_pull_request: "#156"
-active_head: 0945381f1d0427915f5487624ada854d9a716ba7
-next_action: "Run final Maven PR Tests on the documentation head, perform desktop validation of the Period Close workspace, then merge PR #156 and mark P10-S1 DONE."
+active_head: fef48d2f48690dc2229bbe9d4d2d2c361f65310c
+next_action: "Perform desktop validation of the Period Close workspace, then merge PR #156 and mark P10-S1 DONE."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -143,7 +143,7 @@ Status: VERIFYING; P10-S1 active on PR #156.
 
 Branch: `codex/P10-S1-period-close-implementation`
 Pull request: #156
-Head before this plan update: `0945381f1d0427915f5487624ada854d9a716ba7`
+Tested head before this plan handoff: `fef48d2f48690dc2229bbe9d4d2d2c361f65310c`
 
 Purpose: replace the run-record/approval-oriented placeholder with authoritative calculated or custom date-range close state, reopening, and factual audit history while preserving canonical ledger, reconciliation protection, and transaction-service boundaries.
 
@@ -165,11 +165,10 @@ Validation:
 - Maven PR Tests run `29164587670` passed for authoritative range service, persistence, restart, and audit behavior.
 - Maven PR Tests run `29164655355` passed after canonical transaction-entry/correction enforcement.
 - Maven PR Tests run `29164725119` passed after JavaFX runtime wiring and Period Close workspace replacement.
-- Final Maven PR Tests are required on the documentation/test head.
+- Maven PR Tests run `29164894557` passed on the complete implementation, test, and documentation head `fef48d2f48690dc2229bbe9d4d2d2c361f65310c`.
 
 Remaining before DONE:
 
-- Run final Maven PR Tests on the current branch head.
 - Perform desktop validation at laptop width: calculated/custom dates, close, refresh, reopen policies/reasons, both tables, scrolling, sorting, resizing, and divider behavior.
 - Merge PR #156, then mark P10-S1 DONE.
 
