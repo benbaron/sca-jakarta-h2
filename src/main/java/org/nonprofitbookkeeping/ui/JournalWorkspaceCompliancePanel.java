@@ -4,7 +4,6 @@ import javafx.animation.PauseTransition;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.event.Event;
-import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -20,8 +19,6 @@ import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.TablePosition;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
@@ -261,7 +258,7 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
     private void wrapTableInSplitRegion(TableView<?> table, String tableKey)
     {
         Parent parent = table.getParent();
-        if (!(parent instanceof VBox box) || parent instanceof SplitPane)
+        if (!(parent instanceof VBox box))
         {
             return;
         }
@@ -272,17 +269,12 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
         }
         box.getChildren().remove(index);
 
-        Label note = new Label("Columns are sortable, resizable, and rearrangeable. The table scrolls independently in both directions.");
-        note.setWrapText(true);
-        note.setPadding(new Insets(4));
-        SplitPane tableSplit = new SplitPane(table, note);
+        SplitPane tableSplit = new SplitPane(table);
         tableSplit.setId(tableKey + "ComplianceSplit");
         tableSplit.setOrientation(Orientation.VERTICAL);
-        tableSplit.setDividerPositions(0.9);
         tableSplit.setMinSize(0, 0);
         VBox.setVgrow(tableSplit, Priority.ALWAYS);
         box.getChildren().add(index, tableSplit);
-        installDividerState(tableSplit, "table-region." + tableKey);
     }
 
     private void installTotalFormatting(Node workspaceRoot)
@@ -382,7 +374,7 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
             table.getColumns().stream()
                     .filter(column -> Objects.equals(columnKey((TableColumn<?, ?>) column), key))
                     .findFirst()
-                    .ifPresent(column -> restored.add((javafx.scene.control.TableColumn) column));
+                    .ifPresent(column -> restored.add((TableColumn) column));
         }
         table.getSortOrder().setAll(restored);
     }
@@ -407,13 +399,18 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
             return;
         }
         String prefix = STATE_PREFIX + "table." + tableKey + ".";
-        queueState(prefix + "order", String.join(",", table.getColumns().stream().map(JournalWorkspaceCompliancePanel::columnKey).toList()));
-        queueState(prefix + "sortOrder", String.join(",", table.getSortOrder().stream().map(JournalWorkspaceCompliancePanel::columnKey).toList()));
+        queueState(prefix + "order", String.join(",", table.getColumns().stream()
+                .map(JournalWorkspaceCompliancePanel::columnKey)
+                .toList()));
+        queueState(prefix + "sortOrder", String.join(",", table.getSortOrder().stream()
+                .map(JournalWorkspaceCompliancePanel::columnKey)
+                .toList()));
         for (TableColumn<?, ?> column : table.getColumns())
         {
             double width = column.getWidth() > 0 ? column.getWidth() : column.getPrefWidth();
             queueState(prefix + columnKey(column) + ".width", Double.toString(width));
-            queueState(prefix + columnKey(column) + ".sort", column.getSortType() == null ? "" : column.getSortType().name());
+            queueState(prefix + columnKey(column) + ".sort",
+                    column.getSortType() == null ? "" : column.getSortType().name());
         }
     }
 
@@ -426,7 +423,8 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
             split.getDividers().get(index).setPosition(stateDouble(stateKey, fallback));
             int dividerIndex = index;
             split.getDividers().get(index).positionProperty().addListener((obs, oldValue, newValue) ->
-                    queueState(STATE_PREFIX + "divider." + key + "." + dividerIndex, Double.toString(newValue.doubleValue())));
+                    queueState(STATE_PREFIX + "divider." + key + "." + dividerIndex,
+                            Double.toString(newValue.doubleValue())));
         }
     }
 

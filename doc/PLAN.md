@@ -1,12 +1,12 @@
 ---
-plan_version: 25
+plan_version: 26
 active_phase: P03
-active_slice: P03-C8
+active_slice: P03-C9
 active_status: VERIFYING
-active_branch: codex/P03-C8-journal-compliance-cleanup
-active_pull_request: "#153"
-active_head: 3d5d3380637119ccd6197ec17fda233ab3237f96
-next_action: "Perform desktop laptop-width validation of the overall Journal editor scrollbar, every nested divider, independent table scrolling, and restored table state; then merge PR #153 and mark P03-C8 DONE."
+active_branch: codex/P03-C9-remove-journal-commentary
+active_pull_request: "#154"
+active_head: 86820cd514dc00fb71e9d1f3fdd224cb9adb6103
+next_action: "Visually confirm the Journal tables no longer show explanatory commentary and retain their scrolling, split-region, formatting, and saved-state behavior; then merge PR #154 and mark P03-C9 DONE."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Perform desktop laptop-width validation of the overall Journal edi
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P03-C6 as merged through PR #151 and P03-C7 as merged through PR #152. P03-C8 removes temporary implementation machinery left by P03-C7, commits the production compile correction that had previously existed only in a diagnostics script, repairs the source guardrails to inspect the actual compliance adapter, and aligns the governing UI documents with current `main`.
+This revision records P03-C6 through P03-C8 as merged through PRs #151–#153. P03-C9 removes visible implementation commentary from Journal table regions while preserving the overall editor scrollbar, table `SplitPane` wrappers, table interaction behavior, company-owned state, company-aware formatting, and canonical accounting services.
 
 ## 2. Status values
 
@@ -35,7 +35,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P00 | Documentation and implementation inventory | none | DONE; update matrices as touched |
 | P01 | Production shell and workspace composition | P00 | DONE; corrective P01-C1 DONE through PR #141 |
 | P02 | Canonical ledger and transaction operations | P00 | DONE; retain |
-| P03 | Journal workspace and canonical transaction operations | P01, P02 | READY; corrective P03-C8 VERIFYING |
+| P03 | Journal workspace and canonical transaction operations | P01, P02 | READY; corrective P03-C9 VERIFYING |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
 | P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137; corrective P05-C5 DONE through PR #148 |
 | P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 DONE through PR #146; corrective P06-C2 DONE through PR #147 |
@@ -116,7 +116,7 @@ Status: DONE, retain.
 
 ### P03 — Journal workspace and canonical transaction operations
 
-Status: READY; corrective P03-C8 VERIFYING.
+Status: READY; corrective P03-C9 VERIFYING.
 
 Completed slices:
 
@@ -127,39 +127,30 @@ Completed slices:
 - P03-C5 Persisted Transaction Editor supplemental details: DONE through PR #150.
 - P03-C6 Unified Journal workspace port: DONE through PR #151.
 - P03-C7 Journal UI design-rule compliance: DONE through PR #152.
+- P03-C8 Journal compliance cleanup and verification: DONE through PR #153.
 
-### P03-C8 — Journal compliance cleanup and verification
+### P03-C9 — Remove visible Journal table commentary
 
 Status: VERIFYING.
-Branch: `codex/P03-C8-journal-compliance-cleanup`
-Pull request: #153
-Head recorded before this plan update: `3d5d3380637119ccd6197ec17fda233ab3237f96`
+Branch: `codex/P03-C9-remove-journal-commentary`
+Pull request: #154
+Head before this plan update: `86820cd514dc00fb71e9d1f3fdd224cb9adb6103`
 
-Purpose: preserve the merged P03-C7 runtime behavior while removing temporary patch/diagnostic machinery, committing its missing source correction, correcting source guardrails to inspect the production `JournalWorkspaceCompliancePanel`, and aligning the plan and UI documents with current `main`.
+Purpose: remove visible implementation commentary from the Journal table regions without removing the actual table behavior or layout contract.
 
 Completed deliverables:
 
-- Removed `.github/workflows/apply-p03-c7.yml`, temporary P03-C7 patch scripts, and trigger files.
-- Removed the subsequently added P03-C8 one-shot source-fix workflow and script; no diagnostic or source-patching workflow remains in the branch.
-- Committed the generic cast required by `restoreSortOrder(...)` directly in `JournalWorkspaceCompliancePanel`.
-- Preserved the overall `journalWorkspaceEditorScroll` vertical scrollbar and nested Journal resize bars.
-- Preserved sortable, resizable, reorderable, unconstrained, independently scrollable Journal, entry-line, and supplemental tables with company-owned table state.
-- Preserved a dedicated `SplitPane` region for every table.
-- Corrected `JournalWorkspacePortSourceTest` to verify the production compliance adapter and factory route rather than stale pre-C7 source strings.
-- Updated `doc/ui_design_rules.md`, `doc/ui/editor-guidelines.md`, and `doc/interface-operation-matrix.md` to identify the actual production panel and completed P03-C7 behavior.
-
-Validation:
-
-- Maven PR Tests run `29131408388` completed successfully for head `3d5d3380637119ccd6197ec17fda233ab3237f96`.
-- Desktop visual validation has not been performed in this environment.
+- Removed the label text stating that columns are sortable, resizable, rearrangeable, and independently scrollable.
+- Retained each table inside its dedicated `SplitPane` wrapper without adding an empty commentary pane.
+- Preserved the overall Journal editor vertical scrollbar, nested major-section dividers, unconstrained table resize policy, sortable/resizable/reorderable columns, company-owned table state, company-aware date/money formatting, and service-backed Journal operations.
+- Updated `JournalWorkspacePortSourceTest` to require the table wrapper and prohibit the removed commentary text.
+- Maven PR Tests run `29132445663` completed successfully for head `86820cd514dc00fb71e9d1f3fdd224cb9adb6103`.
 
 Remaining before DONE:
 
-- At laptop width, verify the complete editor has one overall vertical scrollbar.
-- Move every nested divider and confirm each section remains usable.
-- Confirm Journal, entry-line, and all supplemental tables scroll independently in both directions when content exceeds their viewport.
-- Reorder/resize columns, apply sorts, reopen the company, and confirm company-owned table state is restored.
-- Merge PR #153, then mark P03-C8 DONE.
+- Visually confirm at laptop width that no table commentary labels remain.
+- Confirm the Journal, entry-line, and supplemental tables still scroll and resize normally.
+- Merge PR #154, then mark P03-C9 DONE.
 
 Known remaining functional limitation:
 
