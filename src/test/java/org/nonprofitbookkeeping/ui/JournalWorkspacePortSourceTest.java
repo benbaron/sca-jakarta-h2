@@ -44,7 +44,7 @@ class JournalWorkspacePortSourceTest
     }
 
     @Test
-    void complianceLayerProvidesOverallEditorScrollAndTableContract() throws Exception
+    void complianceLayerProvidesOverallEditorScrollAndTableContractWithoutVisibleCommentary() throws Exception
     {
         String source = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/JournalWorkspaceCompliancePanel.java"));
 
@@ -60,10 +60,12 @@ class JournalWorkspacePortSourceTest
         assertTrue(source.contains("restoreTableState"));
         assertTrue(source.contains("installTableStatePersistence"));
         assertTrue(source.contains("wrapTableInSplitRegion"));
-        assertTrue(source.contains("new SplitPane(table, note)"));
+        assertTrue(source.contains("new SplitPane(table)"));
         assertTrue(source.contains("installDividerState"));
         assertTrue(source.contains("CompanyUiFormat"));
         assertTrue(source.contains("CompanyUiPreferencesService"));
+        assertFalse(source.contains("Columns are sortable, resizable, and rearrangeable"));
+        assertFalse(source.contains("The table scrolls independently in both directions"));
         assertFalse(source.contains("java.util.prefs.Preferences"));
         assertFalse(source.contains("CurrentCompany"));
     }
