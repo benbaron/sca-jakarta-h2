@@ -27,10 +27,10 @@ class PeriodCloseRangeServiceTest
                         INSERT INTO period_close_range
                             (id, company_code, start_date, end_date, range_kind, status,
                              closed_by, close_reason)
-                        VALUES (?, 'DEFAULT', DATE '2026-04-01', DATE '2026-04-30',
+                        VALUES (CAST('""" + id + """' AS UUID), 'DEFAULT',
+                                DATE '2026-04-01', DATE '2026-04-30',
                                 'CUSTOM', 'CLOSED', 'treasurer', 'Manual insert')
                         """)
-                        .setParameter(1, id)
                         .executeUpdate();
                 em.getTransaction().commit();
             }
