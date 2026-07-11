@@ -1,6 +1,6 @@
 # Model and persistence authority inventory
 
-Status: P00 inventory of current main, updated through P03-C6 unified Journal workspace. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
+Status: P00 inventory of current main, updated through P10-S1 calculated period close. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
 
 ## Current persistence map
 
@@ -8,7 +8,7 @@ Status: P00 inventory of current main, updated through P03-C6 unified Journal wo
 |---|---|---|---|---|
 | Canonical ledger and Journal workspace | `Txn` and `TxnSplit` JPA entities, `txn_supplemental_line`, `TransactionEntryService`, unified `JournalWorkspacePanel` | yes for accepted transaction headers, lines, and supplemental details | the older `JournalTransaction`/`PostingLine` path remains a parallel-model hazard but is not used by the Journal workspace | preserve P02 authority and retire/remap overlapping journal/open-item tables deliberately |
 | Journal/open-item compatibility core | `JournalTransaction`, `PostingLine`, JDBC journal/open-item repositories, V4/V5 migrations | partially; repository exists but is separate from `Txn`/`TxnSplit` | second transaction model can become a parallel ledger | do not add independent writes; later compatibility/migration treatment |
-| Corrections/periods | accounting-period/audit/correction entities and V47/V48 | yes where wired | must not bypass canonical ledger or reconciliation protection | P02/P10 |
+| Corrections/period close | `period_close_range`, `period_close_event`, `audit_event`, `PeriodCloseRangeService`, canonical transaction services | yes for active company close state and factual history | legacy `AccountingPeriod` rows and period-close run records remain compatibility data but are not the P10 business authority | preserve range authority; retire or remap legacy period/run surfaces deliberately |
 | Budget categories | `BudgetCategory` JPA plus V45 | yes for categories | categories are not budget targets | P04 |
 | Budget targets | `BudgetPlan`/`BudgetLine` JPA entities and `budget_plan`/`budget_line` tables | yes | version activation must remain through `BudgetPlanService`; no sidecar target store remains | P04 persistent budget model |
 | Import preview | `ImportPreviewService` in-memory accepted/rejected rows | no by design until acceptance | acceptable staging, but accepted writes must use canonical services | P05/P13 |
@@ -17,8 +17,8 @@ Status: P00 inventory of current main, updated through P03-C6 unified Journal wo
 | Former Schedules panel | top-level panel, route, navigation item, and schedule runbook sidecar removed in P07 | no active top-level persistence remains | historical V2 schedule/open-item tables remain until a later migration decision | future domain-specific supplemental transaction records, not a Schedules function |
 | Fixed assets/depreciation | `FixedAsset` and `FixedAssetDepreciationRun` JPA entities with V55 tables; depreciation runs create canonical `Txn` rows | yes for P08-S1 asset records and completed depreciation runs | old asset/depreciation text sidecars removed from production paths | later hardening: richer disposal/impairment workflows, visual polish, and reports |
 | Inventory/supplies | `InventoryItem` and `InventoryMovement` JPA entities with V56 tables; movement records reserve a nullable canonical `Txn` link | yes for P09-S1 item records and movement history | old inventory text runbook removed from production paths | later hardening: financially relevant movement-to-ledger automation and reports |
-| Audit/approval | `ApprovalAuditRecord`/repository and approval UI | H2 records exist | approval/rejection semantics conflict with product decision | P10/P12 factual audit history |
-| Preferences/app state | `FileAppStateStore`, `UserAppStateStore`, session state | sidecar/user file | not company-scoped H2 preferences | P12 |
+| Audit/approval | `AuditEvent` is factual JPA audit history; `ApprovalAuditRecord` remains a legacy approval-oriented repository/panel | yes for both stored record types | legacy approval terminology conflicts with product decision outside Period Close | P12 should rename/scope the remaining approval audit surface |
+| Preferences/app state | `FileAppStateStore`, `UserAppStateStore`, session state, company UI preference/state tables | mixed; company display state is H2, shell state remains sidecar/user file | shell preferences are not fully company-scoped | P12 |
 | Import/export jobs | `UiWorkspaceDataStore.jobs` static list | no | no durable job diagnostics | P13 |
 
 ## Duplicate transaction and journal models
@@ -32,9 +32,18 @@ Status: P00 inventory of current main, updated through P03-C6 unified Journal wo
 
 - `JournalWorkspacePanel` queries `TransactionEntryService.search(...)` and `load(...)`.
 - New and edited entries write through `TransactionEntryService.enter(...)` and `update(...)`.
-- Delete and reverse operations write through `TransactionCorrectionService` and retain period/reconciliation protection.
-- The panel stores only UI preferences such as divider positions and table state outside H2; unsaved editor rows are dirty UI state, not accepted accounting data.
+- Delete and reverse operations write through `TransactionCorrectionService` and retain period-range/reconciliation protection.
+- The panel stores only UI preferences such as divider positions and table state outside ledger tables; unsaved editor rows are dirty UI state, not accepted accounting data.
 - `LEDGER_REGISTER` and `TXN_EDITOR` are compatibility destination aliases only. They do not identify separate data stores or panels.
+
+## Period close authority
+
+- V60 adds `period_close_range` as the authoritative company-scoped closed-date-range state and `period_close_event` as factual close/reopen history.
+- `PeriodCloseRangeService` owns close, overlap validation, list, reopen-policy enforcement, and factual event/audit writes.
+- `TransactionEntryService` and `TransactionCorrectionService` call `PeriodCloseRangeService.requireOpen(...)` inside the same transaction before changing canonical ledger data.
+- Reconciliation protection remains an independent prerequisite check; period close does not weaken completed-reconciliation protection.
+- `AccountingPeriod` and `AccountingPeriodService` remain compatibility structures but are not the P10 business authority for calculated/custom range close state.
+- `PeriodCloseService` and `PeriodCloseRunRepository` remain compatibility run-artifact APIs and are not used by the production Period Close workspace.
 
 ## Budget model authority
 
@@ -76,7 +85,7 @@ Status: P00 inventory of current main, updated through P03-C6 unified Journal wo
 2. V4/V5 add journal/open-item tables that overlap transaction semantics.
 3. V6/V7/V8 add workflow/approval records that conflict with the plan’s no-approval-queue decision if surfaced as approval workflow.
 4. V2 schedule tables remain as historical schema until a deliberate nondestructive migration retires or remaps them.
-5. V49 through V58 are occupied by reconciliation, budget, bank import, fixed asset, inventory, and transaction-supplemental migrations. These migrations must remain nondestructive.
+5. V49 through V60 are occupied by reconciliation, budget, bank import, fixed asset, inventory, transaction-supplemental, company UI preference/state, and period-close-range migrations. These migrations must remain nondestructive.
 6. Any later schema change needs a new nondestructive migration and in-memory upgrade test.
 7. Hibernate generation must not be treated as a substitute for Flyway review.
 
@@ -84,3 +93,4 @@ Status: P00 inventory of current main, updated through P03-C6 unified Journal wo
 
 - `UiWorkspaceDataStore`: bank transactions and import/export jobs remain sidecar/static session lists.
 - Unified Journal draft state: acceptable only as unsaved UI state; accepted headers, lines, and supplemental details must be written through `TransactionEntryService` to H2.
+- Legacy period-close run artifacts: compatibility-only; production close state and factual history belong to `period_close_range`/`period_close_event` and `AuditEvent`.
