@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -24,6 +25,11 @@ import java.util.UUID;
  */
 public class PeriodCloseRangeService
 {
+    private static final String RANGE_COLUMNS = """
+            CAST(id AS VARCHAR), company_code, start_date, end_date, range_kind, status,
+            closed_at, closed_by, close_reason, reopened_at, reopened_by, reopen_reason
+            """;
+
     private final Jpa jpa;
 
     public PeriodCloseRangeService(Jpa jpa)
@@ -46,6 +52,7 @@ public class PeriodCloseRangeService
         {
             throw new IllegalArgumentException("endDate must be on or after startDate");
         }
+
         String kind = normalizeKind(rangeKind);
         String cleanActor = requireText(actor, "actor");
         String cleanReason = blankToNull(reason);
@@ -80,16 +87,16 @@ public class PeriodCloseRangeService
                         INSERT INTO period_close_range
                             (id, company_code, start_date, end_date, range_kind, status,
                              closed_at, closed_by, close_reason, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, 'CLOSED', ?, ?, ?, ?, ?)
+                        VALUES (CAST(? AS UUID), ?, ?, ?, ?, 'CLOSED', ?, ?, NULLIF(?, ''), ?, ?)
                         """)
-                        .setParameter(1, id)
+                        .setParameter(1, id.toString())
                         .setParameter(2, company)
                         .setParameter(3, Date.valueOf(start))
                         .setParameter(4, Date.valueOf(end))
                         .setParameter(5, kind)
                         .setParameter(6, Timestamp.from(now))
                         .setParameter(7, cleanActor)
-                        .setParameter(8, cleanReason)
+                        .setParameter(8, cleanReason == null ? "" : cleanReason)
                         .setParameter(9, Timestamp.from(now))
                         .setParameter(10, Timestamp.from(now))
                         .executeUpdate();
@@ -123,6 +130,7 @@ public class PeriodCloseRangeService
         String cleanActor = requireText(actor, "actor");
         ClosedPeriodPolicy effectivePolicy = Objects.requireNonNull(policy, "policy");
         String cleanReason = blankToNull(reason);
+
         if (effectivePolicy == ClosedPeriodPolicy.REQUIRE_FORMAL_ADJUSTMENT)
         {
             throw new IllegalStateException(
@@ -132,9 +140,9 @@ public class PeriodCloseRangeService
         {
             throw new IllegalArgumentException("A reopening reason is required");
         }
+
         Instant now = Instant.now();
         UUID eventId = UUID.randomUUID();
-
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
@@ -152,14 +160,14 @@ public class PeriodCloseRangeService
                 int updated = em.createNativeQuery("""
                         UPDATE period_close_range
                         SET status = 'REOPENED', reopened_at = ?, reopened_by = ?,
-                            reopen_reason = ?, updated_at = ?
-                        WHERE id = ? AND status = 'CLOSED'
+                            reopen_reason = NULLIF(?, ''), updated_at = ?
+                        WHERE id = CAST(? AS UUID) AND status = 'CLOSED'
                         """)
                         .setParameter(1, Timestamp.from(now))
                         .setParameter(2, cleanActor)
-                        .setParameter(3, cleanReason)
+                        .setParameter(3, cleanReason == null ? "" : cleanReason)
                         .setParameter(4, Timestamp.from(now))
-                        .setParameter(5, id)
+                        .setParameter(5, id.toString())
                         .executeUpdate();
                 if (updated != 1)
                 {
@@ -190,22 +198,14 @@ public class PeriodCloseRangeService
         try (EntityManager em = jpa.em())
         {
             @SuppressWarnings("unchecked")
-            List<Object[]> rows = em.createNativeQuery("""
-                    SELECT id, company_code, start_date, end_date, range_kind, status,
-                           closed_at, closed_by, close_reason,
-                           reopened_at, reopened_by, reopen_reason
+            List<Object[]> rows = em.createNativeQuery("SELECT " + RANGE_COLUMNS + """
                     FROM period_close_range
                     WHERE company_code = ?
                     ORDER BY start_date DESC, end_date DESC, closed_at DESC
                     """)
                     .setParameter(1, company)
                     .getResultList();
-            List<PeriodCloseRangeView> result = new ArrayList<>();
-            for (Object[] row : rows)
-            {
-                result.add(mapRange(row));
-            }
-            return result;
+            return mapRanges(rows);
         }
     }
 
@@ -216,7 +216,8 @@ public class PeriodCloseRangeService
         {
             @SuppressWarnings("unchecked")
             List<Object[]> rows = em.createNativeQuery("""
-                    SELECT id, close_range_id, company_code, event_type, actor, reason, event_at
+                    SELECT CAST(id AS VARCHAR), CAST(close_range_id AS VARCHAR),
+                           company_code, event_type, actor, reason, event_at
                     FROM period_close_event
                     WHERE company_code = ?
                     ORDER BY event_at DESC, id DESC
@@ -227,8 +228,8 @@ public class PeriodCloseRangeService
             for (Object[] row : rows)
             {
                 result.add(new PeriodCloseEventView(
-                        toUuid(row[0]),
-                        toUuid(row[1]),
+                        UUID.fromString(String.valueOf(row[0])),
+                        UUID.fromString(String.valueOf(row[1])),
                         String.valueOf(row[2]),
                         String.valueOf(row[3]),
                         String.valueOf(row[4]),
@@ -251,11 +252,12 @@ public class PeriodCloseRangeService
 
     public PeriodCloseRangeView loadRange(UUID rangeId)
     {
+        UUID id = Objects.requireNonNull(rangeId, "rangeId");
         try (EntityManager em = jpa.em())
         {
-            return singleRangeRow(em, rangeId)
+            return singleRangeRow(em, id)
                     .map(PeriodCloseRangeService::mapRange)
-                    .orElseThrow(() -> new IllegalArgumentException("Unknown close range: " + rangeId));
+                    .orElseThrow(() -> new IllegalArgumentException("Unknown close range: " + id));
         }
     }
 
@@ -280,10 +282,7 @@ public class PeriodCloseRangeService
             LocalDate date)
     {
         @SuppressWarnings("unchecked")
-        List<Object[]> rows = em.createNativeQuery("""
-                SELECT id, company_code, start_date, end_date, range_kind, status,
-                       closed_at, closed_by, close_reason,
-                       reopened_at, reopened_by, reopen_reason
+        List<Object[]> rows = em.createNativeQuery("SELECT " + RANGE_COLUMNS + """
                 FROM period_close_range
                 WHERE company_code = ?
                   AND status = 'CLOSED'
@@ -307,23 +306,30 @@ public class PeriodCloseRangeService
     private static Optional<Object[]> singleRangeRow(EntityManager em, UUID id)
     {
         @SuppressWarnings("unchecked")
-        List<Object[]> rows = em.createNativeQuery("""
-                SELECT id, company_code, start_date, end_date, range_kind, status,
-                       closed_at, closed_by, close_reason,
-                       reopened_at, reopened_by, reopen_reason
+        List<Object[]> rows = em.createNativeQuery("SELECT " + RANGE_COLUMNS + """
                 FROM period_close_range
-                WHERE id = ?
+                WHERE id = CAST(? AS UUID)
                 """)
-                .setParameter(1, id)
+                .setParameter(1, id.toString())
                 .setMaxResults(1)
                 .getResultList();
         return rows.stream().findFirst();
     }
 
+    private static List<PeriodCloseRangeView> mapRanges(List<Object[]> rows)
+    {
+        List<PeriodCloseRangeView> result = new ArrayList<>();
+        for (Object[] row : rows)
+        {
+            result.add(mapRange(row));
+        }
+        return result;
+    }
+
     private static PeriodCloseRangeView mapRange(Object[] row)
     {
         return new PeriodCloseRangeView(
-                toUuid(row[0]),
+                UUID.fromString(String.valueOf(row[0])),
                 String.valueOf(row[1]),
                 toLocalDate(row[2]),
                 toLocalDate(row[3]),
@@ -350,14 +356,14 @@ public class PeriodCloseRangeService
         em.createNativeQuery("""
                 INSERT INTO period_close_event
                     (id, close_range_id, company_code, event_type, actor, reason, event_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (CAST(? AS UUID), CAST(? AS UUID), ?, ?, ?, NULLIF(?, ''), ?)
                 """)
-                .setParameter(1, eventId)
-                .setParameter(2, rangeId)
+                .setParameter(1, eventId.toString())
+                .setParameter(2, rangeId.toString())
                 .setParameter(3, company)
                 .setParameter(4, eventType)
                 .setParameter(5, actor)
-                .setParameter(6, reason)
+                .setParameter(6, reason == null ? "" : reason)
                 .setParameter(7, Timestamp.from(eventAt))
                 .executeUpdate();
     }
@@ -427,15 +433,6 @@ public class PeriodCloseRangeService
         return value == null ? null : String.valueOf(value);
     }
 
-    private static UUID toUuid(Object value)
-    {
-        if (value instanceof UUID uuid)
-        {
-            return uuid;
-        }
-        return UUID.fromString(String.valueOf(value));
-    }
-
     private static LocalDate toLocalDate(Object value)
     {
         if (value instanceof LocalDate date)
@@ -446,7 +443,8 @@ public class PeriodCloseRangeService
         {
             return date.toLocalDate();
         }
-        return LocalDate.parse(String.valueOf(value));
+        String text = String.valueOf(value);
+        return LocalDate.parse(text.length() > 10 ? text.substring(0, 10) : text);
     }
 
     private static Instant toInstant(Object value)
@@ -469,9 +467,26 @@ public class PeriodCloseRangeService
         }
         if (value instanceof LocalDateTime localDateTime)
         {
-            return localDateTime.toInstant(java.time.ZoneOffset.UTC);
+            return localDateTime.toInstant(ZoneOffset.UTC);
         }
-        return Instant.parse(String.valueOf(value));
+
+        String text = String.valueOf(value).trim();
+        try
+        {
+            return Instant.parse(text);
+        }
+        catch (RuntimeException ignored)
+        {
+            String iso = text.replace(' ', 'T');
+            try
+            {
+                return OffsetDateTime.parse(iso).toInstant();
+            }
+            catch (RuntimeException ignoredOffset)
+            {
+                return LocalDateTime.parse(iso).toInstant(ZoneOffset.UTC);
+            }
+        }
     }
 
     private static void rollback(EntityManager em)
