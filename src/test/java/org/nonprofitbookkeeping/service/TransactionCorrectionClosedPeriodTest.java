@@ -1,7 +1,6 @@
 package org.nonprofitbookkeeping.service;
 
 import jakarta.persistence.EntityManager;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.model.ClosedPeriodPolicy;
@@ -15,7 +14,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Disabled("Temporary isolation while converting P10 correction tests")
 public class TransactionCorrectionClosedPeriodTest
 {
     @Test
