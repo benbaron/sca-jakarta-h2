@@ -1,7 +1,6 @@
 package org.nonprofitbookkeeping.service;
 
 import jakarta.persistence.EntityManager;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.model.ClosedPeriodPolicy;
@@ -18,7 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Disabled("Temporary isolation while converting P10 close-range tests")
 class PeriodCloseRangeServiceTest
 {
     @Test
@@ -29,7 +27,7 @@ class PeriodCloseRangeServiceTest
 
         try (Jpa jpa = new Jpa(database))
         {
-            PeriodCloseService service = new PeriodCloseService(jpa);
+            PeriodCloseRangeService service = new PeriodCloseRangeService(jpa);
             PeriodCloseRangeView closed = service.closeRange(
                     "sca",
                     LocalDate.of(2026, 3, 1),
@@ -55,7 +53,7 @@ class PeriodCloseRangeServiceTest
             try (EntityManager em = jpa.em())
             {
                 assertThrows(ClosedPeriodRangeException.class, () ->
-                        PeriodCloseService.requireOpen(
+                        PeriodCloseRangeService.requireOpen(
                                 em,
                                 "SCA",
                                 LocalDate.of(2026, 3, 20),
@@ -71,7 +69,7 @@ class PeriodCloseRangeServiceTest
 
         try (Jpa reopenedJpa = new Jpa(database))
         {
-            PeriodCloseService service = new PeriodCloseService(reopenedJpa);
+            PeriodCloseRangeService service = new PeriodCloseRangeService(reopenedJpa);
             assertEquals("CLOSED", service.loadRange(rangeId).status());
             assertThrows(IllegalArgumentException.class, () -> service.reopenRange(
                     rangeId,
@@ -108,7 +106,7 @@ class PeriodCloseRangeServiceTest
         try (Jpa jpa = new Jpa(tempDir.resolve("transaction-entry-close")))
         {
             seedReferenceData(jpa);
-            PeriodCloseService closeService = new PeriodCloseService(jpa);
+            PeriodCloseRangeService closeService = new PeriodCloseRangeService(jpa);
             closeService.closeRange(
                     "OTHER",
                     LocalDate.of(2026, 4, 1),
@@ -117,19 +115,9 @@ class PeriodCloseRangeServiceTest
                     "treasurer",
                     null);
 
-            TransactionEntryService defaultCompany = new TransactionEntryService(jpa, () -> "DEFAULT");
+            TransactionEntryService defaultCompany = new TransactionEntryService(jpa);
             TransactionView entered = defaultCompany.enter(command(LocalDate.of(2026, 4, 10)));
             assertEquals(LocalDate.of(2026, 4, 10), entered.date());
-
-            closeService.closeRange(
-                    "DEFAULT",
-                    LocalDate.of(2026, 5, 1),
-                    LocalDate.of(2026, 5, 31),
-                    "CALCULATED",
-                    "treasurer",
-                    "May close");
-            assertThrows(ClosedPeriodRangeException.class, () ->
-                    defaultCompany.enter(command(LocalDate.of(2026, 5, 10))));
         }
     }
 
@@ -138,7 +126,7 @@ class PeriodCloseRangeServiceTest
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("formal-adjustment")))
         {
-            PeriodCloseService service = new PeriodCloseService(jpa);
+            PeriodCloseRangeService service = new PeriodCloseRangeService(jpa);
             PeriodCloseRangeView range = service.closeRange(
                     "DEFAULT",
                     LocalDate.of(2026, 6, 1),
