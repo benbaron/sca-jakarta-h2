@@ -3,8 +3,6 @@ package org.nonprofitbookkeeping.service;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import org.nonprofitbookkeeping.model.AccountingPeriod;
-import org.nonprofitbookkeeping.model.AccountingPeriodStatus;
 import org.nonprofitbookkeeping.model.AuditEvent;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
@@ -13,6 +11,8 @@ import org.nonprofitbookkeeping.persistence.Jpa;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * Applies direct edits, deletions, reversals, and replacement transactions.
@@ -21,11 +21,18 @@ import java.util.List;
 public class TransactionCorrectionService
 {
     private final Jpa jpa;
+    private final Supplier<String> companyCodeSupplier;
 
     @Inject
     public TransactionCorrectionService(Jpa jpa)
     {
-        this.jpa = jpa;
+        this(jpa, () -> "DEFAULT");
+    }
+
+    public TransactionCorrectionService(Jpa jpa, Supplier<String> companyCodeSupplier)
+    {
+        this.jpa = Objects.requireNonNull(jpa, "jpa");
+        this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
     }
 
     public Txn directEdit(long transactionId, LocalDate transactionDate, String memo, String correctionNote, String actor)
@@ -44,8 +51,8 @@ public class TransactionCorrectionService
                 Txn txn = requireTransaction(em, transactionId);
                 requireEntered(txn);
                 requireNotReconciled(em, transactionId, "edit transaction");
-                requireOpenPeriodIfConfigured(em, txn.getTxnDate(), "edit transaction");
-                requireOpenPeriodIfConfigured(em, transactionDate, "move transaction");
+                requireOpenRange(em, txn.getTxnDate(), "edit transaction");
+                requireOpenRange(em, transactionDate, "move transaction");
 
                 String before = snapshot(txn);
                 txn.setTxnDate(transactionDate);
@@ -75,7 +82,7 @@ public class TransactionCorrectionService
                 Txn txn = requireTransaction(em, transactionId);
                 requireEntered(txn);
                 requireNotReconciled(em, transactionId, "delete transaction");
-                requireOpenPeriodIfConfigured(em, txn.getTxnDate(), "delete transaction");
+                requireOpenRange(em, txn.getTxnDate(), "delete transaction");
 
                 AuditEvent event = audit(actor, "TRANSACTION_DELETED", txn, snapshot(txn), null, reason);
                 event.setEntityId(Long.toString(transactionId));
@@ -108,7 +115,7 @@ public class TransactionCorrectionService
                 Txn original = requireTransaction(em, transactionId);
                 requireEntered(original);
                 requireNotReconciled(em, transactionId, "reverse transaction");
-                requireOpenPeriodIfConfigured(em, reversalDate, "create reversal");
+                requireOpenRange(em, reversalDate, "create reversal");
 
                 List<TxnSplit> originalSplits = em.createQuery(
                                 "from TxnSplit s where s.txn.id = :id order by s.id",
@@ -173,26 +180,9 @@ public class TransactionCorrectionService
         }
     }
 
-    private static void requireOpenPeriodIfConfigured(EntityManager em, LocalDate date, String operation)
+    private void requireOpenRange(EntityManager em, LocalDate date, String operation)
     {
-        List<AccountingPeriod> periods = em.createQuery("""
-                from AccountingPeriod p
-                where p.startDate <= :date
-                  and p.endDate >= :date
-                order by p.fiscalYear, p.periodNumber
-                """, AccountingPeriod.class)
-                .setParameter("date", date)
-                .setMaxResults(2)
-                .getResultList();
-
-        if (periods.size() > 1)
-        {
-            throw new IllegalStateException("Multiple accounting periods contain date " + date);
-        }
-        if (!periods.isEmpty() && periods.get(0).getStatus() == AccountingPeriodStatus.CLOSED)
-        {
-            throw new ClosedAccountingPeriodException(periods.get(0).getId(), date, operation);
-        }
+        PeriodCloseRangeService.requireOpen(em, companyCodeSupplier.get(), date, operation);
     }
 
     private static Txn copyHeader(Txn source, LocalDate date)
