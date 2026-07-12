@@ -2,20 +2,20 @@
 plan_version: 31
 active_phase: P11
 active_slice: P11-S1
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P11-S1-report-catalog-parameters
-active_pull_request: "TBD"
-active_head: 78cd26748181af9665229318231c5bf8ae4a7d0c
-next_action: "Open the P11-S1 draft PR, then implement a typed report catalog, report-specific parameters, fund filtering, company-aware formatting, and focused preview/export tests."
+active_pull_request: "#158"
+active_head: f147c6f82b549ba53f81d139d70a8ecb7e21cc07
+next_action: "Complete final Maven validation and desktop laptop-width checks for typed report selection, parameters, fund filtering, preview, export, drill-through, and divider persistence; then merge PR #158."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ## 1. Purpose
 
-This document is the phase controller for work in `benbaron/sca-jakarta-h2`. Execute one phase and one mergeable slice at a time under `AGENTS.md`.
+This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P10-S1 and corrective P10-C1 as DONE through merged PRs #156 and #157, then activates P11-S1 as the first newly unblocked Report Library slice.
+This revision records P10-S1 and corrective P10-C1 as DONE through merged PRs #156 and #157, then records P11-S1 typed Report Library work on PR #158.
 
 ## 2. Status values
 
@@ -26,27 +26,27 @@ This revision records P10-S1 and corrective P10-C1 as DONE through merged PRs #1
 - `DONE`
 - `ELIMINATED`
 
-Only merged and verified behavior is `DONE`. `ELIMINATED` means the former function is not part of the product plan.
+Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase or function is no longer part of the product plan and must not be reintroduced without a new requirements decision.
 
-## 3. Phase index
+## 3. Phase index after requirements clarification
 
 | Phase | Name | Depends on | Status |
 |---|---|---|---|
-| P00 | Documentation and implementation inventory | none | DONE; update as touched |
-| P01 | Production shell and workspace composition | P00 | DONE through corrective P01-C1 / PR #141 |
+| P00 | Documentation and implementation inventory | none | DONE; update matrices as touched |
+| P01 | Production shell and workspace composition | P00 | DONE; corrective P01-C1 DONE through PR #141 |
 | P02 | Canonical ledger and transaction operations | P00 | DONE; retain |
 | P03 | Journal workspace and canonical transaction operations | P01, P02 | DONE through corrective P03-C9 / PR #154 |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
-| P05 | Banking configuration and statement import | P02, P03 | DONE through PR #137 and corrective P05-C5 / PR #148 |
-| P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138 and corrective PRs #146–#147 |
-| P07 | Eliminated former Schedules phase | n/a | ELIMINATED through PR #139 |
-| P08 | Asset Register and depreciation | P02 | DONE through PR #140 and corrective PR #144 |
-| P09 | Inventory and supplies | P02 | DONE through PR #142 and corrective PR #143 |
+| P05 | Banking configuration and statement import | P02, P03-C1 | DONE through PR #137; corrective P05-C5 DONE through PR #148 |
+| P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 DONE through PR #146; corrective P06-C2 DONE through PR #147 |
+| P07 | Eliminated former Schedules phase | n/a | DONE through PR #139 |
+| P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 DONE through PR #144 |
+| P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
-| P11 | Report Library | P02, P04, P06, P08, P09, P10 | IN_PROGRESS; P11-S1 active |
+| P11 | Report Library | P02, P04, P06, P08, P09, P10 | VERIFYING; P11-S1 on PR #158 |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | READY |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
-| P14 | End-to-end hardening | P03–P13 except eliminated P07 | BLOCKED |
+| P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
 ## 4. Governing documents
 
@@ -55,7 +55,7 @@ Always read:
 - `AGENTS.md`
 - `doc/PLAN.md`
 
-For UI/accounting/report work also read:
+Focused documents for current UI/accounting work:
 
 - `doc/interface-operation-matrix.md`
 - `doc/persistence-authority-inventory.md`
@@ -66,110 +66,228 @@ For UI/accounting/report work also read:
 - `doc/accounting/ledger-authority.md`
 - `doc/accounting/transaction-lifecycle.md`
 - `doc/accounting/period-and-correction-policy.md`
+- `doc/reporting/report-library.md`
 - `doc/workflow/development-workflow.md`
 
-`doc/architecture/production-workspace.md` was removed. Do not restore it.
+`doc/architecture/production-workspace.md` was removed. Do not re-add it or list it as required reading.
 
-## 5. Established product decisions
+## 5. Established product decisions after clarification
 
-- Maintain one JavaFX/H2 application and one canonical ledger.
-- H2 is authoritative for accepted operational and accounting data.
-- Use the existing JPA/Hibernate/Flyway foundation.
-- Write services own validation and transactions; query services return projections.
-- Reports belong in `REPORT_LIBRARY` and read authoritative services/projections.
-- No approval queue, separate posting workflow, generic Schedules function, or Import/Export Jobs function.
-- Notes and factual audit history remain in scope.
-- Production UI follows `doc/ui_design_rules.md` and `doc/ui/editor-guidelines.md`.
-- Company-specific date, money, table, and divider preferences are company-owned.
-- The desktop JPA bootstrap explicitly selects the configured Hibernate provider.
+- One production JavaFX application.
+- H2 is authoritative for accepted operational/accounting data.
+- Existing JPA/Hibernate model and Flyway migrations are the schema foundation.
+- No parallel ledgers, budget stores, import stores, or panel frameworks.
+- Write services own validation and transactions.
+- Query services return projections for panels and reports.
+- Constructor injection is preferred.
+- Left Navigation under Accounting exposes one Journal destination rather than separate Ledger Register, Transaction Editor, and Inspect Journal destinations.
+- Left Navigation must not include Schedules.
+- Left Navigation must not include Import/Export Jobs as a separate function.
+- No approval queue or formal approval/rejection workflow.
+- Reconciliation approve/reject semantics are replaced by saved comparison/reconciliation state.
+- Notes and factual audit history are in scope.
+- Reports belong in `REPORT_LIBRARY`.
+- The former Schedules function is eliminated.
+- Import/Export Jobs is eliminated as both a panel and generic durable job-tracking function.
+- Fixed assets are distinct from inventory and require H2-backed asset/depreciation records.
+- Inventory/supplies are distinct from fixed assets and require H2-backed item/movement records.
+- Production widgets with visible non-blank display text should expose their full text on hover, except text boxes and custom-help tooltip cases.
+- Disabled placeholder Delete buttons are not part of the UI contract; a Delete button must perform a real supported operation.
+- Bank Reconciliation must be a full statement-to-ledger matching workspace, not only a saved comparison table.
+- Transaction supplemental schedule/detail panels are not the eliminated generic Schedules function; they are per-transaction detail editors and viewers.
+- Period close uses calculated or custom date ranges rather than an accounting-period table as the business authority.
+- Reopening is supported and creates factual audit history; P10 must not expose approval/rejection semantics.
+- The desktop JPA bootstrap explicitly selects the Hibernate provider configured by `persistence.xml`; it does not rely on launcher-sensitive Jakarta Persistence service discovery.
+- Report preview, export, and drill-through use one immutable validated report request.
+- Visible report dates and money follow active-company preferences; machine CSV remains unadorned and stable.
 
-## 6. Completed phase handoffs
+## 6. Completed phases and slices
 
-### P03 — Journal workspace
+### P00 — Documentation and implementation inventory
 
-DONE through P03-C9 / PR #154. The unified Journal uses canonical `Txn`/`TxnSplit` services and H2-backed supplemental transaction records. A later corrective slice may add authoritative line-level cleared-state projection.
+Status: DONE, with clarification updates as touched.
 
-### P05/P06 — Banking and reconciliation
+### P01 — Production shell and workspace composition
 
-DONE through PRs #137, #138, #146–#148. Banking configuration, statement facts, matching, resolution, reconciliation sessions, and comparison reports are H2-backed. Later work may extend specialized reconciliation reporting.
+Status: DONE, retrofit as touched.
 
-### P08 — Fixed assets
+Corrective slices:
 
-DONE through PRs #140 and #144. Asset records and depreciation runs are H2-backed; depreciation creates canonical transactions.
+- P01-C1 Full-text hover tooltips for production widgets: DONE through PR #141.
 
-### P09 — Inventory
+### P02 — Canonical ledger and transaction operations
 
-DONE through PRs #142 and #143. Inventory items and movements are H2-backed. Later work may automate financially relevant movement transactions and reporting.
+Status: DONE, retain.
 
-### P10 — Period close and factual audit history
+### P03 — Journal workspace and canonical transaction operations
 
-DONE through P10-S1 / PR #156 and corrective P10-C1 / PR #157.
+Status: DONE through corrective P03-C9 / PR #154.
 
-Completed behavior:
+Completed slices:
 
-- company-scoped calculated or custom close ranges in V60;
-- factual close/reopen events and audit records;
-- canonical transaction-entry/correction enforcement;
-- service-backed Period Close workspace without approval/rejection semantics;
-- explicit Hibernate bootstrap for reliable JavaFX desktop startup.
+- P03-C1 Transaction Editor modes and Ledger Register buttons: DONE.
+- P03-C2 Journal Pane and Inspect Journal navigation: DONE.
+- P03-C3 Transaction Editor Delete correction action: DONE.
+- P03-C4 Transaction Editor and Journal Pane redesign: DONE through PR #149.
+- P03-C5 Persisted Transaction Editor supplemental details: DONE through PR #150.
+- P03-C6 Unified Journal workspace port: DONE through PR #151.
+- P03-C7 Journal UI design-rule compliance: DONE through PR #152.
+- P03-C8 Journal compliance cleanup and verification: DONE through PR #153.
+- P03-C9 Remove visible Journal table commentary: DONE through PR #154; Maven PR Tests runs `29132445663` and `29132508479` passed before merge.
+
+Known remaining P03 limitation:
+
+- `TransactionView.Line` does not yet expose the authoritative line-level cleared flag. The Journal does not claim authoritative mixed cleared/uncleared transaction detail; an explicit line-level projection remains a later corrective slice.
+
+### P10 — Period close, reopening, and factual audit history
+
+Status: DONE through P10-S1 / PR #156 and corrective P10-C1 / PR #157.
+
+#### P10-S1 — Calculated period close and reopen service
+
+Branch: `codex/P10-S1-period-close-implementation`
+Pull request: #156, merged into `main` at `fc9e8ddb5bb2583ec744ff7fe6e9ce7ba07a5e8a`
+Tested implementation head: `2462a591de7965d69c8909991443011665daba8a`
+
+Purpose: replace the run-record/approval-oriented placeholder with authoritative calculated or custom date-range close state, reopening, and factual audit history while preserving canonical ledger, reconciliation protection, and transaction-service boundaries.
+
+Completed deliverables:
+
+- Added nondestructive V60 H2 tables `period_close_range` and `period_close_event`, scoped by company and date range.
+- Added `PeriodCloseRangeService` close, overlap validation, list, lookup, reopen-policy, and factual event/audit operations.
+- Kept legacy `PeriodCloseService`/run records separate as compatibility-only data instead of mixing two authorities in one service.
+- Added company-scoped `ClosedPeriodRangeException` and read projections for close ranges and events.
+- Wired `TransactionEntryService` and `TransactionCorrectionService` to authoritative range checks inside canonical ledger transactions.
+- Preserved completed-reconciliation protection and allowed reversal of a prior-period transaction into an open destination date.
+- Replaced `PeriodCloseRunsPanel` run/approval controls with calculated/custom Close Range, Reopen Selected, Refresh, range-state table, and factual event-history table.
+- Removed approval/rejection and direct repository-write behavior from the production Period Close workspace.
+- Added service restart/history/company/policy tests, transaction entry enforcement tests, correction rollback/reversal tests, migration uniqueness coverage, and UI source guardrails.
+- Updated the operation matrix, persistence authority inventory, and period/correction policy.
 
 Validation:
 
-- P10-S1 Maven PR Tests passed through final implementation head `2462a591de7965d69c8909991443011665daba8a`.
-- P10-C1 Maven PR Tests runs `29177308667` and `29177357943` passed on head `0d82d960d2a47529eb5883fe8ccf388eb8bc2551`.
-- PR #157 merged as `78cd26748181af9665229318231c5bf8ae4a7d0c`.
+- Maven PR Tests run `29164587670` passed for authoritative range service, persistence, restart, and audit behavior.
+- Maven PR Tests run `29164655355` passed after canonical transaction-entry/correction enforcement.
+- Maven PR Tests run `29164725119` passed after JavaFX runtime wiring and Period Close workspace replacement.
+- Maven PR Tests run `29164894557` passed on the complete implementation, test, and documentation head.
+- PR #156 merged on 2026-07-11.
+- Desktop validation exposed the provider-discovery startup failure addressed by P10-C1.
 
-Known later P10 cleanup:
+#### P10-C1 — Explicit desktop JPA provider bootstrap
 
-- legacy `AccountingPeriod` and period-close run artifacts remain compatibility structures, not close authority;
-- `REQUIRE_FORMAL_ADJUSTMENT` blocks direct reopening; a specialized formal-adjustment workflow may be added only as a later deliberate slice.
+Branch: `codex/P10-C1-explicit-jpa-provider`
+Pull request: #157, merged into `main` at `78cd26748181af9665229318231c5bf8ae4a7d0c`
+Tested head: `0d82d960d2a47529eb5883fe8ccf388eb8bc2551`
 
-## 7. Active phase contract
+Completed deliverables:
 
-# P11 — Report Library
+- Replaced `Persistence.createEntityManagerFactory(...)` with explicit `HibernatePersistenceProvider` bootstrap while retaining `META-INF/persistence.xml`, `scaLedgerPU`, RESOURCE_LOCAL transactions, and JDBC overrides.
+- Added focused diagnostics for a missing or incompatible Hibernate runtime dependency.
+- Added a regression test that empties the global provider resolver and verifies file-mode `Jpa` still starts.
+- Maven PR Tests runs `29177308667` and `29177357943` passed.
+- PR #157 merged and the user directed that the slice be marked DONE.
 
-**Selector:** `PHASE=P11`
+Known P10 follow-up:
 
-**Depends on:** P02, P04, P06, P08, P09, P10 — all satisfied.
+- `AccountingPeriod`/`AccountingPeriodService` and legacy period-close run artifacts remain compatibility structures, not close authority.
+- `REQUIRE_FORMAL_ADJUSTMENT` blocks direct reopen; a specialized formal-adjustment workflow remains a deliberate later slice rather than a prerequisite for P11.
 
-### P11-S1 — Typed report catalog and parameters
+### P11 — Report Library
 
-**Status:** IN_PROGRESS
+Status: VERIFYING; P11-S1 active on PR #158.
 
-**Branch:** `codex/P11-S1-report-catalog-parameters`
+#### P11-S1 — Typed report catalog and parameters
 
-**Pull request:** TBD
+Branch: `codex/P11-S1-report-catalog-parameters`
+Pull request: #158
+Tested head before this plan handoff: `f147c6f82b549ba53f81d139d70a8ecb7e21cc07`
 
-#### Current implementation
+Purpose: replace string-based report selection and duplicated parameter construction with a typed catalog and one validated request shared by preview, export, and Journal drill-through.
 
-- `ReportLibraryPanel` owns a string list of four core financial reports plus workbook-semantic reports.
-- Core Trial Balance, General Ledger Detail, Balance Sheet, and Income Statement queries are real H2-backed projections from `FinancialReportService`.
-- Preview and export support TEXT, CSV, PDF, and XLSX.
-- The panel has only the global `DateRangeContext`; it lacks report-specific parameter metadata, a fund selector, and a single immutable request shared by preview/export.
-- Core text renderers print ISO dates and raw `BigDecimal` values instead of active-company display preferences.
-- Donor `NonprofitAccounting` reporting code is design reference only; do not port its persistence model or create a parallel reporting framework.
+Completed deliverables:
 
-#### Required deliverables
+- Added typed `ReportDefinition`, stable `ReportFundOption`, validated `ReportRequest`, immutable `ReportResult`, and `ReportExecutionService`.
+- Cataloged the four core H2-backed reports and all existing workbook-semantic templates; no selectable placeholder report remains.
+- Added report-specific as-of/date-range controls, active-fund filtering with All Funds, and conditional row limits.
+- Extended semantic reports to accept applicable fund and row-limit parameters.
+- Added active-company date/money formatting for visible core report text while preserving ISO/raw numeric CSV.
+- Reused the same request/result for preview and export and included request context in Journal drill-through.
+- Added company-owned Report Library divider state.
+- Added catalog/request validation, H2 fund-filter/format integration, and source guardrail tests.
+- Added `doc/reporting/report-library.md`.
 
-- Replace stringly report dispatch with a typed report catalog covering existing core and semantic reports.
-- Define report-specific parameter requirements: as-of date, date range, optional fund, and General Ledger row limit where applicable.
-- Add an active-company fund selector using stable IDs/codes and an explicit All Funds option.
-- Build one immutable report request and use it for preview, export, and drill-through context.
-- Apply active-company date and money formatting to visible core report previews without changing authoritative numeric values or CSV machine data.
-- Preserve existing semantic-template rendering and TEXT/CSV/PDF/XLSX export paths.
-- Remove or disable no visible report unless its real service/template is absent; never show a selectable “Report not implemented” path.
-- Add focused catalog, parameter validation, fund-filter, formatting, preview/export consistency, and UI-source tests.
-- Update the operation matrix, reporting documentation, and this plan with actual results.
+Validation:
 
-#### Definition of done
+- Maven PR Tests run `29178671839` passed after the typed panel integration.
+- Maven PR Tests run `29178741120` passed with catalog/request, fund-filter/format integration, and source guardrail tests.
+- Final documentation-only validation is pending after restoring unrelated matrix/plan structure.
 
-- Every selectable report maps to a real service or semantic template.
-- Report-specific controls are visible only when applicable and survive normal selection changes without corrupting the request.
-- Preview and export consume the same validated report request.
-- Fund-filtered core reports return only the selected fund’s authoritative ledger activity.
-- Visible dates and money follow active-company preferences; CSV remains stable machine-readable data.
-- Maven PR Tests pass, final diff is reviewed, and laptop-width visual checks are recorded.
+Remaining before DONE:
 
-#### Next exact action
+- Complete final Maven PR Tests on the focused final diff.
+- Desktop test at laptop width: select every report; verify conditional dates/fund/row-limit controls; run previews; export TEXT/CSV/PDF/XLSX; drill to Journal; resize and reopen the split pane.
+- Merge PR #158, then mark P11-S1 DONE and select the next P11 slice or phase.
 
-Open the draft PR, inspect fund lookup and company-format utilities plus current report tests/templates, then implement the typed catalog and request model before changing the JavaFX controls.
+## 7. Active and recent phase contracts
+
+# P06 — Bank reconciliation and cleared-state comparison
+
+**Selector:** `PHASE=P06`
+**Status:** DONE through PR #138; corrective P06-C1 DONE through PR #146; corrective P06-C2 DONE through PR #147
+**Depends on:** P05
+
+Completed deliverables: removed approval semantics; added configured-account reconciliation comparison; added unresolved report summaries backed by H2 run records.
+
+### P06-C1 — Full Bank Reconciliation workspace
+
+Status: DONE through PR #146.
+
+Completed deliverables: V57 H2 tables for durable reconciliation sessions and match/resolution rows; `BankReconciliationWorkspaceService`; configured-account filtering; session start/load/list; balance calculations; manual statement-line entry; CSV/OFX/QIF import parsing; matching, unmatching, mark-cleared, resolve-difference, save-unresolved, and finalize; JavaFX reconciliation workspace with configured-account selector, session controls, four cleared-state policies, balance cards, statement source tabs, matching tables, comparison report, and saved reconciliation table.
+
+### P06-C2 — Bank Reconciliation laptop layout correction
+
+Status: DONE through PR #147.
+
+Completed deliverables: Replaced the one-page reconciliation canvas with workflow tabs: Setup, Statement, Match, and Review / Save; moved configured-account/session/policy controls to Setup; moved manual/CSV/OFX/QIF statement entry and import controls to Statement; moved statement and ledger tables plus match/unmatch/mark-cleared/resolve controls to Match; moved balance cards, comparison report, and save/finalize controls to Review / Save.
+
+# P07 — Eliminated former Schedules phase
+
+**Selector:** `PHASE=P07`
+**Status:** DONE through PR #139
+
+Completed deliverables: removed `SchedulesPanel`, production factory route, navigation item, schedule runbook sidecar methods, schedule runbook formatting tests, and related operation-matrix/persistence-inventory references. `AppPanelId.SCHEDULES` remains only as a retired compatibility enum value for legacy switch/preset paths; it has no product route.
+
+# P08 — Asset Register and depreciation
+
+**Selector:** `PHASE=P08`
+**Status:** DONE through PR #140; corrective P08-C1 DONE through PR #144
+**Depends on:** P02
+
+Required behavior: implement Asset Register add/edit and depreciation behavior through H2-backed records and canonical accounting transactions. Assets are separate from Inventory items. Depreciation schedules define calculation only; running depreciation creates actual accounting transactions through the canonical transaction service.
+
+### P08-S1 — H2 fixed asset register and depreciation runs
+
+Status: DONE through PR #140.
+
+Completed deliverables: V55 fixed asset/depreciation-run migration; `FixedAsset` and `FixedAssetDepreciationRun` JPA entities; `FixedAssetService` create/update/list/depreciation-run behavior; depreciation runs create canonical `Txn` and `TxnSplit` rows; Asset Register and Depreciation Runs panels read/write through `FixedAssetService`; asset/depreciation runbook sidecars removed; docs and focused tests added/updated, including a Flyway migration-version uniqueness guardrail.
+
+### P08-C1 — Asset Register selector display labels
+
+Status: DONE through PR #144.
+
+Completed deliverables: Added account and fund `StringConverter` display labels for Asset Register selectors so combo boxes show `code — name` instead of Java object identity strings; added focused source-level label-format test.
+
+# P01-C1 — Full-text hover tooltips
+
+**Selector:** `PHASE=P01`
+**Status:** DONE through PR #141
+
+Completed deliverables: `FullTextTooltipInstaller` utility; production `MainApp` installation; UI design-rule documentation; focused JavaFX tests.
+
+# P09 — Inventory and supplies
+
+**Selector:** `PHASE=P09`
+**Status:** DONE through PR #142; corrective P09-C1 DONE through PR #143
+**Depends on:** P02
+
+Required behavior: implement genuine Inventory item add and movement history; remove runbook subpane; use canonical transactions when financially relevant.
