@@ -5,8 +5,8 @@ active_slice: P11-S1
 active_status: VERIFYING
 active_branch: codex/P11-S1-report-catalog-parameters
 active_pull_request: "#158"
-active_head: f147c6f82b549ba53f81d139d70a8ecb7e21cc07
-next_action: "Complete final Maven validation and desktop laptop-width checks for typed report selection, parameters, fund filtering, preview, export, drill-through, and divider persistence; then merge PR #158."
+active_head: 9c8d6f3c7ea32772345444d6f44d542212ddcc70
+next_action: "Perform desktop laptop-width checks for typed report selection, conditional parameters, fund filtering, preview, TEXT/CSV/PDF/XLSX export, Journal drill-through, and divider persistence; then merge PR #158."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -200,7 +200,7 @@ Status: VERIFYING; P11-S1 active on PR #158.
 
 Branch: `codex/P11-S1-report-catalog-parameters`
 Pull request: #158
-Tested head before this plan handoff: `f147c6f82b549ba53f81d139d70a8ecb7e21cc07`
+Tested head before this plan handoff: `9c8d6f3c7ea32772345444d6f44d542212ddcc70`
 
 Purpose: replace string-based report selection and duplicated parameter construction with a typed catalog and one validated request shared by preview, export, and Journal drill-through.
 
@@ -214,17 +214,17 @@ Completed deliverables:
 - Reused the same request/result for preview and export and included request context in Journal drill-through.
 - Added company-owned Report Library divider state.
 - Added catalog/request validation, H2 fund-filter/format integration, and source guardrail tests.
-- Added `doc/reporting/report-library.md`.
+- Added `doc/reporting/report-library.md` and updated the Report Library operation-matrix row.
 
 Validation:
 
 - Maven PR Tests run `29178671839` passed after the typed panel integration.
 - Maven PR Tests run `29178741120` passed with catalog/request, fund-filter/format integration, and source guardrail tests.
-- Final documentation-only validation is pending after restoring unrelated matrix/plan structure.
+- Maven PR Tests run `29178922845` passed after restoring focused plan/matrix scope.
+- Maven PR Tests run `29178972494` passed on the focused implementation, tests, report documentation, and operation-matrix head `9c8d6f3c7ea32772345444d6f44d542212ddcc70`.
 
 Remaining before DONE:
 
-- Complete final Maven PR Tests on the focused final diff.
 - Desktop test at laptop width: select every report; verify conditional dates/fund/row-limit controls; run previews; export TEXT/CSV/PDF/XLSX; drill to Journal; resize and reopen the split pane.
 - Merge PR #158, then mark P11-S1 DONE and select the next P11 slice or phase.
 
@@ -290,4 +290,4 @@ Completed deliverables: `FullTextTooltipInstaller` utility; production `MainApp`
 **Status:** DONE through PR #142; corrective P09-C1 DONE through PR #143
 **Depends on:** P02
 
-Required behavior: implement genuine Inventory item add and movement history; remove runbook subpane; use canonical transactions when financially relevant.
+Required behavior: implement genuine Inventory item add/edit, movement history, remove runbook subpane, and use canonical transactions when financially relevant.
