@@ -1,26 +1,32 @@
 package org.nonprofitbookkeeping.ui;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import javafx.beans.binding.Bindings;
+import javafx.animation.PauseTransition;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Separator;
+import javafx.scene.control.Spinner;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
-import org.nonprofitbookkeeping.report.template.RenderedSemanticReport;
-import org.nonprofitbookkeeping.report.template.SemanticReportRenderer;
-import org.nonprofitbookkeeping.report.template.SemanticReportValueSet;
-import org.nonprofitbookkeeping.report.template.WorkbookSemanticReportService;
-import org.nonprofitbookkeeping.service.FinancialReportRenderer;
-import org.nonprofitbookkeeping.service.FinancialReportService;
+import javafx.util.Duration;
+import javafx.util.StringConverter;
+import org.nonprofitbookkeeping.report.ReportDefinition;
+import org.nonprofitbookkeeping.report.ReportExecutionService;
+import org.nonprofitbookkeeping.report.ReportFundOption;
+import org.nonprofitbookkeeping.report.ReportRequest;
+import org.nonprofitbookkeeping.report.ReportResult;
+import org.nonprofitbookkeeping.service.CompanyUiPreferencesService;
 import org.nonprofitbookkeeping.service.FinancialReportExportAdapter;
 import org.nonprofitbookkeeping.service.FinancialReportExportFormat;
 import org.nonprofitbookkeeping.service.JasperPdfFinancialReportAdapter;
@@ -36,38 +42,48 @@ import java.util.EnumMap;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Represents the ReportLibraryPanel component in the nonprofit bookkeeping application.
- */
+/** Typed, service-backed Report Library workspace. */
 public class ReportLibraryPanel implements AppPanel
 {
-    private static final String TRIAL_BALANCE = "Trial Balance";
-    private static final String GENERAL_LEDGER_DETAIL = "General Ledger Detail";
-    private static final String BALANCE_SHEET = "Balance Sheet";
-    private static final String INCOME_STATEMENT = "Income Statement";
-    private static final String BALANCE_STMT = "BalanceStmt (SCA workbook)";
-    private static final String INCOME_STMT = "IncomeStmt (SCA workbook)";
-    private static final String WORKBOOK_SUMMARY = "WorkbookSummary (SCA workbook)";
-    private static final String TRANSACTIONS_LIST = "TransactionsList (SCA workbook)";
-    private static final String ALL_CHECKS_TFRS = "AllChecksTfrs (SCA workbook)";
-    private static final String FUND_TRANSFERS = "FundTransfers (SCA workbook)";
+    private static final String STATE_DIVIDER = "reportLibrary.divider";
 
     private final BorderPane root = new BorderPane();
-    private final ListView<String> reportList = new ListView<>();
+    private final ListView<ReportDefinition> reportList = new ListView<>();
     private final TextArea preview = new TextArea();
     private final BorderPane previewHost = new BorderPane();
     private final Label status = new Label();
+    private final Label startLabel = new Label("Start date:");
+    private final Label endLabel = new Label("End date:");
+    private final Label fundLabel = new Label("Fund:");
+    private final Label rowLimitLabel = new Label("Maximum rows:");
+    private final DatePicker startDate = new DatePicker();
+    private final DatePicker endDate = new DatePicker();
+    private final ComboBox<ReportFundOption> fund = new ComboBox<>();
+    private final Spinner<Integer> rowLimit = new Spinner<>(
+            1,
+            ReportRequest.MAX_ROW_LIMIT,
+            ReportRequest.DEFAULT_ROW_LIMIT,
+            100);
     private final ComboBox<FinancialReportExportFormat> exportFormat = new ComboBox<>();
-    private final Map<FinancialReportExportFormat, FinancialReportExportAdapter> adapters = new EnumMap<>(FinancialReportExportFormat.class);
+    private final Map<FinancialReportExportFormat, FinancialReportExportAdapter> adapters =
+            new EnumMap<>(FinancialReportExportFormat.class);
+    private final CompanyUiPreferencesService preferencesService = UiServiceRegistry.companyUiPreferences();
+    private final String companyCode = activeCompanyCode();
+    private final CompanyUiFormat companyFormat = new CompanyUiFormat(preferencesService.load(companyCode));
+    private final ReportExecutionService executionService =
+            new ReportExecutionService(UiServiceRegistry.financialReports(), companyFormat);
+    private final PauseTransition dividerSaveDelay = new PauseTransition(Duration.millis(350));
 
-    private record RenderedReport(String text, String csv, JsonNode template, SemanticReportValueSet values) {}
+    private SplitPane workspaceSplit;
+    private ReportResult currentResult;
 
     public ReportLibraryPanel()
     {
         root.setPadding(new Insets(8));
-        Label title = new Label("Reports Library");
-        Label range = new Label();
-        range.textProperty().bind(Bindings.createStringBinding(() -> "Date Range: " + DateRangeContext.get(), DateRangeContext.selectedProperty()));
+        root.setMinWidth(0.0);
+        root.setMinHeight(0.0);
+
+        Label title = new Label("Report Library");
         title.getStyleClass().add("panel-title");
 
         adapters.put(FinancialReportExportFormat.PDF, new JasperPdfFinancialReportAdapter());
@@ -75,68 +91,225 @@ public class ReportLibraryPanel implements AppPanel
 
         Button run = new Button("Run");
         Button export = new Button("Export");
-        Button drillLedger = new Button("Drill to Ledger");
+        Button drillLedger = new Button("Drill to Journal");
         exportFormat.getItems().setAll(FinancialReportExportFormat.values());
         exportFormat.getSelectionModel().select(FinancialReportExportFormat.TEXT);
         exportFormat.setPrefWidth(160);
         HBox actions = new HBox(8, run, export, drillLedger, new Label("Export format:"), exportFormat);
 
-        root.setTop(new VBox(6, title, range, actions, status, new Separator()));
+        root.setTop(new VBox(6, title, actions, status, new Separator()));
 
-        reportList.getItems().addAll(
-                TRIAL_BALANCE,
-                GENERAL_LEDGER_DETAIL,
-                BALANCE_SHEET,
-                INCOME_STATEMENT,
-                BALANCE_STMT,
-                INCOME_STMT,
-                WORKBOOK_SUMMARY,
-                TRANSACTIONS_LIST,
-                ALL_CHECKS_TFRS,
-                FUND_TRANSFERS
-        );
-        reportList.getSelectionModel().select(0);
+        configureReportList();
+        configureParameters();
+        configurePreview();
+        configureWorkspace();
+        configureActions(run, export, drillLedger);
+        loadFunds();
 
+        reportList.getSelectionModel().select(ReportDefinition.TRIAL_BALANCE);
+        refreshParameterVisibility(ReportDefinition.TRIAL_BALANCE);
+        runReport();
+    }
+
+    private void configureReportList()
+    {
+        reportList.getItems().setAll(ReportDefinition.catalog());
+        reportList.setCellFactory(list -> new ListCell<>()
+        {
+            @Override
+            protected void updateItem(ReportDefinition item, boolean empty)
+            {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.displayName());
+            }
+        });
+        reportList.setMinWidth(180.0);
+    }
+
+    private void configureParameters()
+    {
+        DateRange defaults = DateRangeContext.get();
+        LocalDate end = defaults.endInclusive() == null ? LocalDate.now() : defaults.endInclusive();
+        startDate.setValue(defaults.startInclusive() == null ? end.withDayOfYear(1) : defaults.startInclusive());
+        endDate.setValue(end);
+        companyFormat.install(startDate);
+        companyFormat.install(endDate);
+
+        fund.setConverter(new StringConverter<>()
+        {
+            @Override
+            public String toString(ReportFundOption option)
+            {
+                return option == null ? "" : option.displayLabel();
+            }
+
+            @Override
+            public ReportFundOption fromString(String value)
+            {
+                return null;
+            }
+        });
+        fund.setPrefWidth(260.0);
+        fund.getItems().setAll(ReportFundOption.ALL_FUNDS);
+        fund.getSelectionModel().selectFirst();
+        rowLimit.setEditable(true);
+
+        startDate.valueProperty().addListener((obs, oldValue, newValue) -> parametersChanged());
+        endDate.valueProperty().addListener((obs, oldValue, newValue) -> parametersChanged());
+        fund.valueProperty().addListener((obs, oldValue, newValue) -> parametersChanged());
+        rowLimit.valueProperty().addListener((obs, oldValue, newValue) -> parametersChanged());
+    }
+
+    private void configurePreview()
+    {
         preview.setEditable(false);
         preview.setWrapText(false);
         previewHost.setCenter(preview);
+        previewHost.setMinWidth(0.0);
+        previewHost.setMinHeight(0.0);
+    }
+
+    private void configureWorkspace()
+    {
+        GridPane parameters = new GridPane();
+        parameters.setHgap(8);
+        parameters.setVgap(8);
+        parameters.add(startLabel, 0, 0);
+        parameters.add(startDate, 1, 0);
+        parameters.add(endLabel, 0, 1);
+        parameters.add(endDate, 1, 1);
+        parameters.add(fundLabel, 0, 2);
+        parameters.add(fund, 1, 2);
+        parameters.add(rowLimitLabel, 0, 3);
+        parameters.add(rowLimit, 1, 3);
 
         VBox right = new VBox(8,
                 new Label("Report Parameters"),
-                new Label("Current period: " + DateRangeContext.get()),
-                new Label("Data source: live database records"),
-                new Label("Workbook-modeled reports are rendered from semantic JSON templates."),
+                parameters,
                 new Separator(),
                 new Label("Preview"),
                 previewHost);
         right.setPadding(new Insets(8));
+        right.setMinWidth(0.0);
+        right.setMinHeight(0.0);
+        VBox.setVgrow(previewHost, Priority.ALWAYS);
 
-        SplitPane sp = new SplitPane(reportList, right);
-        sp.setDividerPositions(0.30);
-        root.setCenter(sp);
+        workspaceSplit = new SplitPane(reportList, right);
+        workspaceSplit.setId("reportLibrarySplit");
+        workspaceSplit.setDividerPositions(loadDividerPosition());
+        workspaceSplit.getDividers().get(0).positionProperty().addListener((obs, oldValue, newValue) -> {
+            dividerSaveDelay.setOnFinished(event -> preferencesService.saveState(
+                    companyCode,
+                    Map.of(STATE_DIVIDER, Double.toString(newValue.doubleValue()))));
+            dividerSaveDelay.playFromStart();
+        });
+        root.setCenter(workspaceSplit);
+    }
 
-        run.setOnAction(e -> runReport());
-        export.setOnAction(e -> exportReport());
-        reportList.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> runReport());
-        drillLedger.setOnAction(e -> drillToLedger());
+    private void configureActions(Button run, Button export, Button drillLedger)
+    {
+        run.setOnAction(event -> runReport());
+        export.setOnAction(event -> exportReport());
+        drillLedger.setOnAction(event -> drillToJournal());
+        reportList.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, definition) -> {
+            if (definition != null)
+            {
+                refreshParameterVisibility(definition);
+                parametersChanged();
+                runReport();
+            }
+        });
+    }
 
-        runReport();
+    private void loadFunds()
+    {
+        UiAsync.run("report-library-funds",
+                () -> UiServiceRegistry.fundLookup().listActiveFunds().stream()
+                        .map(ReportFundOption::from)
+                        .toList(),
+                options -> {
+                    ReportFundOption selected = fund.getValue();
+                    fund.getItems().setAll(ReportFundOption.ALL_FUNDS);
+                    fund.getItems().addAll(options);
+                    if (selected != null && fund.getItems().contains(selected))
+                    {
+                        fund.getSelectionModel().select(selected);
+                    }
+                    else
+                    {
+                        fund.getSelectionModel().selectFirst();
+                    }
+                },
+                ex -> status.setText("Could not load funds: " + UiErrors.safeMessage(ex)));
+    }
+
+    private void refreshParameterVisibility(ReportDefinition definition)
+    {
+        boolean range = definition.dateMode() == ReportDefinition.DateMode.RANGE;
+        setVisibleManaged(startLabel, range);
+        setVisibleManaged(startDate, range);
+        endLabel.setText(range ? "End date:" : "As of date:");
+
+        setVisibleManaged(fundLabel, definition.supportsFund());
+        setVisibleManaged(fund, definition.supportsFund());
+        if (!definition.supportsFund())
+        {
+            fund.getSelectionModel().select(ReportFundOption.ALL_FUNDS);
+        }
+
+        setVisibleManaged(rowLimitLabel, definition.supportsRowLimit());
+        setVisibleManaged(rowLimit, definition.supportsRowLimit());
+    }
+
+    private static void setVisibleManaged(Node node, boolean visible)
+    {
+        node.setVisible(visible);
+        node.setManaged(visible);
+    }
+
+    private void parametersChanged()
+    {
+        currentResult = null;
+    }
+
+    private ReportRequest buildRequest()
+    {
+        ReportDefinition definition = reportList.getSelectionModel().getSelectedItem();
+        if (definition == null)
+        {
+            throw new IllegalStateException("Select a report.");
+        }
+        ReportFundOption selectedFund = definition.supportsFund()
+                ? fund.getValue()
+                : ReportFundOption.ALL_FUNDS;
+        return new ReportRequest(
+                definition,
+                startDate.getValue(),
+                endDate.getValue(),
+                selectedFund,
+                rowLimit.getValue());
     }
 
     private void runReport()
     {
-        String reportName = reportList.getSelectionModel().getSelectedItem();
-        if (reportName == null)
+        ReportRequest request;
+        try
         {
+            request = buildRequest();
+        }
+        catch (RuntimeException ex)
+        {
+            status.setText(UiErrors.safeMessage(ex));
             return;
         }
 
-        status.setText("Generating " + reportName + "...");
-        UiAsync.run("report-preview-" + reportName,
-                () -> buildPreview(reportName),
-                rendered -> {
-                    setPreview(rendered);
-                    status.setText("Preview ready for " + reportName + ".");
+        status.setText("Generating " + request.definition().displayName() + "...");
+        UiAsync.run("report-preview-" + request.definition().id(),
+                () -> executionService.execute(request),
+                result -> {
+                    currentResult = result;
+                    setPreview(result);
+                    status.setText("Preview ready: " + request.contextSummary());
                 },
                 ex -> {
                     preview.setText("Could not generate preview: " + UiErrors.safeMessage(ex));
@@ -145,123 +318,60 @@ public class ReportLibraryPanel implements AppPanel
                 });
     }
 
-    private void setPreview(RenderedReport rendered)
+    private void setPreview(ReportResult result)
     {
-        if (rendered.template() != null && rendered.values() != null)
+        if (result.semantic())
         {
-            Node form = new SemanticReportFxRenderer().render(rendered.template(), rendered.values());
-            previewHost.setCenter(form);
+            previewHost.setCenter(new SemanticReportFxRenderer().render(
+                    result.semanticTemplate(),
+                    result.semanticValues()));
         }
         else
         {
-            preview.setText(rendered.text());
+            preview.setText(result.text());
             previewHost.setCenter(preview);
         }
     }
 
-    private RenderedReport buildPreview(String reportName)
+    private void drillToJournal()
     {
-        FinancialReportService reports = UiServiceRegistry.financialReports();
-        DateRange range = DateRangeContext.get();
-        LocalDate start = range.startInclusive();
-        LocalDate end = range.endInclusive() == null ? LocalDate.now() : range.endInclusive();
-
-        String templateId = workbookTemplateId(reportName);
-        if (templateId != null)
+        try
         {
-            WorkbookSemanticReportService semantic = new WorkbookSemanticReportService(reports);
-            JsonNode template = semantic.loadTemplate(templateId);
-            SemanticReportValueSet values = semantic.loadValues(templateId, start, end);
-            RenderedSemanticReport rendered = new SemanticReportRenderer().render(template, values);
-            return new RenderedReport(rendered.text(), rendered.csv(), template, values);
+            ReportRequest request = currentResult == null ? buildRequest() : currentResult.request();
+            DrillThroughCoordinator.openLedgerWithContext("Report drill-through: " + request.contextSummary());
         }
-
-        return switch (reportName)
+        catch (RuntimeException ex)
         {
-            case TRIAL_BALANCE -> {
-                FinancialReportService.TrialBalanceReport report = reports.trialBalance(end, null);
-                yield new RenderedReport(
-                        FinancialReportRenderer.renderTrialBalanceText(report),
-                        FinancialReportRenderer.renderTrialBalanceCsv(report),
-                        null,
-                        null);
-            }
-            case GENERAL_LEDGER_DETAIL -> {
-                java.util.List<FinancialReportService.GeneralLedgerRow> rows = reports.generalLedgerDetail(start, end, null, 400);
-                yield new RenderedReport(
-                        FinancialReportRenderer.renderGeneralLedgerText(rows),
-                        FinancialReportRenderer.renderGeneralLedgerCsv(rows),
-                        null,
-                        null);
-            }
-            case BALANCE_SHEET -> {
-                FinancialReportService.BalanceSheetReport report = reports.balanceSheet(end, null);
-                yield new RenderedReport(
-                        FinancialReportRenderer.renderBalanceSheetText(report),
-                        FinancialReportRenderer.renderBalanceSheetCsv(report),
-                        null,
-                        null);
-            }
-            case INCOME_STATEMENT -> {
-                FinancialReportService.IncomeStatementReport report = reports.incomeStatement(start, end, null);
-                yield new RenderedReport(
-                        FinancialReportRenderer.renderIncomeStatementText(report),
-                        FinancialReportRenderer.renderIncomeStatementCsv(report),
-                        null,
-                        null);
-            }
-            default -> new RenderedReport("Report not implemented: " + reportName, "", null, null);
-        };
-    }
-
-    private String workbookTemplateId(String reportName)
-    {
-        return switch (reportName)
-        {
-            case BALANCE_STMT -> "BalanceStmt";
-            case INCOME_STMT -> "IncomeStmt";
-            case WORKBOOK_SUMMARY -> "WorkbookSummary";
-            case TRANSACTIONS_LIST -> "TransactionsList";
-            case ALL_CHECKS_TFRS -> "AllChecksTfrs";
-            case FUND_TRANSFERS -> "FundTransfers";
-            default -> null;
-        };
-    }
-
-    private void drillToLedger()
-    {
-        String reportName = reportList.getSelectionModel().getSelectedItem();
-        if (reportName == null)
-        {
-            return;
+            status.setText(UiErrors.safeMessage(ex));
         }
-        DrillThroughCoordinator.openLedgerWithContext("Report drill-through: " + reportName + " | " + DateRangeContext.get());
     }
 
     private void exportReport()
     {
-        String reportName = reportList.getSelectionModel().getSelectedItem();
-        if (reportName == null)
+        ReportResult result;
+        try
         {
-            status.setText("Select a report before exporting.");
-            return;
+            ReportRequest request = buildRequest();
+            result = currentResult != null && currentResult.request().equals(request)
+                    ? currentResult
+                    : executionService.execute(request);
         }
-        RenderedReport rendered = buildPreview(reportName);
-        String previewText = rendered.text();
-        if (previewText == null || previewText.isBlank())
+        catch (RuntimeException ex)
         {
-            status.setText("Run the report preview before exporting.");
+            status.setText("Could not generate export: " + UiErrors.safeMessage(ex));
             return;
         }
 
-        FinancialReportExportFormat format = exportFormat.getValue() == null
-                ? FinancialReportExportFormat.TEXT
-                : exportFormat.getValue();
-
+        FinancialReportExportFormat format = selectedExportFormat();
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Export Report Preview");
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(format.label(), "*." + format.extension()));
-        chooser.setInitialFileName(buildReportExportFileName(reportName, LocalDate.now(), format));
+        chooser.setTitle("Export Report");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+                format.label(),
+                "*." + format.extension()));
+        chooser.setInitialFileName(buildReportExportFileName(
+                result.request().definition().displayName(),
+                result.request().endDate(),
+                format));
         File selected = chooser.showSaveDialog(root.getScene() == null ? null : root.getScene().getWindow());
         if (selected == null)
         {
@@ -271,58 +381,90 @@ public class ReportLibraryPanel implements AppPanel
 
         try
         {
-            Path path = selected.toPath();
-            writeExport(path, reportName, rendered, format);
-            status.setText("Exported " + reportName + " (" + format.label() + ") to " + path.getFileName() + ".");
+            writeExport(selected.toPath(), result, format);
+            currentResult = result;
+            status.setText("Exported " + result.request().definition().displayName()
+                    + " (" + format.label() + ") to " + selected.getName() + ".");
         }
         catch (IOException | RuntimeException ex)
         {
-            status.setText("Could not export report preview: " + UiErrors.safeMessage(ex));
+            status.setText("Could not export report: " + UiErrors.safeMessage(ex));
         }
     }
 
+    private FinancialReportExportFormat selectedExportFormat()
+    {
+        return exportFormat.getValue() == null
+                ? FinancialReportExportFormat.TEXT
+                : exportFormat.getValue();
+    }
 
     void setExportFormatForTests(FinancialReportExportFormat format)
     {
-        exportFormat.getSelectionModel().select(format == null ? FinancialReportExportFormat.TEXT : format);
+        exportFormat.getSelectionModel().select(
+                format == null ? FinancialReportExportFormat.TEXT : format);
     }
 
     void exportReportToPathForTests(Path path) throws IOException
     {
-        String reportName = reportList.getSelectionModel().getSelectedItem();
-        if (reportName == null)
-        {
-            throw new IllegalStateException("No report selected.");
-        }
-        RenderedReport rendered = buildPreview(reportName);
-        FinancialReportExportFormat format = exportFormat.getValue() == null
-                ? FinancialReportExportFormat.TEXT
-                : exportFormat.getValue();
-        writeExport(path, reportName, rendered, format);
+        ReportRequest request = buildRequest();
+        ReportResult result = currentResult != null && currentResult.request().equals(request)
+                ? currentResult
+                : executionService.execute(request);
+        writeExport(path, result, selectedExportFormat());
     }
 
-    private void writeExport(Path path,
-                             String reportName,
-                             RenderedReport rendered,
-                             FinancialReportExportFormat format) throws IOException
+    private void writeExport(
+            Path path,
+            ReportResult result,
+            FinancialReportExportFormat format) throws IOException
     {
-        String previewText = rendered.text();
         switch (format)
         {
-            case TEXT -> Files.writeString(path, previewText, StandardCharsets.UTF_8);
-            case CSV -> Files.writeString(path, rendered.csv(), StandardCharsets.UTF_8);
+            case TEXT -> Files.writeString(path, result.text(), StandardCharsets.UTF_8);
+            case CSV -> Files.writeString(path, result.csv(), StandardCharsets.UTF_8);
             case PDF, XLSX -> {
                 FinancialReportExportAdapter adapter = adapters.get(format);
                 if (adapter == null)
                 {
                     throw new IllegalStateException("No export adapter configured for format: " + format);
                 }
-                Files.write(path, adapter.render(reportName, previewText, rendered.csv()));
+                Files.write(path, adapter.render(
+                        result.request().definition().displayName(),
+                        result.text(),
+                        result.csv()));
             }
         }
     }
 
-    static String buildReportExportFileName(String reportName, LocalDate date, FinancialReportExportFormat format)
+    private double loadDividerPosition()
+    {
+        String value = preferencesService.loadState(companyCode, "reportLibrary.")
+                .get(STATE_DIVIDER);
+        try
+        {
+            double position = value == null ? 0.28 : Double.parseDouble(value);
+            return Math.max(0.15, Math.min(0.60, position));
+        }
+        catch (NumberFormatException ex)
+        {
+            return 0.28;
+        }
+    }
+
+    private static String activeCompanyCode()
+    {
+        String company = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
+        String value = company == null || company.isBlank()
+                ? "DEFAULT"
+                : company.trim().toUpperCase(Locale.ROOT);
+        return value.replaceAll("[^A-Z0-9_-]", "_");
+    }
+
+    static String buildReportExportFileName(
+            String reportName,
+            LocalDate date,
+            FinancialReportExportFormat format)
     {
         String normalized = reportName.toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9]+", "-")
@@ -331,10 +473,22 @@ public class ReportLibraryPanel implements AppPanel
         {
             normalized = "report";
         }
-        FinancialReportExportFormat effective = format == null ? FinancialReportExportFormat.TEXT : format;
-        return normalized + "-" + date + "." + effective.extension();
+        FinancialReportExportFormat effective = format == null
+                ? FinancialReportExportFormat.TEXT
+                : format;
+        LocalDate effectiveDate = date == null ? LocalDate.now() : date;
+        return normalized + "-" + effectiveDate + "." + effective.extension();
     }
 
-    @Override public String title() { return "Reports Library"; }
-    @Override public Node root() { return root; }
+    @Override
+    public String title()
+    {
+        return "Report Library";
+    }
+
+    @Override
+    public Node root()
+    {
+        return root;
+    }
 }
