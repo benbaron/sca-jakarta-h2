@@ -4,6 +4,7 @@ import javafx.scene.control.DatePicker;
 import javafx.util.StringConverter;
 import org.nonprofitbookkeeping.model.CompanyUiPreferences;
 import org.nonprofitbookkeeping.model.DateDisplayFormat;
+import org.nonprofitbookkeeping.service.FinancialReportDisplayFormat;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -19,7 +20,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /** Company-aware presentation and lenient editing support for money and dates. */
-public final class CompanyUiFormat
+public final class CompanyUiFormat implements FinancialReportDisplayFormat
 {
     private final CompanyUiPreferences preferences;
     private final DecimalFormat numberFormat;
@@ -42,6 +43,7 @@ public final class CompanyUiFormat
         return preferences;
     }
 
+    @Override
     public String formatMoney(BigDecimal value)
     {
         BigDecimal amount = value == null ? BigDecimal.ZERO : value.setScale(2, RoundingMode.HALF_UP);
@@ -103,6 +105,7 @@ public final class CompanyUiFormat
         }
     }
 
+    @Override
     public String formatDate(LocalDate value)
     {
         return value == null ? "" : displayDateFormatter.format(value);
