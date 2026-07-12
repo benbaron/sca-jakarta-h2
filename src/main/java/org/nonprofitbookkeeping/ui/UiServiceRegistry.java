@@ -26,6 +26,7 @@ import org.nonprofitbookkeeping.service.FundBalanceService;
 import org.nonprofitbookkeeping.service.FundLookupService;
 import org.nonprofitbookkeeping.service.InventoryService;
 import org.nonprofitbookkeeping.service.LedgerQueryService;
+import org.nonprofitbookkeeping.service.PeriodCloseRangeService;
 import org.nonprofitbookkeeping.service.PeriodCloseService;
 import org.nonprofitbookkeeping.service.ReconciliationComparisonService;
 import org.nonprofitbookkeeping.service.ReconciliationService;
@@ -81,6 +82,7 @@ public final class UiServiceRegistry
     public static FinancialReportService financialReports() { return services().financialReports(); }
     public static DashboardQueryService dashboardQuery() { return services().dashboardQuery(); }
     public static BankReconciliationWorkspaceService bankReconciliationWorkspace() { return services().bankReconciliationWorkspace(); }
+    public static PeriodCloseRangeService periodCloseRangeService() { return services().periodCloseRangeService(); }
 
     private static ServiceBundle services()
     {
@@ -138,7 +140,8 @@ public final class UiServiceRegistry
     private static ServiceBundle buildServices(Jpa jpa)
     {
         System.err.println("[NPBK] Building UI service bundle.");
-        TransactionEntryService transactionEntry = new TransactionEntryService(jpa);
+        TransactionEntryService transactionEntry = new TransactionEntryService(jpa, UiServiceRegistry::activeCompanyCode);
+        PeriodCloseRangeService periodCloseRange = new PeriodCloseRangeService(jpa);
         return new ServiceBundle(
                 jpa,
                 new AccountLookupService(jpa),
@@ -157,12 +160,19 @@ public final class UiServiceRegistry
                 new ScheduleEligibilityService(jpa),
                 new LedgerQueryService(jpa),
                 transactionEntry,
-                new TransactionCorrectionService(jpa),
+                new TransactionCorrectionService(jpa, UiServiceRegistry::activeCompanyCode),
                 new TransactionReferenceDataService(jpa),
                 new SampleCompanyService(jpa),
                 new FinancialReportService(jpa),
                 new JpaDashboardQueryService(jpa),
-                new BankReconciliationWorkspaceService(jpa));
+                new BankReconciliationWorkspaceService(jpa),
+                periodCloseRange);
+    }
+
+    private static String activeCompanyCode()
+    {
+        String company = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
+        return company == null || company.isBlank() ? "DEFAULT" : company.trim();
     }
 
     public static ReconciliationRunRepository reconciliationRunRepository()
@@ -185,6 +195,8 @@ public final class UiServiceRegistry
         return new ReconciliationComparisonService(services().jpa(), reconciliationService());
     }
 
+    /** Legacy run-artifact service retained for compatibility outside the production Period Close workspace. */
+    @Deprecated
     public static PeriodCloseService periodCloseService()
     {
         return new PeriodCloseService(periodCloseRunRepository());
@@ -251,7 +263,8 @@ public final class UiServiceRegistry
             SampleCompanyService sampleCompany,
             FinancialReportService financialReports,
             DashboardQueryService dashboardQuery,
-            BankReconciliationWorkspaceService bankReconciliationWorkspace)
+            BankReconciliationWorkspaceService bankReconciliationWorkspace,
+            PeriodCloseRangeService periodCloseRangeService)
     {
         void close()
         {

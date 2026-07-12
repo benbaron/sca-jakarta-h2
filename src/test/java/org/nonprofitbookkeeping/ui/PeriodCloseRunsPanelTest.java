@@ -1,38 +1,42 @@
 package org.nonprofitbookkeeping.ui;
 
-import javafx.scene.control.Button;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-/**
- * PeriodCloseRunsPanelTest component.
- */
-public class PeriodCloseRunsPanelTest
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/** Source guardrails for the authoritative Period Close workspace. */
+class PeriodCloseRunsPanelTest
 {
-    @BeforeAll
-    static void setupFx()
-    {
-        FxTestSupport.initToolkitOrSkip();
-    }
-
     @Test
-    public void approveWithoutSelection_setsHelpfulStatus()
+    void periodCloseWorkspaceUsesRealCloseReopenAndHistoryOperations() throws Exception
     {
-        PeriodCloseRunsPanel panel = FxTestSupport.onFx(PeriodCloseRunsPanel::new);
+        String source = Files.readString(
+                Path.of("src/main/java/org/nonprofitbookkeeping/ui/PeriodCloseRunsPanel.java"));
 
-        String status = FxTestSupport.onFx(() -> {
-            VBox top = (VBox) ((BorderPane) panel.root()).getTop();
-            HBox actions = (HBox) top.getChildren().get(1);
-            Button approve = (Button) actions.getChildren().get(2);
-            approve.fire();
-            return ((javafx.scene.control.Label) top.getChildren().get(2)).getText();
-        });
+        assertTrue(source.contains("new Button(\"Use Active Month\")"));
+        assertTrue(source.contains("new Button(\"Close Range\")"));
+        assertTrue(source.contains("new Button(\"Reopen Selected\")"));
+        assertTrue(source.contains("service().closeRange("));
+        assertTrue(source.contains("service().reopenRange("));
+        assertTrue(source.contains("service().listRanges(company)"));
+        assertTrue(source.contains("service().listEvents(company)"));
+        assertTrue(source.contains("new SplitPane(rangePane, historyPane)"));
+        assertTrue(source.contains("TableView.UNCONSTRAINED_RESIZE_POLICY"));
+        assertTrue(source.contains("column.setSortable(true)"));
+        assertTrue(source.contains("column.setResizable(true)"));
+        assertTrue(source.contains("column.setReorderable(true)"));
 
-        assertEquals("Select a period-close run before recording an approval decision.", status);
+        assertFalse(source.contains("Approve Selected"));
+        assertFalse(source.contains("Reject Selected"));
+        assertFalse(source.contains("ApprovalDecision"));
+        assertFalse(source.contains("approvalAuditService"));
+        assertFalse(source.contains("periodCloseRunRepository"));
+        assertFalse(source.contains("Record Started"));
+        assertFalse(source.contains("Record Failed"));
+        assertFalse(source.contains("Record Completed Close"));
     }
 }
