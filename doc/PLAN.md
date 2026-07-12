@@ -1,12 +1,12 @@
 ---
-plan_version: 29
+plan_version: 30
 active_phase: P10
-active_slice: P10-S1
+active_slice: P10-C1
 active_status: VERIFYING
-active_branch: codex/P10-S1-period-close-implementation
-active_pull_request: "#156"
-active_head: fef48d2f48690dc2229bbe9d4d2d2c361f65310c
-next_action: "Perform desktop validation of the Period Close workspace, then merge PR #156 and mark P10-S1 DONE."
+active_branch: codex/P10-C1-explicit-jpa-provider
+active_pull_request: "#157"
+active_head: d5039e1b7d2956e232efeb1f049b9bb7db8a822e
+next_action: "Merge PR #157, refresh the Eclipse Maven project, rerun FxMain, and confirm Dashboard and Period Close open without the Jakarta Persistence provider exception."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Perform desktop validation of the Period Close workspace, then mer
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P03-C9 as DONE through merged PR #154 and records the implemented P10-S1 authoritative period-close range slice on PR #156. Plan-only PR #155 activated P10-S1 but contained no implementation.
+This revision records P10-S1 as merged through PR #156 and records corrective P10-C1 on PR #157 after desktop validation exposed Jakarta Persistence provider discovery failure during JavaFX startup.
 
 ## 2. Status values
 
@@ -42,7 +42,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P07 | Eliminated former Schedules phase | n/a | DONE through PR #139 |
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 DONE through PR #144 |
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
-| P10 | Period close, reopening, and factual audit history | P02, P06 | VERIFYING; P10-S1 on PR #156 |
+| P10 | Period close, reopening, and factual audit history | P02, P06 | VERIFYING; P10-S1 merged through PR #156; P10-C1 active on PR #157 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | BLOCKED by P10 |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | READY after P10 selection |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
@@ -96,6 +96,7 @@ Focused documents for current UI/accounting work:
 - Transaction supplemental schedule/detail panels are not the eliminated generic Schedules function; they are per-transaction detail editors and viewers.
 - Period close uses calculated or custom date ranges rather than an accounting-period table as the business authority.
 - Reopening is supported and creates factual audit history; P10 must not expose approval/rejection semantics.
+- The desktop JPA bootstrap explicitly selects the Hibernate provider configured by `persistence.xml`; it does not rely on launcher-sensitive Jakarta Persistence service discovery.
 
 ## 6. Completed phases and slices
 
@@ -137,13 +138,13 @@ Known remaining P03 limitation:
 
 ### P10 — Period close, reopening, and factual audit history
 
-Status: VERIFYING; P10-S1 active on PR #156.
+Status: VERIFYING; P10-S1 merged through PR #156 and corrective P10-C1 active on PR #157.
 
 #### P10-S1 — Calculated period close and reopen service
 
 Branch: `codex/P10-S1-period-close-implementation`
-Pull request: #156
-Tested head before this plan handoff: `fef48d2f48690dc2229bbe9d4d2d2c361f65310c`
+Pull request: #156, merged into `main` at `fc9e8ddb5bb2583ec744ff7fe6e9ce7ba07a5e8a`
+Tested implementation head: `2462a591de7965d69c8909991443011665daba8a`
 
 Purpose: replace the run-record/approval-oriented placeholder with authoritative calculated or custom date-range close state, reopening, and factual audit history while preserving canonical ledger, reconciliation protection, and transaction-service boundaries.
 
@@ -165,12 +166,31 @@ Validation:
 - Maven PR Tests run `29164587670` passed for authoritative range service, persistence, restart, and audit behavior.
 - Maven PR Tests run `29164655355` passed after canonical transaction-entry/correction enforcement.
 - Maven PR Tests run `29164725119` passed after JavaFX runtime wiring and Period Close workspace replacement.
-- Maven PR Tests run `29164894557` passed on the complete implementation, test, and documentation head `fef48d2f48690dc2229bbe9d4d2d2c361f65310c`.
+- Maven PR Tests run `29164894557` passed on the complete implementation, test, and documentation head.
+- PR #156 merged on 2026-07-11.
+- Desktop validation then exposed the provider-discovery startup failure addressed by P10-C1.
+
+#### P10-C1 — Explicit desktop JPA provider bootstrap
+
+Branch: `codex/P10-C1-explicit-jpa-provider`
+Pull request: #157
+Tested head before this plan handoff: `d5039e1b7d2956e232efeb1f049b9bb7db8a822e`
+
+Purpose: make the production JavaFX launch reliably create `scaLedgerPU` when the launcher places Jakarta Persistence and Hibernate on class-path/module-path segments where service discovery does not return the Hibernate provider.
+
+Completed deliverables:
+
+- Replaced `Persistence.createEntityManagerFactory(...)` with explicit `HibernatePersistenceProvider` bootstrap while retaining `META-INF/persistence.xml`, the `scaLedgerPU` name, RESOURCE_LOCAL transactions, and JDBC override behavior.
+- Added focused diagnostics for a genuinely missing or incompatible Hibernate runtime dependency.
+- Added a regression test that installs an empty global `PersistenceProviderResolver` and verifies that file-mode `Jpa` still starts and creates an open `EntityManager`.
+- Maven PR Tests run `29177308667` passed on corrective implementation head `d5039e1b7d2956e232efeb1f049b9bb7db8a822e`.
 
 Remaining before DONE:
 
-- Perform desktop validation at laptop width: calculated/custom dates, close, refresh, reopen policies/reasons, both tables, scrolling, sorting, resizing, and divider behavior.
-- Merge PR #156, then mark P10-S1 DONE.
+- Merge PR #157.
+- In Eclipse, run Maven > Update Project, then launch `org.nonprofitbookkeeping.ui.FxMain`; alternatively run `mvn -Pui javafx:run`.
+- Confirm Dashboard and Period Close open without `No Persistence provider for EntityManager named scaLedgerPU`.
+- Complete the remaining Period Close laptop-width workflow validation after successful startup.
 
 Known follow-up:
 
