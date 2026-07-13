@@ -2,11 +2,11 @@
 plan_version: 32
 active_phase: P12
 active_slice: P12-S1
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P12-S1-fund-lifecycle-rules
-active_pull_request: "TBD"
-active_head: eb0ff9a2769d9935ba2ba89a74152dc6a8ad57f7
-next_action: "Open the P12-S1 draft PR, then implement stable-ID fund editing, lifecycle fields, protected deletion, deactivation, service tests, and a service-backed Funds workspace."
+active_pull_request: "#159"
+active_head: 0df1b2f4b034ed113611578cb6dd765fe4b2f83e
+next_action: "Perform desktop laptop-width validation of stable-ID Fund create/edit/code-change, hierarchy and date fields, deactivation, blocked referenced deletion, confirmed unused deletion, scrolling/table state, and divider restoration; then merge PR #159."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Open the P12-S1 draft PR, then implement stable-ID fund editing, l
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P11-S1 as user-verified and merged through PR #158, then activates P12-S1 for stable-ID Funds editing and safe delete/deactivate lifecycle rules.
+This revision records P11-S1 as user-verified and merged through PR #158, then records the implemented P12-S1 stable-ID Funds lifecycle slice on PR #159.
 
 ## 2. Status values
 
@@ -44,7 +44,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
-| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-S1 active |
+| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | VERIFYING; P12-S1 on PR #159 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
@@ -67,6 +67,7 @@ Focused documents for current UI/accounting work:
 - `doc/accounting/transaction-lifecycle.md`
 - `doc/accounting/period-and-correction-policy.md`
 - `doc/reporting/report-library.md`
+- `doc/administration/fund-lifecycle.md`
 - `doc/workflow/development-workflow.md`
 
 `doc/architecture/production-workspace.md` was removed. Do not re-add it or list it as required reading.
@@ -228,30 +229,44 @@ Validation:
 
 ### P12 — Administration, company lifecycle, preferences, and Funds edit
 
-Status: IN_PROGRESS; P12-S1 active.
+Status: VERIFYING; P12-S1 active on PR #159.
 
 #### P12-S1 — Stable-ID Funds editing and lifecycle rules
 
 Branch: `codex/P12-S1-fund-lifecycle-rules`
-Pull request: TBD
-Base: current `main` at `eb0ff9a2769d9935ba2ba89a74152dc6a8ad57f7`
+Pull request: #159
+Tested implementation/documentation head before this handoff: `0df1b2f4b034ed113611578cb6dd765fe4b2f83e`
 
 Purpose: replace code-keyed pseudo-editing with stable-ID fund create/update behavior and enforce safe deactivate/delete rules through `FundAdminService`.
 
-Planned deliverables:
+Completed deliverables:
 
-- Add a stable-ID fund command covering code, name, type, active state, parent, effective dates, and restriction text.
-- Validate code uniqueness, effective-date ordering, and parent/self/cycle rules in the service transaction.
-- Calculate authoritative usage across transaction splits, budgets, assets, inventory, aliases, transfers, and child funds.
-- Allow physical deletion only when the fund has no references; direct users to deactivation when history exists.
-- Replace the one-page Funds panel with separate table/editor regions, company-aware date controls, explicit New/Save/Delete Unused operations, and honest validation/status text.
-- Add service integration tests, UI guardrails, fund-lifecycle documentation, and focused matrix/inventory updates.
+- Added immutable `FundCommand` and `FundUsage` projections.
+- Added stable-ID create/update for code, name, type, active state, parent, effective dates, and restriction text.
+- Added case-insensitive code uniqueness, field-length, date-order, parent existence, self-parent, and parent-cycle validation inside the service transaction.
+- Added usage assessment for canonical transaction splits, budget lines, fixed assets, inventory items, aliases, transfers, and child funds.
+- Added `deleteUnused(...)`, which repeats usage assessment in the deletion transaction and rejects referenced funds with deactivation guidance.
+- Preserved the compatibility code-keyed `upsert(...)` boundary while routing the production workspace through stable-ID commands.
+- Updated Fund lookup to fetch parent labels for detached JavaFX rows.
+- Replaced the one-page Funds form with split table/editor regions, all persisted lifecycle fields, company-aware date controls, dirty-state handling, and real New, Save, Delete Unused, and Refresh actions.
+- Added sortable/resizable/reorderable columns plus company-owned width/order/sort and divider state.
+- Added service integration tests and a JavaFX source guardrail.
+- Added `doc/administration/fund-lifecycle.md` and focused operation-matrix/persistence-inventory updates.
+
+Validation:
+
+- Maven PR Tests run `29224690525` passed after service, integration-test, and JavaFX workspace implementation.
+- Maven PR Tests run `29224900193` passed on the complete implementation, tests, and documentation head `0df1b2f4b034ed113611578cb6dd765fe4b2f83e`.
+- Full diff review found no unrelated schema, ledger, report, company, user, or preference changes.
 
 Remaining before DONE:
 
-- Open the draft PR.
-- Implement and validate the service, panel, tests, and documentation.
-- Perform laptop-width desktop validation and merge the PR.
+- At laptop width, create a fund and edit its code while confirming one stable row remains.
+- Verify parent selection, effective-date formatting/editing, restriction text, active/inactive display, sorting, resizing, reordering, independent scrolling, and divider restoration.
+- Confirm a referenced fund reports its reference summary and directs the user to deactivate it.
+- Confirm clearing Active and saving preserves the referenced row.
+- Create an unused fund, choose Delete Unused, cancel once, then confirm deletion.
+- Merge PR #159 and mark P12-S1 DONE.
 
 ## 7. Active and recent phase contracts
 
