@@ -1,12 +1,12 @@
 ---
-plan_version: 30
-active_phase: P10
-active_slice: P10-C1
+plan_version: 31
+active_phase: P11
+active_slice: P11-S1
 active_status: VERIFYING
-active_branch: codex/P10-C1-explicit-jpa-provider
-active_pull_request: "#157"
-active_head: d5039e1b7d2956e232efeb1f049b9bb7db8a822e
-next_action: "Merge PR #157, refresh the Eclipse Maven project, rerun FxMain, and confirm Dashboard and Period Close open without the Jakarta Persistence provider exception."
+active_branch: codex/P11-S1-report-catalog-parameters
+active_pull_request: "#158"
+active_head: 9c8d6f3c7ea32772345444d6f44d542212ddcc70
+next_action: "Perform desktop laptop-width checks for typed report selection, conditional parameters, fund filtering, preview, TEXT/CSV/PDF/XLSX export, Journal drill-through, and divider persistence; then merge PR #158."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Merge PR #157, refresh the Eclipse Maven project, rerun FxMain, an
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P10-S1 as merged through PR #156 and records corrective P10-C1 on PR #157 after desktop validation exposed Jakarta Persistence provider discovery failure during JavaFX startup.
+This revision records P10-S1 and corrective P10-C1 as DONE through merged PRs #156 and #157, then records P11-S1 typed Report Library work on PR #158.
 
 ## 2. Status values
 
@@ -42,9 +42,9 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P07 | Eliminated former Schedules phase | n/a | DONE through PR #139 |
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 DONE through PR #144 |
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
-| P10 | Period close, reopening, and factual audit history | P02, P06 | VERIFYING; P10-S1 merged through PR #156; P10-C1 active on PR #157 |
-| P11 | Report Library | P02, P04, P06, P08, P09, P10 | BLOCKED by P10 |
-| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | READY after P10 selection |
+| P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
+| P11 | Report Library | P02, P04, P06, P08, P09, P10 | VERIFYING; P11-S1 on PR #158 |
+| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | READY |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
@@ -66,6 +66,7 @@ Focused documents for current UI/accounting work:
 - `doc/accounting/ledger-authority.md`
 - `doc/accounting/transaction-lifecycle.md`
 - `doc/accounting/period-and-correction-policy.md`
+- `doc/reporting/report-library.md`
 - `doc/workflow/development-workflow.md`
 
 `doc/architecture/production-workspace.md` was removed. Do not re-add it or list it as required reading.
@@ -97,6 +98,8 @@ Focused documents for current UI/accounting work:
 - Period close uses calculated or custom date ranges rather than an accounting-period table as the business authority.
 - Reopening is supported and creates factual audit history; P10 must not expose approval/rejection semantics.
 - The desktop JPA bootstrap explicitly selects the Hibernate provider configured by `persistence.xml`; it does not rely on launcher-sensitive Jakarta Persistence service discovery.
+- Report preview, export, and drill-through use one immutable validated report request.
+- Visible report dates and money follow active-company preferences; machine CSV remains unadorned and stable.
 
 ## 6. Completed phases and slices
 
@@ -138,7 +141,7 @@ Known remaining P03 limitation:
 
 ### P10 — Period close, reopening, and factual audit history
 
-Status: VERIFYING; P10-S1 merged through PR #156 and corrective P10-C1 active on PR #157.
+Status: DONE through P10-S1 / PR #156 and corrective P10-C1 / PR #157.
 
 #### P10-S1 — Calculated period close and reopen service
 
@@ -168,34 +171,62 @@ Validation:
 - Maven PR Tests run `29164725119` passed after JavaFX runtime wiring and Period Close workspace replacement.
 - Maven PR Tests run `29164894557` passed on the complete implementation, test, and documentation head.
 - PR #156 merged on 2026-07-11.
-- Desktop validation then exposed the provider-discovery startup failure addressed by P10-C1.
+- Desktop validation exposed the provider-discovery startup failure addressed by P10-C1.
 
 #### P10-C1 — Explicit desktop JPA provider bootstrap
 
 Branch: `codex/P10-C1-explicit-jpa-provider`
-Pull request: #157
-Tested head before this plan handoff: `d5039e1b7d2956e232efeb1f049b9bb7db8a822e`
-
-Purpose: make the production JavaFX launch reliably create `scaLedgerPU` when the launcher places Jakarta Persistence and Hibernate on class-path/module-path segments where service discovery does not return the Hibernate provider.
+Pull request: #157, merged into `main` at `78cd26748181af9665229318231c5bf8ae4a7d0c`
+Tested head: `0d82d960d2a47529eb5883fe8ccf388eb8bc2551`
 
 Completed deliverables:
 
-- Replaced `Persistence.createEntityManagerFactory(...)` with explicit `HibernatePersistenceProvider` bootstrap while retaining `META-INF/persistence.xml`, the `scaLedgerPU` name, RESOURCE_LOCAL transactions, and JDBC override behavior.
-- Added focused diagnostics for a genuinely missing or incompatible Hibernate runtime dependency.
-- Added a regression test that installs an empty global `PersistenceProviderResolver` and verifies that file-mode `Jpa` still starts and creates an open `EntityManager`.
-- Maven PR Tests run `29177308667` passed on corrective implementation head `d5039e1b7d2956e232efeb1f049b9bb7db8a822e`.
+- Replaced `Persistence.createEntityManagerFactory(...)` with explicit `HibernatePersistenceProvider` bootstrap while retaining `META-INF/persistence.xml`, `scaLedgerPU`, RESOURCE_LOCAL transactions, and JDBC overrides.
+- Added focused diagnostics for a missing or incompatible Hibernate runtime dependency.
+- Added a regression test that empties the global provider resolver and verifies file-mode `Jpa` still starts.
+- Maven PR Tests runs `29177308667` and `29177357943` passed.
+- PR #157 merged and the user directed that the slice be marked DONE.
+
+Known P10 follow-up:
+
+- `AccountingPeriod`/`AccountingPeriodService` and legacy period-close run artifacts remain compatibility structures, not close authority.
+- `REQUIRE_FORMAL_ADJUSTMENT` blocks direct reopen; a specialized formal-adjustment workflow remains a deliberate later slice rather than a prerequisite for P11.
+
+### P11 — Report Library
+
+Status: VERIFYING; P11-S1 active on PR #158.
+
+#### P11-S1 — Typed report catalog and parameters
+
+Branch: `codex/P11-S1-report-catalog-parameters`
+Pull request: #158
+Tested head before this plan handoff: `9c8d6f3c7ea32772345444d6f44d542212ddcc70`
+
+Purpose: replace string-based report selection and duplicated parameter construction with a typed catalog and one validated request shared by preview, export, and Journal drill-through.
+
+Completed deliverables:
+
+- Added typed `ReportDefinition`, stable `ReportFundOption`, validated `ReportRequest`, immutable `ReportResult`, and `ReportExecutionService`.
+- Cataloged the four core H2-backed reports and all existing workbook-semantic templates; no selectable placeholder report remains.
+- Added report-specific as-of/date-range controls, active-fund filtering with All Funds, and conditional row limits.
+- Extended semantic reports to accept applicable fund and row-limit parameters.
+- Added active-company date/money formatting for visible core report text while preserving ISO/raw numeric CSV.
+- Reused the same request/result for preview and export and included request context in Journal drill-through.
+- Added company-owned Report Library divider state.
+- Added catalog/request validation, H2 fund-filter/format integration, and source guardrail tests.
+- Added `doc/reporting/report-library.md` and updated the Report Library operation-matrix row.
+
+Validation:
+
+- Maven PR Tests run `29178671839` passed after the typed panel integration.
+- Maven PR Tests run `29178741120` passed with catalog/request, fund-filter/format integration, and source guardrail tests.
+- Maven PR Tests run `29178922845` passed after restoring focused plan/matrix scope.
+- Maven PR Tests run `29178972494` passed on the focused implementation, tests, report documentation, and operation-matrix head `9c8d6f3c7ea32772345444d6f44d542212ddcc70`.
 
 Remaining before DONE:
 
-- Merge PR #157.
-- In Eclipse, run Maven > Update Project, then launch `org.nonprofitbookkeeping.ui.FxMain`; alternatively run `mvn -Pui javafx:run`.
-- Confirm Dashboard and Period Close open without `No Persistence provider for EntityManager named scaLedgerPU`.
-- Complete the remaining Period Close laptop-width workflow validation after successful startup.
-
-Known follow-up:
-
-- `AccountingPeriod`/`AccountingPeriodService` and legacy period-close run artifacts remain compatibility structures. Their deliberate retirement or migration is a later nondestructive cleanup slice; they are not the P10 close authority.
-- `REQUIRE_FORMAL_ADJUSTMENT` correctly blocks direct reopen, but the formal adjustment workflow itself remains a later P10 slice.
+- Desktop test at laptop width: select every report; verify conditional dates/fund/row-limit controls; run previews; export TEXT/CSV/PDF/XLSX; drill to Journal; resize and reopen the split pane.
+- Merge PR #158, then mark P11-S1 DONE and select the next P11 slice or phase.
 
 ## 7. Active and recent phase contracts
 
@@ -259,4 +290,4 @@ Completed deliverables: `FullTextTooltipInstaller` utility; production `MainApp`
 **Status:** DONE through PR #142; corrective P09-C1 DONE through PR #143
 **Depends on:** P02
 
-Required behavior: implement genuine Inventory item add and movement history; remove runbook subpane; use canonical transactions when financially relevant.
+Required behavior: implement genuine Inventory item add/edit, movement history, remove runbook subpane, and use canonical transactions when financially relevant.
