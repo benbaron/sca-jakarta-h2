@@ -1,12 +1,12 @@
 ---
-plan_version: 31
-active_phase: P11
-active_slice: P11-S1
+plan_version: 32
+active_phase: P12
+active_slice: P12-S1
 active_status: VERIFYING
-active_branch: codex/P11-S1-report-catalog-parameters
-active_pull_request: "#158"
-active_head: 9c8d6f3c7ea32772345444d6f44d542212ddcc70
-next_action: "Perform desktop laptop-width checks for typed report selection, conditional parameters, fund filtering, preview, TEXT/CSV/PDF/XLSX export, Journal drill-through, and divider persistence; then merge PR #158."
+active_branch: codex/P12-S1-fund-lifecycle-rules
+active_pull_request: "#159"
+active_head: 0df1b2f4b034ed113611578cb6dd765fe4b2f83e
+next_action: "Perform desktop laptop-width validation of stable-ID Fund create/edit/code-change, hierarchy and date fields, deactivation, blocked referenced deletion, confirmed unused deletion, scrolling/table state, and divider restoration; then merge PR #159."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Perform desktop laptop-width checks for typed report selection, co
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P10-S1 and corrective P10-C1 as DONE through merged PRs #156 and #157, then records P11-S1 typed Report Library work on PR #158.
+This revision records P11-S1 as user-verified and merged through PR #158, then records the implemented P12-S1 stable-ID Funds lifecycle slice on PR #159.
 
 ## 2. Status values
 
@@ -43,8 +43,8 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 DONE through PR #144 |
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
-| P11 | Report Library | P02, P04, P06, P08, P09, P10 | VERIFYING; P11-S1 on PR #158 |
-| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | READY |
+| P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
+| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | VERIFYING; P12-S1 on PR #159 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
@@ -67,6 +67,7 @@ Focused documents for current UI/accounting work:
 - `doc/accounting/transaction-lifecycle.md`
 - `doc/accounting/period-and-correction-policy.md`
 - `doc/reporting/report-library.md`
+- `doc/administration/fund-lifecycle.md`
 - `doc/workflow/development-workflow.md`
 
 `doc/architecture/production-workspace.md` was removed. Do not re-add it or list it as required reading.
@@ -100,6 +101,7 @@ Focused documents for current UI/accounting work:
 - The desktop JPA bootstrap explicitly selects the Hibernate provider configured by `persistence.xml`; it does not rely on launcher-sensitive Jakarta Persistence service discovery.
 - Report preview, export, and drill-through use one immutable validated report request.
 - Visible report dates and money follow active-company preferences; machine CSV remains unadorned and stable.
+- Funds are edited by stable database ID. Referenced funds are retained and deactivated; physical deletion is limited to unreferenced funds after explicit confirmation.
 
 ## 6. Completed phases and slices
 
@@ -194,13 +196,13 @@ Known P10 follow-up:
 
 ### P11 — Report Library
 
-Status: VERIFYING; P11-S1 active on PR #158.
+Status: DONE through P11-S1 / PR #158.
 
 #### P11-S1 — Typed report catalog and parameters
 
 Branch: `codex/P11-S1-report-catalog-parameters`
-Pull request: #158
-Tested head before this plan handoff: `9c8d6f3c7ea32772345444d6f44d542212ddcc70`
+Pull request: #158, merged into `main` at `eb0ff9a2769d9935ba2ba89a74152dc6a8ad57f7`
+Tested head: `4f779e64b7ce8ec8d64a748c9b513a3b983463bf`
 
 Purpose: replace string-based report selection and duplicated parameter construction with a typed catalog and one validated request shared by preview, export, and Journal drill-through.
 
@@ -222,11 +224,49 @@ Validation:
 - Maven PR Tests run `29178741120` passed with catalog/request, fund-filter/format integration, and source guardrail tests.
 - Maven PR Tests run `29178922845` passed after restoring focused plan/matrix scope.
 - Maven PR Tests run `29178972494` passed on the focused implementation, tests, report documentation, and operation-matrix head `9c8d6f3c7ea32772345444d6f44d542212ddcc70`.
+- Maven PR Tests run `29179022737` passed on final implementation head `4f779e64b7ce8ec8d64a748c9b513a3b983463bf`.
+- User desktop acceptance was recorded on PR #158 and the PR merged on 2026-07-12.
+
+### P12 — Administration, company lifecycle, preferences, and Funds edit
+
+Status: VERIFYING; P12-S1 active on PR #159.
+
+#### P12-S1 — Stable-ID Funds editing and lifecycle rules
+
+Branch: `codex/P12-S1-fund-lifecycle-rules`
+Pull request: #159
+Tested implementation/documentation head before this handoff: `0df1b2f4b034ed113611578cb6dd765fe4b2f83e`
+
+Purpose: replace code-keyed pseudo-editing with stable-ID fund create/update behavior and enforce safe deactivate/delete rules through `FundAdminService`.
+
+Completed deliverables:
+
+- Added immutable `FundCommand` and `FundUsage` projections.
+- Added stable-ID create/update for code, name, type, active state, parent, effective dates, and restriction text.
+- Added case-insensitive code uniqueness, field-length, date-order, parent existence, self-parent, and parent-cycle validation inside the service transaction.
+- Added usage assessment for canonical transaction splits, budget lines, fixed assets, inventory items, aliases, transfers, and child funds.
+- Added `deleteUnused(...)`, which repeats usage assessment in the deletion transaction and rejects referenced funds with deactivation guidance.
+- Preserved the compatibility code-keyed `upsert(...)` boundary while routing the production workspace through stable-ID commands.
+- Updated Fund lookup to fetch parent labels for detached JavaFX rows.
+- Replaced the one-page Funds form with split table/editor regions, all persisted lifecycle fields, company-aware date controls, dirty-state handling, and real New, Save, Delete Unused, and Refresh actions.
+- Added sortable/resizable/reorderable columns plus company-owned width/order/sort and divider state.
+- Added service integration tests and a JavaFX source guardrail.
+- Added `doc/administration/fund-lifecycle.md` and focused operation-matrix/persistence-inventory updates.
+
+Validation:
+
+- Maven PR Tests run `29224690525` passed after service, integration-test, and JavaFX workspace implementation.
+- Maven PR Tests run `29224900193` passed on the complete implementation, tests, and documentation head `0df1b2f4b034ed113611578cb6dd765fe4b2f83e`.
+- Full diff review found no unrelated schema, ledger, report, company, user, or preference changes.
 
 Remaining before DONE:
 
-- Desktop test at laptop width: select every report; verify conditional dates/fund/row-limit controls; run previews; export TEXT/CSV/PDF/XLSX; drill to Journal; resize and reopen the split pane.
-- Merge PR #158, then mark P11-S1 DONE and select the next P11 slice or phase.
+- At laptop width, create a fund and edit its code while confirming one stable row remains.
+- Verify parent selection, effective-date formatting/editing, restriction text, active/inactive display, sorting, resizing, reordering, independent scrolling, and divider restoration.
+- Confirm a referenced fund reports its reference summary and directs the user to deactivate it.
+- Confirm clearing Active and saving preserves the referenced row.
+- Create an unused fund, choose Delete Unused, cancel once, then confirm deletion.
+- Merge PR #159 and mark P12-S1 DONE.
 
 ## 7. Active and recent phase contracts
 
@@ -290,4 +330,4 @@ Completed deliverables: `FullTextTooltipInstaller` utility; production `MainApp`
 **Status:** DONE through PR #142; corrective P09-C1 DONE through PR #143
 **Depends on:** P02
 
-Required behavior: implement genuine Inventory item add/edit, movement history, remove runbook subpane, and use canonical transactions when financially relevant.
+Required behavior: implement genuine Inventory item add and movement history; remove runbook subpane; use canonical transactions when financially relevant.
