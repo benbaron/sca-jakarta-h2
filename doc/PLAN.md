@@ -67,6 +67,7 @@ Focused documents for current UI/accounting work:
 - `doc/accounting/transaction-lifecycle.md`
 - `doc/accounting/period-and-correction-policy.md`
 - `doc/reporting/report-library.md`
+- `doc/administration/fund-lifecycle.md`
 - `doc/workflow/development-workflow.md`
 
 `doc/architecture/production-workspace.md` was removed. Do not re-add it or list it as required reading.
@@ -321,4 +322,4 @@ Completed deliverables: `FullTextTooltipInstaller` utility; production `MainApp`
 **Status:** DONE through PR #142; corrective P09-C1 DONE through PR #143
 **Depends on:** P02
 
-Required behavior: implement genuine Inventory item add/edit, movement history, remove runbook subpane, and use canonical transactions when financially relevant.
+Required behavior: implement genuine Inventory item add and movement history; remove runbook subpane; use canonical transactions when financially relevant.

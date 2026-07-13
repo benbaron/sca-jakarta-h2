@@ -1,6 +1,6 @@
 # Model and persistence authority inventory
 
-Status: P00 inventory of current main, updated through P10-S1 calculated period close. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
+Status: P00 inventory of current main, updated through P12-S1 Fund lifecycle work. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
 
 ## Current persistence map
 
@@ -9,6 +9,7 @@ Status: P00 inventory of current main, updated through P10-S1 calculated period 
 | Canonical ledger and Journal workspace | `Txn` and `TxnSplit` JPA entities, `txn_supplemental_line`, `TransactionEntryService`, unified `JournalWorkspacePanel` | yes for accepted transaction headers, lines, and supplemental details | the older `JournalTransaction`/`PostingLine` path remains a parallel-model hazard but is not used by the Journal workspace | preserve P02 authority and retire/remap overlapping journal/open-item tables deliberately |
 | Journal/open-item compatibility core | `JournalTransaction`, `PostingLine`, JDBC journal/open-item repositories, V4/V5 migrations | partially; repository exists but is separate from `Txn`/`TxnSplit` | second transaction model can become a parallel ledger | do not add independent writes; later compatibility/migration treatment |
 | Corrections/period close | `period_close_range`, `period_close_event`, `audit_event`, `PeriodCloseRangeService`, canonical transaction services | yes for active company close state and factual history | legacy `AccountingPeriod` rows and period-close run records remain compatibility data but are not the P10 business authority | preserve range authority; retire or remap legacy period/run surfaces deliberately |
+| Fund master data | `Fund` JPA entity, stable-ID `FundCommand`, `FundAdminService`, `FundLookupService` | yes for fund identity and lifecycle fields | code-keyed compatibility `upsert` remains for older callers but the production editor uses stable IDs | preserve referenced funds through deactivation; delete only zero-reference funds |
 | Budget categories | `BudgetCategory` JPA plus V45 | yes for categories | categories are not budget targets | P04 |
 | Budget targets | `BudgetPlan`/`BudgetLine` JPA entities and `budget_plan`/`budget_line` tables | yes | version activation must remain through `BudgetPlanService`; no sidecar target store remains | P04 persistent budget model |
 | Import preview | `ImportPreviewService` in-memory accepted/rejected rows | no by design until acceptance | acceptable staging, but accepted writes must use canonical services | P05/P13 |
@@ -44,6 +45,15 @@ Status: P00 inventory of current main, updated through P10-S1 calculated period 
 - Reconciliation protection remains an independent prerequisite check; period close does not weaken completed-reconciliation protection.
 - `AccountingPeriod` and `AccountingPeriodService` remain compatibility structures but are not the P10 business authority for calculated/custom range close state.
 - `PeriodCloseService` and `PeriodCloseRunRepository` remain compatibility run-artifact APIs and are not used by the production Period Close workspace.
+
+## Fund master-data authority
+
+- `Fund.id` is record identity. Fund codes are editable unique business labels, not update keys.
+- The production Funds workspace writes through `FundAdminService.save(FundCommand)` and may change a code without creating a second row.
+- Parent, effective dates, restriction text, type, and active state remain fields of the same H2 `Fund` record.
+- `FundAdminService.usage(...)` counts references from canonical transaction splits, budget lines, fixed assets, inventory items, aliases, transfers, and child funds.
+- `deleteUnused(...)` repeats the usage assessment in its transaction and removes only zero-reference funds.
+- Referenced funds remain authoritative historical master data and are deactivated rather than deleted.
 
 ## Budget model authority
 
