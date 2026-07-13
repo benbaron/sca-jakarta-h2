@@ -26,21 +26,21 @@ public record FundUsage(
     public String describeReferences()
     {
         List<String> parts = new ArrayList<>();
-        add(parts, transactionSplits, "transaction split");
-        add(parts, budgetLines, "budget line");
-        add(parts, fixedAssets, "fixed asset");
-        add(parts, inventoryItems, "inventory item");
-        add(parts, aliases, "alias");
-        add(parts, transfers, "fund transfer");
-        add(parts, childFunds, "child fund");
+        add(parts, transactionSplits, "transaction split", "transaction splits");
+        add(parts, budgetLines, "budget line", "budget lines");
+        add(parts, fixedAssets, "fixed asset", "fixed assets");
+        add(parts, inventoryItems, "inventory item", "inventory items");
+        add(parts, aliases, "alias", "aliases");
+        add(parts, transfers, "fund transfer", "fund transfers");
+        add(parts, childFunds, "child fund", "child funds");
         return parts.isEmpty() ? "no references" : String.join(", ", parts);
     }
 
-    private static void add(List<String> parts, long count, String singular)
+    private static void add(List<String> parts, long count, String singular, String plural)
     {
         if (count > 0)
         {
-            parts.add(count + " " + singular + (count == 1 ? "" : "s"));
+            parts.add(count + " " + (count == 1 ? singular : plural));
         }
     }
 }
