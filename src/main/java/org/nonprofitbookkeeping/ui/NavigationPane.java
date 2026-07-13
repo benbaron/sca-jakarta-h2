@@ -88,6 +88,8 @@ public class NavigationPane extends VBox
         addItem(content, AppPanelId.REPORT_LIBRARY, "Report Library", UiIcons.Glyph.REPORT);
 
         section(content, "ADMINISTRATION");
+        addItem(content, AppPanelId.COMPANY_ADMIN, "Company Admin", UiIcons.Glyph.ACCOUNTS);
+        addItem(content, AppPanelId.USER_ADMIN, "User Admin", UiIcons.Glyph.USERS);
         addItem(content, AppPanelId.CHART_OF_ACCOUNTS, "Chart of Accounts", UiIcons.Glyph.ACCOUNTS);
         addItem(content, AppPanelId.FUNDS, "Funds", UiIcons.Glyph.FUNDS);
         addItem(content, AppPanelId.SETTINGS, "Settings", UiIcons.Glyph.SETTINGS);
