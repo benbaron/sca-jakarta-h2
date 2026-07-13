@@ -38,6 +38,8 @@ public enum AppPanelId
 
     REPORT_LIBRARY,
 
+    COMPANY_ADMIN,
+    USER_ADMIN,
     CHART_OF_ACCOUNTS,
     FUNDS,
     SETTINGS,
