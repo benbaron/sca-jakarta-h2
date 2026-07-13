@@ -1,12 +1,12 @@
 ---
-plan_version: 31
-active_phase: P11
-active_slice: P11-S1
-active_status: VERIFYING
-active_branch: codex/P11-S1-report-catalog-parameters
-active_pull_request: "#158"
-active_head: 9c8d6f3c7ea32772345444d6f44d542212ddcc70
-next_action: "Perform desktop laptop-width checks for typed report selection, conditional parameters, fund filtering, preview, TEXT/CSV/PDF/XLSX export, Journal drill-through, and divider persistence; then merge PR #158."
+plan_version: 32
+active_phase: P12
+active_slice: P12-S1
+active_status: IN_PROGRESS
+active_branch: codex/P12-S1-administration-navigation
+active_pull_request: "TBD"
+active_head: eb0ff9a2769d9935ba2ba89a74152dc6a8ad57f7
+next_action: "Open the P12-S1 draft PR, then expose the existing H2-backed Company Admin and User Admin panels through stable AppPanelId routes and Administration navigation, with focused routing tests and documentation updates."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Perform desktop laptop-width checks for typed report selection, co
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P10-S1 and corrective P10-C1 as DONE through merged PRs #156 and #157, then records P11-S1 typed Report Library work on PR #158.
+This revision records P11-S1 as verified and merged through PR #158, marks P11 DONE, and activates P12-S1 as the first Administration slice.
 
 ## 2. Status values
 
@@ -43,8 +43,8 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 DONE through PR #144 |
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
-| P11 | Report Library | P02, P04, P06, P08, P09, P10 | VERIFYING; P11-S1 on PR #158 |
-| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | READY |
+| P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
+| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-S1 active |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
@@ -194,13 +194,13 @@ Known P10 follow-up:
 
 ### P11 — Report Library
 
-Status: VERIFYING; P11-S1 active on PR #158.
+Status: DONE through P11-S1 / PR #158.
 
 #### P11-S1 — Typed report catalog and parameters
 
 Branch: `codex/P11-S1-report-catalog-parameters`
-Pull request: #158
-Tested head before this plan handoff: `9c8d6f3c7ea32772345444d6f44d542212ddcc70`
+Pull request: #158, merged into `main` at `eb0ff9a2769d9935ba2ba89a74152dc6a8ad57f7`
+Tested head: `4f779e64b7ce8ec8d64a748c9b513a3b983463bf`
 
 Purpose: replace string-based report selection and duplicated parameter construction with a typed catalog and one validated request shared by preview, export, and Journal drill-through.
 
@@ -222,11 +222,29 @@ Validation:
 - Maven PR Tests run `29178741120` passed with catalog/request, fund-filter/format integration, and source guardrail tests.
 - Maven PR Tests run `29178922845` passed after restoring focused plan/matrix scope.
 - Maven PR Tests run `29178972494` passed on the focused implementation, tests, report documentation, and operation-matrix head `9c8d6f3c7ea32772345444d6f44d542212ddcc70`.
+- Maven PR Tests run `29179022737` passed on final implementation head `4f779e64b7ce8ec8d64a748c9b513a3b983463bf`.
+- User desktop validation was accepted for typed selection, conditional parameters, fund filtering, preview, all export formats, Journal drill-through, and divider restoration.
+- PR #158 merged on 2026-07-12.
 
-Remaining before DONE:
+### P12 — Administration, company lifecycle, preferences, and Funds edit
 
-- Desktop test at laptop width: select every report; verify conditional dates/fund/row-limit controls; run previews; export TEXT/CSV/PDF/XLSX; drill to Journal; resize and reopen the split pane.
-- Merge PR #158, then mark P11-S1 DONE and select the next P11 slice or phase.
+Status: IN_PROGRESS; P12-S1 active.
+
+#### P12-S1 — Reachable company and user administration
+
+Branch: `codex/P12-S1-administration-navigation`
+Pull request: TBD
+
+Purpose: expose the existing H2-backed company and user administration services through stable production workspace destinations instead of leaving `CompanyAdminPanel` and `UserAdminPanel` unreachable from `AppPanelId`, `PanelFactory`, and Administration navigation.
+
+Planned deliverables:
+
+- Add stable Company Admin and User Admin panel identifiers.
+- Register both existing service-backed panels in the shell-owned `PanelFactory`.
+- Add both destinations under Administration navigation.
+- Preserve current Company, AppUser, AppRole, and UserCompanyRole service boundaries and H2 authority; do not add authentication enforcement in this slice.
+- Add focused route/navigation/source guardrail tests.
+- Update the interface-operation matrix and this plan with actual results.
 
 ## 7. Active and recent phase contracts
 
