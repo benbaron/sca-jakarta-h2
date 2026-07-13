@@ -11,19 +11,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AdministrationNavigationSourceTest
 {
     @Test
-    void companyAndUserAdministrationHaveStableWorkspaceRoutes() throws Exception
+    void settingsDestinationRoutesToAdministrationHub() throws Exception
     {
-        String appPanelId = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/AppPanelId.java"));
         String panelFactory = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/PanelFactory.java"));
         String navigationPane = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/NavigationPane.java"));
+        String administrationPanel = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/AdministrationPanel.java"));
 
-        assertTrue(appPanelId.contains("COMPANY_ADMIN"));
-        assertTrue(appPanelId.contains("USER_ADMIN"));
-
-        assertTrue(panelFactory.contains("AppPanelId.COMPANY_ADMIN, CompanyAdminPanel::new"));
-        assertTrue(panelFactory.contains("AppPanelId.USER_ADMIN, UserAdminPanel::new"));
-
-        assertTrue(navigationPane.contains("AppPanelId.COMPANY_ADMIN, \"Company Admin\""));
-        assertTrue(navigationPane.contains("AppPanelId.USER_ADMIN, \"User Admin\""));
+        assertTrue(panelFactory.contains("AppPanelId.SETTINGS, AdministrationPanel::new"));
+        assertTrue(navigationPane.contains("AppPanelId.SETTINGS, \"Administration\""));
+        assertTrue(administrationPanel.contains("tab(\"Preferences\", settings)"));
+        assertTrue(administrationPanel.contains("tab(\"Company Admin\", companies)"));
+        assertTrue(administrationPanel.contains("tab(\"User Admin\", users)"));
     }
 }
