@@ -67,6 +67,7 @@ Focused documents for current UI/accounting work:
 - `doc/accounting/transaction-lifecycle.md`
 - `doc/accounting/period-and-correction-policy.md`
 - `doc/reporting/report-library.md`
+- `doc/administration/fund-lifecycle.md`
 - `doc/workflow/development-workflow.md`
 
 `doc/architecture/production-workspace.md` was removed. Do not re-add it or list it as required reading.

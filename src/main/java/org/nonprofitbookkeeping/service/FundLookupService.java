@@ -30,20 +30,20 @@ public class FundLookupService
         try (EntityManager em = jpa.em())
         {
             return em.createQuery(
-                    "from Fund f where f.active = true order by f.code",
-                    Fund.class)
-                .getResultList();
+                            "select f from Fund f left join fetch f.parent where f.active = true order by f.code",
+                            Fund.class)
+                    .getResultList();
         }
     }
+
     public List<Fund> listAllFunds()
     {
         try (EntityManager em = jpa.em())
         {
             return em.createQuery(
-                    "from Fund f order by f.code",
-                    Fund.class)
-                .getResultList();
+                            "select f from Fund f left join fetch f.parent order by f.code",
+                            Fund.class)
+                    .getResultList();
         }
     }
-
 }
