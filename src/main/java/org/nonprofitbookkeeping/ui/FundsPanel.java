@@ -33,7 +33,6 @@ import org.nonprofitbookkeeping.service.CompanyUiPreferencesService;
 import org.nonprofitbookkeeping.service.FundCommand;
 import org.nonprofitbookkeeping.service.FundUsage;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -159,6 +158,7 @@ public class FundsPanel implements AppPanel
                 suppressSelection = false;
                 return;
             }
+            rebuildParentOptions(table.getItems(), newRow.getId());
             loadRowIntoForm(newRow);
         });
     }
@@ -294,6 +294,7 @@ public class FundsPanel implements AppPanel
             suppressSelection = true;
             table.getSelectionModel().clearSelection();
             suppressSelection = false;
+            rebuildParentOptions(table.getItems(), null);
             codeField.clear();
             nameField.clear();
             typeField.getSelectionModel().clearSelection();
@@ -403,6 +404,10 @@ public class FundsPanel implements AppPanel
                                 .findFirst()
                                 .ifPresent(table.getSelectionModel()::select);
                     }
+                    else if (editingFundId == null)
+                    {
+                        dirty = false;
+                    }
                     status.setText(formatStatus("Loaded " + rows.size() + " fund(s), including inactive funds."));
                     refresh.setDisable(false);
                 },
@@ -414,16 +419,25 @@ public class FundsPanel implements AppPanel
 
     private void rebuildParentOptions(List<Fund> rows, Long selectedFundId)
     {
-        Long currentParent = parentField.getValue() == null ? null : parentField.getValue().id();
-        List<ParentOption> options = new ArrayList<>();
-        options.add(new ParentOption(null, "(no parent)"));
-        rows.stream()
-                .filter(fund -> selectedFundId == null || !Objects.equals(fund.getId(), selectedFundId))
-                .sorted(Comparator.comparing(Fund::getCode, String.CASE_INSENSITIVE_ORDER))
-                .map(fund -> new ParentOption(fund.getId(), fund.getCode() + " — " + fund.getName()))
-                .forEach(options::add);
-        parentField.getItems().setAll(options);
-        selectParent(currentParent);
+        boolean previousPopulating = populating;
+        populating = true;
+        try
+        {
+            Long currentParent = parentField.getValue() == null ? null : parentField.getValue().id();
+            List<ParentOption> options = new ArrayList<>();
+            options.add(new ParentOption(null, "(no parent)"));
+            rows.stream()
+                    .filter(fund -> selectedFundId == null || !Objects.equals(fund.getId(), selectedFundId))
+                    .sorted(Comparator.comparing(Fund::getCode, String.CASE_INSENSITIVE_ORDER))
+                    .map(fund -> new ParentOption(fund.getId(), fund.getCode() + " — " + fund.getName()))
+                    .forEach(options::add);
+            parentField.getItems().setAll(options);
+            selectParent(currentParent);
+        }
+        finally
+        {
+            populating = previousPopulating;
+        }
     }
 
     private void selectParent(Long parentId)
