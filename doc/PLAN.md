@@ -1,12 +1,12 @@
 ---
-plan_version: 31
-active_phase: P11
-active_slice: P11-S1
-active_status: VERIFYING
-active_branch: codex/P11-S1-report-catalog-parameters
-active_pull_request: "#158"
-active_head: 9c8d6f3c7ea32772345444d6f44d542212ddcc70
-next_action: "Perform desktop laptop-width checks for typed report selection, conditional parameters, fund filtering, preview, TEXT/CSV/PDF/XLSX export, Journal drill-through, and divider persistence; then merge PR #158."
+plan_version: 32
+active_phase: P12
+active_slice: P12-S1
+active_status: IN_PROGRESS
+active_branch: codex/P12-S1-company-lifecycle-admin
+active_pull_request: "pending"
+active_head: eb0ff9a2769d9935ba2ba89a74152dc6a8ad57f7
+next_action: "Inspect and implement P12-S1: make Company Administration reachable, replace sidecar-only company creation/selection with H2-backed lifecycle operations, enforce deactivate/no-delete rules, and add focused UI/service tests and documentation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Perform desktop laptop-width checks for typed report selection, co
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P10-S1 and corrective P10-C1 as DONE through merged PRs #156 and #157, then records P11-S1 typed Report Library work on PR #158.
+This revision records P11-S1 as DONE through merged PR #158 and owner verification, completes P11, and activates P12-S1 company lifecycle and administration work.
 
 ## 2. Status values
 
@@ -43,8 +43,8 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 DONE through PR #144 |
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
-| P11 | Report Library | P02, P04, P06, P08, P09, P10 | VERIFYING; P11-S1 on PR #158 |
-| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | READY |
+| P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
+| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-S1 active |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
@@ -100,6 +100,8 @@ Focused documents for current UI/accounting work:
 - The desktop JPA bootstrap explicitly selects the Hibernate provider configured by `persistence.xml`; it does not rely on launcher-sensitive Jakarta Persistence service discovery.
 - Report preview, export, and drill-through use one immutable validated report request.
 - Visible report dates and money follow active-company preferences; machine CSV remains unadorned and stable.
+- Company records in H2 are authoritative for company existence and active/inactive lifecycle; shell recent-company state may remember selections but must not create fictional companies.
+- Companies and funds are deactivated rather than hard-deleted when referenced by accounting or operational records.
 
 ## 6. Completed phases and slices
 
@@ -194,13 +196,13 @@ Known P10 follow-up:
 
 ### P11 — Report Library
 
-Status: VERIFYING; P11-S1 active on PR #158.
+Status: DONE through P11-S1 / merged PR #158 and owner verification.
 
 #### P11-S1 — Typed report catalog and parameters
 
 Branch: `codex/P11-S1-report-catalog-parameters`
-Pull request: #158
-Tested head before this plan handoff: `9c8d6f3c7ea32772345444d6f44d542212ddcc70`
+Pull request: #158, merged into `main` at `eb0ff9a2769d9935ba2ba89a74152dc6a8ad57f7`
+Tested head: `4f779e64b7ce8ec8d64a748c9b513a3b983463bf`
 
 Purpose: replace string-based report selection and duplicated parameter construction with a typed catalog and one validated request shared by preview, export, and Journal drill-through.
 
@@ -222,11 +224,49 @@ Validation:
 - Maven PR Tests run `29178741120` passed with catalog/request, fund-filter/format integration, and source guardrail tests.
 - Maven PR Tests run `29178922845` passed after restoring focused plan/matrix scope.
 - Maven PR Tests run `29178972494` passed on the focused implementation, tests, report documentation, and operation-matrix head `9c8d6f3c7ea32772345444d6f44d542212ddcc70`.
+- Maven PR Tests run `29179022737` passed on final head `4f779e64b7ce8ec8d64a748c9b513a3b983463bf`.
+- PR #158 merged on 2026-07-13.
+- The owner verified the desktop/laptop-width report selection, parameters, fund filtering, preview/export, drill-through, and divider behavior and directed that P11-S1 be recorded verified.
 
-Remaining before DONE:
+### P12 — Administration, company lifecycle, preferences, and Funds edit
 
-- Desktop test at laptop width: select every report; verify conditional dates/fund/row-limit controls; run previews; export TEXT/CSV/PDF/XLSX; drill to Journal; resize and reopen the split pane.
-- Merge PR #158, then mark P11-S1 DONE and select the next P11 slice or phase.
+Status: IN_PROGRESS; P12-S1 active.
+
+#### P12-S1 — Company lifecycle and administration workspace
+
+Branch: `codex/P12-S1-company-lifecycle-admin`
+Pull request: pending
+
+Purpose: make H2 company records authoritative for creation, editing, activation/deactivation, and active-company selection, and expose a real Company Administration workspace without preserving sidecar-only company creation or placeholder tabs.
+
+Required reading:
+
+- `doc/interface-operation-matrix.md`
+- `doc/persistence-authority-inventory.md`
+- `doc/ui_design_rules.md`
+- `doc/ui/editor-guidelines.md`
+- `doc/requirements/requirements-clarification-overlay.md`
+- `doc/requirements/phase-remap-after-clarification.md`
+
+Required inspection:
+
+- `Company`, `CompanyTaxProfile`, `ChartOfAccounts`, and company-related migrations.
+- `CompanyAdminService`, `CompanyAdminPanel`, `CompanyWizardDialog`, `MainWindow`, `UiSessionState`, `WorkspaceContext`, `AppPanelId`, `NavigationPane`, `PanelFactory`, and `UiServiceRegistry`.
+- Current company/admin tests and donor company-administration UI only as design reference.
+
+Planned deliverables:
+
+- Add a stable Company Administration destination, factory route, navigation entry, labels, privilege gating, and command-palette support.
+- Replace sidecar-only Add Company/Company Wizard creation with service-backed H2 creation and validation; recent-company state remains only a selection convenience.
+- Persist company active state, fiscal-year start, default currency, and other supported profile fields through one application service transaction.
+- Support explicit active-company selection only for an existing active H2 company and propagate it through session/workspace context and service composition.
+- Deactivate rather than hard-delete companies; prevent deactivating the current company or leaving no active company without an explicit switch.
+- Remove or defer placeholder Company Admin tabs instead of exposing enabled non-persistent controls.
+- Apply UI design rules, company-owned table/divider state, dirty-state/discard protection, focused service/UI tests, and governing documentation updates.
+
+Next exact action:
+
+- Inspect current company migrations, lifecycle services, panel wiring, and tests; establish the Maven compile/focused-test baseline; then implement the service and reachable workspace as one coherent slice.
 
 ## 7. Active and recent phase contracts
 
@@ -260,34 +300,3 @@ Completed deliverables: removed `SchedulesPanel`, production factory route, navi
 # P08 — Asset Register and depreciation
 
 **Selector:** `PHASE=P08`
-**Status:** DONE through PR #140; corrective P08-C1 DONE through PR #144
-**Depends on:** P02
-
-Required behavior: implement Asset Register add/edit and depreciation behavior through H2-backed records and canonical accounting transactions. Assets are separate from Inventory items. Depreciation schedules define calculation only; running depreciation creates actual accounting transactions through the canonical transaction service.
-
-### P08-S1 — H2 fixed asset register and depreciation runs
-
-Status: DONE through PR #140.
-
-Completed deliverables: V55 fixed asset/depreciation-run migration; `FixedAsset` and `FixedAssetDepreciationRun` JPA entities; `FixedAssetService` create/update/list/depreciation-run behavior; depreciation runs create canonical `Txn` and `TxnSplit` rows; Asset Register and Depreciation Runs panels read/write through `FixedAssetService`; asset/depreciation runbook sidecars removed; docs and focused tests added/updated, including a Flyway migration-version uniqueness guardrail.
-
-### P08-C1 — Asset Register selector display labels
-
-Status: DONE through PR #144.
-
-Completed deliverables: Added account and fund `StringConverter` display labels for Asset Register selectors so combo boxes show `code — name` instead of Java object identity strings; added focused source-level label-format test.
-
-# P01-C1 — Full-text hover tooltips
-
-**Selector:** `PHASE=P01`
-**Status:** DONE through PR #141
-
-Completed deliverables: `FullTextTooltipInstaller` utility; production `MainApp` installation; UI design-rule documentation; focused JavaFX tests.
-
-# P09 — Inventory and supplies
-
-**Selector:** `PHASE=P09`
-**Status:** DONE through PR #142; corrective P09-C1 DONE through PR #143
-**Depends on:** P02
-
-Required behavior: implement genuine Inventory item add/edit, movement history, remove runbook subpane, and use canonical transactions when financially relevant.
