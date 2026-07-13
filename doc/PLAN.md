@@ -4,8 +4,8 @@ active_phase: P12
 active_slice: P12-S1
 active_status: IN_PROGRESS
 active_branch: codex/P12-S1-company-lifecycle-admin
-active_pull_request: "pending"
-active_head: eb0ff9a2769d9935ba2ba89a74152dc6a8ad57f7
+active_pull_request: "#161"
+active_head: a75183a9d5a971cfdb41e87466e3cd4426e39286
 next_action: "Inspect and implement P12-S1: make Company Administration reachable, replace sidecar-only company creation/selection with H2-backed lifecycle operations, enforce deactivate/no-delete rules, and add focused UI/service tests and documentation."
 ---
 
@@ -235,7 +235,7 @@ Status: IN_PROGRESS; P12-S1 active.
 #### P12-S1 — Company lifecycle and administration workspace
 
 Branch: `codex/P12-S1-company-lifecycle-admin`
-Pull request: pending
+Pull request: #161
 
 Purpose: make H2 company records authoritative for creation, editing, activation/deactivation, and active-company selection, and expose a real Company Administration workspace without preserving sidecar-only company creation or placeholder tabs.
 
