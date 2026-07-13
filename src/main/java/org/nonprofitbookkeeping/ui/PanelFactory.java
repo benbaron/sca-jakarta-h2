@@ -43,7 +43,7 @@ public final class PanelFactory
         factories.put(AppPanelId.REPORT_LIBRARY, ReportLibraryPanel::new);
         factories.put(AppPanelId.CHART_OF_ACCOUNTS, ChartOfAccountsPanel::new);
         factories.put(AppPanelId.FUNDS, FundsPanel::new);
-        factories.put(AppPanelId.SETTINGS, SettingsPanel::new);
+        factories.put(AppPanelId.SETTINGS, AdministrationPanel::new);
         factories.put(AppPanelId.DIAGNOSTICS, DiagnosticsPanel::new);
         factories.put(AppPanelId.HELP, HelpPanel::new);
     }

@@ -3,10 +3,10 @@ plan_version: 32
 active_phase: P12
 active_slice: P12-S1
 active_status: VERIFYING
-active_branch: codex/P12-S1-fund-lifecycle-rules
-active_pull_request: "#159"
-active_head: 0df1b2f4b034ed113611578cb6dd765fe4b2f83e
-next_action: "Perform desktop laptop-width validation of stable-ID Fund create/edit/code-change, hierarchy and date fields, deactivation, blocked referenced deletion, confirmed unused deletion, scrolling/table state, and divider restoration; then merge PR #159."
+active_branch: codex/P12-S1-administration-navigation
+active_pull_request: "#160"
+active_head: bc9b65c06e31f6d71032d8ac0f05d6c7a85a262b
+next_action: "Perform desktop validation that Administration opens through the former Settings destination, that Preferences, Company Admin, and User Admin tabs load, and that global Save delegates to the selected tab; then merge PR #160."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Perform desktop laptop-width validation of stable-ID Fund create/e
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P11-S1 as user-verified and merged through PR #158, then records the implemented P12-S1 stable-ID Funds lifecycle slice on PR #159.
+This revision records P11-S1 as verified and merged through PR #158, marks P11 DONE, and records the implemented P12-S1 Administration workspace on PR #160.
 
 ## 2. Status values
 
@@ -44,7 +44,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
-| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | VERIFYING; P12-S1 on PR #159 |
+| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | VERIFYING; P12-S1 on PR #160 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
@@ -101,7 +101,7 @@ Focused documents for current UI/accounting work:
 - The desktop JPA bootstrap explicitly selects the Hibernate provider configured by `persistence.xml`; it does not rely on launcher-sensitive Jakarta Persistence service discovery.
 - Report preview, export, and drill-through use one immutable validated report request.
 - Visible report dates and money follow active-company preferences; machine CSV remains unadorned and stable.
-- Funds are edited by stable database ID. Referenced funds are retained and deactivated; physical deletion is limited to unreferenced funds after explicit confirmation.
+- The stable `SETTINGS` workspace destination hosts the Administration workspace; Company Admin and User Admin are tabs within that workspace rather than separate shell identifiers.
 
 ## 6. Completed phases and slices
 
@@ -225,48 +225,40 @@ Validation:
 - Maven PR Tests run `29178922845` passed after restoring focused plan/matrix scope.
 - Maven PR Tests run `29178972494` passed on the focused implementation, tests, report documentation, and operation-matrix head `9c8d6f3c7ea32772345444d6f44d542212ddcc70`.
 - Maven PR Tests run `29179022737` passed on final implementation head `4f779e64b7ce8ec8d64a748c9b513a3b983463bf`.
-- User desktop acceptance was recorded on PR #158 and the PR merged on 2026-07-12.
+- User desktop validation was accepted for typed selection, conditional parameters, fund filtering, preview, all export formats, Journal drill-through, and divider restoration.
+- PR #158 merged on 2026-07-12.
 
 ### P12 — Administration, company lifecycle, preferences, and Funds edit
 
-Status: VERIFYING; P12-S1 active on PR #159.
+Status: VERIFYING; P12-S1 active on PR #160.
 
-#### P12-S1 — Stable-ID Funds editing and lifecycle rules
+#### P12-S1 — Administration workspace hub
 
-Branch: `codex/P12-S1-fund-lifecycle-rules`
-Pull request: #159
-Tested implementation/documentation head before this handoff: `0df1b2f4b034ed113611578cb6dd765fe4b2f83e`
+Branch: `codex/P12-S1-administration-navigation`
+Pull request: #160
+Tested implementation head before plan handoff: `bc9b65c06e31f6d71032d8ac0f05d6c7a85a262b`
 
-Purpose: replace code-keyed pseudo-editing with stable-ID fund create/update behavior and enforce safe deactivate/delete rules through `FundAdminService`.
+Purpose: make existing H2-backed company and user administration reachable without expanding the stable shell enum or creating a second administration framework.
 
 Completed deliverables:
 
-- Added immutable `FundCommand` and `FundUsage` projections.
-- Added stable-ID create/update for code, name, type, active state, parent, effective dates, and restriction text.
-- Added case-insensitive code uniqueness, field-length, date-order, parent existence, self-parent, and parent-cycle validation inside the service transaction.
-- Added usage assessment for canonical transaction splits, budget lines, fixed assets, inventory items, aliases, transfers, and child funds.
-- Added `deleteUnused(...)`, which repeats usage assessment in the deletion transaction and rejects referenced funds with deactivation guidance.
-- Preserved the compatibility code-keyed `upsert(...)` boundary while routing the production workspace through stable-ID commands.
-- Updated Fund lookup to fetch parent labels for detached JavaFX rows.
-- Replaced the one-page Funds form with split table/editor regions, all persisted lifecycle fields, company-aware date controls, dirty-state handling, and real New, Save, Delete Unused, and Refresh actions.
-- Added sortable/resizable/reorderable columns plus company-owned width/order/sort and divider state.
-- Added service integration tests and a JavaFX source guardrail.
-- Added `doc/administration/fund-lifecycle.md` and focused operation-matrix/persistence-inventory updates.
+- Added `AdministrationPanel` with Preferences, Company Admin, and User Admin tabs.
+- Routed the existing stable `AppPanelId.SETTINGS` destination to `AdministrationPanel`.
+- Renamed the visible Administration navigation item while preserving saved destinations and command-palette compatibility.
+- Delegated global Save, New, and dirty-state queries to the selected administration tab.
+- Preserved existing `SettingsPanel`, `CompanyAdminPanel`, `UserAdminPanel`, `CompanyAdminService`, and `UserAdminService` behavior and H2 authority.
+- Kept authentication enforcement explicitly out of scope.
+- Added focused source guardrails and updated the interface-operation matrix.
 
 Validation:
 
-- Maven PR Tests run `29224690525` passed after service, integration-test, and JavaFX workspace implementation.
-- Maven PR Tests run `29224900193` passed on the complete implementation, tests, and documentation head `0df1b2f4b034ed113611578cb6dd765fe4b2f83e`.
-- Full diff review found no unrelated schema, ledger, report, company, user, or preference changes.
+- Maven PR Tests run `29259566867` passed after the stable `SETTINGS`-route Administration hub and focused source guardrail were introduced.
+- Maven PR Tests run `29259761711` passed on implementation and documentation head `bc9b65c06e31f6d71032d8ac0f05d6c7a85a262b`.
 
 Remaining before DONE:
 
-- At laptop width, create a fund and edit its code while confirming one stable row remains.
-- Verify parent selection, effective-date formatting/editing, restriction text, active/inactive display, sorting, resizing, reordering, independent scrolling, and divider restoration.
-- Confirm a referenced fund reports its reference summary and directs the user to deactivate it.
-- Confirm clearing Active and saving preserves the referenced row.
-- Create an unused fund, choose Delete Unused, cancel once, then confirm deletion.
-- Merge PR #159 and mark P12-S1 DONE.
+- Desktop test at laptop width: open Administration, switch among Preferences, Company Admin, and User Admin, verify data loads, and confirm global Save reaches the selected tab.
+- Merge PR #160, then mark P12-S1 DONE and select the next P12 slice.
 
 ## 7. Active and recent phase contracts
 
