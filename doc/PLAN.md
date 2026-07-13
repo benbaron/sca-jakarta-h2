@@ -2,11 +2,11 @@
 plan_version: 32
 active_phase: P12
 active_slice: P12-S1
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P12-S1-administration-navigation
-active_pull_request: "TBD"
-active_head: eb0ff9a2769d9935ba2ba89a74152dc6a8ad57f7
-next_action: "Open the P12-S1 draft PR, then expose the existing H2-backed Company Admin and User Admin panels through stable AppPanelId routes and Administration navigation, with focused routing tests and documentation updates."
+active_pull_request: "#160"
+active_head: bc9b65c06e31f6d71032d8ac0f05d6c7a85a262b
+next_action: "Perform desktop validation that Administration opens through the former Settings destination, that Preferences, Company Admin, and User Admin tabs load, and that global Save delegates to the selected tab; then merge PR #160."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Open the P12-S1 draft PR, then expose the existing H2-backed Compa
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P11-S1 as verified and merged through PR #158, marks P11 DONE, and activates P12-S1 as the first Administration slice.
+This revision records P11-S1 as verified and merged through PR #158, marks P11 DONE, and records the implemented P12-S1 Administration workspace on PR #160.
 
 ## 2. Status values
 
@@ -44,7 +44,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
-| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-S1 active |
+| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | VERIFYING; P12-S1 on PR #160 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
@@ -100,6 +100,7 @@ Focused documents for current UI/accounting work:
 - The desktop JPA bootstrap explicitly selects the Hibernate provider configured by `persistence.xml`; it does not rely on launcher-sensitive Jakarta Persistence service discovery.
 - Report preview, export, and drill-through use one immutable validated report request.
 - Visible report dates and money follow active-company preferences; machine CSV remains unadorned and stable.
+- The stable `SETTINGS` workspace destination hosts the Administration workspace; Company Admin and User Admin are tabs within that workspace rather than separate shell identifiers.
 
 ## 6. Completed phases and slices
 
@@ -228,23 +229,35 @@ Validation:
 
 ### P12 — Administration, company lifecycle, preferences, and Funds edit
 
-Status: IN_PROGRESS; P12-S1 active.
+Status: VERIFYING; P12-S1 active on PR #160.
 
-#### P12-S1 — Reachable company and user administration
+#### P12-S1 — Administration workspace hub
 
 Branch: `codex/P12-S1-administration-navigation`
-Pull request: TBD
+Pull request: #160
+Tested implementation head before plan handoff: `bc9b65c06e31f6d71032d8ac0f05d6c7a85a262b`
 
-Purpose: expose the existing H2-backed company and user administration services through stable production workspace destinations instead of leaving `CompanyAdminPanel` and `UserAdminPanel` unreachable from `AppPanelId`, `PanelFactory`, and Administration navigation.
+Purpose: make existing H2-backed company and user administration reachable without expanding the stable shell enum or creating a second administration framework.
 
-Planned deliverables:
+Completed deliverables:
 
-- Add stable Company Admin and User Admin panel identifiers.
-- Register both existing service-backed panels in the shell-owned `PanelFactory`.
-- Add both destinations under Administration navigation.
-- Preserve current Company, AppUser, AppRole, and UserCompanyRole service boundaries and H2 authority; do not add authentication enforcement in this slice.
-- Add focused route/navigation/source guardrail tests.
-- Update the interface-operation matrix and this plan with actual results.
+- Added `AdministrationPanel` with Preferences, Company Admin, and User Admin tabs.
+- Routed the existing stable `AppPanelId.SETTINGS` destination to `AdministrationPanel`.
+- Renamed the visible Administration navigation item while preserving saved destinations and command-palette compatibility.
+- Delegated global Save, New, and dirty-state queries to the selected administration tab.
+- Preserved existing `SettingsPanel`, `CompanyAdminPanel`, `UserAdminPanel`, `CompanyAdminService`, and `UserAdminService` behavior and H2 authority.
+- Kept authentication enforcement explicitly out of scope.
+- Added focused source guardrails and updated the interface-operation matrix.
+
+Validation:
+
+- Maven PR Tests run `29259566867` passed after the stable `SETTINGS`-route Administration hub and focused source guardrail were introduced.
+- Maven PR Tests run `29259761711` passed on implementation and documentation head `bc9b65c06e31f6d71032d8ac0f05d6c7a85a262b`.
+
+Remaining before DONE:
+
+- Desktop test at laptop width: open Administration, switch among Preferences, Company Admin, and User Admin, verify data loads, and confirm global Save reaches the selected tab.
+- Merge PR #160, then mark P12-S1 DONE and select the next P12 slice.
 
 ## 7. Active and recent phase contracts
 
