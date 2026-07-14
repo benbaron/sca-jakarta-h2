@@ -2,10 +2,10 @@
 plan_version: 33
 active_phase: P12
 active_slice: P12-C1
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P12-C1-reconcile-plan-ledger
-active_pull_request: ""
-active_head: c64be3f381a48a31e6b7fa85337129ad7116515c
+active_pull_request: "#162"
+active_head: c324ca100ba1659cface36c3bda2758970d00fb9
 next_action: "Review and merge the P12 plan-reconciliation pull request; then activate P12-S3 Company lifecycle and active-company authority from fresh current main."
 ---
 
@@ -257,10 +257,10 @@ Remaining verification:
 
 ### P12-C1 — Reconcile overlapping P12 slice records
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P12-C1-reconcile-plan-ledger`  
-Pull request: pending
+Pull request: #162
 
 Purpose: repair the execution ledger after PRs #159, #160, and #161 reused `P12-S1` and overwrote one another’s plan records.
 
