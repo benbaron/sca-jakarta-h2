@@ -4,7 +4,7 @@
 
 The `company` table is authoritative for company existence and active/inactive lifecycle. `MultiCompanyState` is only a recent-selection convenience. A code found only in sidecar state is not a company and must never become the active workspace company.
 
-`Company.id` is stable record identity. The code is a unique business label and may be edited without creating a second company row.
+`Company.id` is stable record identity. The code is a unique business label and may be edited without creating a second company row. Code-keyed company UI preferences/state and period-close history move to the new code in the same transaction; company-owned tables that use `company_id` remain attached automatically.
 
 ## Persisted profile
 

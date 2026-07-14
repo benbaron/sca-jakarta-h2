@@ -103,6 +103,14 @@ final class CompanySessionController
             CompanyView saved = service().save(
                     command,
                     sessionState.multiCompany().activeCompanyCode());
+            String current = sessionState.multiCompany().activeCompanyCode();
+            if (!saved.code().equalsIgnoreCase(current) && !changeGuard.allow(current, saved.code()))
+            {
+                return new SelectionResult(
+                        false,
+                        "Created company " + saved.code() + ", but selection was cancelled because unsaved edits remain open.",
+                        saved);
+            }
             applySelectionState(saved.code());
             return new SelectionResult(true, "Created and selected company " + saved.code() + ".", saved);
         }

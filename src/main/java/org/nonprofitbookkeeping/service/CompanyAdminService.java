@@ -199,6 +199,11 @@ public class CompanyAdminService
                 ensureUniqueCode(em, clean.code(), clean.id());
                 enforceActiveLifecycle(em, company, clean.active(), currentActiveCompanyCode);
 
+                if (company.getId() != null && !company.getCode().equals(clean.code()))
+                {
+                    renameCompanyCodeReferences(em, company.getCode(), clean.code());
+                }
+
                 company.setCode(clean.code());
                 company.setDisplayName(clean.displayName());
                 company.setLegalName(blankToNull(clean.legalName()));
@@ -277,6 +282,33 @@ public class CompanyAdminService
         if (query.getSingleResult() > 0L)
         {
             throw new IllegalArgumentException("Company code already exists: " + code);
+        }
+    }
+
+    /**
+     * Keeps the remaining code-keyed company records attached to the same
+     * stable Company row. Most company-owned tables use company_id foreign
+     * keys; these UI-state and period-close tables intentionally use the
+     * business code and therefore must move in the same transaction.
+     */
+    private static void renameCompanyCodeReferences(EntityManager em, String previousCode, String nextCode)
+    {
+        em.createNativeQuery("delete from company_ui_preference where company_code = :nextCode")
+                .setParameter("nextCode", nextCode)
+                .executeUpdate();
+        em.createNativeQuery("delete from company_ui_state where company_code = :nextCode")
+                .setParameter("nextCode", nextCode)
+                .executeUpdate();
+        for (String table : List.of(
+                "company_ui_preference",
+                "company_ui_state",
+                "period_close_range",
+                "period_close_event"))
+        {
+            em.createNativeQuery("update " + table + " set company_code = :nextCode where company_code = :previousCode")
+                    .setParameter("nextCode", nextCode)
+                    .setParameter("previousCode", previousCode)
+                    .executeUpdate();
         }
     }
 

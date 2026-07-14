@@ -32,6 +32,13 @@ class DatabaseCompanyRoundTripIntegrationTest
                     null, "COMPANY-A", "Company A", "Company A", null, null, true, 1, 1, "USD"));
             assertEquals("COMPANY-A", session.multiCompany().activeCompanyCode());
             assertEquals("COMPANY-A", store.loadMultiCompany().orElseThrow().activeCompanyCode());
+
+            controller.setChangeGuard((current, requested) -> false);
+            CompanySessionController.SelectionResult guardedCreate = controller.createAndSelect(new CompanyCommand(
+                    null, "COMPANY-B", "Company B", "Company B", null, null, true, 1, 1, "USD"));
+            assertFalse(guardedCreate.selected());
+            assertEquals("COMPANY-A", session.multiCompany().activeCompanyCode());
+            assertEquals("COMPANY-B", service.requireActiveCompany("COMPANY-B").code());
         }
 
         store.saveMultiCompany(new MultiCompanyState(

@@ -35,6 +35,22 @@ class CompanyAdminServiceTest
                     "DEFAULT");
             companyId = created.id();
 
+            try (var em = jpa.em())
+            {
+                em.getTransaction().begin();
+                em.createNativeQuery("""
+                        insert into company_ui_state (company_code, state_key, state_value)
+                        values ('SCA-ONE', 'companyAdmin.divider', '0.55')
+                        """).executeUpdate();
+                em.createNativeQuery("""
+                        insert into period_close_range
+                            (id, company_code, start_date, end_date, range_kind, status, closed_by)
+                        values
+                            (random_uuid(), 'SCA-ONE', DATE '2025-01-01', DATE '2025-01-31', 'CUSTOM', 'CLOSED', 'test')
+                        """).executeUpdate();
+                em.getTransaction().commit();
+            }
+
             CompanyView updated = service.save(new CompanyCommand(
                     companyId,
                     "SCA-RENAMED",
@@ -56,6 +72,15 @@ class CompanyAdminServiceTest
             assertEquals(1L, service.listCompanyViews().stream()
                     .filter(company -> company.id().equals(companyId))
                     .count());
+            try (var em = jpa.em())
+            {
+                assertEquals(1L, ((Number) em.createNativeQuery(
+                                "select count(*) from company_ui_state where company_code = 'SCA-RENAMED'")
+                        .getSingleResult()).longValue());
+                assertEquals(1L, ((Number) em.createNativeQuery(
+                                "select count(*) from period_close_range where company_code = 'SCA-RENAMED'")
+                        .getSingleResult()).longValue());
+            }
         }
 
         try (Jpa jpa = new Jpa(database))

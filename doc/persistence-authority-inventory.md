@@ -58,7 +58,7 @@ Status: P00 inventory of current main, updated through P12-S3 company lifecycle 
 
 ## Company master-data and selection authority
 
-- `Company.id` is stable record identity. Company code is an editable unique business label.
+- `Company.id` is stable record identity. Company code is an editable unique business label; code-keyed UI state and period-close history are renamed transactionally with it.
 - `CompanyAdminService.save(...)` persists identity fields, active state, fiscal-year start, and default currency in one transaction.
 - The current company cannot be deactivated, and no operation may leave the database without an active company.
 - `CompanySessionController` validates selection through `CompanyAdminService.requireActiveCompany(...)` before changing session or workspace context.
