@@ -2,11 +2,11 @@
 plan_version: 36
 active_phase: P12
 active_slice: P12-C2
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P12-C2-company-admin-horizontal-split
 active_pull_request: "#164"
-active_head: 9d3356c6ec007ea122474ad58b42dc7b27fea909
-next_action: "Implement the Company Admin horizontal-divider correction on draft PR #164, add its focused guardrail, and run the full Maven PR Tests workflow."
+active_head: 1dafac8b6cfa0755eed1c8a2590da49cb60163ad
+next_action: "Desktop-verify PR #164 at laptop width: confirm the company table is above the full-width editor with a horizontal draggable divider, then approve and merge the correction."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -332,7 +332,7 @@ Next exact action:
 
 ### P12-C2 — Company Admin horizontal divider correction
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P12-C2-company-admin-horizontal-split`
 Pull request: #164 (draft)
@@ -346,9 +346,21 @@ Planned deliverables:
 - Add a focused source/layout guardrail and update the lifecycle documentation.
 - Run the full Maven PR Tests workflow and leave the correction VERIFYING until desktop confirmation and merge.
 
+Completed deliverables:
+
+- Set the existing `companyAdminWorkspaceSplit` to vertical item orientation so its divider runs horizontally and the table is above the editor.
+- Preserved independent editor scrolling, table growth, company-owned divider persistence, and the existing Administration destination.
+- Added a focused orientation guardrail and documented the top/bottom laptop-width layout.
+- Maven PR Tests run `29372548918` passed on implementation head `1dafac8b6cfa0755eed1c8a2590da49cb60163ad`.
+
+Remaining verification:
+
+- At laptop width, confirm the company table appears above the full-width profile editor and the horizontal divider remains draggable and restores its saved position.
+- Merge PR #164 only after that desktop confirmation; leave P12-C2 VERIFYING until then.
+
 Next exact action:
 
-- Implement the horizontal-divider correction and focused guardrail, then run the full Maven PR Tests workflow.
+- Desktop-verify PR #164 at laptop width, then approve and merge the correction.
 
 ## 8. Active and recent phase contracts
 
