@@ -4,9 +4,9 @@ active_phase: P12
 active_slice: P12-S3
 active_status: IN_PROGRESS
 active_branch: codex/P12-S3-company-lifecycle
-active_pull_request: ""
-active_head: fa6b94a67c9f6aa2d6d79e1de77b257240c49a42
-next_action: "Open the draft P12-S3 pull request, establish the Maven compile and focused-test baseline, then inspect and implement H2-authoritative company lifecycle and active-company selection through the existing Administration hub."
+active_pull_request: "#163"
+active_head: 0824ed70dc462e61ee6dc4603cc61cc20e1a2101
+next_action: "Establish the Maven compile and focused-test baseline, then inspect and implement H2-authoritative company lifecycle and active-company selection through the existing Administration hub."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -277,7 +277,7 @@ Deliverables:
 Status: IN_PROGRESS.
 
 Branch: `codex/P12-S3-company-lifecycle`
-Pull request: pending
+Pull request: #163 (draft)
 
 Purpose: make H2 company rows authoritative for company creation, editing, activation/deactivation, and active-company selection through the existing Administration hub.
 
@@ -308,7 +308,6 @@ Planned deliverables:
 
 Next exact action:
 
-- Open the draft pull request from the fresh current-`main` branch.
 - Establish the Maven compile and focused-test baseline, inspect the required implementation and governing documents, and implement P12-S3 as one coherent vertical slice.
 
 ## 8. Active and recent phase contracts
