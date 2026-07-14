@@ -23,6 +23,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import org.nonprofitbookkeeping.service.SampleCompanyService;
+import org.nonprofitbookkeeping.service.CompanyView;
 
 import org.nonprofitbookkeeping.model.WorkspaceDividerState;
 
@@ -44,6 +45,7 @@ public class ProductionWorkspaceWindow extends BorderPane
     private final WorkspaceServices workspaceServices;
     private final WorkspaceContext workspaceContext;
     private final DatabaseSessionController databaseSessionController;
+    private final CompanySessionController companySessionController;
     private final PanelHost panelHost;
     private final InspectorPane inspectorPane = new InspectorPane();
     private final NavigationPane navigationPane;
@@ -51,10 +53,12 @@ public class ProductionWorkspaceWindow extends BorderPane
     private final Label activePanelLabel = new Label();
     private final Label activePeriodLabel = new Label();
     private final Label activeDatabaseLabel = new Label();
+    private final ComboBox<CompanyView> activeCompanySelector = new ComboBox<>();
     private CloseAllTabsPrompt closeAllTabsPrompt = this::confirmCloseAllTabs;
     private RuntimeException databaseFailure;
     private WorkspaceDividerState rememberedDividerState;
     private boolean restoringDividers;
+    private boolean updatingCompanySelector;
 
     public ProductionWorkspaceWindow()
     {
@@ -72,11 +76,14 @@ public class ProductionWorkspaceWindow extends BorderPane
                 connector);
         this.workspaceContext = workspaceServices.context();
         this.databaseSessionController = workspaceServices.databaseSessionController();
+        this.companySessionController = workspaceServices.companySessionController();
         this.panelHost = new PanelHost(workspaceServices.panelFactory());
+        this.companySessionController.setChangeGuard(this::confirmCompanyChange);
 
         try
         {
             databaseSessionController.restorePersistedSelection();
+            companySessionController.restoreAuthoritativeSelection();
         }
         catch (RuntimeException ex)
         {
@@ -96,12 +103,15 @@ public class ProductionWorkspaceWindow extends BorderPane
                 (observable, oldDate, newDate) -> updateActivePeriodLabel());
         workspaceContext.activeDatabasePathProperty().addListener(
                 (observable, oldPath, newPath) -> updateActiveDatabaseLabel());
+        workspaceContext.activeCompanyCodeProperty().addListener(
+                (observable, oldCode, newCode) -> activeCompanyChanged(oldCode, newCode));
 
         setTop(buildTopChrome());
         setCenter(buildWorkspace());
         setBottom(buildStatusBar());
 
         updateActiveDatabaseLabel();
+        refreshActiveCompanySelector();
         showDashboardOrRecovery(databaseFailure);
     }
 
@@ -361,6 +371,10 @@ public class ProductionWorkspaceWindow extends BorderPane
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         updateActivePeriodLabel();
+        activeCompanySelector.setId("activeCompanySelector");
+        activeCompanySelector.setPromptText("Active company");
+        activeCompanySelector.setOnShowing(event -> refreshActiveCompanySelector());
+        activeCompanySelector.setOnAction(event -> selectCompanyFromToolbar());
         return new ToolBar(
                 newButton,
                 saveButton,
@@ -372,6 +386,9 @@ public class ProductionWorkspaceWindow extends BorderPane
                 periodSelector,
                 setPeriodButton,
                 spacer,
+                new Label("Company:"),
+                activeCompanySelector,
+                new Separator(),
                 activeDatabaseLabel,
                 new Separator(),
                 activePeriodLabel);
@@ -452,6 +469,26 @@ public class ProductionWorkspaceWindow extends BorderPane
         return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
     }
 
+    private boolean confirmCompanyChange(String currentCompanyCode, String requestedCompanyCode)
+    {
+        List<String> dirtyTitles = panelHost.dirtyPanelTitles();
+        if (dirtyTitles.isEmpty())
+        {
+            return true;
+        }
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Change active company");
+        alert.setHeaderText("Discard unsaved edits before changing companies?");
+        alert.setContentText("Changing from " + currentCompanyCode + " to " + requestedCompanyCode
+                + " will recreate open workspaces. Unsaved edits are present in: "
+                + String.join(", ", dirtyTitles) + ".");
+        if (getScene() != null && getScene().getWindow() != null)
+        {
+            alert.initOwner(getScene().getWindow());
+        }
+        return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
+    }
+
     @FunctionalInterface
     interface CloseAllTabsPrompt
     {
@@ -515,6 +552,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         try
         {
             databaseSessionController.connect(databaseFile);
+            companySessionController.restoreAuthoritativeSelection();
             databaseFailure = null;
             workspaceContext.setDatabaseFailure(null);
             panelHost.refreshOpenPanels();
@@ -588,6 +626,54 @@ public class ProductionWorkspaceWindow extends BorderPane
         activeDatabaseLabel.setTooltip(new javafx.scene.control.Tooltip(path.toAbsolutePath().toString()));
     }
 
+    private void refreshActiveCompanySelector()
+    {
+        try
+        {
+            updatingCompanySelector = true;
+            List<CompanyView> activeCompanies = companySessionController.listActiveCompanies();
+            activeCompanySelector.getItems().setAll(activeCompanies);
+            activeCompanies.stream()
+                    .filter(company -> company.code().equalsIgnoreCase(workspaceContext.activeCompanyCode()))
+                    .findFirst()
+                    .ifPresent(activeCompanySelector::setValue);
+        }
+        catch (RuntimeException ex)
+        {
+            activeCompanySelector.getItems().clear();
+            activeCompanySelector.setPromptText("Company unavailable");
+        }
+        finally
+        {
+            updatingCompanySelector = false;
+        }
+    }
+
+    private void selectCompanyFromToolbar()
+    {
+        if (updatingCompanySelector || activeCompanySelector.getValue() == null)
+        {
+            return;
+        }
+        CompanySessionController.SelectionResult result = companySessionController.select(
+                activeCompanySelector.getValue().code());
+        if (!result.selected())
+        {
+            inspectorPane.show("Company selection failed", result.message());
+            refreshActiveCompanySelector();
+        }
+    }
+
+    private void activeCompanyChanged(String oldCode, String newCode)
+    {
+        refreshActiveCompanySelector();
+        if (oldCode != null && !oldCode.equalsIgnoreCase(newCode) && panelHost.openPanelCount() > 0)
+        {
+            panelHost.refreshOpenPanels();
+            activePanelLabel.setText("Workspace: " + panelHost.getActiveTitle());
+        }
+    }
+
     private NavigationPane.InspectorContext inspectorContext()
     {
         AppPanelId active = panelHost.activePanelId();
@@ -595,7 +681,7 @@ public class ProductionWorkspaceWindow extends BorderPane
                 ? (active == null ? "No active panel" : "Active panel: " + panelHost.getActiveTitle())
                 : "Database unavailable: select, repair, or create a database";
         return new NavigationPane.InspectorContext(
-                workspaceContext.activeDatabasePath().toString(),
+                workspaceContext.activeCompanyCode(),
                 workspaceContext.activePeriodDate().toString(),
                 capabilities);
     }

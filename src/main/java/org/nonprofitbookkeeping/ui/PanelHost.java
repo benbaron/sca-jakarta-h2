@@ -136,6 +136,16 @@ public class PanelHost extends TabPane
                 .toList();
     }
 
+    /** Returns every open panel that currently owns unsaved edits. */
+    public List<String> dirtyPanelTitles()
+    {
+        return panels.values().stream()
+                .filter(AppPanel::hasUnsavedChanges)
+                .map(AppPanel::title)
+                .distinct()
+                .toList();
+    }
+
     public int closeAllClosableTabs()
     {
         List<AppPanelId> closableIds = tabs.entrySet().stream()

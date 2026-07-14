@@ -27,7 +27,7 @@ public class MainWindowStateWiringTest
     }
 
     @Test
-    public void restoresAndAppliesThemeNativeAndCompanyFromStore()
+    public void restoresThemeAndReconcilesFictionalCompanyFromStore()
     {
         AppPreferencesState prefs = new AppPreferencesState(UiThemePreference.DARK, true, true, UserPrivilegeLevel.MANAGER);
         MultiCompanyState company = new MultiCompanyState("BARONY-GREEN", List.of("BARONY-GREEN"));
@@ -43,7 +43,7 @@ public class MainWindowStateWiringTest
 
         assertTrue(window.usesDarkThemeFlag());
         assertTrue(window.usesNativeDecorationsFlag());
-        assertEquals("BARONY-GREEN", window.activeCompanyCode());
+        assertEquals("DEFAULT", window.activeCompanyCode());
         assertEquals("/tmp/dragon.mv.db", window.activeDatabasePath());
     }
 
@@ -66,7 +66,7 @@ public class MainWindowStateWiringTest
         });
 
         assertEquals(UiThemePreference.LIGHT, store.savedPreferences.themePreference());
-        assertEquals("BARONY-RED", store.savedCompany.activeCompanyCode());
+        assertEquals("DEFAULT", store.savedCompany.activeCompanyCode());
         assertEquals("data/sca-ledger.mv.db", store.savedDatabaseSelection.activeDatabasePath());
         assertEquals(1, store.savedViewPresets.size());
         assertEquals("April Reports", store.savedViewPresets.get(0).name());

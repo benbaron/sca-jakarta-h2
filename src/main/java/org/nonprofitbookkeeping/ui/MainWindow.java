@@ -34,6 +34,7 @@ import org.nonprofitbookkeeping.service.CoaCsvMapper;
 import org.nonprofitbookkeeping.service.ImportExportOrchestrationService;
 import org.nonprofitbookkeeping.service.JournalLine;
 import org.nonprofitbookkeeping.service.LedgerQueryService;
+import org.nonprofitbookkeeping.service.CompanyCommand;
 
 import javafx.stage.FileChooser;
 
@@ -57,10 +58,11 @@ public class MainWindow extends BorderPane
     private static final UiSessionState SESSION_STATE = new UiSessionState();
 
     private final AppStateStore stateStore;
+    private final CompanySessionController companySessionController;
     private final ImportExportOrchestrationService importExportService = new ImportExportOrchestrationService();
-    private final PanelHost panelHost = new PanelHost();
+    private final PanelHost panelHost;
     private final InspectorPane inspectorPane = new InspectorPane();
-    private final NavigationPane nav = new NavigationPane(this::openPanel, this::openInspectorForSelection, this::navigationInspectorContext);
+    private final NavigationPane nav;
     private DateRangeSelector dateRangeSelector;
     private Label activePanelLabel;
     private Label activeCompanyLabel;
@@ -71,6 +73,7 @@ public class MainWindow extends BorderPane
     private final Map<String, ViewPreset> viewPresets = new LinkedHashMap<>();
     private final Map<MenuItem, UserPrivilegeLevel> gatedMenuItems = new LinkedHashMap<>();
     private final Map<ButtonBase, UserPrivilegeLevel> gatedButtons = new LinkedHashMap<>();
+    private String renderedCompanyCode;
 
     public MainWindow()
     {
@@ -82,6 +85,24 @@ public class MainWindow extends BorderPane
         this.stateStore = stateStore;
 
         restoreState();
+        companySessionController = new CompanySessionController(
+                SESSION_STATE,
+                stateStore,
+                UiServiceRegistry::companyAdmin);
+        panelHost = new PanelHost(new PanelFactory(companySessionController));
+        nav = new NavigationPane(this::openPanel, this::openInspectorForSelection, this::navigationInspectorContext);
+        companySessionController.setChangeGuard(this::confirmCompanyChange);
+        try
+        {
+            UiServiceRegistry.reconnectToDatabase(
+                    org.nonprofitbookkeeping.persistence.DatabaseLocationService.resolveDatabasePath(
+                            SESSION_STATE.databaseSelection().activeDatabasePath()));
+            companySessionController.restoreAuthoritativeSelection();
+        }
+        catch (RuntimeException ex)
+        {
+            System.err.println("[NPBK] Could not reconcile the persisted active company: " + ex.getMessage());
+        }
 
         setTop(buildTopChrome());
         SplitPane shellPanes = new SplitPane(nav, panelHost, inspectorPane);
@@ -315,7 +336,7 @@ public class MainWindow extends BorderPane
             case APPROVAL_AUDIT -> "Factual audit filters by workflow/decision/actor/date; run-id visibility";
             case IMPORT_EXPORT_JOBS -> "Unified import/export job history and error tracking";
             case BANK_TRANSACTIONS -> "Imported bank transactions, drill to ledger, export selected";
-            case SETTINGS -> "Preferences management";
+            case SETTINGS -> "Preferences, H2 company lifecycle, active-company selection, and user administration";
             case DIAGNOSTICS -> "Health checks and duplicate-code diagnostics";
             default -> "Open panel, inspect context, panel-local actions";
         };
@@ -358,7 +379,7 @@ public class MainWindow extends BorderPane
             case REPORT_LIBRARY -> "Reports Library";
             case CHART_OF_ACCOUNTS -> "Chart of Accounts";
             case FUNDS -> "Funds";
-            case SETTINGS -> "Settings";
+            case SETTINGS -> "Administration";
             case DIAGNOSTICS -> "Diagnostics";
             case HELP -> "Help";
         };
@@ -702,14 +723,25 @@ public class MainWindow extends BorderPane
         var owner = getScene() == null ? null : getScene().getWindow();
         String current = SESSION_STATE.multiCompany().activeCompanyCode();
         CompanyWizardDialog.show(owner, current).ifPresent(result -> {
-            applyCompanySelection(result.companyCode());
             if (result.action() == CompanyWizardDialog.Action.ADD_COMPANY)
             {
-                info("Company wizard: added company " + result.companyCode() + " in current database.");
+                CompanySessionController.SelectionResult created = companySessionController.createAndSelect(
+                        new CompanyCommand(
+                                null,
+                                result.companyCode(),
+                                result.companyCode(),
+                                result.companyCode(),
+                                null,
+                                null,
+                                true,
+                                1,
+                                1,
+                                "USD"));
+                info(created.message());
             }
             else
             {
-                info("Company wizard: switched active company to " + result.companyCode() + ".");
+                info(applyCompanySelection(result.companyCode()).message());
             }
         });
     }
@@ -754,8 +786,19 @@ public class MainWindow extends BorderPane
                 info("Company add cancelled: blank code.");
                 return;
             }
-            applyCompanySelection(normalized);
-            info("Added company: " + normalized + " in current database.");
+            CompanySessionController.SelectionResult result = companySessionController.createAndSelect(
+                    new CompanyCommand(
+                            null,
+                            normalized,
+                            normalized,
+                            normalized,
+                            null,
+                            null,
+                            true,
+                            1,
+                            1,
+                            "USD"));
+            info(result.message());
         });
     }
 
@@ -812,23 +855,15 @@ public class MainWindow extends BorderPane
     }
 
 
-    private void applyCompanySelection(String companyCode)
+    private CompanySessionController.SelectionResult applyCompanySelection(String companyCode)
     {
-        String normalized = companyCode == null ? "" : companyCode.trim().toUpperCase(Locale.ROOT);
-        if (normalized.isBlank())
-        {
-            return;
-        }
-        List<String> recents = new ArrayList<>(SESSION_STATE.multiCompany().recentCompanyCodes());
-        recents.remove(normalized);
-        recents.add(0, normalized);
-        SESSION_STATE.setMultiCompany(new MultiCompanyState(normalized, recents));
-        stateStore.saveMultiCompany(SESSION_STATE.multiCompany());
+        return companySessionController.select(companyCode);
     }
 
     private void initializeSampleCompany()
     {
-        applyCompanySelection("SAMPLE-CO");
+        UiServiceRegistry.sampleCompany().createOrRefresh();
+        companySessionController.restoreAuthoritativeSelection();
     }
 
     private void refreshAuthStatus()
@@ -846,6 +881,7 @@ public class MainWindow extends BorderPane
         {
             DatabaseBootstrap.migrate(path);
             UiServiceRegistry.reconnectToDatabase(path);
+            companySessionController.restoreAuthoritativeSelection();
         }
         catch (RuntimeException ex)
         {
@@ -857,6 +893,7 @@ public class MainWindow extends BorderPane
         recents.remove(selected);
         recents.add(0, selected);
         SESSION_STATE.setDatabaseSelection(new DatabaseSelectionState(selected, recents));
+        panelHost.refreshOpenPanels();
         info("Database switched to: " + path.getFileName());
     }
 
@@ -1008,10 +1045,32 @@ public class MainWindow extends BorderPane
 
     void applyMultiCompany(MultiCompanyState state)
     {
+        boolean changed = renderedCompanyCode != null
+                && !renderedCompanyCode.equalsIgnoreCase(state.activeCompanyCode());
+        renderedCompanyCode = state.activeCompanyCode();
         if (activeCompanyLabel != null)
         {
             activeCompanyLabel.setText("Company: " + state.activeCompanyCode());
         }
+        if (changed && panelHost.openPanelCount() > 0)
+        {
+            panelHost.refreshOpenPanels();
+        }
+    }
+
+    private boolean confirmCompanyChange(String currentCompanyCode, String requestedCompanyCode)
+    {
+        List<String> dirtyTitles = panelHost.dirtyPanelTitles();
+        if (dirtyTitles.isEmpty())
+        {
+            return true;
+        }
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                javafx.scene.control.Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Change active company");
+        alert.setHeaderText("Discard unsaved edits before changing companies?");
+        alert.setContentText("Unsaved edits are present in: " + String.join(", ", dirtyTitles) + ".");
+        return alert.showAndWait().filter(ButtonType.OK::equals).isPresent();
     }
 
     void applyDatabaseSelection(DatabaseSelectionState state)

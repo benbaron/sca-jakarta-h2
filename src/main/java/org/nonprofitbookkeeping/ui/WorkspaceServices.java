@@ -10,16 +10,19 @@ public final class WorkspaceServices
 {
     private final WorkspaceContext context;
     private final DatabaseSessionController databaseSessionController;
+    private final CompanySessionController companySessionController;
     private final PanelFactory panelFactory;
     private final Supplier<DashboardQueryService> dashboardQueryService;
 
     WorkspaceServices(
             WorkspaceContext context,
             DatabaseSessionController databaseSessionController,
+            CompanySessionController companySessionController,
             Supplier<DashboardQueryService> dashboardQueryService)
     {
         this.context = Objects.requireNonNull(context, "context");
         this.databaseSessionController = Objects.requireNonNull(databaseSessionController, "databaseSessionController");
+        this.companySessionController = Objects.requireNonNull(companySessionController, "companySessionController");
         this.dashboardQueryService = Objects.requireNonNull(dashboardQueryService, "dashboardQueryService");
         this.panelFactory = new PanelFactory(this);
     }
@@ -32,6 +35,11 @@ public final class WorkspaceServices
     DatabaseSessionController databaseSessionController()
     {
         return databaseSessionController;
+    }
+
+    CompanySessionController companySessionController()
+    {
+        return companySessionController;
     }
 
     PanelFactory panelFactory()

@@ -13,12 +13,23 @@ public final class AdministrationPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
     private final TabPane tabs = new TabPane();
-    private final SettingsPanel settings = new SettingsPanel();
-    private final CompanyAdminPanel companies = new CompanyAdminPanel();
-    private final UserAdminPanel users = new UserAdminPanel();
+    private final SettingsPanel settings;
+    private final CompanyAdminPanel companies;
+    private final UserAdminPanel users;
 
     public AdministrationPanel()
     {
+        this(new CompanySessionController(
+                MainWindow.sharedSessionState(),
+                UserAppStateStore.create(),
+                UiServiceRegistry::companyAdmin));
+    }
+
+    AdministrationPanel(CompanySessionController companyController)
+    {
+        settings = new SettingsPanel(MainWindow.sharedSessionState(), companyController);
+        companies = new CompanyAdminPanel(companyController);
+        users = new UserAdminPanel();
         tabs.setId("administrationTabs");
         tabs.getTabs().setAll(
                 tab("Preferences", settings),
@@ -72,6 +83,16 @@ public final class AdministrationPanel implements AppPanel
     {
         AppPanel selected = selectedPanel();
         return selected != null && selected.hasUnsavedChanges();
+    }
+
+    @Override
+    public void onPanelShown()
+    {
+        AppPanel selected = selectedPanel();
+        if (selected != null)
+        {
+            selected.onPanelShown();
+        }
     }
 
     private AppPanel selectedPanel()
