@@ -1,12 +1,12 @@
 ---
-plan_version: 33
+plan_version: 35
 active_phase: P12
-active_slice: P12-C1
+active_slice: P12-S3
 active_status: VERIFYING
-active_branch: codex/P12-C1-reconcile-plan-ledger
-active_pull_request: "#162"
-active_head: c324ca100ba1659cface36c3bda2758970d00fb9
-next_action: "Review and merge the P12 plan-reconciliation pull request; then activate P12-S3 Company lifecycle and active-company authority from fresh current main."
+active_branch: codex/P12-S3-company-lifecycle
+active_pull_request: "#163"
+active_head: f1cf7333b981aa766498fd725853ecc5ccf187d1
+next_action: "Complete the recorded laptop-width desktop lifecycle checks for PR #163, merge after approval, and then mark P12-S3 DONE only from current main."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Review and merge the P12 plan-reconciliation pull request; then ac
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision reconciles three overlapping P12 pull requests that reused `P12-S1`. It records the Fund lifecycle work from PR #159 as `P12-S1`, the Administration workspace hub from PR #160 as `P12-S2`, and PR #161 as a merged plan-only activation that did not implement company lifecycle. Company lifecycle is therefore assigned the new unimplemented slice `P12-S3`.
+This revision records P12-C1 as DONE through merged PR #162 and activates P12-S3 for H2-authoritative company lifecycle and active-company selection through the existing Administration hub.
 
 ## 2. Status values
 
@@ -44,7 +44,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
-| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-C1 plan reconciliation active; P12-S1 and P12-S2 merged/VERIFYING; P12-S3 READY after reconciliation |
+| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-C1 DONE; P12-S1 and P12-S2 merged/VERIFYING; P12-S3 active |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
@@ -68,6 +68,7 @@ Focused documents for current UI/accounting work:
 - `doc/accounting/period-and-correction-policy.md`
 - `doc/reporting/report-library.md`
 - `doc/administration/fund-lifecycle.md`
+- `doc/administration/company-lifecycle.md`
 - `doc/workflow/development-workflow.md`
 
 `doc/architecture/production-workspace.md` was removed. Do not re-add it or list it as required reading.
@@ -205,7 +206,7 @@ Completed deliverables:
 
 ## 7. P12 — Administration, company lifecycle, preferences, and Funds edit
 
-Status: IN_PROGRESS. The execution ledger is being reconciled by P12-C1. Product implementation already merged through PRs #159 and #160 but still requires the recorded desktop acceptance checks.
+Status: IN_PROGRESS. P12-C1 is DONE; P12-S3 is active. Product implementation already merged through PRs #159 and #160 but still requires the recorded desktop acceptance checks.
 
 ### P12-S1 — Stable-ID Funds editing and lifecycle rules
 
@@ -257,10 +258,10 @@ Remaining verification:
 
 ### P12-C1 — Reconcile overlapping P12 slice records
 
-Status: VERIFYING.
+Status: DONE through merged PR #162.
 
 Branch: `codex/P12-C1-reconcile-plan-ledger`  
-Pull request: #162
+Pull request: #162, merged into `main` at `fa6b94a67c9f6aa2d6d79e1de77b257240c49a42`
 
 Purpose: repair the execution ledger after PRs #159, #160, and #161 reused `P12-S1` and overwrote one another’s plan records.
 
@@ -274,7 +275,11 @@ Deliverables:
 
 ### P12-S3 — Company lifecycle and active-company authority
 
-Status: READY after P12-C1 merges. No branch or pull request exists.
+Status: VERIFYING; implementation is on PR #163, ready for review.
+
+Branch: `codex/P12-S3-company-lifecycle`
+Pull request: #163 (ready for review)
+Tested implementation head: `f1cf7333b981aa766498fd725853ecc5ccf187d1`
 
 Purpose: make H2 company rows authoritative for company creation, editing, activation/deactivation, and active-company selection through the existing Administration hub.
 
@@ -303,10 +308,27 @@ Planned deliverables:
 - Remove or defer enabled non-persistent placeholder tabs and controls.
 - Apply UI design rules, company-owned layout state, dirty-state/discard protection, focused service/UI tests, and governing-document updates.
 
-Next exact action after P12-C1:
+Completed deliverables:
 
-- Create a fresh branch from current `main` named `codex/P12-S3-company-lifecycle`.
-- Establish the Maven baseline and implement P12-S3 as one coherent vertical slice.
+- Added stable-ID H2 company create/edit/deactivate transactions with complete supported profile persistence and active-company invariants.
+- Reconciled persisted recent-company convenience state against active H2 rows, so fictional or inactive codes cannot become the workspace company.
+- Added the production toolbar selector and refreshed open database-bound panels after guarded active-company changes.
+- Preserved the `SETTINGS` Administration hub while reducing Preferences to preferences and replacing Company Admin placeholders with one real split table/editor workflow.
+- Added service integration coverage, restart/sidecar authority coverage, JavaFX source guardrails, and `doc/administration/company-lifecycle.md`.
+- Maven PR Tests runs `29305022115`, `29305144314`, and `29305406957` passed; the last run is on the tested implementation head.
+
+Remaining verification:
+
+- At laptop width, create a company and confirm it exists after restart with all supported profile fields.
+- Rename the current company code and confirm open workspaces and active-company formatting use the new authoritative code.
+- Switch to another active company and confirm dirty workspaces prompt before refresh.
+- Deactivate a non-current company, confirm it disappears from selectors, and confirm current/last-active deactivation is blocked.
+- Verify Company Admin table sorting, resizing, reordering, scrolling, divider restoration, tooltip behavior, and dirty-state prompts.
+- Review and merge PR #163 after approval; do not mark the slice DONE until merged and the desktop checks are complete.
+
+Next exact action:
+
+- Complete the recorded laptop-width desktop lifecycle checks for PR #163, merge after approval, and then mark P12-S3 DONE only from current `main`.
 
 ## 8. Active and recent phase contracts
 

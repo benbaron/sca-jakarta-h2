@@ -1,6 +1,6 @@
 # Model and persistence authority inventory
 
-Status: P00 inventory of current main, updated through P12-S1 Fund lifecycle work. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
+Status: P00 inventory of current main, updated through P12-S3 company lifecycle work. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
 
 ## Current persistence map
 
@@ -10,6 +10,7 @@ Status: P00 inventory of current main, updated through P12-S1 Fund lifecycle wor
 | Journal/open-item compatibility core | `JournalTransaction`, `PostingLine`, JDBC journal/open-item repositories, V4/V5 migrations | partially; repository exists but is separate from `Txn`/`TxnSplit` | second transaction model can become a parallel ledger | do not add independent writes; later compatibility/migration treatment |
 | Corrections/period close | `period_close_range`, `period_close_event`, `audit_event`, `PeriodCloseRangeService`, canonical transaction services | yes for active company close state and factual history | legacy `AccountingPeriod` rows and period-close run records remain compatibility data but are not the P10 business authority | preserve range authority; retire or remap legacy period/run surfaces deliberately |
 | Fund master data | `Fund` JPA entity, stable-ID `FundCommand`, `FundAdminService`, `FundLookupService` | yes for fund identity and lifecycle fields | code-keyed compatibility `upsert` remains for older callers but the production editor uses stable IDs | preserve referenced funds through deactivation; delete only zero-reference funds |
+| Company master data and active selection | `Company` JPA entity, stable-ID `CompanyCommand`, `CompanyAdminService`, `CompanySessionController` | yes for existence, profile, and active/inactive lifecycle | `MultiCompanyState` remains sidecar recent-selection convenience only | require an existing active H2 row for selection; deactivate rather than hard-delete; protect current and last active companies |
 | Budget categories | `BudgetCategory` JPA plus V45 | yes for categories | categories are not budget targets | P04 |
 | Budget targets | `BudgetPlan`/`BudgetLine` JPA entities and `budget_plan`/`budget_line` tables | yes | version activation must remain through `BudgetPlanService`; no sidecar target store remains | P04 persistent budget model |
 | Import preview | `ImportPreviewService` in-memory accepted/rejected rows | no by design until acceptance | acceptable staging, but accepted writes must use canonical services | P05/P13 |
@@ -54,6 +55,16 @@ Status: P00 inventory of current main, updated through P12-S1 Fund lifecycle wor
 - `FundAdminService.usage(...)` counts references from canonical transaction splits, budget lines, fixed assets, inventory items, aliases, transfers, and child funds.
 - `deleteUnused(...)` repeats the usage assessment in its transaction and removes only zero-reference funds.
 - Referenced funds remain authoritative historical master data and are deactivated rather than deleted.
+
+## Company master-data and selection authority
+
+- `Company.id` is stable record identity. Company code is an editable unique business label; code-keyed UI state and period-close history are renamed transactionally with it.
+- `CompanyAdminService.save(...)` persists identity fields, active state, fiscal-year start, and default currency in one transaction.
+- The current company cannot be deactivated, and no operation may leave the database without an active company.
+- `CompanySessionController` validates selection through `CompanyAdminService.requireActiveCompany(...)` before changing session or workspace context.
+- `MultiCompanyState` contains only active codes confirmed in the current H2 database. Missing and inactive recent codes are discarded rather than materialized as companies.
+- Open production workspaces are recreated after an active-company change so cached formatting, layout ownership, and company context do not remain bound to the prior company.
+- No hard-delete company operation is exposed. Existing foreign keys to company-owned banking, reconciliation, asset, inventory, tax, and role records remain intact.
 
 ## Budget model authority
 

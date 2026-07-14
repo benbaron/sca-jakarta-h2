@@ -6,11 +6,10 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
@@ -56,37 +55,48 @@ public class SettingsPanel implements AppPanel
     private final ComboBox<String> activeDatabase = new ComboBox<>();
 
     private final UiSessionState session;
+    private final CompanySessionController companyController;
 
     public SettingsPanel()
     {
-        this(MainWindow.sharedSessionState());
+        this(
+                MainWindow.sharedSessionState(),
+                new CompanySessionController(
+                        MainWindow.sharedSessionState(),
+                        UserAppStateStore.create(),
+                        UiServiceRegistry::companyAdmin));
     }
 
     SettingsPanel(UiSessionState session)
     {
+        this(
+                session,
+                new CompanySessionController(
+                        session,
+                        UserAppStateStore.create(),
+                        UiServiceRegistry::companyAdmin));
+    }
+
+    SettingsPanel(UiSessionState session, CompanySessionController companyController)
+    {
         this.session = session;
+        this.companyController = companyController;
 
         root.setPadding(new Insets(8));
 
-        Label title = new Label("Settings and Administration");
+        Label title = new Label("Preferences");
         title.getStyleClass().add("panel-title");
 
         root.setTop(new VBox(6, title, status, new Separator()));
 
-        TabPane tabs = new TabPane();
-        tabs.getTabs().add(tab("Preferences", buildPreferencesPane()));
-        tabs.getTabs().add(tab("Company Admin", new CompanyAdminPanel().root()));
-        tabs.getTabs().add(tab("User Admin", new UserAdminPanel().root()));
-        root.setCenter(tabs);
+        ScrollPane scroll = new ScrollPane(buildPreferencesPane());
+        scroll.setId("settingsPreferencesScroll");
+        scroll.setFitToWidth(true);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        root.setCenter(scroll);
 
         syncFromSession();
-    }
-
-    private Tab tab(String title, Node content)
-    {
-        Tab tab = new Tab(title, content);
-        tab.setClosable(false);
-        return tab;
     }
 
     private Node buildPreferencesPane()
@@ -108,9 +118,8 @@ public class SettingsPanel implements AppPanel
         moneyPrintFormat.getItems().setAll(MoneyPrintFormat.values());
         dateDisplayFormat.getItems().setAll(DateDisplayFormat.values());
 
-        activeCompany.setEditable(true);
-        activeCompany.getItems().addAll(session.multiCompany().recentCompanyCodes());
-        activeCompany.setOnAction(event -> loadCompanyUiPreferences(activeCompany.getEditor().getText()));
+        activeCompany.setEditable(false);
+        activeCompany.setOnAction(event -> loadCompanyUiPreferences(activeCompany.getValue()));
 
         activeDatabase.setEditable(true);
         activeDatabase.getItems().addAll(session.databaseSelection().recentDatabasePaths());
@@ -182,10 +191,16 @@ public class SettingsPanel implements AppPanel
         periodStartDay.getValueFactory().setValue(p.periodStartDayOfMonth());
         confirmDeletion.setSelected(p.confirmEnteredTransactionDeletion());
 
-        activeCompany.getItems().setAll(c.recentCompanyCodes());
-        if (!c.recentCompanyCodes().contains(c.activeCompanyCode()))
+        try
         {
-            activeCompany.getItems().add(c.activeCompanyCode());
+            activeCompany.getItems().setAll(companyController.listActiveCompanies().stream()
+                    .map(org.nonprofitbookkeeping.service.CompanyView::code)
+                    .toList());
+        }
+        catch (RuntimeException ex)
+        {
+            activeCompany.getItems().clear();
+            status.setText("Could not load active companies: " + UiErrors.safeMessage(ex));
         }
         activeCompany.getSelectionModel().select(c.activeCompanyCode());
         loadCompanyUiPreferences(c.activeCompanyCode());
@@ -200,11 +215,19 @@ public class SettingsPanel implements AppPanel
 
     private void applyToSession()
     {
+        String selectedCompany = activeCompany.getValue();
+        if (selectedCompany == null || selectedCompany.isBlank())
+        {
+            status.setText("Choose an active H2 company before applying preferences.");
+            return;
+        }
         session.setPreferences(readPreferences());
-        session.setMultiCompany(readMultiCompany());
         session.setDatabaseSelection(readDatabaseSelection());
-        saveCompanyUiPreferences(session.multiCompany().activeCompanyCode());
-        status.setText("Applied settings and company display preferences to the current session.");
+        saveCompanyUiPreferences(selectedCompany);
+        CompanySessionController.SelectionResult selection = companyController.select(selectedCompany);
+        status.setText(selection.selected()
+                ? "Applied settings and company display preferences. " + selection.message()
+                : "Preferences saved, but active-company selection failed: " + selection.message());
     }
 
     CompanyUiPreferences readCompanyUiPreferences()
@@ -256,7 +279,7 @@ public class SettingsPanel implements AppPanel
 
     MultiCompanyState readMultiCompany()
     {
-        String selected = activeCompany.getEditor().getText();
+        String selected = activeCompany.getValue();
         if (selected == null || selected.isBlank())
         {
             selected = "DEFAULT";

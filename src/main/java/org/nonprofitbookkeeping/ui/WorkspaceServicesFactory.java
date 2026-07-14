@@ -20,6 +20,10 @@ public final class WorkspaceServicesFactory
                 sessionState,
                 stateStore,
                 connector);
+        CompanySessionController companySessionController = new CompanySessionController(
+                sessionState,
+                stateStore,
+                UiServiceRegistry::companyAdmin);
         sessionState.onDatabaseSelectionChanged(context::applyDatabaseSelection);
         sessionState.onMultiCompanyChanged(context::applyMultiCompany);
         ActivePeriodContext.activeDateProperty().addListener(
@@ -27,6 +31,7 @@ public final class WorkspaceServicesFactory
         return new WorkspaceServices(
                 context,
                 databaseSessionController,
+                companySessionController,
                 UiServiceRegistry::dashboardQuery);
     }
 }

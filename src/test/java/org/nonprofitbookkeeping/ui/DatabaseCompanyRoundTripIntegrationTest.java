@@ -1,84 +1,65 @@
 package org.nonprofitbookkeeping.ui;
 
 import org.junit.jupiter.api.Test;
-import org.nonprofitbookkeeping.model.AccountType;
-import org.nonprofitbookkeeping.model.ChartOfAccounts;
-import org.nonprofitbookkeeping.model.ChartStatus;
-import org.nonprofitbookkeeping.model.DatabaseSelectionState;
+import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
-import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.persistence.Jpa;
-import org.nonprofitbookkeeping.service.AccountAdminService;
-import org.nonprofitbookkeeping.service.AccountLookupService;
+import org.nonprofitbookkeeping.service.CompanyAdminService;
+import org.nonprofitbookkeeping.service.CompanyCommand;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-/**
- * DatabaseCompanyRoundTripIntegrationTest component.
- */
-public class DatabaseCompanyRoundTripIntegrationTest
+class DatabaseCompanyRoundTripIntegrationTest
 {
     @Test
-    public void roundTrip_databaseAndCompanyContext_reopensAndReadsBackData() throws Exception
+    void recentCompanyStateNeverCreatesOrSelectsAFictionalCompany(@TempDir Path tempDir)
     {
-        Path db = Files.createTempFile("db-roundtrip", ".mv.db");
-        Path stateFile = Files.createTempFile("ui-state-roundtrip", ".properties");
-
-        DatabaseBootstrap.migrate(db);
-
+        Path database = tempDir.resolve("company-round-trip");
+        Path stateFile = tempDir.resolve("ui-state.properties");
         FileAppStateStore store = new FileAppStateStore(stateFile);
-        store.saveDatabaseSelection(new DatabaseSelectionState(db.toString(), List.of(db.toString())));
-        store.saveMultiCompany(new MultiCompanyState("COMPANY_A", List.of("COMPANY_A")));
 
-        Jpa first = new Jpa(db);
-        try
+        try (Jpa jpa = new Jpa(database))
         {
-            seedActiveChart(first);
-            AccountAdminService admin = new AccountAdminService(first);
-            admin.upsert("A-1000", "COMPANY_A Cash", AccountType.ASSET, NormalBalance.DEBIT, null, null, true);
+            CompanyAdminService service = new CompanyAdminService(jpa);
+            UiSessionState session = new UiSessionState();
+            CompanySessionController controller = new CompanySessionController(session, store, () -> service);
+
+            controller.createAndSelect(new CompanyCommand(
+                    null, "COMPANY-A", "Company A", "Company A", null, null, true, 1, 1, "USD"));
+            assertEquals("COMPANY-A", session.multiCompany().activeCompanyCode());
+            assertEquals("COMPANY-A", store.loadMultiCompany().orElseThrow().activeCompanyCode());
+
+            controller.setChangeGuard((current, requested) -> false);
+            CompanySessionController.SelectionResult guardedCreate = controller.createAndSelect(new CompanyCommand(
+                    null, "COMPANY-B", "Company B", "Company B", null, null, true, 1, 1, "USD"));
+            assertFalse(guardedCreate.selected());
+            assertEquals("COMPANY-A", session.multiCompany().activeCompanyCode());
+            assertEquals("COMPANY-B", service.requireActiveCompany("COMPANY-B").code());
         }
-        finally
-        {
-            first.close();
-        }
 
-        store.saveMultiCompany(new MultiCompanyState("COMPANY_B", List.of("COMPANY_B", "COMPANY_A")));
-        MultiCompanyState switched = store.loadMultiCompany().orElseThrow();
-        assertEquals("COMPANY_B", switched.activeCompanyCode());
+        store.saveMultiCompany(new MultiCompanyState(
+                "FICTIONAL",
+                List.of("FICTIONAL", "COMPANY-A", "ALSO-FICTIONAL")));
 
-        store.saveMultiCompany(new MultiCompanyState("COMPANY_A", List.of("COMPANY_A", "COMPANY_B")));
-        MultiCompanyState reopened = store.loadMultiCompany().orElseThrow();
-        assertEquals("COMPANY_A", reopened.activeCompanyCode());
+        try (Jpa jpa = new Jpa(database))
+        {
+            CompanyAdminService service = new CompanyAdminService(jpa);
+            UiSessionState restartedSession = new UiSessionState();
+            CompanySessionController restarted = new CompanySessionController(
+                    restartedSession,
+                    store,
+                    () -> service);
 
-        Jpa second = new Jpa(db);
-        try
-        {
-            AccountLookupService lookup = new AccountLookupService(second);
-            List<String> names = lookup.listPostingAccountsIncludingInactive().stream().map(a -> a.getName()).toList();
-            assertTrue(names.contains("COMPANY_A Cash"));
-        }
-        finally
-        {
-            second.close();
-        }
-    }
+            restarted.restoreAuthoritativeSelection();
 
-    private static void seedActiveChart(Jpa jpa)
-    {
-        try (var em = jpa.em())
-        {
-            em.getTransaction().begin();
-            ChartOfAccounts chart = new ChartOfAccounts();
-            chart.setName("Default Chart");
-            chart.setVersion("v1");
-            chart.setStatus(ChartStatus.ACTIVE);
-            em.persist(chart);
-            em.getTransaction().commit();
+            String selected = restartedSession.multiCompany().activeCompanyCode();
+            service.requireActiveCompany(selected);
+            assertFalse(restartedSession.multiCompany().recentCompanyCodes().contains("FICTIONAL"));
+            assertFalse(restartedSession.multiCompany().recentCompanyCodes().contains("ALSO-FICTIONAL"));
         }
     }
 }
