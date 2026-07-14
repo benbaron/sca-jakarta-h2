@@ -6,7 +6,7 @@ active_status: VERIFYING
 active_branch: codex/P12-S3-company-lifecycle
 active_pull_request: "#163"
 active_head: f1cf7333b981aa766498fd725853ecc5ccf187d1
-next_action: "Review draft PR #163, complete the recorded laptop-width desktop lifecycle checks, merge after approval, and then mark P12-S3 DONE only from current main."
+next_action: "Complete the recorded laptop-width desktop lifecycle checks for PR #163, merge after approval, and then mark P12-S3 DONE only from current main."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -275,10 +275,10 @@ Deliverables:
 
 ### P12-S3 — Company lifecycle and active-company authority
 
-Status: VERIFYING; implementation is on draft PR #163.
+Status: VERIFYING; implementation is on PR #163, ready for review.
 
 Branch: `codex/P12-S3-company-lifecycle`
-Pull request: #163 (draft)
+Pull request: #163 (ready for review)
 Tested implementation head: `f1cf7333b981aa766498fd725853ecc5ccf187d1`
 
 Purpose: make H2 company rows authoritative for company creation, editing, activation/deactivation, and active-company selection through the existing Administration hub.
@@ -324,11 +324,11 @@ Remaining verification:
 - Switch to another active company and confirm dirty workspaces prompt before refresh.
 - Deactivate a non-current company, confirm it disappears from selectors, and confirm current/last-active deactivation is blocked.
 - Verify Company Admin table sorting, resizing, reordering, scrolling, divider restoration, tooltip behavior, and dirty-state prompts.
-- Review and merge draft PR #163 after approval; do not mark the slice DONE until merged and the desktop checks are complete.
+- Review and merge PR #163 after approval; do not mark the slice DONE until merged and the desktop checks are complete.
 
 Next exact action:
 
-- Review draft PR #163, complete the recorded laptop-width desktop lifecycle checks, merge after approval, and then mark P12-S3 DONE only from current `main`.
+- Complete the recorded laptop-width desktop lifecycle checks for PR #163, merge after approval, and then mark P12-S3 DONE only from current `main`.
 
 ## 8. Active and recent phase contracts
 
