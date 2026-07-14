@@ -5,6 +5,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -113,15 +114,18 @@ public class CompanyAdminPanel implements AppPanel
 
         configureCompaniesTable();
         VBox tableRegion = new VBox(6, new Label("Companies in this database"), companies);
+        tableRegion.setMinHeight(0.0);
         VBox.setVgrow(companies, Priority.ALWAYS);
 
         ScrollPane editorScroll = new ScrollPane(buildEditor());
         editorScroll.setId("companyAdminEditorScroll");
         editorScroll.setFitToWidth(true);
+        editorScroll.setMinHeight(0.0);
         editorScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         editorScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
         split.setId("companyAdminWorkspaceSplit");
+        split.setOrientation(Orientation.VERTICAL);
         split.getItems().setAll(tableRegion, editorScroll);
         split.setDividerPositions(0.56);
         root.setCenter(split);

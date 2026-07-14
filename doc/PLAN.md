@@ -4,9 +4,9 @@ active_phase: P12
 active_slice: P12-C2
 active_status: IN_PROGRESS
 active_branch: codex/P12-C2-company-admin-horizontal-split
-active_pull_request: "pending"
-active_head: b08a0a29755d0d6a5e19fb152798c4d5e6eb4784
-next_action: "Open the P12-C2 draft PR, then change Company Admin to a top/bottom split with a horizontal divider and add a focused layout guardrail."
+active_pull_request: "#164"
+active_head: 9d3356c6ec007ea122474ad58b42dc7b27fea909
+next_action: "Implement the Company Admin horizontal-divider correction on draft PR #164, add its focused guardrail, and run the full Maven PR Tests workflow."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -335,7 +335,7 @@ Next exact action:
 Status: IN_PROGRESS.
 
 Branch: `codex/P12-C2-company-admin-horizontal-split`
-Pull request: pending
+Pull request: #164 (draft)
 
 Purpose: correct the Company Admin center workspace discovered during laptop-width desktop validation so the company table and profile editor are stacked top/bottom and separated by a horizontal divider.
 
@@ -348,7 +348,7 @@ Planned deliverables:
 
 Next exact action:
 
-- Open the P12-C2 draft PR, then implement the horizontal-divider correction and focused guardrail.
+- Implement the horizontal-divider correction and focused guardrail, then run the full Maven PR Tests workflow.
 
 ## 8. Active and recent phase contracts
 

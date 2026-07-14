@@ -27,6 +27,8 @@ Tax filing, chart assignment, and expanded reporting-default editors are not exp
 
 The existing Administration destination continues to use `AppPanelId.SETTINGS`. Its Company Admin tab provides New, Save, Select Active, and Refresh operations. It does not add a second shell destination or administration framework.
 
+The center workspace stacks the company table above the profile editor. A horizontal draggable divider separates them, and the editor keeps its own vertical scrolling so the full-width form remains usable at laptop dimensions. The divider position remains company-owned UI state.
+
 ## Active lifecycle
 
 - A company may be selected only when an active H2 row exists.

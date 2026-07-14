@@ -40,6 +40,7 @@ class AdministrationNavigationSourceTest
         assertTrue(companyPanel.contains("fiscalDay"));
         assertTrue(companyPanel.contains("defaultCurrency"));
         assertTrue(companyPanel.contains("companyController.select"));
+        assertTrue(companyPanel.contains("split.setOrientation(Orientation.VERTICAL)"));
         assertTrue(!companyPanel.contains("taxPlaceholder"));
         assertTrue(!companyPanel.contains("tab(\"Chart of Accounts\""));
         assertTrue(!companyPanel.contains("tab(\"Reporting Defaults\""));
