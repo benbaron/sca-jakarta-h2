@@ -5,7 +5,7 @@ active_slice: P12-S3
 active_status: VERIFYING
 active_branch: codex/P12-S3-company-lifecycle
 active_pull_request: "#163"
-active_head: d2c1d35b94161a42c118b693fd9a61a32dd7b6b7
+active_head: f1cf7333b981aa766498fd725853ecc5ccf187d1
 next_action: "Review draft PR #163, complete the recorded laptop-width desktop lifecycle checks, merge after approval, and then mark P12-S3 DONE only from current main."
 ---
 
@@ -279,7 +279,7 @@ Status: VERIFYING; implementation is on draft PR #163.
 
 Branch: `codex/P12-S3-company-lifecycle`
 Pull request: #163 (draft)
-Tested implementation head: `d2c1d35b94161a42c118b693fd9a61a32dd7b6b7`
+Tested implementation head: `f1cf7333b981aa766498fd725853ecc5ccf187d1`
 
 Purpose: make H2 company rows authoritative for company creation, editing, activation/deactivation, and active-company selection through the existing Administration hub.
 
@@ -315,7 +315,7 @@ Completed deliverables:
 - Added the production toolbar selector and refreshed open database-bound panels after guarded active-company changes.
 - Preserved the `SETTINGS` Administration hub while reducing Preferences to preferences and replacing Company Admin placeholders with one real split table/editor workflow.
 - Added service integration coverage, restart/sidecar authority coverage, JavaFX source guardrails, and `doc/administration/company-lifecycle.md`.
-- Maven PR Tests run `29305022115` passed on the tested implementation head.
+- Maven PR Tests runs `29305022115`, `29305144314`, and `29305406957` passed; the last run is on the tested implementation head.
 
 Remaining verification:
 
