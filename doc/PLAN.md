@@ -1,12 +1,12 @@
 ---
-plan_version: 34
+plan_version: 35
 active_phase: P12
 active_slice: P12-S3
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P12-S3-company-lifecycle
 active_pull_request: "#163"
-active_head: 0824ed70dc462e61ee6dc4603cc61cc20e1a2101
-next_action: "Establish the Maven compile and focused-test baseline, then inspect and implement H2-authoritative company lifecycle and active-company selection through the existing Administration hub."
+active_head: d2c1d35b94161a42c118b693fd9a61a32dd7b6b7
+next_action: "Review draft PR #163, complete the recorded laptop-width desktop lifecycle checks, merge after approval, and then mark P12-S3 DONE only from current main."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -275,10 +275,11 @@ Deliverables:
 
 ### P12-S3 — Company lifecycle and active-company authority
 
-Status: IN_PROGRESS.
+Status: VERIFYING; implementation is on draft PR #163.
 
 Branch: `codex/P12-S3-company-lifecycle`
 Pull request: #163 (draft)
+Tested implementation head: `d2c1d35b94161a42c118b693fd9a61a32dd7b6b7`
 
 Purpose: make H2 company rows authoritative for company creation, editing, activation/deactivation, and active-company selection through the existing Administration hub.
 
@@ -307,9 +308,27 @@ Planned deliverables:
 - Remove or defer enabled non-persistent placeholder tabs and controls.
 - Apply UI design rules, company-owned layout state, dirty-state/discard protection, focused service/UI tests, and governing-document updates.
 
+Completed deliverables:
+
+- Added stable-ID H2 company create/edit/deactivate transactions with complete supported profile persistence and active-company invariants.
+- Reconciled persisted recent-company convenience state against active H2 rows, so fictional or inactive codes cannot become the workspace company.
+- Added the production toolbar selector and refreshed open database-bound panels after guarded active-company changes.
+- Preserved the `SETTINGS` Administration hub while reducing Preferences to preferences and replacing Company Admin placeholders with one real split table/editor workflow.
+- Added service integration coverage, restart/sidecar authority coverage, JavaFX source guardrails, and `doc/administration/company-lifecycle.md`.
+- Maven PR Tests run `29305022115` passed on the tested implementation head.
+
+Remaining verification:
+
+- At laptop width, create a company and confirm it exists after restart with all supported profile fields.
+- Rename the current company code and confirm open workspaces and active-company formatting use the new authoritative code.
+- Switch to another active company and confirm dirty workspaces prompt before refresh.
+- Deactivate a non-current company, confirm it disappears from selectors, and confirm current/last-active deactivation is blocked.
+- Verify Company Admin table sorting, resizing, reordering, scrolling, divider restoration, tooltip behavior, and dirty-state prompts.
+- Review and merge draft PR #163 after approval; do not mark the slice DONE until merged and the desktop checks are complete.
+
 Next exact action:
 
-- Establish the Maven compile and focused-test baseline, inspect the required implementation and governing documents, and implement P12-S3 as one coherent vertical slice.
+- Review draft PR #163, complete the recorded laptop-width desktop lifecycle checks, merge after approval, and then mark P12-S3 DONE only from current `main`.
 
 ## 8. Active and recent phase contracts
 
