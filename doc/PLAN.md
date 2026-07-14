@@ -1,12 +1,12 @@
 ---
-plan_version: 33
+plan_version: 34
 active_phase: P12
-active_slice: P12-C1
-active_status: VERIFYING
-active_branch: codex/P12-C1-reconcile-plan-ledger
-active_pull_request: "#162"
-active_head: c324ca100ba1659cface36c3bda2758970d00fb9
-next_action: "Review and merge the P12 plan-reconciliation pull request; then activate P12-S3 Company lifecycle and active-company authority from fresh current main."
+active_slice: P12-S3
+active_status: IN_PROGRESS
+active_branch: codex/P12-S3-company-lifecycle
+active_pull_request: ""
+active_head: fa6b94a67c9f6aa2d6d79e1de77b257240c49a42
+next_action: "Open the draft P12-S3 pull request, establish the Maven compile and focused-test baseline, then inspect and implement H2-authoritative company lifecycle and active-company selection through the existing Administration hub."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Review and merge the P12 plan-reconciliation pull request; then ac
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision reconciles three overlapping P12 pull requests that reused `P12-S1`. It records the Fund lifecycle work from PR #159 as `P12-S1`, the Administration workspace hub from PR #160 as `P12-S2`, and PR #161 as a merged plan-only activation that did not implement company lifecycle. Company lifecycle is therefore assigned the new unimplemented slice `P12-S3`.
+This revision records P12-C1 as DONE through merged PR #162 and activates P12-S3 for H2-authoritative company lifecycle and active-company selection through the existing Administration hub.
 
 ## 2. Status values
 
@@ -44,7 +44,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
-| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-C1 plan reconciliation active; P12-S1 and P12-S2 merged/VERIFYING; P12-S3 READY after reconciliation |
+| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-C1 DONE; P12-S1 and P12-S2 merged/VERIFYING; P12-S3 active |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
@@ -205,7 +205,7 @@ Completed deliverables:
 
 ## 7. P12 — Administration, company lifecycle, preferences, and Funds edit
 
-Status: IN_PROGRESS. The execution ledger is being reconciled by P12-C1. Product implementation already merged through PRs #159 and #160 but still requires the recorded desktop acceptance checks.
+Status: IN_PROGRESS. P12-C1 is DONE; P12-S3 is active. Product implementation already merged through PRs #159 and #160 but still requires the recorded desktop acceptance checks.
 
 ### P12-S1 — Stable-ID Funds editing and lifecycle rules
 
@@ -257,10 +257,10 @@ Remaining verification:
 
 ### P12-C1 — Reconcile overlapping P12 slice records
 
-Status: VERIFYING.
+Status: DONE through merged PR #162.
 
 Branch: `codex/P12-C1-reconcile-plan-ledger`  
-Pull request: #162
+Pull request: #162, merged into `main` at `fa6b94a67c9f6aa2d6d79e1de77b257240c49a42`
 
 Purpose: repair the execution ledger after PRs #159, #160, and #161 reused `P12-S1` and overwrote one another’s plan records.
 
@@ -274,7 +274,10 @@ Deliverables:
 
 ### P12-S3 — Company lifecycle and active-company authority
 
-Status: READY after P12-C1 merges. No branch or pull request exists.
+Status: IN_PROGRESS.
+
+Branch: `codex/P12-S3-company-lifecycle`
+Pull request: pending
 
 Purpose: make H2 company rows authoritative for company creation, editing, activation/deactivation, and active-company selection through the existing Administration hub.
 
@@ -303,10 +306,10 @@ Planned deliverables:
 - Remove or defer enabled non-persistent placeholder tabs and controls.
 - Apply UI design rules, company-owned layout state, dirty-state/discard protection, focused service/UI tests, and governing-document updates.
 
-Next exact action after P12-C1:
+Next exact action:
 
-- Create a fresh branch from current `main` named `codex/P12-S3-company-lifecycle`.
-- Establish the Maven baseline and implement P12-S3 as one coherent vertical slice.
+- Open the draft pull request from the fresh current-`main` branch.
+- Establish the Maven compile and focused-test baseline, inspect the required implementation and governing documents, and implement P12-S3 as one coherent vertical slice.
 
 ## 8. Active and recent phase contracts
 
