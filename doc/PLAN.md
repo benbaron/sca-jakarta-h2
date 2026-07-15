@@ -1,12 +1,12 @@
 ---
-plan_version: 37
+plan_version: 38
 active_phase: P12
 active_slice: P12-S3
 active_status: VERIFYING
 active_branch: main
 active_pull_request: "#163 (merged); corrective #164 (merged)"
-active_head: c59c11c25bc7c77841da0a8b77822404a358646a
-next_action: "At laptop width on current main, create a company with all supported profile fields, restart the application, and confirm the same authoritative H2 profile reloads."
+active_head: 7289a5abceca931972f2ab9536c45d10ea652088
+next_action: "On current main, rename the current company's code and confirm the toolbar, Administration workspace, open workspaces, and active-company formatting follow the same stable company record."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "At laptop width on current main, create a company with all support
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P12-C2 as DONE through merged PR #164 and owner desktop verification, then returns the active controller to the remaining P12-S3 lifecycle acceptance checks.
+This revision records successful owner verification of H2-backed company creation and complete profile reload after restart, then advances P12-S3 to current-company code rename verification.
 
 ## 2. Status values
 
@@ -316,10 +316,10 @@ Completed deliverables:
 - Preserved the `SETTINGS` Administration hub while reducing Preferences to preferences and replacing Company Admin placeholders with one real split table/editor workflow.
 - Added service integration coverage, restart/sidecar authority coverage, JavaFX source guardrails, and `doc/administration/company-lifecycle.md`.
 - Maven PR Tests runs `29305022115`, `29305144314`, and `29305406957` passed; the last run is on the tested implementation head.
+- The owner created a company with every supported profile field and verified that the same authoritative H2 profile reloaded after application restart.
 
 Remaining verification:
 
-- At laptop width, create a company and confirm it exists after restart with all supported profile fields.
 - Rename the current company code and confirm open workspaces and active-company formatting use the new authoritative code.
 - Switch to another active company and confirm dirty workspaces prompt before refresh.
 - Deactivate a non-current company, confirm it disappears from selectors, and confirm current/last-active deactivation is blocked.
@@ -328,7 +328,7 @@ Remaining verification:
 
 Next exact action:
 
-- At laptop width on current `main`, create a company with all supported profile fields, restart the application, and confirm the same authoritative H2 profile reloads.
+- On current `main`, rename the current company's code and confirm the toolbar, Administration workspace, open workspaces, and active-company formatting follow the same stable company record.
 
 ### P12-C2 — Company Admin horizontal divider correction
 
