@@ -1,12 +1,12 @@
 ---
-plan_version: 38
+plan_version: 39
 active_phase: P12
 active_slice: P12-S3
 active_status: VERIFYING
 active_branch: main
 active_pull_request: "#163 (merged); corrective #164 (merged)"
-active_head: 7289a5abceca931972f2ab9536c45d10ea652088
-next_action: "On current main, rename the current company's code and confirm the toolbar, Administration workspace, open workspaces, and active-company formatting follow the same stable company record."
+active_head: 826f09d18b5d423f3352c926c3af9f8bd5f7d535
+next_action: "With unsaved edits open in another workspace on current main, attempt to switch to another active company; confirm Cancel preserves the current company and edits, then confirm approval switches company and refreshes open workspaces."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "On current main, rename the current company's code and confirm the
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records successful owner verification of H2-backed company creation and complete profile reload after restart, then advances P12-S3 to current-company code rename verification.
+This revision records successful owner verification of stable-ID current-company code rename behavior, then advances P12-S3 to dirty-workspace protection during active-company switching.
 
 ## 2. Status values
 
@@ -317,10 +317,10 @@ Completed deliverables:
 - Added service integration coverage, restart/sidecar authority coverage, JavaFX source guardrails, and `doc/administration/company-lifecycle.md`.
 - Maven PR Tests runs `29305022115`, `29305144314`, and `29305406957` passed; the last run is on the tested implementation head.
 - The owner created a company with every supported profile field and verified that the same authoritative H2 profile reloaded after application restart.
+- The owner renamed the current company code and verified that the toolbar, Administration workspace, Inspector and open-workspace context, and restart selection followed the same stable company record; the old code was no longer selectable and no duplicate company row was created.
 
 Remaining verification:
 
-- Rename the current company code and confirm open workspaces and active-company formatting use the new authoritative code.
 - Switch to another active company and confirm dirty workspaces prompt before refresh.
 - Deactivate a non-current company, confirm it disappears from selectors, and confirm current/last-active deactivation is blocked.
 - Verify Company Admin table sorting, resizing, reordering, scrolling, divider restoration, tooltip behavior, and dirty-state prompts.
@@ -328,7 +328,7 @@ Remaining verification:
 
 Next exact action:
 
-- On current `main`, rename the current company's code and confirm the toolbar, Administration workspace, open workspaces, and active-company formatting follow the same stable company record.
+- With unsaved edits open in another workspace on current `main`, attempt to switch to another active company; confirm Cancel preserves the current company and edits, then confirm approval switches company and refreshes open workspaces.
 
 ### P12-C2 — Company Admin horizontal divider correction
 
