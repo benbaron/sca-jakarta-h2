@@ -1,12 +1,12 @@
 ---
-plan_version: 36
+plan_version: 37
 active_phase: P12
-active_slice: P12-C2
+active_slice: P12-S3
 active_status: VERIFYING
-active_branch: codex/P12-C2-company-admin-horizontal-split
-active_pull_request: "#164"
-active_head: 1dafac8b6cfa0755eed1c8a2590da49cb60163ad
-next_action: "Desktop-verify PR #164 at laptop width: confirm the company table is above the full-width editor with a horizontal draggable divider, then approve and merge the correction."
+active_branch: main
+active_pull_request: "#163 (merged); corrective #164 (merged)"
+active_head: c59c11c25bc7c77841da0a8b77822404a358646a
+next_action: "At laptop width on current main, create a company with all supported profile fields, restart the application, and confirm the same authoritative H2 profile reloads."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Desktop-verify PR #164 at laptop width: confirm the company table 
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P12-S3 as merged/VERIFYING through PR #163 and activates P12-C2 to correct the Company Admin split orientation found during laptop-width desktop validation.
+This revision records P12-C2 as DONE through merged PR #164 and owner desktop verification, then returns the active controller to the remaining P12-S3 lifecycle acceptance checks.
 
 ## 2. Status values
 
@@ -44,7 +44,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
-| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-C1 DONE; P12-S1, P12-S2, and P12-S3 merged/VERIFYING; P12-C2 active |
+| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-C1 and P12-C2 DONE; P12-S1, P12-S2, and P12-S3 merged/VERIFYING; P12-S3 active |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
@@ -206,7 +206,7 @@ Completed deliverables:
 
 ## 7. P12 — Administration, company lifecycle, preferences, and Funds edit
 
-Status: IN_PROGRESS. P12-C1 is DONE; P12-S1, P12-S2, and P12-S3 are merged/VERIFYING; P12-C2 is active for the desktop layout correction.
+Status: IN_PROGRESS. P12-C1 and P12-C2 are DONE; P12-S1, P12-S2, and P12-S3 are merged/VERIFYING; P12-S3 is active for the remaining lifecycle acceptance checks.
 
 ### P12-S1 — Stable-ID Funds editing and lifecycle rules
 
@@ -324,18 +324,19 @@ Remaining verification:
 - Switch to another active company and confirm dirty workspaces prompt before refresh.
 - Deactivate a non-current company, confirm it disappears from selectors, and confirm current/last-active deactivation is blocked.
 - Verify Company Admin table sorting, resizing, reordering, scrolling, divider restoration, tooltip behavior, and dirty-state prompts.
-- Complete the remaining desktop checks and corrective P12-C2; do not mark the slice DONE until those checks are complete.
+- Complete the remaining desktop lifecycle checks; do not mark the slice DONE until those checks are complete.
 
 Next exact action:
 
-- Implement P12-C2, then resume the recorded laptop-width lifecycle checks on current `main`.
+- At laptop width on current `main`, create a company with all supported profile fields, restart the application, and confirm the same authoritative H2 profile reloads.
 
 ### P12-C2 — Company Admin horizontal divider correction
 
-Status: VERIFYING.
+Status: DONE through merged PR #164 and owner desktop verification.
 
 Branch: `codex/P12-C2-company-admin-horizontal-split`
-Pull request: #164 (draft)
+Pull request: #164, merged into `main` at `c59c11c25bc7c77841da0a8b77822404a358646a`
+Tested implementation head: `1dafac8b6cfa0755eed1c8a2590da49cb60163ad`
 
 Purpose: correct the Company Admin center workspace discovered during laptop-width desktop validation so the company table and profile editor are stacked top/bottom and separated by a horizontal divider.
 
@@ -351,16 +352,12 @@ Completed deliverables:
 - Set the existing `companyAdminWorkspaceSplit` to vertical item orientation so its divider runs horizontally and the table is above the editor.
 - Preserved independent editor scrolling, table growth, company-owned divider persistence, and the existing Administration destination.
 - Added a focused orientation guardrail and documented the top/bottom laptop-width layout.
-- Maven PR Tests run `29372548918` passed on implementation head `1dafac8b6cfa0755eed1c8a2590da49cb60163ad`.
-
-Remaining verification:
-
-- At laptop width, confirm the company table appears above the full-width profile editor and the horizontal divider remains draggable and restores its saved position.
-- Merge PR #164 only after that desktop confirmation; leave P12-C2 VERIFYING until then.
+- Maven PR Tests runs `29372548918` and `29372653080` passed; the last run is on final handoff head `ef6fb259a69fd03ce4ae39a2b612f07dddb07e08`.
+- The owner verified the corrected laptop-width top/bottom layout and horizontal draggable divider after merge.
 
 Next exact action:
 
-- Desktop-verify PR #164 at laptop width, then approve and merge the correction.
+- Resume the remaining P12-S3 lifecycle acceptance checks on current `main`.
 
 ## 8. Active and recent phase contracts
 
