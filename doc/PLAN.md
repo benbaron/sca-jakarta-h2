@@ -1,12 +1,12 @@
 ---
-plan_version: 42
+plan_version: 43
 active_phase: P12
-active_slice: P12-S1
-active_status: VERIFYING
-active_branch: main
-active_pull_request: "#159 (merged)"
-active_head: 76e2011660c8e767ec127fcd0361a4a01a3c1eb5
-next_action: "At laptop width on current main, create a Fund and edit its code; confirm that one stable row remains and that the persisted values reload after reopening Funds."
+active_slice: P12-C3
+active_status: IN_PROGRESS
+active_branch: codex/P12-C3-funds-horizontal-split
+active_pull_request: "draft PR pending"
+active_head: 34a28f513d2116878d03a43d3b0fffbf8e42fda7
+next_action: "Open the P12-C3 draft pull request, then stack the Funds table above its editor with a horizontal draggable divider and add focused layout coverage."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "At laptop width on current main, create a Fund and edit its code; 
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records successful owner completion of the P12-S3 Company Admin acceptance pass, marks P12-S3 DONE, and activates the first remaining unblocked P12 verification slice, P12-S1.
+This revision activates P12-C3 after owner desktop review found that the Funds table and editor still use a left/right split instead of the required top/bottom layout with a horizontal divider.
 
 ## 2. Status values
 
@@ -44,7 +44,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
-| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-C1, P12-C2, and P12-S3 DONE; P12-S1 and P12-S2 merged/VERIFYING; P12-S1 active |
+| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-C1, P12-C2, and P12-S3 DONE; P12-S1 and P12-S2 merged/VERIFYING; corrective P12-C3 active |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
@@ -206,7 +206,7 @@ Completed deliverables:
 
 ## 7. P12 — Administration, company lifecycle, preferences, and Funds edit
 
-Status: IN_PROGRESS. P12-C1, P12-C2, and P12-S3 are DONE; P12-S1 and P12-S2 are merged/VERIFYING; P12-S1 is active for the remaining Funds lifecycle acceptance checks.
+Status: IN_PROGRESS. P12-C1, P12-C2, and P12-S3 are DONE; P12-S1 and P12-S2 are merged/VERIFYING; corrective P12-C3 is active before Funds lifecycle acceptance resumes.
 
 ### P12-S1 — Stable-ID Funds editing and lifecycle rules
 
@@ -235,6 +235,27 @@ Remaining verification:
 Next exact action:
 
 - At laptop width on current `main`, create a Fund and edit its code; confirm that one stable row remains and that the persisted values reload after reopening Funds.
+
+### P12-C3 — Funds horizontal divider correction
+
+Status: IN_PROGRESS.
+
+Branch: `codex/P12-C3-funds-horizontal-split`
+Pull request: draft PR pending
+Base head: `34a28f513d2116878d03a43d3b0fffbf8e42fda7`
+
+Purpose: correct the Funds center workspace discovered during laptop-width desktop validation so the fund table and editor are stacked top/bottom and separated by a horizontal draggable divider.
+
+Planned deliverables:
+
+- Set the existing Funds `SplitPane` to vertical item orientation, producing a horizontal draggable divider.
+- Preserve the stable-ID table/editor workflow, independent editor scrolling, and company-owned divider persistence.
+- Add a focused source/layout guardrail and update the Fund lifecycle documentation.
+- Run the full Maven PR Tests workflow and leave the correction VERIFYING until desktop confirmation and merge.
+
+Next exact action:
+
+- Open the draft pull request, then implement the focused layout correction.
 
 ### P12-S2 — Administration workspace hub
 
