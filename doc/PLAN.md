@@ -1,12 +1,12 @@
 ---
-plan_version: 40
+plan_version: 41
 active_phase: P12
 active_slice: P12-S3
 active_status: VERIFYING
 active_branch: main
 active_pull_request: "#163 (merged); corrective #164 (merged)"
-active_head: ca996fc2552326eb6054e4eed6981415485e5089
-next_action: "On current main, deactivate a non-current company and confirm it disappears from active-company selectors; then confirm attempts to deactivate the current company or leave no active company are blocked."
+active_head: 97408181e6d999f46db05a22a702f9adee53f891
+next_action: "On current main, verify Company Admin table sorting, column resizing and reordering, horizontal and vertical scrolling, divider restoration, tooltip behavior, and dirty-state prompts."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "On current main, deactivate a non-current company and confirm it d
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records successful owner verification of dirty-workspace protection during active-company switching, then advances P12-S3 to company-deactivation safeguards.
+This revision records successful owner verification of company-deactivation safeguards, then advances P12-S3 to the remaining Company Admin UI acceptance checks.
 
 ## 2. Status values
 
@@ -319,16 +319,16 @@ Completed deliverables:
 - The owner created a company with every supported profile field and verified that the same authoritative H2 profile reloaded after application restart.
 - The owner renamed the current company code and verified that the toolbar, Administration workspace, Inspector and open-workspace context, and restart selection followed the same stable company record; the old code was no longer selectable and no duplicate company row was created.
 - The owner verified that cancelling an active-company switch preserved the current company and unsaved workspace edits without refreshing panels, while approving the switch changed the active company and refreshed open workspaces without retaining stale company data.
+- The owner deactivated a non-current company and verified that its authoritative row remained inactive while disappearing from active-company selectors and recent-company selection; attempts to deactivate the current or last active company were blocked.
 
 Remaining verification:
 
-- Deactivate a non-current company, confirm it disappears from selectors, and confirm current/last-active deactivation is blocked.
 - Verify Company Admin table sorting, resizing, reordering, scrolling, divider restoration, tooltip behavior, and dirty-state prompts.
 - Complete the remaining desktop lifecycle checks; do not mark the slice DONE until those checks are complete.
 
 Next exact action:
 
-- On current `main`, deactivate a non-current company and confirm it disappears from active-company selectors; then confirm attempts to deactivate the current company or leave no active company are blocked.
+- On current `main`, verify Company Admin table sorting, column resizing and reordering, horizontal and vertical scrolling, divider restoration, tooltip behavior, and dirty-state prompts.
 
 ### P12-C2 — Company Admin horizontal divider correction
 
