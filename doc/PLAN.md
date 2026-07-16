@@ -1,12 +1,12 @@
 ---
-plan_version: 41
+plan_version: 42
 active_phase: P12
-active_slice: P12-S3
+active_slice: P12-S1
 active_status: VERIFYING
 active_branch: main
-active_pull_request: "#163 (merged); corrective #164 (merged)"
-active_head: 97408181e6d999f46db05a22a702f9adee53f891
-next_action: "On current main, verify Company Admin table sorting, column resizing and reordering, horizontal and vertical scrolling, divider restoration, tooltip behavior, and dirty-state prompts."
+active_pull_request: "#159 (merged)"
+active_head: 76e2011660c8e767ec127fcd0361a4a01a3c1eb5
+next_action: "At laptop width on current main, create a Fund and edit its code; confirm that one stable row remains and that the persisted values reload after reopening Funds."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "On current main, verify Company Admin table sorting, column resizi
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records successful owner verification of company-deactivation safeguards, then advances P12-S3 to the remaining Company Admin UI acceptance checks.
+This revision records successful owner completion of the P12-S3 Company Admin acceptance pass, marks P12-S3 DONE, and activates the first remaining unblocked P12 verification slice, P12-S1.
 
 ## 2. Status values
 
@@ -44,7 +44,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
-| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-C1 and P12-C2 DONE; P12-S1, P12-S2, and P12-S3 merged/VERIFYING; P12-S3 active |
+| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-C1, P12-C2, and P12-S3 DONE; P12-S1 and P12-S2 merged/VERIFYING; P12-S1 active |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
@@ -206,7 +206,7 @@ Completed deliverables:
 
 ## 7. P12 — Administration, company lifecycle, preferences, and Funds edit
 
-Status: IN_PROGRESS. P12-C1 and P12-C2 are DONE; P12-S1, P12-S2, and P12-S3 are merged/VERIFYING; P12-S3 is active for the remaining lifecycle acceptance checks.
+Status: IN_PROGRESS. P12-C1, P12-C2, and P12-S3 are DONE; P12-S1 and P12-S2 are merged/VERIFYING; P12-S1 is active for the remaining Funds lifecycle acceptance checks.
 
 ### P12-S1 — Stable-ID Funds editing and lifecycle rules
 
@@ -231,6 +231,10 @@ Remaining verification:
 - At laptop width, create a fund and edit its code while confirming one stable row remains.
 - Verify parent selection, effective dates, restriction text, active/inactive display, sorting, resizing, reordering, scrolling, and divider restoration.
 - Verify referenced deletion is blocked with deactivation guidance, and unused deletion requires confirmation.
+
+Next exact action:
+
+- At laptop width on current `main`, create a Fund and edit its code; confirm that one stable row remains and that the persisted values reload after reopening Funds.
 
 ### P12-S2 — Administration workspace hub
 
@@ -275,7 +279,7 @@ Deliverables:
 
 ### P12-S3 — Company lifecycle and active-company authority
 
-Status: VERIFYING; implementation is merged.
+Status: DONE through merged PR #163, corrective PR #164, and owner desktop acceptance.
 
 Branch: `codex/P12-S3-company-lifecycle`
 Pull request: #163, merged into `main` at `b08a0a29755d0d6a5e19fb152798c4d5e6eb4784`
@@ -320,15 +324,11 @@ Completed deliverables:
 - The owner renamed the current company code and verified that the toolbar, Administration workspace, Inspector and open-workspace context, and restart selection followed the same stable company record; the old code was no longer selectable and no duplicate company row was created.
 - The owner verified that cancelling an active-company switch preserved the current company and unsaved workspace edits without refreshing panels, while approving the switch changed the active company and refreshed open workspaces without retaining stale company data.
 - The owner deactivated a non-current company and verified that its authoritative row remained inactive while disappearing from active-company selectors and recent-company selection; attempts to deactivate the current or last active company were blocked.
-
-Remaining verification:
-
-- Verify Company Admin table sorting, resizing, reordering, scrolling, divider restoration, tooltip behavior, and dirty-state prompts.
-- Complete the remaining desktop lifecycle checks; do not mark the slice DONE until those checks are complete.
+- The owner verified Company Admin table sorting, resizing, reordering, horizontal and vertical scrolling, company-owned divider restoration, full-text tooltip behavior, and dirty-state prompts for every tested discard path.
 
 Next exact action:
 
-- On current `main`, verify Company Admin table sorting, column resizing and reordering, horizontal and vertical scrolling, divider restoration, tooltip behavior, and dirty-state prompts.
+- None; P12-S3 is DONE.
 
 ### P12-C2 — Company Admin horizontal divider correction
 
@@ -357,7 +357,7 @@ Completed deliverables:
 
 Next exact action:
 
-- Resume the remaining P12-S3 lifecycle acceptance checks on current `main`.
+- None; P12-C2 is DONE.
 
 ## 8. Active and recent phase contracts
 
