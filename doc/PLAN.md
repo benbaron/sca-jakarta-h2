@@ -1,12 +1,12 @@
 ---
-plan_version: 43
+plan_version: 44
 active_phase: P12
 active_slice: P12-C3
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P12-C3-funds-horizontal-split
-active_pull_request: "draft PR pending"
-active_head: 34a28f513d2116878d03a43d3b0fffbf8e42fda7
-next_action: "Open the P12-C3 draft pull request, then stack the Funds table above its editor with a horizontal draggable divider and add focused layout coverage."
+active_pull_request: "#171 (draft)"
+active_head: e307633189c94a4f15428044965b76af83341ed8
+next_action: "Complete Maven PR Tests and diff review for PR #171, then verify on the desktop that the Funds table is above the editor with a restorable horizontal divider."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Open the P12-C3 draft pull request, then stack the Funds table abo
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision activates P12-C3 after owner desktop review found that the Funds table and editor still use a left/right split instead of the required top/bottom layout with a horizontal divider.
+This revision records the implemented P12-C3 Funds top/bottom layout correction in draft PR #171 and advances it to CI and desktop verification.
 
 ## 2. Status values
 
@@ -238,11 +238,12 @@ Next exact action:
 
 ### P12-C3 — Funds horizontal divider correction
 
-Status: IN_PROGRESS.
+Status: VERIFYING; implementation is in draft PR #171.
 
 Branch: `codex/P12-C3-funds-horizontal-split`
-Pull request: draft PR pending
+Pull request: #171, draft
 Base head: `34a28f513d2116878d03a43d3b0fffbf8e42fda7`
+Implementation head: `e307633189c94a4f15428044965b76af83341ed8`
 
 Purpose: correct the Funds center workspace discovered during laptop-width desktop validation so the fund table and editor are stacked top/bottom and separated by a horizontal draggable divider.
 
@@ -253,9 +254,16 @@ Planned deliverables:
 - Add a focused source/layout guardrail and update the Fund lifecycle documentation.
 - Run the full Maven PR Tests workflow and leave the correction VERIFYING until desktop confirmation and merge.
 
+Completed deliverables:
+
+- Set `fundsWorkspaceSplit` to vertical item orientation so the divider runs horizontally and the fund table is above the editor.
+- Allowed both split items to shrink while preserving table scrolling, the independent editor `ScrollPane`, and existing company-owned divider persistence.
+- Added a focused Funds panel source guardrail and documented the top/bottom workspace behavior.
+- Local Maven validation was unavailable because the container has neither Maven nor a Maven wrapper; GitHub Maven PR Tests is authoritative for this correction.
+
 Next exact action:
 
-- Open the draft pull request, then implement the focused layout correction.
+- Complete Maven PR Tests and final diff review for PR #171, then perform desktop confirmation before merge.
 
 ### P12-S2 — Administration workspace hub
 
