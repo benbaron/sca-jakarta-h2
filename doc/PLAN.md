@@ -1,12 +1,12 @@
 ---
-plan_version: 44
+plan_version: 45
 active_phase: P12
 active_slice: P12-C3
 active_status: VERIFYING
 active_branch: codex/P12-C3-funds-horizontal-split
 active_pull_request: "#171 (draft)"
 active_head: e307633189c94a4f15428044965b76af83341ed8
-next_action: "Complete Maven PR Tests and diff review for PR #171, then verify on the desktop that the Funds table is above the editor with a restorable horizontal divider."
+next_action: "Merge CI-green PR #171, then verify on the desktop that the Funds table is above the editor with a restorable horizontal divider."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Complete Maven PR Tests and diff review for PR #171, then verify o
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records the implemented P12-C3 Funds top/bottom layout correction in draft PR #171 and advances it to CI and desktop verification.
+This revision records successful Maven PR Tests for the P12-C3 Funds top/bottom layout correction and advances PR #171 to merge and desktop verification.
 
 ## 2. Status values
 
@@ -260,10 +260,11 @@ Completed deliverables:
 - Allowed both split items to shrink while preserving table scrolling, the independent editor `ScrollPane`, and existing company-owned divider persistence.
 - Added a focused Funds panel source guardrail and documented the top/bottom workspace behavior.
 - Local Maven validation was unavailable because the container has neither Maven nor a Maven wrapper; GitHub Maven PR Tests is authoritative for this correction.
+- Maven PR Tests run `29469588821` passed on handoff head `e14f778594c76f277230f37ac49f36638099b3b1`.
 
 Next exact action:
 
-- Complete Maven PR Tests and final diff review for PR #171, then perform desktop confirmation before merge.
+- Merge PR #171, then verify on the desktop that the table is above the editor, the horizontal divider is draggable and restored, and both regions remain usable at laptop width.
 
 ### P12-S2 — Administration workspace hub
 
