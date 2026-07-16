@@ -55,7 +55,7 @@ The JavaFX workspace first displays the reference summary. It asks for explicit 
 
 ## Workspace behavior
 
-The Funds workspace has separate table and editor regions in a `SplitPane`.
+The Funds workspace stacks the fund table above the editor in a `SplitPane`. The pane uses vertical item orientation, producing a horizontal draggable divider. Both regions can shrink with the window: the table retains its own scrolling and the editor retains its independent `ScrollPane`.
 
 - **New** clears the editor for a new stable record.
 - Selecting a row loads all lifecycle fields and records its database ID.
@@ -64,7 +64,7 @@ The Funds workspace has separate table and editor regions in a `SplitPane`.
 - **Refresh** reloads active and inactive funds.
 - Unsaved editor state is reported through the `AppPanel` dirty-state contract.
 
-Date fields use the active company’s date preference through `CompanyUiFormat`. Table column width, order, sort state, and the workspace divider are stored in company-owned UI state under the `funds.` prefix.
+Date fields use the active company’s date preference through `CompanyUiFormat`. Table column width, order, sort state, and the horizontal workspace divider are stored in company-owned UI state under the `funds.` prefix.
 
 ## Validation
 

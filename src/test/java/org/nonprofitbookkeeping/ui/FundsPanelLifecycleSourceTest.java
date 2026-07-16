@@ -22,6 +22,9 @@ class FundsPanelLifecycleSourceTest
         assertTrue(source.contains("fundAdmin().usage(editingFundId)"));
         assertTrue(source.contains("fundAdmin().deleteUnused(editingFundId)"));
         assertTrue(source.contains("new SplitPane()"));
+        assertTrue(source.contains("split.setOrientation(Orientation.VERTICAL)"));
+        assertTrue(source.contains("tableRegion.setMinHeight(0.0)"));
+        assertTrue(source.contains("editorScroll.setMinHeight(0.0)"));
         assertTrue(source.contains("CompanyUiFormat"));
         assertTrue(source.contains("companyFormat.install(effectiveFromField)"));
         assertTrue(source.contains("preferencesService.saveState"));
