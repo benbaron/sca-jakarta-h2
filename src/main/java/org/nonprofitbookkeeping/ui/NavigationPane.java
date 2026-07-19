@@ -80,7 +80,6 @@ public class NavigationPane extends VBox
 
         section(content, "IMPORT & OVERSIGHT");
         addItem(content, AppPanelId.IMPORT_PREVIEW, "Import Preview", UiIcons.Glyph.IMPORT);
-        addItem(content, AppPanelId.IMPORT_EXPORT_JOBS, "Import / Export Jobs", UiIcons.Glyph.IMPORT);
         addItem(content, AppPanelId.APPROVAL_AUDIT, "Audit History", UiIcons.Glyph.CHECK);
         addItem(content, AppPanelId.PERIOD_CLOSE_RUNS, "Period Close", UiIcons.Glyph.CLOCK);
 

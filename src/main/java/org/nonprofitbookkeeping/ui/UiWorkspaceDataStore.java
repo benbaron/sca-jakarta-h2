@@ -1,20 +1,16 @@
 package org.nonprofitbookkeeping.ui;
 
-import org.nonprofitbookkeeping.model.BankingDataFormat;
 import org.nonprofitbookkeeping.service.BankTransactionRecord;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Session-scoped deterministic UI data store for unfinished import/export projections.
+ * Session-scoped deterministic UI data store for unfinished bank-transaction staging.
  */
 final class UiWorkspaceDataStore
 {
     private static final Object LOCK = new Object();
     private static List<BankTransactionRecord> bankTransactions = List.of();
-    private static final List<ImportExportJob> jobs = new ArrayList<>();
 
     private UiWorkspaceDataStore()
     {
@@ -36,48 +32,11 @@ final class UiWorkspaceDataStore
         }
     }
 
-    static void appendJob(ImportExportJob job)
-    {
-        synchronized (LOCK)
-        {
-            jobs.add(job);
-        }
-    }
-
-    static List<ImportExportJob> jobs()
-    {
-        synchronized (LOCK)
-        {
-            return List.copyOf(jobs);
-        }
-    }
-
-    static void clearJobsForTests()
-    {
-        synchronized (LOCK)
-        {
-            jobs.clear();
-        }
-    }
-
     static void clearForTests()
     {
         synchronized (LOCK)
         {
             bankTransactions = List.of();
-            jobs.clear();
         }
-    }
-
-    record ImportExportJob(LocalDateTime recordedAt,
-                           String operation,
-                           String sourcePath,
-                           String targetPath,
-                           BankingDataFormat format,
-                           int rowCount,
-                           int transactionCount,
-                           String outcome,
-                           String error)
-    {
     }
 }

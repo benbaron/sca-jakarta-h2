@@ -48,7 +48,6 @@ public final class PanelFactory
         factories.put(AppPanelId.PERIOD_CLOSE_RUNS, PeriodCloseRunsPanel::new);
         factories.put(AppPanelId.IMPORT_PREVIEW, ImportPreviewPanel::new);
         factories.put(AppPanelId.APPROVAL_AUDIT, ApprovalAuditPanel::new);
-        factories.put(AppPanelId.IMPORT_EXPORT_JOBS, ImportExportJobsPanel::new);
         factories.put(AppPanelId.BANK_TRANSACTIONS, BankTransactionsPanel::new);
         factories.put(AppPanelId.REPORT_LIBRARY, ReportLibraryPanel::new);
         factories.put(AppPanelId.CHART_OF_ACCOUNTS, ChartOfAccountsPanel::new);
