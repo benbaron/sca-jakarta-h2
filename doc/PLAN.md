@@ -1,12 +1,12 @@
 ---
-plan_version: 53
+plan_version: 54
 active_phase: P13
 active_slice: P13-S2
-active_status: READY
-active_branch: main
-active_pull_request: none
-active_head: 69ef903ab00e209f0855d9b374c0fc4fc3d39377
-next_action: "Create fresh branch codex/P13-S2-typed-diagnostics-recovery from current main, open a draft PR before implementation, then replace mixed Diagnostics/recovery callbacks and direct lookups with typed command and result ownership without changing Import Preview acceptance or P14 behavior."
+active_status: IN_PROGRESS
+active_branch: codex/P13-S2-typed-diagnostics-recovery
+active_pull_request: pending
+active_head: 6809601310fda171b6259af042133ef105b75c81
+next_action: "Open the P13-S2 draft PR, complete required inspection, then replace mixed Diagnostics/recovery callbacks and direct lookups with typed command and result ownership without changing Import Preview acceptance or P14 behavior."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Create fresh branch codex/P13-S2-typed-diagnostics-recovery from c
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records merged and owner-verified P13-S1 as DONE and activates P13-S2 for typed Diagnostics and recovery command ownership.
+This revision starts P13-S2 on a fresh branch from current main for typed Diagnostics and recovery command ownership.
 
 ## 2. Status values
 
@@ -45,7 +45,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
-| P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | READY; P13-S1 DONE, P13-S2 active |
+| P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | IN_PROGRESS; P13-S1 DONE, P13-S2 active |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
 ## 4. Governing documents
@@ -392,7 +392,7 @@ Next exact action:
 # P13 — Data exchange and diagnostics without Import/Export Jobs
 
 **Selector:** `PHASE=P13`
-**Status:** READY; P13-S1 DONE, P13-S2 active
+**Status:** IN_PROGRESS; P13-S1 DONE, P13-S2 active
 **Depends on:** P02, P05, P12
 
 Purpose: preserve useful data exchange, import review, and diagnostics while eliminating the prohibited generic Import/Export Jobs function and generic job-tracking concept. Domain-specific banking, reconciliation, import-review, diagnostic, and audit facts remain governed by their authoritative services and tables.
@@ -451,11 +451,11 @@ Next exact action:
 
 ### P13-S2 — Typed diagnostics and recovery command ownership
 
-Status: READY.
+Status: IN_PROGRESS.
 
-Planned branch: `codex/P13-S2-typed-diagnostics-recovery`
-Pull request: none; open a draft PR before implementation.
-Base head: `69ef903ab00e209f0855d9b374c0fc4fc3d39377`
+Branch: `codex/P13-S2-typed-diagnostics-recovery`
+Pull request: pending draft creation.
+Base head: `6809601310fda171b6259af042133ef105b75c81`
 
 Required reading:
 
@@ -487,7 +487,7 @@ Out of scope:
 
 Next exact action:
 
-- Create `codex/P13-S2-typed-diagnostics-recovery` from current `main`, open its draft PR, complete the required inspection, and implement the typed diagnostics/recovery boundary with focused tests and documentation.
+- Open the draft PR, complete the required inspection, and implement the typed diagnostics/recovery boundary with focused tests and documentation.
 
 # P06 — Bank reconciliation and cleared-state comparison
 
