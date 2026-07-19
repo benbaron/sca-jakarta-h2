@@ -1,12 +1,12 @@
 ---
-plan_version: 50
+plan_version: 51
 active_phase: P13
 active_slice: P13-S1
-active_status: READY
-active_branch: main
-active_pull_request: "none"
-active_head: feb545c0470d79e5d139d851e8b9bb389052e879
-next_action: "Create a fresh P13-S1 branch and draft pull request from current main, then remove the generic Import/Export Jobs destination, panel, and session job log while preserving domain-specific import and banking facts."
+active_status: IN_PROGRESS
+active_branch: codex/P13-S1-remove-import-export-jobs
+active_pull_request: "draft PR pending"
+active_head: 58eab6563cbe245d39beb7ef6cb814946df6cf9d
+next_action: "Open the P13-S1 draft pull request, then remove the generic Import/Export Jobs destination, panel, and session job log while preserving domain-specific import and banking facts."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Create a fresh P13-S1 branch and draft pull request from current m
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records successful owner completion of P12-S2 Administration hub acceptance, marks P12 DONE, unblocks P13, and defines P13-S1 as removal of the prohibited generic Import/Export Jobs function and session job log.
+This revision activates P13-S1 on `codex/P13-S1-remove-import-export-jobs` for removal of the prohibited generic Import/Export Jobs function and session job log.
 
 ## 2. Status values
 
@@ -45,7 +45,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
-| P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | READY; P13-S1 active |
+| P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | IN_PROGRESS; P13-S1 active |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
 ## 4. Governing documents
@@ -392,7 +392,7 @@ Next exact action:
 # P13 — Data exchange and diagnostics without Import/Export Jobs
 
 **Selector:** `PHASE=P13`
-**Status:** READY; P13-S1 active
+**Status:** IN_PROGRESS; P13-S1 active
 **Depends on:** P02, P05, P12
 
 Purpose: preserve useful data exchange, import review, and diagnostics while eliminating the prohibited generic Import/Export Jobs function and generic job-tracking concept. Domain-specific banking, reconciliation, import-review, diagnostic, and audit facts remain governed by their authoritative services and tables.
@@ -414,7 +414,11 @@ Required inspection:
 
 ### P13-S1 — Remove generic Import/Export Jobs function and session job tracking
 
-Status: READY.
+Status: IN_PROGRESS.
+
+Branch: `codex/P13-S1-remove-import-export-jobs`
+Pull request: draft PR pending
+Base head: `58eab6563cbe245d39beb7ef6cb814946df6cf9d`
 
 Planned deliverables:
 
@@ -431,7 +435,7 @@ Out of scope:
 
 Next exact action:
 
-- Create `codex/P13-S1-remove-import-export-jobs` from current `main`, open a draft pull request, and implement only this removal slice.
+- Open the draft pull request, then implement only this removal slice.
 
 # P06 — Bank reconciliation and cleared-state comparison
 
