@@ -1,12 +1,12 @@
 ---
-plan_version: 46
+plan_version: 47
 active_phase: P12
 active_slice: P12-S1
 active_status: VERIFYING
 active_branch: main
 active_pull_request: "#159 (merged)"
-active_head: b199f3e66d736d8f4e743fe61199b0f1683eacf9
-next_action: "At laptop width on current main, create a Fund and edit its code; confirm that one stable row remains and that the persisted values reload after reopening Funds."
+active_head: 33fe70b8fac3f369da7f2992362acc8215113d8f
+next_action: "On current main, persist and reload a Fund parent, effective dates, restriction text, and active state; then verify table sorting, resizing, reordering, scrolling, and company-owned divider restoration."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "At laptop width on current main, create a Fund and edit its code; 
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records successful owner desktop verification of the merged P12-C3 Funds top/bottom layout correction, marks P12-C3 DONE, and resumes P12-S1 lifecycle acceptance.
+This revision records successful owner verification of stable-ID Fund creation and code editing, then advances P12-S1 to persisted lifecycle fields and workspace-state acceptance.
 
 ## 2. Status values
 
@@ -225,16 +225,16 @@ Completed deliverables:
 - Added split table/editor UI, company-aware dates, dirty-state handling, real New/Save/Delete Unused/Refresh actions, and company-owned table/divider state.
 - Added integration tests, UI source guardrails, `doc/administration/fund-lifecycle.md`, and focused matrix/inventory updates.
 - Maven PR Tests runs `29224690525`, `29224900193`, and `29224988928` passed.
+- The owner created a Fund, changed its code, and verified that one stable row remained, the old code was unavailable, no duplicate was created, and all persisted values reloaded after reopening Funds.
 
 Remaining verification:
 
-- At laptop width, create a fund and edit its code while confirming one stable row remains.
 - Verify parent selection, effective dates, restriction text, active/inactive display, sorting, resizing, reordering, scrolling, and divider restoration.
 - Verify referenced deletion is blocked with deactivation guidance, and unused deletion requires confirmation.
 
 Next exact action:
 
-- At laptop width on current `main`, create a Fund and edit its code; confirm that one stable row remains and that the persisted values reload after reopening Funds.
+- On current `main`, persist and reload a Fund parent, effective dates, restriction text, and active state; then verify table sorting, resizing, reordering, scrolling, and company-owned divider restoration.
 
 ### P12-C3 — Funds horizontal divider correction
 
