@@ -1,12 +1,12 @@
 ---
-plan_version: 51
+plan_version: 52
 active_phase: P13
 active_slice: P13-S1
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P13-S1-remove-import-export-jobs
-active_pull_request: "draft PR pending"
-active_head: 58eab6563cbe245d39beb7ef6cb814946df6cf9d
-next_action: "Open the P13-S1 draft pull request, then remove the generic Import/Export Jobs destination, panel, and session job log while preserving domain-specific import and banking facts."
+active_pull_request: "#177 (draft)"
+active_head: 495bf4ab296cb66ee2b4b7c8aebee803ca808ae2
+next_action: "Complete final diff review and Maven PR Tests for PR #177, merge it, then verify that Import / Export Jobs is absent from navigation, menus, and the command palette while real import/export operations still work."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Open the P13-S1 draft pull request, then remove the generic Import
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision activates P13-S1 on `codex/P13-S1-remove-import-export-jobs` for removal of the prohibited generic Import/Export Jobs function and session job log.
+This revision records the implemented P13-S1 removal in draft PR #177 and advances it to final diff, CI, merge, and desktop verification.
 
 ## 2. Status values
 
@@ -45,7 +45,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
-| P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | IN_PROGRESS; P13-S1 active |
+| P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | VERIFYING; P13-S1 active |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
 ## 4. Governing documents
@@ -392,7 +392,7 @@ Next exact action:
 # P13 — Data exchange and diagnostics without Import/Export Jobs
 
 **Selector:** `PHASE=P13`
-**Status:** IN_PROGRESS; P13-S1 active
+**Status:** VERIFYING; P13-S1 active
 **Depends on:** P02, P05, P12
 
 Purpose: preserve useful data exchange, import review, and diagnostics while eliminating the prohibited generic Import/Export Jobs function and generic job-tracking concept. Domain-specific banking, reconciliation, import-review, diagnostic, and audit facts remain governed by their authoritative services and tables.
@@ -414,11 +414,12 @@ Required inspection:
 
 ### P13-S1 — Remove generic Import/Export Jobs function and session job tracking
 
-Status: IN_PROGRESS.
+Status: VERIFYING; implementation is in draft PR #177.
 
 Branch: `codex/P13-S1-remove-import-export-jobs`
-Pull request: draft PR pending
+Pull request: #177, draft
 Base head: `58eab6563cbe245d39beb7ef6cb814946df6cf9d`
+Implementation head: `495bf4ab296cb66ee2b4b7c8aebee803ca808ae2`
 
 Planned deliverables:
 
@@ -433,9 +434,17 @@ Out of scope:
 
 - Diagnostics command redesign, accepted-import canonical transaction writes, and unrelated P14 hardening.
 
+Completed deliverables:
+
+- Removed `IMPORT_EXPORT_JOBS` from `AppPanelId`, navigation, the Tools menu, command-palette labels/capabilities, and `PanelFactory`.
+- Deleted `ImportExportJobsPanel` and removed the generic `ImportExportJob` session list plus append, query, and clear APIs.
+- Removed generic job-log writes from CoA and bank import/export actions while preserving the actual operations, user-facing outcome messages, and temporary bank-transaction staging.
+- Updated the interface matrix and persistence inventory, simplified the staging-store tests, and added a focused elimination/source guardrail.
+- Local Maven validation remains unavailable because the container has neither Maven nor a Maven wrapper; Maven PR Tests run `29670629196` passed on implementation head `495bf4ab296cb66ee2b4b7c8aebee803ca808ae2`.
+
 Next exact action:
 
-- Open the draft pull request, then implement only this removal slice.
+- Complete final diff review and Maven PR Tests for PR #177, merge it, then perform desktop navigation and retained-operation confirmation.
 
 # P06 — Bank reconciliation and cleared-state comparison
 
