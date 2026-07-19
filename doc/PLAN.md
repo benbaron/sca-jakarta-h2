@@ -1,12 +1,12 @@
 ---
-plan_version: 54
+plan_version: 55
 active_phase: P13
 active_slice: P13-S2
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P13-S2-typed-diagnostics-recovery
-active_pull_request: pending
-active_head: 6809601310fda171b6259af042133ef105b75c81
-next_action: "Open the P13-S2 draft PR, complete required inspection, then replace mixed Diagnostics/recovery callbacks and direct lookups with typed command and result ownership without changing Import Preview acceptance or P14 behavior."
+active_pull_request: "#179 (draft)"
+active_head: cb6881d9810e249d7503e5944fab58254ca2f63e
+next_action: "Complete final diff review and Maven PR Tests for PR #179, merge it, then desktop-verify factual Diagnostics refresh/warnings/drill-through and all three typed Dashboard database-recovery actions."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Open the P13-S2 draft PR, complete required inspection, then repla
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision starts P13-S2 on a fresh branch from current main for typed Diagnostics and recovery command ownership.
+This revision records the implemented P13-S2 typed Diagnostics and recovery boundary in draft PR #179 and advances it to final review, CI, merge, and desktop verification.
 
 ## 2. Status values
 
@@ -45,7 +45,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
-| P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | IN_PROGRESS; P13-S1 DONE, P13-S2 active |
+| P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | VERIFYING; P13-S1 DONE, P13-S2 active |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
 ## 4. Governing documents
@@ -392,7 +392,7 @@ Next exact action:
 # P13 — Data exchange and diagnostics without Import/Export Jobs
 
 **Selector:** `PHASE=P13`
-**Status:** IN_PROGRESS; P13-S1 DONE, P13-S2 active
+**Status:** VERIFYING; P13-S1 DONE, P13-S2 active
 **Depends on:** P02, P05, P12
 
 Purpose: preserve useful data exchange, import review, and diagnostics while eliminating the prohibited generic Import/Export Jobs function and generic job-tracking concept. Domain-specific banking, reconciliation, import-review, diagnostic, and audit facts remain governed by their authoritative services and tables.
@@ -451,11 +451,12 @@ Next exact action:
 
 ### P13-S2 — Typed diagnostics and recovery command ownership
 
-Status: IN_PROGRESS.
+Status: VERIFYING; implementation is in draft PR #179.
 
 Branch: `codex/P13-S2-typed-diagnostics-recovery`
-Pull request: pending draft creation.
+Pull request: #179, draft
 Base head: `6809601310fda171b6259af042133ef105b75c81`
+Implementation head: `cb6881d9810e249d7503e5944fab58254ca2f63e`
 
 Required reading:
 
@@ -485,9 +486,18 @@ Out of scope:
 
 - Canonical acceptance from Import Preview, banking/reconciliation remediation, schema redesign, and unrelated P14 end-to-end hardening.
 
+Completed deliverables:
+
+- Added `DiagnosticsQueryService` with an immutable typed report for runtime, Java, active-company, active-database, datasource, active/total account and fund counts, duplicate codes, quality state, and safe failure details.
+- Removed datasource, session, account, and fund fact gathering from `DiagnosticsPanel`; lifecycle-owned `WorkspaceServices` and `PanelFactory` now supply the diagnostics query service.
+- Added typed `DatabaseRecoveryCommand` values and one command handler; File-menu and Dashboard recovery controls route retry-current, select-existing, and create-new through the production workspace shell.
+- Preserved the existing Diagnostics destination, duplicate-code drill-through, Dashboard recovery surface, successful-connection-only database selection, and non-destructive failure behavior.
+- Updated the interface matrix and persistence inventory and added focused service, JavaFX behavior, and source-boundary tests.
+- Local Maven validation remains unavailable because the container has neither Maven nor a Maven wrapper; Maven PR Tests run `29672098613` passed on implementation head `cb6881d9810e249d7503e5944fab58254ca2f63e`.
+
 Next exact action:
 
-- Open the draft PR, complete the required inspection, and implement the typed diagnostics/recovery boundary with focused tests and documentation.
+- Complete final diff review and Maven PR Tests for PR #179, merge it, then perform desktop verification of factual Diagnostics states, duplicate drill-through, and all three Dashboard database-recovery commands.
 
 # P06 — Bank reconciliation and cleared-state comparison
 
