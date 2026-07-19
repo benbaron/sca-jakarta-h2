@@ -1,12 +1,12 @@
 ---
-plan_version: 49
-active_phase: P12
-active_slice: P12-S2
-active_status: VERIFYING
+plan_version: 50
+active_phase: P13
+active_slice: P13-S1
+active_status: READY
 active_branch: main
-active_pull_request: "#160 (merged)"
-active_head: bd1d0408bcc0c9c088abd3d7905cfc6532b1f397
-next_action: "At laptop width on current main, open Administration, switch among Preferences, Company Admin, and User Admin, verify each tab loads data and receives global New/Save commands, and confirm no separate Company Admin or User Admin shell destination exists."
+active_pull_request: "none"
+active_head: feb545c0470d79e5d139d851e8b9bb389052e879
+next_action: "Create a fresh P13-S1 branch and draft pull request from current main, then remove the generic Import/Export Jobs destination, panel, and session job log while preserving domain-specific import and banking facts."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "At laptop width on current main, open Administration, switch among
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records successful owner completion of P12-S1 Funds lifecycle acceptance, marks P12-S1 DONE, and activates the last open P12 slice, P12-S2 Administration hub acceptance.
+This revision records successful owner completion of P12-S2 Administration hub acceptance, marks P12 DONE, unblocks P13, and defines P13-S1 as removal of the prohibited generic Import/Export Jobs function and session job log.
 
 ## 2. Status values
 
@@ -44,8 +44,8 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
-| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-S1, P12-S3, P12-C1, P12-C2, and P12-C3 DONE; P12-S2 merged/VERIFYING and active |
-| P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
+| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
+| P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | READY; P13-S1 active |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
 ## 4. Governing documents
@@ -206,7 +206,7 @@ Completed deliverables:
 
 ## 7. P12 — Administration, company lifecycle, preferences, and Funds edit
 
-Status: IN_PROGRESS. P12-S1, P12-S3, P12-C1, P12-C2, and P12-C3 are DONE; P12-S2 is merged/VERIFYING and active for the final Administration hub acceptance checks.
+Status: DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 with owner desktop acceptance.
 
 ### P12-S1 — Stable-ID Funds editing and lifecycle rules
 
@@ -267,7 +267,7 @@ Next exact action:
 
 ### P12-S2 — Administration workspace hub
 
-Status: VERIFYING; implementation is merged.
+Status: DONE through merged PR #160 and owner desktop acceptance.
 
 Branch: `codex/P12-S1-administration-navigation`  
 Pull request: #160, merged into `main` at `04966951a68f2e594ad1bfa289c8026840e9dbd0`  
@@ -282,16 +282,11 @@ Completed deliverables:
 - Preserved existing H2-backed company, user, role-assignment, and preference services.
 - Added focused source guardrails and updated the operation matrix.
 - Maven PR Tests runs `29259566867` and `29259761711` passed.
-
-Remaining verification:
-
-- At laptop width, open Administration and switch among all three tabs.
-- Verify data loads and global Save/New behavior reaches the selected tab.
-- Verify no separate Company Admin or User Admin shell destination was introduced.
+- The owner verified at laptop width that Preferences, Company Admin, and User Admin loaded through the single Administration destination, that global Save/New delegation reached the selected tab where supported, and that no separate Company Admin or User Admin shell destination exists.
 
 Next exact action:
 
-- At laptop width on current `main`, open Administration, switch among Preferences, Company Admin, and User Admin, verify each tab loads data and receives global New/Save commands, and confirm no separate Company Admin or User Admin shell destination exists.
+- None; P12-S2 is DONE.
 
 ### P12-C1 — Reconcile overlapping P12 slice records
 
@@ -393,6 +388,50 @@ Next exact action:
 - None; P12-C2 is DONE.
 
 ## 8. Active and recent phase contracts
+
+# P13 — Data exchange and diagnostics without Import/Export Jobs
+
+**Selector:** `PHASE=P13`
+**Status:** READY; P13-S1 active
+**Depends on:** P02, P05, P12
+
+Purpose: preserve useful data exchange, import review, and diagnostics while eliminating the prohibited generic Import/Export Jobs function and generic job-tracking concept. Domain-specific banking, reconciliation, import-review, diagnostic, and audit facts remain governed by their authoritative services and tables.
+
+Required reading:
+
+- `doc/requirements/requirements-clarification-overlay.md`
+- `doc/requirements/phase-remap-after-clarification.md`
+- `doc/interface-operation-matrix.md`
+- `doc/persistence-authority-inventory.md`
+- `doc/banking/import-and-reconciliation.md`
+- `doc/ui_design_rules.md`
+
+Required inspection:
+
+- `AppPanelId`, `NavigationPane`, `MainWindow`, `PanelFactory`, and command-palette tests.
+- `ImportExportJobsPanel`, `UiWorkspaceDataStore`, `ImportPreviewPanel`, `BankTransactionsPanel`, and `DiagnosticsPanel`.
+- Current import/export, banking-import, diagnostics, navigation, and UI-store tests.
+
+### P13-S1 — Remove generic Import/Export Jobs function and session job tracking
+
+Status: READY.
+
+Planned deliverables:
+
+- Remove `IMPORT_EXPORT_JOBS` as an `AppPanelId`, navigation item, menu/command-palette destination, panel-factory route, and production panel.
+- Remove the generic `ImportExportJob` session list and append/clear APIs rather than replacing them with durable generic job tracking.
+- Preserve actual import/export commands and domain-specific H2 banking, reconciliation, import-issue, diagnostic, and audit facts.
+- Preserve the temporary bank-transaction staging surface only to the extent still required by its owning banking work; do not broaden P13-S1 into unrelated P05 remediation.
+- Update governing inventories, focused navigation/source tests, and obsolete-name consistency checks.
+- Run the full Maven PR Tests workflow and leave the slice VERIFYING until desktop navigation confirmation and merge.
+
+Out of scope:
+
+- Diagnostics command redesign, accepted-import canonical transaction writes, and unrelated P14 hardening.
+
+Next exact action:
+
+- Create `codex/P13-S1-remove-import-export-jobs` from current `main`, open a draft pull request, and implement only this removal slice.
 
 # P06 — Bank reconciliation and cleared-state comparison
 
