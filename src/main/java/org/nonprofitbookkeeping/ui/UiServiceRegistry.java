@@ -19,6 +19,7 @@ import org.nonprofitbookkeeping.service.BudgetCategoryLookupService;
 import org.nonprofitbookkeeping.service.BudgetPlanService;
 import org.nonprofitbookkeeping.service.CompanyAdminService;
 import org.nonprofitbookkeeping.service.CompanyUiPreferencesService;
+import org.nonprofitbookkeeping.service.DiagnosticsQueryService;
 import org.nonprofitbookkeeping.service.FinancialReportService;
 import org.nonprofitbookkeeping.service.FixedAssetService;
 import org.nonprofitbookkeeping.service.FundAdminService;
@@ -83,6 +84,17 @@ public final class UiServiceRegistry
     public static DashboardQueryService dashboardQuery() { return services().dashboardQuery(); }
     public static BankReconciliationWorkspaceService bankReconciliationWorkspace() { return services().bankReconciliationWorkspace(); }
     public static PeriodCloseRangeService periodCloseRangeService() { return services().periodCloseRangeService(); }
+    public static DiagnosticsQueryService diagnosticsQuery()
+    {
+        ServiceBundle current = services();
+        return new DiagnosticsQueryService(
+                UiDataSources.forCurrentSessionDatabase(),
+                current.accountLookup(),
+                current.fundLookup(),
+                UiServiceRegistry::activeCompanyCode,
+                () -> DatabaseLocationService.resolveDatabasePath(
+                        MainWindow.sharedSessionState().databaseSelection().activeDatabasePath()));
+    }
 
     private static ServiceBundle services()
     {

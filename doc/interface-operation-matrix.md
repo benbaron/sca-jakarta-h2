@@ -1,6 +1,6 @@
 # Interface operation matrix
 
-Status: P00 inventory of current main, updated through P13-S1 removal of generic Import/Export Jobs. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
+Status: P00 inventory of current main, updated through P13-S2 typed diagnostics and database-recovery command ownership. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
 
 ## Scope and evidence
 
@@ -22,7 +22,7 @@ Status: P00 inventory of current main, updated through P13-S1 removal of generic
 | Copy/Paste | menu/toolbar button | active selection | active panel hooks | no accounting persistence | no | mostly UI clipboard/status behavior | P01 |
 | Find/Journal/command runner | toolbar/global shortcuts | active panel selection and services | active panel `onRunCommand` | panel-dependent | panel-dependent | text-command dispatch should become typed commands | P01 |
 | Import/Export | main-window file actions | CSV/OFX/QIF services and session state | import/export services; temporary `UiWorkspaceDataStore.bankTransactions` staging; some COA import writes H2 | partially | mixed | no generic job log; bank transactions remain session/static until their owning banking workflow replaces the staging boundary | P05/P13 |
-| Database wizard/switch | main-window database actions | `DatabaseLocationService`, `DatabaseMigrationService`, `UiServiceRegistry` | H2 file/JPA resources | yes | yes after successful switch | switching and recovery need atomic composition review | P01/P12 |
+| Database wizard/switch | main-window database actions and Dashboard recovery surface | `DatabaseLocationService`, `DatabaseMigrationService`, `DatabaseSessionController`, `UiServiceRegistry` | H2 file/JPA resources through typed `DatabaseRecoveryCommand` dispatch | yes | yes after successful switch | selected path changes only after successful connection; no automatic destructive repair | P01/P12/P13 |
 
 ## Delete operation rule
 
@@ -54,14 +54,14 @@ Do not add disabled placeholder Delete buttons. A durable-record panel may expos
 | `CHART_OF_ACCOUNTS` | `ChartOfAccountsPanel` | table, fields, type/status selectors, save/new | account lookup/admin services | `AccountAdminService` | yes | yes | JPA account model | real admin write path exists | composition/validation hardening | P12 |
 | `FUNDS` | `FundsPanel` | table, fields, fund type/status selectors, save/new | fund lookup/admin services | `FundAdminService` | yes | yes | JPA fund model | real admin write path exists | composition/validation hardening | P12 |
 | `SETTINGS` | `AdministrationPanel` hosting `SettingsPanel`, `CompanyAdminPanel`, and `UserAdminPanel` | Preferences, Company Admin, and User Admin tabs; H2 company New/Save/Select Active/Refresh; panel-local save/new delegation | `UiSessionState`, `CompanyUiPreferencesService`, `CompanyAdminService`, `CompanySessionController`, `UserAdminService` | application/company preference state; stable-ID H2 company profile/lifecycle writes; validated active-company selection; user and company-role assignment writes | yes | yes for company, user, role assignment, and company UI preference data | existing Administration hub, H2 `company`, production workspace context, company UI state | tax/chart/reporting placeholders removed; bank-account maintenance remains in Banking; later specialized editors must be vertically complete before exposure | desktop validation of lifecycle rules, toolbar switching, dirty-state prompt, and company-owned layout restoration | P12 |
-| `DIAGNOSTICS` | `DiagnosticsPanel` | buttons for diagnostics/recovery | database/session services | recovery/navigation actions | mixed | mixed | migration/location/recovery services | diagnostic actions need typed command ownership | diagnostics/jobs architecture | P13 |
+| `DIAGNOSTICS` | `DiagnosticsPanel` | Refresh Diagnostics; duplicate account/fund drill-through | typed `DiagnosticsQueryService.Report` over datasource, account/fund services, and active workspace facts | navigation only; database recovery uses typed commands on the Dashboard fallback | current runtime facts are queried on demand | H2 is authoritative for datasource/account/fund facts | lifecycle-owned service composition, `DatabaseSessionController`, typed `DatabaseRecoveryCommand` | no automatic repair and no generic job tracking; failures return an explicit unavailable report | desktop validation of healthy, warning, and failed-datasource states | P13 |
 | `HELP` | `HelpPanel` | static guidance text | static content | none | n/a | n/a | none | no write behavior | keep aligned with current workflows | P12/P14 |
 
 ## Panels without `AppPanelId`
 
 - `CompanyAdminPanel` and `UserAdminPanel` are hosted inside the stable `SETTINGS`/`AdministrationPanel` destination rather than assigned separate shell identifiers.
 - `DashboardWorkspacePanel`, `DashboardPanelFX`, `ReferenceWorkspaceWindow`, and `DashboardExperiment` are alternate/reference dashboard/workspace components that P01 must classify or retire from the production shell.
-- `DatabaseRecoveryPanel` is a recovery surface outside normal panel navigation.
+- `DatabaseRecoveryPanel` is a recovery surface outside normal panel navigation. Its buttons dispatch `RETRY_CURRENT`, `SELECT_EXISTING`, and `CREATE_NEW` through the shell-owned typed recovery handler.
 
 ## Immediate backlog implications
 

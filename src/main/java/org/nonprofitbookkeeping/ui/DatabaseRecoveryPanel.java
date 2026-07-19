@@ -27,23 +27,17 @@ final class DatabaseRecoveryPanel implements AppPanel
     DatabaseRecoveryPanel(
             Path databasePath,
             Throwable failure,
-            Runnable repairCurrent,
-            Runnable selectExisting,
-            Runnable createNew)
+            DatabaseRecoveryCommandHandler commandHandler)
     {
         Objects.requireNonNull(databasePath, "databasePath");
-        Objects.requireNonNull(repairCurrent, "repairCurrent");
-        Objects.requireNonNull(selectExisting, "selectExisting");
-        Objects.requireNonNull(createNew, "createNew");
+        Objects.requireNonNull(commandHandler, "commandHandler");
 
         root.getStyleClass().add("dashboard-experiment-root");
         root.setTop(buildHeader());
         root.setCenter(buildContent(
                 databasePath,
                 failure,
-                repairCurrent,
-                selectExisting,
-                createNew));
+                commandHandler));
     }
 
     @Override
@@ -72,9 +66,7 @@ final class DatabaseRecoveryPanel implements AppPanel
     private static Node buildContent(
             Path databasePath,
             Throwable failure,
-            Runnable repairCurrent,
-            Runnable selectExisting,
-            Runnable createNew)
+            DatabaseRecoveryCommandHandler commandHandler)
     {
         Label heading = new Label("Database attention required");
         heading.getStyleClass().add("panel-title");
@@ -95,11 +87,11 @@ final class DatabaseRecoveryPanel implements AppPanel
         error.getStyleClass().add("database-error-message");
 
         Button repair = new Button("Retry / Repair Current Database");
-        repair.setOnAction(event -> repairCurrent.run());
+        repair.setOnAction(event -> commandHandler.execute(DatabaseRecoveryCommand.RETRY_CURRENT));
         Button select = new Button("Select Existing Database…");
-        select.setOnAction(event -> selectExisting.run());
+        select.setOnAction(event -> commandHandler.execute(DatabaseRecoveryCommand.SELECT_EXISTING));
         Button create = new Button("Create New Database…");
-        create.setOnAction(event -> createNew.run());
+        create.setOnAction(event -> commandHandler.execute(DatabaseRecoveryCommand.CREATE_NEW));
 
         HBox actions = new HBox(10, repair, select, create);
         actions.setAlignment(Pos.CENTER_LEFT);

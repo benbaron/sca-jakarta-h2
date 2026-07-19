@@ -285,11 +285,11 @@ public class ProductionWorkspaceWindow extends BorderPane
     {
         Menu file = new Menu("File");
         MenuItem selectDatabase = new MenuItem("Select Database File…");
-        selectDatabase.setOnAction(event -> selectDatabaseFile());
+        selectDatabase.setOnAction(event -> executeDatabaseRecoveryCommand(DatabaseRecoveryCommand.SELECT_EXISTING));
         MenuItem createDatabase = new MenuItem("Create New Database…");
-        createDatabase.setOnAction(event -> createNewDatabase());
+        createDatabase.setOnAction(event -> executeDatabaseRecoveryCommand(DatabaseRecoveryCommand.CREATE_NEW));
         MenuItem repairDatabase = new MenuItem("Retry / Repair Current Database");
-        repairDatabase.setOnAction(event -> repairCurrentDatabase());
+        repairDatabase.setOnAction(event -> executeDatabaseRecoveryCommand(DatabaseRecoveryCommand.RETRY_CURRENT));
         MenuItem sampleCompany = new MenuItem("Create / Refresh Sample Company Data");
         sampleCompany.setOnAction(event -> createOrRefreshSampleCompany());
         MenuItem save = new MenuItem("Save");
@@ -444,9 +444,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         DatabaseRecoveryPanel recoveryPanel = new DatabaseRecoveryPanel(
                 workspaceContext.activeDatabasePath(),
                 failure,
-                this::repairCurrentDatabase,
-                this::selectDatabaseFile,
-                this::createNewDatabase);
+                this::executeDatabaseRecoveryCommand);
         panelHost.showReplacement(AppPanelId.DASHBOARD, recoveryPanel);
         activePanelLabel.setText("Workspace: Dashboard — database attention required");
         inspectorPane.show(
@@ -493,6 +491,16 @@ public class ProductionWorkspaceWindow extends BorderPane
     interface CloseAllTabsPrompt
     {
         boolean confirmDiscard(List<String> dirtyTitles);
+    }
+
+    void executeDatabaseRecoveryCommand(DatabaseRecoveryCommand command)
+    {
+        switch (Objects.requireNonNull(command, "command"))
+        {
+            case RETRY_CURRENT -> repairCurrentDatabase();
+            case SELECT_EXISTING -> selectDatabaseFile();
+            case CREATE_NEW -> createNewDatabase();
+        }
     }
 
     private void repairCurrentDatabase()
