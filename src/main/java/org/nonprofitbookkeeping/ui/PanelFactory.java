@@ -18,23 +18,28 @@ public final class PanelFactory
                 () -> new DashboardHomePanel(
                         services.dashboardQueryService(),
                         services.context()),
-                () -> new AdministrationPanel(services.companySessionController()));
+                () -> new AdministrationPanel(services.companySessionController()),
+                () -> new DiagnosticsPanel(services.diagnosticsQueryService()));
     }
 
     PanelFactory(CompanySessionController companySessionController)
     {
         Objects.requireNonNull(companySessionController, "companySessionController");
-        registerFactories(DashboardHomePanel::new, () -> new AdministrationPanel(companySessionController));
+        registerFactories(
+                DashboardHomePanel::new,
+                () -> new AdministrationPanel(companySessionController),
+                DiagnosticsPanel::new);
     }
 
     PanelFactory()
     {
-        registerFactories(DashboardHomePanel::new, AdministrationPanel::new);
+        registerFactories(DashboardHomePanel::new, AdministrationPanel::new, DiagnosticsPanel::new);
     }
 
     private void registerFactories(
             Supplier<AppPanel> dashboardFactory,
-            Supplier<AppPanel> administrationFactory)
+            Supplier<AppPanel> administrationFactory,
+            Supplier<AppPanel> diagnosticsFactory)
     {
         factories.put(AppPanelId.DASHBOARD, dashboardFactory);
         factories.put(AppPanelId.JOURNAL_PANE, JournalWorkspaceCompliancePanel::new);
@@ -53,7 +58,7 @@ public final class PanelFactory
         factories.put(AppPanelId.CHART_OF_ACCOUNTS, ChartOfAccountsPanel::new);
         factories.put(AppPanelId.FUNDS, FundsPanel::new);
         factories.put(AppPanelId.SETTINGS, administrationFactory);
-        factories.put(AppPanelId.DIAGNOSTICS, DiagnosticsPanel::new);
+        factories.put(AppPanelId.DIAGNOSTICS, diagnosticsFactory);
         factories.put(AppPanelId.HELP, HelpPanel::new);
     }
 

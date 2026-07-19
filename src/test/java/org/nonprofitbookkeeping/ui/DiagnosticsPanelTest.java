@@ -2,11 +2,10 @@ package org.nonprofitbookkeeping.ui;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -15,14 +14,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class DiagnosticsPanelTest
 {
     @Test
-    public void duplicateCodes_returnsOnlyDuplicates()
+    public void panelDelegatesFactualQueriesToTypedDiagnosticsService() throws Exception
     {
-        Map<String, Integer> duplicates = DiagnosticsPanel.duplicateCodes(
-                Arrays.asList("1000", "2000", "1000", "", null, "F01", "F01", "F02"));
+        String source = Files.readString(Path.of(
+                "src/main/java/org/nonprofitbookkeeping/ui/DiagnosticsPanel.java"));
 
-        assertEquals(2, duplicates.size());
-        assertEquals(2, duplicates.get("1000"));
-        assertEquals(2, duplicates.get("F01"));
-        assertTrue(!duplicates.containsKey("2000"));
+        assertTrue(source.contains("DiagnosticsQueryService.Report report = diagnostics.query()"));
+        assertFalse(source.contains("UiDataSources.forCurrentSessionDatabase"));
+        assertFalse(source.contains("UiServiceRegistry.accountLookup"));
+        assertFalse(source.contains("UiServiceRegistry.fundLookup"));
+        assertFalse(source.contains("MainWindow.sharedSessionState"));
     }
 }

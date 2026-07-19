@@ -6,14 +6,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 import javafx.scene.layout.VBox;
-import org.nonprofitbookkeeping.service.AccountLookupService;
-import org.nonprofitbookkeeping.service.FundLookupService;
-
-import java.nio.file.Path;
-import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import org.nonprofitbookkeeping.service.DiagnosticsQueryService;
 
 /**
  * Basic runtime diagnostics center for operator troubleshooting.
@@ -33,9 +26,16 @@ public class DiagnosticsPanel implements AppPanel
     private final Label status = new Label();
     private final Button reviewAccountDuplicates = new Button("Review account duplicates");
     private final Button reviewFundDuplicates = new Button("Review fund duplicates");
+    private final DiagnosticsQueryService diagnostics;
 
     public DiagnosticsPanel()
     {
+        this(UiServiceRegistry.diagnosticsQuery());
+    }
+
+    DiagnosticsPanel(DiagnosticsQueryService diagnostics)
+    {
+        this.diagnostics = java.util.Objects.requireNonNull(diagnostics, "diagnostics");
         root.setPadding(new Insets(8));
 
         Label title = new Label("Diagnostics Center");
@@ -93,36 +93,21 @@ public class DiagnosticsPanel implements AppPanel
 
     private void reload()
     {
-        runtime.setText("Runtime timestamp: " + Instant.now());
-        javaVersion.setText("Java version: " + System.getProperty("java.version"));
-        activeCompany.setText("Active company: " + MainWindow.sharedSessionState().multiCompany().activeCompanyCode());
+        DiagnosticsQueryService.Report report = diagnostics.query();
+        runtime.setText("Runtime timestamp: " + report.runtimeTimestamp());
+        javaVersion.setText("Java version: " + report.javaVersion());
+        activeCompany.setText("Active company: " + report.activeCompanyCode());
+        activeDatabase.setText("Active database file: " + report.activeDatabasePath());
 
-        String db = MainWindow.sharedSessionState().databaseSelection().activeDatabasePath();
-        activeDatabase.setText("Active database file: " + Path.of(db).toAbsolutePath());
-
-        try
+        if (report.available())
         {
-            UiDataSources.forCurrentSessionDatabase().getConnection().close();
             datasource.setText("Datasource check: OK");
+            accountQuality.setText("Accounts quality: active posting=" + report.accounts().active()
+                    + ", total posting=" + report.accounts().total());
+            fundQuality.setText("Funds quality: active=" + report.funds().active()
+                    + ", total=" + report.funds().total());
 
-            AccountLookupService accountLookup = UiServiceRegistry.accountLookup();
-            FundLookupService fundLookup = UiServiceRegistry.fundLookup();
-
-            List<org.nonprofitbookkeeping.model.Account> accounts = accountLookup.listPostingAccountsIncludingInactive();
-            List<org.nonprofitbookkeeping.model.Fund> funds = fundLookup.listAllFunds();
-
-            int activePostingAccounts = accountLookup.listActivePostingAccounts().size();
-            int allPostingAccounts = accounts.size();
-            int activeFunds = fundLookup.listActiveFunds().size();
-            int allFunds = funds.size();
-
-            accountQuality.setText("Accounts quality: active posting=" + activePostingAccounts + ", total posting=" + allPostingAccounts);
-            fundQuality.setText("Funds quality: active=" + activeFunds + ", total=" + allFunds);
-
-            Map<String, Integer> duplicateAccounts = duplicateCodes(accounts.stream().map(org.nonprofitbookkeeping.model.Account::getCode).toList());
-            Map<String, Integer> duplicateFunds = duplicateCodes(funds.stream().map(org.nonprofitbookkeeping.model.Fund::getCode).toList());
-
-            if (activePostingAccounts == 0 || activeFunds == 0)
+            if (report.accounts().active() == 0 || report.funds().active() == 0)
             {
                 qualitySummary.setText("Quality warning: missing active posting accounts or active funds.");
             }
@@ -131,12 +116,14 @@ public class DiagnosticsPanel implements AppPanel
                 qualitySummary.setText("Quality checks: OK");
             }
 
-            reviewAccountDuplicates.setDisable(duplicateAccounts.isEmpty());
-            reviewFundDuplicates.setDisable(duplicateFunds.isEmpty());
+            reviewAccountDuplicates.setDisable(report.duplicateAccountCodes().isEmpty());
+            reviewFundDuplicates.setDisable(report.duplicateFundCodes().isEmpty());
 
-            if (!duplicateAccounts.isEmpty() || !duplicateFunds.isEmpty())
+            if (!report.duplicateAccountCodes().isEmpty() || !report.duplicateFundCodes().isEmpty())
             {
-                duplicateSummary.setText("Duplicate-code warning: accounts=" + duplicateAccounts.keySet() + ", funds=" + duplicateFunds.keySet());
+                duplicateSummary.setText("Duplicate-code warning: accounts="
+                        + report.duplicateAccountCodes().keySet()
+                        + ", funds=" + report.duplicateFundCodes().keySet());
             }
             else
             {
@@ -145,7 +132,7 @@ public class DiagnosticsPanel implements AppPanel
 
             status.setText("Diagnostics refreshed.");
         }
-        catch (Exception ex)
+        else
         {
             datasource.setText("Datasource check: FAILED");
             accountQuality.setText("Accounts quality: unavailable");
@@ -154,30 +141,7 @@ public class DiagnosticsPanel implements AppPanel
             duplicateSummary.setText("Duplicate-code checks: unavailable");
             reviewAccountDuplicates.setDisable(true);
             reviewFundDuplicates.setDisable(true);
-            status.setText("Datasource issue: " + UiErrors.safeMessage(ex));
+            status.setText("Datasource issue: " + report.failureMessage());
         }
-    }
-
-    static Map<String, Integer> duplicateCodes(List<String> codes)
-    {
-        Map<String, Integer> counts = new LinkedHashMap<>();
-        for (String code : codes)
-        {
-            if (code == null || code.isBlank())
-            {
-                continue;
-            }
-            counts.merge(code, 1, Integer::sum);
-        }
-
-        Map<String, Integer> duplicates = new LinkedHashMap<>();
-        for (Map.Entry<String, Integer> entry : counts.entrySet())
-        {
-            if (entry.getValue() > 1)
-            {
-                duplicates.put(entry.getKey(), entry.getValue());
-            }
-        }
-        return duplicates;
     }
 }

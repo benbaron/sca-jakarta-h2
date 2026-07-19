@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.ui;
 
 import org.nonprofitbookkeeping.service.dashboard.DashboardQueryService;
+import org.nonprofitbookkeeping.service.DiagnosticsQueryService;
 
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -13,17 +14,20 @@ public final class WorkspaceServices
     private final CompanySessionController companySessionController;
     private final PanelFactory panelFactory;
     private final Supplier<DashboardQueryService> dashboardQueryService;
+    private final Supplier<DiagnosticsQueryService> diagnosticsQueryService;
 
     WorkspaceServices(
             WorkspaceContext context,
             DatabaseSessionController databaseSessionController,
             CompanySessionController companySessionController,
-            Supplier<DashboardQueryService> dashboardQueryService)
+            Supplier<DashboardQueryService> dashboardQueryService,
+            Supplier<DiagnosticsQueryService> diagnosticsQueryService)
     {
         this.context = Objects.requireNonNull(context, "context");
         this.databaseSessionController = Objects.requireNonNull(databaseSessionController, "databaseSessionController");
         this.companySessionController = Objects.requireNonNull(companySessionController, "companySessionController");
         this.dashboardQueryService = Objects.requireNonNull(dashboardQueryService, "dashboardQueryService");
+        this.diagnosticsQueryService = Objects.requireNonNull(diagnosticsQueryService, "diagnosticsQueryService");
         this.panelFactory = new PanelFactory(this);
     }
 
@@ -50,5 +54,10 @@ public final class WorkspaceServices
     DashboardQueryService dashboardQueryService()
     {
         return dashboardQueryService.get();
+    }
+
+    DiagnosticsQueryService diagnosticsQueryService()
+    {
+        return diagnosticsQueryService.get();
     }
 }

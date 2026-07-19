@@ -32,6 +32,7 @@ public final class WorkspaceServicesFactory
                 context,
                 databaseSessionController,
                 companySessionController,
-                UiServiceRegistry::dashboardQuery);
+                UiServiceRegistry::dashboardQuery,
+                UiServiceRegistry::diagnosticsQuery);
     }
 }
