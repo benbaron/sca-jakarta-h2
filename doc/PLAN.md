@@ -1,12 +1,12 @@
 ---
-plan_version: 52
+plan_version: 53
 active_phase: P13
-active_slice: P13-S1
-active_status: VERIFYING
-active_branch: codex/P13-S1-remove-import-export-jobs
-active_pull_request: "#177 (draft)"
-active_head: 495bf4ab296cb66ee2b4b7c8aebee803ca808ae2
-next_action: "Complete final diff review and Maven PR Tests for PR #177, merge it, then verify that Import / Export Jobs is absent from navigation, menus, and the command palette while real import/export operations still work."
+active_slice: P13-S2
+active_status: READY
+active_branch: main
+active_pull_request: none
+active_head: 69ef903ab00e209f0855d9b374c0fc4fc3d39377
+next_action: "Create fresh branch codex/P13-S2-typed-diagnostics-recovery from current main, open a draft PR before implementation, then replace mixed Diagnostics/recovery callbacks and direct lookups with typed command and result ownership without changing Import Preview acceptance or P14 behavior."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Complete final diff review and Maven PR Tests for PR #177, merge i
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records the implemented P13-S1 removal in draft PR #177 and advances it to final diff, CI, merge, and desktop verification.
+This revision records merged and owner-verified P13-S1 as DONE and activates P13-S2 for typed Diagnostics and recovery command ownership.
 
 ## 2. Status values
 
@@ -45,7 +45,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
-| P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | VERIFYING; P13-S1 active |
+| P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | READY; P13-S1 DONE, P13-S2 active |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
 ## 4. Governing documents
@@ -392,7 +392,7 @@ Next exact action:
 # P13 — Data exchange and diagnostics without Import/Export Jobs
 
 **Selector:** `PHASE=P13`
-**Status:** VERIFYING; P13-S1 active
+**Status:** READY; P13-S1 DONE, P13-S2 active
 **Depends on:** P02, P05, P12
 
 Purpose: preserve useful data exchange, import review, and diagnostics while eliminating the prohibited generic Import/Export Jobs function and generic job-tracking concept. Domain-specific banking, reconciliation, import-review, diagnostic, and audit facts remain governed by their authoritative services and tables.
@@ -414,12 +414,13 @@ Required inspection:
 
 ### P13-S1 — Remove generic Import/Export Jobs function and session job tracking
 
-Status: VERIFYING; implementation is in draft PR #177.
+Status: DONE through merged PR #177 and owner desktop verification.
 
 Branch: `codex/P13-S1-remove-import-export-jobs`
-Pull request: #177, draft
+Pull request: #177, merged
 Base head: `58eab6563cbe245d39beb7ef6cb814946df6cf9d`
 Implementation head: `495bf4ab296cb66ee2b4b7c8aebee803ca808ae2`
+Merged head: `69ef903ab00e209f0855d9b374c0fc4fc3d39377`
 
 Planned deliverables:
 
@@ -440,11 +441,53 @@ Completed deliverables:
 - Deleted `ImportExportJobsPanel` and removed the generic `ImportExportJob` session list plus append, query, and clear APIs.
 - Removed generic job-log writes from CoA and bank import/export actions while preserving the actual operations, user-facing outcome messages, and temporary bank-transaction staging.
 - Updated the interface matrix and persistence inventory, simplified the staging-store tests, and added a focused elimination/source guardrail.
-- Local Maven validation remains unavailable because the container has neither Maven nor a Maven wrapper; Maven PR Tests run `29670629196` passed on implementation head `495bf4ab296cb66ee2b4b7c8aebee803ca808ae2`.
+- Local Maven validation remains unavailable because the container has neither Maven nor a Maven wrapper; Maven PR Tests runs `29670629196` and `29670678408` passed, with the latter on the final PR head.
+- PR #177 merged at `69ef903ab00e209f0855d9b374c0fc4fc3d39377`.
+- The owner verified that Import / Export Jobs is absent from navigation, menus, and the command palette while CoA and OFX/QFX import/export operations and their user-facing outcome messages remain available.
 
 Next exact action:
 
-- Complete final diff review and Maven PR Tests for PR #177, merge it, then perform desktop navigation and retained-operation confirmation.
+- None; P13-S1 is DONE.
+
+### P13-S2 — Typed diagnostics and recovery command ownership
+
+Status: READY.
+
+Planned branch: `codex/P13-S2-typed-diagnostics-recovery`
+Pull request: none; open a draft PR before implementation.
+Base head: `69ef903ab00e209f0855d9b374c0fc4fc3d39377`
+
+Required reading:
+
+- `doc/interface-operation-matrix.md`
+- `doc/persistence-authority-inventory.md`
+- `doc/ui_design_rules.md`
+- `doc/ui/editor-guidelines.md`
+- `doc/requirements/requirements-clarification-overlay.md`
+- `doc/requirements/phase-remap-after-clarification.md`
+
+Required inspection:
+
+- `DiagnosticsPanel`, `DatabaseRecoveryPanel`, `ProductionWorkspaceWindow`, `MainWindow`, and `PanelFactory`.
+- `DatabaseLocationService`, `DatabaseMigrationService`, `FlywaySchemaRecoveryService`, `DatabaseSessionController`, `WorkspaceContext`, `UiSessionState`, and `UiServiceRegistry`.
+- Current diagnostics, migration-recovery, database-session, navigation, tooltip, and JavaFX source/behavior tests.
+
+Planned deliverables:
+
+- Introduce explicit typed diagnostics queries/results for runtime, active-company, active-database, datasource, account, fund, and duplicate-code health rather than assembling diagnostic facts directly in the JavaFX panel.
+- Give database retry/repair, select-existing, and create-new recovery actions explicit typed command ownership while preserving the existing Dashboard recovery surface and database-session composition.
+- Keep diagnostics factual and non-destructive: do not add automatic data repair, generic job tracking, or enabled placeholder actions.
+- Preserve drill-through to the existing Chart of Accounts and Funds destinations with explicit context when duplicate codes exist.
+- Apply current scrolling, tooltip, formatting, error-message, and company-owned UI-state rules; add focused service tests and JavaFX source/behavior guardrails.
+- Update the interface matrix and persistence inventory, run the full Maven PR Tests workflow, and leave the slice VERIFYING until desktop validation and merge.
+
+Out of scope:
+
+- Canonical acceptance from Import Preview, banking/reconciliation remediation, schema redesign, and unrelated P14 end-to-end hardening.
+
+Next exact action:
+
+- Create `codex/P13-S2-typed-diagnostics-recovery` from current `main`, open its draft PR, complete the required inspection, and implement the typed diagnostics/recovery boundary with focused tests and documentation.
 
 # P06 — Bank reconciliation and cleared-state comparison
 
