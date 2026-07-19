@@ -215,7 +215,6 @@ public class MainWindow extends BorderPane
                 item("Import CoA CSV…", null, this::importCoaCsvFromFile),
                 item("Import Bank OFX/QFX…", null, this::importBankEnvelopeFromFile),
                 item("Import Preview…", null, () -> openPanel(AppPanelId.IMPORT_PREVIEW)),
-                item("Import / Export Jobs…", null, () -> openPanel(AppPanelId.IMPORT_EXPORT_JOBS)),
                 item("Bank Transactions…", null, () -> openPanel(AppPanelId.BANK_TRANSACTIONS)),
                 gatedItem("Audit History…", null, () -> openPanel(AppPanelId.APPROVAL_AUDIT), UserPrivilegeLevel.MANAGER),
                 gatedItem("Diagnostics…", null, () -> openPanel(AppPanelId.DIAGNOSTICS), UserPrivilegeLevel.ADMIN),
@@ -334,7 +333,6 @@ public class MainWindow extends BorderPane
             case JOURNAL_PANE -> "Grouped journal review, New/Edit/Save, Delete/Reverse, validation, and supplemental details";
             case IMPORT_PREVIEW -> "Import review and preview workflow";
             case APPROVAL_AUDIT -> "Factual audit filters by workflow/decision/actor/date; run-id visibility";
-            case IMPORT_EXPORT_JOBS -> "Unified import/export job history and error tracking";
             case BANK_TRANSACTIONS -> "Imported bank transactions, drill to ledger, export selected";
             case SETTINGS -> "Preferences, H2 company lifecycle, active-company selection, and user administration";
             case DIAGNOSTICS -> "Health checks and duplicate-code diagnostics";
@@ -374,7 +372,6 @@ public class MainWindow extends BorderPane
             case PERIOD_CLOSE_RUNS -> "Period Close Runs";
             case IMPORT_PREVIEW -> "Import Preview";
             case APPROVAL_AUDIT -> "Audit History";
-            case IMPORT_EXPORT_JOBS -> "Import / Export Jobs";
             case BANK_TRANSACTIONS -> "Bank Transactions";
             case REPORT_LIBRARY -> "Reports Library";
             case CHART_OF_ACCOUNTS -> "Chart of Accounts";
@@ -561,30 +558,10 @@ public class MainWindow extends BorderPane
                     {
                         ImportExportOrchestrationService.CoaImportResult result = importExportService.importChartOfAccountsCsvFile(path);
                         lastImportedCoaRows = List.copyOf(result.rows());
-                        UiWorkspaceDataStore.appendJob(new UiWorkspaceDataStore.ImportExportJob(
-                                java.time.LocalDateTime.now(),
-                                "IMPORT_COA",
-                                path.toString(),
-                                "",
-                                null,
-                                result.rowCount(),
-                                0,
-                                "SUCCESS",
-                                ""));
                         info("Imported CoA rows: " + result.rowCount() + " from " + path.getFileName());
                     }
                     catch (RuntimeException ex)
                     {
-                        UiWorkspaceDataStore.appendJob(new UiWorkspaceDataStore.ImportExportJob(
-                                java.time.LocalDateTime.now(),
-                                "IMPORT_COA",
-                                path.toString(),
-                                "",
-                                null,
-                                0,
-                                0,
-                                "FAILED",
-                                UiErrors.safeMessage(ex)));
                         info("Import failed for CoA CSV " + path.getFileName() + ": " + UiErrors.safeMessage(ex));
                     }
                 });
@@ -599,30 +576,10 @@ public class MainWindow extends BorderPane
                         ImportExportOrchestrationService.BankImportResult result = importExportService.importBankDataFile(path);
                         lastImportedBankTransactions = List.copyOf(result.transactions());
                         UiWorkspaceDataStore.replaceBankTransactions(lastImportedBankTransactions);
-                        UiWorkspaceDataStore.appendJob(new UiWorkspaceDataStore.ImportExportJob(
-                                java.time.LocalDateTime.now(),
-                                "IMPORT_BANK",
-                                path.toString(),
-                                "",
-                                result.format(),
-                                0,
-                                result.transactionCount(),
-                                "SUCCESS",
-                                ""));
                         info("Imported " + result.format() + " transactions: " + result.transactionCount() + " from " + path.getFileName());
                     }
                     catch (RuntimeException ex)
                     {
-                        UiWorkspaceDataStore.appendJob(new UiWorkspaceDataStore.ImportExportJob(
-                                java.time.LocalDateTime.now(),
-                                "IMPORT_BANK",
-                                path.toString(),
-                                "",
-                                null,
-                                0,
-                                0,
-                                "FAILED",
-                                UiErrors.safeMessage(ex)));
                         info("Import failed for bank file " + path.getFileName() + ": " + UiErrors.safeMessage(ex));
                     }
                 });
@@ -661,7 +618,6 @@ public class MainWindow extends BorderPane
         {
             List<CoaCsvMapper.CoaCsvRow> exportRows = buildCoaExportRows();
             importExportService.exportChartOfAccountsCsvFile(exportRows, path);
-            UiWorkspaceDataStore.appendJob(new UiWorkspaceDataStore.ImportExportJob(java.time.LocalDateTime.now(), "EXPORT_COA", "(active chart)", path.toString(), null, exportRows.size(), 0, "SUCCESS", ""));
             info("Exported CoA CSV rows: " + exportRows.size() + " to " + path.getFileName());
             return;
         }
@@ -671,12 +627,10 @@ public class MainWindow extends BorderPane
                     ? BankingDataFormat.QFX
                     : BankingDataFormat.OFX;
             importExportService.exportBankDataFile(format, lastImportedBankTransactions, path);
-            UiWorkspaceDataStore.appendJob(new UiWorkspaceDataStore.ImportExportJob(java.time.LocalDateTime.now(), "EXPORT_BANK", "(session bank transactions)", path.toString(), format, 0, lastImportedBankTransactions.size(), "SUCCESS", ""));
             info("Exported " + format + " bank statement transactions: " + lastImportedBankTransactions.size() + " to " + path.getFileName());
             return;
         }
 
-        UiWorkspaceDataStore.appendJob(new UiWorkspaceDataStore.ImportExportJob(java.time.LocalDateTime.now(), "EXPORT_UNKNOWN", "", path.toString(), null, 0, 0, "FAILED", "Unsupported extension"));
         info("Export cancelled: unsupported extension for " + path.getFileName());
     }
 

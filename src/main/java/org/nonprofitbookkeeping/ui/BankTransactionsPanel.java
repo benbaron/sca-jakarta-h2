@@ -135,30 +135,10 @@ public class BankTransactionsPanel implements AppPanel
         try
         {
             importExportService.exportBankDataFile(format, selected, path);
-            UiWorkspaceDataStore.appendJob(new UiWorkspaceDataStore.ImportExportJob(
-                    java.time.LocalDateTime.now(),
-                    "EXPORT_BANK_SELECTED",
-                    "(panel selection)",
-                    path.toString(),
-                    format,
-                    0,
-                    selected.size(),
-                    "SUCCESS",
-                    ""));
             status.setText("Exported " + selected.size() + " selected bank transaction(s) to " + path.getFileName() + ".");
         }
         catch (RuntimeException ex)
         {
-            UiWorkspaceDataStore.appendJob(new UiWorkspaceDataStore.ImportExportJob(
-                    java.time.LocalDateTime.now(),
-                    "EXPORT_BANK_SELECTED",
-                    "(panel selection)",
-                    path.toString(),
-                    format,
-                    0,
-                    selected.size(),
-                    "FAILED",
-                    UiErrors.safeMessage(ex)));
             status.setText("Could not export selected bank transactions: " + UiErrors.safeMessage(ex));
         }
     }

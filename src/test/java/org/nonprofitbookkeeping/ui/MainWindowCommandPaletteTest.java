@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -25,8 +26,9 @@ public class MainWindowCommandPaletteTest
     {
         List<MainWindow.PaletteEntry> entries = MainWindow.commandPaletteEntriesForTests();
         assertTrue(entries.stream().anyMatch(e -> e.panelId() == AppPanelId.APPROVAL_AUDIT));
-        assertTrue(entries.stream().anyMatch(e -> e.panelId() == AppPanelId.IMPORT_EXPORT_JOBS));
         assertTrue(entries.stream().anyMatch(e -> e.panelId() == AppPanelId.BANK_TRANSACTIONS));
+        assertFalse(entries.stream().map(MainWindow.PaletteEntry::label)
+                .anyMatch(label -> label.contains("Import / Export Jobs")));
     }
 
     @Test

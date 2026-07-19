@@ -1,6 +1,6 @@
 # Model and persistence authority inventory
 
-Status: P00 inventory of current main, updated through P12-S3 company lifecycle work. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
+Status: P00 inventory of current main, updated through P13-S1 removal of generic Import/Export Jobs. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
 
 ## Current persistence map
 
@@ -21,7 +21,7 @@ Status: P00 inventory of current main, updated through P12-S3 company lifecycle 
 | Inventory/supplies | `InventoryItem` and `InventoryMovement` JPA entities with V56 tables; movement records reserve a nullable canonical `Txn` link | yes for P09-S1 item records and movement history | old inventory text runbook removed from production paths | later hardening: financially relevant movement-to-ledger automation and reports |
 | Audit/approval | `AuditEvent` is factual JPA audit history; `ApprovalAuditRecord` remains a legacy approval-oriented repository/panel | yes for both stored record types | legacy approval terminology conflicts with product decision outside Period Close | P12 should rename/scope the remaining approval audit surface |
 | Preferences/app state | `FileAppStateStore`, `UserAppStateStore`, session state, company UI preference/state tables | mixed; company display state is H2, shell state remains sidecar/user file | shell preferences are not fully company-scoped | P12 |
-| Import/export jobs | `UiWorkspaceDataStore.jobs` static list | no | no durable job diagnostics | P13 |
+| Former Import/Export Jobs function | panel, route, navigation destination, enum identifier, and `UiWorkspaceDataStore` generic job list removed in P13-S1 | no active generic job store remains | none; domain-specific import, banking, reconciliation, diagnostic, and audit facts remain in their owning models | do not reintroduce generic job tracking |
 
 ## Duplicate transaction and journal models
 
