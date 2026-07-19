@@ -1,12 +1,12 @@
 ---
-plan_version: 48
+plan_version: 49
 active_phase: P12
-active_slice: P12-S1
+active_slice: P12-S2
 active_status: VERIFYING
 active_branch: main
-active_pull_request: "#159 (merged)"
-active_head: c6c19f93354e7f3fd8b595d9c632a1d81349ced6
-next_action: "On current main, verify that Delete Unused blocks a referenced Fund with deactivation guidance, then verify that deleting an unused Fund requires explicit confirmation and honors cancellation."
+active_pull_request: "#160 (merged)"
+active_head: bd1d0408bcc0c9c088abd3d7905cfc6532b1f397
+next_action: "At laptop width on current main, open Administration, switch among Preferences, Company Admin, and User Admin, verify each tab loads data and receives global New/Save commands, and confirm no separate Company Admin or User Admin shell destination exists."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "On current main, verify that Delete Unused blocks a referenced Fun
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records successful owner verification of Fund lifecycle fields and company-owned workspace state, then advances P12-S1 to protected deletion and deactivation acceptance.
+This revision records successful owner completion of P12-S1 Funds lifecycle acceptance, marks P12-S1 DONE, and activates the last open P12 slice, P12-S2 Administration hub acceptance.
 
 ## 2. Status values
 
@@ -44,7 +44,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
-| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-C1, P12-C2, P12-C3, and P12-S3 DONE; P12-S1 and P12-S2 merged/VERIFYING; P12-S1 active |
+| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-S1, P12-S3, P12-C1, P12-C2, and P12-C3 DONE; P12-S2 merged/VERIFYING and active |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
@@ -206,11 +206,11 @@ Completed deliverables:
 
 ## 7. P12 — Administration, company lifecycle, preferences, and Funds edit
 
-Status: IN_PROGRESS. P12-C1, P12-C2, P12-C3, and P12-S3 are DONE; P12-S1 and P12-S2 are merged/VERIFYING; P12-S1 is active for the remaining Funds lifecycle acceptance checks.
+Status: IN_PROGRESS. P12-S1, P12-S3, P12-C1, P12-C2, and P12-C3 are DONE; P12-S2 is merged/VERIFYING and active for the final Administration hub acceptance checks.
 
 ### P12-S1 — Stable-ID Funds editing and lifecycle rules
 
-Status: VERIFYING; implementation is merged.
+Status: DONE through merged PR #159, corrective PR #171, and owner desktop acceptance.
 
 Branch: `codex/P12-S1-fund-lifecycle-rules`  
 Pull request: #159, merged into `main` at `affbae227b9751d9f9caad9cd301656c0ac640e7`  
@@ -227,14 +227,11 @@ Completed deliverables:
 - Maven PR Tests runs `29224690525`, `29224900193`, and `29224988928` passed.
 - The owner created a Fund, changed its code, and verified that one stable row remained, the old code was unavailable, no duplicate was created, and all persisted values reloaded after reopening Funds.
 - The owner verified parent selection, effective dates and company formatting, restriction text, active/inactive display, table sorting, resizing, reordering and scrolling, and company-owned divider and table-state restoration.
-
-Remaining verification:
-
-- Verify referenced deletion is blocked with deactivation guidance, and unused deletion requires confirmation.
+- The owner verified that referenced Fund deletion was blocked with reference details and deactivation guidance, that deactivation retained the referenced row, and that unused Fund deletion required explicit confirmation and honored cancellation.
 
 Next exact action:
 
-- On current `main`, verify that Delete Unused blocks a referenced Fund with deactivation guidance, then verify that deleting an unused Fund requires explicit confirmation and honors cancellation.
+- None; P12-S1 is DONE.
 
 ### P12-C3 — Funds horizontal divider correction
 
@@ -291,6 +288,10 @@ Remaining verification:
 - At laptop width, open Administration and switch among all three tabs.
 - Verify data loads and global Save/New behavior reaches the selected tab.
 - Verify no separate Company Admin or User Admin shell destination was introduced.
+
+Next exact action:
+
+- At laptop width on current `main`, open Administration, switch among Preferences, Company Admin, and User Admin, verify each tab loads data and receives global New/Save commands, and confirm no separate Company Admin or User Admin shell destination exists.
 
 ### P12-C1 — Reconcile overlapping P12 slice records
 
