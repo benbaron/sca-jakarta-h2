@@ -1,12 +1,12 @@
 ---
-plan_version: 45
+plan_version: 46
 active_phase: P12
-active_slice: P12-C3
+active_slice: P12-S1
 active_status: VERIFYING
-active_branch: codex/P12-C3-funds-horizontal-split
-active_pull_request: "#171 (draft)"
-active_head: e307633189c94a4f15428044965b76af83341ed8
-next_action: "Merge CI-green PR #171, then verify on the desktop that the Funds table is above the editor with a restorable horizontal divider."
+active_branch: main
+active_pull_request: "#159 (merged)"
+active_head: b199f3e66d736d8f4e743fe61199b0f1683eacf9
+next_action: "At laptop width on current main, create a Fund and edit its code; confirm that one stable row remains and that the persisted values reload after reopening Funds."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Merge CI-green PR #171, then verify on the desktop that the Funds 
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records successful Maven PR Tests for the P12-C3 Funds top/bottom layout correction and advances PR #171 to merge and desktop verification.
+This revision records successful owner desktop verification of the merged P12-C3 Funds top/bottom layout correction, marks P12-C3 DONE, and resumes P12-S1 lifecycle acceptance.
 
 ## 2. Status values
 
@@ -44,7 +44,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
-| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-C1, P12-C2, and P12-S3 DONE; P12-S1 and P12-S2 merged/VERIFYING; corrective P12-C3 active |
+| P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | IN_PROGRESS; P12-C1, P12-C2, P12-C3, and P12-S3 DONE; P12-S1 and P12-S2 merged/VERIFYING; P12-S1 active |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | BLOCKED by P12 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
 
@@ -206,7 +206,7 @@ Completed deliverables:
 
 ## 7. P12 — Administration, company lifecycle, preferences, and Funds edit
 
-Status: IN_PROGRESS. P12-C1, P12-C2, and P12-S3 are DONE; P12-S1 and P12-S2 are merged/VERIFYING; corrective P12-C3 is active before Funds lifecycle acceptance resumes.
+Status: IN_PROGRESS. P12-C1, P12-C2, P12-C3, and P12-S3 are DONE; P12-S1 and P12-S2 are merged/VERIFYING; P12-S1 is active for the remaining Funds lifecycle acceptance checks.
 
 ### P12-S1 — Stable-ID Funds editing and lifecycle rules
 
@@ -238,10 +238,10 @@ Next exact action:
 
 ### P12-C3 — Funds horizontal divider correction
 
-Status: VERIFYING; implementation is in draft PR #171.
+Status: DONE through merged PR #171 and owner desktop acceptance.
 
 Branch: `codex/P12-C3-funds-horizontal-split`
-Pull request: #171, draft
+Pull request: #171, merged into `main` at `b199f3e66d736d8f4e743fe61199b0f1683eacf9`
 Base head: `34a28f513d2116878d03a43d3b0fffbf8e42fda7`
 Implementation head: `e307633189c94a4f15428044965b76af83341ed8`
 
@@ -261,10 +261,12 @@ Completed deliverables:
 - Added a focused Funds panel source guardrail and documented the top/bottom workspace behavior.
 - Local Maven validation was unavailable because the container has neither Maven nor a Maven wrapper; GitHub Maven PR Tests is authoritative for this correction.
 - Maven PR Tests run `29469588821` passed on handoff head `e14f778594c76f277230f37ac49f36638099b3b1`.
+- Final Maven PR Tests run `29469691118` passed on PR head `ec2b949793a66f3322a598dfbdb4fbbdedd58496`.
+- The owner verified on current `main` that the table is above the editor, the horizontal divider is draggable and restored, and both regions remain usable at laptop width.
 
 Next exact action:
 
-- Merge PR #171, then verify on the desktop that the table is above the editor, the horizontal divider is draggable and restored, and both regions remain usable at laptop width.
+- None; P12-C3 is DONE.
 
 ### P12-S2 — Administration workspace hub
 
