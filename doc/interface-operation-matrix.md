@@ -1,6 +1,6 @@
 # Interface operation matrix
 
-Status: P00 inventory of current main, updated through P13-S2 typed diagnostics and database-recovery command ownership. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
+Status: P00 inventory of current main, updated through P14-S1 production table compliance and route coverage. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
 
 ## Scope and evidence
 
@@ -8,6 +8,7 @@ Status: P00 inventory of current main, updated through P13-S2 typed diagnostics 
 - `PanelHost` creates one reusable workspace tab per canonical destination. Requests for either retired P03 alias select the same Journal tab.
 - `NavigationPane` exposes one **Journal** destination under Accounting rather than separate Ledger Register, Transaction Editor, and Inspect Journal items.
 - `PanelFactory` routes the Journal destination to `JournalWorkspaceCompliancePanel`, which delegates all accounting behavior to `JournalWorkspacePanel` and applies the company UI formatting/state/layout contract.
+- `PanelFactory` also applies `CompanyTableStateBinder` at the production composition boundary. Every table on every canonical route is unconstrained, sortable, resizable, reorderable, and registered to H2 company-owned order/width/sort state; Journal, Funds, and Company Admin retain their richer existing H2 state owners.
 - The stable `SETTINGS` destination now opens `AdministrationPanel`, which hosts Preferences, Company Admin, and User Admin tabs without introducing additional shell identifiers or a second administration framework.
 - Global commands route from `MainWindow`/toolbar/menu through `PanelHost` to `AppPanel` hooks (`onNew`, `onSave`, `onCopy`, `onPaste`, `onRunCommand`).
 - `UiServiceRegistry` creates JPA-backed lookup/admin/report, reconciliation-workspace, and period-close-range services, plus compatibility JDBC repositories for legacy run records and approval audit.
@@ -31,6 +32,8 @@ Do not add disabled placeholder Delete buttons. A durable-record panel may expos
 ## Completed-phase UI design-rule updates
 
 `doc/ui_design_rules.md` applies to every panel listed below, including panels delivered by completed phases. For future inventory passes, record whether each table-bearing panel has sortable/resizable/reorderable columns, per-company saved table state, vertical and horizontal scroll bars, a split-pane boundary from surrounding data, company-preference money/date formatting, and whether Delete is a real supported operation. Any noncompliance found in a completed phase becomes a focused corrective slice rather than a wholesale phase reopening.
+
+P14-S1 adds a production-root route smoke under a disposable migrated H2 database and makes the table interaction/state portion of that contract universal. Banking and Inventory no longer write table layout to Java Preferences. Panel-specific split layout, scrolling, company formatting, and dirty-state repairs remain explicitly assigned to P14-S2 and P14-S3.
 
 ## Panel matrix
 

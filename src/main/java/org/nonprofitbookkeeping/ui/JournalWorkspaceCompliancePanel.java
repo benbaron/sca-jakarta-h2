@@ -199,6 +199,7 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
     {
         for (TableView<?> table : findAll(workspaceRoot, TableView.class))
         {
+            CompanyTableStateBinder.markCompanyStateOwned(table);
             String tableKey = table.getId() == null || table.getId().isBlank()
                     ? "anonymous-" + Integer.toHexString(System.identityHashCode(table))
                     : table.getId();

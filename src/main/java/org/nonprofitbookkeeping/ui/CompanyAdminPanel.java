@@ -175,6 +175,7 @@ public class CompanyAdminPanel implements AppPanel
     {
         companies.setId("companyAdminTable");
         companies.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        CompanyTableStateBinder.markCompanyStateOwned(companies);
         companies.setPlaceholder(new Label("No company rows found in the active database."));
         addColumn("code", "Code", CompanyView::code, 125);
         addColumn("name", "Display Name", CompanyView::displayName, 210);

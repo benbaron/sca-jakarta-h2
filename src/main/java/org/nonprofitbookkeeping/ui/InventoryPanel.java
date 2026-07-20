@@ -1,7 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
 import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
@@ -39,12 +38,10 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.function.Function;
-import java.util.prefs.Preferences;
 
 /** H2-backed Inventory panel. */
 public class InventoryPanel implements AppPanel
 {
-    private static final Preferences TABLE_STATE = Preferences.userNodeForPackage(InventoryPanel.class).node("inventory-table-state");
     private static final String INVALID_FIELD_STYLE = "field-invalid";
 
     private final BorderPane root = new BorderPane();
@@ -72,7 +69,6 @@ public class InventoryPanel implements AppPanel
     private final DatePicker movementDate = new DatePicker(LocalDate.now());
     private final TextField movementNotes = new TextField();
 
-    private boolean restoringTableState;
     private boolean suppressDirty;
     private boolean dirty;
     private boolean editorOpen;
@@ -88,8 +84,6 @@ public class InventoryPanel implements AppPanel
         configureSelectors();
         configureItemTable();
         configureMovementTable();
-        installTableStatePersistence(itemTable, "items");
-        installTableStatePersistence(movementTable, "movements");
         configureListPanel();
         configureItemEditorPanel();
         installFormatCorrection();
@@ -185,7 +179,6 @@ public class InventoryPanel implements AppPanel
         addItemColumn("Location", InventoryItemView::storageLocation, 160);
         addItemColumn("Acquired", v -> formatDate(v.acquisitionDate()), 120);
         addItemColumn("Status", v -> v.status().name(), 100);
-        restoreTableState(itemTable, "items");
         itemTable.setPlaceholder(new Label("No inventory items found."));
         itemTable.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2 && itemTable.getSelectionModel().getSelectedItem() != null)
@@ -206,7 +199,6 @@ public class InventoryPanel implements AppPanel
         addMovementColumn("Unit Value", v -> formatMoney(v.unitValue()), 120);
         addMovementColumn("Txn", v -> v.transactionId() == null ? "" : String.valueOf(v.transactionId()), 80);
         addMovementColumn("Notes", InventoryMovementView::notes, 220);
-        restoreTableState(movementTable, "movements");
         movementTable.setPlaceholder(new Label("No inventory movements recorded."));
     }
 
@@ -542,105 +534,6 @@ public class InventoryPanel implements AppPanel
                 }
             }
         });
-    }
-
-    private void installTableStatePersistence(TableView<?> table, String tableKey)
-    {
-        table.getColumns().addListener((ListChangeListener<TableColumn<?, ?>>) change -> saveTableState(table, tableKey));
-        table.getSortOrder().addListener((ListChangeListener<TableColumn<?, ?>>) change -> saveTableState(table, tableKey));
-        for (TableColumn<?, ?> column : table.getColumns())
-        {
-            column.widthProperty().addListener((obs, oldWidth, newWidth) -> saveTableState(table, tableKey));
-            column.sortTypeProperty().addListener((obs, oldSort, newSort) -> saveTableState(table, tableKey));
-        }
-    }
-
-    private void restoreTableState(TableView<?> table, String tableKey)
-    {
-        restoringTableState = true;
-        try
-        {
-            String prefix = tableStatePrefix(tableKey);
-            for (TableColumn<?, ?> column : table.getColumns())
-            {
-                column.setPrefWidth(TABLE_STATE.getDouble(prefix + columnKey(column) + ".width", column.getPrefWidth()));
-                String sort = TABLE_STATE.get(prefix + columnKey(column) + ".sort", "");
-                if ("ASCENDING".equals(sort))
-                {
-                    column.setSortType(TableColumn.SortType.ASCENDING);
-                }
-                else if ("DESCENDING".equals(sort))
-                {
-                    column.setSortType(TableColumn.SortType.DESCENDING);
-                }
-            }
-            restoreColumnOrder(table, prefix);
-            restoreSortOrder(table, prefix);
-        }
-        finally
-        {
-            restoringTableState = false;
-        }
-    }
-
-    private void saveTableState(TableView<?> table, String tableKey)
-    {
-        if (restoringTableState)
-        {
-            return;
-        }
-        String prefix = tableStatePrefix(tableKey);
-        TABLE_STATE.put(prefix + "order", String.join(",", table.getColumns().stream().map(InventoryPanel::columnKey).toList()));
-        TABLE_STATE.put(prefix + "sortOrder", String.join(",", table.getSortOrder().stream().map(InventoryPanel::columnKey).toList()));
-        for (TableColumn<?, ?> column : table.getColumns())
-        {
-            TABLE_STATE.putDouble(prefix + columnKey(column) + ".width", column.getWidth() > 0 ? column.getWidth() : column.getPrefWidth());
-            TABLE_STATE.put(prefix + columnKey(column) + ".sort", column.getSortType() == null ? "" : column.getSortType().name());
-        }
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private static void restoreColumnOrder(TableView table, String prefix)
-    {
-        String order = TABLE_STATE.get(prefix + "order", "");
-        if (order.isBlank())
-        {
-            return;
-        }
-        List<String> keys = List.of(order.split(","));
-        List<TableColumn> ordered = (List<TableColumn>) table.getColumns().stream()
-                .sorted(java.util.Comparator.comparingInt(column -> {
-                    int index = keys.indexOf(columnKey((TableColumn<?, ?>) column));
-                    return index < 0 ? Integer.MAX_VALUE : index;
-                }))
-                .toList();
-        table.getColumns().setAll(ordered);
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private static void restoreSortOrder(TableView table, String prefix)
-    {
-        String sortOrder = TABLE_STATE.get(prefix + "sortOrder", "");
-        if (sortOrder.isBlank())
-        {
-            return;
-        }
-        List<String> keys = List.of(sortOrder.split(","));
-        table.getSortOrder().setAll((java.util.Collection) table.getColumns().stream()
-                .filter(column -> keys.contains(columnKey((TableColumn<?, ?>) column)))
-                .sorted(java.util.Comparator.comparingInt(column -> keys.indexOf(columnKey((TableColumn<?, ?>) column))))
-                .toList());
-    }
-
-    private static String columnKey(TableColumn<?, ?> column)
-    {
-        Object key = column.getUserData();
-        return key == null ? column.getText().replaceAll("\\W+", "_") : key.toString();
-    }
-
-    private static String tableStatePrefix(String tableKey)
-    {
-        return activeCompanyCode().replaceAll("[^A-Za-z0-9_.-]", "_") + "." + tableKey + ".";
     }
 
     private Long selectedItemId()

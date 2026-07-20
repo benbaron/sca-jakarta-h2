@@ -1,12 +1,12 @@
 ---
-plan_version: 56
+plan_version: 58
 active_phase: P14
 active_slice: P14-S1
-active_status: READY
-active_branch: main
-active_pull_request: none
-active_head: 7ef06129551eb967f6caa1f9d30141835a7f6ddc
-next_action: "Create fresh branch codex/P14-S1-production-workspace-smoke from current main, open a draft PR before implementation, then add a disposable-H2 production workspace route/lifecycle smoke test and repair only defects directly exposed by that test."
+active_status: VERIFYING
+active_branch: codex/P14-S1-production-ui-compliance-foundation
+active_pull_request: 181
+active_head: 6c5e2f5bbe02098679deba90769824c40fc264bc
+next_action: "Owner desktop-validate PR #181 across representative table-bearing destinations; if accepted, mark it ready and merge it, then start P14-S2 from the resulting current main on a fresh branch and draft PR."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Create fresh branch codex/P14-S1-production-workspace-smoke from c
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records merged and owner-verified P13-S2 and P13 as DONE, then activates the first bounded P14 end-to-end hardening slice.
+This revision records P14-S1 implementation and green production-route validation in draft PR #181, leaving desktop verification and merge before P14-S2 begins.
 
 ## 2. Status values
 
@@ -46,7 +46,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
-| P14 | End-to-end hardening | P03-P13 except eliminated P07 | READY; P14-S1 active |
+| P14 | End-to-end hardening | P03-P13 except eliminated P07 | IN_PROGRESS; P14-S1 active |
 
 ## 4. Governing documents
 
@@ -506,7 +506,7 @@ Next exact action:
 # P14 — End-to-end hardening
 
 **Selector:** `PHASE=P14`
-**Status:** READY; P14-S1 active
+**Status:** IN_PROGRESS; P14-S1 active
 **Depends on:** P03 through P13 except eliminated P07
 
 Purpose: harden the one production JavaFX/H2 application through cross-workspace lifecycle and regression coverage. P14 repairs defects exposed by end-to-end use; it does not absorb unfinished feature expansion owned by earlier domain phases.
@@ -521,13 +521,25 @@ Required reading:
 - `doc/requirements/phase-remap-after-clarification.md`
 - `doc/workflow/development-workflow.md`
 
-### P14-S1 — Production workspace route and lifecycle smoke hardening
+Audit findings from current main:
 
-Status: READY.
+- Only the production Journal compliance wrapper, Funds, and Company Admin fully satisfy the strict table layout/state/formatting/editor contract on current main.
+- Twelve table-bearing production panels have no saved column order, width, or sort state; Banking and Inventory use Java Preferences rather than company-owned H2 UI state.
+- Dashboard, Approval Audit, Bank Transactions, and Import Preview explicitly use constrained table policies on six tables.
+- Dashboard, Banking, Budget, Assets, Depreciation, Inventory, Reconciliation, Period Close, Approval Audit, and Bank Transactions contain money/date presentation that bypasses active-company `CompanyUiFormat` rules.
+- Assets, Banking, Budget Editor, Chart of Accounts, Preferences, and User Admin do not report unsaved editor changes; `AdministrationPanel` checks only the selected child tab and can miss dirty state in another administration tab.
+- Existing `ProductionDesignRulesTestFxTest` launches legacy `MainWindow`, is `DISPLAY`-gated, and does not prove compliance in the `MainApp` / `ProductionWorkspaceWindow` composition.
+- Help contains stale navigation text and repository/document links.
 
-Planned branch: `codex/P14-S1-production-workspace-smoke`
-Pull request: none; open a draft PR before implementation.
-Base head: `7ef06129551eb967f6caa1f9d30141835a7f6ddc`
+### P14-S1 — Production UI compliance foundation and route smoke
+
+Status: VERIFYING.
+
+Branch: `codex/P14-S1-production-ui-compliance-foundation`
+Pull request: draft PR #181.
+Base head: `62d0a8408dd482296d5a80736c7a31cba4cae7b1`
+Implementation head: `6c5e2f5bbe02098679deba90769824c40fc264bc`
+Validation: Maven PR Tests run `29716315784` passed, including the complete established headless suite and focused Xvfb production-route/table-state compliance tests.
 
 Required inspection:
 
@@ -539,9 +551,10 @@ Planned deliverables:
 
 - Build a repeatable JavaFX smoke fixture backed by a disposable migrated H2 database with an authoritative active company.
 - Enumerate and open every canonical production destination through the production workspace composition, while confirming compatibility aliases reuse their canonical destination and eliminated destinations remain absent.
-- Exercise database/company lifecycle rebinding enough to detect stale service, workspace, or active-context composition without relying on fictional session state.
-- Repair only startup, routing, composition, refresh, or lifecycle defects directly exposed by the smoke path, with focused regression assertions for each repair.
-- Keep tooltip, scrolling, table, split-pane, dirty-state, formatting, and company-owned UI-state rules intact on every touched surface.
+- Add one reusable H2-backed company-owned table-state helper for column order, widths, sort direction, and sort priority; do not add another preferences sidecar.
+- Add production-root compliance guardrails that can enumerate every table and detect constrained policies, non-sortable/non-resizable/non-reorderable columns, and missing registered company-state ownership.
+- Apply the shared helper at `PanelFactory` so every production table receives the common contract, while preserving the richer H2 owners already used by Journal, Funds, and Company Admin.
+- Remove Banking and Inventory Java Preferences table stores so production table layout has only the H2 company-state authority.
 - Update governing inventories, run the full Maven PR Tests workflow, and leave the slice VERIFYING until desktop validation and merge.
 
 Out of scope:
@@ -550,7 +563,33 @@ Out of scope:
 
 Next exact action:
 
-- Create `codex/P14-S1-production-workspace-smoke` from current `main`, open its draft PR, complete required inspection, and implement the disposable-H2 production route/lifecycle smoke test plus only directly exposed repairs.
+- Desktop-validate PR #181 by opening representative table-bearing destinations, resizing/reordering/sorting columns, restarting, and confirming state remains company-specific; then mark ready and merge if accepted.
+
+### P14-S2 — Core editor form layout and dirty-state compliance
+
+Status: BLOCKED by P14-S1.
+
+Planned scope:
+
+- Repair Assets, Banking, Budget Editor, Chart of Accounts, Preferences, User Admin, and the Administration dirty-state aggregator.
+- Add required table/form split regions, editor scrolling, company-owned state, and loss-prevention prompts without changing domain services.
+
+### P14-S3 — Financial view formatting and table-layout compliance
+
+Status: BLOCKED by P14-S1.
+
+Planned scope:
+
+- Repair Dashboard, Budget vs Actual, Depreciation Runs, Inventory, Reconciliation, Period Close, Import Preview, Audit History, and Bank Transactions.
+- Apply company money/date formatting, unconstrained tables, company-owned state, and required split regions without expanding their domain workflows.
+
+### P14-S4 — Help, production desktop sweep, and final compliance closure
+
+Status: BLOCKED by P14-S2 and P14-S3.
+
+Planned scope:
+
+- Correct Help navigation/document links, run the all-destination production smoke path, perform laptop-width desktop validation, and close only verified residual design-rule findings.
 
 # P06 — Bank reconciliation and cleared-state comparison
 
