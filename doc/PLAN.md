@@ -1,12 +1,12 @@
 ---
-plan_version: 60
+plan_version: 61
 active_phase: P14
-active_slice: P14-S2
-active_status: VERIFYING
-active_branch: codex/P14-S2-core-editor-form-compliance
-active_pull_request: 182
-active_head: 927c0d2024d7aed126c8dd5704e9ce2fd3a244f7
-next_action: "Owner desktop-validate PR #182 across the seven P14-S2 editors, including horizontal dividers, independent form/table scrolling, company-owned divider restoration, and dirty-state prompts; merge if accepted, then start P14-S3 from current main."
+active_slice: P14-S3
+active_status: IN_PROGRESS
+active_branch: codex/P14-S3-financial-view-formatting-compliance
+active_pull_request: pending
+active_head: pending
+next_action: "Open the required draft PR for P14-S3 from current main, record its exact PR and head, then inspect the scoped financial views against the governing UI rules before implementation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Owner desktop-validate PR #182 across the seven P14-S2 editors, in
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records the P14-S2 implementation and green automated validation in draft PR #182, leaving desktop verification and merge before P14-S3.
+This revision records merged and owner-verified P14-S2 as DONE and activates P14-S3 from the resulting current main; implementation remains gated on opening its draft PR and completing focused inspection.
 
 ## 2. Status values
 
@@ -46,7 +46,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
-| P14 | End-to-end hardening | P03-P13 except eliminated P07 | IN_PROGRESS; P14-S2 active |
+| P14 | End-to-end hardening | P03-P13 except eliminated P07 | IN_PROGRESS; P14-S3 active |
 
 ## 4. Governing documents
 
@@ -506,7 +506,7 @@ Next exact action:
 # P14 — End-to-end hardening
 
 **Selector:** `PHASE=P14`
-**Status:** IN_PROGRESS; P14-S2 active
+**Status:** IN_PROGRESS; P14-S3 active
 **Depends on:** P03 through P13 except eliminated P07
 
 Purpose: harden the one production JavaFX/H2 application through cross-workspace lifecycle and regression coverage. P14 repairs defects exposed by end-to-end use; it does not absorb unfinished feature expansion owned by earlier domain phases.
@@ -569,14 +569,16 @@ Next exact action:
 
 ### P14-S2 — Core editor form layout and dirty-state compliance
 
-Status: VERIFYING.
+Status: DONE through merged PR #182 and owner desktop verification.
 
 Branch: `codex/P14-S2-core-editor-form-compliance`
-Pull request: draft PR #182.
+Pull request: #182, merged into `main` at `96993c9a5c143dbd617ba6ac7ec5c1c0026ad980`.
 Base head: `9bbdda0ab7113df75bc0fd16705df7e8bd5c9c14`
 Activation head: `707078169c39f74e4f1169afa55e31dd8437aaaf`
 Implementation head: `927c0d2024d7aed126c8dd5704e9ce2fd3a244f7`
 Validation: Maven PR Tests run `29756498806` passed, including the complete established suite plus focused Xvfb production-route and seven-editor dirty-state coverage.
+Final documentation-head Maven PR Tests run `29756777489` passed on `0bd9afa56bd70f380f2910e01ca8f94c8fbdc1cc`.
+The owner verified the horizontal dividers, independent scrolling, company-owned divider restoration, dirty-state prompts, and hidden Administration-tab dirty aggregation, then confirmed the slice for merge.
 
 Required inspection:
 
@@ -603,20 +605,28 @@ Completed deliverables:
 
 Next exact action:
 
-- Desktop-validate draft PR #182 at laptop width, including every divider, independent scroll region, restart restoration, row/new/refresh discard prompts, and Administration detection of edits hidden on another tab; merge if accepted.
+- None; P14-S2 is DONE.
 
 ### P14-S3 — Financial view formatting and table-layout compliance
 
-Status: BLOCKED by P14-S1.
+Status: IN_PROGRESS.
+
+Branch: `codex/P14-S3-financial-view-formatting-compliance`
+Pull request: pending draft PR.
+Base head: `96993c9a5c143dbd617ba6ac7ec5c1c0026ad980`
 
 Planned scope:
 
 - Repair Dashboard, Budget vs Actual, Depreciation Runs, Inventory, Reconciliation, Period Close, Import Preview, Audit History, and Bank Transactions.
 - Apply company money/date formatting, unconstrained tables, company-owned state, and required split regions without expanding their domain workflows.
 
+Next exact action:
+
+- Open the required draft PR, record its exact number and activation head, then inspect every scoped panel, test, and governing UI rule before changing production behavior.
+
 ### P14-S4 — Help, production desktop sweep, and final compliance closure
 
-Status: BLOCKED by P14-S2 and P14-S3.
+Status: BLOCKED by P14-S3.
 
 Planned scope:
 
