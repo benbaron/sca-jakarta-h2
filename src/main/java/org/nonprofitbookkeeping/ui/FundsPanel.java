@@ -140,6 +140,7 @@ public class FundsPanel implements AppPanel
     {
         table.setId("fundsTable");
         table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        CompanyTableStateBinder.markCompanyStateOwned(table);
         table.setPlaceholder(new Label("No funds found. Choose New to create a fund."));
 
         addColumn("code", "Code", Fund::getCode, 125);

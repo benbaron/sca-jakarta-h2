@@ -78,6 +78,8 @@ public final class PanelFactory
         {
             throw new IllegalArgumentException("Unsupported panel id: " + id);
         }
-        return factory.get();
+        AppPanel panel = factory.get();
+        CompanyTableStateBinder.applyProductionPanel(panel.root(), canonicalId);
+        return panel;
     }
 }
