@@ -1,12 +1,12 @@
 ---
-plan_version: 55
-active_phase: P13
-active_slice: P13-S2
-active_status: VERIFYING
-active_branch: codex/P13-S2-typed-diagnostics-recovery
-active_pull_request: "#179 (draft)"
-active_head: cb6881d9810e249d7503e5944fab58254ca2f63e
-next_action: "Complete final diff review and Maven PR Tests for PR #179, merge it, then desktop-verify factual Diagnostics refresh/warnings/drill-through and all three typed Dashboard database-recovery actions."
+plan_version: 56
+active_phase: P14
+active_slice: P14-S1
+active_status: READY
+active_branch: main
+active_pull_request: none
+active_head: 7ef06129551eb967f6caa1f9d30141835a7f6ddc
+next_action: "Create fresh branch codex/P14-S1-production-workspace-smoke from current main, open a draft PR before implementation, then add a disposable-H2 production workspace route/lifecycle smoke test and repair only defects directly exposed by that test."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Complete final diff review and Maven PR Tests for PR #179, merge i
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records the implemented P13-S2 typed Diagnostics and recovery boundary in draft PR #179 and advances it to final review, CI, merge, and desktop verification.
+This revision records merged and owner-verified P13-S2 and P13 as DONE, then activates the first bounded P14 end-to-end hardening slice.
 
 ## 2. Status values
 
@@ -45,8 +45,8 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
-| P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | VERIFYING; P13-S1 DONE, P13-S2 active |
-| P14 | End-to-end hardening | P03-P13 except eliminated P07 | BLOCKED |
+| P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
+| P14 | End-to-end hardening | P03-P13 except eliminated P07 | READY; P14-S1 active |
 
 ## 4. Governing documents
 
@@ -392,7 +392,7 @@ Next exact action:
 # P13 — Data exchange and diagnostics without Import/Export Jobs
 
 **Selector:** `PHASE=P13`
-**Status:** VERIFYING; P13-S1 DONE, P13-S2 active
+**Status:** DONE through P13-S1 / PR #177 and P13-S2 / PR #179
 **Depends on:** P02, P05, P12
 
 Purpose: preserve useful data exchange, import review, and diagnostics while eliminating the prohibited generic Import/Export Jobs function and generic job-tracking concept. Domain-specific banking, reconciliation, import-review, diagnostic, and audit facts remain governed by their authoritative services and tables.
@@ -451,12 +451,13 @@ Next exact action:
 
 ### P13-S2 — Typed diagnostics and recovery command ownership
 
-Status: VERIFYING; implementation is in draft PR #179.
+Status: DONE through merged PR #179 and owner desktop verification.
 
 Branch: `codex/P13-S2-typed-diagnostics-recovery`
-Pull request: #179, draft
+Pull request: #179, merged
 Base head: `6809601310fda171b6259af042133ef105b75c81`
 Implementation head: `cb6881d9810e249d7503e5944fab58254ca2f63e`
+Merged head: `7ef06129551eb967f6caa1f9d30141835a7f6ddc`
 
 Required reading:
 
@@ -494,10 +495,62 @@ Completed deliverables:
 - Preserved the existing Diagnostics destination, duplicate-code drill-through, Dashboard recovery surface, successful-connection-only database selection, and non-destructive failure behavior.
 - Updated the interface matrix and persistence inventory and added focused service, JavaFX behavior, and source-boundary tests.
 - Local Maven validation remains unavailable because the container has neither Maven nor a Maven wrapper; Maven PR Tests run `29672098613` passed on implementation head `cb6881d9810e249d7503e5944fab58254ca2f63e`.
+- Final Maven PR Tests run `29672152187` passed on final PR head `094d9e4a33997431564c71c15c38669394a42e4c`.
+- PR #179 merged at `7ef06129551eb967f6caa1f9d30141835a7f6ddc`.
+- The owner verified factual Diagnostics refresh and warnings, duplicate account/fund drill-through behavior, all three Dashboard database-recovery actions, and protection of the selected database after a failed connection.
 
 Next exact action:
 
-- Complete final diff review and Maven PR Tests for PR #179, merge it, then perform desktop verification of factual Diagnostics states, duplicate drill-through, and all three Dashboard database-recovery commands.
+- None; P13-S2 and P13 are DONE.
+
+# P14 — End-to-end hardening
+
+**Selector:** `PHASE=P14`
+**Status:** READY; P14-S1 active
+**Depends on:** P03 through P13 except eliminated P07
+
+Purpose: harden the one production JavaFX/H2 application through cross-workspace lifecycle and regression coverage. P14 repairs defects exposed by end-to-end use; it does not absorb unfinished feature expansion owned by earlier domain phases.
+
+Required reading:
+
+- `doc/interface-operation-matrix.md`
+- `doc/persistence-authority-inventory.md`
+- `doc/ui_design_rules.md`
+- `doc/ui/editor-guidelines.md`
+- `doc/requirements/requirements-clarification-overlay.md`
+- `doc/requirements/phase-remap-after-clarification.md`
+- `doc/workflow/development-workflow.md`
+
+### P14-S1 — Production workspace route and lifecycle smoke hardening
+
+Status: READY.
+
+Planned branch: `codex/P14-S1-production-workspace-smoke`
+Pull request: none; open a draft PR before implementation.
+Base head: `7ef06129551eb967f6caa1f9d30141835a7f6ddc`
+
+Required inspection:
+
+- `MainApp`, `ProductionWorkspaceWindow`, `NavigationPane`, `PanelFactory`, `PanelHost`, `WorkspaceServices`, `WorkspaceServicesFactory`, and `UiServiceRegistry`.
+- `DatabaseBootstrap`, `DatabaseSessionController`, `CompanySessionController`, `WorkspaceContext`, `UiSessionState`, and test H2/bootstrap helpers.
+- `AppPanelId`, `AppPanelConsistencyTest`, `WorkspaceCompositionTest`, `ProductionWorkspaceJavaFxBehaviorTest`, `ProductionDesignRulesTestFxTest`, and current panel source/behavior tests.
+
+Planned deliverables:
+
+- Build a repeatable JavaFX smoke fixture backed by a disposable migrated H2 database with an authoritative active company.
+- Enumerate and open every canonical production destination through the production workspace composition, while confirming compatibility aliases reuse their canonical destination and eliminated destinations remain absent.
+- Exercise database/company lifecycle rebinding enough to detect stale service, workspace, or active-context composition without relying on fictional session state.
+- Repair only startup, routing, composition, refresh, or lifecycle defects directly exposed by the smoke path, with focused regression assertions for each repair.
+- Keep tooltip, scrolling, table, split-pane, dirty-state, formatting, and company-owned UI-state rules intact on every touched surface.
+- Update governing inventories, run the full Maven PR Tests workflow, and leave the slice VERIFYING until desktop validation and merge.
+
+Out of scope:
+
+- New Import Preview acceptance, bank-statement review, reconciliation resolution, inventory-to-ledger automation, report expansion, schema redesign, or other unfinished domain features merely listed in earlier-phase backlogs.
+
+Next exact action:
+
+- Create `codex/P14-S1-production-workspace-smoke` from current `main`, open its draft PR, complete required inspection, and implement the disposable-H2 production route/lifecycle smoke test plus only directly exposed repairs.
 
 # P06 — Bank reconciliation and cleared-state comparison
 
