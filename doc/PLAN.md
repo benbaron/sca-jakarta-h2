@@ -1,12 +1,12 @@
 ---
-plan_version: 59
+plan_version: 60
 active_phase: P14
 active_slice: P14-S2
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P14-S2-core-editor-form-compliance
 active_pull_request: 182
-active_head: 707078169c39f74e4f1169afa55e31dd8437aaaf
-next_action: "Inspect the seven P14-S2 editor/administration surfaces on current main, then implement coherent split-layout, scrolling, and dirty-state/discard protection in draft PR #182 without changing domain services."
+active_head: 927c0d2024d7aed126c8dd5704e9ce2fd3a244f7
+next_action: "Owner desktop-validate PR #182 across the seven P14-S2 editors, including horizontal dividers, independent form/table scrolling, company-owned divider restoration, and dirty-state prompts; merge if accepted, then start P14-S3 from current main."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Inspect the seven P14-S2 editor/administration surfaces on current
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records owner-verified P14-S1 as DONE through merged PR #181 and activates P14-S2 from current main.
+This revision records the P14-S2 implementation and green automated validation in draft PR #182, leaving desktop verification and merge before P14-S3.
 
 ## 2. Status values
 
@@ -569,12 +569,14 @@ Next exact action:
 
 ### P14-S2 — Core editor form layout and dirty-state compliance
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P14-S2-core-editor-form-compliance`
 Pull request: draft PR #182.
 Base head: `9bbdda0ab7113df75bc0fd16705df7e8bd5c9c14`
 Activation head: `707078169c39f74e4f1169afa55e31dd8437aaaf`
+Implementation head: `927c0d2024d7aed126c8dd5704e9ce2fd3a244f7`
+Validation: Maven PR Tests run `29756498806` passed, including the complete established suite plus focused Xvfb production-route and seven-editor dirty-state coverage.
 
 Required inspection:
 
@@ -589,9 +591,19 @@ Planned scope:
 - Add required table/form split regions, editor scrolling, company-owned state, and loss-prevention prompts without changing domain services.
 - Add focused JavaFX/source guardrails and run the complete Maven PR Tests workflow; leave the slice VERIFYING until desktop acceptance and merge.
 
+Completed deliverables:
+
+- Added reusable immutable form-snapshot dirty tracking and H2 company-owned split-divider persistence without introducing a new data authority.
+- Rebuilt Asset Register and Chart of Accounts as table-over-scrollable-editor workspaces.
+- Rebuilt both Banking sections and the User Admin user/assignment tabs with dedicated table/editor splits and independently scrollable forms.
+- Moved the Budget amount editor out of the header into its own scrollable split region and protected unsaved target amounts from row, refresh, and activation loss.
+- Added dirty-state reporting and discard protection to Assets, Banking, Budget Editor, Chart of Accounts, Preferences, and User Admin.
+- Changed Administration dirty aggregation to inspect Preferences, Company Admin, and User Admin regardless of which tab is selected.
+- Added focused source guardrails and Xvfb behavior coverage for all seven targets; no domain services, H2 models, or ledger behavior changed.
+
 Next exact action:
 
-- Establish the exact per-panel layout and dirty-state gaps from current main, then implement the bounded corrections in draft PR #182.
+- Desktop-validate draft PR #182 at laptop width, including every divider, independent scroll region, restart restoration, row/new/refresh discard prompts, and Administration detection of edits hidden on another tab; merge if accepted.
 
 ### P14-S3 — Financial view formatting and table-layout compliance
 
