@@ -81,8 +81,11 @@ public final class AdministrationPanel implements AppPanel
     @Override
     public boolean hasUnsavedChanges()
     {
-        AppPanel selected = selectedPanel();
-        return selected != null && selected.hasUnsavedChanges();
+        return tabs.getTabs().stream()
+                .map(Tab::getUserData)
+                .filter(AppPanel.class::isInstance)
+                .map(AppPanel.class::cast)
+                .anyMatch(AppPanel::hasUnsavedChanges);
     }
 
     @Override
@@ -99,5 +102,10 @@ public final class AdministrationPanel implements AppPanel
     {
         Tab selected = tabs.getSelectionModel().getSelectedItem();
         return selected != null && selected.getUserData() instanceof AppPanel panel ? panel : null;
+    }
+
+    SettingsPanel settingsForTests()
+    {
+        return settings;
     }
 }

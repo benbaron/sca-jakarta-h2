@@ -56,6 +56,7 @@ public class SettingsPanel implements AppPanel
 
     private final UiSessionState session;
     private final CompanySessionController companyController;
+    private final FormDirtyTracker dirtyState;
 
     public SettingsPanel()
     {
@@ -96,6 +97,7 @@ public class SettingsPanel implements AppPanel
         scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         root.setCenter(scroll);
 
+        dirtyState = new FormDirtyTracker(this::formSnapshot);
         syncFromSession();
     }
 
@@ -211,6 +213,7 @@ public class SettingsPanel implements AppPanel
             activeDatabase.getItems().add(d.activeDatabasePath());
         }
         activeDatabase.getSelectionModel().select(d.activeDatabasePath());
+        dirtyState.markClean();
     }
 
     private void applyToSession()
@@ -228,6 +231,7 @@ public class SettingsPanel implements AppPanel
         status.setText(selection.selected()
                 ? "Applied settings and company display preferences. " + selection.message()
                 : "Preferences saved, but active-company selection failed: " + selection.message());
+        dirtyState.markClean();
     }
 
     CompanyUiPreferences readCompanyUiPreferences()
@@ -344,5 +348,28 @@ public class SettingsPanel implements AppPanel
     public Node root()
     {
         return root;
+    }
+
+    @Override
+    public boolean hasUnsavedChanges()
+    {
+        return dirtyState.isDirty();
+    }
+
+    private SettingsSnapshot formSnapshot()
+    {
+        return new SettingsSnapshot(
+                readPreferences(),
+                readCompanyUiPreferences(),
+                activeCompany.getValue(),
+                activeDatabase.getEditor().getText());
+    }
+
+    private record SettingsSnapshot(
+            AppPreferencesState preferences,
+            CompanyUiPreferences companyPreferences,
+            String activeCompany,
+            String activeDatabase)
+    {
     }
 }

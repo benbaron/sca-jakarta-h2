@@ -5,7 +5,9 @@ import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -74,29 +76,38 @@ public class BankingPanel implements AppPanel
     private final Button saveAccount = new Button("Save Bank Account");
     private final Button refresh = new Button("Refresh");
     private final Label status = new Label();
+    private final FormDirtyTracker bankDirty;
+    private final FormDirtyTracker accountDirty;
     private Long editingBankId;
+    private boolean suppressBankSelection;
 
     public BankingPanel()
     {
         root.setPadding(new Insets(8));
         Label title = new Label("Banking");
         title.getStyleClass().add("panel-title");
-        newBank.setOnAction(event -> clearBankForm());
+        newBank.setOnAction(event -> onNew());
         saveBank.setOnAction(event -> saveBank());
         saveAccount.setOnAction(event -> saveBankAccount());
-        refresh.setOnAction(event -> reload());
-
-        SplitPane split = new SplitPane(bankListPane(), bankAccountPane());
-        split.setOrientation(Orientation.VERTICAL);
-        split.setDividerPositions(0.50);
-        root.setTop(new VBox(6, title, new HBox(8, newBank, saveBank, refresh), status, new Separator()));
-        root.setCenter(split);
+        refresh.setOnAction(event -> reloadWithDiscardProtection());
 
         configureBankTable();
         configureBankAccountTable();
         configureForms();
+        bankDirty = new FormDirtyTracker(this::bankSnapshot);
+        accountDirty = new FormDirtyTracker(this::accountSnapshot);
+
+        SplitPane split = new SplitPane(bankListPane(), bankAccountPane());
+        split.setId("bankingWorkspaceSplit");
+        split.setOrientation(Orientation.VERTICAL);
+        split.setDividerPositions(0.50);
+        CompanySplitPaneStateBinder.bind(split, "banking-workspace", 0.50);
+        root.setTop(new VBox(6, title, new HBox(8, newBank, saveBank, refresh), status, new Separator()));
+        root.setCenter(split);
+
         installFormatCorrection();
         clearBankForm();
+        clearAccountForm();
         reload();
     }
 
@@ -106,8 +117,12 @@ public class BankingPanel implements AppPanel
     @Override
     public void onNew()
     {
-        clearBankForm();
-        status.setText("Create mode: enter a Bank, then save linked bank-account configuration.");
+        if (!hasUnsavedChanges() || confirmDiscard())
+        {
+            clearBankForm();
+            clearAccountForm();
+            status.setText("Create mode: enter a Bank, then save linked bank-account configuration.");
+        }
     }
 
     FormState formStateForTests()
@@ -123,20 +138,22 @@ public class BankingPanel implements AppPanel
 
     private Node bankListPane()
     {
-        Node form = bankForm();
-        VBox pane = new VBox(8, new Label("Financial institutions"), banks, form);
-        pane.setPadding(new Insets(8));
-        VBox.setVgrow(banks, Priority.ALWAYS);
-        return pane;
+        return tableEditorPane(
+                "bankingInstitutionsSplit",
+                "Financial institutions",
+                banks,
+                bankForm(),
+                "banking-institutions");
     }
 
     private Node bankAccountPane()
     {
-        Node form = accountForm();
-        VBox pane = new VBox(8, new Label("Configured bank accounts"), bankAccounts, form);
-        pane.setPadding(new Insets(8));
-        VBox.setVgrow(bankAccounts, Priority.ALWAYS);
-        return pane;
+        return tableEditorPane(
+                "bankingAccountsSplit",
+                "Configured bank accounts",
+                bankAccounts,
+                accountForm(),
+                "banking-accounts");
     }
 
     private Node bankForm()
@@ -154,9 +171,11 @@ public class BankingPanel implements AppPanel
         form.add(new Label("Contact email"), 0, row); form.add(contactEmail, 1, row++);
         form.add(new Label("Notes"), 0, row); form.add(bankNotes, 1, row++);
         form.add(bankActive, 1, row);
-        ScrollPane scroll = new ScrollPane(form);
-        scroll.setFitToWidth(true);
-        return scroll;
+        for (Node field : List.of(bankName, routingNumber, address, website, contactName, contactPhone, contactEmail, bankNotes))
+        {
+            GridPane.setHgrow(field, Priority.ALWAYS);
+        }
+        return form;
     }
 
     private Node accountForm()
@@ -184,9 +203,13 @@ public class BankingPanel implements AppPanel
         form.add(new Label("Notes"), 0, row); form.add(accountNotes, 1, row++);
         form.add(accountActive, 1, row++);
         form.add(saveAccount, 1, row);
-        ScrollPane scroll = new ScrollPane(form);
-        scroll.setFitToWidth(true);
-        return scroll;
+        for (Node field : List.of(
+                bankSelector, existingAccountSelector, accountCode, accountName, maskedAccount, nickname,
+                openingDate, openingBalance, importFormat, ofxBankId, ofxAccountId, accountNotes))
+        {
+            GridPane.setHgrow(field, Priority.ALWAYS);
+        }
+        return form;
     }
 
     private void configureBankTable()
@@ -203,7 +226,20 @@ public class BankingPanel implements AppPanel
         configureColumn(name, "bankName", 220);
         configureColumn(routing, "routing", 120);
         configureColumn(active, "active", 84);
-        banks.getSelectionModel().selectedItemProperty().addListener((obs, oldRow, newRow) -> loadBank(newRow));
+        banks.getSelectionModel().selectedItemProperty().addListener((obs, oldRow, newRow) -> {
+            if (suppressBankSelection || newRow == null)
+            {
+                return;
+            }
+            if (hasUnsavedChanges() && !confirmDiscard())
+            {
+                suppressBankSelection = true;
+                banks.getSelectionModel().select(oldRow);
+                suppressBankSelection = false;
+                return;
+            }
+            loadBank(newRow);
+        });
     }
 
     private void configureBankAccountTable()
@@ -314,6 +350,7 @@ public class BankingPanel implements AppPanel
                     ? UiServiceRegistry.bankConfiguration().createBank(command)
                     : UiServiceRegistry.bankConfiguration().updateBank(editingBankId, command);
             editingBankId = saved.getId();
+            bankDirty.markClean();
             status.setText("Saved bank " + saved.getName() + ".");
             reload();
         }
@@ -341,6 +378,7 @@ public class BankingPanel implements AppPanel
             }
             CompanyBankAccount saved = UiServiceRegistry.bankConfiguration().createBankAccount(new BankAccountCommand(
                     activeCompanyCode(), selectedBank.getId(), account.getId(), maskedAccount.getText(), nickname.getText(), parseDate(openingDate.getText()), parseMoney(openingBalance.getText()), importFormat.getValue(), ofxBankId.getText(), ofxAccountId.getText(), accountNotes.getText(), accountActive.isSelected()));
+            accountDirty.markClean();
             status.setText("Saved configured bank account " + saved.getName() + ".");
             reload();
         }
@@ -368,6 +406,8 @@ public class BankingPanel implements AppPanel
         bankActive.setSelected(bank.isActive());
         bankSelector.setValue(bank);
         status.setText("Edit mode for bank " + bank.getName() + ".");
+        bankDirty.markClean();
+        accountDirty.markClean();
     }
 
     private void clearBankForm()
@@ -383,6 +423,92 @@ public class BankingPanel implements AppPanel
         contactEmail.clear();
         bankNotes.clear();
         bankActive.setSelected(true);
+        bankDirty.markClean();
+    }
+
+    private void clearAccountForm()
+    {
+        bankSelector.setValue(null);
+        useExistingAccount.setSelected(true);
+        existingAccountSelector.setValue(null);
+        accountCode.clear();
+        accountName.clear();
+        maskedAccount.clear();
+        nickname.clear();
+        openingDate.clear();
+        openingBalance.setText("0.00");
+        importFormat.setValue(BankingDataFormat.OFX);
+        ofxBankId.clear();
+        ofxAccountId.clear();
+        accountNotes.clear();
+        accountActive.setSelected(true);
+        accountDirty.markClean();
+    }
+
+    private Node tableEditorPane(String id,
+                                 String tableLabel,
+                                 TableView<?> table,
+                                 Node form,
+                                 String stateKey)
+    {
+        VBox tableRegion = new VBox(6, new Label(tableLabel), table);
+        tableRegion.setPadding(new Insets(8));
+        tableRegion.setMinHeight(0.0);
+        VBox.setVgrow(table, Priority.ALWAYS);
+        ScrollPane editorScroll = new ScrollPane(form);
+        editorScroll.setFitToWidth(true);
+        editorScroll.setMinHeight(0.0);
+        editorScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        editorScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        SplitPane split = new SplitPane(tableRegion, editorScroll);
+        split.setId(id);
+        split.setOrientation(Orientation.VERTICAL);
+        split.setDividerPositions(0.58);
+        CompanySplitPaneStateBinder.bind(split, stateKey, 0.58);
+        return split;
+    }
+
+    private BankFormSnapshot bankSnapshot()
+    {
+        return new BankFormSnapshot(bankName.getText(), routingNumber.getText(), address.getText(), website.getText(),
+                contactName.getText(), contactPhone.getText(), contactEmail.getText(), bankNotes.getText(), bankActive.isSelected());
+    }
+
+    private AccountFormSnapshot accountSnapshot()
+    {
+        return new AccountFormSnapshot(
+                idOf(bankSelector.getValue()), useExistingAccount.isSelected(), idOf(existingAccountSelector.getValue()),
+                accountCode.getText(), accountName.getText(), maskedAccount.getText(), nickname.getText(),
+                openingDate.getText(), openingBalance.getText(), importFormat.getValue(), ofxBankId.getText(),
+                ofxAccountId.getText(), accountNotes.getText(), accountActive.isSelected());
+    }
+
+    private static Long idOf(Object value)
+    {
+        if (value instanceof Bank bank)
+        {
+            return bank.getId();
+        }
+        return value instanceof Account account ? account.getId() : null;
+    }
+
+    private void reloadWithDiscardProtection()
+    {
+        if (!hasUnsavedChanges() || confirmDiscard())
+        {
+            clearBankForm();
+            clearAccountForm();
+            reload();
+        }
+    }
+
+    private boolean confirmDiscard()
+    {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle("Discard banking edits");
+        confirmation.setHeaderText("Discard unsaved Banking changes?");
+        confirmation.setContentText("Choose Cancel to remain in the current editor.");
+        return confirmation.showAndWait().filter(ButtonType.OK::equals).isPresent();
     }
 
     private static boolean isQualifyingBankAccount(Account account)
@@ -439,6 +565,27 @@ public class BankingPanel implements AppPanel
                      int bankCount,
                      int bankAccountCount,
                      String statusText)
+    {
+    }
+
+    void setBankNameForTests(String value)
+    {
+        bankName.setText(value);
+    }
+
+    @Override public void onSave() { if (bankDirty.isDirty()) saveBank(); else saveBankAccount(); }
+    @Override public boolean hasUnsavedChanges() { return bankDirty.isDirty() || accountDirty.isDirty(); }
+
+    private record BankFormSnapshot(
+            String name, String routing, String address, String website, String contactName,
+            String contactPhone, String contactEmail, String notes, boolean active)
+    {
+    }
+
+    private record AccountFormSnapshot(
+            Long bankId, boolean useExisting, Long existingAccountId, String accountCode, String accountName,
+            String maskedAccount, String nickname, String openingDate, String openingBalance,
+            BankingDataFormat importFormat, String ofxBankId, String ofxAccountId, String notes, boolean active)
     {
     }
 }

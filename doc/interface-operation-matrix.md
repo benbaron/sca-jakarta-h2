@@ -1,6 +1,6 @@
 # Interface operation matrix
 
-Status: P00 inventory of current main, updated through P14-S1 production table compliance and route coverage. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
+Status: P00 inventory of current main, updated through P14-S2 core editor layout and dirty-state compliance. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
 
 ## Scope and evidence
 
@@ -34,6 +34,8 @@ Do not add disabled placeholder Delete buttons. A durable-record panel may expos
 `doc/ui_design_rules.md` applies to every panel listed below, including panels delivered by completed phases. For future inventory passes, record whether each table-bearing panel has sortable/resizable/reorderable columns, per-company saved table state, vertical and horizontal scroll bars, a split-pane boundary from surrounding data, company-preference money/date formatting, and whether Delete is a real supported operation. Any noncompliance found in a completed phase becomes a focused corrective slice rather than a wholesale phase reopening.
 
 P14-S1 adds a production-root route smoke under a disposable migrated H2 database and makes the table interaction/state portion of that contract universal. Banking and Inventory no longer write table layout to Java Preferences. Panel-specific split layout, scrolling, company formatting, and dirty-state repairs remain explicitly assigned to P14-S2 and P14-S3.
+
+P14-S2 adds table-over-editor split regions, independently scrollable forms, company-owned divider positions, and snapshot-based dirty-state protection to Asset Register, Banking, Budget Editor, Chart of Accounts, Preferences, and User Admin. The Administration hub now reports unsaved changes in every child tab, including tabs that are not selected. Financial display formatting and remaining data-view layout corrections remain P14-S3.
 
 ## Panel matrix
 

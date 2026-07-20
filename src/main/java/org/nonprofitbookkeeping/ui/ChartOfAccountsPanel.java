@@ -2,18 +2,24 @@ package org.nonprofitbookkeeping.ui;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.AccountSubtype;
@@ -38,6 +44,8 @@ public class ChartOfAccountsPanel implements AppPanel
     private final TextField parentCodeField = new TextField();
     private final CheckBox activeField = new CheckBox("Active");
     private Button refresh;
+    private final FormDirtyTracker dirtyState;
+    private boolean suppressSelection;
     private String pendingDrillContext = "";
 
     public ChartOfAccountsPanel()
@@ -48,18 +56,20 @@ public class ChartOfAccountsPanel implements AppPanel
         title.getStyleClass().add("panel-title");
 
         Button add = new Button("+ Add");
-        add.setOnAction(e -> clearFormForNew());
+        add.setOnAction(e -> onNew());
 
         Button save = new Button("Save");
         save.setOnAction(e -> saveForm());
 
         refresh = new Button("Refresh");
-        refresh.setOnAction(e -> reload());
+        refresh.setOnAction(e -> reloadWithDiscardProtection());
 
         HBox actions = new HBox(8, add, save, refresh);
-        VBox header = new VBox(6, title, actions, buildEditorForm(), status, new Separator());
+        Node editorForm = buildEditorForm();
+        VBox header = new VBox(6, title, actions, status, new Separator());
 
         root.setTop(header);
+        dirtyState = new FormDirtyTracker(this::formSnapshot);
 
         TableColumn<Account, String> code = new TableColumn<>("Code");
         code.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().getCode()));
@@ -84,8 +94,36 @@ public class ChartOfAccountsPanel implements AppPanel
 
         table.getColumns().addAll(code, name, type, normalBalance, subtype, parentCode, active);
         table.setPlaceholder(new Label("No accounts found. Use the form above to create a posting account."));
-        table.getSelectionModel().selectedItemProperty().addListener((obs, oldRow, newRow) -> loadRowIntoForm(newRow));
-        root.setCenter(table);
+        table.getSelectionModel().selectedItemProperty().addListener((obs, oldRow, newRow) -> {
+            if (suppressSelection || newRow == null)
+            {
+                return;
+            }
+            if (dirtyState.isDirty() && !confirmDiscard())
+            {
+                suppressSelection = true;
+                table.getSelectionModel().select(oldRow);
+                suppressSelection = false;
+                return;
+            }
+            loadRowIntoForm(newRow);
+        });
+
+        VBox tableRegion = new VBox(6, new Label("Posting accounts"), table);
+        tableRegion.setMinHeight(0.0);
+        VBox.setVgrow(table, Priority.ALWAYS);
+        ScrollPane editorScroll = new ScrollPane(editorForm);
+        editorScroll.setId("chartOfAccountsEditorScroll");
+        editorScroll.setFitToWidth(true);
+        editorScroll.setMinHeight(0.0);
+        editorScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        editorScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        SplitPane split = new SplitPane(tableRegion, editorScroll);
+        split.setId("chartOfAccountsWorkspaceSplit");
+        split.setOrientation(Orientation.VERTICAL);
+        split.setDividerPositions(0.62);
+        CompanySplitPaneStateBinder.bind(split, "chart-of-accounts-workspace", 0.62);
+        root.setCenter(split);
 
         clearFormForNew();
         reload();
@@ -97,8 +135,11 @@ public class ChartOfAccountsPanel implements AppPanel
     @Override
     public void onNew()
     {
-        clearFormForNew();
-        status.setText("Create mode: enter account details and click Save.");
+        if (!dirtyState.isDirty() || confirmDiscard())
+        {
+            clearFormForNew();
+            status.setText("Create mode: enter account details and click Save.");
+        }
     }
 
     private Node buildEditorForm()
@@ -129,6 +170,11 @@ public class ChartOfAccountsPanel implements AppPanel
         form.add(parentCodeField, 3, row);
         row++;
         form.add(activeField, 0, row, 2, 1);
+        for (Node field : java.util.List.of(
+                codeField, nameField, typeField, balanceField, subtypeField, parentCodeField))
+        {
+            GridPane.setHgrow(field, Priority.ALWAYS);
+        }
 
         return form;
     }
@@ -147,6 +193,7 @@ public class ChartOfAccountsPanel implements AppPanel
         subtypeField.setValue(row.getSubtype());
         parentCodeField.setText(row.getParent() == null ? "" : row.getParent().getCode());
         status.setText("Edit mode for account " + row.getCode() + ".");
+        dirtyState.markClean();
     }
 
     private void clearFormForNew()
@@ -159,6 +206,7 @@ public class ChartOfAccountsPanel implements AppPanel
         subtypeField.getSelectionModel().clearSelection();
         parentCodeField.clear();
         activeField.setSelected(true);
+        dirtyState.markClean();
     }
 
     private void saveForm()
@@ -174,6 +222,7 @@ public class ChartOfAccountsPanel implements AppPanel
                     parentCodeField.getText(),
                     activeField.isSelected());
             status.setText("Saved account " + codeField.getText().trim() + ".");
+            dirtyState.markClean();
             reload();
         }
         catch (RuntimeException ex)
@@ -260,5 +309,40 @@ public class ChartOfAccountsPanel implements AppPanel
                 status.setText(formatStatus("Failed to load accounts: " + UiErrors.safeMessage(ex)));
                 refresh.setDisable(false);
             });
+    }
+
+    private FormState formSnapshot()
+    {
+        return readFormStateForTests();
+    }
+
+    private void reloadWithDiscardProtection()
+    {
+        if (!dirtyState.isDirty() || confirmDiscard())
+        {
+            clearFormForNew();
+            reload();
+        }
+    }
+
+    private boolean confirmDiscard()
+    {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle("Discard account edits");
+        confirmation.setHeaderText("Discard unsaved Chart of Accounts changes?");
+        confirmation.setContentText("Choose Cancel to remain in the current editor.");
+        return confirmation.showAndWait().filter(ButtonType.OK::equals).isPresent();
+    }
+
+    @Override
+    public void onSave()
+    {
+        saveForm();
+    }
+
+    @Override
+    public boolean hasUnsavedChanges()
+    {
+        return dirtyState.isDirty();
     }
 }
