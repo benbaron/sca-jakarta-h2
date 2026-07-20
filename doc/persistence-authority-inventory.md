@@ -1,6 +1,6 @@
 # Model and persistence authority inventory
 
-Status: P00 inventory of current main, updated through P13-S2 typed diagnostics and database-recovery command ownership. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
+Status: P00 inventory of current main, updated through P14-S1 production table-state authority and route coverage. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
 
 ## Current persistence map
 
@@ -20,7 +20,7 @@ Status: P00 inventory of current main, updated through P13-S2 typed diagnostics 
 | Fixed assets/depreciation | `FixedAsset` and `FixedAssetDepreciationRun` JPA entities with V55 tables; depreciation runs create canonical `Txn` rows | yes for P08-S1 asset records and completed depreciation runs | old asset/depreciation text sidecars removed from production paths | later hardening: richer disposal/impairment workflows, visual polish, and reports |
 | Inventory/supplies | `InventoryItem` and `InventoryMovement` JPA entities with V56 tables; movement records reserve a nullable canonical `Txn` link | yes for P09-S1 item records and movement history | old inventory text runbook removed from production paths | later hardening: financially relevant movement-to-ledger automation and reports |
 | Audit/approval | `AuditEvent` is factual JPA audit history; `ApprovalAuditRecord` remains a legacy approval-oriented repository/panel | yes for both stored record types | legacy approval terminology conflicts with product decision outside Period Close | P12 should rename/scope the remaining approval audit surface |
-| Preferences/app state | `FileAppStateStore`, `UserAppStateStore`, session state, company UI preference/state tables | mixed; company display state is H2, shell state remains sidecar/user file | shell preferences are not fully company-scoped | P12 |
+| Preferences/app state | `FileAppStateStore`, `UserAppStateStore`, session state, company UI preference/state tables, production `CompanyTableStateBinder` | mixed; all production table order/width/sort state and company display state are H2, while shell state remains a user file | shell-only preferences are not fully company-scoped; Banking and Inventory Java Preferences table stores were removed in P14-S1 | preserve the H2 company boundary while P14 completes panel-specific layout/format/dirty-state repairs |
 | Former Import/Export Jobs function | panel, route, navigation destination, enum identifier, and `UiWorkspaceDataStore` generic job list removed in P13-S1 | no active generic job store remains | none; domain-specific import, banking, reconciliation, diagnostic, and audit facts remain in their owning models | do not reintroduce generic job tracking |
 | Diagnostics and database recovery | `DiagnosticsQueryService.Report`, `DatabaseSessionController`, and typed `DatabaseRecoveryCommand` dispatch | H2 remains authoritative for datasource/account/fund facts; runtime/session values are factual context only | diagnostics are queried on demand and are not persisted as jobs; a failed connection does not replace the selected database path | keep recovery explicit and non-destructive; selected path changes only after successful service composition |
 
@@ -66,6 +66,13 @@ Status: P00 inventory of current main, updated through P13-S2 typed diagnostics 
 - `MultiCompanyState` contains only active codes confirmed in the current H2 database. Missing and inactive recent codes are discarded rather than materialized as companies.
 - Open production workspaces are recreated after an active-company change so cached formatting, layout ownership, and company context do not remain bound to the prior company.
 - No hard-delete company operation is exposed. Existing foreign keys to company-owned banking, reconciliation, asset, inventory, tax, and role records remain intact.
+
+## Production table-state authority
+
+- `PanelFactory` applies `CompanyTableStateBinder` to every canonical production panel root.
+- Column order, width, sort direction, and sort priority are stored by active company and stable panel/table keys in `company_ui_state`.
+- Journal, Funds, and Company Admin keep their existing richer H2 layout binders and mark their tables as already owned so the shared boundary does not attach a second writer.
+- Banking and Inventory no longer use `java.util.prefs.Preferences` for table layout. Recent user-machine state is not migrated because H2 company rows are the authoritative boundary.
 
 ## Budget model authority
 
@@ -113,6 +120,6 @@ Status: P00 inventory of current main, updated through P13-S2 typed diagnostics 
 
 ## Sidecar/static stores to eliminate or confine
 
-- `UiWorkspaceDataStore`: bank transactions and import/export jobs remain sidecar/static session lists.
+- `UiWorkspaceDataStore`: bank transactions remain a sidecar/static session list pending their owning bank-review workflow.
 - Unified Journal draft state: acceptable only as unsaved UI state; accepted headers, lines, and supplemental details must be written through `TransactionEntryService` to H2.
 - Legacy period-close run artifacts: compatibility-only; production close state and factual history belong to `period_close_range`/`period_close_event` and `AuditEvent`.

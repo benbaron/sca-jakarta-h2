@@ -1,12 +1,12 @@
 ---
-plan_version: 57
+plan_version: 58
 active_phase: P14
 active_slice: P14-S1
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P14-S1-production-ui-compliance-foundation
-active_pull_request: pending
-active_head: 62d0a8408dd482296d5a80736c7a31cba4cae7b1
-next_action: "Open the P14-S1 draft PR, then add production-shell route coverage and shared H2 company-owned table-state compliance support before repairing panel-specific layout, formatting, and dirty-state gaps in later P14 slices."
+active_pull_request: 181
+active_head: 6c5e2f5bbe02098679deba90769824c40fc264bc
+next_action: "Owner desktop-validate PR #181 across representative table-bearing destinations; if accepted, mark it ready and merge it, then start P14-S2 from the resulting current main on a fresh branch and draft PR."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Open the P14-S1 draft PR, then add production-shell route coverage
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision starts P14-S1 from current main and records the full production-panel audit against `doc/ui_design_rules.md` as a bounded multi-slice hardening program.
+This revision records P14-S1 implementation and green production-route validation in draft PR #181, leaving desktop verification and merge before P14-S2 begins.
 
 ## 2. Status values
 
@@ -533,11 +533,13 @@ Audit findings from current main:
 
 ### P14-S1 — Production UI compliance foundation and route smoke
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P14-S1-production-ui-compliance-foundation`
-Pull request: pending draft creation.
+Pull request: draft PR #181.
 Base head: `62d0a8408dd482296d5a80736c7a31cba4cae7b1`
+Implementation head: `6c5e2f5bbe02098679deba90769824c40fc264bc`
+Validation: Maven PR Tests run `29716315784` passed, including the complete established headless suite and focused Xvfb production-route/table-state compliance tests.
 
 Required inspection:
 
@@ -551,7 +553,8 @@ Planned deliverables:
 - Enumerate and open every canonical production destination through the production workspace composition, while confirming compatibility aliases reuse their canonical destination and eliminated destinations remain absent.
 - Add one reusable H2-backed company-owned table-state helper for column order, widths, sort direction, and sort priority; do not add another preferences sidecar.
 - Add production-root compliance guardrails that can enumerate every table and detect constrained policies, non-sortable/non-resizable/non-reorderable columns, and missing registered company-state ownership.
-- Convert a small representative set of panels to the shared helper to prove the boundary; later slices apply it with panel-specific layout and formatting repairs.
+- Apply the shared helper at `PanelFactory` so every production table receives the common contract, while preserving the richer H2 owners already used by Journal, Funds, and Company Admin.
+- Remove Banking and Inventory Java Preferences table stores so production table layout has only the H2 company-state authority.
 - Update governing inventories, run the full Maven PR Tests workflow, and leave the slice VERIFYING until desktop validation and merge.
 
 Out of scope:
@@ -560,7 +563,7 @@ Out of scope:
 
 Next exact action:
 
-- Open the draft PR, complete required inspection, and implement production route/compliance coverage plus the shared H2 company-owned table-state boundary.
+- Desktop-validate PR #181 by opening representative table-bearing destinations, resizing/reordering/sorting columns, restarting, and confirming state remains company-specific; then mark ready and merge if accepted.
 
 ### P14-S2 — Core editor form layout and dirty-state compliance
 
