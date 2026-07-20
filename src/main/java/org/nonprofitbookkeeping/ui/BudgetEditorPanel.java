@@ -4,14 +4,18 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.BudgetCategory;
@@ -35,6 +39,8 @@ public class BudgetEditorPanel implements AppPanel
     private final TableView<CategoryBudgetRow> table = new TableView<>();
     private final Label status = new Label();
     private final TextField amountField = new TextField();
+    private final FormDirtyTracker dirtyState;
+    private boolean suppressSelection;
     private BudgetPlanView currentPlan;
 
     public BudgetEditorPanel()
@@ -49,7 +55,7 @@ public class BudgetEditorPanel implements AppPanel
 
         Button refresh = new Button("Refresh Budget");
         refresh.setId("budgetEditorRefreshButton");
-        refresh.setOnAction(e -> reload());
+        refresh.setOnAction(e -> reloadWithDiscardProtection());
         Button saveTarget = new Button("Save Draft Amount");
         saveTarget.setId("budgetEditorSaveDraftAmountButton");
         saveTarget.setOnAction(e -> saveTarget());
@@ -61,7 +67,8 @@ public class BudgetEditorPanel implements AppPanel
         status.setId("budgetEditorStatusLabel");
         amountField.setId("budgetEditorAmountField");
         amountField.setPromptText("Budget amount");
-        root.setTop(new VBox(6, title, new HBox(8, refresh, new Label("Amount"), amountField, saveTarget, activate), status, new Separator()));
+        root.setTop(new VBox(6, title, new HBox(8, refresh, activate), status, new Separator()));
+        dirtyState = new FormDirtyTracker(this::formSnapshot);
 
         TableColumn<CategoryBudgetRow, String> code = new TableColumn<>("Category");
         code.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().categoryCode()));
@@ -74,19 +81,42 @@ public class BudgetEditorPanel implements AppPanel
         table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         table.setPlaceholder(new Label("No active budget categories are available."));
         table.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
-            if (newV != null)
+            if (suppressSelection || newV == null)
             {
-                amountField.setText(newV.budgetAmount().toPlainString());
+                return;
             }
+            if (dirtyState.isDirty() && !confirmDiscard())
+            {
+                suppressSelection = true;
+                table.getSelectionModel().select(oldV);
+                suppressSelection = false;
+                return;
+            }
+            amountField.setText(newV.budgetAmount().toPlainString());
+            dirtyState.markClean();
         });
 
         Label details = new Label("Select a row, enter an amount, save the draft amount, then activate the budget version when ready.");
         details.setId("budgetEditorWorkflowHint");
         details.setWrapText(true);
-        SplitPane splitPane = new SplitPane(table, details);
+        GridPane editor = new GridPane();
+        editor.setHgap(8);
+        editor.setVgap(8);
+        editor.setPadding(new Insets(8));
+        editor.addRow(0, new Label("Budget amount"), amountField, saveTarget);
+        editor.add(details, 0, 1, 3, 1);
+        ScrollPane editorScroll = new ScrollPane(editor);
+        editorScroll.setId("budgetEditorScroll");
+        editorScroll.setFitToWidth(true);
+        editorScroll.setMinHeight(0.0);
+        editorScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        editorScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        SplitPane splitPane = new SplitPane(table, editorScroll);
         splitPane.setId("budgetEditorSplitPane");
         splitPane.setOrientation(Orientation.VERTICAL);
-        splitPane.setDividerPositions(0.82);
+        splitPane.setDividerPositions(0.72);
+        table.setMinHeight(0.0);
+        CompanySplitPaneStateBinder.bind(splitPane, "budget-editor-workspace", 0.72);
         root.setCenter(splitPane);
         reload();
     }
@@ -149,6 +179,7 @@ public class BudgetEditorPanel implements AppPanel
             return UiServiceRegistry.budgetPlan().replaceDraftLines(draft.id(), commands);
         }, plan -> {
             currentPlan = plan;
+            dirtyState.markClean();
             status.setText("Saved draft budget amount for category " + selected.categoryCode() + ".");
             reload();
         }, ex -> status.setText("Could not save budget amount: " + UiErrors.safeMessage(ex)));
@@ -167,6 +198,11 @@ public class BudgetEditorPanel implements AppPanel
 
     private void activatePlan()
     {
+        if (dirtyState.isDirty())
+        {
+            status.setText("Save or discard the edited budget amount before activating the version.");
+            return;
+        }
         if (currentPlan == null)
         {
             status.setText("Load or save a draft budget before activation.");
@@ -206,4 +242,41 @@ public class BudgetEditorPanel implements AppPanel
 
     @Override public String title() { return "Budget Editor"; }
     @Override public Node root() { return root; }
+    @Override public void onSave() { saveTarget(); }
+    @Override public boolean hasUnsavedChanges() { return dirtyState.isDirty(); }
+
+    private BudgetFormSnapshot formSnapshot()
+    {
+        CategoryBudgetRow selected = table.getSelectionModel().getSelectedItem();
+        return new BudgetFormSnapshot(selected == null ? null : selected.categoryId(), amountField.getText());
+    }
+
+    private void reloadWithDiscardProtection()
+    {
+        if (!dirtyState.isDirty() || confirmDiscard())
+        {
+            table.getSelectionModel().clearSelection();
+            amountField.clear();
+            dirtyState.markClean();
+            reload();
+        }
+    }
+
+    private boolean confirmDiscard()
+    {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle("Discard budget edit");
+        confirmation.setHeaderText("Discard the unsaved budget amount?");
+        confirmation.setContentText("Choose Cancel to remain on the selected budget category.");
+        return confirmation.showAndWait().filter(ButtonType.OK::equals).isPresent();
+    }
+
+    private record BudgetFormSnapshot(Long categoryId, String amount)
+    {
+    }
+
+    void setAmountForTests(String value)
+    {
+        amountField.setText(value);
+    }
 }

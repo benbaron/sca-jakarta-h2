@@ -19,7 +19,9 @@ class BankingPanelSourceTest
         assertTrue(source.contains("split.setOrientation(Orientation.VERTICAL)"));
         assertTrue(source.contains("Financial institutions"));
         assertTrue(source.contains("Configured bank accounts"));
-        assertTrue(source.contains("VBox.setVgrow(banks, Priority.ALWAYS)"));
-        assertTrue(source.contains("VBox.setVgrow(bankAccounts, Priority.ALWAYS)"));
+        assertTrue(source.contains("bankingInstitutionsSplit"));
+        assertTrue(source.contains("bankingAccountsSplit"));
+        assertTrue(source.contains("VBox.setVgrow(table, Priority.ALWAYS)"));
+        assertTrue(source.contains("CompanySplitPaneStateBinder.bind"));
     }
 }

@@ -3,12 +3,17 @@ package org.nonprofitbookkeeping.ui;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
@@ -17,6 +22,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 import org.nonprofitbookkeeping.model.Account;
@@ -48,7 +54,9 @@ public class AssetsRegisterPanel implements AppPanel
     private final TextField openingAccumulatedDepreciation = new TextField("0.00");
     private final TextArea notes = new TextArea();
     private final Label status = new Label();
+    private final FormDirtyTracker dirtyState;
     private Long selectedAssetId;
+    private boolean suppressSelection;
 
     public AssetsRegisterPanel()
     {
@@ -57,17 +65,33 @@ public class AssetsRegisterPanel implements AppPanel
         title.getStyleClass().add("panel-title");
 
         Button refresh = new Button("Refresh");
-        refresh.setOnAction(e -> reload());
+        refresh.setOnAction(e -> reloadWithDiscardProtection());
         Button newAsset = new Button("New Asset");
-        newAsset.setOnAction(e -> clearForm());
+        newAsset.setOnAction(e -> onNew());
         Button save = new Button("Save Asset");
         save.setOnAction(e -> saveAsset());
         HBox actions = new HBox(8, refresh, newAsset, save);
 
         root.setTop(new VBox(6, title, actions, status, new Separator()));
-        root.setCenter(new VBox(8, buildForm(), table));
         configureTable();
         configureChoices();
+        dirtyState = new FormDirtyTracker(this::formSnapshot);
+        VBox tableRegion = new VBox(6, new Label("Fixed assets"), table);
+        tableRegion.setMinHeight(0.0);
+        VBox.setVgrow(table, Priority.ALWAYS);
+        ScrollPane editorScroll = new ScrollPane(buildForm());
+        editorScroll.setId("assetRegisterEditorScroll");
+        editorScroll.setFitToWidth(true);
+        editorScroll.setMinHeight(0.0);
+        editorScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        editorScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        SplitPane split = new SplitPane(tableRegion, editorScroll);
+        split.setId("assetRegisterWorkspaceSplit");
+        split.setOrientation(Orientation.VERTICAL);
+        split.setDividerPositions(0.55);
+        CompanySplitPaneStateBinder.bind(split, "asset-register-workspace", 0.55);
+        root.setCenter(split);
+        clearForm();
         reload();
     }
 
@@ -102,6 +126,13 @@ public class AssetsRegisterPanel implements AppPanel
         notes.setPrefRowCount(2);
         form.add(new Label("Notes"), 0, row);
         form.add(notes, 1, row);
+        for (Node field : java.util.List.of(
+                name, assetAccount, accumulatedDepreciationAccount, depreciationExpenseAccount,
+                fund, acquisitionDate, acquisitionCost, salvageValue, usefulLifeMonths,
+                openingAccumulatedDepreciation, statusChoice, notes))
+        {
+            GridPane.setHgrow(field, Priority.ALWAYS);
+        }
         return form;
     }
 
@@ -118,7 +149,20 @@ public class AssetsRegisterPanel implements AppPanel
         addColumn("Book Value", "currentBookValue", 110);
         addColumn("Next Dep.", "nextDepreciationAmount", 110);
         addColumn("Status", "status", 100);
-        table.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) -> fillForm(selected));
+        table.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) -> {
+            if (suppressSelection || selected == null)
+            {
+                return;
+            }
+            if (dirtyState.isDirty() && !confirmDiscard())
+            {
+                suppressSelection = true;
+                table.getSelectionModel().select(old);
+                suppressSelection = false;
+                return;
+            }
+            fillForm(selected);
+        });
     }
 
     private void addColumn(String title, String property, double width)
@@ -206,6 +250,7 @@ public class AssetsRegisterPanel implements AppPanel
                     ? UiServiceRegistry.fixedAssets().create(command)
                     : UiServiceRegistry.fixedAssets().update(selectedAssetId, command);
             selectedAssetId = saved.id();
+            dirtyState.markClean();
             reload();
             status.setText("Saved fixed asset: " + saved.name());
         }
@@ -253,6 +298,7 @@ public class AssetsRegisterPanel implements AppPanel
         selectAccountById(accumulatedDepreciationAccount, asset.accumulatedDepreciationAccountId());
         selectAccountById(depreciationExpenseAccount, asset.depreciationExpenseAccountId());
         selectFundById(fund, asset.fundId());
+        dirtyState.markClean();
     }
 
     private void clearForm()
@@ -268,6 +314,44 @@ public class AssetsRegisterPanel implements AppPanel
         usefulLifeMonths.getSelectionModel().select(Integer.valueOf(60));
         table.getSelectionModel().clearSelection();
         status.setText("Ready to enter a new fixed asset.");
+        dirtyState.markClean();
+    }
+
+    private AssetFormSnapshot formSnapshot()
+    {
+        return new AssetFormSnapshot(
+                name.getText(), selectedId(assetAccount), selectedId(accumulatedDepreciationAccount),
+                selectedId(depreciationExpenseAccount), selectedId(fund), acquisitionDate.getValue(),
+                acquisitionCost.getText(), salvageValue.getText(), usefulLifeMonths.getValue(),
+                openingAccumulatedDepreciation.getText(), statusChoice.getValue(), notes.getText());
+    }
+
+    private static Long selectedId(ComboBox<?> box)
+    {
+        Object value = box.getValue();
+        if (value instanceof Account account)
+        {
+            return account.getId();
+        }
+        return value instanceof Fund selectedFund ? selectedFund.getId() : null;
+    }
+
+    private void reloadWithDiscardProtection()
+    {
+        if (!dirtyState.isDirty() || confirmDiscard())
+        {
+            clearForm();
+            reload();
+        }
+    }
+
+    private boolean confirmDiscard()
+    {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle("Discard asset edits");
+        confirmation.setHeaderText("Discard unsaved Asset Register changes?");
+        confirmation.setContentText("Choose Cancel to remain in the current editor.");
+        return confirmation.showAndWait().filter(ButtonType.OK::equals).isPresent();
     }
 
     private static <T> T requireSelected(ComboBox<T> comboBox, String label)
@@ -318,6 +402,30 @@ public class AssetsRegisterPanel implements AppPanel
     {
     }
 
+    void setNameForTests(String value)
+    {
+        name.setText(value);
+    }
+
     @Override public String title() { return "Asset Register"; }
     @Override public Node root() { return root; }
+    @Override public void onNew() { if (!dirtyState.isDirty() || confirmDiscard()) clearForm(); }
+    @Override public void onSave() { saveAsset(); }
+    @Override public boolean hasUnsavedChanges() { return dirtyState.isDirty(); }
+
+    private record AssetFormSnapshot(
+            String name,
+            Long assetAccountId,
+            Long accumulatedDepreciationAccountId,
+            Long depreciationExpenseAccountId,
+            Long fundId,
+            LocalDate acquisitionDate,
+            String acquisitionCost,
+            String salvageValue,
+            Integer usefulLifeMonths,
+            String openingAccumulatedDepreciation,
+            FixedAsset.Status status,
+            String notes)
+    {
+    }
 }

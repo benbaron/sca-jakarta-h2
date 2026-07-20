@@ -3,11 +3,16 @@ package org.nonprofitbookkeeping.ui;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableColumn;
@@ -16,6 +21,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.AppRole;
 import org.nonprofitbookkeeping.model.AppUser;
@@ -40,9 +46,14 @@ public class UserAdminPanel implements AppPanel
     private final ComboBox<String> assignUser = new ComboBox<>();
     private final ComboBox<String> assignCompany = new ComboBox<>();
     private final ComboBox<String> assignRole = new ComboBox<>();
+    private final FormDirtyTracker userDirty;
+    private final FormDirtyTracker assignmentDirty;
+    private boolean suppressUserSelection;
 
     public UserAdminPanel()
     {
+        userDirty = new FormDirtyTracker(this::userSnapshot);
+        assignmentDirty = new FormDirtyTracker(this::assignmentSnapshot);
         build();
         refresh();
     }
@@ -54,7 +65,7 @@ public class UserAdminPanel implements AppPanel
         Label help = new Label("Manage application users, roles, and company-specific role assignments. Authentication enforcement is a later slice.");
         help.setWrapText(true);
         Button refresh = new Button("Refresh");
-        refresh.setOnAction(e -> refresh());
+        refresh.setOnAction(e -> refreshWithDiscardProtection());
         Button saveUser = new Button("Save User");
         saveUser.setOnAction(e -> saveUser());
         Button assign = new Button("Assign Role");
@@ -78,6 +89,9 @@ public class UserAdminPanel implements AppPanel
         userForm.addRow(r++, new Label("Email"), email);
         userForm.add(active, 1, r++);
         active.setSelected(true);
+        GridPane.setHgrow(username, Priority.ALWAYS);
+        GridPane.setHgrow(displayName, Priority.ALWAYS);
+        GridPane.setHgrow(email, Priority.ALWAYS);
 
         GridPane assignForm = new GridPane();
         assignForm.setHgap(8);
@@ -87,15 +101,34 @@ public class UserAdminPanel implements AppPanel
         assignForm.addRow(ar++, new Label("User"), assignUser);
         assignForm.addRow(ar++, new Label("Company"), assignCompany);
         assignForm.addRow(ar++, new Label("Role"), assignRole);
+        GridPane.setHgrow(assignUser, Priority.ALWAYS);
+        GridPane.setHgrow(assignCompany, Priority.ALWAYS);
+        GridPane.setHgrow(assignRole, Priority.ALWAYS);
 
         users.getSelectionModel().selectedItemProperty().addListener((obs, old, next) -> {
-            if (next != null) populate(next);
+            if (suppressUserSelection || next == null)
+            {
+                return;
+            }
+            if (userDirty.isDirty() && !confirmDiscard("user"))
+            {
+                suppressUserSelection = true;
+                users.getSelectionModel().select(old);
+                suppressUserSelection = false;
+                return;
+            }
+            populate(next);
         });
 
         TabPane tabs = new TabPane();
-        tabs.getTabs().add(tab("Users", new VBox(8, userForm, users)));
-        tabs.getTabs().add(tab("Roles", roles));
-        tabs.getTabs().add(tab("Company Assignments", new VBox(8, assignForm, assignments)));
+        tabs.getTabs().add(tab("Users", tableEditorSplit(
+                "userAdminUsersSplit", "Users", users, userForm, "user-admin-users")));
+        VBox rolesRegion = new VBox(6, new Label("Roles"), roles);
+        rolesRegion.setMinHeight(0.0);
+        VBox.setVgrow(roles, Priority.ALWAYS);
+        tabs.getTabs().add(tab("Roles", rolesRegion));
+        tabs.getTabs().add(tab("Company Assignments", tableEditorSplit(
+                "userAdminAssignmentsSplit", "Company assignments", assignments, assignForm, "user-admin-assignments")));
         tabs.getTabs().add(tab("Authentication", new Label("Password hashing, login policy, and local/external authentication are intentionally deferred to a later security slice.")));
         root.setCenter(tabs);
     }
@@ -116,7 +149,7 @@ public class UserAdminPanel implements AppPanel
                 col("Email", AppUser::getEmail),
                 col("Active", u -> String.valueOf(u.isActive()))
         );
-        users.setMinHeight(280);
+        users.setMinHeight(0.0);
     }
 
     private void configureRolesTable()
@@ -127,7 +160,7 @@ public class UserAdminPanel implements AppPanel
                 col("Name", AppRole::getName),
                 col("Description", AppRole::getDescription)
         );
-        roles.setMinHeight(280);
+        roles.setMinHeight(0.0);
     }
 
     private void configureAssignmentsTable()
@@ -139,7 +172,7 @@ public class UserAdminPanel implements AppPanel
                 col("Role", a -> a.getRole().getCode()),
                 col("Active", a -> String.valueOf(a.isActive()))
         );
-        assignments.setMinHeight(280);
+        assignments.setMinHeight(0.0);
     }
 
     private <T> TableColumn<T, String> col(String title, java.util.function.Function<T, String> extractor)
@@ -157,6 +190,7 @@ public class UserAdminPanel implements AppPanel
         displayName.setText(user.getDisplayName());
         email.setText(nullToBlank(user.getEmail()));
         active.setSelected(user.isActive());
+        userDirty.markClean();
     }
 
     private void refresh()
@@ -178,6 +212,8 @@ public class UserAdminPanel implements AppPanel
                 users.getSelectionModel().select(0);
             }
             status.setText("Loaded " + userRows.size() + " user(s), " + assignmentRows.size() + " assignment(s).");
+            userDirty.markClean();
+            assignmentDirty.markClean();
         }
         catch (RuntimeException ex)
         {
@@ -190,6 +226,7 @@ public class UserAdminPanel implements AppPanel
         try
         {
             AppUser saved = UiServiceRegistry.userAdmin().upsertUser(username.getText(), displayName.getText(), email.getText(), active.isSelected());
+            userDirty.markClean();
             status.setText("Saved user " + saved.getUsername() + ".");
             refresh();
         }
@@ -204,6 +241,7 @@ public class UserAdminPanel implements AppPanel
         try
         {
             UserCompanyRole assignment = UiServiceRegistry.userAdmin().assignRole(assignUser.getValue(), assignCompany.getValue(), assignRole.getValue());
+            assignmentDirty.markClean();
             status.setText("Assigned " + assignment.getRole().getCode() + " to " + assignment.getUser().getUsername() + " for " + assignment.getCompany().getCode() + ".");
             refresh();
         }
@@ -220,5 +258,82 @@ public class UserAdminPanel implements AppPanel
 
     @Override public String title() { return "User Admin"; }
     @Override public Node root() { return root; }
-    @Override public void onSave() { saveUser(); }
+    @Override public void onSave() { if (userDirty.isDirty()) saveUser(); else if (assignmentDirty.isDirty()) assignRole(); else saveUser(); }
+    @Override public void onNew() { if (!userDirty.isDirty() || confirmDiscard("user")) clearUserForm(); }
+    @Override public boolean hasUnsavedChanges() { return userDirty.isDirty() || assignmentDirty.isDirty(); }
+
+    private Node tableEditorSplit(String id,
+                                  String tableLabel,
+                                  TableView<?> table,
+                                  Node editor,
+                                  String stateKey)
+    {
+        VBox tableRegion = new VBox(6, new Label(tableLabel), table);
+        tableRegion.setMinHeight(0.0);
+        VBox.setVgrow(table, Priority.ALWAYS);
+        ScrollPane editorScroll = new ScrollPane(editor);
+        editorScroll.setFitToWidth(true);
+        editorScroll.setMinHeight(0.0);
+        editorScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        editorScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        SplitPane split = new SplitPane(tableRegion, editorScroll);
+        split.setId(id);
+        split.setOrientation(Orientation.VERTICAL);
+        split.setDividerPositions(0.65);
+        CompanySplitPaneStateBinder.bind(split, stateKey, 0.65);
+        return split;
+    }
+
+    private UserSnapshot userSnapshot()
+    {
+        return new UserSnapshot(username.getText(), displayName.getText(), email.getText(), active.isSelected());
+    }
+
+    private AssignmentSnapshot assignmentSnapshot()
+    {
+        return new AssignmentSnapshot(assignUser.getValue(), assignCompany.getValue(), assignRole.getValue());
+    }
+
+    private void clearUserForm()
+    {
+        suppressUserSelection = true;
+        users.getSelectionModel().clearSelection();
+        suppressUserSelection = false;
+        username.clear();
+        displayName.clear();
+        email.clear();
+        active.setSelected(true);
+        userDirty.markClean();
+        status.setText("Ready to create a user.");
+    }
+
+    private void refreshWithDiscardProtection()
+    {
+        if (!hasUnsavedChanges() || confirmDiscard("user or assignment"))
+        {
+            refresh();
+        }
+    }
+
+    private boolean confirmDiscard(String editor)
+    {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle("Discard administration edits");
+        confirmation.setHeaderText("Discard unsaved " + editor + " changes?");
+        confirmation.setContentText("Choose Cancel to remain in User Admin.");
+        return confirmation.showAndWait().filter(ButtonType.OK::equals).isPresent();
+    }
+
+    private record UserSnapshot(String username, String displayName, String email, boolean active)
+    {
+    }
+
+    private record AssignmentSnapshot(String user, String company, String role)
+    {
+    }
+
+    void setUsernameForTests(String value)
+    {
+        username.setText(value);
+    }
 }
