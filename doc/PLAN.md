@@ -1,12 +1,12 @@
 ---
-plan_version: 61
+plan_version: 62
 active_phase: P14
 active_slice: P14-S3
 active_status: IN_PROGRESS
 active_branch: codex/P14-S3-financial-view-formatting-compliance
-active_pull_request: pending
-active_head: pending
-next_action: "Open the required draft PR for P14-S3 from current main, record its exact PR and head, then inspect the scoped financial views against the governing UI rules before implementation."
+active_pull_request: 183
+active_head: df737cc9d498e1fa0222b4989ae1d0fcadca4715
+next_action: "Inspect every P14-S3 panel, its current money/date rendering and split/scroll layout, relevant tests, and the governing UI documents; record the exact compliance gaps before implementation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Open the required draft PR for P14-S3 from current main, record it
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records merged and owner-verified P14-S2 as DONE and activates P14-S3 from the resulting current main; implementation remains gated on opening its draft PR and completing focused inspection.
+This revision records merged and owner-verified P14-S2 as DONE and activates P14-S3 in draft PR #183 from the resulting current main; implementation begins with focused source, test, and governing-document inspection.
 
 ## 2. Status values
 
@@ -612,8 +612,9 @@ Next exact action:
 Status: IN_PROGRESS.
 
 Branch: `codex/P14-S3-financial-view-formatting-compliance`
-Pull request: pending draft PR.
+Pull request: draft PR #183.
 Base head: `96993c9a5c143dbd617ba6ac7ec5c1c0026ad980`
+Activation head: `df737cc9d498e1fa0222b4989ae1d0fcadca4715`
 
 Planned scope:
 
@@ -622,7 +623,7 @@ Planned scope:
 
 Next exact action:
 
-- Open the required draft PR, record its exact number and activation head, then inspect every scoped panel, test, and governing UI rule before changing production behavior.
+- Inspect every scoped panel, its source/behavior tests, active-company money/date formatting paths, and split/scroll layout against the governing UI rules; record exact gaps before implementation.
 
 ### P14-S4 — Help, production desktop sweep, and final compliance closure
 
