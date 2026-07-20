@@ -257,9 +257,15 @@ final class CompanyTableStateBinder
                             column.setSortType(pieces.length > 1 && "DESC".equals(pieces[1])
                                     ? TableColumn.SortType.DESCENDING
                                     : TableColumn.SortType.ASCENDING);
-                            table.getSortOrder().add(column);
+                            addSortColumn(column);
                         });
             }
+        }
+
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        private void addSortColumn(TableColumn<?, ?> column)
+        {
+            ((TableView) table).getSortOrder().add((TableColumn) column);
         }
 
         private void queueSave()
