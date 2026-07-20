@@ -31,24 +31,31 @@ class ProductionPanelRouteComplianceTest
         session.setDatabaseSelection(new DatabaseSelectionState(database.toString(), List.of(database.toString())));
         session.setMultiCompany(new MultiCompanyState("DEFAULT", List.of("DEFAULT")));
         UiServiceRegistry.reconnectToDatabase(database);
+        FileAppStateStore stateStore = new FileAppStateStore(tempDir.resolve("production-ui-state.properties"));
+        stateStore.saveDatabaseSelection(session.databaseSelection());
+        stateStore.saveMultiCompany(session.multiCompany());
 
         try
         {
             FxTestSupport.onFx(() ->
             {
-                PanelFactory factory = new PanelFactory();
+                ProductionWorkspaceWindow window = new ProductionWorkspaceWindow(
+                        stateStore,
+                        UiServiceRegistry::reconnectToDatabase);
+                PanelFactory routeInventory = new PanelFactory();
                 Set<AppPanelId> canonicalRoutes = new LinkedHashSet<>();
-                factory.supportedPanelIds().stream()
+                routeInventory.supportedPanelIds().stream()
                         .map(AppPanelId::canonical)
                         .forEach(canonicalRoutes::add);
 
                 assertFalse(canonicalRoutes.isEmpty());
                 for (AppPanelId panelId : canonicalRoutes)
                 {
-                    AppPanel panel = factory.create(panelId);
-                    assertNotNull(panel.root(), panelId + " must create a production root.");
+                    window.openPanel(panelId);
+                    javafx.scene.Node root = window.panelHost().activeRoot();
+                    assertNotNull(root, panelId + " must create a production root.");
                     for (javafx.scene.control.TableView<?> table
-                            : CompanyTableStateBinder.findTables(panel.root()))
+                            : CompanyTableStateBinder.findTables(root))
                     {
                         assertTrue(CompanyTableStateBinder.isCompanyStateOwned(table),
                                 panelId + " / " + table.getId() + " must use company-owned H2 state.");
