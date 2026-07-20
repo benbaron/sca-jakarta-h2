@@ -4,9 +4,9 @@ active_phase: P14
 active_slice: P14-S2
 active_status: IN_PROGRESS
 active_branch: codex/P14-S2-core-editor-form-compliance
-active_pull_request: pending
-active_head: 9bbdda0ab7113df75bc0fd16705df7e8bd5c9c14
-next_action: "Open the P14-S2 draft PR, then inspect the seven editor/administration surfaces and implement coherent split-layout, scrolling, and dirty-state/discard protection without changing domain services."
+active_pull_request: 182
+active_head: 707078169c39f74e4f1169afa55e31dd8437aaaf
+next_action: "Inspect the seven P14-S2 editor/administration surfaces on current main, then implement coherent split-layout, scrolling, and dirty-state/discard protection in draft PR #182 without changing domain services."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -572,8 +572,9 @@ Next exact action:
 Status: IN_PROGRESS.
 
 Branch: `codex/P14-S2-core-editor-form-compliance`
-Pull request: pending draft creation.
+Pull request: draft PR #182.
 Base head: `9bbdda0ab7113df75bc0fd16705df7e8bd5c9c14`
+Activation head: `707078169c39f74e4f1169afa55e31dd8437aaaf`
 
 Required inspection:
 
@@ -590,7 +591,7 @@ Planned scope:
 
 Next exact action:
 
-- Open the draft PR before implementation, then establish the exact per-panel layout and dirty-state gaps from current main.
+- Establish the exact per-panel layout and dirty-state gaps from current main, then implement the bounded corrections in draft PR #182.
 
 ### P14-S3 — Financial view formatting and table-layout compliance
 
