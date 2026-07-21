@@ -1,12 +1,12 @@
 ---
-plan_version: 68
+plan_version: 69
 active_phase: P14
-active_slice: P14-S4
-active_status: VERIFYING
-active_branch: codex/P14-S4-help-desktop-compliance-closure
-active_pull_request: 184
-active_head: 3a6f5e4bcd2ecc1e8e9076d8ce661137e3fd7a1a
-next_action: "Owner perform the final laptop-width production desktop sweep on draft PR #184: verify Help scrolling/text/links and fallback status, canonical Destinations menu names, every navigation destination, sidebar collapse/resize, table/form scrolling, dividers, tooltips, formatting, dirty prompts, and company switching; merge only if accepted."
+active_slice: P14-C1
+active_status: IN_PROGRESS
+active_branch: codex/P14-C1-finalize-plan-ledger
+active_pull_request: pending
+active_head: pending
+next_action: "Open the documentation-only P14-C1 corrective PR from current main, record its exact PR/head, reconcile the merged and owner-verified P14-S4 ledger, run Maven PR Tests, and merge the closure."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Owner perform the final laptop-width production desktop sweep on d
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records merged and owner-verified P14-S3 as DONE and P14-S4 Help/smoke closure implementation with green Maven PR Tests in draft PR #184; only the final owner desktop sweep and merge remain.
+This revision records merged and owner-verified P14-S4 as DONE and activates documentation-only P14-C1 to reconcile the final phase ledger after PR #184 merged before the owner confirmation was recorded.
 
 ## 2. Status values
 
@@ -46,7 +46,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
-| P14 | End-to-end hardening | P03-P13 except eliminated P07 | IN_PROGRESS; P14-S4 active |
+| P14 | End-to-end hardening | P03-P13 except eliminated P07 | IN_PROGRESS; P14-C1 final ledger closure active |
 
 ## 4. Governing documents
 
@@ -506,7 +506,7 @@ Next exact action:
 # P14 — End-to-end hardening
 
 **Selector:** `PHASE=P14`
-**Status:** IN_PROGRESS; P14-S4 active
+**Status:** IN_PROGRESS; P14-C1 final ledger closure active
 **Depends on:** P03 through P13 except eliminated P07
 
 Purpose: harden the one production JavaFX/H2 application through cross-workspace lifecycle and regression coverage. P14 repairs defects exposed by end-to-end use; it does not absorb unfinished feature expansion owned by earlier domain phases.
@@ -638,14 +638,16 @@ Next exact action:
 
 ### P14-S4 — Help, production desktop sweep, and final compliance closure
 
-Status: VERIFYING.
+Status: DONE through merged PR #184 and owner desktop verification.
 
 Branch: `codex/P14-S4-help-desktop-compliance-closure`
-Pull request: draft PR #184.
+Pull request: #184, merged into `main` at `cf1c99788505b1cbb90bd92da1dcbc902af9a765`.
 Base head: `9e5edf02e7d85ae14f317435c0527788d2ec82f1`
 Activation head: `bffbe75ecb6e883dfcc6e909ec0104fe46c4d72b`
 Implementation head: `3a6f5e4bcd2ecc1e8e9076d8ce661137e3fd7a1a`
 Validation: Maven PR Tests run `29791007379` passed, including the complete established suite, exact all-destination production H2/Xvfb route smoke, alias reuse checks, and focused Help/menu/path guardrails.
+Final Maven PR Tests run `29791138579` passed on documentation head `c70b5c981c4ace9db9913e672f19375a8227d86e`.
+The owner completed and confirmed the final laptop-width production desktop sweep after merge, including Help, canonical destination names, all navigation routes, sidebars, scrolling, dividers, tooltips, formatting, dirty prompts, and company switching.
 
 Planned scope:
 
@@ -661,7 +663,24 @@ Completed implementation:
 
 Next exact action:
 
-- Owner perform the final laptop-width production desktop sweep on draft PR #184: verify Help scrolling/text/links and browser fallback, canonical Destinations menu names, every navigation destination, collapsed/resized sidebars, table/form scrolling, draggable divider restoration, tooltips, company formatting, dirty prompts, and company switching; merge only if accepted.
+- None; P14-S4 is DONE.
+
+### P14-C1 — Final plan-ledger reconciliation
+
+Status: IN_PROGRESS.
+
+Branch: `codex/P14-C1-finalize-plan-ledger`
+Pull request: pending documentation-only PR.
+Base head: `cf1c99788505b1cbb90bd92da1dcbc902af9a765`
+
+Purpose:
+
+- Record the owner-confirmed P14-S4 desktop sweep after product PR #184 merged with the slice still marked VERIFYING.
+- Mark P14-S4 and P14 DONE only through a fresh documentation-only PR from current main.
+
+Next exact action:
+
+- Open the documentation-only corrective PR, record its exact PR/head, run Maven PR Tests, then finalize and merge the P14 ledger closure.
 
 # P06 — Bank reconciliation and cleared-state comparison
 
