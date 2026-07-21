@@ -34,8 +34,6 @@ import org.nonprofitbookkeeping.service.InventoryMovementView;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.function.Function;
 
@@ -51,6 +49,7 @@ public class InventoryPanel implements AppPanel
     private final TableView<InventoryMovementView> movementTable = new TableView<>();
     private final Label status = new Label();
     private final Label editorTitle = new Label("Inventory Item");
+    private final CompanyUiFormat companyFormat = CompanyUiFormat.activeCompany();
 
     private final ComboBox<Account> inventoryAccount = new ComboBox<>();
     private final ComboBox<Fund> fund = new ComboBox<>();
@@ -86,6 +85,8 @@ public class InventoryPanel implements AppPanel
         configureMovementTable();
         configureListPanel();
         configureItemEditorPanel();
+        companyFormat.install(acquisitionDate);
+        companyFormat.install(movementDate);
         installFormatCorrection();
         installDirtyTracking();
         reload();
@@ -146,6 +147,8 @@ public class InventoryPanel implements AppPanel
         SplitPane split = new SplitPane(new VBox(6, new Label("Inventory Items"), itemTable), new VBox(6, new Label("Movement History"), movementTable));
         split.setOrientation(Orientation.VERTICAL);
         split.setDividerPositions(0.58);
+        split.setId("inventoryTablesSplit");
+        CompanySplitPaneStateBinder.bind(split, "inventory-tables", 0.58);
         VBox.setVgrow(itemTable, Priority.ALWAYS);
         VBox.setVgrow(movementTable, Priority.ALWAYS);
         VBox.setVgrow(split, Priority.ALWAYS);
@@ -530,7 +533,7 @@ public class InventoryPanel implements AppPanel
                 catch (RuntimeException ex)
                 {
                     markInvalid(picker);
-                    status.setText("Date fields need a valid date such as yyyy-mm-dd or m/d/yyyy.");
+                    status.setText("Date fields need a valid date using " + picker.getPromptText() + " ordering.");
                 }
             }
         });
@@ -661,15 +664,19 @@ public class InventoryPanel implements AppPanel
         node.getStyleClass().remove(INVALID_FIELD_STYLE);
     }
 
-    private static String formatMoney(BigDecimal value)
+    private String formatMoney(BigDecimal value)
     {
-        return value == null ? "" : "$" + value.setScale(2, RoundingMode.HALF_UP).toPlainString();
+        return value == null ? "" : companyFormat.formatMoney(value);
     }
 
-    private static BigDecimal parseMoney(String raw)
+    private BigDecimal parseMoney(String raw)
     {
-        String normalized = raw == null ? "" : raw.trim().replace("$", "").replace(",", "");
-        return normalized.isBlank() ? BigDecimal.ZERO : new BigDecimal(normalized).setScale(4, RoundingMode.HALF_UP);
+        BigDecimal parsed = companyFormat.parseMoney(raw);
+        if (parsed == null)
+        {
+            throw new IllegalArgumentException("Money amount is invalid.");
+        }
+        return parsed.setScale(4, RoundingMode.HALF_UP);
     }
 
     private static String formatQuantity(BigDecimal value)
@@ -683,35 +690,19 @@ public class InventoryPanel implements AppPanel
         return normalized.isBlank() ? BigDecimal.ZERO : new BigDecimal(normalized).setScale(4, RoundingMode.HALF_UP);
     }
 
-    private static String formatDate(LocalDate value)
+    private String formatDate(LocalDate value)
     {
-        return value == null ? "" : value.format(DateTimeFormatter.ISO_LOCAL_DATE);
+        return companyFormat.formatDate(value);
     }
 
-    private static LocalDate parseDate(String value)
+    private LocalDate parseDate(String value)
     {
-        if (value == null || value.isBlank())
+        LocalDate parsed = companyFormat.parseDate(value);
+        if (parsed == null && value != null && !value.isBlank())
         {
-            return null;
+            throw new IllegalArgumentException("Date must be valid.");
         }
-        String trimmed = value.trim();
-        for (DateTimeFormatter formatter : List.of(
-                DateTimeFormatter.ISO_LOCAL_DATE,
-                DateTimeFormatter.ofPattern("M/d/uuuu"),
-                DateTimeFormatter.ofPattern("M-d-uuuu"),
-                DateTimeFormatter.ofPattern("MM/dd/uuuu"),
-                DateTimeFormatter.ofPattern("MM-dd-uuuu")))
-        {
-            try
-            {
-                return LocalDate.parse(trimmed, formatter);
-            }
-            catch (DateTimeParseException ignored)
-            {
-                // Try the next accepted UI date format.
-            }
-        }
-        throw new IllegalArgumentException("Date must be valid.");
+        return parsed;
     }
 
     private static String activeCompanyCode()

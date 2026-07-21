@@ -7,6 +7,7 @@ import org.nonprofitbookkeeping.model.MoneyPrintFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -37,5 +38,15 @@ class CompanyUiFormatTest
         assertEquals(LocalDate.of(2026, 10, 7), mdy.parseDate("10/7/2026"));
         assertEquals(LocalDate.of(2026, 7, 10), mdy.parseDate("2026-07-10"));
         assertNull(dmy.parseDate("31/31/2026"));
+    }
+
+    @Test
+    void dateTimeFormattingKeepsCompanyDateOrdering()
+    {
+        CompanyUiFormat dmy = new CompanyUiFormat(new CompanyUiPreferences(
+                "£", MoneyPrintFormat.SYMBOL_PREFIX, DateDisplayFormat.DAY_MONTH_YEAR));
+
+        assertEquals("10/7/2026 14:05:06",
+                dmy.formatDateTime(LocalDateTime.of(2026, 7, 10, 14, 5, 6)));
     }
 }

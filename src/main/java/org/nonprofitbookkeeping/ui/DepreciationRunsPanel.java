@@ -2,11 +2,13 @@ package org.nonprofitbookkeeping.ui;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
@@ -27,6 +29,7 @@ public class DepreciationRunsPanel implements AppPanel
     private final DatePicker runDate = new DatePicker(LocalDate.now());
     private final TextField notes = new TextField();
     private final Label status = new Label();
+    private final CompanyUiFormat companyFormat = CompanyUiFormat.activeCompany();
 
     public DepreciationRunsPanel()
     {
@@ -43,7 +46,15 @@ public class DepreciationRunsPanel implements AppPanel
         root.setTop(new VBox(6, title, actions, status, new Separator()));
         configureAssetTable();
         configureRunTable();
-        root.setCenter(new VBox(8, new Label("Depreciation Basis"), assets, new Label("Completed Depreciation Runs"), runs));
+        VBox assetRegion = tableRegion("Depreciation Basis", assets);
+        VBox runRegion = tableRegion("Completed Depreciation Runs", runs);
+        SplitPane split = new SplitPane(assetRegion, runRegion);
+        split.setId("depreciationRunsSplit");
+        split.setOrientation(Orientation.VERTICAL);
+        split.setDividerPositions(0.55);
+        CompanySplitPaneStateBinder.bind(split, "depreciation-runs", 0.55);
+        root.setCenter(split);
+        companyFormat.install(runDate);
         reload();
     }
 
@@ -53,10 +64,10 @@ public class DepreciationRunsPanel implements AppPanel
         assets.setPlaceholder(new Label("No active fixed assets are available for depreciation."));
         assetColumn("Asset", a -> a.name(), 180);
         assetColumn("Asset Account", a -> a.assetAccountCode(), 120);
-        assetColumn("Cost", a -> a.acquisitionCost().toPlainString(), 110);
-        assetColumn("Accum. Dep.", a -> a.accumulatedDepreciation().toPlainString(), 110);
-        assetColumn("Book Value", a -> a.currentBookValue().toPlainString(), 110);
-        assetColumn("Next Dep.", a -> a.nextDepreciationAmount().toPlainString(), 110);
+        assetColumn("Cost", a -> companyFormat.formatMoney(a.acquisitionCost()), 110);
+        assetColumn("Accum. Dep.", a -> companyFormat.formatMoney(a.accumulatedDepreciation()), 110);
+        assetColumn("Book Value", a -> companyFormat.formatMoney(a.currentBookValue()), 110);
+        assetColumn("Next Dep.", a -> companyFormat.formatMoney(a.nextDepreciationAmount()), 110);
         assetColumn("Status", a -> a.status().name(), 100);
     }
 
@@ -64,9 +75,9 @@ public class DepreciationRunsPanel implements AppPanel
     {
         runs.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         runs.setPlaceholder(new Label("No depreciation runs have been recorded."));
-        runColumn("Run Date", r -> String.valueOf(r.runDate()), 110);
+        runColumn("Run Date", r -> companyFormat.formatDate(r.runDate()), 110);
         runColumn("Asset", DepreciationRunView::assetName, 180);
-        runColumn("Amount", r -> r.depreciationAmount().toPlainString(), 110);
+        runColumn("Amount", r -> companyFormat.formatMoney(r.depreciationAmount()), 110);
         runColumn("Txn", r -> String.valueOf(r.transactionId()), 90);
         runColumn("Notes", DepreciationRunView::notes, 180);
     }
@@ -93,6 +104,14 @@ public class DepreciationRunsPanel implements AppPanel
         column.setResizable(true);
         column.setReorderable(true);
         runs.getColumns().add(column);
+    }
+
+    private static VBox tableRegion(String title, TableView<?> table)
+    {
+        VBox region = new VBox(6, new Label(title), table);
+        region.setMinHeight(0.0);
+        VBox.setVgrow(table, javafx.scene.layout.Priority.ALWAYS);
+        return region;
     }
 
     private void reload()

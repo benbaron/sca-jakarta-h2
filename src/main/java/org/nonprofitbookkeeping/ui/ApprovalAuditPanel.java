@@ -25,9 +25,10 @@ import java.util.Locale;
  */
 public class ApprovalAuditPanel implements AppPanel
 {
+    private final CompanyUiFormat companyFormat = CompanyUiFormat.activeCompany();
     private final BorderPane root = new BorderPane();
     private final TableView<ApprovalAuditRecord> table = new TableView<>();
-    private final Label status = new Label("Load recent approval and audit records for the active company.");
+    private final Label status = new Label("Load factual audit history for the active company.");
     private final TextField workflowTypeFilter = new TextField();
     private final TextField decisionFilter = new TextField();
     private final TextField actorFilter = new TextField();
@@ -39,13 +40,15 @@ public class ApprovalAuditPanel implements AppPanel
     {
         root.setPadding(new Insets(8));
 
-        Label title = new Label("Approval Audit");
+        Label title = new Label("Audit History");
         title.getStyleClass().add("panel-title");
 
         workflowTypeFilter.setPromptText("Workflow type");
         decisionFilter.setPromptText("Decision");
         actorFilter.setPromptText("Actor");
         runIdFilter.setPromptText("Run ID");
+        companyFormat.install(fromDate);
+        companyFormat.install(toDate);
 
         Button apply = new Button("Apply Filters");
         apply.setOnAction(e -> reload());
@@ -92,7 +95,7 @@ public class ApprovalAuditPanel implements AppPanel
     @Override
     public String title()
     {
-        return "Approval Audit";
+        return "Audit History";
     }
 
     @Override
@@ -104,7 +107,7 @@ public class ApprovalAuditPanel implements AppPanel
     private void buildTable()
     {
         TableColumn<ApprovalAuditRecord, String> created = new TableColumn<>("Created");
-        created.setCellValueFactory(v -> new SimpleStringProperty(String.valueOf(v.getValue().createdAt())));
+        created.setCellValueFactory(v -> new SimpleStringProperty(companyFormat.formatDateTime(v.getValue().createdAt())));
         TableColumn<ApprovalAuditRecord, String> workflow = new TableColumn<>("Workflow");
         workflow.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().workflowType()));
         TableColumn<ApprovalAuditRecord, String> runId = new TableColumn<>("Run ID");
@@ -116,7 +119,7 @@ public class ApprovalAuditPanel implements AppPanel
         TableColumn<ApprovalAuditRecord, String> rationale = new TableColumn<>("Rationale");
         rationale.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().rationale()));
         table.getColumns().addAll(created, workflow, runId, decision, actor, rationale);
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
+        table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         table.setPlaceholder(new Label("No approval/audit records found for current filters."));
     }
 

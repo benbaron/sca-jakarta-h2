@@ -11,6 +11,9 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -22,6 +25,7 @@ import java.util.Set;
 /** Company-aware presentation and lenient editing support for money and dates. */
 public final class CompanyUiFormat implements FinancialReportDisplayFormat
 {
+    private static final DateTimeFormatter DISPLAY_TIME = DateTimeFormatter.ofPattern("HH:mm:ss", Locale.US);
     private final CompanyUiPreferences preferences;
     private final DecimalFormat numberFormat;
     private final DateTimeFormatter displayDateFormatter;
@@ -41,6 +45,14 @@ public final class CompanyUiFormat implements FinancialReportDisplayFormat
     public CompanyUiPreferences preferences()
     {
         return preferences;
+    }
+
+    /** Loads the display contract for the authoritative active company. */
+    public static CompanyUiFormat activeCompany()
+    {
+        String companyCode = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
+        String normalized = companyCode == null || companyCode.isBlank() ? "DEFAULT" : companyCode.trim();
+        return new CompanyUiFormat(UiServiceRegistry.companyUiPreferences().load(normalized));
     }
 
     @Override
@@ -109,6 +121,16 @@ public final class CompanyUiFormat implements FinancialReportDisplayFormat
     public String formatDate(LocalDate value)
     {
         return value == null ? "" : displayDateFormatter.format(value);
+    }
+
+    public String formatDateTime(LocalDateTime value)
+    {
+        return value == null ? "" : formatDate(value.toLocalDate()) + " " + DISPLAY_TIME.format(value.toLocalTime());
+    }
+
+    public String formatDateTime(Instant value)
+    {
+        return value == null ? "" : formatDateTime(LocalDateTime.ofInstant(value, ZoneId.systemDefault()));
     }
 
     public String normalizeDate(String value)

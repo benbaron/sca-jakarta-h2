@@ -19,6 +19,8 @@ import org.nonprofitbookkeeping.service.ImportExportOrchestrationService;
 import java.io.File;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 /**
@@ -26,6 +28,7 @@ import java.util.List;
  */
 public class BankTransactionsPanel implements AppPanel
 {
+    private final CompanyUiFormat companyFormat = CompanyUiFormat.activeCompany();
     private final BorderPane root = new BorderPane();
     private final TableView<BankTransactionRecord> table = new TableView<>();
     private final Label status = new Label("Imported bank transactions for the active session appear here.");
@@ -69,9 +72,9 @@ public class BankTransactionsPanel implements AppPanel
         TableColumn<BankTransactionRecord, String> fit = new TableColumn<>("FITID");
         fit.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().fitId()));
         TableColumn<BankTransactionRecord, String> posted = new TableColumn<>("Posted On");
-        posted.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().postedOn()));
+        posted.setCellValueFactory(v -> new SimpleStringProperty(formatPostedOn(v.getValue().postedOn())));
         TableColumn<BankTransactionRecord, String> amount = new TableColumn<>("Amount");
-        amount.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().amount().toPlainString()));
+        amount.setCellValueFactory(v -> new SimpleStringProperty(companyFormat.formatMoney(v.getValue().amount())));
         TableColumn<BankTransactionRecord, String> type = new TableColumn<>("Type");
         type.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().transactionType()));
         TableColumn<BankTransactionRecord, String> name = new TableColumn<>("Name");
@@ -80,7 +83,7 @@ public class BankTransactionsPanel implements AppPanel
         memo.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().memo()));
 
         table.getColumns().addAll(fit, posted, amount, type, name, memo);
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
+        table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         table.getSelectionModel().setCellSelectionEnabled(false);
         table.getSelectionModel().setSelectionMode(javafx.scene.control.SelectionMode.MULTIPLE);
         table.setPlaceholder(new Label("No bank transactions imported yet."));
@@ -101,7 +104,7 @@ public class BankTransactionsPanel implements AppPanel
             return;
         }
         DrillThroughCoordinator.openLedgerWithContext("Bank transaction drill-through: " + selected.get(0).fitId()
-                + " on " + LocalDate.now() + " (selected=" + selected.size() + ")");
+                + " on " + companyFormat.formatDate(LocalDate.now()) + " (selected=" + selected.size() + ")");
     }
 
     private void exportSelectedRows()
@@ -146,5 +149,27 @@ public class BankTransactionsPanel implements AppPanel
     private List<BankTransactionRecord> selectedRows()
     {
         return List.copyOf(table.getSelectionModel().getSelectedItems());
+    }
+
+    private String formatPostedOn(String value)
+    {
+        if (value == null || value.isBlank())
+        {
+            return "";
+        }
+        String candidate = value.trim();
+        try
+        {
+            if (candidate.length() >= 8 && candidate.substring(0, 8).chars().allMatch(Character::isDigit))
+            {
+                return companyFormat.formatDate(LocalDate.parse(candidate.substring(0, 8), DateTimeFormatter.BASIC_ISO_DATE));
+            }
+            LocalDate parsed = companyFormat.parseDate(candidate);
+            return parsed == null ? candidate : companyFormat.formatDate(parsed);
+        }
+        catch (DateTimeParseException ex)
+        {
+            return candidate;
+        }
     }
 }
