@@ -1,12 +1,12 @@
 ---
-plan_version: 69
+plan_version: 70
 active_phase: P14
 active_slice: P14-C1
-active_status: IN_PROGRESS
+active_status: DONE
 active_branch: codex/P14-C1-finalize-plan-ledger
-active_pull_request: pending
-active_head: pending
-next_action: "Open the documentation-only P14-C1 corrective PR from current main, record its exact PR/head, reconcile the merged and owner-verified P14-S4 ledger, run Maven PR Tests, and merge the closure."
+active_pull_request: 185
+active_head: b41544371165bbb2fdb45c1a7a764c320334c37e
+next_action: "None; P14 end-to-end hardening is complete after merging documentation-only corrective PR #185. Begin no new phase without an explicit plan amendment."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Open the documentation-only P14-C1 corrective PR from current main
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records merged and owner-verified P14-S4 as DONE and activates documentation-only P14-C1 to reconcile the final phase ledger after PR #184 merged before the owner confirmation was recorded.
+This revision records merged and owner-verified P14-S4 and documentation-only P14-C1 as DONE, completing P14 end-to-end hardening. No later phase is authorized by this plan.
 
 ## 2. Status values
 
@@ -46,7 +46,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
-| P14 | End-to-end hardening | P03-P13 except eliminated P07 | IN_PROGRESS; P14-C1 final ledger closure active |
+| P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 
 ## 4. Governing documents
 
@@ -506,7 +506,7 @@ Next exact action:
 # P14 — End-to-end hardening
 
 **Selector:** `PHASE=P14`
-**Status:** IN_PROGRESS; P14-C1 final ledger closure active
+**Status:** DONE through P14-S1, P14-S2, P14-S3, P14-S4, and documentation-only P14-C1
 **Depends on:** P03 through P13 except eliminated P07
 
 Purpose: harden the one production JavaFX/H2 application through cross-workspace lifecycle and regression coverage. P14 repairs defects exposed by end-to-end use; it does not absorb unfinished feature expansion owned by earlier domain phases.
@@ -667,20 +667,27 @@ Next exact action:
 
 ### P14-C1 — Final plan-ledger reconciliation
 
-Status: IN_PROGRESS.
+Status: DONE through documentation-only PR #185.
 
 Branch: `codex/P14-C1-finalize-plan-ledger`
-Pull request: pending documentation-only PR.
+Pull request: documentation-only PR #185.
 Base head: `cf1c99788505b1cbb90bd92da1dcbc902af9a765`
+Activation head: `b41544371165bbb2fdb45c1a7a764c320334c37e`
 
 Purpose:
 
 - Record the owner-confirmed P14-S4 desktop sweep after product PR #184 merged with the slice still marked VERIFYING.
 - Mark P14-S4 and P14 DONE only through a fresh documentation-only PR from current main.
 
+Completed deliverables:
+
+- Verified PR #184 merged at `cf1c99788505b1cbb90bd92da1dcbc902af9a765` after both Maven PR Tests runs passed.
+- Recorded the owner's final desktop acceptance of Help, navigation, sidebars, scrolling, dividers, tooltips, company formatting, dirty prompts, and company switching.
+- Reconciled the phase index, active front matter, P14 status, P14-S4 record, and next action without changing product code.
+
 Next exact action:
 
-- Open the documentation-only corrective PR, record its exact PR/head, run Maven PR Tests, then finalize and merge the P14 ledger closure.
+- None after PR #185 merges; P14 is DONE and no later phase is authorized without an explicit plan amendment.
 
 # P06 — Bank reconciliation and cleared-state comparison
 
