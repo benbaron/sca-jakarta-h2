@@ -1,12 +1,12 @@
 ---
-plan_version: 63
+plan_version: 64
 active_phase: P14
 active_slice: P14-S3
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P14-S3-financial-view-formatting-compliance
 active_pull_request: 183
-active_head: df737cc9d498e1fa0222b4989ae1d0fcadca4715
-next_action: "Publish the P14-S3 implementation, run the full Maven PR Tests workflow, fix every failure, then record the tested head and leave the slice VERIFYING for desktop validation."
+active_head: 6e4ddc45f64a50d5f48beeb16aa257c49b8cbfab
+next_action: "Owner desktop-validate draft PR #183 at laptop width: verify company-specific money/date display, horizontal draggable dividers and restart restoration, independent table scrolling, and the visible Audit History title; merge only if accepted."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Publish the P14-S3 implementation, run the full Maven PR Tests wor
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records merged and owner-verified P14-S2 as DONE and activates P14-S3 in draft PR #183 from the resulting current main; implementation begins with focused source, test, and governing-document inspection.
+This revision records merged and owner-verified P14-S2 as DONE and P14-S3 implementation with green Maven PR Tests in draft PR #183; P14-S3 remains VERIFYING for owner desktop validation and merge.
 
 ## 2. Status values
 
@@ -609,12 +609,14 @@ Next exact action:
 
 ### P14-S3 — Financial view formatting and table-layout compliance
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P14-S3-financial-view-formatting-compliance`
 Pull request: draft PR #183.
 Base head: `96993c9a5c143dbd617ba6ac7ec5c1c0026ad980`
 Activation head: `df737cc9d498e1fa0222b4989ae1d0fcadca4715`
+Implementation head: `6e4ddc45f64a50d5f48beeb16aa257c49b8cbfab`
+Validation: Maven PR Tests run `29789423476` passed, including the complete established suite, production-route Xvfb coverage, focused financial-view source guardrails, and company formatter behavior tests.
 
 Planned scope:
 
@@ -633,7 +635,7 @@ Completed implementation:
 
 Next exact action:
 
-- Publish the implementation to draft PR #183, run the full Maven PR Tests workflow, correct all failures, and record the final tested head before desktop handoff.
+- Owner desktop-validate draft PR #183 at laptop width: verify company-specific currency symbol/print format and date ordering, top/bottom horizontal dividers and restart restoration, independent table scrolling, and the visible Audit History title; merge only if accepted.
 
 ### P14-S4 — Help, production desktop sweep, and final compliance closure
 
