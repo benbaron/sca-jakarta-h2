@@ -330,11 +330,13 @@ public class ProductionWorkspaceWindow extends BorderPane
         Menu destinationsMenu = new Menu("Destinations");
         MenuItem dashboard = new MenuItem("Dashboard");
         dashboard.setOnAction(event -> openPanel(AppPanelId.DASHBOARD));
-        MenuItem ledger = new MenuItem("Ledger Register");
-        ledger.setOnAction(event -> openPanel(AppPanelId.LEDGER_REGISTER));
-        MenuItem transaction = new MenuItem("Transaction Editor");
-        transaction.setOnAction(event -> openPanel(AppPanelId.TXN_EDITOR));
-        destinationsMenu.getItems().addAll(dashboard, ledger, transaction);
+        MenuItem journal = new MenuItem("Journal");
+        journal.setOnAction(event -> openPanel(AppPanelId.JOURNAL_PANE));
+        MenuItem administration = new MenuItem("Administration");
+        administration.setOnAction(event -> openPanel(AppPanelId.SETTINGS));
+        MenuItem help = new MenuItem("Help");
+        help.setOnAction(event -> openPanel(AppPanelId.HELP));
+        destinationsMenu.getItems().addAll(dashboard, journal, administration, help);
 
         return new MenuBar(file, workspaceMenu, destinationsMenu, view);
     }
