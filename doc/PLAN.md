@@ -1,12 +1,12 @@
 ---
-plan_version: 65
+plan_version: 66
 active_phase: P14
 active_slice: P14-S4
 active_status: IN_PROGRESS
 active_branch: codex/P14-S4-help-desktop-compliance-closure
-active_pull_request: pending
-active_head: pending
-next_action: "Open the required draft PR for P14-S4 from current main, record its exact PR and head, then inspect Help, production all-destination smoke coverage, and residual UI-rule findings before implementation."
+active_pull_request: 184
+active_head: bffbe75ecb6e883dfcc6e909ec0104fe46c4d72b
+next_action: "Inspect Help content, production all-destination smoke/geometry coverage, and residual UI-rule findings; record exact gaps before implementing the final compliance closure."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Open the required draft PR for P14-S4 from current main, record it
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records merged and owner-verified P14-S3 as DONE and activates final hardening slice P14-S4 from the resulting current main; implementation remains gated on its draft PR and focused inspection.
+This revision records merged and owner-verified P14-S3 as DONE and activates final hardening slice P14-S4 in draft PR #184 from the resulting current main; implementation begins with focused Help, production-smoke, and residual-rule inspection.
 
 ## 2. Status values
 
@@ -644,8 +644,9 @@ Next exact action:
 Status: IN_PROGRESS.
 
 Branch: `codex/P14-S4-help-desktop-compliance-closure`
-Pull request: pending draft PR.
+Pull request: draft PR #184.
 Base head: `9e5edf02e7d85ae14f317435c0527788d2ec82f1`
+Activation head: `bffbe75ecb6e883dfcc6e909ec0104fe46c4d72b`
 
 Planned scope:
 
@@ -653,7 +654,7 @@ Planned scope:
 
 Next exact action:
 
-- Open the required draft PR, record its exact number and activation head, then inspect Help content, production route/smoke tests, and current residual UI-rule findings before changing production code.
+- Inspect Help content, production all-destination smoke/geometry tests, and current residual UI-rule findings; record exact gaps before changing production code.
 
 # P06 — Bank reconciliation and cleared-state comparison
 
