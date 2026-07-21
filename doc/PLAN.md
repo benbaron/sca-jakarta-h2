@@ -1,12 +1,12 @@
 ---
-plan_version: 70
-active_phase: P14
-active_slice: P14-C1
-active_status: DONE
-active_branch: codex/P14-C1-finalize-plan-ledger
-active_pull_request: 185
-active_head: b41544371165bbb2fdb45c1a7a764c320334c37e
-next_action: "None; P14 end-to-end hardening is complete after merging documentation-only corrective PR #185. Begin no new phase without an explicit plan amendment."
+plan_version: 71
+active_phase: P15
+active_slice: P15-S0
+active_status: IN_PROGRESS
+active_branch: codex/P15-S0-data-exchange-plan
+active_pull_request: pending
+active_head: pending
+next_action: "Review and merge the P15-S0 planning contract, then begin P15-S1 from the resulting current main on a fresh branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "None; P14 end-to-end hardening is complete after merging documenta
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records merged and owner-verified P14-S4 and documentation-only P14-C1 as DONE, completing P14 end-to-end hardening. No later phase is authorized by this plan.
+This revision records P14 as complete and activates documentation-only P15-S0 to govern versioned SCLX, Chart of Accounts JSON, database transfer, and OFX 2.x/QFX/CSV bank-record interchange.
 
 ## 2. Status values
 
@@ -47,6 +47,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
+| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S0 |
 
 ## 4. Governing documents
 
@@ -688,6 +689,264 @@ Completed deliverables:
 Next exact action:
 
 - None after PR #185 merges; P14 is DONE and no later phase is authorized without an explicit plan amendment.
+
+
+# P15 — Versioned data interchange and database transfer
+
+**Selector:** \`PHASE=P15\`  
+**Status:** IN_PROGRESS at documentation-only P15-S0  
+**Depends on:** P02, P05, P06, P12, P13, P14
+
+Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
+
+Established boundaries:
+
+- SCLX is active-company business-data interchange reconstructed from current canonical H2 authority; it is not a raw H2 backup.
+- Chart of Accounts JSON is an independently versioned chart-transfer format; it is not SCLX and does not contain transaction history.
+- Database backup/import is a separate whole-database administration workflow.
+- OFX 2.x, QFX, and bank CSV are single-account bank-statement interchange formats. They do not represent double-entry accounting and must not be advertised as complete ledger export.
+- Imported bank records become durable review facts in \`bank_import_batch\`, \`bank_statement_line\`, and \`import_issue\` before any explicit canonical transaction acceptance or reconciliation action.
+- SCLX bank sections preserve supported source statement metadata and match/reconciliation facts; OFX/QFX/CSV remain dedicated bank-statement entry and exit formats.
+- Every import has a non-mutating preview and validation result before commit. Blocking errors prevent all writes.
+- Every commit is atomic at its documented boundary and reports created, updated, skipped, warning, and error counts.
+- No workflow in P15 writes compatibility journal/open-item tables, serializes JPA entities directly, retains passwords, or revives generic durable job tracking.
+
+Required reading:
+
+- \`doc/interface-operation-matrix.md\`
+- \`doc/persistence-authority-inventory.md\`
+- \`doc/ui_design_rules.md\`
+- \`doc/ui/editor-guidelines.md\`
+- \`doc/requirements/requirements-clarification-overlay.md\`
+- \`doc/requirements/phase-remap-after-clarification.md\`
+- \`doc/accounting/ledger-authority.md\`
+- \`doc/accounting/transaction-lifecycle.md\`
+- \`doc/accounting/period-and-correction-policy.md\`
+- \`doc/banking/banking-and-reconciliation.md\`
+- \`doc/banking/import-and-reconciliation.md\`
+- \`doc/administration/company-lifecycle.md\`
+- \`doc/workflow/development-workflow.md\`
+- donor \`benbaron/NonprofitAccounting\` SCLX, COA, bank import/export, database administration, tests, and actual emitted fixtures as reference only
+
+Required inspection:
+
+- \`Company\`, \`ChartOfAccounts\`, \`Account\`, \`Txn\`, \`TxnSplit\`, \`Fund\`, \`BudgetCategory\`, \`Activity\`, \`Counterparty\`, \`Merchant\`, bank, asset, inventory, reconciliation, and audit entities and their company-ownership paths.
+- \`ImportExportOrchestrationService\`, \`ImportPreviewService\`, \`CoaCsvMapper\`, \`OfxQfxTransactionExtractor\`, \`BankDataEnvelopeRecognizer\`, \`BankImportNormalizationService\`, \`BankImportReviewService\`, \`ReconciliationComparisonService\`, canonical transaction services, and current export adapters.
+- \`ImportPreviewPanel\`, \`BankTransactionsPanel\`, \`BankingPanel\`, \`ChartOfAccountsPanel\`, production File menu, workspace lifecycle, dirty-state, progress, and company-owned UI-state composition.
+- Flyway migrations and tests for company ownership, accounts, canonical transactions, banking imports, reconciliation, fixed assets, inventory, period close, audit history, and database bootstrap/recovery.
+- Donor SCLX versions 1.0/1.2/1.3, COA JSON output, import modes/options/results, round-trip tests, and database-transfer behavior. Port behavior deliberately; do not copy donor sidecar repositories or alternate shell architecture.
+
+## P15-S0 — Interchange contract and donor fixtures
+
+Status: IN_PROGRESS
+
+Branch: \`codex/P15-S0-data-exchange-plan\`  
+Pull request: pending  
+Head: pending
+
+Purpose: freeze the governing contracts, compatibility fixtures, authority boundaries, and slice dependencies before implementation.
+
+Planned deliverables:
+
+- Add \`doc/data-exchange/sclx.md\`, \`doc/data-exchange/chart-of-accounts-json.md\`, \`doc/data-exchange/database-transfer.md\`, and \`doc/data-exchange/bank-statement-interchange.md\`.
+- Govern SCLX read compatibility for 1.0, 1.2, and 1.3 and deterministic SCLX 1.3 output.
+- Generate donor-produced COA JSON golden files and document the actual compatibility shape before implementing the new codec; do not rely on donor Javadoc where it differs from emitted JSON.
+- Freeze representative valid and invalid fixtures for SCLX, COA JSON, OFX 2.x XML, practical QFX variants, and normalized/mapped bank CSV.
+- Specify file-size, nesting-depth, entity-count, encoding, date, money, path, atomic-write, source-hash, and external-identity limits.
+- Specify preview-only, validate-only, commit-to-active-company, and create-new-database/company modes where applicable.
+- Specify AS_IS and explicit MAPPED account-reference behavior, generated balancing-line confirmation for incomplete SCLX transactions, conflict policies, unsupported fields, and result counts.
+- Audit direct and indirect company ownership. Record required nondestructive migrations before active-company SCLX export is allowed.
+- Decide the maintained OFX/QFX parser/writer boundary through fixtures and security tests. Support OFX 2.x XML and real-world QFX envelopes deliberately; do not depend on filename alone.
+- Define the normalized bank CSV profile and export schema, including transaction/posted dates, amount or debit/credit inputs, FITID/source ID, type, name/payee, memo, check/reference values, account identity, currency, and optional statement balances.
+- Update the interface matrix and persistence inventory.
+- Make no product-code, entity, service, migration, or JavaFX changes in this slice.
+
+Acceptance:
+
+- Each format has one documented authority, version policy, import/export scope, and error policy.
+- Golden fixtures prove the donor compatibility claims and the intended OFX/QFX/CSV boundary.
+- The plan identifies every prerequisite that would otherwise make active-company export ambiguous.
+- The generic Import/Export Jobs destination and generic durable job log remain eliminated.
+
+Next exact action:
+
+- Review and merge P15-S0, then begin P15-S1 from the resulting current \`main\`.
+
+## P15-S1 — Shared operation contract, company ownership, and external identity
+
+Status: BLOCKED until P15-S0 merges.
+
+Planned deliverables:
+
+- Add immutable shared preview, validation-message, confirmation, progress, operation-count, and result types used by SCLX, COA JSON, database transfer, and bank-statement exchange.
+- Preserve the four donor-established modes where meaningful: preview only, validate only, commit to active company, and create/import into a new database and company.
+- Add nondestructive company-ownership migrations only where the P15-S0 audit proves current active-company selection is ambiguous.
+- Backfill ownership deterministically, change global uniqueness to company-scoped uniqueness where required, and reject cross-company references at service boundaries.
+- Add durable interchange identity keyed by company, format, entity type, source system, and external ID. This is deduplication/traceability evidence, not a job queue.
+- Add migration-upgrade and multi-company-isolation tests.
+
+Acceptance:
+
+- Every record eligible for active-company SCLX export has an unambiguous authoritative owner.
+- Reimport can distinguish identical, new, and conflicting records without relying on local numeric primary keys.
+- Shared contracts remain independent of JavaFX and JPA entities.
+
+## P15-S2 — Whole-database backup, import-copy, validation, and recovery
+
+Status: BLOCKED until P15-S1 merges.
+
+Planned deliverables:
+
+- Implement consistent H2 backup through supported H2 backup/script facilities rather than copying an open \`.mv.db\` file.
+- Restore/import only into a new explicit target path by default, migrate and validate it, then offer a guarded database switch.
+- Require exclusive-access and backup confirmation for any repair/recovery action that could modify a database.
+- Display exact source, destination, backup, and validation-result paths.
+- Reuse current database-session, Dashboard recovery, diagnostics, and migration composition; do not create a second database controller.
+- Add failure-injection, source-equals-target, active-database overwrite, corrupt input, version migration, and round-trip tests.
+
+Acceptance:
+
+- A backup restored to a new database preserves every H2-backed company and record, including compatibility structures intentionally retained by current schema.
+- Failed validation never replaces or changes the active database.
+- Database transfer remains visibly separate from SCLX and COA JSON.
+
+## P15-S3 — Chart of Accounts JSON import and export
+
+Status: BLOCKED until P15-S1 merges.
+
+Planned deliverables:
+
+- Add DTO-based, deterministic, pretty-printed UTF-8 JSON; never serialize Hibernate entities.
+- Import the actual donor compatibility shape and export a documented independently versioned shape.
+- Preserve every donor field with a valid current-model equivalent, including account number/code, name, type, normal/increase side, parent, currency, opening balance, funds, and supplemental-detail kinds; warn on unsupported fields.
+- Support \`CREATE_NEW_CHART\`, \`MERGE_BY_CODE\`, and explicit \`MAP_CODES\`; missing input accounts never delete or deactivate local accounts.
+- Preview and validate duplicate codes, parent references, cycles, type/subtype/normal-balance compatibility, posting state, dates, and history restrictions before any write.
+- Treat opening-balance or history-sensitive structural changes as financial changes requiring explicit supported policy and confirmation.
+- Persist parent-before-child in one transaction and make repeated identical import idempotent.
+- Add Import JSON and Export JSON actions to the existing Chart of Accounts workspace with dirty-state and desktop design-rule compliance.
+
+Acceptance:
+
+- Export/import into a clean company produces a semantically equivalent chart.
+- Blocking errors or injected late failure produce no partial chart.
+- Merge does not delete absent accounts and identical reimport makes no changes.
+
+## P15-S4 — SCLX model, parser, and deterministic active-company export
+
+Status: BLOCKED until P15-S1 and P15-S3 merge.
+
+Planned deliverables:
+
+- Adapt donor SCLX document/parser/options/result concepts while keeping DTOs independent of JPA entities.
+- Read SCLX 1.0, 1.2, and 1.3; write deterministic SCLX 1.3.
+- Export the active company, chart/accounts, funds, budgets, supported counterparties/activities, canonical transactions/splits, supplemental details, bank configuration and reviewed statement facts, reconciliation facts, fixed assets/depreciation, inventory/movements, period-close facts, and factual audit history where the governed format supports them.
+- Put supported application-specific facts not expressible in standard SCLX under a documented \`extensions.scaJakartaH2\` namespace or list them explicitly as excluded.
+- Preserve supported OFX provenance such as FITID, transaction type, transaction/posted dates, check/reference numbers, payee/name, memo, payee ID, correction references/actions, and statement/account metadata.
+- Exclude authentication material, UI state, Flyway/H2 internals, filesystem paths, raw attachments, compatibility journal/open-item authority, eliminated Schedules, and generic job history.
+- Validate references and balanced canonical transactions before writing through a temporary file and atomic move; report counts, warnings, exclusions, and SHA-256 content hash.
+
+Acceptance:
+
+- Export is reconstructed from current canonical H2 data, so later application edits appear.
+- Deterministic exports from unchanged data compare equal except explicitly documented envelope metadata.
+- No local numeric primary key is used as a portable identity.
+
+## P15-S5 — SCLX preview, mapping, and transactional import
+
+Status: BLOCKED until P15-S4 merges.
+
+Planned deliverables:
+
+- Preview format/version, entity counts, references, external IDs, account/fund mappings, duplicates, unsupported sections, transaction balance, closed-period conflicts, reconciliation protections, and target-company conflicts without changing H2.
+- Support donor-established \`AS_IS\` and explicit \`MAPPED\` account reference modes.
+- For single-sided or unbalanced source transactions, require an explicitly selected active posting cash account and display every generated balancing line before commit.
+- Skip zero-value lines and transactions with no posting lines with explicit warnings and counts.
+- Import masters before dependent history, then route financial records through transaction-aware canonical services inside one caller-owned transaction.
+- Default to a new or empty target company; reject accidental populated-company merge until explicit conflict rules are implemented and tested.
+- Preserve external identity for idempotent reimport; skip identical records and require explicit resolution for conflicts.
+- Write one factual audit event with source name/hash, version, mappings, target, counts, warnings, and user after successful commit.
+- Roll back the entire documented commit boundary on any failure.
+
+Acceptance:
+
+- Export/import/export is semantically equivalent for every supported section.
+- Identical second import creates no duplicates.
+- Closed-period and completed-reconciliation protections remain authoritative.
+- No compatibility journal table or donor parallel SCLX repository is written.
+
+## P15-S6 — OFX 2.x/QFX and bank CSV import to durable review
+
+Status: BLOCKED until P15-S0 and P15-S1 merge.
+
+Purpose: replace temporary/session bank-transaction staging with a complete, company-scoped, configured-bank-account import and review path.
+
+Planned deliverables:
+
+- Parse OFX 2.x XML and governed real-world QFX envelopes, including XML and explicitly supported SGML/header variants established by P15-S0 fixtures.
+- Reject malformed, encrypted, unsupported-message-set, multi-account-ambiguous, oversized, or entity-expansion input safely and explain the blocking reason.
+- Add mapped CSV import with previewable column profiles for common amount or debit/credit layouts, delimiter/quote handling, header mapping, date format, sign convention, currency, and account selection.
+- Persist reusable CSV mapping profiles in H2 per company and configured bank account only after explicit save; do not use Java Preferences or a sidecar file.
+- Normalize source identifiers, transaction and posted dates, amount, type, payee/name, memo, check/reference data, currency, bank/account IDs, and correction metadata before durable review.
+- Require an explicit active configured bank account; validate OFX/QFX bank/account identity against it and require a visible override decision for a non-blocking mismatch.
+- Reuse and extend \`BankImportNormalizationService\` and \`BankImportReviewService\` so one import creates one atomic \`bank_import_batch\`, its \`bank_statement_line\` rows, and \`import_issue\` facts.
+- Detect exact duplicates by stable source ID/FITID and probable duplicates by deterministic normalized fingerprint; show both in preview and never silently discard a conflict.
+- Wire Import Preview, Banking, and Bank Transactions to the durable review authority and remove \`UiWorkspaceDataStore.bankTransactions\` when no production consumer remains.
+- Do not create canonical \`Txn\`/\`TxnSplit\` rows merely because a bank statement was imported; acceptance/matching remains an explicit banking workflow.
+- Add parser golden files, malformed/security cases, multi-company isolation, duplicate/correction, CSV profile, rollback, JavaFX behavior, and desktop tests.
+
+Acceptance:
+
+- OFX 2.x, QFX, and CSV imports produce equivalent normalized statement facts for equivalent inputs.
+- Reimport is idempotent by source identity/fingerprint and reports skipped/conflicting rows.
+- A late failure leaves no partial batch, statement line, issue, or saved CSV profile.
+- Restart and company switching preserve only authoritative company-owned review state.
+
+## P15-S7 — OFX 2.x/QFX and normalized bank CSV export
+
+Status: BLOCKED until P15-S6 merges.
+
+Purpose: export portable single-account bank-statement records without presenting OFX/QFX as a double-entry ledger export.
+
+Planned deliverables:
+
+- Export one explicitly selected configured bank account and date range from authoritative durable reviewed statement lines.
+- Write standards-conformant OFX 2.x XML and a governed QFX profile with deterministic ordering, account/currency/statement metadata, transaction identifiers, dates, amounts, types, payee/name, memo, check/reference fields, supported correction metadata, and opening/closing balances when authoritative.
+- Preserve imported FITID/source identity where valid. When a required export identifier is absent, derive a deterministic namespaced export ID and report that derivation without changing accounting authority.
+- Export normalized UTF-8 CSV with a frozen round-trip schema and RFC 4180 quoting. Include source ID/FITID, transaction date, posted date, amount, debit/credit indicator, type, payee/name, memo, check/reference, currency, configured bank-account identity, batch/source provenance, duplicate/review state, and supported match identifiers.
+- Make normalized CSV export directly re-importable through P15-S6 without losing governed statement facts.
+- Keep canonical double-entry ledger export in SCLX/report exports; do not flatten the whole ledger into OFX/QFX.
+- Write through a temporary file and atomic move, with counts, warnings, source scope, and SHA-256 hash.
+- Add OFX/QFX schema/profile validation, CSV round-trip, deterministic export, correction, balance-availability, empty-range, and cross-company-isolation tests.
+- Add explicit Export OFX 2.x, Export QFX, and Export Bank CSV actions to the existing Banking/Bank Transactions workflow; do not add an Import/Export Jobs destination.
+
+Acceptance:
+
+- Export/import round trips preserve every governed normalized bank-statement field.
+- Export never includes another company or bank account.
+- OFX/QFX output represents bank-statement activity only and is labeled accordingly.
+- Missing optional source metadata produces disclosed warnings rather than fabricated values.
+
+## P15-S8 — Integrated JavaFX workflow and end-to-end verification
+
+Status: BLOCKED until P15-S2 through P15-S7 merge.
+
+Planned deliverables:
+
+- Keep SCLX preview/validation/mapping/commit in Import Preview and expose Export Active Company to SCLX from the File menu.
+- Keep COA JSON actions in Chart of Accounts.
+- Keep OFX/QFX/CSV import, review, and export in Banking, Bank Transactions, and Import Preview as defined by the operation matrix.
+- Keep whole-database backup/import/validate/recovery under database administration and existing recovery composition.
+- Run long operations asynchronously with bounded progress and cancellation before commit; write factual audit history only for completed durable operations.
+- Apply current scrolling, split-pane, tooltip, formatting, dirty-state, company-owned state, and guarded company/database switching rules.
+- Add all-format golden-file, unsupported-version, malformed/oversized, conflict, rollback, semantic round-trip, idempotency, multi-company, closed-period, reconciliation-protection, production-route, and laptop-width desktop coverage.
+- Run full \`mvn clean verify\` through the PR workflow and complete owner desktop acceptance.
+
+Acceptance:
+
+- Each operation is labeled by exact scope and target; “database,” “active company,” “Chart of Accounts,” and “bank statement” are never used interchangeably.
+- No generic Import/Export Jobs destination or generic durable job log exists.
+- Every enabled action has a real service-backed operation and a preview/confirmation path appropriate to its risk.
+
 
 # P06 — Bank reconciliation and cleared-state comparison
 
