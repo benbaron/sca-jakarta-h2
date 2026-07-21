@@ -1,12 +1,12 @@
 ---
-plan_version: 67
+plan_version: 68
 active_phase: P14
 active_slice: P14-S4
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P14-S4-help-desktop-compliance-closure
 active_pull_request: 184
-active_head: bffbe75ecb6e883dfcc6e909ec0104fe46c4d72b
-next_action: "Publish the P14-S4 implementation, run the full Maven PR Tests workflow, fix every failure, then record the tested head and leave the slice VERIFYING for the final desktop sweep."
+active_head: 3a6f5e4bcd2ecc1e8e9076d8ce661137e3fd7a1a
+next_action: "Owner perform the final laptop-width production desktop sweep on draft PR #184: verify Help scrolling/text/links and fallback status, canonical Destinations menu names, every navigation destination, sidebar collapse/resize, table/form scrolling, dividers, tooltips, formatting, dirty prompts, and company switching; merge only if accepted."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Publish the P14-S4 implementation, run the full Maven PR Tests wor
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records merged and owner-verified P14-S3 as DONE and P14-S4 Help/smoke closure implementation in draft PR #184; automated validation and the final owner desktop sweep remain.
+This revision records merged and owner-verified P14-S3 as DONE and P14-S4 Help/smoke closure implementation with green Maven PR Tests in draft PR #184; only the final owner desktop sweep and merge remain.
 
 ## 2. Status values
 
@@ -638,12 +638,14 @@ Next exact action:
 
 ### P14-S4 — Help, production desktop sweep, and final compliance closure
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P14-S4-help-desktop-compliance-closure`
 Pull request: draft PR #184.
 Base head: `9e5edf02e7d85ae14f317435c0527788d2ec82f1`
 Activation head: `bffbe75ecb6e883dfcc6e909ec0104fe46c4d72b`
+Implementation head: `3a6f5e4bcd2ecc1e8e9076d8ce661137e3fd7a1a`
+Validation: Maven PR Tests run `29791007379` passed, including the complete established suite, exact all-destination production H2/Xvfb route smoke, alias reuse checks, and focused Help/menu/path guardrails.
 
 Planned scope:
 
@@ -659,7 +661,7 @@ Completed implementation:
 
 Next exact action:
 
-- Publish the implementation to draft PR #184, run the full Maven PR Tests workflow, correct all failures, and record the tested head before the final desktop handoff.
+- Owner perform the final laptop-width production desktop sweep on draft PR #184: verify Help scrolling/text/links and browser fallback, canonical Destinations menu names, every navigation destination, collapsed/resized sidebars, table/form scrolling, draggable divider restoration, tooltips, company formatting, dirty prompts, and company switching; merge only if accepted.
 
 # P06 — Bank reconciliation and cleared-state comparison
 
