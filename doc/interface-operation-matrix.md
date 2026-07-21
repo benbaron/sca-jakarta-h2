@@ -1,6 +1,6 @@
 # Interface operation matrix
 
-Status: P00 inventory of current main, updated through P14-S3 financial-view formatting and layout compliance. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
+Status: P00 inventory of current main, updated through P14-S4 Help and production-route compliance closure. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
 
 ## Scope and evidence
 
@@ -39,6 +39,8 @@ P14-S2 adds table-over-editor split regions, independently scrollable forms, com
 
 P14-S3 routes visible money and dates in Dashboard, Budget vs Actual, Depreciation Runs, Inventory, Reconciliation, Period Close, Audit History, and Bank Transactions through active-company `CompanyUiFormat`. It removes scoped constrained table policies and adds H2 company-owned divider state to the multi-region financial views, including top/bottom table regions for Depreciation Runs and Import Preview. Import Preview has no money/date columns in its current COA staging surface, but its tables and split layout follow the shared contract.
 
+P14-S4 aligns Help and the production Destinations menu with the canonical navigation contract. Help is independently scrollable, links only to authoritative existing repository paths, and reports browser-launch failures with a copyable address. The production route smoke now requires the exact canonical destination set, excludes Schedules, and proves Ledger Register/Transaction Editor compatibility requests reuse the one Journal workspace.
+
 ## Panel matrix
 
 | `AppPanelId` | Panel/class | Visible controls | Query source | Write source | Survives restart | H2 authoritative | Dependencies | Simulated/placeholder/sidecar behavior | Missing work | Owning phase |
@@ -62,7 +64,7 @@ P14-S3 routes visible money and dates in Dashboard, Budget vs Actual, Depreciati
 | `FUNDS` | `FundsPanel` | table, fields, fund type/status selectors, save/new | fund lookup/admin services | `FundAdminService` | yes | yes | JPA fund model | real admin write path exists | composition/validation hardening | P12 |
 | `SETTINGS` | `AdministrationPanel` hosting `SettingsPanel`, `CompanyAdminPanel`, and `UserAdminPanel` | Preferences, Company Admin, and User Admin tabs; H2 company New/Save/Select Active/Refresh; panel-local save/new delegation | `UiSessionState`, `CompanyUiPreferencesService`, `CompanyAdminService`, `CompanySessionController`, `UserAdminService` | application/company preference state; stable-ID H2 company profile/lifecycle writes; validated active-company selection; user and company-role assignment writes | yes | yes for company, user, role assignment, and company UI preference data | existing Administration hub, H2 `company`, production workspace context, company UI state | tax/chart/reporting placeholders removed; bank-account maintenance remains in Banking; later specialized editors must be vertically complete before exposure | desktop validation of lifecycle rules, toolbar switching, dirty-state prompt, and company-owned layout restoration | P12 |
 | `DIAGNOSTICS` | `DiagnosticsPanel` | Refresh Diagnostics; duplicate account/fund drill-through | typed `DiagnosticsQueryService.Report` over datasource, account/fund services, and active workspace facts | navigation only; database recovery uses typed commands on the Dashboard fallback | current runtime facts are queried on demand | H2 is authoritative for datasource/account/fund facts | lifecycle-owned service composition, `DatabaseSessionController`, typed `DatabaseRecoveryCommand` | no automatic repair and no generic job tracking; failures return an explicit unavailable report | P13-S2 desktop verification complete; retain in P14 route/lifecycle smoke coverage | P13/P14 |
-| `HELP` | `HelpPanel` | static guidance text | static content | none | n/a | n/a | none | no write behavior | keep aligned with current workflows | P12/P14 |
+| `HELP` | `HelpPanel` | scrollable current-workflow guidance and authoritative project links | static current navigation plus existing repository documents | external browser navigation only | n/a | n/a | canonical navigation contract and repository paths | browser-unavailable state exposes the copyable URL; no stale/nonexistent guide links | final P14 desktop sweep | P14 |
 
 ## Panels without `AppPanelId`
 

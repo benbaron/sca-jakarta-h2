@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -48,7 +49,13 @@ class ProductionPanelRouteComplianceTest
                         .map(AppPanelId::canonical)
                         .forEach(canonicalRoutes::add);
 
-                assertFalse(canonicalRoutes.isEmpty());
+                EnumSet<AppPanelId> expectedRoutes = EnumSet.allOf(AppPanelId.class);
+                expectedRoutes.remove(AppPanelId.LEDGER_REGISTER);
+                expectedRoutes.remove(AppPanelId.TXN_EDITOR);
+                expectedRoutes.remove(AppPanelId.SCHEDULES);
+                assertEquals(expectedRoutes, canonicalRoutes,
+                        "Production smoke must enumerate every canonical destination exactly once.");
+                assertFalse(routeInventory.supportedPanelIds().contains(AppPanelId.SCHEDULES));
                 for (AppPanelId panelId : canonicalRoutes)
                 {
                     window.openPanel(panelId);
@@ -75,6 +82,16 @@ class ProductionPanelRouteComplianceTest
                         AppPanelId.JOURNAL_PANE,
                         AppPanelId.SETTINGS,
                         AppPanelId.HELP)));
+
+                window.openPanel(AppPanelId.JOURNAL_PANE);
+                javafx.scene.Node journalRoot = window.panelHost().activeRoot();
+                int openCount = window.panelHost().openPanelCount();
+                window.openPanel(AppPanelId.LEDGER_REGISTER);
+                assertSame(journalRoot, window.panelHost().activeRoot());
+                assertEquals(openCount, window.panelHost().openPanelCount());
+                window.openPanel(AppPanelId.TXN_EDITOR);
+                assertSame(journalRoot, window.panelHost().activeRoot());
+                assertEquals(openCount, window.panelHost().openPanelCount());
                 return null;
             });
         }

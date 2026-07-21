@@ -1,12 +1,12 @@
 ---
-plan_version: 66
+plan_version: 67
 active_phase: P14
 active_slice: P14-S4
 active_status: IN_PROGRESS
 active_branch: codex/P14-S4-help-desktop-compliance-closure
 active_pull_request: 184
 active_head: bffbe75ecb6e883dfcc6e909ec0104fe46c4d72b
-next_action: "Inspect Help content, production all-destination smoke/geometry coverage, and residual UI-rule findings; record exact gaps before implementing the final compliance closure."
+next_action: "Publish the P14-S4 implementation, run the full Maven PR Tests workflow, fix every failure, then record the tested head and leave the slice VERIFYING for the final desktop sweep."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Inspect Help content, production all-destination smoke/geometry co
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records merged and owner-verified P14-S3 as DONE and activates final hardening slice P14-S4 in draft PR #184 from the resulting current main; implementation begins with focused Help, production-smoke, and residual-rule inspection.
+This revision records merged and owner-verified P14-S3 as DONE and P14-S4 Help/smoke closure implementation in draft PR #184; automated validation and the final owner desktop sweep remain.
 
 ## 2. Status values
 
@@ -521,15 +521,12 @@ Required reading:
 - `doc/requirements/phase-remap-after-clarification.md`
 - `doc/workflow/development-workflow.md`
 
-Audit findings from current main:
+Original P14 audit findings and closure ownership:
 
-- Only the production Journal compliance wrapper, Funds, and Company Admin fully satisfy the strict table layout/state/formatting/editor contract on current main.
-- Twelve table-bearing production panels have no saved column order, width, or sort state; Banking and Inventory use Java Preferences rather than company-owned H2 UI state.
-- Dashboard, Approval Audit, Bank Transactions, and Import Preview explicitly use constrained table policies on six tables.
-- Dashboard, Banking, Budget, Assets, Depreciation, Inventory, Reconciliation, Period Close, Approval Audit, and Bank Transactions contain money/date presentation that bypasses active-company `CompanyUiFormat` rules.
-- Assets, Banking, Budget Editor, Chart of Accounts, Preferences, and User Admin do not report unsaved editor changes; `AdministrationPanel` checks only the selected child tab and can miss dirty state in another administration tab.
-- Existing `ProductionDesignRulesTestFxTest` launches legacy `MainWindow`, is `DISPLAY`-gated, and does not prove compliance in the `MainApp` / `ProductionWorkspaceWindow` composition.
-- Help contains stale navigation text and repository/document links.
+- P14-S1 closed universal table interaction/state authority and production-route smoke gaps.
+- P14-S2 closed core editor layout, scrolling, divider-state, and dirty-state gaps.
+- P14-S3 closed scoped company money/date formatting and financial-view split/table-layout gaps.
+- P14-S4 closes stale Help content/links, canonical production destination-menu names, and exact all-destination/alias smoke assertions.
 
 ### P14-S1 — Production UI compliance foundation and route smoke
 
@@ -652,9 +649,17 @@ Planned scope:
 
 - Correct Help navigation/document links, run the all-destination production smoke path, perform laptop-width desktop validation, and close only verified residual design-rule findings.
 
+Completed implementation:
+
+- Rebuilt Help as a laptop-safe scrollable surface with current database, active-company, active-period, Journal, Banking, import, and Administration guidance.
+- Replaced nonexistent/wrong-owner Help links with the authoritative repository, plan, UI rules, and development-workflow paths; browser-unavailable failures now show the copyable URL instead of failing silently.
+- Replaced retired Ledger Register and Transaction Editor entries in the production Destinations menu with canonical Journal, Administration, and Help entries.
+- Strengthened the production H2/Xvfb route smoke to require the exact canonical destination set, reject the eliminated Schedules route, and prove both retired Journal aliases reuse one existing Journal root/tab.
+- Added focused Help/menu source and documentation-path guardrails. No domain service, persistence, schema, ledger, or accounting behavior changed.
+
 Next exact action:
 
-- Inspect Help content, production all-destination smoke/geometry tests, and current residual UI-rule findings; record exact gaps before changing production code.
+- Publish the implementation to draft PR #184, run the full Maven PR Tests workflow, correct all failures, and record the tested head before the final desktop handoff.
 
 # P06 — Bank reconciliation and cleared-state comparison
 
