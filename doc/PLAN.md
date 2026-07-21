@@ -4,8 +4,8 @@ active_phase: P15
 active_slice: P15-S0
 active_status: IN_PROGRESS
 active_branch: codex/P15-S0-data-exchange-plan
-active_pull_request: pending
-active_head: pending
+active_pull_request: 186
+active_head: bb71c84aca21adeef90564b3e4da5a237f7a0181
 next_action: "Review and merge the P15-S0 planning contract, then begin P15-S1 from the resulting current main on a fresh branch."
 ---
 
@@ -741,8 +741,8 @@ Required inspection:
 Status: IN_PROGRESS
 
 Branch: \`codex/P15-S0-data-exchange-plan\`  
-Pull request: pending  
-Head: pending
+Pull request: #186  
+Activation head: `bb71c84aca21adeef90564b3e4da5a237f7a0181`
 
 Purpose: freeze the governing contracts, compatibility fixtures, authority boundaries, and slice dependencies before implementation.
 
