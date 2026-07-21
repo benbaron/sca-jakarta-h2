@@ -1,6 +1,6 @@
 # Model and persistence authority inventory
 
-Status: P00 inventory of current main, updated through P14-S2 company-owned editor-divider state and dirty-state compliance. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
+Status: P00 inventory of current main, updated through P14-S3 company-owned financial-view formatting and divider-state compliance. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
 
 ## Current persistence map
 
@@ -74,6 +74,7 @@ Status: P00 inventory of current main, updated through P14-S2 company-owned edit
 - Journal, Funds, and Company Admin keep their existing richer H2 layout binders and mark their tables as already owned so the shared boundary does not attach a second writer.
 - Banking and Inventory no longer use `java.util.prefs.Preferences` for table layout. Recent user-machine state is not migrated because H2 company rows are the authoritative boundary.
 - P14-S2 editor split positions use `CompanySplitPaneStateBinder` and `company_ui_state`; unsaved form snapshots remain in-memory dirty UI state and never become a second persistence path.
+- P14-S3 financial-view split positions use the same binder and H2 state boundary. Active-company money/date preferences affect presentation and parsing only; they do not alter canonical `BigDecimal`, date/time, ledger, budget, asset, inventory, reconciliation, period-close, import, or audit storage.
 
 ## Budget model authority
 

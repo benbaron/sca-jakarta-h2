@@ -25,14 +25,12 @@ import org.nonprofitbookkeeping.service.PeriodCloseRangeService;
 import org.nonprofitbookkeeping.service.PeriodCloseRangeView;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 /** Authoritative period-close, reopen, and factual-history workspace. */
 public class PeriodCloseRunsPanel implements AppPanel
 {
-    private static final DateTimeFormatter EVENT_TIME = DateTimeFormatter.ISO_INSTANT;
-
+    private final CompanyUiFormat companyFormat = CompanyUiFormat.activeCompany();
     private final BorderPane root = new BorderPane();
     private final DatePicker startDate = new DatePicker();
     private final DatePicker endDate = new DatePicker();
@@ -59,6 +57,8 @@ public class PeriodCloseRunsPanel implements AppPanel
         reopenPolicy.getItems().setAll(ClosedPeriodPolicy.values());
         reopenPolicy.setValue(ClosedPeriodPolicy.WARN_AND_REOPEN);
         reason.setPromptText("Optional close/reopen reason");
+        companyFormat.install(startDate);
+        companyFormat.install(endDate);
 
         Button useActiveMonth = new Button("Use Active Month");
         useActiveMonth.setOnAction(event -> setCalculatedMonth());
@@ -104,6 +104,8 @@ public class PeriodCloseRunsPanel implements AppPanel
         split.setOrientation(Orientation.VERTICAL);
         split.setDividerPositions(0.58);
         split.setMinSize(0, 0);
+        split.setId("periodCloseTablesSplit");
+        CompanySplitPaneStateBinder.bind(split, "period-close-tables", 0.58);
         root.setCenter(split);
 
         setCalculatedMonth();
@@ -129,9 +131,9 @@ public class PeriodCloseRunsPanel implements AppPanel
         ranges.setPlaceholder(new Label("No close ranges exist for the active company."));
 
         TableColumn<PeriodCloseRangeView, String> start = column("Start", "start", 110,
-                row -> String.valueOf(row.startDate()));
+                row -> companyFormat.formatDate(row.startDate()));
         TableColumn<PeriodCloseRangeView, String> end = column("End", "end", 110,
-                row -> String.valueOf(row.endDate()));
+                row -> companyFormat.formatDate(row.endDate()));
         TableColumn<PeriodCloseRangeView, String> kind = column("Type", "kind", 110,
                 PeriodCloseRangeView::rangeKind);
         TableColumn<PeriodCloseRangeView, String> rangeStatus = column("Status", "status", 110,
@@ -139,11 +141,11 @@ public class PeriodCloseRunsPanel implements AppPanel
         TableColumn<PeriodCloseRangeView, String> closedBy = column("Closed By", "closedBy", 140,
                 PeriodCloseRangeView::closedBy);
         TableColumn<PeriodCloseRangeView, String> closedAt = column("Closed At", "closedAt", 190,
-                row -> row.closedAt() == null ? "" : EVENT_TIME.format(row.closedAt()));
+                row -> companyFormat.formatDateTime(row.closedAt()));
         TableColumn<PeriodCloseRangeView, String> reopenedBy = column("Reopened By", "reopenedBy", 140,
                 row -> blank(row.reopenedBy()));
         TableColumn<PeriodCloseRangeView, String> reopenedAt = column("Reopened At", "reopenedAt", 190,
-                row -> row.reopenedAt() == null ? "" : EVENT_TIME.format(row.reopenedAt()));
+                row -> companyFormat.formatDateTime(row.reopenedAt()));
         TableColumn<PeriodCloseRangeView, String> closeReason = column("Close Reason", "closeReason", 220,
                 row -> blank(row.closeReason()));
         TableColumn<PeriodCloseRangeView, String> reopenReason = column("Reopen Reason", "reopenReason", 220,
@@ -161,7 +163,7 @@ public class PeriodCloseRunsPanel implements AppPanel
         history.setPlaceholder(new Label("No period-close history exists for the active company."));
 
         TableColumn<PeriodCloseEventView, String> eventAt = column("Event At", "eventAt", 190,
-                row -> row.eventAt() == null ? "" : EVENT_TIME.format(row.eventAt()));
+                row -> companyFormat.formatDateTime(row.eventAt()));
         TableColumn<PeriodCloseEventView, String> eventType = column("Event", "eventType", 110,
                 PeriodCloseEventView::eventType);
         TableColumn<PeriodCloseEventView, String> range = column("Range ID", "rangeId", 260,
@@ -199,7 +201,7 @@ public class PeriodCloseRunsPanel implements AppPanel
                         actor.getText(),
                         reason.getText()),
                 closed -> {
-                    status.setText("Closed " + closed.startDate() + " through " + closed.endDate()
+                    status.setText("Closed " + companyFormat.formatDate(closed.startDate()) + " through " + companyFormat.formatDate(closed.endDate())
                             + " for " + closed.companyCode() + ".");
                     reason.clear();
                     reload();
@@ -229,7 +231,7 @@ public class PeriodCloseRunsPanel implements AppPanel
                         reopenPolicy.getValue(),
                         requireReason.isSelected()),
                 reopened -> {
-                    status.setText("Reopened " + reopened.startDate() + " through " + reopened.endDate()
+                    status.setText("Reopened " + companyFormat.formatDate(reopened.startDate()) + " through " + companyFormat.formatDate(reopened.endDate())
                             + " for " + reopened.companyCode() + ".");
                     reason.clear();
                     reload();

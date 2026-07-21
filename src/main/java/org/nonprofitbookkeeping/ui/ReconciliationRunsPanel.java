@@ -46,6 +46,7 @@ import java.time.LocalDate;
 /** Full bank statement-to-ledger reconciliation workspace. */
 public class ReconciliationRunsPanel implements AppPanel
 {
+    private final CompanyUiFormat companyFormat = CompanyUiFormat.activeCompany();
     private final BorderPane root = new BorderPane();
     private final TabPane workflowTabs = new TabPane();
     private final ComboBox<BankAccountOption> bankAccountSelect = new ComboBox<>();
@@ -96,6 +97,7 @@ public class ReconciliationRunsPanel implements AppPanel
         configureTables();
         configureStatementSources();
         configureWorkflowTabs();
+        companyFormat.install(statementEndDate);
         warnOnly.setSelected(true);
         root.setTop(new VBox(6, title, subtitle, sessionSummary, status, new Separator()));
         root.setCenter(workflowTabs);
@@ -148,9 +150,15 @@ public class ReconciliationRunsPanel implements AppPanel
 
         VBox sessions = new VBox(6, new Label("Saved Reconciliations"), sessionTable);
         VBox.setVgrow(sessionTable, Priority.ALWAYS);
-        VBox pane = new VBox(10, new Label("Setup"), form, actions, sessions);
+        VBox setup = new VBox(10, new Label("Setup"), form, actions);
+        SplitPane split = new SplitPane(setup, sessions);
+        split.setId("reconciliationSetupSplit");
+        split.setOrientation(Orientation.VERTICAL);
+        split.setDividerPositions(0.48);
+        CompanySplitPaneStateBinder.bind(split, "reconciliation-setup", 0.48);
+        VBox pane = new VBox(split);
         pane.setPadding(new Insets(8));
-        VBox.setVgrow(sessions, Priority.ALWAYS);
+        VBox.setVgrow(split, Priority.ALWAYS);
         return pane;
     }
 
@@ -179,7 +187,9 @@ public class ReconciliationRunsPanel implements AppPanel
         VBox.setVgrow(statementTable, Priority.ALWAYS);
         VBox.setVgrow(ledgerTable, Priority.ALWAYS);
         SplitPane split = new SplitPane(statementPane, ledgerPane);
+        split.setId("reconciliationMatchSplit");
         split.setDividerPositions(0.50);
+        CompanySplitPaneStateBinder.bind(split, "reconciliation-match", 0.50);
         VBox pane = new VBox(8,
                 new Label("Match Statement Entries to Ledger Lines"),
                 matchingActions(),
@@ -198,13 +208,16 @@ public class ReconciliationRunsPanel implements AppPanel
         saveUnresolved.setOnAction(e -> save(false));
         Button finalize = new Button("Finalize");
         finalize.setOnAction(e -> save(true));
-        VBox pane = new VBox(10,
-                new Label("Review and Save"),
-                balances(),
-                reportPane,
+        VBox summary = new VBox(10, new Label("Review and Save"), balances());
+        SplitPane split = new SplitPane(summary, reportPane);
+        split.setId("reconciliationReviewSplit");
+        split.setOrientation(Orientation.VERTICAL);
+        split.setDividerPositions(0.28);
+        CompanySplitPaneStateBinder.bind(split, "reconciliation-review", 0.28);
+        VBox pane = new VBox(10, split,
                 new HBox(8, backButton("Back: Match", 2), saveUnresolved, finalize));
         pane.setPadding(new Insets(8));
-        VBox.setVgrow(reportPane, Priority.ALWAYS);
+        VBox.setVgrow(split, Priority.ALWAYS);
         return pane;
     }
 
@@ -297,7 +310,7 @@ public class ReconciliationRunsPanel implements AppPanel
         });
         sessionSelect.setConverter(new StringConverter<>()
         {
-            @Override public String toString(SessionSummary summary) { return summary == null ? "Start New" : summary.id() + " • " + summary.bankAccountLabel() + " • " + summary.statementEndDate() + " • " + summary.status(); }
+            @Override public String toString(SessionSummary summary) { return summary == null ? "Start New" : summary.id() + " • " + summary.bankAccountLabel() + " • " + companyFormat.formatDate(summary.statementEndDate()) + " • " + summary.status(); }
             @Override public SessionSummary fromString(String string) { return null; }
         });
     }
@@ -305,7 +318,7 @@ public class ReconciliationRunsPanel implements AppPanel
     private void configureTables()
     {
         statementTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        column(statementTable, "Date", v -> string(v.date()), 110);
+        column(statementTable, "Date", v -> companyFormat.formatDate(v.date()), 110);
         column(statementTable, "Description", StatementEntryView::description, 220);
         column(statementTable, "Reference", StatementEntryView::reference, 120);
         column(statementTable, "Amount", v -> money(v.amount()), 100);
@@ -314,7 +327,7 @@ public class ReconciliationRunsPanel implements AppPanel
         column(statementTable, "Matched Ledger Line", v -> string(v.matchedLedgerSplitId()), 130);
         column(statementTable, "Resolution", StatementEntryView::resolution, 220);
         ledgerTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        column(ledgerTable, "Date", v -> string(v.date()), 110);
+        column(ledgerTable, "Date", v -> companyFormat.formatDate(v.date()), 110);
         column(ledgerTable, "Payee / Memo", LedgerLineView::memo, 240);
         column(ledgerTable, "Transaction #", LedgerLineView::transactionNumber, 120);
         column(ledgerTable, "Amount", v -> money(v.amount()), 100);
@@ -323,15 +336,15 @@ public class ReconciliationRunsPanel implements AppPanel
         column(ledgerTable, "Statement Ref", v -> string(v.matchedStatementLineId()), 120);
         differenceTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         column(differenceTable, "Category", v -> v.category().name(), 210);
-        column(differenceTable, "Ledger Date", v -> string(v.ledgerDate()), 120);
-        column(differenceTable, "Statement Date", v -> string(v.statementDate()), 130);
+        column(differenceTable, "Ledger Date", v -> companyFormat.formatDate(v.ledgerDate()), 120);
+        column(differenceTable, "Statement Date", v -> companyFormat.formatDate(v.statementDate()), 130);
         column(differenceTable, "Ledger Amount", v -> money(v.ledgerAmount()), 130);
         column(differenceTable, "Statement Amount", v -> money(v.statementAmount()), 140);
         column(differenceTable, "Description", DifferenceView::description, 460);
         sessionTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         column(sessionTable, "Session", v -> String.valueOf(v.id()), 100);
         column(sessionTable, "Account", SessionSummary::bankAccountLabel, 260);
-        column(sessionTable, "Through Date", v -> string(v.statementEndDate()), 120);
+        column(sessionTable, "Through Date", v -> companyFormat.formatDate(v.statementEndDate()), 120);
         column(sessionTable, "Status", v -> v.status().name(), 110);
         column(sessionTable, "Difference", v -> money(v.difference()), 120);
     }
@@ -403,7 +416,7 @@ public class ReconciliationRunsPanel implements AppPanel
 
     private void addManualLine()
     {
-        runAction(() -> service().addManualLine(new ManualStatementLineCommand(requireSession(), LocalDate.parse(manualDate.getText().trim()), parseMoney(manualAmount.getText()), manualDescription.getText(), manualReference.getText())), "Manual statement line added.");
+        runAction(() -> service().addManualLine(new ManualStatementLineCommand(requireSession(), requireManualDate(), parseMoney(manualAmount.getText()), manualDescription.getText(), manualReference.getText())), "Manual statement line added.");
     }
 
     private void importPastedText()
@@ -468,9 +481,9 @@ public class ReconciliationRunsPanel implements AppPanel
         bookCleared.setText(money(next.balances().bookBalanceClearedOnly()));
         statementBalance.setText(money(next.balances().statementEndingBalance()));
         difference.setText(money(next.balances().difference()));
-        dateRange.setText("Period: " + next.statementStartDate() + " – " + next.statementEndDate());
+        dateRange.setText("Period: " + companyFormat.formatDate(next.statementStartDate()) + " – " + companyFormat.formatDate(next.statementEndDate()));
         result.setText(next.differences().isEmpty() && next.balances().difference().compareTo(BigDecimal.ZERO) == 0 ? "Result: Balances Match" : "Result: Unresolved Differences");
-        sessionSummary.setText("Session " + next.sessionId() + " • " + next.bankAccountLabel() + " • " + next.statementStartDate() + " – " + next.statementEndDate() + " • " + next.status());
+        sessionSummary.setText("Session " + next.sessionId() + " • " + next.bankAccountLabel() + " • " + companyFormat.formatDate(next.statementStartDate()) + " – " + companyFormat.formatDate(next.statementEndDate()) + " • " + next.status());
     }
 
     private long requireSession()
@@ -540,25 +553,37 @@ public class ReconciliationRunsPanel implements AppPanel
         return card;
     }
 
-    private static Label balanceLabel()
+    private Label balanceLabel()
     {
-        Label label = new Label("$0.00");
+        Label label = new Label(companyFormat.formatMoney(BigDecimal.ZERO));
         label.getStyleClass().add("dashboard-value");
         return label;
     }
 
-    private static String money(BigDecimal value)
+    private String money(BigDecimal value)
     {
-        return value == null ? "" : "$" + value.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
+        return value == null ? "" : companyFormat.formatMoney(value);
     }
 
-    private static BigDecimal parseMoney(String raw)
+    private BigDecimal parseMoney(String raw)
     {
-        if (raw == null || raw.isBlank())
+        BigDecimal parsed = companyFormat.parseMoney(raw);
+        if (parsed == null)
         {
-            return BigDecimal.ZERO;
+            throw new IllegalArgumentException("Enter a valid money amount.");
         }
-        return new BigDecimal(raw.trim().replace("$", "").replace(",", ""));
+        return parsed;
+    }
+
+    private LocalDate requireManualDate()
+    {
+        LocalDate parsed = companyFormat.parseDate(manualDate.getText());
+        if (parsed == null)
+        {
+            throw new IllegalArgumentException("Enter a valid statement date.");
+        }
+        manualDate.setText(companyFormat.formatDate(parsed));
+        return parsed;
     }
 
     private static String string(Object value)

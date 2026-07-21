@@ -25,6 +25,7 @@ public class BudgetVsActualPanel implements AppPanel
     private final BorderPane root = new BorderPane();
     private final TableView<BudgetVarianceView> table = new TableView<>();
     private final Label status = new Label();
+    private final CompanyUiFormat companyFormat = CompanyUiFormat.activeCompany();
 
     public BudgetVsActualPanel()
     {
@@ -45,11 +46,11 @@ public class BudgetVsActualPanel implements AppPanel
         TableColumn<BudgetVarianceView, String> fund = new TableColumn<>("Fund");
         fund.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().fundCode().orElse("All funds")));
         TableColumn<BudgetVarianceView, String> budget = new TableColumn<>("Budget");
-        budget.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().budget().toPlainString()));
+        budget.setCellValueFactory(v -> new SimpleStringProperty(companyFormat.formatMoney(v.getValue().budget())));
         TableColumn<BudgetVarianceView, String> actual = new TableColumn<>("Actual");
-        actual.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().actual().toPlainString()));
+        actual.setCellValueFactory(v -> new SimpleStringProperty(companyFormat.formatMoney(v.getValue().actual())));
         TableColumn<BudgetVarianceView, String> variance = new TableColumn<>("Variance (Actual-Budget)");
-        variance.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().variance().toPlainString()));
+        variance.setCellValueFactory(v -> new SimpleStringProperty(companyFormat.formatMoney(v.getValue().variance())));
         table.getColumns().addAll(category, fund, budget, actual, variance);
         table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         table.setPlaceholder(new Label("No active budget version is selected for comparison."));
@@ -60,6 +61,7 @@ public class BudgetVsActualPanel implements AppPanel
         splitPane.setId("budgetVsActualSplitPane");
         splitPane.setOrientation(Orientation.VERTICAL);
         splitPane.setDividerPositions(0.82);
+        CompanySplitPaneStateBinder.bind(splitPane, "budget-vs-actual", 0.82);
         root.setCenter(splitPane);
         reload();
     }
@@ -73,8 +75,8 @@ public class BudgetVsActualPanel implements AppPanel
             BigDecimal netActual = total(rows, BudgetVarianceView::actual);
             BigDecimal netBudget = total(rows, BudgetVarianceView::budget);
             BigDecimal netVariance = total(rows, BudgetVarianceView::variance);
-            status.setText("Loaded " + rows.size() + " active budget row(s). Net actual = " + netActual.toPlainString()
-                    + ", net budget = " + netBudget.toPlainString() + ", net variance = " + netVariance.toPlainString());
+            status.setText("Loaded " + rows.size() + " active budget row(s). Net actual = " + companyFormat.formatMoney(netActual)
+                    + ", net budget = " + companyFormat.formatMoney(netBudget) + ", net variance = " + companyFormat.formatMoney(netVariance));
         }, ex -> status.setText("Could not compute Budget vs Actual view: " + UiErrors.safeMessage(ex)));
     }
 

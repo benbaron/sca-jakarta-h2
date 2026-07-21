@@ -1,12 +1,12 @@
 ---
-plan_version: 62
+plan_version: 63
 active_phase: P14
 active_slice: P14-S3
 active_status: IN_PROGRESS
 active_branch: codex/P14-S3-financial-view-formatting-compliance
 active_pull_request: 183
 active_head: df737cc9d498e1fa0222b4989ae1d0fcadca4715
-next_action: "Inspect every P14-S3 panel, its current money/date rendering and split/scroll layout, relevant tests, and the governing UI documents; record the exact compliance gaps before implementation."
+next_action: "Publish the P14-S3 implementation, run the full Maven PR Tests workflow, fix every failure, then record the tested head and leave the slice VERIFYING for desktop validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -621,9 +621,19 @@ Planned scope:
 - Repair Dashboard, Budget vs Actual, Depreciation Runs, Inventory, Reconciliation, Period Close, Import Preview, Audit History, and Bank Transactions.
 - Apply company money/date formatting, unconstrained tables, company-owned state, and required split regions without expanding their domain workflows.
 
+Completed implementation:
+
+- Routed Dashboard, Budget vs Actual, Depreciation Runs, Inventory, Reconciliation, Period Close, Audit History, and Bank Transactions money/date presentation and editing through active-company `CompanyUiFormat`.
+- Extended the shared formatter to company-aware date/time display without changing persisted timestamp values.
+- Removed scoped constrained table policies and retained the universal H2 company-owned table-state boundary.
+- Added company-owned split-divider state to Dashboard table cards, Budget vs Actual, Depreciation Runs, Inventory, Reconciliation, Period Close, and Import Preview.
+- Stacked Depreciation and Import Preview table regions top/bottom with horizontal draggable dividers; preserved independent table scrolling and current domain operations.
+- Renamed the visible legacy Approval Audit surface to factual Audit History while retaining its stable compatibility identifier and repository.
+- Added focused source and formatter behavior guardrails. No services, entities, migrations, canonical ledger behavior, or domain workflows changed.
+
 Next exact action:
 
-- Inspect every scoped panel, its source/behavior tests, active-company money/date formatting paths, and split/scroll layout against the governing UI rules; record exact gaps before implementation.
+- Publish the implementation to draft PR #183, run the full Maven PR Tests workflow, correct all failures, and record the final tested head before desktop handoff.
 
 ### P14-S4 — Help, production desktop sweep, and final compliance closure
 

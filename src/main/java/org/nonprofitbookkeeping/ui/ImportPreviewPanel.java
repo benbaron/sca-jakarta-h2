@@ -2,6 +2,7 @@ package org.nonprofitbookkeeping.ui;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -12,6 +13,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import org.nonprofitbookkeeping.model.AccountType;
@@ -59,12 +61,29 @@ public class ImportPreviewPanel implements AppPanel
         warnings.setPlaceholder(new Label("No validation warnings."));
 
         SplitPane rowTables = new SplitPane(
-                new VBox(6, new Label("Accepted COA Rows"), acceptedCoaRows),
-                new VBox(6, new Label("Rejected COA Rows"), rejectedCoaRows));
+                tableRegion("Accepted COA Rows", acceptedCoaRows),
+                tableRegion("Rejected COA Rows", rejectedCoaRows));
+        rowTables.setId("importPreviewRowsSplit");
+        rowTables.setOrientation(Orientation.VERTICAL);
         rowTables.setDividerPositions(0.58);
+        CompanySplitPaneStateBinder.bind(rowTables, "import-preview-rows", 0.58);
 
-        VBox center = new VBox(8, new Label("Preview Warnings"), warnings, rowTables);
+        VBox warningRegion = new VBox(6, new Label("Preview Warnings"), warnings);
+        VBox.setVgrow(warnings, Priority.ALWAYS);
+        SplitPane center = new SplitPane(warningRegion, rowTables);
+        center.setId("importPreviewWorkspaceSplit");
+        center.setOrientation(Orientation.VERTICAL);
+        center.setDividerPositions(0.28);
+        CompanySplitPaneStateBinder.bind(center, "import-preview-workspace", 0.28);
         root.setCenter(center);
+    }
+
+    private static VBox tableRegion(String title, TableView<?> table)
+    {
+        VBox region = new VBox(6, new Label(title), table);
+        region.setMinHeight(0.0);
+        VBox.setVgrow(table, Priority.ALWAYS);
+        return region;
     }
 
     @Override
@@ -92,7 +111,7 @@ public class ImportPreviewPanel implements AppPanel
         TableColumn<CoaCsvMapper.CoaCsvRow, String> parent = new TableColumn<>("Parent");
         parent.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().parentCode()));
         acceptedCoaRows.getColumns().addAll(code, name, type, normal, parent);
-        acceptedCoaRows.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
+        acceptedCoaRows.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
     }
 
     private void buildRejectedTable()
@@ -104,7 +123,7 @@ public class ImportPreviewPanel implements AppPanel
         TableColumn<ImportPreviewService.RejectedCoaRow, String> reason = new TableColumn<>("Error Reason");
         reason.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().errorReason()));
         rejectedCoaRows.getColumns().addAll(line, raw, reason);
-        rejectedCoaRows.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
+        rejectedCoaRows.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
     }
 
     private void commitAcceptedCoaRows()

@@ -14,6 +14,7 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
@@ -31,7 +32,6 @@ import org.nonprofitbookkeeping.service.dashboard.DashboardSnapshot;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -45,11 +45,10 @@ public final class DashboardHomePanel implements AppPanel
 {
     private static final int RECENT_TRANSACTION_LIMIT = 25;
     private static final BigDecimal ON_TRACK_TOLERANCE = new BigDecimal("0.05");
-    private static final DateTimeFormatter DISPLAY_DATE = DateTimeFormatter.ofPattern("MM/dd/yyyy");
-
     private final DashboardQueryService dashboardQueryService;
     private final Supplier<LocalDate> asOfDateSupplier;
     private final Supplier<String> groupCodeSupplier;
+    private final CompanyUiFormat companyFormat;
     private final BorderPane root = new BorderPane();
     private final GridPane dashboardGrid = new GridPane();
     private final Label loadMessage = new Label();
@@ -77,7 +76,8 @@ public final class DashboardHomePanel implements AppPanel
         this(
                 UiServiceRegistry.dashboardQuery(),
                 ActivePeriodContext::get,
-                () -> MainWindow.sharedSessionState().multiCompany().activeCompanyCode());
+                () -> MainWindow.sharedSessionState().multiCompany().activeCompanyCode(),
+                CompanyUiFormat.activeCompany());
         ActivePeriodContext.activeDateProperty().addListener(
                 (observable, oldDate, newDate) -> reload());
     }
@@ -89,7 +89,8 @@ public final class DashboardHomePanel implements AppPanel
         this(
                 dashboardQueryService,
                 workspaceContext::activePeriodDate,
-                workspaceContext::activeCompanyCode);
+                workspaceContext::activeCompanyCode,
+                CompanyUiFormat.activeCompany());
         workspaceContext.activePeriodDateProperty().addListener(
                 (observable, oldDate, newDate) -> reload());
         workspaceContext.activeCompanyCodeProperty().addListener(
@@ -101,9 +102,20 @@ public final class DashboardHomePanel implements AppPanel
             Supplier<LocalDate> asOfDateSupplier,
             Supplier<String> groupCodeSupplier)
     {
+        this(dashboardQueryService, asOfDateSupplier, groupCodeSupplier,
+                new CompanyUiFormat(org.nonprofitbookkeeping.model.CompanyUiPreferences.defaults()));
+    }
+
+    DashboardHomePanel(
+            DashboardQueryService dashboardQueryService,
+            Supplier<LocalDate> asOfDateSupplier,
+            Supplier<String> groupCodeSupplier,
+            CompanyUiFormat companyFormat)
+    {
         this.dashboardQueryService = dashboardQueryService;
         this.asOfDateSupplier = asOfDateSupplier;
         this.groupCodeSupplier = groupCodeSupplier;
+        this.companyFormat = companyFormat;
         buildView();
         reload();
     }
@@ -159,12 +171,12 @@ public final class DashboardHomePanel implements AppPanel
                 + snapshot.reconciliations().size() + " reconciliation row(s), "
                 + snapshot.budgetActuals().size() + " budget row(s), and "
                 + snapshot.openItems().totalOpenItems() + " open item(s).");
-        bookCash.setText(DashboardValueFormatter.money(snapshot.bookCash()));
+        bookCash.setText(companyFormat.formatMoney(snapshot.bookCash()));
         clearedCash.setText(snapshot.reconciledCash()
-                .map(value -> "Cleared " + DashboardValueFormatter.money(value))
+                .map(value -> "Cleared " + companyFormat.formatMoney(value))
                 .orElse("Cleared balance not available"));
-        cashAsOf.setText("as of " + DISPLAY_DATE.format(snapshot.asOfDate()));
-        yearToDateSurplus.setText(DashboardValueFormatter.money(snapshot.yearToDateSurplus()));
+        cashAsOf.setText("as of " + companyFormat.formatDate(snapshot.asOfDate()));
+        yearToDateSurplus.setText(companyFormat.formatMoney(snapshot.yearToDateSurplus()));
 
         Map<String, Long> counts = snapshot.openItems().countsByKind();
         long genericBankItems = counts.getOrDefault("OUTSTANDING_BANK_ITEM", 0L);
@@ -305,10 +317,9 @@ public final class DashboardHomePanel implements AppPanel
         configureRecentTransactions();
         Label showing = muted("Showing up to " + RECENT_TRANSACTION_LIMIT + " transactions");
         Hyperlink viewLedger = link("View Ledger Register  →", AppPanelId.LEDGER_REGISTER);
-        return card(
-                "Recent Transactions",
-                recentTransactions,
-                footer(showing, viewLedger));
+        return card("Recent Transactions",
+                tableAndFooter(recentTransactions, footer(showing, viewLedger), "dashboard-recent-transactions"),
+                null);
     }
 
     private Node reconciliationCard()
@@ -317,10 +328,9 @@ public final class DashboardHomePanel implements AppPanel
         Hyperlink go = link(
                 "Go to Banking & Reconciliation  →",
                 AppPanelId.RECONCILIATION_RUNS);
-        return card(
-                "Bank Reconciliation Status",
-                reconciliations,
-                footer(new Label(), go));
+        return card("Bank Reconciliation Status",
+                tableAndFooter(reconciliations, footer(new Label(), go), "dashboard-reconciliations"),
+                null);
     }
 
     private Node budgetActualCard()
@@ -329,10 +339,9 @@ public final class DashboardHomePanel implements AppPanel
         Hyperlink go = link(
                 "View Budget vs Actual Report  →",
                 AppPanelId.BUDGET_VS_ACTUAL);
-        return card(
-                "Budget vs Actual (YTD)",
-                budgetActuals,
-                footer(new Label(), go));
+        return card("Budget vs Actual (YTD)",
+                tableAndFooter(budgetActuals, footer(new Label(), go), "dashboard-budget-actuals"),
+                null);
     }
 
     private Node quickLinksCard()
@@ -362,12 +371,11 @@ public final class DashboardHomePanel implements AppPanel
     private void configureRecentTransactions()
     {
         recentTransactions.getStyleClass().add("dashboard-table");
-        recentTransactions.setColumnResizePolicy(
-                TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        recentTransactions.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         recentTransactions.setPrefHeight(210);
         recentTransactions.setFixedCellSize(28);
         recentTransactions.getColumns().setAll(
-                column("Date", row -> DISPLAY_DATE.format(row.transactionDate()), 85),
+                column("Date", row -> companyFormat.formatDate(row.transactionDate()), 85),
                 column("Txn #", row -> Long.toString(row.transactionId()), 62),
                 column("Description", DashboardSnapshot.RecentTransaction::description, 150),
                 column("Account", DashboardSnapshot.RecentTransaction::accountSummary, 150),
@@ -398,8 +406,7 @@ public final class DashboardHomePanel implements AppPanel
     private void configureReconciliations()
     {
         reconciliations.getStyleClass().add("dashboard-table");
-        reconciliations.setColumnResizePolicy(
-                TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        reconciliations.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         reconciliations.setPrefHeight(155);
         reconciliations.setFixedCellSize(28);
         reconciliations.getColumns().setAll(
@@ -409,7 +416,7 @@ public final class DashboardHomePanel implements AppPanel
                         150),
                 column(
                         "Statement Date",
-                        row -> DISPLAY_DATE.format(row.statementEndingOn()),
+                        row -> companyFormat.formatDate(row.statementEndingOn()),
                         100),
                 column(
                         "Status",
@@ -432,7 +439,7 @@ public final class DashboardHomePanel implements AppPanel
         budgetActuals.getColumns().setAll(
                 column("Category", DashboardHomePanel::budgetCategoryLabel, 145),
                 column("Budget", row -> optionalAmountText(row.budget()), 90),
-                column("Actual", row -> DashboardValueFormatter.money(row.actual()), 90),
+                column("Actual", row -> companyFormat.formatMoney(row.actual()), 90),
                 column("Variance", row -> optionalAmountText(row.variance()), 90),
                 column("%", row -> percentText(row.performancePercent()), 55));
         budgetActuals.setPlaceholder(
@@ -538,7 +545,7 @@ public final class DashboardHomePanel implements AppPanel
             surplusComparison.setText("");
             return;
         }
-        surplusBudget.setText("Budget " + DashboardValueFormatter.money(totalBudget));
+        surplusBudget.setText("Budget " + companyFormat.formatMoney(totalBudget));
         BigDecimal percent = surplus
                 .divide(totalBudget.abs(), 4, RoundingMode.HALF_UP)
                 .multiply(new BigDecimal("100"));
@@ -604,6 +611,16 @@ public final class DashboardHomePanel implements AppPanel
         footer.setAlignment(Pos.CENTER_LEFT);
         footer.getStyleClass().add("dashboard-card-footer");
         return footer;
+    }
+
+    private static SplitPane tableAndFooter(TableView<?> table, Node footer, String stateKey)
+    {
+        SplitPane split = new SplitPane(table, footer);
+        split.setOrientation(javafx.geometry.Orientation.VERTICAL);
+        split.setDividerPositions(0.84);
+        split.setMinSize(0.0, 0.0);
+        CompanySplitPaneStateBinder.bind(split, stateKey, 0.84);
+        return split;
     }
 
     private static HBox quickLink(
@@ -712,18 +729,18 @@ public final class DashboardHomePanel implements AppPanel
                 : row.categoryCode() + " " + row.categoryName();
     }
 
-    private static String amountText(BigDecimal value)
+    private String amountText(BigDecimal value)
     {
         return value == null || value.compareTo(BigDecimal.ZERO) == 0
                 ? ""
-                : DashboardValueFormatter.money(value);
+                : companyFormat.formatMoney(value);
     }
 
-    private static String optionalAmountText(Optional<BigDecimal> value)
+    private String optionalAmountText(Optional<BigDecimal> value)
     {
         return value == null || value.isEmpty()
                 ? "—"
-                : DashboardValueFormatter.money(value.orElseThrow());
+                : companyFormat.formatMoney(value.orElseThrow());
     }
 
     private static String percentText(Optional<BigDecimal> value)
