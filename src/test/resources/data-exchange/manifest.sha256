@@ -1,5 +1,5 @@
 # SHA-256  relative-path
-e27a3e358170ab925d33115fdfc7873d1c9d872773b2e9a62cc9334fd827e697  README.md
+e8aeeee6b2c0fc7b5d1a1a8a6cadbcaccf7a6194dfa758cef858b6a3e6c227d0  README.md
 b089378969005a52bb74f34ea127309308002751f34771cd385bc28d21bd8398  bank-statement/csv/invalid/both-debit-credit.csv
 2d3883249495a3f8d120090515e43e25d6aca4b934cd25753dec0bbd7e9ed914  bank-statement/csv/invalid/duplicate-headers.csv
 f54d2e9c702f3d6543c158ce239c021818728471160c50e38dfd7410c4777e3e  bank-statement/csv/invalid/malformed.csv
