@@ -17,45 +17,27 @@ jobs:
         with:
           ref: codex/P15-S1-repair-clean-publication
           fetch-depth: 0
-      - name: Verify payload fragments
+      - name: Fetch and verify preserved implementation archive
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          set +e
-          mkdir -p /tmp/p15-parts
-          cp .p15-s1-small/payload.part{00..15} /tmp/p15-parts/
-          cat > /tmp/p15-expected.sha256 <<'HASHES'
-          253b84b170f637ecb8898c6f937118c6eb69b9c7ec3f14b896df21a0c8a17315  .p15-s1-small/payload.part00
-          b55f4fcc9140073648848ee8f3f916b35a6f4ead1b2c9ece0ec37a77914bce54  .p15-s1-small/payload.part01
-          5c8ceff50b8576aa38336f7c5879ed7ed37f4c093b38ee0f8bc1a979ce50ab39  .p15-s1-small/payload.part02
-          c05f1275692d2797e03e1e708cb7f0dc26a1232af99444e24fc38a981ebdc4fc  .p15-s1-small/payload.part03
-          537df1d873a2e693a6f5fca3cf4c1e9b6596e5c93a7224a2469e03a9040ae7c8  .p15-s1-small/payload.part04
-          16289214fec4b61038aa2a7ad1ea6ed700277fd5fa4d4619588ad16a6c1b11ea  .p15-s1-small/payload.part05
-          94a682dd4f461d66e333b2e52ae7e3ff3ca9316ae98fc9a7614c8927d0c5a305  .p15-s1-small/payload.part06
-          1c7a3624334222b925e35fc5a9be920c95c9e099123511bcefb3e4f3ecdfcc59  .p15-s1-small/payload.part07
-          c2c4712214a7b1841293cc46af2ceaa03270d8e00e66df58b26db97959da50a1  .p15-s1-small/payload.part08
-          e52eaef27c195f6eadb2295ceafa6c1ab203c4d620e9689996feb7b74562f879  .p15-s1-small/payload.part09
-          d81717adcd06f03b213f01b1828733080bf1f39a9d16a001ec7536fbb9f5a5a0  .p15-s1-small/payload.part10
-          ce922e5e641f268efc2e42b1ed06c97e216670fe287ce912cba651d5581d4c4c  .p15-s1-small/payload.part11
-          43436b63c3cee091f363e22a5eda9833006a9528e7307f0dbbc81c0f4505ae2a  .p15-s1-small/payload.part12
-          a149530806a801267e6c62e1ff4c515fb91766bcbd21432d9cd406fbcc032284  .p15-s1-small/payload.part13
-          60c3cfdfe7192335d505a8aee5ca762c340846abcc078f48df929e6237785123  .p15-s1-small/payload.part14
-          388565a86bcefee261e332c51bf636657310a8ac849804d53e3acb9b858b3a46  .p15-s1-small/payload.part15
-          HASHES
-          sha256sum .p15-s1-small/payload.part{00..15} > /tmp/p15-actual.sha256
-          sha256sum -c /tmp/p15-expected.sha256 > /tmp/p15-hash-check.txt 2>&1
-          wc -c .p15-s1-small/payload.part{00..15} > /tmp/p15-part-sizes.txt
-          cat /tmp/p15-hash-check.txt
-          cat /tmp/p15-part-sizes.txt
-          exit 0
-      - name: Upload payload diagnostics
+          set -euo pipefail
+          mkdir -p /tmp/p15-archive
+          gh api repos/${{ github.repository }}/git/blobs/8754a7423c2ec91cac68502a25c3e9b72996e4d8 \
+            --jq .content | tr -d '\n' | base64 -d > /tmp/p15-archive/p15-s1-clean.tgz
+          echo 'c2271b20858fe71b67580744f092ce538b2c52acb0abcac658368f177f7017a1  /tmp/p15-archive/p15-s1-clean.tgz' \
+            | sha256sum -c -
+          test "$(wc -c < /tmp/p15-archive/p15-s1-clean.tgz)" -eq 98872
+          tar -tzf /tmp/p15-archive/p15-s1-clean.tgz > /tmp/p15-archive/members.txt
+          test "$(grep -c '/$' /tmp/p15-archive/members.txt || true)" -ge 1
+          test "$(grep -vc '/$' /tmp/p15-archive/members.txt)" -eq 64
+          grep -E 'V61__company_ownership_and_interchange_identity.sql|ExternalInterchangeIdentity|InterchangeOperation' /tmp/p15-archive/members.txt
+          cat /tmp/p15-archive/members.txt
+      - name: Upload verified archive
         uses: actions/upload-artifact@v4
         with:
-          name: p15-s1-parts
-          path: |
-            /tmp/p15-parts
-            /tmp/p15-expected.sha256
-            /tmp/p15-actual.sha256
-            /tmp/p15-hash-check.txt
-            /tmp/p15-part-sizes.txt
+          name: p15-s1-clean-archive
+          path: /tmp/p15-archive
           if-no-files-found: error
           retention-days: 1
