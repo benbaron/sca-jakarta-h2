@@ -45,16 +45,21 @@ jobs:
           cache: maven
       - name: Resolve compile and test dependencies
         run: mvn -B -ntp -DskipTests test-compile --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository
-      - name: Stage portable Maven cache
+      - name: Stream portable Maven artifacts
         run: |
-          mkdir -p /tmp/p15-s1-tooling/maven /tmp/p15-s1-tooling/m2
-          cp -a /usr/share/apache-maven/. /tmp/p15-s1-tooling/maven/
-          cp -a "$HOME/.m2/repository"/. /tmp/p15-s1-tooling/m2/
-          tar -C /tmp -czf /tmp/p15-s1-tooling.tgz p15-s1-tooling
-      - name: Upload tooling archive
+          tar -C /usr/share -czf /tmp/p15-s1-maven.tgz apache-maven
+          tar --warning=no-file-changed -C "$HOME/.m2" -czf /tmp/p15-s1-m2.tgz repository
+      - name: Upload Maven
         uses: actions/upload-artifact@v4
         with:
-          name: p15-s1-tooling
-          path: /tmp/p15-s1-tooling.tgz
+          name: p15-s1-maven
+          path: /tmp/p15-s1-maven.tgz
+          if-no-files-found: error
+          retention-days: 1
+      - name: Upload Maven repository
+        uses: actions/upload-artifact@v4
+        with:
+          name: p15-s1-m2
+          path: /tmp/p15-s1-m2.tgz
           if-no-files-found: error
           retention-days: 1
