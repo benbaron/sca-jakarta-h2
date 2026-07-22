@@ -17,11 +17,12 @@ jobs:
         with:
           ref: codex/P15-S1-repair-clean-publication
           fetch-depth: 0
-      - name: Verify and reconstruct available payload
+      - name: Verify payload fragments
         shell: bash
         run: |
           set +e
-          mkdir -p /tmp/p15-recovered
+          mkdir -p /tmp/p15-parts
+          cp .p15-s1-small/payload.part{00..15} /tmp/p15-parts/
           cat > /tmp/p15-expected.sha256 <<'HASHES'
           253b84b170f637ecb8898c6f937118c6eb69b9c7ec3f14b896df21a0c8a17315  .p15-s1-small/payload.part00
           b55f4fcc9140073648848ee8f3f916b35a6f4ead1b2c9ece0ec37a77914bce54  .p15-s1-small/payload.part01
@@ -42,38 +43,19 @@ jobs:
           HASHES
           sha256sum .p15-s1-small/payload.part{00..15} > /tmp/p15-actual.sha256
           sha256sum -c /tmp/p15-expected.sha256 > /tmp/p15-hash-check.txt 2>&1
-          echo $? > /tmp/p15-hash-check.status
-          cat .p15-s1-small/payload.part{00..15} > /tmp/p15-payload.b64
-          base64 -d /tmp/p15-payload.b64 > /tmp/p15-payload.tgz 2>/tmp/p15-base64.err
-          echo $? > /tmp/p15-base64.status
-          gzip -dc /tmp/p15-payload.tgz > /tmp/p15-payload.tar 2>/tmp/p15-gzip.err
-          echo $? > /tmp/p15-gzip.status
-          tar -tvf /tmp/p15-payload.tar > /tmp/p15-recovered-list.txt 2>/tmp/p15-tar-list.err
-          echo $? > /tmp/p15-tar-list.status
-          tar -xf /tmp/p15-payload.tar -C /tmp/p15-recovered --ignore-zeros 2>/tmp/p15-tar-extract.err
-          echo $? > /tmp/p15-tar-extract.status
-          find /tmp/p15-recovered -type f -print | sort > /tmp/p15-recovered-files.txt
-          wc -c /tmp/p15-payload.b64 /tmp/p15-payload.tgz /tmp/p15-payload.tar > /tmp/p15-sizes.txt
+          wc -c .p15-s1-small/payload.part{00..15} > /tmp/p15-part-sizes.txt
           cat /tmp/p15-hash-check.txt
-          cat /tmp/p15-sizes.txt
-          cat /tmp/p15-recovered-files.txt
+          cat /tmp/p15-part-sizes.txt
           exit 0
-      - name: Upload recovered implementation and diagnostics
+      - name: Upload payload diagnostics
         uses: actions/upload-artifact@v4
         with:
-          name: p15-s1-recovered
+          name: p15-s1-parts
           path: |
-            /tmp/p15-recovered
-            /tmp/p15-recovered-list.txt
-            /tmp/p15-recovered-files.txt
-            /tmp/p15-payload.b64
-            /tmp/p15-payload.tgz
-            /tmp/p15-payload.tar
+            /tmp/p15-parts
             /tmp/p15-expected.sha256
             /tmp/p15-actual.sha256
             /tmp/p15-hash-check.txt
-            /tmp/p15-*.err
-            /tmp/p15-*.status
-            /tmp/p15-sizes.txt
+            /tmp/p15-part-sizes.txt
           if-no-files-found: error
           retention-days: 1
