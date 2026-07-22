@@ -1,0 +1,47 @@
+{
+  "format": "SCLX",
+  "version": "1.3",
+  "exportedAt": "2026-01-01T00:00:00Z",
+  "organization": {
+    "organizationId": "org-missing-ref",
+    "name": "Fictional Missing Reference Branch",
+    "baseCurrency": "USD"
+  },
+  "reportingPeriod": {
+    "startDate": "2026-01-01",
+    "endDate": "2026-12-31"
+  },
+  "chartOfAccounts": [],
+  "funds": [
+    {
+      "fundId": "fund-general",
+      "name": "General Fund"
+    }
+  ],
+  "budgets": [],
+  "people": [],
+  "events": [],
+  "documents": [],
+  "transactions": [
+    {
+      "transactionId": "txn-missing-account",
+      "transactionDate": "2026-01-02",
+      "lines": [
+        {
+          "lineId": "line-1",
+          "accountId": "acct-does-not-exist",
+          "debit": 10,
+          "credit": 0,
+          "fundId": "fund-general"
+        },
+        {
+          "lineId": "line-2",
+          "accountId": "acct-also-missing",
+          "debit": 0,
+          "credit": 10,
+          "fundId": "fund-general"
+        }
+      ]
+    }
+  ]
+}

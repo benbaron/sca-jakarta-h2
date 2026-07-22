@@ -1,0 +1,90 @@
+{
+  "format": "SCLX",
+  "version": "1.0",
+  "exportedAt": "2026-01-31T18:00:00Z",
+  "organization": {
+    "organizationId": "org-fox-hollow",
+    "name": "Fictional Barony of Fox Hollow",
+    "parentOrganization": "Fictional Kingdom of the Pine",
+    "baseCurrency": "USD",
+    "fiscalYearStart": "2026-01-01",
+    "fiscalYearEnd": "2026-12-31"
+  },
+  "reportingPeriod": {
+    "startDate": "2026-01-01",
+    "endDate": "2026-01-31",
+    "label": "January 2026",
+    "fiscalYear": 2026,
+    "periodType": "MONTH"
+  },
+  "chartOfAccounts": [
+    {
+      "Number": "1010",
+      "Name": "Fictional Community Bank Checking",
+      "Type": "CHECKING",
+      "Parent": "1000",
+      "IncreaseSide": "DEBIT",
+      "OpeningBalance": 125.5,
+      "SupplementalKinds": []
+    },
+    {
+      "Number": "4000",
+      "Name": "Fictional Event Income",
+      "Type": "INCOME",
+      "Parent": null,
+      "IncreaseSide": "CREDIT",
+      "OpeningBalance": 0,
+      "SupplementalKinds": []
+    }
+  ],
+  "funds": [
+    {
+      "fundId": "fund-general",
+      "name": "General Fund",
+      "restricted": false,
+      "description": "Unrestricted fictional operating fund."
+    }
+  ],
+  "budgets": [],
+  "people": [
+    {
+      "personId": "person-alex-river",
+      "displayName": "Alex River",
+      "kind": "PERSON",
+      "email": "alex.river@example.invalid",
+      "phone": "+1-555-0100"
+    }
+  ],
+  "events": [],
+  "documents": [],
+  "transactions": [
+    {
+      "transactionId": "txn-2026-0001",
+      "transactionDate": "2026-01-15",
+      "postingDate": "2026-01-15",
+      "description": "Fictional winter gathering deposits",
+      "reference": "DEP-0001",
+      "personId": "person-alex-river",
+      "status": "ENTERED",
+      "source": "SCLX",
+      "lines": [
+        {
+          "lineId": "line-1",
+          "accountId": "1010",
+          "debit": 250.0,
+          "credit": 0,
+          "fundId": "fund-general",
+          "memo": "Deposit"
+        },
+        {
+          "lineId": "line-2",
+          "accountId": "4000",
+          "debit": 0,
+          "credit": 250.0,
+          "fundId": "fund-general",
+          "memo": "Event income"
+        }
+      ]
+    }
+  ]
+}

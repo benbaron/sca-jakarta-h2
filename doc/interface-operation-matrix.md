@@ -1,6 +1,6 @@
 # Interface operation matrix
 
-Status: P00 inventory of current main, updated through P14-S4 Help and production-route compliance closure. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
+Status: P00 inventory of current main, updated through P15-S0 interchange-contract and fixture governance. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
 
 ## Scope and evidence
 
@@ -22,7 +22,7 @@ Status: P00 inventory of current main, updated through P14-S4 Help and productio
 | Save | menu/toolbar button | active `AppPanel` | active panel `onSave` | panel-dependent | panel-dependent | unified Journal delegates to `TransactionEntryService`; other panels remain panel-dependent | P01/P02/P03 |
 | Copy/Paste | menu/toolbar button | active selection | active panel hooks | no accounting persistence | no | mostly UI clipboard/status behavior | P01 |
 | Find/Journal/command runner | toolbar/global shortcuts | active panel selection and services | active panel `onRunCommand` | panel-dependent | panel-dependent | text-command dispatch should become typed commands | P01 |
-| Import/Export | main-window file actions | CSV/OFX/QIF services and session state | import/export services; temporary `UiWorkspaceDataStore.bankTransactions` staging; some COA import writes H2 | partially | mixed | no generic job log; bank transactions remain session/static until their owning banking workflow replaces the staging boundary | P05/P13 |
+| Legacy Import/Export actions | main-window file actions | current CSV/OFX/QIF services and session state | current import/export services; temporary `UiWorkspaceDataStore.bankTransactions` staging; some COA import writes H2 | partially | mixed | P15 contracts supersede this mixed boundary by four explicit operations; no generic job log | P05/P13/P15 |
 | Database wizard/switch | main-window database actions and Dashboard recovery surface | `DatabaseLocationService`, `DatabaseMigrationService`, `DatabaseSessionController`, `UiServiceRegistry` | H2 file/JPA resources through typed `DatabaseRecoveryCommand` dispatch | yes | yes after successful switch | selected path changes only after successful connection; no automatic destructive repair | P01/P12/P13 |
 
 ## Delete operation rule
@@ -79,3 +79,24 @@ P14-S4 aligns Help and the production Destinations menu with the canonical navig
 3. P09 must still add financially relevant movement-to-ledger automation and inventory reporting.
 4. P06 must finish per-line cleared-state resolution choices and edit existing reconciliation workflow.
 5. P03 should add explicit line-level cleared-state fields to the unified journal projection so mixed cleared/uncleared transactions are represented without inference.
+
+## P15 governed interchange operation matrix
+
+P15-S0 defines contracts and fixtures only. The rows below are required destinations/operations for later slices; they are not claims that current JavaFX behavior already implements the contract.
+
+| Exchange operation | User-visible scope | Recognition/query authority | Commit/write authority | Durable result | Explicitly not | Delivery slice |
+|---|---|---|---|---|---|---|
+| SCLX import/export | one selected active company's supported business data | content-root `SCLX` plus version 1.0/1.2/1.3; canonical H2 reads after company-ownership gate | one caller-owned import transaction through canonical services; atomic SCLX 1.3 file export | factual audit event, external identity, counts, warnings, SHA-256 | database backup, COA-only file, bank statement, donor sidecar ledger | P15-S4/P15-S5 |
+| Chart of Accounts JSON | one chart and account hierarchy | actual donor compatibility fixture or `SCA-COA` 1.0 root | `AccountAdminService`/chart authority in one transaction; atomic deterministic file export | counts, mappings, unsupported fields, SHA-256 | transaction history, SCLX, bank activity, database backup | P15-S3 |
+| Whole-database transfer | every company and H2-backed record | H2 backup structure/version and existing database diagnostics | supported H2 restore to a new path, migration, validation, then guarded session switch | backup manifest/result, validation report, SHA-256 | selected-company transfer, COA file, bank statement | P15-S2 |
+| OFX 2.x/QFX/mapped CSV import | statement activity for one configured company-owned bank account | content-first secure XML/SGML/CSV profile parsing | one review-batch transaction to `bank_import_batch`, `bank_statement_line`, and `import_issue` | durable review batch, issues, exact/probable duplicate state, source SHA-256 | automatic `Txn`/`TxnSplit` creation, double-entry ledger import | P15-S6 |
+| Normalized CSV and OFX/QFX statement export | durable selected-account statement activity | bank review query for one configured account/date range | atomic deterministic statement file write | counts, warnings, byte count, SHA-256 | canonical double-entry ledger export | P15-S6 |
+
+### P15 UI and command guardrails
+
+- The four operation families require distinct labels, DTOs, previews, confirmations, results, and file chooser descriptions.
+- No top-level **Import/Export Jobs** destination or generic durable job queue returns.
+- Current filename-based `BankDataEnvelopeRecognizer`, regex `OfxQfxTransactionExtractor`, per-row COA commit behavior, and direct `Files.writeString` paths are implementation evidence, not the final P15 contract.
+- Bank import preview never implies that a canonical transaction has been created. Later acceptance/matching must remain a separate explicit canonical-service operation.
+- Database restore never changes the selected path until the restored copy passes migration, schema validation, diagnostics, and clean reopen.
+

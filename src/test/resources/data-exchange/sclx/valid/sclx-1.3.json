@@ -1,0 +1,153 @@
+{
+  "format": "SCLX",
+  "version": "1.3",
+  "exportedAt": "2026-06-30T18:00:00Z",
+  "features": [
+    "balancedTransactions",
+    "bankStatementImports",
+    "extensions"
+  ],
+  "compatibility": {
+    "minimumReaderVersion": "1.0",
+    "lossyDowngradeTo": [
+      "1.2",
+      "1.0"
+    ]
+  },
+  "organization": {
+    "organizationId": "org-copper-hill",
+    "name": "Fictional Barony of Copper Hill",
+    "parentOrganization": "Fictional Kingdom of the Pine",
+    "baseCurrency": "USD",
+    "fiscalYearStart": "2026-01-01",
+    "fiscalYearEnd": "2026-12-31",
+    "extensions": {
+      "branchType": "BARONY"
+    }
+  },
+  "reportingPeriod": {
+    "startDate": "2026-01-01",
+    "endDate": "2026-06-30",
+    "label": "First Half 2026",
+    "fiscalYear": 2026,
+    "periodType": "CUSTOM"
+  },
+  "chartOfAccounts": [
+    {
+      "accountId": "acct-1010",
+      "code": "1010",
+      "Number": "1010",
+      "Name": "Fictional Community Bank Checking",
+      "Type": "CHECKING",
+      "IncreaseSide": "DEBIT",
+      "OpeningBalance": 125.5,
+      "active": true
+    },
+    {
+      "accountId": "acct-4100",
+      "code": "4100",
+      "Number": "4100",
+      "Name": "Fictional Donation Income",
+      "Type": "INCOME",
+      "IncreaseSide": "CREDIT",
+      "OpeningBalance": 0,
+      "active": true
+    }
+  ],
+  "funds": [
+    {
+      "fundId": "fund-general",
+      "name": "General Fund",
+      "restricted": false,
+      "description": "Unrestricted operations."
+    }
+  ],
+  "budgets": [],
+  "people": [
+    {
+      "personId": "person-jordan-vale",
+      "displayName": "Jordan Vale",
+      "kind": "PERSON",
+      "email": "jordan.vale@example.invalid",
+      "phone": "+1-555-0125"
+    }
+  ],
+  "bankAccounts": [
+    {
+      "bankAccountId": "bankacct-checking",
+      "accountName": "Operating Checking",
+      "institutionName": "Fictional Community Bank",
+      "accountNumberMasked": "****4321",
+      "accountType": "CHECKING",
+      "currency": "USD",
+      "interestBearing": false,
+      "signatureRequirement": "TWO_SIGNERS",
+      "accountHolderName": "Fictional Barony of Copper Hill",
+      "chartAccountId": "acct-1010",
+      "authorizedSigners": []
+    }
+  ],
+  "officeAssignments": [],
+  "committeeMemberships": [],
+  "events": [],
+  "documents": [],
+  "transactions": [
+    {
+      "transactionId": "txn-2026-0200",
+      "transactionDate": "2026-06-10",
+      "postingDate": "2026-06-11",
+      "description": "Fictional unrestricted donation",
+      "reference": "DEP-0200",
+      "personId": "person-jordan-vale",
+      "personDisplayName": "Jordan Vale",
+      "status": "ENTERED",
+      "source": "SCLX",
+      "lines": [
+        {
+          "lineId": "line-1",
+          "accountId": "acct-1010",
+          "debit": 300.0,
+          "credit": 0,
+          "fundId": "fund-general",
+          "memo": "Bank deposit"
+        },
+        {
+          "lineId": "line-2",
+          "accountId": "acct-4100",
+          "debit": 0,
+          "credit": 300.0,
+          "fundId": "fund-general",
+          "memo": "Donation income"
+        }
+      ]
+    }
+  ],
+  "bankingItems": [],
+  "outstandingItems": [],
+  "otherAssetItems": [],
+  "supplementalItems": [],
+  "assets": [],
+  "supplies": [],
+  "bankStatementImports": [
+    {
+      "bankStatementImportId": "bank-import-2026-06",
+      "bankAccountId": "bankacct-checking",
+      "sourceFileName": "fictional-june.ofx",
+      "sourceHash": "8d5df2f9d8d0d6f0e2f1aab1791f59cf87a30df6f467d7e08338f1372131d890",
+      "statementStartDate": "2026-06-01",
+      "statementEndDate": "2026-06-30",
+      "currency": "USD",
+      "openingBalance": 125.5,
+      "closingBalance": 425.5,
+      "importedAt": "2026-07-01T12:00:00Z",
+      "status": "IMPORTED"
+    }
+  ],
+  "extensions": {
+    "scaJakartaH2": {
+      "version": "1.0",
+      "periodCloseRanges": [],
+      "auditEvents": []
+    }
+  }
+}
