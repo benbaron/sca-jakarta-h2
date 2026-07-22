@@ -1,0 +1,43 @@
+name: P15-S1 Recover Validated Payload
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S1-repair-clean-publication
+          fetch-depth: 0
+      - name: Reconstruct available payload
+        shell: bash
+        run: |
+          set -u
+          mkdir -p /tmp/p15-recovered
+          cat .p15-s1-small/payload.part{00..15} > /tmp/p15-payload.b64
+          base64 -d /tmp/p15-payload.b64 > /tmp/p15-payload.tgz || true
+          gzip -dc /tmp/p15-payload.tgz > /tmp/p15-payload.tar || true
+          tar -tvf /tmp/p15-payload.tar > /tmp/p15-recovered-list.txt || true
+          tar -xf /tmp/p15-payload.tar -C /tmp/p15-recovered --ignore-zeros || true
+          find /tmp/p15-recovered -type f -print | sort > /tmp/p15-recovered-files.txt
+          wc -c /tmp/p15-payload.b64 /tmp/p15-payload.tgz /tmp/p15-payload.tar
+          cat /tmp/p15-recovered-files.txt
+          test -s /tmp/p15-recovered-files.txt
+      - name: Upload recovered implementation
+        uses: actions/upload-artifact@v4
+        with:
+          name: p15-s1-recovered
+          path: |
+            /tmp/p15-recovered
+            /tmp/p15-recovered-list.txt
+            /tmp/p15-recovered-files.txt
+          if-no-files-found: error
+          retention-days: 1
