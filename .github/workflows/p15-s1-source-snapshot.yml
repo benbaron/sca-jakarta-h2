@@ -45,11 +45,10 @@ jobs:
           cache: maven
       - name: Resolve compile and test dependencies
         run: mvn -B -ntp -DskipTests test-compile --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository
-      - name: Stage portable tooling
+      - name: Stage portable Maven cache
         run: |
-          mkdir -p /tmp/p15-s1-tooling/jdk /tmp/p15-s1-tooling/maven /tmp/p15-s1-tooling/m2
-          cp -aL "$JAVA_HOME"/. /tmp/p15-s1-tooling/jdk/
-          cp -aL /usr/share/apache-maven/. /tmp/p15-s1-tooling/maven/
+          mkdir -p /tmp/p15-s1-tooling/maven /tmp/p15-s1-tooling/m2
+          cp -a /usr/share/apache-maven/. /tmp/p15-s1-tooling/maven/
           cp -a "$HOME/.m2/repository"/. /tmp/p15-s1-tooling/m2/
           tar -C /tmp -czf /tmp/p15-s1-tooling.tgz p15-s1-tooling
       - name: Upload tooling archive
