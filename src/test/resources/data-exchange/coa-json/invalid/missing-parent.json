@@ -1,0 +1,22 @@
+{
+  "format": "SCA-COA",
+  "version": "1.0",
+  "chart": {
+    "name": "Missing Parent",
+    "chartVersion": "1",
+    "status": "DRAFT",
+    "currency": "USD"
+  },
+  "accounts": [
+    {
+      "code": "1010",
+      "name": "Checking",
+      "type": "ASSET",
+      "normalBalance": "DEBIT",
+      "parentCode": "9999",
+      "posting": true,
+      "active": true,
+      "openingBalance": "0.00"
+    }
+  ]
+}

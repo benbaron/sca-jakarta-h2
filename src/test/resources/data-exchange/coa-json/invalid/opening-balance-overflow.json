@@ -1,0 +1,21 @@
+{
+  "format": "SCA-COA",
+  "version": "1.0",
+  "chart": {
+    "name": "Overflow",
+    "chartVersion": "1",
+    "status": "DRAFT",
+    "currency": "USD"
+  },
+  "accounts": [
+    {
+      "code": "1000",
+      "name": "Cash",
+      "type": "ASSET",
+      "normalBalance": "DEBIT",
+      "posting": true,
+      "active": true,
+      "openingBalance": "1000000000000000.00"
+    }
+  ]
+}

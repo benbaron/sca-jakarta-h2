@@ -1,0 +1,32 @@
+{
+  "format": "SCA-COA",
+  "version": "1.0",
+  "chart": {
+    "name": "Cycle",
+    "chartVersion": "1",
+    "status": "DRAFT",
+    "currency": "USD"
+  },
+  "accounts": [
+    {
+      "code": "1000",
+      "name": "A",
+      "type": "ASSET",
+      "normalBalance": "DEBIT",
+      "parentCode": "1010",
+      "posting": false,
+      "active": true,
+      "openingBalance": "0.00"
+    },
+    {
+      "code": "1010",
+      "name": "B",
+      "type": "ASSET",
+      "normalBalance": "DEBIT",
+      "parentCode": "1000",
+      "posting": false,
+      "active": true,
+      "openingBalance": "0.00"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "format": "SCA-BANK-CSV-PROFILE",
+  "version": "1.0",
+  "profileName": "Fictional Signed Amount CSV",
+  "delimiter": ",",
+  "encoding": "UTF-8",
+  "dateFormats": ["yyyy-MM-dd"],
+  "amountMode": "SIGNED_AMOUNT",
+  "columns": {
+    "postedDate": "Posting Date",
+    "transactionDate": "Transaction Date",
+    "amount": "Amount",
+    "sourceTransactionId": "Transaction ID",
+    "transactionType": "Type",
+    "payeeName": "Payee",
+    "memo": "Memo",
+    "checkNumber": "Check",
+    "reference": "Reference",
+    "currency": "Currency",
+    "accountId": "Account"
+  }
+}

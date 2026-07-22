@@ -1,0 +1,43 @@
+{
+  "format": "SCA-COA",
+  "version": "1.0",
+  "chart": {
+    "name": "Fictional Copper Hill Chart",
+    "chartVersion": "2026",
+    "status": "DRAFT",
+    "currency": "USD"
+  },
+  "accounts": [
+    {
+      "code": "1000",
+      "name": "Assets",
+      "type": "ASSET",
+      "normalBalance": "DEBIT",
+      "posting": false,
+      "active": true,
+      "openingBalance": "0.00"
+    },
+    {
+      "code": "1010",
+      "name": "Fictional Community Bank Checking",
+      "type": "ASSET",
+      "subtype": "BANK",
+      "normalBalance": "DEBIT",
+      "parentCode": "1000",
+      "posting": true,
+      "active": true,
+      "effectiveFrom": "2026-01-01",
+      "openingBalance": "125.50",
+      "description": "Fictional operating account."
+    },
+    {
+      "code": "4000",
+      "name": "Fictional Event Income",
+      "type": "INCOME",
+      "normalBalance": "CREDIT",
+      "posting": true,
+      "active": true,
+      "openingBalance": "0.00"
+    }
+  ]
+}

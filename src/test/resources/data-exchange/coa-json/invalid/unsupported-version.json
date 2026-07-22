@@ -1,0 +1,11 @@
+{
+  "format": "SCA-COA",
+  "version": "9.0",
+  "chart": {
+    "name": "Unsupported",
+    "chartVersion": "9",
+    "status": "DRAFT",
+    "currency": "USD"
+  },
+  "accounts": []
+}

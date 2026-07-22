@@ -1,0 +1,102 @@
+{
+  "chartOfAccounts" : [ {
+    "associatedFundIds" : [ ],
+    "accountNumber" : "1000",
+    "increaseSide" : "DEBIT",
+    "name" : "Assets",
+    "accountCode" : "ASSET",
+    "accountType" : "ASSET",
+    "parentAccountId" : null,
+    "currency" : "USD",
+    "openingBalance" : 0.00,
+    "supplementalLineKinds" : [ ],
+    "effectiveIncreaseSide" : "DEBIT"
+  }, {
+    "associatedFundIds" : [ "fund-general" ],
+    "accountNumber" : "1010",
+    "increaseSide" : "DEBIT",
+    "name" : "Fictional Community Bank Checking",
+    "accountCode" : "CASH",
+    "accountType" : "CHECKING",
+    "parentAccountId" : "1000",
+    "currency" : "USD",
+    "openingBalance" : 125.50,
+    "supplementalLineKinds" : [ ],
+    "effectiveIncreaseSide" : "DEBIT"
+  }, {
+    "associatedFundIds" : [ ],
+    "accountNumber" : "4000",
+    "increaseSide" : "CREDIT",
+    "name" : "Fictional Event Income",
+    "accountCode" : "EVENT_INCOME",
+    "accountType" : "INCOME",
+    "parentAccountId" : null,
+    "currency" : "USD",
+    "openingBalance" : 0.00,
+    "supplementalLineKinds" : [ ],
+    "effectiveIncreaseSide" : "CREDIT"
+  } ],
+  "rootAccounts" : [ {
+    "associatedFundIds" : [ ],
+    "accountNumber" : "1000",
+    "increaseSide" : "DEBIT",
+    "name" : "Assets",
+    "accountCode" : "ASSET",
+    "accountType" : "ASSET",
+    "parentAccountId" : null,
+    "currency" : "USD",
+    "openingBalance" : 0.00,
+    "supplementalLineKinds" : [ ],
+    "effectiveIncreaseSide" : "DEBIT"
+  }, {
+    "associatedFundIds" : [ ],
+    "accountNumber" : "4000",
+    "increaseSide" : "CREDIT",
+    "name" : "Fictional Event Income",
+    "accountCode" : "EVENT_INCOME",
+    "accountType" : "INCOME",
+    "parentAccountId" : null,
+    "currency" : "USD",
+    "openingBalance" : 0.00,
+    "supplementalLineKinds" : [ ],
+    "effectiveIncreaseSide" : "CREDIT"
+  } ],
+  "accountNames" : "Assets, Fictional Community Bank Checking, Fictional Event Income",
+  "accounts" : [ {
+    "associatedFundIds" : [ ],
+    "accountNumber" : "1000",
+    "increaseSide" : "DEBIT",
+    "name" : "Assets",
+    "accountCode" : "ASSET",
+    "accountType" : "ASSET",
+    "parentAccountId" : null,
+    "currency" : "USD",
+    "openingBalance" : 0.00,
+    "supplementalLineKinds" : [ ],
+    "effectiveIncreaseSide" : "DEBIT"
+  }, {
+    "associatedFundIds" : [ "fund-general" ],
+    "accountNumber" : "1010",
+    "increaseSide" : "DEBIT",
+    "name" : "Fictional Community Bank Checking",
+    "accountCode" : "CASH",
+    "accountType" : "CHECKING",
+    "parentAccountId" : "1000",
+    "currency" : "USD",
+    "openingBalance" : 125.50,
+    "supplementalLineKinds" : [ ],
+    "effectiveIncreaseSide" : "DEBIT"
+  }, {
+    "associatedFundIds" : [ ],
+    "accountNumber" : "4000",
+    "increaseSide" : "CREDIT",
+    "name" : "Fictional Event Income",
+    "accountCode" : "EVENT_INCOME",
+    "accountType" : "INCOME",
+    "parentAccountId" : null,
+    "currency" : "USD",
+    "openingBalance" : 0.00,
+    "supplementalLineKinds" : [ ],
+    "effectiveIncreaseSide" : "CREDIT"
+  } ]
+}

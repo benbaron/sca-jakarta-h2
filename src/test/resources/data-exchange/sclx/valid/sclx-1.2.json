@@ -1,0 +1,116 @@
+{
+  "format": "SCLX",
+  "version": "1.2",
+  "exportedAt": "2026-03-31T18:00:00Z",
+  "compatibility": {
+    "minimumReaderVersion": "1.0",
+    "lossyDowngradeTo": [
+      "1.0"
+    ]
+  },
+  "organization": {
+    "organizationId": "org-moonlit-glen",
+    "name": "Fictional Shire of Moonlit Glen",
+    "parentOrganization": "Fictional Kingdom of the Pine",
+    "baseCurrency": "USD",
+    "fiscalYearStart": "2026-01-01",
+    "fiscalYearEnd": "2026-12-31"
+  },
+  "reportingPeriod": {
+    "startDate": "2026-01-01",
+    "endDate": "2026-03-31",
+    "label": "First Quarter 2026",
+    "fiscalYear": 2026,
+    "periodType": "QUARTER"
+  },
+  "chartOfAccounts": [
+    {
+      "accountId": "acct-cash",
+      "code": "1010",
+      "Number": "1010",
+      "Name": "Fictional Credit Union Checking",
+      "Type": "CHECKING",
+      "IncreaseSide": "DEBIT",
+      "OpeningBalance": 500.0,
+      "active": true
+    },
+    {
+      "accountId": "acct-supplies",
+      "code": "6100",
+      "Number": "6100",
+      "Name": "Fictional Program Supplies",
+      "Type": "EXPENSE",
+      "IncreaseSide": "DEBIT",
+      "OpeningBalance": 0,
+      "active": true
+    }
+  ],
+  "funds": [
+    {
+      "fundId": "fund-general",
+      "name": "General Fund",
+      "restricted": false
+    }
+  ],
+  "budgets": [
+    {
+      "budgetId": "budget-2026",
+      "name": "Fictional 2026 Operating Budget",
+      "fiscalYear": 2026,
+      "fundId": "fund-general",
+      "active": true,
+      "lines": [
+        {
+          "eventName": "Programs",
+          "budgetedAmount": 1200.0,
+          "expenseCategory": "Supplies",
+          "accountId": "acct-supplies"
+        }
+      ]
+    }
+  ],
+  "people": [],
+  "bankAccounts": [],
+  "officeAssignments": [],
+  "committeeMemberships": [],
+  "events": [],
+  "documents": [],
+  "transactions": [
+    {
+      "transactionId": "txn-2026-0100",
+      "transactionDate": "2026-03-05",
+      "description": "Fictional craft supplies",
+      "reference": "CHK-0100",
+      "checkNumber": "0100",
+      "personOrBusinessName": "Fictional Artisan Supply",
+      "status": "ENTERED",
+      "source": "SCLX",
+      "lines": [
+        {
+          "lineId": "line-1",
+          "accountId": "acct-supplies",
+          "debit": 75.25,
+          "credit": 0,
+          "fundId": "fund-general",
+          "budgetId": "budget-2026",
+          "memo": "Supplies"
+        },
+        {
+          "lineId": "line-2",
+          "accountId": "acct-cash",
+          "debit": 0,
+          "credit": 75.25,
+          "fundId": "fund-general",
+          "memo": "Checking"
+        }
+      ]
+    }
+  ],
+  "bankingItems": [],
+  "outstandingItems": [],
+  "otherAssetItems": [],
+  "supplementalItems": [],
+  "assets": [],
+  "supplies": [],
+  "bankStatementImports": []
+}

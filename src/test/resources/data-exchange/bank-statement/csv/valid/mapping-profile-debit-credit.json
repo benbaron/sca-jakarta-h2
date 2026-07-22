@@ -1,0 +1,21 @@
+{
+  "format": "SCA-BANK-CSV-PROFILE",
+  "version": "1.0",
+  "profileName": "Fictional Debit Credit CSV",
+  "delimiter": ",",
+  "encoding": "UTF-8",
+  "dateFormats": ["MM/dd/yyyy"],
+  "amountMode": "DEBIT_CREDIT",
+  "debitCreditConvention": "CREDIT_MINUS_DEBIT_ASSET_ACCOUNT",
+  "fixedCurrency": "USD",
+  "fixedAccountId": "FICTIONAL-4321",
+  "columns": {
+    "postedDate": "Date",
+    "debit": "Debit",
+    "credit": "Credit",
+    "sourceTransactionId": "ID",
+    "payeeName": "Description",
+    "memo": "Details",
+    "checkNumber": "Check Number"
+  }
+}

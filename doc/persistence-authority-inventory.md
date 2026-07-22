@@ -1,6 +1,6 @@
 # Model and persistence authority inventory
 
-Status: P00 inventory of current main, updated through P14-S3 company-owned financial-view formatting and divider-state compliance. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
+Status: P00 inventory of current main, updated through P15-S0 interchange-contract and active-company ownership audit. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
 
 ## Current persistence map
 
@@ -125,3 +125,78 @@ Status: P00 inventory of current main, updated through P14-S3 company-owned fina
 - `UiWorkspaceDataStore`: bank transactions remain a sidecar/static session list pending their owning bank-review workflow.
 - Unified Journal draft state: acceptable only as unsaved UI state; accepted headers, lines, and supplemental details must be written through `TransactionEntryService` to H2.
 - Legacy period-close run artifacts: compatibility-only; production close state and factual history belong to `period_close_range`/`period_close_event` and `AuditEvent`.
+
+## P15-S0 active-company interchange ownership audit
+
+This audit is the authority gate for selected-company SCLX export and import. It was performed against `main` at `9f3e67e53cf7e96dd41d09abaafb1985535f9fce`. A direct company owner means a non-null `company_id` foreign key to `company`. An indirect owner is acceptable only when every link is mandatory and cross-company references are structurally impossible or service-validated. A code string is not equivalent to a foreign-key owner.
+
+| Record/family | Current ownership path | Ambiguity or cross-company risk | P15-S1 prerequisite |
+|---|---|---|---|
+| `Company` | root record; globally unique `company.code` | none as root, but code is mutable and is used by some non-FK tables | retain stable `Company.id`; migrate code-owned records to `company_id` or enforce transactional rename/backfill |
+| `ChartOfAccounts` | no company column; `Company.activeChartOfAccounts -> ChartOfAccounts` is a one-way optional pointer | a chart can be shared by multiple companies, remain orphaned, or differ from the company whose accounts reference it | add nullable then backfilled `chart_of_accounts.company_id`; reject shared/orphaned active charts; add company-scoped chart identity/uniqueness |
+| `Account` and aliases/report/schedule mappings | `Account -> ChartOfAccounts`; no direct company | ownership is only as reliable as chart ownership; `CompanyBankAccount`, assets, inventory, transactions, and splits can reference an account outside the active company's chart | inherit company through owned chart; add same-company service checks and targeted constraints where H2 can enforce them; preserve `(chart_id, code)` uniqueness |
+| `Txn` | no company column; references global payee and account | bank account may imply a chart, but it is nullable; non-bank transactions have no owner; reversal/replacement links can cross companies | add/backfill non-null `txn.company_id`; derive only when every split/account/fund reference agrees; quarantine ambiguous rows; add company/date and external-identity indexes |
+| `TxnSplit` | `TxnSplit -> Txn` | split account, fund, budget category, activity, merchant, matched statement line, and cleared facts can disagree with the future transaction company | inherit owner through `Txn`; validate all dimensions and matched statement lines belong to that company; reject cross-company writes |
+| `TxnSupplementalLine` | `TxnSupplementalLine -> Txn` | safe only after `Txn` is company-owned | inherit through `Txn`; no separate company column required unless query isolation needs it |
+| transaction correction links | `Txn.reversalOf` and `replacementFor` | current FKs do not require same-company pairs | add service and migration checks that correction links remain within one company |
+| `Fund`, `FundAlias`, `FundTransfer` | no company column; global unique `fund.code`; transfers reference funds and optional `Txn` | funds and hierarchy are global; a transfer can join funds or a transaction from different companies | add/backfill `fund.company_id`; change code uniqueness to `(company_id, code)`; enforce same-company parent/transfer/posted-transaction references |
+| `BudgetCategory` and aliases | no company column; global unique code | category code namespace is shared across all companies | add/backfill `budget_category.company_id`; change uniqueness to `(company_id, code)`; scope aliases through category |
+| `BudgetPlan` | no company column; uniqueness `(fiscal_year, version_code)` | every company currently shares one budget version namespace | add/backfill `budget_plan.company_id`; change uniqueness to `(company_id, fiscal_year, version_code)`; scope activation queries |
+| `BudgetLine` | `BudgetLine -> BudgetPlan`, plus global category/fund | line dimensions can span companies | inherit through owned plan and enforce category/fund same-company references |
+| `Activity` | no company column; global unique code | activity namespace and history are global | add/backfill `activity.company_id`; change uniqueness to `(company_id, code)` |
+| `Counterparty` | no company column | a person/organization can be reused accidentally across companies; privacy-sensitive export scope is indeterminate | add company ownership or a deliberate shared-party model. P15-S1 defaults to `counterparty.company_id` and company-scoped external identity; do not infer from display name |
+| `Merchant` | no company column; global unique name | merchant namespace is global and name matching can merge unrelated parties | add/backfill `merchant.company_id`; change uniqueness to `(company_id, normalized_name)` or a governed company-scoped business key |
+| `Bank` | direct `Bank.company` | `CompanyBankAccount.bank` FK does not prove that bank and configured account company match | retain direct owner; add migration validation and service checks for same-company configured-account links |
+| `CompanyBankAccount` | direct `company_id`; references `Bank` and `Account` | DB permits its bank to belong to another company and its ledger account to belong to another company's chart | require bank owner equality and account chart owner equality; retain unique `(company_id, account_id)` |
+| `BankImportBatch` | direct `company_id`; optional configured account | DB does not enforce batch company equals configured-account company | validate/backfill mismatches; add service checks and, where practical, composite ownership constraints |
+| `BankStatementLine` | direct `company_id`; also batch and configured account | direct owner can disagree with batch/account; accepted/matched `Txn` has no current company owner | require line, batch, bank account, accepted/matched transaction to share one company; preserve batch-row/fingerprint uniqueness and add account-scoped source identity |
+| `ImportIssue` | `ImportIssue -> BankImportBatch` and optional statement line | issue line could reference a line from another batch/company | inherit through batch; enforce optional line belongs to the same batch/company |
+| `bank_reconciliation_session` | direct `company_id`; configured account | DB does not enforce selected account company equality | retain direct owner and validate same-company account |
+| `bank_reconciliation_match` | through reconciliation session; references statement line and `TxnSplit` | match can currently cross session company, statement company, and global transaction dimensions | enforce session/statement/split company equality after `Txn` ownership migration |
+| compatibility `reconciliation_run` | `group_code` text only | code is mutable and not a foreign key; compatibility record can be misattributed | either add `company_id` and backfill from current company code or explicitly exclude compatibility runs from SCLX; keep production reconciliation session/facts authoritative |
+| `txn_reconciliation_protection` | through global `Txn`; UUID run link has no FK | cannot prove company until both transaction and run are owned | inherit from `Txn`; validate linked run/company and preserve completed-reconciliation protection |
+| `FixedAsset` | direct `company_id`; references three accounts and a fund | referenced accounts/fund may belong elsewhere | retain direct owner; enforce all referenced dimensions share company |
+| `FixedAssetDepreciationRun` | through `FixedAsset`; references `Txn` | run transaction may belong to another company | inherit through asset and enforce transaction company equality |
+| `InventoryItem` | direct `company_id`; references account and fund | referenced account/fund may belong elsewhere | retain direct owner; enforce dimension ownership equality |
+| `InventoryMovement` | through `InventoryItem`; optional `Txn` | linked transaction may belong to another company | inherit through item and enforce transaction company equality |
+| `period_close_range` / `period_close_event` | mutable `company_code` text | no FK; rename service currently preserves code, but stale/manual rows cannot be proven by schema | add `company_id`, backfill by exact active/inactive company code, retain code only as denormalized display if useful; enforce event/range company equality |
+| `AccountingPeriod` / `PeriodReopenEvent` | no company column; global uniqueness `(fiscal_year, period_number)` | compatibility period history is global and conflicts across companies | add company ownership and company-scoped uniqueness only if retained for interchange; otherwise explicitly exclude compatibility period structures |
+| `AuditEvent` | no company column; generic entity type/ID strings | factual audit events cannot be reliably selected by company and entity IDs can collide by type | add nullable then backfilled `company_id`; require company for new business audit events; retain truly application-global events as explicitly global and exclude them from company SCLX |
+| `CompanyTaxProfile`, `UserCompanyRole` | direct company ownership | authentication/authorization material is outside SCLX | no SCLX migration required; whole-database transfer preserves them |
+| `company_ui_preference` / `company_ui_state` | mutable `company_code` text | no FK, but these are UI state and excluded from SCLX | no P15-S1 export migration required; whole-database transfer preserves them |
+
+### Global or ambiguous uniqueness requiring company scope
+
+P15-S1 must nondestructively replace or supplement these global business-key constraints after backfill:
+
+- `fund.code`;
+- `budget_category.code`;
+- `budget_plan(fiscal_year, version_code)`;
+- `activity.code`;
+- `merchant.name`;
+- `accounting_period(fiscal_year, period_number)` if compatibility periods remain company business data; and
+- any new external identity, which must be unique by company, format, source system, entity type, and external ID.
+
+`company.code`, application usernames, and role codes remain intentionally global. `account(chart_id, code)` remains chart-scoped and becomes company-safe when each chart has one owner.
+
+### Required nondestructive P15-S1 migration sequence
+
+1. Add nullable ownership columns and supporting indexes without dropping current constraints.
+2. Backfill direct derivations from existing company-owned records.
+3. For charts, transactions, funds, budgets, activities, parties, merchants, periods, and audit events, run deterministic ownership analysis and write diagnostics for zero-owner, multi-owner, and cross-company rows.
+4. Stop and require explicit repair for ambiguous rows; never choose the current UI company as a silent default.
+5. Add service-boundary same-company validation before making new ownership columns mandatory.
+6. Replace affected global uniqueness with company-scoped uniqueness only after collision diagnostics and explicit nondestructive conflict handling.
+7. Add non-null and referential constraints after all supported rows are owned.
+8. Add multi-company isolation, migration-upgrade, and cross-company rejection tests.
+
+Until that sequence is merged and verified, active-company SCLX export MUST fail closed for ambiguous sections rather than emit a partial document that appears complete.
+
+## P15 exchange authority boundaries
+
+- SCLX is selected-company business data reconstructed from current canonical H2 authority after the ownership gate passes.
+- Chart of Accounts JSON is chart structure only and uses DTOs; it neither serializes entities nor transfers transaction history.
+- Whole-database transfer uses supported H2 backup/restore facilities and preserves every database record, including application administration and compatibility structures.
+- OFX/QFX/CSV import persists external statement facts to `bank_import_batch`, `bank_statement_line`, and `import_issue`; it does not automatically create canonical ledger transactions.
+- No exchange type writes `UiWorkspaceDataStore`, a donor sidecar repository, a parallel journal, static company authority, or generic Import/Export Jobs history.
+
