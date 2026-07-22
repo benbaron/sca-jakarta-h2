@@ -17,11 +17,32 @@ jobs:
         with:
           ref: codex/P15-S1-repair-clean-publication
           fetch-depth: 0
-      - name: Reconstruct available payload
+      - name: Verify and reconstruct available payload
         shell: bash
         run: |
           set +e
           mkdir -p /tmp/p15-recovered
+          cat > /tmp/p15-expected.sha256 <<'HASHES'
+          253b84b170f637ecb8898c6f937118c6eb69b9c7ec3f14b896df21a0c8a17315  .p15-s1-small/payload.part00
+          b55f4fcc9140073648848ee8f3f916b35a6f4ead1b2c9ece0ec37a77914bce54  .p15-s1-small/payload.part01
+          5c8ceff50b8576aa38336f7c5879ed7ed37f4c093b38ee0f8bc1a979ce50ab39  .p15-s1-small/payload.part02
+          c05f1275692d2797e03e1e708cb7f0dc26a1232af99444e24fc38a981ebdc4fc  .p15-s1-small/payload.part03
+          537df1d873a2e693a6f5fca3cf4c1e9b6596e5c93a7224a2469e03a9040ae7c8  .p15-s1-small/payload.part04
+          16289214fec4b61038aa2a7ad1ea6ed700277fd5fa4d4619588ad16a6c1b11ea  .p15-s1-small/payload.part05
+          94a682dd4f461d66e333b2e52ae7e3ff3ca9316ae98fc9a7614c8927d0c5a305  .p15-s1-small/payload.part06
+          1c7a3624334222b925e35fc5a9be920c95c9e099123511bcefb3e4f3ecdfcc59  .p15-s1-small/payload.part07
+          c2c4712214a7b1841293cc46af2ceaa03270d8e00e66df58b26db97959da50a1  .p15-s1-small/payload.part08
+          e52eaef27c195f6eadb2295ceafa6c1ab203c4d620e9689996feb7b74562f879  .p15-s1-small/payload.part09
+          d81717adcd06f03b213f01b1828733080bf1f39a9d16a001ec7536fbb9f5a5a0  .p15-s1-small/payload.part10
+          ce922e5e641f268efc2e42b1ed06c97e216670fe287ce912cba651d5581d4c4c  .p15-s1-small/payload.part11
+          43436b63c3cee091f363e22a5eda9833006a9528e7307f0dbbc81c0f4505ae2a  .p15-s1-small/payload.part12
+          a149530806a801267e6c62e1ff4c515fb91766bcbd21432d9cd406fbcc032284  .p15-s1-small/payload.part13
+          60c3cfdfe7192335d505a8aee5ca762c340846abcc078f48df929e6237785123  .p15-s1-small/payload.part14
+          388565a86bcefee261e332c51bf636657310a8ac849804d53e3acb9b858b3a46  .p15-s1-small/payload.part15
+          HASHES
+          sha256sum .p15-s1-small/payload.part{00..15} > /tmp/p15-actual.sha256
+          sha256sum -c /tmp/p15-expected.sha256 > /tmp/p15-hash-check.txt 2>&1
+          echo $? > /tmp/p15-hash-check.status
           cat .p15-s1-small/payload.part{00..15} > /tmp/p15-payload.b64
           base64 -d /tmp/p15-payload.b64 > /tmp/p15-payload.tgz 2>/tmp/p15-base64.err
           echo $? > /tmp/p15-base64.status
@@ -33,6 +54,7 @@ jobs:
           echo $? > /tmp/p15-tar-extract.status
           find /tmp/p15-recovered -type f -print | sort > /tmp/p15-recovered-files.txt
           wc -c /tmp/p15-payload.b64 /tmp/p15-payload.tgz /tmp/p15-payload.tar > /tmp/p15-sizes.txt
+          cat /tmp/p15-hash-check.txt
           cat /tmp/p15-sizes.txt
           cat /tmp/p15-recovered-files.txt
           exit 0
@@ -47,6 +69,9 @@ jobs:
             /tmp/p15-payload.b64
             /tmp/p15-payload.tgz
             /tmp/p15-payload.tar
+            /tmp/p15-expected.sha256
+            /tmp/p15-actual.sha256
+            /tmp/p15-hash-check.txt
             /tmp/p15-*.err
             /tmp/p15-*.status
             /tmp/p15-sizes.txt
