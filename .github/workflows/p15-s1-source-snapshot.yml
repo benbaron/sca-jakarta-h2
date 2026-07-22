@@ -46,7 +46,11 @@ jobs:
       - name: Resolve compile and test dependencies
         run: mvn -B -ntp -DskipTests test-compile --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository
       - name: Stage Maven inside workspace
-        run: cp -aL /usr/share/apache-maven "$GITHUB_WORKSPACE/.p15-s1-maven"
+        shell: bash
+        run: |
+          maven_home="$(dirname "$(dirname "$(readlink -f "$(command -v mvn)")")")"
+          test -x "$maven_home/bin/mvn"
+          cp -aL "$maven_home" "$GITHUB_WORKSPACE/.p15-s1-maven"
       - name: Upload Maven repository
         uses: actions/upload-artifact@v4
         with:
