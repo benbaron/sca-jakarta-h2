@@ -1,0 +1,69 @@
+name: P15-S1 Source Snapshot
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout P15-S1 branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S1-company-ownership
+          fetch-depth: 0
+      - name: Create source archive
+        run: |
+          git reset --hard e5dbf79e4b60c26dcd35d1016ffef66096c35a15
+          git clean -fdx
+          tar -czf /tmp/sca-jakarta-h2-main.tgz --exclude=.git .
+      - name: Upload source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: p15-s1-source
+          path: /tmp/sca-jakarta-h2-main.tgz
+          if-no-files-found: error
+          retention-days: 1
+
+  tooling:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@v4
+        with:
+          ref: e5dbf79e4b60c26dcd35d1016ffef66096c35a15
+      - name: Set up Temurin JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Resolve compile and test dependencies
+        run: mvn -B -ntp -DskipTests test-compile --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository
+      - name: Stage Maven inside workspace
+        shell: bash
+        run: |
+          maven_home="$(dirname "$(dirname "$(readlink -f "$(command -v mvn)")")")"
+          test -x "$maven_home/bin/mvn"
+          cp -aL "$maven_home" "$GITHUB_WORKSPACE/.p15-s1-maven"
+      - name: Upload Maven repository
+        uses: actions/upload-artifact@v4
+        with:
+          name: p15-s1-m2
+          path: /home/runner/.m2/repository
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 1
+      - name: Upload Maven
+        uses: actions/upload-artifact@v4
+        with:
+          name: p15-s1-maven
+          path: .p15-s1-maven
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 1
