@@ -18,3 +18,5 @@ These fixtures freeze the P15-S0 compatibility and security boundary. All organi
 The donor COA fixture was generated in GitHub Actions by compiling donor commit `c697630ec1f784ebe8338d7300da6c9ac801b180`, constructing three fictional accounts, and invoking the donor's unmodified `ChartOfAccountsIOService.exportToJson(...)`. Its artifact was then copied byte-for-byte into this directory.
 
 `manifest.sha256` contains SHA-256 for every governed fixture except itself. Any intentional fixture change must update its contract, focused tests, and manifest in the same commit.
+
+Production readers and writers are intentionally absent from P15-S0; these resources are executable contracts for later implementation slices.
