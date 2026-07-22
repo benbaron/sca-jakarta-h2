@@ -17,27 +17,47 @@ jobs:
         with:
           ref: codex/P15-S1-repair-clean-publication
           fetch-depth: 0
-      - name: Fetch and verify preserved implementation archive
+      - name: Diagnose preserved implementation blob
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -euo pipefail
+          set +e
           mkdir -p /tmp/p15-archive
-          gh api repos/${{ github.repository }}/git/blobs/8754a7423c2ec91cac68502a25c3e9b72996e4d8 \
-            --jq .content | tr -d '\n' | base64 -d > /tmp/p15-archive/p15-s1-clean.tgz
-          echo 'c2271b20858fe71b67580744f092ce538b2c52acb0abcac658368f177f7017a1  /tmp/p15-archive/p15-s1-clean.tgz' \
-            | sha256sum -c -
-          test "$(wc -c < /tmp/p15-archive/p15-s1-clean.tgz)" -eq 98872
-          tar -tzf /tmp/p15-archive/p15-s1-clean.tgz > /tmp/p15-archive/members.txt
-          test "$(grep -c '/$' /tmp/p15-archive/members.txt || true)" -ge 1
-          test "$(grep -vc '/$' /tmp/p15-archive/members.txt)" -eq 64
-          grep -E 'V61__company_ownership_and_interchange_identity.sql|ExternalInterchangeIdentity|InterchangeOperation' /tmp/p15-archive/members.txt
-          cat /tmp/p15-archive/members.txt
-      - name: Upload verified archive
+          gh api --include repos/${{ github.repository }}/git/blobs/8754a7423c2ec91cac68502a25c3e9b72996e4d8 \
+            > /tmp/p15-archive/blob-response.txt 2> /tmp/p15-archive/blob-error.txt
+          echo $? > /tmp/p15-archive/blob-status.txt
+          sed -n '1,40p' /tmp/p15-archive/blob-response.txt
+          cat /tmp/p15-archive/blob-error.txt
+          python3 - <<'PY'
+          import base64, json, pathlib
+          root = pathlib.Path('/tmp/p15-archive')
+          text = root.joinpath('blob-response.txt').read_text(errors='replace')
+          start = text.find('{')
+          if start >= 0:
+              try:
+                  payload = json.loads(text[start:])
+                  root.joinpath('blob-json.json').write_text(json.dumps(payload, indent=2))
+                  content = payload.get('content')
+                  if content:
+                      root.joinpath('p15-s1-clean.tgz').write_bytes(base64.b64decode(content))
+              except Exception as exc:
+                  root.joinpath('decode-error.txt').write_text(repr(exc))
+          PY
+          if test -s /tmp/p15-archive/p15-s1-clean.tgz; then
+            sha256sum /tmp/p15-archive/p15-s1-clean.tgz > /tmp/p15-archive/archive.sha256
+            wc -c /tmp/p15-archive/p15-s1-clean.tgz > /tmp/p15-archive/archive.size
+            tar -tzf /tmp/p15-archive/p15-s1-clean.tgz > /tmp/p15-archive/members.txt 2> /tmp/p15-archive/tar-error.txt
+            echo $? > /tmp/p15-archive/tar-status.txt
+            cat /tmp/p15-archive/archive.sha256
+            cat /tmp/p15-archive/archive.size
+            cat /tmp/p15-archive/members.txt
+          fi
+          exit 0
+      - name: Upload blob diagnostics
         uses: actions/upload-artifact@v4
         with:
-          name: p15-s1-clean-archive
+          name: p15-s1-blob-diagnostics
           path: /tmp/p15-archive
           if-no-files-found: error
           retention-days: 1
