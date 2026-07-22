@@ -1,0 +1,31 @@
+name: P15-S1 Source Snapshot
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout P15-S1 branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S1-company-ownership
+          fetch-depth: 0
+      - name: Create source archive
+        run: |
+          git reset --hard e5dbf79e4b60c26dcd35d1016ffef66096c35a15
+          git clean -fdx
+          tar -czf /tmp/sca-jakarta-h2-main.tgz --exclude=.git .
+      - name: Upload source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: p15-s1-source
+          path: /tmp/sca-jakarta-h2-main.tgz
+          if-no-files-found: error
+          retention-days: 1
