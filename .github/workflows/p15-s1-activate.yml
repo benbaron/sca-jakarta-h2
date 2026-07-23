@@ -1,0 +1,51 @@
+name: P15-S1 Activate
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  activate:
+    if: github.head_ref == 'codex/P15-S1-company-ownership-reimplementation'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout implementation branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S1-company-ownership-reimplementation
+          fetch-depth: 0
+      - name: Activate P15-S1 in plan
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('doc/PLAN.md')
+          text = path.read_text()
+          replacements = {
+              'plan_version: 75': 'plan_version: 76',
+              'active_status: BLOCKED': 'active_status: IN_PROGRESS',
+              'active_branch: null': 'active_branch: codex/P15-S1-company-ownership-reimplementation',
+              'active_pull_request: null': 'active_pull_request: 193',
+              'active_head: "b9f61d8805e93772ee42ccf07081b5b0bcb92d5c"': 'active_head: "c52d6056fceda04f0d96e845911dec3750188053"',
+              'next_action: "Await separate explicit authorization to begin P15-S1 from current main; do not create an implementation branch while the slice is BLOCKED."': 'next_action: "Reimplement P15-S1 company ownership, shared interchange contracts, and external identity from clean current main; validate and publish through draft PR #193."',
+              'This revision records the completed P15-S0 contract-and-fixture slice after PR #187 merged and leaves P15-S1 blocked pending separate explicit authorization.': 'This revision begins the authorized P15-S1 reimplementation from clean current main after corrective PR #192 removed accidental staging artifacts.',
+              '| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | BLOCKED at P15-S1 pending explicit authorization |': '| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S1 |',
+              '**Status:** BLOCKED at P15-S1 pending explicit authorization; P15-S0 DONE through PR #187': '**Status:** IN_PROGRESS at P15-S1; P15-S0 DONE through PR #187',
+              'Status: BLOCKED pending separate explicit authorization after P15-S0 merged through PR #187.': 'Status: IN_PROGRESS on fresh branch `codex/P15-S1-company-ownership-reimplementation` from clean merge `c52d6056fceda04f0d96e845911dec3750188053`.'
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit(f'Missing expected plan text: {old}')
+              text = text.replace(old, new, 1)
+          path.write_text(text)
+          PY
+          rm .github/workflows/p15-s1-activate.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add doc/PLAN.md .github/workflows/p15-s1-activate.yml
+          git commit -m "P15-S1: activate clean reimplementation"
+          git push origin HEAD:codex/P15-S1-company-ownership-reimplementation
