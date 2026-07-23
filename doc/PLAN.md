@@ -1,12 +1,12 @@
 ---
-plan_version: 75
+plan_version: 76
 active_phase: P15
 active_slice: P15-S1
-active_status: BLOCKED
-active_branch: null
-active_pull_request: null
-active_head: "b9f61d8805e93772ee42ccf07081b5b0bcb92d5c"
-next_action: "Await separate explicit authorization to begin P15-S1 from current main; do not create an implementation branch while the slice is BLOCKED."
+active_status: IN_PROGRESS
+active_branch: codex/P15-S1-company-ownership-reimplementation
+active_pull_request: 193
+active_head: "c52d6056fceda04f0d96e845911dec3750188053"
+next_action: "Reimplement P15-S1 company ownership, shared interchange contracts, and external identity from clean current main; validate and publish through draft PR #193."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Await separate explicit authorization to begin P15-S1 from current
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records the completed P15-S0 contract-and-fixture slice after PR #187 merged and leaves P15-S1 blocked pending separate explicit authorization.
+This revision begins the authorized P15-S1 reimplementation from clean current main after corrective PR #192 removed accidental staging artifacts.
 
 ## 2. Status values
 
@@ -47,7 +47,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
-| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | BLOCKED at P15-S1 pending explicit authorization |
+| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S1 |
 
 ## 4. Governing documents
 
@@ -694,7 +694,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** BLOCKED at P15-S1 pending explicit authorization; P15-S0 DONE through PR #187  
+**Status:** IN_PROGRESS at P15-S1; P15-S0 DONE through PR #187  
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -792,7 +792,7 @@ Next exact action:
 
 ## P15-S1 — Shared operation contract, company ownership, and external identity
 
-Status: BLOCKED pending separate explicit authorization after P15-S0 merged through PR #187.
+Status: IN_PROGRESS on fresh branch `codex/P15-S1-company-ownership-reimplementation` from clean merge `c52d6056fceda04f0d96e845911dec3750188053`.
 
 Purpose: make selected-company interchange structurally unambiguous before any SCLX company export/import implementation.
 
