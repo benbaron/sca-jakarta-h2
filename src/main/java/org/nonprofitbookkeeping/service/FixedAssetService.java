@@ -160,7 +160,10 @@ public class FixedAssetService
             throw new IllegalStateException("No remaining depreciable value for asset " + assetId);
         }
 
-        TransactionView txn = transactionEntryService.enter(new TransactionCommand(
+        TransactionEntryService companyTransactionEntryService = new TransactionEntryService(
+                jpa,
+                () -> before.companyCode());
+        TransactionView txn = companyTransactionEntryService.enter(new TransactionCommand(
                 runDate,
                 null,
                 "Depreciation: " + before.name(),
@@ -179,7 +182,9 @@ public class FixedAssetService
                 run.setFixedAsset(asset);
                 run.setRunDate(runDate);
                 run.setDepreciationAmount(amount);
-                run.setTransaction(require(em, Txn.class, txn.id(), "Depreciation transaction"));
+                Txn depreciationTxn = require(em, Txn.class, txn.id(), "Depreciation transaction");
+                new CompanyOwnershipService(jpa).requireOwnedBy(asset.getCompany(), depreciationTxn, "Depreciation transaction");
+                run.setTransaction(depreciationTxn);
                 run.setNotes(notes);
                 em.persist(run);
                 em.getTransaction().commit();
@@ -205,6 +210,11 @@ public class FixedAssetService
         Account accumulatedAccount = require(em, Account.class, command.accumulatedDepreciationAccountId(), "Accumulated depreciation account");
         Account expenseAccount = require(em, Account.class, command.depreciationExpenseAccountId(), "Depreciation expense account");
         Fund fund = require(em, Fund.class, command.fundId(), "Fund");
+        CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
+        ownership.ensureOwnedBy(em, company, assetAccount, "Asset account");
+        ownership.ensureOwnedBy(em, company, accumulatedAccount, "Accumulated depreciation account");
+        ownership.ensureOwnedBy(em, company, expenseAccount, "Depreciation expense account");
+        ownership.ensureOwnedBy(em, company, fund, "Asset fund");
 
         validateAssetAccount(assetAccount);
         if (expenseAccount.getAccountType() != AccountType.EXPENSE)

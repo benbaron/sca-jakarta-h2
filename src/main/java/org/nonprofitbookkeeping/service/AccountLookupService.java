@@ -1,57 +1,64 @@
 package org.nonprofitbookkeeping.service;
 
-import org.nonprofitbookkeeping.model.Account;
-import org.nonprofitbookkeeping.persistence.Jpa;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.Company;
+import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Supplier;
 
-/**
- * Minimal account lookup for UI.
- *
- * In the real app, this will be scoped by:
- * - current branch
- * - selected chart-of-accounts version / effective date
- * - fund restrictions, etc.
- */
+/** Company-scoped account lookup for UI reference data. */
 @ApplicationScoped
 public class AccountLookupService
 {
     @Inject
     Jpa jpa;
 
-    public AccountLookupService() {}
+    private Supplier<String> companyCodeSupplier = () -> "DEFAULT";
+
+    public AccountLookupService()
+    {
+    }
 
     public AccountLookupService(Jpa jpa)
     {
-        this.jpa = jpa;
+        this(jpa, () -> "DEFAULT");
     }
 
-    /**
-     * List active posting accounts ordered by code.
-     */
+    public AccountLookupService(Jpa jpa, Supplier<String> companyCodeSupplier)
+    {
+        this.jpa = Objects.requireNonNull(jpa, "jpa");
+        this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
+    }
+
     public List<Account> listActivePostingAccounts()
     {
-        try (EntityManager em = jpa.em())
-        {
-            return em.createQuery(
-                    "select a from Account a left join fetch a.parent where a.active = true and a.posting = true order by a.code",
-                    Account.class)
-                .getResultList();
-        }
+        return list(true);
     }
+
     public List<Account> listPostingAccountsIncludingInactive()
+    {
+        return list(false);
+    }
+
+    private List<Account> list(boolean activeOnly)
     {
         try (EntityManager em = jpa.em())
         {
+            Company company = new CompanyOwnershipService(jpa).requireCompany(em, companyCodeSupplier.get());
+            String activeClause = activeOnly ? "and a.active = true " : "";
             return em.createQuery(
-                    "select a from Account a left join fetch a.parent where a.posting = true order by a.code",
-                    Account.class)
-                .getResultList();
+                            "select a from Account a left join fetch a.parent "
+                                    + "where a.chart.company = :company "
+                                    + activeClause
+                                    + "and a.posting = true order by a.code",
+                            Account.class)
+                    .setParameter("company", company)
+                    .getResultList();
         }
     }
-
 }

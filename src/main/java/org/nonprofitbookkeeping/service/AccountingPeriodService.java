@@ -7,6 +7,7 @@ import org.nonprofitbookkeeping.model.AccountingPeriod;
 import org.nonprofitbookkeeping.model.AccountingPeriodStatus;
 import org.nonprofitbookkeeping.model.AuditEvent;
 import org.nonprofitbookkeeping.model.ClosedPeriodPolicy;
+import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.PeriodReopenEvent;
 import org.nonprofitbookkeeping.model.ReopenScope;
 import org.nonprofitbookkeeping.persistence.Jpa;
@@ -15,6 +16,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * Creates, locates, closes, and reopens accounting periods with audit history.
@@ -23,20 +26,29 @@ import java.util.Optional;
 public class AccountingPeriodService
 {
     private final Jpa jpa;
+    private final Supplier<String> companyCodeSupplier;
 
     @Inject
     public AccountingPeriodService(Jpa jpa)
     {
-        this.jpa = jpa;
+        this(jpa, () -> "DEFAULT");
+    }
+
+    public AccountingPeriodService(Jpa jpa, Supplier<String> companyCodeSupplier)
+    {
+        this.jpa = Objects.requireNonNull(jpa, "jpa");
+        this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
     }
 
     public List<AccountingPeriod> listPeriods()
     {
         try (EntityManager em = jpa.em())
         {
+            Company company = company(em);
             return em.createQuery(
-                            "from AccountingPeriod p order by p.fiscalYear, p.periodNumber",
+                            "from AccountingPeriod p where p.company = :company order by p.fiscalYear, p.periodNumber",
                             AccountingPeriod.class)
+                    .setParameter("company", company)
                     .getResultList();
         }
     }
@@ -56,12 +68,15 @@ public class AccountingPeriodService
 
         try (EntityManager em = jpa.em())
         {
+            Company company = company(em);
             List<AccountingPeriod> matches = em.createQuery("""
                     from AccountingPeriod p
-                    where p.startDate <= :date
+                    where p.company = :company
+                      and p.startDate <= :date
                       and p.endDate >= :date
                     order by p.fiscalYear, p.periodNumber
                     """, AccountingPeriod.class)
+                    .setParameter("company", company)
                     .setParameter("date", date)
                     .setMaxResults(2)
                     .getResultList();
@@ -90,12 +105,15 @@ public class AccountingPeriodService
             em.getTransaction().begin();
             try
             {
+                Company company = company(em);
                 long overlaps = em.createQuery("""
                         select count(p)
                         from AccountingPeriod p
-                        where p.startDate <= :endDate
+                        where p.company = :company
+                          and p.startDate <= :endDate
                           and p.endDate >= :startDate
                         """, Long.class)
+                        .setParameter("company", company)
                         .setParameter("startDate", startDate)
                         .setParameter("endDate", endDate)
                         .getSingleResult();
@@ -106,6 +124,7 @@ public class AccountingPeriodService
                 }
 
                 AccountingPeriod period = new AccountingPeriod();
+                period.setCompany(company);
                 period.setFiscalYear(fiscalYear);
                 period.setPeriodNumber(periodNumber);
                 period.setStartDate(startDate);
@@ -130,14 +149,16 @@ public class AccountingPeriodService
             em.getTransaction().begin();
             try
             {
+                Company company = company(em);
                 AccountingPeriod period = requirePeriod(em, periodId);
+                ownership().ensureOwnedBy(em, company, period, "Accounting period");
                 requireStatus(period, AccountingPeriodStatus.OPEN, "close");
 
                 period.setStatus(AccountingPeriodStatus.CLOSED);
                 period.setClosedAt(Instant.now());
                 period.setClosedBy(cleanActor);
                 period.touchUpdatedAt();
-                em.persist(audit(cleanActor, "PERIOD_CLOSED", periodId, "Accounting period closed", null));
+                em.persist(audit(company, cleanActor, "PERIOD_CLOSED", periodId, "Accounting period closed", null));
                 em.getTransaction().commit();
                 return period;
             }
@@ -194,7 +215,9 @@ public class AccountingPeriodService
             em.getTransaction().begin();
             try
             {
+                Company company = company(em);
                 AccountingPeriod period = requirePeriod(em, periodId);
+                ownership().ensureOwnedBy(em, company, period, "Accounting period");
                 requireStatus(period, AccountingPeriodStatus.CLOSED, "reopen");
                 enforceReopenPolicy(periodId, policy, requireReason, reason);
 
@@ -211,7 +234,7 @@ public class AccountingPeriodService
                 period.setClosedBy(null);
                 period.touchUpdatedAt();
 
-                em.persist(audit(cleanActor, "PERIOD_REOPENED", periodId, "Accounting period reopened", reason));
+                em.persist(audit(company, cleanActor, "PERIOD_REOPENED", periodId, "Accounting period reopened", reason));
                 em.getTransaction().commit();
                 return period;
             }
@@ -241,6 +264,16 @@ public class AccountingPeriodService
         }
     }
 
+    private Company company(EntityManager em)
+    {
+        return ownership().requireCompany(em, companyCodeSupplier.get());
+    }
+
+    private CompanyOwnershipService ownership()
+    {
+        return new CompanyOwnershipService(jpa);
+    }
+
     private static AccountingPeriod requirePeriod(EntityManager em, long periodId)
     {
         AccountingPeriod period = em.find(AccountingPeriod.class, periodId);
@@ -264,9 +297,10 @@ public class AccountingPeriodService
         }
     }
 
-    private static AuditEvent audit(String actor, String action, long periodId, String summary, String reason)
+    private static AuditEvent audit(Company company, String actor, String action, long periodId, String summary, String reason)
     {
         AuditEvent event = new AuditEvent();
+        event.setCompany(company);
         event.setActor(actor);
         event.setActionType(action);
         event.setEntityType("AccountingPeriod");

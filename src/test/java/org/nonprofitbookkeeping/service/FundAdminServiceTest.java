@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 public class FundAdminServiceTest
 {
-    private final FundAdminService service = new FundAdminService(null);
+    private final FundAdminService service = new FundAdminService();
 
     @Test
     public void upsert_rejectsBlankCode()

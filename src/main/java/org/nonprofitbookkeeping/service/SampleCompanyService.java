@@ -8,6 +8,7 @@ import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.BudgetCategory;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
+import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.Counterparty;
 import org.nonprofitbookkeeping.model.CounterpartyKind;
 import org.nonprofitbookkeeping.model.Fund;
@@ -41,15 +42,16 @@ public class SampleCompanyService
             em.getTransaction().begin();
             try
             {
-                ChartOfAccounts chart = findOrCreateChart(em);
+                Company company = new CompanyOwnershipService(jpa).requireCompany(em, "DEFAULT");
+                ChartOfAccounts chart = findOrCreateChart(em, company);
                 seedAccounts(em, chart);
-                seedFunds(em);
-                seedBudgetCategories(em);
-                seedActivities(em);
-                seedMerchants(em);
-                seedCounterparties(em);
+                seedFunds(em, company);
+                seedBudgetCategories(em, company);
+                seedActivities(em, company);
+                seedMerchants(em, company);
+                seedCounterparties(em, company);
                 em.getTransaction().commit();
-                return summarize(em, chart.getId());
+                return summarize(em, company, chart.getId());
             }
             catch (RuntimeException ex)
             {
@@ -62,11 +64,12 @@ public class SampleCompanyService
         }
     }
 
-    private static ChartOfAccounts findOrCreateChart(EntityManager em)
+    private static ChartOfAccounts findOrCreateChart(EntityManager em, Company company)
     {
         List<ChartOfAccounts> existing = em.createQuery(
-                        "from ChartOfAccounts c where c.name = :name order by c.id",
+                        "from ChartOfAccounts c where c.company = :company and c.name = :name order by c.id",
                         ChartOfAccounts.class)
+                .setParameter("company", company)
                 .setParameter("name", SAMPLE_CHART_NAME)
                 .setMaxResults(1)
                 .getResultList();
@@ -74,6 +77,7 @@ public class SampleCompanyService
         if (existing.isEmpty())
         {
             chart = new ChartOfAccounts();
+            chart.setCompany(company);
             chart.setName(SAMPLE_CHART_NAME);
             chart.setVersion(SAMPLE_VERSION);
             chart.setStatus(ChartStatus.ACTIVE);
@@ -82,6 +86,7 @@ public class SampleCompanyService
         else
         {
             chart = existing.get(0);
+            chart.setCompany(company);
             chart.setVersion(SAMPLE_VERSION);
             chart.setStatus(ChartStatus.ACTIVE);
             chart.touchUpdatedAt();
@@ -136,21 +141,23 @@ public class SampleCompanyService
         }
     }
 
-    private static void seedFunds(EntityManager em)
+    private static void seedFunds(EntityManager em, Company company)
     {
-        upsertFund(em, "UNREST", "Unrestricted Operating", FundType.UNRESTRICTED);
-        upsertFund(em, "RESTRICT", "Donor Restricted", FundType.TEMP_RESTRICTED);
-        upsertFund(em, "DESIGNATED", "Board Designated", FundType.DESIGNATED);
+        upsertFund(em, company, "UNREST", "Unrestricted Operating", FundType.UNRESTRICTED);
+        upsertFund(em, company, "RESTRICT", "Donor Restricted", FundType.TEMP_RESTRICTED);
+        upsertFund(em, company, "DESIGNATED", "Board Designated", FundType.DESIGNATED);
     }
 
-    private static void upsertFund(EntityManager em, String code, String name, FundType type)
+    private static void upsertFund(EntityManager em, Company company, String code, String name, FundType type)
     {
-        Fund fund = em.createQuery("from Fund f where f.code = :code", Fund.class)
+        Fund fund = em.createQuery("from Fund f where f.company = :company and f.code = :code", Fund.class)
+                .setParameter("company", company)
                 .setParameter("code", code)
                 .setMaxResults(1)
                 .getResultStream()
                 .findFirst()
                 .orElseGet(Fund::new);
+        fund.setCompany(company);
         fund.setCode(code);
         fund.setName(name);
         fund.setFundType(type);
@@ -162,21 +169,23 @@ public class SampleCompanyService
         }
     }
 
-    private static void seedBudgetCategories(EntityManager em)
+    private static void seedBudgetCategories(EntityManager em, Company company)
     {
-        upsertBudgetCategory(em, "PROGRAM", "Program Services");
-        upsertBudgetCategory(em, "ADMIN", "Administration");
-        upsertBudgetCategory(em, "FUNDRAISE", "Fundraising");
+        upsertBudgetCategory(em, company, "PROGRAM", "Program Services");
+        upsertBudgetCategory(em, company, "ADMIN", "Administration");
+        upsertBudgetCategory(em, company, "FUNDRAISE", "Fundraising");
     }
 
-    private static void upsertBudgetCategory(EntityManager em, String code, String name)
+    private static void upsertBudgetCategory(EntityManager em, Company company, String code, String name)
     {
-        BudgetCategory category = em.createQuery("from BudgetCategory b where b.code = :code", BudgetCategory.class)
+        BudgetCategory category = em.createQuery("from BudgetCategory b where b.company = :company and b.code = :code", BudgetCategory.class)
+                .setParameter("company", company)
                 .setParameter("code", code)
                 .setMaxResults(1)
                 .getResultStream()
                 .findFirst()
                 .orElseGet(BudgetCategory::new);
+        category.setCompany(company);
         category.setCode(code);
         category.setName(name);
         category.setActive(true);
@@ -187,20 +196,22 @@ public class SampleCompanyService
         }
     }
 
-    private static void seedActivities(EntityManager em)
+    private static void seedActivities(EntityManager em, Company company)
     {
-        upsertActivity(em, "GENERAL", "General Operations");
-        upsertActivity(em, "OUTREACH", "Community Outreach");
+        upsertActivity(em, company, "GENERAL", "General Operations");
+        upsertActivity(em, company, "OUTREACH", "Community Outreach");
     }
 
-    private static void upsertActivity(EntityManager em, String code, String name)
+    private static void upsertActivity(EntityManager em, Company company, String code, String name)
     {
-        Activity activity = em.createQuery("from Activity a where a.code = :code", Activity.class)
+        Activity activity = em.createQuery("from Activity a where a.company = :company and a.code = :code", Activity.class)
+                .setParameter("company", company)
                 .setParameter("code", code)
                 .setMaxResults(1)
                 .getResultStream()
                 .findFirst()
                 .orElseGet(Activity::new);
+        activity.setCompany(company);
         activity.setCode(code);
         activity.setName(name);
         activity.setActive(true);
@@ -210,20 +221,22 @@ public class SampleCompanyService
         }
     }
 
-    private static void seedMerchants(EntityManager em)
+    private static void seedMerchants(EntityManager em, Company company)
     {
-        upsertMerchant(em, "SCA Office Supply");
-        upsertMerchant(em, "Community Venue");
+        upsertMerchant(em, company, "SCA Office Supply");
+        upsertMerchant(em, company, "Community Venue");
     }
 
-    private static void upsertMerchant(EntityManager em, String name)
+    private static void upsertMerchant(EntityManager em, Company company, String name)
     {
-        Merchant merchant = em.createQuery("from Merchant m where m.name = :name", Merchant.class)
+        Merchant merchant = em.createQuery("from Merchant m where m.company = :company and m.name = :name", Merchant.class)
+                .setParameter("company", company)
                 .setParameter("name", name)
                 .setMaxResults(1)
                 .getResultStream()
                 .findFirst()
                 .orElseGet(Merchant::new);
+        merchant.setCompany(company);
         merchant.setName(name);
         merchant.setActive(true);
         if (merchant.getId() == null)
@@ -232,23 +245,25 @@ public class SampleCompanyService
         }
     }
 
-    private static void seedCounterparties(EntityManager em)
+    private static void seedCounterparties(EntityManager em, Company company)
     {
-        upsertCounterparty(em, "Sample Donor", CounterpartyKind.PERSON);
-        upsertCounterparty(em, "Sample Grantor Foundation", CounterpartyKind.ORG);
-        upsertCounterparty(em, "Sample Program Client", CounterpartyKind.OTHER);
+        upsertCounterparty(em, company, "Sample Donor", CounterpartyKind.PERSON);
+        upsertCounterparty(em, company, "Sample Grantor Foundation", CounterpartyKind.ORG);
+        upsertCounterparty(em, company, "Sample Program Client", CounterpartyKind.OTHER);
     }
 
-    private static void upsertCounterparty(EntityManager em, String name, CounterpartyKind kind)
+    private static void upsertCounterparty(EntityManager em, Company company, String name, CounterpartyKind kind)
     {
         Counterparty counterparty = em.createQuery(
-                        "from Counterparty c where c.displayName = :name",
+                        "from Counterparty c where c.company = :company and c.displayName = :name",
                         Counterparty.class)
+                .setParameter("company", company)
                 .setParameter("name", name)
                 .setMaxResults(1)
                 .getResultStream()
                 .findFirst()
                 .orElseGet(Counterparty::new);
+        counterparty.setCompany(company);
         counterparty.setDisplayName(name);
         counterparty.setKind(kind);
         counterparty.setActive(true);
@@ -258,18 +273,18 @@ public class SampleCompanyService
         }
     }
 
-    private static SampleCompanySummary summarize(EntityManager em, Long chartId)
+    private static SampleCompanySummary summarize(EntityManager em, Company company, Long chartId)
     {
         return new SampleCompanySummary(
                 chartId,
                 em.createQuery("select count(a) from Account a where a.chart.id = :chartId", Long.class)
                         .setParameter("chartId", chartId)
                         .getSingleResult(),
-                em.createQuery("select count(f) from Fund f where f.active = true", Long.class).getSingleResult(),
-                em.createQuery("select count(b) from BudgetCategory b where b.active = true", Long.class).getSingleResult(),
-                em.createQuery("select count(a) from Activity a where a.active = true", Long.class).getSingleResult(),
-                em.createQuery("select count(m) from Merchant m where m.active = true", Long.class).getSingleResult(),
-                em.createQuery("select count(c) from Counterparty c where c.active = true", Long.class).getSingleResult());
+                em.createQuery("select count(f) from Fund f where f.company = :company and f.active = true", Long.class).setParameter("company", company).getSingleResult(),
+                em.createQuery("select count(b) from BudgetCategory b where b.company = :company and b.active = true", Long.class).setParameter("company", company).getSingleResult(),
+                em.createQuery("select count(a) from Activity a where a.company = :company and a.active = true", Long.class).setParameter("company", company).getSingleResult(),
+                em.createQuery("select count(m) from Merchant m where m.company = :company and m.active = true", Long.class).setParameter("company", company).getSingleResult(),
+                em.createQuery("select count(c) from Counterparty c where c.company = :company and c.active = true", Long.class).setParameter("company", company).getSingleResult());
     }
 
     public record SampleCompanySummary(

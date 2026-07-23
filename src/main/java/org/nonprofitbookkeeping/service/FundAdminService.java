@@ -3,6 +3,7 @@ package org.nonprofitbookkeeping.service;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.model.FundType;
 import org.nonprofitbookkeeping.persistence.Jpa;
@@ -12,6 +13,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 /** Service-owned Fund create, edit, deactivate, usage, and protected-delete boundary. */
 @ApplicationScoped
@@ -20,13 +23,21 @@ public class FundAdminService
     @Inject
     Jpa jpa;
 
+    private Supplier<String> companyCodeSupplier = () -> "DEFAULT";
+
     public FundAdminService()
     {
     }
 
     public FundAdminService(Jpa jpa)
     {
-        this.jpa = jpa;
+        this(jpa, () -> "DEFAULT");
+    }
+
+    public FundAdminService(Jpa jpa, Supplier<String> companyCodeSupplier)
+    {
+        this.jpa = Objects.requireNonNull(jpa, "jpa");
+        this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
     }
 
     /**
@@ -45,10 +56,17 @@ public class FundAdminService
             em.getTransaction().begin();
             try
             {
+                CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
+                Company company = ownership.requireCompany(em, companyCodeSupplier.get());
                 Fund fund = command.id() == null
                         ? new Fund()
                         : requireFund(em, command.id());
-                apply(em, fund, command);
+                if (fund.getCompany() == null)
+                {
+                    fund.setCompany(company);
+                }
+                ownership.ensureOwnedBy(em, company, fund, "Fund");
+                apply(em, ownership, company, fund, command);
                 if (fund.getId() == null)
                 {
                     em.persist(fund);
@@ -79,9 +97,12 @@ public class FundAdminService
             em.getTransaction().begin();
             try
             {
+                CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
+                Company company = ownership.requireCompany(em, companyCodeSupplier.get());
                 Fund existing = em.createQuery(
-                                "from Fund f left join fetch f.parent where upper(f.code) = :code",
+                                "from Fund f left join fetch f.parent where (f.company = :company or f.company is null) and upper(f.code) = :code",
                                 Fund.class)
+                        .setParameter("company", company)
                         .setParameter("code", cleanCode)
                         .setMaxResults(1)
                         .getResultStream()
@@ -98,7 +119,12 @@ public class FundAdminService
                         existing == null ? null : existing.getEffectiveTo(),
                         existing == null ? null : existing.getRestrictionText());
                 Fund fund = existing == null ? new Fund() : existing;
-                apply(em, fund, command);
+                if (fund.getCompany() == null)
+                {
+                    fund.setCompany(company);
+                }
+                ownership.ensureOwnedBy(em, company, fund, "Fund");
+                apply(em, ownership, company, fund, command);
                 if (fund.getId() == null)
                 {
                     em.persist(fund);
@@ -118,7 +144,9 @@ public class FundAdminService
     {
         try (EntityManager em = jpa.em())
         {
-            requireFund(em, fundId);
+            Fund fund = requireFund(em, fundId);
+            Company company = new CompanyOwnershipService(jpa).requireCompany(em, companyCodeSupplier.get());
+            new CompanyOwnershipService(jpa).ensureOwnedBy(em, company, fund, "Fund");
             return usage(em, fundId);
         }
     }
@@ -134,7 +162,10 @@ public class FundAdminService
             em.getTransaction().begin();
             try
             {
+                CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
+                Company company = ownership.requireCompany(em, companyCodeSupplier.get());
                 Fund fund = requireFund(em, fundId);
+                ownership.ensureOwnedBy(em, company, fund, "Fund");
                 FundUsage usage = usage(em, fundId);
                 if (!usage.canDelete())
                 {
@@ -154,7 +185,7 @@ public class FundAdminService
         }
     }
 
-    private static void apply(EntityManager em, Fund fund, FundCommand command)
+    private static void apply(EntityManager em, CompanyOwnershipService ownership, Company company, Fund fund, FundCommand command)
     {
         String code = normalizeCode(command.code());
         String name = requireText(command.name(), "Fund name", 200);
@@ -163,9 +194,9 @@ public class FundAdminService
             throw new IllegalArgumentException("Fund type is required.");
         }
         validateDates(command.effectiveFrom(), command.effectiveTo());
-        requireUniqueCode(em, command.id(), code);
+        requireUniqueCode(em, company, command.id(), code);
 
-        Fund parent = loadValidatedParent(em, command.id(), command.parentFundId());
+        Fund parent = loadValidatedParent(em, ownership, company, command.id(), command.parentFundId());
         fund.setCode(code);
         fund.setName(name);
         fund.setFundType(command.fundType());
@@ -177,7 +208,7 @@ public class FundAdminService
         fund.touchUpdatedAt();
     }
 
-    private static Fund loadValidatedParent(EntityManager em, Long fundId, Long parentFundId)
+    private static Fund loadValidatedParent(EntityManager em, CompanyOwnershipService ownership, Company company, Long fundId, Long parentFundId)
     {
         if (parentFundId == null)
         {
@@ -189,6 +220,7 @@ public class FundAdminService
         }
 
         Fund parent = requireFund(em, parentFundId);
+        ownership.ensureOwnedBy(em, company, parent, "Parent fund");
         Set<Long> visited = new HashSet<>();
         Fund cursor = parent;
         while (cursor != null)
@@ -226,12 +258,13 @@ public class FundAdminService
                 .getSingleResult();
     }
 
-    private static void requireUniqueCode(EntityManager em, Long fundId, String code)
+    private static void requireUniqueCode(EntityManager em, Company company, Long fundId, String code)
     {
         String jpql = fundId == null
-                ? "select f.id from Fund f where upper(f.code) = :code"
-                : "select f.id from Fund f where upper(f.code) = :code and f.id <> :id";
+                ? "select f.id from Fund f where f.company = :company and upper(f.code) = :code"
+                : "select f.id from Fund f where f.company = :company and upper(f.code) = :code and f.id <> :id";
         var query = em.createQuery(jpql, Long.class)
+                .setParameter("company", company)
                 .setParameter("code", code)
                 .setMaxResults(1);
         if (fundId != null)
@@ -293,7 +326,7 @@ public class FundAdminService
             return ex;
         }
         String message = ex.getMessage() == null ? "" : ex.getMessage().toLowerCase(Locale.ROOT);
-        if (message.contains("uq_fund_code") || message.contains("unique") || message.contains("constraint"))
+        if (message.contains("uq_fund_company_code") || message.contains("unique") || message.contains("constraint"))
         {
             return new IllegalArgumentException("Fund code already exists: " + code + ".", ex);
         }

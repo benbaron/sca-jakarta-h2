@@ -7,10 +7,11 @@ import java.math.*;
 
 @Entity
 @Table(name = "fund",
-       uniqueConstraints = @UniqueConstraint(name = "uq_fund_code", columnNames = {"code"}),
+       uniqueConstraints = @UniqueConstraint(name = "uq_fund_company_code", columnNames = {"company_id", "code"}),
        indexes = {
            @Index(name = "ix_fund_parent", columnList = "parent_id"),
-           @Index(name = "ix_fund_active", columnList = "is_active")
+           @Index(name = "ix_fund_active", columnList = "is_active"),
+           @Index(name = "ix_fund_company_active", columnList = "company_id, is_active")
        })
 /**
  * Represents the Fund component in the nonprofit bookkeeping application.
@@ -20,6 +21,10 @@ public class Fund
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
 
     @Column(nullable = false, length = 64)
     private String code;
@@ -55,6 +60,8 @@ public class Fund
     private Instant updatedAt = Instant.now();
 
     public Long getId() { return id; }
+    public Company getCompany() { return company; }
+    public void setCompany(Company company) { this.company = company; }
 
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }

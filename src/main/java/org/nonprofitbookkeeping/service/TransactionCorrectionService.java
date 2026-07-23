@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.AuditEvent;
+import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
 import org.nonprofitbookkeeping.persistence.Jpa;
@@ -48,7 +49,9 @@ public class TransactionCorrectionService
             em.getTransaction().begin();
             try
             {
+                Company company = selectedCompany(em);
                 Txn txn = requireTransaction(em, transactionId);
+                ownership().ensureOwnedBy(em, company, txn, "Transaction");
                 requireEntered(txn);
                 requireNotReconciled(em, transactionId, "edit transaction");
                 requireOpenRange(em, txn.getTxnDate(), "edit transaction");
@@ -59,7 +62,7 @@ public class TransactionCorrectionService
                 txn.setMemo(blankToNull(memo));
                 txn.setCorrectionNote(blankToNull(correctionNote));
                 txn.touchUpdatedAt();
-                em.persist(audit(actor, "TRANSACTION_EDITED", txn, before, snapshot(txn), correctionNote));
+                em.persist(audit(company, actor, "TRANSACTION_EDITED", txn, before, snapshot(txn), correctionNote));
                 em.getTransaction().commit();
                 return txn;
             }
@@ -79,12 +82,14 @@ public class TransactionCorrectionService
             em.getTransaction().begin();
             try
             {
+                Company company = selectedCompany(em);
                 Txn txn = requireTransaction(em, transactionId);
+                ownership().ensureOwnedBy(em, company, txn, "Transaction");
                 requireEntered(txn);
                 requireNotReconciled(em, transactionId, "delete transaction");
                 requireOpenRange(em, txn.getTxnDate(), "delete transaction");
 
-                AuditEvent event = audit(actor, "TRANSACTION_DELETED", txn, snapshot(txn), null, reason);
+                AuditEvent event = audit(company, actor, "TRANSACTION_DELETED", txn, snapshot(txn), null, reason);
                 event.setEntityId(Long.toString(transactionId));
                 em.persist(event);
                 em.flush();
@@ -112,7 +117,9 @@ public class TransactionCorrectionService
             em.getTransaction().begin();
             try
             {
+                Company company = selectedCompany(em);
                 Txn original = requireTransaction(em, transactionId);
+                ownership().ensureOwnedBy(em, company, original, "Transaction");
                 requireEntered(original);
                 requireNotReconciled(em, transactionId, "reverse transaction");
                 requireOpenRange(em, reversalDate, "create reversal");
@@ -124,6 +131,7 @@ public class TransactionCorrectionService
                         .getResultList();
                 validateBalanced(originalSplits);
 
+                validateSplitOwnership(em, company, originalSplits);
                 Txn reversal = copyHeader(original, reversalDate);
                 reversal.setReversalOf(original);
                 reversal.setCorrectionNote(blankToNull(reason));
@@ -150,7 +158,7 @@ public class TransactionCorrectionService
                     }
                 }
 
-                em.persist(audit(actor, "TRANSACTION_REVERSED", original, snapshot(original), snapshot(reversal), reason));
+                em.persist(audit(company, actor, "TRANSACTION_REVERSED", original, snapshot(original), snapshot(reversal), reason));
                 em.getTransaction().commit();
                 return new CorrectionResult(reversal.getId(), replacement == null ? null : replacement.getId());
             }
@@ -160,6 +168,28 @@ public class TransactionCorrectionService
                 throw ex;
             }
         }
+    }
+
+    private void validateSplitOwnership(EntityManager em, Company company, List<TxnSplit> splits)
+    {
+        for (TxnSplit split : splits)
+        {
+            ownership().ensureOwnedBy(em, company, split.getAccount(), "Transaction line account");
+            ownership().ensureOwnedBy(em, company, split.getFund(), "Transaction line fund");
+            ownership().ensureOwnedBy(em, company, split.getBudgetCategory(), "Transaction line budget category");
+            ownership().ensureOwnedBy(em, company, split.getActivity(), "Transaction line activity");
+            ownership().ensureOwnedBy(em, company, split.getMerchant(), "Transaction line merchant");
+        }
+    }
+
+    private Company selectedCompany(EntityManager em)
+    {
+        return ownership().requireCompany(em, companyCodeSupplier.get());
+    }
+
+    private CompanyOwnershipService ownership()
+    {
+        return new CompanyOwnershipService(jpa);
     }
 
     private static void requireNotReconciled(EntityManager em, long transactionId, String operation)
@@ -188,6 +218,7 @@ public class TransactionCorrectionService
     private static Txn copyHeader(Txn source, LocalDate date)
     {
         Txn target = new Txn();
+        target.setCompany(source.getCompany());
         target.setTxnDate(date);
         target.setPayee(source.getPayee());
         target.setMemo(source.getMemo());
@@ -243,9 +274,10 @@ public class TransactionCorrectionService
         }
     }
 
-    private static AuditEvent audit(String actor, String action, Txn txn, String before, String after, String reason)
+    private static AuditEvent audit(Company company, String actor, String action, Txn txn, String before, String after, String reason)
     {
         AuditEvent event = new AuditEvent();
+        event.setCompany(company);
         event.setActor(requireText(actor, "actor"));
         event.setActionType(action);
         event.setEntityType("Txn");

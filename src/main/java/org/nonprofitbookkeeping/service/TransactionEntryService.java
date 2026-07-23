@@ -7,6 +7,7 @@ import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.BudgetCategory;
 import org.nonprofitbookkeeping.model.Counterparty;
+import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.NormalBalance;
@@ -76,11 +77,13 @@ public class TransactionEntryService
             em.getTransaction().begin();
             try
             {
+                Company company = selectedCompany(em);
                 Txn txn = em.find(Txn.class, transactionId);
                 if (txn == null)
                 {
                     throw new PostingException("Transaction not found: " + transactionId);
                 }
+                ownership().ensureOwnedBy(em, company, txn, "Transaction");
                 if (!"ENTERED".equals(txn.getStatus()))
                 {
                     throw new PostingException("Only ENTERED transactions can be updated by the entry service.");
@@ -90,17 +93,17 @@ public class TransactionEntryService
                 requireOpenRange(em, command.date(), "update transaction");
                 String before = snapshot(txn);
 
-                applyHeader(em, txn, command);
+                applyHeader(em, company, txn, command);
                 em.createQuery("delete from TxnSupplementalLine s where s.txn = :txn")
                         .setParameter("txn", txn)
                         .executeUpdate();
                 em.createQuery("delete from TxnSplit s where s.txn = :txn")
                         .setParameter("txn", txn)
                         .executeUpdate();
-                persistLines(em, txn, command.lines());
+                persistLines(em, company, txn, command.lines());
                 persistSupplementalLines(em, txn, command.supplementalLines());
                 txn.touchUpdatedAt();
-                em.persist(audit("system", "TRANSACTION_UPDATED", txn, before, snapshot(txn), null));
+                em.persist(audit(company, "system", "TRANSACTION_UPDATED", txn, before, snapshot(txn), null));
                 em.getTransaction().commit();
                 return load(transactionId);
             }
@@ -116,11 +119,13 @@ public class TransactionEntryService
     {
         try (EntityManager em = jpa.em())
         {
+            Company company = selectedCompany(em);
             Txn txn = em.find(Txn.class, transactionId);
             if (txn == null)
             {
                 throw new PostingException("Transaction not found: " + transactionId);
             }
+            ownership().ensureOwnedBy(em, company, txn, "Transaction");
             return toView(em, txn);
         }
     }
@@ -131,14 +136,17 @@ public class TransactionEntryService
         String needle = text == null || text.isBlank() ? null : "%" + text.trim().toLowerCase() + "%";
         try (EntityManager em = jpa.em())
         {
+            Company company = selectedCompany(em);
             List<Txn> txns = em.createQuery(
                             "select distinct t from Txn t " +
                                     "left join t.payee p " +
-                                    "where (:fromDate is null or t.txnDate >= :fromDate) " +
+                                    "where t.company = :company " +
+                                    "and (:fromDate is null or t.txnDate >= :fromDate) " +
                                     "and (:toDate is null or t.txnDate <= :toDate) " +
                                     "and (:needle is null or lower(coalesce(t.memo, '')) like :needle " +
                                     "or lower(coalesce(p.displayName, '')) like :needle) " +
                                     "order by t.txnDate desc, t.id desc", Txn.class)
+                    .setParameter("company", company)
                     .setParameter("fromDate", fromDate)
                     .setParameter("toDate", toDate)
                     .setParameter("needle", needle)
@@ -174,14 +182,20 @@ public class TransactionEntryService
             em.getTransaction().begin();
             try
             {
+                Company company = selectedCompany(em);
                 requireOpenRange(em, command.date(), "enter transaction");
                 Txn txn = new Txn();
+                txn.setCompany(company);
                 txn.setReplacementFor(replacementFor);
-                applyHeader(em, txn, command);
+                if (replacementFor != null)
+                {
+                    ownership().ensureOwnedBy(em, company, replacementFor, "Replacement transaction");
+                }
+                applyHeader(em, company, txn, command);
                 em.persist(txn);
-                persistLines(em, txn, command.lines());
+                persistLines(em, company, txn, command.lines());
                 persistSupplementalLines(em, txn, command.supplementalLines());
-                em.persist(audit("system", "TRANSACTION_ENTERED", txn, null, snapshot(txn), null));
+                em.persist(audit(company, "system", "TRANSACTION_ENTERED", txn, null, snapshot(txn), null));
                 em.getTransaction().commit();
                 return load(txn.getId());
             }
@@ -233,27 +247,43 @@ public class TransactionEntryService
         }
     }
 
-    private void applyHeader(EntityManager em, Txn txn, TransactionCommand command)
+    private void applyHeader(EntityManager em, Company company, Txn txn, TransactionCommand command)
     {
+        txn.setCompany(company);
         txn.setTxnDate(command.date());
-        txn.setPayee(command.payeeId() == null ? null : required(em, Counterparty.class, command.payeeId(), "Payee"));
+        Counterparty payee = command.payeeId() == null ? null : required(em, Counterparty.class, command.payeeId(), "Payee");
+        ownership().ensureOwnedBy(em, company, payee, "Payee");
+        txn.setPayee(payee);
         txn.setMemo(command.memo());
-        txn.setBankAccount(command.bankAccountId() == null ? null : required(em, Account.class, command.bankAccountId(), "Bank account"));
+        Account bankAccount = command.bankAccountId() == null ? null : required(em, Account.class, command.bankAccountId(), "Bank account");
+        if (bankAccount != null)
+        {
+            ownership().ensureOwnedBy(em, company, bankAccount, "Bank account");
+        }
+        txn.setBankAccount(bankAccount);
     }
 
-    private void persistLines(EntityManager em, Txn txn, List<TransactionLineCommand> lines)
+    private void persistLines(EntityManager em, Company company, Txn txn, List<TransactionLineCommand> lines)
     {
         for (TransactionLineCommand command : lines)
         {
             Account account = required(em, Account.class, command.accountId(), "Account");
             Fund fund = required(em, Fund.class, command.fundId(), "Fund");
+            BudgetCategory category = command.budgetCategoryId() == null ? null : required(em, BudgetCategory.class, command.budgetCategoryId(), "Budget category");
+            Activity activity = command.activityId() == null ? null : required(em, Activity.class, command.activityId(), "Activity");
+            Merchant merchant = command.merchantId() == null ? null : required(em, Merchant.class, command.merchantId(), "Merchant");
+            ownership().ensureOwnedBy(em, company, account, "Account");
+            ownership().ensureOwnedBy(em, company, fund, "Fund");
+            ownership().ensureOwnedBy(em, company, category, "Budget category");
+            ownership().ensureOwnedBy(em, company, activity, "Activity");
+            ownership().ensureOwnedBy(em, company, merchant, "Merchant");
             TxnSplit split = new TxnSplit();
             split.setTxn(txn);
             split.setAccount(account);
             split.setFund(fund);
-            split.setBudgetCategory(command.budgetCategoryId() == null ? null : required(em, BudgetCategory.class, command.budgetCategoryId(), "Budget category"));
-            split.setActivity(command.activityId() == null ? null : required(em, Activity.class, command.activityId(), "Activity"));
-            split.setMerchant(command.merchantId() == null ? null : required(em, Merchant.class, command.merchantId(), "Merchant"));
+            split.setBudgetCategory(category);
+            split.setActivity(activity);
+            split.setMerchant(merchant);
             split.setNmr(command.nmr());
             split.setNotes(command.notes());
             split.setAmountSigned(toSignedAmount(account, command));
@@ -386,6 +416,7 @@ public class TransactionEntryService
     }
 
     private static org.nonprofitbookkeeping.model.AuditEvent audit(
+            Company company,
             String actor,
             String action,
             Txn txn,
@@ -394,6 +425,7 @@ public class TransactionEntryService
             String reason)
     {
         org.nonprofitbookkeeping.model.AuditEvent event = new org.nonprofitbookkeeping.model.AuditEvent();
+        event.setCompany(company);
         event.setActor(actor);
         event.setActionType(action);
         event.setEntityType("Txn");
@@ -424,6 +456,16 @@ public class TransactionEntryService
             throw new PostingException(label + " not found: " + id);
         }
         return entity;
+    }
+
+    private Company selectedCompany(EntityManager em)
+    {
+        return ownership().requireCompany(em, companyCodeSupplier.get());
+    }
+
+    private CompanyOwnershipService ownership()
+    {
+        return new CompanyOwnershipService(jpa);
     }
 
     private void rollbackIfActive(EntityManager em)

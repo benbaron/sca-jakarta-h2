@@ -5,8 +5,8 @@ active_slice: P15-S1
 active_status: IN_PROGRESS
 active_branch: codex/P15-S1-company-ownership-reimplementation
 active_pull_request: 193
-active_head: "c52d6056fceda04f0d96e845911dec3750188053"
-next_action: "Reimplement P15-S1 company ownership, shared interchange contracts, and external identity from clean current main; validate and publish through draft PR #193."
+active_head: "ab8d9b39db5cb0bbdf0f98cad98cd94e355e7cc3"
+next_action: "Publish the rebuilt P15-S1 implementation to draft PR #193, run full local and GitHub validation, then reconcile the final head before review and merge; do not start P15-S2."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Reimplement P15-S1 company ownership, shared interchange contracts
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision begins the authorized P15-S1 reimplementation from clean current main after corrective PR #192 removed accidental staging artifacts.
+This revision executes P15-S1 from current main, adding authoritative company ownership, migration diagnostics, shared interchange operation contracts, and durable external identity before any selected-company SCLX implementation.
 
 ## 2. Status values
 
@@ -47,7 +47,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
-| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S1 |
+| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | VERIFYING at P15-S1 |
 
 ## 4. Governing documents
 
@@ -60,6 +60,7 @@ Focused documents for current UI/accounting work:
 
 - `doc/interface-operation-matrix.md`
 - `doc/persistence-authority-inventory.md`
+- `doc/data-exchange/shared-operation-contract.md`
 - `doc/ui_design_rules.md`
 - `doc/ui/editor-guidelines.md`
 - `doc/requirements/requirements-clarification-overlay.md`
@@ -694,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S1; P15-S0 DONE through PR #187  
+**Status:** VERIFYING at P15-S1; P15-S0 DONE through PR #187  
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -715,6 +716,7 @@ Required reading:
 
 - `doc/interface-operation-matrix.md`
 - `doc/persistence-authority-inventory.md`
+- `doc/data-exchange/shared-operation-contract.md`
 - `doc/ui_design_rules.md`
 - `doc/ui/editor-guidelines.md`
 - `doc/requirements/requirements-clarification-overlay.md`
@@ -788,15 +790,20 @@ Acceptance:
 
 Next exact action:
 
-- None; P15-S0 is DONE. P15-S1 remains BLOCKED pending separate explicit authorization.
+- None; P15-S0 is DONE. P15-S1 is authorized and executing in draft PR #189.
 
 ## P15-S1 — Shared operation contract, company ownership, and external identity
 
-Status: IN_PROGRESS on fresh branch `codex/P15-S1-company-ownership-reimplementation` from clean merge `c52d6056fceda04f0d96e845911dec3750188053`.
+Status: VERIFYING; implementation and local validation complete, clean publication and final PR-head validation pending.
+
+Branch: `codex/P15-S1-company-ownership-reimplementation`  
+Draft pull request: #193  
+Base commit: `e5dbf79e4b60c26dcd35d1016ffef66096c35a15`  
+Tested implementation commit: pending clean publication; the exact SHA will be recorded in the plan bookkeeping commit.
 
 Purpose: make selected-company interchange structurally unambiguous before any SCLX company export/import implementation.
 
-Planned deliverables:
+Completed deliverables in this branch:
 
 - Add immutable shared preview, validation-message, confirmation, progress, operation-count, and result types used by SCLX, COA JSON, database transfer, and bank-statement exchange without conflating their DTOs or authorities.
 - Preserve preview only, validate only, commit to active company, and create/import into a new database/company only where each governed format permits them.
@@ -817,6 +824,18 @@ Acceptance:
 - Reimport distinguishes identical, new, and conflicting records without local numeric primary keys.
 - Migration leaves ambiguous data untouched and reported rather than guessed.
 - Shared contracts remain independent of JavaFX and JPA entities, and no generic job framework returns.
+
+Validation status:
+
+- Focused P15-S1 migration, ownership, identity, rollback, and contract tests: PASS.
+- Complete established test catalog plus P15-S1 additions, executed in bounded local Maven batches: 368 tests, 0 failures, 0 errors, 21 documented display-dependent skips.
+- Local virtual-display compliance subset matching `.github/workflows/maven-pr-tests.yml`: PASS — 4 tests, 0 failures, 0 errors, 0 skipped.
+- Final GitHub Temurin 17 `mvn clean verify` and Maven PR Tests: pending clean implementation publication.
+- Draft PR review and merge: pending.
+
+Next exact action:
+
+- Publish the clean implementation commit, record its exact SHA, confirm final-head GitHub validation, review and merge draft PR #189, then begin P15-S2 from the resulting current `main` only after explicit authorization.
 
 ## P15-S2 — Whole-database backup, import-copy, validation, and recovery
 

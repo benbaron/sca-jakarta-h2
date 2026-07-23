@@ -9,7 +9,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -24,11 +26,12 @@ import java.util.List;
  */
 @Entity
 @Table(name = "budget_plan",
-       uniqueConstraints = @UniqueConstraint(name = "uq_budget_plan_fiscal_version", columnNames = {"fiscal_year", "version_code"}),
+       uniqueConstraints = @UniqueConstraint(name = "uq_budget_plan_company_fiscal_version", columnNames = {"company_id", "fiscal_year", "version_code"}),
        indexes = {
            @Index(name = "ix_budget_plan_status", columnList = "status"),
            @Index(name = "ix_budget_plan_fiscal_year", columnList = "fiscal_year"),
-           @Index(name = "ix_budget_plan_active_year", columnList = "fiscal_year, activated_at")
+           @Index(name = "ix_budget_plan_active_year", columnList = "fiscal_year, activated_at"),
+           @Index(name = "ix_budget_plan_company_year", columnList = "company_id, fiscal_year")
        })
 public class BudgetPlan
 {
@@ -42,6 +45,10 @@ public class BudgetPlan
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
 
     @Column(nullable = false, length = 200)
     private String name;
@@ -81,6 +88,8 @@ public class BudgetPlan
     private List<BudgetLine> lines = new ArrayList<>();
 
     public Long getId() { return id; }
+    public Company getCompany() { return company; }
+    public void setCompany(Company company) { this.company = company; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     public int getFiscalYear() { return fiscalYear; }

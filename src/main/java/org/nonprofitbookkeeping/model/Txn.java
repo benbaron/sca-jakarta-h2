@@ -21,7 +21,8 @@ import java.time.LocalDate;
            @Index(name = "ix_txn_date", columnList = "txn_date"),
            @Index(name = "ix_txn_payee", columnList = "payee_id"),
            @Index(name = "ix_txn_status", columnList = "status"),
-           @Index(name = "ix_txn_replacement_for", columnList = "replacement_for_txn_id")
+           @Index(name = "ix_txn_replacement_for", columnList = "replacement_for_txn_id"),
+           @Index(name = "ix_txn_company_date", columnList = "company_id, txn_date")
        })
 /**
  * Represents an entered accounting transaction.
@@ -31,6 +32,10 @@ public class Txn
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
 
     @Column(name = "txn_date", nullable = false)
     private LocalDate txnDate;
@@ -67,6 +72,8 @@ public class Txn
     private Instant updatedAt = Instant.now();
 
     public Long getId() { return id; }
+    public Company getCompany() { return company; }
+    public void setCompany(Company company) { this.company = company; }
     public LocalDate getTxnDate() { return txnDate; }
     public void setTxnDate(LocalDate txnDate) { this.txnDate = txnDate; }
     public Counterparty getPayee() { return payee; }

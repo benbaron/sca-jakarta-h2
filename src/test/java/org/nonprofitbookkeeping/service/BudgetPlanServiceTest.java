@@ -117,8 +117,8 @@ public class BudgetPlanServiceTest
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
-            em.createNativeQuery("INSERT INTO fund (id, code, name, fund_type) VALUES (1, 'OPERATING', 'Operating', 'UNRESTRICTED')").executeUpdate();
-            em.createNativeQuery("INSERT INTO budget_category (id, code, name, is_active) VALUES (1, 'PROGRAM', 'Program Services', TRUE)").executeUpdate();
+            em.createNativeQuery("INSERT INTO fund (id, company_id, code, name, fund_type) VALUES (1, 1, 'OPERATING', 'Operating', 'UNRESTRICTED')").executeUpdate();
+            em.createNativeQuery("INSERT INTO budget_category (id, company_id, code, name, is_active) VALUES (1, 1, 'PROGRAM', 'Program Services', TRUE)").executeUpdate();
             em.getTransaction().commit();
         }
     }
@@ -128,10 +128,10 @@ public class BudgetPlanServiceTest
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
-            em.createNativeQuery("INSERT INTO chart_of_accounts (id, name, version, status) VALUES (1, 'Test', '1', 'ACTIVE')").executeUpdate();
+            em.createNativeQuery("INSERT INTO chart_of_accounts (id, company_id, name, version, status) VALUES (1, 1, 'Test', '1', 'ACTIVE')").executeUpdate();
             em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (1, 1, '1000', 'Checking', 'BANK', 'DEBIT')").executeUpdate();
             em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (2, 1, '5000', 'Expense', 'EXPENSE', 'DEBIT')").executeUpdate();
-            em.createNativeQuery("INSERT INTO txn (id, txn_date, memo, status) VALUES (1, DATE '2026-02-10', 'Expense', 'ENTERED')").executeUpdate();
+            em.createNativeQuery("INSERT INTO txn (id, company_id, txn_date, memo, status) VALUES (1, 1, DATE '2026-02-10', 'Expense', 'ENTERED')").executeUpdate();
             em.createNativeQuery("INSERT INTO txn_split (id, txn_id, account_id, fund_id, amount_signed) VALUES (1, 1, 1, 1, -50.0000)").executeUpdate();
             em.createNativeQuery("INSERT INTO txn_split (id, txn_id, account_id, fund_id, budget_category_id, amount_signed) VALUES (2, 1, 2, 1, 1, 50.0000)").executeUpdate();
             em.getTransaction().commit();

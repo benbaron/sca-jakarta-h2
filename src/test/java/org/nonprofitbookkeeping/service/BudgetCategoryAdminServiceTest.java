@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class BudgetCategoryAdminServiceTest
 {
-    private final BudgetCategoryAdminService service = new BudgetCategoryAdminService(null);
+    private final BudgetCategoryAdminService service = new BudgetCategoryAdminService();
 
     @Test
     public void upsert_rejectsBlankCode()

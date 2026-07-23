@@ -7,7 +7,10 @@ import java.math.*;
 
 @Entity
 @Table(name = "counterparty",
-       indexes = @Index(name = "ix_counterparty_name", columnList = "display_name"))
+       indexes = {
+           @Index(name = "ix_counterparty_name", columnList = "display_name"),
+           @Index(name = "ix_counterparty_company_name", columnList = "company_id, display_name")
+       })
 /**
  * Represents the Counterparty component in the nonprofit bookkeeping application.
  */
@@ -16,6 +19,10 @@ public class Counterparty
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
 
     @Column(name = "display_name", nullable = false, length = 200)
     private String displayName;
@@ -37,6 +44,8 @@ public class Counterparty
     private boolean active = true;
 
     public Long getId() { return id; }
+    public Company getCompany() { return company; }
+    public void setCompany(Company company) { this.company = company; }
     public String getDisplayName() { return displayName; }
     public void setDisplayName(String displayName) { this.displayName = displayName; }
     public CounterpartyKind getKind() { return kind; }

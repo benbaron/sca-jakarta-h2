@@ -5,7 +5,8 @@ import java.time.*;
 
 
 @Entity
-@Table(name = "chart_of_accounts")
+@Table(name = "chart_of_accounts",
+       indexes = @Index(name = "ix_chart_company", columnList = "company_id"))
 /**
  * Represents the ChartOfAccounts component in the nonprofit bookkeeping application.
  */
@@ -14,6 +15,10 @@ public class ChartOfAccounts
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
 
     @Column(nullable = false, length = 200)
     private String name;
@@ -32,6 +37,8 @@ public class ChartOfAccounts
     private Instant updatedAt = Instant.now();
 
     public Long getId() { return id; }
+    public Company getCompany() { return company; }
+    public void setCompany(Company company) { this.company = company; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     public String getVersion() { return version; }

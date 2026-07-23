@@ -8,19 +8,22 @@ import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
+import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 @ApplicationScoped
-/**
- * AccountAdminService component.
- */
+/** Company-scoped account create/update service for the selected chart. */
 public class AccountAdminService
 {
     @Inject
     Jpa jpa;
+
+    private Supplier<String> companyCodeSupplier = () -> "DEFAULT";
 
     public AccountAdminService()
     {
@@ -28,7 +31,13 @@ public class AccountAdminService
 
     public AccountAdminService(Jpa jpa)
     {
-        this.jpa = jpa;
+        this(jpa, () -> "DEFAULT");
+    }
+
+    public AccountAdminService(Jpa jpa, Supplier<String> companyCodeSupplier)
+    {
+        this.jpa = Objects.requireNonNull(jpa, "jpa");
+        this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
     }
 
     public Account upsert(String code,
@@ -55,7 +64,9 @@ public class AccountAdminService
             em.getTransaction().begin();
             try
             {
-                ChartOfAccounts chart = resolveChart(em);
+                CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
+                Company company = ownership.requireCompany(em, companyCodeSupplier.get());
+                ChartOfAccounts chart = resolveChart(em, company, ownership);
 
                 List<Account> existingMatches = em.createQuery(
                                 "from Account a where a.chart = :chart and a.code = :code",
@@ -78,6 +89,10 @@ public class AccountAdminService
                 }
 
                 Account parent = resolveParent(em, chart, cleanCode, parentCode);
+                if (parent != null)
+                {
+                    ownership.ensureOwnedBy(em, company, parent, "Parent account");
+                }
 
                 account.setCode(cleanCode);
                 account.setName(cleanName);
@@ -170,29 +185,50 @@ public class AccountAdminService
         return parentMatches.get(0);
     }
 
-    private ChartOfAccounts resolveChart(EntityManager em)
+    private ChartOfAccounts resolveChart(
+            EntityManager em,
+            Company company,
+            CompanyOwnershipService ownership)
     {
-        List<ChartOfAccounts> activeCharts = em.createQuery(
-                        "from ChartOfAccounts c where c.status = :status order by c.id",
+        Company managedCompany = em.find(Company.class, company.getId());
+        if (managedCompany.getActiveChartOfAccounts() != null)
+        {
+            ChartOfAccounts active = managedCompany.getActiveChartOfAccounts();
+            ownership.ensureOwnedBy(em, managedCompany, active, "Active Chart of Accounts");
+            return active;
+        }
+
+        List<ChartOfAccounts> ownedActive = em.createQuery(
+                        "from ChartOfAccounts c where c.company = :company and c.status = :status order by c.id",
                         ChartOfAccounts.class)
+                .setParameter("company", managedCompany)
                 .setParameter("status", ChartStatus.ACTIVE)
-                .setMaxResults(1)
+                .setMaxResults(2)
                 .getResultList();
-        if (!activeCharts.isEmpty())
+        if (ownedActive.size() == 1)
         {
-            return activeCharts.get(0);
+            managedCompany.setActiveChartOfAccounts(ownedActive.get(0));
+            return ownedActive.get(0);
+        }
+        if (ownedActive.size() > 1)
+        {
+            throw new CompanyOwnershipException("Company has multiple active Charts of Accounts.");
         }
 
-        List<ChartOfAccounts> anyChart = em.createQuery(
-                        "from ChartOfAccounts c order by c.id",
+        List<ChartOfAccounts> unowned = em.createQuery(
+                        "from ChartOfAccounts c where c.company is null order by c.id",
                         ChartOfAccounts.class)
-                .setMaxResults(1)
+                .setMaxResults(2)
                 .getResultList();
-
-        if (anyChart.isEmpty())
+        if (unowned.size() == 1)
         {
-            throw new IllegalStateException("No Chart of Accounts exists. Seed chart data before creating accounts.");
+            ChartOfAccounts chart = unowned.get(0);
+            ownership.ensureOwnedBy(em, managedCompany, chart, "Chart of Accounts");
+            managedCompany.setActiveChartOfAccounts(chart);
+            return chart;
         }
-        return anyChart.get(0);
+
+        throw new IllegalStateException("No unambiguous Chart of Accounts exists for company "
+                + managedCompany.getCode() + ".");
     }
 }

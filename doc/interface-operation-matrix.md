@@ -95,6 +95,8 @@ P15-S0 defines contracts and fixtures only. The rows below are required destinat
 ### P15 UI and command guardrails
 
 - The four operation families require distinct labels, DTOs, previews, confirmations, results, and file chooser descriptions.
+- `doc/data-exchange/shared-operation-contract.md` supplies only immutable lifecycle records, company-ownership validation, diagnostics, and external identity; it does not merge the four format authorities.
+- Every selected-company preview fails closed while `company_ownership_issue` contains unresolved records relevant to the operation. Cross-company references are blocking errors, not warnings.
 - No top-level **Import/Export Jobs** destination or generic durable job queue returns.
 - Current filename-based `BankDataEnvelopeRecognizer`, regex `OfxQfxTransactionExtractor`, per-row COA commit behavior, and direct `Files.writeString` paths are implementation evidence, not the final P15 contract.
 - Bank import preview never implies that a canonical transaction has been created. Later acceptance/matching must remain a separate explicit canonical-service operation.

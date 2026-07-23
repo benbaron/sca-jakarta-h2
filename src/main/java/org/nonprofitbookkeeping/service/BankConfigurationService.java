@@ -131,6 +131,7 @@ public class BankConfigurationService
                 }
                 Account account = em.find(Account.class, command.accountId());
                 validateBankLedgerAccount(account);
+                new CompanyOwnershipService(jpa).ensureOwnedBy(em, company, account, "Bank ledger account");
 
                 CompanyBankAccount bankAccount = new CompanyBankAccount();
                 bankAccount.setCompany(company);

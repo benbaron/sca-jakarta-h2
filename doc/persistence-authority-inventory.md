@@ -1,6 +1,6 @@
 # Model and persistence authority inventory
 
-Status: P00 inventory of current main, updated through P15-S0 interchange-contract and active-company ownership audit. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
+Status: P00 inventory of current main, updated through P15-S1 company ownership, migration diagnostics, and external interchange identity. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
 
 ## Current persistence map
 
@@ -191,6 +191,19 @@ P15-S1 must nondestructively replace or supplement these global business-key con
 8. Add multi-company isolation, migration-upgrade, and cross-company rejection tests.
 
 Until that sequence is merged and verified, active-company SCLX export MUST fail closed for ambiguous sections rather than emit a partial document that appears complete.
+
+### P15-S1 implementation outcome
+
+Migration `V61__company_ownership_and_interchange_identity.sql` implements the nondestructive ownership stage as follows:
+
+- nullable `company_id` foreign keys and indexes now exist for charts, canonical transactions, funds, budget categories/plans, activities, counterparties, merchants, retained accounting periods, business audit events, and close ranges/events;
+- deterministic single-owner evidence is backfilled, while zero-owner, multi-owner, and cross-company evidence is retained unchanged and recorded in `company_ownership_issue`;
+- affected global business keys are company-scoped;
+- `interchange_identity` provides company/format/source/entity/external-ID uniqueness and normalized-content SHA-256 evidence;
+- canonical administration, transaction, bank, reconciliation, asset, inventory, period, and lookup services enforce the selected or explicitly supplied company; and
+- selected-company interchange must call the unresolved-ownership gate before previewing a complete export.
+
+The migration deliberately does not make every new ownership column non-null. Ambiguous historical rows must remain recoverable and diagnosed rather than guessed. Non-null enforcement is a later migration step after explicit repair has reduced open diagnostics to zero for supported records.
 
 ## P15 exchange authority boundaries
 

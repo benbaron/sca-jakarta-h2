@@ -4,9 +4,13 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
@@ -16,12 +20,17 @@ import java.time.LocalDate;
 /** Accounting period persisted in the active organization database. */
 @Entity
 @Table(name = "accounting_period",
-       uniqueConstraints = @UniqueConstraint(name = "uq_accounting_period_year_number", columnNames = {"fiscal_year", "period_number"}))
+       uniqueConstraints = @UniqueConstraint(name = "uq_accounting_period_company_year_number", columnNames = {"company_id", "fiscal_year", "period_number"}),
+       indexes = @Index(name = "ix_accounting_period_company_dates", columnList = "company_id, start_date, end_date"))
 public class AccountingPeriod
 {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
 
     @Column(name = "fiscal_year", nullable = false)
     private int fiscalYear;
@@ -52,6 +61,8 @@ public class AccountingPeriod
     private Instant updatedAt = Instant.now();
 
     public Long getId() { return id; }
+    public Company getCompany() { return company; }
+    public void setCompany(Company company) { this.company = company; }
     public int getFiscalYear() { return fiscalYear; }
     public void setFiscalYear(int fiscalYear) { this.fiscalYear = fiscalYear; }
     public int getPeriodNumber() { return periodNumber; }

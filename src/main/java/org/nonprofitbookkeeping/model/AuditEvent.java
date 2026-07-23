@@ -2,22 +2,31 @@ package org.nonprofitbookkeeping.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
 
 /** Material-change audit event stored in the active organization database. */
 @Entity
-@Table(name = "audit_event")
+@Table(name = "audit_event",
+       indexes = @Index(name = "ix_audit_event_company_time", columnList = "company_id, occurred_at"))
 public class AuditEvent
 {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
 
     @Column(name = "occurred_at", nullable = false)
     private Instant occurredAt = Instant.now();
@@ -49,6 +58,8 @@ public class AuditEvent
     private String reason;
 
     public Long getId() { return id; }
+    public Company getCompany() { return company; }
+    public void setCompany(Company company) { this.company = company; }
     public Instant getOccurredAt() { return occurredAt; }
     public String getActor() { return actor; }
     public void setActor(String actor) { this.actor = actor; }

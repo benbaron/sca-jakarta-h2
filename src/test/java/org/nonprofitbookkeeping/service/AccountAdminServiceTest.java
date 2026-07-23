@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 public class AccountAdminServiceTest
 {
-    private final AccountAdminService service = new AccountAdminService(null);
+    private final AccountAdminService service = new AccountAdminService();
 
     @Test
     public void upsert_rejectsBlankCode()

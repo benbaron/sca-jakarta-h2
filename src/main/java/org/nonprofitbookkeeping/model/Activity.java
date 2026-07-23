@@ -6,7 +6,9 @@ import java.math.*;
 
 
 @Entity
-@Table(name = "activity")
+@Table(name = "activity",
+       uniqueConstraints = @UniqueConstraint(name = "uq_activity_company_code", columnNames = {"company_id", "code"}),
+       indexes = @Index(name = "ix_activity_company_active", columnList = "company_id, is_active"))
 /**
  * Represents the Activity component in the nonprofit bookkeeping application.
  */
@@ -16,7 +18,11 @@ public class Activity
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 64, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
+
+    @Column(nullable = false, length = 64)
     private String code;
 
     @Column(nullable = false, length = 200)
@@ -26,6 +32,8 @@ public class Activity
     private boolean active = true;
 
     public Long getId() { return id; }
+    public Company getCompany() { return company; }
+    public void setCompany(Company company) { this.company = company; }
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
     public String getName() { return name; }

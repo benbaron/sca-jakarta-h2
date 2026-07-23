@@ -124,8 +124,13 @@ public class FixedAssetServiceTest
                     .setParameter(1, COMPANY_ID)
                     .setParameter(2, CHART_ID)
                     .executeUpdate();
-            em.createNativeQuery("INSERT INTO fund (id, code, name, fund_type) VALUES (?, 'OPERATING', 'Operating', 'UNRESTRICTED')")
+            em.createNativeQuery("UPDATE chart_of_accounts SET company_id = ? WHERE id = ?")
+                    .setParameter(1, COMPANY_ID)
+                    .setParameter(2, CHART_ID)
+                    .executeUpdate();
+            em.createNativeQuery("INSERT INTO fund (id, company_id, code, name, fund_type) VALUES (?, ?, 'OPERATING', 'Operating', 'UNRESTRICTED')")
                     .setParameter(1, FUND_ID)
+                    .setParameter(2, COMPANY_ID)
                     .executeUpdate();
             em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, subtype, normal_balance) VALUES (?, ?, '1500', 'Equipment', 'ASSET', 'FIXED_ASSET', 'DEBIT')")
                     .setParameter(1, ASSET_ACCOUNT_ID)

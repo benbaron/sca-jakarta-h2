@@ -3,6 +3,7 @@ package org.nonprofitbookkeeping.service;
 import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.AuditEvent;
 import org.nonprofitbookkeeping.model.ClosedPeriodPolicy;
+import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.sql.Date;
@@ -27,7 +28,7 @@ public class PeriodCloseRangeService
 {
     private static final String RANGE_COLUMNS = """
             CAST(id AS VARCHAR), company_code, start_date, end_date, range_kind, status,
-            closed_at, closed_by, close_reason, reopened_at, reopened_by, reopen_reason
+            closed_at, closed_by, close_reason, reopened_at, reopened_by, reopen_reason, company_id
             """;
 
     private final Jpa jpa;
@@ -65,15 +66,16 @@ public class PeriodCloseRangeService
             em.getTransaction().begin();
             try
             {
+                Company companyEntity = requireCompany(em, company);
                 Number overlaps = (Number) em.createNativeQuery("""
                         SELECT COUNT(*)
                         FROM period_close_range
-                        WHERE company_code = ?
+                        WHERE company_id = ?
                           AND status = 'CLOSED'
                           AND start_date <= ?
                           AND end_date >= ?
                         """)
-                        .setParameter(1, company)
+                        .setParameter(1, companyEntity.getId())
                         .setParameter(2, Date.valueOf(end))
                         .setParameter(3, Date.valueOf(start))
                         .getSingleResult();
@@ -85,24 +87,26 @@ public class PeriodCloseRangeService
 
                 em.createNativeQuery("""
                         INSERT INTO period_close_range
-                            (id, company_code, start_date, end_date, range_kind, status,
+                            (id, company_id, company_code, start_date, end_date, range_kind, status,
                              closed_at, closed_by, close_reason, created_at, updated_at)
-                        VALUES (CAST(? AS UUID), ?, ?, ?, ?, 'CLOSED', ?, ?, NULLIF(?, ''), ?, ?)
+                        VALUES (CAST(? AS UUID), ?, ?, ?, ?, ?, 'CLOSED', ?, ?, NULLIF(?, ''), ?, ?)
                         """)
                         .setParameter(1, id.toString())
-                        .setParameter(2, company)
-                        .setParameter(3, Date.valueOf(start))
-                        .setParameter(4, Date.valueOf(end))
-                        .setParameter(5, kind)
-                        .setParameter(6, Timestamp.from(now))
-                        .setParameter(7, cleanActor)
-                        .setParameter(8, cleanReason == null ? "" : cleanReason)
-                        .setParameter(9, Timestamp.from(now))
+                        .setParameter(2, companyEntity.getId())
+                        .setParameter(3, company)
+                        .setParameter(4, Date.valueOf(start))
+                        .setParameter(5, Date.valueOf(end))
+                        .setParameter(6, kind)
+                        .setParameter(7, Timestamp.from(now))
+                        .setParameter(8, cleanActor)
+                        .setParameter(9, cleanReason == null ? "" : cleanReason)
                         .setParameter(10, Timestamp.from(now))
+                        .setParameter(11, Timestamp.from(now))
                         .executeUpdate();
 
-                insertEvent(em, eventId, id, company, "CLOSED", cleanActor, cleanReason, now);
+                insertEvent(em, eventId, id, companyEntity.getId(), company, "CLOSED", cleanActor, cleanReason, now);
                 em.persist(audit(
+                        companyEntity,
                         cleanActor,
                         "PERIOD_RANGE_CLOSED",
                         id,
@@ -151,6 +155,12 @@ public class PeriodCloseRangeService
                 Object[] current = singleRangeRow(em, id)
                         .orElseThrow(() -> new IllegalArgumentException("Unknown close range: " + id));
                 String company = String.valueOf(current[1]);
+                Long companyId = ((Number) current[12]).longValue();
+                Company companyEntity = em.find(Company.class, companyId);
+                if (companyEntity == null)
+                {
+                    throw new IllegalStateException("Close range " + id + " has no valid company owner");
+                }
                 String status = String.valueOf(current[5]);
                 if (!"CLOSED".equals(status))
                 {
@@ -174,8 +184,9 @@ public class PeriodCloseRangeService
                     throw new IllegalStateException("Close range " + id + " could not be reopened");
                 }
 
-                insertEvent(em, eventId, id, company, "REOPENED", cleanActor, cleanReason, now);
+                insertEvent(em, eventId, id, companyId, company, "REOPENED", cleanActor, cleanReason, now);
                 em.persist(audit(
+                        companyEntity,
                         cleanActor,
                         "PERIOD_RANGE_REOPENED",
                         id,
@@ -197,13 +208,14 @@ public class PeriodCloseRangeService
         String company = normalizeCompanyCode(companyCode);
         try (EntityManager em = jpa.em())
         {
+            Company companyEntity = requireCompany(em, company);
             @SuppressWarnings("unchecked")
             List<Object[]> rows = em.createNativeQuery("SELECT " + RANGE_COLUMNS + """
                     FROM period_close_range
-                    WHERE company_code = ?
+                    WHERE company_id = ?
                     ORDER BY start_date DESC, end_date DESC, closed_at DESC
                     """)
-                    .setParameter(1, company)
+                    .setParameter(1, companyEntity.getId())
                     .getResultList();
             return mapRanges(rows);
         }
@@ -214,15 +226,16 @@ public class PeriodCloseRangeService
         String company = normalizeCompanyCode(companyCode);
         try (EntityManager em = jpa.em())
         {
+            Company companyEntity = requireCompany(em, company);
             @SuppressWarnings("unchecked")
             List<Object[]> rows = em.createNativeQuery("""
                     SELECT CAST(id AS VARCHAR), CAST(close_range_id AS VARCHAR),
                            company_code, event_type, actor, reason, event_at
                     FROM period_close_event
-                    WHERE company_code = ?
+                    WHERE company_id = ?
                     ORDER BY event_at DESC, id DESC
                     """)
-                    .setParameter(1, company)
+                    .setParameter(1, companyEntity.getId())
                     .getResultList();
             List<PeriodCloseEventView> result = new ArrayList<>();
             for (Object[] row : rows)
@@ -281,16 +294,17 @@ public class PeriodCloseRangeService
             String company,
             LocalDate date)
     {
+        Long companyId = requireCompanyId(em, company);
         @SuppressWarnings("unchecked")
         List<Object[]> rows = em.createNativeQuery("SELECT " + RANGE_COLUMNS + """
                 FROM period_close_range
-                WHERE company_code = ?
+                WHERE company_id = ?
                   AND status = 'CLOSED'
                   AND start_date <= ?
                   AND end_date >= ?
                 ORDER BY start_date, end_date, id
                 """)
-                .setParameter(1, company)
+                .setParameter(1, companyId)
                 .setParameter(2, Date.valueOf(date))
                 .setParameter(3, Date.valueOf(date))
                 .setMaxResults(2)
@@ -347,6 +361,7 @@ public class PeriodCloseRangeService
             EntityManager em,
             UUID eventId,
             UUID rangeId,
+            Long companyId,
             String company,
             String eventType,
             String actor,
@@ -355,20 +370,22 @@ public class PeriodCloseRangeService
     {
         em.createNativeQuery("""
                 INSERT INTO period_close_event
-                    (id, close_range_id, company_code, event_type, actor, reason, event_at)
-                VALUES (CAST(? AS UUID), CAST(? AS UUID), ?, ?, ?, NULLIF(?, ''), ?)
+                    (id, close_range_id, company_id, company_code, event_type, actor, reason, event_at)
+                VALUES (CAST(? AS UUID), CAST(? AS UUID), ?, ?, ?, ?, NULLIF(?, ''), ?)
                 """)
                 .setParameter(1, eventId.toString())
                 .setParameter(2, rangeId.toString())
-                .setParameter(3, company)
-                .setParameter(4, eventType)
-                .setParameter(5, actor)
-                .setParameter(6, reason == null ? "" : reason)
-                .setParameter(7, Timestamp.from(eventAt))
+                .setParameter(3, companyId)
+                .setParameter(4, company)
+                .setParameter(5, eventType)
+                .setParameter(6, actor)
+                .setParameter(7, reason == null ? "" : reason)
+                .setParameter(8, Timestamp.from(eventAt))
                 .executeUpdate();
     }
 
     private static AuditEvent audit(
+            Company company,
             String actor,
             String action,
             UUID rangeId,
@@ -376,6 +393,7 @@ public class PeriodCloseRangeService
             String reason)
     {
         AuditEvent event = new AuditEvent();
+        event.setCompany(company);
         event.setActor(actor);
         event.setActionType(action);
         event.setEntityType("PeriodCloseRange");
@@ -383,6 +401,20 @@ public class PeriodCloseRangeService
         event.setSummary(summary);
         event.setReason(reason);
         return event;
+    }
+
+    private static Company requireCompany(EntityManager em, String companyCode)
+    {
+        return em.createQuery("from Company c where upper(c.code) = :code", Company.class)
+                .setParameter("code", normalizeCompanyCode(companyCode))
+                .getResultStream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Company does not exist: " + companyCode));
+    }
+
+    private static Long requireCompanyId(EntityManager em, String companyCode)
+    {
+        return requireCompany(em, companyCode).getId();
     }
 
     private static String normalizeCompanyCode(String value)

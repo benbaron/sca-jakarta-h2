@@ -7,6 +7,7 @@ import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.BudgetCategory;
 import org.nonprofitbookkeeping.model.BudgetLine;
 import org.nonprofitbookkeeping.model.BudgetPlan;
+import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
@@ -18,17 +19,26 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 /** Application service for normalized, versioned budget plans. */
 @ApplicationScoped
 public class BudgetPlanService
 {
     private final Jpa jpa;
+    private final Supplier<String> companyCodeSupplier;
 
     @Inject
     public BudgetPlanService(Jpa jpa)
     {
-        this.jpa = jpa;
+        this(jpa, () -> "DEFAULT");
+    }
+
+    public BudgetPlanService(Jpa jpa, Supplier<String> companyCodeSupplier)
+    {
+        this.jpa = Objects.requireNonNull(jpa, "jpa");
+        this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
     }
 
     public BudgetPlanView createDraft(BudgetPlanCommand command)
@@ -38,7 +48,9 @@ public class BudgetPlanService
             em.getTransaction().begin();
             try
             {
+                Company company = ownership().requireCompany(em, companyCodeSupplier.get());
                 BudgetPlan plan = new BudgetPlan();
+                plan.setCompany(company);
                 applyHeader(plan, command);
                 plan.setStatus(BudgetPlan.Status.DRAFT);
                 em.persist(plan);
@@ -61,7 +73,9 @@ public class BudgetPlanService
             em.getTransaction().begin();
             try
             {
+                Company company = ownership().requireCompany(em, companyCodeSupplier.get());
                 BudgetPlan plan = requirePlan(em, planId);
+                ownership().ensureOwnedBy(em, company, plan, "Budget plan");
                 requireDraft(plan);
                 validateLineScopes(plan, safeCommands);
                 em.createQuery("delete from BudgetLine l where l.budgetPlan.id = :planId")
@@ -72,8 +86,15 @@ public class BudgetPlanService
                 {
                     BudgetLine line = new BudgetLine();
                     line.setBudgetPlan(plan);
-                    line.setBudgetCategory(require(em, BudgetCategory.class, command.budgetCategoryId(), "Budget category"));
-                    line.setFund(command.fundId() == null ? null : require(em, Fund.class, command.fundId(), "Fund"));
+                    BudgetCategory category = require(em, BudgetCategory.class, command.budgetCategoryId(), "Budget category");
+                    ownership().ensureOwnedBy(em, company, category, "Budget category");
+                    Fund fund = command.fundId() == null ? null : require(em, Fund.class, command.fundId(), "Fund");
+                    if (fund != null)
+                    {
+                        ownership().ensureOwnedBy(em, company, fund, "Fund");
+                    }
+                    line.setBudgetCategory(category);
+                    line.setFund(fund);
                     line.setPeriodMonth(command.periodMonth());
                     line.setAmount(command.amount());
                     line.setNotes(command.notes());
@@ -98,13 +119,16 @@ public class BudgetPlanService
             em.getTransaction().begin();
             try
             {
+                Company company = ownership().requireCompany(em, companyCodeSupplier.get());
                 BudgetPlan plan = requirePlan(em, planId);
+                ownership().ensureOwnedBy(em, company, plan, "Budget plan");
                 if (plan.getStatus() == BudgetPlan.Status.ARCHIVED)
                 {
                     throw new IllegalStateException("Archived budgets cannot be activated");
                 }
                 Instant now = Instant.now();
-                em.createQuery("select p from BudgetPlan p where p.fiscalYear = :year and p.status = :status and p.id <> :id", BudgetPlan.class)
+                em.createQuery("select p from BudgetPlan p where p.company = :company and p.fiscalYear = :year and p.status = :status and p.id <> :id", BudgetPlan.class)
+                        .setParameter("company", company)
                         .setParameter("year", plan.getFiscalYear())
                         .setParameter("status", BudgetPlan.Status.ACTIVE)
                         .setParameter("id", planId)
@@ -137,7 +161,9 @@ public class BudgetPlanService
             em.getTransaction().begin();
             try
             {
+                Company company = ownership().requireCompany(em, companyCodeSupplier.get());
                 BudgetPlan plan = requirePlan(em, planId);
+                ownership().ensureOwnedBy(em, company, plan, "Budget plan");
                 plan.setStatus(BudgetPlan.Status.ARCHIVED);
                 plan.setArchivedAt(Instant.now());
                 plan.touchUpdatedAt();
@@ -156,11 +182,13 @@ public class BudgetPlanService
     {
         try (EntityManager em = jpa.em())
         {
+            Company company = ownership().requireCompany(em, companyCodeSupplier.get());
             List<BudgetPlan> plans = em.createQuery("""
                     select p from BudgetPlan p
-                    where p.fiscalYear = :year and p.status = :status
+                    where p.company = :company and p.fiscalYear = :year and p.status = :status
                     order by p.activatedAt desc, p.id desc
                     """, BudgetPlan.class)
+                    .setParameter("company", company)
                     .setParameter("year", fiscalYear)
                     .setParameter("status", BudgetPlan.Status.ACTIVE)
                     .setMaxResults(1)
@@ -174,7 +202,13 @@ public class BudgetPlanService
         try (EntityManager em = jpa.em())
         {
             BudgetPlan plan = em.find(BudgetPlan.class, planId);
-            return plan == null ? Optional.empty() : Optional.of(toView(plan, lines(em, planId)));
+            if (plan == null)
+            {
+                return Optional.empty();
+            }
+            Company company = ownership().requireCompany(em, companyCodeSupplier.get());
+            ownership().ensureOwnedBy(em, company, plan, "Budget plan");
+            return Optional.of(toView(plan, lines(em, planId)));
         }
     }
 
@@ -191,11 +225,12 @@ public class BudgetPlanService
             {
                 return List.of();
             }
-            return variances(em, active.orElseThrow().id(), asOfDate);
+            Company company = ownership().requireCompany(em, companyCodeSupplier.get());
+            return variances(em, company, active.orElseThrow().id(), asOfDate);
         }
     }
 
-    private static List<BudgetVarianceView> variances(EntityManager em, long planId, LocalDate asOfDate)
+    private static List<BudgetVarianceView> variances(EntityManager em, Company company, long planId, LocalDate asOfDate)
     {
         Map<String, VarianceAccumulator> rows = new LinkedHashMap<>();
         List<Object[]> budgetRows = em.createQuery("""
@@ -226,11 +261,14 @@ public class BudgetPlanService
                 join s.budgetCategory bc
                 join s.account a
                 join s.fund f
-                where s.txn.txnDate between :start and :asOf
+                where (s.txn.company = :company
+                       or (s.txn.company is null and (select count(c) from Company c) = 1))
+                  and s.txn.txnDate between :start and :asOf
                   and s.txn.status = 'ENTERED'
                 group by bc.code, bc.name, f.id, f.code, f.name
                 order by bc.code, f.code
                 """, Object[].class)
+                .setParameter("company", company)
                 .setParameter("incomeType", AccountType.INCOME)
                 .setParameter("expenseType", AccountType.EXPENSE)
                 .setParameter("start", LocalDate.of(asOfDate.getYear(), 1, 1))
@@ -355,6 +393,11 @@ public class BudgetPlanService
                 plan.getArchivedAt(),
                 plan.getNotes() == null ? "" : plan.getNotes(),
                 lines);
+    }
+
+    private CompanyOwnershipService ownership()
+    {
+        return new CompanyOwnershipService(jpa);
     }
 
     private static void rollback(EntityManager em)

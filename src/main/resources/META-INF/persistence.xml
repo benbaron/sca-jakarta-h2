@@ -50,6 +50,8 @@
     <class>org.nonprofitbookkeeping.model.AccountingPeriod</class>
     <class>org.nonprofitbookkeeping.model.PeriodReopenEvent</class>
     <class>org.nonprofitbookkeeping.model.AuditEvent</class>
+    <class>org.nonprofitbookkeeping.model.CompanyOwnershipIssue</class>
+    <class>org.nonprofitbookkeeping.model.InterchangeIdentity</class>
 
     <properties>
       <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>

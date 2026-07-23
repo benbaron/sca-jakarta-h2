@@ -486,7 +486,7 @@ public class BankReconciliationWorkspaceService
     {
         SessionRow session = session(em, sessionId);
         CompanyBankAccount bankAccount = configuredBankAccount(em, session.bankAccountId(), session.company());
-        List<TxnSplit> ledger = ledgerLines(em, bankAccount.getAccount(), session.startDate(), session.endDate());
+        List<TxnSplit> ledger = ledgerLines(em, session.company(), bankAccount.getAccount(), session.startDate(), session.endDate());
         List<BankStatementLine> statements = statementLines(em, bankAccount, session.startDate(), session.endDate());
         Map<Long, MatchRow> statementMatches = statementMatches(em, sessionId);
         Map<Long, MatchRow> splitMatches = splitMatches(em, sessionId);
@@ -540,6 +540,17 @@ public class BankReconciliationWorkspaceService
         BankStatementLine statement = required(em, BankStatementLine.class, statementLineId, "Statement line");
         TxnSplit split = required(em, TxnSplit.class, splitId, "Ledger line");
         CompanyBankAccount bankAccount = configuredBankAccount(em, session.bankAccountId(), session.company());
+        CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
+        if (statement.getCompany() == null || !Objects.equals(statement.getCompany().getId(), session.company().getId()))
+        {
+            throw new IllegalArgumentException("Statement line belongs to a different company.");
+        }
+        ownership.ensureOwnedBy(em, session.company(), split.getTxn(), "Ledger transaction");
+        ownership.ensureOwnedBy(em, session.company(), split.getAccount(), "Ledger line account");
+        ownership.ensureOwnedBy(em, session.company(), split.getFund(), "Ledger line fund");
+        ownership.ensureOwnedBy(em, session.company(), split.getBudgetCategory(), "Ledger line budget category");
+        ownership.ensureOwnedBy(em, session.company(), split.getActivity(), "Ledger line activity");
+        ownership.ensureOwnedBy(em, session.company(), split.getMerchant(), "Ledger line merchant");
         if (statement.getBankAccount() == null || !Objects.equals(statement.getBankAccount().getId(), bankAccount.getId()))
         {
             throw new IllegalArgumentException("Statement line does not belong to the reconciliation bank account.");
@@ -687,7 +698,7 @@ public class BankReconciliationWorkspaceService
         BigDecimal beginning = amount(bankAccount.getOpeningBalance());
         BigDecimal periodActivity = BigDecimal.ZERO;
         BigDecimal cleared = amount(bankAccount.getOpeningBalance());
-        for (TxnSplit split : ledgerLinesThrough(em, bankAccount.getAccount(), end))
+        for (TxnSplit split : ledgerLinesThrough(em, bankAccount.getCompany(), bankAccount.getAccount(), end))
         {
             LocalDate transactionDate = split.getTxn().getTxnDate();
             BigDecimal signed = amount(split.getAmountSigned());
@@ -845,35 +856,39 @@ public class BankReconciliationWorkspaceService
                 .executeUpdate();
     }
 
-    private static List<TxnSplit> ledgerLines(EntityManager em, Account account, LocalDate start, LocalDate end)
+    private static List<TxnSplit> ledgerLines(EntityManager em, Company company, Account account, LocalDate start, LocalDate end)
     {
         return em.createQuery("""
                 select s from TxnSplit s
                 join fetch s.txn t
                 join fetch s.account a
                 left join fetch s.matchedBankStatementLine
-                where a = :account
+                where t.company = :company
+                  and a = :account
                   and t.txnDate >= :start
                   and t.txnDate <= :end
                 order by t.txnDate, s.id
                 """, TxnSplit.class)
+                .setParameter("company", company)
                 .setParameter("account", account)
                 .setParameter("start", start)
                 .setParameter("end", end)
                 .getResultList();
     }
 
-    private static List<TxnSplit> ledgerLinesThrough(EntityManager em, Account account, LocalDate end)
+    private static List<TxnSplit> ledgerLinesThrough(EntityManager em, Company company, Account account, LocalDate end)
     {
         return em.createQuery("""
                 select s from TxnSplit s
                 join fetch s.txn t
                 join fetch s.account a
                 left join fetch s.matchedBankStatementLine
-                where a = :account
+                where t.company = :company
+                  and a = :account
                   and t.txnDate <= :end
                 order by t.txnDate, s.id
                 """, TxnSplit.class)
+                .setParameter("company", company)
                 .setParameter("account", account)
                 .setParameter("end", end)
                 .getResultList();
@@ -929,6 +944,7 @@ public class BankReconciliationWorkspaceService
             throw new IllegalArgumentException("Reconciliation requires an active configured bank account linked to a Bank and chart account.");
         }
         BankConfigurationService.validateBankLedgerAccount(bankAccount.getAccount());
+        new CompanyOwnershipService(jpa).ensureOwnedBy(em, company, bankAccount.getAccount(), "Configured bank ledger account");
         return bankAccount;
     }
 

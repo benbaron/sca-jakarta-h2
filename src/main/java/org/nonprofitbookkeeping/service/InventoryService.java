@@ -200,6 +200,9 @@ public class InventoryService
                 .orElseThrow(() -> new IllegalArgumentException("Company not found: " + command.companyCode()));
         Account account = require(em, Account.class, command.inventoryAccountId(), "Inventory account");
         Fund fund = require(em, Fund.class, command.fundId(), "Fund");
+        CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
+        ownership.ensureOwnedBy(em, company, account, "Inventory account");
+        ownership.ensureOwnedBy(em, company, fund, "Inventory fund");
         validateInventoryAccount(account);
 
         item.setCompany(company);
