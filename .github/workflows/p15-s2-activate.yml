@@ -1,0 +1,59 @@
+name: P15-S2 Activate
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  activate:
+    if: github.head_ref == 'codex/P15-S2-database-transfer'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout P15-S2 branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S2-database-transfer
+          fetch-depth: 0
+      - name: Reconcile P15-S1 and activate P15-S2
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          path = Path('doc/PLAN.md')
+          text = path.read_text()
+          replacements = {
+              'plan_version: 76': 'plan_version: 77',
+              'active_slice: P15-S1': 'active_slice: P15-S2',
+              'active_branch: codex/P15-S1-company-ownership-reimplementation': 'active_branch: codex/P15-S2-database-transfer',
+              'active_pull_request: 193': f"active_pull_request: {os.environ['PR_NUMBER']}",
+              'active_head: "ab8d9b39db5cb0bbdf0f98cad98cd94e355e7cc3"': 'active_head: "539f0f388eae89363e6ca1dcab136dc6cbd7f2ed"',
+              'next_action: "Publish the rebuilt P15-S1 implementation to draft PR #193, run full local and GitHub validation, then reconcile the final head before review and merge; do not start P15-S2."': 'next_action: "Implement P15-S2 whole-database backup, restore-to-new-copy, validation, and guarded switch from current main; run focused and full validation in the draft PR."',
+              'This revision executes P15-S1 from current main, adding authoritative company ownership, migration diagnostics, shared interchange operation contracts, and durable external identity before any selected-company SCLX implementation.': 'This revision records the owner-applied P15-S1 implementation on current main, closes superseded PR #193, and begins P15-S2 whole-database backup, restore-copy validation, and guarded database switching.',
+              '| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | VERIFYING at P15-S1 |': '| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S2 |',
+              '**Status:** VERIFYING at P15-S1; P15-S0 DONE through PR #187  ': '**Status:** IN_PROGRESS at P15-S2; P15-S0 and P15-S1 DONE  ',
+              'Status: VERIFYING; implementation and local validation complete, clean publication and final PR-head validation pending.': 'Status: DONE through the owner-applied implementation now present on current `main` at `539f0f388eae89363e6ca1dcab136dc6cbd7f2ed`.',
+              'Branch: `codex/P15-S1-company-ownership-reimplementation`  \nDraft pull request: #193  \nBase commit: `e5dbf79e4b60c26dcd35d1016ffef66096c35a15`  \nTested implementation commit: pending clean publication; the exact SHA will be recorded in the plan bookkeeping commit.': 'Former branch: `codex/P15-S1-company-ownership-reimplementation`  \nSuperseded pull request: #193, closed/merged before the owner manually applied the complete archive  \nAuthoritative current-main head: `539f0f388eae89363e6ca1dcab136dc6cbd7f2ed`',
+              '- Final GitHub Temurin 17 `mvn clean verify` and Maven PR Tests: pending clean implementation publication.\n- Draft PR review and merge: pending.': '- The owner manually applied the complete implementation archive and merged the resulting source to `main`.\n- Current `main` contains V61, the shared interchange contracts, ownership entities/services, updated persistence mappings, and focused tests; temporary `.p15-publish` payload files are absent.',
+              '- Publish the clean implementation commit, record its exact SHA, confirm final-head GitHub validation, review and merge draft PR #189, then begin P15-S2 from the resulting current `main` only after explicit authorization.': '- None; P15-S1 is DONE. P15-S2 is authorized and begins from current main.',
+              'Status: BLOCKED until P15-S1 merges.': 'Status: IN_PROGRESS on branch `codex/P15-S2-database-transfer` from current main `539f0f388eae89363e6ca1dcab136dc6cbd7f2ed`.'
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit(f'Missing expected plan text: {old}')
+              text = text.replace(old, new, 1)
+          path.write_text(text)
+          PY
+          rm .github/workflows/p15-s2-activate.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add doc/PLAN.md .github/workflows/p15-s2-activate.yml
+          git commit -m "P15-S2: activate database transfer slice"
+          git push origin HEAD:codex/P15-S2-database-transfer
