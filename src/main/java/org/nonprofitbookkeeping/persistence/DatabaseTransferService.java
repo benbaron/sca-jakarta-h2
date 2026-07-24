@@ -17,6 +17,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -131,11 +132,9 @@ public final class DatabaseTransferService
         Instant started = Instant.now();
         try
         {
-            Restore.execute(backup.toString(), temporaryBase.toString(), null);
-            if (!Files.isRegularFile(temporaryFile))
-            {
-                throw new IllegalStateException("The backup did not contain a restorable H2 database.");
-            }
+            Restore.execute(backup.toString(), workspace.toString(), null);
+            Path restoredFile = findRestoredDatabase(workspace);
+            moveAtomically(restoredFile, temporaryFile);
             DatabaseMigrationService.migrate(temporaryBase);
             DatabaseCounts counts;
             try (Jpa ignored = new Jpa(temporaryBase))
@@ -155,6 +154,23 @@ public final class DatabaseTransferService
         {
             deleteTreeQuietly(workspace);
             throw ex;
+        }
+    }
+
+    private static Path findRestoredDatabase(Path workspace) throws IOException
+    {
+        try (var paths = Files.walk(workspace))
+        {
+            List<Path> databases = paths
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().endsWith(".mv.db"))
+                    .toList();
+            if (databases.size() != 1)
+            {
+                throw new IllegalStateException(
+                        "The backup must contain exactly one restorable H2 database; found " + databases.size() + ".");
+            }
+            return databases.get(0);
         }
     }
 

@@ -34,6 +34,7 @@ public class MainApp extends Application
         stage.setX(geometry.x());
         stage.setY(geometry.y());
         stage.setScene(scene);
+        DatabaseTransferUiRegistry.install(root);
         stage.show();
     }
 }

@@ -4,35 +4,52 @@ import javafx.scene.Node;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.BorderPane;
+import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
 
 /**
- * Production Administration workspace that makes preferences, company, and user
- * administration reachable through one stable shell destination.
+ * Production Administration workspace that makes preferences, database transfer,
+ * company, and user administration reachable through one stable shell destination.
  */
 public final class AdministrationPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
     private final TabPane tabs = new TabPane();
     private final SettingsPanel settings;
+    private final DatabaseTransferPanel transfers;
     private final CompanyAdminPanel companies;
     private final UserAdminPanel users;
 
     public AdministrationPanel()
     {
-        this(new CompanySessionController(
-                MainWindow.sharedSessionState(),
-                UserAppStateStore.create(),
-                UiServiceRegistry::companyAdmin));
+        this(
+                new CompanySessionController(
+                        MainWindow.sharedSessionState(),
+                        UserAppStateStore.create(),
+                        UiServiceRegistry::companyAdmin),
+                DatabaseTransferActions.unavailable(() -> DatabaseLocationService.resolveDatabasePath(
+                        MainWindow.sharedSessionState().databaseSelection().activeDatabasePath())));
     }
 
     AdministrationPanel(CompanySessionController companyController)
     {
+        this(
+                companyController,
+                DatabaseTransferActions.unavailable(() -> DatabaseLocationService.resolveDatabasePath(
+                        MainWindow.sharedSessionState().databaseSelection().activeDatabasePath())));
+    }
+
+    AdministrationPanel(
+            CompanySessionController companyController,
+            DatabaseTransferActions databaseTransferActions)
+    {
         settings = new SettingsPanel(MainWindow.sharedSessionState(), companyController);
+        transfers = new DatabaseTransferPanel(databaseTransferActions);
         companies = new CompanyAdminPanel(companyController);
         users = new UserAdminPanel();
         tabs.setId("administrationTabs");
         tabs.getTabs().setAll(
                 tab("Preferences", settings),
+                tab("Database Transfer", transfers),
                 tab("Company Admin", companies),
                 tab("User Admin", users));
         root.setCenter(tabs);
@@ -107,5 +124,15 @@ public final class AdministrationPanel implements AppPanel
     SettingsPanel settingsForTests()
     {
         return settings;
+    }
+
+    DatabaseTransferPanel transfersForTests()
+    {
+        return transfers;
+    }
+
+    TabPane tabsForTests()
+    {
+        return tabs;
     }
 }

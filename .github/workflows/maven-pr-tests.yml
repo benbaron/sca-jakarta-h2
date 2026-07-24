@@ -42,4 +42,4 @@ jobs:
         run: mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository
 
       - name: Run production JavaFX route compliance
-        run: xvfb-run -a mvn -B -ntp -e -Dtest=CompanyTableStateBinderTest,ProductionPanelRouteComplianceTest,CoreEditorComplianceTest test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository
+        run: xvfb-run -a mvn -B -ntp -e -Dtest=DatabaseTransferPanelTest,DatabaseTransferMenuInstallerTest,CompanyTableStateBinderTest,ProductionPanelRouteComplianceTest,CoreEditorComplianceTest test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository

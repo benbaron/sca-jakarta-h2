@@ -1,5 +1,7 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
+
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
@@ -18,7 +20,9 @@ public final class PanelFactory
                 () -> new DashboardHomePanel(
                         services.dashboardQueryService(),
                         services.context()),
-                () -> new AdministrationPanel(services.companySessionController()),
+                () -> new AdministrationPanel(
+                        services.companySessionController(),
+                        services.databaseTransferActions()),
                 () -> new DiagnosticsPanel(services.diagnosticsQueryService()));
     }
 
@@ -27,13 +31,27 @@ public final class PanelFactory
         Objects.requireNonNull(companySessionController, "companySessionController");
         registerFactories(
                 DashboardHomePanel::new,
-                () -> new AdministrationPanel(companySessionController),
+                () -> new AdministrationPanel(companySessionController, unavailableTransferActions()),
                 DiagnosticsPanel::new);
     }
 
     PanelFactory()
     {
-        registerFactories(DashboardHomePanel::new, AdministrationPanel::new, DiagnosticsPanel::new);
+        registerFactories(
+                DashboardHomePanel::new,
+                () -> new AdministrationPanel(
+                        new CompanySessionController(
+                                MainWindow.sharedSessionState(),
+                                UserAppStateStore.create(),
+                                UiServiceRegistry::companyAdmin),
+                        unavailableTransferActions()),
+                DiagnosticsPanel::new);
+    }
+
+    private static DatabaseTransferActions unavailableTransferActions()
+    {
+        return DatabaseTransferActions.unavailable(() -> DatabaseLocationService.resolveDatabasePath(
+                MainWindow.sharedSessionState().databaseSelection().activeDatabasePath()));
     }
 
     private void registerFactories(

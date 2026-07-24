@@ -61,9 +61,9 @@ final class FxTestSupport
             {
                 future.complete(callable.call());
             }
-            catch (Exception ex)
+            catch (Throwable failure)
             {
-                future.completeExceptionally(ex);
+                future.completeExceptionally(failure);
             }
         });
         return future.join();
