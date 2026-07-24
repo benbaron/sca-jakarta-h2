@@ -20,6 +20,14 @@
     </proxy>
   </proxies>
 
+  <mirrors>
+    <mirror>
+      <id>aliyun-public-mirror</id>
+      <mirrorOf>central</mirrorOf>
+      <url>https://maven.aliyun.com/repository/public</url>
+    </mirror>
+  </mirrors>
+
   <profiles>
     <profile>
       <id>repo-local-bootstrap</id>
