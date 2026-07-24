@@ -15,6 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TransactionEntryCloseRangeTest
 {
+    private static final long OTHER_COMPANY_ID = 20_002L;
+
     @Test
     void entryHonorsActiveCompanyCloseRange(@TempDir Path tempDir)
     {
@@ -67,13 +69,16 @@ class TransactionEntryCloseRangeTest
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
-            em.createNativeQuery("INSERT INTO chart_of_accounts (id, name, version, status) VALUES (1, 'Test', '1', 'ACTIVE')")
+            em.createNativeQuery("INSERT INTO company (id, code, display_name) VALUES (?, 'OTHER', 'Other Company')")
+                    .setParameter(1, OTHER_COMPANY_ID)
+                    .executeUpdate();
+            em.createNativeQuery("INSERT INTO chart_of_accounts (id, company_id, name, version, status) VALUES (1, (SELECT id FROM company WHERE code = 'DEFAULT'), 'Test', '1', 'ACTIVE')")
                     .executeUpdate();
             em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (1, 1, '1000', 'Cash', 'ASSET', 'DEBIT')")
                     .executeUpdate();
             em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (2, 1, '4000', 'Income', 'INCOME', 'CREDIT')")
                     .executeUpdate();
-            em.createNativeQuery("INSERT INTO fund (id, code, name, fund_type) VALUES (1, 'OPERATING', 'Operating', 'UNRESTRICTED')")
+            em.createNativeQuery("INSERT INTO fund (id, company_id, code, name, fund_type) VALUES (1, (SELECT id FROM company WHERE code = 'DEFAULT'), 'OPERATING', 'Operating', 'UNRESTRICTED')")
                     .executeUpdate();
             em.getTransaction().commit();
         }
