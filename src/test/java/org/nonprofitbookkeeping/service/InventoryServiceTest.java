@@ -153,9 +153,14 @@ public class InventoryServiceTest
                     .setParameter(2, COMPANY_CODE)
                     .setParameter(3, CHART_ID)
                     .executeUpdate();
-            em.createNativeQuery("INSERT INTO fund (id, code, name, fund_type) VALUES (?, ?, 'Inventory Test Fund', 'UNRESTRICTED')")
+            em.createNativeQuery("UPDATE chart_of_accounts SET company_id = ? WHERE id = ?")
+                    .setParameter(1, COMPANY_ID)
+                    .setParameter(2, CHART_ID)
+                    .executeUpdate();
+            em.createNativeQuery("INSERT INTO fund (id, company_id, code, name, fund_type) VALUES (?, ?, ?, 'Inventory Test Fund', 'UNRESTRICTED')")
                     .setParameter(1, FUND_ID)
-                    .setParameter(2, FUND_CODE)
+                    .setParameter(2, COMPANY_ID)
+                    .setParameter(3, FUND_CODE)
                     .executeUpdate();
             em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, subtype, normal_balance) VALUES (?, ?, '1300', 'Inventory', 'ASSET', 'INVENTORY', 'DEBIT')")
                     .setParameter(1, INVENTORY_ACCOUNT_ID)

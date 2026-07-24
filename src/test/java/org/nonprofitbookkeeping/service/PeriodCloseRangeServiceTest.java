@@ -17,6 +17,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PeriodCloseRangeServiceTest
 {
+    private static final long SCA_COMPANY_ID = 20_001L;
+    private static final long OTHER_COMPANY_ID = 20_002L;
+
     @Test
     void closeAndReopenPersistWithFactualHistory(@TempDir Path tempDir)
     {
@@ -25,6 +28,7 @@ class PeriodCloseRangeServiceTest
 
         try (Jpa jpa = new Jpa(database))
         {
+            seedCompany(jpa, SCA_COMPANY_ID, "SCA", "SCA Company");
             PeriodCloseRangeService service = new PeriodCloseRangeService(jpa);
             PeriodCloseRangeView closed = service.closeRange(
                     "sca",
@@ -103,6 +107,7 @@ class PeriodCloseRangeServiceTest
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("company-scoped-close")))
         {
+            seedCompany(jpa, OTHER_COMPANY_ID, "OTHER", "Other Company");
             PeriodCloseRangeService service = new PeriodCloseRangeService(jpa);
             service.closeRange(
                     "OTHER",
@@ -138,6 +143,20 @@ class PeriodCloseRangeServiceTest
                     ClosedPeriodPolicy.REQUIRE_FORMAL_ADJUSTMENT,
                     false));
             assertEquals("CLOSED", service.loadRange(range.id()).status());
+        }
+    }
+
+    private static void seedCompany(Jpa jpa, long id, String code, String displayName)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            em.getTransaction().begin();
+            em.createNativeQuery("INSERT INTO company (id, code, display_name) VALUES (?, ?, ?)")
+                    .setParameter(1, id)
+                    .setParameter(2, code)
+                    .setParameter(3, displayName)
+                    .executeUpdate();
+            em.getTransaction().commit();
         }
     }
 }
