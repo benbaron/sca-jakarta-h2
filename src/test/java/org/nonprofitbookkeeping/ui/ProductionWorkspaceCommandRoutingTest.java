@@ -110,7 +110,7 @@ public class ProductionWorkspaceCommandRoutingTest
     }
 
     @Test
-    public void productionShellConfiguresDrillThroughCoordinatorForTransactionEditor()
+    public void productionShellCanonicalizesTransactionEditorDrillThroughToJournal()
     {
         ProductionWorkspaceWindow window = FxTestSupport.onFx(ProductionWorkspaceCommandRoutingTest::newWindow);
 
@@ -119,8 +119,8 @@ public class ProductionWorkspaceCommandRoutingTest
 
             DrillThroughCoordinator.openTransactionEditorWithContext(LedgerRegisterPanel.editorContext(909L));
 
-            assertTrue(window.panelHost().isOpen(AppPanelId.TXN_EDITOR));
-            assertEquals(AppPanelId.TXN_EDITOR, window.panelHost().activePanelId());
+            assertTrue(window.panelHost().isOpen(AppPanelId.JOURNAL_PANE));
+            assertEquals(AppPanelId.JOURNAL_PANE, window.panelHost().activePanelId());
             return null;
         });
     }
