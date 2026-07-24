@@ -7,7 +7,7 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Source-level guardrails for reachable company and user administration. */
+/** Source-level guardrails for reachable company, database, and user administration. */
 class AdministrationNavigationSourceTest
 {
     @Test
@@ -18,9 +18,11 @@ class AdministrationNavigationSourceTest
         String administrationPanel = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/AdministrationPanel.java"));
 
         assertTrue(panelFactory.contains("AppPanelId.SETTINGS, administrationFactory"));
-        assertTrue(panelFactory.contains("new AdministrationPanel(services.companySessionController())"));
+        assertTrue(panelFactory.contains("services.companySessionController()"));
+        assertTrue(panelFactory.contains("services.databaseTransferActions()"));
         assertTrue(navigationPane.contains("AppPanelId.SETTINGS, \"Administration\""));
         assertTrue(administrationPanel.contains("tab(\"Preferences\", settings)"));
+        assertTrue(administrationPanel.contains("tab(\"Database Transfer\", transfers)"));
         assertTrue(administrationPanel.contains("tab(\"Company Admin\", companies)"));
         assertTrue(administrationPanel.contains("tab(\"User Admin\", users)"));
     }
