@@ -19,6 +19,8 @@ interface DatabaseTransferActions
 
     ReadOnlyBooleanProperty busyProperty();
 
+    ReadOnlyBooleanProperty switchAvailableProperty();
+
     ReadOnlyStringProperty statusProperty();
 
     ReadOnlyObjectProperty<DatabaseTransferService.BackupResult> lastBackupProperty();
@@ -37,6 +39,7 @@ interface DatabaseTransferActions
         return new DatabaseTransferActions()
         {
             private final SimpleBooleanProperty busy = new SimpleBooleanProperty(false);
+            private final SimpleBooleanProperty switchAvailable = new SimpleBooleanProperty(false);
             private final SimpleStringProperty status = new SimpleStringProperty(
                     "Database transfer is available from the production workspace.");
             private final SimpleObjectProperty<DatabaseTransferService.BackupResult> lastBackup =
@@ -54,6 +57,12 @@ interface DatabaseTransferActions
             public ReadOnlyBooleanProperty busyProperty()
             {
                 return busy;
+            }
+
+            @Override
+            public ReadOnlyBooleanProperty switchAvailableProperty()
+            {
+                return switchAvailable;
             }
 
             @Override
