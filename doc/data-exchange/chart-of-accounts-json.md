@@ -53,9 +53,10 @@ Field conversion rules are:
 - `accountNumber` becomes the portable account `code` unless an explicit `MAP_CODES` mapping overrides it;
 - `increaseSide` maps to `normalBalance`;
 - a compatible donor `accountType` maps to the current `AccountType`;
+- donor checking, savings, bank, and cash types map to current `AccountType.BANK` with `AccountSubtype.CASH`;
 - `parentAccountId` maps to `parentCode`;
 - `currency` must equal the target company's currency or produce a blocking mismatch;
-- `associatedFundIds` and `supplementalLineKinds` are unsupported by the current `Account` entity and produce named warnings; and
+- `associatedFundIds` and `supplementalLineKinds` are unsupported by the current `Account` entity and produce named warnings;
 - `accountCode` is retained as unsupported compatibility metadata unless a later governed field is added; and
 - `effectiveIncreaseSide` is validation evidence only and is not a second persisted field.
 
@@ -98,11 +99,11 @@ Output uses UTF-8 without BOM, LF endings, two-space indentation, fixed property
 
 ### 5.1 `CREATE_NEW_CHART`
 
-Creates a new chart and accounts. The target chart name/version must not conflict with an existing chart selected for the company. All validation occurs before one atomic commit. The new chart is not made active unless the user separately confirms activation.
+Creates a new chart and accounts. The target chart name/version must not conflict with an existing chart selected for the company. All validation occurs before one atomic commit. The new chart is created as `DRAFT` and is not made active; activation remains a separate deliberate company-administration action.
 
 ### 5.2 `MERGE_BY_CODE`
 
-Matches source `code` to target `code` in the selected company chart. It may create missing accounts and update explicitly supported fields of compatible existing accounts. It MUST NOT delete, deactivate, detach, or reparent absent local accounts.
+Matches source `code` to target `code` in the active company chart. It may create missing accounts and update explicitly supported fields of compatible existing accounts. It MUST NOT delete, deactivate, detach, or reparent absent local accounts.
 
 ### 5.3 `MAP_CODES`
 
@@ -119,7 +120,7 @@ Preview MUST validate the complete graph before commit:
 - no self-parenting or direct/indirect hierarchy cycle;
 - compatible account type and subtype;
 - compatible normal balance for type;
-- posting-state consistency, including no posting child under a prohibited summary rule;
+- posting-state consistency, including no posting parent that also has imported children;
 - active/effective-date consistency;
 - currency consistency;
 - opening-balance policy;
@@ -139,9 +140,9 @@ For an existing account with canonical transaction history, a different imported
 
 ## 8. Idempotency and atomicity
 
-An identical second import MUST make no changes. Matching is by normalized source identity and selected mode, never local numeric primary key alone.
+An identical second import MUST make no account changes. Matching is by normalized source identity and selected mode, never local numeric primary key alone.
 
-All account and hierarchy writes occur in one transaction. Parent accounts are persisted before children, but any late failure rolls back the entire chart import. Preview and validation perform no writes.
+All account and hierarchy writes occur in one caller-owned JPA transaction. Parent accounts are persisted before children, and durable interchange identities are written inside the same transaction. Any late failure rolls back the chart, accounts, hierarchy, and identity records together. Preview and validation perform no writes.
 
 Absent source accounts never delete or deactivate local accounts. A separate explicit administrative action is required for deactivation or deletion under current account-history protections.
 
@@ -152,12 +153,12 @@ The operation result reports:
 - detected family/version, source bytes, and SHA-256;
 - selected chart and import mode;
 - effective code mappings;
-- counts read, valid, created, updated, unchanged, unsupported-field, warning, and error;
+- counts read, created, updated, identical, skipped, warning, and error;
 - hierarchy and history conflicts;
 - opening-balance decisions; and
 - committed or rolled-back state.
 
-Export reports chart/account counts, exclusions, destination, byte count, and SHA-256.
+Export reports chart/account counts, destination, byte count, and SHA-256.
 
 ## 10. Security and limits
 
@@ -186,3 +187,24 @@ Path, overwrite, temporary-file, atomic-move, and SHA-256 rules are the same as 
 - OFX/QFX/CSV carry statement activity only.
 
 UI labels, services, DTOs, tests, and file choosers MUST retain the explicit name **Chart of Accounts JSON** and MUST NOT call it a ledger, backup, SCLX, or bank import.
+
+## 12. P15-S3 implementation and owner verification
+
+Draft PR #197 implements the contract through DTOs under `org.nonprofitbookkeeping.interchange.coa`, `ChartOfAccountsJsonService`, `ChartOfAccountsJsonImportService`, and the production `ChartOfAccountsInterchangePanel` wrapper. The wrapper preserves the established single-account editor and adds explicit **Import JSON…** and **Export JSON…** actions without creating a new navigation destination or generic import/export job log.
+
+Automated coverage includes donor-fixture conversion, deterministic byte-identical export, duplicate-key rejection, hierarchy-cycle blocking, new-chart import, merge idempotency, absent-local-account retention, durable identity writes, and injected late rollback.
+
+Owner desktop verification for this slice:
+
+1. Open **Chart of Accounts** and confirm the existing account table/editor, New, Save, Refresh, dirty-state behavior, and table/divider state still work.
+2. Export the active chart twice to different new files and confirm the files are byte-identical and the displayed SHA-256 values match.
+3. Preview the frozen donor fixture and confirm its three source accounts appear once, checking maps to `BANK`/`CASH`, redundant donor fields produce warnings, and no duplicate rows are proposed.
+4. Import the donor fixture as a new chart and confirm the chart is created as `DRAFT`, is not automatically activated, and parent/child relationships reload correctly.
+5. Merge an identical SCA-COA file twice and confirm the second preview reports identical accounts and creates no duplicates.
+6. Confirm a local account omitted from a merge remains active and unchanged.
+7. Confirm `MAP_CODES` blocks unmapped or colliding mappings and displays the effective source and target codes.
+8. Confirm a nonzero opening balance requires the explicit preview confirmation before Import is enabled.
+9. Cancel from the options and preview dialogs and confirm H2 is unchanged.
+10. At laptop width, confirm the interchange toolbar, preview table, validation list, and dialogs remain readable and scrollable.
+
+CI status must not be marked passing until Maven reaches compilation and tests. GitHub Actions runs during initial PR #197 development were externally blocked before compilation by temporary DNS failures resolving Maven Central plugins.
