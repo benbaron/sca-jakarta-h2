@@ -12,6 +12,7 @@ public final class WorkspaceServices
     private final WorkspaceContext context;
     private final DatabaseSessionController databaseSessionController;
     private final CompanySessionController companySessionController;
+    private final DatabaseTransferActions databaseTransferActions;
     private final PanelFactory panelFactory;
     private final Supplier<DashboardQueryService> dashboardQueryService;
     private final Supplier<DiagnosticsQueryService> diagnosticsQueryService;
@@ -20,12 +21,14 @@ public final class WorkspaceServices
             WorkspaceContext context,
             DatabaseSessionController databaseSessionController,
             CompanySessionController companySessionController,
+            DatabaseTransferActions databaseTransferActions,
             Supplier<DashboardQueryService> dashboardQueryService,
             Supplier<DiagnosticsQueryService> diagnosticsQueryService)
     {
         this.context = Objects.requireNonNull(context, "context");
         this.databaseSessionController = Objects.requireNonNull(databaseSessionController, "databaseSessionController");
         this.companySessionController = Objects.requireNonNull(companySessionController, "companySessionController");
+        this.databaseTransferActions = Objects.requireNonNull(databaseTransferActions, "databaseTransferActions");
         this.dashboardQueryService = Objects.requireNonNull(dashboardQueryService, "dashboardQueryService");
         this.diagnosticsQueryService = Objects.requireNonNull(diagnosticsQueryService, "diagnosticsQueryService");
         this.panelFactory = new PanelFactory(this);
@@ -44,6 +47,11 @@ public final class WorkspaceServices
     CompanySessionController companySessionController()
     {
         return companySessionController;
+    }
+
+    DatabaseTransferActions databaseTransferActions()
+    {
+        return databaseTransferActions;
     }
 
     PanelFactory panelFactory()
