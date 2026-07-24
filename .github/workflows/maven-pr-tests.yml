@@ -30,30 +30,10 @@ jobs:
       - name: Install virtual display
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
-      - name: Capture headless test failure
-        id: headless
+      - name: Run headless tests
         env:
           DISPLAY: ""
-        shell: bash
-        run: |
-          set +e
-          mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository > maven-full.log 2>&1
-          result=$?
-          tail -n 180 maven-full.log > maven-tail.txt
-          echo "result=$result" >> "$GITHUB_OUTPUT"
-          exit 0
-
-      - name: Upload Maven diagnostic
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: p15-s3-maven-tail
-          path: maven-tail.txt
-          retention-days: 1
-
-      - name: Fail when headless tests failed
-        if: steps.headless.outputs.result != '0'
-        run: exit 1
+        run: mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository        
 
       - name: Run tests
         run: mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository
