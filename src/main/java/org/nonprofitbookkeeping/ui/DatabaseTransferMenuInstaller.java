@@ -7,6 +7,7 @@ import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 
+import java.util.List;
 import java.util.Objects;
 
 /** Installs the shared database-transfer actions in the production File menu. */
@@ -64,11 +65,12 @@ final class DatabaseTransferMenuInstaller
         int insertionIndex = insertionIndex(fileMenu);
         fileMenu.getItems().addAll(
                 insertionIndex,
-                new SeparatorMenuItem(),
-                backup,
-                restore,
-                switchDatabase,
-                new SeparatorMenuItem());
+                List.of(
+                        new SeparatorMenuItem(),
+                        backup,
+                        restore,
+                        switchDatabase,
+                        new SeparatorMenuItem()));
     }
 
     private static int insertionIndex(Menu fileMenu)
