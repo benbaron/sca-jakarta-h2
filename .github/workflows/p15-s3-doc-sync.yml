@@ -1,0 +1,147 @@
+name: P15-S3 Documentation Sync
+
+on:
+  pull_request:
+    branches: [ "**" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.head_ref == 'codex/P15-S3-coa-json-import-export'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S3-coa-json-import-export
+          fetch-depth: 0
+
+      - name: Synchronize P15-S3 plan and operation matrix
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          plan_path = Path('doc/PLAN.md')
+          plan = plan_path.read_text(encoding='utf-8')
+          old_front = '''---
+          plan_version: 77
+          active_phase: P15
+          active_slice: P15-S2
+          active_status: IN_PROGRESS
+          active_branch: codex/P15-S2-database-transfer
+          active_pull_request: 194
+          active_head: "539f0f388eae89363e6ca1dcab136dc6cbd7f2ed"
+          next_action: "Implement P15-S2 whole-database backup, restore-to-new-copy, validation, and guarded switch from current main; run focused and full validation in the draft PR."
+          ---'''.replace('          ', '')
+          new_front = '''---
+          plan_version: 78
+          active_phase: P15
+          active_slice: P15-S3
+          active_status: VERIFYING
+          active_branch: codex/P15-S3-coa-json-import-export
+          active_pull_request: 197
+          active_head: "ae8a30de51f166c8081b6974921b7aa771de1579"
+          next_action: "Run final clean verification for P15-S3, complete the documented Chart of Accounts JSON desktop acceptance checks, then merge PR #197."
+          ---'''.replace('          ', '')
+          if old_front not in plan:
+              raise SystemExit('PLAN front matter did not match expected P15-S2 state')
+          plan = plan.replace(old_front, new_front, 1)
+          plan = plan.replace(
+              'This revision records the owner-applied P15-S1 implementation on current main, closes superseded PR #193, and begins P15-S2 whole-database backup, restore-copy validation, and guarded database switching.',
+              'This revision records owner-verified P15-S2 database transfer completion and advances P15-S3 Chart of Accounts JSON interchange to final verification in draft PR #197.',
+              1)
+          plan = plan.replace(
+              '| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S2 |',
+              '| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | VERIFYING at P15-S3 |',
+              1)
+          plan = plan.replace(
+              'Status: IN_PROGRESS on branch `codex/P15-S2-database-transfer` from current main `539f0f388eae89363e6ca1dcab136dc6cbd7f2ed`.',
+              'Status: DONE through merged PR #195 for the transfer service and merged PR #196 for production UI/session integration, followed by owner verification.',
+              1)
+          p15s2_acceptance = '''- A backup restored to a new database preserves every H2-backed company and record, including compatibility structures intentionally retained by current schema.
+          - Failed validation never replaces or changes the active database.
+          - Database transfer remains visibly separate from SCLX and COA JSON.'''.replace('          ', '')
+          p15s2_done = p15s2_acceptance + '''
+
+          Validation status:
+
+          - The whole-database backup/restore-copy service, validation, guarded switching, File menu routes, and Administration surface are merged on current `main` through PRs #195 and #196.
+          - CI passed on the merged implementation heads, and the owner confirmed the database transfer workflow before authorizing P15-S3.
+
+          Next exact action:
+
+          - None; P15-S2 is DONE.'''.replace('          ', '')
+          if p15s2_acceptance not in plan:
+              raise SystemExit('P15-S2 acceptance block not found')
+          plan = plan.replace(p15s2_acceptance, p15s2_done, 1)
+          plan = plan.replace(
+              'Status: BLOCKED until P15-S1 merges.',
+              'Status: VERIFYING on branch `codex/P15-S3-coa-json-import-export` in draft PR #197.\n\nTested implementation head: `ae8a30de51f166c8081b6974921b7aa771de1579`',
+              1)
+          p15s3_acceptance = '''- Export/import into a clean company produces a semantically equivalent chart.
+          - Blocking errors or injected late failure produce no partial chart.
+          - Merge does not delete absent accounts and identical reimport makes no changes.'''.replace('          ', '')
+          p15s3_status = p15s3_acceptance + '''
+
+          Completed deliverables:
+
+          - Added strict DTO-based donor-compatible and `SCA-COA` 1.0 parsing with bounded UTF-8, duplicate-key, size, depth, string, number, account-count, date, code, name, and decimal validation.
+          - Added deterministic parent-before-child JSON export through temporary-file plus atomic move, with byte count and SHA-256.
+          - Added non-mutating `CREATE_NEW_CHART`, `MERGE_BY_CODE`, and `MAP_CODES` previews covering hierarchy, cycles, mappings, types, subtypes, normal balances, currency, dates, opening balances, unsupported fields, and history-sensitive conflicts.
+          - Added one caller-owned JPA transaction for parent-before-child account writes, same-transaction durable interchange identities, no automatic activation, no deletion/deactivation of absent local accounts, idempotent reimport, and complete late-failure rollback.
+          - Added the production `ChartOfAccountsInterchangePanel` wrapper with explicit Import JSON and Export JSON actions while retaining `ChartOfAccountsPanel` as the sole account editor.
+          - Added donor conversion, deterministic export, malformed input, hierarchy, mapping, create-new, merge-idempotency, absent-account retention, and rollback tests.
+          - Added proxy-free GitHub Actions Maven settings while retaining the existing developer/Codex proxy settings.
+
+          Validation status:
+
+          - Maven PR Tests run `30141677017` passed on tested implementation head `ae8a30de51f166c8081b6974921b7aa771de1579`.
+          - The headless Maven suite, normal Maven suite, and focused JavaFX route-compliance suite all passed.
+          - The earlier eight fixture errors were corrected by using non-reserved test-company codes; the later three rollback failures were corrected by populating new IDENTITY accounts before `persist`.
+
+          Remaining deliverables:
+
+          - Run final `mvn clean verify` through the proxy-free GitHub workflow.
+          - Complete the owner desktop acceptance checklist in `doc/data-exchange/chart-of-accounts-json.md`.
+
+          Next exact action:
+
+          - Complete clean verification, then present the Chart of Accounts JSON desktop acceptance steps to the owner.'''.replace('          ', '')
+          if p15s3_acceptance not in plan:
+              raise SystemExit('P15-S3 acceptance block not found')
+          plan = plan.replace(p15s3_acceptance, p15s3_status, 1)
+          plan_path.write_text(plan, encoding='utf-8')
+
+          matrix_path = Path('doc/interface-operation-matrix.md')
+          matrix = matrix_path.read_text(encoding='utf-8')
+          matrix = matrix.replace(
+              'Status: P00 inventory of current main, updated through P15-S0 interchange-contract and fixture governance. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.',
+              'Status: P00 inventory of current main, updated through P15-S3 Chart of Accounts JSON implementation and verification. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.',
+              1)
+          matrix = matrix.replace(
+              '| `CHART_OF_ACCOUNTS` | `ChartOfAccountsPanel` | table, fields, type/status selectors, save/new | account lookup/admin services | `AccountAdminService` | yes | yes | JPA account model | real admin write path exists | composition/validation hardening | P12 |',
+              '| `CHART_OF_ACCOUNTS` | `ChartOfAccountsInterchangePanel` wrapping the existing `ChartOfAccountsPanel` | account table/editor New and Save; explicit Import JSON and Export JSON; import mode, mappings, preview, validation, confirmation, progress, and result details | account lookup/admin services plus `ChartOfAccountsJsonService` | existing `AccountAdminService` for single-account edits; `ChartOfAccountsJsonImportService` for one-transaction chart import; atomic deterministic file export | yes | yes | JPA chart/account model and durable `interchange_identity` | one account editor and one H2 authority; no parallel chart store or generic import job | owner desktop verification of preview, commit, export, dirty-state, and laptop-width behavior | P12/P15-S3 |',
+              1)
+          matrix = matrix.replace(
+              'P15-S0 defines contracts and fixtures only. The rows below are required destinations/operations for later slices; they are not claims that current JavaFX behavior already implements the contract.',
+              'P15-S0 defines the contracts and fixtures. Whole-database transfer is implemented through P15-S2 and Chart of Accounts JSON is implemented through P15-S3; SCLX and bank-statement exchange rows remain delivery requirements for later slices.',
+              1)
+          matrix = matrix.replace(
+              '| Chart of Accounts JSON | one chart and account hierarchy | actual donor compatibility fixture or `SCA-COA` 1.0 root | `AccountAdminService`/chart authority in one transaction; atomic deterministic file export | counts, mappings, unsupported fields, SHA-256 | transaction history, SCLX, bank activity, database backup | P15-S3 |',
+              '| Chart of Accounts JSON | one chart and account hierarchy | actual donor compatibility fixture or `SCA-COA` 1.0 root through strict bounded parsing and non-mutating preview | `ChartOfAccountsJsonImportService` in one caller-owned transaction with parent-before-child writes and durable identities; atomic deterministic file export | counts, mappings, unsupported fields, exact paths, byte count, and SHA-256 | transaction history, SCLX, bank activity, database backup | P15-S3 implemented; owner desktop verification pending |',
+              1)
+          matrix_path.write_text(matrix, encoding='utf-8')
+          PY
+
+      - name: Commit documentation synchronization
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add doc/PLAN.md doc/interface-operation-matrix.md
+          git commit -m "docs: synchronize P15-S3 verification state"
+          git push origin HEAD:codex/P15-S3-coa-json-import-export
