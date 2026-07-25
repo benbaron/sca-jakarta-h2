@@ -19,6 +19,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ChartOfAccountsJsonMappingTest
 {
+    private static final String TEST_COMPANY_CODE = "COA_MAP_TEST";
+
     @Test
     void mapCodesPersistsMappedHierarchyAndBlocksIncompleteOrCollidingMaps(@TempDir Path tempDir) throws Exception
     {
@@ -27,7 +29,7 @@ class ChartOfAccountsJsonMappingTest
         {
             seedCompanyAndChart(jpa);
             Path source = writeSource(tempDir.resolve("mapped.json"));
-            ChartOfAccountsJsonService previews = new ChartOfAccountsJsonService(jpa, () -> "DEFAULT");
+            ChartOfAccountsJsonService previews = new ChartOfAccountsJsonService(jpa, () -> TEST_COMPANY_CODE);
 
             CoaImportPreview incomplete = previews.preview(new CoaImportRequest(
                     source,
@@ -60,7 +62,7 @@ class ChartOfAccountsJsonMappingTest
                     true);
             CoaImportPreview mapped = previews.preview(mappedRequest);
             assertFalse(mapped.hasBlockingErrors());
-            CoaImportResult result = new ChartOfAccountsJsonImportService(jpa, () -> "DEFAULT").commit(mapped);
+            CoaImportResult result = new ChartOfAccountsJsonImportService(jpa, () -> TEST_COMPANY_CODE).commit(mapped);
             assertTrue(result.committed());
 
             try (EntityManager em = jpa.em())
@@ -118,8 +120,8 @@ class ChartOfAccountsJsonMappingTest
         {
             em.getTransaction().begin();
             Company company = new Company();
-            company.setCode("DEFAULT");
-            company.setDisplayName("Default Company");
+            company.setCode(TEST_COMPANY_CODE);
+            company.setDisplayName("COA Mapping Test Company");
             company.setDefaultCurrency("USD");
             em.persist(company);
 
