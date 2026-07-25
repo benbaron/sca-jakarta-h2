@@ -207,4 +207,4 @@ Owner desktop verification for this slice:
 9. Cancel from the options and preview dialogs and confirm H2 is unchanged.
 10. At laptop width, confirm the interchange toolbar, preview table, validation list, and dialogs remain readable and scrollable.
 
-CI status must not be marked passing until Maven reaches compilation and tests. GitHub Actions runs during initial PR #197 development were externally blocked before compilation by temporary DNS failures resolving Maven Central plugins.
+Final automated verification passed in GitHub Actions run `30141967625`: proxy-free `mvn clean verify`, the repeated normal Maven test suite, and the focused JavaFX route-compliance suite all completed successfully on clean-verification head `555206c60009410fe0a51afe9a1fff6957572cd6`.

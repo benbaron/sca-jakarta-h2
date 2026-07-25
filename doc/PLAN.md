@@ -1,12 +1,12 @@
 ---
-plan_version: 78
+plan_version: 79
 active_phase: P15
 active_slice: P15-S3
 active_status: VERIFYING
 active_branch: codex/P15-S3-coa-json-import-export
 active_pull_request: 197
-active_head: "ae8a30de51f166c8081b6974921b7aa771de1579"
-next_action: "Run final clean verification for P15-S3, complete the documented Chart of Accounts JSON desktop acceptance checks, then merge PR #197."
+active_head: "555206c60009410fe0a51afe9a1fff6957572cd6"
+next_action: "Complete the documented Chart of Accounts JSON desktop acceptance checks; after owner confirmation, merge PR #197 and advance to P15-S4."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -899,18 +899,18 @@ Completed deliverables:
 
 Validation status:
 
-- Maven PR Tests run `30141677017` passed on tested implementation head `ae8a30de51f166c8081b6974921b7aa771de1579`.
-- The headless Maven suite, normal Maven suite, and focused JavaFX route-compliance suite all passed.
+- Maven PR Tests run `30141677017` passed on tested implementation head `ae8a30de51f166c8081b6974921b7aa771de1579` after the fixture and IDENTITY-persist corrections.
+- Final Maven PR Tests run `30141967625` passed on clean-verification head `555206c60009410fe0a51afe9a1fff6957572cd6`.
+- `mvn clean verify`, the repeated normal Maven test suite, and the focused JavaFX route-compliance suite all passed through proxy-free GitHub Actions settings.
 - The earlier eight fixture errors were corrected by using non-reserved test-company codes; the later three rollback failures were corrected by populating new IDENTITY accounts before `persist`.
 
-Remaining deliverables:
+Remaining deliverable:
 
-- Run final `mvn clean verify` through the proxy-free GitHub workflow.
 - Complete the owner desktop acceptance checklist in `doc/data-exchange/chart-of-accounts-json.md`.
 
 Next exact action:
 
-- Complete clean verification, then present the Chart of Accounts JSON desktop acceptance steps to the owner.
+- Present the Chart of Accounts JSON desktop acceptance steps to the owner; keep PR #197 draft until acceptance is confirmed.
 
 ## P15-S4 — SCLX model, parser, and deterministic active-company export
 
