@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ChartOfAccountsJsonImportServiceTest
 {
+    private static final String TEST_COMPANY_CODE = "COA_IMPORT_TEST";
+
     @Test
     void createNewChartCommitsParentBeforeChildWithoutActivation(@TempDir Path tempDir) throws Exception
     {
@@ -29,7 +31,7 @@ class ChartOfAccountsJsonImportServiceTest
         {
             seedCompanyAndActiveChart(jpa);
             Path source = writeSource(tempDir.resolve("create.json"));
-            ChartOfAccountsJsonService previewService = new ChartOfAccountsJsonService(jpa, () -> "DEFAULT");
+            ChartOfAccountsJsonService previewService = new ChartOfAccountsJsonService(jpa, () -> TEST_COMPANY_CODE);
             CoaImportRequest request = new CoaImportRequest(
                     source,
                     CoaImportMode.CREATE_NEW_CHART,
@@ -39,15 +41,17 @@ class ChartOfAccountsJsonImportServiceTest
                     true);
             CoaImportPreview preview = previewService.preview(request);
 
-            CoaImportResult result = new ChartOfAccountsJsonImportService(jpa, () -> "DEFAULT").commit(preview);
+            CoaImportResult result = new ChartOfAccountsJsonImportService(jpa, () -> TEST_COMPANY_CODE).commit(preview);
 
             assertTrue(result.committed());
             assertFalse(result.rolledBack());
             try (EntityManager em = jpa.em())
             {
                 Company company = em.createQuery(
-                        "from Company c where c.code = 'DEFAULT'",
-                        Company.class).getSingleResult();
+                        "from Company c where c.code = :code",
+                        Company.class)
+                        .setParameter("code", TEST_COMPANY_CODE)
+                        .getSingleResult();
                 ChartOfAccounts imported = em.createQuery(
                         "from ChartOfAccounts c where c.company = :company and c.name = 'Imported Chart'",
                         ChartOfAccounts.class)
@@ -78,7 +82,7 @@ class ChartOfAccountsJsonImportServiceTest
         {
             seedCompanyAndActiveChart(jpa);
             Path source = writeSource(tempDir.resolve("rollback.json"));
-            ChartOfAccountsJsonService previewService = new ChartOfAccountsJsonService(jpa, () -> "DEFAULT");
+            ChartOfAccountsJsonService previewService = new ChartOfAccountsJsonService(jpa, () -> TEST_COMPANY_CODE);
             CoaImportPreview preview = previewService.preview(new CoaImportRequest(
                     source,
                     CoaImportMode.CREATE_NEW_CHART,
@@ -88,7 +92,7 @@ class ChartOfAccountsJsonImportServiceTest
                     true));
             ChartOfAccountsJsonImportService service = new ChartOfAccountsJsonImportService(
                     jpa,
-                    () -> "DEFAULT",
+                    () -> TEST_COMPANY_CODE,
                     count -> {
                         if (count == 2)
                         {
@@ -130,8 +134,8 @@ class ChartOfAccountsJsonImportServiceTest
                     "",
                     Map.of(),
                     true);
-            ChartOfAccountsJsonService previewService = new ChartOfAccountsJsonService(jpa, () -> "DEFAULT");
-            ChartOfAccountsJsonImportService importService = new ChartOfAccountsJsonImportService(jpa, () -> "DEFAULT");
+            ChartOfAccountsJsonService previewService = new ChartOfAccountsJsonService(jpa, () -> TEST_COMPANY_CODE);
+            ChartOfAccountsJsonImportService importService = new ChartOfAccountsJsonImportService(jpa, () -> TEST_COMPANY_CODE);
 
             CoaImportResult first = importService.commit(previewService.preview(request));
             CoaImportPreview secondPreview = previewService.preview(request);
@@ -194,8 +198,8 @@ class ChartOfAccountsJsonImportServiceTest
         {
             em.getTransaction().begin();
             Company company = new Company();
-            company.setCode("DEFAULT");
-            company.setDisplayName("Default Company");
+            company.setCode(TEST_COMPANY_CODE);
+            company.setDisplayName("COA Import Test Company");
             company.setDefaultCurrency("USD");
             em.persist(company);
 
