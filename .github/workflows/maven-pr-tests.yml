@@ -30,10 +30,34 @@ jobs:
       - name: Install virtual display
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
-      - name: Run headless tests
+      - name: Capture headless test result
+        id: headless
         env:
           DISPLAY: ""
-        run: mvn -B -ntp -e test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository
+        shell: bash
+        run: |
+          set +e
+          mvn -B -ntp -e test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository > maven-headless.log 2>&1
+          result=$?
+          mkdir -p ci-diagnostic
+          tail -n 240 maven-headless.log > ci-diagnostic/maven-tail.log
+          if [ -d target/surefire-reports ]; then
+            grep -R -n -E "Tests run:|FAILURE|ERROR|AssertionFailedError|expected:|actual:" target/surefire-reports > ci-diagnostic/surefire-summary.log || true
+          fi
+          echo "exit_code=$result" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload Maven diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p15-s3-test-diagnostic
+          path: ci-diagnostic
+          retention-days: 1
+
+      - name: Fail when headless tests failed
+        if: steps.headless.outputs.exit_code != '0'
+        run: exit 1
 
       - name: Run tests
         run: mvn -B -ntp -e test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository
