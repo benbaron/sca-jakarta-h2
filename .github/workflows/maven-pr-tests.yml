@@ -20,47 +20,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply candidate account-persist correction
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path("src/main/java/org/nonprofitbookkeeping/interchange/coa/ChartOfAccountsJsonImportService.java")
-          text = path.read_text(encoding="utf-8")
-          old = '''                    Account account = accountsByCode.get(item.targetCode());
-                    if (account == null)
-                    {
-                        account = new Account();
-                        account.setChart(targetChart);
-                        account.setCode(item.targetCode());
-                        em.persist(account);
-                        accountsByCode.put(item.targetCode(), account);
-                    }
-                    applySupportedFields(account, item, sourceToTarget, accountsByCode);
-                    writtenAccounts.put(item, account);
-'''
-          new = '''                    Account account = accountsByCode.get(item.targetCode());
-                    boolean created = account == null;
-                    if (created)
-                    {
-                        account = new Account();
-                        account.setChart(targetChart);
-                        account.setCode(item.targetCode());
-                        accountsByCode.put(item.targetCode(), account);
-                    }
-                    applySupportedFields(account, item, sourceToTarget, accountsByCode);
-                    if (created)
-                    {
-                        em.persist(account);
-                    }
-                    writtenAccounts.put(item, account);
-'''
-          if old not in text:
-              raise SystemExit("Expected account-persist block was not found")
-          path.write_text(text.replace(old, new, 1), encoding="utf-8")
-          PY
-
       - name: Set up Temurin JDK 17
         uses: actions/setup-java@v4
         with:
@@ -71,35 +30,10 @@ jobs:
       - name: Install virtual display
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
-      - name: Capture headless test result
-        id: headless
+      - name: Run headless tests
         env:
           DISPLAY: ""
-        shell: bash
-        run: |
-          set +e
-          mvn -B -ntp -e test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository > maven-headless.log 2>&1
-          result=$?
-          mkdir -p ci-diagnostic
-          tail -n 240 maven-headless.log > ci-diagnostic/maven-tail.log
-          if [ -d target/surefire-reports ]; then
-            grep -R -n -E "Tests run:|FAILURE|ERROR|AssertionFailedError|expected:|actual:" target/surefire-reports > ci-diagnostic/surefire-summary.log || true
-          fi
-          cp src/main/java/org/nonprofitbookkeeping/interchange/coa/ChartOfAccountsJsonImportService.java ci-diagnostic/
-          echo "exit_code=$result" >> "$GITHUB_OUTPUT"
-          exit 0
-
-      - name: Upload Maven diagnostic
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: p15-s3-persist-fix-validation
-          path: ci-diagnostic
-          retention-days: 1
-
-      - name: Fail when headless tests failed
-        if: steps.headless.outputs.exit_code != '0'
-        run: exit 1
+        run: mvn -B -ntp -e test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository
 
       - name: Run tests
         run: mvn -B -ntp -e test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository
