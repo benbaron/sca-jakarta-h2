@@ -25,6 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ChartOfAccountsJsonServiceTest
 {
+    private static final String TEST_COMPANY_CODE = "COA_JSON_TEST";
+
     @Test
     void donorFixturePreviewsOnceAndMapsCheckingToBankCash(@TempDir Path tempDir) throws Exception
     {
@@ -33,7 +35,7 @@ class ChartOfAccountsJsonServiceTest
         {
             seedCompanyAndChart(jpa);
             Path fixture = Path.of("src/test/resources/data-exchange/coa-json/valid/donor-generated.json");
-            ChartOfAccountsJsonService service = new ChartOfAccountsJsonService(jpa, () -> "DEFAULT");
+            ChartOfAccountsJsonService service = new ChartOfAccountsJsonService(jpa, () -> TEST_COMPANY_CODE);
 
             CoaImportPreview preview = service.preview(new CoaImportRequest(
                     fixture,
@@ -75,7 +77,7 @@ class ChartOfAccountsJsonServiceTest
         {
             seedCompanyAndChart(jpa);
             seedAccounts(jpa);
-            ChartOfAccountsJsonService service = new ChartOfAccountsJsonService(jpa, () -> "DEFAULT");
+            ChartOfAccountsJsonService service = new ChartOfAccountsJsonService(jpa, () -> TEST_COMPANY_CODE);
             Path first = tempDir.resolve("first.json");
             Path second = tempDir.resolve("second.json");
 
@@ -109,7 +111,7 @@ class ChartOfAccountsJsonServiceTest
                       "accounts": []
                     }
                     """);
-            ChartOfAccountsJsonService service = new ChartOfAccountsJsonService(jpa, () -> "DEFAULT");
+            ChartOfAccountsJsonService service = new ChartOfAccountsJsonService(jpa, () -> TEST_COMPANY_CODE);
 
             IllegalArgumentException error = assertThrows(
                     IllegalArgumentException.class,
@@ -143,7 +145,7 @@ class ChartOfAccountsJsonServiceTest
                       ]
                     }
                     """);
-            ChartOfAccountsJsonService service = new ChartOfAccountsJsonService(jpa, () -> "DEFAULT");
+            ChartOfAccountsJsonService service = new ChartOfAccountsJsonService(jpa, () -> TEST_COMPANY_CODE);
 
             CoaImportPreview preview = service.preview(new CoaImportRequest(
                     source,
@@ -165,8 +167,8 @@ class ChartOfAccountsJsonServiceTest
         {
             em.getTransaction().begin();
             Company company = new Company();
-            company.setCode("DEFAULT");
-            company.setDisplayName("Default Company");
+            company.setCode(TEST_COMPANY_CODE);
+            company.setDisplayName("COA JSON Test Company");
             company.setDefaultCurrency("USD");
             em.persist(company);
 
