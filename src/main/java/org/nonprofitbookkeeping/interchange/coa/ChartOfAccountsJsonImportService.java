@@ -117,15 +117,19 @@ public final class ChartOfAccountsJsonImportService
                     }
 
                     Account account = accountsByCode.get(item.targetCode());
-                    if (account == null)
+                    boolean created = account == null;
+                    if (created)
                     {
                         account = new Account();
                         account.setChart(targetChart);
                         account.setCode(item.targetCode());
-                        em.persist(account);
                         accountsByCode.put(item.targetCode(), account);
                     }
                     applySupportedFields(account, item, sourceToTarget, accountsByCode);
+                    if (created)
+                    {
+                        em.persist(account);
+                    }
                     writtenAccounts.put(item, account);
                     writes++;
                     afterAccountWrite.accept(writes);
