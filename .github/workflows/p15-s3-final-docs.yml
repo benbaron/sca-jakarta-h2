@@ -1,0 +1,85 @@
+name: P15-S3 Final Documentation Sync
+
+on:
+  pull_request:
+    branches: [ "**" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.head_ref == 'codex/P15-S3-coa-json-import-export'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S3-coa-json-import-export
+          fetch-depth: 0
+
+      - name: Record final automated verification
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          plan_path = Path('doc/PLAN.md')
+          plan = plan_path.read_text(encoding='utf-8')
+          plan = plan.replace('plan_version: 78', 'plan_version: 79', 1)
+          plan = plan.replace(
+              'active_head: "ae8a30de51f166c8081b6974921b7aa771de1579"',
+              'active_head: "555206c60009410fe0a51afe9a1fff6957572cd6"',
+              1)
+          plan = plan.replace(
+              'next_action: "Run final clean verification for P15-S3, complete the documented Chart of Accounts JSON desktop acceptance checks, then merge PR #197."',
+              'next_action: "Complete the documented Chart of Accounts JSON desktop acceptance checks; after owner confirmation, merge PR #197 and advance to P15-S4."',
+              1)
+          old_validation = '''- Maven PR Tests run `30141677017` passed on tested implementation head `ae8a30de51f166c8081b6974921b7aa771de1579`.
+          - The headless Maven suite, normal Maven suite, and focused JavaFX route-compliance suite all passed.
+          - The earlier eight fixture errors were corrected by using non-reserved test-company codes; the later three rollback failures were corrected by populating new IDENTITY accounts before `persist`.'''.replace('          ', '')
+          new_validation = '''- Maven PR Tests run `30141677017` passed on tested implementation head `ae8a30de51f166c8081b6974921b7aa771de1579` after the fixture and IDENTITY-persist corrections.
+          - Final Maven PR Tests run `30141967625` passed on clean-verification head `555206c60009410fe0a51afe9a1fff6957572cd6`.
+          - `mvn clean verify`, the repeated normal Maven test suite, and the focused JavaFX route-compliance suite all passed through proxy-free GitHub Actions settings.
+          - The earlier eight fixture errors were corrected by using non-reserved test-company codes; the later three rollback failures were corrected by populating new IDENTITY accounts before `persist`.'''.replace('          ', '')
+          if old_validation not in plan:
+              raise SystemExit('Expected P15-S3 validation block not found')
+          plan = plan.replace(old_validation, new_validation, 1)
+          plan = plan.replace(
+              '''Remaining deliverables:
+
+          - Run final `mvn clean verify` through the proxy-free GitHub workflow.
+          - Complete the owner desktop acceptance checklist in `doc/data-exchange/chart-of-accounts-json.md`.
+
+          Next exact action:
+
+          - Complete clean verification, then present the Chart of Accounts JSON desktop acceptance steps to the owner.'''.replace('          ', ''),
+              '''Remaining deliverable:
+
+          - Complete the owner desktop acceptance checklist in `doc/data-exchange/chart-of-accounts-json.md`.
+
+          Next exact action:
+
+          - Present the Chart of Accounts JSON desktop acceptance steps to the owner; keep PR #197 draft until acceptance is confirmed.'''.replace('          ', ''),
+              1)
+          plan_path.write_text(plan, encoding='utf-8')
+
+          contract_path = Path('doc/data-exchange/chart-of-accounts-json.md')
+          contract = contract_path.read_text(encoding='utf-8')
+          old = 'CI status must not be marked passing until Maven reaches compilation and tests. GitHub Actions runs during initial PR #197 development were externally blocked before compilation by temporary DNS failures resolving Maven Central plugins.'
+          new = 'Final automated verification passed in GitHub Actions run `30141967625`: proxy-free `mvn clean verify`, the repeated normal Maven test suite, and the focused JavaFX route-compliance suite all completed successfully on clean-verification head `555206c60009410fe0a51afe9a1fff6957572cd6`.'
+          if old not in contract:
+              raise SystemExit('Expected obsolete CI note not found')
+          contract_path.write_text(contract.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Commit final documentation and remove this workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/p15-s3-final-docs.yml
+          git add doc/PLAN.md doc/data-exchange/chart-of-accounts-json.md
+          git commit -m "docs: record P15-S3 clean verification"
+          git push origin HEAD:codex/P15-S3-coa-json-import-export
