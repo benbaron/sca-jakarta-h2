@@ -1,12 +1,12 @@
 ---
-plan_version: 77
+plan_version: 79
 active_phase: P15
-active_slice: P15-S2
-active_status: IN_PROGRESS
-active_branch: codex/P15-S2-database-transfer
-active_pull_request: 194
-active_head: "539f0f388eae89363e6ca1dcab136dc6cbd7f2ed"
-next_action: "Implement P15-S2 whole-database backup, restore-to-new-copy, validation, and guarded switch from current main; run focused and full validation in the draft PR."
+active_slice: P15-S3
+active_status: VERIFYING
+active_branch: codex/P15-S3-coa-json-import-export
+active_pull_request: 197
+active_head: "555206c60009410fe0a51afe9a1fff6957572cd6"
+next_action: "Complete the documented Chart of Accounts JSON desktop acceptance checks; after owner confirmation, merge PR #197 and advance to P15-S4."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Implement P15-S2 whole-database backup, restore-to-new-copy, valid
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records the owner-applied P15-S1 implementation on current main, closes superseded PR #193, and begins P15-S2 whole-database backup, restore-copy validation, and guarded database switching.
+This revision records owner-verified P15-S2 database transfer completion and advances P15-S3 Chart of Accounts JSON interchange to final verification in draft PR #197.
 
 ## 2. Status values
 
@@ -47,7 +47,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
-| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S2 |
+| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | VERIFYING at P15-S3 |
 
 ## 4. Governing documents
 
@@ -838,7 +838,7 @@ Next exact action:
 
 ## P15-S2 — Whole-database backup, import-copy, validation, and recovery
 
-Status: IN_PROGRESS on branch `codex/P15-S2-database-transfer` from current main `539f0f388eae89363e6ca1dcab136dc6cbd7f2ed`.
+Status: DONE through merged PR #195 for the transfer service and merged PR #196 for production UI/session integration, followed by owner verification.
 
 Planned deliverables:
 
@@ -855,9 +855,20 @@ Acceptance:
 - Failed validation never replaces or changes the active database.
 - Database transfer remains visibly separate from SCLX and COA JSON.
 
+Validation status:
+
+- The whole-database backup/restore-copy service, validation, guarded switching, File menu routes, and Administration surface are merged on current `main` through PRs #195 and #196.
+- CI passed on the merged implementation heads, and the owner confirmed the database transfer workflow before authorizing P15-S3.
+
+Next exact action:
+
+- None; P15-S2 is DONE.
+
 ## P15-S3 — Chart of Accounts JSON import and export
 
-Status: BLOCKED until P15-S1 merges.
+Status: VERIFYING on branch `codex/P15-S3-coa-json-import-export` in draft PR #197.
+
+Tested implementation head: `ae8a30de51f166c8081b6974921b7aa771de1579`
 
 Planned deliverables:
 
@@ -875,6 +886,31 @@ Acceptance:
 - Export/import into a clean company produces a semantically equivalent chart.
 - Blocking errors or injected late failure produce no partial chart.
 - Merge does not delete absent accounts and identical reimport makes no changes.
+
+Completed deliverables:
+
+- Added strict DTO-based donor-compatible and `SCA-COA` 1.0 parsing with bounded UTF-8, duplicate-key, size, depth, string, number, account-count, date, code, name, and decimal validation.
+- Added deterministic parent-before-child JSON export through temporary-file plus atomic move, with byte count and SHA-256.
+- Added non-mutating `CREATE_NEW_CHART`, `MERGE_BY_CODE`, and `MAP_CODES` previews covering hierarchy, cycles, mappings, types, subtypes, normal balances, currency, dates, opening balances, unsupported fields, and history-sensitive conflicts.
+- Added one caller-owned JPA transaction for parent-before-child account writes, same-transaction durable interchange identities, no automatic activation, no deletion/deactivation of absent local accounts, idempotent reimport, and complete late-failure rollback.
+- Added the production `ChartOfAccountsInterchangePanel` wrapper with explicit Import JSON and Export JSON actions while retaining `ChartOfAccountsPanel` as the sole account editor.
+- Added donor conversion, deterministic export, malformed input, hierarchy, mapping, create-new, merge-idempotency, absent-account retention, and rollback tests.
+- Added proxy-free GitHub Actions Maven settings while retaining the existing developer/Codex proxy settings.
+
+Validation status:
+
+- Maven PR Tests run `30141677017` passed on tested implementation head `ae8a30de51f166c8081b6974921b7aa771de1579` after the fixture and IDENTITY-persist corrections.
+- Final Maven PR Tests run `30141967625` passed on clean-verification head `555206c60009410fe0a51afe9a1fff6957572cd6`.
+- `mvn clean verify`, the repeated normal Maven test suite, and the focused JavaFX route-compliance suite all passed through proxy-free GitHub Actions settings.
+- The earlier eight fixture errors were corrected by using non-reserved test-company codes; the later three rollback failures were corrected by populating new IDENTITY accounts before `persist`.
+
+Remaining deliverable:
+
+- Complete the owner desktop acceptance checklist in `doc/data-exchange/chart-of-accounts-json.md`.
+
+Next exact action:
+
+- Present the Chart of Accounts JSON desktop acceptance steps to the owner; keep PR #197 draft until acceptance is confirmed.
 
 ## P15-S4 — SCLX model, parser, and deterministic active-company export
 

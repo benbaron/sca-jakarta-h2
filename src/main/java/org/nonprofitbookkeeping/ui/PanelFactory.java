@@ -1,7 +1,5 @@
 package org.nonprofitbookkeeping.ui;
 
-import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
-
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
@@ -20,9 +18,7 @@ public final class PanelFactory
                 () -> new DashboardHomePanel(
                         services.dashboardQueryService(),
                         services.context()),
-                () -> new AdministrationPanel(
-                        services.companySessionController(),
-                        services.databaseTransferActions()),
+                () -> new AdministrationPanel(services.companySessionController(), services.databaseTransferActions()),
                 () -> new DiagnosticsPanel(services.diagnosticsQueryService()));
     }
 
@@ -31,27 +27,13 @@ public final class PanelFactory
         Objects.requireNonNull(companySessionController, "companySessionController");
         registerFactories(
                 DashboardHomePanel::new,
-                () -> new AdministrationPanel(companySessionController, unavailableTransferActions()),
+                () -> new AdministrationPanel(companySessionController),
                 DiagnosticsPanel::new);
     }
 
     PanelFactory()
     {
-        registerFactories(
-                DashboardHomePanel::new,
-                () -> new AdministrationPanel(
-                        new CompanySessionController(
-                                MainWindow.sharedSessionState(),
-                                UserAppStateStore.create(),
-                                UiServiceRegistry::companyAdmin),
-                        unavailableTransferActions()),
-                DiagnosticsPanel::new);
-    }
-
-    private static DatabaseTransferActions unavailableTransferActions()
-    {
-        return DatabaseTransferActions.unavailable(() -> DatabaseLocationService.resolveDatabasePath(
-                MainWindow.sharedSessionState().databaseSelection().activeDatabasePath()));
+        registerFactories(DashboardHomePanel::new, AdministrationPanel::new, DiagnosticsPanel::new);
     }
 
     private void registerFactories(
@@ -73,7 +55,7 @@ public final class PanelFactory
         factories.put(AppPanelId.APPROVAL_AUDIT, ApprovalAuditPanel::new);
         factories.put(AppPanelId.BANK_TRANSACTIONS, BankTransactionsPanel::new);
         factories.put(AppPanelId.REPORT_LIBRARY, ReportLibraryPanel::new);
-        factories.put(AppPanelId.CHART_OF_ACCOUNTS, ChartOfAccountsPanel::new);
+        factories.put(AppPanelId.CHART_OF_ACCOUNTS, ChartOfAccountsInterchangePanel::new);
         factories.put(AppPanelId.FUNDS, FundsPanel::new);
         factories.put(AppPanelId.SETTINGS, administrationFactory);
         factories.put(AppPanelId.DIAGNOSTICS, diagnosticsFactory);

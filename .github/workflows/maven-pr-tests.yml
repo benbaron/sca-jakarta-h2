@@ -30,16 +30,13 @@ jobs:
       - name: Install virtual display
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
-      - name: Clear Maven cache (if needed)
-        run: rm -rf $HOME/.m2/repository
-
-      - name: Run headless tests
+      - name: Run clean headless verification
         env:
           DISPLAY: ""
-        run: mvn -B -ntp -e clean test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository        
+        run: mvn -B -ntp -e clean verify --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository
 
       - name: Run tests
-        run: mvn -B -ntp -e test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository
+        run: mvn -B -ntp -e test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository
 
       - name: Run production JavaFX route compliance
-        run: xvfb-run -a mvn -B -ntp -e -Dtest=DatabaseTransferPanelTest,DatabaseTransferMenuInstallerTest,CompanyTableStateBinderTest,ProductionPanelRouteComplianceTest,CoreEditorComplianceTest test --settings .mvn/settings.xml -Dmaven.repo.local=$HOME/.m2/repository
+        run: xvfb-run -a mvn -B -ntp -e -Dtest=DatabaseTransferPanelTest,DatabaseTransferMenuInstallerTest,CompanyTableStateBinderTest,ProductionPanelRouteComplianceTest,CoreEditorComplianceTest,ChartOfAccountsInterchangePanelTest test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository
