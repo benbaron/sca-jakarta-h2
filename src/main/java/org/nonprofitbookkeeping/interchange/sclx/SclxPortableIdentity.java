@@ -101,7 +101,7 @@ public final class SclxPortableIdentity
             }
             else
             {
-                encoded.append('%').append(HEX.toHexDigits(unsigned));
+                encoded.append('%').append(HEX.toHexDigits(current));
             }
         }
         return encoded.toString();
