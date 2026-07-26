@@ -21,7 +21,7 @@ class SclxExportDocumentValidatorTest
     {
         assertDoesNotThrow(() -> validator.validate(document(
                 List.of(line("line-1", "acct-expense", "fund-general", "25.00", "0"),
-                        line("line-2", "acct-cash", "fund-general", "0", "25.00"))));
+                        line("line-2", "acct-cash", "fund-general", "0", "25.00")))));
     }
 
     @Test
