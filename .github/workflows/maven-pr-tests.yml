@@ -20,6 +20,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Publish repository source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: repository-source-${{ github.sha }}
+          path: |
+            .
+            !.git/**
+            !target/**
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Set up Temurin JDK 17
         uses: actions/setup-java@v4
         with:
