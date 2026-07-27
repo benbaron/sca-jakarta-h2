@@ -1,12 +1,12 @@
 ---
-plan_version: 82
+plan_version: 83
 active_phase: P15
 active_slice: P15-S4
-active_status: IN_PROGRESS
-active_branch: codex/P15-S4-sclx-budget-transaction-snapshot
-active_pull_request: 207
-active_head: "3914cdaf42f0c1e3939cca4ca3cb7add4fe4291a"
-next_action: "Validate and merge PR #207, then implement deterministic SCLX serialization and atomic file output on a fresh P15-S4 branch."
+active_status: VERIFYING
+active_branch: codex/P15-S4-sclx-deterministic-file-export
+active_pull_request: 208
+active_head: "43b6ada84f7531d7e235aac4d0ac6b7f9ae60ffb"
+next_action: "Validate and merge PR #208, then continue P15-S4 with additional selected-company sections and production JavaFX export wiring on a fresh branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Validate and merge PR #207, then implement deterministic SCLX seri
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records merged P15-S4 portable transaction identity through PR #206 and selected-company budget and canonical-transaction snapshot mapping in draft PR #207.
+This revision records merged selected-company financial snapshot mapping through PR #207 and deterministic atomic SCLX file export in draft PR #208.
 
 ## 2. Status values
 
@@ -915,9 +915,9 @@ Next exact action:
 
 ## P15-S4 — SCLX model, parser, and deterministic active-company export
 
-Status: IN_PROGRESS on branch `codex/P15-S4-sclx-budget-transaction-snapshot` in draft PR #207.
+Status: VERIFYING on branch `codex/P15-S4-sclx-deterministic-file-export` in draft PR #208.
 
-Current tested implementation head: `3914cdaf42f0c1e3939cca4ca3cb7add4fe4291a`
+Current tested implementation head: `43b6ada84f7531d7e235aac4d0ac6b7f9ae60ffb`
 
 Incremental completed deliverables:
 
@@ -931,10 +931,11 @@ Incremental completed deliverables:
 - PR #205: bounded JPA loading of selected-company active-chart accounts and company-owned funds, with inactive-row retention and multi-company isolation coverage.
 - PR #206: durable UUID identity for canonical `Txn` rows, with V62 backfill/default/uniqueness enforcement so transaction export does not use local numeric IDs.
 - PR #207: selected-company budget plan/line and canonical `Txn`/`TxnSplit` snapshot mapping, including period-scoped budget identities, exact debit/credit conversion, correction links, deterministic business ordering, and cross-company rejection.
+- PR #208: deterministic Jackson tree serialization, guarded same-directory atomic file replacement, overwrite/path/active-database protections, SHA-256, entity counts, deferred-section warnings, and explicit exclusions.
 
 Validation status:
 
-- PRs #198 through #206 are merged.
+- PRs #198 through #207 are merged.
 - Maven PR Tests run `30221018029` passed on PR #204 head `2663adf380b47a94776234ac62247480f38712da`.
 - Maven PR Tests run `30221508687` passed on PR #205 implementation head `413e0712004e5c2b8035a88d34c61eaa1463832b`.
 - Final Maven PR Tests run `30221662744` passed on PR #205 plan-inclusive head `f5b114fd1922934fb63cd826a6ad7a91789f8faa`.
@@ -943,6 +944,10 @@ Validation status:
 - Final PR #206 run `30229515838` passed on plan-inclusive head `0d3546bbac752c77f255bd066798022914c37052`; PR #206 merged at `ba27c7218fd450a4e74fdb37ca788efd3e1ec1c5`.
 - Initial PR #207 run `30231726888` exposed a test-fixture lifecycle violation because an `ACTIVE` budget plan lacked required `activatedAt`; the fixture was corrected without changing production behavior.
 - PR #207 run `30231944656` passed on clean implementation head `3914cdaf42f0c1e3939cca4ca3cb7add4fe4291a`, including `mvn clean verify`, the repeated test suite, and JavaFX production-route compliance.
+- Final PR #207 run `30232140766` passed on plan-inclusive head `cf14dfe6bcbae194e44c140060f82c0dcf8e8b68`; PR #207 merged at `d35281a558083b28117dc6668324d117aa6e7cf9`.
+- Initial PR #208 run `30235977494` exposed one extra closing parenthesis in the new serializer test fixture; production sources compiled and the fixture was corrected.
+- Focused PR #208 verification passed 7 tests with 0 failures and 0 errors after the correction.
+- Maven PR Tests run `30236206639` passed on clean implementation head `43b6ada84f7531d7e235aac4d0ac6b7f9ae60ffb`, including `mvn clean verify`, the repeated test suite, and JavaFX production-route compliance.
 
 Planned deliverables:
 
@@ -962,7 +967,7 @@ Acceptance:
 
 Next exact action:
 
-- Validate and merge PR #207, then start a fresh P15-S4 branch for deterministic Jackson serialization, atomic file output, overwrite/path protections, operation counts, warnings/exclusions, and SHA-256.
+- Validate and merge PR #208, then start a fresh P15-S4 branch for additional governed selected-company section mapping and production JavaFX export wiring/result presentation.
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
