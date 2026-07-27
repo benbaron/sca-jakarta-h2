@@ -1,12 +1,12 @@
 ---
-plan_version: 80
+plan_version: 81
 active_phase: P15
 active_slice: P15-S4
 active_status: IN_PROGRESS
-active_branch: codex/P15-S4-sclx-core-snapshot-query
-active_pull_request: 205
-active_head: "413e0712004e5c2b8035a88d34c61eaa1463832b"
-next_action: "Validate and merge PR #205, then continue P15-S4 with budget and canonical-transaction snapshot mapping."
+active_branch: codex/P15-S4-sclx-transaction-portable-id
+active_pull_request: 206
+active_head: "cc795b5039ef20b43f7af6608e874d406fe5fc30"
+next_action: "Validate and merge PR #206, then map company-owned budgets and canonical transactions using durable portable identities."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Validate and merge PR #205, then continue P15-S4 with budget and c
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision reconciles merged P15-S3 and incremental P15-S4 work through PR #204, and records the bounded selected-company core snapshot query in draft PR #205.
+This revision records merged P15-S4 core snapshot loading through PR #205 and the durable canonical-transaction portable identity prerequisite in draft PR #206.
 
 ## 2. Status values
 
@@ -915,9 +915,9 @@ Next exact action:
 
 ## P15-S4 — SCLX model, parser, and deterministic active-company export
 
-Status: IN_PROGRESS on branch `codex/P15-S4-sclx-core-snapshot-query` in draft PR #205.
+Status: IN_PROGRESS on branch `codex/P15-S4-sclx-transaction-portable-id` in draft PR #206.
 
-Current implementation head: `413e0712004e5c2b8035a88d34c61eaa1463832b`
+Current implementation head: `cc795b5039ef20b43f7af6608e874d406fe5fc30`
 
 Incremental completed deliverables:
 
@@ -929,12 +929,15 @@ Incremental completed deliverables:
 - PR #203: deterministic H2-independent portable identity derivation.
 - PR #204: selected-company core DTO assembly for company, active-chart accounts, and funds.
 - PR #205: bounded JPA loading of selected-company active-chart accounts and company-owned funds, with inactive-row retention and multi-company isolation coverage.
+- PR #206: durable UUID identity for canonical `Txn` rows, with V62 backfill/default/uniqueness enforcement so transaction export does not use local numeric IDs.
 
 Validation status:
 
-- PRs #198 through #204 are merged.
+- PRs #198 through #205 are merged.
 - Maven PR Tests run `30221018029` passed on PR #204 head `2663adf380b47a94776234ac62247480f38712da`.
-- Maven PR Tests run `30221508687` passed on PR #205 head `413e0712004e5c2b8035a88d34c61eaa1463832b`.
+- Maven PR Tests run `30221508687` passed on PR #205 implementation head `413e0712004e5c2b8035a88d34c61eaa1463832b`.
+- Final Maven PR Tests run `30221662744` passed on PR #205 plan-inclusive head `f5b114fd1922934fb63cd826a6ad7a91789f8faa`.
+- PR #206 automated validation is pending.
 
 Planned deliverables:
 
@@ -954,7 +957,7 @@ Acceptance:
 
 Next exact action:
 
-- Obtain owner validation for PR #205, merge it, then start a fresh P15-S4 branch for budget and canonical-transaction mapping.
+- Validate and merge PR #206, then start a fresh P15-S4 branch to map company-owned budget plans/lines and canonical transactions/splits using durable portable identities.
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
