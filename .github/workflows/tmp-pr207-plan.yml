@@ -1,0 +1,51 @@
+name: Temporary PR207 plan reconciliation
+
+on:
+  push:
+    branches:
+      - codex/P15-S4-sclx-budget-transaction-snapshot
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    if: ${{ !contains(github.event.head_commit.message, 'Reconcile P15 plan for PR207') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reconcile execution ledger
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('doc/PLAN.md')
+          text = path.read_text()
+          replacements = [
+              ('plan_version: 81', 'plan_version: 82'),
+              ('active_branch: codex/P15-S4-sclx-transaction-portable-id', 'active_branch: codex/P15-S4-sclx-budget-transaction-snapshot'),
+              ('active_pull_request: 206', 'active_pull_request: 207'),
+              ('active_head: "db1bae8fad0b0bdea50e1b80fadbedea225eeb48"', 'active_head: "3914cdaf42f0c1e3939cca4ca3cb7add4fe4291a"'),
+              ('next_action: "Validate and merge PR #206, then map company-owned budgets and canonical transactions using durable portable identities."', 'next_action: "Validate and merge PR #207, then implement deterministic SCLX serialization and atomic file output on a fresh P15-S4 branch."'),
+              ('This revision records merged P15-S4 core snapshot loading through PR #205 and the durable canonical-transaction portable identity prerequisite in draft PR #206.', 'This revision records merged P15-S4 portable transaction identity through PR #206 and selected-company budget and canonical-transaction snapshot mapping in draft PR #207.'),
+              ('Status: IN_PROGRESS on branch `codex/P15-S4-sclx-transaction-portable-id` in draft PR #206.', 'Status: IN_PROGRESS on branch `codex/P15-S4-sclx-budget-transaction-snapshot` in draft PR #207.'),
+              ('Current tested implementation head: `db1bae8fad0b0bdea50e1b80fadbedea225eeb48`', 'Current tested implementation head: `3914cdaf42f0c1e3939cca4ca3cb7add4fe4291a`'),
+              ('- PR #206: durable UUID identity for canonical `Txn` rows, with V62 backfill/default/uniqueness enforcement so transaction export does not use local numeric IDs.', '- PR #206: durable UUID identity for canonical `Txn` rows, with V62 backfill/default/uniqueness enforcement so transaction export does not use local numeric IDs.\n- PR #207: selected-company budget plan/line and canonical `Txn`/`TxnSplit` snapshot mapping, including period-scoped budget identities, exact debit/credit conversion, correction links, deterministic business ordering, and cross-company rejection.'),
+              ('- PRs #198 through #205 are merged.', '- PRs #198 through #206 are merged.'),
+              ('- Maven PR Tests run `30229244201` passed on clean review head `db1bae8fad0b0bdea50e1b80fadbedea225eeb48`, including `mvn clean verify`, the repeated test suite, and JavaFX production-route compliance.', '- Maven PR Tests run `30229244201` passed on clean PR #206 review head `db1bae8fad0b0bdea50e1b80fadbedea225eeb48`, including `mvn clean verify`, the repeated test suite, and JavaFX production-route compliance.\n- Final PR #206 run `30229515838` passed on plan-inclusive head `0d3546bbac752c77f255bd066798022914c37052`; PR #206 merged at `ba27c7218fd450a4e74fdb37ca788efd3e1ec1c5`.\n- Initial PR #207 run `30231726888` exposed a test-fixture lifecycle violation because an `ACTIVE` budget plan lacked required `activatedAt`; the fixture was corrected without changing production behavior.\n- PR #207 run `30231944656` passed on clean implementation head `3914cdaf42f0c1e3939cca4ca3cb7add4fe4291a`, including `mvn clean verify`, the repeated test suite, and JavaFX production-route compliance.'),
+              ('- Validate and merge PR #206, then start a fresh P15-S4 branch to map company-owned budget plans/lines and canonical transactions/splits using durable portable identities.', '- Validate and merge PR #207, then start a fresh P15-S4 branch for deterministic Jackson serialization, atomic file output, overwrite/path protections, operation counts, warnings/exclusions, and SHA-256.'),
+          ]
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit(f'missing PLAN.md text: {old}')
+              text = text.replace(old, new, 1)
+          path.write_text(text)
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add doc/PLAN.md
+          git commit -m "Reconcile P15 plan for PR207"
+          git push
