@@ -200,6 +200,7 @@ class SclxFinancialSnapshotQueryServiceTest
         plan.setFiscalYear(2026);
         plan.setVersionCode(version);
         plan.setStatus(BudgetPlan.Status.ACTIVE);
+        plan.setActivatedAt(Instant.parse("2026-01-01T00:00:00Z"));
         plan.setPeriodStart(LocalDate.of(2026, 1, 1));
         plan.setPeriodEnd(LocalDate.of(2026, 12, 31));
         return plan;
