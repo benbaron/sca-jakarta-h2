@@ -112,7 +112,7 @@ class SclxJsonSerializerTest
                                         new BigDecimal("25.0000"), BigDecimal.ZERO, null),
                                 new SclxExportDocument.TransactionLine(
                                         "transaction-line:1", cashId, fundId, null, null,
-                                        BigDecimal.ZERO, new BigDecimal("25.0000"), null))))),
+                                        BigDecimal.ZERO, new BigDecimal("25.0000"), null)))),
                 new SclxExportDocument.Extensions(1, extensionValues));
     }
 }
