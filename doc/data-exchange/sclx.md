@@ -63,6 +63,8 @@ Portable identities MUST be stable external strings, not local numeric primary k
 
 Canonical transactions use `Txn.portableId`, a durable UUID assigned independently of the local numeric primary key. Existing rows receive one during the nondestructive ownership/interchange migration sequence, and new rows receive one at creation. SCLX transaction identities namespace that UUID by company. Budget plans use company code, fiscal year, and version code; budget lines use their plan identity plus category code, optional fund identity, and optional period month.
 
+The current deterministic snapshot writes every company-owned budget plan and line. Budget lines preserve `categoryCode`, optional fund reference, optional `periodMonth`, and exact `BigDecimal` amount; the current normalized budget model has no direct account relation, so `accountId` remains absent rather than being inferred. Canonical transactions preserve status, deterministic debit/credit lines, and explicit `REVERSAL` or `REPLACEMENT` correction relationships. Transaction-line ordinals are assigned only after sorting by stable business content and never by a serialized database identifier. Counterparty, activity, and merchant master-data references remain unset until their company-scoped portable master sections are added, avoiding unresolved or locally keyed references.
+
 Within a document:
 
 - every required identity MUST be present and nonblank;

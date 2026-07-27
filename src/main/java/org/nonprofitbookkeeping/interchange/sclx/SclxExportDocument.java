@@ -3,6 +3,7 @@ package org.nonprofitbookkeeping.interchange.sclx;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -143,13 +144,28 @@ public record SclxExportDocument(
             String accountId,
             String fundId,
             String categoryCode,
+            String periodMonth,
             BigDecimal amount)
     {
         public BudgetLine
         {
             requireText(lineId, "lineId");
             requireText(categoryCode, "categoryCode");
+            if (periodMonth != null && !periodMonth.isBlank())
+            {
+                YearMonth.parse(periodMonth);
+            }
             Objects.requireNonNull(amount, "amount");
+        }
+
+        public BudgetLine(
+                String lineId,
+                String accountId,
+                String fundId,
+                String categoryCode,
+                BigDecimal amount)
+        {
+            this(lineId, accountId, fundId, categoryCode, null, amount);
         }
     }
 
@@ -158,6 +174,8 @@ public record SclxExportDocument(
             LocalDate transactionDate,
             String description,
             String reference,
+            String status,
+            String correctionType,
             String correctionOfTransactionId,
             List<TransactionLine> lines)
     {
@@ -166,7 +184,38 @@ public record SclxExportDocument(
             requireText(transactionId, "transactionId");
             Objects.requireNonNull(transactionDate, "transactionDate");
             requireText(description, "description");
+            requireText(status, "status");
+            if (correctionType != null
+                    && !"REVERSAL".equals(correctionType)
+                    && !"REPLACEMENT".equals(correctionType))
+            {
+                throw new IllegalArgumentException("unsupported correctionType: " + correctionType);
+            }
+            if (correctionType != null
+                    && (correctionOfTransactionId == null || correctionOfTransactionId.isBlank()))
+            {
+                throw new IllegalArgumentException("correctionType requires correctionOfTransactionId");
+            }
             lines = List.copyOf(Objects.requireNonNull(lines, "lines"));
+        }
+
+        public Transaction(
+                String transactionId,
+                LocalDate transactionDate,
+                String description,
+                String reference,
+                String correctionOfTransactionId,
+                List<TransactionLine> lines)
+        {
+            this(
+                    transactionId,
+                    transactionDate,
+                    description,
+                    reference,
+                    "ENTERED",
+                    correctionOfTransactionId == null ? null : "REPLACEMENT",
+                    correctionOfTransactionId,
+                    lines);
         }
     }
 

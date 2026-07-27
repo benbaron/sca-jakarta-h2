@@ -38,9 +38,25 @@ public final class SclxPortableIdentity
         return identity("budget", companyCode, Integer.toString(fiscalYear), version);
     }
 
+    public static String budgetLine(
+            String budgetId,
+            String categoryCode,
+            String accountId,
+            String fundId,
+            String periodMonth)
+    {
+        return identity(
+                "budget-line",
+                budgetId,
+                categoryCode,
+                nullablePart(accountId),
+                nullablePart(fundId),
+                nullablePart(periodMonth));
+    }
+
     public static String budgetLine(String budgetId, String categoryCode, String accountId, String fundId)
     {
-        return identity("budget-line", budgetId, categoryCode, nullablePart(accountId), nullablePart(fundId));
+        return budgetLine(budgetId, categoryCode, accountId, fundId, null);
     }
 
     public static String transaction(String companyCode, String durableTransactionKey)
