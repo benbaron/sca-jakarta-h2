@@ -7,6 +7,7 @@ import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 
+import java.util.List;
 import java.util.Objects;
 
 /** Installs selected-company SCLX export in the production File menu. */
@@ -61,9 +62,10 @@ final class SclxExportMenuInstaller
         int insertionIndex = recoveryIndex >= 0 ? recoveryIndex + 1 : Math.min(3, fileMenu.getItems().size());
         fileMenu.getItems().addAll(
                 insertionIndex,
-                new SeparatorMenuItem(),
-                export,
-                new SeparatorMenuItem());
+                List.of(
+                        new SeparatorMenuItem(),
+                        export,
+                        new SeparatorMenuItem()));
     }
 
     private static int indexOf(Menu menu, String id)
