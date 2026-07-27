@@ -14,98 +14,40 @@
 [INFO] Compiling 381 source files with javac [debug release 17] to target/classes
 [INFO] /home/runner/work/sca-jakarta-h2/sca-jakarta-h2/src/main/java/org/nonprofitbookkeeping/ui/UserAdminPanel.java: Some input files use unchecked or unsafe operations.
 [INFO] /home/runner/work/sca-jakarta-h2/sca-jakarta-h2/src/main/java/org/nonprofitbookkeeping/ui/UserAdminPanel.java: Recompile with -Xlint:unchecked for details.
-[INFO] Some messages have been simplified; recompile with -Xdiags:verbose to get full output
-[INFO] -------------------------------------------------------------
-[ERROR] COMPILATION ERROR : 
-[INFO] -------------------------------------------------------------
-[ERROR] /home/runner/work/sca-jakarta-h2/sca-jakarta-h2/src/main/java/org/nonprofitbookkeeping/ui/SclxExportMenuInstaller.java:[62,28] method addAll in interface javafx.collections.ObservableList<E> cannot be applied to given types;
-  required: javafx.scene.control.MenuItem[]
-  found:    int,javafx.scene.control.SeparatorMenuItem,javafx.scene.control.MenuItem,javafx.scene.control.SeparatorMenuItem
-  reason: varargs mismatch; int cannot be converted to javafx.scene.control.MenuItem
-[INFO] 1 error
-[INFO] -------------------------------------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ sca-ledger-h2-jakarta ---
+[INFO] Copying 51 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ sca-ledger-h2-jakarta ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 163 source files with javac [debug release 17] to target/test-classes
+[INFO] /home/runner/work/sca-jakarta-h2/sca-jakarta-h2/src/test/java/org/nonprofitbookkeeping/ui/CompanyTableStateBinderTest.java: /home/runner/work/sca-jakarta-h2/sca-jakarta-h2/src/test/java/org/nonprofitbookkeeping/ui/CompanyTableStateBinderTest.java uses or overrides a deprecated API.
+[INFO] /home/runner/work/sca-jakarta-h2/sca-jakarta-h2/src/test/java/org/nonprofitbookkeeping/ui/CompanyTableStateBinderTest.java: Recompile with -Xlint:deprecation for details.
+[INFO] /home/runner/work/sca-jakarta-h2/sca-jakarta-h2/src/test/java/org/nonprofitbookkeeping/ui/CompanyTableStateBinderTest.java: /home/runner/work/sca-jakarta-h2/sca-jakarta-h2/src/test/java/org/nonprofitbookkeeping/ui/CompanyTableStateBinderTest.java uses unchecked or unsafe operations.
+[INFO] /home/runner/work/sca-jakarta-h2/sca-jakarta-h2/src/test/java/org/nonprofitbookkeeping/ui/CompanyTableStateBinderTest.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ sca-ledger-h2-jakarta ---
+[INFO] Surefire report directory: /home/runner/work/sca-jakarta-h2/sca-jakarta-h2/target/surefire-reports
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running org.nonprofitbookkeeping.ui.SclxExportCoordinatorTest
+[WARNING] Tests run: 6, Failures: 0, Errors: 0, Skipped: 3, Time elapsed: 0.117 s -- in org.nonprofitbookkeeping.ui.SclxExportCoordinatorTest
+[INFO] Running org.nonprofitbookkeeping.ui.SclxExportMenuInstallerTest
+[WARNING] Tests run: 1, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.010 s -- in org.nonprofitbookkeeping.ui.SclxExportMenuInstallerTest
+[INFO] Running org.nonprofitbookkeeping.ui.SclxExportProductionRouteSourceTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in org.nonprofitbookkeeping.ui.SclxExportProductionRouteSourceTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[WARNING] Tests run: 8, Failures: 0, Errors: 0, Skipped: 4
+[INFO] 
 [INFO] ------------------------------------------------------------------------
-[INFO] BUILD FAILURE
+[INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  9.111 s
-[INFO] Finished at: 2026-07-27T05:12:17Z
+[INFO] Total time:  9.430 s
+[INFO] Finished at: 2026-07-27T05:13:47Z
 [INFO] ------------------------------------------------------------------------
-[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.13.0:compile (default-compile) on project sca-ledger-h2-jakarta: Compilation failure
-[ERROR] /home/runner/work/sca-jakarta-h2/sca-jakarta-h2/src/main/java/org/nonprofitbookkeeping/ui/SclxExportMenuInstaller.java:[62,28] method addAll in interface javafx.collections.ObservableList<E> cannot be applied to given types;
-[ERROR]   required: javafx.scene.control.MenuItem[]
-[ERROR]   found:    int,javafx.scene.control.SeparatorMenuItem,javafx.scene.control.MenuItem,javafx.scene.control.SeparatorMenuItem
-[ERROR]   reason: varargs mismatch; int cannot be converted to javafx.scene.control.MenuItem
-[ERROR] -> [Help 1]
-org.apache.maven.lifecycle.LifecycleExecutionException: Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.13.0:compile (default-compile) on project sca-ledger-h2-jakarta: Compilation failure
-/home/runner/work/sca-jakarta-h2/sca-jakarta-h2/src/main/java/org/nonprofitbookkeeping/ui/SclxExportMenuInstaller.java:[62,28] method addAll in interface javafx.collections.ObservableList<E> cannot be applied to given types;
-  required: javafx.scene.control.MenuItem[]
-  found:    int,javafx.scene.control.SeparatorMenuItem,javafx.scene.control.MenuItem,javafx.scene.control.SeparatorMenuItem
-  reason: varargs mismatch; int cannot be converted to javafx.scene.control.MenuItem
-
-    at org.apache.maven.lifecycle.internal.MojoExecutor.doExecute2 (MojoExecutor.java:333)
-    at org.apache.maven.lifecycle.internal.MojoExecutor.doExecute (MojoExecutor.java:316)
-    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:212)
-    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:174)
-    at org.apache.maven.lifecycle.internal.MojoExecutor.access$000 (MojoExecutor.java:75)
-    at org.apache.maven.lifecycle.internal.MojoExecutor$1.run (MojoExecutor.java:162)
-    at org.apache.maven.plugin.DefaultMojosExecutionStrategy.execute (DefaultMojosExecutionStrategy.java:39)
-    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:159)
-    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:105)
-    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:73)
-    at org.apache.maven.lifecycle.internal.builder.singlethreaded.SingleThreadedBuilder.build (SingleThreadedBuilder.java:53)
-    at org.apache.maven.lifecycle.internal.LifecycleStarter.execute (LifecycleStarter.java:118)
-    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:261)
-    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:173)
-    at org.apache.maven.DefaultMaven.execute (DefaultMaven.java:101)
-    at org.apache.maven.cli.MavenCli.execute (MavenCli.java:919)
-    at org.apache.maven.cli.MavenCli.doMain (MavenCli.java:285)
-    at org.apache.maven.cli.MavenCli.main (MavenCli.java:207)
-    at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0 (Native Method)
-    at jdk.internal.reflect.NativeMethodAccessorImpl.invoke (NativeMethodAccessorImpl.java:77)
-    at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke (DelegatingMethodAccessorImpl.java:43)
-    at java.lang.reflect.Method.invoke (Method.java:569)
-    at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced (Launcher.java:255)
-    at org.codehaus.plexus.classworlds.launcher.Launcher.launch (Launcher.java:201)
-    at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode (Launcher.java:362)
-    at org.codehaus.plexus.classworlds.launcher.Launcher.main (Launcher.java:314)
-Caused by: org.apache.maven.plugin.compiler.CompilationFailureException: Compilation failure
-/home/runner/work/sca-jakarta-h2/sca-jakarta-h2/src/main/java/org/nonprofitbookkeeping/ui/SclxExportMenuInstaller.java:[62,28] method addAll in interface javafx.collections.ObservableList<E> cannot be applied to given types;
-  required: javafx.scene.control.MenuItem[]
-  found:    int,javafx.scene.control.SeparatorMenuItem,javafx.scene.control.MenuItem,javafx.scene.control.SeparatorMenuItem
-  reason: varargs mismatch; int cannot be converted to javafx.scene.control.MenuItem
-
-    at org.apache.maven.plugin.compiler.AbstractCompilerMojo.execute (AbstractCompilerMojo.java:1309)
-    at org.apache.maven.plugin.compiler.CompilerMojo.execute (CompilerMojo.java:215)
-    at org.apache.maven.plugin.DefaultBuildPluginManager.executeMojo (DefaultBuildPluginManager.java:126)
-    at org.apache.maven.lifecycle.internal.MojoExecutor.doExecute2 (MojoExecutor.java:328)
-    at org.apache.maven.lifecycle.internal.MojoExecutor.doExecute (MojoExecutor.java:316)
-    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:212)
-    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:174)
-    at org.apache.maven.lifecycle.internal.MojoExecutor.access$000 (MojoExecutor.java:75)
-    at org.apache.maven.lifecycle.internal.MojoExecutor$1.run (MojoExecutor.java:162)
-    at org.apache.maven.plugin.DefaultMojosExecutionStrategy.execute (DefaultMojosExecutionStrategy.java:39)
-    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:159)
-    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:105)
-    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:73)
-    at org.apache.maven.lifecycle.internal.builder.singlethreaded.SingleThreadedBuilder.build (SingleThreadedBuilder.java:53)
-    at org.apache.maven.lifecycle.internal.LifecycleStarter.execute (LifecycleStarter.java:118)
-    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:261)
-    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:173)
-    at org.apache.maven.DefaultMaven.execute (DefaultMaven.java:101)
-    at org.apache.maven.cli.MavenCli.execute (MavenCli.java:919)
-    at org.apache.maven.cli.MavenCli.doMain (MavenCli.java:285)
-    at org.apache.maven.cli.MavenCli.main (MavenCli.java:207)
-    at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0 (Native Method)
-    at jdk.internal.reflect.NativeMethodAccessorImpl.invoke (NativeMethodAccessorImpl.java:77)
-    at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke (DelegatingMethodAccessorImpl.java:43)
-    at java.lang.reflect.Method.invoke (Method.java:569)
-    at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced (Launcher.java:255)
-    at org.codehaus.plexus.classworlds.launcher.Launcher.launch (Launcher.java:201)
-    at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode (Launcher.java:362)
-    at org.codehaus.plexus.classworlds.launcher.Launcher.main (Launcher.java:314)
-[ERROR] 
-[ERROR] Re-run Maven using the -X switch to enable full debug logging.
-[ERROR] 
-[ERROR] For more information about the errors and possible solutions, please read the following articles:
-[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
-MAVEN_EXIT_CODE=1
+MAVEN_EXIT_CODE=0
