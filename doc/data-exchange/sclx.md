@@ -154,6 +154,14 @@ Export MUST:
 
 A failed export MUST leave the pre-existing destination unchanged.
 
+### 10.1 Production selected-company export route
+
+The production File menu exposes **Export Active Company to SCLX…** only when an active database and selected company are available. The action uses the current `SclxFileExportService`; it does not serialize panel state, reuse the database-transfer service, or open a generic Import/Export Jobs surface.
+
+The file chooser is labeled **SCLX Active Company Files** and normalizes the destination to `.sclx`. Replacing an existing file requires explicit confirmation that names the exact destination. The export runs away from the JavaFX application thread and the menu action remains disabled while it is running.
+
+The completion result displays the selected company code, SCLX version, fixed operation timestamp, exact destination, byte count, SHA-256, included record counts, warning count, governed deferred sections, and explicit exclusions. Deferred sections remain visible warnings until their P15-S4 mapping is implemented; the UI MUST NOT imply that those records were exported.
+
 ## 11. Import transaction boundary and results
 
 Preview and validation MUST make no H2 changes. Commit MUST use one caller-owned transaction for the documented import boundary and route financial records through canonical services. A late failure MUST roll back all records in that boundary.
@@ -221,3 +229,19 @@ organization identity, byte count, SHA-256, entity counts, deferred-extension wa
 governed explicit-exclusion section list. Deferred extension sections are reported as warnings until
 their selected-company snapshot mappings are implemented; policy exclusions are reported separately
 and are not silently treated as exported empty sections.
+
+## 15. Production selected-company export route
+
+The production File menu exposes **Export Active Company to SCLX…**. The save chooser is labeled
+**SCLX Active Company Files** and proposes a company-scoped `.sclx` filename. This route is distinct
+from whole-database backup, Chart of Accounts JSON, and bank-statement exchange.
+
+The UI fixes the selected company code, active database path, destination, operation timestamp, and
+overwrite decision before the background task begins. A later company or database selection cannot
+silently retarget that operation; the fixed-scope operation either completes for the captured scope or
+fails without committing the destination. Existing files require explicit replacement confirmation.
+
+The action is unavailable without an active database and nonblank selected company and remains disabled
+while its export is running. Completion presents the exact company, SCLX version, timestamp, destination,
+byte count, SHA-256, included record counts, validation messages, deferred governed sections, and explicit
+exclusions. Deferred sections remain visible warnings and are not represented as implemented empty data.
