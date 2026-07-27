@@ -14,6 +14,7 @@ import jakarta.persistence.Table;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Entity
 @Table(name = "txn",
@@ -36,6 +37,9 @@ public class Txn
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
     private Company company;
+
+    @Column(name = "portable_id", nullable = false, unique = true)
+    private UUID portableId = UUID.randomUUID();
 
     @Column(name = "txn_date", nullable = false)
     private LocalDate txnDate;
@@ -74,6 +78,8 @@ public class Txn
     public Long getId() { return id; }
     public Company getCompany() { return company; }
     public void setCompany(Company company) { this.company = company; }
+    public UUID getPortableId() { return portableId; }
+    public void setPortableId(UUID portableId) { this.portableId = portableId; }
     public LocalDate getTxnDate() { return txnDate; }
     public void setTxnDate(LocalDate txnDate) { this.txnDate = txnDate; }
     public Counterparty getPayee() { return payee; }
