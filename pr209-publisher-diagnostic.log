@@ -1,0 +1,55 @@
+HEAD=b143436f68f44c0c4b53a4ea233e3738b0e0fe2f
+PARTS
+ 8000 .p15-publish/pr209.part00
+ 8000 .p15-publish/pr209.part01
+ 8000 .p15-publish/pr209.part02
+10664 .p15-publish/pr209.part03
+ 2664 .p15-publish/pr209.part04
+37328 total
+COMBINED_BYTES=37328
+BASE64_STATUS=0
+ARCHIVE_BYTES=27994
+
+gzip: /tmp/tmp.s9zlIHbXuW/payload.tar.gz: decompression OK, trailing garbage ignored
+GZIP_STATUS=2
+src/main/java/org/nonprofitbookkeeping/ui/SclxExportActions.java
+src/main/java/org/nonprofitbookkeeping/ui/SclxExportMenuInstaller.java
+src/main/java/org/nonprofitbookkeeping/ui/SclxExportUiRegistry.java
+src/main/java/org/nonprofitbookkeeping/ui/SclxExportCoordinator.java
+src/main/java/org/nonprofitbookkeeping/ui/UiServiceRegistry.java
+src/main/java/org/nonprofitbookkeeping/ui/WorkspaceServicesFactory.java
+src/main/java/org/nonprofitbookkeeping/ui/WorkspaceServices.java
+src/main/java/org/nonprofitbookkeeping/ui/MainApp.java
+src/test/java/org/nonprofitbookkeeping/ui/SclxExportMenuInstallerTest.java
+src/test/java/org/nonprofitbookkeeping/ui/SclxExportCoordinatorTest.java
+src/test/java/org/nonprofitbookkeeping/ui/SclxExportProductionRouteSourceTest.java
+doc/data-exchange/sclx.md
+doc/interface-operation-matrix.md
+doc/P15-S4-sclx-export-ui-user-testing.md
+
+gzip: stdin: decompression OK, trailing garbage ignored
+tar: Child returned status 2
+tar: Error is not recoverable: exiting now
+TAR_LIST_STATUS=2
+
+gzip: stdin: decompression OK, trailing garbage ignored
+tar: Child returned status 2
+tar: Error is not recoverable: exiting now
+TAR_EXTRACT_STATUS=2
+/tmp/tmp.s9zlIHbXuW/out/doc/P15-S4-sclx-export-ui-user-testing.md
+/tmp/tmp.s9zlIHbXuW/out/doc/data-exchange/sclx.md
+/tmp/tmp.s9zlIHbXuW/out/doc/interface-operation-matrix.md
+/tmp/tmp.s9zlIHbXuW/out/src/main/java/org/nonprofitbookkeeping/ui/MainApp.java
+/tmp/tmp.s9zlIHbXuW/out/src/main/java/org/nonprofitbookkeeping/ui/SclxExportActions.java
+/tmp/tmp.s9zlIHbXuW/out/src/main/java/org/nonprofitbookkeeping/ui/SclxExportCoordinator.java
+/tmp/tmp.s9zlIHbXuW/out/src/main/java/org/nonprofitbookkeeping/ui/SclxExportMenuInstaller.java
+/tmp/tmp.s9zlIHbXuW/out/src/main/java/org/nonprofitbookkeeping/ui/SclxExportUiRegistry.java
+/tmp/tmp.s9zlIHbXuW/out/src/main/java/org/nonprofitbookkeeping/ui/UiServiceRegistry.java
+/tmp/tmp.s9zlIHbXuW/out/src/main/java/org/nonprofitbookkeeping/ui/WorkspaceServices.java
+/tmp/tmp.s9zlIHbXuW/out/src/main/java/org/nonprofitbookkeeping/ui/WorkspaceServicesFactory.java
+/tmp/tmp.s9zlIHbXuW/out/src/test/java/org/nonprofitbookkeeping/ui/SclxExportCoordinatorTest.java
+/tmp/tmp.s9zlIHbXuW/out/src/test/java/org/nonprofitbookkeeping/ui/SclxExportMenuInstallerTest.java
+/tmp/tmp.s9zlIHbXuW/out/src/test/java/org/nonprofitbookkeeping/ui/SclxExportProductionRouteSourceTest.java
+GIT_STATUS_BEFORE
+?? pr209-publisher-diagnostic.log
+COMMIT_STATUS=0
