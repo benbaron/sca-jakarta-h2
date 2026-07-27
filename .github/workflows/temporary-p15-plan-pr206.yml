@@ -1,0 +1,52 @@
+name: Temporary P15 plan reconciliation PR206
+
+on:
+  push:
+    branches:
+      - codex/P15-S4-sclx-transaction-portable-id
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile-plan:
+    if: ${{ !contains(github.event.head_commit.message, 'Reconcile P15 plan for PR 206') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconcile P15 execution state
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('doc/PLAN.md')
+          text = path.read_text()
+          replacements = [
+              ('plan_version: 80', 'plan_version: 81'),
+              ('active_branch: codex/P15-S4-sclx-core-snapshot-query', 'active_branch: codex/P15-S4-sclx-transaction-portable-id'),
+              ('active_pull_request: 205', 'active_pull_request: 206'),
+              ('active_head: "413e0712004e5c2b8035a88d34c61eaa1463832b"', 'active_head: "cc795b5039ef20b43f7af6608e874d406fe5fc30"'),
+              ('next_action: "Validate and merge PR #205, then continue P15-S4 with budget and canonical-transaction snapshot mapping."', 'next_action: "Validate and merge PR #206, then map company-owned budgets and canonical transactions using durable portable identities."'),
+              ('This revision reconciles merged P15-S3 and incremental P15-S4 work through PR #204, and records the bounded selected-company core snapshot query in draft PR #205.', 'This revision records merged P15-S4 core snapshot loading through PR #205 and the durable canonical-transaction portable identity prerequisite in draft PR #206.'),
+              ('Status: IN_PROGRESS on branch `codex/P15-S4-sclx-core-snapshot-query` in draft PR #205.', 'Status: IN_PROGRESS on branch `codex/P15-S4-sclx-transaction-portable-id` in draft PR #206.'),
+              ('Current implementation head: `413e0712004e5c2b8035a88d34c61eaa1463832b`', 'Current implementation head: `cc795b5039ef20b43f7af6608e874d406fe5fc30`'),
+              ('- PR #205: bounded JPA loading of selected-company active-chart accounts and company-owned funds, with inactive-row retention and multi-company isolation coverage.', '- PR #205: bounded JPA loading of selected-company active-chart accounts and company-owned funds, with inactive-row retention and multi-company isolation coverage.\n- PR #206: durable UUID identity for canonical `Txn` rows, with V62 backfill/default/uniqueness enforcement so transaction export does not use local numeric IDs.'),
+              ('- PRs #198 through #204 are merged.\n- Maven PR Tests run `30221018029` passed on PR #204 head `2663adf380b47a94776234ac62247480f38712da`.\n- Maven PR Tests run `30221508687` passed on PR #205 head `413e0712004e5c2b8035a88d34c61eaa1463832b`.', '- PRs #198 through #205 are merged.\n- Maven PR Tests run `30221018029` passed on PR #204 head `2663adf380b47a94776234ac62247480f38712da`.\n- Maven PR Tests run `30221508687` passed on PR #205 implementation head `413e0712004e5c2b8035a88d34c61eaa1463832b`.\n- Final Maven PR Tests run `30221662744` passed on PR #205 plan-inclusive head `f5b114fd1922934fb63cd826a6ad7a91789f8faa`.\n- PR #206 automated validation is pending.'),
+              ('- Obtain owner validation for PR #205, merge it, then start a fresh P15-S4 branch for budget and canonical-transaction mapping.', '- Validate and merge PR #206, then start a fresh P15-S4 branch to map company-owned budget plans/lines and canonical transactions/splits using durable portable identities.'),
+          ]
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit(f'missing PLAN.md text: {old}')
+              text = text.replace(old, new, 1)
+          path.write_text(text)
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add doc/PLAN.md
+          git commit -m "Reconcile P15 plan for PR 206"
+          git push
