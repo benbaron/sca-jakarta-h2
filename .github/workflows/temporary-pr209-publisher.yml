@@ -1,0 +1,32 @@
+name: Temporary PR209 implementation publisher
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: ${{ github.event.pull_request.head.ref == 'codex/P15-S4-sclx-export-ui' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S4-sclx-export-ui
+          fetch-depth: 0
+      - name: Apply reviewed implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .p15-publish/pr209.part* | base64 -d | tar -xz
+          rm -rf .p15-publish
+          rm .github/workflows/temporary-pr209-publisher.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "P15-S4: wire selected-company SCLX export into File menu"
+          git push
