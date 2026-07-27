@@ -1,12 +1,12 @@
 ---
-plan_version: 79
+plan_version: 80
 active_phase: P15
-active_slice: P15-S3
-active_status: VERIFYING
-active_branch: codex/P15-S3-coa-json-import-export
-active_pull_request: 197
-active_head: "555206c60009410fe0a51afe9a1fff6957572cd6"
-next_action: "Complete the documented Chart of Accounts JSON desktop acceptance checks; after owner confirmation, merge PR #197 and advance to P15-S4."
+active_slice: P15-S4
+active_status: IN_PROGRESS
+active_branch: codex/P15-S4-sclx-core-snapshot-query
+active_pull_request: 205
+active_head: "413e0712004e5c2b8035a88d34c61eaa1463832b"
+next_action: "Validate and merge PR #205, then continue P15-S4 with budget and canonical-transaction snapshot mapping."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Complete the documented Chart of Accounts JSON desktop acceptance 
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records owner-verified P15-S2 database transfer completion and advances P15-S3 Chart of Accounts JSON interchange to final verification in draft PR #197.
+This revision reconciles merged P15-S3 and incremental P15-S4 work through PR #204, and records the bounded selected-company core snapshot query in draft PR #205.
 
 ## 2. Status values
 
@@ -47,7 +47,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
-| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | VERIFYING at P15-S3 |
+| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S4 |
 
 ## 4. Governing documents
 
@@ -866,9 +866,9 @@ Next exact action:
 
 ## P15-S3 — Chart of Accounts JSON import and export
 
-Status: VERIFYING on branch `codex/P15-S3-coa-json-import-export` in draft PR #197.
+Status: DONE through merged PR #197 after owner desktop acceptance.
 
-Tested implementation head: `ae8a30de51f166c8081b6974921b7aa771de1579`
+Final implementation head: `16235ba0b8bc02caa525a90465a4027c95dae5a0`
 
 Planned deliverables:
 
@@ -904,17 +904,37 @@ Validation status:
 - `mvn clean verify`, the repeated normal Maven test suite, and the focused JavaFX route-compliance suite all passed through proxy-free GitHub Actions settings.
 - The earlier eight fixture errors were corrected by using non-reserved test-company codes; the later three rollback failures were corrected by populating new IDENTITY accounts before `persist`.
 
-Remaining deliverable:
+Owner verification:
 
-- Complete the owner desktop acceptance checklist in `doc/data-exchange/chart-of-accounts-json.md`.
+- The owner completed the documented Chart of Accounts JSON desktop acceptance checks and authorized merge.
+- PR #197 merged to `main` at `80fc7367d5b66f77a0d8d4414b1fc20a224b93e7`.
 
 Next exact action:
 
-- Present the Chart of Accounts JSON desktop acceptance steps to the owner; keep PR #197 draft until acceptance is confirmed.
+- None; P15-S3 is DONE.
 
 ## P15-S4 — SCLX model, parser, and deterministic active-company export
 
-Status: BLOCKED until P15-S1 and P15-S3 merge.
+Status: IN_PROGRESS on branch `codex/P15-S4-sclx-core-snapshot-query` in draft PR #205.
+
+Current implementation head: `413e0712004e5c2b8035a88d34c61eaa1463832b`
+
+Incremental completed deliverables:
+
+- PR #198: SCLX version/account-mode scaffold and governed source artifact publication.
+- PR #199: strict bounded UTF-8 parser for SCLX 1.0, 1.2, and 1.3.
+- PR #200: structural/reference validation and entity limits.
+- PR #201: immutable SCLX 1.3 export DTO and governed included/excluded section catalog.
+- PR #202: export snapshot identity/reference validation and exact debit/credit balance checks.
+- PR #203: deterministic H2-independent portable identity derivation.
+- PR #204: selected-company core DTO assembly for company, active-chart accounts, and funds.
+- PR #205: bounded JPA loading of selected-company active-chart accounts and company-owned funds, with inactive-row retention and multi-company isolation coverage.
+
+Validation status:
+
+- PRs #198 through #204 are merged.
+- Maven PR Tests run `30221018029` passed on PR #204 head `2663adf380b47a94776234ac62247480f38712da`.
+- Maven PR Tests run `30221508687` passed on PR #205 head `413e0712004e5c2b8035a88d34c61eaa1463832b`.
 
 Planned deliverables:
 
@@ -931,6 +951,10 @@ Acceptance:
 - Export is reconstructed from current canonical H2 data, so later application edits appear.
 - Deterministic exports from unchanged data compare equal except explicitly documented envelope metadata.
 - No local numeric primary key is used as a portable identity.
+
+Next exact action:
+
+- Obtain owner validation for PR #205, merge it, then start a fresh P15-S4 branch for budget and canonical-transaction mapping.
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
