@@ -5,7 +5,7 @@ active_slice: P15-S4
 active_status: IN_PROGRESS
 active_branch: codex/P15-S4-sclx-transaction-portable-id
 active_pull_request: 206
-active_head: "cc795b5039ef20b43f7af6608e874d406fe5fc30"
+active_head: "db1bae8fad0b0bdea50e1b80fadbedea225eeb48"
 next_action: "Validate and merge PR #206, then map company-owned budgets and canonical transactions using durable portable identities."
 ---
 
@@ -917,7 +917,7 @@ Next exact action:
 
 Status: IN_PROGRESS on branch `codex/P15-S4-sclx-transaction-portable-id` in draft PR #206.
 
-Current implementation head: `cc795b5039ef20b43f7af6608e874d406fe5fc30`
+Current tested implementation head: `db1bae8fad0b0bdea50e1b80fadbedea225eeb48`
 
 Incremental completed deliverables:
 
@@ -937,7 +937,8 @@ Validation status:
 - Maven PR Tests run `30221018029` passed on PR #204 head `2663adf380b47a94776234ac62247480f38712da`.
 - Maven PR Tests run `30221508687` passed on PR #205 implementation head `413e0712004e5c2b8035a88d34c61eaa1463832b`.
 - Final Maven PR Tests run `30221662744` passed on PR #205 plan-inclusive head `f5b114fd1922934fb63cd826a6ad7a91789f8faa`.
-- PR #206 automated validation is pending.
+- Initial PR #206 run `30228781451` exposed a complete-schema recovery conflict because Hibernate could already create `txn.portable_id`; V62 was corrected to use recovery-safe `IF NOT EXISTS` operations.
+- Maven PR Tests run `30229244201` passed on clean review head `db1bae8fad0b0bdea50e1b80fadbedea225eeb48`, including `mvn clean verify`, the repeated test suite, and JavaFX production-route compliance.
 
 Planned deliverables:
 
