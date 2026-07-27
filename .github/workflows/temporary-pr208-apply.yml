@@ -4,18 +4,22 @@ on:
   push:
     branches:
       - codex/P15-S4-sclx-deterministic-file-export
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
 
 jobs:
   apply:
-    if: ${{ !contains(github.event.head_commit.message, 'Apply PR208 deterministic export implementation') }}
+    if: ${{ !contains(github.event.head_commit.message || '', 'Apply PR208 deterministic export implementation') }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout branch
         uses: actions/checkout@v4
         with:
+          ref: codex/P15-S4-sclx-deterministic-file-export
           fetch-depth: 0
       - name: Apply implementation files
         shell: bash
