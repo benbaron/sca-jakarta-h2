@@ -61,6 +61,8 @@ Unsupported donor sections MUST be reported by section and count. They MUST NOT 
 
 Portable identities MUST be stable external strings, not local numeric primary keys. Each exported object type MUST use a documented identity such as company code plus format-owned external ID, account code, fund code, or another stable business key.
 
+Canonical transactions use `Txn.portableId`, a durable UUID assigned independently of the local numeric primary key. Existing rows receive one during the nondestructive ownership/interchange migration sequence, and new rows receive one at creation. SCLX transaction identities namespace that UUID by company. Budget plans use company code, fiscal year, and version code; budget lines use their plan identity plus category code, optional fund identity, and optional period month.
+
 Within a document:
 
 - every required identity MUST be present and nonblank;
