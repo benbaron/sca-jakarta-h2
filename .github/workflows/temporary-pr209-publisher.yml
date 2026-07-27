@@ -18,18 +18,41 @@ jobs:
         with:
           ref: codex/P15-S4-sclx-export-ui
           fetch-depth: 0
-      - name: Apply reviewed implementation
+      - name: Diagnose publisher
         shell: bash
         run: |
-          set -euo pipefail
-          if [ ! -d .p15-publish ]; then
-            echo "Reviewed implementation is already published."
+          set +e
+          if [ -f pr209-publisher-diagnostic.log ]; then
+            echo "Publisher diagnostic already captured."
             exit 0
           fi
-          cat .p15-publish/pr209.part* | base64 -d | tar -xz
-          rm -rf .p15-publish
+          tmpdir=$(mktemp -d)
+          {
+            echo "HEAD=$(git rev-parse HEAD)"
+            echo "PARTS"
+            wc -c .p15-publish/pr209.part*
+            cat .p15-publish/pr209.part* > "$tmpdir/payload.b64"
+            echo "COMBINED_BYTES=$(wc -c < "$tmpdir/payload.b64")"
+            base64 -d "$tmpdir/payload.b64" > "$tmpdir/payload.tar.gz"
+            echo "BASE64_STATUS=$?"
+            echo "ARCHIVE_BYTES=$(wc -c < "$tmpdir/payload.tar.gz")"
+            gzip -t "$tmpdir/payload.tar.gz"
+            echo "GZIP_STATUS=$?"
+            tar -tzf "$tmpdir/payload.tar.gz"
+            echo "TAR_LIST_STATUS=$?"
+            mkdir "$tmpdir/out"
+            tar -xzf "$tmpdir/payload.tar.gz" -C "$tmpdir/out"
+            echo "TAR_EXTRACT_STATUS=$?"
+            find "$tmpdir/out" -type f | sort
+            echo "GIT_STATUS_BEFORE"
+            git status --short
+          } > pr209-publisher-diagnostic.log 2>&1
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -A
-          git commit -m "P15-S4: wire selected-company SCLX export into File menu"
+          git add pr209-publisher-diagnostic.log
+          git commit -m "Capture PR209 publisher diagnostic"
+          commit_status=$?
+          echo "COMMIT_STATUS=$commit_status" >> pr209-publisher-diagnostic.log
+          git add pr209-publisher-diagnostic.log
+          git commit --amend --no-edit
           git push
