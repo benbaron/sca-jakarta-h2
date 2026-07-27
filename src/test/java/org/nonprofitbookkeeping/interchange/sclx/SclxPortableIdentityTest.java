@@ -16,6 +16,10 @@ class SclxPortableIdentityTest
         assertEquals("fund:CAER-GALEN:GENERAL", SclxPortableIdentity.fund("CAER-GALEN", "GENERAL"));
         assertEquals("budget:CAER-GALEN:2026:ADOPTED",
                 SclxPortableIdentity.budget("CAER-GALEN", 2026, "ADOPTED"));
+        String budgetId = SclxPortableIdentity.budget("CAER-GALEN", 2026, "ADOPTED");
+        assertNotEquals(
+                SclxPortableIdentity.budgetLine(budgetId, "SUPPLIES", null, "fund-1", "2026-07"),
+                SclxPortableIdentity.budgetLine(budgetId, "SUPPLIES", null, "fund-1", "2026-08"));
     }
 
     @Test
