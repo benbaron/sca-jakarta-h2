@@ -200,3 +200,24 @@ Malformed JSON, duplicate required object keys, unsupported versions, duplicate 
 - **Bank-statement interchange** carries external statement activity for durable review and never represents a double-entry ledger.
 
 The four entry points, DTO families, previews, confirmations, and result labels MUST remain visibly distinct.
+
+## 14. Current deterministic file-export API
+
+P15-S4 exposes selected-company file export through `SclxFileExportService` and an immutable
+`SclxExportRequest`. The request fixes the destination, operation timestamp, and explicit overwrite
+confirmation before snapshot reconstruction begins. `SclxJsonSerializer` validates the complete DTO
+and emits the governed root/member order, stable entity order, UTF-8/LF/two-space formatting, ISO
+dates and instants, and plain-string decimal values. Application extension map keys are sorted and
+unsupported extension value types are rejected rather than serialized through reflection.
+
+The file service rejects directories, symbolic-link traversal, active H2 database files, non-regular
+targets, and an existing destination without explicit overwrite confirmation. It writes and forces a
+uniquely named same-directory temporary file, computes SHA-256 from the exact final bytes, uses an
+atomic replacing move when available, restores the previous destination if the safe fallback fails,
+and removes temporary artifacts after failure.
+
+`SclxExportResult` reports the final destination, format/version, fixed export timestamp, portable
+organization identity, byte count, SHA-256, entity counts, deferred-extension warnings, and the
+governed explicit-exclusion section list. Deferred extension sections are reported as warnings until
+their selected-company snapshot mappings are implemented; policy exclusions are reported separately
+and are not silently treated as exported empty sections.
