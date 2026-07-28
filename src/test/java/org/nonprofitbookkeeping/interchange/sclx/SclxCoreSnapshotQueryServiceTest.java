@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.AccountType;
+import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Company;
@@ -46,6 +47,11 @@ class SclxCoreSnapshotQueryServiceTest
             assertEquals(List.of("GENERAL", "RESERVE"),
                     document.funds().stream().map(SclxExportDocument.Fund::code).toList());
             assertFalse(document.funds().get(1).active());
+            List<SclxActivityExtension.Entry> activities = SclxActivityExtension.entries(document.extensions());
+            assertEquals(List.of("EVENT", "OLD"), activities.stream()
+                    .map(SclxActivityExtension.Entry::code)
+                    .toList());
+            assertFalse(activities.get(1).active());
         }
     }
 
@@ -97,6 +103,10 @@ class SclxCoreSnapshotQueryServiceTest
             em.persist(fund(alpha, "RESERVE", false));
             em.persist(fund(beta, "FOREIGN", true));
 
+            em.persist(activity(alpha, "EVENT", true));
+            em.persist(activity(alpha, "OLD", false));
+            em.persist(activity(beta, "FOREIGN", true));
+
             em.getTransaction().commit();
         }
     }
@@ -144,6 +154,17 @@ class SclxCoreSnapshotQueryServiceTest
         account.setPosting(posting);
         account.setActive(active);
         return account;
+    }
+
+
+    private static Activity activity(Company company, String code, boolean active)
+    {
+        Activity activity = new Activity();
+        activity.setCompany(company);
+        activity.setCode(code);
+        activity.setName(code + " Activity");
+        activity.setActive(active);
+        return activity;
     }
 
     private static Fund fund(Company company, String code, boolean active)

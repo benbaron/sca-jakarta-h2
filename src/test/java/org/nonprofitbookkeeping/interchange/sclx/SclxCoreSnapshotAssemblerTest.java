@@ -3,6 +3,7 @@ package org.nonprofitbookkeeping.interchange.sclx;
 import org.junit.jupiter.api.Test;
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.AccountType;
+import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.Fund;
@@ -64,6 +65,26 @@ class SclxCoreSnapshotAssemblerTest
                 () -> assembler.assemble(company, List.of(), List.of(foreignFund), Instant.EPOCH));
     }
 
+
+    @Test
+    void rejectsActivityFromAnotherCompany()
+    {
+        Company company = company("TEST");
+        activeChart(company);
+        Activity foreignActivity = activity(company("OTHER"), "EVENT");
+
+        assertThrows(IllegalArgumentException.class, () -> assembler.assemble(
+                company,
+                List.of(),
+                List.of(),
+                List.of(foreignActivity),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                Instant.EPOCH));
+    }
+
     private static Company company(String code)
     {
         Company company = new Company();
@@ -95,6 +116,16 @@ class SclxCoreSnapshotAssemblerTest
         account.setNormalBalance(type == AccountType.ASSET ? NormalBalance.DEBIT : NormalBalance.DEBIT);
         account.setOpeningBalance(BigDecimal.ZERO);
         return account;
+    }
+
+
+    private static Activity activity(Company company, String code)
+    {
+        Activity activity = new Activity();
+        activity.setCompany(company);
+        activity.setCode(code);
+        activity.setName(code + " Activity");
+        return activity;
     }
 
     private static Fund fund(Company company, String code)

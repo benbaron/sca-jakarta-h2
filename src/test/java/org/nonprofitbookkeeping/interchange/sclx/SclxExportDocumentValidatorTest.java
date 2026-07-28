@@ -24,6 +24,38 @@ class SclxExportDocumentValidatorTest
                         line("line-2", "acct-cash", "fund-general", "0", "25.00")))));
     }
 
+
+    @Test
+    void acceptsResolvedActivityReference()
+    {
+        assertDoesNotThrow(() -> validator.validate(document(
+                List.of(line("line-1", "acct-expense", "fund-general", "activity:TEST:EVENT", "25.00", "0"),
+                        line("line-2", "acct-cash", "fund-general", null, "0", "25.00")),
+                Map.of(SclxActivityExtension.KEY, List.of(SclxActivityExtension.entry(
+                        "activity:TEST:EVENT", "EVENT", "Annual Event", true))))));
+    }
+
+    @Test
+    void rejectsMissingActivityReference()
+    {
+        assertThrows(IllegalArgumentException.class, () -> validator.validate(document(
+                List.of(line("line-1", "acct-expense", "fund-general", "activity:TEST:MISSING", "25.00", "0"),
+                        line("line-2", "acct-cash", "fund-general", null, "0", "25.00")),
+                Map.of(SclxActivityExtension.KEY, List.of(SclxActivityExtension.entry(
+                        "activity:TEST:EVENT", "EVENT", "Annual Event", true))))));
+    }
+
+    @Test
+    void rejectsDuplicateActivityPortableIdentity()
+    {
+        Map<String, Object> activity = SclxActivityExtension.entry(
+                "activity:TEST:EVENT", "EVENT", "Annual Event", true);
+        assertThrows(IllegalArgumentException.class, () -> validator.validate(document(
+                List.of(line("line-1", "acct-expense", "fund-general", "25.00", "0"),
+                        line("line-2", "acct-cash", "fund-general", "0", "25.00")),
+                Map.of(SclxActivityExtension.KEY, List.of(activity, activity)))));
+    }
+
     @Test
     void rejectsUnbalancedTransaction()
     {
@@ -55,6 +87,13 @@ class SclxExportDocumentValidatorTest
 
     private static SclxExportDocument document(List<SclxExportDocument.TransactionLine> lines)
     {
+        return document(lines, Map.of());
+    }
+
+    private static SclxExportDocument document(
+            List<SclxExportDocument.TransactionLine> lines,
+            Map<String, Object> extensionValues)
+    {
         return SclxExportDocument.version13(
                 Instant.parse("2026-07-26T18:00:00Z"),
                 new SclxExportDocument.Organization(
@@ -72,11 +111,22 @@ class SclxExportDocumentValidatorTest
                 List.of(),
                 List.of(new SclxExportDocument.Transaction(
                         "transaction:TX-1", LocalDate.of(2026, 7, 1), "Test transaction", null, null, lines)),
-                new SclxExportDocument.Extensions(1, Map.of()));
+                new SclxExportDocument.Extensions(1, extensionValues));
     }
 
     private static SclxExportDocument.TransactionLine line(
             String id, String accountId, String fundId, String debit, String credit)
+    {
+        return line(id, accountId, fundId, null, debit, credit);
+    }
+
+    private static SclxExportDocument.TransactionLine line(
+            String id,
+            String accountId,
+            String fundId,
+            String activityId,
+            String debit,
+            String credit)
     {
         String resolvedAccountId = switch (accountId)
         {
@@ -85,7 +135,7 @@ class SclxExportDocumentValidatorTest
             default -> accountId;
         };
         return new SclxExportDocument.TransactionLine(
-                id, resolvedAccountId, fundId, null, null,
+                id, resolvedAccountId, fundId, activityId, null,
                 new BigDecimal(debit), new BigDecimal(credit), null);
     }
 }

@@ -7,7 +7,7 @@ public enum SclxExportSection
     CHART_OF_ACCOUNTS(Support.INCLUDED, "chartOfAccounts", "Active company chart and accounts"),
     FUNDS(Support.INCLUDED, "funds", "Company funds and hierarchy"),
     BUDGETS(Support.INCLUDED, "budgets", "Budget categories, plans, and lines"),
-    ACTIVITIES(Support.EXTENSION, "extensions.scaJakartaH2.activities", "Company activities"),
+    ACTIVITIES(Support.EXTENSION, true, "extensions.scaJakartaH2.activities", "Company activities"),
     COUNTERPARTIES(Support.EXTENSION, "extensions.scaJakartaH2.counterparties", "Used counterparties and merchants"),
     TRANSACTIONS(Support.INCLUDED, "transactions", "Canonical balanced transactions and splits"),
     SUPPLEMENTAL_DETAILS(Support.EXTENSION, "extensions.scaJakartaH2.supplementalDetails", "Supported transaction details"),
@@ -30,12 +30,23 @@ public enum SclxExportSection
     OTHER_COMPANY_RECORDS(Support.EXCLUDED, null, "Records owned by another company");
 
     private final Support support;
+    private final boolean includedByCurrentSnapshot;
     private final String outputPath;
     private final String description;
 
     SclxExportSection(Support support, String outputPath, String description)
     {
+        this(support, support == Support.INCLUDED, outputPath, description);
+    }
+
+    SclxExportSection(
+            Support support,
+            boolean includedByCurrentSnapshot,
+            String outputPath,
+            String description)
+    {
         this.support = support;
+        this.includedByCurrentSnapshot = includedByCurrentSnapshot;
         this.outputPath = outputPath;
         this.description = description;
     }
@@ -58,6 +69,16 @@ public enum SclxExportSection
     public boolean exported()
     {
         return support != Support.EXCLUDED;
+    }
+
+    public boolean includedByCurrentSnapshot()
+    {
+        return includedByCurrentSnapshot;
+    }
+
+    public boolean deferred()
+    {
+        return support == Support.EXTENSION && !includedByCurrentSnapshot;
     }
 
     public enum Support

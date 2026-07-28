@@ -33,6 +33,11 @@ public final class SclxPortableIdentity
         return identity("fund", companyCode, fundCode);
     }
 
+    public static String activity(String companyCode, String activityCode)
+    {
+        return identity("activity", companyCode, activityCode);
+    }
+
     public static String budget(String companyCode, int fiscalYear, String version)
     {
         return identity("budget", companyCode, Integer.toString(fiscalYear), version);

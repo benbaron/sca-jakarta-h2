@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.BudgetLine;
 import org.nonprofitbookkeeping.model.BudgetPlan;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
@@ -71,6 +72,12 @@ public class SclxCoreSnapshotQueryService
                             Fund.class)
                     .setParameter("company", company)
                     .getResultList();
+            List<Activity> activities = em.createQuery(
+                            "select a from Activity a "
+                                    + "where a.company = :company order by a.code",
+                            Activity.class)
+                    .setParameter("company", company)
+                    .getResultList();
             List<BudgetPlan> budgetPlans = em.createQuery(
                             "select p from BudgetPlan p "
                                     + "where p.company = :company "
@@ -114,6 +121,7 @@ public class SclxCoreSnapshotQueryService
                     company,
                     accounts,
                     funds,
+                    activities,
                     budgetPlans,
                     budgetLines,
                     transactions,

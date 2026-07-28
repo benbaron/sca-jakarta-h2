@@ -43,6 +43,8 @@ class SclxFileExportServiceTest
         assertEquals(2, result.counts().accounts());
         assertEquals(1, result.counts().budgetLines());
         assertEquals(2, result.counts().transactionLines());
+        assertEquals(1, result.counts().activities());
+        assertFalse(result.deferredSections().contains(SclxExportSection.ACTIVITIES));
         assertEquals(result.deferredSections().size(), result.counts().warnings());
         assertEquals(result.excludedSections().size(), result.counts().exclusions());
         assertFalse(result.messages().isEmpty());
