@@ -132,6 +132,8 @@ Each identity stores the normalized content SHA-256 and an optional local entity
 
 Recording identical content is idempotent. A conflicting hash or a different already-linked local identity is rejected. Format-specific commit services use the caller-owned `EntityManager` overload so identity creation rolls back with the business write. This table is not a generic job log and does not authorize automatic canonical transaction creation.
 
+Durable local portable identities are separate from source-specific `interchange_identity` rows. `Txn`, `Counterparty`, and `Merchant` carry UUID portable identities that survive mutable business labels and never expose local numeric primary keys. The shared identity table continues to record import-source idempotency and traceability; it is not used as a substitute for an intrinsic local entity identity.
+
 ## 10. Validation and operational visibility
 
 P15-S1 validation includes:
