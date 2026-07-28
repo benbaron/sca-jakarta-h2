@@ -1,11 +1,11 @@
 ---
-plan_version: 86
+plan_version: 87
 active_phase: P15
 active_slice: P15-S4
 active_status: VERIFYING
 active_branch: codex/P15-S4-party-portable-identity
 active_pull_request: 211
-active_head: "a053f69e0aeca9e308f26120f18c9b028098b0a4"
+active_head: "41280d0f26fe58afaf8f25fb71dd76035d2eebd8"
 next_action: "Validate and merge PR #211, then map selected-company counterparties and merchants into SCLX on a fresh P15-S4 branch."
 ---
 
@@ -917,7 +917,7 @@ Next exact action:
 
 Status: VERIFYING on branch `codex/P15-S4-party-portable-identity` in draft PR #211.
 
-Current implementation head awaiting Maven PR validation: `a053f69e0aeca9e308f26120f18c9b028098b0a4`
+Current tested implementation head: `41280d0f26fe58afaf8f25fb71dd76035d2eebd8`
 
 Incremental completed deliverables:
 
@@ -960,7 +960,8 @@ Validation status:
 - Corrected PR #210 diagnostic run `30319427594` passed `mvn clean verify` with 430 tests, 0 failures, and 0 errors.
 - Clean PR #210 implementation run `30319554988` passed `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance on head `a1699d91d3db13fc9f94869641654f1a29d9594e`.
 - Final PR #210 run `30319837886` passed on artifact-free, plan-inclusive head `910de5a4c8e3e7a906c39e8588242e1d9ce869b4`; PR #210 merged at `64a3056392c5d723043f154f9ff26a151b3652a4`.
-- PR #211 Java sources and focused tests passed Java 17 syntax compilation with bounded local stubs; Maven PR validation is pending.
+- PR #211 Java sources and focused tests passed Java 17 syntax compilation with bounded local stubs.
+- Maven PR Tests run `30323574869` passed on clean, plan-inclusive PR #211 head `41280d0f26fe58afaf8f25fb71dd76035d2eebd8`, including `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance.
 
 Planned deliverables:
 
