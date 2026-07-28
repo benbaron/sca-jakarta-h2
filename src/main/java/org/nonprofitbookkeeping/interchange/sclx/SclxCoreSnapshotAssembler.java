@@ -12,6 +12,7 @@ import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
+import org.nonprofitbookkeeping.model.TxnSupplementalLine;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -44,6 +45,19 @@ public final class SclxCoreSnapshotAssembler
             .thenComparing(split -> split.getMerchant() == null ? "" : split.getMerchant().getPortableId().toString())
             .thenComparing(TxnSplit::getAmountSigned)
             .thenComparing(split -> split.getNotes() == null ? "" : split.getNotes());
+
+    private static final Comparator<TxnSupplementalLine> SUPPLEMENTAL_DETAIL_ORDER = Comparator
+            .comparingInt(TxnSupplementalLine::getLineOrder)
+            .thenComparing(TxnSupplementalLine::getKind)
+            .thenComparing(line -> nullableSort(line.getEntryRef()))
+            .thenComparing(line -> nullableSort(line.getCounterparty()))
+            .thenComparing(TxnSupplementalLine::getDescription)
+            .thenComparing(line -> nullableSort(line.getReference()))
+            .thenComparing(TxnSupplementalLine::getAmount)
+            .thenComparing(line -> nullableSort(line.getDueDate()))
+            .thenComparing(line -> nullableSort(line.getStartDate()))
+            .thenComparing(line -> nullableSort(line.getEndDate()))
+            .thenComparing(line -> nullableSort(line.getNotes()));
 
     private final SclxExportDocumentValidator validator = new SclxExportDocumentValidator();
 
@@ -124,6 +138,35 @@ public final class SclxCoreSnapshotAssembler
             List<TxnSplit> transactionLines,
             Instant exportedAt)
     {
+        return assemble(
+                company,
+                accounts,
+                funds,
+                activities,
+                counterparties,
+                merchants,
+                budgetPlans,
+                budgetLines,
+                transactions,
+                transactionLines,
+                List.of(),
+                exportedAt);
+    }
+
+    public SclxExportDocument assemble(
+            Company company,
+            List<Account> accounts,
+            List<Fund> funds,
+            List<Activity> activities,
+            List<Counterparty> counterparties,
+            List<Merchant> merchants,
+            List<BudgetPlan> budgetPlans,
+            List<BudgetLine> budgetLines,
+            List<Txn> transactions,
+            List<TxnSplit> transactionLines,
+            List<TxnSupplementalLine> supplementalDetails,
+            Instant exportedAt)
+    {
         Objects.requireNonNull(company, "company");
         Objects.requireNonNull(accounts, "accounts");
         Objects.requireNonNull(funds, "funds");
@@ -134,6 +177,7 @@ public final class SclxCoreSnapshotAssembler
         Objects.requireNonNull(budgetLines, "budgetLines");
         Objects.requireNonNull(transactions, "transactions");
         Objects.requireNonNull(transactionLines, "transactionLines");
+        Objects.requireNonNull(supplementalDetails, "supplementalDetails");
         Objects.requireNonNull(exportedAt, "exportedAt");
 
         ChartOfAccounts activeChart = Objects.requireNonNull(
@@ -223,26 +267,59 @@ public final class SclxCoreSnapshotAssembler
         }
 
         Set<Txn> includedTransactions = identitySet(transactions);
+        Map<Txn, String> exportedTransactionIds = new IdentityHashMap<>();
         Map<TxnSplit, String> exportedLineIds = new IdentityHashMap<>();
         List<SclxExportDocument.Transaction> exportedTransactions = transactions.stream()
                 .peek(transaction -> requireTransactionOwnership(transaction, company, includedTransactions, includedCounterparties))
                 .sorted(Comparator.comparing(Txn::getTxnDate)
                         .thenComparing(transaction -> transaction.getPortableId().toString()))
-                .map(transaction -> mapTransaction(
-                        companyCode,
-                        transaction,
-                        transactionLines.stream()
-                                .filter(line -> line.getTxn() == transaction)
-                                .peek(line -> requireTransactionLineOwnership(
-                                        line, company, activeChart, includedTransactions, includedCounterparties, includedMerchants))
-                                .sorted(TRANSACTION_LINE_ORDER)
-                                .toList(),
-                        exportedLineIds))
+                .map(transaction ->
+                {
+                    SclxExportDocument.Transaction exported = mapTransaction(
+                            companyCode,
+                            transaction,
+                            transactionLines.stream()
+                                    .filter(line -> line.getTxn() == transaction)
+                                    .peek(line -> requireTransactionLineOwnership(
+                                            line, company, activeChart, includedTransactions, includedCounterparties, includedMerchants))
+                                    .sorted(TRANSACTION_LINE_ORDER)
+                                    .toList(),
+                            exportedLineIds);
+                    exportedTransactionIds.put(transaction, exported.transactionId());
+                    return exported;
+                })
                 .toList();
         for (TxnSplit line : transactionLines)
         {
             requireTransactionLineOwnership(line, company, activeChart, includedTransactions, includedCounterparties, includedMerchants);
         }
+        for (TxnSupplementalLine detail : supplementalDetails)
+        {
+            requireSupplementalDetailOwnership(detail, company, includedTransactions);
+        }
+
+        List<Map<String, Object>> exportedSupplementalDetails = new java.util.ArrayList<>();
+        transactions.stream()
+                .sorted(Comparator.comparing(Txn::getTxnDate)
+                        .thenComparing(transaction -> transaction.getPortableId().toString()))
+                .forEach(transaction ->
+                {
+                    String transactionId = Objects.requireNonNull(
+                            exportedTransactionIds.get(transaction),
+                            "exported transaction identity");
+                    List<TxnSupplementalLine> transactionDetails = supplementalDetails.stream()
+                            .filter(detail -> detail.getTxn() == transaction)
+                            .sorted(SUPPLEMENTAL_DETAIL_ORDER)
+                            .toList();
+                    int ordinal = 1;
+                    for (TxnSupplementalLine detail : transactionDetails)
+                    {
+                        exportedSupplementalDetails.add(mapSupplementalDetail(
+                                transactionId,
+                                ordinal++,
+                                detail));
+                    }
+                });
 
         List<Map<String, Object>> transactionLineMerchants = transactionLines.stream()
                 .filter(line -> line.getMerchant() != null)
@@ -264,6 +341,7 @@ public final class SclxCoreSnapshotAssembler
                 exportedCounterparties,
                 exportedMerchants,
                 transactionLineMerchants));
+        extensionValues.put(SclxSupplementalDetailExtension.KEY, List.copyOf(exportedSupplementalDetails));
 
         SclxExportDocument document = SclxExportDocument.version13(
                 exportedAt,
@@ -457,6 +535,27 @@ public final class SclxCoreSnapshotAssembler
                 line.getNotes());
     }
 
+    private static Map<String, Object> mapSupplementalDetail(
+            String transactionId,
+            int ordinal,
+            TxnSupplementalLine detail)
+    {
+        return SclxSupplementalDetailExtension.entry(
+                SclxPortableIdentity.supplementalDetail(transactionId, ordinal),
+                transactionId,
+                detail.getLineOrder(),
+                detail.getKind(),
+                detail.getEntryRef(),
+                detail.getCounterparty(),
+                detail.getDescription(),
+                detail.getReference(),
+                detail.getAmount(),
+                detail.getDueDate(),
+                detail.getStartDate(),
+                detail.getEndDate(),
+                detail.getNotes());
+    }
+
     private static String transactionDescription(Txn transaction)
     {
         if (transaction.getMemo() != null && !transaction.getMemo().isBlank())
@@ -619,6 +718,44 @@ public final class SclxCoreSnapshotAssembler
                 throw new IllegalArgumentException("transaction line merchant is outside the exported party snapshot");
             }
         }
+    }
+
+    private static void requireSupplementalDetailOwnership(
+            TxnSupplementalLine detail,
+            Company company,
+            Set<Txn> includedTransactions)
+    {
+        Objects.requireNonNull(detail, "supplemental detail");
+        Txn transaction = Objects.requireNonNull(detail.getTxn(), "supplemental detail transaction");
+        if (!includedTransactions.contains(transaction))
+        {
+            throw new IllegalArgumentException(
+                    "supplemental detail references a transaction outside the exported snapshot");
+        }
+        if (transaction.getCompany() != company)
+        {
+            throw new IllegalArgumentException(
+                    "supplemental detail transaction is outside the selected company");
+        }
+        SclxSupplementalDetailExtension.entry(
+                "validation",
+                "validation",
+                detail.getLineOrder(),
+                detail.getKind(),
+                detail.getEntryRef(),
+                detail.getCounterparty(),
+                detail.getDescription(),
+                detail.getReference(),
+                detail.getAmount(),
+                detail.getDueDate(),
+                detail.getStartDate(),
+                detail.getEndDate(),
+                detail.getNotes());
+    }
+
+    private static String nullableSort(Object value)
+    {
+        return value == null ? "" : value.toString();
     }
 
     private static <T> Set<T> identitySet(List<T> values)

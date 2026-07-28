@@ -283,6 +283,7 @@ final class SclxExportCoordinator implements SclxExportActions
                 + "\n  Budget lines: " + counts.budgetLines()
                 + "\n  Transactions: " + counts.transactions()
                 + "\n  Transaction lines: " + counts.transactionLines()
+                + "\n  Supplemental details: " + counts.supplementalDetails()
                 + "\n  Total entities: " + counts.totalEntities()
                 + "\n\nWarnings: " + counts.warnings()
                 + "\nValidation messages:" + messages

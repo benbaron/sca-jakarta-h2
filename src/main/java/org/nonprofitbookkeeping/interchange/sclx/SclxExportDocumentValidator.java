@@ -22,9 +22,13 @@ public final class SclxExportDocumentValidator
         validateAccountParents(document.chartOfAccounts(), accountIds);
         validateFundParents(document.funds(), fundIds);
         validateBudgets(document.budgets(), accountIds, fundIds);
-        Set<String> transactionLineIds = validateTransactions(
+        TransactionReferences transactionReferences = validateTransactions(
                 document.transactions(), accountIds, fundIds, activityIds, counterpartyIds);
-        validateTransactionLineMerchants(partyData, transactionLineIds, merchantIds);
+        validateTransactionLineMerchants(
+                partyData, transactionReferences.transactionLineIds(), merchantIds);
+        validateSupplementalDetails(
+                SclxSupplementalDetailExtension.entries(document.extensions()),
+                transactionReferences.transactionIds());
     }
 
     private static Set<String> uniqueAccountIds(List<SclxExportDocument.Account> accounts)
@@ -84,7 +88,7 @@ public final class SclxExportDocumentValidator
         }
     }
 
-    private static Set<String> validateTransactions(
+    private static TransactionReferences validateTransactions(
             List<SclxExportDocument.Transaction> transactions,
             Set<String> accountIds,
             Set<String> fundIds,
@@ -131,7 +135,7 @@ public final class SclxExportDocumentValidator
             requireOptionalReference(transaction.correctionOfTransactionId(), transactionIds,
                     "transaction " + transaction.transactionId() + " correctionOfTransactionId");
         }
-        return lineIds;
+        return new TransactionReferences(Set.copyOf(transactionIds), Set.copyOf(lineIds));
     }
 
     private static void validateTransactionLineMerchants(
@@ -147,6 +151,20 @@ public final class SclxExportDocumentValidator
                     "transaction-line merchant lineId");
             requireReference(link.merchantId(), merchantIds,
                     "transaction-line merchant merchantId");
+        }
+    }
+
+    private static void validateSupplementalDetails(
+            List<SclxSupplementalDetailExtension.Entry> details,
+            Set<String> transactionIds)
+    {
+        SclxSupplementalDetailExtension.uniqueIds(details);
+        for (SclxSupplementalDetailExtension.Entry detail : details)
+        {
+            requireReference(
+                    detail.transactionId(),
+                    transactionIds,
+                    "supplemental detail " + detail.supplementalDetailId() + " transactionId");
         }
     }
 
@@ -173,4 +191,8 @@ public final class SclxExportDocumentValidator
             requireReference(identity, identities, field);
         }
     }
+    private record TransactionReferences(Set<String> transactionIds, Set<String> transactionLineIds)
+    {
+    }
+
 }

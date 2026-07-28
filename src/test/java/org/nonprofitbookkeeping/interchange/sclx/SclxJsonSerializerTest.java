@@ -36,12 +36,17 @@ class SclxJsonSerializerTest
         assertEquals("1000", root.path("chartOfAccounts").get(0).path("openingBalance").textValue());
         assertEquals("0", root.path("transactions").get(0).path("lines").get(0).path("debit").textValue());
         assertEquals("25", root.path("transactions").get(0).path("lines").get(0).path("credit").textValue());
-        assertEquals(List.of("activities", "alpha", "zeta"),
+        assertEquals(List.of("activities", "alpha", "supplementalDetails", "zeta"),
                 iterable(root.path("extensions").path("scaJakartaH2").fieldNames()));
         JsonNode activity = root.path("extensions").path("scaJakartaH2").path("activities").get(0);
         assertEquals("activity:TEST:EVENT", activity.path("activityId").textValue());
         assertEquals("EVENT", activity.path("code").textValue());
         assertTrue(activity.path("active").booleanValue());
+        JsonNode supplemental = root.path("extensions").path("scaJakartaH2")
+                .path("supplementalDetails").get(0);
+        assertEquals(transactionId(), supplemental.path("transactionId").textValue());
+        assertEquals("125.5", supplemental.path("amount").textValue());
+        assertEquals("2026-08-15", supplemental.path("dueDate").textValue());
         assertEquals("2026-07-27T02:00:00Z", root.path("exportedAt").textValue());
         assertTrue(json.endsWith("\n"));
         assertFalse(json.contains("\r"));
@@ -74,17 +79,37 @@ class SclxJsonSerializerTest
         return values;
     }
 
+    private static String transactionId()
+    {
+        return "transaction:TEST:11111111-1111-1111-1111-111111111111";
+    }
+
     static SclxExportDocument document()
     {
         String cashId = "account:TEST:1010";
         String expenseId = "account:TEST:6100";
         String fundId = "fund:TEST:GENERAL";
-        String transactionId = "transaction:TEST:11111111-1111-1111-1111-111111111111";
+        String transactionId = transactionId();
         LinkedHashMap<String, Object> extensionValues = new LinkedHashMap<>();
         extensionValues.put("zeta", "last");
         extensionValues.put("alpha", new BigDecimal("1.2300"));
         extensionValues.put(SclxActivityExtension.KEY, List.of(SclxActivityExtension.entry(
                 "activity:TEST:EVENT", "EVENT", "Annual Event", true)));
+        extensionValues.put(SclxSupplementalDetailExtension.KEY, List.of(
+                SclxSupplementalDetailExtension.entry(
+                        SclxPortableIdentity.supplementalDetail(transactionId, 1),
+                        transactionId,
+                        0,
+                        "RECEIVABLE",
+                        "line 1",
+                        "Donor",
+                        "Pledge receivable",
+                        "INV-100",
+                        new BigDecimal("125.5000"),
+                        LocalDate.of(2026, 8, 15),
+                        null,
+                        null,
+                        "Expected payment")));
 
         return SclxExportDocument.version13(
                 Instant.parse("2026-07-27T02:00:00Z"),

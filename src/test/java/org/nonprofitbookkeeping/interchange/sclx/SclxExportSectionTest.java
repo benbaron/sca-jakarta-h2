@@ -33,5 +33,7 @@ class SclxExportSectionTest
         assertFalse(SclxExportSection.ACTIVITIES.deferred());
         assertTrue(SclxExportSection.COUNTERPARTIES.includedByCurrentSnapshot());
         assertFalse(SclxExportSection.COUNTERPARTIES.deferred());
+        assertTrue(SclxExportSection.SUPPLEMENTAL_DETAILS.includedByCurrentSnapshot());
+        assertFalse(SclxExportSection.SUPPLEMENTAL_DETAILS.deferred());
     }
 }

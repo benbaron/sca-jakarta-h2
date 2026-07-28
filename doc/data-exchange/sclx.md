@@ -63,7 +63,7 @@ Portable identities MUST be stable external strings, not local numeric primary k
 
 Canonical transactions use `Txn.portableId`, and counterparties and merchants use their own durable UUID `portableId` values, all assigned independently of local numeric primary keys. Existing rows receive identities during the nondestructive migration sequence, and new rows receive them at creation. SCLX identities namespace those UUIDs by company. Names remain mutable presentation data and are never used as the durable identity for counterparties or merchants. Budget plans use company code, fiscal year, and version code; budget lines use their plan identity plus category code, optional fund identity, and optional period month.
 
-The current deterministic snapshot writes every company-owned budget plan and line. Budget lines preserve `categoryCode`, optional fund reference, optional `periodMonth`, and exact `BigDecimal` amount; the current normalized budget model has no direct account relation, so `accountId` remains absent rather than being inferred. Canonical transactions preserve status, deterministic debit/credit lines, and explicit `REVERSAL` or `REPLACEMENT` correction relationships. Transaction-line ordinals are assigned only after sorting by stable business content and never by a serialized database identifier. Company activities use company code plus activity code as their portable identity, and transaction-line `activityId` values resolve to the exported activity extension. Company counterparties and merchants use company-scoped UUID identities. A transaction header payee is repeated as the standard `counterpartyId` on each exported transaction line, while line-level merchant relationships are preserved separately under the governed party extension.
+The current deterministic snapshot writes every company-owned budget plan and line. Budget lines preserve `categoryCode`, optional fund reference, optional `periodMonth`, and exact `BigDecimal` amount; the current normalized budget model has no direct account relation, so `accountId` remains absent rather than being inferred. Canonical transactions preserve status, deterministic debit/credit lines, and explicit `REVERSAL` or `REPLACEMENT` correction relationships. Transaction-line ordinals are assigned only after sorting by stable business content and never by a serialized database identifier. Supplemental-detail identities similarly use the exported transaction identity plus a deterministic transaction-local ordinal after sorting by persisted line order and exported business content. Company activities use company code plus activity code as their portable identity, and transaction-line `activityId` values resolve to the exported activity extension. Company counterparties and merchants use company-scoped UUID identities. A transaction header payee is repeated as the standard `counterpartyId` on each exported transaction line, while line-level merchant relationships are preserved separately under the governed party extension.
 
 Within a document:
 
@@ -133,6 +133,24 @@ Counterparty identities use `counterparty:<company-code>:<portable-uuid>` and me
 When a canonical transaction has a header payee, each exported transaction line writes that payee's `counterpartyId`. This repetition is intentional because the governed export DTO carries the standard counterparty reference on transaction lines rather than the transaction header. A line-level `Merchant` is not collapsed into that counterparty reference; it is preserved by `transactionLineMerchants`, allowing both relationships to coexist.
 
 Every nonblank transaction-line `counterpartyId` MUST resolve to exactly one exported counterparty. Every merchant link MUST resolve to exactly one exported transaction line and one exported merchant, and a line may have at most one merchant link. Duplicate identities, malformed extension objects, omitted referenced masters, and cross-company relationships are blocking export errors. Counterparties and merchants contribute separately to export counts, and the `COUNTERPARTIES` section is no longer reported as deferred.
+
+### 8.3 Supplemental transaction details extension
+
+`extensions.scaJakartaH2.supplementalDetails` is an array containing every persisted `TxnSupplementalLine` whose canonical transaction belongs to the selected company. Each entry contains exactly:
+
+- `supplementalDetailId`: `supplemental-detail:<transaction-id>:<ordinal>` using the governed portable-identity encoding;
+- `transactionId`: the canonical exported transaction identity;
+- `lineOrder`: the persisted non-negative transaction-local display order;
+- `kind`: one of `RECEIVABLE`, `PAYABLE`, `PREPAID_EXPENSE`, `DEFERRED_REVENUE`, `OTHER_ASSET`, or `OTHER_LIABILITY`;
+- nullable `entryRef`, `counterparty`, `reference`, and `notes` text;
+- required `description`;
+- non-negative exact decimal `amount`;
+- nullable `dueDate`; and
+- nullable paired `startDate` and `endDate`.
+
+The supplemental-detail identity never uses `txn_supplemental_line.id`. Details are grouped by canonical transaction, sorted by persisted `lineOrder` and then by all exported business fields, and assigned a positive deterministic ordinal. Exact duplicate rows remain byte deterministic because their exported content is identical and only the sequential ordinal distinguishes them.
+
+Every `transactionId` MUST resolve to exactly one exported canonical transaction. Both start and end dates are present or absent together, and start MUST NOT follow end. Negative amounts, unsupported kinds, duplicate identities, malformed fields, cross-company transactions, and details whose transaction is outside the selected snapshot are blocking export errors. Supplemental details contribute to export counts, and `SUPPLEMENTAL_DETAILS` is no longer reported as deferred.
 
 ## 9. Deterministic SCLX 1.3 output
 

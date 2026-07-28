@@ -176,14 +176,14 @@ class SclxExportCoordinatorTest
                 "ALPHA",
                 1234L,
                 "a".repeat(64),
-                new SclxExportCounts(1, 4, 2, 1, 3, 2, 1, 3, 5, 10, 2, 1, 32),
+                new SclxExportCounts(1, 4, 2, 1, 3, 2, 1, 3, 5, 10, 4, 2, 1, 36),
                 List.of(new InterchangeValidationMessage(
                         InterchangeMessageSeverity.WARNING,
                         "SCLX_DEFERRED_SECTION",
-                        "extensions.scaJakartaH2.supplementalDetails",
-                        "Supplemental details are deferred.",
+                        "extensions.scaJakartaH2.bankConfiguration",
+                        "Bank configuration is deferred.",
                         false)),
-                List.of(SclxExportSection.SUPPLEMENTAL_DETAILS),
+                List.of(SclxExportSection.BANK_CONFIGURATION),
                 List.of(SclxExportSection.UI_STATE));
 
         String summary = SclxExportCoordinator.resultSummary(result);
@@ -194,9 +194,10 @@ class SclxExportCoordinatorTest
         assertTrue(summary.contains("Counterparties: 3"));
         assertTrue(summary.contains("Merchants: 2"));
         assertTrue(summary.contains("Transactions: 5"));
+        assertTrue(summary.contains("Supplemental details: 4"));
         assertTrue(summary.contains("Warnings: 2"));
-        assertTrue(summary.contains("Supplemental details are deferred."));
-        assertTrue(summary.contains("extensions.scaJakartaH2.supplementalDetails"));
+        assertTrue(summary.contains("Bank configuration is deferred."));
+        assertTrue(summary.contains("extensions.scaJakartaH2.bankConfiguration"));
         assertTrue(summary.contains("UI_STATE"));
         assertTrue(summary.contains("a".repeat(64)));
     }
