@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.interchange.sclx;
 
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.BudgetLine;
 import org.nonprofitbookkeeping.model.BudgetPlan;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
@@ -16,6 +17,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -70,9 +72,33 @@ public final class SclxCoreSnapshotAssembler
             List<TxnSplit> transactionLines,
             Instant exportedAt)
     {
+        return assemble(
+                company,
+                accounts,
+                funds,
+                List.of(),
+                budgetPlans,
+                budgetLines,
+                transactions,
+                transactionLines,
+                exportedAt);
+    }
+
+    public SclxExportDocument assemble(
+            Company company,
+            List<Account> accounts,
+            List<Fund> funds,
+            List<Activity> activities,
+            List<BudgetPlan> budgetPlans,
+            List<BudgetLine> budgetLines,
+            List<Txn> transactions,
+            List<TxnSplit> transactionLines,
+            Instant exportedAt)
+    {
         Objects.requireNonNull(company, "company");
         Objects.requireNonNull(accounts, "accounts");
         Objects.requireNonNull(funds, "funds");
+        Objects.requireNonNull(activities, "activities");
         Objects.requireNonNull(budgetPlans, "budgetPlans");
         Objects.requireNonNull(budgetLines, "budgetLines");
         Objects.requireNonNull(transactions, "transactions");
@@ -103,6 +129,16 @@ public final class SclxCoreSnapshotAssembler
                 .peek(fund -> requireFundOwnership(fund, company))
                 .sorted(Comparator.comparing(Fund::getCode))
                 .map(fund -> mapFund(companyCode, fund))
+                .toList();
+
+        List<Map<String, Object>> exportedActivities = activities.stream()
+                .peek(activity -> requireActivityOwnership(activity, company))
+                .sorted(Comparator.comparing(Activity::getCode))
+                .map(activity -> SclxActivityExtension.entry(
+                        SclxPortableIdentity.activity(companyCode, activity.getCode()),
+                        activity.getCode(),
+                        activity.getName(),
+                        activity.isActive()))
                 .toList();
 
         Set<BudgetPlan> includedBudgetPlans = identitySet(budgetPlans);
@@ -145,6 +181,11 @@ public final class SclxCoreSnapshotAssembler
             requireTransactionLineOwnership(line, company, activeChart, includedTransactions);
         }
 
+        Map<String, Object> extensionValues = new LinkedHashMap<>();
+        extensionValues.put("activeChartName", activeChart.getName());
+        extensionValues.put("activeChartVersion", activeChart.getVersion());
+        extensionValues.put(SclxActivityExtension.KEY, exportedActivities);
+
         SclxExportDocument document = SclxExportDocument.version13(
                 exportedAt,
                 new SclxExportDocument.Organization(
@@ -157,9 +198,7 @@ public final class SclxCoreSnapshotAssembler
                 exportedFunds,
                 exportedBudgets,
                 exportedTransactions,
-                new SclxExportDocument.Extensions(1, Map.of(
-                        "activeChartName", activeChart.getName(),
-                        "activeChartVersion", activeChart.getVersion())));
+                new SclxExportDocument.Extensions(1, extensionValues));
         validator.validate(document);
         return document;
     }
@@ -316,7 +355,9 @@ public final class SclxCoreSnapshotAssembler
                 SclxPortableIdentity.transactionLine(transactionId, ordinal),
                 SclxPortableIdentity.account(companyCode, line.getAccount().getCode()),
                 SclxPortableIdentity.fund(companyCode, line.getFund().getCode()),
-                null,
+                line.getActivity() == null
+                        ? null
+                        : SclxPortableIdentity.activity(companyCode, line.getActivity().getCode()),
                 null,
                 debit,
                 credit,
@@ -355,6 +396,17 @@ public final class SclxCoreSnapshotAssembler
         {
             throw new IllegalArgumentException("fund is outside the selected company: " + fund.getCode());
         }
+    }
+
+    private static void requireActivityOwnership(Activity activity, Company company)
+    {
+        Objects.requireNonNull(activity, "activity");
+        if (activity.getCompany() != company)
+        {
+            throw new IllegalArgumentException("activity is outside the selected company: " + activity.getCode());
+        }
+        requireText(activity.getCode(), "activity code");
+        requireText(activity.getName(), "activity name");
     }
 
     private static void requireBudgetOwnership(BudgetPlan plan, Company company)

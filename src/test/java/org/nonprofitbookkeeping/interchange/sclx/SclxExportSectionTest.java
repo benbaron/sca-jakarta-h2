@@ -29,5 +29,8 @@ class SclxExportSectionTest
         assertFalse(SclxExportSection.USERS_AND_AUTHENTICATION.exported());
         assertFalse(SclxExportSection.COMPATIBILITY_LEDGER.exported());
         assertTrue(SclxExportSection.TRANSACTIONS.exported());
+        assertTrue(SclxExportSection.ACTIVITIES.includedByCurrentSnapshot());
+        assertFalse(SclxExportSection.ACTIVITIES.deferred());
+        assertTrue(SclxExportSection.COUNTERPARTIES.deferred());
     }
 }

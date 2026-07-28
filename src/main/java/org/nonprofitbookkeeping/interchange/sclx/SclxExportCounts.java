@@ -5,6 +5,7 @@ public record SclxExportCounts(
         long organizations,
         long accounts,
         long funds,
+        long activities,
         long budgets,
         long budgetLines,
         long transactions,
@@ -15,12 +16,38 @@ public record SclxExportCounts(
 {
     public SclxExportCounts
     {
-        if (organizations < 0L || accounts < 0L || funds < 0L || budgets < 0L
+        if (organizations < 0L || accounts < 0L || funds < 0L || activities < 0L || budgets < 0L
                 || budgetLines < 0L || transactions < 0L || transactionLines < 0L
                 || warnings < 0L || exclusions < 0L || totalEntities < 0L)
         {
             throw new IllegalArgumentException("SCLX export counts must not be negative");
         }
+    }
+
+    public SclxExportCounts(
+            long organizations,
+            long accounts,
+            long funds,
+            long budgets,
+            long budgetLines,
+            long transactions,
+            long transactionLines,
+            long warnings,
+            long exclusions,
+            long totalEntities)
+    {
+        this(
+                organizations,
+                accounts,
+                funds,
+                0L,
+                budgets,
+                budgetLines,
+                transactions,
+                transactionLines,
+                warnings,
+                exclusions,
+                totalEntities);
     }
 
     static SclxExportCounts from(
@@ -34,9 +61,11 @@ public record SclxExportCounts(
         long transactionLineCount = document.transactions().stream()
                 .mapToLong(transaction -> transaction.lines().size())
                 .sum();
+        long activityCount = SclxActivityExtension.entries(document.extensions()).size();
         long entityCount = 1L
                 + document.chartOfAccounts().size()
                 + document.funds().size()
+                + activityCount
                 + document.budgets().size()
                 + budgetLineCount
                 + document.transactions().size()
@@ -45,6 +74,7 @@ public record SclxExportCounts(
                 1L,
                 document.chartOfAccounts().size(),
                 document.funds().size(),
+                activityCount,
                 document.budgets().size(),
                 budgetLineCount,
                 document.transactions().size(),

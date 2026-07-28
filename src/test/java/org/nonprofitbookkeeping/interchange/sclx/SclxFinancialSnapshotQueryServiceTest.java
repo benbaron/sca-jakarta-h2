@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.AccountType;
+import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.BudgetCategory;
 import org.nonprofitbookkeeping.model.BudgetLine;
 import org.nonprofitbookkeeping.model.BudgetPlan;
@@ -26,6 +27,7 @@ import java.time.YearMonth;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -52,6 +54,12 @@ class SclxFinancialSnapshotQueryServiceTest
                     budget.lines().stream().map(SclxExportDocument.BudgetLine::periodMonth).toList());
             assertNotEquals(budget.lines().get(0).lineId(), budget.lines().get(1).lineId());
 
+            List<SclxActivityExtension.Entry> activities = SclxActivityExtension.entries(document.extensions());
+            assertEquals(List.of("EVENT", "OLD"),
+                    activities.stream().map(SclxActivityExtension.Entry::code).toList());
+            assertTrue(activities.get(0).active());
+            assertFalse(activities.get(1).active());
+
             assertEquals(2, document.transactions().size());
             SclxExportDocument.Transaction original = document.transactions().get(0);
             SclxExportDocument.Transaction reversal = document.transactions().get(1);
@@ -63,11 +71,13 @@ class SclxFinancialSnapshotQueryServiceTest
                     .toList());
             assertEquals(new BigDecimal("25.0000"), original.lines().get(0).credit());
             assertEquals(new BigDecimal("25.0000"), original.lines().get(1).debit());
+            assertEquals("activity:ALPHA:EVENT", original.lines().get(1).activityId());
             assertEquals("REVERSAL", reversal.correctionType());
             assertEquals(original.transactionId(), reversal.correctionOfTransactionId());
 
             assertTrue(document.budgets().stream().noneMatch(item -> item.name().contains("BETA")));
             assertTrue(document.transactions().stream().noneMatch(item -> item.description().contains("BETA")));
+            assertTrue(activities.stream().noneMatch(item -> item.code().contains("BETA")));
         }
     }
 
@@ -102,6 +112,13 @@ class SclxFinancialSnapshotQueryServiceTest
             em.persist(alphaFund);
             em.persist(betaFund);
 
+            Activity alphaEvent = activity(alpha, "EVENT", "Annual Event", true);
+            Activity alphaOld = activity(alpha, "OLD", "Retired Event", false);
+            Activity betaEvent = activity(beta, "BETA-EVENT", "BETA Event", true);
+            em.persist(alphaEvent);
+            em.persist(alphaOld);
+            em.persist(betaEvent);
+
             BudgetCategory alphaCategory = category(alpha, "SUPPLIES");
             BudgetCategory betaCategory = category(beta, "SUPPLIES");
             em.persist(alphaCategory);
@@ -118,7 +135,9 @@ class SclxFinancialSnapshotQueryServiceTest
             Txn original = transaction(alpha, LocalDate.of(2026, 7, 1), "Office supplies");
             em.persist(original);
             em.persist(split(original, alphaCash, alphaFund, "-25.0000"));
-            em.persist(split(original, alphaExpense, alphaFund, "25.0000"));
+            TxnSplit originalExpense = split(original, alphaExpense, alphaFund, "25.0000");
+            originalExpense.setActivity(alphaEvent);
+            em.persist(originalExpense);
 
             Txn reversal = transaction(alpha, LocalDate.of(2026, 7, 2), "Office supplies reversal");
             reversal.setReversalOf(original);
@@ -181,6 +200,20 @@ class SclxFinancialSnapshotQueryServiceTest
         fund.setName(code + " Fund");
         fund.setFundType(FundType.UNRESTRICTED);
         return fund;
+    }
+
+    private static Activity activity(
+            Company company,
+            String code,
+            String name,
+            boolean active)
+    {
+        Activity activity = new Activity();
+        activity.setCompany(company);
+        activity.setCode(code);
+        activity.setName(name);
+        activity.setActive(active);
+        return activity;
     }
 
     private static BudgetCategory category(Company company, String code)

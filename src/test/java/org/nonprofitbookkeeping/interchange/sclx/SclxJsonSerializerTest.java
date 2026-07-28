@@ -36,7 +36,12 @@ class SclxJsonSerializerTest
         assertEquals("1000", root.path("chartOfAccounts").get(0).path("openingBalance").textValue());
         assertEquals("0", root.path("transactions").get(0).path("lines").get(0).path("debit").textValue());
         assertEquals("25", root.path("transactions").get(0).path("lines").get(0).path("credit").textValue());
-        assertEquals("alpha", root.path("extensions").path("scaJakartaH2").fieldNames().next());
+        assertEquals(List.of("activities", "alpha", "zeta"),
+                iterable(root.path("extensions").path("scaJakartaH2").fieldNames()));
+        JsonNode activity = root.path("extensions").path("scaJakartaH2").path("activities").get(0);
+        assertEquals("activity:TEST:EVENT", activity.path("activityId").textValue());
+        assertEquals("EVENT", activity.path("code").textValue());
+        assertTrue(activity.path("active").booleanValue());
         assertEquals("2026-07-27T02:00:00Z", root.path("exportedAt").textValue());
         assertTrue(json.endsWith("\n"));
         assertFalse(json.contains("\r"));
@@ -78,6 +83,8 @@ class SclxJsonSerializerTest
         LinkedHashMap<String, Object> extensionValues = new LinkedHashMap<>();
         extensionValues.put("zeta", "last");
         extensionValues.put("alpha", new BigDecimal("1.2300"));
+        extensionValues.put(SclxActivityExtension.KEY, List.of(SclxActivityExtension.entry(
+                "activity:TEST:EVENT", "EVENT", "Annual Event", true)));
 
         return SclxExportDocument.version13(
                 Instant.parse("2026-07-27T02:00:00Z"),

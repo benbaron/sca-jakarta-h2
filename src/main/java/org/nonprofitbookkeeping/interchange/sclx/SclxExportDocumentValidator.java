@@ -15,10 +15,11 @@ public final class SclxExportDocumentValidator
 
         Set<String> accountIds = uniqueAccountIds(document.chartOfAccounts());
         Set<String> fundIds = uniqueFundIds(document.funds());
+        Set<String> activityIds = SclxActivityExtension.uniqueIds(document.extensions());
         validateAccountParents(document.chartOfAccounts(), accountIds);
         validateFundParents(document.funds(), fundIds);
         validateBudgets(document.budgets(), accountIds, fundIds);
-        validateTransactions(document.transactions(), accountIds, fundIds);
+        validateTransactions(document.transactions(), accountIds, fundIds, activityIds);
     }
 
     private static Set<String> uniqueAccountIds(List<SclxExportDocument.Account> accounts)
@@ -79,7 +80,7 @@ public final class SclxExportDocumentValidator
     }
 
     private static void validateTransactions(List<SclxExportDocument.Transaction> transactions,
-            Set<String> accountIds, Set<String> fundIds)
+            Set<String> accountIds, Set<String> fundIds, Set<String> activityIds)
     {
         Set<String> transactionIds = new HashSet<>();
         Set<String> lineIds = new HashSet<>();
@@ -101,6 +102,8 @@ public final class SclxExportDocumentValidator
                         "transaction line " + line.lineId() + " accountId");
                 requireOptionalReference(line.fundId(), fundIds,
                         "transaction line " + line.lineId() + " fundId");
+                requireOptionalReference(line.activityId(), activityIds,
+                        "transaction line " + line.lineId() + " activityId");
                 debits = debits.add(line.debit());
                 credits = credits.add(line.credit());
             }

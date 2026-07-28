@@ -180,20 +180,21 @@ class SclxExportCoordinatorTest
                 List.of(new InterchangeValidationMessage(
                         InterchangeMessageSeverity.WARNING,
                         "SCLX_DEFERRED_SECTION",
-                        "extensions.scaJakartaH2.activities",
-                        "Activities are deferred.",
+                        "extensions.scaJakartaH2.counterparties",
+                        "Counterparties are deferred.",
                         false)),
-                List.of(SclxExportSection.ACTIVITIES),
+                List.of(SclxExportSection.COUNTERPARTIES),
                 List.of(SclxExportSection.UI_STATE));
 
         String summary = SclxExportCoordinator.resultSummary(result);
 
         assertTrue(summary.contains("Active company: ALPHA"));
         assertTrue(summary.contains("Accounts: 4"));
+        assertTrue(summary.contains("Activities: 0"));
         assertTrue(summary.contains("Transactions: 5"));
         assertTrue(summary.contains("Warnings: 2"));
-        assertTrue(summary.contains("Activities are deferred."));
-        assertTrue(summary.contains("extensions.scaJakartaH2.activities"));
+        assertTrue(summary.contains("Counterparties are deferred."));
+        assertTrue(summary.contains("extensions.scaJakartaH2.counterparties"));
         assertTrue(summary.contains("UI_STATE"));
         assertTrue(summary.contains("a".repeat(64)));
     }

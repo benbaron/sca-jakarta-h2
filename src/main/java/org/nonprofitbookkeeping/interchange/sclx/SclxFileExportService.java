@@ -48,7 +48,7 @@ public final class SclxFileExportService
         byte[] bytes = serializer.serialize(document);
 
         List<SclxExportSection> deferredSections = Arrays.stream(SclxExportSection.values())
-                .filter(section -> section.support() == SclxExportSection.Support.EXTENSION)
+                .filter(SclxExportSection::deferred)
                 .toList();
         List<SclxExportSection> excludedSections = Arrays.stream(SclxExportSection.values())
                 .filter(section -> section.support() == SclxExportSection.Support.EXCLUDED)

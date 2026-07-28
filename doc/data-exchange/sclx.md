@@ -63,7 +63,7 @@ Portable identities MUST be stable external strings, not local numeric primary k
 
 Canonical transactions use `Txn.portableId`, a durable UUID assigned independently of the local numeric primary key. Existing rows receive one during the nondestructive ownership/interchange migration sequence, and new rows receive one at creation. SCLX transaction identities namespace that UUID by company. Budget plans use company code, fiscal year, and version code; budget lines use their plan identity plus category code, optional fund identity, and optional period month.
 
-The current deterministic snapshot writes every company-owned budget plan and line. Budget lines preserve `categoryCode`, optional fund reference, optional `periodMonth`, and exact `BigDecimal` amount; the current normalized budget model has no direct account relation, so `accountId` remains absent rather than being inferred. Canonical transactions preserve status, deterministic debit/credit lines, and explicit `REVERSAL` or `REPLACEMENT` correction relationships. Transaction-line ordinals are assigned only after sorting by stable business content and never by a serialized database identifier. Counterparty, activity, and merchant master-data references remain unset until their company-scoped portable master sections are added, avoiding unresolved or locally keyed references.
+The current deterministic snapshot writes every company-owned budget plan and line. Budget lines preserve `categoryCode`, optional fund reference, optional `periodMonth`, and exact `BigDecimal` amount; the current normalized budget model has no direct account relation, so `accountId` remains absent rather than being inferred. Canonical transactions preserve status, deterministic debit/credit lines, and explicit `REVERSAL` or `REPLACEMENT` correction relationships. Transaction-line ordinals are assigned only after sorting by stable business content and never by a serialized database identifier. Company activities use company code plus activity code as their portable identity, and transaction-line `activityId` values resolve to the exported activity extension. Counterparty and merchant references remain unset until their portable master section is implemented, avoiding unresolved or locally keyed references.
 
 Within a document:
 
@@ -119,6 +119,17 @@ Application-specific output uses only the `extensions.scaJakartaH2` namespace. E
 Readers MAY preserve unknown extension namespaces for a same-operation round trip when doing so is safe and bounded. Unknown extensions MUST NOT affect accounting behavior. Executable code, external URLs to fetch, path traversal material, serialized Java objects, and embedded database content are prohibited.
 
 Standard SCLX fields MUST be used when they can faithfully express the fact. Extensions MUST NOT duplicate or override standard fields.
+
+### 8.1 Activities extension
+
+`extensions.scaJakartaH2.activities` is an array containing every activity owned by the selected company, including inactive activities needed for historical interpretation. Entries are ordered by activity code and contain exactly:
+
+- `activityId`: `activity:<company-code>:<activity-code>` using the governed portable-identity encoding;
+- `code`: the company-scoped activity code;
+- `name`: the activity display name; and
+- `active`: the persisted active/inactive state.
+
+A canonical transaction line with an activity writes `activityId` in the standard transaction-line DTO. Every nonblank `activityId` MUST resolve to exactly one entry in this extension. Duplicate activity identities, cross-company activities, malformed entries, and unresolved references are blocking export errors. Activity records contribute to the operation entity counts, and the `ACTIVITIES` section is no longer reported as deferred.
 
 ## 9. Deterministic SCLX 1.3 output
 
@@ -225,7 +236,7 @@ atomic replacing move when available, restores the previous destination if the s
 and removes temporary artifacts after failure.
 
 `SclxExportResult` reports the final destination, format/version, fixed export timestamp, portable
-organization identity, byte count, SHA-256, entity counts, deferred-extension warnings, and the
+organization identity, byte count, SHA-256, core and activity entity counts, deferred-extension warnings, and the
 governed explicit-exclusion section list. Deferred extension sections are reported as warnings until
 their selected-company snapshot mappings are implemented; policy exclusions are reported separately
 and are not silently treated as exported empty sections.
