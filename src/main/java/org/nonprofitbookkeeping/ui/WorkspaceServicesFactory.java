@@ -62,6 +62,11 @@ public final class WorkspaceServicesFactory
                 ownerWindow,
                 afterSuccessfulDatabaseSwitch);
         DatabaseTransferUiRegistry.registerActions(databaseTransferActions);
+        SclxExportActions sclxExportActions = new SclxExportCoordinator(
+                UiServiceRegistry::sclxFileExport,
+                context,
+                ownerWindow);
+        SclxExportUiRegistry.registerActions(sclxExportActions);
 
         sessionState.onDatabaseSelectionChanged(context::applyDatabaseSelection);
         sessionState.onMultiCompanyChanged(context::applyMultiCompany);
@@ -72,6 +77,7 @@ public final class WorkspaceServicesFactory
                 databaseSessionController,
                 companySessionController,
                 databaseTransferActions,
+                sclxExportActions,
                 UiServiceRegistry::dashboardQuery,
                 UiServiceRegistry::diagnosticsQuery);
     }

@@ -1,12 +1,12 @@
 ---
-plan_version: 83
+plan_version: 84
 active_phase: P15
 active_slice: P15-S4
 active_status: VERIFYING
-active_branch: codex/P15-S4-sclx-deterministic-file-export
-active_pull_request: 208
-active_head: "43b6ada84f7531d7e235aac4d0ac6b7f9ae60ffb"
-next_action: "Validate and merge PR #208, then continue P15-S4 with additional selected-company sections and production JavaFX export wiring on a fresh branch."
+active_branch: codex/P15-S4-sclx-export-ui
+active_pull_request: 209
+active_head: "18aac1b988a6604521e7d3f1e59bc310dd34a7fd"
+next_action: "Validate and merge PR #209, then continue P15-S4 with the remaining governed selected-company section mappings on a fresh branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Validate and merge PR #208, then continue P15-S4 with additional s
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records merged selected-company financial snapshot mapping through PR #207 and deterministic atomic SCLX file export in draft PR #208.
+This revision records deterministic atomic SCLX file export merged through PR #208 and the production selected-company File-menu export route in draft PR #209.
 
 ## 2. Status values
 
@@ -915,9 +915,9 @@ Next exact action:
 
 ## P15-S4 — SCLX model, parser, and deterministic active-company export
 
-Status: VERIFYING on branch `codex/P15-S4-sclx-deterministic-file-export` in draft PR #208.
+Status: VERIFYING on branch `codex/P15-S4-sclx-export-ui` in draft PR #209.
 
-Current tested implementation head: `43b6ada84f7531d7e235aac4d0ac6b7f9ae60ffb`
+Current tested implementation head: `18aac1b988a6604521e7d3f1e59bc310dd34a7fd`
 
 Incremental completed deliverables:
 
@@ -932,10 +932,11 @@ Incremental completed deliverables:
 - PR #206: durable UUID identity for canonical `Txn` rows, with V62 backfill/default/uniqueness enforcement so transaction export does not use local numeric IDs.
 - PR #207: selected-company budget plan/line and canonical `Txn`/`TxnSplit` snapshot mapping, including period-scoped budget identities, exact debit/credit conversion, correction links, deterministic business ordering, and cross-company rejection.
 - PR #208: deterministic Jackson tree serialization, guarded same-directory atomic file replacement, overwrite/path/active-database protections, SHA-256, entity counts, deferred-section warnings, and explicit exclusions.
+- PR #209: production File-menu selected-company SCLX export with frozen company/database scope, asynchronous execution, explicit overwrite confirmation, exact counts/hash/warnings/exclusions presentation, route tests, and desktop acceptance instructions.
 
 Validation status:
 
-- PRs #198 through #207 are merged.
+- PRs #198 through #208 are merged.
 - Maven PR Tests run `30221018029` passed on PR #204 head `2663adf380b47a94776234ac62247480f38712da`.
 - Maven PR Tests run `30221508687` passed on PR #205 implementation head `413e0712004e5c2b8035a88d34c61eaa1463832b`.
 - Final Maven PR Tests run `30221662744` passed on PR #205 plan-inclusive head `f5b114fd1922934fb63cd826a6ad7a91789f8faa`.
@@ -948,6 +949,10 @@ Validation status:
 - Initial PR #208 run `30235977494` exposed one extra closing parenthesis in the new serializer test fixture; production sources compiled and the fixture was corrected.
 - Focused PR #208 verification passed 7 tests with 0 failures and 0 errors after the correction.
 - Maven PR Tests run `30236206639` passed on clean implementation head `43b6ada84f7531d7e235aac4d0ac6b7f9ae60ffb`, including `mvn clean verify`, the repeated test suite, and JavaFX production-route compliance.
+- Final PR #208 run `30236397436` passed on plan-inclusive head `dfa7a25db3f89eee99b3a478137ac02ca1ad2520`; PR #208 merged at `96004c909192d663cdc168de35b871ca241bca66`.
+- Initial clean PR #209 run `30238993416` exposed an invalid indexed JavaFX `ObservableList.addAll` overload in the fallback File-menu insertion; the implementation was corrected to the established indexed `List.of(...)` form.
+- Focused PR #209 run `30239143008` passed 8 tests with 0 failures and 0 errors after the correction; 4 display-dependent cases were skipped because that focused diagnostic did not install Xvfb.
+- Maven PR Tests run `30239221873` passed on clean implementation head `18aac1b988a6604521e7d3f1e59bc310dd34a7fd`, including `mvn clean verify`, the repeated test suite, and JavaFX production-route compliance under Xvfb.
 
 Planned deliverables:
 
@@ -967,7 +972,7 @@ Acceptance:
 
 Next exact action:
 
-- Validate and merge PR #208, then start a fresh P15-S4 branch for additional governed selected-company section mapping and production JavaFX export wiring/result presentation.
+- Validate and merge PR #209, then start a fresh P15-S4 branch for the remaining governed selected-company section mappings; complete owner desktop acceptance before P15-S4 is marked done.
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 

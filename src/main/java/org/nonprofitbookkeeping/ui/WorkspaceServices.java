@@ -13,6 +13,7 @@ public final class WorkspaceServices
     private final DatabaseSessionController databaseSessionController;
     private final CompanySessionController companySessionController;
     private final DatabaseTransferActions databaseTransferActions;
+    private final SclxExportActions sclxExportActions;
     private final PanelFactory panelFactory;
     private final Supplier<DashboardQueryService> dashboardQueryService;
     private final Supplier<DiagnosticsQueryService> diagnosticsQueryService;
@@ -22,6 +23,7 @@ public final class WorkspaceServices
             DatabaseSessionController databaseSessionController,
             CompanySessionController companySessionController,
             DatabaseTransferActions databaseTransferActions,
+            SclxExportActions sclxExportActions,
             Supplier<DashboardQueryService> dashboardQueryService,
             Supplier<DiagnosticsQueryService> diagnosticsQueryService)
     {
@@ -29,6 +31,7 @@ public final class WorkspaceServices
         this.databaseSessionController = Objects.requireNonNull(databaseSessionController, "databaseSessionController");
         this.companySessionController = Objects.requireNonNull(companySessionController, "companySessionController");
         this.databaseTransferActions = Objects.requireNonNull(databaseTransferActions, "databaseTransferActions");
+        this.sclxExportActions = Objects.requireNonNull(sclxExportActions, "sclxExportActions");
         this.dashboardQueryService = Objects.requireNonNull(dashboardQueryService, "dashboardQueryService");
         this.diagnosticsQueryService = Objects.requireNonNull(diagnosticsQueryService, "diagnosticsQueryService");
         this.panelFactory = new PanelFactory(this);
@@ -52,6 +55,11 @@ public final class WorkspaceServices
     DatabaseTransferActions databaseTransferActions()
     {
         return databaseTransferActions;
+    }
+
+    SclxExportActions sclxExportActions()
+    {
+        return sclxExportActions;
     }
 
     PanelFactory panelFactory()

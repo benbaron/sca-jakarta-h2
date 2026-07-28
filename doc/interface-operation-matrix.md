@@ -82,11 +82,11 @@ P14-S4 aligns Help and the production Destinations menu with the canonical navig
 
 ## P15 governed interchange operation matrix
 
-P15-S0 defines the contracts and fixtures. Whole-database transfer is implemented through P15-S2 and Chart of Accounts JSON is implemented through P15-S3; SCLX and bank-statement exchange rows remain delivery requirements for later slices.
+P15-S0 defines the contracts and fixtures. Whole-database transfer is implemented through P15-S2, Chart of Accounts JSON through P15-S3, and selected-company SCLX 1.3 export now has its production File-menu route in P15-S4. SCLX import and bank-statement exchange remain later-slice delivery requirements.
 
 | Exchange operation | User-visible scope | Recognition/query authority | Commit/write authority | Durable result | Explicitly not | Delivery slice |
 |---|---|---|---|---|---|---|
-| SCLX import/export | one selected active company's supported business data | content-root `SCLX` plus version 1.0/1.2/1.3; canonical H2 reads after company-ownership gate | one caller-owned import transaction through canonical services; atomic SCLX 1.3 file export | factual audit event, external identity, counts, warnings, SHA-256 | database backup, COA-only file, bank statement, donor sidecar ledger | P15-S4/P15-S5 |
+| SCLX import/export | one selected active company's supported business data | content-root `SCLX` plus version 1.0/1.2/1.3; canonical H2 reads after company-ownership gate | one caller-owned import transaction through canonical services; atomic SCLX 1.3 file export | export path/version/timestamp, record counts, deferred-section warnings, exclusions, byte count, and SHA-256; import later adds factual audit/external identity | database backup, COA-only file, bank statement, donor sidecar ledger | P15-S4 export service and File-menu route implemented; P15-S5 import pending |
 | Chart of Accounts JSON | one chart and account hierarchy | actual donor compatibility fixture or `SCA-COA` 1.0 root through strict bounded parsing and non-mutating preview | `ChartOfAccountsJsonImportService` in one caller-owned transaction with parent-before-child writes and durable identities; atomic deterministic file export | counts, mappings, unsupported fields, exact paths, byte count, and SHA-256 | transaction history, SCLX, bank activity, database backup | P15-S3 implemented; owner desktop verification pending |
 | Whole-database transfer | every company and H2-backed record | H2 backup structure/version and existing database diagnostics | supported H2 restore to a new path, migration, validation, then guarded session switch | backup manifest/result, validation report, SHA-256 | selected-company transfer, COA file, bank statement | P15-S2 |
 | OFX 2.x/QFX/mapped CSV import | statement activity for one configured company-owned bank account | content-first secure XML/SGML/CSV profile parsing | one review-batch transaction to `bank_import_batch`, `bank_statement_line`, and `import_issue` | durable review batch, issues, exact/probable duplicate state, source SHA-256 | automatic `Txn`/`TxnSplit` creation, double-entry ledger import | P15-S6 |
@@ -95,6 +95,7 @@ P15-S0 defines the contracts and fixtures. Whole-database transfer is implemente
 ### P15 UI and command guardrails
 
 - The four operation families require distinct labels, DTOs, previews, confirmations, results, and file chooser descriptions.
+- The SCLX production File-menu action is labeled **Export Active Company to SCLX…** and its chooser is labeled **SCLX Active Company Files**; deferred sections are disclosed in the completion result rather than implied to be present.
 - `doc/data-exchange/shared-operation-contract.md` supplies only immutable lifecycle records, company-ownership validation, diagnostics, and external identity; it does not merge the four format authorities.
 - Every selected-company preview fails closed while `company_ownership_issue` contains unresolved records relevant to the operation. Cross-company references are blocking errors, not warnings.
 - No top-level **Import/Export Jobs** destination or generic durable job queue returns.

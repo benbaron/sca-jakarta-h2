@@ -1,5 +1,7 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.interchange.sclx.SclxCoreSnapshotQueryService;
+import org.nonprofitbookkeeping.interchange.sclx.SclxFileExportService;
 import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
 import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.repository.ApprovalAuditRepository;
@@ -41,6 +43,7 @@ import org.nonprofitbookkeeping.service.dashboard.DashboardQueryService;
 import org.nonprofitbookkeeping.service.dashboard.JpaDashboardQueryService;
 
 import java.nio.file.Path;
+import java.util.Objects;
 
 /**
  * Lightweight service wiring for JavaFX runtime without CDI bootstrap.
@@ -82,6 +85,21 @@ public final class UiServiceRegistry
     public static SampleCompanyService sampleCompany() { return services().sampleCompany(); }
     public static FinancialReportService financialReports() { return services().financialReports(); }
     public static DashboardQueryService dashboardQuery() { return services().dashboardQuery(); }
+    public static SclxFileExportService sclxFileExport(String companyCode, Path activeDatabasePath)
+    {
+        String fixedCompanyCode = Objects.requireNonNull(companyCode, "companyCode").strip();
+        if (fixedCompanyCode.isBlank())
+        {
+            throw new IllegalArgumentException("companyCode must not be blank");
+        }
+        Path fixedDatabasePath = Objects.requireNonNull(activeDatabasePath, "activeDatabasePath")
+                .toAbsolutePath()
+                .normalize();
+        ServiceBundle current = services();
+        return new SclxFileExportService(
+                new SclxCoreSnapshotQueryService(current.jpa(), () -> fixedCompanyCode),
+                () -> fixedDatabasePath);
+    }
     public static BankReconciliationWorkspaceService bankReconciliationWorkspace() { return services().bankReconciliationWorkspace(); }
     public static PeriodCloseRangeService periodCloseRangeService() { return services().periodCloseRangeService(); }
     public static DiagnosticsQueryService diagnosticsQuery()
