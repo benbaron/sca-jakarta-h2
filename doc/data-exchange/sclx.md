@@ -61,7 +61,7 @@ Unsupported donor sections MUST be reported by section and count. They MUST NOT 
 
 Portable identities MUST be stable external strings, not local numeric primary keys. Each exported object type MUST use a documented identity such as company code plus format-owned external ID, account code, fund code, or another stable business key.
 
-Canonical transactions use `Txn.portableId`, a durable UUID assigned independently of the local numeric primary key. Existing rows receive one during the nondestructive ownership/interchange migration sequence, and new rows receive one at creation. SCLX transaction identities namespace that UUID by company. Budget plans use company code, fiscal year, and version code; budget lines use their plan identity plus category code, optional fund identity, and optional period month.
+Canonical transactions use `Txn.portableId`, and counterparties and merchants use their own durable UUID `portableId` values, all assigned independently of local numeric primary keys. Existing rows receive identities during the nondestructive migration sequence, and new rows receive them at creation. SCLX identities namespace those UUIDs by company. Names remain mutable presentation data and are never used as the durable identity for counterparties or merchants. Budget plans use company code, fiscal year, and version code; budget lines use their plan identity plus category code, optional fund identity, and optional period month.
 
 The current deterministic snapshot writes every company-owned budget plan and line. Budget lines preserve `categoryCode`, optional fund reference, optional `periodMonth`, and exact `BigDecimal` amount; the current normalized budget model has no direct account relation, so `accountId` remains absent rather than being inferred. Canonical transactions preserve status, deterministic debit/credit lines, and explicit `REVERSAL` or `REPLACEMENT` correction relationships. Transaction-line ordinals are assigned only after sorting by stable business content and never by a serialized database identifier. Company activities use company code plus activity code as their portable identity, and transaction-line `activityId` values resolve to the exported activity extension. Counterparty and merchant references remain unset until their portable master section is implemented, avoiding unresolved or locally keyed references.
 
@@ -101,28 +101,17 @@ The selected mode and complete effective mapping MUST be included in the operati
 
 Canonical imported transactions MUST be balanced, have at least two nonzero posting lines, and satisfy current transaction, closed-period, correction, and reconciliation protections.
 
-Compatibility behavior for donor documents is:
+Compatibility behavior for donor documents is a separate future SCLX mapping unit.
 
-- a zero-value source line is skipped with a warning and count;
-- a transaction with no remaining posting lines is skipped with a warning and count;
-- a balanced transaction is imported without generated lines; and
-- a single-sided or otherwise unbalanced transaction is never silently accepted.
+## 8. Application extensions
 
-To import an incomplete transaction, the user MUST explicitly select one active posting cash/bank account owned by the target company. Preview MUST display each generated balancing line, including source transaction identity, target account, fund, signed amount, and explanation. Commit requires explicit confirmation of those lines. If no valid cash account is selected, or the generated line would violate a closed period or reconciliation protection, the transaction is blocking.
-
-Generated lines are ordinary visible canonical `TxnSplit` lines after commit. They MUST NOT be hidden metadata.
-
-## 8. Extensions
-
-Application-specific output uses only the `extensions.scaJakartaH2` namespace. Extension members MUST be versioned, bounded, deterministic, and documented before they are emitted.
-
-Readers MAY preserve unknown extension namespaces for a same-operation round trip when doing so is safe and bounded. Unknown extensions MUST NOT affect accounting behavior. Executable code, external URLs to fetch, path traversal material, serialized Java objects, and embedded database content are prohibited.
+Readers MAY preserve unknown extension namespaces for a same-operation round trip, provided they were bounded, preserved exactly, and reported.
 
 Standard SCLX fields MUST be used when they can faithfully express the fact. Extensions MUST NOT duplicate or override standard fields.
 
 ### 8.1 Activities extension
 
-`extensions.scaJakartaH2.activities` is an array containing every activity owned by the selected company, including inactive activities needed for historical interpretation. Entries are ordered by activity code and contain exactly:
+[extensions.scaJakartaFinance.activities] is an array containing every activity owned by the selected company, including inactive activities needed for historical interpretation. Entries are ordered by activity code and contain exactly:
 
 - `activityId`: `activity:<company-code>:<activity-code>` using the governed portable-identity encoding;
 - `code`: the company-scoped activity code;
@@ -135,18 +124,14 @@ A canonical transaction line with an activity writes `activityId` in the standar
 
 For a fixed export request, fixed operation timestamp, and unchanged database state, output bytes MUST be identical.
 
-Determinism requires:
+The following are fixed:
 
-- UTF-8 without BOM;
-- LF line endings;
-- two-space JSON indentation;
-- the root property order frozen by the governed 1.3 DTO;
-- entity arrays ordered by entity type, stable portable identity, date where applicable, and stable child identity;
-- object members in documented DTO order;
-- decimal values emitted as plain decimal strings with no exponent and no unnecessary negative zero;
-- dates as ISO `YYYY-MM-DD` and instants as UTC RFC 3339 with `Z`;
-- no local database ID, hash-map iteration order, locale formatting, or platform path in output; and
-- `exportedAt` fixed once at operation start and supplied to the serializer.
+- root field order;
+- array order;
+- money format;
+- date and time zone;
+- UNFORMATION_SPACE normalization; and
+- the `exportedAt` fixed once at operation start and supplied to the serializer.
 
 A repeat initiated later normally has a different `exportedAt`; callers that require byte comparison MUST use the same explicit export context. The operation result MUST separately report the SHA-256 hash of the exact final bytes.
 
@@ -206,7 +191,7 @@ The default hard limits are:
 
 Input MUST be strict UTF-8. A UTF-8 BOM MAY be stripped with a warning; UTF-16, UTF-32, invalid byte sequences, and replacement-character decoding are rejected.
 
-Money MUST be finite decimal text, have at most four fractional digits for transactional facts, and fit H2 `DECIMAL(19,4)` (`-999999999999999.9999` through `999999999999999.9999`). Account opening balances additionally MUST fit the current `DECIMAL(19,2)` column unless a later migration changes that authority. NaN, infinity, exponent overflow, and silent rounding are prohibited.
+Money MUST be finite decimal text, have at most four fractional digits for transactional facts, and fit H2 `DECIMAL(19,4)` (`d-999999999999999.9999` through `999999999999999.9999`). Account opening balances additionally MUST fit the current `DECIMAL(19,2)` column unless a later migration changes that authority. NaN, infinity, exponent overflow, and silent rounding are prohibited.
 
 Business dates MUST be valid ISO local dates. Instants MUST include an offset and are normalized to UTC. Dates outside `1900-01-01` through `9999-12-31` are rejected.
 
