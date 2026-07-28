@@ -63,6 +63,10 @@ class SclxPortableIdentityTest
                 SclxPortableIdentity.transactionLine(transactionId, 1));
         assertThrows(IllegalArgumentException.class,
                 () -> SclxPortableIdentity.transactionLine(transactionId, 0));
+        assertEquals("supplemental-detail:transaction%3ATEST%3ATX-1:1",
+                SclxPortableIdentity.supplementalDetail(transactionId, 1));
+        assertThrows(IllegalArgumentException.class,
+                () -> SclxPortableIdentity.supplementalDetail(transactionId, 0));
     }
 
     @Test

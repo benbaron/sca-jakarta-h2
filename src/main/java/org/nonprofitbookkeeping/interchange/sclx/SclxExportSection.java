@@ -10,7 +10,7 @@ public enum SclxExportSection
     ACTIVITIES(Support.EXTENSION, true, "extensions.scaJakartaH2.activities", "Company activities"),
     COUNTERPARTIES(Support.EXTENSION, true, "extensions.scaJakartaH2.counterparties", "Company counterparties, merchants, and transaction references"),
     TRANSACTIONS(Support.INCLUDED, "transactions", "Canonical balanced transactions and splits"),
-    SUPPLEMENTAL_DETAILS(Support.EXTENSION, "extensions.scaJakartaH2.supplementalDetails", "Supported transaction details"),
+    SUPPLEMENTAL_DETAILS(Support.EXTENSION, true, "extensions.scaJakartaH2.supplementalDetails", "Canonical transaction supplemental details"),
     BANK_CONFIGURATION(Support.EXTENSION, "extensions.scaJakartaH2.bankConfiguration", "Configured bank accounts without credentials"),
     BANK_STATEMENT_FACTS(Support.EXTENSION, "extensions.scaJakartaH2.bankStatementFacts", "Reviewed statement and import facts"),
     RECONCILIATION(Support.EXTENSION, "extensions.scaJakartaH2.reconciliation", "Matching and reconciliation facts"),

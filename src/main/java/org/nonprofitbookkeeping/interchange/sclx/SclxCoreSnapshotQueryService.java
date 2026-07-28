@@ -14,6 +14,7 @@ import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
+import org.nonprofitbookkeeping.model.TxnSupplementalLine;
 import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.service.CompanyOwnershipService;
 
@@ -130,6 +131,14 @@ public class SclxCoreSnapshotQueryService
                             TxnSplit.class)
                     .setParameter("company", company)
                     .getResultList();
+            List<TxnSupplementalLine> supplementalDetails = em.createQuery(
+                            "select d from TxnSupplementalLine d "
+                                    + "join fetch d.txn t "
+                                    + "where t.company = :company "
+                                    + "order by t.portableId, d.lineOrder",
+                            TxnSupplementalLine.class)
+                    .setParameter("company", company)
+                    .getResultList();
 
             return assembler.assemble(
                     company,
@@ -142,6 +151,7 @@ public class SclxCoreSnapshotQueryService
                     budgetLines,
                     transactions,
                     transactionLines,
+                    supplementalDetails,
                     exportedAt);
         }
     }

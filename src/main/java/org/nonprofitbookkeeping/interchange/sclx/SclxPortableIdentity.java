@@ -88,6 +88,15 @@ public final class SclxPortableIdentity
         return identity("transaction-line", transactionId, Integer.toString(ordinal));
     }
 
+    public static String supplementalDetail(String transactionId, int ordinal)
+    {
+        if (ordinal < 1)
+        {
+            throw new IllegalArgumentException("supplemental detail ordinal must be positive");
+        }
+        return identity("supplemental-detail", transactionId, Integer.toString(ordinal));
+    }
+
     static String identity(String namespace, String... parts)
     {
         String normalizedNamespace = normalizeRequired(namespace, "namespace").toLowerCase(Locale.ROOT);
