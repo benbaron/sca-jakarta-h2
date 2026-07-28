@@ -36,7 +36,8 @@ class SclxJsonSerializerTest
         assertEquals("1000", root.path("chartOfAccounts").get(0).path("openingBalance").textValue());
         assertEquals("0", root.path("transactions").get(0).path("lines").get(0).path("debit").textValue());
         assertEquals("25", root.path("transactions").get(0).path("lines").get(0).path("credit").textValue());
-        assertEquals("alpha", root.path("extensions").path("scaJakartaH2").fieldNames().next());
+        assertEquals(List.of("activities", "alpha", "zeta"),
+                iterable(root.path("extensions").path("scaJakartaH2").fieldNames()));
         JsonNode activity = root.path("extensions").path("scaJakartaH2").path("activities").get(0);
         assertEquals("activity:TEST:EVENT", activity.path("activityId").textValue());
         assertEquals("EVENT", activity.path("code").textValue());
