@@ -1,4 +1,4 @@
-name: Temporary PR214 banking identity publisher
+name: Temporary PR214 chunk diagnostic
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  publish:
+  diagnose:
     if: ${{ github.event.pull_request.head.ref == 'codex/P15-S4-banking-portable-identities' }}
     runs-on: ubuntu-latest
     steps:
@@ -18,26 +18,36 @@ jobs:
         with:
           ref: codex/P15-S4-banking-portable-identities
           fetch-depth: 0
-      - name: Verify and apply reviewed banking identity patch
+      - name: Capture chunk diagnostics
         shell: bash
         run: |
-          set -euo pipefail
-          echo "1a22a5438edf52b8e795ee2664970d1d47014a1cd6406f89dafafd41c7bd879c  .p15-publish/pr214-chunks/chunk-00" | sha256sum -c -
-          echo "0c4757a9793d6b329a98de4838b404489829c829ff3634ba3352d085009cb50c  .p15-publish/pr214-chunks/chunk-01" | sha256sum -c -
-          echo "08db36ce4b4f136c9a7ce49e1e7222aef6b3ed779269cda12ac089ecbcf7ddf0  .p15-publish/pr214-chunks/chunk-02" | sha256sum -c -
-          echo "dad506da07fc5735034237af911c9bb55c07b12476291433e911ba9660582686  .p15-publish/pr214-chunks/chunk-03" | sha256sum -c -
-          echo "ff4de3512e74e36fa8703b0970dac3334171e57e9f7e0983b3cd7a86857dde37  .p15-publish/pr214-chunks/chunk-04" | sha256sum -c -
-          cat .p15-publish/pr214-chunks/chunk-* > /tmp/pr214.diff.gz.b64
-          echo "54c96f135cbfaccf930e039cd7c851b4564a446dd6f4f0aa8a207e6d88892489  /tmp/pr214.diff.gz.b64" | sha256sum -c -
-          base64 -d /tmp/pr214.diff.gz.b64 > /tmp/pr214.diff.gz
-          echo "df1b530d7a9635903eb0189483cb35ee36ccd75d3ac3eb2c3e4bcc901cae5338  /tmp/pr214.diff.gz" | sha256sum -c -
-          gzip -dc /tmp/pr214.diff.gz > /tmp/pr214.diff
-          echo "58a09bb477d16e318aaa6a1536dd4f4d535744eec6274375e28ce53d89c66991  /tmp/pr214.diff" | sha256sum -c -
-          patch --dry-run --batch --forward -p1 < /tmp/pr214.diff
-          patch --batch --forward -p1 < /tmp/pr214.diff
-          rm -rf .p15-publish pr214-publisher-diagnostic.log
+          set +e
+          {
+            echo "expected chunk-00 1a22a5438edf52b8e795ee2664970d1d47014a1cd6406f89dafafd41c7bd879c"
+            sha256sum .p15-publish/pr214-chunks/chunk-00
+            echo "expected chunk-01 0c4757a9793d6b329a98de4838b404489829c829ff3634ba3352d085009cb50c"
+            sha256sum .p15-publish/pr214-chunks/chunk-01
+            echo "expected chunk-02 08db36ce4b4f136c9a7ce49e1e7222aef6b3ed779269cda12ac089ecbcf7ddf0"
+            sha256sum .p15-publish/pr214-chunks/chunk-02
+            echo "expected chunk-03 dad506da07fc5735034237af911c9bb55c07b12476291433e911ba9660582686"
+            sha256sum .p15-publish/pr214-chunks/chunk-03
+            echo "expected chunk-04 ff4de3512e74e36fa8703b0970dac3334171e57e9f7e0983b3cd7a86857dde37"
+            sha256sum .p15-publish/pr214-chunks/chunk-04
+            wc -c .p15-publish/pr214-chunks/chunk-*
+            cat .p15-publish/pr214-chunks/chunk-* > /tmp/pr214.diff.gz.b64
+            echo "expected encoded 54c96f135cbfaccf930e039cd7c851b4564a446dd6f4f0aa8a207e6d88892489"
+            sha256sum /tmp/pr214.diff.gz.b64
+            base64 -d /tmp/pr214.diff.gz.b64 > /tmp/pr214.diff.gz
+            echo "decode status $?"
+            echo "expected gzip df1b530d7a9635903eb0189483cb35ee36ccd75d3ac3eb2c3e4bcc901cae5338"
+            sha256sum /tmp/pr214.diff.gz
+            gzip -dc /tmp/pr214.diff.gz > /tmp/pr214.diff
+            echo "gunzip status $?"
+            echo "expected diff 58a09bb477d16e318aaa6a1536dd4f4d535744eec6274375e28ce53d89c66991"
+            sha256sum /tmp/pr214.diff
+          } > pr214-chunk-diagnostic.log 2>&1
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -A
-          git commit -m "P15-S4: add durable banking portable identities"
+          git add pr214-chunk-diagnostic.log
+          git commit -m "diagnose PR214 chunks" || exit 0
           git push
