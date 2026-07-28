@@ -3,6 +3,7 @@ package org.nonprofitbookkeeping.model;
 import jakarta.persistence.*;
 import java.time.*;
 import java.math.*;
+import java.util.UUID;
 
 
 @Entity
@@ -18,6 +19,9 @@ public class Merchant
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "portable_id", nullable = false, unique = true)
+    private UUID portableId = UUID.randomUUID();
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
     private Company company;
@@ -32,6 +36,8 @@ public class Merchant
     private boolean active = true;
 
     public Long getId() { return id; }
+    public UUID getPortableId() { return portableId; }
+    public void setPortableId(UUID portableId) { this.portableId = portableId; }
     public Company getCompany() { return company; }
     public void setCompany(Company company) { this.company = company; }
     public String getName() { return name; }
