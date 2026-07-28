@@ -6,7 +6,9 @@ import org.nonprofitbookkeeping.model.BudgetLine;
 import org.nonprofitbookkeeping.model.BudgetPlan;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.Company;
+import org.nonprofitbookkeeping.model.Counterparty;
 import org.nonprofitbookkeeping.model.Fund;
+import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
@@ -39,7 +41,7 @@ public final class SclxCoreSnapshotAssembler
             .comparing((TxnSplit split) -> split.getAccount().getCode())
             .thenComparing(split -> split.getFund().getCode())
             .thenComparing(split -> split.getActivity() == null ? "" : split.getActivity().getCode())
-            .thenComparing(split -> split.getMerchant() == null ? "" : split.getMerchant().getName())
+            .thenComparing(split -> split.getMerchant() == null ? "" : split.getMerchant().getPortableId().toString())
             .thenComparing(TxnSplit::getAmountSigned)
             .thenComparing(split -> split.getNotes() == null ? "" : split.getNotes());
 
@@ -95,10 +97,39 @@ public final class SclxCoreSnapshotAssembler
             List<TxnSplit> transactionLines,
             Instant exportedAt)
     {
+        return assemble(
+                company,
+                accounts,
+                funds,
+                activities,
+                List.of(),
+                List.of(),
+                budgetPlans,
+                budgetLines,
+                transactions,
+                transactionLines,
+                exportedAt);
+    }
+
+    public SclxExportDocument assemble(
+            Company company,
+            List<Account> accounts,
+            List<Fund> funds,
+            List<Activity> activities,
+            List<Counterparty> counterparties,
+            List<Merchant> merchants,
+            List<BudgetPlan> budgetPlans,
+            List<BudgetLine> budgetLines,
+            List<Txn> transactions,
+            List<TxnSplit> transactionLines,
+            Instant exportedAt)
+    {
         Objects.requireNonNull(company, "company");
         Objects.requireNonNull(accounts, "accounts");
         Objects.requireNonNull(funds, "funds");
         Objects.requireNonNull(activities, "activities");
+        Objects.requireNonNull(counterparties, "counterparties");
+        Objects.requireNonNull(merchants, "merchants");
         Objects.requireNonNull(budgetPlans, "budgetPlans");
         Objects.requireNonNull(budgetLines, "budgetLines");
         Objects.requireNonNull(transactions, "transactions");
@@ -141,6 +172,36 @@ public final class SclxCoreSnapshotAssembler
                         activity.isActive()))
                 .toList();
 
+        List<Map<String, Object>> exportedCounterparties = counterparties.stream()
+                .peek(counterparty -> requireCounterpartyOwnership(counterparty, company))
+                .sorted(Comparator.comparing(counterparty -> counterparty.getPortableId().toString()))
+                .map(counterparty -> SclxPartyExtension.counterpartyEntry(
+                        SclxPortableIdentity.counterparty(
+                                companyCode,
+                                counterparty.getPortableId().toString()),
+                        counterparty.getDisplayName(),
+                        counterparty.getKind().name(),
+                        counterparty.getEmail(),
+                        counterparty.getPhone(),
+                        counterparty.getNotes(),
+                        counterparty.isActive()))
+                .toList();
+
+        List<Map<String, Object>> exportedMerchants = merchants.stream()
+                .peek(merchant -> requireMerchantOwnership(merchant, company))
+                .sorted(Comparator.comparing(merchant -> merchant.getPortableId().toString()))
+                .map(merchant -> SclxPartyExtension.merchantEntry(
+                        SclxPortableIdentity.merchant(
+                                companyCode,
+                                merchant.getPortableId().toString()),
+                        merchant.getName(),
+                        merchant.getNotes(),
+                        merchant.isActive()))
+                .toList();
+
+        Set<Counterparty> includedCounterparties = identitySet(counterparties);
+        Set<Merchant> includedMerchants = identitySet(merchants);
+
         Set<BudgetPlan> includedBudgetPlans = identitySet(budgetPlans);
         List<SclxExportDocument.Budget> exportedBudgets = budgetPlans.stream()
                 .peek(plan -> requireBudgetOwnership(plan, company))
@@ -162,8 +223,9 @@ public final class SclxCoreSnapshotAssembler
         }
 
         Set<Txn> includedTransactions = identitySet(transactions);
+        Map<TxnSplit, String> exportedLineIds = new IdentityHashMap<>();
         List<SclxExportDocument.Transaction> exportedTransactions = transactions.stream()
-                .peek(transaction -> requireTransactionOwnership(transaction, company, includedTransactions))
+                .peek(transaction -> requireTransactionOwnership(transaction, company, includedTransactions, includedCounterparties))
                 .sorted(Comparator.comparing(Txn::getTxnDate)
                         .thenComparing(transaction -> transaction.getPortableId().toString()))
                 .map(transaction -> mapTransaction(
@@ -172,19 +234,36 @@ public final class SclxCoreSnapshotAssembler
                         transactionLines.stream()
                                 .filter(line -> line.getTxn() == transaction)
                                 .peek(line -> requireTransactionLineOwnership(
-                                        line, company, activeChart, includedTransactions))
+                                        line, company, activeChart, includedTransactions, includedCounterparties, includedMerchants))
                                 .sorted(TRANSACTION_LINE_ORDER)
-                                .toList()))
+                                .toList(),
+                        exportedLineIds))
                 .toList();
         for (TxnSplit line : transactionLines)
         {
-            requireTransactionLineOwnership(line, company, activeChart, includedTransactions);
+            requireTransactionLineOwnership(line, company, activeChart, includedTransactions, includedCounterparties, includedMerchants);
         }
+
+        List<Map<String, Object>> transactionLineMerchants = transactionLines.stream()
+                .filter(line -> line.getMerchant() != null)
+                .map(line -> SclxPartyExtension.transactionLineMerchantEntry(
+                        Objects.requireNonNull(exportedLineIds.get(line), "exported transaction line identity"),
+                        SclxPortableIdentity.merchant(
+                                companyCode,
+                                Objects.requireNonNull(
+                                        line.getMerchant().getPortableId(),
+                                        "merchant portableId").toString())))
+                .sorted(Comparator.comparing(link -> (String) link.get("lineId")))
+                .toList();
 
         Map<String, Object> extensionValues = new LinkedHashMap<>();
         extensionValues.put("activeChartName", activeChart.getName());
         extensionValues.put("activeChartVersion", activeChart.getVersion());
         extensionValues.put(SclxActivityExtension.KEY, exportedActivities);
+        extensionValues.put(SclxPartyExtension.KEY, SclxPartyExtension.value(
+                exportedCounterparties,
+                exportedMerchants,
+                transactionLineMerchants));
 
         SclxExportDocument document = SclxExportDocument.version13(
                 exportedAt,
@@ -284,7 +363,8 @@ public final class SclxCoreSnapshotAssembler
     private static SclxExportDocument.Transaction mapTransaction(
             String companyCode,
             Txn transaction,
-            List<TxnSplit> lines)
+            List<TxnSplit> lines,
+            Map<TxnSplit, String> exportedLineIds)
     {
         String transactionId = SclxPortableIdentity.transaction(
                 companyCode,
@@ -308,7 +388,13 @@ public final class SclxCoreSnapshotAssembler
         int ordinal = 1;
         for (TxnSplit line : lines)
         {
-            exportedLines.add(mapTransactionLine(companyCode, transactionId, ordinal++, line));
+            SclxExportDocument.TransactionLine exportedLine = mapTransactionLine(
+                    companyCode,
+                    transactionId,
+                    ordinal++,
+                    line);
+            exportedLineIds.put(line, exportedLine.lineId());
+            exportedLines.add(exportedLine);
         }
 
         return new SclxExportDocument.Transaction(
@@ -351,6 +437,13 @@ public final class SclxCoreSnapshotAssembler
             debit = signed.abs();
         }
 
+        Counterparty payee = line.getTxn().getPayee();
+        String counterpartyId = payee == null
+                ? null
+                : SclxPortableIdentity.counterparty(
+                        companyCode,
+                        Objects.requireNonNull(payee.getPortableId(), "counterparty portableId").toString());
+
         return new SclxExportDocument.TransactionLine(
                 SclxPortableIdentity.transactionLine(transactionId, ordinal),
                 SclxPortableIdentity.account(companyCode, line.getAccount().getCode()),
@@ -358,7 +451,7 @@ public final class SclxCoreSnapshotAssembler
                 line.getActivity() == null
                         ? null
                         : SclxPortableIdentity.activity(companyCode, line.getActivity().getCode()),
-                null,
+                counterpartyId,
                 debit,
                 credit,
                 line.getNotes());
@@ -409,6 +502,31 @@ public final class SclxCoreSnapshotAssembler
         requireText(activity.getName(), "activity name");
     }
 
+    private static void requireCounterpartyOwnership(Counterparty counterparty, Company company)
+    {
+        Objects.requireNonNull(counterparty, "counterparty");
+        if (counterparty.getCompany() != company)
+        {
+            throw new IllegalArgumentException(
+                    "counterparty is outside the selected company: " + counterparty.getDisplayName());
+        }
+        Objects.requireNonNull(counterparty.getPortableId(), "counterparty portableId");
+        requireText(counterparty.getDisplayName(), "counterparty display name");
+        Objects.requireNonNull(counterparty.getKind(), "counterparty kind");
+    }
+
+    private static void requireMerchantOwnership(Merchant merchant, Company company)
+    {
+        Objects.requireNonNull(merchant, "merchant");
+        if (merchant.getCompany() != company)
+        {
+            throw new IllegalArgumentException(
+                    "merchant is outside the selected company: " + merchant.getName());
+        }
+        Objects.requireNonNull(merchant.getPortableId(), "merchant portableId");
+        requireText(merchant.getName(), "merchant name");
+    }
+
     private static void requireBudgetOwnership(BudgetPlan plan, Company company)
     {
         Objects.requireNonNull(plan, "budget plan");
@@ -442,7 +560,8 @@ public final class SclxCoreSnapshotAssembler
     private static void requireTransactionOwnership(
             Txn transaction,
             Company company,
-            Set<Txn> includedTransactions)
+            Set<Txn> includedTransactions,
+            Set<Counterparty> includedCounterparties)
     {
         Objects.requireNonNull(transaction, "transaction");
         if (transaction.getCompany() != company)
@@ -450,9 +569,13 @@ public final class SclxCoreSnapshotAssembler
             throw new IllegalArgumentException("transaction is outside the selected company");
         }
         Objects.requireNonNull(transaction.getPortableId(), "transaction portableId");
-        if (transaction.getPayee() != null && transaction.getPayee().getCompany() != company)
+        if (transaction.getPayee() != null)
         {
-            throw new IllegalArgumentException("transaction payee is outside the selected company");
+            requireCounterpartyOwnership(transaction.getPayee(), company);
+            if (!includedCounterparties.contains(transaction.getPayee()))
+            {
+                throw new IllegalArgumentException("transaction payee is outside the exported party snapshot");
+            }
         }
         if (transaction.getReplacementFor() != null && !includedTransactions.contains(transaction.getReplacementFor()))
         {
@@ -468,14 +591,16 @@ public final class SclxCoreSnapshotAssembler
             TxnSplit line,
             Company company,
             ChartOfAccounts activeChart,
-            Set<Txn> includedTransactions)
+            Set<Txn> includedTransactions,
+            Set<Counterparty> includedCounterparties,
+            Set<Merchant> includedMerchants)
     {
         Objects.requireNonNull(line, "transaction line");
         if (!includedTransactions.contains(line.getTxn()))
         {
             throw new IllegalArgumentException("transaction line references a transaction outside the exported snapshot");
         }
-        requireTransactionOwnership(line.getTxn(), company, includedTransactions);
+        requireTransactionOwnership(line.getTxn(), company, includedTransactions, includedCounterparties);
         requireAccountOwnership(line.getAccount(), activeChart);
         requireFundOwnership(line.getFund(), company);
         if (line.getBudgetCategory() != null && line.getBudgetCategory().getCompany() != company)
@@ -486,9 +611,13 @@ public final class SclxCoreSnapshotAssembler
         {
             throw new IllegalArgumentException("transaction line activity is outside the selected company");
         }
-        if (line.getMerchant() != null && line.getMerchant().getCompany() != company)
+        if (line.getMerchant() != null)
         {
-            throw new IllegalArgumentException("transaction line merchant is outside the selected company");
+            requireMerchantOwnership(line.getMerchant(), company);
+            if (!includedMerchants.contains(line.getMerchant()))
+            {
+                throw new IllegalArgumentException("transaction line merchant is outside the exported party snapshot");
+            }
         }
     }
 

@@ -12,7 +12,10 @@ import org.nonprofitbookkeeping.model.BudgetPlan;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Company;
+import org.nonprofitbookkeeping.model.Counterparty;
+import org.nonprofitbookkeeping.model.CounterpartyKind;
 import org.nonprofitbookkeeping.model.Fund;
+import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.FundType;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.model.Txn;
@@ -72,6 +75,18 @@ class SclxFinancialSnapshotQueryServiceTest
             assertEquals(new BigDecimal("25.0000"), original.lines().get(0).credit());
             assertEquals(new BigDecimal("25.0000"), original.lines().get(1).debit());
             assertEquals("activity:ALPHA:EVENT", original.lines().get(1).activityId());
+            SclxPartyExtension.Data parties = SclxPartyExtension.data(document.extensions());
+            assertEquals(1, parties.counterparties().size());
+            assertEquals("Office Supplier", parties.counterparties().get(0).displayName());
+            assertTrue(original.lines().stream().allMatch(line ->
+                    parties.counterparties().get(0).counterpartyId().equals(line.counterpartyId())));
+            assertEquals(1, parties.merchants().size());
+            assertEquals("Stationery Store", parties.merchants().get(0).name());
+            assertEquals(1, parties.transactionLineMerchants().size());
+            assertEquals(original.lines().get(1).lineId(),
+                    parties.transactionLineMerchants().get(0).lineId());
+            assertEquals(parties.merchants().get(0).merchantId(),
+                    parties.transactionLineMerchants().get(0).merchantId());
             assertEquals("REVERSAL", reversal.correctionType());
             assertEquals(original.transactionId(), reversal.correctionOfTransactionId());
 
@@ -119,6 +134,15 @@ class SclxFinancialSnapshotQueryServiceTest
             em.persist(alphaOld);
             em.persist(betaEvent);
 
+            Counterparty alphaPayee = counterparty(alpha, "Office Supplier");
+            Counterparty betaPayee = counterparty(beta, "BETA Supplier");
+            Merchant alphaMerchant = merchant(alpha, "Stationery Store");
+            Merchant betaMerchant = merchant(beta, "BETA Store");
+            em.persist(alphaPayee);
+            em.persist(betaPayee);
+            em.persist(alphaMerchant);
+            em.persist(betaMerchant);
+
             BudgetCategory alphaCategory = category(alpha, "SUPPLIES");
             BudgetCategory betaCategory = category(beta, "SUPPLIES");
             em.persist(alphaCategory);
@@ -133,10 +157,12 @@ class SclxFinancialSnapshotQueryServiceTest
             em.persist(budgetLine(betaBudget, betaCategory, betaFund, YearMonth.of(2026, 7), "999.0000"));
 
             Txn original = transaction(alpha, LocalDate.of(2026, 7, 1), "Office supplies");
+            original.setPayee(alphaPayee);
             em.persist(original);
             em.persist(split(original, alphaCash, alphaFund, "-25.0000"));
             TxnSplit originalExpense = split(original, alphaExpense, alphaFund, "25.0000");
             originalExpense.setActivity(alphaEvent);
+            originalExpense.setMerchant(alphaMerchant);
             em.persist(originalExpense);
 
             Txn reversal = transaction(alpha, LocalDate.of(2026, 7, 2), "Office supplies reversal");
@@ -146,6 +172,7 @@ class SclxFinancialSnapshotQueryServiceTest
             em.persist(split(reversal, alphaExpense, alphaFund, "-25.0000"));
 
             Txn betaTransaction = transaction(beta, LocalDate.of(2026, 7, 1), "BETA transaction");
+            betaTransaction.setPayee(betaPayee);
             em.persist(betaTransaction);
             em.persist(split(betaTransaction, betaCash, betaFund, "-10.0000"));
             em.persist(split(betaTransaction, betaExpense, betaFund, "10.0000"));
@@ -214,6 +241,23 @@ class SclxFinancialSnapshotQueryServiceTest
         activity.setName(name);
         activity.setActive(active);
         return activity;
+    }
+
+    private static Counterparty counterparty(Company company, String name)
+    {
+        Counterparty counterparty = new Counterparty();
+        counterparty.setCompany(company);
+        counterparty.setDisplayName(name);
+        counterparty.setKind(CounterpartyKind.ORG);
+        return counterparty;
+    }
+
+    private static Merchant merchant(Company company, String name)
+    {
+        Merchant merchant = new Merchant();
+        merchant.setCompany(company);
+        merchant.setName(name);
+        return merchant;
     }
 
     private static BudgetCategory category(Company company, String code)

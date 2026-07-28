@@ -15,6 +15,10 @@ class SclxPortableIdentityTest
         assertEquals("account:CAER-GALEN:1010", SclxPortableIdentity.account("CAER-GALEN", "1010"));
         assertEquals("fund:CAER-GALEN:GENERAL", SclxPortableIdentity.fund("CAER-GALEN", "GENERAL"));
         assertEquals("activity:CAER-GALEN:EVENT", SclxPortableIdentity.activity("CAER-GALEN", "EVENT"));
+        assertEquals("counterparty:CAER-GALEN:11111111-1111-1111-1111-111111111111",
+                SclxPortableIdentity.counterparty("CAER-GALEN", "11111111-1111-1111-1111-111111111111"));
+        assertEquals("merchant:CAER-GALEN:22222222-2222-2222-2222-222222222222",
+                SclxPortableIdentity.merchant("CAER-GALEN", "22222222-2222-2222-2222-222222222222"));
         assertEquals("budget:CAER-GALEN:2026:ADOPTED",
                 SclxPortableIdentity.budget("CAER-GALEN", 2026, "ADOPTED"));
         String budgetId = SclxPortableIdentity.budget("CAER-GALEN", 2026, "ADOPTED");

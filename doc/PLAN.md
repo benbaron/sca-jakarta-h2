@@ -1,12 +1,12 @@
 ---
-plan_version: 87
+plan_version: 88
 active_phase: P15
 active_slice: P15-S4
 active_status: VERIFYING
-active_branch: codex/P15-S4-party-portable-identity
-active_pull_request: 211
-active_head: "41280d0f26fe58afaf8f25fb71dd76035d2eebd8"
-next_action: "Validate and merge PR #211, then map selected-company counterparties and merchants into SCLX on a fresh P15-S4 branch."
+active_branch: codex/P15-S4-sclx-parties
+active_pull_request: 212
+active_head: "8364a1bd0abd8bc48f4673aa9e18bc28ebea5afc"
+next_action: "Validate and merge PR #212, then map selected-company supplemental transaction details into SCLX on a fresh P15-S4 branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Validate and merge PR #211, then map selected-company counterparti
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records selected-company Activity export merged through PR #210 and durable Counterparty/Merchant portable identity in draft PR #211.
+This revision records durable Counterparty/Merchant portable identity merged through PR #211 and selected-company party export in draft PR #212.
 
 ## 2. Status values
 
@@ -915,9 +915,9 @@ Next exact action:
 
 ## P15-S4 — SCLX model, parser, and deterministic active-company export
 
-Status: VERIFYING on branch `codex/P15-S4-party-portable-identity` in draft PR #211.
+Status: VERIFYING on branch `codex/P15-S4-sclx-parties` in draft PR #212.
 
-Current tested implementation head: `41280d0f26fe58afaf8f25fb71dd76035d2eebd8`
+Current tested implementation head: `8364a1bd0abd8bc48f4673aa9e18bc28ebea5afc`
 
 Incremental completed deliverables:
 
@@ -935,10 +935,11 @@ Incremental completed deliverables:
 - PR #209: production File-menu selected-company SCLX export with frozen company/database scope, asynchronous execution, explicit overwrite confirmation, exact counts/hash/warnings/exclusions presentation, route tests, and desktop acceptance instructions.
 - PR #210: selected-company Activity export under `extensions.scaJakartaH2.activities`, stable company/code identities, transaction-line activity references, strict extension/reference validation, deterministic ordering, counts, and inactive-row retention.
 - PR #211: durable UUID portable identities for `Counterparty` and `Merchant`, with V63 backfill/default/non-null/uniqueness enforcement, entity initialization, migration tests, and identity-contract documentation.
+- PR #212: selected-company counterparty and merchant export, standard transaction-line payee references, deterministic line-level merchant links, strict ownership/reference validation, counts, inactive-row retention, and desktop acceptance updates.
 
 Validation status:
 
-- PRs #198 through #210 are merged.
+- PRs #198 through #211 are merged.
 - Maven PR Tests run `30221018029` passed on PR #204 head `2663adf380b47a94776234ac62247480f38712da`.
 - Maven PR Tests run `30221508687` passed on PR #205 implementation head `413e0712004e5c2b8035a88d34c61eaa1463832b`.
 - Final Maven PR Tests run `30221662744` passed on PR #205 plan-inclusive head `f5b114fd1922934fb63cd826a6ad7a91789f8faa`.
@@ -962,6 +963,10 @@ Validation status:
 - Final PR #210 run `30319837886` passed on artifact-free, plan-inclusive head `910de5a4c8e3e7a906c39e8588242e1d9ce869b4`; PR #210 merged at `64a3056392c5d723043f154f9ff26a151b3652a4`.
 - PR #211 Java sources and focused tests passed Java 17 syntax compilation with bounded local stubs.
 - Maven PR Tests run `30323574869` passed on clean, plan-inclusive PR #211 head `41280d0f26fe58afaf8f25fb71dd76035d2eebd8`, including `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance.
+- Final PR #211 run `30323799799` passed on artifact-free review head `881dfed2d06f9104e166c82ecf9dbb81436a16ed`; PR #211 merged at `3b4a39dc8287b5ecd7dca57c213558619e7c90ac`.
+- Initial clean PR #212 run `30327910606` compiled production code and passed 437 of 438 tests but exposed a shifted `SclxExportCounts` test fixture after counterparties and merchants were added.
+- The fixture was corrected to preserve its intended budgets, transactions, transaction-lines, and total counts without changing production behavior.
+- Clean PR #212 implementation run `30328268651` passed `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance on head `8364a1bd0abd8bc48f4673aa9e18bc28ebea5afc`.
 
 Planned deliverables:
 
@@ -981,7 +986,7 @@ Acceptance:
 
 Next exact action:
 
-- Validate and merge PR #211, then start a fresh P15-S4 branch to map selected-company counterparties and merchants using their durable UUID identities; complete owner desktop acceptance before P15-S4 is marked done.
+- Validate and merge PR #212, then start a fresh P15-S4 branch to map selected-company supplemental transaction details; complete owner desktop acceptance before P15-S4 is marked done.
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
