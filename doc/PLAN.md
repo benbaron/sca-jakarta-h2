@@ -1,12 +1,12 @@
 ---
-plan_version: 89
+plan_version: 90
 active_phase: P15
 active_slice: P15-S4
 active_status: VERIFYING
-active_branch: codex/P15-S4-sclx-supplemental-details
-active_pull_request: 213
-active_head: "264942af84ea74c8882a374cec573d94fef617b5"
-next_action: "Validate and merge PR #213, then map selected-company banking and reconciliation facts into SCLX on a fresh P15-S4 branch."
+active_branch: codex/P15-S4-banking-portable-identities
+active_pull_request: 214
+active_head: "db5c4a8c3c4271dbb60a526e95a8ce77be6edd41"
+next_action: "Validate and merge PR #214, then map selected-company banking configuration, reviewed statement/import facts, and reconciliation facts into SCLX on a fresh P15-S4 branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Validate and merge PR #213, then map selected-company banking and 
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records selected-company party export merged through PR #212 and supplemental transaction-detail export in draft PR #213.
+This revision records supplemental transaction-detail export merged through PR #213 and durable banking/reconciliation portable identities in draft PR #214.
 
 ## 2. Status values
 
@@ -915,9 +915,9 @@ Next exact action:
 
 ## P15-S4 — SCLX model, parser, and deterministic active-company export
 
-Status: VERIFYING on branch `codex/P15-S4-sclx-supplemental-details` in draft PR #213.
+Status: VERIFYING on branch `codex/P15-S4-banking-portable-identities` in draft PR #214.
 
-Current tested implementation head: `264942af84ea74c8882a374cec573d94fef617b5`
+Current tested implementation head: `db5c4a8c3c4271dbb60a526e95a8ce77be6edd41`
 
 Incremental completed deliverables:
 
@@ -937,10 +937,11 @@ Incremental completed deliverables:
 - PR #211: durable UUID portable identities for `Counterparty` and `Merchant`, with V63 backfill/default/non-null/uniqueness enforcement, entity initialization, migration tests, and identity-contract documentation.
 - PR #212: selected-company counterparty and merchant export, standard transaction-line payee references, deterministic line-level merchant links, strict ownership/reference validation, counts, inactive-row retention, and desktop acceptance updates.
 - PR #213: selected-company supplemental transaction-detail export, deterministic transaction-local identities, complete persisted field preservation, strict semantic/reference validation, counts, and desktop acceptance updates.
+- PR #214: durable UUID portable identities for banks, configured company bank accounts, import batches, statement lines, import issues, reconciliation sessions, and reconciliation matches, with V64 backfill/default/non-null/uniqueness enforcement and focused migration/entity coverage.
 
 Validation status:
 
-- PRs #198 through #212 are merged.
+- PRs #198 through #213 are merged.
 - Maven PR Tests run `30221018029` passed on PR #204 head `2663adf380b47a94776234ac62247480f38712da`.
 - Maven PR Tests run `30221508687` passed on PR #205 implementation head `413e0712004e5c2b8035a88d34c61eaa1463832b`.
 - Final Maven PR Tests run `30221662744` passed on PR #205 plan-inclusive head `f5b114fd1922934fb63cd826a6ad7a91789f8faa`.
@@ -971,6 +972,9 @@ Validation status:
 - Final PR #212 run `30328459742` passed on artifact-free, plan-inclusive head `6bca1c6dfae8ad155af03458107b4645e7e6d68d`; PR #212 merged at `ab78c7faee8efe061c18375eef8518800fbec669`.
 - PR #213 contract, validator, assembler, query, and focused test sources passed bounded Java 17 syntax compilation before publication.
 - Clean PR #213 implementation run `30331172014` passed `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance on artifact-free head `264942af84ea74c8882a374cec573d94fef617b5`.
+- Final PR #213 run `30331442228` passed on artifact-free, plan-inclusive head `6ee989d4a6030ea674c5ebe572eccc9dd0ed25fa`; PR #213 merged at `5716d5472e8af07e04fc0c261af805ba15915f5b`.
+- PR #214 entity mappings and focused tests passed bounded Java 17 syntax compilation before publication.
+- Clean PR #214 implementation run `30402166342` passed `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance on artifact-free head `db5c4a8c3c4271dbb60a526e95a8ce77be6edd41`.
 
 Planned deliverables:
 
@@ -990,7 +994,7 @@ Acceptance:
 
 Next exact action:
 
-- Validate and merge PR #213, then start a fresh P15-S4 branch to map selected-company banking and reconciliation facts; complete owner desktop acceptance before P15-S4 is marked done.
+- Validate and merge PR #214, then start a fresh P15-S4 branch to map selected-company banking configuration, reviewed statement/import facts, and reconciliation facts; complete owner desktop acceptance before P15-S4 is marked done.
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
