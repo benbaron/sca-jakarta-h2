@@ -1,12 +1,12 @@
 ---
-plan_version: 85
+plan_version: 86
 active_phase: P15
 active_slice: P15-S4
 active_status: VERIFYING
-active_branch: codex/P15-S4-sclx-activities
-active_pull_request: 210
-active_head: "a1699d91d3db13fc9f94869641654f1a29d9594e"
-next_action: "Validate and merge PR #210, then continue P15-S4 by establishing stable portable identity for counterparties and merchants before mapping that governed section on a fresh branch."
+active_branch: codex/P15-S4-party-portable-identity
+active_pull_request: 211
+active_head: "a053f69e0aeca9e308f26120f18c9b028098b0a4"
+next_action: "Validate and merge PR #211, then map selected-company counterparties and merchants into SCLX on a fresh P15-S4 branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Validate and merge PR #210, then continue P15-S4 by establishing s
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records the production selected-company SCLX export route merged through PR #209 and selected-company Activity export in draft PR #210.
+This revision records selected-company Activity export merged through PR #210 and durable Counterparty/Merchant portable identity in draft PR #211.
 
 ## 2. Status values
 
@@ -915,9 +915,9 @@ Next exact action:
 
 ## P15-S4 — SCLX model, parser, and deterministic active-company export
 
-Status: VERIFYING on branch `codex/P15-S4-sclx-activities` in draft PR #210.
+Status: VERIFYING on branch `codex/P15-S4-party-portable-identity` in draft PR #211.
 
-Current tested implementation head: `a1699d91d3db13fc9f94869641654f1a29d9594e`
+Current implementation head awaiting Maven PR validation: `a053f69e0aeca9e308f26120f18c9b028098b0a4`
 
 Incremental completed deliverables:
 
@@ -934,10 +934,11 @@ Incremental completed deliverables:
 - PR #208: deterministic Jackson tree serialization, guarded same-directory atomic file replacement, overwrite/path/active-database protections, SHA-256, entity counts, deferred-section warnings, and explicit exclusions.
 - PR #209: production File-menu selected-company SCLX export with frozen company/database scope, asynchronous execution, explicit overwrite confirmation, exact counts/hash/warnings/exclusions presentation, route tests, and desktop acceptance instructions.
 - PR #210: selected-company Activity export under `extensions.scaJakartaH2.activities`, stable company/code identities, transaction-line activity references, strict extension/reference validation, deterministic ordering, counts, and inactive-row retention.
+- PR #211: durable UUID portable identities for `Counterparty` and `Merchant`, with V63 backfill/default/non-null/uniqueness enforcement, entity initialization, migration tests, and identity-contract documentation.
 
 Validation status:
 
-- PRs #198 through #209 are merged.
+- PRs #198 through #210 are merged.
 - Maven PR Tests run `30221018029` passed on PR #204 head `2663adf380b47a94776234ac62247480f38712da`.
 - Maven PR Tests run `30221508687` passed on PR #205 implementation head `413e0712004e5c2b8035a88d34c61eaa1463832b`.
 - Final Maven PR Tests run `30221662744` passed on PR #205 plan-inclusive head `f5b114fd1922934fb63cd826a6ad7a91789f8faa`.
@@ -958,6 +959,8 @@ Validation status:
 - Initial clean PR #210 run `30319123316` passed compilation and 429 of 430 tests but exposed a stale serializer assertion that expected custom extension key `alpha` before the newly governed, correctly sorted `activities` key.
 - Corrected PR #210 diagnostic run `30319427594` passed `mvn clean verify` with 430 tests, 0 failures, and 0 errors.
 - Clean PR #210 implementation run `30319554988` passed `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance on head `a1699d91d3db13fc9f94869641654f1a29d9594e`.
+- Final PR #210 run `30319837886` passed on artifact-free, plan-inclusive head `910de5a4c8e3e7a906c39e8588242e1d9ce869b4`; PR #210 merged at `64a3056392c5d723043f154f9ff26a151b3652a4`.
+- PR #211 Java sources and focused tests passed Java 17 syntax compilation with bounded local stubs; Maven PR validation is pending.
 
 Planned deliverables:
 
@@ -977,7 +980,7 @@ Acceptance:
 
 Next exact action:
 
-- Validate and merge PR #210, then start a fresh P15-S4 branch to establish stable portable identity for counterparties and merchants before mapping that governed section; complete owner desktop acceptance before P15-S4 is marked done.
+- Validate and merge PR #211, then start a fresh P15-S4 branch to map selected-company counterparties and merchants using their durable UUID identities; complete owner desktop acceptance before P15-S4 is marked done.
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
