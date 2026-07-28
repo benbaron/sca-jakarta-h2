@@ -8,7 +8,7 @@ public enum SclxExportSection
     FUNDS(Support.INCLUDED, "funds", "Company funds and hierarchy"),
     BUDGETS(Support.INCLUDED, "budgets", "Budget categories, plans, and lines"),
     ACTIVITIES(Support.EXTENSION, true, "extensions.scaJakartaH2.activities", "Company activities"),
-    COUNTERPARTIES(Support.EXTENSION, "extensions.scaJakartaH2.counterparties", "Used counterparties and merchants"),
+    COUNTERPARTIES(Support.EXTENSION, true, "extensions.scaJakartaH2.counterparties", "Company counterparties, merchants, and transaction references"),
     TRANSACTIONS(Support.INCLUDED, "transactions", "Canonical balanced transactions and splits"),
     SUPPLEMENTAL_DETAILS(Support.EXTENSION, "extensions.scaJakartaH2.supplementalDetails", "Supported transaction details"),
     BANK_CONFIGURATION(Support.EXTENSION, "extensions.scaJakartaH2.bankConfiguration", "Configured bank accounts without credentials"),

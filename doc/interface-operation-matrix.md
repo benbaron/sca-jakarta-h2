@@ -95,7 +95,7 @@ P15-S0 defines the contracts and fixtures. Whole-database transfer is implemente
 ### P15 UI and command guardrails
 
 - The four operation families require distinct labels, DTOs, previews, confirmations, results, and file chooser descriptions.
-- The SCLX production File-menu action is labeled **Export Active Company to SCLX…** and its chooser is labeled **SCLX Active Company Files**; company activities and transaction-line activity references are exported, while remaining deferred sections are disclosed in the completion result rather than implied to be present.
+- The SCLX production File-menu action is labeled **Export Active Company to SCLX…** and its chooser is labeled **SCLX Active Company Files**; company activities, counterparties, merchants, payee references, and line-level merchant references are exported, while remaining deferred sections are disclosed in the completion result rather than implied to be present.
 - `doc/data-exchange/shared-operation-contract.md` supplies only immutable lifecycle records, company-ownership validation, diagnostics, and external identity; it does not merge the four format authorities.
 - Every selected-company preview fails closed while `company_ownership_issue` contains unresolved records relevant to the operation. Cross-company references are blocking errors, not warnings.
 - No top-level **Import/Export Jobs** destination or generic durable job queue returns.

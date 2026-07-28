@@ -6,7 +6,10 @@ import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.Company;
+import org.nonprofitbookkeeping.model.Counterparty;
+import org.nonprofitbookkeeping.model.CounterpartyKind;
 import org.nonprofitbookkeeping.model.Fund;
+import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.FundType;
 import org.nonprofitbookkeeping.model.NormalBalance;
 
@@ -85,6 +88,48 @@ class SclxCoreSnapshotAssemblerTest
                 Instant.EPOCH));
     }
 
+    @Test
+    void rejectsCounterpartyFromAnotherCompany()
+    {
+        Company company = company("TEST");
+        activeChart(company);
+        Counterparty foreign = counterparty(company("OTHER"), "Foreign Vendor");
+
+        assertThrows(IllegalArgumentException.class, () -> assembler.assemble(
+                company,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(foreign),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                Instant.EPOCH));
+    }
+
+    @Test
+    void rejectsMerchantFromAnotherCompany()
+    {
+        Company company = company("TEST");
+        activeChart(company);
+        Merchant foreign = merchant(company("OTHER"), "Foreign Store");
+
+        assertThrows(IllegalArgumentException.class, () -> assembler.assemble(
+                company,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(foreign),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                Instant.EPOCH));
+    }
+
     private static Company company(String code)
     {
         Company company = new Company();
@@ -126,6 +171,23 @@ class SclxCoreSnapshotAssemblerTest
         activity.setCode(code);
         activity.setName(code + " Activity");
         return activity;
+    }
+
+    private static Counterparty counterparty(Company company, String name)
+    {
+        Counterparty counterparty = new Counterparty();
+        counterparty.setCompany(company);
+        counterparty.setDisplayName(name);
+        counterparty.setKind(CounterpartyKind.ORG);
+        return counterparty;
+    }
+
+    private static Merchant merchant(Company company, String name)
+    {
+        Merchant merchant = new Merchant();
+        merchant.setCompany(company);
+        merchant.setName(name);
+        return merchant;
     }
 
     private static Fund fund(Company company, String code)

@@ -9,7 +9,10 @@ import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Company;
+import org.nonprofitbookkeeping.model.Counterparty;
+import org.nonprofitbookkeeping.model.CounterpartyKind;
 import org.nonprofitbookkeeping.model.Fund;
+import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.FundType;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.persistence.Jpa;
@@ -52,6 +55,20 @@ class SclxCoreSnapshotQueryServiceTest
                     .map(SclxActivityExtension.Entry::code)
                     .toList());
             assertFalse(activities.get(1).active());
+            SclxPartyExtension.Data parties = SclxPartyExtension.data(document.extensions());
+            assertEquals(List.of("Alpha Former", "Alpha Vendor"), parties.counterparties().stream()
+                    .map(SclxPartyExtension.CounterpartyEntry::displayName)
+                    .sorted()
+                    .toList());
+            assertFalse(parties.counterparties().stream()
+                    .filter(entry -> entry.displayName().equals("Alpha Former"))
+                    .findFirst()
+                    .orElseThrow()
+                    .active());
+            assertEquals(List.of("Alpha Merchant", "Old Merchant"), parties.merchants().stream()
+                    .map(SclxPartyExtension.MerchantEntry::name)
+                    .sorted()
+                    .toList());
         }
     }
 
@@ -106,6 +123,13 @@ class SclxCoreSnapshotQueryServiceTest
             em.persist(activity(alpha, "EVENT", true));
             em.persist(activity(alpha, "OLD", false));
             em.persist(activity(beta, "FOREIGN", true));
+
+            em.persist(counterparty(alpha, "Alpha Vendor", true));
+            em.persist(counterparty(alpha, "Alpha Former", false));
+            em.persist(counterparty(beta, "Beta Vendor", true));
+            em.persist(merchant(alpha, "Alpha Merchant", true));
+            em.persist(merchant(alpha, "Old Merchant", false));
+            em.persist(merchant(beta, "Beta Merchant", true));
 
             em.getTransaction().commit();
         }
@@ -165,6 +189,25 @@ class SclxCoreSnapshotQueryServiceTest
         activity.setName(code + " Activity");
         activity.setActive(active);
         return activity;
+    }
+
+    private static Counterparty counterparty(Company company, String name, boolean active)
+    {
+        Counterparty counterparty = new Counterparty();
+        counterparty.setCompany(company);
+        counterparty.setDisplayName(name);
+        counterparty.setKind(CounterpartyKind.ORG);
+        counterparty.setActive(active);
+        return counterparty;
+    }
+
+    private static Merchant merchant(Company company, String name, boolean active)
+    {
+        Merchant merchant = new Merchant();
+        merchant.setCompany(company);
+        merchant.setName(name);
+        merchant.setActive(active);
+        return merchant;
     }
 
     private static Fund fund(Company company, String code, boolean active)

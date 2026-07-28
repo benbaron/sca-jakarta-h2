@@ -6,6 +6,8 @@ public record SclxExportCounts(
         long accounts,
         long funds,
         long activities,
+        long counterparties,
+        long merchants,
         long budgets,
         long budgetLines,
         long transactions,
@@ -16,12 +18,42 @@ public record SclxExportCounts(
 {
     public SclxExportCounts
     {
-        if (organizations < 0L || accounts < 0L || funds < 0L || activities < 0L || budgets < 0L
+        if (organizations < 0L || accounts < 0L || funds < 0L || activities < 0L
+                || counterparties < 0L || merchants < 0L || budgets < 0L
                 || budgetLines < 0L || transactions < 0L || transactionLines < 0L
                 || warnings < 0L || exclusions < 0L || totalEntities < 0L)
         {
             throw new IllegalArgumentException("SCLX export counts must not be negative");
         }
+    }
+
+    public SclxExportCounts(
+            long organizations,
+            long accounts,
+            long funds,
+            long activities,
+            long budgets,
+            long budgetLines,
+            long transactions,
+            long transactionLines,
+            long warnings,
+            long exclusions,
+            long totalEntities)
+    {
+        this(
+                organizations,
+                accounts,
+                funds,
+                activities,
+                0L,
+                0L,
+                budgets,
+                budgetLines,
+                transactions,
+                transactionLines,
+                warnings,
+                exclusions,
+                totalEntities);
     }
 
     public SclxExportCounts(
@@ -40,6 +72,8 @@ public record SclxExportCounts(
                 organizations,
                 accounts,
                 funds,
+                0L,
+                0L,
                 0L,
                 budgets,
                 budgetLines,
@@ -62,10 +96,15 @@ public record SclxExportCounts(
                 .mapToLong(transaction -> transaction.lines().size())
                 .sum();
         long activityCount = SclxActivityExtension.entries(document.extensions()).size();
+        SclxPartyExtension.Data partyData = SclxPartyExtension.data(document.extensions());
+        long counterpartyCount = partyData.counterparties().size();
+        long merchantCount = partyData.merchants().size();
         long entityCount = 1L
                 + document.chartOfAccounts().size()
                 + document.funds().size()
                 + activityCount
+                + counterpartyCount
+                + merchantCount
                 + document.budgets().size()
                 + budgetLineCount
                 + document.transactions().size()
@@ -75,6 +114,8 @@ public record SclxExportCounts(
                 document.chartOfAccounts().size(),
                 document.funds().size(),
                 activityCount,
+                counterpartyCount,
+                merchantCount,
                 document.budgets().size(),
                 budgetLineCount,
                 document.transactions().size(),

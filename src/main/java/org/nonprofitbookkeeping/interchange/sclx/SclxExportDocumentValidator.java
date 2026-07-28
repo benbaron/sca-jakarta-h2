@@ -16,10 +16,15 @@ public final class SclxExportDocumentValidator
         Set<String> accountIds = uniqueAccountIds(document.chartOfAccounts());
         Set<String> fundIds = uniqueFundIds(document.funds());
         Set<String> activityIds = SclxActivityExtension.uniqueIds(document.extensions());
+        SclxPartyExtension.Data partyData = SclxPartyExtension.data(document.extensions());
+        Set<String> counterpartyIds = SclxPartyExtension.uniqueCounterpartyIds(partyData);
+        Set<String> merchantIds = SclxPartyExtension.uniqueMerchantIds(partyData);
         validateAccountParents(document.chartOfAccounts(), accountIds);
         validateFundParents(document.funds(), fundIds);
         validateBudgets(document.budgets(), accountIds, fundIds);
-        validateTransactions(document.transactions(), accountIds, fundIds, activityIds);
+        Set<String> transactionLineIds = validateTransactions(
+                document.transactions(), accountIds, fundIds, activityIds, counterpartyIds);
+        validateTransactionLineMerchants(partyData, transactionLineIds, merchantIds);
     }
 
     private static Set<String> uniqueAccountIds(List<SclxExportDocument.Account> accounts)
@@ -79,8 +84,12 @@ public final class SclxExportDocumentValidator
         }
     }
 
-    private static void validateTransactions(List<SclxExportDocument.Transaction> transactions,
-            Set<String> accountIds, Set<String> fundIds, Set<String> activityIds)
+    private static Set<String> validateTransactions(
+            List<SclxExportDocument.Transaction> transactions,
+            Set<String> accountIds,
+            Set<String> fundIds,
+            Set<String> activityIds,
+            Set<String> counterpartyIds)
     {
         Set<String> transactionIds = new HashSet<>();
         Set<String> lineIds = new HashSet<>();
@@ -104,6 +113,8 @@ public final class SclxExportDocumentValidator
                         "transaction line " + line.lineId() + " fundId");
                 requireOptionalReference(line.activityId(), activityIds,
                         "transaction line " + line.lineId() + " activityId");
+                requireOptionalReference(line.counterpartyId(), counterpartyIds,
+                        "transaction line " + line.lineId() + " counterpartyId");
                 debits = debits.add(line.debit());
                 credits = credits.add(line.credit());
             }
@@ -119,6 +130,23 @@ public final class SclxExportDocumentValidator
         {
             requireOptionalReference(transaction.correctionOfTransactionId(), transactionIds,
                     "transaction " + transaction.transactionId() + " correctionOfTransactionId");
+        }
+        return lineIds;
+    }
+
+    private static void validateTransactionLineMerchants(
+            SclxPartyExtension.Data partyData,
+            Set<String> transactionLineIds,
+            Set<String> merchantIds)
+    {
+        Set<String> linkedLineIds = new HashSet<>();
+        for (SclxPartyExtension.TransactionLineMerchant link : partyData.transactionLineMerchants())
+        {
+            requireUnique(linkedLineIds, link.lineId(), "transaction-line merchant reference");
+            requireReference(link.lineId(), transactionLineIds,
+                    "transaction-line merchant lineId");
+            requireReference(link.merchantId(), merchantIds,
+                    "transaction-line merchant merchantId");
         }
     }
 

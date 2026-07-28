@@ -277,6 +277,8 @@ final class SclxExportCoordinator implements SclxExportActions
                 + "\n  Accounts: " + counts.accounts()
                 + "\n  Funds: " + counts.funds()
                 + "\n  Activities: " + counts.activities()
+                + "\n  Counterparties: " + counts.counterparties()
+                + "\n  Merchants: " + counts.merchants()
                 + "\n  Budgets: " + counts.budgets()
                 + "\n  Budget lines: " + counts.budgetLines()
                 + "\n  Transactions: " + counts.transactions()

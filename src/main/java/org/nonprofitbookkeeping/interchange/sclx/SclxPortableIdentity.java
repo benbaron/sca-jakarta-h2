@@ -38,6 +38,16 @@ public final class SclxPortableIdentity
         return identity("activity", companyCode, activityCode);
     }
 
+    public static String counterparty(String companyCode, String durableCounterpartyKey)
+    {
+        return identity("counterparty", companyCode, durableCounterpartyKey);
+    }
+
+    public static String merchant(String companyCode, String durableMerchantKey)
+    {
+        return identity("merchant", companyCode, durableMerchantKey);
+    }
+
     public static String budget(String companyCode, int fiscalYear, String version)
     {
         return identity("budget", companyCode, Integer.toString(fiscalYear), version);

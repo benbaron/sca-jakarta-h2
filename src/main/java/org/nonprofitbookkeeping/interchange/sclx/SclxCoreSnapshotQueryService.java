@@ -9,7 +9,9 @@ import org.nonprofitbookkeeping.model.BudgetLine;
 import org.nonprofitbookkeeping.model.BudgetPlan;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.Company;
+import org.nonprofitbookkeeping.model.Counterparty;
 import org.nonprofitbookkeeping.model.Fund;
+import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
 import org.nonprofitbookkeeping.persistence.Jpa;
@@ -78,6 +80,18 @@ public class SclxCoreSnapshotQueryService
                             Activity.class)
                     .setParameter("company", company)
                     .getResultList();
+            List<Counterparty> counterparties = em.createQuery(
+                            "select c from Counterparty c "
+                                    + "where c.company = :company order by c.portableId",
+                            Counterparty.class)
+                    .setParameter("company", company)
+                    .getResultList();
+            List<Merchant> merchants = em.createQuery(
+                            "select m from Merchant m "
+                                    + "where m.company = :company order by m.portableId",
+                            Merchant.class)
+                    .setParameter("company", company)
+                    .getResultList();
             List<BudgetPlan> budgetPlans = em.createQuery(
                             "select p from BudgetPlan p "
                                     + "where p.company = :company "
@@ -122,6 +136,8 @@ public class SclxCoreSnapshotQueryService
                     accounts,
                     funds,
                     activities,
+                    counterparties,
+                    merchants,
                     budgetPlans,
                     budgetLines,
                     transactions,
