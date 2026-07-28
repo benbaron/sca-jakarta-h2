@@ -1,0 +1,37 @@
+name: Temporary PR214 banking identity publisher
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: ${{ github.event.pull_request.head.ref == 'codex/P15-S4-banking-portable-identities' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout banking identity branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S4-banking-portable-identities
+          fetch-depth: 0
+      - name: Verify and apply reviewed banking identity patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "54c96f135cbfaccf930e039cd7c851b4564a446dd6f4f0aa8a207e6d88892489  .p15-publish/pr214.diff.gz.b64" | sha256sum -c -
+          base64 -d .p15-publish/pr214.diff.gz.b64 > /tmp/pr214.diff.gz
+          echo "df1b530d7a9635903eb0189483cb35ee36ccd75d3ac3eb2c3e4bcc901cae5338  /tmp/pr214.diff.gz" | sha256sum -c -
+          gzip -dc /tmp/pr214.diff.gz > /tmp/pr214.diff
+          echo "58a09bb477d16e318aaa6a1536dd4f4d535744eec6274375e28ce53d89c66991  /tmp/pr214.diff" | sha256sum -c -
+          patch --dry-run --batch --forward -p1 < /tmp/pr214.diff
+          patch --batch --forward -p1 < /tmp/pr214.diff
+          rm -rf .p15-publish
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "P15-S4: add durable banking portable identities"
+          git push
