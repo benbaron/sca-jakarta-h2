@@ -1,0 +1,262 @@
+MAVEN_EXIT_CODE=1
+
+01:07:40.942 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "5 - open item concurrency and fks"
+01:07:40.943 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "6 - workflow run records"
+01:07:40.944 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "7 - workflow run status constraints"
+01:07:40.945 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "8 - approval audit records"
+01:07:40.946 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "45 - add budget category"
+01:07:40.949 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "46 - company user admin foundation"
+01:07:40.951 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "47 - accounting period and audit"
+01:07:40.952 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "48 - transaction corrections"
+01:07:40.954 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "49 - txn reconciliation protection"
+01:07:40.955 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "50 - budget plan and line"
+01:07:40.956 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "51 - bank import batch and statement line"
+01:07:40.958 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "52 - bank and configured bank account"
+01:07:40.964 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "53 - bank import review all rows"
+01:07:40.965 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "54 - txn split cleared state"
+01:07:40.969 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "55 - fixed assets and depreciation"
+01:07:40.972 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "56 - inventory items and movements"
+01:07:40.974 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "57 - bank reconciliation workspace"
+01:07:40.976 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "58 - txn supplemental lines"
+01:07:40.977 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "59 - company ui preferences and state"
+01:07:40.978 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "60 - period close ranges"
+01:07:40.985 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "61 - company ownership and interchange identity"
+01:07:40.996 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "62 - txn portable identity"
+01:07:40.998 INFO  [main] o.f.core.internal.command.DbMigrate - Successfully applied 26 migrations to schema "public", now at version v62 (execution time 00:00.023s)
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.137 s -- in org.nonprofitbookkeeping.repository.JdbcJournalTransactionRepositoryTest
+[INFO] Running org.nonprofitbookkeeping.repository.JdbcPeriodCloseRunRepositoryTest
+01:07:41.005 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:h2:mem:repo_test_4c6906fd-b6ad-4d2c-a9db-f2c6f23e1ff8 (H2 2.2)
+01:07:41.008 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Schema history table "public"."flyway_schema_history" does not exist yet
+01:07:41.008 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 26 migrations (execution time 00:00.002s)
+01:07:41.009 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Creating Schema History table "public"."flyway_schema_history" ...
+01:07:41.010 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema "public": << Empty Schema >>
+01:07:41.012 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "1 - init"
+01:07:41.016 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "2 - schedule items"
+01:07:41.017 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "3 - subtype schedule defaults"
+01:07:41.018 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "4 - journal open item core"
+01:07:41.020 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "5 - open item concurrency and fks"
+01:07:41.021 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "6 - workflow run records"
+01:07:41.022 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "7 - workflow run status constraints"
+01:07:41.023 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "8 - approval audit records"
+01:07:41.024 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "45 - add budget category"
+01:07:41.027 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "46 - company user admin foundation"
+01:07:41.029 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "47 - accounting period and audit"
+01:07:41.030 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "48 - transaction corrections"
+01:07:41.033 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "49 - txn reconciliation protection"
+01:07:41.035 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "50 - budget plan and line"
+01:07:41.037 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "51 - bank import batch and statement line"
+01:07:41.040 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "52 - bank and configured bank account"
+01:07:41.046 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "53 - bank import review all rows"
+01:07:41.047 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "54 - txn split cleared state"
+01:07:41.051 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "55 - fixed assets and depreciation"
+01:07:41.053 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "56 - inventory items and movements"
+01:07:41.056 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "57 - bank reconciliation workspace"
+01:07:41.057 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "58 - txn supplemental lines"
+01:07:41.059 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "59 - company ui preferences and state"
+01:07:41.060 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "60 - period close ranges"
+01:07:41.066 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "61 - company ownership and interchange identity"
+01:07:41.079 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "62 - txn portable identity"
+01:07:41.081 INFO  [main] o.f.core.internal.command.DbMigrate - Successfully applied 26 migrations to schema "public", now at version v62 (execution time 00:00.026s)
+01:07:41.087 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:h2:mem:repo_test_a80bd62a-7e09-47dd-a4e4-776a0ec4635d (H2 2.2)
+01:07:41.090 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Schema history table "public"."flyway_schema_history" does not exist yet
+01:07:41.091 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 26 migrations (execution time 00:00.002s)
+01:07:41.091 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Creating Schema History table "public"."flyway_schema_history" ...
+01:07:41.092 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema "public": << Empty Schema >>
+01:07:41.094 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "1 - init"
+01:07:41.097 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "2 - schedule items"
+01:07:41.099 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "3 - subtype schedule defaults"
+01:07:41.100 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "4 - journal open item core"
+01:07:41.101 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "5 - open item concurrency and fks"
+01:07:41.103 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "6 - workflow run records"
+01:07:41.104 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "7 - workflow run status constraints"
+01:07:41.104 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "8 - approval audit records"
+01:07:41.105 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "45 - add budget category"
+01:07:41.109 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "46 - company user admin foundation"
+01:07:41.111 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "47 - accounting period and audit"
+01:07:41.112 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "48 - transaction corrections"
+01:07:41.116 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "49 - txn reconciliation protection"
+01:07:41.117 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "50 - budget plan and line"
+01:07:41.120 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "51 - bank import batch and statement line"
+01:07:41.123 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "52 - bank and configured bank account"
+01:07:41.127 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "53 - bank import review all rows"
+01:07:41.128 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "54 - txn split cleared state"
+01:07:41.131 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "55 - fixed assets and depreciation"
+01:07:41.132 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "56 - inventory items and movements"
+01:07:41.134 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "57 - bank reconciliation workspace"
+01:07:41.135 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "58 - txn supplemental lines"
+01:07:41.136 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "59 - company ui preferences and state"
+01:07:41.137 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "60 - period close ranges"
+01:07:41.156 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "61 - company ownership and interchange identity"
+01:07:41.165 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "62 - txn portable identity"
+01:07:41.167 INFO  [main] o.f.core.internal.command.DbMigrate - Successfully applied 26 migrations to schema "public", now at version v62 (execution time 00:00.020s)
+01:07:41.172 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:h2:mem:repo_test_2ebbf9bd-96fb-47bb-b919-6b0c9b6d167a (H2 2.2)
+01:07:41.176 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Schema history table "public"."flyway_schema_history" does not exist yet
+01:07:41.176 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 26 migrations (execution time 00:00.003s)
+01:07:41.177 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Creating Schema History table "public"."flyway_schema_history" ...
+01:07:41.177 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema "public": << Empty Schema >>
+01:07:41.180 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "1 - init"
+01:07:41.183 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "2 - schedule items"
+01:07:41.185 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "3 - subtype schedule defaults"
+01:07:41.186 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "4 - journal open item core"
+01:07:41.187 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "5 - open item concurrency and fks"
+01:07:41.189 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "6 - workflow run records"
+01:07:41.190 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "7 - workflow run status constraints"
+01:07:41.191 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "8 - approval audit records"
+01:07:41.191 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "45 - add budget category"
+01:07:41.195 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "46 - company user admin foundation"
+01:07:41.197 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "47 - accounting period and audit"
+01:07:41.198 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "48 - transaction corrections"
+01:07:41.201 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "49 - txn reconciliation protection"
+01:07:41.203 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "50 - budget plan and line"
+01:07:41.205 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "51 - bank import batch and statement line"
+01:07:41.208 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "52 - bank and configured bank account"
+01:07:41.214 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "53 - bank import review all rows"
+01:07:41.215 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "54 - txn split cleared state"
+01:07:41.219 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "55 - fixed assets and depreciation"
+01:07:41.221 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "56 - inventory items and movements"
+01:07:41.223 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "57 - bank reconciliation workspace"
+01:07:41.225 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "58 - txn supplemental lines"
+01:07:41.226 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "59 - company ui preferences and state"
+01:07:41.228 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "60 - period close ranges"
+01:07:41.234 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "61 - company ownership and interchange identity"
+01:07:41.247 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "62 - txn portable identity"
+01:07:41.249 INFO  [main] o.f.core.internal.command.DbMigrate - Successfully applied 26 migrations to schema "public", now at version v62 (execution time 00:00.026s)
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.250 s -- in org.nonprofitbookkeeping.repository.JdbcPeriodCloseRunRepositoryTest
+[INFO] Running org.nonprofitbookkeeping.report.ReportRequestTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in org.nonprofitbookkeeping.report.ReportRequestTest
+[INFO] Running org.nonprofitbookkeeping.report.ReportExecutionServiceIntegrationTest
+[NPBK] Preparing database: /tmp/junit8947595339931751023/report-execution
+[NPBK] Flyway migration starting.
+[NPBK] JDBC URL: jdbc:h2:file:/tmp/junit8947595339931751023/report-execution;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;INIT=CREATE SCHEMA IF NOT EXISTS PUBLIC\;SET SCHEMA PUBLIC
+01:07:41.268 INFO  [main] org.flywaydb.core.FlywayExecutor - Database: jdbc:h2:file:/tmp/junit8947595339931751023/report-execution (H2 2.2)
+01:07:41.272 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Schema history table "public"."flyway_schema_history" does not exist yet
+01:07:41.272 INFO  [main] o.f.core.internal.command.DbValidate - Successfully validated 26 migrations (execution time 00:00.002s)
+01:07:41.272 INFO  [main] o.f.c.i.s.JdbcTableSchemaHistory - Creating Schema History table "public"."flyway_schema_history" ...
+01:07:41.273 INFO  [main] o.f.core.internal.command.DbMigrate - Current version of schema "public": << Empty Schema >>
+01:07:41.275 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "1 - init"
+01:07:41.279 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "2 - schedule items"
+01:07:41.280 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "3 - subtype schedule defaults"
+01:07:41.282 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "4 - journal open item core"
+01:07:41.283 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "5 - open item concurrency and fks"
+01:07:41.284 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "6 - workflow run records"
+01:07:41.285 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "7 - workflow run status constraints"
+01:07:41.286 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "8 - approval audit records"
+01:07:41.287 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "45 - add budget category"
+01:07:41.290 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "46 - company user admin foundation"
+01:07:41.293 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "47 - accounting period and audit"
+01:07:41.294 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "48 - transaction corrections"
+01:07:41.298 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "49 - txn reconciliation protection"
+01:07:41.299 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "50 - budget plan and line"
+01:07:41.302 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "51 - bank import batch and statement line"
+01:07:41.305 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "52 - bank and configured bank account"
+01:07:41.310 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "53 - bank import review all rows"
+01:07:41.312 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "54 - txn split cleared state"
+01:07:41.316 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "55 - fixed assets and depreciation"
+01:07:41.318 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "56 - inventory items and movements"
+01:07:41.320 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "57 - bank reconciliation workspace"
+01:07:41.322 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "58 - txn supplemental lines"
+01:07:41.324 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "59 - company ui preferences and state"
+01:07:41.325 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "60 - period close ranges"
+01:07:41.332 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "61 - company ownership and interchange identity"
+01:07:41.344 INFO  [main] o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "62 - txn portable identity"
+01:07:41.346 INFO  [main] o.f.core.internal.command.DbMigrate - Successfully applied 26 migrations to schema "public", now at version v62 (execution time 00:00.026s)
+[NPBK] Flyway migration complete.
+[NPBK] Creating JPA EntityManagerFactory for selected database.
+01:07:41.402 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-93 - Starting...
+01:07:41.410 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-93 - Start completed.
+[NPBK] JPA EntityManagerFactory created for selected database.
+01:07:41.522 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-93 - Shutdown initiated...
+01:07:41.527 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-93 - Shutdown completed.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.273 s -- in org.nonprofitbookkeeping.report.ReportExecutionServiceIntegrationTest
+[INFO] Running org.nonprofitbookkeeping.feature.CapabilityCoverageCatalogTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in org.nonprofitbookkeeping.feature.CapabilityCoverageCatalogTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   SclxJsonSerializerTest.emitsByteIdenticalGovernedJsonWithFixedOrderingAndPlainDecimals:39 expected: <alpha> but was: <activities>
+[INFO] 
+[ERROR] Tests run: 430, Failures: 1, Errors: 0, Skipped: 28
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  57.358 s
+[INFO] Finished at: 2026-07-28T01:07:41Z
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.2.5:test (default-test) on project sca-ledger-h2-jakarta: There are test failures.
+[ERROR] 
+[ERROR] Please refer to /home/runner/work/sca-jakarta-h2/sca-jakarta-h2/target/surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+org.apache.maven.lifecycle.LifecycleExecutionException: Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.2.5:test (default-test) on project sca-ledger-h2-jakarta: There are test failures.
+
+Please refer to /home/runner/work/sca-jakarta-h2/sca-jakarta-h2/target/surefire-reports for the individual test results.
+Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+    at org.apache.maven.lifecycle.internal.MojoExecutor.doExecute2 (MojoExecutor.java:333)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.doExecute (MojoExecutor.java:316)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:212)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:174)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.access$000 (MojoExecutor.java:75)
+    at org.apache.maven.lifecycle.internal.MojoExecutor$1.run (MojoExecutor.java:162)
+    at org.apache.maven.plugin.DefaultMojosExecutionStrategy.execute (DefaultMojosExecutionStrategy.java:39)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:159)
+    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:105)
+    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:73)
+    at org.apache.maven.lifecycle.internal.builder.singlethreaded.SingleThreadedBuilder.build (SingleThreadedBuilder.java:53)
+    at org.apache.maven.lifecycle.internal.LifecycleStarter.execute (LifecycleStarter.java:118)
+    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:261)
+    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:173)
+    at org.apache.maven.DefaultMaven.execute (DefaultMaven.java:101)
+    at org.apache.maven.cli.MavenCli.execute (MavenCli.java:919)
+    at org.apache.maven.cli.MavenCli.doMain (MavenCli.java:285)
+    at org.apache.maven.cli.MavenCli.main (MavenCli.java:207)
+    at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0 (Native Method)
+    at jdk.internal.reflect.NativeMethodAccessorImpl.invoke (NativeMethodAccessorImpl.java:77)
+    at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke (DelegatingMethodAccessorImpl.java:43)
+    at java.lang.reflect.Method.invoke (Method.java:569)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced (Launcher.java:255)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.launch (Launcher.java:201)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode (Launcher.java:362)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.main (Launcher.java:314)
+Caused by: org.apache.maven.plugin.MojoFailureException: There are test failures.
+
+Please refer to /home/runner/work/sca-jakarta-h2/sca-jakarta-h2/target/surefire-reports for the individual test results.
+Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+    at org.apache.maven.plugin.surefire.SurefireHelper.throwException (SurefireHelper.java:247)
+    at org.apache.maven.plugin.surefire.SurefireHelper.reportExecution (SurefireHelper.java:159)
+    at org.apache.maven.plugin.surefire.SurefirePlugin.handleSummary (SurefirePlugin.java:542)
+    at org.apache.maven.plugin.surefire.AbstractSurefireMojo.executeAfterPreconditionsChecked (AbstractSurefireMojo.java:1102)
+    at org.apache.maven.plugin.surefire.AbstractSurefireMojo.execute (AbstractSurefireMojo.java:910)
+    at org.apache.maven.plugin.DefaultBuildPluginManager.executeMojo (DefaultBuildPluginManager.java:126)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.doExecute2 (MojoExecutor.java:328)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.doExecute (MojoExecutor.java:316)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:212)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:174)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.access$000 (MojoExecutor.java:75)
+    at org.apache.maven.lifecycle.internal.MojoExecutor$1.run (MojoExecutor.java:162)
+    at org.apache.maven.plugin.DefaultMojosExecutionStrategy.execute (DefaultMojosExecutionStrategy.java:39)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:159)
+    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:105)
+    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:73)
+    at org.apache.maven.lifecycle.internal.builder.singlethreaded.SingleThreadedBuilder.build (SingleThreadedBuilder.java:53)
+    at org.apache.maven.lifecycle.internal.LifecycleStarter.execute (LifecycleStarter.java:118)
+    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:261)
+    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:173)
+    at org.apache.maven.DefaultMaven.execute (DefaultMaven.java:101)
+    at org.apache.maven.cli.MavenCli.execute (MavenCli.java:919)
+    at org.apache.maven.cli.MavenCli.doMain (MavenCli.java:285)
+    at org.apache.maven.cli.MavenCli.main (MavenCli.java:207)
+    at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0 (Native Method)
+    at jdk.internal.reflect.NativeMethodAccessorImpl.invoke (NativeMethodAccessorImpl.java:77)
+    at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke (DelegatingMethodAccessorImpl.java:43)
+    at java.lang.reflect.Method.invoke (Method.java:569)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced (Launcher.java:255)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.launch (Launcher.java:201)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode (Launcher.java:362)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.main (Launcher.java:314)
+[ERROR] 
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
