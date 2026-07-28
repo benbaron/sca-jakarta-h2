@@ -176,7 +176,7 @@ class SclxExportCoordinatorTest
                 "ALPHA",
                 1234L,
                 "a".repeat(64),
-                new SclxExportCounts(1, 4, 2, 1, 3, 2, 3, 5, 10, 2, 2, 1, 31),
+                new SclxExportCounts(1, 4, 2, 1, 3, 2, 1, 3, 5, 10, 2, 1, 32),
                 List.of(new InterchangeValidationMessage(
                         InterchangeMessageSeverity.WARNING,
                         "SCLX_DEFERRED_SECTION",
