@@ -1,0 +1,63 @@
+name: Temporary PR214 plan reconciliation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    if: ${{ github.event.pull_request.head.ref == 'codex/P15-S4-banking-portable-identities' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout banking identity branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S4-banking-portable-identities
+          fetch-depth: 0
+      - name: Reconcile P15-S4 execution ledger
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('doc/PLAN.md')
+          text = path.read_text()
+          replacements = [
+              ('plan_version: 89', 'plan_version: 90'),
+              ('active_branch: codex/P15-S4-sclx-supplemental-details', 'active_branch: codex/P15-S4-banking-portable-identities'),
+              ('active_pull_request: 213', 'active_pull_request: 214'),
+              ('active_head: "264942af84ea74c8882a374cec573d94fef617b5"',
+               'active_head: "db5c4a8c3c4271dbb60a526e95a8ce77be6edd41"'),
+              ('next_action: "Validate and merge PR #213, then map selected-company banking and reconciliation facts into SCLX on a fresh P15-S4 branch."',
+               'next_action: "Validate and merge PR #214, then map selected-company banking configuration, reviewed statement/import facts, and reconciliation facts into SCLX on a fresh P15-S4 branch."'),
+              ('This revision records selected-company party export merged through PR #212 and supplemental transaction-detail export in draft PR #213.',
+               'This revision records supplemental transaction-detail export merged through PR #213 and durable banking/reconciliation portable identities in draft PR #214.'),
+              ('Status: VERIFYING on branch `codex/P15-S4-sclx-supplemental-details` in draft PR #213.',
+               'Status: VERIFYING on branch `codex/P15-S4-banking-portable-identities` in draft PR #214.'),
+              ('Current tested implementation head: `264942af84ea74c8882a374cec573d94fef617b5`',
+               'Current tested implementation head: `db5c4a8c3c4271dbb60a526e95a8ce77be6edd41`'),
+              ('- PR #213: selected-company supplemental transaction-detail export, deterministic transaction-local identities, complete persisted field preservation, strict semantic/reference validation, counts, and desktop acceptance updates.',
+               '- PR #213: selected-company supplemental transaction-detail export, deterministic transaction-local identities, complete persisted field preservation, strict semantic/reference validation, counts, and desktop acceptance updates.\n- PR #214: durable UUID portable identities for banks, configured company bank accounts, import batches, statement lines, import issues, reconciliation sessions, and reconciliation matches, with V64 backfill/default/non-null/uniqueness enforcement and focused migration/entity coverage.'),
+              ('- PRs #198 through #212 are merged.', '- PRs #198 through #213 are merged.'),
+              ('- Clean PR #213 implementation run `30331172014` passed `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance on artifact-free head `264942af84ea74c8882a374cec573d94fef617b5`.',
+               '- Clean PR #213 implementation run `30331172014` passed `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance on artifact-free head `264942af84ea74c8882a374cec573d94fef617b5`.\n- Final PR #213 run `30331442228` passed on artifact-free, plan-inclusive head `6ee989d4a6030ea674c5ebe572eccc9dd0ed25fa`; PR #213 merged at `5716d5472e8af07e04fc0c261af805ba15915f5b`.\n- PR #214 entity mappings and focused tests passed bounded Java 17 syntax compilation before publication.\n- Clean PR #214 implementation run `30402166342` passed `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance on artifact-free head `db5c4a8c3c4271dbb60a526e95a8ce77be6edd41`.'),
+              ('- Validate and merge PR #213, then start a fresh P15-S4 branch to map selected-company banking and reconciliation facts; complete owner desktop acceptance before P15-S4 is marked done.',
+               '- Validate and merge PR #214, then start a fresh P15-S4 branch to map selected-company banking configuration, reviewed statement/import facts, and reconciliation facts; complete owner desktop acceptance before P15-S4 is marked done.')
+          ]
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'Expected exactly one occurrence, found {count}: {old[:120]}')
+              text = text.replace(old, new)
+          path.write_text(text)
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add doc/PLAN.md
+          git commit -m "Reconcile P15-S4 banking identity plan"
+          git push
