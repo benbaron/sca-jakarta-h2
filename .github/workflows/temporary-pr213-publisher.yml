@@ -27,8 +27,8 @@ jobs:
           echo "6d215c81add9ec1914a79f772b2bda1a63418353dcc9e309adce9802d4804cb9  /tmp/pr213.diff.gz" | sha256sum -c -
           gzip -dc /tmp/pr213.diff.gz > /tmp/pr213.diff
           echo "d598072980adb15ded9a6dcbe9860868360f5567a319ebfc9ee048870de35409  /tmp/pr213.diff" | sha256sum -c -
-          git apply --check /tmp/pr213.diff
-          git apply /tmp/pr213.diff
+          patch --dry-run --batch --forward -p1 < /tmp/pr213.diff
+          patch --batch --forward -p1 < /tmp/pr213.diff
           rm -rf .p15-publish
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
