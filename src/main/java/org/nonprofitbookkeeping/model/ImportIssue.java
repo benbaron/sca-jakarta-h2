@@ -14,6 +14,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.UUID;
 
 /** Durable validation or review issue for an import batch or statement line. */
 @Entity
@@ -30,6 +31,9 @@ public class ImportIssue
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "portable_id", nullable = false, unique = true, updatable = false)
+    private UUID portableId = UUID.randomUUID();
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "batch_id", nullable = false)
@@ -56,6 +60,7 @@ public class ImportIssue
     private Instant createdAt = Instant.now();
 
     public Long getId() { return id; }
+    public UUID getPortableId() { return portableId; }
     public BankImportBatch getBatch() { return batch; }
     public void setBatch(BankImportBatch batch) { this.batch = batch; }
     public BankStatementLine getStatementLine() { return statementLine; }
