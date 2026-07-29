@@ -47,12 +47,15 @@ class SclxFileExportServiceTest
         assertEquals(0, result.counts().counterparties());
         assertEquals(0, result.counts().merchants());
         assertEquals(1, result.counts().supplementalDetails());
+        assertEquals(1, result.counts().fixedAssets());
+        assertEquals(1, result.counts().depreciationRuns());
         assertFalse(result.deferredSections().contains(SclxExportSection.ACTIVITIES));
         assertFalse(result.deferredSections().contains(SclxExportSection.COUNTERPARTIES));
         assertFalse(result.deferredSections().contains(SclxExportSection.SUPPLEMENTAL_DETAILS));
         assertFalse(result.deferredSections().contains(SclxExportSection.BANK_CONFIGURATION));
         assertFalse(result.deferredSections().contains(SclxExportSection.BANK_STATEMENT_FACTS));
         assertFalse(result.deferredSections().contains(SclxExportSection.RECONCILIATION));
+        assertFalse(result.deferredSections().contains(SclxExportSection.FIXED_ASSETS));
         assertEquals(result.deferredSections().size(), result.counts().warnings());
         assertEquals(result.excludedSections().size(), result.counts().exclusions());
         assertFalse(result.messages().isEmpty());

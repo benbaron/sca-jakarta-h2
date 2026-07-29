@@ -29,6 +29,11 @@ public final class SclxExportDocumentValidator
         validateSupplementalDetails(
                 SclxSupplementalDetailExtension.entries(document.extensions()),
                 transactionReferences.transactionIds());
+        validateFixedAssets(
+                SclxFixedAssetsExtension.data(document.extensions()),
+                accountIds,
+                fundIds,
+                transactionReferences.transactionIds());
         SclxBankConfigurationExtension.Data bankConfiguration =
                 SclxBankConfigurationExtension.data(document.extensions());
         Set<String> bankIds = SclxBankConfigurationExtension.uniqueBankIds(bankConfiguration);
@@ -182,6 +187,40 @@ public final class SclxExportDocumentValidator
                     detail.transactionId(),
                     transactionIds,
                     "supplemental detail " + detail.supplementalDetailId() + " transactionId");
+        }
+    }
+
+    private static void validateFixedAssets(
+            SclxFixedAssetsExtension.Data data,
+            Set<String> accountIds,
+            Set<String> fundIds,
+            Set<String> transactionIds)
+    {
+        Set<String> fixedAssetIds = SclxFixedAssetsExtension.uniqueAssetIds(data);
+        SclxFixedAssetsExtension.uniqueDepreciationRunIds(data);
+        for (SclxFixedAssetsExtension.AssetEntry asset : data.assets())
+        {
+            requireReference(
+                    asset.assetAccountId(), accountIds,
+                    "fixed asset " + asset.fixedAssetId() + " assetAccountId");
+            requireReference(
+                    asset.accumulatedDepreciationAccountId(), accountIds,
+                    "fixed asset " + asset.fixedAssetId() + " accumulatedDepreciationAccountId");
+            requireReference(
+                    asset.depreciationExpenseAccountId(), accountIds,
+                    "fixed asset " + asset.fixedAssetId() + " depreciationExpenseAccountId");
+            requireReference(
+                    asset.fundId(), fundIds,
+                    "fixed asset " + asset.fixedAssetId() + " fundId");
+        }
+        for (SclxFixedAssetsExtension.DepreciationRunEntry run : data.depreciationRuns())
+        {
+            requireReference(
+                    run.fixedAssetId(), fixedAssetIds,
+                    "depreciation run " + run.depreciationRunId() + " fixedAssetId");
+            requireReference(
+                    run.transactionId(), transactionIds,
+                    "depreciation run " + run.depreciationRunId() + " transactionId");
         }
     }
 

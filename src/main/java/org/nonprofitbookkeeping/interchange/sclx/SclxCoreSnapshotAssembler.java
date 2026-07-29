@@ -198,6 +198,39 @@ public final class SclxCoreSnapshotAssembler
             SclxBankingSnapshot banking,
             Instant exportedAt)
     {
+        return assemble(
+                company,
+                accounts,
+                funds,
+                activities,
+                counterparties,
+                merchants,
+                budgetPlans,
+                budgetLines,
+                transactions,
+                transactionLines,
+                supplementalDetails,
+                banking,
+                SclxFixedAssetSnapshot.empty(),
+                exportedAt);
+    }
+
+    public SclxExportDocument assemble(
+            Company company,
+            List<Account> accounts,
+            List<Fund> funds,
+            List<Activity> activities,
+            List<Counterparty> counterparties,
+            List<Merchant> merchants,
+            List<BudgetPlan> budgetPlans,
+            List<BudgetLine> budgetLines,
+            List<Txn> transactions,
+            List<TxnSplit> transactionLines,
+            List<TxnSupplementalLine> supplementalDetails,
+            SclxBankingSnapshot banking,
+            SclxFixedAssetSnapshot fixedAssets,
+            Instant exportedAt)
+    {
         Objects.requireNonNull(company, "company");
         Objects.requireNonNull(accounts, "accounts");
         Objects.requireNonNull(funds, "funds");
@@ -210,6 +243,7 @@ public final class SclxCoreSnapshotAssembler
         Objects.requireNonNull(transactionLines, "transactionLines");
         Objects.requireNonNull(supplementalDetails, "supplementalDetails");
         Objects.requireNonNull(banking, "banking");
+        Objects.requireNonNull(fixedAssets, "fixedAssets");
         Objects.requireNonNull(exportedAt, "exportedAt");
 
         ChartOfAccounts activeChart = Objects.requireNonNull(
@@ -375,6 +409,14 @@ public final class SclxCoreSnapshotAssembler
                 transactionLines,
                 exportedLineIds);
 
+        Map<String, Object> exportedFixedAssets = new SclxFixedAssetSnapshotAssembler().assemble(
+                companyCode,
+                company,
+                activeChart,
+                fixedAssets,
+                includedTransactions,
+                exportedTransactionIds);
+
         Map<String, Object> extensionValues = new LinkedHashMap<>();
         extensionValues.put("activeChartName", activeChart.getName());
         extensionValues.put("activeChartVersion", activeChart.getVersion());
@@ -387,6 +429,7 @@ public final class SclxCoreSnapshotAssembler
         extensionValues.put(SclxBankConfigurationExtension.KEY, exportedBanking.bankConfiguration());
         extensionValues.put(SclxBankStatementFactsExtension.KEY, exportedBanking.bankStatementFacts());
         extensionValues.put(SclxReconciliationExtension.KEY, exportedBanking.reconciliation());
+        extensionValues.put(SclxFixedAssetsExtension.KEY, exportedFixedAssets);
 
         SclxExportDocument document = SclxExportDocument.version13(
                 exportedAt,

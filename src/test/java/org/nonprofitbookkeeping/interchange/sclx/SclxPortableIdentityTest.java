@@ -33,6 +33,10 @@ class SclxPortableIdentityTest
                 SclxPortableIdentity.reconciliationSession("CAER-GALEN", "88888888-8888-8888-8888-888888888888"));
         assertEquals("reconciliation-match:CAER-GALEN:99999999-9999-9999-9999-999999999999",
                 SclxPortableIdentity.reconciliationMatch("CAER-GALEN", "99999999-9999-9999-9999-999999999999"));
+        assertEquals("fixed-asset:CAER-GALEN:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+                SclxPortableIdentity.fixedAsset("CAER-GALEN", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+        assertEquals("depreciation-run:CAER-GALEN:bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+                SclxPortableIdentity.depreciationRun("CAER-GALEN", "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"));
         assertEquals("budget:CAER-GALEN:2026:ADOPTED",
                 SclxPortableIdentity.budget("CAER-GALEN", 2026, "ADOPTED"));
         String budgetId = SclxPortableIdentity.budget("CAER-GALEN", 2026, "ADOPTED");

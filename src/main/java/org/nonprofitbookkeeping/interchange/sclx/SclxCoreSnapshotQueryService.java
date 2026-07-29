@@ -141,6 +141,7 @@ public class SclxCoreSnapshotQueryService
                     .setParameter("company", company)
                     .getResultList();
             SclxBankingSnapshot banking = new SclxBankingSnapshotQuery().query(em, company);
+            SclxFixedAssetSnapshot fixedAssets = new SclxFixedAssetSnapshotQuery().query(em, company);
 
             return assembler.assemble(
                     company,
@@ -155,6 +156,7 @@ public class SclxCoreSnapshotQueryService
                     transactionLines,
                     supplementalDetails,
                     banking,
+                    fixedAssets,
                     exportedAt);
         }
     }

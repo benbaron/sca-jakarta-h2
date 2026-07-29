@@ -37,7 +37,7 @@ class SclxJsonSerializerTest
         assertEquals("0", root.path("transactions").get(0).path("lines").get(0).path("debit").textValue());
         assertEquals("25", root.path("transactions").get(0).path("lines").get(0).path("credit").textValue());
         assertEquals(List.of("activities", "alpha", "bankConfiguration", "bankStatementFacts",
-                        "reconciliation", "supplementalDetails", "zeta"),
+                        "fixedAssets", "reconciliation", "supplementalDetails", "zeta"),
                 iterable(root.path("extensions").path("scaJakartaH2").fieldNames()));
         JsonNode activity = root.path("extensions").path("scaJakartaH2").path("activities").get(0);
         assertEquals("activity:TEST:EVENT", activity.path("activityId").textValue());
@@ -48,6 +48,14 @@ class SclxJsonSerializerTest
         assertEquals(transactionId(), supplemental.path("transactionId").textValue());
         assertEquals("125.5", supplemental.path("amount").textValue());
         assertEquals("2026-08-15", supplemental.path("dueDate").textValue());
+        JsonNode fixedAsset = root.path("extensions").path("scaJakartaH2")
+                .path("fixedAssets").path("assets").get(0);
+        assertEquals("1250", fixedAsset.path("acquisitionCost").textValue());
+        assertEquals("2026-01-15", fixedAsset.path("acquisitionDate").textValue());
+        JsonNode depreciationRun = root.path("extensions").path("scaJakartaH2")
+                .path("fixedAssets").path("depreciationRuns").get(0);
+        assertEquals("20", depreciationRun.path("depreciationAmount").textValue());
+        assertEquals(transactionId(), depreciationRun.path("transactionId").textValue());
         assertEquals("2026-07-27T02:00:00Z", root.path("exportedAt").textValue());
         assertTrue(json.endsWith("\n"));
         assertFalse(json.contains("\r"));
@@ -100,6 +108,22 @@ class SclxJsonSerializerTest
                 SclxBankConfigurationExtension.value(List.of(), List.of()));
         extensionValues.put(SclxBankStatementFactsExtension.KEY,
                 SclxBankStatementFactsExtension.value(List.of(), List.of(), List.of(), List.of()));
+        String fixedAssetId = SclxPortableIdentity.fixedAsset(
+                "TEST", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        extensionValues.put(SclxFixedAssetsExtension.KEY, SclxFixedAssetsExtension.value(
+                List.of(SclxFixedAssetsExtension.assetEntry(
+                        fixedAssetId, cashId, cashId, expenseId, fundId,
+                        "Storage Pavilion", LocalDate.of(2026, 1, 15),
+                        new BigDecimal("1250.0000"), new BigDecimal("50.0000"), 60,
+                        "STRAIGHT_LINE", new BigDecimal("100.0000"), "ACTIVE",
+                        "Fictional test asset", Instant.parse("2026-01-15T12:00:00Z"),
+                        Instant.parse("2026-07-31T12:00:00Z"))),
+                List.of(SclxFixedAssetsExtension.depreciationRunEntry(
+                        SclxPortableIdentity.depreciationRun(
+                                "TEST", "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+                        fixedAssetId, LocalDate.of(2026, 2, 28),
+                        new BigDecimal("20.0000"), transactionId,
+                        "February depreciation", Instant.parse("2026-02-28T12:00:00Z")))));
         extensionValues.put(SclxReconciliationExtension.KEY,
                 SclxReconciliationExtension.value(List.of(), List.of()));
         extensionValues.put(SclxSupplementalDetailExtension.KEY, List.of(
