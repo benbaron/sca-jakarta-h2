@@ -1,0 +1,28 @@
+name: Publish P15-S4 fixed assets mapping
+on:
+  push:
+    branches:
+      - codex/P15-S4-fixed-assets-sclx-export
+permissions:
+  contents: write
+jobs:
+  publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S4-fixed-assets-sclx-export
+          fetch-depth: 0
+      - name: Apply reviewed patch
+        shell: bash
+        run: |
+          cat .p15-publish/chunk-* | base64 -d | gzip -d > /tmp/fixed-assets.patch
+          echo '9230d47b367414e099b30b6becf2ed88e5361fd6dcb20d8e78ac85cb227dc00c  /tmp/fixed-assets.patch' | sha256sum -c -
+          patch -p1 < /tmp/fixed-assets.patch
+          rm -rf .p15-publish .github/workflows/publish-p15-s4-fixed-assets.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m 'P15-S4: export fixed assets and depreciation runs'
+          git push origin HEAD:codex/P15-S4-fixed-assets-sclx-export
