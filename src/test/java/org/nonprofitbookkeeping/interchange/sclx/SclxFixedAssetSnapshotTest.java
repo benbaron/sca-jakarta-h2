@@ -42,7 +42,7 @@ class SclxFixedAssetSnapshotTest
 
         SclxFixedAssetsExtension.AssetEntry asset = data.assets().get(0);
         assertEquals(SclxPortableIdentity.fixedAsset(
-                "ALPHA", fixture.asset().getPortableId().toString()), asset.fixedAssetId());
+                "ALPHA", fixture.asset().getPortableId().toString()), asset.assetId());
         assertEquals(SclxPortableIdentity.account("ALPHA", "1500"), asset.assetAccountId());
         assertEquals(SclxPortableIdentity.account("ALPHA", "1590"),
                 asset.accumulatedDepreciationAccountId());
@@ -57,9 +57,9 @@ class SclxFixedAssetSnapshotTest
         assertEquals("ACTIVE", asset.status());
 
         SclxFixedAssetsExtension.DepreciationRunEntry run = data.depreciationRuns().get(0);
-        assertEquals(SclxPortableIdentity.depreciationRun(
+        assertEquals(SclxPortableIdentity.fixedAssetDepreciationRun(
                 "ALPHA", fixture.run().getPortableId().toString()), run.depreciationRunId());
-        assertEquals(asset.fixedAssetId(), run.fixedAssetId());
+        assertEquals(asset.assetId(), run.assetId());
         assertEquals(document.transactions().get(0).transactionId(), run.transactionId());
         assertEquals(new BigDecimal("20.0000"), run.depreciationAmount());
 
@@ -90,7 +90,8 @@ class SclxFixedAssetSnapshotTest
                 List.of(),
                 List.of(),
                 SclxBankingSnapshot.empty(),
-                new SclxFixedAssetSnapshot(List.of(fixture.asset()), List.of(fixture.run())),
+                List.of(fixture.asset()),
+                List.of(fixture.run()),
                 Instant.EPOCH));
     }
 
@@ -105,24 +106,24 @@ class SclxFixedAssetSnapshotTest
         values.put(SclxFixedAssetsExtension.KEY, SclxFixedAssetsExtension.value(
                 List.of(
                         SclxFixedAssetsExtension.assetEntry(
-                                data.assets().get(0).fixedAssetId(),
-                                data.assets().get(0).assetAccountId(),
-                                data.assets().get(0).accumulatedDepreciationAccountId(),
-                                data.assets().get(0).depreciationExpenseAccountId(),
-                                data.assets().get(0).fundId(),
+                                data.assets().get(0).assetId(),
                                 "First", LocalDate.of(2026, 1, 1),
                                 new BigDecimal("100.0000"), BigDecimal.ZERO, 36,
                                 "STRAIGHT_LINE", BigDecimal.ZERO, "ACTIVE", null,
-                                Instant.EPOCH, Instant.EPOCH),
-                        SclxFixedAssetsExtension.assetEntry(
-                                data.assets().get(0).fixedAssetId(),
                                 data.assets().get(0).assetAccountId(),
                                 data.assets().get(0).accumulatedDepreciationAccountId(),
                                 data.assets().get(0).depreciationExpenseAccountId(),
                                 data.assets().get(0).fundId(),
+                                Instant.EPOCH, Instant.EPOCH),
+                        SclxFixedAssetsExtension.assetEntry(
+                                data.assets().get(0).assetId(),
                                 "Second", LocalDate.of(2026, 1, 2),
                                 new BigDecimal("200.0000"), BigDecimal.ZERO, 36,
                                 "STRAIGHT_LINE", BigDecimal.ZERO, "ACTIVE", null,
+                                data.assets().get(0).assetAccountId(),
+                                data.assets().get(0).accumulatedDepreciationAccountId(),
+                                data.assets().get(0).depreciationExpenseAccountId(),
+                                data.assets().get(0).fundId(),
                                 Instant.EPOCH, Instant.EPOCH)),
                 List.of()));
         assertThrows(IllegalArgumentException.class,
@@ -157,9 +158,8 @@ class SclxFixedAssetSnapshotTest
                 fixture.splits(),
                 List.of(),
                 SclxBankingSnapshot.empty(),
-                new SclxFixedAssetSnapshot(
-                        List.of(fixture.asset()),
-                        includeRun ? List.of(fixture.run()) : List.of()),
+                List.of(fixture.asset()),
+                includeRun ? List.of(fixture.run()) : List.of(),
                 Instant.parse("2026-03-01T00:00:00Z"));
     }
 

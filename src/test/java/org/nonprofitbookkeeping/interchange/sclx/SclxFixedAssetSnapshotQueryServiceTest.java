@@ -47,8 +47,8 @@ class SclxFixedAssetSnapshotQueryServiceTest
                     data.assets().stream().map(SclxFixedAssetsExtension.AssetEntry::name).toList());
             assertEquals("INACTIVE", data.assets().get(0).status());
             assertEquals(1, data.depreciationRuns().size());
-            assertEquals(data.assets().get(0).fixedAssetId(),
-                    data.depreciationRuns().get(0).fixedAssetId());
+            assertEquals(data.assets().get(0).assetId(),
+                    data.depreciationRuns().get(0).assetId());
             assertEquals(document.transactions().get(0).transactionId(),
                     data.depreciationRuns().get(0).transactionId());
 
