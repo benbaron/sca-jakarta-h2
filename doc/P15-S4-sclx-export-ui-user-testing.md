@@ -20,3 +20,10 @@ The production **File** menu now contains **Export Active Company to SCLX…**. 
 ## Expected current limitation
 
 The result must visibly list the governed sections that remain deferred in P15-S4. **Activities**, **Counterparties**, and **Supplemental details** must not appear in that deferred list because activities, parties, their supported transaction references, and canonical supplemental transaction rows are now exported. Other deferred records are not silently omitted or claimed as exported. This acceptance covers the production route and result presentation, not completion of those later mappings or SCLX import.
+
+## Banking portable-identity prerequisite
+
+This migration-only unit introduces no new menu item or visible banking export section. After applying the migration,
+open an existing company and confirm the application and current SCLX export still operate normally. Banking
+configuration, statement-review, and reconciliation sections must continue to appear as deferred until the following
+mapping unit is merged; this prerequisite must not make an empty banking section appear implemented.
