@@ -59,7 +59,7 @@ public final class SclxFixedAssetsExtension
         entry.put("depreciationMethod", depreciationMethod);
         entry.put("openingAccumulatedDepreciation", openingAccumulatedDepreciation);
         entry.put("status", status);
-        entry.put("notes", notes);
+        putOptional(entry, "notes", notes);
         entry.put("assetAccountId", assetAccountId);
         entry.put("accumulatedDepreciationAccountId", accumulatedDepreciationAccountId);
         entry.put("depreciationExpenseAccountId", depreciationExpenseAccountId);
@@ -84,9 +84,17 @@ public final class SclxFixedAssetsExtension
         entry.put("runDate", runDate);
         entry.put("depreciationAmount", depreciationAmount);
         entry.put("transactionId", transactionId);
-        entry.put("notes", notes);
+        putOptional(entry, "notes", notes);
         entry.put("createdAt", createdAt);
         return Map.copyOf(entry);
+    }
+
+    private static void putOptional(Map<String, Object> entry, String key, Object value)
+    {
+        if (value != null)
+        {
+            entry.put(key, value);
+        }
     }
 
     public static Data data(SclxExportDocument.Extensions extensions)
