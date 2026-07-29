@@ -9,6 +9,7 @@ import org.nonprofitbookkeeping.model.CompanyBankAccount;
 import org.nonprofitbookkeeping.model.ImportIssue;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -164,7 +165,20 @@ final class SclxBankingSnapshotQuery
         {
             return null;
         }
-        return value instanceof UUID uuid ? uuid : UUID.fromString(value.toString());
+        if (value instanceof UUID uuid)
+        {
+            return uuid;
+        }
+        if (value instanceof byte[] bytes)
+        {
+            if (bytes.length != 16)
+            {
+                throw new IllegalArgumentException("UUID byte array must contain exactly 16 bytes");
+            }
+            ByteBuffer buffer = ByteBuffer.wrap(bytes);
+            return new UUID(buffer.getLong(), buffer.getLong());
+        }
+        return UUID.fromString(value.toString());
     }
 
     private static LocalDate date(Object value, String field)
