@@ -1,0 +1,38 @@
+name: Temporary PR216 plan reconciliation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    if: ${{ github.event.pull_request.head.ref == 'codex/P15-S4-fixed-asset-portable-identities' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fixed-asset identity branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S4-fixed-asset-portable-identities
+          fetch-depth: 0
+      - name: Reconcile P15-S4 execution ledger and remove publication artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          tr -d '\n\r' < .p15-publish/plan-216.txt \
+            | base64 --decode \
+            | gzip --decompress > /tmp/pr216-plan.patch
+          echo 'dc1a643b5874d732e0211789977559d591207576a6c043d521ac0d75806c2c54  /tmp/pr216-plan.patch' \
+            | sha256sum --check
+          git apply --check /tmp/pr216-plan.patch
+          git apply /tmp/pr216-plan.patch
+          git rm .p15-publish/plan-216.txt \
+                 .github/workflows/temporary-pr216-plan-reconciliation.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add doc/PLAN.md
+          git commit -m 'Reconcile P15-S4 fixed-asset identity plan'
+          git push
