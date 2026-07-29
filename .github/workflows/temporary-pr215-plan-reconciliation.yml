@@ -1,0 +1,64 @@
+name: Temporary PR215 plan reconciliation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    if: ${{ github.event.pull_request.head.ref == 'codex/P15-S4-sclx-banking-reconciliation' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout banking export branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S4-sclx-banking-reconciliation
+          fetch-depth: 0
+      - name: Reconcile P15-S4 execution ledger
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('doc/PLAN.md')
+          text = path.read_text()
+          replacements = [
+              ('plan_version: 90', 'plan_version: 91'),
+              ('active_branch: codex/P15-S4-banking-portable-identities',
+               'active_branch: codex/P15-S4-sclx-banking-reconciliation'),
+              ('active_pull_request: 214', 'active_pull_request: 215'),
+              ('active_head: "db5c4a8c3c4271dbb60a526e95a8ce77be6edd41"',
+               'active_head: "59f80e1d6e474a47b3292a64b34c6813034dc74c"'),
+              ('next_action: "Validate and merge PR #214, then map selected-company banking configuration, reviewed statement/import facts, and reconciliation facts into SCLX on a fresh P15-S4 branch."',
+               'next_action: "Validate and merge PR #215, then map selected-company fixed assets and depreciation into SCLX on a fresh P15-S4 branch."'),
+              ('This revision records supplemental transaction-detail export merged through PR #213 and durable banking/reconciliation portable identities in draft PR #214.',
+               'This revision records durable banking/reconciliation portable identities merged through PR #214 and selected-company banking/reconciliation export in draft PR #215.'),
+              ('Status: VERIFYING on branch `codex/P15-S4-banking-portable-identities` in draft PR #214.',
+               'Status: VERIFYING on branch `codex/P15-S4-sclx-banking-reconciliation` in draft PR #215.'),
+              ('Current tested implementation head: `db5c4a8c3c4271dbb60a526e95a8ce77be6edd41`',
+               'Current tested implementation head: `59f80e1d6e474a47b3292a64b34c6813034dc74c`'),
+              ('- PR #214: durable UUID portable identities for banks, configured company bank accounts, import batches, statement lines, import issues, reconciliation sessions, and reconciliation matches, with V64 backfill/default/non-null/uniqueness enforcement and focused migration/entity coverage.',
+               '- PR #214: durable UUID portable identities for banks, configured company bank accounts, import batches, statement lines, import issues, reconciliation sessions, and reconciliation matches, with V64 backfill/default/non-null/uniqueness enforcement and focused migration/entity coverage.\n- PR #215: selected-company bank configuration, reviewed import/statement provenance, transaction-line clearance facts, reconciliation sessions/matches, strict ownership/reference validation, deterministic ordering, counts, and desktop acceptance updates.'),
+              ('- PRs #198 through #213 are merged.', '- PRs #198 through #214 are merged.'),
+              ('- Clean PR #214 implementation run `30402166342` passed `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance on artifact-free head `db5c4a8c3c4271dbb60a526e95a8ce77be6edd41`.',
+               '- Clean PR #214 implementation run `30402166342` passed `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance on artifact-free head `db5c4a8c3c4271dbb60a526e95a8ce77be6edd41`.\n- Final PR #214 run `30402481760` passed on artifact-free, plan-inclusive head `dfdae4509016ece2ed77146699651cb4af1fbd16`; PR #214 merged at `906deaee9b37e889012faf7c3c5cc44ec3e8cd6b`.\n- PR #215 production and focused test sources passed bounded Java 17 syntax compilation before publication; an assembler/validator runtime smoke test also passed.\n- Initial clean PR #215 run `30416169502` passed 446 of 447 tests but exposed that H2 returns native-query UUID columns as 16-byte arrays rather than `UUID` objects.\n- The banking query conversion was corrected to accept exact 16-byte UUID values while retaining native `UUID` and text handling.\n- Clean corrected PR #215 run `30416441389` passed `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance on head `59f80e1d6e474a47b3292a64b34c6813034dc74c`.'),
+              ('- Validate and merge PR #214, then start a fresh P15-S4 branch to map selected-company banking configuration, reviewed statement/import facts, and reconciliation facts; complete owner desktop acceptance before P15-S4 is marked done.',
+               '- Validate and merge PR #215, then start a fresh P15-S4 branch to map selected-company fixed assets and depreciation; complete owner desktop acceptance before P15-S4 is marked done.')
+          ]
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'Expected exactly one occurrence, found {count}: {old[:120]}')
+              text = text.replace(old, new)
+          path.write_text(text)
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add doc/PLAN.md
+          git commit -m "Reconcile P15-S4 banking export plan"
+          git push
