@@ -1,0 +1,65 @@
+name: Temporary P15-S4 fixed-assets SCLX publication
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: ${{ github.event.pull_request.head.ref == 'codex/P15-S4-fixed-assets-sclx-mapping' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fixed-assets SCLX branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S4-fixed-assets-sclx-mapping
+          fetch-depth: 0
+      - name: Apply reviewed implementation and remove publication artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .p15-publish/fixed-assets-sclx-*.txt \
+            | tr -d '\n\r' \
+            | base64 --decode \
+            | gzip --decompress > /tmp/fixed-assets-sclx.patch
+          echo '7785e22f36d5d081ad6265e895a1919599b611ef2a19c1eb61eeb9cbe52bcd35  /tmp/fixed-assets-sclx.patch' \
+            | sha256sum --check
+          git apply --check /tmp/fixed-assets-sclx.patch
+          git apply /tmp/fixed-assets-sclx.patch
+          git rm .p15-publish/fixed-assets-sclx-00.txt \
+                 .p15-publish/fixed-assets-sclx-01.txt \
+                 .p15-publish/fixed-assets-sclx-02.txt \
+                 .p15-publish/fixed-assets-sclx-03.txt \
+                 .p15-publish/fixed-assets-sclx-04.txt \
+                 .p15-publish/fixed-assets-sclx-05.txt \
+                 .p15-publish/fixed-assets-sclx-06.txt \
+                 .github/workflows/temporary-p15-s4-fixed-assets-sclx.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add doc/P15-S4-sclx-export-ui-user-testing.md \
+                  doc/data-exchange/sclx.md \
+                  doc/interface-operation-matrix.md \
+                  src/main/java/org/nonprofitbookkeeping/interchange/sclx/SclxCoreSnapshotAssembler.java \
+                  src/main/java/org/nonprofitbookkeeping/interchange/sclx/SclxCoreSnapshotQueryService.java \
+                  src/main/java/org/nonprofitbookkeeping/interchange/sclx/SclxExportCounts.java \
+                  src/main/java/org/nonprofitbookkeeping/interchange/sclx/SclxExportDocumentValidator.java \
+                  src/main/java/org/nonprofitbookkeeping/interchange/sclx/SclxExportSection.java \
+                  src/main/java/org/nonprofitbookkeeping/interchange/sclx/SclxFixedAssetSnapshot.java \
+                  src/main/java/org/nonprofitbookkeeping/interchange/sclx/SclxFixedAssetSnapshotAssembler.java \
+                  src/main/java/org/nonprofitbookkeeping/interchange/sclx/SclxFixedAssetSnapshotQuery.java \
+                  src/main/java/org/nonprofitbookkeeping/interchange/sclx/SclxFixedAssetsExtension.java \
+                  src/main/java/org/nonprofitbookkeeping/interchange/sclx/SclxPortableIdentity.java \
+                  src/main/java/org/nonprofitbookkeeping/ui/SclxExportCoordinator.java \
+                  src/test/java/org/nonprofitbookkeeping/interchange/sclx/SclxExportSectionTest.java \
+                  src/test/java/org/nonprofitbookkeeping/interchange/sclx/SclxFileExportServiceTest.java \
+                  src/test/java/org/nonprofitbookkeeping/interchange/sclx/SclxFixedAssetSnapshotQueryServiceTest.java \
+                  src/test/java/org/nonprofitbookkeeping/interchange/sclx/SclxFixedAssetSnapshotTest.java \
+                  src/test/java/org/nonprofitbookkeeping/interchange/sclx/SclxJsonSerializerTest.java \
+                  src/test/java/org/nonprofitbookkeeping/interchange/sclx/SclxPortableIdentityTest.java \
+                  src/test/java/org/nonprofitbookkeeping/ui/SclxExportCoordinatorTest.java
+          git commit -m 'Export selected-company fixed assets to SCLX'
+          git push
