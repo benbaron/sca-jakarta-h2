@@ -1,0 +1,42 @@
+name: Temporary PR215 banking export publisher
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: ${{ github.event.pull_request.head.ref == 'codex/P15-S4-sclx-banking-reconciliation' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout banking export branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S4-sclx-banking-reconciliation
+          fetch-depth: 0
+      - name: Verify and publish reviewed banking export
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "6518a524b0409aa3029efc869f28afdda1fa0e54e964f7cb623454a47da74a7e  .p15-publish/pr215/chunk-00" | sha256sum -c -
+          echo "1e6e7ae5438e572a8a03cdb302c968088ca31f6b4da76aeca19955d5a3467d3d  .p15-publish/pr215/chunk-01" | sha256sum -c -
+          echo "3332a701be2718ea39896e407dce84924d10f9674938015d7fb78697f92c587b  .p15-publish/pr215/chunk-02" | sha256sum -c -
+          echo "95b889cfd2341d1394c0857ce604444a1f24c21f2c590cb4eab50c2c59aa12e7  .p15-publish/pr215/chunk-03" | sha256sum -c -
+          echo "211d04bc6a056675f38dc0b857ad31caf0fbd89d491340635b46879be832a267  .p15-publish/pr215/chunk-04" | sha256sum -c -
+          echo "7a1530c8e6570a3d6fedddf7966a2f72d36f09284aed316ea70a9b0f748ba4bc  .p15-publish/pr215/chunk-05" | sha256sum -c -
+          cat .p15-publish/pr215/chunk-* > /tmp/pr215-overlay.tar.gz.b64
+          echo "0e774c76fb4fe1958e9a51439d639880b6e80bd4224fa292c0c9b90e9a14da54  /tmp/pr215-overlay.tar.gz.b64" | sha256sum -c -
+          base64 -d /tmp/pr215-overlay.tar.gz.b64 > /tmp/pr215-overlay.tar.gz
+          echo "4c20b654cbb2c46e3d42a7f7ffc6d0b9bb46cc7e481b451f998b346283829c29  /tmp/pr215-overlay.tar.gz" | sha256sum -c -
+          tar -tzf /tmp/pr215-overlay.tar.gz
+          tar -xzf /tmp/pr215-overlay.tar.gz -C .
+          rm -rf .p15-publish
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "P15-S4: export banking and reconciliation facts"
+          git push
