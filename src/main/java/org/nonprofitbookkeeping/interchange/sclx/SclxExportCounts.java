@@ -41,6 +41,38 @@ public record SclxExportCounts(
         }
     }
 
+    /** Backward-compatible constructor used by banking-complete summaries before fixed assets. */
+    public SclxExportCounts(
+            long organizations,
+            long accounts,
+            long funds,
+            long activities,
+            long counterparties,
+            long merchants,
+            long budgets,
+            long budgetLines,
+            long transactions,
+            long transactionLines,
+            long supplementalDetails,
+            long banks,
+            long bankAccounts,
+            long importBatches,
+            long statementLines,
+            long importIssues,
+            long reconciliationSessions,
+            long reconciliationMatches,
+            long warnings,
+            long exclusions,
+            long totalEntities)
+    {
+        this(
+                organizations, accounts, funds, activities, counterparties, merchants,
+                budgets, budgetLines, transactions, transactionLines, supplementalDetails,
+                banks, bankAccounts, importBatches, statementLines, importIssues,
+                reconciliationSessions, reconciliationMatches, 0L, 0L,
+                warnings, exclusions, totalEntities);
+    }
+
     /** Backward-compatible constructor used by pre-banking completion summaries. */
     public SclxExportCounts(
             long organizations,
