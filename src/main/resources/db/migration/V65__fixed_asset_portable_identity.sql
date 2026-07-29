@@ -1,5 +1,5 @@
 -- P15-S4: give fixed assets and completed depreciation runs durable, database-independent portable identities.
--- Mutable names, account/fund labels, linked transaction IDs, and local numeric IDs are not stable portable keys.
+-- Mutable names, account/fund labels, linked canonical transaction identity, and local numeric IDs are not stable portable keys.
 -- IF NOT EXISTS keeps complete-schema Flyway-history recovery nondestructive.
 
 ALTER TABLE fixed_asset ADD COLUMN IF NOT EXISTS portable_id UUID;
