@@ -20,6 +20,8 @@ public record SclxExportCounts(
         long importIssues,
         long reconciliationSessions,
         long reconciliationMatches,
+        long fixedAssets,
+        long depreciationRuns,
         long warnings,
         long exclusions,
         long totalEntities)
@@ -32,10 +34,43 @@ public record SclxExportCounts(
                 || supplementalDetails < 0L || banks < 0L || bankAccounts < 0L
                 || importBatches < 0L || statementLines < 0L || importIssues < 0L
                 || reconciliationSessions < 0L || reconciliationMatches < 0L
+                || fixedAssets < 0L || depreciationRuns < 0L
                 || warnings < 0L || exclusions < 0L || totalEntities < 0L)
         {
             throw new IllegalArgumentException("SCLX export counts must not be negative");
         }
+    }
+
+    /** Backward-compatible constructor used before fixed-assets mapping was included. */
+    public SclxExportCounts(
+            long organizations,
+            long accounts,
+            long funds,
+            long activities,
+            long counterparties,
+            long merchants,
+            long budgets,
+            long budgetLines,
+            long transactions,
+            long transactionLines,
+            long supplementalDetails,
+            long banks,
+            long bankAccounts,
+            long importBatches,
+            long statementLines,
+            long importIssues,
+            long reconciliationSessions,
+            long reconciliationMatches,
+            long warnings,
+            long exclusions,
+            long totalEntities)
+    {
+        this(
+                organizations, accounts, funds, activities, counterparties, merchants,
+                budgets, budgetLines, transactions, transactionLines, supplementalDetails,
+                banks, bankAccounts, importBatches, statementLines, importIssues,
+                reconciliationSessions, reconciliationMatches, 0L, 0L,
+                warnings, exclusions, totalEntities);
     }
 
     /** Backward-compatible constructor used by pre-banking completion summaries. */
@@ -58,7 +93,7 @@ public record SclxExportCounts(
         this(
                 organizations, accounts, funds, activities, counterparties, merchants,
                 budgets, budgetLines, transactions, transactionLines, supplementalDetails,
-                0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                 warnings, exclusions, totalEntities);
     }
 
@@ -142,6 +177,8 @@ public record SclxExportCounts(
                 SclxBankStatementFactsExtension.data(document.extensions());
         SclxReconciliationExtension.Data reconciliation =
                 SclxReconciliationExtension.data(document.extensions());
+        SclxFixedAssetsExtension.Data fixedAssetData =
+                SclxFixedAssetsExtension.data(document.extensions());
 
         long bankCount = bankConfiguration.banks().size();
         long bankAccountCount = bankConfiguration.accounts().size();
@@ -150,6 +187,8 @@ public record SclxExportCounts(
         long importIssueCount = bankStatementFacts.issues().size();
         long reconciliationSessionCount = reconciliation.sessions().size();
         long reconciliationMatchCount = reconciliation.matches().size();
+        long fixedAssetCount = fixedAssetData.assets().size();
+        long depreciationRunCount = fixedAssetData.depreciationRuns().size();
         long entityCount = 1L
                 + document.chartOfAccounts().size()
                 + document.funds().size()
@@ -167,7 +206,9 @@ public record SclxExportCounts(
                 + statementLineCount
                 + importIssueCount
                 + reconciliationSessionCount
-                + reconciliationMatchCount;
+                + reconciliationMatchCount
+                + fixedAssetCount
+                + depreciationRunCount;
         return new SclxExportCounts(
                 1L,
                 document.chartOfAccounts().size(),
@@ -187,6 +228,8 @@ public record SclxExportCounts(
                 importIssueCount,
                 reconciliationSessionCount,
                 reconciliationMatchCount,
+                fixedAssetCount,
+                depreciationRunCount,
                 warningCount,
                 exclusionCount,
                 entityCount);

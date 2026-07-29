@@ -178,15 +178,15 @@ class SclxExportCoordinatorTest
                 "a".repeat(64),
                 new SclxExportCounts(
                         1, 4, 2, 1, 3, 2, 1, 3, 5, 10, 4,
-                        2, 2, 1, 3, 1, 1, 2,
-                        2, 1, 48),
+                        2, 2, 1, 3, 1, 1, 2, 1, 2,
+                        2, 1, 51),
                 List.of(new InterchangeValidationMessage(
                         InterchangeMessageSeverity.WARNING,
                         "SCLX_DEFERRED_SECTION",
-                        "extensions.scaJakartaH2.fixedAssets",
-                        "Fixed assets are deferred.",
+                        "extensions.scaJakartaH2.inventory",
+                        "Inventory is deferred.",
                         false)),
-                List.of(SclxExportSection.FIXED_ASSETS),
+                List.of(SclxExportSection.INVENTORY),
                 List.of(SclxExportSection.UI_STATE));
 
         String summary = SclxExportCoordinator.resultSummary(result);
@@ -205,9 +205,11 @@ class SclxExportCoordinatorTest
         assertTrue(summary.contains("Import issues: 1"));
         assertTrue(summary.contains("Reconciliation sessions: 1"));
         assertTrue(summary.contains("Reconciliation matches: 2"));
+        assertTrue(summary.contains("Fixed assets: 1"));
+        assertTrue(summary.contains("Depreciation runs: 2"));
         assertTrue(summary.contains("Warnings: 2"));
-        assertTrue(summary.contains("Fixed assets are deferred."));
-        assertTrue(summary.contains("extensions.scaJakartaH2.fixedAssets"));
+        assertTrue(summary.contains("Inventory is deferred."));
+        assertTrue(summary.contains("extensions.scaJakartaH2.inventory"));
         assertTrue(summary.contains("UI_STATE"));
         assertTrue(summary.contains("a".repeat(64)));
     }
