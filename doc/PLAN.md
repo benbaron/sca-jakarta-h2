@@ -1,12 +1,12 @@
 ---
-plan_version: 91
+plan_version: 92
 active_phase: P15
 active_slice: P15-S4
 active_status: VERIFYING
-active_branch: codex/P15-S4-sclx-banking-reconciliation
-active_pull_request: 215
-active_head: "59f80e1d6e474a47b3292a64b34c6813034dc74c"
-next_action: "Validate and merge PR #215, then map selected-company fixed assets and depreciation into SCLX on a fresh P15-S4 branch."
+active_branch: codex/P15-S4-fixed-asset-portable-identities
+active_pull_request: 216
+active_head: "ef081a93975a3ba68c094d890322b876bd1df57e"
+next_action: "Validate and merge PR #216, then implement selected-company fixed-assets and depreciation SCLX mapping on a fresh P15-S4 branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Validate and merge PR #215, then map selected-company fixed assets
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records durable banking/reconciliation portable identities merged through PR #214 and selected-company banking/reconciliation export in draft PR #215.
+This revision records selected-company banking/reconciliation export merged through PR #215 and durable fixed-asset/depreciation-run portable identities in draft PR #216.
 
 ## 2. Status values
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S2; P15-S0 and P15-S1 DONE  
+**Status:** IN_PROGRESS at P15-S4; P15-S0 through P15-S3 DONE
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -915,9 +915,9 @@ Next exact action:
 
 ## P15-S4 — SCLX model, parser, and deterministic active-company export
 
-Status: VERIFYING on branch `codex/P15-S4-sclx-banking-reconciliation` in draft PR #215.
+Status: VERIFYING on branch `codex/P15-S4-fixed-asset-portable-identities` in draft PR #216.
 
-Current tested implementation head: `59f80e1d6e474a47b3292a64b34c6813034dc74c`
+Current tested implementation head: `ef081a93975a3ba68c094d890322b876bd1df57e`
 
 Incremental completed deliverables:
 
@@ -939,10 +939,11 @@ Incremental completed deliverables:
 - PR #213: selected-company supplemental transaction-detail export, deterministic transaction-local identities, complete persisted field preservation, strict semantic/reference validation, counts, and desktop acceptance updates.
 - PR #214: durable UUID portable identities for banks, configured company bank accounts, import batches, statement lines, import issues, reconciliation sessions, and reconciliation matches, with V64 backfill/default/non-null/uniqueness enforcement and focused migration/entity coverage.
 - PR #215: selected-company bank configuration, reviewed import/statement provenance, transaction-line clearance facts, reconciliation sessions/matches, strict ownership/reference validation, deterministic ordering, counts, and desktop acceptance updates.
+- PR #216: intrinsic UUID portable identities for fixed assets and completed depreciation runs, with V65 backfill/default/non-null/uniqueness enforcement, focused entity/migration/recovery coverage, identity-contract documentation, and no fixed-asset SCLX mapping.
 
 Validation status:
 
-- PRs #198 through #214 are merged.
+- PRs #198 through #215 are merged.
 - Maven PR Tests run `30221018029` passed on PR #204 head `2663adf380b47a94776234ac62247480f38712da`.
 - Maven PR Tests run `30221508687` passed on PR #205 implementation head `413e0712004e5c2b8035a88d34c61eaa1463832b`.
 - Final Maven PR Tests run `30221662744` passed on PR #205 plan-inclusive head `f5b114fd1922934fb63cd826a6ad7a91789f8faa`.
@@ -981,6 +982,10 @@ Validation status:
 - Initial clean PR #215 run `30416169502` passed 446 of 447 tests but exposed that H2 returns native-query UUID columns as 16-byte arrays rather than `UUID` objects.
 - The banking query conversion was corrected to accept exact 16-byte UUID values while retaining native `UUID` and text handling.
 - Clean corrected PR #215 run `30416441389` passed `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance on head `59f80e1d6e474a47b3292a64b34c6813034dc74c`.
+- Final PR #215 run `30416682585` passed on artifact-free implementation head `33a576ce923eea886dce8d23ca048b704546f7a0`; PR #215 merged into `main` at `f952e6cdfabc256488b6934556525baab6a8f9e7`.
+- PR #216 entity mappings and focused tests passed bounded Java 17 syntax compilation before publication. That review caught and corrected an illegal Java escape in the migration-test JDBC URL before any repository commit.
+- Temporary publication run `30424653524` applied the reviewed SHA-256-verified patch and removed all payload chunks and its workflow from the branch head. The resulting bot-pushed recursive Maven run `30424668038` was marked `action_required` without starting jobs, so a normal repository commit retriggered validation.
+- Clean PR #216 implementation run `30424725757` passed `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance on artifact-free head `ef081a93975a3ba68c094d890322b876bd1df57e`.
 
 Planned deliverables:
 
@@ -1000,7 +1005,7 @@ Acceptance:
 
 Next exact action:
 
-- Validate and merge PR #215, then start a fresh P15-S4 branch to map selected-company fixed assets and depreciation; complete owner desktop acceptance before P15-S4 is marked done.
+- Validate and merge PR #216, then start a fresh P15-S4 branch for the separate selected-company fixed-assets/depreciation SCLX mapping unit; complete owner desktop acceptance before P15-S4 is marked done.
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
