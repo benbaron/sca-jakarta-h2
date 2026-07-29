@@ -112,14 +112,15 @@ class SclxJsonSerializerTest
                 "TEST", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         extensionValues.put(SclxFixedAssetsExtension.KEY, SclxFixedAssetsExtension.value(
                 List.of(SclxFixedAssetsExtension.assetEntry(
-                        fixedAssetId, cashId, cashId, expenseId, fundId,
+                        fixedAssetId,
                         "Storage Pavilion", LocalDate.of(2026, 1, 15),
                         new BigDecimal("1250.0000"), new BigDecimal("50.0000"), 60,
                         "STRAIGHT_LINE", new BigDecimal("100.0000"), "ACTIVE",
-                        "Fictional test asset", Instant.parse("2026-01-15T12:00:00Z"),
+                        "Fictional test asset", cashId, cashId, expenseId, fundId,
+                        Instant.parse("2026-01-15T12:00:00Z"),
                         Instant.parse("2026-07-31T12:00:00Z"))),
                 List.of(SclxFixedAssetsExtension.depreciationRunEntry(
-                        SclxPortableIdentity.depreciationRun(
+                        SclxPortableIdentity.fixedAssetDepreciationRun(
                                 "TEST", "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
                         fixedAssetId, LocalDate.of(2026, 2, 28),
                         new BigDecimal("20.0000"), transactionId,
