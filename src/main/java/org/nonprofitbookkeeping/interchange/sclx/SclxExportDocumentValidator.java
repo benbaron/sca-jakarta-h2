@@ -46,6 +46,11 @@ public final class SclxExportDocumentValidator
                 bankAccountIds,
                 bankingReferences.statementLineIds(),
                 transactionReferences.transactionLineIds());
+        validateFixedAssets(
+                SclxFixedAssetsExtension.data(document.extensions()),
+                accountIds,
+                fundIds,
+                transactionReferences.transactionIds());
     }
 
     private static Set<String> uniqueAccountIds(List<SclxExportDocument.Account> accounts)
@@ -182,6 +187,48 @@ public final class SclxExportDocumentValidator
                     detail.transactionId(),
                     transactionIds,
                     "supplemental detail " + detail.supplementalDetailId() + " transactionId");
+        }
+    }
+
+    private static void validateFixedAssets(
+            SclxFixedAssetsExtension.Data data,
+            Set<String> accountIds,
+            Set<String> fundIds,
+            Set<String> transactionIds)
+    {
+        Set<String> assetIds = SclxFixedAssetsExtension.uniqueAssetIds(data);
+        SclxFixedAssetsExtension.requireUniqueRunIds(data);
+        for (SclxFixedAssetsExtension.AssetEntry asset : data.assets())
+        {
+            requireReference(asset.assetAccountId(), accountIds,
+                    "fixed asset " + asset.assetId() + " assetAccountId");
+            requireReference(asset.accumulatedDepreciationAccountId(), accountIds,
+                    "fixed asset " + asset.assetId() + " accumulatedDepreciationAccountId");
+            requireReference(asset.depreciationExpenseAccountId(), accountIds,
+                    "fixed asset " + asset.assetId() + " depreciationExpenseAccountId");
+            requireReference(asset.fundId(), fundIds,
+                    "fixed asset " + asset.assetId() + " fundId");
+            if (asset.acquisitionCost().signum() < 0 || asset.salvageValue().signum() < 0
+                    || asset.openingAccumulatedDepreciation().signum() < 0)
+            {
+                throw new IllegalArgumentException("fixed asset amounts must not be negative: " + asset.assetId());
+            }
+            if (asset.usefulLifeMonths() < 1)
+            {
+                throw new IllegalArgumentException("fixed asset usefulLifeMonths must be positive: " + asset.assetId());
+            }
+        }
+        for (SclxFixedAssetsExtension.DepreciationRunEntry run : data.depreciationRuns())
+        {
+            requireReference(run.assetId(), assetIds,
+                    "depreciation run " + run.depreciationRunId() + " assetId");
+            requireReference(run.transactionId(), transactionIds,
+                    "depreciation run " + run.depreciationRunId() + " transactionId");
+            if (run.depreciationAmount().signum() <= 0)
+            {
+                throw new IllegalArgumentException(
+                        "depreciation run amount must be positive: " + run.depreciationRunId());
+            }
         }
     }
 

@@ -11,6 +11,8 @@ import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.Counterparty;
 import org.nonprofitbookkeeping.model.Fund;
+import org.nonprofitbookkeeping.model.FixedAsset;
+import org.nonprofitbookkeeping.model.FixedAssetDepreciationRun;
 import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
@@ -141,6 +143,24 @@ public class SclxCoreSnapshotQueryService
                     .setParameter("company", company)
                     .getResultList();
             SclxBankingSnapshot banking = new SclxBankingSnapshotQuery().query(em, company);
+            List<FixedAsset> fixedAssets = em.createQuery(
+                            "select a from FixedAsset a "
+                                    + "join fetch a.assetAccount aa join fetch aa.chart "
+                                    + "join fetch a.accumulatedDepreciationAccount ada join fetch ada.chart "
+                                    + "join fetch a.depreciationExpenseAccount dea join fetch dea.chart "
+                                    + "join fetch a.fund "
+                                    + "where a.company = :company order by a.portableId",
+                            FixedAsset.class)
+                    .setParameter("company", company)
+                    .getResultList();
+            List<FixedAssetDepreciationRun> depreciationRuns = em.createQuery(
+                            "select r from FixedAssetDepreciationRun r "
+                                    + "join fetch r.fixedAsset a "
+                                    + "join fetch r.transaction t "
+                                    + "where a.company = :company order by r.portableId",
+                            FixedAssetDepreciationRun.class)
+                    .setParameter("company", company)
+                    .getResultList();
 
             return assembler.assemble(
                     company,
@@ -155,6 +175,8 @@ public class SclxCoreSnapshotQueryService
                     transactionLines,
                     supplementalDetails,
                     banking,
+                    fixedAssets,
+                    depreciationRuns,
                     exportedAt);
         }
     }

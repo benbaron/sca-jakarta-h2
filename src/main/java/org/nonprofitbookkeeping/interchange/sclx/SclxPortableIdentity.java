@@ -83,6 +83,16 @@ public final class SclxPortableIdentity
         return identity("reconciliation-match", companyCode, durableMatchKey);
     }
 
+    public static String fixedAsset(String companyCode, String durableAssetKey)
+    {
+        return identity("fixed-asset", companyCode, durableAssetKey);
+    }
+
+    public static String fixedAssetDepreciationRun(String companyCode, String durableRunKey)
+    {
+        return identity("fixed-asset-depreciation-run", companyCode, durableRunKey);
+    }
+
     public static String budget(String companyCode, int fiscalYear, String version)
     {
         return identity("budget", companyCode, Integer.toString(fiscalYear), version);

@@ -291,6 +291,8 @@ final class SclxExportCoordinator implements SclxExportActions
                 + "\n  Import issues: " + counts.importIssues()
                 + "\n  Reconciliation sessions: " + counts.reconciliationSessions()
                 + "\n  Reconciliation matches: " + counts.reconciliationMatches()
+                + "\n  Fixed assets: " + counts.fixedAssets()
+                + "\n  Depreciation runs: " + counts.depreciationRuns()
                 + "\n  Total entities: " + counts.totalEntities()
                 + "\n\nWarnings: " + counts.warnings()
                 + "\nValidation messages:" + messages

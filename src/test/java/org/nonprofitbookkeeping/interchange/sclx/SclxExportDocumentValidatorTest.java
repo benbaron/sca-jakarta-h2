@@ -98,6 +98,49 @@ class SclxExportDocumentValidatorTest
                 Map.of(SclxPartyExtension.KEY, partyValue))));
     }
 
+
+    @Test
+    void acceptsResolvedFixedAssetAndDepreciationRunReferences()
+    {
+        Map<String, Object> fixedAssets = SclxFixedAssetsExtension.value(
+                List.of(SclxFixedAssetsExtension.assetEntry(
+                        "fixed-asset:TEST:A1", "Laptop", LocalDate.of(2026, 1, 2),
+                        new BigDecimal("1200.00"), new BigDecimal("100.00"), 36,
+                        "STRAIGHT_LINE", BigDecimal.ZERO, "ACTIVE", "Office asset",
+                        "account:1010", "account:1010", "account:6100", "fund-general",
+                        Instant.parse("2026-01-02T12:00:00Z"), Instant.parse("2026-01-02T12:00:00Z"))),
+                List.of(SclxFixedAssetsExtension.depreciationRunEntry(
+                        "fixed-asset-depreciation-run:TEST:R1", "fixed-asset:TEST:A1",
+                        LocalDate.of(2026, 2, 28), new BigDecimal("30.56"),
+                        "transaction:TX-1", "February", Instant.parse("2026-02-28T12:00:00Z"))));
+
+        assertDoesNotThrow(() -> validator.validate(document(
+                List.of(line("line-1", "acct-expense", "fund-general", "25.00", "0"),
+                        line("line-2", "acct-cash", "fund-general", "0", "25.00")),
+                Map.of(SclxFixedAssetsExtension.KEY, fixedAssets))));
+    }
+
+    @Test
+    void rejectsDepreciationRunWithoutExportedTransaction()
+    {
+        Map<String, Object> fixedAssets = SclxFixedAssetsExtension.value(
+                List.of(SclxFixedAssetsExtension.assetEntry(
+                        "fixed-asset:TEST:A1", "Laptop", LocalDate.of(2026, 1, 2),
+                        new BigDecimal("1200.00"), BigDecimal.ZERO, 36,
+                        "STRAIGHT_LINE", BigDecimal.ZERO, "ACTIVE", null,
+                        "account:1010", "account:1010", "account:6100", "fund-general",
+                        Instant.parse("2026-01-02T12:00:00Z"), Instant.parse("2026-01-02T12:00:00Z"))),
+                List.of(SclxFixedAssetsExtension.depreciationRunEntry(
+                        "fixed-asset-depreciation-run:TEST:R1", "fixed-asset:TEST:A1",
+                        LocalDate.of(2026, 2, 28), new BigDecimal("30.56"),
+                        "transaction:MISSING", null, Instant.parse("2026-02-28T12:00:00Z"))));
+
+        assertThrows(IllegalArgumentException.class, () -> validator.validate(document(
+                List.of(line("line-1", "acct-expense", "fund-general", "25.00", "0"),
+                        line("line-2", "acct-cash", "fund-general", "0", "25.00")),
+                Map.of(SclxFixedAssetsExtension.KEY, fixedAssets))));
+    }
+
     @Test
     void rejectsUnbalancedTransaction()
     {
