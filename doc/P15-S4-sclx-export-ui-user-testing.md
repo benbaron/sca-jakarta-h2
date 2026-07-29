@@ -24,3 +24,7 @@ The result must visibly list the governed sections that remain deferred in P15-S
 ## Banking and reconciliation acceptance
 
 Open a company that has at least one configured bank account, a reviewed statement batch, a statement line or import issue, and a reconciliation session. Export SCLX and confirm that the completion counts agree with the visible banking data. A company with no banking history must still contain the three governed extension objects with empty arrays rather than reporting those sections as deferred. Switch companies and repeat to verify strict company isolation.
+
+## Fixed-asset portable-identity prerequisite
+
+This migration-only prerequisite introduces no new menu action and does not add `extensions.scaJakartaH2.fixedAssets` to exported files. Fixed assets and completed depreciation runs must remain in the governed deferred-section warning until the separate mapping unit is implemented. After migration, open an existing company and run the current SCLX export route to confirm that the application and existing export continue to operate normally, with no empty fixed-assets section presented as implemented.
