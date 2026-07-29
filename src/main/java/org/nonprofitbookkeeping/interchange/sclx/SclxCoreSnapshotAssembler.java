@@ -167,6 +167,37 @@ public final class SclxCoreSnapshotAssembler
             List<TxnSupplementalLine> supplementalDetails,
             Instant exportedAt)
     {
+        return assemble(
+                company,
+                accounts,
+                funds,
+                activities,
+                counterparties,
+                merchants,
+                budgetPlans,
+                budgetLines,
+                transactions,
+                transactionLines,
+                supplementalDetails,
+                SclxBankingSnapshot.empty(),
+                exportedAt);
+    }
+
+    public SclxExportDocument assemble(
+            Company company,
+            List<Account> accounts,
+            List<Fund> funds,
+            List<Activity> activities,
+            List<Counterparty> counterparties,
+            List<Merchant> merchants,
+            List<BudgetPlan> budgetPlans,
+            List<BudgetLine> budgetLines,
+            List<Txn> transactions,
+            List<TxnSplit> transactionLines,
+            List<TxnSupplementalLine> supplementalDetails,
+            SclxBankingSnapshot banking,
+            Instant exportedAt)
+    {
         Objects.requireNonNull(company, "company");
         Objects.requireNonNull(accounts, "accounts");
         Objects.requireNonNull(funds, "funds");
@@ -178,6 +209,7 @@ public final class SclxCoreSnapshotAssembler
         Objects.requireNonNull(transactions, "transactions");
         Objects.requireNonNull(transactionLines, "transactionLines");
         Objects.requireNonNull(supplementalDetails, "supplementalDetails");
+        Objects.requireNonNull(banking, "banking");
         Objects.requireNonNull(exportedAt, "exportedAt");
 
         ChartOfAccounts activeChart = Objects.requireNonNull(
@@ -333,6 +365,16 @@ public final class SclxCoreSnapshotAssembler
                 .sorted(Comparator.comparing(link -> (String) link.get("lineId")))
                 .toList();
 
+        SclxBankingSnapshotAssembler.Result exportedBanking = new SclxBankingSnapshotAssembler().assemble(
+                companyCode,
+                company,
+                activeChart,
+                banking,
+                includedTransactions,
+                exportedTransactionIds,
+                transactionLines,
+                exportedLineIds);
+
         Map<String, Object> extensionValues = new LinkedHashMap<>();
         extensionValues.put("activeChartName", activeChart.getName());
         extensionValues.put("activeChartVersion", activeChart.getVersion());
@@ -342,6 +384,9 @@ public final class SclxCoreSnapshotAssembler
                 exportedMerchants,
                 transactionLineMerchants));
         extensionValues.put(SclxSupplementalDetailExtension.KEY, List.copyOf(exportedSupplementalDetails));
+        extensionValues.put(SclxBankConfigurationExtension.KEY, exportedBanking.bankConfiguration());
+        extensionValues.put(SclxBankStatementFactsExtension.KEY, exportedBanking.bankStatementFacts());
+        extensionValues.put(SclxReconciliationExtension.KEY, exportedBanking.reconciliation());
 
         SclxExportDocument document = SclxExportDocument.version13(
                 exportedAt,

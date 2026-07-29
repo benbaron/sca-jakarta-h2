@@ -152,6 +152,26 @@ The supplemental-detail identity never uses `txn_supplemental_line.id`. Details 
 
 Every `transactionId` MUST resolve to exactly one exported canonical transaction. Both start and end dates are present or absent together, and start MUST NOT follow end. Negative amounts, unsupported kinds, duplicate identities, malformed fields, cross-company transactions, and details whose transaction is outside the selected snapshot are blocking export errors. Supplemental details contribute to export counts, and `SUPPLEMENTAL_DETAILS` is no longer reported as deferred.
 
+### 8.4 Bank configuration extension
+
+`extensions.scaJakartaH2.bankConfiguration` is an object with exactly `banks` and `accounts` arrays. It contains every selected-company bank and configured bank account, including inactive records needed to interpret history. Bank entries preserve durable `bankId`, name, routing/contact/address fields, notes, and active state. Configured-account entries preserve durable `bankAccountId`, optional bank and ledger-account references, labels, masking and last-four display data, opening date and balance, supported statement-import format, OFX bank/account identifiers, notes, and active state.
+
+Bank and configured-account arrays are ordered by durable UUID identity. Every optional `bankId` and `ledgerAccountId` MUST resolve within the selected-company snapshot. Mutable institution names, configured-account labels, and masked numbers are presentation data only. Duplicate identities, cross-company ownership, inactive-chart ledger references, malformed fields, and unresolved references are blocking export errors. Banks and configured bank accounts contribute separately to export counts, and `BANK_CONFIGURATION` is no longer reported as deferred.
+
+### 8.5 Reviewed bank-statement facts extension
+
+`extensions.scaJakartaH2.bankStatementFacts` is an object with exactly four arrays: `importBatches`, `statementLines`, `issues`, and `transactionLineClearance`. Import batches preserve durable identity, optional configured-account reference, source filename and SHA-256 or equivalent persisted hash, source format, review status and timestamps, line/accept/reject/issue counts, and notes. The source filesystem path and importing-user identity are explicitly excluded.
+
+Statement lines preserve durable identity and batch/account references plus the persisted source row, FITID or source transaction ID, deterministic fingerprint, statement account identifier, transaction and posted dates, exact amount, transaction type, name, memo, check/reference values, review status, disposition note, and optional accepted or matched canonical transaction references. Import issues preserve severity, code, message, source row, timestamps, and their batch/statement references. Transaction-line clearance entries preserve only non-default clearance facts: exported line identity, cleared flag/date, and optional reviewed statement-line reference.
+
+Arrays are ordered by durable identity or exported transaction-line identity. Every reference MUST resolve within the selected-company export; `ACCEPTED` statement lines require an accepted transaction, `MATCHED` lines require a matched transaction, and each transaction line may have at most one clearance entry. Duplicate identities, cross-company facts, malformed status/format values, negative counts, omitted masters, and unresolved references are blocking export errors. Batches, statement lines, and issues contribute to entity counts; clearance entries are relationships rather than additional entities. `BANK_STATEMENT_FACTS` is no longer reported as deferred.
+
+### 8.6 Reconciliation extension
+
+`extensions.scaJakartaH2.reconciliation` is an object with exactly `sessions` and `matches` arrays. Sessions preserve durable identity, configured-account reference, statement date range and optional ending balance, mismatch policy, lifecycle status, notes, beginning/book/cleared/difference balances, and timestamps. Matches preserve durable identity, session reference, optional statement-line and transaction-line references, match status, resolution note, and timestamps. At least one statement-line or transaction-line reference is required for every match.
+
+Sessions and matches are ordered by durable UUID identity. Date ranges, policies, statuses, ownership, and all references are strictly validated. Duplicate identities, cross-company sessions, matches outside an exported session, and references to omitted statement or transaction lines are blocking export errors. Sessions and matches contribute separately to export counts, and `RECONCILIATION` is no longer reported as deferred.
+
 ## 9. Deterministic SCLX 1.3 output
 
 For a fixed export request, fixed operation timestamp, and unchanged database state, output bytes MUST be identical.

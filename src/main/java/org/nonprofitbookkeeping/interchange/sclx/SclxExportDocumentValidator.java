@@ -29,6 +29,23 @@ public final class SclxExportDocumentValidator
         validateSupplementalDetails(
                 SclxSupplementalDetailExtension.entries(document.extensions()),
                 transactionReferences.transactionIds());
+        SclxBankConfigurationExtension.Data bankConfiguration =
+                SclxBankConfigurationExtension.data(document.extensions());
+        Set<String> bankIds = SclxBankConfigurationExtension.uniqueBankIds(bankConfiguration);
+        Set<String> bankAccountIds = SclxBankConfigurationExtension.uniqueBankAccountIds(bankConfiguration);
+        validateBankConfiguration(bankConfiguration, bankIds, accountIds);
+        SclxBankStatementFactsExtension.Data statementFacts =
+                SclxBankStatementFactsExtension.data(document.extensions());
+        BankingReferences bankingReferences = validateBankStatementFacts(
+                statementFacts,
+                bankAccountIds,
+                transactionReferences.transactionIds(),
+                transactionReferences.transactionLineIds());
+        validateReconciliation(
+                SclxReconciliationExtension.data(document.extensions()),
+                bankAccountIds,
+                bankingReferences.statementLineIds(),
+                transactionReferences.transactionLineIds());
     }
 
     private static Set<String> uniqueAccountIds(List<SclxExportDocument.Account> accounts)
@@ -168,6 +185,117 @@ public final class SclxExportDocumentValidator
         }
     }
 
+    private static void validateBankConfiguration(
+            SclxBankConfigurationExtension.Data data,
+            Set<String> bankIds,
+            Set<String> ledgerAccountIds)
+    {
+        for (SclxBankConfigurationExtension.AccountEntry account : data.accounts())
+        {
+            requireOptionalReference(
+                    account.bankId(), bankIds,
+                    "bank account " + account.bankAccountId() + " bankId");
+            requireOptionalReference(
+                    account.ledgerAccountId(), ledgerAccountIds,
+                    "bank account " + account.bankAccountId() + " ledgerAccountId");
+        }
+    }
+
+    private static BankingReferences validateBankStatementFacts(
+            SclxBankStatementFactsExtension.Data data,
+            Set<String> bankAccountIds,
+            Set<String> transactionIds,
+            Set<String> transactionLineIds)
+    {
+        Set<String> batchIds = SclxBankStatementFactsExtension.uniqueImportBatchIds(data);
+        Set<String> statementLineIds = SclxBankStatementFactsExtension.uniqueStatementLineIds(data);
+        SclxBankStatementFactsExtension.uniqueIssueIds(data);
+        for (SclxBankStatementFactsExtension.ImportBatchEntry batch : data.importBatches())
+        {
+            requireOptionalReference(
+                    batch.bankAccountId(), bankAccountIds,
+                    "bank import batch " + batch.importBatchId() + " bankAccountId");
+        }
+        for (SclxBankStatementFactsExtension.StatementLineEntry line : data.statementLines())
+        {
+            requireReference(
+                    line.importBatchId(), batchIds,
+                    "bank statement line " + line.statementLineId() + " importBatchId");
+            requireOptionalReference(
+                    line.bankAccountId(), bankAccountIds,
+                    "bank statement line " + line.statementLineId() + " bankAccountId");
+            requireOptionalReference(
+                    line.acceptedTransactionId(), transactionIds,
+                    "bank statement line " + line.statementLineId() + " acceptedTransactionId");
+            requireOptionalReference(
+                    line.matchedTransactionId(), transactionIds,
+                    "bank statement line " + line.statementLineId() + " matchedTransactionId");
+            if ("ACCEPTED".equals(line.status()) && line.acceptedTransactionId() == null)
+            {
+                throw new IllegalArgumentException(
+                        "accepted bank statement line " + line.statementLineId()
+                                + " must reference acceptedTransactionId");
+            }
+            if ("MATCHED".equals(line.status()) && line.matchedTransactionId() == null)
+            {
+                throw new IllegalArgumentException(
+                        "matched bank statement line " + line.statementLineId()
+                                + " must reference matchedTransactionId");
+            }
+        }
+        for (SclxBankStatementFactsExtension.IssueEntry issue : data.issues())
+        {
+            requireReference(
+                    issue.importBatchId(), batchIds,
+                    "bank import issue " + issue.issueId() + " importBatchId");
+            requireOptionalReference(
+                    issue.statementLineId(), statementLineIds,
+                    "bank import issue " + issue.issueId() + " statementLineId");
+        }
+        Set<String> clearedLineIds = new HashSet<>();
+        for (SclxBankStatementFactsExtension.TransactionLineClearance clearance
+                : data.transactionLineClearance())
+        {
+            requireUnique(clearedLineIds, clearance.lineId(), "transaction-line clearance");
+            requireReference(
+                    clearance.lineId(), transactionLineIds,
+                    "transaction-line clearance lineId");
+            requireOptionalReference(
+                    clearance.statementLineId(), statementLineIds,
+                    "transaction-line clearance " + clearance.lineId() + " statementLineId");
+        }
+        return new BankingReferences(Set.copyOf(batchIds), Set.copyOf(statementLineIds));
+    }
+
+    private static void validateReconciliation(
+            SclxReconciliationExtension.Data data,
+            Set<String> bankAccountIds,
+            Set<String> statementLineIds,
+            Set<String> transactionLineIds)
+    {
+        Set<String> sessionIds = SclxReconciliationExtension.uniqueSessionIds(data);
+        SclxReconciliationExtension.uniqueMatchIds(data);
+        for (SclxReconciliationExtension.SessionEntry session : data.sessions())
+        {
+            requireReference(
+                    session.bankAccountId(), bankAccountIds,
+                    "reconciliation session " + session.reconciliationSessionId() + " bankAccountId");
+        }
+        for (SclxReconciliationExtension.MatchEntry match : data.matches())
+        {
+            requireReference(
+                    match.reconciliationSessionId(), sessionIds,
+                    "reconciliation match " + match.reconciliationMatchId()
+                            + " reconciliationSessionId");
+            requireOptionalReference(
+                    match.statementLineId(), statementLineIds,
+                    "reconciliation match " + match.reconciliationMatchId() + " statementLineId");
+            requireOptionalReference(
+                    match.lineId(), transactionLineIds,
+                    "reconciliation match " + match.reconciliationMatchId() + " lineId");
+        }
+    }
+
     private static void requireUnique(Set<String> identities, String identity, String type)
     {
         if (!identities.add(identity))
@@ -192,6 +320,10 @@ public final class SclxExportDocumentValidator
         }
     }
     private record TransactionReferences(Set<String> transactionIds, Set<String> transactionLineIds)
+    {
+    }
+
+    private record BankingReferences(Set<String> importBatchIds, Set<String> statementLineIds)
     {
     }
 

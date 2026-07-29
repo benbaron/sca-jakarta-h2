@@ -19,6 +19,20 @@ class SclxPortableIdentityTest
                 SclxPortableIdentity.counterparty("CAER-GALEN", "11111111-1111-1111-1111-111111111111"));
         assertEquals("merchant:CAER-GALEN:22222222-2222-2222-2222-222222222222",
                 SclxPortableIdentity.merchant("CAER-GALEN", "22222222-2222-2222-2222-222222222222"));
+        assertEquals("bank:CAER-GALEN:33333333-3333-3333-3333-333333333333",
+                SclxPortableIdentity.bank("CAER-GALEN", "33333333-3333-3333-3333-333333333333"));
+        assertEquals("bank-account:CAER-GALEN:44444444-4444-4444-4444-444444444444",
+                SclxPortableIdentity.bankAccount("CAER-GALEN", "44444444-4444-4444-4444-444444444444"));
+        assertEquals("bank-import-batch:CAER-GALEN:55555555-5555-5555-5555-555555555555",
+                SclxPortableIdentity.bankImportBatch("CAER-GALEN", "55555555-5555-5555-5555-555555555555"));
+        assertEquals("bank-statement-line:CAER-GALEN:66666666-6666-6666-6666-666666666666",
+                SclxPortableIdentity.bankStatementLine("CAER-GALEN", "66666666-6666-6666-6666-666666666666"));
+        assertEquals("bank-import-issue:CAER-GALEN:77777777-7777-7777-7777-777777777777",
+                SclxPortableIdentity.bankImportIssue("CAER-GALEN", "77777777-7777-7777-7777-777777777777"));
+        assertEquals("reconciliation-session:CAER-GALEN:88888888-8888-8888-8888-888888888888",
+                SclxPortableIdentity.reconciliationSession("CAER-GALEN", "88888888-8888-8888-8888-888888888888"));
+        assertEquals("reconciliation-match:CAER-GALEN:99999999-9999-9999-9999-999999999999",
+                SclxPortableIdentity.reconciliationMatch("CAER-GALEN", "99999999-9999-9999-9999-999999999999"));
         assertEquals("budget:CAER-GALEN:2026:ADOPTED",
                 SclxPortableIdentity.budget("CAER-GALEN", 2026, "ADOPTED"));
         String budgetId = SclxPortableIdentity.budget("CAER-GALEN", 2026, "ADOPTED");
