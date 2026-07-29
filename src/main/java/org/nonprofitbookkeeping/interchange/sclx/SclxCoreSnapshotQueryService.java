@@ -127,6 +127,7 @@ public class SclxCoreSnapshotQueryService
                                     + "left join fetch s.budgetCategory "
                                     + "left join fetch s.activity "
                                     + "left join fetch s.merchant "
+                                    + "left join fetch s.matchedBankStatementLine "
                                     + "where t.company = :company",
                             TxnSplit.class)
                     .setParameter("company", company)
@@ -139,6 +140,7 @@ public class SclxCoreSnapshotQueryService
                             TxnSupplementalLine.class)
                     .setParameter("company", company)
                     .getResultList();
+            SclxBankingSnapshot banking = new SclxBankingSnapshotQuery().query(em, company);
 
             return assembler.assemble(
                     company,
@@ -152,6 +154,7 @@ public class SclxCoreSnapshotQueryService
                     transactions,
                     transactionLines,
                     supplementalDetails,
+                    banking,
                     exportedAt);
         }
     }

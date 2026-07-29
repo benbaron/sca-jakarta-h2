@@ -36,7 +36,8 @@ class SclxJsonSerializerTest
         assertEquals("1000", root.path("chartOfAccounts").get(0).path("openingBalance").textValue());
         assertEquals("0", root.path("transactions").get(0).path("lines").get(0).path("debit").textValue());
         assertEquals("25", root.path("transactions").get(0).path("lines").get(0).path("credit").textValue());
-        assertEquals(List.of("activities", "alpha", "supplementalDetails", "zeta"),
+        assertEquals(List.of("activities", "alpha", "bankConfiguration", "bankStatementFacts",
+                        "reconciliation", "supplementalDetails", "zeta"),
                 iterable(root.path("extensions").path("scaJakartaH2").fieldNames()));
         JsonNode activity = root.path("extensions").path("scaJakartaH2").path("activities").get(0);
         assertEquals("activity:TEST:EVENT", activity.path("activityId").textValue());
@@ -95,6 +96,12 @@ class SclxJsonSerializerTest
         extensionValues.put("alpha", new BigDecimal("1.2300"));
         extensionValues.put(SclxActivityExtension.KEY, List.of(SclxActivityExtension.entry(
                 "activity:TEST:EVENT", "EVENT", "Annual Event", true)));
+        extensionValues.put(SclxBankConfigurationExtension.KEY,
+                SclxBankConfigurationExtension.value(List.of(), List.of()));
+        extensionValues.put(SclxBankStatementFactsExtension.KEY,
+                SclxBankStatementFactsExtension.value(List.of(), List.of(), List.of(), List.of()));
+        extensionValues.put(SclxReconciliationExtension.KEY,
+                SclxReconciliationExtension.value(List.of(), List.of()));
         extensionValues.put(SclxSupplementalDetailExtension.KEY, List.of(
                 SclxSupplementalDetailExtension.entry(
                         SclxPortableIdentity.supplementalDetail(transactionId, 1),

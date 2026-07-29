@@ -48,6 +48,41 @@ public final class SclxPortableIdentity
         return identity("merchant", companyCode, durableMerchantKey);
     }
 
+    public static String bank(String companyCode, String durableBankKey)
+    {
+        return identity("bank", companyCode, durableBankKey);
+    }
+
+    public static String bankAccount(String companyCode, String durableBankAccountKey)
+    {
+        return identity("bank-account", companyCode, durableBankAccountKey);
+    }
+
+    public static String bankImportBatch(String companyCode, String durableImportBatchKey)
+    {
+        return identity("bank-import-batch", companyCode, durableImportBatchKey);
+    }
+
+    public static String bankStatementLine(String companyCode, String durableStatementLineKey)
+    {
+        return identity("bank-statement-line", companyCode, durableStatementLineKey);
+    }
+
+    public static String bankImportIssue(String companyCode, String durableIssueKey)
+    {
+        return identity("bank-import-issue", companyCode, durableIssueKey);
+    }
+
+    public static String reconciliationSession(String companyCode, String durableSessionKey)
+    {
+        return identity("reconciliation-session", companyCode, durableSessionKey);
+    }
+
+    public static String reconciliationMatch(String companyCode, String durableMatchKey)
+    {
+        return identity("reconciliation-match", companyCode, durableMatchKey);
+    }
+
     public static String budget(String companyCode, int fiscalYear, String version)
     {
         return identity("budget", companyCode, Integer.toString(fiscalYear), version);

@@ -284,6 +284,13 @@ final class SclxExportCoordinator implements SclxExportActions
                 + "\n  Transactions: " + counts.transactions()
                 + "\n  Transaction lines: " + counts.transactionLines()
                 + "\n  Supplemental details: " + counts.supplementalDetails()
+                + "\n  Banks: " + counts.banks()
+                + "\n  Bank accounts: " + counts.bankAccounts()
+                + "\n  Import batches: " + counts.importBatches()
+                + "\n  Statement lines: " + counts.statementLines()
+                + "\n  Import issues: " + counts.importIssues()
+                + "\n  Reconciliation sessions: " + counts.reconciliationSessions()
+                + "\n  Reconciliation matches: " + counts.reconciliationMatches()
                 + "\n  Total entities: " + counts.totalEntities()
                 + "\n\nWarnings: " + counts.warnings()
                 + "\nValidation messages:" + messages

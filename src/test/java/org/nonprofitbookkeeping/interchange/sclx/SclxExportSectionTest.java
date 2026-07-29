@@ -35,5 +35,11 @@ class SclxExportSectionTest
         assertFalse(SclxExportSection.COUNTERPARTIES.deferred());
         assertTrue(SclxExportSection.SUPPLEMENTAL_DETAILS.includedByCurrentSnapshot());
         assertFalse(SclxExportSection.SUPPLEMENTAL_DETAILS.deferred());
+        assertTrue(SclxExportSection.BANK_CONFIGURATION.includedByCurrentSnapshot());
+        assertFalse(SclxExportSection.BANK_CONFIGURATION.deferred());
+        assertTrue(SclxExportSection.BANK_STATEMENT_FACTS.includedByCurrentSnapshot());
+        assertFalse(SclxExportSection.BANK_STATEMENT_FACTS.deferred());
+        assertTrue(SclxExportSection.RECONCILIATION.includedByCurrentSnapshot());
+        assertFalse(SclxExportSection.RECONCILIATION.deferred());
     }
 }

@@ -176,14 +176,17 @@ class SclxExportCoordinatorTest
                 "ALPHA",
                 1234L,
                 "a".repeat(64),
-                new SclxExportCounts(1, 4, 2, 1, 3, 2, 1, 3, 5, 10, 4, 2, 1, 36),
+                new SclxExportCounts(
+                        1, 4, 2, 1, 3, 2, 1, 3, 5, 10, 4,
+                        2, 2, 1, 3, 1, 1, 2,
+                        2, 1, 48),
                 List.of(new InterchangeValidationMessage(
                         InterchangeMessageSeverity.WARNING,
                         "SCLX_DEFERRED_SECTION",
-                        "extensions.scaJakartaH2.bankConfiguration",
-                        "Bank configuration is deferred.",
+                        "extensions.scaJakartaH2.fixedAssets",
+                        "Fixed assets are deferred.",
                         false)),
-                List.of(SclxExportSection.BANK_CONFIGURATION),
+                List.of(SclxExportSection.FIXED_ASSETS),
                 List.of(SclxExportSection.UI_STATE));
 
         String summary = SclxExportCoordinator.resultSummary(result);
@@ -195,9 +198,16 @@ class SclxExportCoordinatorTest
         assertTrue(summary.contains("Merchants: 2"));
         assertTrue(summary.contains("Transactions: 5"));
         assertTrue(summary.contains("Supplemental details: 4"));
+        assertTrue(summary.contains("Banks: 2"));
+        assertTrue(summary.contains("Bank accounts: 2"));
+        assertTrue(summary.contains("Import batches: 1"));
+        assertTrue(summary.contains("Statement lines: 3"));
+        assertTrue(summary.contains("Import issues: 1"));
+        assertTrue(summary.contains("Reconciliation sessions: 1"));
+        assertTrue(summary.contains("Reconciliation matches: 2"));
         assertTrue(summary.contains("Warnings: 2"));
-        assertTrue(summary.contains("Bank configuration is deferred."));
-        assertTrue(summary.contains("extensions.scaJakartaH2.bankConfiguration"));
+        assertTrue(summary.contains("Fixed assets are deferred."));
+        assertTrue(summary.contains("extensions.scaJakartaH2.fixedAssets"));
         assertTrue(summary.contains("UI_STATE"));
         assertTrue(summary.contains("a".repeat(64)));
     }
