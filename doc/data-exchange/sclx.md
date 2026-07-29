@@ -176,6 +176,16 @@ Arrays are ordered by durable identity or exported transaction-line identity. Ev
 
 Sessions and matches are ordered by durable UUID identity. Date ranges, policies, statuses, ownership, and all references are strictly validated. Duplicate identities, cross-company sessions, matches outside an exported session, and references to omitted statement or transaction lines are blocking export errors. Sessions and matches contribute separately to export counts, and `RECONCILIATION` is no longer reported as deferred.
 
+### 8.7 Fixed assets and completed depreciation extension
+
+`extensions.scaJakartaH2.fixedAssets` is an object with exactly `assets` and `depreciationRuns` arrays. It contains every fixed asset owned by the selected company, including inactive and disposed records needed to interpret history, plus every completed depreciation run for those assets. It does not create future schedules or inferred depreciation entries.
+
+Each asset entry contains exactly `fixedAssetId`, `assetAccountId`, `accumulatedDepreciationAccountId`, `depreciationExpenseAccountId`, `fundId`, `name`, `acquisitionDate`, `acquisitionCost`, `salvageValue`, `usefulLifeMonths`, `depreciationMethod`, `openingAccumulatedDepreciation`, `status`, nullable `notes`, `createdAt`, and `updatedAt`. Each depreciation-run entry contains exactly `depreciationRunId`, `fixedAssetId`, `runDate`, `depreciationAmount`, `transactionId`, nullable `notes`, and `createdAt`. Current book value and total accumulated depreciation remain derived from the persisted opening amount and completed runs; they are not serialized as a second accounting authority.
+
+Asset and run arrays are ordered by their intrinsic UUID portable identities. Every account reference MUST resolve to the selected company's exported active chart, every fund reference MUST resolve to an exported company fund, every run MUST resolve to an exported fixed asset, and every run transaction MUST resolve to the canonical transaction created for that completed run. The run keeps its own identity; `transactionId` is accounting provenance and never substitutes for `depreciationRunId`. Local numeric IDs, mutable names, and content-derived ordinals are prohibited as portable identity.
+
+Negative costs, salvage outside zero through acquisition cost, unsupported useful lives or methods, nonpositive run amounts, duplicate identities, cross-company records, and unresolved references are blocking export errors. Fixed assets and completed depreciation runs contribute separately to export counts, and `FIXED_ASSETS` is no longer reported as deferred.
+
 ## 9. Deterministic SCLX 1.3 output
 
 For a fixed export request, fixed operation timestamp, and unchanged database state, output bytes MUST be identical.

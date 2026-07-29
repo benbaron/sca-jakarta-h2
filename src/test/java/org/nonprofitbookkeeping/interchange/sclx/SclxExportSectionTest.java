@@ -41,5 +41,7 @@ class SclxExportSectionTest
         assertFalse(SclxExportSection.BANK_STATEMENT_FACTS.deferred());
         assertTrue(SclxExportSection.RECONCILIATION.includedByCurrentSnapshot());
         assertFalse(SclxExportSection.RECONCILIATION.deferred());
+        assertTrue(SclxExportSection.FIXED_ASSETS.includedByCurrentSnapshot());
+        assertFalse(SclxExportSection.FIXED_ASSETS.deferred());
     }
 }

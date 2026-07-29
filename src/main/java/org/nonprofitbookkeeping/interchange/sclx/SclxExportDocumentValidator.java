@@ -29,6 +29,11 @@ public final class SclxExportDocumentValidator
         validateSupplementalDetails(
                 SclxSupplementalDetailExtension.entries(document.extensions()),
                 transactionReferences.transactionIds());
+        validateFixedAssets(
+                SclxFixedAssetsExtension.data(document.extensions()),
+                accountIds,
+                fundIds,
+                transactionReferences.transactionIds());
         SclxBankConfigurationExtension.Data bankConfiguration =
                 SclxBankConfigurationExtension.data(document.extensions());
         Set<String> bankIds = SclxBankConfigurationExtension.uniqueBankIds(bankConfiguration);

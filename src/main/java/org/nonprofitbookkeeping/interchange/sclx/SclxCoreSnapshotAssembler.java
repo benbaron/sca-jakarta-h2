@@ -402,6 +402,14 @@ public final class SclxCoreSnapshotAssembler
                 transactionLines,
                 exportedLineIds);
 
+        Map<String, Object> exportedFixedAssets = new SclxFixedAssetSnapshotAssembler().assemble(
+                companyCode,
+                company,
+                activeChart,
+                fixedAssets,
+                includedTransactions,
+                exportedTransactionIds);
+
         Map<String, Object> extensionValues = new LinkedHashMap<>();
         extensionValues.put("activeChartName", activeChart.getName());
         extensionValues.put("activeChartVersion", activeChart.getVersion());
@@ -414,6 +422,7 @@ public final class SclxCoreSnapshotAssembler
         extensionValues.put(SclxBankConfigurationExtension.KEY, exportedBanking.bankConfiguration());
         extensionValues.put(SclxBankStatementFactsExtension.KEY, exportedBanking.bankStatementFacts());
         extensionValues.put(SclxReconciliationExtension.KEY, exportedBanking.reconciliation());
+        extensionValues.put(SclxFixedAssetsExtension.KEY, exportedFixedAssets);
 
         Set<FixedAsset> includedFixedAssets = identitySet(fixedAssets);
         List<Map<String, Object>> exportedFixedAssets = fixedAssets.stream()
