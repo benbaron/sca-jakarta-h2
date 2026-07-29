@@ -41,7 +41,7 @@ public record SclxExportCounts(
         }
     }
 
-    /** Backward-compatible constructor used before fixed-assets mapping was included. */
+    /** Backward-compatible constructor used by banking-complete summaries before fixed assets. */
     public SclxExportCounts(
             long organizations,
             long accounts,

@@ -8,6 +8,8 @@ import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.Counterparty;
 import org.nonprofitbookkeeping.model.Fund;
+import org.nonprofitbookkeeping.model.FixedAsset;
+import org.nonprofitbookkeeping.model.FixedAssetDepreciationRun;
 import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.model.Txn;
@@ -199,20 +201,9 @@ public final class SclxCoreSnapshotAssembler
             Instant exportedAt)
     {
         return assemble(
-                company,
-                accounts,
-                funds,
-                activities,
-                counterparties,
-                merchants,
-                budgetPlans,
-                budgetLines,
-                transactions,
-                transactionLines,
-                supplementalDetails,
-                banking,
-                SclxFixedAssetSnapshot.empty(),
-                exportedAt);
+                company, accounts, funds, activities, counterparties, merchants,
+                budgetPlans, budgetLines, transactions, transactionLines,
+                supplementalDetails, banking, List.of(), List.of(), exportedAt);
     }
 
     public SclxExportDocument assemble(
@@ -228,7 +219,8 @@ public final class SclxCoreSnapshotAssembler
             List<TxnSplit> transactionLines,
             List<TxnSupplementalLine> supplementalDetails,
             SclxBankingSnapshot banking,
-            SclxFixedAssetSnapshot fixedAssets,
+            List<FixedAsset> fixedAssets,
+            List<FixedAssetDepreciationRun> depreciationRuns,
             Instant exportedAt)
     {
         Objects.requireNonNull(company, "company");
@@ -244,6 +236,7 @@ public final class SclxCoreSnapshotAssembler
         Objects.requireNonNull(supplementalDetails, "supplementalDetails");
         Objects.requireNonNull(banking, "banking");
         Objects.requireNonNull(fixedAssets, "fixedAssets");
+        Objects.requireNonNull(depreciationRuns, "depreciationRuns");
         Objects.requireNonNull(exportedAt, "exportedAt");
 
         ChartOfAccounts activeChart = Objects.requireNonNull(
@@ -431,6 +424,21 @@ public final class SclxCoreSnapshotAssembler
         extensionValues.put(SclxReconciliationExtension.KEY, exportedBanking.reconciliation());
         extensionValues.put(SclxFixedAssetsExtension.KEY, exportedFixedAssets);
 
+        Set<FixedAsset> includedFixedAssets = identitySet(fixedAssets);
+        List<Map<String, Object>> exportedFixedAssets = fixedAssets.stream()
+                .peek(asset -> requireFixedAssetOwnership(asset, company, activeChart))
+                .sorted(Comparator.comparing(asset -> asset.getPortableId().toString()))
+                .map(asset -> mapFixedAsset(companyCode, asset))
+                .toList();
+        List<Map<String, Object>> exportedDepreciationRuns = depreciationRuns.stream()
+                .peek(run -> requireDepreciationRunOwnership(
+                        run, company, includedFixedAssets, includedTransactions))
+                .sorted(Comparator.comparing(run -> run.getPortableId().toString()))
+                .map(run -> mapDepreciationRun(companyCode, run))
+                .toList();
+        extensionValues.put(SclxFixedAssetsExtension.KEY, SclxFixedAssetsExtension.value(
+                exportedFixedAssets, exportedDepreciationRuns));
+
         SclxExportDocument document = SclxExportDocument.version13(
                 exportedAt,
                 new SclxExportDocument.Organization(
@@ -446,6 +454,93 @@ public final class SclxCoreSnapshotAssembler
                 new SclxExportDocument.Extensions(1, extensionValues));
         validator.validate(document);
         return document;
+    }
+
+    private static Map<String, Object> mapFixedAsset(String companyCode, FixedAsset asset)
+    {
+        return SclxFixedAssetsExtension.assetEntry(
+                SclxPortableIdentity.fixedAsset(
+                        companyCode,
+                        Objects.requireNonNull(asset.getPortableId(), "fixed asset portableId").toString()),
+                requireText(asset.getName(), "fixed asset name"),
+                Objects.requireNonNull(asset.getAcquisitionDate(), "fixed asset acquisitionDate"),
+                Objects.requireNonNull(asset.getAcquisitionCost(), "fixed asset acquisitionCost"),
+                Objects.requireNonNull(asset.getSalvageValue(), "fixed asset salvageValue"),
+                asset.getUsefulLifeMonths(),
+                Objects.requireNonNull(asset.getDepreciationMethod(), "fixed asset depreciationMethod").name(),
+                Objects.requireNonNull(asset.getOpeningAccumulatedDepreciation(),
+                        "fixed asset openingAccumulatedDepreciation"),
+                Objects.requireNonNull(asset.getStatus(), "fixed asset status").name(),
+                asset.getNotes(),
+                SclxPortableIdentity.account(companyCode, asset.getAssetAccount().getCode()),
+                SclxPortableIdentity.account(companyCode, asset.getAccumulatedDepreciationAccount().getCode()),
+                SclxPortableIdentity.account(companyCode, asset.getDepreciationExpenseAccount().getCode()),
+                SclxPortableIdentity.fund(companyCode, asset.getFund().getCode()),
+                Objects.requireNonNull(asset.getCreatedAt(), "fixed asset createdAt"),
+                Objects.requireNonNull(asset.getUpdatedAt(), "fixed asset updatedAt"));
+    }
+
+    private static Map<String, Object> mapDepreciationRun(
+            String companyCode,
+            FixedAssetDepreciationRun run)
+    {
+        return SclxFixedAssetsExtension.depreciationRunEntry(
+                SclxPortableIdentity.fixedAssetDepreciationRun(
+                        companyCode,
+                        Objects.requireNonNull(run.getPortableId(), "depreciation run portableId").toString()),
+                SclxPortableIdentity.fixedAsset(
+                        companyCode,
+                        Objects.requireNonNull(run.getFixedAsset().getPortableId(),
+                                "depreciation run asset portableId").toString()),
+                Objects.requireNonNull(run.getRunDate(), "depreciation run date"),
+                Objects.requireNonNull(run.getDepreciationAmount(), "depreciation run amount"),
+                SclxPortableIdentity.transaction(
+                        companyCode,
+                        Objects.requireNonNull(run.getTransaction().getPortableId(),
+                                "depreciation run transaction portableId").toString()),
+                run.getNotes(),
+                Objects.requireNonNull(run.getCreatedAt(), "depreciation run createdAt"));
+    }
+
+    private static void requireFixedAssetOwnership(
+            FixedAsset asset,
+            Company company,
+            ChartOfAccounts activeChart)
+    {
+        if (asset.getCompany() != company)
+        {
+            throw new IllegalArgumentException("fixed asset does not belong to the selected company");
+        }
+        if (asset.getAssetAccount().getChart() != activeChart
+                || asset.getAccumulatedDepreciationAccount().getChart() != activeChart
+                || asset.getDepreciationExpenseAccount().getChart() != activeChart)
+        {
+            throw new IllegalArgumentException("fixed asset account does not belong to the selected active chart");
+        }
+        if (asset.getFund().getCompany() != company)
+        {
+            throw new IllegalArgumentException("fixed asset fund does not belong to the selected company");
+        }
+    }
+
+    private static void requireDepreciationRunOwnership(
+            FixedAssetDepreciationRun run,
+            Company company,
+            Set<FixedAsset> includedFixedAssets,
+            Set<Txn> includedTransactions)
+    {
+        if (!includedFixedAssets.contains(run.getFixedAsset()))
+        {
+            throw new IllegalArgumentException("depreciation run references an asset outside the selected snapshot");
+        }
+        if (run.getFixedAsset().getCompany() != company)
+        {
+            throw new IllegalArgumentException("depreciation run asset does not belong to the selected company");
+        }
+        if (!includedTransactions.contains(run.getTransaction()) || run.getTransaction().getCompany() != company)
+        {
+            throw new IllegalArgumentException("depreciation run transaction is outside the selected company snapshot");
+        }
     }
 
     private static SclxExportDocument.Account mapAccount(
