@@ -18,10 +18,17 @@ jobs:
         with:
           ref: codex/P15-S4-fixed-assets-sclx-mapping
           fetch-depth: 0
-      - name: Apply reviewed implementation and remove publication artifacts
+      - name: Verify chunks, apply reviewed implementation, and remove publication artifacts
         shell: bash
         run: |
           set -euo pipefail
+          echo '53057913c74bb780717fb657ac393e1716f12d06276c306256b45d99f501f309  .p15-publish/fixed-assets-sclx-00.txt' | sha256sum --check
+          echo '4d82af3b2bdec9dbf0ba914acc09bf82a7484dc078162f326d98eb7953498e58  .p15-publish/fixed-assets-sclx-01.txt' | sha256sum --check
+          echo '0c365d327cccd393b2ab06a4ad1c83638708352340849c20381b31a676783d6a  .p15-publish/fixed-assets-sclx-02.txt' | sha256sum --check
+          echo '64f2fd2d1660aa1ff592e0ae238b6ad7de1c7d5b635e8ef34b6f3b6f47eaf6bc  .p15-publish/fixed-assets-sclx-03.txt' | sha256sum --check
+          echo 'db49a61024eb028139a75f778636cd6b51223bf632de8aa692e5d1fb8d364bc5  .p15-publish/fixed-assets-sclx-04.txt' | sha256sum --check
+          echo 'ca7eaeadad26e490539f51f22d9ce6d595c16e840796707645c5d4ddfea5d691  .p15-publish/fixed-assets-sclx-05.txt' | sha256sum --check
+          echo '81a0457f4dc88faef4feef1bf420ffc83f49d87e0f0f4e2b6497ce6bf5969146  .p15-publish/fixed-assets-sclx-06.txt' | sha256sum --check
           cat .p15-publish/fixed-assets-sclx-*.txt \
             | tr -d '\n\r' \
             | base64 --decode \
