@@ -39,10 +39,6 @@ final class SclxFixedAssetSnapshotAssembler
                 .sorted(Comparator.comparing(asset -> asset.getPortableId().toString()))
                 .map(asset -> SclxFixedAssetsExtension.assetEntry(
                         SclxPortableIdentity.fixedAsset(companyCode, asset.getPortableId().toString()),
-                        accountId(companyCode, asset.getAssetAccount()),
-                        accountId(companyCode, asset.getAccumulatedDepreciationAccount()),
-                        accountId(companyCode, asset.getDepreciationExpenseAccount()),
-                        fundId(companyCode, asset.getFund()),
                         asset.getName(),
                         asset.getAcquisitionDate(),
                         asset.getAcquisitionCost(),
@@ -52,6 +48,10 @@ final class SclxFixedAssetSnapshotAssembler
                         asset.getOpeningAccumulatedDepreciation(),
                         Objects.requireNonNull(asset.getStatus(), "fixed asset status").name(),
                         asset.getNotes(),
+                        accountId(companyCode, asset.getAssetAccount()),
+                        accountId(companyCode, asset.getAccumulatedDepreciationAccount()),
+                        accountId(companyCode, asset.getDepreciationExpenseAccount()),
+                        fundId(companyCode, asset.getFund()),
                         asset.getCreatedAt(),
                         asset.getUpdatedAt()))
                 .toList();
@@ -61,7 +61,7 @@ final class SclxFixedAssetSnapshotAssembler
                         run, company, includedAssets, includedTransactions, exportedTransactionIds))
                 .sorted(Comparator.comparing(run -> run.getPortableId().toString()))
                 .map(run -> SclxFixedAssetsExtension.depreciationRunEntry(
-                        SclxPortableIdentity.depreciationRun(
+                        SclxPortableIdentity.fixedAssetDepreciationRun(
                                 companyCode,
                                 run.getPortableId().toString()),
                         SclxPortableIdentity.fixedAsset(

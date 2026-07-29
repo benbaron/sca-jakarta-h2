@@ -406,7 +406,7 @@ public final class SclxCoreSnapshotAssembler
                 companyCode,
                 company,
                 activeChart,
-                fixedAssets,
+                new SclxFixedAssetSnapshot(fixedAssets, depreciationRuns),
                 includedTransactions,
                 exportedTransactionIds);
 
@@ -423,21 +423,6 @@ public final class SclxCoreSnapshotAssembler
         extensionValues.put(SclxBankStatementFactsExtension.KEY, exportedBanking.bankStatementFacts());
         extensionValues.put(SclxReconciliationExtension.KEY, exportedBanking.reconciliation());
         extensionValues.put(SclxFixedAssetsExtension.KEY, exportedFixedAssets);
-
-        Set<FixedAsset> includedFixedAssets = identitySet(fixedAssets);
-        List<Map<String, Object>> exportedFixedAssets = fixedAssets.stream()
-                .peek(asset -> requireFixedAssetOwnership(asset, company, activeChart))
-                .sorted(Comparator.comparing(asset -> asset.getPortableId().toString()))
-                .map(asset -> mapFixedAsset(companyCode, asset))
-                .toList();
-        List<Map<String, Object>> exportedDepreciationRuns = depreciationRuns.stream()
-                .peek(run -> requireDepreciationRunOwnership(
-                        run, company, includedFixedAssets, includedTransactions))
-                .sorted(Comparator.comparing(run -> run.getPortableId().toString()))
-                .map(run -> mapDepreciationRun(companyCode, run))
-                .toList();
-        extensionValues.put(SclxFixedAssetsExtension.KEY, SclxFixedAssetsExtension.value(
-                exportedFixedAssets, exportedDepreciationRuns));
 
         SclxExportDocument document = SclxExportDocument.version13(
                 exportedAt,
