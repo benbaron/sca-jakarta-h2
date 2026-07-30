@@ -12,5 +12,6 @@ PR #222 merged only the governed inventory SCLX contract. This corrective slice 
 - Those fixtures were corrected to pass explicit empty inventory-item and inventory-movement lists.
 - Maven PR Tests run `30511454947` compiled production and tests and ran 462 tests; 461 passed, with one inventory-extension error caused by exact-key validation rejecting omitted governed optional fields.
 - The shared extension reader now rejects unknown keys while allowing optional governed keys to be omitted; required fields remain enforced by typed readers.
-- `doc/PLAN.md` is reconciled through PR #223 on clean bot-authored head `bae0bbe74b2b6d856d7547aebaeb38ee642ab23c`.
-- This normal repository commit triggers authoritative plan-inclusive Maven PR validation before review.
+- Maven PR Tests run `30512885063` passed `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance on exact head `8a7eec251d4bba14c3d7cc0e167e2e2bebfdfe47`.
+- `doc/PLAN.md` now records the successful run and next governed action on clean bot-authored head `810b1e652fdb097f12ce59c2205940badb0d2600`.
+- This normal repository commit triggers the final plan-inclusive Maven PR validation before review.
