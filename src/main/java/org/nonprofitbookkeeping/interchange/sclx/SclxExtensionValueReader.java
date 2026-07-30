@@ -35,7 +35,7 @@ final class SclxExtensionValueReader
             {
                 throw new IllegalArgumentException(path + '[' + index + "] must be an object");
             }
-            if (!map.keySet().equals(keys))
+            if (!keys.containsAll(map.keySet()))
             {
                 throw new IllegalArgumentException(path + '[' + index + "] has unsupported fields");
             }
