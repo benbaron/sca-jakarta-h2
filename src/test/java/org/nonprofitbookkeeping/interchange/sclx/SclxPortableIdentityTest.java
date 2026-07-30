@@ -38,6 +38,12 @@ class SclxPortableIdentityTest
         assertEquals("fixed-asset-depreciation-run:CAER-GALEN:bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
                 SclxPortableIdentity.fixedAssetDepreciationRun(
                         "CAER-GALEN", "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"));
+        assertEquals("inventory-item:CAER-GALEN:cccccccc-cccc-cccc-cccc-cccccccccccc",
+                SclxPortableIdentity.inventoryItem(
+                        "CAER-GALEN", "cccccccc-cccc-cccc-cccc-cccccccccccc"));
+        assertEquals("inventory-movement:CAER-GALEN:dddddddd-dddd-dddd-dddd-dddddddddddd",
+                SclxPortableIdentity.inventoryMovement(
+                        "CAER-GALEN", "dddddddd-dddd-dddd-dddd-dddddddddddd"));
         assertEquals("budget:CAER-GALEN:2026:ADOPTED",
                 SclxPortableIdentity.budget("CAER-GALEN", 2026, "ADOPTED"));
         String budgetId = SclxPortableIdentity.budget("CAER-GALEN", 2026, "ADOPTED");
