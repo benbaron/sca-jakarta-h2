@@ -17,6 +17,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.UUID;
 
 /** H2-backed inventory item record. */
 @Entity
@@ -47,6 +48,9 @@ public class InventoryItem
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "portable_id", nullable = false, unique = true, updatable = false)
+    private UUID portableId = UUID.randomUUID();
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
@@ -103,6 +107,7 @@ public class InventoryItem
     private Instant updatedAt = Instant.now();
 
     public Long getId() { return id; }
+    public UUID getPortableId() { return portableId; }
     public Company getCompany() { return company; }
     public void setCompany(Company company) { this.company = company; }
     public Account getInventoryAccount() { return inventoryAccount; }
