@@ -16,7 +16,7 @@ public enum SclxExportSection
     RECONCILIATION(Support.EXTENSION, true, "extensions.scaJakartaH2.reconciliation", "Matching and reconciliation facts"),
     FIXED_ASSETS(Support.EXTENSION, true, "extensions.scaJakartaH2.fixedAssets", "Fixed assets and completed depreciation"),
     INVENTORY(Support.EXTENSION, true, "extensions.scaJakartaH2.inventory", "Inventory items and movements"),
-    PERIOD_CLOSE(Support.EXTENSION, "extensions.scaJakartaH2.periodClose", "Close ranges and factual close history"),
+    PERIOD_CLOSE(Support.EXTENSION, true, "extensions.scaJakartaH2.periodClose", "Close ranges and factual close history"),
     AUDIT_HISTORY(Support.EXTENSION, "extensions.scaJakartaH2.auditHistory", "Company-owned factual audit events"),
 
     USERS_AND_AUTHENTICATION(Support.EXCLUDED, null, "Users, roles, credentials, password hashes, and login state"),

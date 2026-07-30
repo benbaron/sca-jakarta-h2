@@ -24,6 +24,8 @@ public record SclxExportCounts(
         long depreciationRuns,
         long inventoryItems,
         long inventoryMovements,
+        long periodCloseRanges,
+        long periodCloseEvents,
         long warnings,
         long exclusions,
         long totalEntities)
@@ -38,6 +40,7 @@ public record SclxExportCounts(
                 || reconciliationSessions < 0L || reconciliationMatches < 0L
                 || fixedAssets < 0L || depreciationRuns < 0L
                 || inventoryItems < 0L || inventoryMovements < 0L
+                || periodCloseRanges < 0L || periodCloseEvents < 0L
                 || warnings < 0L || exclusions < 0L || totalEntities < 0L)
         {
             throw new IllegalArgumentException("SCLX export counts must not be negative");
@@ -55,7 +58,7 @@ public record SclxExportCounts(
         this(organizations, accounts, funds, activities, counterparties, merchants, budgets, budgetLines,
                 transactions, transactionLines, supplementalDetails, banks, bankAccounts, importBatches,
                 statementLines, importIssues, reconciliationSessions, reconciliationMatches, fixedAssets,
-                depreciationRuns, 0L, 0L, warnings, exclusions, totalEntities);
+                depreciationRuns, 0L, 0L, 0L, 0L, warnings, exclusions, totalEntities);
     }
 
     /** Backward-compatible constructor used by banking-complete summaries before fixed assets. */
@@ -69,7 +72,7 @@ public record SclxExportCounts(
         this(organizations, accounts, funds, activities, counterparties, merchants, budgets, budgetLines,
                 transactions, transactionLines, supplementalDetails, banks, bankAccounts, importBatches,
                 statementLines, importIssues, reconciliationSessions, reconciliationMatches, 0L, 0L, 0L, 0L,
-                warnings, exclusions, totalEntities);
+                0L, 0L, warnings, exclusions, totalEntities);
     }
 
     /** Backward-compatible constructor used by pre-banking completion summaries. */
@@ -79,7 +82,7 @@ public record SclxExportCounts(
     {
         this(organizations, accounts, funds, activities, counterparties, merchants, budgets, budgetLines,
                 transactions, transactionLines, supplementalDetails, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
-                0L, 0L, warnings, exclusions, totalEntities);
+                0L, 0L, 0L, 0L, warnings, exclusions, totalEntities);
     }
 
     public SclxExportCounts(long organizations, long accounts, long funds, long activities, long counterparties,
@@ -87,7 +90,7 @@ public record SclxExportCounts(
             long warnings, long exclusions, long totalEntities)
     {
         this(organizations, accounts, funds, activities, counterparties, merchants, budgets, budgetLines,
-                transactions, transactionLines, 0L, warnings, exclusions, totalEntities);
+                transactions, transactionLines, 0L, 0L, 0L, warnings, exclusions, totalEntities);
     }
 
     public SclxExportCounts(long organizations, long accounts, long funds, long activities, long budgets,
@@ -95,14 +98,14 @@ public record SclxExportCounts(
             long totalEntities)
     {
         this(organizations, accounts, funds, activities, 0L, 0L, budgets, budgetLines, transactions,
-                transactionLines, 0L, warnings, exclusions, totalEntities);
+                transactionLines, 0L, 0L, 0L, warnings, exclusions, totalEntities);
     }
 
     public SclxExportCounts(long organizations, long accounts, long funds, long budgets, long budgetLines,
             long transactions, long transactionLines, long warnings, long exclusions, long totalEntities)
     {
         this(organizations, accounts, funds, 0L, 0L, 0L, budgets, budgetLines, transactions,
-                transactionLines, 0L, warnings, exclusions, totalEntities);
+                transactionLines, 0L, 0L, 0L, warnings, exclusions, totalEntities);
     }
 
     static SclxExportCounts from(SclxExportDocument document, long warningCount, long exclusionCount)
@@ -124,6 +127,7 @@ public record SclxExportCounts(
         SclxFixedAssetsExtension.Data fixedAssetData =
                 SclxFixedAssetsExtension.data(document.extensions());
         SclxInventoryExtension.Data inventoryData = SclxInventoryExtension.data(document.extensions());
+        SclxPeriodCloseExtension.Data periodCloseData = SclxPeriodCloseExtension.data(document.extensions());
 
         long bankCount = bankConfiguration.banks().size();
         long bankAccountCount = bankConfiguration.accounts().size();
@@ -136,17 +140,21 @@ public record SclxExportCounts(
         long depreciationRunCount = fixedAssetData.depreciationRuns().size();
         long inventoryItemCount = inventoryData.items().size();
         long inventoryMovementCount = inventoryData.movements().size();
+        long periodCloseRangeCount = periodCloseData.ranges().size();
+        long periodCloseEventCount = periodCloseData.events().size();
         long entityCount = 1L + document.chartOfAccounts().size() + document.funds().size() + activityCount
                 + counterpartyCount + merchantCount + document.budgets().size() + budgetLineCount
                 + document.transactions().size() + transactionLineCount + supplementalDetailCount + bankCount
                 + bankAccountCount + importBatchCount + statementLineCount + importIssueCount
                 + reconciliationSessionCount + reconciliationMatchCount + fixedAssetCount
-                + depreciationRunCount + inventoryItemCount + inventoryMovementCount;
+                + depreciationRunCount + inventoryItemCount + inventoryMovementCount
+                + periodCloseRangeCount + periodCloseEventCount;
         return new SclxExportCounts(1L, document.chartOfAccounts().size(), document.funds().size(), activityCount,
                 counterpartyCount, merchantCount, document.budgets().size(), budgetLineCount,
                 document.transactions().size(), transactionLineCount, supplementalDetailCount, bankCount,
                 bankAccountCount, importBatchCount, statementLineCount, importIssueCount,
                 reconciliationSessionCount, reconciliationMatchCount, fixedAssetCount, depreciationRunCount,
-                inventoryItemCount, inventoryMovementCount, warningCount, exclusionCount, entityCount);
+                inventoryItemCount, inventoryMovementCount, periodCloseRangeCount, periodCloseEventCount,
+                warningCount, exclusionCount, entityCount);
     }
 }

@@ -56,6 +56,7 @@ public final class SclxExportDocumentValidator
                 accountIds,
                 fundIds,
                 transactionReferences.transactionIds());
+        validatePeriodClose(SclxPeriodCloseExtension.data(document.extensions()));
     }
 
     private static Set<String> uniqueAccountIds(List<SclxExportDocument.Account> accounts)
@@ -269,6 +270,31 @@ public final class SclxExportDocumentValidator
                         "inventory movement resultingQuantity and unitValue must not be negative: "
                                 + movement.movementId());
             }
+        }
+    }
+
+    private static void validatePeriodClose(SclxPeriodCloseExtension.Data data)
+    {
+        Set<String> rangeIds = SclxPeriodCloseExtension.uniqueRangeIds(data);
+        SclxPeriodCloseExtension.requireUniqueEventIds(data);
+        for (SclxPeriodCloseExtension.RangeEntry range : data.ranges())
+        {
+            if (range.endDate().isBefore(range.startDate()))
+                throw new IllegalArgumentException("period-close range endDate precedes startDate: " + range.rangeId());
+            if (!Set.of("CALCULATED", "CUSTOM").contains(range.rangeKind()))
+                throw new IllegalArgumentException("unsupported period-close rangeKind: " + range.rangeKind());
+            if (!Set.of("CLOSED", "REOPENED").contains(range.status()))
+                throw new IllegalArgumentException("unsupported period-close status: " + range.status());
+            if ("CLOSED".equals(range.status()) && (range.reopenedAt() != null || range.reopenedBy() != null))
+                throw new IllegalArgumentException("closed period-close range contains reopen facts: " + range.rangeId());
+            if ("REOPENED".equals(range.status()) && (range.reopenedAt() == null || range.reopenedBy() == null))
+                throw new IllegalArgumentException("reopened period-close range lacks reopen facts: " + range.rangeId());
+        }
+        for (SclxPeriodCloseExtension.EventEntry event : data.events())
+        {
+            requireReference(event.rangeId(), rangeIds, "period-close event " + event.eventId() + " rangeId");
+            if (!Set.of("CLOSED", "REOPENED").contains(event.eventType()))
+                throw new IllegalArgumentException("unsupported period-close eventType: " + event.eventType());
         }
     }
 
