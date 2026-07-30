@@ -1,16 +1,16 @@
 name: P15 Inventory Publish
 
 on:
-  push:
+  pull_request:
     branches:
-      - codex/P15-S4-C3-inventory-sclx-export
+      - main
 
 permissions:
   contents: write
 
 jobs:
   publish:
-    if: github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]' && github.head_ref == 'codex/P15-S4-C3-inventory-sclx-export'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
