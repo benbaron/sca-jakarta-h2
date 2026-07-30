@@ -90,7 +90,8 @@ public record SclxExportCounts(
             long warnings, long exclusions, long totalEntities)
     {
         this(organizations, accounts, funds, activities, counterparties, merchants, budgets, budgetLines,
-                transactions, transactionLines, 0L, 0L, 0L, warnings, exclusions, totalEntities);
+                transactions, transactionLines, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                warnings, exclusions, totalEntities);
     }
 
     public SclxExportCounts(long organizations, long accounts, long funds, long activities, long budgets,
@@ -98,14 +99,16 @@ public record SclxExportCounts(
             long totalEntities)
     {
         this(organizations, accounts, funds, activities, 0L, 0L, budgets, budgetLines, transactions,
-                transactionLines, 0L, 0L, 0L, warnings, exclusions, totalEntities);
+                transactionLines, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                warnings, exclusions, totalEntities);
     }
 
     public SclxExportCounts(long organizations, long accounts, long funds, long budgets, long budgetLines,
             long transactions, long transactionLines, long warnings, long exclusions, long totalEntities)
     {
         this(organizations, accounts, funds, 0L, 0L, 0L, budgets, budgetLines, transactions,
-                transactionLines, 0L, 0L, 0L, warnings, exclusions, totalEntities);
+                transactionLines, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                warnings, exclusions, totalEntities);
     }
 
     static SclxExportCounts from(SclxExportDocument document, long warningCount, long exclusionCount)
