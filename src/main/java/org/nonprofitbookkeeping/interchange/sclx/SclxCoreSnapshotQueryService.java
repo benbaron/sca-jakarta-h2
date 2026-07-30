@@ -21,6 +21,9 @@ import org.nonprofitbookkeeping.model.TxnSplit;
 import org.nonprofitbookkeeping.model.TxnSupplementalLine;
 import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.service.CompanyOwnershipService;
+import org.nonprofitbookkeeping.service.PeriodCloseEventView;
+import org.nonprofitbookkeeping.service.PeriodCloseRangeService;
+import org.nonprofitbookkeeping.service.PeriodCloseRangeView;
 
 import java.time.Instant;
 import java.util.List;
@@ -179,6 +182,9 @@ public class SclxCoreSnapshotQueryService
                             InventoryMovement.class)
                     .setParameter("company", company)
                     .getResultList();
+            PeriodCloseRangeService periodCloseService = new PeriodCloseRangeService(jpa);
+            List<PeriodCloseRangeView> periodCloseRanges = periodCloseService.listRanges(company.getCode());
+            List<PeriodCloseEventView> periodCloseEvents = periodCloseService.listEvents(company.getCode());
 
             return assembler.assemble(
                     company,
@@ -197,6 +203,8 @@ public class SclxCoreSnapshotQueryService
                     depreciationRuns,
                     inventoryItems,
                     inventoryMovements,
+                    periodCloseRanges,
+                    periodCloseEvents,
                     exportedAt);
         }
     }

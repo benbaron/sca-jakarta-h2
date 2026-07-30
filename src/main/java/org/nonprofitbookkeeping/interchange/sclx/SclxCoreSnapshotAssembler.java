@@ -17,6 +17,8 @@ import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
 import org.nonprofitbookkeeping.model.TxnSupplementalLine;
+import org.nonprofitbookkeeping.service.PeriodCloseEventView;
+import org.nonprofitbookkeeping.service.PeriodCloseRangeView;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -205,7 +207,7 @@ public final class SclxCoreSnapshotAssembler
         return assemble(
                 company, accounts, funds, activities, counterparties, merchants,
                 budgetPlans, budgetLines, transactions, transactionLines,
-                supplementalDetails, banking, List.of(), List.of(), List.of(), List.of(), exportedAt);
+                supplementalDetails, banking, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), exportedAt);
     }
 
     public SclxExportDocument assemble(
@@ -225,6 +227,8 @@ public final class SclxCoreSnapshotAssembler
             List<FixedAssetDepreciationRun> depreciationRuns,
             List<InventoryItem> inventoryItems,
             List<InventoryMovement> inventoryMovements,
+            List<PeriodCloseRangeView> periodCloseRanges,
+            List<PeriodCloseEventView> periodCloseEvents,
             Instant exportedAt)
     {
         Objects.requireNonNull(company, "company");
@@ -243,6 +247,8 @@ public final class SclxCoreSnapshotAssembler
         Objects.requireNonNull(depreciationRuns, "depreciationRuns");
         Objects.requireNonNull(inventoryItems, "inventoryItems");
         Objects.requireNonNull(inventoryMovements, "inventoryMovements");
+        Objects.requireNonNull(periodCloseRanges, "periodCloseRanges");
+        Objects.requireNonNull(periodCloseEvents, "periodCloseEvents");
         Objects.requireNonNull(exportedAt, "exportedAt");
 
         ChartOfAccounts activeChart = Objects.requireNonNull(
@@ -438,6 +444,8 @@ public final class SclxCoreSnapshotAssembler
         extensionValues.put(SclxReconciliationExtension.KEY, exportedBanking.reconciliation());
         extensionValues.put(SclxFixedAssetsExtension.KEY, exportedFixedAssets);
         extensionValues.put(SclxInventoryExtension.KEY, exportedInventory);
+        extensionValues.put(SclxPeriodCloseExtension.KEY,
+                new SclxPeriodCloseSnapshotAssembler().assemble(companyCode, periodCloseRanges, periodCloseEvents));
 
         SclxExportDocument document = SclxExportDocument.version13(
                 exportedAt,
