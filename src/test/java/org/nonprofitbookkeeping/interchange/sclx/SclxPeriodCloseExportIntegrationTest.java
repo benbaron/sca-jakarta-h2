@@ -73,7 +73,7 @@ class SclxPeriodCloseExportIntegrationTest
     private static SclxExportDocument document(Map<String, Object> periodClose)
     {
         return new SclxExportDocument(
-                "sclx", "1.3", Instant.EPOCH,
+                "SCLX", "1.3", Instant.EPOCH,
                 new SclxExportDocument.Organization(
                         SclxPortableIdentity.organization("TEST"), "TEST", "Test", "USD",
                         LocalDate.of(2026, 1, 1)),
