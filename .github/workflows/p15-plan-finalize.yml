@@ -1,0 +1,45 @@
+name: P15 Plan Finalize
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]' && github.head_ref == 'codex/P15-S4-C3-inventory-sclx-export'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S4-C3-inventory-sclx-export
+          fetch-depth: 0
+      - name: Record final inventory validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('doc/PLAN.md')
+          s = p.read_text()
+          s = s.replace('plan_version: 94', 'plan_version: 95', 1)
+          s = s.replace('active_head: "97c8856a9ab589e776497b70f5e9bec29e71e4d1"', 'active_head: "8a7eec251d4bba14c3d7cc0e167e2e2bebfdfe47"', 1)
+          s = s.replace('next_action: "Run authoritative Maven PR validation for PR #223, correct any remaining failures, then mark the PR ready for review."', 'next_action: "Review and merge PR #223 after owner authorization, then start a fresh P15-S4 branch for period-close and factual audit-history export."', 1)
+          s = s.replace('Current validation target head: `97c8856a9ab589e776497b70f5e9bec29e71e4d1`', 'Current tested implementation head: `8a7eec251d4bba14c3d7cc0e167e2e2bebfdfe47`', 1)
+          marker = '- The shared extension reader now rejects unknown fields while permitting governed optional fields to be omitted; required fields remain enforced by typed readers. The resulting bot-authored head `97c8856a9ab589e776497b70f5e9bec29e71e4d1` requires a normal plan-inclusive commit to trigger authoritative Maven validation.\n'
+          replacement = marker + '- Maven PR Tests run `30512885063` passed on exact head `8a7eec251d4bba14c3d7cc0e167e2e2bebfdfe47`: `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance all succeeded.\n'
+          if marker not in s:
+              raise SystemExit('validation marker missing')
+          s = s.replace(marker, replacement, 1)
+          s = s.replace('- Run authoritative Maven PR validation for PR #223, correct any remaining failures, mark it ready for review, and merge only after owner authorization. Period-close and factual audit-history export remain subsequent fresh P15-S4 slices.', '- Review and merge PR #223 only after owner authorization. Then start a fresh P15-S4 branch for period-close facts and factual audit-history export; complete owner desktop acceptance before P15-S4 is marked done.', 1)
+          p.write_text(s)
+          PY
+          rm -f .github/workflows/p15-plan-finalize.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'P15-S4-C3 record successful inventory validation'
+          git push origin HEAD:codex/P15-S4-C3-inventory-sclx-export
