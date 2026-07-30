@@ -103,6 +103,16 @@ public final class SclxPortableIdentity
         return identity("inventory-movement", companyCode, durableMovementKey);
     }
 
+    public static String periodCloseRange(String companyCode, String durableRangeKey)
+    {
+        return identity("period-close-range", companyCode, durableRangeKey);
+    }
+
+    public static String periodCloseEvent(String companyCode, String durableEventKey)
+    {
+        return identity("period-close-event", companyCode, durableEventKey);
+    }
+
     public static String budget(String companyCode, int fiscalYear, String version)
     {
         return identity("budget", companyCode, Integer.toString(fiscalYear), version);
