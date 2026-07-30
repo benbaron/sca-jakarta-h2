@@ -10,6 +10,8 @@ import org.nonprofitbookkeeping.model.Counterparty;
 import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.model.FixedAsset;
 import org.nonprofitbookkeeping.model.FixedAssetDepreciationRun;
+import org.nonprofitbookkeeping.model.InventoryItem;
+import org.nonprofitbookkeeping.model.InventoryMovement;
 import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.model.Txn;
@@ -203,7 +205,7 @@ public final class SclxCoreSnapshotAssembler
         return assemble(
                 company, accounts, funds, activities, counterparties, merchants,
                 budgetPlans, budgetLines, transactions, transactionLines,
-                supplementalDetails, banking, List.of(), List.of(), exportedAt);
+                supplementalDetails, banking, List.of(), List.of(), List.of(), List.of(), exportedAt);
     }
 
     public SclxExportDocument assemble(
@@ -221,6 +223,8 @@ public final class SclxCoreSnapshotAssembler
             SclxBankingSnapshot banking,
             List<FixedAsset> fixedAssets,
             List<FixedAssetDepreciationRun> depreciationRuns,
+            List<InventoryItem> inventoryItems,
+            List<InventoryMovement> inventoryMovements,
             Instant exportedAt)
     {
         Objects.requireNonNull(company, "company");
@@ -237,6 +241,8 @@ public final class SclxCoreSnapshotAssembler
         Objects.requireNonNull(banking, "banking");
         Objects.requireNonNull(fixedAssets, "fixedAssets");
         Objects.requireNonNull(depreciationRuns, "depreciationRuns");
+        Objects.requireNonNull(inventoryItems, "inventoryItems");
+        Objects.requireNonNull(inventoryMovements, "inventoryMovements");
         Objects.requireNonNull(exportedAt, "exportedAt");
 
         ChartOfAccounts activeChart = Objects.requireNonNull(
@@ -410,6 +416,14 @@ public final class SclxCoreSnapshotAssembler
                 includedTransactions,
                 exportedTransactionIds);
 
+        Map<String, Object> exportedInventory = new SclxInventorySnapshotAssembler().assemble(
+                companyCode,
+                company,
+                activeChart,
+                new SclxInventorySnapshot(inventoryItems, inventoryMovements),
+                includedTransactions,
+                exportedTransactionIds);
+
         Map<String, Object> extensionValues = new LinkedHashMap<>();
         extensionValues.put("activeChartName", activeChart.getName());
         extensionValues.put("activeChartVersion", activeChart.getVersion());
@@ -423,6 +437,7 @@ public final class SclxCoreSnapshotAssembler
         extensionValues.put(SclxBankStatementFactsExtension.KEY, exportedBanking.bankStatementFacts());
         extensionValues.put(SclxReconciliationExtension.KEY, exportedBanking.reconciliation());
         extensionValues.put(SclxFixedAssetsExtension.KEY, exportedFixedAssets);
+        extensionValues.put(SclxInventoryExtension.KEY, exportedInventory);
 
         SclxExportDocument document = SclxExportDocument.version13(
                 exportedAt,

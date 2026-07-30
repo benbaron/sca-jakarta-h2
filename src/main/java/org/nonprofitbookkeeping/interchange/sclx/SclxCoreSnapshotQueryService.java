@@ -13,6 +13,8 @@ import org.nonprofitbookkeeping.model.Counterparty;
 import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.model.FixedAsset;
 import org.nonprofitbookkeeping.model.FixedAssetDepreciationRun;
+import org.nonprofitbookkeeping.model.InventoryItem;
+import org.nonprofitbookkeeping.model.InventoryMovement;
 import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
@@ -161,6 +163,22 @@ public class SclxCoreSnapshotQueryService
                             FixedAssetDepreciationRun.class)
                     .setParameter("company", company)
                     .getResultList();
+            List<InventoryItem> inventoryItems = em.createQuery(
+                            "select i from InventoryItem i "
+                                    + "join fetch i.inventoryAccount a join fetch a.chart "
+                                    + "join fetch i.fund "
+                                    + "where i.company = :company order by i.portableId",
+                            InventoryItem.class)
+                    .setParameter("company", company)
+                    .getResultList();
+            List<InventoryMovement> inventoryMovements = em.createQuery(
+                            "select m from InventoryMovement m "
+                                    + "join fetch m.inventoryItem i "
+                                    + "left join fetch m.transaction "
+                                    + "where i.company = :company order by m.portableId",
+                            InventoryMovement.class)
+                    .setParameter("company", company)
+                    .getResultList();
 
             return assembler.assemble(
                     company,
@@ -177,6 +195,8 @@ public class SclxCoreSnapshotQueryService
                     banking,
                     fixedAssets,
                     depreciationRuns,
+                    inventoryItems,
+                    inventoryMovements,
                     exportedAt);
         }
     }
