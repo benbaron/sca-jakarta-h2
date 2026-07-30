@@ -29,11 +29,6 @@ public final class SclxExportDocumentValidator
         validateSupplementalDetails(
                 SclxSupplementalDetailExtension.entries(document.extensions()),
                 transactionReferences.transactionIds());
-        validateFixedAssets(
-                SclxFixedAssetsExtension.data(document.extensions()),
-                accountIds,
-                fundIds,
-                transactionReferences.transactionIds());
         SclxBankConfigurationExtension.Data bankConfiguration =
                 SclxBankConfigurationExtension.data(document.extensions());
         Set<String> bankIds = SclxBankConfigurationExtension.uniqueBankIds(bankConfiguration);
@@ -53,6 +48,11 @@ public final class SclxExportDocumentValidator
                 transactionReferences.transactionLineIds());
         validateFixedAssets(
                 SclxFixedAssetsExtension.data(document.extensions()),
+                accountIds,
+                fundIds,
+                transactionReferences.transactionIds());
+        validateInventory(
+                SclxInventoryExtension.data(document.extensions()),
                 accountIds,
                 fundIds,
                 transactionReferences.transactionIds());
@@ -233,6 +233,41 @@ public final class SclxExportDocumentValidator
             {
                 throw new IllegalArgumentException(
                         "depreciation run amount must be positive: " + run.depreciationRunId());
+            }
+        }
+    }
+
+    private static void validateInventory(
+            SclxInventoryExtension.Data data,
+            Set<String> accountIds,
+            Set<String> fundIds,
+            Set<String> transactionIds)
+    {
+        Set<String> itemIds = SclxInventoryExtension.uniqueItemIds(data);
+        SclxInventoryExtension.requireUniqueMovementIds(data);
+        for (SclxInventoryExtension.ItemEntry item : data.items())
+        {
+            requireReference(item.inventoryAccountId(), accountIds,
+                    "inventory item " + item.itemId() + " inventoryAccountId");
+            requireReference(item.fundId(), fundIds,
+                    "inventory item " + item.itemId() + " fundId");
+            if (item.quantity().signum() < 0 || item.unitValue().signum() < 0)
+            {
+                throw new IllegalArgumentException(
+                        "inventory item quantity and unitValue must not be negative: " + item.itemId());
+            }
+        }
+        for (SclxInventoryExtension.MovementEntry movement : data.movements())
+        {
+            requireReference(movement.itemId(), itemIds,
+                    "inventory movement " + movement.movementId() + " itemId");
+            requireOptionalReference(movement.transactionId(), transactionIds,
+                    "inventory movement " + movement.movementId() + " transactionId");
+            if (movement.resultingQuantity().signum() < 0 || movement.unitValue().signum() < 0)
+            {
+                throw new IllegalArgumentException(
+                        "inventory movement resultingQuantity and unitValue must not be negative: "
+                                + movement.movementId());
             }
         }
     }

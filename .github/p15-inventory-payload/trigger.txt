@@ -1,1 +1,0 @@
-Trigger publication from the pull-request workflow.
