@@ -17,6 +17,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.UUID;
 
 /** H2-backed inventory movement record. */
 @Entity
@@ -38,6 +39,9 @@ public class InventoryMovement
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "portable_id", nullable = false, unique = true, updatable = false)
+    private UUID portableId = UUID.randomUUID();
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "inventory_item_id", nullable = false)
@@ -71,6 +75,7 @@ public class InventoryMovement
     private Instant createdAt = Instant.now();
 
     public Long getId() { return id; }
+    public UUID getPortableId() { return portableId; }
     public InventoryItem getInventoryItem() { return inventoryItem; }
     public void setInventoryItem(InventoryItem inventoryItem) { this.inventoryItem = inventoryItem; }
     public LocalDate getMovementDate() { return movementDate; }
