@@ -21,7 +21,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .github/p15-inventory-payload/chunk-* | base64 --decode > /tmp/inventory-impl.tar.gz
+          base64 --decode .github/p15-inventory-payload/chunk-00 > /tmp/inventory-impl.tar.gz
           echo '8ba7b48141c52ab65becfff4aada9beccdb4cdc43ced227807354542c9b951d8  /tmp/inventory-impl.tar.gz' | sha256sum -c -
           tar -xzf /tmp/inventory-impl.tar.gz
           rm -rf .github/p15-inventory-payload
