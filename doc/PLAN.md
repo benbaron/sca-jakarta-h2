@@ -1,12 +1,12 @@
 ---
-plan_version: 94
+plan_version: 95
 active_phase: P15
 active_slice: P15-S4
 active_status: VERIFYING
 active_branch: codex/P15-S4-C3-inventory-sclx-export
 active_pull_request: 223
-active_head: "97c8856a9ab589e776497b70f5e9bec29e71e4d1"
-next_action: "Run authoritative Maven PR validation for PR #223, correct any remaining failures, then mark the PR ready for review."
+active_head: "8a7eec251d4bba14c3d7cc0e167e2e2bebfdfe47"
+next_action: "Review and merge PR #223 after owner authorization, then start a fresh P15-S4 branch for period-close and factual audit-history export."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -917,7 +917,7 @@ Next exact action:
 
 Status: VERIFYING on branch `codex/P15-S4-C3-inventory-sclx-export` in draft PR #223.
 
-Current validation target head: `97c8856a9ab589e776497b70f5e9bec29e71e4d1`
+Current tested implementation head: `8a7eec251d4bba14c3d7cc0e167e2e2bebfdfe47`
 
 Incremental completed deliverables:
 
@@ -1003,6 +1003,7 @@ Validation status:
 - Initial normal PR #223 run `30511334865` compiled production sources but exposed two stale fixed-asset test calls using the pre-inventory assembler signature; the fixtures were corrected to pass empty inventory lists.
 - Corrected PR #223 run `30511454947` compiled production and test sources and ran 462 tests; 461 passed and one new inventory test exposed that the shared extension reader incorrectly required optional fields to be present.
 - The shared extension reader now rejects unknown fields while permitting governed optional fields to be omitted; required fields remain enforced by typed readers. The resulting bot-authored head `97c8856a9ab589e776497b70f5e9bec29e71e4d1` requires a normal plan-inclusive commit to trigger authoritative Maven validation.
+- Maven PR Tests run `30512885063` passed on exact head `8a7eec251d4bba14c3d7cc0e167e2e2bebfdfe47`: `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance all succeeded.
 
 Planned deliverables:
 
@@ -1022,7 +1023,7 @@ Acceptance:
 
 Next exact action:
 
-- Run authoritative Maven PR validation for PR #223, correct any remaining failures, mark it ready for review, and merge only after owner authorization. Period-close and factual audit-history export remain subsequent fresh P15-S4 slices.
+- Review and merge PR #223 only after owner authorization. Then start a fresh P15-S4 branch for period-close facts and factual audit-history export; complete owner desktop acceptance before P15-S4 is marked done.
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
