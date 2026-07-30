@@ -93,6 +93,16 @@ public final class SclxPortableIdentity
         return identity("fixed-asset-depreciation-run", companyCode, durableRunKey);
     }
 
+    public static String inventoryItem(String companyCode, String durableItemKey)
+    {
+        return identity("inventory-item", companyCode, durableItemKey);
+    }
+
+    public static String inventoryMovement(String companyCode, String durableMovementKey)
+    {
+        return identity("inventory-movement", companyCode, durableMovementKey);
+    }
+
     public static String budget(String companyCode, int fiscalYear, String version)
     {
         return identity("budget", companyCode, Integer.toString(fiscalYear), version);
