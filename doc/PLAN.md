@@ -1,12 +1,12 @@
 ---
-plan_version: 93
+plan_version: 94
 active_phase: P15
 active_slice: P15-S4
 active_status: VERIFYING
-active_branch: codex/P15-S4-fixed-assets-sclx-export
-active_pull_request: 218
-active_head: "049617344f778000be5e571c40b3c8b8055758e6"
-next_action: "Validate and merge PR #218, then implement the next deferred selected-company SCLX section on a fresh P15-S4 branch."
+active_branch: codex/P15-S4-C3-inventory-sclx-export
+active_pull_request: 223
+active_head: "97c8856a9ab589e776497b70f5e9bec29e71e4d1"
+next_action: "Run authoritative Maven PR validation for PR #223, correct any remaining failures, then mark the PR ready for review."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Validate and merge PR #218, then implement the next deferred selec
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records durable fixed-asset/depreciation-run identities merged through PR #216 and selected-company fixed-asset/depreciation SCLX export in draft PR #218.
+This revision records fixed-asset export corrections merged through PR #220, durable inventory identities merged through PR #221, the inventory SCLX contract merged through PR #222, and its production implementation in corrective PR #223.
 
 ## 2. Status values
 
@@ -915,9 +915,9 @@ Next exact action:
 
 ## P15-S4 — SCLX model, parser, and deterministic active-company export
 
-Status: VERIFYING on branch `codex/P15-S4-fixed-assets-sclx-export` in draft PR #218.
+Status: VERIFYING on branch `codex/P15-S4-C3-inventory-sclx-export` in draft PR #223.
 
-Current tested implementation head: `049617344f778000be5e571c40b3c8b8055758e6`
+Current validation target head: `97c8856a9ab589e776497b70f5e9bec29e71e4d1`
 
 Incremental completed deliverables:
 
@@ -941,6 +941,11 @@ Incremental completed deliverables:
 - PR #215: selected-company bank configuration, reviewed import/statement provenance, transaction-line clearance facts, reconciliation sessions/matches, strict ownership/reference validation, deterministic ordering, counts, and desktop acceptance updates.
 - PR #216: intrinsic UUID portable identities for fixed assets and completed depreciation runs, with V65 backfill/default/non-null/uniqueness enforcement, focused entity/migration/recovery coverage, identity-contract documentation, and no fixed-asset SCLX mapping.
 - PR #218: selected-company fixed assets and completed depreciation runs under `extensions.scaJakartaH2.fixedAssets`, preserving all authoritative asset fields, account/fund references, canonical transaction provenance, deterministic intrinsic identities, exact counts, strict ownership/reference validation, and nullable notes.
+- PR #219: corrective repair of the merged fixed-asset export assembly after overlapping implementations caused production compilation drift.
+- PR #220: fixed-asset test-contract reconciliation, restoring governed accessors, identities, builder ordering, and assembler calls.
+- PR #221: intrinsic UUID portable identities for inventory items and movements, with V66 recovery-safe backfill/default/non-null/uniqueness enforcement.
+- PR #222: governed `extensions.scaJakartaH2.inventory` contract documentation only; no production implementation was included.
+- PR #223: corrective selected-company inventory item and movement export implementation, including deterministic identities/order, strict ownership/reference validation, exact counts, completion-summary integration, and focused tests.
 
 Validation status:
 
@@ -991,6 +996,13 @@ Validation status:
 - Initial PR #218 run `30475855000` compiled production sources but exposed an existing coordinator fixture using the pre-fixed-assets 21-field export-count constructor; backward-compatible delegation was restored.
 - Corrected PR #218 run `30476023044` passed compilation and 452 tests before a focused nullable-notes fixture exposed `Map.copyOf` rejecting absent optional notes; the production extension builder was corrected to omit null optional values without substituting empty text.
 - Clean PR #218 implementation run `30476305641` passed `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance on exact head `049617344f778000be5e571c40b3c8b8055758e6`.
+- PR #218 subsequently merged, and corrective PRs #219 and #220 restored production/test contract consistency; PR #220 merged at `88ab6a816f01d8b39245ee16c0d8c09fd66e87a4`.
+- PR #221 passed Maven PR Tests run `30505370010` on head `58c59d8f366b7111b804ba4df75245eefc40f4f0` and merged at `99262cdd7e579943c62ec21eea7927d6f8f123a0`.
+- PR #222 merged at `3e8c7c8220a8cfe20ee697d835e28d4cc69e4092` but changed only `doc/data-exchange/inventory-sclx.md`; production inventory export remained open.
+- PR #223 publication run `30511264525` reconstructed a SHA-256-verified source archive and removed all temporary payload/workflow files in the resulting implementation commit.
+- Initial normal PR #223 run `30511334865` compiled production sources but exposed two stale fixed-asset test calls using the pre-inventory assembler signature; the fixtures were corrected to pass empty inventory lists.
+- Corrected PR #223 run `30511454947` compiled production and test sources and ran 462 tests; 461 passed and one new inventory test exposed that the shared extension reader incorrectly required optional fields to be present.
+- The shared extension reader now rejects unknown fields while permitting governed optional fields to be omitted; required fields remain enforced by typed readers. The resulting bot-authored head `97c8856a9ab589e776497b70f5e9bec29e71e4d1` requires a normal plan-inclusive commit to trigger authoritative Maven validation.
 
 Planned deliverables:
 
@@ -1010,7 +1022,7 @@ Acceptance:
 
 Next exact action:
 
-- Validate and merge PR #218, then start a fresh P15-S4 branch for the next deferred selected-company SCLX section; complete owner desktop acceptance before P15-S4 is marked done.
+- Run authoritative Maven PR validation for PR #223, correct any remaining failures, mark it ready for review, and merge only after owner authorization. Period-close and factual audit-history export remain subsequent fresh P15-S4 slices.
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
