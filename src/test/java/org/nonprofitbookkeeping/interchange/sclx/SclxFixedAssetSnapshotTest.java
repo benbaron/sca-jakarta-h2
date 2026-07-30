@@ -94,6 +94,8 @@ class SclxFixedAssetSnapshotTest
                 List.of(fixture.run()),
                 List.of(),
                 List.of(),
+                List.of(),
+                List.of(),
                 Instant.EPOCH));
     }
 
@@ -162,6 +164,8 @@ class SclxFixedAssetSnapshotTest
                 SclxBankingSnapshot.empty(),
                 List.of(fixture.asset()),
                 includeRun ? List.of(fixture.run()) : List.of(),
+                List.of(),
+                List.of(),
                 List.of(),
                 List.of(),
                 Instant.parse("2026-03-01T00:00:00Z"));
