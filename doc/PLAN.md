@@ -2,11 +2,11 @@
 plan_version: 105
 active_phase: P15
 active_slice: P15-S5-C5
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S5-C5-fixed-asset-import
 active_pull_request: 232
 active_head: "09c0e38a4531e8f1a4a457ba49cbf9f9564fc89f"
-next_action: "Run Maven PR Tests on draft PR #232, correct concrete compiler or H2 integration failures, and keep the production SCLX commit action absent."
+next_action: "Review draft PR #232 after final plan-inclusive CI; keep the production SCLX commit action absent until the remaining section writers are complete."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: IN_PROGRESS at P15-S5-C5.
+Status: VERIFYING at P15-S5-C5 on draft PR #232.
 
 Startup scope:
 
@@ -1200,7 +1200,7 @@ Next exact action:
 
 ### P15-S5-C5 — Fixed-asset and completed-depreciation-run import
 
-Status: IN_PROGRESS on draft PR #232.
+Status: VERIFYING on draft PR #232.
 
 Scope:
 
@@ -1215,10 +1215,11 @@ Validation status:
 
 - Local Maven is unavailable; Java 17 source validation and GitHub Maven PR Tests are required.
 - Initial implementation head `09c0e38a4531e8f1a4a457ba49cbf9f9564fc89f` is published on draft PR #232.
+- Plan-inclusive head `f3da2daa6da8d8b9f98cdbe38c894cc37e68190a` passed Maven PR Tests run `30669727984`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
 
 Next exact action:
 
-- Run exact-head Maven PR Tests on draft PR #232 and correct any concrete compiler or H2 integration failures.
+- Review and merge draft PR #232 after its final governance-only head passes all Maven PR Tests gates.
 
 Planned deliverables:
 
