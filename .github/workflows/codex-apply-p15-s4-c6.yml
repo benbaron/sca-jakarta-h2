@@ -7,12 +7,17 @@ on:
     paths:
       - .codex/apply_p15_s4_c6.py
       - .github/workflows/codex-apply-p15-s4-c6.yml
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
 
 jobs:
   apply:
+    if: github.head_ref == 'codex/P15-S4-C6-audit-history-sclx-export' || github.ref_name == 'codex/P15-S4-C6-audit-history-sclx-export'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,5 +35,3 @@ jobs:
           git add -A
           git commit -m "P15-S4-C6: export factual audit history to SCLX"
           git push origin HEAD:codex/P15-S4-C6-audit-history-sclx-export
-
-# Triggered after workflow publication so the branch workflow is already registered.
