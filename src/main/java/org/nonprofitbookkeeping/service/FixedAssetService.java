@@ -16,8 +16,10 @@ import org.nonprofitbookkeeping.persistence.Jpa;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 /** Application service for H2-backed fixed assets and depreciation runs. */
 @ApplicationScoped
@@ -196,6 +198,88 @@ public class FixedAssetService
                 throw ex;
             }
         }
+    }
+
+    /** Creates a fixed asset inside an interchange caller's existing transaction. */
+    public FixedAsset createForImport(
+            EntityManager em,
+            Company company,
+            FixedAssetCommand command,
+            UUID portableId,
+            Instant createdAt,
+            Instant updatedAt)
+    {
+        Objects.requireNonNull(em, "em");
+        Objects.requireNonNull(company, "company");
+        if (!em.getTransaction().isActive())
+        {
+            throw new IllegalStateException("Fixed-asset import requires an active caller-owned transaction");
+        }
+        if (command == null || command.companyCode() == null
+                || !company.getCode().equalsIgnoreCase(command.companyCode().trim()))
+        {
+            throw new IllegalArgumentException("Fixed-asset import company does not match the command");
+        }
+        FixedAsset asset = new FixedAsset();
+        apply(em, asset, command);
+        asset.initializeImportMetadata(portableId, createdAt, updatedAt);
+        em.persist(asset);
+        return asset;
+    }
+
+    /** Records a completed depreciation run inside an interchange caller's existing transaction. */
+    public FixedAssetDepreciationRun recordCompletedRunForImport(
+            EntityManager em,
+            Company company,
+            FixedAsset asset,
+            LocalDate runDate,
+            BigDecimal amount,
+            Txn transaction,
+            String notes,
+            UUID portableId,
+            Instant createdAt)
+    {
+        Objects.requireNonNull(em, "em");
+        Objects.requireNonNull(company, "company");
+        Objects.requireNonNull(asset, "asset");
+        Objects.requireNonNull(transaction, "transaction");
+        if (!em.getTransaction().isActive())
+        {
+            throw new IllegalStateException("Depreciation-run import requires an active caller-owned transaction");
+        }
+        if (runDate == null)
+        {
+            throw new IllegalArgumentException("runDate is required");
+        }
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0)
+        {
+            throw new IllegalArgumentException("Depreciation amount must be positive");
+        }
+        CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
+        ownership.ensureOwnedBy(em, company, asset, "Fixed asset");
+        ownership.ensureOwnedBy(em, company, transaction, "Depreciation transaction");
+        boolean duplicatePeriod = !em.createQuery("""
+                select r.id from FixedAssetDepreciationRun r
+                where r.fixedAsset = :asset and r.runDate = :runDate
+                """, Long.class)
+                .setParameter("asset", asset)
+                .setParameter("runDate", runDate)
+                .setMaxResults(1)
+                .getResultList()
+                .isEmpty();
+        if (duplicatePeriod)
+        {
+            throw new IllegalStateException("A completed depreciation run already exists for " + runDate);
+        }
+        FixedAssetDepreciationRun run = new FixedAssetDepreciationRun();
+        run.setFixedAsset(asset);
+        run.setRunDate(runDate);
+        run.setDepreciationAmount(scale(amount));
+        run.setTransaction(transaction);
+        run.setNotes(notes);
+        run.initializeImportMetadata(portableId, createdAt);
+        em.persist(run);
+        return run;
     }
 
     private void apply(EntityManager em, FixedAsset asset, FixedAssetCommand command)

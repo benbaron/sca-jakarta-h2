@@ -180,7 +180,7 @@ Sessions and matches are ordered by durable UUID identity. Date ranges, policies
 
 `extensions.scaJakartaH2.fixedAssets` is an object with exactly `assets` and `depreciationRuns` arrays. It contains every fixed asset owned by the selected company, including inactive and disposed records needed to interpret history, plus every completed depreciation run for those assets. It does not create future schedules or inferred depreciation entries.
 
-Each asset entry contains exactly `fixedAssetId`, `assetAccountId`, `accumulatedDepreciationAccountId`, `depreciationExpenseAccountId`, `fundId`, `name`, `acquisitionDate`, `acquisitionCost`, `salvageValue`, `usefulLifeMonths`, `depreciationMethod`, `openingAccumulatedDepreciation`, `status`, nullable `notes`, `createdAt`, and `updatedAt`. Each depreciation-run entry contains exactly `depreciationRunId`, `fixedAssetId`, `runDate`, `depreciationAmount`, `transactionId`, nullable `notes`, and `createdAt`. Current book value and total accumulated depreciation remain derived from the persisted opening amount and completed runs; they are not serialized as a second accounting authority.
+Each asset entry contains exactly `assetId`, `assetAccountId`, `accumulatedDepreciationAccountId`, `depreciationExpenseAccountId`, `fundId`, `name`, `acquisitionDate`, `acquisitionCost`, `salvageValue`, `usefulLifeMonths`, `depreciationMethod`, `openingAccumulatedDepreciation`, `status`, nullable `notes`, `createdAt`, and `updatedAt`. Each depreciation-run entry contains exactly `depreciationRunId`, `assetId`, `runDate`, `depreciationAmount`, `transactionId`, nullable `notes`, and `createdAt`. Current book value and total accumulated depreciation remain derived from the persisted opening amount and completed runs; they are not serialized as a second accounting authority.
 
 Asset and run arrays are ordered by their intrinsic UUID portable identities. Every account reference MUST resolve to the selected company's exported active chart, every fund reference MUST resolve to an exported company fund, every run MUST resolve to an exported fixed asset, and every run transaction MUST resolve to the canonical transaction created for that completed run. The run keeps its own identity; `transactionId` is accounting provenance and never substitutes for `depreciationRunId`. Local numeric IDs, mutable names, and content-derived ordinals are prohibited as portable identity.
 
@@ -350,6 +350,28 @@ C4 still rejects banking and reconciliation, fixed assets and depreciation, inve
 facts, imported audit history, correction relationships, populated unknown sections, and populated
 target-company merge. The JavaFX SCLX commit action remains absent.
 
+### 10.6 P15-S5-C5 fixed-asset import boundary
+
+P15-S5-C5 extends the same caller-owned transaction to
+`extensions.scaJakartaH2.fixedAssets` version 1. Before mutation, the importer strictly validates the
+asset and completed-run shapes, identities, account/fund/transaction references, supported status and
+depreciation values, nonnegative `DECIMAL(19,4)` asset amounts, positive run amounts, timestamps, and
+one completed run per asset and run date.
+
+Assets are recreated through the caller-owned `FixedAssetService` boundary after accounts and funds
+exist. Their intrinsic portable UUID, source creation/update timestamps, name, acquisition facts,
+method, opening accumulated depreciation, status, notes, account references, and fund reference are
+preserved. Completed runs are written only after canonical source transactions exist and preserve
+their own portable UUID, asset, run date, amount, transaction provenance, notes, and creation time.
+The importer never calculates a new depreciation amount or creates another ledger transaction for an
+already-completed source run.
+
+Every imported asset and completed run receives a same-transaction `interchange_identity`. A
+successful operation writes one company-owned `SCLX_FIXED_ASSETS_IMPORTED` event, and an identical
+reimport remains a no-op. C5 still rejects banking and reconciliation, inventory, period-close facts,
+imported audit history, correction relationships, populated unknown sections, and populated-target
+merge. The JavaFX SCLX commit action remains absent.
+
 ## 11. Import transaction boundary and results
 
 Preview and validation MUST make no H2 changes. Commit MUST use one caller-owned transaction for the documented import boundary and route financial records through canonical services. A late failure MUST roll back all records in that boundary.
@@ -364,6 +386,9 @@ merchants, supplemental transaction rows, their relationships, and their interch
 
 For P15-S5-C4, the same rollback boundary additionally includes created budget categories, normalized
 budget plans and lines, their interchange identities, and the C4 operation audit event.
+
+For P15-S5-C5, the same rollback boundary additionally includes fixed assets, completed depreciation
+runs, their intrinsic portable metadata and interchange identities, and the C5 operation audit event.
 
 The result MUST report at least:
 

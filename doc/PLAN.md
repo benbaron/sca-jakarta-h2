@@ -1,12 +1,12 @@
 ---
-plan_version: 104
+plan_version: 105
 active_phase: P15
-active_slice: P15-S5-C4
+active_slice: P15-S5-C5
 active_status: VERIFYING
-active_branch: codex/P15-S5-C4-budget-import
-active_pull_request: 231
-active_head: "c65ec99cc56cf965b112c1e59894c8e52ae75786"
-next_action: "Review draft PR #231 after final plan-inclusive CI; keep the production SCLX commit action absent until the remaining section writers are complete."
+active_branch: codex/P15-S5-C5-fixed-asset-import
+active_pull_request: 232
+active_head: "09c0e38a4531e8f1a4a457ba49cbf9f9564fc89f"
+next_action: "Review draft PR #232 after final plan-inclusive CI; keep the production SCLX commit action absent until the remaining section writers are complete."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Review draft PR #231 after final plan-inclusive CI; keep the produ
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S5-C3 complete through merged PR #230 and activates P15-S5-C4 budget import on a fresh branch from current main.
+This revision records P15-S5-C4 complete through merged PR #231 and activates P15-S5-C5 fixed-asset import on a fresh branch from current main.
 
 ## 2. Status values
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** VERIFYING at P15-S5-C4; P15-S0 through P15-S4 and P15-S5-C1 through C3 DONE
+**Status:** IN_PROGRESS at P15-S5-C5; P15-S0 through P15-S4 and P15-S5-C1 through C4 DONE
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: VERIFYING at P15-S5-C4 on draft PR #231.
+Status: VERIFYING at P15-S5-C5 on draft PR #232.
 
 Startup scope:
 
@@ -1093,10 +1093,12 @@ Current validation status:
 - Plan-handoff head `bbf03bae2ce2cf71d895c543a8f260dfca4e904c` passed Maven PR Tests run `30662272533`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
 - Final C3 head `c5086ae0fff22d046f4ca2b32b4e0bc40d6afaa6` passed Maven PR Tests run `30662503100`, and PR #230 merged to `main` at `d4eed71fe8943ec0e56c3ad57f9892c5ddc49579`.
 - P15-S5-C4 imports governed budget plans and lines through caller-owned canonical budget services while retaining the same atomic rollback and idempotent identity boundary.
+- Final C4 head `e36ec398a216cfd38836d9213c2860a261fafab6` passed Maven PR Tests run `30665458733`, and PR #231 merged to `main` at `12e7195b528108a246d039d7f7cc41b25f08c5f7`.
+- P15-S5-C5 imports fixed assets and completed depreciation runs through caller-owned canonical services after their account, fund, and canonical transaction dependencies exist.
 
 Next exact action:
 
-- Complete P15-S5-C4 budget import, focused rollback/idempotency coverage, governing documentation, and exact-head CI on the fresh C4 branch.
+- Complete P15-S5-C5 fixed-asset import, focused rollback/idempotency coverage, governing documentation, and exact-head CI on the fresh C5 branch.
 
 ### P15-S5-C1 — Non-mutating SCLX import preview
 
@@ -1173,7 +1175,7 @@ Next exact action:
 
 ### P15-S5-C4 — Budget plan and line import
 
-Status: VERIFYING on draft PR #231.
+Status: DONE through merged PR #231.
 
 Scope:
 
@@ -1190,10 +1192,34 @@ Validation status:
 
 - Java 17 grammar validation passes for every changed Java source.
 - Plan-inclusive head `541da393bd0bc2c3ec64e8f649e2abc3244c5f5f` passed Maven PR Tests run `30665277721`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
+- Final head `e36ec398a216cfd38836d9213c2860a261fafab6` passed Maven PR Tests run `30665458733`, and PR #231 merged to `main` at `12e7195b528108a246d039d7f7cc41b25f08c5f7`.
 
 Next exact action:
 
-- Review and merge draft PR #231 after its final governance-only head passes all Maven PR Tests gates.
+- None; P15-S5-C4 is DONE.
+
+### P15-S5-C5 — Fixed-asset and completed-depreciation-run import
+
+Status: VERIFYING on draft PR #232.
+
+Scope:
+
+- Strictly validate `extensions.scaJakartaH2.fixedAssets` version 1, including asset and completed-run shapes, identities, values, timestamps, references, and one run per asset/date.
+- Create fixed assets through a caller-owned `FixedAssetService` boundary after accounts and funds exist, preserving intrinsic UUIDs, timestamps, accounting references, acquisition facts, method, opening depreciation, status, and notes.
+- Record completed depreciation runs after canonical transactions exist, preserving each run's intrinsic UUID, source amount, transaction provenance, notes, and creation time without recalculating depreciation or creating another ledger transaction.
+- Record durable identities for every asset and completed run, retain identical reimport as a no-op, and roll both families back with the complete imported graph after a late failure.
+- Continue to reject banking, reconciliation, inventory, period close, imported audit history, corrections, and populated unknown extensions.
+- Keep the production SCLX commit action absent.
+
+Validation status:
+
+- Local Maven is unavailable; Java 17 source validation and GitHub Maven PR Tests are required.
+- Initial implementation head `09c0e38a4531e8f1a4a457ba49cbf9f9564fc89f` is published on draft PR #232.
+- Plan-inclusive head `f3da2daa6da8d8b9f98cdbe38c894cc37e68190a` passed Maven PR Tests run `30669727984`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
+
+Next exact action:
+
+- Review and merge draft PR #232 after its final governance-only head passes all Maven PR Tests gates.
 
 Planned deliverables:
 
