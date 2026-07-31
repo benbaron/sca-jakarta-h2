@@ -5,8 +5,8 @@ active_slice: P15-S5
 active_status: VERIFYING
 active_branch: codex/P15-S5-C1-sclx-import-preview
 active_pull_request: 228
-active_head: "922289b06089fdbd5786634f56da744efdae37d6 (UI/documentation commit pending)"
-next_action: "Publish the completed P15-S5-C1 JavaFX route, tests, and documentation to PR #228; run all Maven PR Tests gates; correct failures; then complete owner desktop acceptance."
+active_head: "b0034047dcb7676eecffb2fb491a06abe9467494"
+next_action: "Complete and confirm the owner desktop checklist in doc/P15-S5-sclx-import-preview-ui-user-testing.md; then reconcile acceptance and mark PR #228 ready for review."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1081,11 +1081,13 @@ Current validation status:
 - P15-S4 export final exact-head Maven PR Tests run `30597102760` passed all gates before merge.
 - The read-only service, target query, projections, deterministic identity/mapping/transaction diagnostics, and focused tests are implemented on PR #228.
 - Service correction head `922289b06089fdbd5786634f56da744efdae37d6` passed Maven PR Tests run `30654509351`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
-- The production Import Preview route, JavaFX behavior/source tests, governing SCLX/operation-matrix documentation, and owner checklist are prepared for publication; final exact-head CI and desktop acceptance remain open.
+- Initial completed-route run `30655874712` exposed one compile-time overload ambiguity in the no-argument `ImportPreviewPanel` constructor; no tests executed on that failed head.
+- Correction head `b0034047dcb7676eecffb2fb491a06abe9467494` passed Maven PR Tests run `30655981097`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
+- The production Import Preview route, JavaFX behavior/source tests, governing SCLX/operation-matrix documentation, and owner checklist are published. Only desktop acceptance remains open.
 
 Next exact action:
 
-- Publish the UI/documentation completion commit to PR #228, run all Maven PR Tests gates, correct any failure, record the final tested head/results, and complete `doc/P15-S5-sclx-import-preview-ui-user-testing.md` before marking the PR ready for review.
+- Complete and confirm `doc/P15-S5-sclx-import-preview-ui-user-testing.md`, then record owner acceptance and mark PR #228 ready for review. Do not merge while the checklist is open.
 
 ### P15-S5-C1 — Non-mutating SCLX import preview
 
@@ -1102,7 +1104,6 @@ Implemented scope:
 
 Remaining scope:
 
-- Successful final exact-head GitHub Actions validation.
 - Owner desktop acceptance of `doc/P15-S5-sclx-import-preview-ui-user-testing.md`.
 - Transactional mapping resolution and commit remain later P15-S5 slices and are not part of P15-S5-C1.
 
