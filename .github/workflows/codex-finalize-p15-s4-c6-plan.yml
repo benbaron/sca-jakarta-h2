@@ -1,0 +1,32 @@
+name: Finalize P15-S4-C6 validation record
+
+on:
+  push:
+    branches:
+      - codex/P15-S4-C6-audit-history-sclx-export
+    paths:
+      - .codex/finalize_p15_s4_c6_plan.py
+      - .github/workflows/codex-finalize-p15-s4-c6-plan.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S4-C6-audit-history-sclx-export
+          fetch-depth: 0
+      - name: Record successful validation
+        run: python .codex/finalize_p15_s4_c6_plan.py
+      - name: Remove helper script
+        run: rm -f .codex/finalize_p15_s4_c6_plan.py
+      - name: Commit final validation record
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Record final P15-S4-C6 validation"
+          git push origin HEAD:codex/P15-S4-C6-audit-history-sclx-export
