@@ -10,21 +10,26 @@ import org.nonprofitbookkeeping.interchange.InterchangeValidationMessage;
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
+import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.AuditEvent;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Company;
+import org.nonprofitbookkeeping.model.Counterparty;
 import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.model.FundType;
+import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
+import org.nonprofitbookkeeping.model.TxnSupplementalLine;
 import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.service.CompanyOwnershipService;
 import org.nonprofitbookkeeping.service.InterchangeIdentityService;
 import org.nonprofitbookkeeping.service.TransactionCommand;
 import org.nonprofitbookkeeping.service.TransactionEntryService;
 import org.nonprofitbookkeeping.service.TransactionLineCommand;
+import org.nonprofitbookkeeping.service.TransactionSupplementalLineCommand;
 
 import java.math.BigDecimal;
 import java.net.URLDecoder;
@@ -45,19 +50,23 @@ import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 
 /**
- * First governed SCLX commit boundary.
+ * Governed SCLX commit boundary for the core graph and transaction-linked details.
  *
  * <p>This slice imports the organization profile, active chart/accounts, funds,
- * and balanced canonical transactions into an empty selected company. Budgets,
- * parties, activities, supplemental details, banking, assets, inventory,
- * period-close facts, and imported audit history remain blocked until their
- * canonical section writers are added. No production UI commit action is exposed
- * while that section coverage remains incomplete.</p>
+ * activities, counterparties, merchants, balanced canonical transactions, and
+ * supplemental transaction details into an empty selected company. Budgets,
+ * banking, assets, inventory, period-close facts, and imported audit history
+ * remain blocked until their canonical section writers are added. No production
+ * UI commit action is exposed while that section coverage remains incomplete.</p>
  */
 public final class SclxImportCommitService
 {
-    private static final Set<String> CORE_ENTITY_TYPES = Set.of(
-            "ORGANIZATION", "ACCOUNT", "FUND", "TRANSACTION", "TRANSACTION_LINE");
+    private static final Set<String> SUPPORTED_ENTITY_TYPES = Set.of(
+            "ORGANIZATION", "ACCOUNT", "FUND", "ACTIVITY", "COUNTERPARTY", "MERCHANT",
+            "TRANSACTION", "TRANSACTION_LINE", "SUPPLEMENTAL_DETAIL");
+    private static final Set<String> SUPPORTED_EXTENSION_KEYS = Set.of(
+            "activeChartName", "activeChartVersion", "activities", "counterparties",
+            "supplementalDetails");
 
     private final Jpa jpa;
     private final Supplier<String> companyCodeSupplier;
@@ -113,15 +122,15 @@ public final class SclxImportCommitService
         {
             throw new IllegalStateException("SCLX has blocking validation or target conflicts.");
         }
-        requireCoreOnly(current);
-
         SclxParsedDocument parsed = parser.parse(source);
         if (!parsed.sha256().equals(current.operation().sourceSha256()))
         {
             throw new IllegalStateException("SCLX source changed while commit validation was running.");
         }
         JsonNode root = parsed.root();
-        requireSupportedCoreShape(root);
+        requireSupportedSections(current, root);
+        SclxTransactionDetailImportData details = SclxTransactionDetailImportData.parse(root);
+        requireSupportedTransactionShape(root, details);
         ownership.requireNoOpenOwnershipIssues();
 
         try (EntityManager em = jpa.em())
@@ -146,7 +155,8 @@ public final class SclxImportCommitService
                 {
                     em.getTransaction().commit();
                     return successfulResult(current, 0L, current.operation().items().size(),
-                            "SCLX_IDENTICAL_REIMPORT", "Every governed core identity was identical; no data changed.");
+                            "SCLX_IDENTICAL_REIMPORT",
+                            "Every governed core and transaction-detail identity was identical; no data changed.");
                 }
                 requireEmptyTarget(em, company);
 
@@ -161,8 +171,18 @@ public final class SclxImportCommitService
                 Map<String, Fund> funds = writeFunds(
                         em, company, root.path("funds"), previews, writes);
                 writes += funds.size();
+                Map<String, Activity> activities = writeActivities(
+                        em, company, details.activities(), previews, writes);
+                writes += activities.size();
+                Map<String, Counterparty> counterparties = writeCounterparties(
+                        em, company, details.counterparties(), previews, writes);
+                writes += counterparties.size();
+                Map<String, Merchant> merchants = writeMerchants(
+                        em, company, details.merchants(), previews, writes);
+                writes += merchants.size();
                 TransactionWrite transactions = writeTransactions(
-                        em, company, root.path("transactions"), accounts, funds, previews, actor, writes);
+                        em, company, root.path("transactions"), accounts, funds, activities,
+                        counterparties, merchants, details, previews, actor, writes);
                 writes += transactions.transactionCount();
 
                 em.flush();
@@ -172,28 +192,33 @@ public final class SclxImportCommitService
                         "ACCOUNT", "accountId", accounts);
                 recordMasterIdentities(em, company, current, previews, root.path("funds"),
                         "FUND", "fundId", funds);
+                recordEntityIdentities(em, company, current, previews, activities, "ACTIVITY");
+                recordEntityIdentities(em, company, current, previews, counterparties, "COUNTERPARTY");
+                recordEntityIdentities(em, company, current, previews, merchants, "MERCHANT");
                 recordTransactionIdentities(em, company, current, previews, transactions);
 
                 AuditEvent operationAudit = new AuditEvent();
                 operationAudit.setCompany(company);
                 operationAudit.setActor(cleanActor(actor));
-                operationAudit.setActionType("SCLX_CORE_IMPORTED");
+                operationAudit.setActionType("SCLX_TRANSACTION_DETAILS_IMPORTED");
                 operationAudit.setEntityType("Company");
                 operationAudit.setEntityId(String.valueOf(company.getId()));
-                operationAudit.setSummary("Imported governed SCLX core company data");
+                operationAudit.setSummary("Imported governed SCLX core and transaction-detail data");
                 operationAudit.setAfterValue("source=" + current.operation().sourceName()
                         + ",version=" + current.version().externalValue()
                         + ",sha256=" + current.operation().sourceSha256()
                         + ",created=" + actualCreatedCount(current));
-                operationAudit.setReason("Atomic SCLX core import; later section families were absent.");
+                operationAudit.setReason(
+                        "Atomic SCLX core and transaction-detail import; later section families were absent.");
                 em.persist(operationAudit);
                 afterBusinessWrite.accept(++writes);
 
                 em.getTransaction().commit();
                 return successfulResult(current, actualCreatedCount(current),
                         current.operation().counts().identical(),
-                        "SCLX_CORE_COMMIT_COMPLETED",
-                        "SCLX organization, chart/accounts, funds, and canonical transactions committed atomically.");
+                        "SCLX_TRANSACTION_DETAILS_COMMIT_COMPLETED",
+                        "SCLX organization, chart/accounts, funds, transaction-linked masters, "
+                                + "canonical transactions, and supplemental details committed atomically.");
             }
             catch (RuntimeException ex)
             {
@@ -223,12 +248,12 @@ public final class SclxImportCommitService
         }
     }
 
-    private void requireCoreOnly(SclxImportPreview preview)
+    private static void requireSupportedSections(SclxImportPreview preview, JsonNode root)
     {
         Set<String> unsupportedTypes = new HashSet<>();
         for (SclxImportEntityPreview item : preview.operation().items())
         {
-            if (!CORE_ENTITY_TYPES.contains(item.entityType()))
+            if (!SUPPORTED_ENTITY_TYPES.contains(item.entityType()))
             {
                 unsupportedTypes.add(item.entityType());
             }
@@ -236,15 +261,58 @@ public final class SclxImportCommitService
         if (!unsupportedTypes.isEmpty()
                 || preview.sectionCounts().count("budgets") > 0L
                 || preview.sectionCounts().count("budgetLines") > 0L
-                || preview.sectionCounts().relationshipCount() > 0L
                 || preview.sectionCounts().unsupportedSectionCount() > 0L)
         {
-            throw new IllegalStateException("P15-S5-C2 core commit does not yet import budgets, relationships, "
-                    + "unsupported root sections, or extension entities: " + unsupportedTypes + ".");
+            throw new IllegalStateException("P15-S5-C3 import does not yet import budgets, unsupported root "
+                    + "sections, or later application-extension entities: " + unsupportedTypes + ".");
+        }
+        JsonNode app = root.path("extensions").path("scaJakartaH2");
+        if (app.isObject())
+        {
+            app.fields().forEachRemaining(entry ->
+            {
+                if (!SUPPORTED_EXTENSION_KEYS.contains(entry.getKey()) && !emptyExtensionValue(entry.getValue()))
+                {
+                    throw new IllegalStateException(
+                            "P15-S5-C3 cannot discard populated extension " + entry.getKey() + ".");
+                }
+            });
         }
     }
 
-    private static void requireSupportedCoreShape(JsonNode root)
+    private static boolean emptyExtensionValue(JsonNode value)
+    {
+        if (value == null || value.isNull() || value.isMissingNode())
+        {
+            return true;
+        }
+        if (value.isArray())
+        {
+            return value.isEmpty();
+        }
+        if (value.isObject())
+        {
+            java.util.Iterator<Map.Entry<String, JsonNode>> fields = value.fields();
+            while (fields.hasNext())
+            {
+                Map.Entry<String, JsonNode> field = fields.next();
+                if ("version".equals(field.getKey()) && field.getValue().isIntegralNumber())
+                {
+                    continue;
+                }
+                if (!emptyExtensionValue(field.getValue()))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static void requireSupportedTransactionShape(
+            JsonNode root,
+            SclxTransactionDetailImportData details)
     {
         for (JsonNode transaction : root.path("transactions"))
         {
@@ -263,9 +331,15 @@ public final class SclxImportCommitService
                 {
                     throw new IllegalStateException("Every committed canonical transaction line requires a fundId.");
                 }
-                if (presentText(line, "activityId") || presentText(line, "counterpartyId"))
+                BigDecimal debit = decimal(line, "debit");
+                BigDecimal credit = decimal(line, "credit");
+                if (debit.signum() == 0 && credit.signum() == 0
+                        && (presentText(line, "activityId")
+                        || presentText(line, "counterpartyId")
+                        || details.merchantForLine(text(line, "lineId")) != null))
                 {
-                    throw new IllegalStateException("Transaction party and activity references require a later SCLX slice.");
+                    throw new IllegalStateException(
+                            "A skipped zero-value line cannot carry activity, counterparty, or merchant facts.");
                 }
             }
         }
@@ -287,9 +361,19 @@ public final class SclxImportCommitService
         long budgets = em.createQuery("select count(p) from BudgetPlan p where p.company = :company", Long.class)
                 .setParameter("company", company)
                 .getSingleResult();
-        if (accounts + funds + transactions + budgets != 0L)
+        long activities = em.createQuery("select count(a) from Activity a where a.company = :company", Long.class)
+                .setParameter("company", company)
+                .getSingleResult();
+        long counterparties = em.createQuery(
+                        "select count(c) from Counterparty c where c.company = :company", Long.class)
+                .setParameter("company", company)
+                .getSingleResult();
+        long merchants = em.createQuery("select count(m) from Merchant m where m.company = :company", Long.class)
+                .setParameter("company", company)
+                .getSingleResult();
+        if (accounts + funds + transactions + budgets + activities + counterparties + merchants != 0L)
         {
-            throw new IllegalStateException("SCLX core commit requires an empty target company.");
+            throw new IllegalStateException("SCLX import requires an empty target company.");
         }
     }
 
@@ -391,18 +475,100 @@ public final class SclxImportCommitService
         return result;
     }
 
+    private Map<String, Activity> writeActivities(
+            EntityManager em,
+            Company company,
+            List<SclxTransactionDetailImportData.ActivityValue> values,
+            Map<EntityKey, SclxImportEntityPreview> previews,
+            int writesBefore)
+    {
+        Map<String, Activity> result = new LinkedHashMap<>();
+        int writes = writesBefore;
+        for (SclxTransactionDetailImportData.ActivityValue value : values)
+        {
+            requireNew(previews, "ACTIVITY", value.externalId());
+            Activity activity = new Activity();
+            activity.setCompany(company);
+            activity.setCode(value.code());
+            activity.setName(value.name());
+            activity.setActive(value.active());
+            em.persist(activity);
+            result.put(value.externalId(), activity);
+            afterBusinessWrite.accept(++writes);
+        }
+        return result;
+    }
+
+    private Map<String, Counterparty> writeCounterparties(
+            EntityManager em,
+            Company company,
+            List<SclxTransactionDetailImportData.CounterpartyValue> values,
+            Map<EntityKey, SclxImportEntityPreview> previews,
+            int writesBefore)
+    {
+        Map<String, Counterparty> result = new LinkedHashMap<>();
+        int writes = writesBefore;
+        for (SclxTransactionDetailImportData.CounterpartyValue value : values)
+        {
+            requireNew(previews, "COUNTERPARTY", value.externalId());
+            Counterparty counterparty = new Counterparty();
+            counterparty.setPortableId(portableUuid(value.externalId()));
+            counterparty.setCompany(company);
+            counterparty.setDisplayName(value.displayName());
+            counterparty.setKind(value.kind());
+            counterparty.setEmail(value.email());
+            counterparty.setPhone(value.phone());
+            counterparty.setNotes(value.notes());
+            counterparty.setActive(value.active());
+            em.persist(counterparty);
+            result.put(value.externalId(), counterparty);
+            afterBusinessWrite.accept(++writes);
+        }
+        return result;
+    }
+
+    private Map<String, Merchant> writeMerchants(
+            EntityManager em,
+            Company company,
+            List<SclxTransactionDetailImportData.MerchantValue> values,
+            Map<EntityKey, SclxImportEntityPreview> previews,
+            int writesBefore)
+    {
+        Map<String, Merchant> result = new LinkedHashMap<>();
+        int writes = writesBefore;
+        for (SclxTransactionDetailImportData.MerchantValue value : values)
+        {
+            requireNew(previews, "MERCHANT", value.externalId());
+            Merchant merchant = new Merchant();
+            merchant.setPortableId(portableUuid(value.externalId()));
+            merchant.setCompany(company);
+            merchant.setName(value.name());
+            merchant.setNotes(value.notes());
+            merchant.setActive(value.active());
+            em.persist(merchant);
+            result.put(value.externalId(), merchant);
+            afterBusinessWrite.accept(++writes);
+        }
+        return result;
+    }
+
     private TransactionWrite writeTransactions(
             EntityManager em,
             Company company,
             JsonNode values,
             Map<String, Account> accounts,
             Map<String, Fund> funds,
+            Map<String, Activity> activities,
+            Map<String, Counterparty> counterparties,
+            Map<String, Merchant> merchants,
+            SclxTransactionDetailImportData details,
             Map<EntityKey, SclxImportEntityPreview> previews,
             String actor,
             int writesBefore)
     {
         Map<String, Txn> transactions = new LinkedHashMap<>();
         Map<String, TxnSplit> lines = new LinkedHashMap<>();
+        Map<String, TxnSupplementalLine> supplementalLines = new LinkedHashMap<>();
         Set<String> skippedLines = new HashSet<>();
         int writes = writesBefore;
         for (JsonNode value : values)
@@ -411,6 +577,7 @@ public final class SclxImportCommitService
             requireNew(previews, "TRANSACTION", transactionId);
             List<TransactionLineCommand> commands = new ArrayList<>();
             List<String> postingLineIds = new ArrayList<>();
+            Set<String> counterpartyIds = new HashSet<>();
             for (JsonNode line : value.path("lines"))
             {
                 String lineId = text(line, "lineId");
@@ -424,17 +591,49 @@ public final class SclxImportCommitService
                 }
                 Account account = required(accounts, text(line, "accountId"), "transaction account");
                 Fund fund = required(funds, text(line, "fundId"), "transaction fund");
+                String activityId = optionalText(line, "activityId");
+                Activity activity = activityId == null ? null
+                        : required(activities, activityId, "transaction activity");
+                String counterpartyId = optionalText(line, "counterpartyId");
+                if (counterpartyId != null)
+                {
+                    required(counterparties, counterpartyId, "transaction counterparty");
+                    counterpartyIds.add(counterpartyId);
+                }
+                String merchantId = details.merchantForLine(lineId);
+                Merchant merchant = merchantId == null ? null
+                        : required(merchants, merchantId, "transaction merchant");
                 commands.add(new TransactionLineCommand(
-                        account.getId(), fund.getId(), null, null, null,
+                        account.getId(), fund.getId(), null,
+                        activity == null ? null : activity.getId(),
+                        merchant == null ? null : merchant.getId(),
                         debit, credit, false, optionalText(line, "memo")));
                 postingLineIds.add(lineId);
             }
+            if (counterpartyIds.size() > 1)
+            {
+                throw new IllegalStateException(
+                        "One canonical transaction cannot import more than one header counterparty: "
+                                + transactionId + ".");
+            }
+            Counterparty counterparty = counterpartyIds.isEmpty()
+                    ? null
+                    : required(counterparties, counterpartyIds.iterator().next(), "transaction counterparty");
+            List<SclxTransactionDetailImportData.SupplementalValue> sourceDetails =
+                    details.supplementalForTransaction(transactionId);
+            List<TransactionSupplementalLineCommand> supplementalCommands = sourceDetails.stream()
+                    .map(detail -> new TransactionSupplementalLineCommand(
+                            detail.kind(), detail.entryRef(), detail.counterparty(), detail.description(),
+                            detail.reference(), detail.amount(), detail.dueDate(), detail.startDate(),
+                            detail.endDate(), detail.notes(), detail.lineOrder()))
+                    .toList();
             TransactionCommand command = new TransactionCommand(
                     LocalDate.parse(text(value, "transactionDate")),
-                    null,
+                    counterparty == null ? null : counterparty.getId(),
                     text(value, "description"),
                     null,
-                    commands);
+                    commands,
+                    supplementalCommands);
             Txn transaction = transactionEntryService.enter(
                     em, company, command, portableUuid(transactionId), cleanActor(actor));
             transaction.setStatus(text(value, "status"));
@@ -452,9 +651,24 @@ public final class SclxImportCommitService
             {
                 lines.put(postingLineIds.get(index), persistedLines.get(index));
             }
+            List<TxnSupplementalLine> persistedDetails = em.createQuery(
+                            "from TxnSupplementalLine s where s.txn = :txn order by s.id",
+                            TxnSupplementalLine.class)
+                    .setParameter("txn", transaction)
+                    .getResultList();
+            if (persistedDetails.size() != sourceDetails.size())
+            {
+                throw new IllegalStateException(
+                        "Canonical supplemental-detail count changed during SCLX import.");
+            }
+            for (int index = 0; index < persistedDetails.size(); index++)
+            {
+                supplementalLines.put(sourceDetails.get(index).externalId(), persistedDetails.get(index));
+            }
             afterBusinessWrite.accept(++writes);
         }
-        return new TransactionWrite(transactions, lines, skippedLines, transactions.size());
+        return new TransactionWrite(
+                transactions, lines, supplementalLines, skippedLines, transactions.size());
     }
 
     private static UUID portableUuid(String externalId)
@@ -526,6 +740,44 @@ public final class SclxImportCommitService
         for (String externalId : written.skippedLines())
         {
             recordIdentity(em, company, preview, previews, "TRANSACTION_LINE", externalId, null);
+        }
+        for (Map.Entry<String, TxnSupplementalLine> entry : written.supplementalLines().entrySet())
+        {
+            recordIdentity(em, company, preview, previews, "SUPPLEMENTAL_DETAIL",
+                    entry.getKey(), String.valueOf(entry.getValue().getId()));
+        }
+    }
+
+    private void recordEntityIdentities(
+            EntityManager em,
+            Company company,
+            SclxImportPreview preview,
+            Map<EntityKey, SclxImportEntityPreview> previews,
+            Map<String, ?> entities,
+            String type)
+    {
+        for (Map.Entry<String, ?> entry : entities.entrySet())
+        {
+            Object entity = entry.getValue();
+            Long localId;
+            if (entity instanceof Activity activity)
+            {
+                localId = activity.getId();
+            }
+            else if (entity instanceof Counterparty counterparty)
+            {
+                localId = counterparty.getId();
+            }
+            else if (entity instanceof Merchant merchant)
+            {
+                localId = merchant.getId();
+            }
+            else
+            {
+                throw new IllegalStateException(
+                        "Unsupported SCLX transaction-detail identity entity: " + entity.getClass());
+            }
+            recordIdentity(em, company, preview, previews, type, entry.getKey(), String.valueOf(localId));
         }
     }
 
@@ -776,6 +1028,7 @@ public final class SclxImportCommitService
     private record TransactionWrite(
             Map<String, Txn> transactions,
             Map<String, TxnSplit> lines,
+            Map<String, TxnSupplementalLine> supplementalLines,
             Set<String> skippedLines,
             int transactionCount)
     {
@@ -783,6 +1036,7 @@ public final class SclxImportCommitService
         {
             transactions = Map.copyOf(transactions);
             lines = Map.copyOf(lines);
+            supplementalLines = Map.copyOf(supplementalLines);
             skippedLines = Set.copyOf(skippedLines);
         }
     }

@@ -294,6 +294,32 @@ relationships, and non-empty unknown sections. Those facts are not dropped or pa
 later P15-S5 slices must add their canonical writers and round-trip tests before the production SCLX
 commit action is enabled.
 
+### 10.4 P15-S5-C3 transaction-linked detail import boundary
+
+P15-S5-C3 extends the same caller-owned transaction to the governed transaction-linked application
+extensions. Before any H2 write, the commit service strictly validates the exact `activities`,
+`counterparties`, and `supplementalDetails` shapes, including all activity/counterparty/merchant
+references, one merchant per transaction line, one canonical header counterparty per transaction,
+and supplemental-detail transaction references and semantics.
+
+The import creates company-owned activities, counterparties, and merchants before canonical
+transactions. Counterparty and merchant intrinsic UUIDs are recovered from their governed portable
+identities when possible, with deterministic UUID fallback for older compatible identities. The
+standard repeated transaction-line `counterpartyId` values resolve to the canonical transaction
+header payee; line activity and merchant references flow through `TransactionLineCommand`.
+Supplemental details flow through `TransactionSupplementalLineCommand`, including their persisted
+non-negative `lineOrder`, and remain owned by `TransactionEntryService` inside the import transaction.
+
+Every activity, counterparty, merchant, and supplemental detail receives a source-specific
+`interchange_identity` in the same transaction. A successful operation writes one company-owned
+`SCLX_TRANSACTION_DETAILS_IMPORTED` event. Identical reimport remains a no-op. A skipped zero-value
+line is rejected if it carries activity, counterparty, or merchant facts because those relationships
+cannot be preserved without a canonical posting line.
+
+C3 still rejects budgets, banking and reconciliation, fixed assets and depreciation, inventory,
+period-close facts, imported audit history, correction relationships, populated unknown sections,
+and populated target-company merge. The JavaFX SCLX commit action remains absent.
+
 ## 11. Import transaction boundary and results
 
 Preview and validation MUST make no H2 changes. Commit MUST use one caller-owned transaction for the documented import boundary and route financial records through canonical services. A late failure MUST roll back all records in that boundary.
@@ -302,6 +328,9 @@ For P15-S5-C2, rollback includes target profile changes, Chart of Accounts metad
 canonical transactions and splits, transaction audit events, interchange identities, and the single
 operation audit event. The service returns an explicit rolled-back result with zero created/updated
 counts and a blocking `SCLX_COMMIT_ROLLED_BACK` message.
+
+For P15-S5-C3, the same rollback boundary additionally includes activities, counterparties,
+merchants, supplemental transaction rows, their relationships, and their interchange identities.
 
 The result MUST report at least:
 

@@ -7,6 +7,8 @@ import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.Txn;
+import org.nonprofitbookkeeping.model.TxnSplit;
+import org.nonprofitbookkeeping.model.TxnSupplementalLine;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.nio.file.Files;
@@ -39,7 +41,7 @@ class SclxImportCommitServiceTest
 
             assertTrue(first.committed());
             assertFalse(first.rolledBack());
-            assertEquals(7L, first.counts().created());
+            assertEquals(11L, first.counts().created());
             try (EntityManager em = jpa.em())
             {
                 Company company = company(em);
@@ -52,26 +54,41 @@ class SclxImportCommitServiceTest
                 assertEquals(1L, count(em, "select count(f) from Fund f"));
                 assertEquals(1L, count(em, "select count(t) from Txn t"));
                 assertEquals(2L, count(em, "select count(s) from TxnSplit s"));
-                assertEquals(7L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
+                assertEquals(1L, count(em, "select count(a) from Activity a"));
+                assertEquals(1L, count(em, "select count(c) from Counterparty c"));
+                assertEquals(1L, count(em, "select count(m) from Merchant m"));
+                assertEquals(1L, count(em, "select count(s) from TxnSupplementalLine s"));
+                assertEquals(11L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
                 Txn transaction = em.createQuery("from Txn t", Txn.class).getSingleResult();
                 assertEquals(TRANSACTION_UUID, transaction.getPortableId());
+                assertEquals("Portable Payee", transaction.getPayee().getDisplayName());
+                TxnSplit enrichedLine = em.createQuery(
+                                "from TxnSplit s where s.merchant is not null", TxnSplit.class)
+                        .getSingleResult();
+                assertEquals("EVENT", enrichedLine.getActivity().getCode());
+                assertEquals("Portable Merchant", enrichedLine.getMerchant().getName());
+                TxnSupplementalLine supplemental = em.createQuery(
+                                "from TxnSupplementalLine s", TxnSupplementalLine.class)
+                        .getSingleResult();
+                assertEquals(7, supplemental.getLineOrder());
+                assertEquals("PAYABLE", supplemental.getKind());
                 assertEquals(1L, count(em,
-                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_CORE_IMPORTED'"));
+                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_TRANSACTION_DETAILS_IMPORTED'"));
             }
 
             SclxImportPreview secondPreview = previews.preview(source);
             assertFalse(secondPreview.hasBlockingErrors(), () -> secondPreview.operation().messages().toString());
-            assertEquals(7L, secondPreview.operation().counts().identical());
+            assertEquals(11L, secondPreview.operation().counts().identical());
             SclxImportResult second = service.commit(source, secondPreview, "tester");
 
             assertTrue(second.committed());
             assertEquals(0L, second.counts().created());
-            assertEquals(7L, second.counts().identical());
+            assertEquals(11L, second.counts().identical());
             try (EntityManager em = jpa.em())
             {
                 assertEquals(1L, count(em, "select count(t) from Txn t"));
                 assertEquals(2L, count(em, "select count(s) from TxnSplit s"));
-                assertEquals(7L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
+                assertEquals(11L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
             }
         }
     }
@@ -89,7 +106,7 @@ class SclxImportCommitServiceTest
                     jpa,
                     () -> TARGET,
                     writes -> {
-                        if (writes == 6)
+                        if (writes == 8)
                         {
                             throw new IllegalStateException("injected late failure");
                         }
@@ -110,9 +127,13 @@ class SclxImportCommitServiceTest
                 assertEquals(0L, count(em, "select count(a) from Account a"));
                 assertEquals(0L, count(em, "select count(f) from Fund f"));
                 assertEquals(0L, count(em, "select count(t) from Txn t"));
+                assertEquals(0L, count(em, "select count(a) from Activity a"));
+                assertEquals(0L, count(em, "select count(c) from Counterparty c"));
+                assertEquals(0L, count(em, "select count(m) from Merchant m"));
+                assertEquals(0L, count(em, "select count(s) from TxnSupplementalLine s"));
                 assertEquals(0L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
                 assertEquals(0L, count(em,
-                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_CORE_IMPORTED'"));
+                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_TRANSACTION_DETAILS_IMPORTED'"));
             }
         }
     }
@@ -164,6 +185,12 @@ class SclxImportCommitServiceTest
         String transaction = SclxPortableIdentity.transaction("SOURCE", TRANSACTION_UUID.toString());
         String debitLine = SclxPortableIdentity.transactionLine(transaction, 1);
         String creditLine = SclxPortableIdentity.transactionLine(transaction, 2);
+        String activity = SclxPortableIdentity.activity("SOURCE", "EVENT");
+        String counterparty = SclxPortableIdentity.counterparty(
+                "SOURCE", "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+        String merchant = SclxPortableIdentity.merchant(
+                "SOURCE", "99999999-8888-7777-6666-555555555555");
+        String supplemental = SclxPortableIdentity.supplementalDetail(transaction, 1);
         Files.writeString(target, """
                 {
                   "format": "SCLX",
@@ -222,6 +249,8 @@ class SclxImportCommitServiceTest
                           "lineId": "%s",
                           "accountId": "%s",
                           "fundId": "%s",
+                          "activityId": "%s",
+                          "counterpartyId": "%s",
                           "debit": "25.00",
                           "credit": "0"
                         },
@@ -229,6 +258,8 @@ class SclxImportCommitServiceTest
                           "lineId": "%s",
                           "accountId": "%s",
                           "fundId": "%s",
+                          "activityId": "%s",
+                          "counterpartyId": "%s",
                           "debit": "0",
                           "credit": "25.00"
                         }
@@ -239,7 +270,59 @@ class SclxImportCommitServiceTest
                     "version": 1,
                     "scaJakartaH2": {
                       "activeChartName": "Portable Chart",
-                      "activeChartVersion": "2026"
+                      "activeChartVersion": "2026",
+                      "activities": [
+                        {
+                          "activityId": "%s",
+                          "code": "EVENT",
+                          "name": "Portable Event",
+                          "active": true
+                        }
+                      ],
+                      "counterparties": {
+                        "counterparties": [
+                          {
+                            "counterpartyId": "%s",
+                            "displayName": "Portable Payee",
+                            "kind": "ORG",
+                            "email": "payee@example.invalid",
+                            "phone": null,
+                            "notes": "Imported payee",
+                            "active": true
+                          }
+                        ],
+                        "merchants": [
+                          {
+                            "merchantId": "%s",
+                            "name": "Portable Merchant",
+                            "notes": null,
+                            "active": true
+                          }
+                        ],
+                        "transactionLineMerchants": [
+                          {
+                            "lineId": "%s",
+                            "merchantId": "%s"
+                          }
+                        ]
+                      },
+                      "supplementalDetails": [
+                        {
+                          "supplementalDetailId": "%s",
+                          "transactionId": "%s",
+                          "lineOrder": 7,
+                          "kind": "PAYABLE",
+                          "entryRef": "AP-1",
+                          "counterparty": "Portable Payee",
+                          "description": "Portable payable detail",
+                          "reference": null,
+                          "amount": "25.00",
+                          "dueDate": "2026-08-15",
+                          "startDate": null,
+                          "endDate": null,
+                          "notes": "Imported detail"
+                        }
+                      ]
                     }
                   }
                 }
@@ -252,9 +335,20 @@ class SclxImportCommitServiceTest
                 debitLine,
                 expense,
                 fund,
+                activity,
+                counterparty,
                 creditLine,
                 asset,
-                fund));
+                fund,
+                activity,
+                counterparty,
+                activity,
+                counterparty,
+                merchant,
+                debitLine,
+                merchant,
+                supplemental,
+                transaction));
         return target;
     }
 }

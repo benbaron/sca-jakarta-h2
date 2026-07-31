@@ -1,6 +1,6 @@
 # Model and persistence authority inventory
 
-Status: P00 inventory of current main, updated through P15-S4 selected-company audit-history identity and SCLX export. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
+Status: P00 inventory of current main, updated through P15-S5-C3 selected-company SCLX transaction-detail import. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
 
 ## Current persistence map
 
@@ -94,6 +94,9 @@ Status: P00 inventory of current main, updated through P15-S4 selected-company a
 - Import preview can remain in-memory while users review rows.
 - Accepted COA imports may write through admin services today; accepted bank/accounting activity must not write static `UiWorkspaceDataStore` rows as accounting truth.
 - P05 must persist statement lines and route accepted accounting effects through the P02 canonical transaction service.
+- P15-S5-C2/C3 SCLX import writes one empty target company graph in one caller-owned JPA transaction. Accounts, funds, activities, counterparties, and merchants are created before dependent canonical transactions; transaction activity/merchant/payee references and supplemental details are persisted through `TransactionEntryService`.
+- Supplemental source `lineOrder` is preserved through the canonical supplemental command. Every imported master, transaction, posting line, and supplemental row receives a same-transaction `interchange_identity`; a late failure rolls all business rows, transaction audit facts, identities, and the operation audit event back together.
+- The service remains unreachable from production JavaFX until budgets and all later application-extension families have governed writers; unsupported populated sections are rejected rather than discarded.
 
 ## Reconciliation, open item, and former schedule authority
 
@@ -219,4 +222,3 @@ The migration deliberately does not make every new ownership column non-null. Am
 - Whole-database transfer uses supported H2 backup/restore facilities and preserves every database record, including application administration and compatibility structures.
 - OFX/QFX/CSV import persists external statement facts to `bank_import_batch`, `bank_statement_line`, and `import_issue`; it does not automatically create canonical ledger transactions.
 - No exchange type writes `UiWorkspaceDataStore`, a donor sidecar repository, a parallel journal, static company authority, or generic Import/Export Jobs history.
-
