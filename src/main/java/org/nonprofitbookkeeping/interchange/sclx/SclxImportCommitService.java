@@ -12,6 +12,9 @@ import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.AuditEvent;
+import org.nonprofitbookkeeping.model.BudgetCategory;
+import org.nonprofitbookkeeping.model.BudgetLine;
+import org.nonprofitbookkeeping.model.BudgetPlan;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Company;
@@ -24,6 +27,10 @@ import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
 import org.nonprofitbookkeeping.model.TxnSupplementalLine;
 import org.nonprofitbookkeeping.persistence.Jpa;
+import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
+import org.nonprofitbookkeeping.service.BudgetLineCommand;
+import org.nonprofitbookkeeping.service.BudgetPlanCommand;
+import org.nonprofitbookkeeping.service.BudgetPlanService;
 import org.nonprofitbookkeeping.service.CompanyOwnershipService;
 import org.nonprofitbookkeeping.service.InterchangeIdentityService;
 import org.nonprofitbookkeeping.service.TransactionCommand;
@@ -50,12 +57,12 @@ import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 
 /**
- * Governed SCLX commit boundary for the core graph and transaction-linked details.
+ * Governed SCLX commit boundary for the core graph, budgets, and transaction-linked details.
  *
  * <p>This slice imports the organization profile, active chart/accounts, funds,
- * activities, counterparties, merchants, balanced canonical transactions, and
- * supplemental transaction details into an empty selected company. Budgets,
- * banking, assets, inventory, period-close facts, and imported audit history
+ * activities, counterparties, merchants, normalized budgets, balanced canonical
+ * transactions, and supplemental transaction details into an empty selected company.
+ * Banking, assets, inventory, period-close facts, and imported audit history
  * remain blocked until their canonical section writers are added. No production
  * UI commit action is exposed while that section coverage remains incomplete.</p>
  */
@@ -63,7 +70,7 @@ public final class SclxImportCommitService
 {
     private static final Set<String> SUPPORTED_ENTITY_TYPES = Set.of(
             "ORGANIZATION", "ACCOUNT", "FUND", "ACTIVITY", "COUNTERPARTY", "MERCHANT",
-            "TRANSACTION", "TRANSACTION_LINE", "SUPPLEMENTAL_DETAIL");
+            "BUDGET", "BUDGET_LINE", "TRANSACTION", "TRANSACTION_LINE", "SUPPLEMENTAL_DETAIL");
     private static final Set<String> SUPPORTED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
             "supplementalDetails");
@@ -74,6 +81,8 @@ public final class SclxImportCommitService
     private final SclxDocumentParser parser;
     private final CompanyOwnershipService ownership;
     private final InterchangeIdentityService identityService;
+    private final BudgetCategoryAdminService budgetCategoryAdminService;
+    private final BudgetPlanService budgetPlanService;
     private final TransactionEntryService transactionEntryService;
     private final IntConsumer afterBusinessWrite;
 
@@ -94,6 +103,8 @@ public final class SclxImportCommitService
         this.parser = new SclxDocumentParser();
         this.ownership = new CompanyOwnershipService(jpa);
         this.identityService = new InterchangeIdentityService(jpa, ownership);
+        this.budgetCategoryAdminService = new BudgetCategoryAdminService(jpa, companyCodeSupplier);
+        this.budgetPlanService = new BudgetPlanService(jpa, companyCodeSupplier);
         this.transactionEntryService = new TransactionEntryService(jpa, companyCodeSupplier);
     }
 
@@ -129,6 +140,7 @@ public final class SclxImportCommitService
         }
         JsonNode root = parsed.root();
         requireSupportedSections(current, root);
+        SclxBudgetImportData budgets = SclxBudgetImportData.parse(root.path("budgets"));
         SclxTransactionDetailImportData details = SclxTransactionDetailImportData.parse(root);
         requireSupportedTransactionShape(root, details);
         ownership.requireNoOpenOwnershipIssues();
@@ -156,7 +168,7 @@ public final class SclxImportCommitService
                     em.getTransaction().commit();
                     return successfulResult(current, 0L, current.operation().items().size(),
                             "SCLX_IDENTICAL_REIMPORT",
-                            "Every governed core and transaction-detail identity was identical; no data changed.");
+                            "Every governed core, budget, and transaction-detail identity was identical; no data changed.");
                 }
                 requireEmptyTarget(em, company);
 
@@ -171,6 +183,9 @@ public final class SclxImportCommitService
                 Map<String, Fund> funds = writeFunds(
                         em, company, root.path("funds"), previews, writes);
                 writes += funds.size();
+                BudgetWrite writtenBudgets = writeBudgets(
+                        em, company, budgets, funds, previews, writes);
+                writes += writtenBudgets.businessWriteCount();
                 Map<String, Activity> activities = writeActivities(
                         em, company, details.activities(), previews, writes);
                 writes += activities.size();
@@ -192,6 +207,7 @@ public final class SclxImportCommitService
                         "ACCOUNT", "accountId", accounts);
                 recordMasterIdentities(em, company, current, previews, root.path("funds"),
                         "FUND", "fundId", funds);
+                recordBudgetIdentities(em, company, current, previews, writtenBudgets);
                 recordEntityIdentities(em, company, current, previews, activities, "ACTIVITY");
                 recordEntityIdentities(em, company, current, previews, counterparties, "COUNTERPARTY");
                 recordEntityIdentities(em, company, current, previews, merchants, "MERCHANT");
@@ -200,25 +216,25 @@ public final class SclxImportCommitService
                 AuditEvent operationAudit = new AuditEvent();
                 operationAudit.setCompany(company);
                 operationAudit.setActor(cleanActor(actor));
-                operationAudit.setActionType("SCLX_TRANSACTION_DETAILS_IMPORTED");
+                operationAudit.setActionType("SCLX_BUDGETS_IMPORTED");
                 operationAudit.setEntityType("Company");
                 operationAudit.setEntityId(String.valueOf(company.getId()));
-                operationAudit.setSummary("Imported governed SCLX core and transaction-detail data");
+                operationAudit.setSummary("Imported governed SCLX core, budget, and transaction-detail data");
                 operationAudit.setAfterValue("source=" + current.operation().sourceName()
                         + ",version=" + current.version().externalValue()
                         + ",sha256=" + current.operation().sourceSha256()
                         + ",created=" + actualCreatedCount(current));
                 operationAudit.setReason(
-                        "Atomic SCLX core and transaction-detail import; later section families were absent.");
+                        "Atomic SCLX core, budget, and transaction-detail import; later section families were absent.");
                 em.persist(operationAudit);
                 afterBusinessWrite.accept(++writes);
 
                 em.getTransaction().commit();
                 return successfulResult(current, actualCreatedCount(current),
                         current.operation().counts().identical(),
-                        "SCLX_TRANSACTION_DETAILS_COMMIT_COMPLETED",
-                        "SCLX organization, chart/accounts, funds, transaction-linked masters, "
-                                + "canonical transactions, and supplemental details committed atomically.");
+                        "SCLX_BUDGET_COMMIT_COMPLETED",
+                        "SCLX organization, chart/accounts, funds, normalized budgets, transaction-linked "
+                                + "masters, canonical transactions, and supplemental details committed atomically.");
             }
             catch (RuntimeException ex)
             {
@@ -258,13 +274,10 @@ public final class SclxImportCommitService
                 unsupportedTypes.add(item.entityType());
             }
         }
-        if (!unsupportedTypes.isEmpty()
-                || preview.sectionCounts().count("budgets") > 0L
-                || preview.sectionCounts().count("budgetLines") > 0L
-                || preview.sectionCounts().unsupportedSectionCount() > 0L)
+        if (!unsupportedTypes.isEmpty() || preview.sectionCounts().unsupportedSectionCount() > 0L)
         {
-            throw new IllegalStateException("P15-S5-C3 import does not yet import budgets, unsupported root "
-                    + "sections, or later application-extension entities: " + unsupportedTypes + ".");
+            throw new IllegalStateException("P15-S5-C4 import does not yet import unsupported root sections "
+                    + "or later application-extension entities: " + unsupportedTypes + ".");
         }
         JsonNode app = root.path("extensions").path("scaJakartaH2");
         if (app.isObject())
@@ -274,7 +287,7 @@ public final class SclxImportCommitService
                 if (!SUPPORTED_EXTENSION_KEYS.contains(entry.getKey()) && !emptyExtensionValue(entry.getValue()))
                 {
                     throw new IllegalStateException(
-                            "P15-S5-C3 cannot discard populated extension " + entry.getKey() + ".");
+                            "P15-S5-C4 cannot discard populated extension " + entry.getKey() + ".");
                 }
             });
         }
@@ -361,6 +374,10 @@ public final class SclxImportCommitService
         long budgets = em.createQuery("select count(p) from BudgetPlan p where p.company = :company", Long.class)
                 .setParameter("company", company)
                 .getSingleResult();
+        long budgetCategories = em.createQuery(
+                        "select count(c) from BudgetCategory c where c.company = :company", Long.class)
+                .setParameter("company", company)
+                .getSingleResult();
         long activities = em.createQuery("select count(a) from Activity a where a.company = :company", Long.class)
                 .setParameter("company", company)
                 .getSingleResult();
@@ -371,7 +388,8 @@ public final class SclxImportCommitService
         long merchants = em.createQuery("select count(m) from Merchant m where m.company = :company", Long.class)
                 .setParameter("company", company)
                 .getSingleResult();
-        if (accounts + funds + transactions + budgets + activities + counterparties + merchants != 0L)
+        if (accounts + funds + transactions + budgets + budgetCategories
+                + activities + counterparties + merchants != 0L)
         {
             throw new IllegalStateException("SCLX import requires an empty target company.");
         }
@@ -497,6 +515,93 @@ public final class SclxImportCommitService
             afterBusinessWrite.accept(++writes);
         }
         return result;
+    }
+
+    private BudgetWrite writeBudgets(
+            EntityManager em,
+            Company company,
+            SclxBudgetImportData source,
+            Map<String, Fund> funds,
+            Map<EntityKey, SclxImportEntityPreview> previews,
+            int writesBefore)
+    {
+        Set<String> categoryCodes = new HashSet<>();
+        for (SclxBudgetImportData.BudgetValue budget : source.budgets())
+        {
+            for (SclxBudgetImportData.LineValue line : budget.lines())
+            {
+                categoryCodes.add(line.categoryCode());
+            }
+        }
+
+        int writes = writesBefore;
+        Map<String, BudgetCategory> categories = new LinkedHashMap<>();
+        for (String code : categoryCodes.stream().sorted().toList())
+        {
+            BudgetCategory category = budgetCategoryAdminService.createForImport(em, company, code);
+            categories.put(code, category);
+            afterBusinessWrite.accept(++writes);
+        }
+        em.flush();
+
+        Map<String, BudgetPlan> plans = new LinkedHashMap<>();
+        Map<String, BudgetLine> lines = new LinkedHashMap<>();
+        for (SclxBudgetImportData.BudgetValue budget : source.budgets())
+        {
+            requireNew(previews, "BUDGET", budget.externalId());
+            List<BudgetLineCommand> commands = new ArrayList<>();
+            for (SclxBudgetImportData.LineValue line : budget.lines())
+            {
+                requireNew(previews, "BUDGET_LINE", line.externalId());
+                BudgetCategory category = required(
+                        categories, line.categoryCode(), "budget category");
+                Fund fund = line.fundId() == null
+                        ? null
+                        : required(funds, line.fundId(), "budget fund");
+                commands.add(new BudgetLineCommand(
+                        category.getId(),
+                        fund == null ? null : fund.getId(),
+                        line.periodMonth(),
+                        line.amount(),
+                        ""));
+            }
+
+            BudgetPlan plan = budgetPlanService.createForImport(
+                    em,
+                    company,
+                    new BudgetPlanCommand(
+                            budget.name(),
+                            budget.fiscalYear(),
+                            budget.version(),
+                            LocalDate.of(budget.fiscalYear(), 1, 1),
+                            LocalDate.of(budget.fiscalYear(), 12, 31),
+                            ""),
+                    budget.active() ? BudgetPlan.Status.ACTIVE : BudgetPlan.Status.DRAFT,
+                    commands);
+            plans.put(budget.externalId(), plan);
+            em.flush();
+            List<BudgetLine> persistedLines = em.createQuery(
+                            "from BudgetLine l where l.budgetPlan = :plan order by l.id", BudgetLine.class)
+                    .setParameter("plan", plan)
+                    .getResultList();
+            if (persistedLines.size() != budget.lines().size())
+            {
+                throw new IllegalStateException("Canonical budget line count changed during SCLX import.");
+            }
+            for (int index = 0; index < persistedLines.size(); index++)
+            {
+                lines.put(budget.lines().get(index).externalId(), persistedLines.get(index));
+            }
+            afterBusinessWrite.accept(++writes);
+            for (int index = 0; index < persistedLines.size(); index++)
+            {
+                afterBusinessWrite.accept(++writes);
+            }
+        }
+        return new BudgetWrite(
+                plans,
+                lines,
+                categories.size() + plans.size() + lines.size());
     }
 
     private Map<String, Counterparty> writeCounterparties(
@@ -744,6 +849,25 @@ public final class SclxImportCommitService
         for (Map.Entry<String, TxnSupplementalLine> entry : written.supplementalLines().entrySet())
         {
             recordIdentity(em, company, preview, previews, "SUPPLEMENTAL_DETAIL",
+                    entry.getKey(), String.valueOf(entry.getValue().getId()));
+        }
+    }
+
+    private void recordBudgetIdentities(
+            EntityManager em,
+            Company company,
+            SclxImportPreview preview,
+            Map<EntityKey, SclxImportEntityPreview> previews,
+            BudgetWrite written)
+    {
+        for (Map.Entry<String, BudgetPlan> entry : written.plans().entrySet())
+        {
+            recordIdentity(em, company, preview, previews, "BUDGET",
+                    entry.getKey(), String.valueOf(entry.getValue().getId()));
+        }
+        for (Map.Entry<String, BudgetLine> entry : written.lines().entrySet())
+        {
+            recordIdentity(em, company, preview, previews, "BUDGET_LINE",
                     entry.getKey(), String.valueOf(entry.getValue().getId()));
         }
     }
@@ -1038,6 +1162,18 @@ public final class SclxImportCommitService
             lines = Map.copyOf(lines);
             supplementalLines = Map.copyOf(supplementalLines);
             skippedLines = Set.copyOf(skippedLines);
+        }
+    }
+
+    private record BudgetWrite(
+            Map<String, BudgetPlan> plans,
+            Map<String, BudgetLine> lines,
+            int businessWriteCount)
+    {
+        private BudgetWrite
+        {
+            plans = Map.copyOf(plans);
+            lines = Map.copyOf(lines);
         }
     }
 }

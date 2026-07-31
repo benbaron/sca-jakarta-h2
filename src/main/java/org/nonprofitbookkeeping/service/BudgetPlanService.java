@@ -65,6 +65,90 @@ public class BudgetPlanService
         }
     }
 
+    /**
+     * Creates one governed imported budget inside a caller-owned transaction.
+     *
+     * <p>The caller supplies managed company-owned category and fund IDs and
+     * owns commit or rollback. This service retains budget header, scope,
+     * ownership, duplicate-line, and active-version policy rather than allowing
+     * an interchange service to write the normalized budget tables directly.</p>
+     */
+    public BudgetPlan createForImport(
+            EntityManager em,
+            Company company,
+            BudgetPlanCommand command,
+            BudgetPlan.Status status,
+            List<BudgetLineCommand> commands)
+    {
+        Objects.requireNonNull(em, "em");
+        Objects.requireNonNull(company, "company");
+        Objects.requireNonNull(command, "command");
+        Objects.requireNonNull(status, "status");
+        List<BudgetLineCommand> safeCommands = List.copyOf(commands == null ? List.of() : commands);
+        if (!em.getTransaction().isActive())
+        {
+            throw new IllegalStateException("Caller-owned transaction must be active.");
+        }
+        if (!em.contains(company) || company.getId() == null)
+        {
+            throw new IllegalArgumentException("Company must be managed by the caller-owned transaction.");
+        }
+
+        if (status == BudgetPlan.Status.ACTIVE)
+        {
+            long active = em.createQuery("""
+                    select count(p) from BudgetPlan p
+                    where p.company = :company
+                      and p.fiscalYear = :year
+                      and p.status = :status
+                    """, Long.class)
+                    .setParameter("company", company)
+                    .setParameter("year", command.fiscalYear())
+                    .setParameter("status", BudgetPlan.Status.ACTIVE)
+                    .getSingleResult();
+            if (active != 0L)
+            {
+                throw new IllegalStateException(
+                        "Only one active budget version is allowed per company and fiscal year.");
+            }
+        }
+
+        BudgetPlan plan = new BudgetPlan();
+        plan.setCompany(company);
+        applyHeader(plan, command);
+        plan.setStatus(status);
+        if (status == BudgetPlan.Status.ACTIVE)
+        {
+            plan.setActivatedAt(Instant.now());
+        }
+        em.persist(plan);
+        validateLineScopes(plan, safeCommands);
+
+        for (BudgetLineCommand lineCommand : safeCommands)
+        {
+            BudgetCategory category = require(
+                    em, BudgetCategory.class, lineCommand.budgetCategoryId(), "Budget category");
+            ownership().ensureOwnedBy(em, company, category, "Budget category");
+            Fund fund = lineCommand.fundId() == null
+                    ? null
+                    : require(em, Fund.class, lineCommand.fundId(), "Fund");
+            if (fund != null)
+            {
+                ownership().ensureOwnedBy(em, company, fund, "Fund");
+            }
+
+            BudgetLine line = new BudgetLine();
+            line.setBudgetPlan(plan);
+            line.setBudgetCategory(category);
+            line.setFund(fund);
+            line.setPeriodMonth(lineCommand.periodMonth());
+            line.setAmount(lineCommand.amount());
+            line.setNotes(lineCommand.notes());
+            em.persist(line);
+        }
+        return plan;
+    }
+
     public BudgetPlanView replaceDraftLines(long planId, List<BudgetLineCommand> commands)
     {
         List<BudgetLineCommand> safeCommands = List.copyOf(commands == null ? List.of() : commands);

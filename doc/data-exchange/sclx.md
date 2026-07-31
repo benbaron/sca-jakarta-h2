@@ -320,6 +320,36 @@ C3 still rejects budgets, banking and reconciliation, fixed assets and depreciat
 period-close facts, imported audit history, correction relationships, populated unknown sections,
 and populated target-company merge. The JavaFX SCLX commit action remains absent.
 
+### 10.5 P15-S5-C4 budget import boundary
+
+P15-S5-C4 extends the same caller-owned transaction to the governed standard `budgets` section.
+Before mutation, `SclxBudgetImportData` validates plan and line identities, required fields, four-digit
+fiscal years, one active version per fiscal year, category/fund/month scope uniqueness, fund
+references, calendar-year period months, and exact `DECIMAL(19,4)` amounts. A non-null budget-line
+`accountId` is blocking because the normalized `BudgetLine` authority has no account relationship and
+the deterministic application exporter deliberately leaves that field absent.
+
+SCLX carries `categoryCode` on a budget line but no separate portable budget-category master or
+category display name. For a required empty target, the importer therefore creates one company-owned
+`BudgetCategory` for each referenced code and initially uses that same code as its display name. It
+does not infer a category name from an account, activity, or another mutable label.
+
+Budget categories and plans are created through caller-owned overloads on
+`BudgetCategoryAdminService` and `BudgetPlanService`. Plans preserve name, fiscal year, version, and
+active state. Lines preserve category code, optional fund, optional period month, and exact amount.
+Inactive source plans become editable `DRAFT` plans because the standard SCLX boolean does not
+distinguish local draft from archived state. The local required plan date range is the source fiscal
+calendar year; those support fields are not presented as additional portable SCLX facts.
+
+Every budget plan and line receives a source-specific `interchange_identity` in the same transaction.
+Supporting category rows are canonical local master data rather than fabricated SCLX entities and do
+not receive a source identity. A successful operation writes one company-owned
+`SCLX_BUDGETS_IMPORTED` event, and an identical reimport remains a no-op.
+
+C4 still rejects banking and reconciliation, fixed assets and depreciation, inventory, period-close
+facts, imported audit history, correction relationships, populated unknown sections, and populated
+target-company merge. The JavaFX SCLX commit action remains absent.
+
 ## 11. Import transaction boundary and results
 
 Preview and validation MUST make no H2 changes. Commit MUST use one caller-owned transaction for the documented import boundary and route financial records through canonical services. A late failure MUST roll back all records in that boundary.
@@ -331,6 +361,9 @@ counts and a blocking `SCLX_COMMIT_ROLLED_BACK` message.
 
 For P15-S5-C3, the same rollback boundary additionally includes activities, counterparties,
 merchants, supplemental transaction rows, their relationships, and their interchange identities.
+
+For P15-S5-C4, the same rollback boundary additionally includes created budget categories, normalized
+budget plans and lines, their interchange identities, and the C4 operation audit event.
 
 The result MUST report at least:
 
