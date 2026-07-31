@@ -4,9 +4,9 @@ active_phase: P15
 active_slice: P15-S5-C5
 active_status: IN_PROGRESS
 active_branch: codex/P15-S5-C5-fixed-asset-import
-active_pull_request: null
-active_head: "12e7195b528108a246d039d7f7cc41b25f08c5f7"
-next_action: "Complete fixed-asset and completed-depreciation-run import, rollback/idempotency coverage, governing documentation, and exact-head CI; keep the production SCLX commit action absent."
+active_pull_request: 232
+active_head: "09c0e38a4531e8f1a4a457ba49cbf9f9564fc89f"
+next_action: "Run Maven PR Tests on draft PR #232, correct concrete compiler or H2 integration failures, and keep the production SCLX commit action absent."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1200,7 +1200,7 @@ Next exact action:
 
 ### P15-S5-C5 — Fixed-asset and completed-depreciation-run import
 
-Status: IN_PROGRESS on `codex/P15-S5-C5-fixed-asset-import`.
+Status: IN_PROGRESS on draft PR #232.
 
 Scope:
 
@@ -1214,10 +1214,11 @@ Scope:
 Validation status:
 
 - Local Maven is unavailable; Java 17 source validation and GitHub Maven PR Tests are required.
+- Initial implementation head `09c0e38a4531e8f1a4a457ba49cbf9f9564fc89f` is published on draft PR #232.
 
 Next exact action:
 
-- Publish the cohesive C5 implementation and documentation, open a draft PR, and run exact-head Maven PR Tests.
+- Run exact-head Maven PR Tests on draft PR #232 and correct any concrete compiler or H2 integration failures.
 
 Planned deliverables:
 
