@@ -2,6 +2,7 @@ package org.nonprofitbookkeeping.ui;
 
 import org.nonprofitbookkeeping.interchange.sclx.SclxCoreSnapshotQueryService;
 import org.nonprofitbookkeeping.interchange.sclx.SclxFileExportService;
+import org.nonprofitbookkeeping.interchange.sclx.SclxImportPreviewService;
 import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
 import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.repository.ApprovalAuditRepository;
@@ -99,6 +100,19 @@ public final class UiServiceRegistry
         return new SclxFileExportService(
                 new SclxCoreSnapshotQueryService(current.jpa(), () -> fixedCompanyCode),
                 () -> fixedDatabasePath);
+    }
+    public static SclxImportPreviewService sclxImportPreview()
+    {
+        return sclxImportPreview(activeCompanyCode());
+    }
+    public static SclxImportPreviewService sclxImportPreview(String companyCode)
+    {
+        String fixedCompanyCode = Objects.requireNonNull(companyCode, "companyCode").strip();
+        if (fixedCompanyCode.isBlank())
+        {
+            throw new IllegalArgumentException("companyCode must not be blank");
+        }
+        return new SclxImportPreviewService(services().jpa(), () -> fixedCompanyCode);
     }
     public static BankReconciliationWorkspaceService bankReconciliationWorkspace() { return services().bankReconciliationWorkspace(); }
     public static PeriodCloseRangeService periodCloseRangeService() { return services().periodCloseRangeService(); }

@@ -240,6 +240,28 @@ The file chooser is labeled **SCLX Active Company Files** and normalizes the des
 
 The completion result displays the selected company code, SCLX version, fixed operation timestamp, exact destination, byte count, SHA-256, included record counts, warning count, governed deferred sections, and explicit exclusions. Deferred sections remain visible warnings until their P15-S4 mapping is implemented; the UI MUST NOT imply that those records were exported.
 
+### 10.2 Production non-mutating import-preview route
+
+The production **Import Preview** workspace exposes **Preview SCLX…**. Its open chooser is labeled
+**SCLX Active Company Files** and accepts `.sclx` and `.json` candidates, but recognition remains
+content-based: the root format and supported version are authoritative.
+
+The JavaFX action captures the selected target company before background work begins and calls
+`SclxImportPreviewService` through the shell-owned composition root. Preview parses and validates the
+bounded source, performs one read-only target-company query, and makes no H2 changes. The workspace
+shows:
+
+- exact entity counts by governed section plus total entities, references, relationships, and unsupported sections;
+- every external identity disposition as `NEW`, `IDENTICAL`, or `CONFLICT`;
+- every account and fund mapping with `AS_IS`, `MAPPED`, `CONFLICT`, or `UNRESOLVED` resolution;
+- transaction posting-line, zero-value-line, balance, closed-period, and finalized-reconciliation diagnostics; and
+- every warning and blocking error with its stable code and source path.
+
+The status text names the source, SCLX version, explicit target company, recommended account mode,
+new/identical/error totals, and whether the preview is blocked. It always states that no data was
+changed. The existing COA commit action is disabled after an SCLX preview, and this slice exposes no
+SCLX commit control. Transactional import remains governed by a later P15-S5 slice.
+
 ## 11. Import transaction boundary and results
 
 Preview and validation MUST make no H2 changes. Commit MUST use one caller-owned transaction for the documented import boundary and route financial records through canonical services. A late failure MUST roll back all records in that boundary.
