@@ -2,11 +2,11 @@
 plan_version: 104
 active_phase: P15
 active_slice: P15-S5-C4
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S5-C4-budget-import
-active_pull_request: null
-active_head: "d4eed71fe8943ec0e56c3ad57f9892c5ddc49579"
-next_action: "Implement governed budget-plan and budget-line import atomically; keep the production SCLX commit action absent until the remaining section writers are complete."
+active_pull_request: 231
+active_head: "c65ec99cc56cf965b112c1e59894c8e52ae75786"
+next_action: "Complete exact-head Maven PR Tests for draft PR #231; keep the production SCLX commit action absent until the remaining section writers are complete."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S5-C4; P15-S0 through P15-S4 and P15-S5-C1 through C3 DONE
+**Status:** VERIFYING at P15-S5-C4; P15-S0 through P15-S4 and P15-S5-C1 through C3 DONE
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: IN_PROGRESS at P15-S5-C4.
+Status: VERIFYING at P15-S5-C4 on draft PR #231.
 
 Startup scope:
 
@@ -1173,7 +1173,7 @@ Next exact action:
 
 ### P15-S5-C4 — Budget plan and line import
 
-Status: IN_PROGRESS on `codex/P15-S5-C4-budget-import`.
+Status: VERIFYING on draft PR #231.
 
 Scope:
 
@@ -1188,11 +1188,12 @@ Scope:
 
 Validation status:
 
-- Not yet run on the C4 branch.
+- Java 17 grammar validation passes for every changed Java source.
+- GitHub Maven PR Tests on the plan-inclusive C4 head are pending.
 
 Next exact action:
 
-- Implement and test the caller-owned budget writers, publish a draft PR, and obtain exact-head Maven PR Tests.
+- Complete exact-head Maven PR Tests and correct any compile, H2 integration, regression, or production-route failures.
 
 Planned deliverables:
 
