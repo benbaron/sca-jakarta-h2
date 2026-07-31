@@ -15,7 +15,7 @@ next_action: "Inspect current SCLX parser, validation, preview, identity, and tr
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records selected-company SCLX inventory export through PR #223, period-close foundation/correction through PRs #224 and #225, and factual audit-history export under verification in draft PR #226.
+This revision records selected-company SCLX export completed through merged PR #226 with owner desktop acceptance, and begins P15-S5 SCLX import preview and mapping in draft PR #227.
 
 ## 2. Status values
 
