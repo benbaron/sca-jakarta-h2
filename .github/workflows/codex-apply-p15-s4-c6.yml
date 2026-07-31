@@ -1,0 +1,32 @@
+name: Apply P15-S4-C6 audit-history export
+
+on:
+  push:
+    branches:
+      - codex/P15-S4-C6-audit-history-sclx-export
+    paths:
+      - .codex/apply_p15_s4_c6.py
+      - .github/workflows/codex-apply-p15-s4-c6.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S4-C6-audit-history-sclx-export
+          fetch-depth: 0
+      - name: Apply reviewed implementation
+        run: python .codex/apply_p15_s4_c6.py
+      - name: Remove publication helpers
+        run: rm -f .codex/apply_p15_s4_c6.py .github/workflows/codex-apply-p15-s4-c6.yml
+      - name: Commit implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "P15-S4-C6: export factual audit history to SCLX"
+          git push origin HEAD:codex/P15-S4-C6-audit-history-sclx-export
