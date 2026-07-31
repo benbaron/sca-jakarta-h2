@@ -113,6 +113,11 @@ public final class SclxPortableIdentity
         return identity("period-close-event", companyCode, durableEventKey);
     }
 
+    public static String auditEvent(String companyCode, String durableEventKey)
+    {
+        return identity("audit-event", companyCode, durableEventKey);
+    }
+
     public static String budget(String companyCode, int fiscalYear, String version)
     {
         return identity("budget", companyCode, Integer.toString(fiscalYear), version);

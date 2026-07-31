@@ -1,12 +1,12 @@
 ---
-plan_version: 95
+plan_version: 97
 active_phase: P15
 active_slice: P15-S4
 active_status: VERIFYING
-active_branch: codex/P15-S4-C3-inventory-sclx-export
-active_pull_request: 223
-active_head: "8a7eec251d4bba14c3d7cc0e167e2e2bebfdfe47"
-next_action: "Review and merge PR #223 after owner authorization, then start a fresh P15-S4 branch for period-close and factual audit-history export."
+active_branch: codex/P15-S4-C6-audit-history-sclx-export
+active_pull_request: 226
+active_head: "230f247245073c39747f3573ccb1682e41eaf42f"
+next_action: "Complete the P15-S4 owner desktop acceptance checklist and merge PR #226 only after explicit owner authorization."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Review and merge PR #223 after owner authorization, then start a f
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records fixed-asset export corrections merged through PR #220, durable inventory identities merged through PR #221, the inventory SCLX contract merged through PR #222, and its production implementation in corrective PR #223.
+This revision records selected-company SCLX inventory export through PR #223, period-close foundation/correction through PRs #224 and #225, and factual audit-history export under verification in draft PR #226.
 
 ## 2. Status values
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S4; P15-S0 through P15-S3 DONE
+**Status:** IN_PROGRESS at P15-S4; P15-S0 through P15-S3 DONE; inventory and period-close export merged through PR #225
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -915,9 +915,9 @@ Next exact action:
 
 ## P15-S4 — SCLX model, parser, and deterministic active-company export
 
-Status: VERIFYING on branch `codex/P15-S4-C3-inventory-sclx-export` in draft PR #223.
+Status: VERIFYING on branch `codex/P15-S4-C6-audit-history-sclx-export` in draft PR #226.
 
-Current tested implementation head: `8a7eec251d4bba14c3d7cc0e167e2e2bebfdfe47`
+Final plan-inclusive tested head: `230f247245073c39747f3573ccb1682e41eaf42f`.
 
 Incremental completed deliverables:
 
@@ -946,6 +946,9 @@ Incremental completed deliverables:
 - PR #221: intrinsic UUID portable identities for inventory items and movements, with V66 recovery-safe backfill/default/non-null/uniqueness enforcement.
 - PR #222: governed `extensions.scaJakartaH2.inventory` contract documentation only; no production implementation was included.
 - PR #223: corrective selected-company inventory item and movement export implementation, including deterministic identities/order, strict ownership/reference validation, exact counts, completion-summary integration, and focused tests.
+- PR #224: governed period-close extension foundation, range/event snapshot mapping, and portable identity contract; merged before production query/count/summary integration was complete.
+- PR #225: corrective period-close production integration, strict validation, exact range/event counts, completion-summary integration, focused tests, and successful Maven PR Tests; merged at `6959f57daf840b9f93edb0bd9ed9a8d188685170`.
+- P15-S4-C6: add durable AuditEvent portable identity and selected-company `extensions.scaJakartaH2.auditHistory` export, validation, counts, tests, and governing-document reconciliation.
 
 Validation status:
 
@@ -1004,6 +1007,10 @@ Validation status:
 - Corrected PR #223 run `30511454947` compiled production and test sources and ran 462 tests; 461 passed and one new inventory test exposed that the shared extension reader incorrectly required optional fields to be present.
 - The shared extension reader now rejects unknown fields while permitting governed optional fields to be omitted; required fields remain enforced by typed readers. The resulting bot-authored head `97c8856a9ab589e776497b70f5e9bec29e71e4d1` requires a normal plan-inclusive commit to trigger authoritative Maven validation.
 - Maven PR Tests run `30512885063` passed on exact head `8a7eec251d4bba14c3d7cc0e167e2e2bebfdfe47`: `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance all succeeded.
+- PR #224 merged the governed period-close extension foundation before production integration was complete; corrective PR #225 completed selected-company query/assembly, strict validation, exact counts, and completion-summary integration and merged at `6959f57daf840b9f93edb0bd9ed9a8d188685170` after successful Maven PR Tests run `30582139713`.
+- Initial authoritative PR #226 run `30595756059` compiled production and ran the new migration/extension tests successfully but exposed one stale export-result fixture that still expected a deferred-section warning after all governed P15-S4 sections became included.
+- Corrected PR #226 run `30596426183` passed on exact implementation head `9a0c22cbbfa19b438ea100f2228d09c8b23b22b7`: `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance all succeeded.
+- The owner checklist was reconciled to verify inventory, period-close, and audit-history counts/content and the completed no-deferred-section state. Final Maven PR Tests run `30596836488` passed on clean plan-inclusive head `230f247245073c39747f3573ccb1682e41eaf42f`: `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance all succeeded.
 
 Planned deliverables:
 
@@ -1023,7 +1030,31 @@ Acceptance:
 
 Next exact action:
 
-- Review and merge PR #223 only after owner authorization. Then start a fresh P15-S4 branch for period-close facts and factual audit-history export; complete owner desktop acceptance before P15-S4 is marked done.
+- Confirm final plan-inclusive Maven PR Tests on PR #226, complete `doc/P15-S4-sclx-export-ui-user-testing.md`, and merge only after explicit owner authorization. After merge, mark P15-S4 DONE and start P15-S5 from fresh current `main`.
+
+### P15-S4-C6 — Selected-company factual audit-history export
+
+Status: VERIFYING on `codex/P15-S4-C6-audit-history-sclx-export` in draft PR #226.
+
+Scope:
+
+- Add a recovery-safe V67 UUID portable identity for `AuditEvent` without serializing or deriving identity from local numeric IDs or polymorphic `entityId` text.
+- Export every factual `AuditEvent` owned by the selected company under governed `extensions.scaJakartaH2.auditHistory` version 1.
+- Preserve actor, action/entity types, optional subject identifier, summary, before/after values, reason, and timestamp with deterministic ordering.
+- Strictly validate shape and duplicate identity, include exact audit-event counts and completion-summary output, and remove only the audit-history deferred warning.
+- Keep application-global/unresolved audit rows, legacy `ApprovalAuditRecord`, users/authentication, UI state, and other-company records excluded.
+- Add migration recovery/default/uniqueness tests and focused extension/ownership/count tests.
+
+Current validation status:
+
+- V67 recovery/backfill/default/uniqueness coverage and focused selected-company extension/ownership/count tests pass.
+- Initial PR #226 run `30595756059` exposed only the stale warning-message expectation after audit history became included.
+- Corrected implementation run `30596426183` passed all Maven PR Tests gates on head `9a0c22cbbfa19b438ea100f2228d09c8b23b22b7`.
+- Final plan-inclusive Maven PR Tests run `30596836488` passed on clean head `230f247245073c39747f3573ccb1682e41eaf42f`; owner desktop acceptance remains open.
+
+Next exact action:
+
+- Perform the owner desktop checklist and merge PR #226 only after explicit owner authorization.
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
