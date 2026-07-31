@@ -1,12 +1,12 @@
 ---
-plan_version: 100
+plan_version: 101
 active_phase: P15
 active_slice: P15-S5
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S5-C2-sclx-transactional-import
-active_pull_request: null
-active_head: "7b032b71e1e201c530d25b421fe78cb4e957f711"
-next_action: "Validate and publish P15-S5-C2 core transactional SCLX import on a draft PR; keep the production commit action absent until later section writers are complete."
+active_pull_request: 229
+active_head: "24f484cec10f4c5d3a87418a404c99393a828a2a"
+next_action: "Review and merge draft PR #229 after its final plan-inclusive CI run; then continue P15-S5 with the remaining governed section writers before exposing a production commit action."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Validate and publish P15-S5-C2 core transactional SCLX import on a
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S5-C1 complete through merged PR #228 and successful owner desktop acceptance, and activates P15-S5-C2 for the service-level core transactional SCLX import boundary.
+This revision records P15-S5-C1 complete through merged PR #228 and successful owner desktop acceptance, and places P15-S5-C2 in verification on draft PR #229 after its service-level core transactional SCLX import boundary passed all CI gates.
 
 ## 2. Status values
 
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: IN_PROGRESS at P15-S5-C2 on `codex/P15-S5-C2-sclx-transactional-import`.
+Status: VERIFYING at P15-S5-C2 on draft PR #229 from `codex/P15-S5-C2-sclx-transactional-import`.
 
 Startup scope:
 
@@ -1085,11 +1085,13 @@ Current validation status:
 - Correction head `b0034047dcb7676eecffb2fb491a06abe9467494` passed Maven PR Tests run `30655981097`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
 - The production Import Preview route, JavaFX behavior/source tests, governing SCLX/operation-matrix documentation, and owner checklist were published in PR #228.
 - The owner completed the P15-S5-C1 desktop checklist and merged PR #228 to `main` at `7b032b71e1e201c530d25b421fe78cb4e957f711`.
-- P15-S5-C2 adds the first caller-owned one-transaction core import boundary and focused atomicity/idempotency coverage; GitHub Actions validation is pending.
+- P15-S5-C2 adds the first caller-owned one-transaction core import boundary and focused atomicity/idempotency coverage.
+- The initial C2 run `30659561592` exposed one stale unsupported-extension count expectation after production compilation and the remainder of the suite succeeded through that test point.
+- Correction head `24f484cec10f4c5d3a87418a404c99393a828a2a` passed Maven PR Tests run `30659855007`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
 
 Next exact action:
 
-- Publish P15-S5-C2 on a draft PR and obtain successful Maven PR Tests for the exact implementation head.
+- Review and merge draft PR #229 after the final plan-inclusive CI run; then begin the next governed application-extension writer slice from current `main`.
 
 ### P15-S5-C1 — Non-mutating SCLX import preview
 
@@ -1115,7 +1117,7 @@ Remaining P15-S5 scope:
 
 ### P15-S5-C2 — Core transactional SCLX import service
 
-Status: IN_PROGRESS on `codex/P15-S5-C2-sclx-transactional-import`.
+Status: VERIFYING on draft PR #229 from `codex/P15-S5-C2-sclx-transactional-import`.
 
 Scope:
 
@@ -1130,12 +1132,12 @@ Scope:
 
 Validation status:
 
-- Focused H2 integration coverage is implemented for core graph commit, portable transaction identity, exact identity counts, identical reimport, and injected late-failure rollback.
-- Local Maven is unavailable in this container; authoritative Maven PR Tests are pending publication.
+- Focused H2 integration coverage passes for core graph commit, portable transaction identity, exact identity counts, identical reimport, and injected late-failure rollback.
+- Local Maven is unavailable in this container; authoritative Maven PR Tests run `30659855007` passed all gates on correction head `24f484cec10f4c5d3a87418a404c99393a828a2a`.
 
 Next exact action:
 
-- Publish the draft PR, correct any compiler/test failures, and record the exact green head before advancing to the next section-writer slice.
+- Review and merge draft PR #229 after the final plan-inclusive CI run; do not expose a production commit action until the remaining governed section writers are complete.
 
 Planned deliverables:
 
