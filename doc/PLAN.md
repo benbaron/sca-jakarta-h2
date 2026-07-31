@@ -4,9 +4,9 @@ active_phase: P15
 active_slice: P15-S5-C3
 active_status: IN_PROGRESS
 active_branch: codex/P15-S5-C3-transaction-detail-import
-active_pull_request: null
-active_head: "pending"
-next_action: "Publish and validate P15-S5-C3 transaction-linked activity, party, merchant, and supplemental-detail import; keep the production SCLX commit action absent."
+active_pull_request: 230
+active_head: "25ff5699fa22bea71b39554a39f8a3469fd3deb8"
+next_action: "Validate P15-S5-C3 on PR #230 through the full Maven PR Tests workflow; keep the production SCLX commit action absent."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1165,7 +1165,7 @@ Validation status:
 
 Next exact action:
 
-- Publish the implementation and focused integration coverage, open a draft PR, and run all Maven PR Tests gates.
+- Validate draft PR #230 head `25ff5699fa22bea71b39554a39f8a3469fd3deb8` through all Maven PR Tests gates.
 
 Planned deliverables:
 
