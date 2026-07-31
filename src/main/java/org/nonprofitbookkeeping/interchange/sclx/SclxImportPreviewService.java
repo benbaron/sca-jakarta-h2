@@ -41,7 +41,8 @@ public final class SclxImportPreviewService
 {
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Set<String> RECOGNIZED_EXTENSION_KEYS = Set.of(
-            "activities", "counterparties", "supplementalDetails", "bankConfiguration",
+            "activeChartName", "activeChartVersion", "activities", "counterparties",
+            "supplementalDetails", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "fixedAssets", "inventory",
             "periodClose", "auditHistory");
     private static final Set<String> UNSUPPORTED_ROOT_SECTIONS = Set.of(
@@ -95,14 +96,17 @@ public final class SclxImportPreviewService
         MappingResult mapping = mappings(document.root(), target, messages);
         TransactionResult transactionResult = transactions(document.root(), target, messages);
 
-        if (target.populated())
+        boolean populatedMerge = target.populated() && entities.stream()
+                .anyMatch(value -> value.identityMatch() != InterchangeIdentityMatch.IDENTICAL);
+        if (populatedMerge)
         {
             messages.add(message(
                     InterchangeMessageSeverity.ERROR,
                     "SCLX_POPULATED_TARGET_UNSUPPORTED",
                     "targetCompany",
                     "The target company already contains accounting or master data. Populated-company merge "
-                            + "is blocked until explicit SCLX conflict rules are implemented.",
+                            + "of new or conflicting identities is blocked until explicit conflict rules are implemented. "
+                            + "A completely identical reimport remains an idempotent no-op.",
                     true));
         }
         if (!organization.code().equalsIgnoreCase(target.companyCode()))
@@ -385,6 +389,16 @@ public final class SclxImportPreviewService
                             : "A used target account must be active and posting.",
                     used);
         }
+        SclxImportTargetSnapshot.IdentityFact imported = target.identities().get(
+                new SclxImportTargetSnapshot.ExternalIdentityKey("ACCOUNT", sourceId));
+        if (imported != null && imported.normalizedContentHash().equals(hash(source)))
+        {
+            return new SclxImportMappingRequirement(
+                    SclxImportMappingRequirement.Kind.ACCOUNT, sourceId, sourceCode,
+                    local.portableId(), local.code(), used,
+                    SclxImportMappingRequirement.Resolution.AS_IS,
+                    "The identical imported identity already resolves to this target account.", false);
+        }
         boolean exact = sourceId.equals(local.portableId());
         return new SclxImportMappingRequirement(
                 SclxImportMappingRequirement.Kind.ACCOUNT, sourceId, sourceCode,
@@ -424,6 +438,16 @@ public final class SclxImportPreviewService
                     !compatible ? "The target fund type is incompatible."
                             : "A used target fund must be active.",
                     used);
+        }
+        SclxImportTargetSnapshot.IdentityFact imported = target.identities().get(
+                new SclxImportTargetSnapshot.ExternalIdentityKey("FUND", sourceId));
+        if (imported != null && imported.normalizedContentHash().equals(hash(source)))
+        {
+            return new SclxImportMappingRequirement(
+                    SclxImportMappingRequirement.Kind.FUND, sourceId, sourceCode,
+                    local.portableId(), local.code(), used,
+                    SclxImportMappingRequirement.Resolution.AS_IS,
+                    "The identical imported identity already resolves to this target fund.", false);
         }
         boolean exact = sourceId.equals(local.portableId());
         return new SclxImportMappingRequirement(

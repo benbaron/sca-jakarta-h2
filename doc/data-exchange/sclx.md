@@ -260,11 +260,48 @@ shows:
 The status text names the source, SCLX version, explicit target company, recommended account mode,
 new/identical/error totals, and whether the preview is blocked. It always states that no data was
 changed. The existing COA commit action is disabled after an SCLX preview, and this slice exposes no
-SCLX commit control. Transactional import remains governed by a later P15-S5 slice.
+SCLX commit control. P15-S5-C2 adds a service-level core commit boundary but deliberately keeps the
+button absent until every exported section has a governed canonical writer.
+
+### 10.3 P15-S5-C2 core transactional-import boundary
+
+`SclxImportCommitService` re-reads and re-previews the exact source immediately before commit. A
+changed SHA-256, changed target company, blocking validation message, non-empty unsupported section,
+or newly populated target prevents the operation from entering its transaction. The first core
+boundary supports only:
+
+- the source organization profile applied to the explicit existing target while retaining the
+  target company code;
+- the active Chart of Accounts metadata, accounts, and account hierarchy under `AS_IS` rules;
+- funds and fund hierarchy under `AS_IS` rules; and
+- balanced `ENTERED` canonical transactions whose nonzero lines resolve to those accounts and funds.
+
+Accounts and funds are written parent-before-child. Canonical transactions are created through the
+caller-owned transaction overload of `TransactionEntryService`, so command validation, ownership,
+closed-period protection, signed split conversion, and factual transaction audit behavior remain in
+the established accounting service. Zero-value source lines are not posted, but their identical
+external identity may be recorded without a local row so a repeated import remains deterministic.
+
+The organization, every created account/fund/transaction/posted line, and every deliberately skipped
+zero line receive a source-specific `interchange_identity` in the same transaction. A successful
+operation writes one company-owned `SCLX_CORE_IMPORTED` factual audit event containing the source,
+version, SHA-256, and counts. An identical second import is a committed no-op and creates no duplicate
+business rows, identities, or operation audit event.
+
+This boundary rejects budgets, activities, counterparties, merchants, supplemental details, banking,
+reconciliation, fixed assets, inventory, period-close facts, imported audit history, correction
+relationships, and non-empty unknown sections. Those facts are not dropped or partially imported;
+later P15-S5 slices must add their canonical writers and round-trip tests before the production SCLX
+commit action is enabled.
 
 ## 11. Import transaction boundary and results
 
 Preview and validation MUST make no H2 changes. Commit MUST use one caller-owned transaction for the documented import boundary and route financial records through canonical services. A late failure MUST roll back all records in that boundary.
+
+For P15-S5-C2, rollback includes target profile changes, Chart of Accounts metadata, accounts, funds,
+canonical transactions and splits, transaction audit events, interchange identities, and the single
+operation audit event. The service returns an explicit rolled-back result with zero created/updated
+counts and a blocking `SCLX_COMMIT_ROLLED_BACK` message.
 
 The result MUST report at least:
 
