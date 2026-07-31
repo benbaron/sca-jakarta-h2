@@ -1,0 +1,42 @@
+name: Clean P15-S5 plan introduction
+
+on:
+  push:
+    branches:
+      - codex/P15-S5-sclx-import-preview
+    paths:
+      - .github/workflows/codex-clean-p15-s5-plan.yml
+
+permissions:
+  contents: write
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S5-sclx-import-preview
+          fetch-depth: 0
+      - name: Reconcile introductory state
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("doc/PLAN.md")
+          text = path.read_text(encoding="utf-8")
+          old = "This revision records selected-company SCLX inventory export through PR #223, period-close foundation/correction through PRs #224 and #225, and factual audit-history export under verification in draft PR #226."
+          new = "This revision records selected-company SCLX export completed through merged PR #226 with owner desktop acceptance, and begins P15-S5 SCLX import preview and mapping in draft PR #227."
+          if text.count(old) != 1:
+              raise SystemExit(f"Expected one stale revision sentence; found {text.count(old)}")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
+      - name: Remove temporary workflow
+        run: rm -f .github/workflows/codex-clean-p15-s5-plan.yml
+      - name: Commit cleanup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Reconcile completed SCLX export plan state"
+          git push origin HEAD:codex/P15-S5-sclx-import-preview
