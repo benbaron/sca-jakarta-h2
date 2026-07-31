@@ -285,6 +285,10 @@ public class TransactionEntryService
             {
                 throw new PostingException(label + " requires a non-negative amount.");
             }
+            if (command.lineOrder() != null && command.lineOrder() < 0)
+            {
+                throw new PostingException(label + " requires a non-negative line order.");
+            }
             if ((command.startDate() == null) != (command.endDate() == null))
             {
                 throw new PostingException(label + " requires both start and end dates or neither.");
@@ -347,7 +351,8 @@ public class TransactionEntryService
         {
             TxnSupplementalLine line = new TxnSupplementalLine();
             line.setTxn(txn);
-            line.setLineOrder(order++);
+            line.setLineOrder(command.lineOrder() == null ? order : command.lineOrder());
+            order++;
             line.setKind(command.kind());
             line.setEntryRef(blankToNull(command.entryRef()));
             line.setCounterparty(blankToNull(command.counterparty()));
