@@ -297,15 +297,13 @@ class SclxImportCommitServiceTest
     {
         Path source = writeSource(tempDir.resolve("invalid-inventory.sclx"));
         String itemId = SclxPortableIdentity.inventoryItem("SOURCE", INVENTORY_ITEM_UUID.toString());
-        String movementId = SclxPortableIdentity.inventoryMovement(
-                "SOURCE", INVENTORY_MOVEMENT_UUID.toString());
         String original = Files.readString(source);
-        String marker = "\"movementId\": \"" + movementId + "\",\n"
-                + "                            \"itemId\": \"" + itemId + "\"";
-        String changed = original.replace(marker,
-                "\"movementId\": \"" + movementId + "\",\n"
-                        + "                            \"itemId\": \"inventory-item:SOURCE:missing\"");
-        assertFalse(original.equals(changed), "inventory movement fixture mutation must apply");
+        String itemReference = "\"itemId\": \"" + itemId + "\"";
+        int movementReference = original.lastIndexOf(itemReference);
+        assertTrue(movementReference >= 0, "inventory movement fixture mutation must apply");
+        String changed = original.substring(0, movementReference)
+                + "\"itemId\": \"inventory-item:SOURCE:missing\""
+                + original.substring(movementReference + itemReference.length());
         Files.writeString(source, changed);
         try (Jpa jpa = new Jpa(tempDir.resolve("invalid-inventory")))
         {
