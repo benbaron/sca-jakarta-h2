@@ -1,12 +1,12 @@
 ---
-plan_version: 99
+plan_version: 100
 active_phase: P15
 active_slice: P15-S5
-active_status: VERIFYING
-active_branch: codex/P15-S5-C1-sclx-import-preview
-active_pull_request: 228
-active_head: "b0034047dcb7676eecffb2fb491a06abe9467494"
-next_action: "Complete and confirm the owner desktop checklist in doc/P15-S5-sclx-import-preview-ui-user-testing.md; then reconcile acceptance and mark PR #228 ready for review."
+active_status: IN_PROGRESS
+active_branch: codex/P15-S5-C2-sclx-transactional-import
+active_pull_request: null
+active_head: "7b032b71e1e201c530d25b421fe78cb4e957f711"
+next_action: "Validate and publish P15-S5-C2 core transactional SCLX import on a draft PR; keep the production commit action absent until later section writers are complete."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Complete and confirm the owner desktop checklist in doc/P15-S5-scl
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records selected-company SCLX export completed through merged PR #226 with owner desktop acceptance and verifies the P15-S5-C1 non-mutating SCLX import preview in draft PR #228.
+This revision records P15-S5-C1 complete through merged PR #228 and successful owner desktop acceptance, and activates P15-S5-C2 for the service-level core transactional SCLX import boundary.
 
 ## 2. Status values
 
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: VERIFYING P15-S5-C1 on `codex/P15-S5-C1-sclx-import-preview` in draft PR #228.
+Status: IN_PROGRESS at P15-S5-C2 on `codex/P15-S5-C2-sclx-transactional-import`.
 
 Startup scope:
 
@@ -1083,15 +1083,17 @@ Current validation status:
 - Service correction head `922289b06089fdbd5786634f56da744efdae37d6` passed Maven PR Tests run `30654509351`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
 - Initial completed-route run `30655874712` exposed one compile-time overload ambiguity in the no-argument `ImportPreviewPanel` constructor; no tests executed on that failed head.
 - Correction head `b0034047dcb7676eecffb2fb491a06abe9467494` passed Maven PR Tests run `30655981097`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
-- The production Import Preview route, JavaFX behavior/source tests, governing SCLX/operation-matrix documentation, and owner checklist are published. Only desktop acceptance remains open.
+- The production Import Preview route, JavaFX behavior/source tests, governing SCLX/operation-matrix documentation, and owner checklist were published in PR #228.
+- The owner completed the P15-S5-C1 desktop checklist and merged PR #228 to `main` at `7b032b71e1e201c530d25b421fe78cb4e957f711`.
+- P15-S5-C2 adds the first caller-owned one-transaction core import boundary and focused atomicity/idempotency coverage; GitHub Actions validation is pending.
 
 Next exact action:
 
-- Complete and confirm `doc/P15-S5-sclx-import-preview-ui-user-testing.md`, then record owner acceptance and mark PR #228 ready for review. Do not merge while the checklist is open.
+- Publish P15-S5-C2 on a draft PR and obtain successful Maven PR Tests for the exact implementation head.
 
 ### P15-S5-C1 — Non-mutating SCLX import preview
 
-Status: VERIFYING in draft PR #228.
+Status: DONE through merged PR #228 and successful owner desktop acceptance.
 
 Implemented scope:
 
@@ -1102,10 +1104,38 @@ Implemented scope:
 - Route **Preview SCLX…** through the shell-owned composition root, capture target scope before background execution, display path-coded messages and exact diagnostics, and keep every SCLX commit action absent.
 - Add focused service, production-route, and JavaFX rendering tests plus the owner desktop checklist.
 
-Remaining scope:
+Owner verification:
 
-- Owner desktop acceptance of `doc/P15-S5-sclx-import-preview-ui-user-testing.md`.
-- Transactional mapping resolution and commit remain later P15-S5 slices and are not part of P15-S5-C1.
+- The owner completed and passed `doc/P15-S5-sclx-import-preview-ui-user-testing.md`.
+- PR #228 merged to `main` at `7b032b71e1e201c530d25b421fe78cb4e957f711`.
+
+Remaining P15-S5 scope:
+
+- Transactional mapping resolution and complete-section commit remain later P15-S5 slices.
+
+### P15-S5-C2 — Core transactional SCLX import service
+
+Status: IN_PROGRESS on `codex/P15-S5-C2-sclx-transactional-import`.
+
+Scope:
+
+- Re-read and re-preview the approved source immediately before commit; reject changed content or target scope.
+- Import the source organization profile, active chart/accounts, funds, and balanced `ENTERED` canonical transactions into an empty explicit target company under `AS_IS` rules.
+- Write accounts and funds parent-before-child and route transaction creation through a caller-owned `TransactionEntryService` transaction overload.
+- Record source identities for every governed core entity, including deliberately skipped zero-value lines, and make an identical second import a no-op.
+- Write one factual operation audit event after the business graph and identities are complete.
+- Roll back profile, masters, transactions, transaction audit facts, identities, and operation audit together after any late failure.
+- Reject budgets, relationships, non-empty unsupported sections, and every application-extension entity until their canonical writers are implemented.
+- Keep the production SCLX commit action absent; P15-S5-C2 is a tested service foundation, not a partial UI workflow.
+
+Validation status:
+
+- Focused H2 integration coverage is implemented for core graph commit, portable transaction identity, exact identity counts, identical reimport, and injected late-failure rollback.
+- Local Maven is unavailable in this container; authoritative Maven PR Tests are pending publication.
+
+Next exact action:
+
+- Publish the draft PR, correct any compiler/test failures, and record the exact green head before advancing to the next section-writer slice.
 
 Planned deliverables:
 
