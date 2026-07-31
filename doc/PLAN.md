@@ -1,12 +1,12 @@
 ---
-plan_version: 103
+plan_version: 104
 active_phase: P15
-active_slice: P15-S5-C3
-active_status: VERIFYING
-active_branch: codex/P15-S5-C3-transaction-detail-import
-active_pull_request: 230
-active_head: "bbf03bae2ce2cf71d895c543a8f260dfca4e904c"
-next_action: "Review draft PR #230 after final plan-inclusive CI; keep the production SCLX commit action absent until the remaining section writers are complete."
+active_slice: P15-S5-C4
+active_status: IN_PROGRESS
+active_branch: codex/P15-S5-C4-budget-import
+active_pull_request: null
+active_head: "d4eed71fe8943ec0e56c3ad57f9892c5ddc49579"
+next_action: "Implement governed budget-plan and budget-line import atomically; keep the production SCLX commit action absent until the remaining section writers are complete."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Review draft PR #230 after final plan-inclusive CI; keep the produ
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S5-C2 complete through merged PR #229 and P15-S5-C3 implementation-complete and verifying on draft PR #230.
+This revision records P15-S5-C3 complete through merged PR #230 and activates P15-S5-C4 budget import on a fresh branch from current main.
 
 ## 2. Status values
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** VERIFYING at P15-S5-C3; P15-S0 through P15-S4 DONE; P15-S5-C1 and C2 DONE
+**Status:** IN_PROGRESS at P15-S5-C4; P15-S0 through P15-S4 and P15-S5-C1 through C3 DONE
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: VERIFYING at P15-S5-C3 on draft PR #230.
+Status: IN_PROGRESS at P15-S5-C4.
 
 Startup scope:
 
@@ -1091,10 +1091,12 @@ Current validation status:
 - Final plan-inclusive head `8f371f4ab821286776ad7ddf3753d2f5fbb6c9a4` passed Maven PR Tests run `30660125545`, and PR #229 merged to `main` at `0b7d5faaf3f32018a7f07b2307b000243c9d4208`.
 - P15-S5-C3 implements activities, counterparties, merchants, line-merchant relationships, and supplemental transaction details inside the same caller-owned transaction.
 - Plan-handoff head `bbf03bae2ce2cf71d895c543a8f260dfca4e904c` passed Maven PR Tests run `30662272533`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
+- Final C3 head `c5086ae0fff22d046f4ca2b32b4e0bc40d6afaa6` passed Maven PR Tests run `30662503100`, and PR #230 merged to `main` at `d4eed71fe8943ec0e56c3ad57f9892c5ddc49579`.
+- P15-S5-C4 imports governed budget plans and lines through caller-owned canonical budget services while retaining the same atomic rollback and idempotent identity boundary.
 
 Next exact action:
 
-- Review draft PR #230; do not expose the production commit action or begin another writer family before C3 merges.
+- Complete P15-S5-C4 budget import, focused rollback/idempotency coverage, governing documentation, and exact-head CI on the fresh C4 branch.
 
 ### P15-S5-C1 — Non-mutating SCLX import preview
 
@@ -1146,7 +1148,7 @@ Next exact action:
 
 ### P15-S5-C3 — Transaction-linked master and supplemental-detail import
 
-Status: VERIFYING on draft PR #230.
+Status: DONE through merged PR #230.
 
 Scope:
 
@@ -1163,11 +1165,34 @@ Validation status:
 
 - Java 17 grammar validation passes for every changed Java source.
 - Plan-handoff head `bbf03bae2ce2cf71d895c543a8f260dfca4e904c` passed Maven PR Tests run `30662272533`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
-- Local Maven is unavailable; GitHub Maven PR Tests are authoritative.
+- Final head `c5086ae0fff22d046f4ca2b32b4e0bc40d6afaa6` passed Maven PR Tests run `30662503100`, and PR #230 merged to `main` at `d4eed71fe8943ec0e56c3ad57f9892c5ddc49579`.
 
 Next exact action:
 
-- Review and merge draft PR #230 after the final plan-inclusive head passes all Maven PR Tests gates.
+- None; P15-S5-C3 is DONE.
+
+### P15-S5-C4 — Budget plan and line import
+
+Status: IN_PROGRESS on `codex/P15-S5-C4-budget-import`.
+
+Scope:
+
+- Strictly validate governed budget plan and line fields, references, active-version uniqueness, category/fund/period scopes, and exact decimal precision before mutation.
+- Create source-referenced budget categories from their portable category codes because SCLX carries no separate category-name master record; do not infer names from accounts or activities.
+- Create normalized budget plans and lines through caller-owned canonical budget service overloads inside the existing SCLX transaction.
+- Preserve plan name, fiscal year, version, active state, category code, optional fund, optional period month, amount, plan identity, and line identity.
+- Reject non-null budget-line account references because the normalized budget model has no account relation and current export deliberately emits that field absent.
+- Record durable identities for every imported budget plan and line, retain identical reimport as a no-op, and roll budget categories/plans/lines back with the complete imported graph after a late failure.
+- Continue to reject banking, reconciliation, fixed assets, inventory, period close, imported audit history, corrections, and populated unknown extensions.
+- Keep the production SCLX commit action absent.
+
+Validation status:
+
+- Not yet run on the C4 branch.
+
+Next exact action:
+
+- Implement and test the caller-owned budget writers, publish a draft PR, and obtain exact-head Maven PR Tests.
 
 Planned deliverables:
 
