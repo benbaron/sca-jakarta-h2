@@ -1,12 +1,12 @@
 ---
-plan_version: 101
+plan_version: 102
 active_phase: P15
-active_slice: P15-S5
-active_status: VERIFYING
-active_branch: codex/P15-S5-C2-sclx-transactional-import
-active_pull_request: 229
-active_head: "24f484cec10f4c5d3a87418a404c99393a828a2a"
-next_action: "Review and merge draft PR #229 after its final plan-inclusive CI run; then continue P15-S5 with the remaining governed section writers before exposing a production commit action."
+active_slice: P15-S5-C3
+active_status: IN_PROGRESS
+active_branch: codex/P15-S5-C3-transaction-detail-import
+active_pull_request: null
+active_head: "pending"
+next_action: "Publish and validate P15-S5-C3 transaction-linked activity, party, merchant, and supplemental-detail import; keep the production SCLX commit action absent."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Review and merge draft PR #229 after its final plan-inclusive CI r
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S5-C1 complete through merged PR #228 and successful owner desktop acceptance, and places P15-S5-C2 in verification on draft PR #229 after its service-level core transactional SCLX import boundary passed all CI gates.
+This revision records P15-S5-C2 complete through merged PR #229 and activates P15-S5-C3 for the next atomic transaction-linked application-extension import writer.
 
 ## 2. Status values
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S4; P15-S0 through P15-S3 DONE; inventory and period-close export merged through PR #225
+**Status:** IN_PROGRESS at P15-S5-C3; P15-S0 through P15-S4 DONE; P15-S5-C1 and C2 DONE
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: VERIFYING at P15-S5-C2 on draft PR #229 from `codex/P15-S5-C2-sclx-transactional-import`.
+Status: IN_PROGRESS at P15-S5-C3 on `codex/P15-S5-C3-transaction-detail-import`.
 
 Startup scope:
 
@@ -1088,10 +1088,12 @@ Current validation status:
 - P15-S5-C2 adds the first caller-owned one-transaction core import boundary and focused atomicity/idempotency coverage.
 - The initial C2 run `30659561592` exposed one stale unsupported-extension count expectation after production compilation and the remainder of the suite succeeded through that test point.
 - Correction head `24f484cec10f4c5d3a87418a404c99393a828a2a` passed Maven PR Tests run `30659855007`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
+- Final plan-inclusive head `8f371f4ab821286776ad7ddf3753d2f5fbb6c9a4` passed Maven PR Tests run `30660125545`, and PR #229 merged to `main` at `0b7d5faaf3f32018a7f07b2307b000243c9d4208`.
+- P15-S5-C3 is implementing activities, counterparties, merchants, line-merchant relationships, and supplemental transaction details inside the same caller-owned transaction.
 
 Next exact action:
 
-- Review and merge draft PR #229 after the final plan-inclusive CI run; then begin the next governed application-extension writer slice from current `main`.
+- Complete P15-S5-C3 implementation and exact-head CI; do not expose the production commit action.
 
 ### P15-S5-C1 — Non-mutating SCLX import preview
 
@@ -1117,7 +1119,7 @@ Remaining P15-S5 scope:
 
 ### P15-S5-C2 — Core transactional SCLX import service
 
-Status: VERIFYING on draft PR #229 from `codex/P15-S5-C2-sclx-transactional-import`.
+Status: DONE through merged PR #229.
 
 Scope:
 
@@ -1134,10 +1136,36 @@ Validation status:
 
 - Focused H2 integration coverage passes for core graph commit, portable transaction identity, exact identity counts, identical reimport, and injected late-failure rollback.
 - Local Maven is unavailable in this container; authoritative Maven PR Tests run `30659855007` passed all gates on correction head `24f484cec10f4c5d3a87418a404c99393a828a2a`.
+- Final plan-inclusive Maven PR Tests run `30660125545` passed all gates on head `8f371f4ab821286776ad7ddf3753d2f5fbb6c9a4`.
+- PR #229 merged to `main` at `0b7d5faaf3f32018a7f07b2307b000243c9d4208`.
 
 Next exact action:
 
-- Review and merge draft PR #229 after the final plan-inclusive CI run; do not expose a production commit action until the remaining governed section writers are complete.
+- None; P15-S5-C2 is DONE.
+
+### P15-S5-C3 — Transaction-linked master and supplemental-detail import
+
+Status: IN_PROGRESS on `codex/P15-S5-C3-transaction-detail-import`.
+
+Scope:
+
+- Strictly validate the governed `activities`, `counterparties`, and `supplementalDetails` extension shapes and their transaction-line relationships before opening the caller-owned transaction.
+- Create company-owned activities, counterparties, and merchants before canonical transactions, preserving intrinsic party/merchant UUID identities and inactive historical masters.
+- Resolve the repeated transaction-line counterparty representation to one canonical transaction-header payee and reject a source transaction that names more than one counterparty.
+- Route activity and merchant references plus supplemental transaction details through `TransactionEntryService` inside the existing import transaction.
+- Preserve persisted supplemental `lineOrder`, record durable source identities for every new master and supplemental row, and retain identical reimport as a no-op.
+- Roll back the company profile, chart/accounts, funds, transaction-linked masters, canonical transactions/splits, supplemental rows, identities, and audit history after any late failure.
+- Continue to reject budgets, banking, reconciliation, fixed assets, inventory, period close, imported audit history, corrections, and populated unknown sections.
+- Keep the production SCLX commit action absent.
+
+Validation status:
+
+- Java 17 grammar validation passes for every changed Java source.
+- Local Maven is unavailable; GitHub Maven PR Tests will be authoritative.
+
+Next exact action:
+
+- Publish the implementation and focused integration coverage, open a draft PR, and run all Maven PR Tests gates.
 
 Planned deliverables:
 
