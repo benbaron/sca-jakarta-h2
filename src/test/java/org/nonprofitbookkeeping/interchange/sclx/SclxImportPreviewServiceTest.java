@@ -2,6 +2,7 @@ package org.nonprofitbookkeeping.interchange.sclx;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.interchange.InterchangeIdentityMatch;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SclxImportPreviewServiceTest
@@ -30,7 +32,7 @@ class SclxImportPreviewServiceTest
         SclxImportTargetSnapshot empty = emptyTarget("TEST");
         SclxImportPreview first = service(empty).preview(source);
 
-        assertFalse(first.hasBlockingErrors());
+        assertFalse(first.hasBlockingErrors(), () -> first.operation().messages().toString());
         assertEquals(SclxAccountMode.AS_IS, first.recommendedAccountMode());
         assertEquals(1L, first.sectionCounts().count("organizations"));
         assertEquals(2L, first.sectionCounts().count("accounts"));
@@ -67,10 +69,17 @@ class SclxImportPreviewServiceTest
     {
         byte[] bytes = new SclxJsonSerializer().serialize(SclxJsonSerializerTest.document());
         JsonNode root = new ObjectMapper().readTree(bytes);
-        root.path("transactions").get(0).path("lines").get(0)
-                .fields().forEachRemaining(ignored -> { });
-        ((com.fasterxml.jackson.databind.node.ObjectNode) root.path("transactions").get(0)
-                .path("lines").get(0)).put("debit", "0");
+        ObjectNode debitLine = null;
+        for (JsonNode line : root.path("transactions").get(0).path("lines"))
+        {
+            if (line.path("debit").decimalValue().signum() > 0)
+            {
+                debitLine = (ObjectNode) line;
+                break;
+            }
+        }
+        assertNotNull(debitLine, "fixture must contain a debit posting line");
+        debitLine.put("debit", "0");
         Path source = tempDir.resolve("conflicts.sclx");
         Files.write(source, new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsBytes(root));
 
