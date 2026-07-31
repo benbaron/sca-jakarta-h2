@@ -5,8 +5,8 @@ active_slice: P15-S4
 active_status: VERIFYING
 active_branch: codex/P15-S4-C6-audit-history-sclx-export
 active_pull_request: 226
-active_head: "58c17129c7e77fa9eab690c4a3a79db280f2f060"
-next_action: "Confirm final plan-inclusive Maven PR Tests, complete the P15-S4 owner desktop acceptance checklist, and merge PR #226 only after explicit owner authorization."
+active_head: "230f247245073c39747f3573ccb1682e41eaf42f"
+next_action: "Complete the P15-S4 owner desktop acceptance checklist and merge PR #226 only after explicit owner authorization."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -917,7 +917,7 @@ Next exact action:
 
 Status: VERIFYING on branch `codex/P15-S4-C6-audit-history-sclx-export` in draft PR #226.
 
-Current tested implementation head: `9a0c22cbbfa19b438ea100f2228d09c8b23b22b7`; owner-checklist-inclusive head: `58c17129c7e77fa9eab690c4a3a79db280f2f060`.
+Final plan-inclusive tested head: `230f247245073c39747f3573ccb1682e41eaf42f`.
 
 Incremental completed deliverables:
 
@@ -1010,7 +1010,7 @@ Validation status:
 - PR #224 merged the governed period-close extension foundation before production integration was complete; corrective PR #225 completed selected-company query/assembly, strict validation, exact counts, and completion-summary integration and merged at `6959f57daf840b9f93edb0bd9ed9a8d188685170` after successful Maven PR Tests run `30582139713`.
 - Initial authoritative PR #226 run `30595756059` compiled production and ran the new migration/extension tests successfully but exposed one stale export-result fixture that still expected a deferred-section warning after all governed P15-S4 sections became included.
 - Corrected PR #226 run `30596426183` passed on exact implementation head `9a0c22cbbfa19b438ea100f2228d09c8b23b22b7`: `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance all succeeded.
-- The owner checklist was reconciled on head `58c17129c7e77fa9eab690c4a3a79db280f2f060` to verify inventory, period-close, and audit-history counts/content and the completed no-deferred-section state; final plan-inclusive CI remains required.
+- The owner checklist was reconciled to verify inventory, period-close, and audit-history counts/content and the completed no-deferred-section state. Final Maven PR Tests run `30596836488` passed on clean plan-inclusive head `230f247245073c39747f3573ccb1682e41eaf42f`: `mvn clean verify`, the repeated Maven test suite, and JavaFX production-route compliance all succeeded.
 
 Planned deliverables:
 
@@ -1050,11 +1050,11 @@ Current validation status:
 - V67 recovery/backfill/default/uniqueness coverage and focused selected-company extension/ownership/count tests pass.
 - Initial PR #226 run `30595756059` exposed only the stale warning-message expectation after audit history became included.
 - Corrected implementation run `30596426183` passed all Maven PR Tests gates on head `9a0c22cbbfa19b438ea100f2228d09c8b23b22b7`.
-- The completed owner checklist is present on head `58c17129c7e77fa9eab690c4a3a79db280f2f060`; final plan-inclusive CI and owner desktop acceptance remain open.
+- Final plan-inclusive Maven PR Tests run `30596836488` passed on clean head `230f247245073c39747f3573ccb1682e41eaf42f`; owner desktop acceptance remains open.
 
 Next exact action:
 
-- Confirm the final plan-inclusive Maven PR Tests, perform the owner desktop checklist, and merge PR #226 only after explicit owner authorization.
+- Perform the owner desktop checklist and merge PR #226 only after explicit owner authorization.
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
