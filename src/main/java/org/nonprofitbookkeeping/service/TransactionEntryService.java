@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
@@ -67,6 +68,54 @@ public class TransactionEntryService
     public TransactionView enter(TransactionCommand command)
     {
         return saveNew(command, null);
+    }
+
+    /**
+     * Caller-owned transaction variant for governed import services.
+     *
+     * <p>The caller must supply a managed company and an active JPA transaction.
+     * Validation, company ownership, closed-period protection, canonical split
+     * conversion, supplemental-detail persistence, and the transaction audit fact
+     * remain owned by this service. The caller owns commit or rollback so the
+     * canonical transaction participates in the import's larger atomic boundary.</p>
+     */
+    public Txn enter(
+            EntityManager em,
+            Company company,
+            TransactionCommand command,
+            UUID portableId,
+            String actor)
+    {
+        Objects.requireNonNull(em, "em");
+        Objects.requireNonNull(company, "company");
+        Objects.requireNonNull(portableId, "portableId");
+        if (!em.getTransaction().isActive())
+        {
+            throw new IllegalStateException("Caller-owned transaction must be active.");
+        }
+        validateCommand(command);
+        if (!em.contains(company) || company.getId() == null)
+        {
+            throw new IllegalArgumentException("Company must be managed by the caller-owned transaction.");
+        }
+        PeriodCloseRangeService.requireOpen(em, company.getCode(), command.date(), "enter transaction");
+
+        Txn txn = new Txn();
+        txn.setCompany(company);
+        txn.setPortableId(portableId);
+        applyHeader(em, company, txn, command);
+        em.persist(txn);
+        persistLines(em, company, txn, command.lines());
+        persistSupplementalLines(em, txn, command.supplementalLines());
+        em.persist(audit(
+                company,
+                actor == null || actor.isBlank() ? "system" : actor.trim(),
+                "TRANSACTION_ENTERED",
+                txn,
+                null,
+                snapshot(txn),
+                "caller-owned transactional import"));
+        return txn;
     }
 
     public TransactionView update(long transactionId, TransactionCommand command)
