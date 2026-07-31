@@ -1,12 +1,12 @@
 ---
-plan_version: 97
+plan_version: 98
 active_phase: P15
-active_slice: P15-S4
-active_status: VERIFYING
-active_branch: codex/P15-S4-C6-audit-history-sclx-export
-active_pull_request: 226
-active_head: "230f247245073c39747f3573ccb1682e41eaf42f"
-next_action: "Complete the P15-S4 owner desktop acceptance checklist and merge PR #226 only after explicit owner authorization."
+active_slice: P15-S5
+active_status: IN_PROGRESS
+active_branch: codex/P15-S5-sclx-import-preview
+active_pull_request: 227
+active_head: "PENDING_FIRST_IMPLEMENTATION_COMMIT"
+next_action: "Inspect current SCLX parser, validation, preview, identity, and transaction-service boundaries; then implement the first coherent P15-S5 import-preview slice on the recorded branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -47,7 +47,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
-| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S4 |
+| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S5 |
 
 ## 4. Governing documents
 
@@ -915,9 +915,9 @@ Next exact action:
 
 ## P15-S4 — SCLX model, parser, and deterministic active-company export
 
-Status: VERIFYING on branch `codex/P15-S4-C6-audit-history-sclx-export` in draft PR #226.
+Status: DONE through merged PR #226 and owner desktop acceptance.
 
-Final plan-inclusive tested head: `230f247245073c39747f3573ccb1682e41eaf42f`.
+Final exact tested head: `6ed522251193ae3aa16942f84dd8ff4a91556ebb`; merged to `main` at `d7304eca38e21715bc7f1d039ed3ac3c4c9e5bed`.
 
 Incremental completed deliverables:
 
@@ -1028,13 +1028,18 @@ Acceptance:
 - Deterministic exports from unchanged data compare equal except explicitly documented envelope metadata.
 - No local numeric primary key is used as a portable identity.
 
+Owner verification:
+
+- The owner completed and passed `doc/P15-S4-sclx-export-ui-user-testing.md`.
+- PR #226 merged to `main` at `d7304eca38e21715bc7f1d039ed3ac3c4c9e5bed`.
+
 Next exact action:
 
-- Confirm final plan-inclusive Maven PR Tests on PR #226, complete `doc/P15-S4-sclx-export-ui-user-testing.md`, and merge only after explicit owner authorization. After merge, mark P15-S4 DONE and start P15-S5 from fresh current `main`.
+- None; P15-S4 is DONE.
 
 ### P15-S4-C6 — Selected-company factual audit-history export
 
-Status: VERIFYING on `codex/P15-S4-C6-audit-history-sclx-export` in draft PR #226.
+Status: DONE through merged PR #226 and owner desktop acceptance.
 
 Scope:
 
@@ -1052,13 +1057,33 @@ Current validation status:
 - Corrected implementation run `30596426183` passed all Maven PR Tests gates on head `9a0c22cbbfa19b438ea100f2228d09c8b23b22b7`.
 - Final plan-inclusive Maven PR Tests run `30596836488` passed on clean head `230f247245073c39747f3573ccb1682e41eaf42f`; owner desktop acceptance remains open.
 
+Owner verification:
+
+- The owner completed and passed the P15-S4 desktop checklist.
+- PR #226 merged to `main` at `d7304eca38e21715bc7f1d039ed3ac3c4c9e5bed`.
+
 Next exact action:
 
-- Perform the owner desktop checklist and merge PR #226 only after explicit owner authorization.
+- None; P15-S4-C6 is DONE.
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: BLOCKED until P15-S4 merges.
+Status: IN_PROGRESS on `codex/P15-S5-sclx-import-preview` in draft PR #227.
+
+Startup scope:
+
+- Begin with a coherent non-mutating import-preview slice: parsed-document projection, target-company scope, exact entity/reference counts, unsupported-section reporting, identity classification, account/fund mapping requirements, transaction-balance diagnostics, closed-period/reconciliation conflict diagnostics, and no H2 writes.
+- Reuse the existing bounded SCLX parser, validators, shared interchange contracts, durable interchange identity, canonical transaction services, and Import Preview workspace; do not introduce a donor parallel repository or generic job framework.
+- Defer transactional commit until the preview contract and mappings are governed and tested.
+
+Current validation status:
+
+- P15-S4 export final exact-head Maven PR Tests run `30597102760` passed all gates before merge.
+- P15-S5 baseline and focused tests are pending first implementation.
+
+Next exact action:
+
+- Inspect the current parser, validator, identity repository, Import Preview route, account/fund services, closed-period enforcement, and reconciliation protections; then implement and test the first non-mutating preview slice.
 
 Planned deliverables:
 
