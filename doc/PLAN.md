@@ -1,12 +1,12 @@
 ---
-plan_version: 102
+plan_version: 103
 active_phase: P15
 active_slice: P15-S5-C3
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S5-C3-transaction-detail-import
 active_pull_request: 230
-active_head: "25ff5699fa22bea71b39554a39f8a3469fd3deb8"
-next_action: "Validate P15-S5-C3 on PR #230 through the full Maven PR Tests workflow; keep the production SCLX commit action absent."
+active_head: "bbf03bae2ce2cf71d895c543a8f260dfca4e904c"
+next_action: "Review draft PR #230 after final plan-inclusive CI; keep the production SCLX commit action absent until the remaining section writers are complete."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Validate P15-S5-C3 on PR #230 through the full Maven PR Tests work
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S5-C2 complete through merged PR #229 and activates P15-S5-C3 for the next atomic transaction-linked application-extension import writer.
+This revision records P15-S5-C2 complete through merged PR #229 and P15-S5-C3 implementation-complete and verifying on draft PR #230.
 
 ## 2. Status values
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S5-C3; P15-S0 through P15-S4 DONE; P15-S5-C1 and C2 DONE
+**Status:** VERIFYING at P15-S5-C3; P15-S0 through P15-S4 DONE; P15-S5-C1 and C2 DONE
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: IN_PROGRESS at P15-S5-C3 on `codex/P15-S5-C3-transaction-detail-import`.
+Status: VERIFYING at P15-S5-C3 on draft PR #230.
 
 Startup scope:
 
@@ -1089,11 +1089,12 @@ Current validation status:
 - The initial C2 run `30659561592` exposed one stale unsupported-extension count expectation after production compilation and the remainder of the suite succeeded through that test point.
 - Correction head `24f484cec10f4c5d3a87418a404c99393a828a2a` passed Maven PR Tests run `30659855007`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
 - Final plan-inclusive head `8f371f4ab821286776ad7ddf3753d2f5fbb6c9a4` passed Maven PR Tests run `30660125545`, and PR #229 merged to `main` at `0b7d5faaf3f32018a7f07b2307b000243c9d4208`.
-- P15-S5-C3 is implementing activities, counterparties, merchants, line-merchant relationships, and supplemental transaction details inside the same caller-owned transaction.
+- P15-S5-C3 implements activities, counterparties, merchants, line-merchant relationships, and supplemental transaction details inside the same caller-owned transaction.
+- Plan-handoff head `bbf03bae2ce2cf71d895c543a8f260dfca4e904c` passed Maven PR Tests run `30662272533`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
 
 Next exact action:
 
-- Complete P15-S5-C3 implementation and exact-head CI; do not expose the production commit action.
+- Review draft PR #230; do not expose the production commit action or begin another writer family before C3 merges.
 
 ### P15-S5-C1 — Non-mutating SCLX import preview
 
@@ -1145,7 +1146,7 @@ Next exact action:
 
 ### P15-S5-C3 — Transaction-linked master and supplemental-detail import
 
-Status: IN_PROGRESS on `codex/P15-S5-C3-transaction-detail-import`.
+Status: VERIFYING on draft PR #230.
 
 Scope:
 
@@ -1161,11 +1162,12 @@ Scope:
 Validation status:
 
 - Java 17 grammar validation passes for every changed Java source.
-- Local Maven is unavailable; GitHub Maven PR Tests will be authoritative.
+- Plan-handoff head `bbf03bae2ce2cf71d895c543a8f260dfca4e904c` passed Maven PR Tests run `30662272533`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
+- Local Maven is unavailable; GitHub Maven PR Tests are authoritative.
 
 Next exact action:
 
-- Validate draft PR #230 head `25ff5699fa22bea71b39554a39f8a3469fd3deb8` through all Maven PR Tests gates.
+- Review and merge draft PR #230 after the final plan-inclusive head passes all Maven PR Tests gates.
 
 Planned deliverables:
 
