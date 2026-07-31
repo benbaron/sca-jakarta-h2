@@ -372,6 +372,14 @@ reimport remains a no-op. C5 still rejects banking and reconciliation, inventory
 imported audit history, correction relationships, populated unknown sections, and populated-target
 merge. The JavaFX SCLX commit action remains absent.
 
+### 10.7 P15-S5-C6 inventory import boundary
+
+P15-S5-C6 extends the caller-owned transaction to `extensions.scaJakartaH2.inventory` version 1. Before mutation, the importer strictly validates item and movement shapes, identities, enum values, exact decimals, timestamps, account/fund/item references, and optional canonical transaction provenance.
+
+Items are recreated through `InventoryService` after their account and fund dependencies exist. Movement history is then written through the same caller-owned service boundary after items and canonical source transactions exist. The importer preserves intrinsic UUIDs, source timestamps, factual quantities and values, item lifecycle fields, movement types, notes, and transaction provenance. It does not synthesize an initial receipt, recompute the source movement history, or create another canonical transaction.
+
+Every item and movement receives a same-transaction `interchange_identity`. A successful operation writes one company-owned `SCLX_INVENTORY_IMPORTED` event, and an identical reimport remains a no-op. C6 still rejects banking and reconciliation, period-close facts, imported audit history, correction relationships, populated unknown sections, and populated-target merge. The JavaFX SCLX commit action remains absent.
+
 ## 11. Import transaction boundary and results
 
 Preview and validation MUST make no H2 changes. Commit MUST use one caller-owned transaction for the documented import boundary and route financial records through canonical services. A late failure MUST roll back all records in that boundary.
@@ -389,6 +397,9 @@ budget plans and lines, their interchange identities, and the C4 operation audit
 
 For P15-S5-C5, the same rollback boundary additionally includes fixed assets, completed depreciation
 runs, their intrinsic portable metadata and interchange identities, and the C5 operation audit event.
+
+For P15-S5-C6, the same rollback boundary additionally includes inventory items, movement history,
+their intrinsic portable metadata and interchange identities, and the C6 operation audit event.
 
 The result MUST report at least:
 
