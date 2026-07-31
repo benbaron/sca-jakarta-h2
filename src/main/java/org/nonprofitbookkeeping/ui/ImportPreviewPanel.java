@@ -60,7 +60,8 @@ public class ImportPreviewPanel implements AppPanel
 
     public ImportPreviewPanel()
     {
-        this(new ImportPreviewService(), UiServiceRegistry::sclxImportPreview);
+        this(new ImportPreviewService(),
+                (Supplier<SclxImportPreviewService>) UiServiceRegistry::sclxImportPreview);
     }
 
     ImportPreviewPanel(
