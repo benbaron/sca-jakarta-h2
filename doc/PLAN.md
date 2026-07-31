@@ -1,12 +1,12 @@
 ---
-plan_version: 98
+plan_version: 99
 active_phase: P15
 active_slice: P15-S5
-active_status: IN_PROGRESS
-active_branch: codex/P15-S5-sclx-import-preview
-active_pull_request: 227
-active_head: "PENDING_FIRST_IMPLEMENTATION_COMMIT"
-next_action: "Inspect current SCLX parser, validation, preview, identity, and transaction-service boundaries; then implement the first coherent P15-S5 import-preview slice on the recorded branch."
+active_status: VERIFYING
+active_branch: codex/P15-S5-C1-sclx-import-preview
+active_pull_request: 228
+active_head: "b0034047dcb7676eecffb2fb491a06abe9467494"
+next_action: "Complete and confirm the owner desktop checklist in doc/P15-S5-sclx-import-preview-ui-user-testing.md; then reconcile acceptance and mark PR #228 ready for review."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Inspect current SCLX parser, validation, preview, identity, and tr
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records selected-company SCLX export completed through merged PR #226 with owner desktop acceptance, and begins P15-S5 SCLX import preview and mapping in draft PR #227.
+This revision records selected-company SCLX export completed through merged PR #226 with owner desktop acceptance and verifies the P15-S5-C1 non-mutating SCLX import preview in draft PR #228.
 
 ## 2. Status values
 
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: IN_PROGRESS on `codex/P15-S5-sclx-import-preview` in draft PR #227.
+Status: VERIFYING P15-S5-C1 on `codex/P15-S5-C1-sclx-import-preview` in draft PR #228.
 
 Startup scope:
 
@@ -1079,11 +1079,33 @@ Startup scope:
 Current validation status:
 
 - P15-S4 export final exact-head Maven PR Tests run `30597102760` passed all gates before merge.
-- P15-S5 baseline and focused tests are pending first implementation.
+- The read-only service, target query, projections, deterministic identity/mapping/transaction diagnostics, and focused tests are implemented on PR #228.
+- Service correction head `922289b06089fdbd5786634f56da744efdae37d6` passed Maven PR Tests run `30654509351`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
+- Initial completed-route run `30655874712` exposed one compile-time overload ambiguity in the no-argument `ImportPreviewPanel` constructor; no tests executed on that failed head.
+- Correction head `b0034047dcb7676eecffb2fb491a06abe9467494` passed Maven PR Tests run `30655981097`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
+- The production Import Preview route, JavaFX behavior/source tests, governing SCLX/operation-matrix documentation, and owner checklist are published. Only desktop acceptance remains open.
 
 Next exact action:
 
-- Inspect the current parser, validator, identity repository, Import Preview route, account/fund services, closed-period enforcement, and reconciliation protections; then implement and test the first non-mutating preview slice.
+- Complete and confirm `doc/P15-S5-sclx-import-preview-ui-user-testing.md`, then record owner acceptance and mark PR #228 ready for review. Do not merge while the checklist is open.
+
+### P15-S5-C1 — Non-mutating SCLX import preview
+
+Status: VERIFYING in draft PR #228.
+
+Implemented scope:
+
+- Parse and structurally validate bounded SCLX 1.0, 1.2, and 1.3 input without beginning a transaction or changing H2.
+- Read the explicit target company once for accounts, funds, durable external identities, closed ranges, and finalized-reconciliation protections.
+- Show exact section/entity/reference/relationship/unsupported counts; `NEW`, `IDENTICAL`, and `CONFLICT` identity dispositions; account/fund mapping requirements; and transaction balance/protection diagnostics.
+- Reject accidental populated-company merge and disclose skipped zero-value/no-posting facts.
+- Route **Preview SCLX…** through the shell-owned composition root, capture target scope before background execution, display path-coded messages and exact diagnostics, and keep every SCLX commit action absent.
+- Add focused service, production-route, and JavaFX rendering tests plus the owner desktop checklist.
+
+Remaining scope:
+
+- Owner desktop acceptance of `doc/P15-S5-sclx-import-preview-ui-user-testing.md`.
+- Transactional mapping resolution and commit remain later P15-S5 slices and are not part of P15-S5-C1.
 
 Planned deliverables:
 

@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.interchange.sclx.SclxImportPreviewService;
 import org.nonprofitbookkeeping.service.dashboard.DashboardQueryService;
 import org.nonprofitbookkeeping.service.DiagnosticsQueryService;
 
@@ -17,6 +18,7 @@ public final class WorkspaceServices
     private final PanelFactory panelFactory;
     private final Supplier<DashboardQueryService> dashboardQueryService;
     private final Supplier<DiagnosticsQueryService> diagnosticsQueryService;
+    private final Supplier<SclxImportPreviewService> sclxImportPreviewService;
 
     WorkspaceServices(
             WorkspaceContext context,
@@ -25,7 +27,8 @@ public final class WorkspaceServices
             DatabaseTransferActions databaseTransferActions,
             SclxExportActions sclxExportActions,
             Supplier<DashboardQueryService> dashboardQueryService,
-            Supplier<DiagnosticsQueryService> diagnosticsQueryService)
+            Supplier<DiagnosticsQueryService> diagnosticsQueryService,
+            Supplier<SclxImportPreviewService> sclxImportPreviewService)
     {
         this.context = Objects.requireNonNull(context, "context");
         this.databaseSessionController = Objects.requireNonNull(databaseSessionController, "databaseSessionController");
@@ -34,6 +37,8 @@ public final class WorkspaceServices
         this.sclxExportActions = Objects.requireNonNull(sclxExportActions, "sclxExportActions");
         this.dashboardQueryService = Objects.requireNonNull(dashboardQueryService, "dashboardQueryService");
         this.diagnosticsQueryService = Objects.requireNonNull(diagnosticsQueryService, "diagnosticsQueryService");
+        this.sclxImportPreviewService = Objects.requireNonNull(
+                sclxImportPreviewService, "sclxImportPreviewService");
         this.panelFactory = new PanelFactory(this);
     }
 
@@ -75,5 +80,10 @@ public final class WorkspaceServices
     DiagnosticsQueryService diagnosticsQueryService()
     {
         return diagnosticsQueryService.get();
+    }
+
+    SclxImportPreviewService sclxImportPreviewService()
+    {
+        return sclxImportPreviewService.get();
     }
 }

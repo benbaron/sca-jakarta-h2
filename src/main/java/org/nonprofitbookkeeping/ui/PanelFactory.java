@@ -1,5 +1,7 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ImportPreviewService;
+
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
@@ -19,7 +21,10 @@ public final class PanelFactory
                         services.dashboardQueryService(),
                         services.context()),
                 () -> new AdministrationPanel(services.companySessionController(), services.databaseTransferActions()),
-                () -> new DiagnosticsPanel(services.diagnosticsQueryService()));
+                () -> new DiagnosticsPanel(services.diagnosticsQueryService()),
+                () -> new ImportPreviewPanel(
+                        new ImportPreviewService(),
+                        services::sclxImportPreviewService));
     }
 
     PanelFactory(CompanySessionController companySessionController)
@@ -28,18 +33,24 @@ public final class PanelFactory
         registerFactories(
                 DashboardHomePanel::new,
                 () -> new AdministrationPanel(companySessionController),
-                DiagnosticsPanel::new);
+                DiagnosticsPanel::new,
+                ImportPreviewPanel::new);
     }
 
     PanelFactory()
     {
-        registerFactories(DashboardHomePanel::new, AdministrationPanel::new, DiagnosticsPanel::new);
+        registerFactories(
+                DashboardHomePanel::new,
+                AdministrationPanel::new,
+                DiagnosticsPanel::new,
+                ImportPreviewPanel::new);
     }
 
     private void registerFactories(
             Supplier<AppPanel> dashboardFactory,
             Supplier<AppPanel> administrationFactory,
-            Supplier<AppPanel> diagnosticsFactory)
+            Supplier<AppPanel> diagnosticsFactory,
+            Supplier<AppPanel> importPreviewFactory)
     {
         factories.put(AppPanelId.DASHBOARD, dashboardFactory);
         factories.put(AppPanelId.JOURNAL_PANE, JournalWorkspaceCompliancePanel::new);
@@ -51,7 +62,7 @@ public final class PanelFactory
         factories.put(AppPanelId.INVENTORY, InventoryPanel::new);
         factories.put(AppPanelId.RECONCILIATION_RUNS, ReconciliationRunsPanel::new);
         factories.put(AppPanelId.PERIOD_CLOSE_RUNS, PeriodCloseRunsPanel::new);
-        factories.put(AppPanelId.IMPORT_PREVIEW, ImportPreviewPanel::new);
+        factories.put(AppPanelId.IMPORT_PREVIEW, importPreviewFactory);
         factories.put(AppPanelId.APPROVAL_AUDIT, ApprovalAuditPanel::new);
         factories.put(AppPanelId.BANK_TRANSACTIONS, BankTransactionsPanel::new);
         factories.put(AppPanelId.REPORT_LIBRARY, ReportLibraryPanel::new);

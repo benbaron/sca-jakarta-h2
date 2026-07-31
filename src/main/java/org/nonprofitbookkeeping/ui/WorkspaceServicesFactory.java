@@ -79,6 +79,7 @@ public final class WorkspaceServicesFactory
                 databaseTransferActions,
                 sclxExportActions,
                 UiServiceRegistry::dashboardQuery,
-                UiServiceRegistry::diagnosticsQuery);
+                UiServiceRegistry::diagnosticsQuery,
+                () -> UiServiceRegistry.sclxImportPreview(context.activeCompanyCode()));
     }
 }
