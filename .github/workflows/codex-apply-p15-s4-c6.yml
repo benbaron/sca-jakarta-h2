@@ -24,6 +24,8 @@ jobs:
         with:
           ref: codex/P15-S4-C6-audit-history-sclx-export
           fetch-depth: 0
+      - name: Correct stale plan heading anchor
+        run: sed -i 's/SCLX preview, mapping, and atomic import/SCLX preview, mapping, and transactional import/g' .codex/apply_p15_s4_c6.py
       - name: Apply reviewed implementation
         run: python .codex/apply_p15_s4_c6.py
       - name: Remove publication helpers
