@@ -1,12 +1,12 @@
 ---
-plan_version: 105
+plan_version: 106
 active_phase: P15
-active_slice: P15-S5-C5
-active_status: VERIFYING
-active_branch: codex/P15-S5-C5-fixed-asset-import
-active_pull_request: 232
-active_head: "09c0e38a4531e8f1a4a457ba49cbf9f9564fc89f"
-next_action: "Review draft PR #232 after final plan-inclusive CI; keep the production SCLX commit action absent until the remaining section writers are complete."
+active_slice: P15-S5-C6
+active_status: IN_PROGRESS
+active_branch: codex/P15-S5-C6-inventory-import
+active_pull_request: null
+active_head: "9ba6dd0f369566fae78d752c35e4202e57f74428"
+next_action: "Complete P15-S5-C6 inventory import, rollback/idempotency coverage, governing documentation, draft PR, and exact-head CI; keep the production SCLX commit action absent."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: VERIFYING at P15-S5-C5 on draft PR #232.
+Status: IN_PROGRESS at P15-S5-C6 on a fresh branch from merged PR #232.
 
 Startup scope:
 
@@ -1095,10 +1095,12 @@ Current validation status:
 - P15-S5-C4 imports governed budget plans and lines through caller-owned canonical budget services while retaining the same atomic rollback and idempotent identity boundary.
 - Final C4 head `e36ec398a216cfd38836d9213c2860a261fafab6` passed Maven PR Tests run `30665458733`, and PR #231 merged to `main` at `12e7195b528108a246d039d7f7cc41b25f08c5f7`.
 - P15-S5-C5 imports fixed assets and completed depreciation runs through caller-owned canonical services after their account, fund, and canonical transaction dependencies exist.
+- Final C5 head `9cc26891f381b8ee5bf4273510daf3d5180b10eb` passed Maven PR Tests run `30669920942`, and PR #232 merged to `main` at `9ba6dd0f369566fae78d752c35e4202e57f74428`.
+- P15-S5-C6 imports governed inventory items and movement history through caller-owned canonical services after their account, fund, item, and optional canonical transaction dependencies exist.
 
 Next exact action:
 
-- Complete P15-S5-C5 fixed-asset import, focused rollback/idempotency coverage, governing documentation, and exact-head CI on the fresh C5 branch.
+- Complete P15-S5-C6 inventory import, focused rollback/idempotency coverage, governing documentation, and exact-head CI on the fresh C6 branch.
 
 ### P15-S5-C1 — Non-mutating SCLX import preview
 
@@ -1200,7 +1202,7 @@ Next exact action:
 
 ### P15-S5-C5 — Fixed-asset and completed-depreciation-run import
 
-Status: VERIFYING on draft PR #232.
+Status: DONE through merged PR #232.
 
 Scope:
 
@@ -1216,10 +1218,32 @@ Validation status:
 - Local Maven is unavailable; Java 17 source validation and GitHub Maven PR Tests are required.
 - Initial implementation head `09c0e38a4531e8f1a4a457ba49cbf9f9564fc89f` is published on draft PR #232.
 - Plan-inclusive head `f3da2daa6da8d8b9f98cdbe38c894cc37e68190a` passed Maven PR Tests run `30669727984`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
+- Final head `9cc26891f381b8ee5bf4273510daf3d5180b10eb` passed Maven PR Tests run `30669920942`, and PR #232 merged to `main` at `9ba6dd0f369566fae78d752c35e4202e57f74428`.
 
 Next exact action:
 
-- Review and merge draft PR #232 after its final governance-only head passes all Maven PR Tests gates.
+- None; P15-S5-C5 is DONE.
+
+### P15-S5-C6 — Inventory item and movement import
+
+Status: IN_PROGRESS on `codex/P15-S5-C6-inventory-import` from current `main`.
+
+Scope:
+
+- Strictly validate `extensions.scaJakartaH2.inventory` version 1, including item and movement shapes, identities, enum values, exact decimal values, timestamps, and references before mutation.
+- Create inventory items through a caller-owned `InventoryService` boundary after accounts and funds exist, preserving intrinsic UUIDs, timestamps, quantity/value facts, lifecycle fields, storage/custodian facts, and notes.
+- Record source movement history through the same service after items and canonical transactions exist, preserving intrinsic UUIDs, signed quantity change, resulting quantity, unit value, optional transaction provenance, notes, and creation time without synthesizing another receipt or ledger transaction.
+- Record durable identities for every item and movement, retain identical reimport as a no-op, reject populated inventory targets, and roll the complete imported graph back after a late failure.
+- Continue to reject banking, reconciliation, period close, imported audit history, corrections, and populated unknown extensions.
+- Keep the production SCLX commit action absent.
+
+Validation status:
+
+- Local Java 17 is available but Maven is unavailable; focused source validation and GitHub Maven PR Tests are required.
+
+Next exact action:
+
+- Publish the cohesive C6 implementation and documentation to a draft PR, run all Maven PR Tests gates, and correct concrete compiler or H2 integration diagnostics.
 
 Planned deliverables:
 
