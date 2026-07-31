@@ -1,0 +1,32 @@
+name: Apply P15-S4-C6 final plan reconciliation
+
+on:
+  push:
+    branches:
+      - codex/P15-S4-C6-audit-history-sclx-export
+    paths:
+      - .codex/apply_p15_s4_c6_plan.py
+      - .github/workflows/codex-apply-p15-s4-c6-plan.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/P15-S4-C6-audit-history-sclx-export
+          fetch-depth: 0
+      - name: Apply final plan reconciliation
+        run: python .codex/apply_p15_s4_c6_plan.py
+      - name: Remove plan publication helpers
+        run: rm -f .codex/apply_p15_s4_c6_plan.py .github/workflows/codex-apply-p15-s4-c6-plan.yml
+      - name: Commit reconciled plan
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Reconcile P15-S4-C6 plan and verification state"
+          git push origin HEAD:codex/P15-S4-C6-audit-history-sclx-export
