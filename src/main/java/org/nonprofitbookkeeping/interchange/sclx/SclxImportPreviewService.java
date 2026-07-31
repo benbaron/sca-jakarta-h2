@@ -226,7 +226,7 @@ public final class SclxImportPreviewService
                             "reconciliationMatches"));
             addObjectArrays(app.get("fixedAssets"), "$.extensions.scaJakartaH2.fixedAssets",
                     counts, entities, messages,
-                    new ArraySpec("assets", "fixedAssetId", "FIXED_ASSET", "fixedAssets"),
+                    new ArraySpec("assets", "assetId", "FIXED_ASSET", "fixedAssets"),
                     new ArraySpec("depreciationRuns", "depreciationRunId", "DEPRECIATION_RUN",
                             "depreciationRuns"));
             addObjectArrays(app.get("inventory"), "$.extensions.scaJakartaH2.inventory",
@@ -755,7 +755,7 @@ public final class SclxImportPreviewService
         return Set.of("organizationId", "accountId", "fundId", "budgetId", "lineId", "transactionId",
                 "activityId", "counterpartyId", "merchantId", "supplementalDetailId", "bankId",
                 "bankAccountId", "importBatchId", "statementLineId", "issueId", "reconciliationSessionId",
-                "reconciliationMatchId", "fixedAssetId", "depreciationRunId", "itemId", "movementId",
+                "reconciliationMatchId", "assetId", "depreciationRunId", "itemId", "movementId",
                 "rangeId", "eventId", "auditEventId").contains(name);
     }
 
