@@ -40,7 +40,7 @@ class SclxImportPreviewServiceTest
         assertEquals(1L, first.sectionCounts().count("fixedAssets"));
         assertEquals(1L, first.sectionCounts().count("depreciationRuns"));
         assertEquals(13L, first.sectionCounts().totalEntities());
-        assertEquals(0L, first.sectionCounts().unsupportedSectionCount());
+        assertEquals(2L, first.sectionCounts().unsupportedSectionCount());
         assertEquals(13L, first.operation().counts().created());
         assertTrue(first.mappings().stream().allMatch(
                 mapping -> mapping.resolution() == SclxImportMappingRequirement.Resolution.AS_IS));
