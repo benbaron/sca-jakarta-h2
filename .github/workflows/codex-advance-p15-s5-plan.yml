@@ -55,3 +55,5 @@ jobs:
           git add -A
           git commit -m "Advance P15 plan to SCLX import preview"
           git push origin HEAD:codex/P15-S5-sclx-import-preview
+
+# Trigger after PR #227 opened.
