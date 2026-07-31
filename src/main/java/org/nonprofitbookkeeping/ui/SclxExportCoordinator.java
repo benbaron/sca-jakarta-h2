@@ -297,6 +297,7 @@ final class SclxExportCoordinator implements SclxExportActions
                 + "\n  Inventory movements: " + counts.inventoryMovements()
                 + "\n  Period-close ranges: " + counts.periodCloseRanges()
                 + "\n  Period-close events: " + counts.periodCloseEvents()
+                + "\n  Audit events: " + counts.auditEvents()
                 + "\n  Total entities: " + counts.totalEntities()
                 + "\n\nWarnings: " + counts.warnings()
                 + "\nValidation messages:" + messages

@@ -57,6 +57,7 @@ public final class SclxExportDocumentValidator
                 fundIds,
                 transactionReferences.transactionIds());
         validatePeriodClose(SclxPeriodCloseExtension.data(document.extensions()));
+        validateAuditHistory(SclxAuditHistoryExtension.data(document.extensions()));
     }
 
     private static Set<String> uniqueAccountIds(List<SclxExportDocument.Account> accounts)
@@ -296,6 +297,11 @@ public final class SclxExportDocumentValidator
             if (!Set.of("CLOSED", "REOPENED").contains(event.eventType()))
                 throw new IllegalArgumentException("unsupported period-close eventType: " + event.eventType());
         }
+    }
+
+    private static void validateAuditHistory(SclxAuditHistoryExtension.Data data)
+    {
+        SclxAuditHistoryExtension.requireUniqueIds(data);
     }
 
     private static void validateBankConfiguration(

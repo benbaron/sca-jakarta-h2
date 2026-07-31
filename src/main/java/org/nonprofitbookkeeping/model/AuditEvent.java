@@ -13,6 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.UUID;
 
 /** Material-change audit event stored in the active organization database. */
 @Entity
@@ -23,6 +24,9 @@ public class AuditEvent
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "portable_id", nullable = false, unique = true, updatable = false)
+    private UUID portableId = UUID.randomUUID();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
@@ -58,6 +62,7 @@ public class AuditEvent
     private String reason;
 
     public Long getId() { return id; }
+    public UUID getPortableId() { return portableId; }
     public Company getCompany() { return company; }
     public void setCompany(Company company) { this.company = company; }
     public Instant getOccurredAt() { return occurredAt; }

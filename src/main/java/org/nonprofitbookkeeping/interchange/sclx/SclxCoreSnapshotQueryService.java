@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AuditEvent;
 import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.BudgetLine;
 import org.nonprofitbookkeeping.model.BudgetPlan;
@@ -185,6 +186,12 @@ public class SclxCoreSnapshotQueryService
             PeriodCloseRangeService periodCloseService = new PeriodCloseRangeService(jpa);
             List<PeriodCloseRangeView> periodCloseRanges = periodCloseService.listRanges(company.getCode());
             List<PeriodCloseEventView> periodCloseEvents = periodCloseService.listEvents(company.getCode());
+            List<AuditEvent> auditEvents = em.createQuery(
+                            "select e from AuditEvent e "
+                                    + "where e.company = :company order by e.occurredAt, e.portableId",
+                            AuditEvent.class)
+                    .setParameter("company", company)
+                    .getResultList();
 
             return assembler.assemble(
                     company,
@@ -205,6 +212,7 @@ public class SclxCoreSnapshotQueryService
                     inventoryMovements,
                     periodCloseRanges,
                     periodCloseEvents,
+                    auditEvents,
                     exportedAt);
         }
     }

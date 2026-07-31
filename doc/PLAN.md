@@ -1,12 +1,12 @@
 ---
-plan_version: 95
+plan_version: 96
 active_phase: P15
 active_slice: P15-S4
-active_status: VERIFYING
-active_branch: codex/P15-S4-C3-inventory-sclx-export
-active_pull_request: 223
-active_head: "8a7eec251d4bba14c3d7cc0e167e2e2bebfdfe47"
-next_action: "Review and merge PR #223 after owner authorization, then start a fresh P15-S4 branch for period-close and factual audit-history export."
+active_status: IN_PROGRESS
+active_branch: codex/P15-S4-C6-audit-history-sclx-export
+active_pull_request: null
+active_head: "PENDING_IMPLEMENTATION_COMMIT"
+next_action: "Complete factual AuditEvent portable identity and selected-company SCLX export on P15-S4-C6, open a draft PR, and run full Maven PR Tests."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S4; P15-S0 through P15-S3 DONE
+**Status:** IN_PROGRESS at P15-S4; P15-S0 through P15-S3 DONE; inventory and period-close export merged through PR #225
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -915,9 +915,9 @@ Next exact action:
 
 ## P15-S4 — SCLX model, parser, and deterministic active-company export
 
-Status: VERIFYING on branch `codex/P15-S4-C3-inventory-sclx-export` in draft PR #223.
+Status: IN_PROGRESS on branch `codex/P15-S4-C6-audit-history-sclx-export`; draft PR pending.
 
-Current tested implementation head: `8a7eec251d4bba14c3d7cc0e167e2e2bebfdfe47`
+Current implementation head: pending first P15-S4-C6 implementation commit.
 
 Incremental completed deliverables:
 
@@ -946,6 +946,9 @@ Incremental completed deliverables:
 - PR #221: intrinsic UUID portable identities for inventory items and movements, with V66 recovery-safe backfill/default/non-null/uniqueness enforcement.
 - PR #222: governed `extensions.scaJakartaH2.inventory` contract documentation only; no production implementation was included.
 - PR #223: corrective selected-company inventory item and movement export implementation, including deterministic identities/order, strict ownership/reference validation, exact counts, completion-summary integration, and focused tests.
+- PR #224: governed period-close extension foundation, range/event snapshot mapping, and portable identity contract; merged before production query/count/summary integration was complete.
+- PR #225: corrective period-close production integration, strict validation, exact range/event counts, completion-summary integration, focused tests, and successful Maven PR Tests; merged at `6959f57daf840b9f93edb0bd9ed9a8d188685170`.
+- P15-S4-C6: add durable AuditEvent portable identity and selected-company `extensions.scaJakartaH2.auditHistory` export, validation, counts, tests, and governing-document reconciliation.
 
 Validation status:
 
@@ -1024,6 +1027,27 @@ Acceptance:
 Next exact action:
 
 - Review and merge PR #223 only after owner authorization. Then start a fresh P15-S4 branch for period-close facts and factual audit-history export; complete owner desktop acceptance before P15-S4 is marked done.
+
+### P15-S4-C6 — Selected-company factual audit-history export
+
+Status: IN_PROGRESS on `codex/P15-S4-C6-audit-history-sclx-export`; draft PR pending.
+
+Scope:
+
+- Add a recovery-safe V67 UUID portable identity for `AuditEvent` without serializing or deriving identity from local numeric IDs or polymorphic `entityId` text.
+- Export every factual `AuditEvent` owned by the selected company under governed `extensions.scaJakartaH2.auditHistory` version 1.
+- Preserve actor, action/entity types, optional subject identifier, summary, before/after values, reason, and timestamp with deterministic ordering.
+- Strictly validate shape and duplicate identity, include exact audit-event counts and completion-summary output, and remove only the audit-history deferred warning.
+- Keep application-global/unresolved audit rows, legacy `ApprovalAuditRecord`, users/authentication, UI state, and other-company records excluded.
+- Add migration recovery/default/uniqueness tests and focused extension/ownership/count tests.
+
+Current validation status:
+
+- Implementation publication and Maven PR Tests pending.
+
+Next exact action:
+
+- Publish the implementation commit, open a draft PR, run full Maven PR Tests, correct any failures, and update this handoff with the exact head and run.
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 

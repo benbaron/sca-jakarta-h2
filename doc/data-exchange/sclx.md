@@ -186,6 +186,22 @@ Asset and run arrays are ordered by their intrinsic UUID portable identities. Ev
 
 Negative costs, salvage outside zero through acquisition cost, unsupported useful lives or methods, nonpositive run amounts, duplicate identities, cross-company records, and unresolved references are blocking export errors. Fixed assets and completed depreciation runs contribute separately to export counts, and `FIXED_ASSETS` is no longer reported as deferred.
 
+### 8.8 Inventory extension
+
+`extensions.scaJakartaH2.inventory` version 1 contains the selected company inventory items and factual movement history. Items and movements use intrinsic UUID portable identities, retain their authoritative account, fund, quantity, value, status, condition, transaction-provenance, timestamp, and notes fields, and are ordered by portable identity. Cross-company records and unresolved account, fund, item, or canonical transaction references are blocking export errors.
+
+### 8.9 Period-close extension
+
+`extensions.scaJakartaH2.periodClose` version 1 contains authoritative calculated or custom close ranges and their factual close/reopen events. Ranges and events use their intrinsic UUID identities namespaced by company. Range status, close and reopen actors/timestamps/reasons, event type, and event-to-range references are preserved. Legacy accounting-period and close-run compatibility records are not substituted for this authority.
+
+### 8.10 Factual audit-history extension
+
+`extensions.scaJakartaH2.auditHistory` version 1 contains every `AuditEvent` whose `company_id` is the selected company. It contains one `events` array. Each entry contains `auditEventId`, `occurredAt`, `actor`, `actionType`, `entityType`, optional `entityId`, `summary`, optional `beforeValue`, optional `afterValue`, and optional `reason`.
+
+`auditEventId` is `audit-event:<company-code>:<portable-uuid>` using the intrinsic UUID added to `audit_event`; it never uses `audit_event.id`, a mutable summary, or the polymorphic `entityId`. Events are ordered by `occurredAt` and then portable UUID. The polymorphic entity type and identifier are preserved as factual subject text and are not rewritten into a reference to an unrelated SCLX object. This prevents a legacy local ID from being presented as a portable foreign key.
+
+Application-global audit rows, unresolved historical rows with no company owner, legacy `ApprovalAuditRecord` workflow records, users, roles, authentication facts, and UI state are not included. Duplicate identities, blank required fields, unsupported extension fields, and any event owned by another company are blocking export errors. Audit events contribute to exact entity counts, and `AUDIT_HISTORY` is no longer reported as deferred.
+
 ## 9. Deterministic SCLX 1.3 output
 
 For a fixed export request, fixed operation timestamp, and unchanged database state, output bytes MUST be identical.
@@ -287,7 +303,7 @@ atomic replacing move when available, restores the previous destination if the s
 and removes temporary artifacts after failure.
 
 `SclxExportResult` reports the final destination, format/version, fixed export timestamp, portable
-organization identity, byte count, SHA-256, core and activity entity counts, deferred-extension warnings, and the
+organization identity, byte count, SHA-256, exact governed entity counts, deferred-extension warnings, and the
 governed explicit-exclusion section list. Deferred extension sections are reported as warnings until
 their selected-company snapshot mappings are implemented; policy exclusions are reported separately
 and are not silently treated as exported empty sections.

@@ -1,6 +1,6 @@
 # Model and persistence authority inventory
 
-Status: P00 inventory of current main, updated through P15-S1 company ownership, migration diagnostics, and external interchange identity. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
+Status: P00 inventory of current main, updated through P15-S4 selected-company audit-history identity and SCLX export. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
 
 ## Current persistence map
 
@@ -19,7 +19,7 @@ Status: P00 inventory of current main, updated through P15-S1 company ownership,
 | Former Schedules panel | top-level panel, route, navigation item, and schedule runbook sidecar removed in P07 | no active top-level persistence remains | historical V2 schedule/open-item tables remain until a later migration decision | future domain-specific supplemental transaction records, not a Schedules function |
 | Fixed assets/depreciation | `FixedAsset` and `FixedAssetDepreciationRun` JPA entities with V55 tables; depreciation runs create canonical `Txn` rows | yes for P08-S1 asset records and completed depreciation runs | old asset/depreciation text sidecars removed from production paths | later hardening: richer disposal/impairment workflows, visual polish, and reports |
 | Inventory/supplies | `InventoryItem` and `InventoryMovement` JPA entities with V56 tables; movement records reserve a nullable canonical `Txn` link | yes for P09-S1 item records and movement history | old inventory text runbook removed from production paths | later hardening: financially relevant movement-to-ledger automation and reports |
-| Audit/approval | `AuditEvent` is factual JPA audit history; `ApprovalAuditRecord` remains a legacy approval-oriented repository/panel | yes for both stored record types | legacy approval terminology conflicts with product decision outside Period Close | P12 should rename/scope the remaining approval audit surface |
+| Audit/approval | `AuditEvent` is company-owned factual JPA audit history with an intrinsic portable UUID; `ApprovalAuditRecord` remains a legacy approval-oriented repository/panel | yes for both stored record types | the two record families are distinct and legacy approval records are not selected-company SCLX authority | export only company-owned `AuditEvent`; retain the legacy surface as compatibility until deliberately replaced |
 | Preferences/app state | `FileAppStateStore`, `UserAppStateStore`, session state, company UI preference/state tables, production `CompanyTableStateBinder` | mixed; all production table order/width/sort state and company display state are H2, while shell state remains a user file | shell-only preferences are not fully company-scoped; Banking and Inventory Java Preferences table stores were removed in P14-S1 | preserve the H2 company boundary while P14 completes panel-specific layout/format/dirty-state repairs |
 | Former Import/Export Jobs function | panel, route, navigation destination, enum identifier, and `UiWorkspaceDataStore` generic job list removed in P13-S1 | no active generic job store remains | none; domain-specific import, banking, reconciliation, diagnostic, and audit facts remain in their owning models | do not reintroduce generic job tracking |
 | Diagnostics and database recovery | `DiagnosticsQueryService.Report`, `DatabaseSessionController`, and typed `DatabaseRecoveryCommand` dispatch | H2 remains authoritative for datasource/account/fund facts; runtime/session values are factual context only | diagnostics are queried on demand and are not persisted as jobs; a failed connection does not replace the selected database path | keep recovery explicit and non-destructive; selected path changes only after successful service composition |
@@ -47,6 +47,13 @@ Status: P00 inventory of current main, updated through P15-S1 company ownership,
 - Reconciliation protection remains an independent prerequisite check; period close does not weaken completed-reconciliation protection.
 - `AccountingPeriod` and `AccountingPeriodService` remain compatibility structures but are not the P10 business authority for calculated/custom range close state.
 - `PeriodCloseService` and `PeriodCloseRunRepository` remain compatibility run-artifact APIs and are not used by the production Period Close workspace.
+
+## Factual audit-history authority
+
+- `AuditEvent` is the selected-company authority for material-change audit facts. V61 supplies explicit nullable company ownership for recoverable historical data, and V67 supplies a non-null intrinsic UUID portable identity without rewriting local IDs or polymorphic subject text.
+- New JPA and SQL-created business audit events receive a UUID through entity initialization or the H2 default. Existing events are backfilled nondestructively, and duplicate portable identities are rejected.
+- SCLX exports only events whose `company_id` is the selected company. Application-global or unresolved historical rows remain outside active-company export rather than being guessed.
+- `ApprovalAuditRecord` is a separate legacy workflow-oriented compatibility record and is not substituted for `AuditEvent` in SCLX.
 
 ## Fund master-data authority
 

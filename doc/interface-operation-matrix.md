@@ -1,6 +1,6 @@
 # Interface operation matrix
 
-Status: P00 inventory of current main, updated through P15-S3 Chart of Accounts JSON implementation and verification. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
+Status: P00 inventory of current main, updated through P15-S4 selected-company SCLX factual audit-history export. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
 
 ## Scope and evidence
 
