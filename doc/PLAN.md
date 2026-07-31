@@ -2,11 +2,11 @@
 plan_version: 106
 active_phase: P15
 active_slice: P15-S5-C6
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S5-C6-inventory-import
-active_pull_request: null
-active_head: "9ba6dd0f369566fae78d752c35e4202e57f74428"
-next_action: "Complete P15-S5-C6 inventory import, rollback/idempotency coverage, governing documentation, draft PR, and exact-head CI; keep the production SCLX commit action absent."
+active_pull_request: 233
+active_head: "85082fecfdcf509627f85928a0f0908890f531a2"
+next_action: "Review draft PR #233 after final plan-inclusive CI; keep the production SCLX commit action absent until the remaining section writers are complete."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: IN_PROGRESS at P15-S5-C6 on a fresh branch from merged PR #232.
+Status: VERIFYING at P15-S5-C6 on draft PR #233.
 
 Startup scope:
 
@@ -1097,6 +1097,8 @@ Current validation status:
 - P15-S5-C5 imports fixed assets and completed depreciation runs through caller-owned canonical services after their account, fund, and canonical transaction dependencies exist.
 - Final C5 head `9cc26891f381b8ee5bf4273510daf3d5180b10eb` passed Maven PR Tests run `30669920942`, and PR #232 merged to `main` at `9ba6dd0f369566fae78d752c35e4202e57f74428`.
 - P15-S5-C6 imports governed inventory items and movement history through caller-owned canonical services after their account, fund, item, and optional canonical transaction dependencies exist.
+- Initial C6 runs `30671855732` and `30671989995` compiled production and executed the full suite but exposed only an indentation-sensitive negative-test fixture mutation; production import behavior was not implicated.
+- Corrected implementation head `85082fecfdcf509627f85928a0f0908890f531a2` passed Maven PR Tests run `30672084818`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
 
 Next exact action:
 
@@ -1226,7 +1228,7 @@ Next exact action:
 
 ### P15-S5-C6 — Inventory item and movement import
 
-Status: IN_PROGRESS on `codex/P15-S5-C6-inventory-import` from current `main`.
+Status: VERIFYING on draft PR #233.
 
 Scope:
 
@@ -1240,10 +1242,13 @@ Scope:
 Validation status:
 
 - Local Java 17 is available but Maven is unavailable; focused source validation and GitHub Maven PR Tests are required.
+- Java 17 grammar parsing passes for all eight changed Java sources.
+- Initial Maven PR Tests runs `30671855732` and `30671989995` exposed only the new negative test's whitespace-sensitive source mutation; both compiled production and ran the remainder of the suite through that assertion.
+- Corrected head `85082fecfdcf509627f85928a0f0908890f531a2` passed Maven PR Tests run `30672084818`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
 
 Next exact action:
 
-- Publish the cohesive C6 implementation and documentation to a draft PR, run all Maven PR Tests gates, and correct concrete compiler or H2 integration diagnostics.
+- Review and merge draft PR #233 after its final plan-inclusive head passes all Maven PR Tests gates.
 
 Planned deliverables:
 
