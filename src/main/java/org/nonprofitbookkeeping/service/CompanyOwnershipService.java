@@ -14,6 +14,7 @@ import org.nonprofitbookkeeping.model.CompanyOwnershipIssue;
 import org.nonprofitbookkeeping.model.Counterparty;
 import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.model.FixedAsset;
+import org.nonprofitbookkeeping.model.InventoryItem;
 import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.persistence.Jpa;
@@ -99,6 +100,11 @@ public class CompanyOwnershipService
         requireOwnedBy(expected, asset == null ? null : asset.getCompany(), label);
     }
 
+    public void requireOwnedBy(Company expected, InventoryItem item, String label)
+    {
+        requireOwnedBy(expected, item == null ? null : item.getCompany(), label);
+    }
+
     public void requireOwnedBy(Company expected, BudgetCategory category, String label)
     {
         requireOwnedBy(expected, category == null ? null : category.getCompany(), label);
@@ -177,6 +183,19 @@ public class CompanyOwnershipService
             asset.setCompany(expected);
         }
         requireOwnedBy(expected, asset, label);
+    }
+
+    public void ensureOwnedBy(EntityManager em, Company expected, InventoryItem item, String label)
+    {
+        if (item == null)
+        {
+            throw new CompanyOwnershipException(label + " is required.");
+        }
+        if (item.getCompany() == null && isOnlyCompany(em, expected))
+        {
+            item.setCompany(expected);
+        }
+        requireOwnedBy(expected, item, label);
     }
 
     public void ensureOwnedBy(EntityManager em, Company expected, BudgetCategory category, String label)
