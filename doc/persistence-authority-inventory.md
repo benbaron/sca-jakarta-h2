@@ -1,6 +1,6 @@
 # Model and persistence authority inventory
 
-Status: P00 inventory of current main, updated through P15-S5-C5 selected-company SCLX fixed-asset import. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
+Status: P00 inventory of current main, updated through P15-S5-C6 selected-company SCLX inventory import. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
 
 ## Current persistence map
 
@@ -94,7 +94,7 @@ Status: P00 inventory of current main, updated through P15-S5-C5 selected-compan
 - Import preview can remain in-memory while users review rows.
 - Accepted COA imports may write through admin services today; accepted bank/accounting activity must not write static `UiWorkspaceDataStore` rows as accounting truth.
 - P05 must persist statement lines and route accepted accounting effects through the P02 canonical transaction service.
-- P15-S5-C2 through C5 SCLX import writes one empty target company graph in one caller-owned JPA transaction. Accounts and funds are created before normalized budgets and dependent canonical transactions; activities, counterparties, and merchants are created before transaction relationships; fixed assets and completed runs are created after their account, fund, and transaction references exist.
+- P15-S5-C2 through C6 SCLX import writes one empty target company graph in one caller-owned JPA transaction. Accounts and funds are created before normalized budgets and dependent canonical transactions; activities, counterparties, and merchants are created before transaction relationships; fixed assets and completed runs are created after their account, fund, and transaction references exist; inventory items and movement history follow their account, fund, item, and optional transaction dependencies.
 - SCLX budget categories are created from portable category codes through `BudgetCategoryAdminService`, and plans/lines are created through the caller-owned `BudgetPlanService` boundary. Budget lines preserve optional fund, period month, and exact amount; account-bearing budget lines are rejected because the normalized authority has no account relation.
 - Supplemental source `lineOrder` is preserved through the canonical supplemental command. Every imported SCLX entity, transaction, posting line, budget plan/line, and supplemental row receives a same-transaction `interchange_identity`; supporting category master rows remain canonical local data. A late failure rolls all business rows, transaction audit facts, identities, and the operation audit event back together.
 - Fixed assets and completed depreciation runs are recreated through caller-owned `FixedAssetService` methods in that same transaction. Their intrinsic UUID identities, source timestamps, accounting references, and completed-run transaction provenance are preserved; the importer does not recalculate depreciation or create duplicate canonical transactions.
@@ -118,6 +118,7 @@ Status: P00 inventory of current main, updated through P15-S5-C5 selected-compan
 ## Inventory authority
 
 - `InventoryItem` records are the H2 authority for inventory-register facts.
+- `InventoryService.createForImport(...)` and `recordMovementForImport(...)` are caller-owned canonical SCLX seams. They preserve source UUID/timestamp metadata and factual movement values without creating an automatic receipt or another canonical transaction.
 - `InventoryMovement` records are the H2 authority for receipt, issue, and adjustment history.
 - The old inventory text runbook and `RunbookPersistence` path are no longer referenced by production code after P09-S1.
 - `InventoryMovement.transaction_id` is nullable in P09-S1 so later financially relevant movement automation can link movements to canonical `Txn` rows without introducing a sidecar ledger.
