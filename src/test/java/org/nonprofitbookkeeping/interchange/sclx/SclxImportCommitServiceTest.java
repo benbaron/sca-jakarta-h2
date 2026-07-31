@@ -6,6 +6,8 @@ import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Company;
+import org.nonprofitbookkeeping.model.BudgetLine;
+import org.nonprofitbookkeeping.model.BudgetPlan;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
 import org.nonprofitbookkeeping.model.TxnSupplementalLine;
@@ -13,10 +15,13 @@ import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.math.BigDecimal;
+import java.time.YearMonth;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SclxImportCommitServiceTest
@@ -41,7 +46,7 @@ class SclxImportCommitServiceTest
 
             assertTrue(first.committed());
             assertFalse(first.rolledBack());
-            assertEquals(11L, first.counts().created());
+            assertEquals(13L, first.counts().created());
             try (EntityManager em = jpa.em())
             {
                 Company company = company(em);
@@ -52,13 +57,27 @@ class SclxImportCommitServiceTest
                 assertEquals("Portable Chart", company.getActiveChartOfAccounts().getName());
                 assertEquals(2L, count(em, "select count(a) from Account a"));
                 assertEquals(1L, count(em, "select count(f) from Fund f"));
+                assertEquals(1L, count(em, "select count(c) from BudgetCategory c"));
+                assertEquals(1L, count(em, "select count(p) from BudgetPlan p"));
+                assertEquals(1L, count(em, "select count(l) from BudgetLine l"));
                 assertEquals(1L, count(em, "select count(t) from Txn t"));
                 assertEquals(2L, count(em, "select count(s) from TxnSplit s"));
                 assertEquals(1L, count(em, "select count(a) from Activity a"));
                 assertEquals(1L, count(em, "select count(c) from Counterparty c"));
                 assertEquals(1L, count(em, "select count(m) from Merchant m"));
                 assertEquals(1L, count(em, "select count(s) from TxnSupplementalLine s"));
-                assertEquals(11L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
+                assertEquals(13L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
+                BudgetPlan budget = em.createQuery("from BudgetPlan p", BudgetPlan.class).getSingleResult();
+                assertEquals("FY2026 Approved", budget.getName());
+                assertEquals(2026, budget.getFiscalYear());
+                assertEquals("APPROVED", budget.getVersionCode());
+                assertEquals(BudgetPlan.Status.ACTIVE, budget.getStatus());
+                BudgetLine budgetLine = em.createQuery("from BudgetLine l", BudgetLine.class).getSingleResult();
+                assertEquals("PROGRAM", budgetLine.getBudgetCategory().getCode());
+                assertEquals("PROGRAM", budgetLine.getBudgetCategory().getName());
+                assertEquals("GENERAL", budgetLine.getFund().getCode());
+                assertEquals(YearMonth.of(2026, 7), budgetLine.getPeriodMonth());
+                assertEquals(new BigDecimal("125.0000"), budgetLine.getAmount());
                 Txn transaction = em.createQuery("from Txn t", Txn.class).getSingleResult();
                 assertEquals(TRANSACTION_UUID, transaction.getPortableId());
                 assertEquals("Portable Payee", transaction.getPayee().getDisplayName());
@@ -73,22 +92,22 @@ class SclxImportCommitServiceTest
                 assertEquals(7, supplemental.getLineOrder());
                 assertEquals("PAYABLE", supplemental.getKind());
                 assertEquals(1L, count(em,
-                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_TRANSACTION_DETAILS_IMPORTED'"));
+                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_BUDGETS_IMPORTED'"));
             }
 
             SclxImportPreview secondPreview = previews.preview(source);
             assertFalse(secondPreview.hasBlockingErrors(), () -> secondPreview.operation().messages().toString());
-            assertEquals(11L, secondPreview.operation().counts().identical());
+            assertEquals(13L, secondPreview.operation().counts().identical());
             SclxImportResult second = service.commit(source, secondPreview, "tester");
 
             assertTrue(second.committed());
             assertEquals(0L, second.counts().created());
-            assertEquals(11L, second.counts().identical());
+            assertEquals(13L, second.counts().identical());
             try (EntityManager em = jpa.em())
             {
                 assertEquals(1L, count(em, "select count(t) from Txn t"));
                 assertEquals(2L, count(em, "select count(s) from TxnSplit s"));
-                assertEquals(11L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
+                assertEquals(13L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
             }
         }
     }
@@ -106,7 +125,7 @@ class SclxImportCommitServiceTest
                     jpa,
                     () -> TARGET,
                     writes -> {
-                        if (writes == 8)
+                        if (writes == 11)
                         {
                             throw new IllegalStateException("injected late failure");
                         }
@@ -126,6 +145,9 @@ class SclxImportCommitServiceTest
                 assertEquals("Empty Chart", company.getActiveChartOfAccounts().getName());
                 assertEquals(0L, count(em, "select count(a) from Account a"));
                 assertEquals(0L, count(em, "select count(f) from Fund f"));
+                assertEquals(0L, count(em, "select count(c) from BudgetCategory c"));
+                assertEquals(0L, count(em, "select count(p) from BudgetPlan p"));
+                assertEquals(0L, count(em, "select count(l) from BudgetLine l"));
                 assertEquals(0L, count(em, "select count(t) from Txn t"));
                 assertEquals(0L, count(em, "select count(a) from Activity a"));
                 assertEquals(0L, count(em, "select count(c) from Counterparty c"));
@@ -133,7 +155,38 @@ class SclxImportCommitServiceTest
                 assertEquals(0L, count(em, "select count(s) from TxnSupplementalLine s"));
                 assertEquals(0L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
                 assertEquals(0L, count(em,
-                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_TRANSACTION_DETAILS_IMPORTED'"));
+                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_BUDGETS_IMPORTED'"));
+            }
+        }
+    }
+
+    @Test
+    void rejectsBudgetAccountRelationBeforeMutation(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writeSource(tempDir.resolve("account-bearing-budget.sclx"));
+        String accountId = SclxPortableIdentity.account("SOURCE", "6100");
+        Files.writeString(source, Files.readString(source).replace(
+                "\"categoryCode\": \"PROGRAM\",",
+                "\"accountId\": \"" + accountId + "\",\n"
+                        + "                          \"categoryCode\": \"PROGRAM\","));
+        try (Jpa jpa = new Jpa(tempDir.resolve("account-bearing-budget")))
+        {
+            seedEmptyTarget(jpa);
+            SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
+            assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+            SclxImportCommitService service = new SclxImportCommitService(jpa, () -> TARGET);
+
+            IllegalStateException failure = assertThrows(
+                    IllegalStateException.class,
+                    () -> service.commit(source, preview, "tester"));
+
+            assertTrue(failure.getMessage().contains("cannot be preserved"));
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals("Empty Target", company(em).getDisplayName());
+                assertEquals(0L, count(em, "select count(a) from Account a"));
+                assertEquals(0L, count(em, "select count(p) from BudgetPlan p"));
+                assertEquals(0L, count(em, "select count(i) from InterchangeIdentity i"));
             }
         }
     }
@@ -182,6 +235,9 @@ class SclxImportCommitServiceTest
         String asset = SclxPortableIdentity.account("SOURCE", "1000");
         String expense = SclxPortableIdentity.account("SOURCE", "6100");
         String fund = SclxPortableIdentity.fund("SOURCE", "GENERAL");
+        String budget = SclxPortableIdentity.budget("SOURCE", 2026, "APPROVED");
+        String budgetLine = SclxPortableIdentity.budgetLine(
+                budget, "PROGRAM", null, fund, "2026-07");
         String transaction = SclxPortableIdentity.transaction("SOURCE", TRANSACTION_UUID.toString());
         String debitLine = SclxPortableIdentity.transactionLine(transaction, 1);
         String creditLine = SclxPortableIdentity.transactionLine(transaction, 2);
@@ -237,7 +293,24 @@ class SclxImportCommitServiceTest
                       "active": true
                     }
                   ],
-                  "budgets": [],
+                  "budgets": [
+                    {
+                      "budgetId": "%s",
+                      "name": "FY2026 Approved",
+                      "fiscalYear": 2026,
+                      "version": "APPROVED",
+                      "active": true,
+                      "lines": [
+                        {
+                          "lineId": "%s",
+                          "fundId": "%s",
+                          "categoryCode": "PROGRAM",
+                          "periodMonth": "2026-07",
+                          "amount": "125.0000"
+                        }
+                      ]
+                    }
+                  ],
                   "transactions": [
                     {
                       "transactionId": "%s",
@@ -330,6 +403,9 @@ class SclxImportCommitServiceTest
                 organizationId,
                 asset,
                 expense,
+                fund,
+                budget,
+                budgetLine,
                 fund,
                 transaction,
                 debitLine,
