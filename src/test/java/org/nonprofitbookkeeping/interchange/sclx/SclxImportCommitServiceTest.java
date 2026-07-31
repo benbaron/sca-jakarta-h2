@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Company;
+import org.nonprofitbookkeeping.model.BudgetCategory;
 import org.nonprofitbookkeeping.model.BudgetLine;
 import org.nonprofitbookkeeping.model.BudgetPlan;
 import org.nonprofitbookkeeping.model.Txn;
@@ -188,6 +189,32 @@ class SclxImportCommitServiceTest
                 assertEquals(0L, count(em, "select count(p) from BudgetPlan p"));
                 assertEquals(0L, count(em, "select count(i) from InterchangeIdentity i"));
             }
+        }
+    }
+
+    @Test
+    void previewBlocksTargetContainingOnlyBudgetCategory(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writeSource(tempDir.resolve("budget-category-target.sclx"));
+        try (Jpa jpa = new Jpa(tempDir.resolve("budget-category-target")))
+        {
+            seedEmptyTarget(jpa);
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                BudgetCategory category = new BudgetCategory();
+                category.setCompany(company(em));
+                category.setCode("EXISTING");
+                category.setName("Existing Category");
+                em.persist(category);
+                em.getTransaction().commit();
+            }
+
+            SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
+
+            assertTrue(preview.hasBlockingErrors());
+            assertTrue(preview.operation().messages().stream()
+                    .anyMatch(message -> message.code().equals("SCLX_POPULATED_TARGET_UNSUPPORTED")));
         }
     }
 
