@@ -82,6 +82,54 @@ public class BudgetCategoryAdminService
         }
     }
 
+    /**
+     * Caller-owned transaction variant used by governed interchange imports.
+     *
+     * <p>SCLX carries a budget category code on each budget line but has no
+     * separate category-name master record. A new empty target therefore uses
+     * the portable code as the initial display name. The caller owns commit or
+     * rollback so this supporting master remains atomic with the imported
+     * budget graph.</p>
+     */
+    public BudgetCategory createForImport(
+            EntityManager em,
+            Company company,
+            String code)
+    {
+        Objects.requireNonNull(em, "em");
+        Objects.requireNonNull(company, "company");
+        String cleanCode = requireText(code, "Budget category code");
+        if (!em.getTransaction().isActive())
+        {
+            throw new IllegalStateException("Caller-owned transaction must be active.");
+        }
+        if (!em.contains(company) || company.getId() == null)
+        {
+            throw new IllegalArgumentException("Company must be managed by the caller-owned transaction.");
+        }
+        List<BudgetCategory> existing = em.createQuery(
+                        "from BudgetCategory b where b.company = :company and b.code = :code",
+                        BudgetCategory.class)
+                .setParameter("company", company)
+                .setParameter("code", cleanCode)
+                .setMaxResults(1)
+                .getResultList();
+        if (!existing.isEmpty())
+        {
+            throw new IllegalStateException(
+                    "SCLX budget category already exists in the empty target: " + cleanCode + ".");
+        }
+
+        BudgetCategory category = new BudgetCategory();
+        category.setCompany(company);
+        category.setCode(cleanCode);
+        category.setName(cleanCode);
+        category.setActive(true);
+        category.touchUpdatedAt();
+        em.persist(category);
+        return category;
+    }
+
     private static RuntimeException mapPersistenceError(RuntimeException ex, String code)
     {
         String message = ex.getMessage() == null ? "" : ex.getMessage().toLowerCase();
