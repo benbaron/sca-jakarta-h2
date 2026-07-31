@@ -17,7 +17,7 @@ public enum SclxExportSection
     FIXED_ASSETS(Support.EXTENSION, true, "extensions.scaJakartaH2.fixedAssets", "Fixed assets and completed depreciation"),
     INVENTORY(Support.EXTENSION, true, "extensions.scaJakartaH2.inventory", "Inventory items and movements"),
     PERIOD_CLOSE(Support.EXTENSION, true, "extensions.scaJakartaH2.periodClose", "Close ranges and factual close history"),
-    AUDIT_HISTORY(Support.EXTENSION, true, "extensions.scaJakartaH2.auditHistory", "Company-owned factual audit events"),
+    AUDIT_HISTORY(Support.EXTENSION, true, "extensions.scaJakartaH2.auditHistory", "Selected-company factual audit events"),
 
     USERS_AND_AUTHENTICATION(Support.EXCLUDED, null, "Users, roles, credentials, password hashes, and login state"),
     UI_STATE(Support.EXCLUDED, null, "JavaFX layout, table, divider, and recent-company state"),
