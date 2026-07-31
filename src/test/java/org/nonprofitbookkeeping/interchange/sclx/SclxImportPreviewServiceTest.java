@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.interchange.InterchangeIdentityMatch;
 
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -72,7 +73,7 @@ class SclxImportPreviewServiceTest
         ObjectNode debitLine = null;
         for (JsonNode line : root.path("transactions").get(0).path("lines"))
         {
-            if (line.path("debit").decimalValue().signum() > 0)
+            if (new BigDecimal(line.path("debit").asText()).signum() > 0)
             {
                 debitLine = (ObjectNode) line;
                 break;
