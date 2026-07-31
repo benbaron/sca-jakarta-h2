@@ -21,6 +21,8 @@ import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.Counterparty;
 import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.model.FundType;
+import org.nonprofitbookkeeping.model.FixedAsset;
+import org.nonprofitbookkeeping.model.FixedAssetDepreciationRun;
 import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.model.Txn;
@@ -33,6 +35,8 @@ import org.nonprofitbookkeeping.service.BudgetPlanCommand;
 import org.nonprofitbookkeeping.service.BudgetPlanService;
 import org.nonprofitbookkeeping.service.CompanyOwnershipService;
 import org.nonprofitbookkeeping.service.InterchangeIdentityService;
+import org.nonprofitbookkeeping.service.FixedAssetCommand;
+import org.nonprofitbookkeeping.service.FixedAssetService;
 import org.nonprofitbookkeeping.service.TransactionCommand;
 import org.nonprofitbookkeeping.service.TransactionEntryService;
 import org.nonprofitbookkeeping.service.TransactionLineCommand;
@@ -57,12 +61,12 @@ import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 
 /**
- * Governed SCLX commit boundary for the core graph, budgets, and transaction-linked details.
+ * Governed SCLX commit boundary for the core graph, budgets, fixed assets, and transaction-linked details.
  *
  * <p>This slice imports the organization profile, active chart/accounts, funds,
  * activities, counterparties, merchants, normalized budgets, balanced canonical
- * transactions, and supplemental transaction details into an empty selected company.
- * Banking, assets, inventory, period-close facts, and imported audit history
+ * transactions, supplemental transaction details, fixed assets, and completed
+ * depreciation runs into an empty selected company. Banking, inventory, period-close facts, and imported audit history
  * remain blocked until their canonical section writers are added. No production
  * UI commit action is exposed while that section coverage remains incomplete.</p>
  */
@@ -70,10 +74,11 @@ public final class SclxImportCommitService
 {
     private static final Set<String> SUPPORTED_ENTITY_TYPES = Set.of(
             "ORGANIZATION", "ACCOUNT", "FUND", "ACTIVITY", "COUNTERPARTY", "MERCHANT",
-            "BUDGET", "BUDGET_LINE", "TRANSACTION", "TRANSACTION_LINE", "SUPPLEMENTAL_DETAIL");
+            "BUDGET", "BUDGET_LINE", "TRANSACTION", "TRANSACTION_LINE", "SUPPLEMENTAL_DETAIL",
+            "FIXED_ASSET", "DEPRECIATION_RUN");
     private static final Set<String> SUPPORTED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
-            "supplementalDetails");
+            "supplementalDetails", "fixedAssets");
 
     private final Jpa jpa;
     private final Supplier<String> companyCodeSupplier;
@@ -83,6 +88,7 @@ public final class SclxImportCommitService
     private final InterchangeIdentityService identityService;
     private final BudgetCategoryAdminService budgetCategoryAdminService;
     private final BudgetPlanService budgetPlanService;
+    private final FixedAssetService fixedAssetService;
     private final TransactionEntryService transactionEntryService;
     private final IntConsumer afterBusinessWrite;
 
@@ -105,6 +111,7 @@ public final class SclxImportCommitService
         this.identityService = new InterchangeIdentityService(jpa, ownership);
         this.budgetCategoryAdminService = new BudgetCategoryAdminService(jpa, companyCodeSupplier);
         this.budgetPlanService = new BudgetPlanService(jpa, companyCodeSupplier);
+        this.fixedAssetService = new FixedAssetService(jpa);
         this.transactionEntryService = new TransactionEntryService(jpa, companyCodeSupplier);
     }
 
@@ -141,6 +148,7 @@ public final class SclxImportCommitService
         JsonNode root = parsed.root();
         requireSupportedSections(current, root);
         SclxBudgetImportData budgets = SclxBudgetImportData.parse(root.path("budgets"));
+        SclxFixedAssetImportData fixedAssets = SclxFixedAssetImportData.parse(root);
         SclxTransactionDetailImportData details = SclxTransactionDetailImportData.parse(root);
         requireSupportedTransactionShape(root, details);
         ownership.requireNoOpenOwnershipIssues();
@@ -168,7 +176,7 @@ public final class SclxImportCommitService
                     em.getTransaction().commit();
                     return successfulResult(current, 0L, current.operation().items().size(),
                             "SCLX_IDENTICAL_REIMPORT",
-                            "Every governed core, budget, and transaction-detail identity was identical; no data changed.");
+                            "Every governed core, budget, fixed-asset, and transaction-detail identity was identical; no data changed.");
                 }
                 requireEmptyTarget(em, company);
 
@@ -199,6 +207,9 @@ public final class SclxImportCommitService
                         em, company, root.path("transactions"), accounts, funds, activities,
                         counterparties, merchants, details, previews, actor, writes);
                 writes += transactions.transactionCount();
+                FixedAssetWrite writtenFixedAssets = writeFixedAssets(
+                        em, company, fixedAssets, accounts, funds, transactions.transactions(), previews, writes);
+                writes += writtenFixedAssets.businessWriteCount();
 
                 em.flush();
                 recordIdentity(em, company, current, previews, "ORGANIZATION",
@@ -212,29 +223,31 @@ public final class SclxImportCommitService
                 recordEntityIdentities(em, company, current, previews, counterparties, "COUNTERPARTY");
                 recordEntityIdentities(em, company, current, previews, merchants, "MERCHANT");
                 recordTransactionIdentities(em, company, current, previews, transactions);
+                recordFixedAssetIdentities(em, company, current, previews, writtenFixedAssets);
 
                 AuditEvent operationAudit = new AuditEvent();
                 operationAudit.setCompany(company);
                 operationAudit.setActor(cleanActor(actor));
-                operationAudit.setActionType("SCLX_BUDGETS_IMPORTED");
+                operationAudit.setActionType("SCLX_FIXED_ASSETS_IMPORTED");
                 operationAudit.setEntityType("Company");
                 operationAudit.setEntityId(String.valueOf(company.getId()));
-                operationAudit.setSummary("Imported governed SCLX core, budget, and transaction-detail data");
+                operationAudit.setSummary("Imported governed SCLX core, budget, fixed-asset, and transaction-detail data");
                 operationAudit.setAfterValue("source=" + current.operation().sourceName()
                         + ",version=" + current.version().externalValue()
                         + ",sha256=" + current.operation().sourceSha256()
                         + ",created=" + actualCreatedCount(current));
                 operationAudit.setReason(
-                        "Atomic SCLX core, budget, and transaction-detail import; later section families were absent.");
+                        "Atomic SCLX core, budget, fixed-asset, and transaction-detail import; later section families were absent.");
                 em.persist(operationAudit);
                 afterBusinessWrite.accept(++writes);
 
                 em.getTransaction().commit();
                 return successfulResult(current, actualCreatedCount(current),
                         current.operation().counts().identical(),
-                        "SCLX_BUDGET_COMMIT_COMPLETED",
+                        "SCLX_FIXED_ASSET_COMMIT_COMPLETED",
                         "SCLX organization, chart/accounts, funds, normalized budgets, transaction-linked "
-                                + "masters, canonical transactions, and supplemental details committed atomically.");
+                                + "masters, canonical transactions, supplemental details, fixed assets, and completed "
+                                + "depreciation runs committed atomically.");
             }
             catch (RuntimeException ex)
             {
@@ -276,7 +289,7 @@ public final class SclxImportCommitService
         }
         if (!unsupportedTypes.isEmpty() || preview.sectionCounts().unsupportedSectionCount() > 0L)
         {
-            throw new IllegalStateException("P15-S5-C4 import does not yet import unsupported root sections "
+            throw new IllegalStateException("P15-S5-C5 import does not yet import unsupported root sections "
                     + "or later application-extension entities: " + unsupportedTypes + ".");
         }
         JsonNode app = root.path("extensions").path("scaJakartaH2");
@@ -287,7 +300,7 @@ public final class SclxImportCommitService
                 if (!SUPPORTED_EXTENSION_KEYS.contains(entry.getKey()) && !emptyExtensionValue(entry.getValue()))
                 {
                     throw new IllegalStateException(
-                            "P15-S5-C4 cannot discard populated extension " + entry.getKey() + ".");
+                            "P15-S5-C5 cannot discard populated extension " + entry.getKey() + ".");
                 }
             });
         }
@@ -388,8 +401,12 @@ public final class SclxImportCommitService
         long merchants = em.createQuery("select count(m) from Merchant m where m.company = :company", Long.class)
                 .setParameter("company", company)
                 .getSingleResult();
+        long fixedAssets = em.createQuery(
+                        "select count(a) from FixedAsset a where a.company = :company", Long.class)
+                .setParameter("company", company)
+                .getSingleResult();
         if (accounts + funds + transactions + budgets + budgetCategories
-                + activities + counterparties + merchants != 0L)
+                + activities + counterparties + merchants + fixedAssets != 0L)
         {
             throw new IllegalStateException("SCLX import requires an empty target company.");
         }
@@ -776,6 +793,75 @@ public final class SclxImportCommitService
                 transactions, lines, supplementalLines, skippedLines, transactions.size());
     }
 
+    private FixedAssetWrite writeFixedAssets(
+            EntityManager em,
+            Company company,
+            SclxFixedAssetImportData source,
+            Map<String, Account> accounts,
+            Map<String, Fund> funds,
+            Map<String, Txn> transactions,
+            Map<EntityKey, SclxImportEntityPreview> previews,
+            int writesBefore)
+    {
+        int writes = writesBefore;
+        Map<String, FixedAsset> assets = new LinkedHashMap<>();
+        for (SclxFixedAssetImportData.AssetValue value : source.assets())
+        {
+            requireNew(previews, "FIXED_ASSET", value.externalId());
+            Account assetAccount = required(accounts, value.assetAccountId(), "fixed-asset account");
+            Account accumulatedAccount = required(
+                    accounts, value.accumulatedDepreciationAccountId(), "accumulated-depreciation account");
+            Account expenseAccount = required(
+                    accounts, value.depreciationExpenseAccountId(), "depreciation-expense account");
+            Fund fund = required(funds, value.fundId(), "fixed-asset fund");
+            FixedAsset asset = fixedAssetService.createForImport(
+                    em,
+                    company,
+                    new FixedAssetCommand(
+                            company.getCode(),
+                            assetAccount.getId(),
+                            accumulatedAccount.getId(),
+                            expenseAccount.getId(),
+                            fund.getId(),
+                            value.name(),
+                            value.acquisitionDate(),
+                            value.acquisitionCost(),
+                            value.salvageValue(),
+                            value.usefulLifeMonths(),
+                            value.depreciationMethod(),
+                            value.openingAccumulatedDepreciation(),
+                            value.status(),
+                            value.notes()),
+                    portableUuid(value.externalId()),
+                    value.createdAt(),
+                    value.updatedAt());
+            assets.put(value.externalId(), asset);
+            afterBusinessWrite.accept(++writes);
+        }
+        em.flush();
+
+        Map<String, FixedAssetDepreciationRun> runs = new LinkedHashMap<>();
+        for (SclxFixedAssetImportData.RunValue value : source.runs())
+        {
+            requireNew(previews, "DEPRECIATION_RUN", value.externalId());
+            FixedAsset asset = required(assets, value.assetId(), "depreciation-run fixed asset");
+            Txn transaction = required(transactions, value.transactionId(), "depreciation-run transaction");
+            FixedAssetDepreciationRun run = fixedAssetService.recordCompletedRunForImport(
+                    em,
+                    company,
+                    asset,
+                    value.runDate(),
+                    value.amount(),
+                    transaction,
+                    value.notes(),
+                    portableUuid(value.externalId()),
+                    value.createdAt());
+            runs.put(value.externalId(), run);
+            afterBusinessWrite.accept(++writes);
+        }
+        return new FixedAssetWrite(assets, runs, assets.size() + runs.size());
+    }
+
     private static UUID portableUuid(String externalId)
     {
         int colon = externalId.lastIndexOf(':');
@@ -868,6 +954,25 @@ public final class SclxImportCommitService
         for (Map.Entry<String, BudgetLine> entry : written.lines().entrySet())
         {
             recordIdentity(em, company, preview, previews, "BUDGET_LINE",
+                    entry.getKey(), String.valueOf(entry.getValue().getId()));
+        }
+    }
+
+    private void recordFixedAssetIdentities(
+            EntityManager em,
+            Company company,
+            SclxImportPreview preview,
+            Map<EntityKey, SclxImportEntityPreview> previews,
+            FixedAssetWrite written)
+    {
+        for (Map.Entry<String, FixedAsset> entry : written.assets().entrySet())
+        {
+            recordIdentity(em, company, preview, previews, "FIXED_ASSET",
+                    entry.getKey(), String.valueOf(entry.getValue().getId()));
+        }
+        for (Map.Entry<String, FixedAssetDepreciationRun> entry : written.runs().entrySet())
+        {
+            recordIdentity(em, company, preview, previews, "DEPRECIATION_RUN",
                     entry.getKey(), String.valueOf(entry.getValue().getId()));
         }
     }
@@ -1174,6 +1279,18 @@ public final class SclxImportCommitService
         {
             plans = Map.copyOf(plans);
             lines = Map.copyOf(lines);
+        }
+    }
+
+    private record FixedAssetWrite(
+            Map<String, FixedAsset> assets,
+            Map<String, FixedAssetDepreciationRun> runs,
+            int businessWriteCount)
+    {
+        private FixedAssetWrite
+        {
+            assets = Map.copyOf(assets);
+            runs = Map.copyOf(runs);
         }
     }
 }
