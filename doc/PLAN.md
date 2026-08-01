@@ -1,12 +1,12 @@
 ---
-plan_version: 108
+plan_version: 109
 active_phase: P15
-active_slice: P15-S5-C8
-active_status: VERIFYING
-active_branch: codex/P15-S5-C8-period-close-import
-active_pull_request: 235
-active_head: "fa7f19b57bfa2df2a8fde7c451575ebd1b840f32"
-next_action: "Review draft PR #235 after final plan-inclusive CI; keep the production SCLX commit action absent until imported audit history and correction relationships are complete."
+active_slice: P15-S5-C9
+active_status: IN_PROGRESS
+active_branch: codex/P15-S5-C9-audit-history-import
+active_pull_request: null
+active_head: null
+next_action: "Publish the reviewed factual-audit-history writer on a draft PR, run all Maven PR Tests gates, and keep the production SCLX commit action absent until correction relationships are complete."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Review draft PR #235 after final plan-inclusive CI; keep the produ
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S5-C7 complete through merged PR #234 and activates P15-S5-C8 period-close import on a fresh branch from current main.
+This revision records P15-S5-C8 complete through merged PR #235 and activates P15-S5-C9 factual-audit-history import on a fresh branch from current main.
 
 ## 2. Status values
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S5-C8; P15-S0 through P15-S4 and P15-S5-C1 through C7 DONE
+**Status:** IN_PROGRESS at P15-S5-C9; P15-S0 through P15-S4 and P15-S5-C1 through C8 DONE
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: VERIFYING at P15-S5-C8 on draft PR #235.
+Status: IN_PROGRESS at P15-S5-C9.
 
 Startup scope:
 
@@ -1108,10 +1108,12 @@ Current validation status:
 - P15-S5-C8 restores authoritative period-close ranges and factual close/reopen events through a caller-owned `PeriodCloseRangeService` seam after the imported ledger graph exists.
 - C8 strict parsing, service writes, populated-target correction, idempotency, pre-mutation mismatch rejection, and late-rollback coverage pass Java 17 grammar validation locally; Maven remains unavailable in the container.
 - Implementation/plan head `fa7f19b57bfa2df2a8fde7c451575ebd1b840f32` passed Maven PR Tests run `30681932839`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
+- Final C8 head `7a8014f255dbf2026bcc14512bca74e025a599a2` passed Maven PR Tests run `30682072520`, and PR #235 merged to `main` at `f0c1ab20a8f828b24ab2738acb498015e7708b09`.
+- P15-S5-C9 restores governed company-owned factual audit history through a caller-owned `AuditHistoryService` seam after the imported business graph exists.
 
 Next exact action:
 
-- Review draft PR #235 after its final plan-inclusive head passes all Maven PR Tests gates.
+- Publish the reviewed C9 implementation, tests, and governing documents on a draft PR, then follow the exact head through all Maven PR Tests gates.
 
 ### P15-S5-C1 — Non-mutating SCLX import preview
 
@@ -1291,7 +1293,7 @@ Next exact action:
 
 ### P15-S5-C8 — Period-close range and factual-event import
 
-Status: VERIFYING on draft PR #235.
+Status: DONE through merged PR #235.
 
 Scope:
 
@@ -1308,10 +1310,33 @@ Validation status:
 - Java 17 grammar parsing passes for the strict projection, caller-owned service seam, commit integration, populated-target reader correction, and focused H2 tests.
 - Draft PR #235 contains exactly the ten intended C8 implementation, test, and governing-document files from current merged `main`.
 - Implementation/plan head `fa7f19b57bfa2df2a8fde7c451575ebd1b840f32` passed Maven PR Tests run `30681932839`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
+- Final plan-inclusive head `7a8014f255dbf2026bcc14512bca74e025a599a2` passed Maven PR Tests run `30682072520`, and PR #235 merged to `main` at `f0c1ab20a8f828b24ab2738acb498015e7708b09`.
 
 Next exact action:
 
-- Review draft PR #235 after its final plan-inclusive head passes all Maven PR Tests gates.
+- None; P15-S5-C8 is DONE.
+
+### P15-S5-C9 — Factual audit-history import
+
+Status: IN_PROGRESS on `codex/P15-S5-C9-audit-history-import`.
+
+Scope:
+
+- Strictly validate `extensions.scaJakartaH2.auditHistory` version 1, including exact fields, durable identities, bounded ISO timestamps, and bounded required and optional factual text before mutation.
+- Restore already-authoritative company-owned `AuditEvent` facts through a caller-owned `AuditHistoryService` seam after the imported business graph exists, preserving intrinsic UUIDs, source timestamps, actors, action/entity labels, summaries, values, and reasons without replaying historical commands.
+- Treat source-local `entityId` as factual text rather than a portable foreign key, and keep restored source facts distinct from the one new local operation audit recording the import.
+- Record durable interchange identities for every imported event, retain identical reimport as a no-op, treat existing audit-history-only targets as populated, and roll the complete imported graph back after a failure injected after audit-history persistence.
+- Continue to reject correction relationships and populated unknown extensions.
+- Keep the production SCLX commit action absent.
+
+Validation status:
+
+- Local Maven is unavailable; Java 17 grammar validation and GitHub Maven PR Tests are required.
+- The focused integration scenarios cover full factual-field preservation, idempotent reimport, strict pre-mutation rejection, audit-only populated-target detection, and late rollback.
+
+Next exact action:
+
+- Publish the cohesive C9 branch, compare it against exact merged `main`, open a draft PR, and run all Maven PR Tests gates.
 
 Planned deliverables:
 
