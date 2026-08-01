@@ -22,10 +22,14 @@ import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
 import org.nonprofitbookkeeping.model.TxnSupplementalLine;
 import org.nonprofitbookkeeping.persistence.Jpa;
+import org.nonprofitbookkeeping.service.PeriodCloseEventView;
+import org.nonprofitbookkeeping.service.PeriodCloseRangeService;
+import org.nonprofitbookkeeping.service.PeriodCloseRangeView;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.Instant;
 import java.util.UUID;
@@ -50,6 +54,120 @@ class SclxImportCommitServiceTest
     private static final UUID IMPORT_ISSUE_UUID = UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-ffffffffffff");
     private static final UUID RECONCILIATION_SESSION_UUID = UUID.fromString("bbbbbbbb-cccc-dddd-eeee-ffffffffffff");
     private static final UUID RECONCILIATION_MATCH_UUID = UUID.fromString("cccccccc-dddd-eeee-ffff-000000000000");
+    private static final UUID PERIOD_CLOSE_RANGE_UUID = UUID.fromString("dddddddd-eeee-ffff-0000-111111111111");
+    private static final UUID PERIOD_CLOSE_EVENT_UUID = UUID.fromString("eeeeeeee-ffff-0000-1111-222222222222");
+    private static final UUID PERIOD_REOPEN_EVENT_UUID = UUID.fromString("ffffffff-0000-1111-2222-333333333333");
+
+    @Test
+    void importsPeriodCloseFactsAtomicallyAndReimportIsIdempotent(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writePeriodCloseSource(tempDir.resolve("period-close.sclx"));
+        try (Jpa jpa = new Jpa(tempDir.resolve("period-close")))
+        {
+            seedEmptyTarget(jpa);
+            SclxImportPreviewService previews = new SclxImportPreviewService(jpa, () -> TARGET);
+            SclxImportPreview preview = previews.preview(source);
+            assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+
+            SclxImportResult result = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, preview, "tester");
+
+            assertTrue(result.committed(), () -> result.messages().toString());
+            assertEquals(23L, result.counts().created());
+            PeriodCloseRangeService closeService = new PeriodCloseRangeService(jpa);
+            PeriodCloseRangeView range = closeService.listRanges(TARGET).get(0);
+            assertEquals(PERIOD_CLOSE_RANGE_UUID, range.id());
+            assertEquals(LocalDate.of(2026, 1, 1), range.startDate());
+            assertEquals(LocalDate.of(2026, 3, 31), range.endDate());
+            assertEquals("REOPENED", range.status());
+            assertEquals(Instant.parse("2026-04-10T12:00:00Z"), range.reopenedAt());
+            assertEquals("closer", range.closedBy());
+            assertEquals("reopener", range.reopenedBy());
+            java.util.List<PeriodCloseEventView> events = closeService.listEvents(TARGET);
+            assertEquals(2, events.size());
+            assertTrue(events.stream().anyMatch(event -> event.id().equals(PERIOD_CLOSE_EVENT_UUID)
+                    && event.eventType().equals("CLOSED")));
+            assertTrue(events.stream().anyMatch(event -> event.id().equals(PERIOD_REOPEN_EVENT_UUID)
+                    && event.eventType().equals("REOPENED")));
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals(23L, count(em,
+                        "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
+                assertEquals(1L, count(em,
+                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_PERIOD_CLOSE_IMPORTED'"));
+            }
+
+            SclxImportPreview secondPreview = previews.preview(source);
+            assertEquals(23L, secondPreview.operation().counts().identical());
+            SclxImportResult second = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, secondPreview, "tester");
+            assertTrue(second.committed());
+            assertEquals(0L, second.counts().created());
+            assertEquals(1, closeService.listRanges(TARGET).size());
+            assertEquals(2, closeService.listEvents(TARGET).size());
+        }
+    }
+
+    @Test
+    void failureAfterPeriodCloseWriteRollsBackCompleteGraph(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writePeriodCloseSource(tempDir.resolve("period-close-rollback.sclx"));
+        try (Jpa jpa = new Jpa(tempDir.resolve("period-close-rollback")))
+        {
+            seedEmptyTarget(jpa);
+            SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
+            SclxImportCommitService service = new SclxImportCommitService(
+                    jpa, () -> TARGET, writes -> {
+                        if (writes == 20)
+                        {
+                            throw new IllegalStateException("injected after period-close write");
+                        }
+                    });
+
+            SclxImportResult result = service.commit(source, preview, "tester");
+
+            assertTrue(result.rolledBack());
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals(0L, nativeCount(em, "period_close_range"));
+                assertEquals(0L, nativeCount(em, "period_close_event"));
+                assertEquals(0L, count(em, "select count(t) from Txn t"));
+                assertEquals(0L, count(em,
+                        "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
+            }
+        }
+    }
+
+    @Test
+    void rejectsMismatchedPeriodCloseEventBeforeMutation(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writePeriodCloseSource(tempDir.resolve("period-close-mismatch.sclx"));
+        String json = Files.readString(source);
+        String marker = "\"actor\": \"reopener\"";
+        int eventActor = json.lastIndexOf(marker);
+        assertTrue(eventActor >= 0, "period-close event fixture marker must exist");
+        Files.writeString(source, json.substring(0, eventActor)
+                + "\"actor\": \"different-actor\""
+                + json.substring(eventActor + marker.length()));
+
+        try (Jpa jpa = new Jpa(tempDir.resolve("period-close-mismatch")))
+        {
+            seedEmptyTarget(jpa);
+            SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
+
+            IllegalStateException failure = assertThrows(IllegalStateException.class,
+                    () -> new SclxImportCommitService(jpa, () -> TARGET)
+                            .commit(source, preview, "tester"));
+
+            assertTrue(failure.getMessage().contains("does not match range facts"));
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals("Empty Target", company(em).getDisplayName());
+                assertEquals(0L, nativeCount(em, "period_close_range"));
+                assertEquals(0L, count(em, "select count(a) from Account a"));
+            }
+        }
+    }
 
     @Test
     void importsBankingAndReconciliationFactsAtomically(@TempDir Path tempDir) throws Exception
@@ -264,7 +382,7 @@ class SclxImportCommitServiceTest
                 assertEquals(new BigDecimal("3.0000"), inventoryMovement.getResultingQuantity());
                 assertEquals(1L, count(em,
                         "select count(a) from AuditEvent a "
-                                + "where a.actionType = 'SCLX_BANKING_RECONCILIATION_IMPORTED'"));
+                                + "where a.actionType = 'SCLX_PERIOD_CLOSE_IMPORTED'"));
             }
 
             SclxImportPreview secondPreview = previews.preview(source);
@@ -336,7 +454,7 @@ class SclxImportCommitServiceTest
                 assertEquals(0L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
                 assertEquals(0L, count(em,
                         "select count(a) from AuditEvent a "
-                                + "where a.actionType = 'SCLX_BANKING_RECONCILIATION_IMPORTED'"));
+                                + "where a.actionType = 'SCLX_PERIOD_CLOSE_IMPORTED'"));
             }
         }
     }
@@ -389,6 +507,29 @@ class SclxImportCommitServiceTest
                 em.persist(category);
                 em.getTransaction().commit();
             }
+
+            SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
+
+            assertTrue(preview.hasBlockingErrors());
+            assertTrue(preview.operation().messages().stream()
+                    .anyMatch(message -> message.code().equals("SCLX_POPULATED_TARGET_UNSUPPORTED")));
+        }
+    }
+
+    @Test
+    void previewBlocksTargetContainingOnlyPeriodCloseHistory(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writeSource(tempDir.resolve("period-close-target.sclx"));
+        try (Jpa jpa = new Jpa(tempDir.resolve("period-close-target")))
+        {
+            seedEmptyTarget(jpa);
+            new PeriodCloseRangeService(jpa).closeRange(
+                    TARGET,
+                    LocalDate.of(2025, 1, 1),
+                    LocalDate.of(2025, 12, 31),
+                    "CALCULATED",
+                    "tester",
+                    "Existing close history");
 
             SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
 
@@ -504,6 +645,60 @@ class SclxImportCommitServiceTest
     {
         return ((Number) em.createNativeQuery("select count(*) from " + table)
                 .getSingleResult()).longValue();
+    }
+
+    private static Path writePeriodCloseSource(Path target) throws Exception
+    {
+        writeSource(target);
+        String range = SclxPortableIdentity.periodCloseRange(
+                "SOURCE", PERIOD_CLOSE_RANGE_UUID.toString());
+        String closedEvent = SclxPortableIdentity.periodCloseEvent(
+                "SOURCE", PERIOD_CLOSE_EVENT_UUID.toString());
+        String reopenedEvent = SclxPortableIdentity.periodCloseEvent(
+                "SOURCE", PERIOD_REOPEN_EVENT_UUID.toString());
+        String periodClose = """
+                      "periodClose": {
+                        "version": 1,
+                        "ranges": [
+                          {
+                            "rangeId": "%s",
+                            "startDate": "2026-01-01",
+                            "endDate": "2026-03-31",
+                            "rangeKind": "CALCULATED",
+                            "status": "REOPENED",
+                            "closedAt": "2026-04-05T10:00:00Z",
+                            "closedBy": "closer",
+                            "closeReason": "Quarter complete",
+                            "reopenedAt": "2026-04-10T12:00:00Z",
+                            "reopenedBy": "reopener",
+                            "reopenReason": "Correction required"
+                          }
+                        ],
+                        "events": [
+                          {
+                            "eventId": "%s",
+                            "rangeId": "%s",
+                            "eventType": "CLOSED",
+                            "actor": "closer",
+                            "reason": "Quarter complete",
+                            "eventAt": "2026-04-05T10:00:00Z"
+                          },
+                          {
+                            "eventId": "%s",
+                            "rangeId": "%s",
+                            "eventType": "REOPENED",
+                            "actor": "reopener",
+                            "reason": "Correction required",
+                            "eventAt": "2026-04-10T12:00:00Z"
+                          }
+                        ]
+                      },
+                    """.formatted(range, closedEvent, range, reopenedEvent, range);
+        String source = Files.readString(target);
+        String marker = "\"fixedAssets\": {";
+        assertTrue(source.contains(marker), "period-close fixture insertion marker must exist");
+        Files.writeString(target, source.replace(marker, periodClose + marker));
+        return target;
     }
 
     private static Path writeBankingSource(Path target) throws Exception
