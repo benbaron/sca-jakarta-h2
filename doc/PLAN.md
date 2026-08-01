@@ -2,11 +2,11 @@
 plan_version: 107
 active_phase: P15
 active_slice: P15-S5-C7
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S5-C7-banking-reconciliation-import
-active_pull_request: null
-active_head: "454e88a68f0e7b96cf7054aefc9f8e2f1157f999"
-next_action: "Publish and validate the atomic P15-S5-C7 banking/reconciliation writer; keep the production SCLX commit action absent until the remaining section writers are complete."
+active_pull_request: 234
+active_head: "4cf2ff68a8d9f50823e52be14874c81f763de77c"
+next_action: "Review draft PR #234 after final plan-inclusive CI; keep the production SCLX commit action absent until the remaining section writers are complete."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: IN_PROGRESS at P15-S5-C7.
+Status: VERIFYING at P15-S5-C7 on draft PR #234.
 
 Startup scope:
 
@@ -1101,10 +1101,13 @@ Current validation status:
 - Corrected implementation head `85082fecfdcf509627f85928a0f0908890f531a2` passed Maven PR Tests run `30672084818`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
 - Final C6 head `2fa863c514875bc9481483e28d61dda71f21065d` passed Maven PR Tests run `30672245197`, and PR #233 merged to `main` at `454e88a68f0e7b96cf7054aefc9f8e2f1157f999`.
 - P15-S5-C7 imports governed bank configuration, reviewed statement facts, transaction-line clearance, and reconciliation sessions/matches after their chart, transaction, and statement dependencies exist.
+- Initial C7 run `30680763088` compiled production and executed the suite but exposed three whitespace-sensitive banking-fixture insertions and one stale operation-audit action expectation.
+- Fixture-correction run `30680861206` passed 482 of 483 tests and exposed the protected identical-reimport edge: the imported transaction's finalized reconciliation blocked the no-op before identity classification could complete.
+- Corrected implementation head `4cf2ff68a8d9f50823e52be14874c81f763de77c` passed Maven PR Tests run `30680958690`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
 
 Next exact action:
 
-- Complete P15-S5-C7 banking/reconciliation import, focused strict-reference/rollback/idempotency coverage, governing documentation, and exact-head CI on the fresh C7 branch.
+- Review and merge draft PR #234 after its final plan-inclusive head passes all Maven PR Tests gates.
 
 ### P15-S5-C1 — Non-mutating SCLX import preview
 
@@ -1255,7 +1258,7 @@ Next exact action:
 
 ### P15-S5-C7 — Banking and reconciliation import
 
-Status: IN_PROGRESS on branch `codex/P15-S5-C7-banking-reconciliation-import`.
+Status: VERIFYING on draft PR #234.
 
 Scope:
 
@@ -1272,11 +1275,14 @@ Validation status:
 
 - Local Java 17 is available but Maven is unavailable; Java grammar validation and GitHub Maven PR Tests are required.
 - Java 17 grammar parsing passes for the drafted C7 source and focused integration tests.
-- Authoritative compiler, H2 integration, repeated-suite, and JavaFX route validation are pending publication.
+- Initial Maven PR Tests run `30680763088` exposed only three whitespace-sensitive fixture insertions and one stale audit-action expectation after production compilation.
+- Fixture-correction run `30680861206` passed 482 of 483 tests and exposed the finalized-reconciliation protection on an otherwise identical reimport.
+- Preview now keeps authoritative closed/finalized protection facts visible but blocks only a non-identical incoming transaction; an identical imported identity remains the governed no-op.
+- Corrected implementation head `4cf2ff68a8d9f50823e52be14874c81f763de77c` passed Maven PR Tests run `30680958690`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
 
 Next exact action:
 
-- Publish the cohesive C7 branch, open a draft PR, and run all Maven PR Tests gates on the exact branch head.
+- Review and merge draft PR #234 after its final plan-inclusive head passes all Maven PR Tests gates.
 
 Planned deliverables:
 
