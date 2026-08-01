@@ -14,10 +14,13 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -36,6 +39,111 @@ public class PeriodCloseRangeService
     public PeriodCloseRangeService(Jpa jpa)
     {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
+    }
+
+    /**
+     * Restores already-authoritative period-close facts inside a caller-owned
+     * interchange transaction without replaying interactive close/reopen policy
+     * or synthesizing another audit history.
+     */
+    public ImportedPeriodClose importForInterchange(
+            EntityManager em,
+            Company company,
+            List<RangeImport> ranges,
+            List<EventImport> events)
+    {
+        Objects.requireNonNull(em, "em");
+        Company owner = Objects.requireNonNull(company, "company");
+        List<RangeImport> sourceRanges = List.copyOf(Objects.requireNonNull(ranges, "ranges"));
+        List<EventImport> sourceEvents = List.copyOf(Objects.requireNonNull(events, "events"));
+        if (!em.getTransaction().isActive())
+        {
+            throw new IllegalStateException("Period-close interchange import requires an active transaction");
+        }
+        if (owner.getId() == null)
+        {
+            throw new IllegalArgumentException("Period-close interchange company must be persisted");
+        }
+        long existingRanges = ((Number) em.createNativeQuery(
+                        "SELECT COUNT(*) FROM period_close_range WHERE company_id = ?")
+                .setParameter(1, owner.getId())
+                .getSingleResult()).longValue();
+        long existingEvents = ((Number) em.createNativeQuery(
+                        "SELECT COUNT(*) FROM period_close_event WHERE company_id = ?")
+                .setParameter(1, owner.getId())
+                .getSingleResult()).longValue();
+        if (existingRanges + existingEvents != 0L)
+        {
+            throw new IllegalStateException("Period-close interchange import requires an empty target history");
+        }
+
+        Map<String, UUID> rangeIds = new LinkedHashMap<>();
+        for (RangeImport range : sourceRanges)
+        {
+            if (rangeIds.put(range.externalId(), range.id()) != null)
+            {
+                throw new IllegalArgumentException("Duplicate period-close range identity: " + range.externalId());
+            }
+        }
+        Map<String, UUID> eventIds = new LinkedHashMap<>();
+        for (EventImport event : sourceEvents)
+        {
+            if (eventIds.put(event.externalId(), event.id()) != null)
+            {
+                throw new IllegalArgumentException("Duplicate period-close event identity: " + event.externalId());
+            }
+            if (!rangeIds.containsKey(event.rangeExternalId()))
+            {
+                throw new IllegalArgumentException(
+                        "Period-close event references an unknown imported range: " + event.rangeExternalId());
+            }
+        }
+        requireCompleteFactualHistory(sourceRanges, sourceEvents);
+        requireNoClosedOverlap(sourceRanges);
+
+        String companyCode = normalizeCompanyCode(owner.getCode());
+        for (RangeImport range : sourceRanges)
+        {
+            Instant updatedAt = range.reopenedAt() == null ? range.closedAt() : range.reopenedAt();
+            em.createNativeQuery("""
+                    INSERT INTO period_close_range
+                        (id, company_id, company_code, start_date, end_date, range_kind, status,
+                         closed_at, closed_by, close_reason, reopened_at, reopened_by, reopen_reason,
+                         created_at, updated_at)
+                    VALUES (CAST(? AS UUID), ?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, ''), ?, ?,
+                            NULLIF(?, ''), ?, ?)
+                    """)
+                    .setParameter(1, range.id().toString())
+                    .setParameter(2, owner.getId())
+                    .setParameter(3, companyCode)
+                    .setParameter(4, Date.valueOf(range.startDate()))
+                    .setParameter(5, Date.valueOf(range.endDate()))
+                    .setParameter(6, range.rangeKind())
+                    .setParameter(7, range.status())
+                    .setParameter(8, Timestamp.from(range.closedAt()))
+                    .setParameter(9, range.closedBy())
+                    .setParameter(10, range.closeReason() == null ? "" : range.closeReason())
+                    .setParameter(11, range.reopenedAt() == null ? null : Timestamp.from(range.reopenedAt()))
+                    .setParameter(12, range.reopenedBy())
+                    .setParameter(13, range.reopenReason() == null ? "" : range.reopenReason())
+                    .setParameter(14, Timestamp.from(range.closedAt()))
+                    .setParameter(15, Timestamp.from(updatedAt))
+                    .executeUpdate();
+        }
+        for (EventImport event : sourceEvents)
+        {
+            insertEvent(
+                    em,
+                    event.id(),
+                    rangeIds.get(event.rangeExternalId()),
+                    owner.getId(),
+                    companyCode,
+                    event.eventType(),
+                    event.actor(),
+                    event.reason(),
+                    event.eventAt());
+        }
+        return new ImportedPeriodClose(rangeIds, eventIds);
     }
 
     public PeriodCloseRangeView closeRange(
@@ -460,6 +568,115 @@ public class PeriodCloseRangeService
         return value == null || value.isBlank() ? null : value.trim();
     }
 
+    private static void requireCompleteFactualHistory(
+            List<RangeImport> ranges,
+            List<EventImport> events)
+    {
+        Map<String, List<EventImport>> byRange = new LinkedHashMap<>();
+        for (EventImport event : events)
+        {
+            byRange.computeIfAbsent(event.rangeExternalId(), ignored -> new ArrayList<>()).add(event);
+        }
+        for (RangeImport range : ranges)
+        {
+            List<EventImport> history = byRange.getOrDefault(range.externalId(), List.of());
+            EventImport closed = singleImportedEvent(history, "CLOSED", range.externalId());
+            requireMatchingEvent(range.closedAt(), range.closedBy(), range.closeReason(), closed,
+                    "close", range.externalId());
+            if ("REOPENED".equals(range.status()))
+            {
+                EventImport reopened = singleImportedEvent(history, "REOPENED", range.externalId());
+                requireMatchingEvent(range.reopenedAt(), range.reopenedBy(), range.reopenReason(), reopened,
+                        "reopen", range.externalId());
+                if (history.size() != 2)
+                {
+                    throw new IllegalArgumentException(
+                            "Reopened period-close range requires exactly two factual events: "
+                                    + range.externalId());
+                }
+            }
+            else if (history.size() != 1)
+            {
+                throw new IllegalArgumentException(
+                        "Closed period-close range requires exactly one factual event: "
+                                + range.externalId());
+            }
+        }
+    }
+
+    private static EventImport singleImportedEvent(
+            List<EventImport> events,
+            String type,
+            String rangeExternalId)
+    {
+        List<EventImport> matching = events.stream()
+                .filter(event -> type.equals(event.eventType()))
+                .toList();
+        if (matching.size() != 1)
+        {
+            throw new IllegalArgumentException(
+                    "Period-close range requires exactly one " + type + " event: " + rangeExternalId);
+        }
+        return matching.get(0);
+    }
+
+    private static void requireMatchingEvent(
+            Instant expectedAt,
+            String expectedActor,
+            String expectedReason,
+            EventImport actual,
+            String label,
+            String rangeExternalId)
+    {
+        if (!expectedAt.equals(actual.eventAt())
+                || !expectedActor.equals(actual.actor())
+                || !Objects.equals(expectedReason, actual.reason()))
+        {
+            throw new IllegalArgumentException(
+                    "Period-close " + label + " event does not match range facts: " + rangeExternalId);
+        }
+    }
+
+    private static void requireNoClosedOverlap(List<RangeImport> ranges)
+    {
+        List<RangeImport> closed = ranges.stream()
+                .filter(range -> "CLOSED".equals(range.status()))
+                .sorted(java.util.Comparator.comparing(RangeImport::startDate)
+                        .thenComparing(RangeImport::endDate))
+                .toList();
+        for (int index = 1; index < closed.size(); index++)
+        {
+            RangeImport previous = closed.get(index - 1);
+            RangeImport current = closed.get(index);
+            if (!current.startDate().isAfter(previous.endDate()))
+            {
+                throw new IllegalArgumentException(
+                        "Imported closed period ranges overlap: " + previous.externalId()
+                                + " and " + current.externalId());
+            }
+        }
+    }
+
+    private static String boundedText(String value, String label, int limit)
+    {
+        String clean = requireText(value, label);
+        if (clean.length() > limit)
+        {
+            throw new IllegalArgumentException(label + " must not exceed " + limit + " characters");
+        }
+        return clean;
+    }
+
+    private static String optionalBoundedText(String value, String label, int limit)
+    {
+        String clean = blankToNull(value);
+        if (clean != null && clean.length() > limit)
+        {
+            throw new IllegalArgumentException(label + " must not exceed " + limit + " characters");
+        }
+        return clean;
+    }
+
     private static String nullableString(Object value)
     {
         return value == null ? null : String.valueOf(value);
@@ -518,6 +735,91 @@ public class PeriodCloseRangeService
             {
                 return LocalDateTime.parse(iso).toInstant(ZoneOffset.UTC);
             }
+        }
+    }
+
+    public record RangeImport(
+            String externalId,
+            UUID id,
+            LocalDate startDate,
+            LocalDate endDate,
+            String rangeKind,
+            String status,
+            Instant closedAt,
+            String closedBy,
+            String closeReason,
+            Instant reopenedAt,
+            String reopenedBy,
+            String reopenReason)
+    {
+        public RangeImport
+        {
+            externalId = requireText(externalId, "externalId");
+            id = Objects.requireNonNull(id, "id");
+            startDate = requireDate(startDate, "startDate");
+            endDate = requireDate(endDate, "endDate");
+            if (endDate.isBefore(startDate))
+            {
+                throw new IllegalArgumentException("endDate must be on or after startDate");
+            }
+            rangeKind = normalizeKind(rangeKind);
+            status = requireText(status, "status").toUpperCase(Locale.ROOT);
+            if (!Set.of("CLOSED", "REOPENED").contains(status))
+            {
+                throw new IllegalArgumentException("status must be CLOSED or REOPENED");
+            }
+            closedAt = Objects.requireNonNull(closedAt, "closedAt");
+            closedBy = boundedText(closedBy, "closedBy", 200);
+            closeReason = optionalBoundedText(closeReason, "closeReason", 1000);
+            reopenedBy = optionalBoundedText(reopenedBy, "reopenedBy", 200);
+            reopenReason = optionalBoundedText(reopenReason, "reopenReason", 1000);
+            if ("CLOSED".equals(status)
+                    && (reopenedAt != null || reopenedBy != null || reopenReason != null))
+            {
+                throw new IllegalArgumentException("A CLOSED range cannot contain reopen facts");
+            }
+            if ("REOPENED".equals(status) && (reopenedAt == null || reopenedBy == null))
+            {
+                throw new IllegalArgumentException("A REOPENED range requires reopenedAt and reopenedBy");
+            }
+            if (reopenedAt != null && reopenedAt.isBefore(closedAt))
+            {
+                throw new IllegalArgumentException("reopenedAt must not precede closedAt");
+            }
+        }
+    }
+
+    public record EventImport(
+            String externalId,
+            UUID id,
+            String rangeExternalId,
+            String eventType,
+            String actor,
+            String reason,
+            Instant eventAt)
+    {
+        public EventImport
+        {
+            externalId = requireText(externalId, "externalId");
+            id = Objects.requireNonNull(id, "id");
+            rangeExternalId = requireText(rangeExternalId, "rangeExternalId");
+            eventType = requireText(eventType, "eventType").toUpperCase(Locale.ROOT);
+            if (!Set.of("CLOSED", "REOPENED").contains(eventType))
+            {
+                throw new IllegalArgumentException("eventType must be CLOSED or REOPENED");
+            }
+            actor = boundedText(actor, "actor", 200);
+            reason = optionalBoundedText(reason, "reason", 1000);
+            eventAt = Objects.requireNonNull(eventAt, "eventAt");
+        }
+    }
+
+    public record ImportedPeriodClose(Map<String, UUID> ranges, Map<String, UUID> events)
+    {
+        public ImportedPeriodClose
+        {
+            ranges = Map.copyOf(Objects.requireNonNull(ranges, "ranges"));
+            events = Map.copyOf(Objects.requireNonNull(events, "events"));
         }
     }
 

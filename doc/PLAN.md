@@ -1,12 +1,12 @@
 ---
-plan_version: 107
+plan_version: 108
 active_phase: P15
-active_slice: P15-S5-C7
+active_slice: P15-S5-C8
 active_status: VERIFYING
-active_branch: codex/P15-S5-C7-banking-reconciliation-import
-active_pull_request: 234
-active_head: "4cf2ff68a8d9f50823e52be14874c81f763de77c"
-next_action: "Review draft PR #234 after final plan-inclusive CI; keep the production SCLX commit action absent until the remaining section writers are complete."
+active_branch: codex/P15-S5-C8-period-close-import
+active_pull_request: 235
+active_head: "fa7f19b57bfa2df2a8fde7c451575ebd1b840f32"
+next_action: "Review draft PR #235 after final plan-inclusive CI; keep the production SCLX commit action absent until imported audit history and correction relationships are complete."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Review draft PR #234 after final plan-inclusive CI; keep the produ
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S5-C6 complete through merged PR #233 and activates P15-S5-C7 banking and reconciliation import on a fresh branch from current main.
+This revision records P15-S5-C7 complete through merged PR #234 and activates P15-S5-C8 period-close import on a fresh branch from current main.
 
 ## 2. Status values
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S5-C5; P15-S0 through P15-S4 and P15-S5-C1 through C4 DONE
+**Status:** IN_PROGRESS at P15-S5-C8; P15-S0 through P15-S4 and P15-S5-C1 through C7 DONE
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: VERIFYING at P15-S5-C7 on draft PR #234.
+Status: VERIFYING at P15-S5-C8 on draft PR #235.
 
 Startup scope:
 
@@ -1104,10 +1104,14 @@ Current validation status:
 - Initial C7 run `30680763088` compiled production and executed the suite but exposed three whitespace-sensitive banking-fixture insertions and one stale operation-audit action expectation.
 - Fixture-correction run `30680861206` passed 482 of 483 tests and exposed the protected identical-reimport edge: the imported transaction's finalized reconciliation blocked the no-op before identity classification could complete.
 - Corrected implementation head `4cf2ff68a8d9f50823e52be14874c81f763de77c` passed Maven PR Tests run `30680958690`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
+- Final C7 head `474003596c8d8cd139d36eda6b513dd5367997dd` passed Maven PR Tests run `30681078096`, and PR #234 merged to `main` at `11e8b74106c0203f64a4e7efadf5e25d2a097174`.
+- P15-S5-C8 restores authoritative period-close ranges and factual close/reopen events through a caller-owned `PeriodCloseRangeService` seam after the imported ledger graph exists.
+- C8 strict parsing, service writes, populated-target correction, idempotency, pre-mutation mismatch rejection, and late-rollback coverage pass Java 17 grammar validation locally; Maven remains unavailable in the container.
+- Implementation/plan head `fa7f19b57bfa2df2a8fde7c451575ebd1b840f32` passed Maven PR Tests run `30681932839`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
 
 Next exact action:
 
-- Review and merge draft PR #234 after its final plan-inclusive head passes all Maven PR Tests gates.
+- Review draft PR #235 after its final plan-inclusive head passes all Maven PR Tests gates.
 
 ### P15-S5-C1 — Non-mutating SCLX import preview
 
@@ -1258,7 +1262,7 @@ Next exact action:
 
 ### P15-S5-C7 — Banking and reconciliation import
 
-Status: VERIFYING on draft PR #234.
+Status: DONE through merged PR #234.
 
 Scope:
 
@@ -1279,10 +1283,35 @@ Validation status:
 - Fixture-correction run `30680861206` passed 482 of 483 tests and exposed the finalized-reconciliation protection on an otherwise identical reimport.
 - Preview now keeps authoritative closed/finalized protection facts visible but blocks only a non-identical incoming transaction; an identical imported identity remains the governed no-op.
 - Corrected implementation head `4cf2ff68a8d9f50823e52be14874c81f763de77c` passed Maven PR Tests run `30680958690`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
+- Final head `474003596c8d8cd139d36eda6b513dd5367997dd` passed Maven PR Tests run `30681078096`, and PR #234 merged to `main` at `11e8b74106c0203f64a4e7efadf5e25d2a097174`.
 
 Next exact action:
 
-- Review and merge draft PR #234 after its final plan-inclusive head passes all Maven PR Tests gates.
+- None; P15-S5-C7 is DONE.
+
+### P15-S5-C8 — Period-close range and factual-event import
+
+Status: VERIFYING on draft PR #235.
+
+Scope:
+
+- Strictly validate `extensions.scaJakartaH2.periodClose` version 1, including exact fields, identities, ISO dates/timestamps, range kind/status, chronology, actor/reason lengths, event references, and non-overlapping active closed ranges before mutation.
+- Require exactly one factual `CLOSED` event matching every range's close actor/reason/time and exactly one matching `REOPENED` event for every reopened range.
+- Restore authoritative ranges and factual events through a caller-owned `PeriodCloseRangeService` seam after the imported ledger graph exists, preserving intrinsic UUIDs and source facts without replaying interactive close/reopen policy or manufacturing duplicate audit events.
+- Record durable identities for every imported range and event, retain identical reimport as a no-op, treat existing period-close-only targets as populated, and roll the complete imported graph back after a failure injected after period-close persistence.
+- Continue to reject imported audit history, correction relationships, and populated unknown extensions.
+- Keep the production SCLX commit action absent.
+
+Validation status:
+
+- Local Maven is unavailable; Java 17 grammar validation and GitHub Maven PR Tests are required.
+- Java 17 grammar parsing passes for the strict projection, caller-owned service seam, commit integration, populated-target reader correction, and focused H2 tests.
+- Draft PR #235 contains exactly the ten intended C8 implementation, test, and governing-document files from current merged `main`.
+- Implementation/plan head `fa7f19b57bfa2df2a8fde7c451575ebd1b840f32` passed Maven PR Tests run `30681932839`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
+
+Next exact action:
+
+- Review draft PR #235 after its final plan-inclusive head passes all Maven PR Tests gates.
 
 Planned deliverables:
 

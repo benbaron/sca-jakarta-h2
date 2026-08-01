@@ -60,7 +60,13 @@ final class JpaSclxImportTargetReader implements SclxImportTargetReader
                     || count(em, "select count(c) from Counterparty c where c.company = :company", company) > 0L
                     || count(em, "select count(m) from Merchant m where m.company = :company", company) > 0L
                     || count(em, "select count(a) from FixedAsset a where a.company = :company", company) > 0L
-                    || count(em, "select count(i) from InventoryItem i where i.company = :company", company) > 0L;
+                    || count(em, "select count(i) from InventoryItem i where i.company = :company", company) > 0L
+                    || count(em, "select count(b) from Bank b where b.company = :company", company) > 0L
+                    || count(em, "select count(a) from CompanyBankAccount a where a.company = :company", company) > 0L
+                    || count(em, "select count(b) from BankImportBatch b where b.company = :company", company) > 0L
+                    || nativeCount(em, "bank_reconciliation_session", company) > 0L
+                    || nativeCount(em, "period_close_range", company) > 0L
+                    || nativeCount(em, "period_close_event", company) > 0L;
 
             return new SclxImportTargetSnapshot(
                     company.getCode(),
@@ -202,6 +208,14 @@ final class JpaSclxImportTargetReader implements SclxImportTargetReader
         return em.createQuery(query, Long.class)
                 .setParameter("company", company)
                 .getSingleResult();
+    }
+
+    private static long nativeCount(EntityManager em, String table, Company company)
+    {
+        return ((Number) em.createNativeQuery(
+                        "select count(*) from " + table + " where company_id = ?")
+                .setParameter(1, company.getId())
+                .getSingleResult()).longValue();
     }
 
     private static LocalDate toLocalDate(Object value)

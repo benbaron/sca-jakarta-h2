@@ -407,6 +407,26 @@ company-owned `SCLX_BANKING_RECONCILIATION_IMPORTED` event, and an identical rei
 C7 still rejects period-close facts, imported audit history, correction relationships, populated
 unknown sections, and populated-target merge. The JavaFX SCLX commit action remains absent.
 
+### 10.9 P15-S5-C8 period-close import boundary
+
+P15-S5-C8 extends the same caller-owned transaction to
+`extensions.scaJakartaH2.periodClose` version 1. `SclxPeriodCloseImportData` strictly validates the
+complete extension before mutation: exact fields, durable identities, ISO dates/timestamps, range
+kind and status, date order, reopen chronology, actor/reason lengths, event references, and
+non-overlapping active closed ranges.
+
+Every range must have exactly one `CLOSED` event whose actor, reason, and timestamp equal the range's
+close facts. A `REOPENED` range must additionally have exactly one matching `REOPENED` event. The
+caller-owned `PeriodCloseRangeService` seam restores these already-authoritative facts directly after
+the imported ledger graph exists. It preserves intrinsic UUIDs and source facts without replaying
+interactive close/reopen policy, recalculating ranges, or synthesizing duplicate audit events.
+
+Every imported range and event receives a same-transaction `interchange_identity`. The target reader
+and commit boundary both treat existing period-close rows as populated-company data. A successful
+operation writes one company-owned `SCLX_PERIOD_CLOSE_IMPORTED` event, and an identical reimport
+remains a no-op. C8 still rejects imported audit history, correction relationships, populated unknown
+sections, and populated-target merge. The JavaFX SCLX commit action remains absent.
+
 ## 11. Import transaction boundary and results
 
 Preview and validation MUST make no H2 changes. Commit MUST use one caller-owned transaction for the documented import boundary and route financial records through canonical services. A late failure MUST roll back all records in that boundary.
@@ -432,6 +452,10 @@ For P15-S5-C7, the same rollback boundary additionally includes banks, configure
 reviewed statement batches/lines/issues, transaction-line cleared state, reconciliation sessions and
 matches, their intrinsic portable metadata and interchange identities, and the C7 operation audit
 event.
+
+For P15-S5-C8, the same rollback boundary additionally includes authoritative period-close ranges,
+their factual close/reopen events, intrinsic UUIDs, interchange identities, and the C8 operation audit
+event. No interactive close/reopen audit rows are synthesized during restoration.
 
 The result MUST report at least:
 
