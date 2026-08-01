@@ -52,6 +52,7 @@ import org.nonprofitbookkeeping.service.FixedAssetCommand;
 import org.nonprofitbookkeeping.service.FixedAssetService;
 import org.nonprofitbookkeeping.service.InventoryItemCommand;
 import org.nonprofitbookkeeping.service.InventoryService;
+import org.nonprofitbookkeeping.service.PeriodCloseRangeService;
 import org.nonprofitbookkeeping.service.TransactionCommand;
 import org.nonprofitbookkeeping.service.TransactionEntryService;
 import org.nonprofitbookkeeping.service.TransactionLineCommand;
@@ -81,9 +82,9 @@ import java.util.function.Supplier;
  * <p>This slice imports the organization profile, active chart/accounts, funds,
  * activities, counterparties, merchants, normalized budgets, balanced canonical
  * transactions, supplemental transaction details, fixed assets, and completed
- * depreciation runs, inventory, banking, and reconciliation facts into an empty selected company.
- * Period-close facts and imported audit history
- * remain blocked until their canonical section writers are added. No production
+ * depreciation runs, inventory, banking, reconciliation, and period-close facts into an empty
+ * selected company. Imported audit history
+ * remains blocked until its canonical section writer is added. No production
  * UI commit action is exposed while that section coverage remains incomplete.</p>
  */
 public final class SclxImportCommitService
@@ -93,11 +94,12 @@ public final class SclxImportCommitService
             "BUDGET", "BUDGET_LINE", "TRANSACTION", "TRANSACTION_LINE", "SUPPLEMENTAL_DETAIL",
             "FIXED_ASSET", "DEPRECIATION_RUN", "INVENTORY_ITEM", "INVENTORY_MOVEMENT",
             "BANK", "BANK_ACCOUNT", "BANK_IMPORT_BATCH", "BANK_STATEMENT_LINE",
-            "BANK_IMPORT_ISSUE", "RECONCILIATION_SESSION", "RECONCILIATION_MATCH");
+            "BANK_IMPORT_ISSUE", "RECONCILIATION_SESSION", "RECONCILIATION_MATCH",
+            "PERIOD_CLOSE_RANGE", "PERIOD_CLOSE_EVENT");
     private static final Set<String> SUPPORTED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
             "supplementalDetails", "fixedAssets", "inventory", "bankConfiguration",
-            "bankStatementFacts", "reconciliation");
+            "bankStatementFacts", "reconciliation", "periodClose");
 
     private final Jpa jpa;
     private final Supplier<String> companyCodeSupplier;
@@ -113,6 +115,7 @@ public final class SclxImportCommitService
     private final BankImportReviewService bankImportReviewService;
     private final BankClearedStateService bankClearedStateService;
     private final BankReconciliationWorkspaceService bankReconciliationService;
+    private final PeriodCloseRangeService periodCloseRangeService;
     private final TransactionEntryService transactionEntryService;
     private final IntConsumer afterBusinessWrite;
 
@@ -141,6 +144,7 @@ public final class SclxImportCommitService
         this.bankImportReviewService = new BankImportReviewService(jpa);
         this.bankClearedStateService = new BankClearedStateService(jpa);
         this.bankReconciliationService = new BankReconciliationWorkspaceService(jpa);
+        this.periodCloseRangeService = new PeriodCloseRangeService(jpa);
         this.transactionEntryService = new TransactionEntryService(jpa, companyCodeSupplier);
     }
 
@@ -180,6 +184,7 @@ public final class SclxImportCommitService
         SclxFixedAssetImportData fixedAssets = SclxFixedAssetImportData.parse(root);
         SclxInventoryImportData inventory = SclxInventoryImportData.parse(root);
         SclxBankingImportData banking = SclxBankingImportData.parse(root);
+        SclxPeriodCloseImportData periodClose = SclxPeriodCloseImportData.parse(root);
         SclxTransactionDetailImportData details = SclxTransactionDetailImportData.parse(root);
         requireSupportedTransactionShape(root, details);
         ownership.requireNoOpenOwnershipIssues();
@@ -207,7 +212,7 @@ public final class SclxImportCommitService
                     em.getTransaction().commit();
                     return successfulResult(current, 0L, current.operation().items().size(),
                             "SCLX_IDENTICAL_REIMPORT",
-                            "Every governed core, budget, fixed-asset, inventory, and transaction-detail identity was identical; no data changed.");
+                            "Every governed core, extension, banking, reconciliation, and period-close identity was identical; no data changed.");
                 }
                 requireEmptyTarget(em, company);
 
@@ -247,6 +252,9 @@ public final class SclxImportCommitService
                 BankingWrite writtenBanking = writeBanking(
                         em, company, banking, accounts, transactions, previews, writes);
                 writes += writtenBanking.businessWriteCount();
+                PeriodCloseWrite writtenPeriodClose = writePeriodClose(
+                        em, company, periodClose, previews, writes);
+                writes += writtenPeriodClose.businessWriteCount();
 
                 em.flush();
                 recordIdentity(em, company, current, previews, "ORGANIZATION",
@@ -263,31 +271,32 @@ public final class SclxImportCommitService
                 recordFixedAssetIdentities(em, company, current, previews, writtenFixedAssets);
                 recordInventoryIdentities(em, company, current, previews, writtenInventory);
                 recordBankingIdentities(em, company, current, previews, writtenBanking);
+                recordPeriodCloseIdentities(em, company, current, previews, writtenPeriodClose);
 
                 AuditEvent operationAudit = new AuditEvent();
                 operationAudit.setCompany(company);
                 operationAudit.setActor(cleanActor(actor));
-                operationAudit.setActionType("SCLX_BANKING_RECONCILIATION_IMPORTED");
+                operationAudit.setActionType("SCLX_PERIOD_CLOSE_IMPORTED");
                 operationAudit.setEntityType("Company");
                 operationAudit.setEntityId(String.valueOf(company.getId()));
-                operationAudit.setSummary("Imported governed SCLX core, banking, reconciliation, and supported extension data");
+                operationAudit.setSummary("Imported governed SCLX core, extensions, banking, reconciliation, and period-close data");
                 operationAudit.setAfterValue("source=" + current.operation().sourceName()
                         + ",version=" + current.version().externalValue()
                         + ",sha256=" + current.operation().sourceSha256()
                         + ",created=" + actualCreatedCount(current));
                 operationAudit.setReason(
-                        "Atomic SCLX core, banking, reconciliation, and supported extension import; later section families were absent.");
+                        "Atomic SCLX core, supported extension, banking, reconciliation, and period-close import; imported audit history was absent.");
                 em.persist(operationAudit);
                 afterBusinessWrite.accept(++writes);
 
                 em.getTransaction().commit();
                 return successfulResult(current, actualCreatedCount(current),
                         current.operation().counts().identical(),
-                        "SCLX_BANKING_RECONCILIATION_COMMIT_COMPLETED",
+                        "SCLX_PERIOD_CLOSE_COMMIT_COMPLETED",
                         "SCLX organization, chart/accounts, funds, normalized budgets, transaction-linked "
                                 + "masters, canonical transactions, supplemental details, fixed assets, and completed "
                                 + "depreciation runs, inventory, bank configuration, reviewed statement facts, "
-                                + "clearance, and reconciliation committed atomically.");
+                                + "clearance, reconciliation, and period-close history committed atomically.");
             }
             catch (RuntimeException ex)
             {
@@ -329,7 +338,7 @@ public final class SclxImportCommitService
         }
         if (!unsupportedTypes.isEmpty() || preview.sectionCounts().unsupportedSectionCount() > 0L)
         {
-            throw new IllegalStateException("P15-S5-C7 import does not yet import unsupported root sections "
+            throw new IllegalStateException("P15-S5-C8 import does not yet import unsupported root sections "
                     + "or later application-extension entities: " + unsupportedTypes + ".");
         }
         JsonNode app = root.path("extensions").path("scaJakartaH2");
@@ -340,7 +349,7 @@ public final class SclxImportCommitService
                 if (!SUPPORTED_EXTENSION_KEYS.contains(entry.getKey()) && !emptyExtensionValue(entry.getValue()))
                 {
                     throw new IllegalStateException(
-                            "P15-S5-C7 cannot discard populated extension " + entry.getKey() + ".");
+                            "P15-S5-C8 cannot discard populated extension " + entry.getKey() + ".");
                 }
             });
         }
@@ -464,9 +473,18 @@ public final class SclxImportCommitService
                         "select count(*) from bank_reconciliation_session where company_id = ?")
                 .setParameter(1, company.getId())
                 .getSingleResult()).longValue();
+        long periodCloseRanges = ((Number) em.createNativeQuery(
+                        "select count(*) from period_close_range where company_id = ?")
+                .setParameter(1, company.getId())
+                .getSingleResult()).longValue();
+        long periodCloseEvents = ((Number) em.createNativeQuery(
+                        "select count(*) from period_close_event where company_id = ?")
+                .setParameter(1, company.getId())
+                .getSingleResult()).longValue();
         if (accounts + funds + transactions + budgets + budgetCategories
                 + activities + counterparties + merchants + fixedAssets + inventoryItems
-                + banks + bankAccounts + importBatches + reconciliationSessions != 0L)
+                + banks + bankAccounts + importBatches + reconciliationSessions
+                + periodCloseRanges + periodCloseEvents != 0L)
         {
             throw new IllegalStateException("SCLX import requires an empty target company.");
         }
@@ -1120,6 +1138,50 @@ public final class SclxImportCommitService
                 reconciliations.sessions(), reconciliations.matches(), writes - writesBefore);
     }
 
+    private PeriodCloseWrite writePeriodClose(
+            EntityManager em,
+            Company company,
+            SclxPeriodCloseImportData source,
+            Map<EntityKey, SclxImportEntityPreview> previews,
+            int writesBefore)
+    {
+        int writes = writesBefore;
+        source.ranges().forEach(value -> requireNew(
+                previews, "PERIOD_CLOSE_RANGE", value.externalId()));
+        source.events().forEach(value -> requireNew(
+                previews, "PERIOD_CLOSE_EVENT", value.externalId()));
+        PeriodCloseRangeService.ImportedPeriodClose imported = periodCloseRangeService.importForInterchange(
+                em,
+                company,
+                source.ranges().stream().map(value -> new PeriodCloseRangeService.RangeImport(
+                        value.externalId(),
+                        portableUuid(value.externalId()),
+                        value.startDate(),
+                        value.endDate(),
+                        value.rangeKind(),
+                        value.status(),
+                        value.closedAt(),
+                        value.closedBy(),
+                        value.closeReason(),
+                        value.reopenedAt(),
+                        value.reopenedBy(),
+                        value.reopenReason())).toList(),
+                source.events().stream().map(value -> new PeriodCloseRangeService.EventImport(
+                        value.externalId(),
+                        portableUuid(value.externalId()),
+                        value.rangeId(),
+                        value.eventType(),
+                        value.actor(),
+                        value.reason(),
+                        value.eventAt())).toList());
+        for (int index = 0; index < source.ranges().size() + source.events().size(); index++)
+        {
+            afterBusinessWrite.accept(++writes);
+        }
+        return new PeriodCloseWrite(
+                imported.ranges(), imported.events(), writes - writesBefore);
+    }
+
     private static UUID portableUuid(String externalId)
     {
         int colon = externalId.lastIndexOf(':');
@@ -1275,6 +1337,19 @@ public final class SclxImportCommitService
                 em, company, preview, previews, "RECONCILIATION_SESSION", identity, String.valueOf(value)));
         written.reconciliationMatches().forEach((identity, value) -> recordIdentity(
                 em, company, preview, previews, "RECONCILIATION_MATCH", identity, String.valueOf(value)));
+    }
+
+    private void recordPeriodCloseIdentities(
+            EntityManager em,
+            Company company,
+            SclxImportPreview preview,
+            Map<EntityKey, SclxImportEntityPreview> previews,
+            PeriodCloseWrite written)
+    {
+        written.ranges().forEach((identity, value) -> recordIdentity(
+                em, company, preview, previews, "PERIOD_CLOSE_RANGE", identity, value.toString()));
+        written.events().forEach((identity, value) -> recordIdentity(
+                em, company, preview, previews, "PERIOD_CLOSE_EVENT", identity, value.toString()));
     }
 
     private void recordEntityIdentities(
@@ -1625,6 +1700,18 @@ public final class SclxImportCommitService
             issues = Map.copyOf(issues);
             reconciliationSessions = Map.copyOf(reconciliationSessions);
             reconciliationMatches = Map.copyOf(reconciliationMatches);
+        }
+    }
+
+    private record PeriodCloseWrite(
+            Map<String, UUID> ranges,
+            Map<String, UUID> events,
+            int businessWriteCount)
+    {
+        private PeriodCloseWrite
+        {
+            ranges = Map.copyOf(ranges);
+            events = Map.copyOf(events);
         }
     }
 }
