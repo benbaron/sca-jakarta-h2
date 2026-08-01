@@ -2,11 +2,11 @@
 plan_version: 109
 active_phase: P15
 active_slice: P15-S5-C9
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S5-C9-audit-history-import
-active_pull_request: null
-active_head: null
-next_action: "Publish the reviewed factual-audit-history writer on a draft PR, run all Maven PR Tests gates, and keep the production SCLX commit action absent until correction relationships are complete."
+active_pull_request: 236
+active_head: "6842abcc5b7dafb87544b8b2732664c5e4b678e9"
+next_action: "Follow draft PR #236 through all Maven PR Tests gates; keep the production SCLX commit action absent until correction relationships are complete."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: IN_PROGRESS at P15-S5-C9.
+Status: VERIFYING at P15-S5-C9 on draft PR #236.
 
 Startup scope:
 
@@ -1113,7 +1113,7 @@ Current validation status:
 
 Next exact action:
 
-- Publish the reviewed C9 implementation, tests, and governing documents on a draft PR, then follow the exact head through all Maven PR Tests gates.
+- Follow draft PR #236 through all Maven PR Tests gates and correct only concrete compiler or H2 diagnostics.
 
 ### P15-S5-C1 — Non-mutating SCLX import preview
 
@@ -1318,7 +1318,7 @@ Next exact action:
 
 ### P15-S5-C9 — Factual audit-history import
 
-Status: IN_PROGRESS on `codex/P15-S5-C9-audit-history-import`.
+Status: VERIFYING on draft PR #236.
 
 Scope:
 
@@ -1333,10 +1333,12 @@ Validation status:
 
 - Local Maven is unavailable; Java 17 grammar validation and GitHub Maven PR Tests are required.
 - The focused integration scenarios cover full factual-field preservation, idempotent reimport, strict pre-mutation rejection, audit-only populated-target detection, and late rollback.
+- All six changed Java files pass a Java 17 grammar parse.
+- Draft PR #236 contains exactly the eleven intended C9 implementation, test, and governing-document files from merged `main`; implementation/plan head `6842abcc5b7dafb87544b8b2732664c5e4b678e9` is awaiting authoritative GitHub Actions validation.
 
 Next exact action:
 
-- Publish the cohesive C9 branch, compare it against exact merged `main`, open a draft PR, and run all Maven PR Tests gates.
+- Follow draft PR #236 through `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
 
 Planned deliverables:
 
