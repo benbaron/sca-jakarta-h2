@@ -66,7 +66,8 @@ final class JpaSclxImportTargetReader implements SclxImportTargetReader
                     || count(em, "select count(b) from BankImportBatch b where b.company = :company", company) > 0L
                     || nativeCount(em, "bank_reconciliation_session", company) > 0L
                     || nativeCount(em, "period_close_range", company) > 0L
-                    || nativeCount(em, "period_close_event", company) > 0L;
+                    || nativeCount(em, "period_close_event", company) > 0L
+                    || count(em, "select count(a) from AuditEvent a where a.company = :company", company) > 0L;
 
             return new SclxImportTargetSnapshot(
                     company.getCode(),
