@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Company;
+import org.nonprofitbookkeeping.model.AuditEvent;
 import org.nonprofitbookkeeping.model.FixedAsset;
 import org.nonprofitbookkeeping.model.FixedAssetDepreciationRun;
 import org.nonprofitbookkeeping.model.InventoryItem;
@@ -57,6 +58,153 @@ class SclxImportCommitServiceTest
     private static final UUID PERIOD_CLOSE_RANGE_UUID = UUID.fromString("dddddddd-eeee-ffff-0000-111111111111");
     private static final UUID PERIOD_CLOSE_EVENT_UUID = UUID.fromString("eeeeeeee-ffff-0000-1111-222222222222");
     private static final UUID PERIOD_REOPEN_EVENT_UUID = UUID.fromString("ffffffff-0000-1111-2222-333333333333");
+    private static final UUID AUDIT_EVENT_UUID = UUID.fromString("12345678-90ab-cdef-1234-567890abcdef");
+
+    @Test
+    void importsFactualAuditHistoryAtomicallyAndReimportIsIdempotent(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writeAuditHistorySource(tempDir.resolve("audit-history.sclx"));
+        try (Jpa jpa = new Jpa(tempDir.resolve("audit-history")))
+        {
+            seedEmptyTarget(jpa);
+            SclxImportPreviewService previews = new SclxImportPreviewService(jpa, () -> TARGET);
+            SclxImportPreview preview = previews.preview(source);
+            assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+            assertEquals(21L, preview.operation().counts().created());
+
+            SclxImportResult result = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, preview, "tester");
+
+            assertTrue(result.committed(), () -> result.messages().toString());
+            assertEquals(21L, result.counts().created());
+            try (EntityManager em = jpa.em())
+            {
+                AuditEvent imported = em.createQuery(
+                                "from AuditEvent a where a.portableId = :portableId", AuditEvent.class)
+                        .setParameter("portableId", AUDIT_EVENT_UUID)
+                        .getSingleResult();
+                assertEquals(TARGET, imported.getCompany().getCode());
+                assertEquals(Instant.parse("2026-06-15T14:30:00Z"), imported.getOccurredAt());
+                assertEquals("source-treasurer", imported.getActor());
+                assertEquals("TRANSACTION_UPDATED", imported.getActionType());
+                assertEquals("Transaction", imported.getEntityType());
+                assertEquals("17", imported.getEntityId());
+                assertEquals("Corrected source transaction", imported.getSummary());
+                assertEquals("old memo", imported.getBeforeValue());
+                assertEquals("new memo", imported.getAfterValue());
+                assertEquals("source correction", imported.getReason());
+                assertEquals(21L, count(em,
+                        "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
+                assertEquals(1L, count(em,
+                        "select count(a) from AuditEvent a "
+                                + "where a.actionType = 'SCLX_AUDIT_HISTORY_IMPORTED'"));
+            }
+
+            SclxImportPreview secondPreview = previews.preview(source);
+            assertFalse(secondPreview.hasBlockingErrors(), () -> secondPreview.operation().messages().toString());
+            assertEquals(21L, secondPreview.operation().counts().identical());
+            SclxImportResult second = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, secondPreview, "tester");
+            assertTrue(second.committed());
+            assertEquals(0L, second.counts().created());
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals(1L, em.createQuery(
+                                "select count(a) from AuditEvent a where a.portableId = :portableId", Long.class)
+                        .setParameter("portableId", AUDIT_EVENT_UUID)
+                        .getSingleResult());
+                assertEquals(1L, count(em,
+                        "select count(a) from AuditEvent a "
+                                + "where a.actionType = 'SCLX_AUDIT_HISTORY_IMPORTED'"));
+            }
+        }
+    }
+
+    @Test
+    void failureAfterAuditHistoryWriteRollsBackCompleteGraph(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writeAuditHistorySource(tempDir.resolve("audit-history-rollback.sclx"));
+        try (Jpa jpa = new Jpa(tempDir.resolve("audit-history-rollback")))
+        {
+            seedEmptyTarget(jpa);
+            SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
+            SclxImportCommitService service = new SclxImportCommitService(
+                    jpa, () -> TARGET, writes -> {
+                        if (writes == 19)
+                        {
+                            throw new IllegalStateException("injected after audit-history write");
+                        }
+                    });
+
+            SclxImportResult result = service.commit(source, preview, "tester");
+
+            assertTrue(result.rolledBack());
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals(0L, count(em, "select count(a) from AuditEvent a"));
+                assertEquals(0L, count(em, "select count(t) from Txn t"));
+                assertEquals(0L, count(em,
+                        "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
+            }
+        }
+    }
+
+    @Test
+    void rejectsMalformedAuditHistoryBeforeMutation(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writeAuditHistorySource(tempDir.resolve("audit-history-malformed.sclx"));
+        String json = Files.readString(source);
+        String marker = "\"actor\": \"source-treasurer\"";
+        assertTrue(json.contains(marker), "audit-history fixture actor marker must exist");
+        Files.writeString(source, json.replace(marker, "\"actor\": \"" + "a".repeat(201) + "\""));
+
+        try (Jpa jpa = new Jpa(tempDir.resolve("audit-history-malformed")))
+        {
+            seedEmptyTarget(jpa);
+            SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
+
+            IllegalStateException failure = assertThrows(IllegalStateException.class,
+                    () -> new SclxImportCommitService(jpa, () -> TARGET)
+                            .commit(source, preview, "tester"));
+
+            assertTrue(failure.getMessage().contains("actor exceeds 200"));
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals("Empty Target", company(em).getDisplayName());
+                assertEquals(0L, count(em, "select count(a) from AuditEvent a"));
+                assertEquals(0L, count(em, "select count(a) from Account a"));
+            }
+        }
+    }
+
+    @Test
+    void previewBlocksTargetContainingOnlyAuditHistory(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writeSource(tempDir.resolve("audit-only-target.sclx"));
+        try (Jpa jpa = new Jpa(tempDir.resolve("audit-only-target")))
+        {
+            seedEmptyTarget(jpa);
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                AuditEvent existing = new AuditEvent();
+                existing.setCompany(company(em));
+                existing.setActor("tester");
+                existing.setActionType("EXISTING_FACT");
+                existing.setEntityType("Company");
+                existing.setSummary("Existing factual audit history");
+                em.persist(existing);
+                em.getTransaction().commit();
+            }
+
+            SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
+
+            assertTrue(preview.targetPopulated());
+            assertTrue(preview.hasBlockingErrors());
+            assertTrue(preview.operation().messages().stream()
+                    .anyMatch(message -> message.code().equals("SCLX_POPULATED_TARGET_UNSUPPORTED")));
+        }
+    }
 
     @Test
     void importsPeriodCloseFactsAtomicallyAndReimportIsIdempotent(@TempDir Path tempDir) throws Exception
@@ -698,6 +846,36 @@ class SclxImportCommitServiceTest
         String marker = "\"fixedAssets\": {";
         assertTrue(source.contains(marker), "period-close fixture insertion marker must exist");
         Files.writeString(target, source.replace(marker, periodClose + marker));
+        return target;
+    }
+
+    private static Path writeAuditHistorySource(Path target) throws Exception
+    {
+        writeSource(target);
+        String auditEvent = SclxPortableIdentity.auditEvent("SOURCE", AUDIT_EVENT_UUID.toString());
+        String auditHistory = """
+                      "auditHistory": {
+                        "version": 1,
+                        "events": [
+                          {
+                            "auditEventId": "%s",
+                            "occurredAt": "2026-06-15T14:30:00Z",
+                            "actor": "source-treasurer",
+                            "actionType": "TRANSACTION_UPDATED",
+                            "entityType": "Transaction",
+                            "entityId": "17",
+                            "summary": "Corrected source transaction",
+                            "beforeValue": "old memo",
+                            "afterValue": "new memo",
+                            "reason": "source correction"
+                          }
+                        ]
+                      },
+                    """.formatted(auditEvent);
+        String source = Files.readString(target);
+        String marker = "\"fixedAssets\": {";
+        assertTrue(source.contains(marker), "audit-history fixture insertion marker must exist");
+        Files.writeString(target, source.replace(marker, auditHistory + marker));
         return target;
     }
 
