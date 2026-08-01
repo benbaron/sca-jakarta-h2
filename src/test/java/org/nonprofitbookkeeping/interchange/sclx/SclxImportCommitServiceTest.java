@@ -242,7 +242,7 @@ class SclxImportCommitServiceTest
                 assertEquals(23L, count(em,
                         "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
                 assertEquals(1L, count(em,
-                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_PERIOD_CLOSE_IMPORTED'"));
+                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_AUDIT_HISTORY_IMPORTED'"));
             }
 
             SclxImportPreview secondPreview = previews.preview(source);
@@ -530,7 +530,7 @@ class SclxImportCommitServiceTest
                 assertEquals(new BigDecimal("3.0000"), inventoryMovement.getResultingQuantity());
                 assertEquals(1L, count(em,
                         "select count(a) from AuditEvent a "
-                                + "where a.actionType = 'SCLX_PERIOD_CLOSE_IMPORTED'"));
+                                + "where a.actionType = 'SCLX_AUDIT_HISTORY_IMPORTED'"));
             }
 
             SclxImportPreview secondPreview = previews.preview(source);
@@ -602,7 +602,7 @@ class SclxImportCommitServiceTest
                 assertEquals(0L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
                 assertEquals(0L, count(em,
                         "select count(a) from AuditEvent a "
-                                + "where a.actionType = 'SCLX_PERIOD_CLOSE_IMPORTED'"));
+                                + "where a.actionType = 'SCLX_AUDIT_HISTORY_IMPORTED'"));
             }
         }
     }
