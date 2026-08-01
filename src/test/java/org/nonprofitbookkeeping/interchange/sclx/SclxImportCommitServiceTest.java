@@ -263,7 +263,8 @@ class SclxImportCommitServiceTest
                 assertEquals(new BigDecimal("3.0000"), inventoryMovement.getQuantityChange());
                 assertEquals(new BigDecimal("3.0000"), inventoryMovement.getResultingQuantity());
                 assertEquals(1L, count(em,
-                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_INVENTORY_IMPORTED'"));
+                        "select count(a) from AuditEvent a "
+                                + "where a.actionType = 'SCLX_BANKING_RECONCILIATION_IMPORTED'"));
             }
 
             SclxImportPreview secondPreview = previews.preview(source);
@@ -334,7 +335,8 @@ class SclxImportCommitServiceTest
                 assertEquals(0L, count(em, "select count(m) from InventoryMovement m"));
                 assertEquals(0L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
                 assertEquals(0L, count(em,
-                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_INVENTORY_IMPORTED'"));
+                        "select count(a) from AuditEvent a "
+                                + "where a.actionType = 'SCLX_BANKING_RECONCILIATION_IMPORTED'"));
             }
         }
     }
@@ -660,7 +662,7 @@ class SclxImportCommitServiceTest
                 session, bankAccount,
                 match, session, statementLine, bankLine);
         String source = Files.readString(target);
-        String marker = "                      \"fixedAssets\": {\n";
+        String marker = "\"fixedAssets\": {";
         assertTrue(source.contains(marker), "banking fixture insertion marker must exist");
         Files.writeString(target, source.replace(marker, banking));
         return target;
