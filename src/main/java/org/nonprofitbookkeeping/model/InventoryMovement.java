@@ -17,6 +17,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Objects;
 import java.util.UUID;
 
 /** H2-backed inventory movement record. */
@@ -93,4 +94,15 @@ public class InventoryMovement
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
     public Instant getCreatedAt() { return createdAt; }
+
+    /** Initializes immutable source metadata before a governed interchange import persists this movement. */
+    public void initializeImportMetadata(UUID portableId, Instant createdAt)
+    {
+        if (id != null)
+        {
+            throw new IllegalStateException("Inventory-movement import metadata must be initialized before persistence");
+        }
+        this.portableId = Objects.requireNonNull(portableId, "portableId");
+        this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
+    }
 }

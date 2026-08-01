@@ -1,12 +1,12 @@
 ---
-plan_version: 105
+plan_version: 106
 active_phase: P15
-active_slice: P15-S5-C5
+active_slice: P15-S5-C6
 active_status: VERIFYING
-active_branch: codex/P15-S5-C5-fixed-asset-import
-active_pull_request: 232
-active_head: "09c0e38a4531e8f1a4a457ba49cbf9f9564fc89f"
-next_action: "Review draft PR #232 after final plan-inclusive CI; keep the production SCLX commit action absent until the remaining section writers are complete."
+active_branch: codex/P15-S5-C6-inventory-import
+active_pull_request: 233
+active_head: "85082fecfdcf509627f85928a0f0908890f531a2"
+next_action: "Review draft PR #233 after final plan-inclusive CI; keep the production SCLX commit action absent until the remaining section writers are complete."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: VERIFYING at P15-S5-C5 on draft PR #232.
+Status: VERIFYING at P15-S5-C6 on draft PR #233.
 
 Startup scope:
 
@@ -1095,10 +1095,14 @@ Current validation status:
 - P15-S5-C4 imports governed budget plans and lines through caller-owned canonical budget services while retaining the same atomic rollback and idempotent identity boundary.
 - Final C4 head `e36ec398a216cfd38836d9213c2860a261fafab6` passed Maven PR Tests run `30665458733`, and PR #231 merged to `main` at `12e7195b528108a246d039d7f7cc41b25f08c5f7`.
 - P15-S5-C5 imports fixed assets and completed depreciation runs through caller-owned canonical services after their account, fund, and canonical transaction dependencies exist.
+- Final C5 head `9cc26891f381b8ee5bf4273510daf3d5180b10eb` passed Maven PR Tests run `30669920942`, and PR #232 merged to `main` at `9ba6dd0f369566fae78d752c35e4202e57f74428`.
+- P15-S5-C6 imports governed inventory items and movement history through caller-owned canonical services after their account, fund, item, and optional canonical transaction dependencies exist.
+- Initial C6 runs `30671855732` and `30671989995` compiled production and executed the full suite but exposed only an indentation-sensitive negative-test fixture mutation; production import behavior was not implicated.
+- Corrected implementation head `85082fecfdcf509627f85928a0f0908890f531a2` passed Maven PR Tests run `30672084818`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
 
 Next exact action:
 
-- Complete P15-S5-C5 fixed-asset import, focused rollback/idempotency coverage, governing documentation, and exact-head CI on the fresh C5 branch.
+- Complete P15-S5-C6 inventory import, focused rollback/idempotency coverage, governing documentation, and exact-head CI on the fresh C6 branch.
 
 ### P15-S5-C1 — Non-mutating SCLX import preview
 
@@ -1200,7 +1204,7 @@ Next exact action:
 
 ### P15-S5-C5 — Fixed-asset and completed-depreciation-run import
 
-Status: VERIFYING on draft PR #232.
+Status: DONE through merged PR #232.
 
 Scope:
 
@@ -1216,10 +1220,35 @@ Validation status:
 - Local Maven is unavailable; Java 17 source validation and GitHub Maven PR Tests are required.
 - Initial implementation head `09c0e38a4531e8f1a4a457ba49cbf9f9564fc89f` is published on draft PR #232.
 - Plan-inclusive head `f3da2daa6da8d8b9f98cdbe38c894cc37e68190a` passed Maven PR Tests run `30669727984`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
+- Final head `9cc26891f381b8ee5bf4273510daf3d5180b10eb` passed Maven PR Tests run `30669920942`, and PR #232 merged to `main` at `9ba6dd0f369566fae78d752c35e4202e57f74428`.
 
 Next exact action:
 
-- Review and merge draft PR #232 after its final governance-only head passes all Maven PR Tests gates.
+- None; P15-S5-C5 is DONE.
+
+### P15-S5-C6 — Inventory item and movement import
+
+Status: VERIFYING on draft PR #233.
+
+Scope:
+
+- Strictly validate `extensions.scaJakartaH2.inventory` version 1, including item and movement shapes, identities, enum values, exact decimal values, timestamps, and references before mutation.
+- Create inventory items through a caller-owned `InventoryService` boundary after accounts and funds exist, preserving intrinsic UUIDs, timestamps, quantity/value facts, lifecycle fields, storage/custodian facts, and notes.
+- Record source movement history through the same service after items and canonical transactions exist, preserving intrinsic UUIDs, signed quantity change, resulting quantity, unit value, optional transaction provenance, notes, and creation time without synthesizing another receipt or ledger transaction.
+- Record durable identities for every item and movement, retain identical reimport as a no-op, reject populated inventory targets, and roll the complete imported graph back after a late failure.
+- Continue to reject banking, reconciliation, period close, imported audit history, corrections, and populated unknown extensions.
+- Keep the production SCLX commit action absent.
+
+Validation status:
+
+- Local Java 17 is available but Maven is unavailable; focused source validation and GitHub Maven PR Tests are required.
+- Java 17 grammar parsing passes for all eight changed Java sources.
+- Initial Maven PR Tests runs `30671855732` and `30671989995` exposed only the new negative test's whitespace-sensitive source mutation; both compiled production and ran the remainder of the suite through that assertion.
+- Corrected head `85082fecfdcf509627f85928a0f0908890f531a2` passed Maven PR Tests run `30672084818`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
+
+Next exact action:
+
+- Review and merge draft PR #233 after its final plan-inclusive head passes all Maven PR Tests gates.
 
 Planned deliverables:
 

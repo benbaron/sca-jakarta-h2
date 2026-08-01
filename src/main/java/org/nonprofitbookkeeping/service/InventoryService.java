@@ -10,13 +10,16 @@ import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.model.InventoryItem;
 import org.nonprofitbookkeeping.model.InventoryMovement;
+import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 /** Application service for H2-backed inventory items and movement history. */
 @ApplicationScoped
@@ -188,6 +191,92 @@ public class InventoryService
                     .map(InventoryService::toMovementView)
                     .toList();
         }
+    }
+
+    /** Creates an inventory item inside an interchange caller's existing transaction. */
+    public InventoryItem createForImport(
+            EntityManager em,
+            Company company,
+            InventoryItemCommand command,
+            UUID portableId,
+            Instant createdAt,
+            Instant updatedAt)
+    {
+        Objects.requireNonNull(em, "em");
+        Objects.requireNonNull(company, "company");
+        if (!em.getTransaction().isActive())
+        {
+            throw new IllegalStateException("Inventory-item import requires an active caller-owned transaction");
+        }
+        if (command == null || command.companyCode() == null
+                || !company.getCode().equalsIgnoreCase(command.companyCode().trim()))
+        {
+            throw new IllegalArgumentException("Inventory-item import company does not match the command");
+        }
+        InventoryItem item = new InventoryItem();
+        apply(em, item, command);
+        item.initializeImportMetadata(portableId, createdAt, updatedAt);
+        em.persist(item);
+        return item;
+    }
+
+    /** Records source movement history without creating another accounting transaction. */
+    public InventoryMovement recordMovementForImport(
+            EntityManager em,
+            Company company,
+            InventoryItem item,
+            LocalDate movementDate,
+            InventoryMovement.MovementType movementType,
+            BigDecimal quantityChange,
+            BigDecimal resultingQuantity,
+            BigDecimal unitValue,
+            Txn transaction,
+            String notes,
+            UUID portableId,
+            Instant createdAt)
+    {
+        Objects.requireNonNull(em, "em");
+        Objects.requireNonNull(company, "company");
+        Objects.requireNonNull(item, "item");
+        Objects.requireNonNull(movementType, "movementType");
+        if (!em.getTransaction().isActive())
+        {
+            throw new IllegalStateException("Inventory-movement import requires an active caller-owned transaction");
+        }
+        if (movementDate == null)
+        {
+            throw new IllegalArgumentException("movementDate is required");
+        }
+        if (quantityChange == null || quantityChange.compareTo(BigDecimal.ZERO) == 0)
+        {
+            throw new IllegalArgumentException("Inventory movement quantity change must be nonzero");
+        }
+        if (resultingQuantity == null || resultingQuantity.compareTo(BigDecimal.ZERO) < 0)
+        {
+            throw new IllegalArgumentException("Inventory movement resulting quantity must be nonnegative");
+        }
+        if (unitValue == null || unitValue.compareTo(BigDecimal.ZERO) < 0)
+        {
+            throw new IllegalArgumentException("Inventory movement unit value must be nonnegative");
+        }
+        CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
+        ownership.ensureOwnedBy(em, company, item, "Inventory item");
+        if (transaction != null)
+        {
+            ownership.ensureOwnedBy(em, company, transaction, "Inventory movement transaction");
+        }
+        InventoryMovement movement = new InventoryMovement();
+        movement.setInventoryItem(item);
+        movement.setMovementDate(movementDate);
+        movement.setMovementType(movementType);
+        movement.setQuantityChange(scale(quantityChange));
+        movement.setResultingQuantity(scale(resultingQuantity));
+        movement.setUnitValue(scale(unitValue));
+        movement.setTransaction(transaction);
+        movement.setNotes(notes);
+        movement.initializeImportMetadata(portableId, createdAt);
+        em.persist(movement);
+        return movement;
     }
 
     private void apply(EntityManager em, InventoryItem item, InventoryItemCommand command)

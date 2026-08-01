@@ -59,7 +59,8 @@ final class JpaSclxImportTargetReader implements SclxImportTargetReader
                     || count(em, "select count(a) from Activity a where a.company = :company", company) > 0L
                     || count(em, "select count(c) from Counterparty c where c.company = :company", company) > 0L
                     || count(em, "select count(m) from Merchant m where m.company = :company", company) > 0L
-                    || count(em, "select count(a) from FixedAsset a where a.company = :company", company) > 0L;
+                    || count(em, "select count(a) from FixedAsset a where a.company = :company", company) > 0L
+                    || count(em, "select count(i) from InventoryItem i where i.company = :company", company) > 0L;
 
             return new SclxImportTargetSnapshot(
                     company.getCode(),

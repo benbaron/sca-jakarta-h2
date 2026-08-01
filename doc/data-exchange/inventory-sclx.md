@@ -83,3 +83,11 @@ Before file replacement, validation requires:
 ## Exclusions
 
 This extension does not export JavaFX state, filesystem paths, compatibility stores, generic job history, authentication material, or records owned by another company.
+
+## Transactional import
+
+P15-S5-C6 strictly validates the complete version 1 extension before mutation. Items are recreated through a caller-owned `InventoryService` transaction boundary after their company-owned account and fund references exist. Movement history is then recorded through the same service after optional canonical transaction provenance resolves.
+
+Import preserves the intrinsic item and movement UUIDs, item facts, movement facts, source timestamps, status, condition, notes, and exact decimal values. It does not synthesize an initial receipt, recalculate source quantities, or create another ledger transaction. Every item and movement receives a durable SCLX interchange identity, identical reimport is a no-op, and any late failure rolls the complete imported company graph back.
+
+The target must remain empty under the governed P15-S5 merge policy. A populated inventory item is sufficient to block preview and commit. Banking, reconciliation, period-close, imported audit-history, correction, and unknown populated extensions remain blocked after C6.

@@ -8,6 +8,8 @@ import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.FixedAsset;
 import org.nonprofitbookkeeping.model.FixedAssetDepreciationRun;
+import org.nonprofitbookkeeping.model.InventoryItem;
+import org.nonprofitbookkeeping.model.InventoryMovement;
 import org.nonprofitbookkeeping.model.BudgetCategory;
 import org.nonprofitbookkeeping.model.BudgetLine;
 import org.nonprofitbookkeeping.model.BudgetPlan;
@@ -34,6 +36,8 @@ class SclxImportCommitServiceTest
     private static final UUID TRANSACTION_UUID = UUID.fromString("11111111-2222-3333-4444-555555555555");
     private static final UUID FIXED_ASSET_UUID = UUID.fromString("22222222-3333-4444-5555-666666666666");
     private static final UUID DEPRECIATION_RUN_UUID = UUID.fromString("33333333-4444-5555-6666-777777777777");
+    private static final UUID INVENTORY_ITEM_UUID = UUID.fromString("44444444-5555-6666-7777-888888888888");
+    private static final UUID INVENTORY_MOVEMENT_UUID = UUID.fromString("55555555-6666-7777-8888-999999999999");
 
     @Test
     void commitsCoreGraphAtomicallyAndReimportIsIdempotent(@TempDir Path tempDir) throws Exception
@@ -52,7 +56,7 @@ class SclxImportCommitServiceTest
 
             assertTrue(first.committed());
             assertFalse(first.rolledBack());
-            assertEquals(17L, first.counts().created());
+            assertEquals(20L, first.counts().created());
             try (EntityManager em = jpa.em())
             {
                 Company company = company(em);
@@ -61,7 +65,7 @@ class SclxImportCommitServiceTest
                 assertEquals(4, company.getFiscalYearStartMonth());
                 assertEquals(1, company.getFiscalYearStartDay());
                 assertEquals("Portable Chart", company.getActiveChartOfAccounts().getName());
-                assertEquals(4L, count(em, "select count(a) from Account a"));
+                assertEquals(5L, count(em, "select count(a) from Account a"));
                 assertEquals(1L, count(em, "select count(f) from Fund f"));
                 assertEquals(1L, count(em, "select count(c) from BudgetCategory c"));
                 assertEquals(1L, count(em, "select count(p) from BudgetPlan p"));
@@ -72,7 +76,7 @@ class SclxImportCommitServiceTest
                 assertEquals(1L, count(em, "select count(c) from Counterparty c"));
                 assertEquals(1L, count(em, "select count(m) from Merchant m"));
                 assertEquals(1L, count(em, "select count(s) from TxnSupplementalLine s"));
-                assertEquals(17L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
+                assertEquals(20L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
                 BudgetPlan budget = em.createQuery("from BudgetPlan p", BudgetPlan.class).getSingleResult();
                 assertEquals("FY2026 Approved", budget.getName());
                 assertEquals(2026, budget.getFiscalYear());
@@ -109,25 +113,43 @@ class SclxImportCommitServiceTest
                 assertEquals(fixedAsset.getId(), depreciationRun.getFixedAsset().getId());
                 assertEquals(transaction.getId(), depreciationRun.getTransaction().getId());
                 assertEquals(new BigDecimal("25.0000"), depreciationRun.getDepreciationAmount());
+                InventoryItem inventoryItem = em.createQuery(
+                                "from InventoryItem i", InventoryItem.class)
+                        .getSingleResult();
+                assertEquals(INVENTORY_ITEM_UUID, inventoryItem.getPortableId());
+                assertEquals("Portable Regalia", inventoryItem.getName());
+                assertEquals(new BigDecimal("3.0000"), inventoryItem.getQuantity());
+                assertEquals(Instant.parse("2026-02-01T10:00:00Z"), inventoryItem.getCreatedAt());
+                assertEquals(Instant.parse("2026-07-31T11:30:00Z"), inventoryItem.getUpdatedAt());
+                InventoryMovement inventoryMovement = em.createQuery(
+                                "from InventoryMovement m", InventoryMovement.class)
+                        .getSingleResult();
+                assertEquals(INVENTORY_MOVEMENT_UUID, inventoryMovement.getPortableId());
+                assertEquals(inventoryItem.getId(), inventoryMovement.getInventoryItem().getId());
+                assertEquals(transaction.getId(), inventoryMovement.getTransaction().getId());
+                assertEquals(new BigDecimal("3.0000"), inventoryMovement.getQuantityChange());
+                assertEquals(new BigDecimal("3.0000"), inventoryMovement.getResultingQuantity());
                 assertEquals(1L, count(em,
-                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_FIXED_ASSETS_IMPORTED'"));
+                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_INVENTORY_IMPORTED'"));
             }
 
             SclxImportPreview secondPreview = previews.preview(source);
             assertFalse(secondPreview.hasBlockingErrors(), () -> secondPreview.operation().messages().toString());
-            assertEquals(17L, secondPreview.operation().counts().identical());
+            assertEquals(20L, secondPreview.operation().counts().identical());
             SclxImportResult second = service.commit(source, secondPreview, "tester");
 
             assertTrue(second.committed());
             assertEquals(0L, second.counts().created());
-            assertEquals(17L, second.counts().identical());
+            assertEquals(20L, second.counts().identical());
             try (EntityManager em = jpa.em())
             {
                 assertEquals(1L, count(em, "select count(t) from Txn t"));
                 assertEquals(2L, count(em, "select count(s) from TxnSplit s"));
                 assertEquals(1L, count(em, "select count(a) from FixedAsset a"));
                 assertEquals(1L, count(em, "select count(r) from FixedAssetDepreciationRun r"));
-                assertEquals(17L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
+                assertEquals(1L, count(em, "select count(i) from InventoryItem i"));
+                assertEquals(1L, count(em, "select count(m) from InventoryMovement m"));
+                assertEquals(20L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
             }
         }
     }
@@ -145,7 +167,7 @@ class SclxImportCommitServiceTest
                     jpa,
                     () -> TARGET,
                     writes -> {
-                        if (writes == 15)
+                        if (writes == 17)
                         {
                             throw new IllegalStateException("injected late failure");
                         }
@@ -175,9 +197,11 @@ class SclxImportCommitServiceTest
                 assertEquals(0L, count(em, "select count(s) from TxnSupplementalLine s"));
                 assertEquals(0L, count(em, "select count(a) from FixedAsset a"));
                 assertEquals(0L, count(em, "select count(r) from FixedAssetDepreciationRun r"));
+                assertEquals(0L, count(em, "select count(i) from InventoryItem i"));
+                assertEquals(0L, count(em, "select count(m) from InventoryMovement m"));
                 assertEquals(0L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
                 assertEquals(0L, count(em,
-                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_FIXED_ASSETS_IMPORTED'"));
+                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_INVENTORY_IMPORTED'"));
             }
         }
     }
@@ -268,6 +292,41 @@ class SclxImportCommitServiceTest
         }
     }
 
+    @Test
+    void rejectsUnresolvedInventoryMovementBeforeMutation(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writeSource(tempDir.resolve("invalid-inventory.sclx"));
+        String itemId = SclxPortableIdentity.inventoryItem("SOURCE", INVENTORY_ITEM_UUID.toString());
+        String original = Files.readString(source);
+        String itemReference = "\"itemId\": \"" + itemId + "\"";
+        int movementReference = original.lastIndexOf(itemReference);
+        assertTrue(movementReference >= 0, "inventory movement fixture mutation must apply");
+        String changed = original.substring(0, movementReference)
+                + "\"itemId\": \"inventory-item:SOURCE:missing\""
+                + original.substring(movementReference + itemReference.length());
+        Files.writeString(source, changed);
+        try (Jpa jpa = new Jpa(tempDir.resolve("invalid-inventory")))
+        {
+            seedEmptyTarget(jpa);
+            SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
+            assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+
+            IllegalStateException failure = assertThrows(
+                    IllegalStateException.class,
+                    () -> new SclxImportCommitService(jpa, () -> TARGET)
+                            .commit(source, preview, "tester"));
+
+            assertTrue(failure.getMessage().contains("does not resolve"));
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals("Empty Target", company(em).getDisplayName());
+                assertEquals(0L, count(em, "select count(a) from Account a"));
+                assertEquals(0L, count(em, "select count(i) from InventoryItem i"));
+                assertEquals(0L, count(em, "select count(i) from InterchangeIdentity i"));
+            }
+        }
+    }
+
     private static void seedEmptyTarget(Jpa jpa)
     {
         try (EntityManager em = jpa.em())
@@ -312,6 +371,7 @@ class SclxImportCommitServiceTest
         String cash = SclxPortableIdentity.account("SOURCE", "1000");
         String asset = SclxPortableIdentity.account("SOURCE", "1500");
         String accumulated = SclxPortableIdentity.account("SOURCE", "1590");
+        String inventoryAccount = SclxPortableIdentity.account("SOURCE", "1600");
         String expense = SclxPortableIdentity.account("SOURCE", "6100");
         String fund = SclxPortableIdentity.fund("SOURCE", "GENERAL");
         String budget = SclxPortableIdentity.budget("SOURCE", 2026, "APPROVED");
@@ -329,6 +389,10 @@ class SclxImportCommitServiceTest
         String fixedAsset = SclxPortableIdentity.fixedAsset("SOURCE", FIXED_ASSET_UUID.toString());
         String depreciationRun = SclxPortableIdentity.fixedAssetDepreciationRun(
                 "SOURCE", DEPRECIATION_RUN_UUID.toString());
+        String inventoryItem = SclxPortableIdentity.inventoryItem(
+                "SOURCE", INVENTORY_ITEM_UUID.toString());
+        String inventoryMovement = SclxPortableIdentity.inventoryMovement(
+                "SOURCE", INVENTORY_MOVEMENT_UUID.toString());
         Files.writeString(target, """
                 {
                   "format": "SCLX",
@@ -373,6 +437,18 @@ class SclxImportCommitServiceTest
                       "type": "ASSET",
                       "subtype": "FIXED_ASSET",
                       "increaseSide": "CREDIT",
+                      "currency": "CAD",
+                      "openingBalance": "0.00",
+                      "posting": true,
+                      "active": true
+                    },
+                    {
+                      "accountId": "%s",
+                      "code": "1600",
+                      "name": "Inventory",
+                      "type": "ASSET",
+                      "subtype": "INVENTORY",
+                      "increaseSide": "DEBIT",
                       "currency": "CAD",
                       "openingBalance": "0.00",
                       "posting": true,
@@ -535,6 +611,43 @@ class SclxImportCommitServiceTest
                             "createdAt": "2026-07-15T12:00:00Z"
                           }
                         ]
+                      },
+                      "inventory": {
+                        "version": 1,
+                        "items": [
+                          {
+                            "itemId": "%s",
+                            "name": "Portable Regalia",
+                            "itemType": "Regalia",
+                            "quantity": "3.0000",
+                            "unit": "pieces",
+                            "unitValue": "125.0000",
+                            "acquisitionDate": "2026-02-01",
+                            "custodian": "Quartermaster",
+                            "storageLocation": "Locker A",
+                            "condition": "GOOD",
+                            "status": "ACTIVE",
+                            "notes": "Imported inventory item",
+                            "inventoryAccountId": "%s",
+                            "fundId": "%s",
+                            "createdAt": "2026-02-01T10:00:00Z",
+                            "updatedAt": "2026-07-31T11:30:00Z"
+                          }
+                        ],
+                        "movements": [
+                          {
+                            "movementId": "%s",
+                            "itemId": "%s",
+                            "movementDate": "2026-07-15",
+                            "movementType": "RECEIPT",
+                            "quantityChange": "3.0000",
+                            "resultingQuantity": "3.0000",
+                            "unitValue": "125.0000",
+                            "transactionId": "%s",
+                            "notes": "Imported receipt",
+                            "createdAt": "2026-07-15T12:30:00Z"
+                          }
+                        ]
                       }
                     }
                   }
@@ -544,6 +657,7 @@ class SclxImportCommitServiceTest
                 cash,
                 asset,
                 accumulated,
+                inventoryAccount,
                 expense,
                 fund,
                 budget,
@@ -574,6 +688,12 @@ class SclxImportCommitServiceTest
                 fund,
                 depreciationRun,
                 fixedAsset,
+                transaction,
+                inventoryItem,
+                inventoryAccount,
+                fund,
+                inventoryMovement,
+                inventoryItem,
                 transaction));
         return target;
     }

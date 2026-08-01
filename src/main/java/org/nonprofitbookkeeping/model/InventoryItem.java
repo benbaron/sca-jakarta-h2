@@ -17,6 +17,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Objects;
 import java.util.UUID;
 
 /** H2-backed inventory item record. */
@@ -139,4 +140,16 @@ public class InventoryItem
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public void touchUpdatedAt() { this.updatedAt = Instant.now(); }
+
+    /** Initializes immutable source metadata before a governed interchange import persists this item. */
+    public void initializeImportMetadata(UUID portableId, Instant createdAt, Instant updatedAt)
+    {
+        if (id != null)
+        {
+            throw new IllegalStateException("Inventory-item import metadata must be initialized before persistence");
+        }
+        this.portableId = Objects.requireNonNull(portableId, "portableId");
+        this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
+        this.updatedAt = Objects.requireNonNull(updatedAt, "updatedAt");
+    }
 }
