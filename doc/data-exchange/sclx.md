@@ -427,6 +427,25 @@ operation writes one company-owned `SCLX_PERIOD_CLOSE_IMPORTED` event, and an id
 remains a no-op. C8 still rejects imported audit history, correction relationships, populated unknown
 sections, and populated-target merge. The JavaFX SCLX commit action remains absent.
 
+### 10.10 P15-S5-C9 factual-audit-history import boundary
+
+P15-S5-C9 extends the same caller-owned transaction to
+`extensions.scaJakartaH2.auditHistory` version 1. `SclxAuditHistoryImportData` strictly validates the
+complete extension before mutation: exact fields, durable identities, bounded ISO timestamps, and
+bounded required and optional factual text.
+
+The caller-owned `AuditHistoryService` seam restores already-authoritative company-owned facts after
+the imported business graph exists. Each event preserves its intrinsic UUID, source timestamp,
+actor, action and entity labels, optional local factual entity label, summary, values, and reason.
+Import does not replay the historical command, manufacture related business rows, or reinterpret the
+source-local `entityId` as a portable foreign key.
+
+Every imported event receives a same-transaction `interchange_identity`. The imported facts remain
+distinct from the one new company-owned `SCLX_AUDIT_HISTORY_IMPORTED` event that records the local
+operation. Existing audit-history-only targets are populated targets, and an identical reimport
+remains a no-op. C9 still rejects correction relationships, populated unknown sections, and
+populated-target merge. The JavaFX SCLX commit action remains absent.
+
 ## 11. Import transaction boundary and results
 
 Preview and validation MUST make no H2 changes. Commit MUST use one caller-owned transaction for the documented import boundary and route financial records through canonical services. A late failure MUST roll back all records in that boundary.
@@ -456,6 +475,10 @@ event.
 For P15-S5-C8, the same rollback boundary additionally includes authoritative period-close ranges,
 their factual close/reopen events, intrinsic UUIDs, interchange identities, and the C8 operation audit
 event. No interactive close/reopen audit rows are synthesized during restoration.
+
+For P15-S5-C9, the same rollback boundary additionally includes imported factual audit events, their
+intrinsic UUIDs and source timestamps, their interchange identities, and the distinct C9 operation
+audit event. No historical business command is replayed during restoration.
 
 The result MUST report at least:
 
