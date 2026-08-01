@@ -2,11 +2,11 @@
 plan_version: 108
 active_phase: P15
 active_slice: P15-S5-C8
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S5-C8-period-close-import
 active_pull_request: 235
-active_head: "570ff18952bfe7a58f63277aeb53786a3344c962"
-next_action: "Run Maven PR Tests on draft PR #235; keep the production SCLX commit action absent until imported audit history and correction relationships are complete."
+active_head: "fa7f19b57bfa2df2a8fde7c451575ebd1b840f32"
+next_action: "Review draft PR #235 after final plan-inclusive CI; keep the production SCLX commit action absent until imported audit history and correction relationships are complete."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: IN_PROGRESS at P15-S5-C8 on draft PR #235.
+Status: VERIFYING at P15-S5-C8 on draft PR #235.
 
 Startup scope:
 
@@ -1107,10 +1107,11 @@ Current validation status:
 - Final C7 head `474003596c8d8cd139d36eda6b513dd5367997dd` passed Maven PR Tests run `30681078096`, and PR #234 merged to `main` at `11e8b74106c0203f64a4e7efadf5e25d2a097174`.
 - P15-S5-C8 restores authoritative period-close ranges and factual close/reopen events through a caller-owned `PeriodCloseRangeService` seam after the imported ledger graph exists.
 - C8 strict parsing, service writes, populated-target correction, idempotency, pre-mutation mismatch rejection, and late-rollback coverage pass Java 17 grammar validation locally; Maven remains unavailable in the container.
+- Implementation/plan head `fa7f19b57bfa2df2a8fde7c451575ebd1b840f32` passed Maven PR Tests run `30681932839`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
 
 Next exact action:
 
-- Run exact-head Maven PR Tests on draft PR #235.
+- Review draft PR #235 after its final plan-inclusive head passes all Maven PR Tests gates.
 
 ### P15-S5-C1 — Non-mutating SCLX import preview
 
@@ -1290,7 +1291,7 @@ Next exact action:
 
 ### P15-S5-C8 — Period-close range and factual-event import
 
-Status: IN_PROGRESS on draft PR #235.
+Status: VERIFYING on draft PR #235.
 
 Scope:
 
@@ -1306,10 +1307,11 @@ Validation status:
 - Local Maven is unavailable; Java 17 grammar validation and GitHub Maven PR Tests are required.
 - Java 17 grammar parsing passes for the strict projection, caller-owned service seam, commit integration, populated-target reader correction, and focused H2 tests.
 - Draft PR #235 contains exactly the ten intended C8 implementation, test, and governing-document files from current merged `main`.
+- Implementation/plan head `fa7f19b57bfa2df2a8fde7c451575ebd1b840f32` passed Maven PR Tests run `30681932839`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
 
 Next exact action:
 
-- Run exact-head Maven PR Tests on draft PR #235.
+- Review draft PR #235 after its final plan-inclusive head passes all Maven PR Tests gates.
 
 Planned deliverables:
 
