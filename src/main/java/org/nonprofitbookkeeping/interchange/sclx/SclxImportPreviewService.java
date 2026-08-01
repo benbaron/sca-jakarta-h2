@@ -565,17 +565,19 @@ public final class SclxImportPreviewService
                         "This transaction is single-sided or unbalanced. Select an active posting cash account "
                                 + "and review the generated balancing line before commit.", true));
             }
+            SclxImportTargetSnapshot.IdentityFact identity = target.identities().get(
+                    new SclxImportTargetSnapshot.ExternalIdentityKey("TRANSACTION", id));
+            boolean identical = identity != null
+                    && identity.normalizedContentHash().equals(hash(transaction));
             boolean closed = target.isClosed(date);
-            if (closed)
+            if (closed && !identical)
             {
                 messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_CLOSED_PERIOD_CONFLICT", path,
                         "Transaction date " + date + " is inside an authoritative closed range.", true));
             }
-            SclxImportTargetSnapshot.IdentityFact identity = target.identities().get(
-                    new SclxImportTargetSnapshot.ExternalIdentityKey("TRANSACTION", id));
             boolean finalized = identity != null && identity.localEntityId() != null
                     && target.finalizedTransactionLocalIds().contains(identity.localEntityId());
-            if (finalized)
+            if (finalized && !identical)
             {
                 messages.add(message(InterchangeMessageSeverity.ERROR,
                         "SCLX_FINALIZED_RECONCILIATION_CONFLICT", path,
