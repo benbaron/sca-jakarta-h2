@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.BankStatementLine;
 import org.nonprofitbookkeeping.model.CompanyBankAccount;
+import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.TxnSplit;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
@@ -61,6 +62,48 @@ public class BankClearedStateService
                 throw ex;
             }
         }
+    }
+
+    /** Restores a factual cleared-state relationship inside an interchange caller's transaction. */
+    public void applyForImport(
+            EntityManager em,
+            Company company,
+            TxnSplit split,
+            BankStatementLine statementLine,
+            LocalDate clearedOn)
+    {
+        if (em == null || company == null || split == null)
+        {
+            throw new IllegalArgumentException("Company and transaction split are required for cleared-state import");
+        }
+        if (!em.getTransaction().isActive())
+        {
+            throw new IllegalStateException("Cleared-state import requires an active caller-owned transaction");
+        }
+        if (split.getTxn() == null || split.getTxn().getCompany() == null
+                || !company.getId().equals(split.getTxn().getCompany().getId()))
+        {
+            throw new IllegalArgumentException("Cleared transaction line belongs to another company");
+        }
+        if (statementLine != null)
+        {
+            CompanyBankAccount configuredAccount = statementLine.getBankAccount();
+            if (statementLine.getCompany() == null
+                    || !company.getId().equals(statementLine.getCompany().getId()))
+            {
+                throw new IllegalArgumentException("Cleared statement line belongs to another company");
+            }
+            if (configuredAccount == null || configuredAccount.getAccount() == null
+                    || split.getAccount() == null
+                    || !split.getAccount().getId().equals(configuredAccount.getAccount().getId()))
+            {
+                throw new IllegalArgumentException(
+                        "Cleared transaction line must use the reviewed statement's configured bank account");
+            }
+        }
+        split.setBankCleared(true);
+        split.setBankClearedOn(clearedOn);
+        split.setMatchedBankStatementLine(statementLine);
     }
 
     private static <T> T required(EntityManager em, Class<T> type, long id, String label)

@@ -12,6 +12,8 @@ import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 /** Service boundary for P05 bank and bank-account configuration. */
 public class BankConfigurationService
@@ -161,6 +163,92 @@ public class BankConfigurationService
                 throw ex;
             }
         }
+    }
+
+    /** Creates a bank inside an interchange caller's existing transaction. */
+    public Bank createBankForImport(
+            EntityManager em,
+            Company company,
+            BankCommand command,
+            UUID portableId)
+    {
+        Objects.requireNonNull(em, "em");
+        Objects.requireNonNull(company, "company");
+        Objects.requireNonNull(command, "command");
+        if (!em.getTransaction().isActive())
+        {
+            throw new IllegalStateException("Bank import requires an active caller-owned transaction");
+        }
+        if (isBlank(command.companyCode())
+                || !company.getCode().equalsIgnoreCase(command.companyCode().trim()))
+        {
+            throw new IllegalArgumentException("Bank import company does not match the command");
+        }
+        if (isBlank(command.name()))
+        {
+            throw new IllegalArgumentException("Bank name is required.");
+        }
+        Bank bank = new Bank();
+        applyBankCommand(bank, command, company);
+        bank.initializeImportMetadata(portableId);
+        em.persist(bank);
+        return bank;
+    }
+
+    /** Creates a configured bank account inside an interchange caller's existing transaction. */
+    public CompanyBankAccount createBankAccountForImport(
+            EntityManager em,
+            Company company,
+            Bank bank,
+            Account account,
+            BankAccountImportCommand command,
+            UUID portableId)
+    {
+        Objects.requireNonNull(em, "em");
+        Objects.requireNonNull(company, "company");
+        Objects.requireNonNull(command, "command");
+        if (!em.getTransaction().isActive())
+        {
+            throw new IllegalStateException("Bank-account import requires an active caller-owned transaction");
+        }
+        CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
+        if (bank != null)
+        {
+            if (bank.getCompany() == null || !company.getId().equals(bank.getCompany().getId()))
+            {
+                throw new IllegalArgumentException("Bank does not belong to the import company");
+            }
+        }
+        if (account != null)
+        {
+            validateBankLedgerAccount(account);
+            ownership.ensureOwnedBy(em, company, account, "Bank ledger account");
+        }
+        if (isBlank(command.name()))
+        {
+            throw new IllegalArgumentException("Configured bank-account name is required.");
+        }
+        CompanyBankAccount bankAccount = new CompanyBankAccount();
+        bankAccount.setCompany(company);
+        bankAccount.setBank(bank);
+        bankAccount.setAccount(account);
+        bankAccount.setName(command.name().trim());
+        bankAccount.setNickname(blankToNull(command.nickname()));
+        bankAccount.setInstitutionName(blankToNull(command.institutionName()));
+        bankAccount.setAccountType(blankToNull(command.accountType()));
+        bankAccount.setLastFour(blankToNull(command.lastFour()));
+        bankAccount.setMaskedAccountNumber(blankToNull(command.maskedAccountNumber()));
+        bankAccount.setOpeningDate(command.openingDate());
+        bankAccount.setStatementImportFormat(command.statementImportFormat());
+        bankAccount.setOfxBankId(blankToNull(command.ofxBankId()));
+        bankAccount.setOfxAccountId(blankToNull(command.ofxAccountId()));
+        bankAccount.setOpeningBalance(command.openingBalance() == null
+                ? BigDecimal.ZERO : command.openingBalance());
+        bankAccount.setActive(command.active());
+        bankAccount.setNotes(blankToNull(command.notes()));
+        bankAccount.initializeImportMetadata(portableId);
+        em.persist(bankAccount);
+        return bankAccount;
     }
 
     static void validateBankLedgerAccount(Account account)

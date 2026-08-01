@@ -13,6 +13,11 @@ import org.nonprofitbookkeeping.model.InventoryMovement;
 import org.nonprofitbookkeeping.model.BudgetCategory;
 import org.nonprofitbookkeeping.model.BudgetLine;
 import org.nonprofitbookkeeping.model.BudgetPlan;
+import org.nonprofitbookkeeping.model.Bank;
+import org.nonprofitbookkeeping.model.BankImportBatch;
+import org.nonprofitbookkeeping.model.BankStatementLine;
+import org.nonprofitbookkeeping.model.CompanyBankAccount;
+import org.nonprofitbookkeeping.model.ImportIssue;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
 import org.nonprofitbookkeeping.model.TxnSupplementalLine;
@@ -38,6 +43,134 @@ class SclxImportCommitServiceTest
     private static final UUID DEPRECIATION_RUN_UUID = UUID.fromString("33333333-4444-5555-6666-777777777777");
     private static final UUID INVENTORY_ITEM_UUID = UUID.fromString("44444444-5555-6666-7777-888888888888");
     private static final UUID INVENTORY_MOVEMENT_UUID = UUID.fromString("55555555-6666-7777-8888-999999999999");
+    private static final UUID BANK_UUID = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa");
+    private static final UUID BANK_ACCOUNT_UUID = UUID.fromString("77777777-8888-9999-aaaa-bbbbbbbbbbbb");
+    private static final UUID IMPORT_BATCH_UUID = UUID.fromString("88888888-9999-aaaa-bbbb-cccccccccccc");
+    private static final UUID STATEMENT_LINE_UUID = UUID.fromString("99999999-aaaa-bbbb-cccc-dddddddddddd");
+    private static final UUID IMPORT_ISSUE_UUID = UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-ffffffffffff");
+    private static final UUID RECONCILIATION_SESSION_UUID = UUID.fromString("bbbbbbbb-cccc-dddd-eeee-ffffffffffff");
+    private static final UUID RECONCILIATION_MATCH_UUID = UUID.fromString("cccccccc-dddd-eeee-ffff-000000000000");
+
+    @Test
+    void importsBankingAndReconciliationFactsAtomically(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writeBankingSource(tempDir.resolve("banking.sclx"));
+        try (Jpa jpa = new Jpa(tempDir.resolve("banking")))
+        {
+            seedEmptyTarget(jpa);
+            SclxImportPreviewService previews = new SclxImportPreviewService(jpa, () -> TARGET);
+            SclxImportPreview preview = previews.preview(source);
+            assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+
+            SclxImportResult result = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, preview, "tester");
+
+            assertTrue(result.committed(), () -> result.messages().toString());
+            assertEquals(27L, result.counts().created());
+            try (EntityManager em = jpa.em())
+            {
+                Bank bank = em.createQuery("from Bank b", Bank.class).getSingleResult();
+                assertEquals(BANK_UUID, bank.getPortableId());
+                assertEquals("Portable Credit Union", bank.getName());
+                CompanyBankAccount bankAccount = em.createQuery(
+                        "from CompanyBankAccount a", CompanyBankAccount.class).getSingleResult();
+                assertEquals(BANK_ACCOUNT_UUID, bankAccount.getPortableId());
+                assertEquals("1000", bankAccount.getAccount().getCode());
+                BankImportBatch batch = em.createQuery(
+                        "from BankImportBatch b", BankImportBatch.class).getSingleResult();
+                assertEquals(IMPORT_BATCH_UUID, batch.getPortableId());
+                assertEquals(Instant.parse("2026-07-20T10:00:00Z"), batch.getImportedAt());
+                BankStatementLine statementLine = em.createQuery(
+                        "from BankStatementLine l", BankStatementLine.class).getSingleResult();
+                assertEquals(STATEMENT_LINE_UUID, statementLine.getPortableId());
+                assertEquals(BankStatementLine.Status.MATCHED, statementLine.getStatus());
+                ImportIssue issue = em.createQuery("from ImportIssue i", ImportIssue.class).getSingleResult();
+                assertEquals(IMPORT_ISSUE_UUID, issue.getPortableId());
+                TxnSplit bankLine = em.createQuery(
+                        "from TxnSplit s where s.account.code = '1000'", TxnSplit.class).getSingleResult();
+                assertTrue(bankLine.isBankCleared());
+                assertEquals(statementLine.getId(), bankLine.getMatchedBankStatementLine().getId());
+                assertEquals(1L, nativeCount(em, "bank_reconciliation_session"));
+                assertEquals(1L, nativeCount(em, "bank_reconciliation_match"));
+                assertEquals(27L, count(em,
+                        "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
+            }
+
+            SclxImportPreview secondPreview = previews.preview(source);
+            assertEquals(27L, secondPreview.operation().counts().identical());
+            SclxImportResult second = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, secondPreview, "tester");
+            assertTrue(second.committed());
+            assertEquals(0L, second.counts().created());
+        }
+    }
+
+    @Test
+    void failureAfterReconciliationWriteRollsBackBankingGraph(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writeBankingSource(tempDir.resolve("banking-rollback.sclx"));
+        try (Jpa jpa = new Jpa(tempDir.resolve("banking-rollback")))
+        {
+            seedEmptyTarget(jpa);
+            SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
+            SclxImportCommitService service = new SclxImportCommitService(
+                    jpa, () -> TARGET, writes -> {
+                        if (writes == 23)
+                        {
+                            throw new IllegalStateException("injected after reconciliation write");
+                        }
+                    });
+
+            SclxImportResult result = service.commit(source, preview, "tester");
+
+            assertTrue(result.rolledBack());
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals(0L, count(em, "select count(b) from Bank b"));
+                assertEquals(0L, count(em, "select count(a) from CompanyBankAccount a"));
+                assertEquals(0L, count(em, "select count(b) from BankImportBatch b"));
+                assertEquals(0L, count(em, "select count(l) from BankStatementLine l"));
+                assertEquals(0L, count(em, "select count(i) from ImportIssue i"));
+                assertEquals(0L, nativeCount(em, "bank_reconciliation_session"));
+                assertEquals(0L, nativeCount(em, "bank_reconciliation_match"));
+                assertEquals(0L, count(em,
+                        "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
+            }
+        }
+    }
+
+    @Test
+    void rejectsUnresolvedReconciliationTransactionLineBeforeMutation(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writeBankingSource(tempDir.resolve("banking-unresolved-line.sclx"));
+        String transaction = SclxPortableIdentity.transaction("SOURCE", TRANSACTION_UUID.toString());
+        String bankLine = SclxPortableIdentity.transactionLine(transaction, 2);
+        String marker = "\"lineId\": \"" + bankLine + "\"";
+        String json = Files.readString(source);
+        int markerIndex = json.lastIndexOf(marker);
+        assertTrue(markerIndex >= 0, "reconciliation transaction-line fixture marker must exist");
+        Files.writeString(source, json.substring(0, markerIndex)
+                + "\"lineId\": \"sclx:transaction-line:missing\""
+                + json.substring(markerIndex + marker.length()));
+
+        try (Jpa jpa = new Jpa(tempDir.resolve("banking-unresolved-line")))
+        {
+            seedEmptyTarget(jpa);
+            SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
+
+            IllegalStateException failure = assertThrows(IllegalStateException.class,
+                    () -> new SclxImportCommitService(jpa, () -> TARGET)
+                            .commit(source, preview, "tester"));
+
+            assertTrue(failure.getMessage().contains("reconciliation.matches[].lineId does not resolve"));
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals(0L, count(em, "select count(b) from Bank b"));
+                assertEquals(0L, count(em,
+                        "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
+            }
+        }
+    }
 
     @Test
     void commitsCoreGraphAtomicallyAndReimportIsIdempotent(@TempDir Path tempDir) throws Exception
@@ -130,7 +263,8 @@ class SclxImportCommitServiceTest
                 assertEquals(new BigDecimal("3.0000"), inventoryMovement.getQuantityChange());
                 assertEquals(new BigDecimal("3.0000"), inventoryMovement.getResultingQuantity());
                 assertEquals(1L, count(em,
-                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_INVENTORY_IMPORTED'"));
+                        "select count(a) from AuditEvent a "
+                                + "where a.actionType = 'SCLX_BANKING_RECONCILIATION_IMPORTED'"));
             }
 
             SclxImportPreview secondPreview = previews.preview(source);
@@ -201,7 +335,8 @@ class SclxImportCommitServiceTest
                 assertEquals(0L, count(em, "select count(m) from InventoryMovement m"));
                 assertEquals(0L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
                 assertEquals(0L, count(em,
-                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_INVENTORY_IMPORTED'"));
+                        "select count(a) from AuditEvent a "
+                                + "where a.actionType = 'SCLX_BANKING_RECONCILIATION_IMPORTED'"));
             }
         }
     }
@@ -363,6 +498,174 @@ class SclxImportCommitServiceTest
     private static long count(EntityManager em, String jpql)
     {
         return em.createQuery(jpql, Long.class).getSingleResult();
+    }
+
+    private static long nativeCount(EntityManager em, String table)
+    {
+        return ((Number) em.createNativeQuery("select count(*) from " + table)
+                .getSingleResult()).longValue();
+    }
+
+    private static Path writeBankingSource(Path target) throws Exception
+    {
+        writeSource(target);
+        String cash = SclxPortableIdentity.account("SOURCE", "1000");
+        String transaction = SclxPortableIdentity.transaction("SOURCE", TRANSACTION_UUID.toString());
+        String bankLine = SclxPortableIdentity.transactionLine(transaction, 2);
+        String bank = SclxPortableIdentity.bank("SOURCE", BANK_UUID.toString());
+        String bankAccount = SclxPortableIdentity.bankAccount("SOURCE", BANK_ACCOUNT_UUID.toString());
+        String batch = SclxPortableIdentity.bankImportBatch("SOURCE", IMPORT_BATCH_UUID.toString());
+        String statementLine = SclxPortableIdentity.bankStatementLine("SOURCE", STATEMENT_LINE_UUID.toString());
+        String issue = SclxPortableIdentity.bankImportIssue("SOURCE", IMPORT_ISSUE_UUID.toString());
+        String session = SclxPortableIdentity.reconciliationSession(
+                "SOURCE", RECONCILIATION_SESSION_UUID.toString());
+        String match = SclxPortableIdentity.reconciliationMatch(
+                "SOURCE", RECONCILIATION_MATCH_UUID.toString());
+        String banking = """
+                      "bankConfiguration": {
+                        "banks": [
+                          {
+                            "bankId": "%s",
+                            "name": "Portable Credit Union",
+                            "routingNumber": "123456789",
+                            "address": "1 Portable Way",
+                            "website": null,
+                            "contactName": "Bank Contact",
+                            "contactPhone": null,
+                            "contactEmail": "contact@example.invalid",
+                            "notes": "Imported bank",
+                            "active": true
+                          }
+                        ],
+                        "accounts": [
+                          {
+                            "bankAccountId": "%s",
+                            "bankId": "%s",
+                            "ledgerAccountId": "%s",
+                            "name": "Portable Checking",
+                            "nickname": "Checking",
+                            "institutionName": "Portable Credit Union",
+                            "accountType": "BANK",
+                            "lastFour": "1234",
+                            "maskedAccountNumber": "****1234",
+                            "openingDate": "2026-01-01",
+                            "statementImportFormat": "OFX",
+                            "ofxBankId": "123456789",
+                            "ofxAccountId": "PORTABLE-1234",
+                            "openingBalance": "0.0000",
+                            "active": true,
+                            "notes": "Imported configured account"
+                          }
+                        ]
+                      },
+                      "bankStatementFacts": {
+                        "importBatches": [
+                          {
+                            "importBatchId": "%s",
+                            "bankAccountId": "%s",
+                            "sourceName": "portable.ofx",
+                            "sourceHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                            "sourceFormat": "OFX",
+                            "status": "ACCEPTED",
+                            "importedAt": "2026-07-20T10:00:00Z",
+                            "completedAt": "2026-07-20T10:05:00Z",
+                            "totalLineCount": 1,
+                            "acceptedLineCount": 1,
+                            "rejectedLineCount": 0,
+                            "issueCount": 1,
+                            "notes": "Imported reviewed batch"
+                          }
+                        ],
+                        "statementLines": [
+                          {
+                            "statementLineId": "%s",
+                            "importBatchId": "%s",
+                            "bankAccountId": "%s",
+                            "sourceRowNumber": 1,
+                            "sourceTransactionId": "FITID-1",
+                            "deterministicFingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                            "statementAccountIdentifier": "PORTABLE-1234",
+                            "transactionDate": "2026-07-15",
+                            "postedDate": "2026-07-16",
+                            "amount": "-25.0000",
+                            "transactionType": "DEBIT",
+                            "name": "Portable Merchant",
+                            "memo": "Purchase supplies",
+                            "checkNumber": null,
+                            "reference": "REF-1",
+                            "status": "MATCHED",
+                            "dispositionNote": "Matched during source review",
+                            "acceptedTransactionId": null,
+                            "matchedTransactionId": "%s"
+                          }
+                        ],
+                        "issues": [
+                          {
+                            "issueId": "%s",
+                            "importBatchId": "%s",
+                            "statementLineId": "%s",
+                            "sourceRowNumber": 1,
+                            "severity": "WARNING",
+                            "code": "PORTABLE_WARNING",
+                            "message": "Portable review warning",
+                            "createdAt": "2026-07-20T10:01:00Z"
+                          }
+                        ],
+                        "transactionLineClearance": [
+                          {
+                            "lineId": "%s",
+                            "bankCleared": true,
+                            "bankClearedOn": "2026-07-16",
+                            "statementLineId": "%s"
+                          }
+                        ]
+                      },
+                      "reconciliation": {
+                        "sessions": [
+                          {
+                            "reconciliationSessionId": "%s",
+                            "bankAccountId": "%s",
+                            "statementStartDate": "2026-07-01",
+                            "statementEndDate": "2026-07-31",
+                            "statementEndingBalance": "-25.0000",
+                            "mismatchPolicy": "WARN_ONLY",
+                            "status": "FINALIZED",
+                            "notes": "Imported reconciliation",
+                            "beginningBalance": "0.0000",
+                            "bookBalanceAll": "-25.0000",
+                            "bookBalanceCleared": "-25.0000",
+                            "differenceAmount": "0.0000",
+                            "createdAt": "2026-07-31T12:00:00Z",
+                            "updatedAt": "2026-07-31T12:05:00Z"
+                          }
+                        ],
+                        "matches": [
+                          {
+                            "reconciliationMatchId": "%s",
+                            "reconciliationSessionId": "%s",
+                            "statementLineId": "%s",
+                            "lineId": "%s",
+                            "matchStatus": "MATCHED",
+                            "resolutionNote": "Exact portable match",
+                            "createdAt": "2026-07-31T12:01:00Z",
+                            "updatedAt": "2026-07-31T12:02:00Z"
+                          }
+                        ]
+                      },
+                      "fixedAssets": {
+                """.formatted(
+                bank, bankAccount, bank, cash,
+                batch, bankAccount,
+                statementLine, batch, bankAccount, transaction,
+                issue, batch, statementLine,
+                bankLine, statementLine,
+                session, bankAccount,
+                match, session, statementLine, bankLine);
+        String source = Files.readString(target);
+        String marker = "\"fixedAssets\": {";
+        assertTrue(source.contains(marker), "banking fixture insertion marker must exist");
+        Files.writeString(target, source.replace(marker, banking));
+        return target;
     }
 
     private static Path writeSource(Path target) throws Exception

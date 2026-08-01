@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -854,6 +855,169 @@ public class BankReconciliationWorkspaceService
                 .setParameter(4, status.name())
                 .setParameter(5, note)
                 .executeUpdate();
+    }
+
+    /** Recreates reconciliation sessions and matches inside an interchange caller's transaction. */
+    public ImportedReconciliation importForInterchange(
+            EntityManager em,
+            Company company,
+            List<SessionImport> sessionValues,
+            List<MatchImport> matchValues,
+            Map<String, CompanyBankAccount> bankAccounts,
+            Map<String, BankStatementLine> statementLines,
+            Map<String, TxnSplit> transactionLines)
+    {
+        Objects.requireNonNull(em, "em");
+        Objects.requireNonNull(company, "company");
+        Objects.requireNonNull(sessionValues, "sessionValues");
+        Objects.requireNonNull(matchValues, "matchValues");
+        if (!em.getTransaction().isActive())
+        {
+            throw new IllegalStateException("Reconciliation import requires an active caller-owned transaction");
+        }
+        Map<String, Long> sessions = new LinkedHashMap<>();
+        for (SessionImport value : sessionValues)
+        {
+            CompanyBankAccount bankAccount = required(bankAccounts, value.bankAccountId(), "configured bank account");
+            if (bankAccount.getCompany() == null
+                    || !company.getId().equals(bankAccount.getCompany().getId()))
+            {
+                throw new IllegalArgumentException("Reconciliation bank account belongs to another company");
+            }
+            em.createNativeQuery("""
+                    insert into bank_reconciliation_session
+                        (portable_id, company_id, bank_account_id, statement_start_date,
+                         statement_end_date, statement_ending_balance, mismatch_policy, status,
+                         notes, beginning_balance, book_balance_all, book_balance_cleared,
+                         difference_amount, created_at, updated_at)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """)
+                    .setParameter(1, value.portableId())
+                    .setParameter(2, company.getId())
+                    .setParameter(3, bankAccount.getId())
+                    .setParameter(4, value.statementStartDate())
+                    .setParameter(5, value.statementEndDate())
+                    .setParameter(6, value.statementEndingBalance())
+                    .setParameter(7, value.mismatchPolicy())
+                    .setParameter(8, value.status())
+                    .setParameter(9, value.notes())
+                    .setParameter(10, value.beginningBalance())
+                    .setParameter(11, value.bookBalanceAll())
+                    .setParameter(12, value.bookBalanceCleared())
+                    .setParameter(13, value.differenceAmount())
+                    .setParameter(14, value.createdAt())
+                    .setParameter(15, value.updatedAt())
+                    .executeUpdate();
+            long id = ((Number) em.createNativeQuery(
+                            "select id from bank_reconciliation_session where portable_id = ?")
+                    .setParameter(1, value.portableId())
+                    .getSingleResult()).longValue();
+            sessions.put(value.externalId(), id);
+        }
+
+        Map<String, Long> matches = new LinkedHashMap<>();
+        for (MatchImport value : matchValues)
+        {
+            long sessionId = required(sessions, value.reconciliationSessionId(), "reconciliation session");
+            BankStatementLine statementLine = optional(
+                    statementLines, value.statementLineId(), "bank statement line");
+            TxnSplit transactionLine = optional(
+                    transactionLines, value.transactionLineId(), "transaction line");
+            if (statementLine == null && transactionLine == null)
+            {
+                throw new IllegalArgumentException("Reconciliation match requires a statement or transaction line");
+            }
+            if (statementLine != null && (statementLine.getCompany() == null
+                    || !company.getId().equals(statementLine.getCompany().getId())))
+            {
+                throw new IllegalArgumentException("Reconciliation statement line belongs to another company");
+            }
+            if (transactionLine != null && (transactionLine.getTxn() == null
+                    || transactionLine.getTxn().getCompany() == null
+                    || !company.getId().equals(transactionLine.getTxn().getCompany().getId())))
+            {
+                throw new IllegalArgumentException("Reconciliation transaction line belongs to another company");
+            }
+            em.createNativeQuery("""
+                    insert into bank_reconciliation_match
+                        (portable_id, session_id, statement_line_id, txn_split_id, match_status,
+                         resolution_note, created_at, updated_at)
+                    values (?, ?, ?, ?, ?, ?, ?, ?)
+                    """)
+                    .setParameter(1, value.portableId())
+                    .setParameter(2, sessionId)
+                    .setParameter(3, statementLine == null ? null : statementLine.getId())
+                    .setParameter(4, transactionLine == null ? null : transactionLine.getId())
+                    .setParameter(5, value.matchStatus())
+                    .setParameter(6, value.resolutionNote())
+                    .setParameter(7, value.createdAt())
+                    .setParameter(8, value.updatedAt())
+                    .executeUpdate();
+            long id = ((Number) em.createNativeQuery(
+                            "select id from bank_reconciliation_match where portable_id = ?")
+                    .setParameter(1, value.portableId())
+                    .getSingleResult()).longValue();
+            matches.put(value.externalId(), id);
+        }
+        return new ImportedReconciliation(sessions, matches);
+    }
+
+    private static <T> T required(Map<String, T> values, String identity, String label)
+    {
+        T value = values.get(identity);
+        if (value == null)
+        {
+            throw new IllegalArgumentException("Unresolved " + label + ": " + identity);
+        }
+        return value;
+    }
+
+    private static <T> T optional(Map<String, T> values, String identity, String label)
+    {
+        return identity == null ? null : required(values, identity, label);
+    }
+
+    public record SessionImport(
+            String externalId,
+            UUID portableId,
+            String bankAccountId,
+            LocalDate statementStartDate,
+            LocalDate statementEndDate,
+            BigDecimal statementEndingBalance,
+            String mismatchPolicy,
+            String status,
+            String notes,
+            BigDecimal beginningBalance,
+            BigDecimal bookBalanceAll,
+            BigDecimal bookBalanceCleared,
+            BigDecimal differenceAmount,
+            Instant createdAt,
+            Instant updatedAt)
+    {
+    }
+
+    public record MatchImport(
+            String externalId,
+            UUID portableId,
+            String reconciliationSessionId,
+            String statementLineId,
+            String transactionLineId,
+            String matchStatus,
+            String resolutionNote,
+            Instant createdAt,
+            Instant updatedAt)
+    {
+    }
+
+    public record ImportedReconciliation(
+            Map<String, Long> sessions,
+            Map<String, Long> matches)
+    {
+        public ImportedReconciliation
+        {
+            sessions = Map.copyOf(sessions);
+            matches = Map.copyOf(matches);
+        }
     }
 
     private static List<TxnSplit> ledgerLines(EntityManager em, Company company, Account account, LocalDate start, LocalDate end)

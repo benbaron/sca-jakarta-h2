@@ -1,12 +1,12 @@
 ---
-plan_version: 106
+plan_version: 107
 active_phase: P15
-active_slice: P15-S5-C6
+active_slice: P15-S5-C7
 active_status: VERIFYING
-active_branch: codex/P15-S5-C6-inventory-import
-active_pull_request: 233
-active_head: "85082fecfdcf509627f85928a0f0908890f531a2"
-next_action: "Review draft PR #233 after final plan-inclusive CI; keep the production SCLX commit action absent until the remaining section writers are complete."
+active_branch: codex/P15-S5-C7-banking-reconciliation-import
+active_pull_request: 234
+active_head: "4cf2ff68a8d9f50823e52be14874c81f763de77c"
+next_action: "Review draft PR #234 after final plan-inclusive CI; keep the production SCLX commit action absent until the remaining section writers are complete."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Review draft PR #233 after final plan-inclusive CI; keep the produ
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S5-C4 complete through merged PR #231 and activates P15-S5-C5 fixed-asset import on a fresh branch from current main.
+This revision records P15-S5-C6 complete through merged PR #233 and activates P15-S5-C7 banking and reconciliation import on a fresh branch from current main.
 
 ## 2. Status values
 
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: VERIFYING at P15-S5-C6 on draft PR #233.
+Status: VERIFYING at P15-S5-C7 on draft PR #234.
 
 Startup scope:
 
@@ -1099,10 +1099,15 @@ Current validation status:
 - P15-S5-C6 imports governed inventory items and movement history through caller-owned canonical services after their account, fund, item, and optional canonical transaction dependencies exist.
 - Initial C6 runs `30671855732` and `30671989995` compiled production and executed the full suite but exposed only an indentation-sensitive negative-test fixture mutation; production import behavior was not implicated.
 - Corrected implementation head `85082fecfdcf509627f85928a0f0908890f531a2` passed Maven PR Tests run `30672084818`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
+- Final C6 head `2fa863c514875bc9481483e28d61dda71f21065d` passed Maven PR Tests run `30672245197`, and PR #233 merged to `main` at `454e88a68f0e7b96cf7054aefc9f8e2f1157f999`.
+- P15-S5-C7 imports governed bank configuration, reviewed statement facts, transaction-line clearance, and reconciliation sessions/matches after their chart, transaction, and statement dependencies exist.
+- Initial C7 run `30680763088` compiled production and executed the suite but exposed three whitespace-sensitive banking-fixture insertions and one stale operation-audit action expectation.
+- Fixture-correction run `30680861206` passed 482 of 483 tests and exposed the protected identical-reimport edge: the imported transaction's finalized reconciliation blocked the no-op before identity classification could complete.
+- Corrected implementation head `4cf2ff68a8d9f50823e52be14874c81f763de77c` passed Maven PR Tests run `30680958690`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
 
 Next exact action:
 
-- Complete P15-S5-C6 inventory import, focused rollback/idempotency coverage, governing documentation, and exact-head CI on the fresh C6 branch.
+- Review and merge draft PR #234 after its final plan-inclusive head passes all Maven PR Tests gates.
 
 ### P15-S5-C1 — Non-mutating SCLX import preview
 
@@ -1228,7 +1233,7 @@ Next exact action:
 
 ### P15-S5-C6 — Inventory item and movement import
 
-Status: VERIFYING on draft PR #233.
+Status: DONE through merged PR #233.
 
 Scope:
 
@@ -1245,10 +1250,39 @@ Validation status:
 - Java 17 grammar parsing passes for all eight changed Java sources.
 - Initial Maven PR Tests runs `30671855732` and `30671989995` exposed only the new negative test's whitespace-sensitive source mutation; both compiled production and ran the remainder of the suite through that assertion.
 - Corrected head `85082fecfdcf509627f85928a0f0908890f531a2` passed Maven PR Tests run `30672084818`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
+- Final head `2fa863c514875bc9481483e28d61dda71f21065d` passed Maven PR Tests run `30672245197`, and PR #233 merged to `main` at `454e88a68f0e7b96cf7054aefc9f8e2f1157f999`.
 
 Next exact action:
 
-- Review and merge draft PR #233 after its final plan-inclusive head passes all Maven PR Tests gates.
+- None; P15-S5-C6 is DONE.
+
+### P15-S5-C7 — Banking and reconciliation import
+
+Status: VERIFYING on draft PR #234.
+
+Scope:
+
+- Strictly validate the governed `bankConfiguration`, `bankStatementFacts`, and `reconciliation` extension shapes, portable identities, enum/date/decimal values, exact batch counts, and all chart/transaction/banking/reconciliation references before mutation.
+- Recreate banks and configured bank accounts through caller-owned `BankConfigurationService` seams after chart accounts exist, preserving intrinsic UUIDs and all governed configuration facts.
+- Recreate reviewed import batches, statement lines, and issues through `BankImportReviewService` after bank accounts and canonical transactions exist, preserving review dispositions and timestamps without replaying normalization or creating another ledger transaction.
+- Restore transaction-line clearance through `BankClearedStateService`, then recreate native reconciliation sessions and matches through `BankReconciliationWorkspaceService` after every referenced statement line and canonical split exists.
+- Preserve source UUIDs, statuses, balances, timestamps, hashes, and transaction provenance while deliberately excluding source-machine paths and source user names.
+- Record durable identities for every imported banking/reconciliation entity, retain identical reimport as a no-op, reject populated banking/reconciliation targets, and roll the complete imported graph back after a late failure.
+- Continue to reject period-close facts, imported audit history, corrections, and populated unknown extensions.
+- Keep the production SCLX commit action absent.
+
+Validation status:
+
+- Local Java 17 is available but Maven is unavailable; Java grammar validation and GitHub Maven PR Tests are required.
+- Java 17 grammar parsing passes for the drafted C7 source and focused integration tests.
+- Initial Maven PR Tests run `30680763088` exposed only three whitespace-sensitive fixture insertions and one stale audit-action expectation after production compilation.
+- Fixture-correction run `30680861206` passed 482 of 483 tests and exposed the finalized-reconciliation protection on an otherwise identical reimport.
+- Preview now keeps authoritative closed/finalized protection facts visible but blocks only a non-identical incoming transaction; an identical imported identity remains the governed no-op.
+- Corrected implementation head `4cf2ff68a8d9f50823e52be14874c81f763de77c` passed Maven PR Tests run `30680958690`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
+
+Next exact action:
+
+- Review and merge draft PR #234 after its final plan-inclusive head passes all Maven PR Tests gates.
 
 Planned deliverables:
 

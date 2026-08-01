@@ -92,4 +92,14 @@ public class Bank
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public void touchUpdatedAt() { this.updatedAt = Instant.now(); }
+
+    /** Initializes immutable source identity before a governed interchange import persists this bank. */
+    public void initializeImportMetadata(UUID portableId)
+    {
+        if (id != null)
+        {
+            throw new IllegalStateException("Bank import metadata must be initialized before persistence");
+        }
+        this.portableId = java.util.Objects.requireNonNull(portableId, "portableId");
+    }
 }
