@@ -5,8 +5,8 @@ active_slice: P15-S5-C9
 active_status: VERIFYING
 active_branch: codex/P15-S5-C9-audit-history-import
 active_pull_request: 236
-active_head: "6842abcc5b7dafb87544b8b2732664c5e4b678e9"
-next_action: "Follow draft PR #236 through all Maven PR Tests gates; keep the production SCLX commit action absent until correction relationships are complete."
+active_head: "738f4c7972c86945e6c9aac1b11033c406a90eb4"
+next_action: "Run the final plan-inclusive PR #236 head through all Maven PR Tests gates; keep the production SCLX commit action absent until correction relationships are complete."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1334,11 +1334,13 @@ Validation status:
 - Local Maven is unavailable; Java 17 grammar validation and GitHub Maven PR Tests are required.
 - The focused integration scenarios cover full factual-field preservation, idempotent reimport, strict pre-mutation rejection, audit-only populated-target detection, and late rollback.
 - All six changed Java files pass a Java 17 grammar parse.
-- Draft PR #236 contains exactly the eleven intended C9 implementation, test, and governing-document files from merged `main`; implementation/plan head `6842abcc5b7dafb87544b8b2732664c5e4b678e9` is awaiting authoritative GitHub Actions validation.
+- Draft PR #236 contains exactly the eleven intended C9 implementation, test, and governing-document files from merged `main`.
+- Initial Maven PR Tests run `30721476025` compiled production and executed the suite but exposed two stale C8 operation-audit expectations in existing core and period-close fixtures; no production behavior or C9 test failed.
+- Corrected implementation head `738f4c7972c86945e6c9aac1b11033c406a90eb4` passed Maven PR Tests run `30721599317`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
 
 Next exact action:
 
-- Follow draft PR #236 through `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
+- Run the final plan-inclusive PR #236 head through `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
 
 Planned deliverables:
 
