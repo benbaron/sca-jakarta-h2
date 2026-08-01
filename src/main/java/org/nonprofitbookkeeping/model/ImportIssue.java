@@ -74,4 +74,15 @@ public class ImportIssue
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }
     public Instant getCreatedAt() { return createdAt; }
+
+    /** Initializes immutable source identity and factual creation time before persistence. */
+    public void initializeImportMetadata(UUID portableId, Instant createdAt)
+    {
+        if (id != null)
+        {
+            throw new IllegalStateException("Import-issue metadata must be initialized before persistence");
+        }
+        this.portableId = java.util.Objects.requireNonNull(portableId, "portableId");
+        this.createdAt = java.util.Objects.requireNonNull(createdAt, "createdAt");
+    }
 }

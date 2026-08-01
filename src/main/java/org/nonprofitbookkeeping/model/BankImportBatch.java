@@ -126,4 +126,17 @@ public class BankImportBatch
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public void touchUpdatedAt() { this.updatedAt = Instant.now(); }
+
+    /** Initializes immutable source identity and factual import time before persistence. */
+    public void initializeImportMetadata(UUID portableId, Instant importedAt)
+    {
+        if (id != null)
+        {
+            throw new IllegalStateException("Bank-import-batch metadata must be initialized before persistence");
+        }
+        this.portableId = java.util.Objects.requireNonNull(portableId, "portableId");
+        this.importedAt = java.util.Objects.requireNonNull(importedAt, "importedAt");
+        this.createdAt = importedAt;
+        this.updatedAt = importedAt;
+    }
 }

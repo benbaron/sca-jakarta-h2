@@ -380,6 +380,33 @@ Items are recreated through `InventoryService` after their account and fund depe
 
 Every item and movement receives a same-transaction `interchange_identity`. A successful operation writes one company-owned `SCLX_INVENTORY_IMPORTED` event, and an identical reimport remains a no-op. C6 still rejects banking and reconciliation, period-close facts, imported audit history, correction relationships, populated unknown sections, and populated-target merge. The JavaFX SCLX commit action remains absent.
 
+### 10.8 P15-S5-C7 banking and reconciliation import boundary
+
+P15-S5-C7 extends the same caller-owned transaction to
+`extensions.scaJakartaH2.bankConfiguration`, `bankStatementFacts`, and `reconciliation`. Before any
+mutation, `SclxBankingImportData` validates the exact extension shapes, durable identities, enums,
+dates, timestamps, `DECIMAL(19,4)` values, source counts, status-required transaction links, and every
+reference between configured accounts, import batches, statement lines, issues, canonical
+transactions/splits, reconciliation sessions, and matches.
+
+Banks and configured accounts are recreated through caller-owned `BankConfigurationService` seams
+after their chart accounts exist. Reviewed batches, statement lines, and issues are then recreated
+through `BankImportReviewService` without normalizing the already-reviewed source or creating another
+ledger transaction. Source-machine path and importing-user values remain excluded, while the governed
+source name/hash/format, review dispositions, counts, intrinsic UUIDs, and timestamps are preserved.
+
+Transaction-line cleared state is restored through `BankClearedStateService` only after canonical
+transactions and statement facts exist. Native reconciliation sessions and matches are written last
+through `BankReconciliationWorkspaceService`, preserving their portable UUIDs, statement range,
+policy, status, balance snapshot, resolution facts, and timestamps without recalculating or reopening
+a finalized source session.
+
+Every bank, configured account, import batch, statement line, issue, reconciliation session, and
+match receives a same-transaction `interchange_identity`. A successful operation writes one
+company-owned `SCLX_BANKING_RECONCILIATION_IMPORTED` event, and an identical reimport remains a no-op.
+C7 still rejects period-close facts, imported audit history, correction relationships, populated
+unknown sections, and populated-target merge. The JavaFX SCLX commit action remains absent.
+
 ## 11. Import transaction boundary and results
 
 Preview and validation MUST make no H2 changes. Commit MUST use one caller-owned transaction for the documented import boundary and route financial records through canonical services. A late failure MUST roll back all records in that boundary.
@@ -400,6 +427,11 @@ runs, their intrinsic portable metadata and interchange identities, and the C5 o
 
 For P15-S5-C6, the same rollback boundary additionally includes inventory items, movement history,
 their intrinsic portable metadata and interchange identities, and the C6 operation audit event.
+
+For P15-S5-C7, the same rollback boundary additionally includes banks, configured bank accounts,
+reviewed statement batches/lines/issues, transaction-line cleared state, reconciliation sessions and
+matches, their intrinsic portable metadata and interchange identities, and the C7 operation audit
+event.
 
 The result MUST report at least:
 

@@ -15,9 +15,13 @@ import org.nonprofitbookkeeping.model.AuditEvent;
 import org.nonprofitbookkeeping.model.BudgetCategory;
 import org.nonprofitbookkeeping.model.BudgetLine;
 import org.nonprofitbookkeeping.model.BudgetPlan;
+import org.nonprofitbookkeeping.model.Bank;
+import org.nonprofitbookkeeping.model.BankImportBatch;
+import org.nonprofitbookkeeping.model.BankStatementLine;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Company;
+import org.nonprofitbookkeeping.model.CompanyBankAccount;
 import org.nonprofitbookkeeping.model.Counterparty;
 import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.model.FundType;
@@ -26,12 +30,19 @@ import org.nonprofitbookkeeping.model.FixedAssetDepreciationRun;
 import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.InventoryItem;
 import org.nonprofitbookkeeping.model.InventoryMovement;
+import org.nonprofitbookkeeping.model.ImportIssue;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
 import org.nonprofitbookkeeping.model.TxnSupplementalLine;
 import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
+import org.nonprofitbookkeeping.service.BankAccountImportCommand;
+import org.nonprofitbookkeeping.service.BankClearedStateService;
+import org.nonprofitbookkeeping.service.BankCommand;
+import org.nonprofitbookkeeping.service.BankConfigurationService;
+import org.nonprofitbookkeeping.service.BankImportReviewService;
+import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService;
 import org.nonprofitbookkeeping.service.BudgetLineCommand;
 import org.nonprofitbookkeeping.service.BudgetPlanCommand;
 import org.nonprofitbookkeeping.service.BudgetPlanService;
@@ -70,8 +81,8 @@ import java.util.function.Supplier;
  * <p>This slice imports the organization profile, active chart/accounts, funds,
  * activities, counterparties, merchants, normalized budgets, balanced canonical
  * transactions, supplemental transaction details, fixed assets, and completed
- * depreciation runs, inventory items, and movement history into an empty selected company. Banking,
- * period-close facts, and imported audit history
+ * depreciation runs, inventory, banking, and reconciliation facts into an empty selected company.
+ * Period-close facts and imported audit history
  * remain blocked until their canonical section writers are added. No production
  * UI commit action is exposed while that section coverage remains incomplete.</p>
  */
@@ -80,10 +91,13 @@ public final class SclxImportCommitService
     private static final Set<String> SUPPORTED_ENTITY_TYPES = Set.of(
             "ORGANIZATION", "ACCOUNT", "FUND", "ACTIVITY", "COUNTERPARTY", "MERCHANT",
             "BUDGET", "BUDGET_LINE", "TRANSACTION", "TRANSACTION_LINE", "SUPPLEMENTAL_DETAIL",
-            "FIXED_ASSET", "DEPRECIATION_RUN", "INVENTORY_ITEM", "INVENTORY_MOVEMENT");
+            "FIXED_ASSET", "DEPRECIATION_RUN", "INVENTORY_ITEM", "INVENTORY_MOVEMENT",
+            "BANK", "BANK_ACCOUNT", "BANK_IMPORT_BATCH", "BANK_STATEMENT_LINE",
+            "BANK_IMPORT_ISSUE", "RECONCILIATION_SESSION", "RECONCILIATION_MATCH");
     private static final Set<String> SUPPORTED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
-            "supplementalDetails", "fixedAssets", "inventory");
+            "supplementalDetails", "fixedAssets", "inventory", "bankConfiguration",
+            "bankStatementFacts", "reconciliation");
 
     private final Jpa jpa;
     private final Supplier<String> companyCodeSupplier;
@@ -95,6 +109,10 @@ public final class SclxImportCommitService
     private final BudgetPlanService budgetPlanService;
     private final FixedAssetService fixedAssetService;
     private final InventoryService inventoryService;
+    private final BankConfigurationService bankConfigurationService;
+    private final BankImportReviewService bankImportReviewService;
+    private final BankClearedStateService bankClearedStateService;
+    private final BankReconciliationWorkspaceService bankReconciliationService;
     private final TransactionEntryService transactionEntryService;
     private final IntConsumer afterBusinessWrite;
 
@@ -119,6 +137,10 @@ public final class SclxImportCommitService
         this.budgetPlanService = new BudgetPlanService(jpa, companyCodeSupplier);
         this.fixedAssetService = new FixedAssetService(jpa);
         this.inventoryService = new InventoryService(jpa);
+        this.bankConfigurationService = new BankConfigurationService(jpa);
+        this.bankImportReviewService = new BankImportReviewService(jpa);
+        this.bankClearedStateService = new BankClearedStateService(jpa);
+        this.bankReconciliationService = new BankReconciliationWorkspaceService(jpa);
         this.transactionEntryService = new TransactionEntryService(jpa, companyCodeSupplier);
     }
 
@@ -157,6 +179,7 @@ public final class SclxImportCommitService
         SclxBudgetImportData budgets = SclxBudgetImportData.parse(root.path("budgets"));
         SclxFixedAssetImportData fixedAssets = SclxFixedAssetImportData.parse(root);
         SclxInventoryImportData inventory = SclxInventoryImportData.parse(root);
+        SclxBankingImportData banking = SclxBankingImportData.parse(root);
         SclxTransactionDetailImportData details = SclxTransactionDetailImportData.parse(root);
         requireSupportedTransactionShape(root, details);
         ownership.requireNoOpenOwnershipIssues();
@@ -221,6 +244,9 @@ public final class SclxImportCommitService
                 InventoryWrite writtenInventory = writeInventory(
                         em, company, inventory, accounts, funds, transactions.transactions(), previews, writes);
                 writes += writtenInventory.businessWriteCount();
+                BankingWrite writtenBanking = writeBanking(
+                        em, company, banking, accounts, transactions, previews, writes);
+                writes += writtenBanking.businessWriteCount();
 
                 em.flush();
                 recordIdentity(em, company, current, previews, "ORGANIZATION",
@@ -236,30 +262,32 @@ public final class SclxImportCommitService
                 recordTransactionIdentities(em, company, current, previews, transactions);
                 recordFixedAssetIdentities(em, company, current, previews, writtenFixedAssets);
                 recordInventoryIdentities(em, company, current, previews, writtenInventory);
+                recordBankingIdentities(em, company, current, previews, writtenBanking);
 
                 AuditEvent operationAudit = new AuditEvent();
                 operationAudit.setCompany(company);
                 operationAudit.setActor(cleanActor(actor));
-                operationAudit.setActionType("SCLX_INVENTORY_IMPORTED");
+                operationAudit.setActionType("SCLX_BANKING_RECONCILIATION_IMPORTED");
                 operationAudit.setEntityType("Company");
                 operationAudit.setEntityId(String.valueOf(company.getId()));
-                operationAudit.setSummary("Imported governed SCLX core, budget, fixed-asset, inventory, and transaction-detail data");
+                operationAudit.setSummary("Imported governed SCLX core, banking, reconciliation, and supported extension data");
                 operationAudit.setAfterValue("source=" + current.operation().sourceName()
                         + ",version=" + current.version().externalValue()
                         + ",sha256=" + current.operation().sourceSha256()
                         + ",created=" + actualCreatedCount(current));
                 operationAudit.setReason(
-                        "Atomic SCLX core, budget, fixed-asset, inventory, and transaction-detail import; later section families were absent.");
+                        "Atomic SCLX core, banking, reconciliation, and supported extension import; later section families were absent.");
                 em.persist(operationAudit);
                 afterBusinessWrite.accept(++writes);
 
                 em.getTransaction().commit();
                 return successfulResult(current, actualCreatedCount(current),
                         current.operation().counts().identical(),
-                        "SCLX_INVENTORY_COMMIT_COMPLETED",
+                        "SCLX_BANKING_RECONCILIATION_COMMIT_COMPLETED",
                         "SCLX organization, chart/accounts, funds, normalized budgets, transaction-linked "
                                 + "masters, canonical transactions, supplemental details, fixed assets, and completed "
-                                + "depreciation runs, inventory items, and movement history committed atomically.");
+                                + "depreciation runs, inventory, bank configuration, reviewed statement facts, "
+                                + "clearance, and reconciliation committed atomically.");
             }
             catch (RuntimeException ex)
             {
@@ -301,7 +329,7 @@ public final class SclxImportCommitService
         }
         if (!unsupportedTypes.isEmpty() || preview.sectionCounts().unsupportedSectionCount() > 0L)
         {
-            throw new IllegalStateException("P15-S5-C6 import does not yet import unsupported root sections "
+            throw new IllegalStateException("P15-S5-C7 import does not yet import unsupported root sections "
                     + "or later application-extension entities: " + unsupportedTypes + ".");
         }
         JsonNode app = root.path("extensions").path("scaJakartaH2");
@@ -312,7 +340,7 @@ public final class SclxImportCommitService
                 if (!SUPPORTED_EXTENSION_KEYS.contains(entry.getKey()) && !emptyExtensionValue(entry.getValue()))
                 {
                     throw new IllegalStateException(
-                            "P15-S5-C6 cannot discard populated extension " + entry.getKey() + ".");
+                            "P15-S5-C7 cannot discard populated extension " + entry.getKey() + ".");
                 }
             });
         }
@@ -421,8 +449,24 @@ public final class SclxImportCommitService
                         "select count(i) from InventoryItem i where i.company = :company", Long.class)
                 .setParameter("company", company)
                 .getSingleResult();
+        long banks = em.createQuery("select count(b) from Bank b where b.company = :company", Long.class)
+                .setParameter("company", company)
+                .getSingleResult();
+        long bankAccounts = em.createQuery(
+                        "select count(a) from CompanyBankAccount a where a.company = :company", Long.class)
+                .setParameter("company", company)
+                .getSingleResult();
+        long importBatches = em.createQuery(
+                        "select count(b) from BankImportBatch b where b.company = :company", Long.class)
+                .setParameter("company", company)
+                .getSingleResult();
+        long reconciliationSessions = ((Number) em.createNativeQuery(
+                        "select count(*) from bank_reconciliation_session where company_id = ?")
+                .setParameter(1, company.getId())
+                .getSingleResult()).longValue();
         if (accounts + funds + transactions + budgets + budgetCategories
-                + activities + counterparties + merchants + fixedAssets + inventoryItems != 0L)
+                + activities + counterparties + merchants + fixedAssets + inventoryItems
+                + banks + bankAccounts + importBatches + reconciliationSessions != 0L)
         {
             throw new IllegalStateException("SCLX import requires an empty target company.");
         }
@@ -948,6 +992,134 @@ public final class SclxImportCommitService
         return new InventoryWrite(items, movements, items.size() + movements.size());
     }
 
+    private BankingWrite writeBanking(
+            EntityManager em,
+            Company company,
+            SclxBankingImportData source,
+            Map<String, Account> accounts,
+            TransactionWrite transactions,
+            Map<EntityKey, SclxImportEntityPreview> previews,
+            int writesBefore)
+    {
+        int writes = writesBefore;
+        Map<String, Bank> banks = new LinkedHashMap<>();
+        for (SclxBankingImportData.BankValue value : source.banks())
+        {
+            requireNew(previews, "BANK", value.externalId());
+            Bank bank = bankConfigurationService.createBankForImport(
+                    em,
+                    company,
+                    new BankCommand(
+                            company.getCode(), value.name(), value.routingNumber(), value.address(),
+                            value.website(), value.contactName(), value.contactPhone(), value.contactEmail(),
+                            value.notes(), value.active()),
+                    portableUuid(value.externalId()));
+            banks.put(value.externalId(), bank);
+            afterBusinessWrite.accept(++writes);
+        }
+        em.flush();
+
+        Map<String, CompanyBankAccount> bankAccounts = new LinkedHashMap<>();
+        for (SclxBankingImportData.BankAccountValue value : source.bankAccounts())
+        {
+            requireNew(previews, "BANK_ACCOUNT", value.externalId());
+            Bank bank = value.bankId() == null ? null : required(banks, value.bankId(), "bank");
+            Account account = value.ledgerAccountId() == null
+                    ? null : required(accounts, value.ledgerAccountId(), "bank ledger account");
+            CompanyBankAccount bankAccount = bankConfigurationService.createBankAccountForImport(
+                    em,
+                    company,
+                    bank,
+                    account,
+                    new BankAccountImportCommand(
+                            value.name(), value.nickname(), value.institutionName(), value.accountType(),
+                            value.lastFour(), value.maskedAccountNumber(), value.openingDate(),
+                            value.statementImportFormat(), value.ofxBankId(), value.ofxAccountId(),
+                            value.openingBalance(), value.active(), value.notes()),
+                    portableUuid(value.externalId()));
+            bankAccounts.put(value.externalId(), bankAccount);
+            afterBusinessWrite.accept(++writes);
+        }
+        em.flush();
+
+        source.batches().forEach(value -> requireNew(previews, "BANK_IMPORT_BATCH", value.externalId()));
+        source.statementLines().forEach(
+                value -> requireNew(previews, "BANK_STATEMENT_LINE", value.externalId()));
+        source.issues().forEach(value -> requireNew(previews, "BANK_IMPORT_ISSUE", value.externalId()));
+        BankImportReviewService.ImportedFacts importedFacts = bankImportReviewService.importForInterchange(
+                em,
+                company,
+                source.batches().stream().map(value -> new BankImportReviewService.BatchImport(
+                        value.externalId(), portableUuid(value.externalId()), value.bankAccountId(),
+                        value.sourceName(), value.sourceHash(), value.sourceFormat(), value.status(),
+                        value.importedAt(), value.completedAt(), value.totalLineCount(),
+                        value.acceptedLineCount(), value.rejectedLineCount(), value.issueCount(),
+                        value.notes())).toList(),
+                source.statementLines().stream().map(value -> new BankImportReviewService.StatementLineImport(
+                        value.externalId(), portableUuid(value.externalId()), value.importBatchId(),
+                        value.bankAccountId(), value.sourceRowNumber(), value.sourceTransactionId(),
+                        value.deterministicFingerprint(), value.statementAccountIdentifier(),
+                        value.transactionDate(), value.postedDate(), value.amount(), value.transactionType(),
+                        value.name(), value.memo(), value.checkNumber(), value.reference(), value.status(),
+                        value.dispositionNote(), value.acceptedTransactionId(),
+                        value.matchedTransactionId())).toList(),
+                source.issues().stream().map(value -> new BankImportReviewService.IssueImport(
+                        value.externalId(), portableUuid(value.externalId()), value.importBatchId(),
+                        value.statementLineId(), value.sourceRowNumber(), value.severity(), value.code(),
+                        value.message(), value.createdAt())).toList(),
+                bankAccounts,
+                transactions.transactions());
+        if (!source.batches().isEmpty() || !source.statementLines().isEmpty() || !source.issues().isEmpty())
+        {
+            afterBusinessWrite.accept(++writes);
+        }
+        em.flush();
+
+        for (SclxBankingImportData.ClearanceValue value : source.clearances())
+        {
+            TxnSplit line = required(
+                    transactions.lines(), value.transactionLineId(), "cleared transaction line");
+            BankStatementLine statementLine = value.statementLineId() == null
+                    ? null
+                    : required(importedFacts.lines(), value.statementLineId(), "cleared statement line");
+            bankClearedStateService.applyForImport(em, company, line, statementLine, value.clearedOn());
+            afterBusinessWrite.accept(++writes);
+        }
+
+        source.sessions().forEach(
+                value -> requireNew(previews, "RECONCILIATION_SESSION", value.externalId()));
+        source.matches().forEach(
+                value -> requireNew(previews, "RECONCILIATION_MATCH", value.externalId()));
+        BankReconciliationWorkspaceService.ImportedReconciliation reconciliations =
+                bankReconciliationService.importForInterchange(
+                        em,
+                        company,
+                        source.sessions().stream().map(value ->
+                                new BankReconciliationWorkspaceService.SessionImport(
+                                        value.externalId(), portableUuid(value.externalId()), value.bankAccountId(),
+                                        value.statementStartDate(), value.statementEndDate(),
+                                        value.statementEndingBalance(), value.mismatchPolicy(), value.status(),
+                                        value.notes(), value.beginningBalance(), value.bookBalanceAll(),
+                                        value.bookBalanceCleared(), value.differenceAmount(), value.createdAt(),
+                                        value.updatedAt())).toList(),
+                        source.matches().stream().map(value ->
+                                new BankReconciliationWorkspaceService.MatchImport(
+                                        value.externalId(), portableUuid(value.externalId()),
+                                        value.reconciliationSessionId(), value.statementLineId(),
+                                        value.transactionLineId(), value.matchStatus(), value.resolutionNote(),
+                                        value.createdAt(), value.updatedAt())).toList(),
+                        bankAccounts,
+                        importedFacts.lines(),
+                        transactions.lines());
+        if (!source.sessions().isEmpty() || !source.matches().isEmpty())
+        {
+            afterBusinessWrite.accept(++writes);
+        }
+        return new BankingWrite(
+                banks, bankAccounts, importedFacts.batches(), importedFacts.lines(), importedFacts.issues(),
+                reconciliations.sessions(), reconciliations.matches(), writes - writesBefore);
+    }
+
     private static UUID portableUuid(String externalId)
     {
         int colon = externalId.lastIndexOf(':');
@@ -1080,6 +1252,29 @@ public final class SclxImportCommitService
             recordIdentity(em, company, preview, previews, "INVENTORY_MOVEMENT",
                     entry.getKey(), String.valueOf(entry.getValue().getId()));
         }
+    }
+
+    private void recordBankingIdentities(
+            EntityManager em,
+            Company company,
+            SclxImportPreview preview,
+            Map<EntityKey, SclxImportEntityPreview> previews,
+            BankingWrite written)
+    {
+        written.banks().forEach((identity, value) -> recordIdentity(
+                em, company, preview, previews, "BANK", identity, String.valueOf(value.getId())));
+        written.bankAccounts().forEach((identity, value) -> recordIdentity(
+                em, company, preview, previews, "BANK_ACCOUNT", identity, String.valueOf(value.getId())));
+        written.batches().forEach((identity, value) -> recordIdentity(
+                em, company, preview, previews, "BANK_IMPORT_BATCH", identity, String.valueOf(value.getId())));
+        written.statementLines().forEach((identity, value) -> recordIdentity(
+                em, company, preview, previews, "BANK_STATEMENT_LINE", identity, String.valueOf(value.getId())));
+        written.issues().forEach((identity, value) -> recordIdentity(
+                em, company, preview, previews, "BANK_IMPORT_ISSUE", identity, String.valueOf(value.getId())));
+        written.reconciliationSessions().forEach((identity, value) -> recordIdentity(
+                em, company, preview, previews, "RECONCILIATION_SESSION", identity, String.valueOf(value)));
+        written.reconciliationMatches().forEach((identity, value) -> recordIdentity(
+                em, company, preview, previews, "RECONCILIATION_MATCH", identity, String.valueOf(value)));
     }
 
     private void recordEntityIdentities(
@@ -1408,6 +1603,28 @@ public final class SclxImportCommitService
         {
             items = Map.copyOf(items);
             movements = Map.copyOf(movements);
+        }
+    }
+
+    private record BankingWrite(
+            Map<String, Bank> banks,
+            Map<String, CompanyBankAccount> bankAccounts,
+            Map<String, BankImportBatch> batches,
+            Map<String, BankStatementLine> statementLines,
+            Map<String, ImportIssue> issues,
+            Map<String, Long> reconciliationSessions,
+            Map<String, Long> reconciliationMatches,
+            int businessWriteCount)
+    {
+        private BankingWrite
+        {
+            banks = Map.copyOf(banks);
+            bankAccounts = Map.copyOf(bankAccounts);
+            batches = Map.copyOf(batches);
+            statementLines = Map.copyOf(statementLines);
+            issues = Map.copyOf(issues);
+            reconciliationSessions = Map.copyOf(reconciliationSessions);
+            reconciliationMatches = Map.copyOf(reconciliationMatches);
         }
     }
 }
