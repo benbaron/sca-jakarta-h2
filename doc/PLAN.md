@@ -4,9 +4,9 @@ active_phase: P15
 active_slice: P15-S5-C8
 active_status: IN_PROGRESS
 active_branch: codex/P15-S5-C8-period-close-import
-active_pull_request: null
-active_head: "11e8b74106c0203f64a4e7efadf5e25d2a097174"
-next_action: "Publish and verify the P15-S5-C8 period-close import slice; keep the production SCLX commit action absent until imported audit history and correction relationships are complete."
+active_pull_request: 235
+active_head: "570ff18952bfe7a58f63277aeb53786a3344c962"
+next_action: "Run Maven PR Tests on draft PR #235; keep the production SCLX commit action absent until imported audit history and correction relationships are complete."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: IN_PROGRESS at P15-S5-C8 on branch `codex/P15-S5-C8-period-close-import`.
+Status: IN_PROGRESS at P15-S5-C8 on draft PR #235.
 
 Startup scope:
 
@@ -1110,7 +1110,7 @@ Current validation status:
 
 Next exact action:
 
-- Publish the cohesive C8 branch, open a draft PR, and run exact-head Maven PR Tests.
+- Run exact-head Maven PR Tests on draft PR #235.
 
 ### P15-S5-C1 — Non-mutating SCLX import preview
 
@@ -1290,7 +1290,7 @@ Next exact action:
 
 ### P15-S5-C8 — Period-close range and factual-event import
 
-Status: IN_PROGRESS on branch `codex/P15-S5-C8-period-close-import`.
+Status: IN_PROGRESS on draft PR #235.
 
 Scope:
 
@@ -1305,10 +1305,11 @@ Validation status:
 
 - Local Maven is unavailable; Java 17 grammar validation and GitHub Maven PR Tests are required.
 - Java 17 grammar parsing passes for the strict projection, caller-owned service seam, commit integration, populated-target reader correction, and focused H2 tests.
+- Draft PR #235 contains exactly the ten intended C8 implementation, test, and governing-document files from current merged `main`.
 
 Next exact action:
 
-- Publish the cohesive C8 branch, open a draft PR, and run exact-head Maven PR Tests.
+- Run exact-head Maven PR Tests on draft PR #235.
 
 Planned deliverables:
 
