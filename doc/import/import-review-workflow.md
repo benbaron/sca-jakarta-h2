@@ -2,7 +2,9 @@
 
 ## Scope
 
-Import staging is in memory for the current application session. It is not persisted to H2 before acceptance.
+Raw parse and mapping preview remains in memory for the current application session. Once the user
+explicitly commits a valid OFX/QFX or mapped bank CSV preview, the complete review batch, statement
+rows, and issues are persisted to H2 atomically; this durable review commit is not ledger acceptance.
 
 ## Row model
 
@@ -53,3 +55,7 @@ Saving as a copy records that the user intentionally accepted the duplicate-like
 ## Session end
 
 Closing the import review or application with unresolved staged rows prompts the user before discarding the in-memory session.
+
+Durably committed bank review rows survive restart and company switching. They remain scoped to their
+owning company and configured bank account and require a later explicit accept or match action before
+any canonical `Txn`/`TxnSplit` effect.

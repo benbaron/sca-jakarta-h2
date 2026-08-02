@@ -31,6 +31,7 @@
     <class>org.nonprofitbookkeeping.model.BudgetPlan</class>
     <class>org.nonprofitbookkeeping.model.BudgetLine</class>
     <class>org.nonprofitbookkeeping.model.BankImportBatch</class>
+    <class>org.nonprofitbookkeeping.model.BankCsvMappingProfile</class>
     <class>org.nonprofitbookkeeping.model.BankStatementLine</class>
     <class>org.nonprofitbookkeeping.model.ImportIssue</class>
     <class>org.nonprofitbookkeeping.model.FixedAsset</class>

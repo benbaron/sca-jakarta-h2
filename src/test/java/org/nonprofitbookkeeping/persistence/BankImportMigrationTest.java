@@ -46,6 +46,10 @@ public class BankImportMigrationTest
                     SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
                     WHERE LOWER(TABLE_NAME) = 'bank_statement_line' AND LOWER(COLUMN_NAME) = 'correction_action'
                     """));
+            assertEquals(1L, scalarLong(statement, """
+                    SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES
+                    WHERE LOWER(TABLE_NAME) = 'bank_csv_mapping_profile'
+                    """));
 
             assertThrows(Exception.class, () -> statement.executeUpdate("""
                     INSERT INTO bank_statement_line (batch_id, company_id, source_row_number, deterministic_fingerprint, transaction_date, amount)

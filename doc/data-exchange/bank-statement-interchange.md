@@ -285,3 +285,21 @@ back. No `Txn` or `TxnSplit` is created.
 The donor JAXB OFX field model informed supported field coverage. Its filename/manual-format selection,
 static current-company authority, direct alternate-ledger writes, and reconciliation queue are not
 ported.
+
+P15-S6-C3 adds strict mapped bank CSV to the same review authority. A durable profile is owned by one
+company and one configured bank account and contains only validated format/mapping metadata. Profiles
+are explicitly created, replaced, listed, activated, or deactivated through
+`BankCsvMappingProfileService`; they are not Java Preferences, sidecar files, credentials, or financial
+rows. Mapping profiles are operational import preferences and are intentionally excluded from SCLX;
+whole-database transfer remains their portable backup authority.
+
+`BankCsvParser` accepts only a validated profile and enforces the 64 MiB file, 1,000,000-record,
+128-column, 4 MiB logical-record, and 1 MiB field limits. It rejects invalid encoding, UTF-16/32,
+NUL bytes, malformed quoting, duplicate normalized headers, missing mapped columns, mixed accounts or
+currencies, ambiguous debit/credit rows, invalid dates, and non-`DECIMAL(19,4)` amounts before H2
+mutation. The preview retains each original logical row beside its normalized projection.
+
+`BankCsvReviewService` binds approval to the exact source hash, company, configured account, durable
+profile portable identity, and canonical profile hash. It re-reads the active profile and reparses the
+source before using the C2 atomic batch/line/issue/audit transaction. An unchanged source/profile/target
+is the same idempotent no-op as OFX/QFX, and CSV import never creates `Txn` or `TxnSplit` rows.
