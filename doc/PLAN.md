@@ -4,9 +4,9 @@ active_phase: P15
 active_slice: P15-S6-C2
 active_status: IN_PROGRESS
 active_branch: codex/P15-S6-C2-durable-ofx-qfx-review
-active_pull_request: null
-active_head: null
-next_action: "Publish P15-S6-C2, run Maven PR Tests, correct concrete diagnostics, and merge before starting mapped CSV profiles."
+active_pull_request: 239
+active_head: "15ac5632d820505eb52763728d40bf6ed040a924"
+next_action: "Run PR #239 through Maven PR Tests, correct concrete diagnostics, and merge before starting mapped CSV profiles."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1450,7 +1450,7 @@ Next exact action:
 
 ### P15-S6-C2 — Configured-account matching and durable OFX/QFX review
 
-Status: IN_PROGRESS on `codex/P15-S6-C2-durable-ofx-qfx-review`.
+Status: VERIFYING on draft PR #239.
 
 Scope:
 
@@ -1464,10 +1464,11 @@ Validation status:
 
 - All changed Java sources pass the Java 17 grammar parser locally; Maven is unavailable in this container.
 - Focused H2 tests cover exact configured-account commit, complete metadata preservation, suffix confirmation, blocking mismatch, identical no-op, no ledger writes, operation audit, migration columns, and late rollback.
+- Draft PR #239 contains exactly the nineteen intended implementation, migration, test, SCLX portability, and governing-document files from merged `main`.
 
 Next exact action:
 
-- Publish the cohesive branch, open a draft PR, and run the authoritative Maven/H2, repeated-suite, and JavaFX production-route gates.
+- Run PR #239 through the authoritative Maven/H2, repeated-suite, and JavaFX production-route gates; correct only concrete diagnostics.
 
 ## P15-S7 — OFX 2.x/QFX and normalized bank CSV export
 
