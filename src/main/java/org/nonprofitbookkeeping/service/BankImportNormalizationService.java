@@ -43,8 +43,8 @@ public class BankImportNormalizationService
                 issues.add(ImportRowIssue.error(rowNumber, "INVALID_AMOUNT", "Bank statement amount is required and cannot be zero."));
             }
 
-            String externalId = normalizeText(record == null ? null : record.fitId());
-            String externalComparisonId = normalizeExternalId(externalId);
+            String externalId = normalizeExternalId(record == null ? null : record.fitId());
+            String externalComparisonId = externalId;
             String fingerprint = fingerprint(postedDate, amount, record == null ? "" : record.transactionType(), record == null ? "" : record.name(), record == null ? "" : record.memo());
             boolean exactDuplicate = false;
             if (!externalId.isBlank())
@@ -111,8 +111,8 @@ public class BankImportNormalizationService
         for (BankStatementDocument.Transaction record : document.transactions())
         {
             List<ImportRowIssue> issues = new ArrayList<>();
-            String externalId = normalizeText(record.sourceTransactionId());
-            String externalComparisonId = normalizeExternalId(externalId);
+            String externalId = normalizeExternalId(record.sourceTransactionId());
+            String externalComparisonId = externalId;
             LocalDate comparisonDate = record.postedDate() == null
                     ? record.transactionDate() : record.postedDate();
             String fingerprint = fingerprint(
@@ -167,7 +167,7 @@ public class BankImportNormalizationService
                     normalizeText(record.reference()),
                     normalizeText(document.currency()).toUpperCase(Locale.ROOT),
                     normalizeText(record.correctionAction()).toUpperCase(Locale.ROOT),
-                    normalizeText(record.correctedSourceTransactionId()),
+                    normalizeExternalId(record.correctedSourceTransactionId()),
                     exactDuplicate,
                     probableDuplicate,
                     List.copyOf(issues)));
@@ -234,7 +234,12 @@ public class BankImportNormalizationService
     {
         public DuplicateContext
         {
-            existingExternalIds = existingExternalIds == null ? Set.of() : Set.copyOf(existingExternalIds);
+            existingExternalIds = existingExternalIds == null
+                    ? Set.of()
+                    : existingExternalIds.stream()
+                            .map(BankImportNormalizationService::normalizeExternalId)
+                            .filter(value -> !value.isBlank())
+                            .collect(java.util.stream.Collectors.toUnmodifiableSet());
             existingFingerprints = existingFingerprints == null ? Set.of() : Set.copyOf(existingFingerprints);
             probableDuplicates = probableDuplicates == null ? List.of() : List.copyOf(probableDuplicates);
         }
