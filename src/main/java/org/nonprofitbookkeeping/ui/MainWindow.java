@@ -23,13 +23,11 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.AppPreferencesState;
-import org.nonprofitbookkeeping.model.BankingDataFormat;
 import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
 import org.nonprofitbookkeeping.model.ViewPresetState;
-import org.nonprofitbookkeeping.service.BankTransactionRecord;
 import org.nonprofitbookkeeping.service.CoaCsvMapper;
 import org.nonprofitbookkeeping.service.ImportExportOrchestrationService;
 import org.nonprofitbookkeeping.service.JournalLine;
@@ -69,7 +67,6 @@ public class MainWindow extends BorderPane
     private Label activeDatabaseLabel;
     private Label authStatusLabel;
     private List<CoaCsvMapper.CoaCsvRow> lastImportedCoaRows = List.of();
-    private List<BankTransactionRecord> lastImportedBankTransactions = List.of();
     private final Map<String, ViewPreset> viewPresets = new LinkedHashMap<>();
     private final Map<MenuItem, UserPrivilegeLevel> gatedMenuItems = new LinkedHashMap<>();
     private final Map<ButtonBase, UserPrivilegeLevel> gatedButtons = new LinkedHashMap<>();
@@ -569,20 +566,8 @@ public class MainWindow extends BorderPane
 
     private void importBankEnvelopeFromFile()
     {
-        chooseFile("Import Bank OFX/QFX", "Bank Statement Files", "*.ofx", "*.qfx")
-                .ifPresent(path -> {
-                    try
-                    {
-                        ImportExportOrchestrationService.BankImportResult result = importExportService.importBankDataFile(path);
-                        lastImportedBankTransactions = List.copyOf(result.transactions());
-                        UiWorkspaceDataStore.replaceBankTransactions(lastImportedBankTransactions);
-                        info("Imported " + result.format() + " transactions: " + result.transactionCount() + " from " + path.getFileName());
-                    }
-                    catch (RuntimeException ex)
-                    {
-                        info("Import failed for bank file " + path.getFileName() + ": " + UiErrors.safeMessage(ex));
-                    }
-                });
+        openPanel(AppPanelId.IMPORT_PREVIEW);
+        info("Use Import Preview to select a configured bank account, preview OFX/QFX or mapped CSV, and commit durable review facts.");
     }
 
     private Optional<Path> chooseFile(String title, String extensionDescription, String... extensions)
@@ -623,11 +608,8 @@ public class MainWindow extends BorderPane
         }
         if (file.endsWith(".ofx") || file.endsWith(".qfx"))
         {
-            BankingDataFormat format = file.endsWith(".qfx")
-                    ? BankingDataFormat.QFX
-                    : BankingDataFormat.OFX;
-            importExportService.exportBankDataFile(format, lastImportedBankTransactions, path);
-            info("Exported " + format + " bank statement transactions: " + lastImportedBankTransactions.size() + " to " + path.getFileName());
+            openPanel(AppPanelId.BANK_TRANSACTIONS);
+            info("Select durable bank review rows in Bank Transactions and use Export Selected. The File menu no longer exports session staging.");
             return;
         }
 
