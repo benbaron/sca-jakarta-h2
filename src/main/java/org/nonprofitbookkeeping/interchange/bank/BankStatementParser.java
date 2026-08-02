@@ -99,19 +99,19 @@ public class BankStatementParser
         {
             throw failure("SOURCE_TOO_LARGE", "source", "Bank statement exceeds the 64 MiB limit");
         }
-        for (byte value : source)
-        {
-            if (value == 0)
-            {
-                throw failure("ENCODING_NUL", "source", "Bank statement contains a NUL byte");
-            }
-        }
         if (startsWith(source, new byte[] {(byte) 0xff, (byte) 0xfe})
                 || startsWith(source, new byte[] {(byte) 0xfe, (byte) 0xff})
                 || startsWith(source, new byte[] {0, 0, (byte) 0xfe, (byte) 0xff})
                 || startsWith(source, new byte[] {(byte) 0xff, (byte) 0xfe, 0, 0}))
         {
             throw failure("ENCODING_UNSUPPORTED", "source", "UTF-16 and UTF-32 bank statements are not supported");
+        }
+        for (byte value : source)
+        {
+            if (value == 0)
+            {
+                throw failure("ENCODING_NUL", "source", "Bank statement contains a NUL byte");
+            }
         }
 
         String asciiPrefix = new String(source, 0, Math.min(source.length, 16 * 1024), StandardCharsets.US_ASCII);
