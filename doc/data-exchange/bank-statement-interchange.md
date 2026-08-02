@@ -266,6 +266,22 @@ the legacy File-menu staging action as a durable import. Later P15-S6 slices own
 matching and override confirmation, mapped CSV profiles, the one-transaction durable review write,
 and removal of `UiWorkspaceDataStore.bankTransactions` after its last production consumer is replaced.
 
+P15-S6-C2 adds the first complete OFX/QFX durable-review boundary. `BankStatementReviewService`
+captures the absolute source, SHA-256, active company, selected configured account, parsed document,
+account-match result, normalized rows, and messages in one exact-scope preview. Commit rehashes and
+reparses the file, re-resolves the company/account, and re-applies the identity policy before starting
+the database write. A full OFX account-ID mismatch, bank-ID mismatch, inactive configuration,
+cross-company account, missing posting account, or currency mismatch is blocking. A suffix-only
+configured account is nonblocking only after explicit identity confirmation.
+
+The C2 transaction preserves envelope variant/version/encoding, source institution/bank/account/type,
+currency, statement dates and balances, row dates, amounts, unmodified trimmed source identifiers,
+check/reference, and correction facts. Duplicate comparison is normalized and scoped to the active
+company and selected configured account. An identical source hash, format, and target returns the
+existing durable batch without adding rows or another operation audit. New review facts, issues, and
+the `BANK_STATEMENT_REVIEW_IMPORTED` audit event commit together; any late failure rolls all of them
+back. No `Txn` or `TxnSplit` is created.
+
 The donor JAXB OFX field model informed supported field coverage. Its filename/manual-format selection,
 static current-company authority, direct alternate-ledger writes, and reconciliation queue are not
 ported.
