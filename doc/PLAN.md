@@ -1,12 +1,12 @@
 ---
-plan_version: 112
+plan_version: 113
 active_phase: P15
-active_slice: P15-S6-C1
-active_status: VERIFYING
-active_branch: codex/P15-S6-C1-strict-ofx-qfx-preview
-active_pull_request: 238
-active_head: "9ed4787759896bf2491d26c5c2d0c37a96f4d54d"
-next_action: "Run the final governance-inclusive PR #238 head through Maven PR Tests, complete the owner desktop checklist, and merge before starting P15-S6-C2."
+active_slice: P15-S6-C2
+active_status: IN_PROGRESS
+active_branch: codex/P15-S6-C2-durable-ofx-qfx-review
+active_pull_request: null
+active_head: null
+next_action: "Publish P15-S6-C2, run Maven PR Tests, correct concrete diagnostics, and merge before starting mapped CSV profiles."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Run the final governance-inclusive PR #238 head through Maven PR T
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S6-C1 implementation validation on corrected head `9ed4787759896bf2491d26c5c2d0c37a96f4d54d` in Maven PR Tests run `30767054385`, including the one-test encoding-diagnostic correction, and leaves the slice VERIFYING for exact-head CI, owner desktop acceptance, and merge.
+This revision records P15-S6-C1 as DONE through merged PR #238 and owner desktop acceptance, then starts P15-S6-C2 for configured-account matching and complete atomic OFX/QFX durable review.
 
 ## 2. Status values
 
@@ -1396,7 +1396,7 @@ Acceptance:
 
 ## P15-S6 — OFX 2.x/QFX and bank CSV import to durable review
 
-Status: IN_PROGRESS at P15-S6-C1.
+Status: IN_PROGRESS at P15-S6-C2.
 
 Purpose: replace temporary/session bank-transaction staging with a complete, company-scoped, configured-bank-account import and review path.
 
@@ -1423,7 +1423,7 @@ Acceptance:
 
 ### P15-S6-C1 — Strict OFX/QFX parser and non-mutating preview
 
-Status: VERIFYING on draft PR #238.
+Status: DONE through merged PR #238 and owner desktop acceptance.
 
 Scope:
 
@@ -1442,10 +1442,32 @@ Validation status:
 - Draft PR #238 contains exactly the twelve intended implementation, test, governing-document, and owner-checklist files from merged `main`.
 - Initial Maven PR Tests run `30766866466` compiled production and passed 505 of 506 executed tests; the sole failure was the new UTF-16 rejection assertion because the generic NUL diagnostic ran before the more specific BOM diagnostic.
 - Corrected head `9ed4787759896bf2491d26c5c2d0c37a96f4d54d` checks the UTF-16/UTF-32 BOM before the generic NUL scan and passed `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance in run `30767054385`.
+- Final governance-inclusive head `fbd360dae4e855b72bd1617b3e269d7a088e64ee` passed all three gates in run `30767225469`; the owner confirmed the desktop checklist on 2026-08-02, and PR #238 merged at `e64016eafa565b876199b35685e0df9eaace2dff`.
 
 Next exact action:
 
-- Run the final governance-inclusive PR #238 head through `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance; then complete the owner desktop checklist and merge before starting P15-S6-C2.
+- None; P15-S6-C1 is DONE.
+
+### P15-S6-C2 — Configured-account matching and durable OFX/QFX review
+
+Status: IN_PROGRESS on `codex/P15-S6-C2-durable-ofx-qfx-review`.
+
+Scope:
+
+- Add nondestructive durable fields for statement envelope/account/balance metadata, account-match facts, row currency, and correction facts, and preserve them through SCLX.
+- Bind preview and commit to the exact source hash, active company, and selected active configured bank account; re-read and revalidate every scope value before mutation.
+- Block cross-company, inactive, missing-posting-account, bank/account/type, and currency conflicts; require explicit confirmation for a suffix-only account match.
+- Persist one atomic review batch, all normalized statement rows, durable issues, and one operation audit without creating `Txn` or `TxnSplit` rows.
+- Scope stable-ID/fingerprint duplicate detection to company and configured account, retain row conflicts for review, make identical file/format/target reimport a no-op, and prove late rollback.
+
+Validation status:
+
+- All changed Java sources pass the Java 17 grammar parser locally; Maven is unavailable in this container.
+- Focused H2 tests cover exact configured-account commit, complete metadata preservation, suffix confirmation, blocking mismatch, identical no-op, no ledger writes, operation audit, migration columns, and late rollback.
+
+Next exact action:
+
+- Publish the cohesive branch, open a draft PR, and run the authoritative Maven/H2, repeated-suite, and JavaFX production-route gates.
 
 ## P15-S7 — OFX 2.x/QFX and normalized bank CSV export
 
