@@ -7,6 +7,8 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Alert;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Separator;
@@ -31,6 +33,15 @@ import org.nonprofitbookkeeping.interchange.sclx.SclxImportPreview;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportPreviewService;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportResult;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportTransactionPreview;
+import org.nonprofitbookkeeping.interchange.bank.BankCsvMappingProfileService;
+import org.nonprofitbookkeeping.interchange.bank.BankCsvReviewPreview;
+import org.nonprofitbookkeeping.interchange.bank.BankCsvReviewService;
+import org.nonprofitbookkeeping.interchange.bank.BankStatementReviewPreview;
+import org.nonprofitbookkeeping.interchange.bank.BankStatementReviewResult;
+import org.nonprofitbookkeeping.interchange.bank.BankStatementReviewService;
+import org.nonprofitbookkeeping.model.CompanyBankAccount;
+import org.nonprofitbookkeeping.service.BankConfigurationService;
+import org.nonprofitbookkeeping.service.BankImportNormalizationService;
 import org.nonprofitbookkeeping.service.CoaCsvMapper;
 import org.nonprofitbookkeeping.service.ImportPreviewService;
 
@@ -51,6 +62,11 @@ public class ImportPreviewPanel implements AppPanel
     private final ImportPreviewService previewService;
     private final SclxPreviewOperationFactory sclxPreviewFactory;
     private final Function<String, SclxImportCommitService> sclxCommitFactory;
+    private final Supplier<String> activeCompanyCode;
+    private final Supplier<BankConfigurationService> bankConfigurationService;
+    private final Supplier<BankStatementReviewService> bankStatementReviewService;
+    private final Supplier<BankCsvReviewService> bankCsvReviewService;
+    private final Supplier<BankCsvMappingProfileService> bankCsvProfileService;
     private final Label status = new Label("Choose an SCLX, COA CSV, or OFX/QFX file to preview before import.");
     private final ListView<String> warnings = new ListView<>();
     private final TableView<CoaCsvMapper.CoaCsvRow> acceptedCoaRows = new TableView<>();
@@ -63,17 +79,35 @@ public class ImportPreviewPanel implements AppPanel
     private final Button commitAccepted = new Button("Commit Accepted COA Rows");
     private final Button previewSclx = new Button("Preview SCLX…");
     private final Button commitSclx = new Button("Import Previewed SCLX…");
+    private final Button previewBank = new Button("Preview Bank OFX/QFX…");
+    private final Button previewBankCsv = new Button("Preview Mapped Bank CSV…");
+    private final Button saveBankCsvProfile = new Button("Save CSV Profile…");
+    private final Button commitBankReview = new Button("Commit Previewed Bank Review…");
+    private final ComboBox<CompanyBankAccount> bankAccount = new ComboBox<>();
+    private final ComboBox<BankCsvMappingProfileService.ProfileSummary> bankCsvProfile = new ComboBox<>();
+    private final CheckBox confirmBankIdentity = new CheckBox("Confirm suffix-only account identity");
+    private final TableView<BankImportNormalizationService.NormalizedBankStatementLine> bankRows = new TableView<>();
+    private final TableView<org.nonprofitbookkeeping.interchange.bank.BankCsvParser.OriginalRow> bankCsvOriginalRows = new TableView<>();
     private final TextField sclxActor = new TextField("ui-operator");
     private ImportPreviewService.CoaPreviewResult lastCoaPreview;
     private Path lastSclxSource;
     private SclxImportPreview lastSclxPreview;
     private SclxImportCommitService lastSclxCommitService;
+    private BankStatementReviewPreview lastBankReview;
+    private BankCsvReviewPreview lastBankCsvReview;
+    private BankStatementReviewService lastBankCommitService;
+    private BankCsvReviewService lastBankCsvCommitService;
 
     public ImportPreviewPanel()
     {
         this(new ImportPreviewService(),
                 (Supplier<SclxImportPreviewService>) UiServiceRegistry::sclxImportPreview,
-                UiServiceRegistry::sclxImportCommit);
+                UiServiceRegistry::sclxImportCommit,
+                () -> MainWindow.sharedSessionState().multiCompany().activeCompanyCode(),
+                UiServiceRegistry::bankConfiguration,
+                UiServiceRegistry::bankStatementReview,
+                UiServiceRegistry::bankCsvReview,
+                UiServiceRegistry::bankCsvMappingProfiles);
     }
 
     ImportPreviewPanel(
@@ -85,7 +119,12 @@ public class ImportPreviewPanel implements AppPanel
                 companyCode ->
                 {
                     throw new IllegalStateException("SCLX commit service was not provided.");
-                });
+                },
+                () -> "DEFAULT",
+                UiServiceRegistry::bankConfiguration,
+                UiServiceRegistry::bankStatementReview,
+                UiServiceRegistry::bankCsvReview,
+                UiServiceRegistry::bankCsvMappingProfiles);
     }
 
     ImportPreviewPanel(
@@ -96,17 +135,48 @@ public class ImportPreviewPanel implements AppPanel
         this(previewService,
                 () -> Objects.requireNonNull(
                         sclxPreviewService.get(), "sclxPreviewService result")::preview,
-                sclxCommitFactory);
+                sclxCommitFactory,
+                () -> MainWindow.sharedSessionState().multiCompany().activeCompanyCode(),
+                UiServiceRegistry::bankConfiguration,
+                UiServiceRegistry::bankStatementReview,
+                UiServiceRegistry::bankCsvReview,
+                UiServiceRegistry::bankCsvMappingProfiles);
+    }
+
+    ImportPreviewPanel(
+            ImportPreviewService previewService,
+            Supplier<SclxImportPreviewService> sclxPreviewService,
+            Function<String, SclxImportCommitService> sclxCommitFactory,
+            Supplier<String> activeCompanyCode,
+            Supplier<BankConfigurationService> bankConfigurationService,
+            Supplier<BankStatementReviewService> bankStatementReviewService,
+            Supplier<BankCsvReviewService> bankCsvReviewService,
+            Supplier<BankCsvMappingProfileService> bankCsvProfileService)
+    {
+        this(previewService,
+                () -> Objects.requireNonNull(sclxPreviewService.get(), "sclxPreviewService result")::preview,
+                sclxCommitFactory, activeCompanyCode, bankConfigurationService,
+                bankStatementReviewService, bankCsvReviewService, bankCsvProfileService);
     }
 
     private ImportPreviewPanel(
             ImportPreviewService previewService,
             SclxPreviewOperationFactory sclxPreviewFactory,
-            Function<String, SclxImportCommitService> sclxCommitFactory)
+            Function<String, SclxImportCommitService> sclxCommitFactory,
+            Supplier<String> activeCompanyCode,
+            Supplier<BankConfigurationService> bankConfigurationService,
+            Supplier<BankStatementReviewService> bankStatementReviewService,
+            Supplier<BankCsvReviewService> bankCsvReviewService,
+            Supplier<BankCsvMappingProfileService> bankCsvProfileService)
     {
         this.previewService = Objects.requireNonNull(previewService, "previewService");
         this.sclxPreviewFactory = Objects.requireNonNull(sclxPreviewFactory, "sclxPreviewFactory");
         this.sclxCommitFactory = Objects.requireNonNull(sclxCommitFactory, "sclxCommitFactory");
+        this.activeCompanyCode = Objects.requireNonNull(activeCompanyCode, "activeCompanyCode");
+        this.bankConfigurationService = Objects.requireNonNull(bankConfigurationService, "bankConfigurationService");
+        this.bankStatementReviewService = Objects.requireNonNull(bankStatementReviewService, "bankStatementReviewService");
+        this.bankCsvReviewService = Objects.requireNonNull(bankCsvReviewService, "bankCsvReviewService");
+        this.bankCsvProfileService = Objects.requireNonNull(bankCsvProfileService, "bankCsvProfileService");
         root.setPadding(new Insets(8));
 
         Label title = new Label("Import Preview");
@@ -120,12 +190,22 @@ public class ImportPreviewPanel implements AppPanel
         sclxActor.setId("sclxImportActor");
         sclxActor.setPromptText("Audit actor");
         sclxActor.textProperty().addListener((observable, oldValue, newValue) -> updateSclxCommitAvailability());
+        sclxActor.textProperty().addListener((observable, oldValue, newValue) -> updateBankCommitAvailability());
 
         Button previewCoa = new Button("Preview COA CSV…");
         previewCoa.setOnAction(e -> chooseAndPreviewCoa());
 
-        Button previewBank = new Button("Preview Bank OFX/QFX…");
         previewBank.setOnAction(e -> chooseAndPreviewBank());
+        previewBank.setId("previewBankStatementButton");
+        previewBankCsv.setOnAction(e -> chooseAndPreviewBankCsv());
+        previewBankCsv.setId("previewBankCsvButton");
+        saveBankCsvProfile.setOnAction(e -> chooseAndSaveBankCsvProfile());
+        saveBankCsvProfile.setId("saveBankCsvProfileButton");
+        commitBankReview.setOnAction(e -> confirmAndCommitBankReview());
+        commitBankReview.setId("commitPreviewedBankReviewButton");
+        commitBankReview.setDisable(true);
+        confirmBankIdentity.selectedProperty().addListener((observable, oldValue, newValue) -> updateBankCommitAvailability());
+        configureBankSelectors();
         commitAccepted.setOnAction(e -> commitAcceptedCoaRows());
         commitAccepted.setId("commitAcceptedCoaRowsButton");
         commitAccepted.setDisable(true);
@@ -134,7 +214,10 @@ public class ImportPreviewPanel implements AppPanel
         status.setWrapText(true);
         root.setTop(new VBox(6, title,
                 new HBox(8, previewSclx, previewCoa, previewBank, commitAccepted),
-                new HBox(8, new Label("Import actor"), sclxActor, commitSclx),
+                new HBox(8, new Label("Configured bank account"), bankAccount,
+                        new Label("CSV profile"), bankCsvProfile, saveBankCsvProfile, previewBankCsv),
+                new HBox(8, new Label("Import actor"), sclxActor, commitSclx,
+                        confirmBankIdentity, commitBankReview),
                 status, new Separator()));
 
         buildAcceptedTable();
@@ -142,6 +225,7 @@ public class ImportPreviewPanel implements AppPanel
         buildSclxEntityTable();
         buildSclxMappingTable();
         buildSclxTransactionTable();
+        buildBankTables();
 
         warnings.setId("importPreviewMessages");
         warnings.setPlaceholder(new Label("No validation warnings."));
@@ -162,7 +246,9 @@ public class ImportPreviewPanel implements AppPanel
                 tab("SCLX Counts", sclxCounts),
                 tab("SCLX Entities", tableRegion("Identity Dispositions", sclxEntities)),
                 tab("SCLX Mappings", tableRegion("Account and Fund Mappings", sclxMappings)),
-                tab("SCLX Transactions", tableRegion("Transaction Diagnostics", sclxTransactions)));
+                tab("SCLX Transactions", tableRegion("Transaction Diagnostics", sclxTransactions)),
+                tab("Bank Review Rows", tableRegion("Normalized Durable Review Preview", bankRows)),
+                tab("CSV Original Rows", tableRegion("Original CSV Logical Rows", bankCsvOriginalRows)));
 
         VBox warningRegion = new VBox(6, new Label("Preview Warnings"), warnings);
         VBox.setVgrow(warnings, Priority.ALWAYS);
@@ -267,6 +353,105 @@ public class ImportPreviewPanel implements AppPanel
                 stringColumn("Balanced", value -> value.balanced() ? "Yes" : "No"),
                 stringColumn("Required Action", ImportPreviewPanel::transactionAction));
         sclxTransactions.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+    }
+
+    private void buildBankTables()
+    {
+        bankRows.setId("bankReviewPreviewRows");
+        bankRows.getColumns().addAll(
+                stringColumn("Source Row", value -> String.valueOf(value.sourceRowNumber())),
+                stringColumn("Source ID", BankImportNormalizationService.NormalizedBankStatementLine::sourceTransactionId),
+                stringColumn("Transaction Date", value -> Objects.toString(value.transactionDate(), "")),
+                stringColumn("Posted Date", value -> Objects.toString(value.postedDate(), "")),
+                stringColumn("Amount", value -> Objects.toString(value.amount(), "")),
+                stringColumn("Currency", BankImportNormalizationService.NormalizedBankStatementLine::currency),
+                stringColumn("Type", BankImportNormalizationService.NormalizedBankStatementLine::transactionType),
+                stringColumn("Payee", BankImportNormalizationService.NormalizedBankStatementLine::name),
+                stringColumn("Memo", BankImportNormalizationService.NormalizedBankStatementLine::memo),
+                stringColumn("Duplicate", value -> value.exactDuplicate() ? "Exact"
+                        : value.probableDuplicate() ? "Probable" : "No"));
+        bankRows.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        bankRows.setPlaceholder(new Label("Preview an OFX/QFX or mapped CSV statement."));
+
+        bankCsvOriginalRows.setId("bankCsvOriginalPreviewRows");
+        bankCsvOriginalRows.getColumns().addAll(
+                stringColumn("Source Row", value -> String.valueOf(value.sourceRowNumber())),
+                stringColumn("Original Logical Row", org.nonprofitbookkeeping.interchange.bank.BankCsvParser.OriginalRow::originalText),
+                stringColumn("Mapped Values", value -> value.mappedValues().toString()));
+        bankCsvOriginalRows.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        bankCsvOriginalRows.setPlaceholder(new Label("Mapped CSV preview preserves original logical rows here."));
+    }
+
+    private void configureBankSelectors()
+    {
+        bankAccount.setId("bankReviewConfiguredAccount");
+        bankAccount.setPromptText("Select configured account");
+        bankAccount.setConverter(new javafx.util.StringConverter<>()
+        {
+            @Override public String toString(CompanyBankAccount value)
+            {
+                return value == null ? "" : value.getName();
+            }
+            @Override public CompanyBankAccount fromString(String value) { return null; }
+        });
+        bankAccount.setOnShowing(event -> reloadBankTargets());
+        bankAccount.valueProperty().addListener((observable, oldValue, newValue) ->
+        {
+            clearBankPreview();
+            reloadBankCsvProfiles();
+        });
+
+        bankCsvProfile.setId("bankCsvMappingProfile");
+        bankCsvProfile.setPromptText("Select saved profile");
+        bankCsvProfile.setConverter(new javafx.util.StringConverter<>()
+        {
+            @Override public String toString(BankCsvMappingProfileService.ProfileSummary value)
+            {
+                return value == null ? "" : value.profileName() + " v" + value.profileVersion();
+            }
+            @Override public BankCsvMappingProfileService.ProfileSummary fromString(String value) { return null; }
+        });
+        bankCsvProfile.setOnShowing(event -> reloadBankCsvProfiles());
+    }
+
+    private void reloadBankTargets()
+    {
+        Long selectedId = bankAccount.getValue() == null ? null : bankAccount.getValue().getId();
+        try
+        {
+            var rows = bankConfigurationService.get().listBankAccounts(activeCompanyCode.get()).stream()
+                    .filter(CompanyBankAccount::isActive)
+                    .toList();
+            bankAccount.getItems().setAll(rows);
+            if (selectedId != null)
+            {
+                rows.stream().filter(value -> selectedId.equals(value.getId())).findFirst()
+                        .ifPresent(bankAccount::setValue);
+            }
+            if (bankAccount.getValue() == null && rows.size() == 1) bankAccount.setValue(rows.get(0));
+        }
+        catch (RuntimeException ex)
+        {
+            status.setText("Could not load configured bank accounts: " + UiErrors.safeMessage(ex));
+        }
+    }
+
+    private void reloadBankCsvProfiles()
+    {
+        CompanyBankAccount account = bankAccount.getValue();
+        bankCsvProfile.getItems().clear();
+        bankCsvProfile.setValue(null);
+        if (account == null) return;
+        try
+        {
+            bankCsvProfile.getItems().setAll(bankCsvProfileService.get().list(activeCompanyCode.get()).stream()
+                    .filter(value -> value.active() && value.bankAccountId() == account.getId())
+                    .toList());
+        }
+        catch (RuntimeException ex)
+        {
+            status.setText("Could not load bank CSV profiles: " + UiErrors.safeMessage(ex));
+        }
     }
 
     private static <T> TableColumn<T, String> stringColumn(String title, Function<T, String> value)
@@ -381,14 +566,75 @@ public class ImportPreviewPanel implements AppPanel
 
     private void chooseAndPreviewBank()
     {
+        reloadBankTargets();
+        if (bankAccount.getValue() == null)
+        {
+            status.setText("Select an active configured bank account before previewing OFX/QFX.");
+            return;
+        }
         chooseOpenFile("Preview Bank OFX/QFX", new FileChooser.ExtensionFilter("Bank Statement Files", "*.ofx", "*.qfx"))
                 .ifPresent(this::previewBank);
     }
 
+    private void chooseAndPreviewBankCsv()
+    {
+        reloadBankTargets();
+        CompanyBankAccount account = bankAccount.getValue();
+        BankCsvMappingProfileService.ProfileSummary profile = bankCsvProfile.getValue();
+        if (account == null || profile == null)
+        {
+            status.setText("Select an active configured bank account and saved CSV profile before previewing CSV.");
+            return;
+        }
+        chooseOpenFile("Preview Mapped Bank CSV", new FileChooser.ExtensionFilter("Bank CSV Files", "*.csv"))
+                .ifPresent(this::previewBankCsv);
+    }
+
+    private void chooseAndSaveBankCsvProfile()
+    {
+        reloadBankTargets();
+        CompanyBankAccount account = bankAccount.getValue();
+        if (account == null)
+        {
+            status.setText("Select an active configured bank account before saving a CSV profile.");
+            return;
+        }
+        chooseOpenFile("Save Bank CSV Mapping Profile",
+                new FileChooser.ExtensionFilter("Bank CSV Mapping Profile", "*.json"))
+                .ifPresent(path -> saveBankCsvProfile(path, account));
+    }
+
+    private void saveBankCsvProfile(Path profileFile, CompanyBankAccount account)
+    {
+        String company = activeCompanyCode.get();
+        saveBankCsvProfile.setDisable(true);
+        status.setText("Validating and saving the selected bank CSV mapping profile...");
+        UiAsync.run("import-preview-save-bank-csv-profile",
+                () -> bankCsvProfileService.get().create(
+                        company, account.getId(), readProfile(profileFile)),
+                result ->
+                {
+                    saveBankCsvProfile.setDisable(false);
+                    reloadBankCsvProfiles();
+                    bankCsvProfile.getItems().stream()
+                            .filter(value -> value.id() == result.id())
+                            .findFirst().ifPresent(bankCsvProfile::setValue);
+                    status.setText("Saved CSV profile " + result.profileName() + " v"
+                            + result.profileVersion() + " for " + account.getName() + ".");
+                },
+                ex ->
+                {
+                    saveBankCsvProfile.setDisable(false);
+                    status.setText("Could not save bank CSV profile: " + UiErrors.safeMessage(ex));
+                });
+    }
+
     private void previewCoa(Path file)
     {
+        clearBankPreview();
         UiAsync.run("import-preview-coa", () -> previewService.previewCoaCsv(file), result -> {
             clearSclxPreview();
+            clearBankPreview();
             lastCoaPreview = result;
             acceptedCoaRows.getItems().setAll(result.acceptedRows());
             rejectedCoaRows.getItems().setAll(result.rejectedRows());
@@ -399,6 +645,7 @@ public class ImportPreviewPanel implements AppPanel
                     + " COA row(s) from " + result.sourceName()
                     + ": accepted " + result.acceptedCount() + ", rejected " + result.rejectedCount() + ".");
         }, ex -> {
+            clearBankPreview();
             warnings.getItems().clear();
             acceptedCoaRows.getItems().clear();
             rejectedCoaRows.getItems().clear();
@@ -409,6 +656,7 @@ public class ImportPreviewPanel implements AppPanel
 
     private void previewSclx(Path file)
     {
+        clearBankPreview();
         Function<Path, SclxImportPreview> fixedScopePreview;
         try
         {
@@ -447,6 +695,7 @@ public class ImportPreviewPanel implements AppPanel
     {
         Objects.requireNonNull(result, "result");
         clearCoaPreview();
+        clearBankPreview();
         lastSclxSource = source == null ? null : source.toAbsolutePath().normalize();
         lastSclxPreview = result;
         lastSclxCommitService = null;
@@ -612,23 +861,176 @@ public class ImportPreviewPanel implements AppPanel
 
     private void previewBank(Path file)
     {
-        UiAsync.run("import-preview-bank", () -> previewService.previewBankStatement(file), result -> {
-            clearCoaPreview();
-            clearSclxPreview();
-            warnings.getItems().setAll(result.messages().stream()
-                    .map(ImportPreviewPanel::displayMessage)
-                    .toList());
-            status.setText("Previewed " + result.variant() + " " + result.version()
-                    + " statement for account " + result.maskedAccountId()
-                    + " (" + result.currency() + ") with " + result.transactionCount()
-                    + " transaction(s) from " + result.sourceName()
-                    + ". No data was changed.");
-        }, ex -> {
-            clearCoaPreview();
-            clearSclxPreview();
-            warnings.getItems().clear();
-            status.setText("Could not preview bank statement: " + UiErrors.safeMessage(ex));
-        });
+        clearBankPreview();
+        CompanyBankAccount account = bankAccount.getValue();
+        String company = activeCompanyCode.get();
+        BankStatementReviewService fixedScopeService = bankStatementReviewService.get();
+        previewBank.setDisable(true);
+        status.setText("Previewing OFX/QFX against " + account.getName() + " without changing H2...");
+        UiAsync.run("import-preview-bank",
+                () -> fixedScopeService.preview(file, company, account.getId()),
+                result ->
+                {
+                    previewBank.setDisable(false);
+                    lastBankCommitService = fixedScopeService;
+                    lastBankCsvCommitService = null;
+                    lastBankCsvReview = null;
+                    applyBankPreview(result, List.of());
+                },
+                ex ->
+                {
+                    previewBank.setDisable(false);
+                    clearBankPreview();
+                    status.setText("Could not preview bank statement: " + UiErrors.safeMessage(ex));
+                });
+    }
+
+    private void previewBankCsv(Path file)
+    {
+        clearBankPreview();
+        CompanyBankAccount account = bankAccount.getValue();
+        BankCsvMappingProfileService.ProfileSummary profile = bankCsvProfile.getValue();
+        String company = activeCompanyCode.get();
+        BankCsvReviewService fixedScopeService = bankCsvReviewService.get();
+        previewBankCsv.setDisable(true);
+        status.setText("Previewing mapped CSV against " + account.getName() + " without changing H2...");
+        UiAsync.run("import-preview-bank-csv",
+                () -> fixedScopeService.preview(file, company, account.getId(), profile.id()),
+                result ->
+                {
+                    previewBankCsv.setDisable(false);
+                    lastBankCsvCommitService = fixedScopeService;
+                    lastBankCommitService = null;
+                    lastBankCsvReview = result;
+                    applyBankPreview(result.review(), result.originalRows());
+                },
+                ex ->
+                {
+                    previewBankCsv.setDisable(false);
+                    clearBankPreview();
+                    status.setText("Could not preview mapped bank CSV: " + UiErrors.safeMessage(ex));
+                });
+    }
+
+    private void applyBankPreview(
+            BankStatementReviewPreview result,
+            List<org.nonprofitbookkeeping.interchange.bank.BankCsvParser.OriginalRow> originalRows)
+    {
+        clearCoaPreview();
+        clearSclxPreview();
+        lastBankReview = result;
+        confirmBankIdentity.setSelected(false);
+        bankRows.getItems().setAll(result.lines());
+        bankCsvOriginalRows.getItems().setAll(originalRows);
+        warnings.getItems().setAll(result.messages().stream()
+                .map(ImportPreviewPanel::displayMessage)
+                .toList());
+        previewTabs.getSelectionModel().select(5);
+        updateBankCommitAvailability();
+        status.setText("Previewed " + result.document().variant() + " " + result.document().version()
+                + " for " + result.configuredAccountName() + " in " + result.companyCode()
+                + " with " + result.lines().size() + " row(s), account match "
+                + result.accountMatchStatus() + ". No data was changed.");
+    }
+
+    private void updateBankCommitAvailability()
+    {
+        boolean ready = lastBankReview != null
+                && (lastBankCommitService != null || lastBankCsvCommitService != null)
+                && Objects.equals(lastBankReview.companyCode(), activeCompanyCode.get())
+                && lastBankReview.commitAllowed(confirmBankIdentity.isSelected())
+                && !sclxActor.getText().isBlank();
+        commitBankReview.setDisable(!ready);
+    }
+
+    private void confirmAndCommitBankReview()
+    {
+        BankStatementReviewPreview preview = lastBankReview;
+        BankCsvReviewPreview csvPreview = lastBankCsvReview;
+        BankStatementReviewService fixedStatementCommit = lastBankCommitService;
+        BankCsvReviewService fixedCsvCommit = lastBankCsvCommitService;
+        String actor = sclxActor.getText().strip();
+        boolean identityConfirmed = confirmBankIdentity.isSelected();
+        if (preview == null || actor.isBlank()
+                || !Objects.equals(preview.companyCode(), activeCompanyCode.get())
+                || !preview.commitAllowed(identityConfirmed)
+                || (fixedStatementCommit == null && fixedCsvCommit == null))
+        {
+            status.setText("Bank review import unavailable: preview a valid file, resolve account confirmation, and provide an actor.");
+            updateBankCommitAvailability();
+            return;
+        }
+
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,
+                "Commit " + preview.lines().size() + " review row(s) from "
+                        + preview.source().getFileName() + " into " + preview.companyCode()
+                        + " / " + preview.configuredAccountName() + "?\n\nSHA-256: "
+                        + preview.sourceHash()
+                        + "\n\nThis creates durable review facts only. It does not create ledger transactions. "
+                        + "The exact file, target, and mapping profile will be revalidated; any failure rolls back the batch.",
+                ButtonType.OK, ButtonType.CANCEL);
+        confirmation.setTitle("Confirm Atomic Bank Review Import");
+        confirmation.setHeaderText("Commit the exact previewed bank statement");
+        if (confirmation.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK)
+        {
+            status.setText("Bank review import cancelled; no data was changed.");
+            return;
+        }
+
+        previewBank.setDisable(true);
+        previewBankCsv.setDisable(true);
+        commitBankReview.setDisable(true);
+        status.setText("Committing the exact previewed bank statement atomically...");
+        UiAsync.run("import-preview-bank-commit",
+                () -> csvPreview == null
+                        ? fixedStatementCommit.commit(preview, identityConfirmed, actor)
+                        : fixedCsvCommit.commit(csvPreview, identityConfirmed, actor),
+                this::applyBankReviewResult,
+                ex ->
+                {
+                    previewBank.setDisable(false);
+                    previewBankCsv.setDisable(false);
+                    clearBankPreview();
+                    status.setText("Bank review import rolled back or was rejected: "
+                            + UiErrors.safeMessage(ex) + ". Preview again before retrying.");
+                });
+    }
+
+    private void applyBankReviewResult(BankStatementReviewResult result)
+    {
+        previewBank.setDisable(false);
+        previewBankCsv.setDisable(false);
+        clearBankPreview();
+        status.setText((result.created() ? "Committed" : "Identical source already committed as")
+                + " durable bank review batch " + result.batchId() + ": total "
+                + result.totalLineCount() + ", reviewable " + result.reviewableLineCount()
+                + ", duplicates " + result.duplicateLineCount() + ", errors "
+                + result.errorLineCount() + ", issues " + result.issueCount()
+                + ". No ledger transaction was created.");
+    }
+
+    private void clearBankPreview()
+    {
+        lastBankReview = null;
+        lastBankCsvReview = null;
+        lastBankCommitService = null;
+        lastBankCsvCommitService = null;
+        bankRows.getItems().clear();
+        bankCsvOriginalRows.getItems().clear();
+        confirmBankIdentity.setSelected(false);
+        commitBankReview.setDisable(true);
+    }
+
+    private static String readProfile(Path path)
+    {
+        try
+        {
+            return java.nio.file.Files.readString(path);
+        }
+        catch (java.io.IOException ex)
+        {
+            throw new IllegalArgumentException("Cannot read bank CSV mapping profile: " + path, ex);
+        }
     }
 
     private java.util.Optional<Path> chooseOpenFile(String title, FileChooser.ExtensionFilter filter)
