@@ -13,6 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
 /** Material-change audit event stored in the active organization database. */
@@ -82,4 +83,15 @@ public class AuditEvent
     public void setAfterValue(String afterValue) { this.afterValue = afterValue; }
     public String getReason() { return reason; }
     public void setReason(String reason) { this.reason = reason; }
+
+    /** Initializes immutable source metadata before a governed interchange import persists this event. */
+    public void initializeImportMetadata(UUID portableId, Instant occurredAt)
+    {
+        if (id != null)
+        {
+            throw new IllegalStateException("Audit-event import metadata must be initialized before persistence");
+        }
+        this.portableId = Objects.requireNonNull(portableId, "portableId");
+        this.occurredAt = Objects.requireNonNull(occurredAt, "occurredAt");
+    }
 }
