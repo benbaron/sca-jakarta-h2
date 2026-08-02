@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SclxImportPreviewProductionRouteSourceTest
 {
     @Test
-    void productionImportPreviewUsesTheReadOnlySclxService() throws IOException
+    void productionImportPreviewAndCommitUseFixedScopeSclxServices() throws IOException
     {
         String panel = source("ImportPreviewPanel.java");
         String factory = source("PanelFactory.java");
@@ -21,10 +21,16 @@ class SclxImportPreviewProductionRouteSourceTest
         assertTrue(panel.contains("Preview SCLX…"));
         assertTrue(panel.contains("SCLX Active Company Files"));
         assertTrue(panel.contains("UiAsync.run(\"import-preview-sclx\""));
+        assertTrue(panel.contains("UiAsync.run(\"import-preview-sclx-commit\""));
+        assertTrue(panel.contains("commitService.commit(source, preview, actor)"));
+        assertTrue(panel.contains("Import Previewed SCLX…"));
         assertTrue(panel.contains("No data was changed"));
         assertTrue(factory.contains("services::sclxImportPreviewService"));
+        assertTrue(factory.contains("services::sclxImportCommitService"));
         assertTrue(workspaceServices.contains("Supplier<SclxImportPreviewService>"));
+        assertTrue(workspaceServices.contains("Function<String, SclxImportCommitService>"));
         assertTrue(registry.contains("new SclxImportPreviewService(services().jpa()"));
+        assertTrue(registry.contains("new SclxImportCommitService(services().jpa()"));
     }
 
     private static String source(String filename) throws IOException
