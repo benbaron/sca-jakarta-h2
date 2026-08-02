@@ -1,12 +1,12 @@
 ---
-plan_version: 114
+plan_version: 115
 active_phase: P15
-active_slice: P15-S6-C2
-active_status: VERIFYING
-active_branch: codex/P15-S6-C2-durable-ofx-qfx-review
-active_pull_request: 239
-active_head: "9c8d085b5fb056a66c62195e10e63aaf0159e076"
-next_action: "Verify this governance-inclusive C2 head, merge PR #239, then start mapped CSV profiles from the exact merged main."
+active_slice: P15-S6-C3
+active_status: IN_PROGRESS
+active_branch: codex/P15-S6-C3-mapped-bank-csv-review
+active_pull_request: null
+active_head: "066fad4163a8596b72bd4b155b966c5bdf31c66d"
+next_action: "Publish mapped bank CSV profiles and durable review from exact merged C2, open a draft PR, and run authoritative CI."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Verify this governance-inclusive C2 head, merge PR #239, then star
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records the successful authoritative verification of P15-S6-C2 configured-account matching and complete atomic OFX/QFX durable review on draft PR #239.
+This revision records P15-S6-C2 as DONE through merged PR #239 and starts P15-S6-C3 for configured-account-owned mapped bank CSV profiles and durable review.
 
 ## 2. Status values
 
@@ -1396,7 +1396,7 @@ Acceptance:
 
 ## P15-S6 — OFX 2.x/QFX and bank CSV import to durable review
 
-Status: IN_PROGRESS at P15-S6-C2.
+Status: IN_PROGRESS at P15-S6-C3.
 
 Purpose: replace temporary/session bank-transaction staging with a complete, company-scoped, configured-bank-account import and review path.
 
@@ -1450,7 +1450,7 @@ Next exact action:
 
 ### P15-S6-C2 — Configured-account matching and durable OFX/QFX review
 
-Status: VERIFYING on draft PR #239.
+Status: DONE through merged PR #239.
 
 Scope:
 
@@ -1468,10 +1468,33 @@ Validation status:
 - The first authoritative workflow on plan-inclusive head `80916aaee9840aed2a22abb256e99bb52f7c749a` compiled production and passed 508 of 510 executed tests. The two failures exposed compatibility drift in the legacy uppercase FITID projection and persisted duplicate matching.
 - Corrected head `9c8d085b5fb056a66c62195e10e63aaf0159e076` restores canonical uppercase source and correction identities and canonicalizes legacy duplicate-context values before comparison.
 - Maven PR Tests run `30769684204` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance on that corrected implementation head.
+- Final governance-inclusive head `cf4b0b987be534316068953b6b534ab74b2052b3` passed the same three gates in run `30769879021`, and PR #239 merged at `066fad4163a8596b72bd4b155b966c5bdf31c66d`.
 
 Next exact action:
 
-- Verify the governance-inclusive C2 head through the same three gates, merge PR #239, and start the mapped CSV profile slice from the exact merged `main`.
+- None; P15-S6-C2 is DONE.
+
+### P15-S6-C3 — Mapped bank CSV profiles and durable review
+
+Status: IN_PROGRESS on branch `codex/P15-S6-C3-mapped-bank-csv-review`.
+
+Scope:
+
+- Persist explicitly saved, versioned mapping profiles in H2 under one company and configured bank account, with a 1,000-profile company cap and no financial rows, credentials, Java Preferences, or sidecars.
+- Strictly validate profile format, delimiter, encoding, dates/locale, decimal/grouping policy, signed or debit/credit amount convention, currency/account identity, and field mappings before persistence.
+- Parse bounded RFC 4180-style logical records, retain original rows beside normalized preview values, and reject malformed encoding/quoting, duplicate normalized headers, missing mappings, mixed identities, invalid dates/amounts, and resource-limit violations before mutation.
+- Bind preview and commit to the exact source hash, company, configured account, profile portable identity, and canonical profile hash; re-read and reparse all scope before commit.
+- Reuse the C2 atomic review transaction, duplicate policy, idempotent no-op, factual operation audit, rollback behavior, and no-ledger-write rule for mapped CSV.
+- Treat mapping profiles as operational import preferences excluded from SCLX; whole-database transfer remains their portable backup authority.
+
+Validation status:
+
+- All changed Java sources pass the Java 17 grammar parser locally; Maven is unavailable in this container.
+- Focused H2 tests cover signed and debit/credit profiles, original-row preview, durable review metadata, configured-account ownership, idempotency, malformed CSV rejection, stale/inactive profile rejection, no ledger writes, and late rollback.
+
+Next exact action:
+
+- Publish the reviewed C3 scope from exact merged C2, open its draft PR, and run the authoritative Maven/H2, repeated-suite, and JavaFX production-route gates.
 
 ## P15-S7 — OFX 2.x/QFX and normalized bank CSV export
 
