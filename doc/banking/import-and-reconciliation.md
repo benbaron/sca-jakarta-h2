@@ -43,3 +43,17 @@ failure therefore leaves H2 untouched. P15-S6-C1 does not change the durable rev
 create canonical ledger activity; later S6 slices will map the richer parser projection into the
 existing normalized-review boundary and retire temporary session staging only after every production
 consumer is rewired.
+
+## P15-S6-C2 configured account and durable OFX/QFX review
+
+`BankStatementReviewService` is the strict OFX/QFX preview-to-review authority. A preview is bound to
+the absolute file, SHA-256, active company, selected active configured bank account, and parsed content.
+Commit repeats every one of those reads and rejects stale files or retargeted company/account state.
+Full source bank/account/type/currency conflicts remain blocking. A suffix-only account match requires
+an explicit confirmation and is recorded on the durable batch.
+
+The write retains statement-level variant, version, encoding, account identity, dates, and balances,
+plus row-level currency, check/reference, and correction facts. Duplicate identities are compared only
+within the selected company and configured account. An identical file/format/target is a no-op returning
+the existing batch. A new batch, its lines and issues, and one factual operation audit share one
+resource-local transaction. The service never creates a canonical ledger transaction.

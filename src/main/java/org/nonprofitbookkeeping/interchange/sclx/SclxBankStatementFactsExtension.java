@@ -20,13 +20,18 @@ final class SclxBankStatementFactsExtension
             "importBatches", "statementLines", "issues", "transactionLineClearance");
     private static final Set<String> BATCH_KEYS = Set.of(
             "importBatchId", "bankAccountId", "sourceName", "sourceHash", "sourceFormat",
+            "sourceVariant", "sourceVersion", "sourceEncoding", "sourceInstitutionId",
+            "sourceBankId", "sourceAccountId", "sourceAccountType", "currency",
+            "statementStartDate", "statementEndDate", "ledgerBalance", "availableBalance",
+            "accountMatchStatus", "accountIdentityConfirmed",
             "status", "importedAt", "completedAt", "totalLineCount", "acceptedLineCount",
             "rejectedLineCount", "issueCount", "notes");
     private static final Set<String> LINE_KEYS = Set.of(
             "statementLineId", "importBatchId", "bankAccountId", "sourceRowNumber",
             "sourceTransactionId", "deterministicFingerprint", "statementAccountIdentifier",
             "transactionDate", "postedDate", "amount", "transactionType", "name", "memo",
-            "checkNumber", "reference", "status", "dispositionNote", "acceptedTransactionId",
+            "checkNumber", "reference", "currency", "correctionAction",
+            "correctedSourceTransactionId", "status", "dispositionNote", "acceptedTransactionId",
             "matchedTransactionId");
     private static final Set<String> ISSUE_KEYS = Set.of(
             "issueId", "importBatchId", "statementLineId", "sourceRowNumber", "severity",
@@ -63,6 +68,20 @@ final class SclxBankStatementFactsExtension
             String sourceName,
             String sourceHash,
             String sourceFormat,
+            String sourceVariant,
+            String sourceVersion,
+            String sourceEncoding,
+            String sourceInstitutionId,
+            String sourceBankId,
+            String sourceAccountId,
+            String sourceAccountType,
+            String currency,
+            LocalDate statementStartDate,
+            LocalDate statementEndDate,
+            BigDecimal ledgerBalance,
+            BigDecimal availableBalance,
+            String accountMatchStatus,
+            boolean accountIdentityConfirmed,
             String status,
             Instant importedAt,
             Instant completedAt,
@@ -84,6 +103,20 @@ final class SclxBankStatementFactsExtension
         entry.put("sourceName", requireText(sourceName, "sourceName"));
         entry.put("sourceHash", optionalText(sourceHash));
         entry.put("sourceFormat", sourceFormat);
+        entry.put("sourceVariant", optionalText(sourceVariant));
+        entry.put("sourceVersion", optionalText(sourceVersion));
+        entry.put("sourceEncoding", optionalText(sourceEncoding));
+        entry.put("sourceInstitutionId", optionalText(sourceInstitutionId));
+        entry.put("sourceBankId", optionalText(sourceBankId));
+        entry.put("sourceAccountId", optionalText(sourceAccountId));
+        entry.put("sourceAccountType", optionalText(sourceAccountType));
+        entry.put("currency", optionalText(currency));
+        entry.put("statementStartDate", statementStartDate);
+        entry.put("statementEndDate", statementEndDate);
+        entry.put("ledgerBalance", ledgerBalance);
+        entry.put("availableBalance", availableBalance);
+        entry.put("accountMatchStatus", optionalText(accountMatchStatus));
+        entry.put("accountIdentityConfirmed", accountIdentityConfirmed);
         entry.put("status", status);
         entry.put("importedAt", Objects.requireNonNull(importedAt, "importedAt"));
         entry.put("completedAt", completedAt);
@@ -111,6 +144,9 @@ final class SclxBankStatementFactsExtension
             String memo,
             String checkNumber,
             String reference,
+            String currency,
+            String correctionAction,
+            String correctedSourceTransactionId,
             String status,
             String dispositionNote,
             String acceptedTransactionId,
@@ -135,6 +171,9 @@ final class SclxBankStatementFactsExtension
         entry.put("memo", optionalText(memo));
         entry.put("checkNumber", optionalText(checkNumber));
         entry.put("reference", optionalText(reference));
+        entry.put("currency", optionalText(currency));
+        entry.put("correctionAction", optionalText(correctionAction));
+        entry.put("correctedSourceTransactionId", optionalText(correctedSourceTransactionId));
         entry.put("status", status);
         entry.put("dispositionNote", optionalText(dispositionNote));
         entry.put("acceptedTransactionId", optionalText(acceptedTransactionId));
@@ -234,6 +273,20 @@ final class SclxBankStatementFactsExtension
                     SclxExtensionValueReader.text(map, "sourceName", path),
                     SclxExtensionValueReader.optionalText(map, "sourceHash", path),
                     format,
+                    SclxExtensionValueReader.optionalText(map, "sourceVariant", path),
+                    SclxExtensionValueReader.optionalText(map, "sourceVersion", path),
+                    SclxExtensionValueReader.optionalText(map, "sourceEncoding", path),
+                    SclxExtensionValueReader.optionalText(map, "sourceInstitutionId", path),
+                    SclxExtensionValueReader.optionalText(map, "sourceBankId", path),
+                    SclxExtensionValueReader.optionalText(map, "sourceAccountId", path),
+                    SclxExtensionValueReader.optionalText(map, "sourceAccountType", path),
+                    SclxExtensionValueReader.optionalText(map, "currency", path),
+                    SclxExtensionValueReader.date(map, "statementStartDate", path, true),
+                    SclxExtensionValueReader.date(map, "statementEndDate", path, true),
+                    SclxExtensionValueReader.decimal(map, "ledgerBalance", path, true),
+                    SclxExtensionValueReader.decimal(map, "availableBalance", path, true),
+                    SclxExtensionValueReader.optionalText(map, "accountMatchStatus", path),
+                    optionalFlag(map, "accountIdentityConfirmed", path),
                     status,
                     SclxExtensionValueReader.instant(map, "importedAt", path, false),
                     SclxExtensionValueReader.instant(map, "completedAt", path, true),
@@ -274,6 +327,9 @@ final class SclxBankStatementFactsExtension
                     SclxExtensionValueReader.optionalText(map, "memo", path),
                     SclxExtensionValueReader.optionalText(map, "checkNumber", path),
                     SclxExtensionValueReader.optionalText(map, "reference", path),
+                    SclxExtensionValueReader.optionalText(map, "currency", path),
+                    SclxExtensionValueReader.optionalText(map, "correctionAction", path),
+                    SclxExtensionValueReader.optionalText(map, "correctedSourceTransactionId", path),
                     status,
                     SclxExtensionValueReader.optionalText(map, "dispositionNote", path),
                     SclxExtensionValueReader.optionalText(map, "acceptedTransactionId", path),
@@ -361,6 +417,11 @@ final class SclxBankStatementFactsExtension
         return value;
     }
 
+    private static boolean optionalFlag(Map<?, ?> map, String field, String path)
+    {
+        return map.containsKey(field) && SclxExtensionValueReader.flag(map, field, path);
+    }
+
     private static void requireNonNegative(int value, String field)
     {
         if (value < 0)
@@ -421,6 +482,20 @@ final class SclxBankStatementFactsExtension
             String sourceName,
             String sourceHash,
             String sourceFormat,
+            String sourceVariant,
+            String sourceVersion,
+            String sourceEncoding,
+            String sourceInstitutionId,
+            String sourceBankId,
+            String sourceAccountId,
+            String sourceAccountType,
+            String currency,
+            LocalDate statementStartDate,
+            LocalDate statementEndDate,
+            BigDecimal ledgerBalance,
+            BigDecimal availableBalance,
+            String accountMatchStatus,
+            boolean accountIdentityConfirmed,
             String status,
             Instant importedAt,
             Instant completedAt,
@@ -448,6 +523,9 @@ final class SclxBankStatementFactsExtension
             String memo,
             String checkNumber,
             String reference,
+            String currency,
+            String correctionAction,
+            String correctedSourceTransactionId,
             String status,
             String dispositionNote,
             String acceptedTransactionId,

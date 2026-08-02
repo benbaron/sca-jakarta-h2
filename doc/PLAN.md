@@ -1,12 +1,12 @@
 ---
-plan_version: 112
+plan_version: 114
 active_phase: P15
-active_slice: P15-S6-C1
+active_slice: P15-S6-C2
 active_status: VERIFYING
-active_branch: codex/P15-S6-C1-strict-ofx-qfx-preview
-active_pull_request: 238
-active_head: "9ed4787759896bf2491d26c5c2d0c37a96f4d54d"
-next_action: "Run the final governance-inclusive PR #238 head through Maven PR Tests, complete the owner desktop checklist, and merge before starting P15-S6-C2."
+active_branch: codex/P15-S6-C2-durable-ofx-qfx-review
+active_pull_request: 239
+active_head: "9c8d085b5fb056a66c62195e10e63aaf0159e076"
+next_action: "Verify this governance-inclusive C2 head, merge PR #239, then start mapped CSV profiles from the exact merged main."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Run the final governance-inclusive PR #238 head through Maven PR T
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S6-C1 implementation validation on corrected head `9ed4787759896bf2491d26c5c2d0c37a96f4d54d` in Maven PR Tests run `30767054385`, including the one-test encoding-diagnostic correction, and leaves the slice VERIFYING for exact-head CI, owner desktop acceptance, and merge.
+This revision records the successful authoritative verification of P15-S6-C2 configured-account matching and complete atomic OFX/QFX durable review on draft PR #239.
 
 ## 2. Status values
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S6-C1; P15-S0 through P15-S5 DONE
+**Status:** IN_PROGRESS at P15-S6-C2; P15-S0 through P15-S5 DONE
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -1396,7 +1396,7 @@ Acceptance:
 
 ## P15-S6 — OFX 2.x/QFX and bank CSV import to durable review
 
-Status: IN_PROGRESS at P15-S6-C1.
+Status: IN_PROGRESS at P15-S6-C2.
 
 Purpose: replace temporary/session bank-transaction staging with a complete, company-scoped, configured-bank-account import and review path.
 
@@ -1423,7 +1423,7 @@ Acceptance:
 
 ### P15-S6-C1 — Strict OFX/QFX parser and non-mutating preview
 
-Status: VERIFYING on draft PR #238.
+Status: DONE through merged PR #238 and owner desktop acceptance.
 
 Scope:
 
@@ -1442,10 +1442,36 @@ Validation status:
 - Draft PR #238 contains exactly the twelve intended implementation, test, governing-document, and owner-checklist files from merged `main`.
 - Initial Maven PR Tests run `30766866466` compiled production and passed 505 of 506 executed tests; the sole failure was the new UTF-16 rejection assertion because the generic NUL diagnostic ran before the more specific BOM diagnostic.
 - Corrected head `9ed4787759896bf2491d26c5c2d0c37a96f4d54d` checks the UTF-16/UTF-32 BOM before the generic NUL scan and passed `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance in run `30767054385`.
+- Final governance-inclusive head `fbd360dae4e855b72bd1617b3e269d7a088e64ee` passed all three gates in run `30767225469`; the owner confirmed the desktop checklist on 2026-08-02, and PR #238 merged at `e64016eafa565b876199b35685e0df9eaace2dff`.
 
 Next exact action:
 
-- Run the final governance-inclusive PR #238 head through `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance; then complete the owner desktop checklist and merge before starting P15-S6-C2.
+- None; P15-S6-C1 is DONE.
+
+### P15-S6-C2 — Configured-account matching and durable OFX/QFX review
+
+Status: VERIFYING on draft PR #239.
+
+Scope:
+
+- Add nondestructive durable fields for statement envelope/account/balance metadata, account-match facts, row currency, and correction facts, and preserve them through SCLX.
+- Bind preview and commit to the exact source hash, active company, and selected active configured bank account; re-read and revalidate every scope value before mutation.
+- Block cross-company, inactive, missing-posting-account, bank/account/type, and currency conflicts; require explicit confirmation for a suffix-only account match.
+- Persist one atomic review batch, all normalized statement rows, durable issues, and one operation audit without creating `Txn` or `TxnSplit` rows.
+- Scope stable-ID/fingerprint duplicate detection to company and configured account, retain row conflicts for review, make identical file/format/target reimport a no-op, and prove late rollback.
+
+Validation status:
+
+- All changed Java sources pass the Java 17 grammar parser locally; Maven is unavailable in this container.
+- Focused H2 tests cover exact configured-account commit, complete metadata preservation, suffix confirmation, blocking mismatch, identical no-op, no ledger writes, operation audit, migration columns, and late rollback.
+- Draft PR #239 contains exactly the nineteen intended implementation, migration, test, SCLX portability, and governing-document files from merged `main`.
+- The first authoritative workflow on plan-inclusive head `80916aaee9840aed2a22abb256e99bb52f7c749a` compiled production and passed 508 of 510 executed tests. The two failures exposed compatibility drift in the legacy uppercase FITID projection and persisted duplicate matching.
+- Corrected head `9c8d085b5fb056a66c62195e10e63aaf0159e076` restores canonical uppercase source and correction identities and canonicalizes legacy duplicate-context values before comparison.
+- Maven PR Tests run `30769684204` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance on that corrected implementation head.
+
+Next exact action:
+
+- Verify the governance-inclusive C2 head through the same three gates, merge PR #239, and start the mapped CSV profile slice from the exact merged `main`.
 
 ## P15-S7 — OFX 2.x/QFX and normalized bank CSV export
 

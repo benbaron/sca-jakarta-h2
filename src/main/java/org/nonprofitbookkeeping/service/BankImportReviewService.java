@@ -165,6 +165,20 @@ public class BankImportReviewService
             batch.setSourcePath(null);
             batch.setSourceHash(value.sourceHash());
             batch.setSourceFormat(value.sourceFormat());
+            batch.setSourceVariant(value.sourceVariant());
+            batch.setSourceVersion(value.sourceVersion());
+            batch.setSourceEncoding(value.sourceEncoding());
+            batch.setSourceInstitutionId(value.sourceInstitutionId());
+            batch.setSourceBankId(value.sourceBankId());
+            batch.setSourceAccountId(value.sourceAccountId());
+            batch.setSourceAccountType(value.sourceAccountType());
+            batch.setCurrency(value.currency());
+            batch.setStatementStartDate(value.statementStartDate());
+            batch.setStatementEndDate(value.statementEndDate());
+            batch.setLedgerBalance(value.ledgerBalance());
+            batch.setAvailableBalance(value.availableBalance());
+            batch.setAccountMatchStatus(value.accountMatchStatus());
+            batch.setAccountIdentityConfirmed(value.accountIdentityConfirmed());
             batch.setStatus(value.status());
             batch.setCompletedAt(value.completedAt());
             batch.setTotalLineCount(value.totalLineCount());
@@ -212,6 +226,9 @@ public class BankImportReviewService
             line.setMemo(value.memo());
             line.setCheckNumber(value.checkNumber());
             line.setReference(value.reference());
+            line.setCurrency(value.currency());
+            line.setCorrectionAction(value.correctionAction());
+            line.setCorrectedSourceTransactionId(value.correctedSourceTransactionId());
             line.setStatus(value.status());
             line.setDispositionNote(value.dispositionNote());
             line.setAcceptedTransaction(accepted);
@@ -275,6 +292,20 @@ public class BankImportReviewService
             String sourceName,
             String sourceHash,
             BankImportBatch.SourceFormat sourceFormat,
+            String sourceVariant,
+            String sourceVersion,
+            String sourceEncoding,
+            String sourceInstitutionId,
+            String sourceBankId,
+            String sourceAccountId,
+            String sourceAccountType,
+            String currency,
+            LocalDate statementStartDate,
+            LocalDate statementEndDate,
+            BigDecimal ledgerBalance,
+            BigDecimal availableBalance,
+            String accountMatchStatus,
+            boolean accountIdentityConfirmed,
             BankImportBatch.Status status,
             Instant importedAt,
             Instant completedAt,
@@ -303,6 +334,9 @@ public class BankImportReviewService
             String memo,
             String checkNumber,
             String reference,
+            String currency,
+            String correctionAction,
+            String correctedSourceTransactionId,
             BankStatementLine.Status status,
             String dispositionNote,
             String acceptedTransactionId,

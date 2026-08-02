@@ -14,6 +14,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 /** Durable metadata for one reviewed bank import batch. */
@@ -52,6 +54,48 @@ public class BankImportBatch
 
     @Column(name = "source_hash", length = 128)
     private String sourceHash;
+
+    @Column(name = "source_variant", length = 30)
+    private String sourceVariant;
+
+    @Column(name = "source_version", length = 20)
+    private String sourceVersion;
+
+    @Column(name = "source_encoding", length = 20)
+    private String sourceEncoding;
+
+    @Column(name = "source_institution_id", length = 120)
+    private String sourceInstitutionId;
+
+    @Column(name = "source_bank_id", length = 80)
+    private String sourceBankId;
+
+    @Column(name = "source_account_id", length = 160)
+    private String sourceAccountId;
+
+    @Column(name = "source_account_type", length = 80)
+    private String sourceAccountType;
+
+    @Column(length = 3)
+    private String currency;
+
+    @Column(name = "statement_start_date")
+    private LocalDate statementStartDate;
+
+    @Column(name = "statement_end_date")
+    private LocalDate statementEndDate;
+
+    @Column(name = "ledger_balance", precision = 19, scale = 4)
+    private BigDecimal ledgerBalance;
+
+    @Column(name = "available_balance", precision = 19, scale = 4)
+    private BigDecimal availableBalance;
+
+    @Column(name = "account_match_status", length = 30)
+    private String accountMatchStatus;
+
+    @Column(name = "account_identity_confirmed", nullable = false)
+    private boolean accountIdentityConfirmed;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "source_format", nullable = false, length = 20)
@@ -104,6 +148,34 @@ public class BankImportBatch
     public void setSourcePath(String sourcePath) { this.sourcePath = sourcePath; }
     public String getSourceHash() { return sourceHash; }
     public void setSourceHash(String sourceHash) { this.sourceHash = sourceHash; }
+    public String getSourceVariant() { return sourceVariant; }
+    public void setSourceVariant(String sourceVariant) { this.sourceVariant = sourceVariant; }
+    public String getSourceVersion() { return sourceVersion; }
+    public void setSourceVersion(String sourceVersion) { this.sourceVersion = sourceVersion; }
+    public String getSourceEncoding() { return sourceEncoding; }
+    public void setSourceEncoding(String sourceEncoding) { this.sourceEncoding = sourceEncoding; }
+    public String getSourceInstitutionId() { return sourceInstitutionId; }
+    public void setSourceInstitutionId(String sourceInstitutionId) { this.sourceInstitutionId = sourceInstitutionId; }
+    public String getSourceBankId() { return sourceBankId; }
+    public void setSourceBankId(String sourceBankId) { this.sourceBankId = sourceBankId; }
+    public String getSourceAccountId() { return sourceAccountId; }
+    public void setSourceAccountId(String sourceAccountId) { this.sourceAccountId = sourceAccountId; }
+    public String getSourceAccountType() { return sourceAccountType; }
+    public void setSourceAccountType(String sourceAccountType) { this.sourceAccountType = sourceAccountType; }
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
+    public LocalDate getStatementStartDate() { return statementStartDate; }
+    public void setStatementStartDate(LocalDate statementStartDate) { this.statementStartDate = statementStartDate; }
+    public LocalDate getStatementEndDate() { return statementEndDate; }
+    public void setStatementEndDate(LocalDate statementEndDate) { this.statementEndDate = statementEndDate; }
+    public BigDecimal getLedgerBalance() { return ledgerBalance; }
+    public void setLedgerBalance(BigDecimal ledgerBalance) { this.ledgerBalance = ledgerBalance; }
+    public BigDecimal getAvailableBalance() { return availableBalance; }
+    public void setAvailableBalance(BigDecimal availableBalance) { this.availableBalance = availableBalance; }
+    public String getAccountMatchStatus() { return accountMatchStatus; }
+    public void setAccountMatchStatus(String accountMatchStatus) { this.accountMatchStatus = accountMatchStatus; }
+    public boolean isAccountIdentityConfirmed() { return accountIdentityConfirmed; }
+    public void setAccountIdentityConfirmed(boolean accountIdentityConfirmed) { this.accountIdentityConfirmed = accountIdentityConfirmed; }
     public SourceFormat getSourceFormat() { return sourceFormat; }
     public void setSourceFormat(SourceFormat sourceFormat) { this.sourceFormat = sourceFormat; }
     public Status getStatus() { return status; }

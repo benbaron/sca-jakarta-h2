@@ -90,6 +90,15 @@ public class BankStatementLine
     @Column(length = 160)
     private String reference;
 
+    @Column(length = 3)
+    private String currency;
+
+    @Column(name = "correction_action", length = 20)
+    private String correctionAction;
+
+    @Column(name = "corrected_source_transaction_id", length = 160)
+    private String correctedSourceTransactionId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private Status status = Status.IMPORTED;
@@ -143,6 +152,12 @@ public class BankStatementLine
     public void setCheckNumber(String checkNumber) { this.checkNumber = checkNumber; }
     public String getReference() { return reference; }
     public void setReference(String reference) { this.reference = reference; }
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
+    public String getCorrectionAction() { return correctionAction; }
+    public void setCorrectionAction(String correctionAction) { this.correctionAction = correctionAction; }
+    public String getCorrectedSourceTransactionId() { return correctedSourceTransactionId; }
+    public void setCorrectedSourceTransactionId(String correctedSourceTransactionId) { this.correctedSourceTransactionId = correctedSourceTransactionId; }
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
     public String getDispositionNote() { return dispositionNote; }
