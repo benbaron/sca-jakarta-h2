@@ -1,5 +1,7 @@
 package org.nonprofitbookkeeping.service;
 
+import org.nonprofitbookkeeping.interchange.bank.BankStatementDocument;
+
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -41,12 +43,14 @@ public class BankImportNormalizationService
                 issues.add(ImportRowIssue.error(rowNumber, "INVALID_AMOUNT", "Bank statement amount is required and cannot be zero."));
             }
 
-            String externalId = normalizeExternalId(record == null ? null : record.fitId());
+            String externalId = normalizeText(record == null ? null : record.fitId());
+            String externalComparisonId = normalizeExternalId(externalId);
             String fingerprint = fingerprint(postedDate, amount, record == null ? "" : record.transactionType(), record == null ? "" : record.name(), record == null ? "" : record.memo());
             boolean exactDuplicate = false;
             if (!externalId.isBlank())
             {
-                exactDuplicate = !seenExternalIds.add(externalId) || context.existingExternalIds().contains(externalId);
+                exactDuplicate = !seenExternalIds.add(externalComparisonId)
+                        || context.existingExternalIds().contains(externalComparisonId);
             }
             if (externalId.isBlank())
             {
@@ -78,11 +82,96 @@ public class BankImportNormalizationService
                     normalizeText(record == null ? null : record.transactionType()),
                     normalizeText(record == null ? null : record.name()),
                     normalizeText(record == null ? null : record.memo()),
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
                     exactDuplicate,
                     probableDuplicate,
                     List.copyOf(issues)));
         }
 
+        return new BankImportNormalizationResult(lines);
+    }
+
+    /** Normalizes the complete strict-parser projection without discarding governed fields. */
+    public BankImportNormalizationResult normalize(
+            BankStatementDocument document,
+            DuplicateContext duplicateContext)
+    {
+        if (document == null)
+        {
+            throw new IllegalArgumentException("Bank statement document is required.");
+        }
+        DuplicateContext context = duplicateContext == null ? DuplicateContext.empty() : duplicateContext;
+        Set<String> seenExternalIds = new HashSet<>();
+        Set<String> seenFingerprints = new HashSet<>();
+        List<NormalizedBankStatementLine> lines = new ArrayList<>();
+        for (BankStatementDocument.Transaction record : document.transactions())
+        {
+            List<ImportRowIssue> issues = new ArrayList<>();
+            String externalId = normalizeText(record.sourceTransactionId());
+            String externalComparisonId = normalizeExternalId(externalId);
+            LocalDate comparisonDate = record.postedDate() == null
+                    ? record.transactionDate() : record.postedDate();
+            String fingerprint = fingerprint(
+                    comparisonDate,
+                    record.amount(),
+                    record.transactionType(),
+                    record.payeeName(),
+                    record.memo());
+            boolean exactDuplicate;
+            if (externalId.isBlank())
+            {
+                exactDuplicate = !seenFingerprints.add(fingerprint)
+                        || context.existingFingerprints().contains(fingerprint);
+            }
+            else
+            {
+                exactDuplicate = !seenExternalIds.add(externalComparisonId)
+                        || context.existingExternalIds().contains(externalComparisonId);
+                seenFingerprints.add(fingerprint);
+            }
+            if (exactDuplicate)
+            {
+                issues.add(ImportRowIssue.error(
+                        record.sourceRowNumber(),
+                        "EXACT_DUPLICATE",
+                        "Exact duplicate bank import row."));
+            }
+            boolean probableDuplicate = !exactDuplicate && context.probableDuplicates().stream()
+                    .anyMatch(candidate -> candidate.matches(
+                            comparisonDate,
+                            record.amount(),
+                            record.payeeName(),
+                            record.memo()));
+            if (probableDuplicate)
+            {
+                issues.add(ImportRowIssue.warning(
+                        record.sourceRowNumber(),
+                        "PROBABLE_DUPLICATE",
+                        "Probable duplicate bank import row."));
+            }
+            lines.add(new NormalizedBankStatementLine(
+                    record.sourceRowNumber(),
+                    externalId,
+                    fingerprint,
+                    record.transactionDate(),
+                    record.postedDate(),
+                    record.amount(),
+                    normalizeText(record.transactionType()),
+                    normalizeText(record.payeeName()),
+                    normalizeText(record.memo()),
+                    normalizeText(record.checkNumber()),
+                    normalizeText(record.reference()),
+                    normalizeText(document.currency()).toUpperCase(Locale.ROOT),
+                    normalizeText(record.correctionAction()).toUpperCase(Locale.ROOT),
+                    normalizeText(record.correctedSourceTransactionId()),
+                    exactDuplicate,
+                    probableDuplicate,
+                    List.copyOf(issues)));
+        }
         return new BankImportNormalizationResult(lines);
     }
 
@@ -193,6 +282,11 @@ public class BankImportNormalizationService
                                               String transactionType,
                                               String name,
                                               String memo,
+                                              String checkNumber,
+                                              String reference,
+                                              String currency,
+                                              String correctionAction,
+                                              String correctedSourceTransactionId,
                                               boolean exactDuplicate,
                                               boolean probableDuplicate,
                                               List<ImportRowIssue> issues)
