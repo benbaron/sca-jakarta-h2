@@ -54,7 +54,8 @@ public record BankStatementDocument(
     {
         OFX_2_XML,
         QFX_2_XML,
-        QFX_1_SGML
+        QFX_1_SGML,
+        MAPPED_CSV
     }
 
     public record AccountIdentity(
