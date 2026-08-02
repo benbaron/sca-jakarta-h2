@@ -5,8 +5,8 @@ active_slice: P15-S6-C4
 active_status: VERIFYING
 active_branch: codex/P15-S6-C4-durable-bank-review-ui
 active_pull_request: 241
-active_head: "2eac079a5885519c115f4345edafe9900abfc98a"
-next_action: "Run the complete Maven/H2/repeated/JavaFX workflow on PR #241, correct only concrete diagnostics, then complete the owner desktop checklist before merge."
+active_head: "a5a94e1ce98d4a9ffb486bb853ca524964ee775f"
+next_action: "Verify the governance-inclusive C4 head through the same three gates, then complete the owner desktop checklist before merge and P15-S6 completion."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1521,10 +1521,13 @@ Validation status:
 - Focused query tests cover durable company isolation, persisted review summary counts, and matched-transaction projection.
 - Source and composition tests cover canonical Import Preview service routing, exact-scope commit controls, durable Banking/Bank Transactions projections, and removal of the temporary store and direct File-menu import route.
 - Draft PR #241 contains exactly the twenty intended production, test, governing-document, checklist, and obsolete-store-removal paths from merged C3, with no unrelated base drift.
+- The first authoritative workflow on plan-inclusive head `dbf5679e7b711f5c10bc4723206283e452650b11` stopped at compilation because `ImportPreviewPanel` omitted the `java.util.List` import used by its new bank-row projection.
+- The next workflow exposed one remote-publication omission: `WorkspaceServices.java` had not changed on the branch, leaving its constructor and accessors inconsistent with the already-published factory wiring. The exact locally reviewed composition file was then published without changing the C4 design.
+- Corrected implementation head `a5a94e1ce98d4a9ffb486bb853ca524964ee775f` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30771668533`.
 
 Next exact action:
 
-- Run the complete Maven/H2/repeated/JavaFX workflow on exact head `2eac079a5885519c115f4345edafe9900abfc98a`, correct only concrete diagnostics, then require owner completion of the C4 desktop checklist before merge and P15-S6 completion.
+- Verify the governance-inclusive C4 head through the same three gates, then require owner completion of the C4 desktop checklist before merge and P15-S6 completion.
 
 ## P15-S7 — OFX 2.x/QFX and normalized bank CSV export
 
