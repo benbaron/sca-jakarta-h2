@@ -315,6 +315,10 @@ final class SclxBankingImportData
             requireObject(batch, itemPath);
             requireFields(batch,
                     Set.of("importBatchId", "bankAccountId", "sourceName", "sourceHash", "sourceFormat",
+                            "sourceVariant", "sourceVersion", "sourceEncoding", "sourceInstitutionId",
+                            "sourceBankId", "sourceAccountId", "sourceAccountType", "currency",
+                            "statementStartDate", "statementEndDate", "ledgerBalance", "availableBalance",
+                            "accountMatchStatus", "accountIdentityConfirmed",
                             "status", "importedAt", "completedAt", "totalLineCount", "acceptedLineCount",
                             "rejectedLineCount", "issueCount", "notes"),
                     Set.of("importBatchId", "sourceName", "sourceFormat", "status", "importedAt",
@@ -327,6 +331,22 @@ final class SclxBankingImportData
                     optionalText(batch, "sourceHash", itemPath),
                     enumValue(BankImportBatch.SourceFormat.class,
                             text(batch, "sourceFormat", itemPath), itemPath + ".sourceFormat"),
+                    optionalText(batch, "sourceVariant", itemPath),
+                    optionalText(batch, "sourceVersion", itemPath),
+                    optionalText(batch, "sourceEncoding", itemPath),
+                    optionalText(batch, "sourceInstitutionId", itemPath),
+                    optionalText(batch, "sourceBankId", itemPath),
+                    optionalText(batch, "sourceAccountId", itemPath),
+                    optionalText(batch, "sourceAccountType", itemPath),
+                    optionalText(batch, "currency", itemPath),
+                    optionalDate(batch, "statementStartDate", itemPath),
+                    optionalDate(batch, "statementEndDate", itemPath),
+                    optionalDecimal(batch, "ledgerBalance", itemPath, true),
+                    optionalDecimal(batch, "availableBalance", itemPath, true),
+                    optionalEnumName(Set.of("EXACT", "CONFIRMATION_REQUIRED"),
+                            optionalText(batch, "accountMatchStatus", itemPath),
+                            itemPath + ".accountMatchStatus"),
+                    optionalFlag(batch, "accountIdentityConfirmed", itemPath),
                     enumValue(BankImportBatch.Status.class,
                             text(batch, "status", itemPath), itemPath + ".status"),
                     instant(batch, "importedAt", itemPath),
@@ -349,7 +369,8 @@ final class SclxBankingImportData
                     Set.of("statementLineId", "importBatchId", "bankAccountId", "sourceRowNumber",
                             "sourceTransactionId", "deterministicFingerprint", "statementAccountIdentifier",
                             "transactionDate", "postedDate", "amount", "transactionType", "name", "memo",
-                            "checkNumber", "reference", "status", "dispositionNote", "acceptedTransactionId",
+                            "checkNumber", "reference", "currency", "correctionAction",
+                            "correctedSourceTransactionId", "status", "dispositionNote", "acceptedTransactionId",
                             "matchedTransactionId"),
                     Set.of("statementLineId", "importBatchId", "sourceRowNumber",
                             "deterministicFingerprint", "status"), itemPath);
@@ -387,6 +408,11 @@ final class SclxBankingImportData
                     optionalText(line, "memo", itemPath),
                     optionalText(line, "checkNumber", itemPath),
                     optionalText(line, "reference", itemPath),
+                    optionalText(line, "currency", itemPath),
+                    optionalEnumName(Set.of("DELETE", "REPLACE"),
+                            optionalText(line, "correctionAction", itemPath),
+                            itemPath + ".correctionAction"),
+                    optionalText(line, "correctedSourceTransactionId", itemPath),
                     status,
                     optionalText(line, "dispositionNote", itemPath),
                     acceptedTransactionId,
@@ -643,6 +669,11 @@ final class SclxBankingImportData
         return node.booleanValue();
     }
 
+    private static boolean optionalFlag(JsonNode value, String field, String path)
+    {
+        return value.has(field) && flag(value, field, path);
+    }
+
     private static int nonNegativeInteger(JsonNode value, String field, String path)
     {
         Integer result = optionalInteger(value, field, path);
@@ -788,6 +819,11 @@ final class SclxBankingImportData
         return value;
     }
 
+    private static String optionalEnumName(Set<String> values, String value, String path)
+    {
+        return value == null ? null : enumName(values, value, path);
+    }
+
     record BankValue(
             String externalId, String name, String routingNumber, String address, String website,
             String contactName, String contactPhone, String contactEmail, String notes, boolean active) { }
@@ -800,7 +836,12 @@ final class SclxBankingImportData
 
     record BatchValue(
             String externalId, String bankAccountId, String sourceName, String sourceHash,
-            BankImportBatch.SourceFormat sourceFormat, BankImportBatch.Status status, Instant importedAt,
+            BankImportBatch.SourceFormat sourceFormat, String sourceVariant, String sourceVersion,
+            String sourceEncoding, String sourceInstitutionId, String sourceBankId, String sourceAccountId,
+            String sourceAccountType, String currency, LocalDate statementStartDate,
+            LocalDate statementEndDate, BigDecimal ledgerBalance, BigDecimal availableBalance,
+            String accountMatchStatus, boolean accountIdentityConfirmed,
+            BankImportBatch.Status status, Instant importedAt,
             Instant completedAt, int totalLineCount, int acceptedLineCount, int rejectedLineCount,
             int issueCount, String notes) { }
 
@@ -808,7 +849,8 @@ final class SclxBankingImportData
             String externalId, String importBatchId, String bankAccountId, int sourceRowNumber,
             String sourceTransactionId, String deterministicFingerprint, String statementAccountIdentifier,
             LocalDate transactionDate, LocalDate postedDate, BigDecimal amount, String transactionType,
-            String name, String memo, String checkNumber, String reference, BankStatementLine.Status status,
+            String name, String memo, String checkNumber, String reference, String currency,
+            String correctionAction, String correctedSourceTransactionId, BankStatementLine.Status status,
             String dispositionNote, String acceptedTransactionId, String matchedTransactionId) { }
 
     record IssueValue(
