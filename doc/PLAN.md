@@ -2,11 +2,11 @@
 plan_version: 115
 active_phase: P15
 active_slice: P15-S6-C3
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S6-C3-mapped-bank-csv-review
-active_pull_request: null
-active_head: "066fad4163a8596b72bd4b155b966c5bdf31c66d"
-next_action: "Publish mapped bank CSV profiles and durable review from exact merged C2, open a draft PR, and run authoritative CI."
+active_pull_request: 240
+active_head: "21033a616557e32e834c32ca2f219e1763533c21"
+next_action: "Run PR #240 through authoritative Maven/H2, repeated-suite, and JavaFX production-route verification; correct only concrete diagnostics."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1476,7 +1476,7 @@ Next exact action:
 
 ### P15-S6-C3 — Mapped bank CSV profiles and durable review
 
-Status: IN_PROGRESS on branch `codex/P15-S6-C3-mapped-bank-csv-review`.
+Status: VERIFYING on draft PR #240.
 
 Scope:
 
@@ -1491,10 +1491,11 @@ Validation status:
 
 - All changed Java sources pass the Java 17 grammar parser locally; Maven is unavailable in this container.
 - Focused H2 tests cover signed and debit/credit profiles, original-row preview, durable review metadata, configured-account ownership, idempotency, malformed CSV rejection, stale/inactive profile rejection, no ledger writes, and late rollback.
+- Draft PR #240 contains exactly the sixteen intended implementation, migration, test, and governing-document files from merged C2.
 
 Next exact action:
 
-- Publish the reviewed C3 scope from exact merged C2, open its draft PR, and run the authoritative Maven/H2, repeated-suite, and JavaFX production-route gates.
+- Run PR #240 through the authoritative Maven/H2, repeated-suite, and JavaFX production-route gates; correct only concrete diagnostics.
 
 ## P15-S7 — OFX 2.x/QFX and normalized bank CSV export
 
