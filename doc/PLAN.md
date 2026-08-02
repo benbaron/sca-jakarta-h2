@@ -2,11 +2,11 @@
 plan_version: 117
 active_phase: P15
 active_slice: P15-S6-C4
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S6-C4-durable-bank-review-ui
-active_pull_request: null
-active_head: "a9cff7b1a3f426a9a4cf56cbc69c48a20eb79a62"
-next_action: "Publish final S6 production wiring and session-staging removal, open the draft C4 PR, pass CI, and complete the owner desktop checklist before merge."
+active_pull_request: 241
+active_head: "2eac079a5885519c115f4345edafe9900abfc98a"
+next_action: "Run the complete Maven/H2/repeated/JavaFX workflow on PR #241, correct only concrete diagnostics, then complete the owner desktop checklist before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1503,7 +1503,7 @@ Next exact action:
 
 ### P15-S6-C4 — Production durable bank-review UI
 
-Status: IN_PROGRESS on `codex/P15-S6-C4-durable-bank-review-ui` from merged C3.
+Status: VERIFYING on draft PR #241 from merged C3.
 
 Scope:
 
@@ -1520,10 +1520,11 @@ Validation status:
 - All changed Java sources pass a Java 17 grammar parse locally; Maven is unavailable in this container.
 - Focused query tests cover durable company isolation, persisted review summary counts, and matched-transaction projection.
 - Source and composition tests cover canonical Import Preview service routing, exact-scope commit controls, durable Banking/Bank Transactions projections, and removal of the temporary store and direct File-menu import route.
+- Draft PR #241 contains exactly the twenty intended production, test, governing-document, checklist, and obsolete-store-removal paths from merged C3, with no unrelated base drift.
 
 Next exact action:
 
-- Publish the exact branch, open the draft C4 PR, run the complete Maven/H2/repeated/JavaFX workflow, correct only concrete diagnostics, then require owner completion of the C4 desktop checklist before merge and P15-S6 completion.
+- Run the complete Maven/H2/repeated/JavaFX workflow on exact head `2eac079a5885519c115f4345edafe9900abfc98a`, correct only concrete diagnostics, then require owner completion of the C4 desktop checklist before merge and P15-S6 completion.
 
 ## P15-S7 — OFX 2.x/QFX and normalized bank CSV export
 
