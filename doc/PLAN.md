@@ -1,12 +1,12 @@
 ---
-plan_version: 116
+plan_version: 117
 active_phase: P15
-active_slice: P15-S6-C3
-active_status: VERIFYING
-active_branch: codex/P15-S6-C3-mapped-bank-csv-review
-active_pull_request: 240
-active_head: "ef21e6faef155cd21a1c3f0fe5cdb84971f247be"
-next_action: "Verify the governance-inclusive C3 head, merge PR #240, then start final S6 production wiring and temporary-staging removal from exact main."
+active_slice: P15-S6-C4
+active_status: IN_PROGRESS
+active_branch: codex/P15-S6-C4-durable-bank-review-ui
+active_pull_request: null
+active_head: "a9cff7b1a3f426a9a4cf56cbc69c48a20eb79a62"
+next_action: "Publish final S6 production wiring and session-staging removal, open the draft C4 PR, pass CI, and complete the owner desktop checklist before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Verify the governance-inclusive C3 head, merge PR #240, then start
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S6-C2 as DONE through merged PR #239 and starts P15-S6-C3 for configured-account-owned mapped bank CSV profiles and durable review.
+This revision records P15-S6-C3 as DONE through merged PR #240 and starts P15-S6-C4 for the complete production bank-review UI and removal of temporary session staging.
 
 ## 2. Status values
 
@@ -1396,7 +1396,7 @@ Acceptance:
 
 ## P15-S6 — OFX 2.x/QFX and bank CSV import to durable review
 
-Status: IN_PROGRESS at P15-S6-C3.
+Status: IN_PROGRESS at P15-S6-C4.
 
 Purpose: replace temporary/session bank-transaction staging with a complete, company-scoped, configured-bank-account import and review path.
 
@@ -1476,7 +1476,7 @@ Next exact action:
 
 ### P15-S6-C3 — Mapped bank CSV profiles and durable review
 
-Status: VERIFYING on draft PR #240.
+Status: DONE through merged PR #240.
 
 Scope:
 
@@ -1495,10 +1495,35 @@ Validation status:
 - The first plan-inclusive workflow on head `80c2336faa04ff54e2bc1f960737e0f4709d17a4` compiled production and passed 513 ordinary tests; only the two empty-Flyway-history recovery cases failed because V69 unconditionally created a table Hibernate had already materialized.
 - Corrected head `ef21e6faef155cd21a1c3f0fe5cdb84971f247be` uses recovery-safe table/index creation and independently idempotent constraints.
 - Maven PR Tests run `30770627629` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance on the corrected implementation head.
+- Final governance-inclusive head `f5960836fe463ad0c979d0a1df9ff30f3a09f776` passed the same three gates in Maven PR Tests run `30770764755`, and PR #240 merged at `a9cff7b1a3f426a9a4cf56cbc69c48a20eb79a62`.
 
 Next exact action:
 
-- Verify the governance-inclusive C3 head through the same three gates, merge PR #240, and start final S6 production wiring and temporary-staging removal from exact merged `main`.
+- None; P15-S6-C3 is DONE.
+
+### P15-S6-C4 — Production durable bank-review UI
+
+Status: IN_PROGRESS on `codex/P15-S6-C4-durable-bank-review-ui` from merged C3.
+
+Scope:
+
+- Make Import Preview the sole production OFX/QFX and mapped bank CSV preview/commit route, using the exact C2/C3 service scopes rather than a second parser or writer.
+- List active configured accounts and durable CSV profiles for the active company, show normalized rows and original CSV logical rows, require an actor and exact-scope confirmation, and expose suffix-only account confirmation explicitly.
+- Reject company, account, file, profile, or profile-state drift after preview and require a new preview after any failed or rolled-back commit.
+- Add a company-scoped read-only query authority for durable bank review rows and counts; wire Banking and Bank Transactions to it with correct company switching and restart behavior.
+- Allow ledger drill-through only for statement rows explicitly matched to canonical transactions and retain the no-ledger-write rule for statement import.
+- Remove `UiWorkspaceDataStore.bankTransactions` and the File-menu direct parser/session-staging route after every production consumer uses durable review.
+- Add focused query isolation, production-route, composition, elimination, and owner desktop coverage in `doc/P15-S6-C4-bank-review-ui-user-testing.md`.
+
+Validation status:
+
+- All changed Java sources pass a Java 17 grammar parse locally; Maven is unavailable in this container.
+- Focused query tests cover durable company isolation, persisted review summary counts, and matched-transaction projection.
+- Source and composition tests cover canonical Import Preview service routing, exact-scope commit controls, durable Banking/Bank Transactions projections, and removal of the temporary store and direct File-menu import route.
+
+Next exact action:
+
+- Publish the exact branch, open the draft C4 PR, run the complete Maven/H2/repeated/JavaFX workflow, correct only concrete diagnostics, then require owner completion of the C4 desktop checklist before merge and P15-S6 completion.
 
 ## P15-S7 — OFX 2.x/QFX and normalized bank CSV export
 
