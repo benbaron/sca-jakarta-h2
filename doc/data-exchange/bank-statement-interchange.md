@@ -262,9 +262,8 @@ normalizer or H2 service is invoked.
 
 Import Preview displays the detected variant/version, masked source account, currency, transaction
 count, and content/filename warnings and explicitly states that no data changed. C1 does not authorize
-the legacy File-menu staging action as a durable import. Later P15-S6 slices own configured-account
-matching and override confirmation, mapped CSV profiles, the one-transaction durable review write,
-and removal of `UiWorkspaceDataStore.bankTransactions` after its last production consumer is replaced.
+the legacy File-menu staging action as a durable import. C2 through C4 add configured-account matching,
+mapped CSV profiles, the one-transaction durable review write, and the production review workspaces.
 
 P15-S6-C2 adds the first complete OFX/QFX durable-review boundary. `BankStatementReviewService`
 captures the absolute source, SHA-256, active company, selected configured account, parsed document,
@@ -303,3 +302,18 @@ mutation. The preview retains each original logical row beside its normalized pr
 profile portable identity, and canonical profile hash. It re-reads the active profile and reparses the
 source before using the C2 atomic batch/line/issue/audit transaction. An unchanged source/profile/target
 is the same idempotent no-op as OFX/QFX, and CSV import never creates `Txn` or `TxnSplit` rows.
+
+P15-S6-C4 is the sole production desktop route for bank-statement review import. Import Preview lists
+only active configured accounts for the active company, previews OFX/QFX through
+`BankStatementReviewService`, previews mapped CSV through `BankCsvReviewService`, displays the exact
+normalized rows and original CSV logical rows, and requires an audit actor plus explicit confirmation
+before committing the captured file, company, account, and profile revision. A suffix-only account
+match additionally requires its visible identity confirmation. Company, file, account, profile, or
+profile-state drift invalidates approval and requires a new preview.
+
+Banking displays durable company-scoped batch/row/issue counts and routes import and review actions to
+Import Preview and Bank Transactions. Bank Transactions projects persisted `BankStatementLine` facts
+through `BankReviewQueryService`; restart and company switching therefore never depend on an in-memory
+staging list. Ledger drill-through is available only for an explicitly matched canonical transaction.
+The File menu opens these same workspaces and does not invoke the former direct parser/staging path.
+`UiWorkspaceDataStore.bankTransactions` is removed after its final production consumer is replaced.
