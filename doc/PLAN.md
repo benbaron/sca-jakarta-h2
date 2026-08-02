@@ -2,11 +2,11 @@
 plan_version: 110
 active_phase: P15
 active_slice: P15-S5-C10
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S5-C10-complete-sclx-import
-active_pull_request: null
-active_head: "f2aa151c1fa7d61f997dc85938d5596a7c79b31d"
-next_action: "Publish the complete correction/UI/round-trip slice, run all Maven PR Tests gates, and complete the P15-S5 desktop checklist before merge."
+active_pull_request: 237
+active_head: "910a0fc3613f1b5d57d3d50ff541cd05ef68b810"
+next_action: "Run draft PR #237 through all Maven PR Tests gates, correct only concrete diagnostics, and complete the P15-S5 desktop checklist before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: IN_PROGRESS at P15-S5-C10.
+Status: VERIFYING at P15-S5-C10 on draft PR #237.
 
 Startup scope:
 
@@ -1347,7 +1347,7 @@ Next exact action:
 
 ### P15-S5-C10 — Correction relationships and complete production import
 
-Status: IN_PROGRESS.
+Status: VERIFYING on draft PR #237.
 
 Scope:
 
@@ -1363,10 +1363,11 @@ Validation status:
 
 - All twelve changed Java sources pass a Java 17 grammar parse locally; Maven is unavailable in this container.
 - Focused tests cover correction validation, atomic write/idempotency, late rollback, semantic re-export, UI rendering/source guards, and the fixed-scope production route.
+- Draft PR #237 contains exactly the seventeen intended C10 implementation, test, governing-document, and desktop-checklist files from merged `main`.
 
 Next exact action:
 
-- Open the draft PR and run `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance; then complete the desktop checklist.
+- Run `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance on PR #237; then complete the desktop checklist.
 
 Planned deliverables:
 
