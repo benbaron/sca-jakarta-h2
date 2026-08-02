@@ -1101,7 +1101,12 @@ public final class SclxImportCommitService
                 company,
                 source.batches().stream().map(value -> new BankImportReviewService.BatchImport(
                         value.externalId(), portableUuid(value.externalId()), value.bankAccountId(),
-                        value.sourceName(), value.sourceHash(), value.sourceFormat(), value.status(),
+                        value.sourceName(), value.sourceHash(), value.sourceFormat(),
+                        value.sourceVariant(), value.sourceVersion(), value.sourceEncoding(),
+                        value.sourceInstitutionId(), value.sourceBankId(), value.sourceAccountId(),
+                        value.sourceAccountType(), value.currency(), value.statementStartDate(),
+                        value.statementEndDate(), value.ledgerBalance(), value.availableBalance(),
+                        value.accountMatchStatus(), value.accountIdentityConfirmed(), value.status(),
                         value.importedAt(), value.completedAt(), value.totalLineCount(),
                         value.acceptedLineCount(), value.rejectedLineCount(), value.issueCount(),
                         value.notes())).toList(),
@@ -1110,7 +1115,8 @@ public final class SclxImportCommitService
                         value.bankAccountId(), value.sourceRowNumber(), value.sourceTransactionId(),
                         value.deterministicFingerprint(), value.statementAccountIdentifier(),
                         value.transactionDate(), value.postedDate(), value.amount(), value.transactionType(),
-                        value.name(), value.memo(), value.checkNumber(), value.reference(), value.status(),
+                        value.name(), value.memo(), value.checkNumber(), value.reference(), value.currency(),
+                        value.correctionAction(), value.correctedSourceTransactionId(), value.status(),
                         value.dispositionNote(), value.acceptedTransactionId(),
                         value.matchedTransactionId())).toList(),
                 source.issues().stream().map(value -> new BankImportReviewService.IssueImport(
