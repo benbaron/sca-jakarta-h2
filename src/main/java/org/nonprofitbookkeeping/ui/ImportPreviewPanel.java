@@ -615,8 +615,14 @@ public class ImportPreviewPanel implements AppPanel
         UiAsync.run("import-preview-bank", () -> previewService.previewBankStatement(file), result -> {
             clearCoaPreview();
             clearSclxPreview();
-            warnings.getItems().clear();
-            status.setText("Previewed " + result.format() + " statement with " + result.transactionCount() + " transaction(s) from " + result.sourceName() + ".");
+            warnings.getItems().setAll(result.messages().stream()
+                    .map(ImportPreviewPanel::displayMessage)
+                    .toList());
+            status.setText("Previewed " + result.variant() + " " + result.version()
+                    + " statement for account " + result.maskedAccountId()
+                    + " (" + result.currency() + ") with " + result.transactionCount()
+                    + " transaction(s) from " + result.sourceName()
+                    + ". No data was changed.");
         }, ex -> {
             clearCoaPreview();
             clearSclxPreview();
