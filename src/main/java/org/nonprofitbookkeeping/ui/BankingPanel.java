@@ -31,6 +31,7 @@ import org.nonprofitbookkeeping.model.Bank;
 import org.nonprofitbookkeeping.model.BankingDataFormat;
 import org.nonprofitbookkeeping.model.CompanyBankAccount;
 import org.nonprofitbookkeeping.model.NormalBalance;
+import org.nonprofitbookkeeping.interchange.bank.BankReviewQueryService;
 import org.nonprofitbookkeeping.service.BankAccountCommand;
 import org.nonprofitbookkeeping.service.BankCommand;
 
@@ -39,6 +40,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 /** Banking configuration panel for P05-S2. */
 public class BankingPanel implements AppPanel
@@ -80,9 +83,19 @@ public class BankingPanel implements AppPanel
     private final FormDirtyTracker accountDirty;
     private Long editingBankId;
     private boolean suppressBankSelection;
+    private final BankReviewQueryService reviewQuery;
+    private final Supplier<String> companyCode;
 
     public BankingPanel()
     {
+        this(UiServiceRegistry.bankReviewQuery(), () ->
+                MainWindow.sharedSessionState().multiCompany().activeCompanyCode());
+    }
+
+    BankingPanel(BankReviewQueryService reviewQuery, Supplier<String> companyCode)
+    {
+        this.reviewQuery = Objects.requireNonNull(reviewQuery, "reviewQuery");
+        this.companyCode = Objects.requireNonNull(companyCode, "companyCode");
         root.setPadding(new Insets(8));
         Label title = new Label("Banking");
         title.getStyleClass().add("panel-title");
@@ -102,7 +115,15 @@ public class BankingPanel implements AppPanel
         split.setOrientation(Orientation.VERTICAL);
         split.setDividerPositions(0.50);
         CompanySplitPaneStateBinder.bind(split, "banking-workspace", 0.50);
-        root.setTop(new VBox(6, title, new HBox(8, newBank, saveBank, refresh), status, new Separator()));
+        Button importStatement = new Button("Import Bank Statement…");
+        importStatement.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(
+                AppPanelId.IMPORT_PREVIEW, "Banking: import statement"));
+        Button reviewRows = new Button("Review Imported Rows…");
+        reviewRows.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(
+                AppPanelId.BANK_TRANSACTIONS, "Banking: durable review rows"));
+        root.setTop(new VBox(6, title,
+                new HBox(8, newBank, saveBank, refresh, importStatement, reviewRows),
+                status, new Separator()));
         root.setCenter(split);
 
         installFormatCorrection();
@@ -333,7 +354,12 @@ public class BankingPanel implements AppPanel
             bankSelector.setItems(FXCollections.observableArrayList(bankRows));
             bankAccounts.setItems(FXCollections.observableArrayList(accountRows));
             existingAccountSelector.setItems(FXCollections.observableArrayList(qualifying));
-            status.setText("Loaded " + bankRows.size() + " bank(s), " + accountRows.size() + " configured bank account(s). Deactivate records to preserve statement and reconciliation history.");
+            BankReviewQueryService.ReviewSummary review = reviewQuery.summary(company);
+            status.setText("Loaded " + bankRows.size() + " bank(s), " + accountRows.size()
+                    + " configured bank account(s), and " + review.rowCount()
+                    + " durable review row(s) in " + review.batchCount() + " batch(es); reviewable="
+                    + review.reviewableCount() + ", duplicates=" + review.duplicateCount()
+                    + ", errors=" + review.errorCount() + ". Deactivate records to preserve history.");
         }
         catch (RuntimeException ex)
         {
@@ -518,9 +544,9 @@ public class BankingPanel implements AppPanel
                 && account.getSubtype() == AccountSubtype.CASH;
     }
 
-    private static String activeCompanyCode()
+    private String activeCompanyCode()
     {
-        return MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
+        return companyCode.get();
     }
 
     private static LocalDate parseDate(String value)
