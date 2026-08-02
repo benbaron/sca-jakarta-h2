@@ -1,5 +1,9 @@
 package org.nonprofitbookkeeping.interchange.sclx;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -59,6 +63,135 @@ class SclxImportCommitServiceTest
     private static final UUID PERIOD_CLOSE_EVENT_UUID = UUID.fromString("eeeeeeee-ffff-0000-1111-222222222222");
     private static final UUID PERIOD_REOPEN_EVENT_UUID = UUID.fromString("ffffffff-0000-1111-2222-333333333333");
     private static final UUID AUDIT_EVENT_UUID = UUID.fromString("12345678-90ab-cdef-1234-567890abcdef");
+    private static final UUID REVERSAL_TRANSACTION_UUID = UUID.fromString("23456789-0abc-def1-2345-67890abcdef1");
+    private static final UUID REPLACEMENT_TRANSACTION_UUID = UUID.fromString("34567890-abcd-ef12-3456-7890abcdef12");
+
+    @Test
+    void importsCorrectionRelationshipsAtomicallyAndReimportIsIdempotent(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writeCorrectionSource(tempDir.resolve("corrections.sclx"));
+        try (Jpa jpa = new Jpa(tempDir.resolve("corrections")))
+        {
+            seedEmptyTarget(jpa);
+            SclxImportPreviewService previews = new SclxImportPreviewService(jpa, () -> TARGET);
+            SclxImportPreview preview = previews.preview(source);
+            assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+            assertEquals(26L, preview.operation().counts().created());
+
+            SclxImportResult result = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, preview, "tester");
+
+            assertTrue(result.committed(), () -> result.messages().toString());
+            assertEquals(26L, result.counts().created());
+            try (EntityManager em = jpa.em())
+            {
+                Txn original = transaction(em, TRANSACTION_UUID);
+                Txn reversal = transaction(em, REVERSAL_TRANSACTION_UUID);
+                Txn replacement = transaction(em, REPLACEMENT_TRANSACTION_UUID);
+                assertEquals("REVERSED", original.getStatus());
+                assertEquals(original.getId(), reversal.getReversalOf().getId());
+                assertEquals(original.getId(), replacement.getReplacementFor().getId());
+                assertEquals(3L, count(em, "select count(t) from Txn t"));
+                assertEquals(26L, count(em,
+                        "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
+                assertEquals(1L, count(em,
+                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_IMPORTED'"));
+            }
+
+            Path roundTrip = tempDir.resolve("corrections-round-trip.sclx");
+            new SclxFileExportService(
+                    new SclxCoreSnapshotQueryService(jpa, () -> TARGET),
+                    () -> tempDir.resolve("active-target.mv.db"))
+                    .export(new SclxExportRequest(roundTrip, Instant.parse("2026-08-02T12:00:00Z"), false));
+            JsonNode exported = new ObjectMapper().readTree(roundTrip.toFile());
+            assertEquals(3, exported.path("transactions").size());
+            String targetOriginal = SclxPortableIdentity.transaction(TARGET, TRANSACTION_UUID.toString());
+            String targetReversal = SclxPortableIdentity.transaction(
+                    TARGET, REVERSAL_TRANSACTION_UUID.toString());
+            String targetReplacement = SclxPortableIdentity.transaction(
+                    TARGET, REPLACEMENT_TRANSACTION_UUID.toString());
+            assertCorrection(exported, targetReversal, "REVERSAL", targetOriginal);
+            assertCorrection(exported, targetReplacement, "REPLACEMENT", targetOriginal);
+            assertEquals("REVERSED", transaction(exported, targetOriginal).path("status").textValue());
+            assertTrue(exported.path("budgets").size() > 0);
+            assertTrue(exported.path("extensions").path("scaJakartaH2").path("fixedAssets").size() > 0);
+            assertTrue(exported.path("extensions").path("scaJakartaH2").path("inventory")
+                    .path("items").size() > 0);
+
+            SclxImportPreview secondPreview = previews.preview(source);
+            assertFalse(secondPreview.hasBlockingErrors(), () -> secondPreview.operation().messages().toString());
+            assertEquals(26L, secondPreview.operation().counts().identical());
+            SclxImportResult second = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, secondPreview, "tester");
+            assertTrue(second.committed());
+            assertEquals(0L, second.counts().created());
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals(3L, count(em, "select count(t) from Txn t"));
+                assertEquals(1L, count(em,
+                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_IMPORTED'"));
+            }
+        }
+    }
+
+    @Test
+    void malformedCorrectionIsRejectedBeforeMutation(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writeCorrectionSource(tempDir.resolve("corrections-invalid.sclx"));
+        String originalId = SclxPortableIdentity.transaction("SOURCE", TRANSACTION_UUID.toString());
+        String json = Files.readString(source);
+        String marker = "\"correctionOfTransactionId\": \"" + originalId + "\"";
+        assertTrue(json.contains(marker));
+        Files.writeString(source, json.replaceFirst(
+                java.util.regex.Pattern.quote(marker),
+                "\"correctionOfTransactionId\": \"transaction:SOURCE:missing\""));
+
+        try (Jpa jpa = new Jpa(tempDir.resolve("corrections-invalid")))
+        {
+            seedEmptyTarget(jpa);
+            SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
+
+            IllegalStateException failure = assertThrows(IllegalStateException.class,
+                    () -> new SclxImportCommitService(jpa, () -> TARGET)
+                            .commit(source, preview, "tester"));
+
+            assertTrue(failure.getMessage().contains("does not resolve"));
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals("Empty Target", company(em).getDisplayName());
+                assertEquals(0L, count(em, "select count(t) from Txn t"));
+                assertEquals(0L, count(em, "select count(i) from InterchangeIdentity i"));
+            }
+        }
+    }
+
+    @Test
+    void failureAfterCorrectionWriteRollsBackCompleteGraph(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writeCorrectionSource(tempDir.resolve("corrections-rollback.sclx"));
+        try (Jpa jpa = new Jpa(tempDir.resolve("corrections-rollback")))
+        {
+            seedEmptyTarget(jpa);
+            SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
+            SclxImportCommitService service = new SclxImportCommitService(
+                    jpa, () -> TARGET, writes -> {
+                        if (writes == 17)
+                        {
+                            throw new IllegalStateException("injected after correction write");
+                        }
+                    });
+
+            SclxImportResult result = service.commit(source, preview, "tester");
+
+            assertTrue(result.rolledBack());
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals(0L, count(em, "select count(t) from Txn t"));
+                assertEquals(0L, count(em, "select count(a) from AuditEvent a"));
+                assertEquals(0L, count(em, "select count(i) from InterchangeIdentity i"));
+            }
+        }
+    }
 
     @Test
     void importsFactualAuditHistoryAtomicallyAndReimportIsIdempotent(@TempDir Path tempDir) throws Exception
@@ -97,7 +230,7 @@ class SclxImportCommitServiceTest
                         "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
                 assertEquals(1L, count(em,
                         "select count(a) from AuditEvent a "
-                                + "where a.actionType = 'SCLX_AUDIT_HISTORY_IMPORTED'"));
+                                + "where a.actionType = 'SCLX_IMPORTED'"));
             }
 
             SclxImportPreview secondPreview = previews.preview(source);
@@ -115,7 +248,7 @@ class SclxImportCommitServiceTest
                         .getSingleResult());
                 assertEquals(1L, count(em,
                         "select count(a) from AuditEvent a "
-                                + "where a.actionType = 'SCLX_AUDIT_HISTORY_IMPORTED'"));
+                                + "where a.actionType = 'SCLX_IMPORTED'"));
             }
         }
     }
@@ -242,7 +375,7 @@ class SclxImportCommitServiceTest
                 assertEquals(23L, count(em,
                         "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
                 assertEquals(1L, count(em,
-                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_AUDIT_HISTORY_IMPORTED'"));
+                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_IMPORTED'"));
             }
 
             SclxImportPreview secondPreview = previews.preview(source);
@@ -530,7 +663,7 @@ class SclxImportCommitServiceTest
                 assertEquals(new BigDecimal("3.0000"), inventoryMovement.getResultingQuantity());
                 assertEquals(1L, count(em,
                         "select count(a) from AuditEvent a "
-                                + "where a.actionType = 'SCLX_AUDIT_HISTORY_IMPORTED'"));
+                                + "where a.actionType = 'SCLX_IMPORTED'"));
             }
 
             SclxImportPreview secondPreview = previews.preview(source);
@@ -602,7 +735,7 @@ class SclxImportCommitServiceTest
                 assertEquals(0L, count(em, "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
                 assertEquals(0L, count(em,
                         "select count(a) from AuditEvent a "
-                                + "where a.actionType = 'SCLX_AUDIT_HISTORY_IMPORTED'"));
+                                + "where a.actionType = 'SCLX_IMPORTED'"));
             }
         }
     }
@@ -789,10 +922,125 @@ class SclxImportCommitServiceTest
         return em.createQuery(jpql, Long.class).getSingleResult();
     }
 
+    private static Txn transaction(EntityManager em, UUID portableId)
+    {
+        return em.createQuery(
+                        "from Txn t where t.portableId = :portableId", Txn.class)
+                .setParameter("portableId", portableId)
+                .getSingleResult();
+    }
+
+    private static JsonNode transaction(JsonNode root, String transactionId)
+    {
+        for (JsonNode transaction : root.path("transactions"))
+        {
+            if (transactionId.equals(transaction.path("transactionId").textValue()))
+            {
+                return transaction;
+            }
+        }
+        throw new AssertionError("Missing exported transaction " + transactionId);
+    }
+
+    private static void assertCorrection(
+            JsonNode root,
+            String transactionId,
+            String correctionType,
+            String correctedTransactionId)
+    {
+        JsonNode transaction = transaction(root, transactionId);
+        assertEquals(correctionType, transaction.path("correctionType").textValue());
+        assertEquals(correctedTransactionId, transaction.path("correctionOfTransactionId").textValue());
+    }
+
     private static long nativeCount(EntityManager em, String table)
     {
         return ((Number) em.createNativeQuery("select count(*) from " + table)
                 .getSingleResult()).longValue();
+    }
+
+    private static Path writeCorrectionSource(Path target) throws Exception
+    {
+        writeSource(target);
+        String original = SclxPortableIdentity.transaction("SOURCE", TRANSACTION_UUID.toString());
+        String reversal = SclxPortableIdentity.transaction(
+                "SOURCE", REVERSAL_TRANSACTION_UUID.toString());
+        String replacement = SclxPortableIdentity.transaction(
+                "SOURCE", REPLACEMENT_TRANSACTION_UUID.toString());
+        String cash = SclxPortableIdentity.account("SOURCE", "1000");
+        String expense = SclxPortableIdentity.account("SOURCE", "6100");
+        String fund = SclxPortableIdentity.fund("SOURCE", "GENERAL");
+        String reversalDebit = SclxPortableIdentity.transactionLine(reversal, 1);
+        String reversalCredit = SclxPortableIdentity.transactionLine(reversal, 2);
+        String replacementDebit = SclxPortableIdentity.transactionLine(replacement, 1);
+        String replacementCredit = SclxPortableIdentity.transactionLine(replacement, 2);
+        String additionalTransactions = """
+                [
+                    {
+                      "transactionId": "%s",
+                      "transactionDate": "2026-07-16",
+                      "description": "Reverse purchase supplies",
+                      "status": "ENTERED",
+                      "correctionType": "REVERSAL",
+                      "correctionOfTransactionId": "%s",
+                      "lines": [
+                        {
+                          "lineId": "%s",
+                          "accountId": "%s",
+                          "fundId": "%s",
+                          "debit": "25.00",
+                          "credit": "0"
+                        },
+                        {
+                          "lineId": "%s",
+                          "accountId": "%s",
+                          "fundId": "%s",
+                          "debit": "0",
+                          "credit": "25.00"
+                        }
+                      ]
+                    },
+                    {
+                      "transactionId": "%s",
+                      "transactionDate": "2026-07-16",
+                      "description": "Replacement purchase supplies",
+                      "status": "ENTERED",
+                      "correctionType": "REPLACEMENT",
+                      "correctionOfTransactionId": "%s",
+                      "lines": [
+                        {
+                          "lineId": "%s",
+                          "accountId": "%s",
+                          "fundId": "%s",
+                          "debit": "30.00",
+                          "credit": "0"
+                        },
+                        {
+                          "lineId": "%s",
+                          "accountId": "%s",
+                          "fundId": "%s",
+                          "debit": "0",
+                          "credit": "30.00"
+                        }
+                      ]
+                    }
+                  ]
+                """.formatted(
+                reversal, original,
+                reversalDebit, cash, fund,
+                reversalCredit, expense, fund,
+                replacement, original,
+                replacementDebit, expense, fund,
+                replacementCredit, cash, fund);
+
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode root = (ObjectNode) mapper.readTree(target.toFile());
+        ArrayNode transactions = (ArrayNode) root.path("transactions");
+        ((ObjectNode) transactions.get(0)).put("status", "REVERSED");
+        JsonNode additions = mapper.readTree(additionalTransactions);
+        additions.forEach(transactions::add);
+        mapper.writerWithDefaultPrettyPrinter().writeValue(target.toFile(), root);
+        return target;
     }
 
     private static Path writePeriodCloseSource(Path target) throws Exception
