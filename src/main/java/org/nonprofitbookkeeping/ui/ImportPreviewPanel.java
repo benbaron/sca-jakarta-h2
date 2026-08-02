@@ -5,6 +5,8 @@ import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Separator;
@@ -13,6 +15,7 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -22,9 +25,11 @@ import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.interchange.InterchangeValidationMessage;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportEntityPreview;
+import org.nonprofitbookkeeping.interchange.sclx.SclxImportCommitService;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportMappingRequirement;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportPreview;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportPreviewService;
+import org.nonprofitbookkeeping.interchange.sclx.SclxImportResult;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportTransactionPreview;
 import org.nonprofitbookkeeping.service.CoaCsvMapper;
 import org.nonprofitbookkeeping.service.ImportPreviewService;
@@ -45,6 +50,7 @@ public class ImportPreviewPanel implements AppPanel
     private final BorderPane root = new BorderPane();
     private final ImportPreviewService previewService;
     private final SclxPreviewOperationFactory sclxPreviewFactory;
+    private final Function<String, SclxImportCommitService> sclxCommitFactory;
     private final Label status = new Label("Choose an SCLX, COA CSV, or OFX/QFX file to preview before import.");
     private final ListView<String> warnings = new ListView<>();
     private final TableView<CoaCsvMapper.CoaCsvRow> acceptedCoaRows = new TableView<>();
@@ -56,35 +62,51 @@ public class ImportPreviewPanel implements AppPanel
     private final TabPane previewTabs = new TabPane();
     private final Button commitAccepted = new Button("Commit Accepted COA Rows");
     private final Button previewSclx = new Button("Preview SCLX…");
+    private final Button commitSclx = new Button("Import Previewed SCLX…");
+    private final TextField sclxActor = new TextField("ui-operator");
     private ImportPreviewService.CoaPreviewResult lastCoaPreview;
+    private Path lastSclxSource;
+    private SclxImportPreview lastSclxPreview;
+    private SclxImportCommitService lastSclxCommitService;
 
     public ImportPreviewPanel()
     {
         this(new ImportPreviewService(),
-                (Supplier<SclxImportPreviewService>) UiServiceRegistry::sclxImportPreview);
+                (Supplier<SclxImportPreviewService>) UiServiceRegistry::sclxImportPreview,
+                UiServiceRegistry::sclxImportCommit);
     }
 
     ImportPreviewPanel(
             ImportPreviewService previewService,
             Function<Path, SclxImportPreview> sclxPreview)
     {
-        this(previewService, () -> Objects.requireNonNull(sclxPreview, "sclxPreview"));
+        this(previewService,
+                () -> Objects.requireNonNull(sclxPreview, "sclxPreview"),
+                companyCode ->
+                {
+                    throw new IllegalStateException("SCLX commit service was not provided.");
+                });
     }
 
     ImportPreviewPanel(
             ImportPreviewService previewService,
-            Supplier<SclxImportPreviewService> sclxPreviewService)
+            Supplier<SclxImportPreviewService> sclxPreviewService,
+            Function<String, SclxImportCommitService> sclxCommitFactory)
     {
-        this(previewService, () -> Objects.requireNonNull(
-                sclxPreviewService.get(), "sclxPreviewService result")::preview);
+        this(previewService,
+                () -> Objects.requireNonNull(
+                        sclxPreviewService.get(), "sclxPreviewService result")::preview,
+                sclxCommitFactory);
     }
 
     private ImportPreviewPanel(
             ImportPreviewService previewService,
-            SclxPreviewOperationFactory sclxPreviewFactory)
+            SclxPreviewOperationFactory sclxPreviewFactory,
+            Function<String, SclxImportCommitService> sclxCommitFactory)
     {
         this.previewService = Objects.requireNonNull(previewService, "previewService");
         this.sclxPreviewFactory = Objects.requireNonNull(sclxPreviewFactory, "sclxPreviewFactory");
+        this.sclxCommitFactory = Objects.requireNonNull(sclxCommitFactory, "sclxCommitFactory");
         root.setPadding(new Insets(8));
 
         Label title = new Label("Import Preview");
@@ -92,6 +114,12 @@ public class ImportPreviewPanel implements AppPanel
 
         previewSclx.setOnAction(e -> chooseAndPreviewSclx());
         previewSclx.setId("previewSclxButton");
+        commitSclx.setId("commitPreviewedSclxButton");
+        commitSclx.setDisable(true);
+        commitSclx.setOnAction(e -> confirmAndCommitSclx());
+        sclxActor.setId("sclxImportActor");
+        sclxActor.setPromptText("Audit actor");
+        sclxActor.textProperty().addListener((observable, oldValue, newValue) -> updateSclxCommitAvailability());
 
         Button previewCoa = new Button("Preview COA CSV…");
         previewCoa.setOnAction(e -> chooseAndPreviewCoa());
@@ -106,6 +134,7 @@ public class ImportPreviewPanel implements AppPanel
         status.setWrapText(true);
         root.setTop(new VBox(6, title,
                 new HBox(8, previewSclx, previewCoa, previewBank, commitAccepted),
+                new HBox(8, new Label("Import actor"), sclxActor, commitSclx),
                 status, new Separator()));
 
         buildAcceptedTable();
@@ -399,7 +428,7 @@ public class ImportPreviewPanel implements AppPanel
         status.setText("Previewing SCLX without changing the active company...");
         UiAsync.run("import-preview-sclx", () -> fixedScopePreview.apply(file), result -> {
             previewSclx.setDisable(false);
-            applySclxPreview(result);
+            applySclxPreview(file, result);
         }, ex -> {
             previewSclx.setDisable(false);
             clearCoaPreview();
@@ -411,8 +440,28 @@ public class ImportPreviewPanel implements AppPanel
 
     void applySclxPreview(SclxImportPreview result)
     {
+        applySclxPreview(null, result);
+    }
+
+    void applySclxPreview(Path source, SclxImportPreview result)
+    {
         Objects.requireNonNull(result, "result");
         clearCoaPreview();
+        lastSclxSource = source == null ? null : source.toAbsolutePath().normalize();
+        lastSclxPreview = result;
+        lastSclxCommitService = null;
+        if (lastSclxSource != null && sclxCommitReady(result))
+        {
+            try
+            {
+                lastSclxCommitService = Objects.requireNonNull(
+                        sclxCommitFactory.apply(result.targetCompanyCode()), "SCLX commit service");
+            }
+            catch (RuntimeException ex)
+            {
+                status.setText("Could not prepare SCLX import: " + UiErrors.safeMessage(ex));
+            }
+        }
         sclxEntities.getItems().setAll(result.operation().items());
         sclxMappings.getItems().setAll(result.mappings());
         sclxTransactions.getItems().setAll(result.transactions());
@@ -430,7 +479,8 @@ public class ImportPreviewPanel implements AppPanel
                 "Unsupported sections: " + result.sectionCounts().unsupportedSectionCount());
         previewTabs.getSelectionModel().select(1);
 
-        String outcome = result.hasBlockingErrors() ? "BLOCKED" : "READY FOR MAPPING REVIEW";
+        updateSclxCommitAvailability();
+        String outcome = sclxCommitReady(result) ? "READY TO IMPORT" : "BLOCKED";
         status.setText("Previewed SCLX " + result.version().externalValue()
                 + " from " + result.operation().sourceName()
                 + " for target " + result.targetCompanyCode()
@@ -439,6 +489,99 @@ public class ImportPreviewPanel implements AppPanel
                 + result.operation().counts().identical() + " identical, "
                 + result.operation().counts().errors() + " blocking error(s); account mode "
                 + result.recommendedAccountMode() + "; " + outcome + ". No data was changed.");
+    }
+
+    private static boolean sclxCommitReady(SclxImportPreview preview)
+    {
+        return !preview.hasBlockingErrors()
+                && (!preview.targetPopulated() || identicalReimport(preview))
+                && preview.recommendedAccountMode() == org.nonprofitbookkeeping.interchange.sclx.SclxAccountMode.AS_IS;
+    }
+
+    private static boolean identicalReimport(SclxImportPreview preview)
+    {
+        return !preview.operation().items().isEmpty()
+                && preview.operation().items().stream()
+                .allMatch(item -> item.identityMatch()
+                        == org.nonprofitbookkeeping.interchange.InterchangeIdentityMatch.IDENTICAL);
+    }
+
+    private void updateSclxCommitAvailability()
+    {
+        boolean ready = lastSclxSource != null
+                && lastSclxPreview != null
+                && lastSclxCommitService != null
+                && sclxCommitReady(lastSclxPreview)
+                && !sclxActor.getText().isBlank();
+        commitSclx.setDisable(!ready);
+    }
+
+    private void confirmAndCommitSclx()
+    {
+        Path source = lastSclxSource;
+        SclxImportPreview preview = lastSclxPreview;
+        SclxImportCommitService commitService = lastSclxCommitService;
+        String actor = sclxActor.getText().strip();
+        if (source == null || preview == null || commitService == null || actor.isBlank()
+                || !sclxCommitReady(preview))
+        {
+            status.setText("Import unavailable: preview a valid SCLX file for an empty target first.");
+            updateSclxCommitAvailability();
+            return;
+        }
+
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,
+                "Import " + preview.sectionCounts().totalEntities() + " governed entities from "
+                        + preview.operation().sourceName() + " into " + preview.operation().targetLabel()
+                        + "?\n\nSHA-256: " + preview.operation().sourceSha256()
+                        + "\n\nThe target must remain empty unless every governed identity is identical. "
+                        + "Every section commits in one transaction; any failure rolls everything back.",
+                ButtonType.OK, ButtonType.CANCEL);
+        confirmation.setTitle("Confirm Atomic SCLX Import");
+        confirmation.setHeaderText("Import the exact previewed SCLX file");
+        if (confirmation.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK)
+        {
+            status.setText("SCLX import cancelled; no data was changed.");
+            return;
+        }
+
+        previewSclx.setDisable(true);
+        commitSclx.setDisable(true);
+        status.setText("Importing the exact previewed SCLX file atomically...");
+        UiAsync.run("import-preview-sclx-commit",
+                () -> commitService.commit(source, preview, actor),
+                this::applySclxImportResult,
+                ex ->
+                {
+                    previewSclx.setDisable(false);
+                    updateSclxCommitAvailability();
+                    status.setText("Could not import SCLX: " + UiErrors.safeMessage(ex));
+                });
+    }
+
+    private void applySclxImportResult(SclxImportResult result)
+    {
+        previewSclx.setDisable(false);
+        warnings.getItems().setAll(result.messages().stream()
+                .map(ImportPreviewPanel::displayMessage)
+                .toList());
+        if (result.committed())
+        {
+            lastSclxSource = null;
+            lastSclxPreview = null;
+            lastSclxCommitService = null;
+            commitSclx.setDisable(true);
+            status.setText("Imported SCLX atomically into " + result.targetLabel()
+                    + ": created " + result.counts().created() + ", identical "
+                    + result.counts().identical() + ", SHA-256 " + result.sourceSha256()
+                    + ". Reopen other workspaces to refresh imported data.");
+            return;
+        }
+        lastSclxSource = null;
+        lastSclxPreview = null;
+        lastSclxCommitService = null;
+        commitSclx.setDisable(true);
+        status.setText("SCLX import rolled back; no partial data was kept. Review the reported errors and preview again.");
     }
 
     private static String displayMessage(InterchangeValidationMessage message)
@@ -457,6 +600,10 @@ public class ImportPreviewPanel implements AppPanel
 
     private void clearSclxPreview()
     {
+        lastSclxSource = null;
+        lastSclxPreview = null;
+        lastSclxCommitService = null;
+        commitSclx.setDisable(true);
         sclxCounts.getItems().clear();
         sclxEntities.getItems().clear();
         sclxMappings.getItems().clear();

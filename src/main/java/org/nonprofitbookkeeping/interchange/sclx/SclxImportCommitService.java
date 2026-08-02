@@ -55,6 +55,7 @@ import org.nonprofitbookkeeping.service.InventoryItemCommand;
 import org.nonprofitbookkeeping.service.InventoryService;
 import org.nonprofitbookkeeping.service.PeriodCloseRangeService;
 import org.nonprofitbookkeeping.service.TransactionCommand;
+import org.nonprofitbookkeeping.service.TransactionCorrectionService;
 import org.nonprofitbookkeeping.service.TransactionEntryService;
 import org.nonprofitbookkeeping.service.TransactionLineCommand;
 import org.nonprofitbookkeeping.service.TransactionSupplementalLineCommand;
@@ -84,9 +85,7 @@ import java.util.function.Supplier;
  * activities, counterparties, merchants, normalized budgets, balanced canonical
  * transactions, supplemental transaction details, fixed assets, and completed
  * depreciation runs, inventory, banking, reconciliation, period-close facts, and factual audit
- * history into an empty selected company. Correction relationships remain blocked until their
- * canonical writer is added. No production UI commit action is exposed while that section
- * coverage remains incomplete.</p>
+ * history and correction relationships into an empty selected company.</p>
  */
 public final class SclxImportCommitService
 {
@@ -119,6 +118,7 @@ public final class SclxImportCommitService
     private final PeriodCloseRangeService periodCloseRangeService;
     private final AuditHistoryService auditHistoryService;
     private final TransactionEntryService transactionEntryService;
+    private final TransactionCorrectionService transactionCorrectionService;
     private final IntConsumer afterBusinessWrite;
 
     public SclxImportCommitService(Jpa jpa, Supplier<String> companyCodeSupplier)
@@ -149,6 +149,7 @@ public final class SclxImportCommitService
         this.periodCloseRangeService = new PeriodCloseRangeService(jpa);
         this.auditHistoryService = new AuditHistoryService();
         this.transactionEntryService = new TransactionEntryService(jpa, companyCodeSupplier);
+        this.transactionCorrectionService = new TransactionCorrectionService(jpa, companyCodeSupplier);
     }
 
     /**
@@ -190,6 +191,7 @@ public final class SclxImportCommitService
         SclxPeriodCloseImportData periodClose = SclxPeriodCloseImportData.parse(root);
         SclxAuditHistoryImportData auditHistory = SclxAuditHistoryImportData.parse(root);
         SclxTransactionDetailImportData details = SclxTransactionDetailImportData.parse(root);
+        SclxCorrectionImportData corrections = SclxCorrectionImportData.parse(root);
         requireSupportedTransactionShape(root, details);
         ownership.requireNoOpenOwnershipIssues();
 
@@ -216,7 +218,7 @@ public final class SclxImportCommitService
                     em.getTransaction().commit();
                     return successfulResult(current, 0L, current.operation().items().size(),
                             "SCLX_IDENTICAL_REIMPORT",
-                            "Every governed core, extension, banking, reconciliation, period-close, and audit-history identity was identical; no data changed.");
+                            "Every governed core, extension, banking, reconciliation, period-close, audit-history, and correction fact was identical; no data changed.");
                 }
                 requireEmptyTarget(em, company);
 
@@ -247,6 +249,8 @@ public final class SclxImportCommitService
                         em, company, root.path("transactions"), accounts, funds, activities,
                         counterparties, merchants, details, previews, actor, writes);
                 writes += transactions.transactionCount();
+                writes += writeCorrectionRelationships(
+                        em, company, corrections, transactions.transactions(), writes);
                 FixedAssetWrite writtenFixedAssets = writeFixedAssets(
                         em, company, fixedAssets, accounts, funds, transactions.transactions(), previews, writes);
                 writes += writtenFixedAssets.businessWriteCount();
@@ -284,27 +288,27 @@ public final class SclxImportCommitService
                 AuditEvent operationAudit = new AuditEvent();
                 operationAudit.setCompany(company);
                 operationAudit.setActor(cleanActor(actor));
-                operationAudit.setActionType("SCLX_AUDIT_HISTORY_IMPORTED");
+                operationAudit.setActionType("SCLX_IMPORTED");
                 operationAudit.setEntityType("Company");
                 operationAudit.setEntityId(String.valueOf(company.getId()));
-                operationAudit.setSummary("Imported governed SCLX business data and factual audit history");
+                operationAudit.setSummary("Imported governed SCLX active-company business data");
                 operationAudit.setAfterValue("source=" + current.operation().sourceName()
                         + ",version=" + current.version().externalValue()
                         + ",sha256=" + current.operation().sourceSha256()
                         + ",created=" + actualCreatedCount(current));
                 operationAudit.setReason(
-                        "Atomic SCLX core, supported extension, banking, reconciliation, period-close, and factual audit-history import; correction relationships were absent.");
+                        "Atomic SCLX core, supported extension, banking, reconciliation, period-close, factual audit-history, and correction-relationship import.");
                 em.persist(operationAudit);
                 afterBusinessWrite.accept(++writes);
 
                 em.getTransaction().commit();
                 return successfulResult(current, actualCreatedCount(current),
                         current.operation().counts().identical(),
-                        "SCLX_AUDIT_HISTORY_COMMIT_COMPLETED",
+                        "SCLX_COMMIT_COMPLETED",
                         "SCLX organization, chart/accounts, funds, normalized budgets, transaction-linked "
                                 + "masters, canonical transactions, supplemental details, fixed assets, and completed "
                                 + "depreciation runs, inventory, bank configuration, reviewed statement facts, "
-                                + "clearance, reconciliation, period-close history, and factual audit history committed atomically.");
+                                + "clearance, reconciliation, period-close history, factual audit history, and correction relationships committed atomically.");
             }
             catch (RuntimeException ex)
             {
@@ -346,7 +350,7 @@ public final class SclxImportCommitService
         }
         if (!unsupportedTypes.isEmpty() || preview.sectionCounts().unsupportedSectionCount() > 0L)
         {
-            throw new IllegalStateException("P15-S5-C9 import does not yet import unsupported root sections "
+            throw new IllegalStateException("P15-S5-C10 import cannot discard unsupported root sections "
                     + "or later application-extension entities: " + unsupportedTypes + ".");
         }
         JsonNode app = root.path("extensions").path("scaJakartaH2");
@@ -357,7 +361,7 @@ public final class SclxImportCommitService
                 if (!SUPPORTED_EXTENSION_KEYS.contains(entry.getKey()) && !emptyExtensionValue(entry.getValue()))
                 {
                     throw new IllegalStateException(
-                            "P15-S5-C9 cannot discard populated extension " + entry.getKey() + ".");
+                            "P15-S5-C10 cannot discard populated extension " + entry.getKey() + ".");
                 }
             });
         }
@@ -399,14 +403,10 @@ public final class SclxImportCommitService
     {
         for (JsonNode transaction : root.path("transactions"))
         {
-            if (!"ENTERED".equals(text(transaction, "status")))
+            if (presentText(transaction, "reference"))
             {
-                throw new IllegalStateException("Core SCLX commit currently requires ENTERED transactions.");
-            }
-            if (presentText(transaction, "reference") || presentText(transaction, "correctionType")
-                    || presentText(transaction, "correctionOfTransactionId"))
-            {
-                throw new IllegalStateException("Transaction references and correction relationships require a later SCLX slice.");
+                throw new IllegalStateException(
+                        "Transaction reference cannot be preserved by the current canonical transaction model.");
             }
             for (JsonNode line : transaction.path("lines"))
             {
@@ -426,6 +426,26 @@ public final class SclxImportCommitService
                 }
             }
         }
+    }
+
+    private int writeCorrectionRelationships(
+            EntityManager em,
+            Company company,
+            SclxCorrectionImportData source,
+            Map<String, Txn> transactions,
+            int writesBefore)
+    {
+        int writes = writesBefore;
+        for (SclxCorrectionImportData.CorrectionValue value : source.relationships())
+        {
+            Txn correction = required(transactions, value.transactionId(), "correction transaction");
+            Txn corrected = required(
+                    transactions, value.correctedTransactionId(), "corrected transaction");
+            transactionCorrectionService.restoreRelationshipForImport(
+                    em, company, correction, value.correctionType(), corrected);
+            afterBusinessWrite.accept(++writes);
+        }
+        return source.relationships().size();
     }
 
     private static void requireEmptyTarget(EntityManager em, Company company)

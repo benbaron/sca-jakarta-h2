@@ -24,7 +24,8 @@ public final class PanelFactory
                 () -> new DiagnosticsPanel(services.diagnosticsQueryService()),
                 () -> new ImportPreviewPanel(
                         new ImportPreviewService(),
-                        services::sclxImportPreviewService));
+                        services::sclxImportPreviewService,
+                        services::sclxImportCommitService));
     }
 
     PanelFactory(CompanySessionController companySessionController)

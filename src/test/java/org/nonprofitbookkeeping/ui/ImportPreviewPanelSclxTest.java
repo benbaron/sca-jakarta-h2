@@ -53,15 +53,17 @@ class ImportPreviewPanelSclxTest
             TableView<?> entities = (TableView<?>) panel.root().lookup("#sclxPreviewEntities");
             TableView<?> mappings = (TableView<?>) panel.root().lookup("#sclxPreviewMappings");
             TableView<?> transactions = (TableView<?>) panel.root().lookup("#sclxPreviewTransactions");
-            Button commit = (Button) panel.root().lookup("#commitAcceptedCoaRowsButton");
+            Button commitCoa = (Button) panel.root().lookup("#commitAcceptedCoaRowsButton");
+            Button commitSclx = (Button) panel.root().lookup("#commitPreviewedSclxButton");
 
-            assertTrue(status.getText().contains("READY FOR MAPPING REVIEW"));
+            assertTrue(status.getText().contains("READY TO IMPORT"));
             assertTrue(status.getText().contains("No data was changed"));
             assertEquals(6, counts.getItems().size());
             assertEquals(1, entities.getItems().size());
             assertEquals(1, mappings.getItems().size());
             assertEquals(1, transactions.getItems().size());
-            assertTrue(commit.isDisabled());
+            assertTrue(commitCoa.isDisabled());
+            assertTrue(commitSclx.isDisabled(), "a rendered result without its exact source cannot commit");
             return null;
         });
     }

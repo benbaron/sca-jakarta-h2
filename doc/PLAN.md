@@ -1,12 +1,12 @@
 ---
-plan_version: 109
+plan_version: 110
 active_phase: P15
-active_slice: P15-S5-C9
+active_slice: P15-S5-C10
 active_status: VERIFYING
-active_branch: codex/P15-S5-C9-audit-history-import
-active_pull_request: 236
-active_head: "738f4c7972c86945e6c9aac1b11033c406a90eb4"
-next_action: "Run the final plan-inclusive PR #236 head through all Maven PR Tests gates; keep the production SCLX commit action absent until correction relationships are complete."
+active_branch: codex/P15-S5-C10-complete-sclx-import
+active_pull_request: 237
+active_head: "305beec8c1b0c47b04403d06316dc83d8c25259d"
+next_action: "Run the final plan-inclusive PR #237 head through all Maven PR Tests gates, then complete the P15-S5 desktop checklist before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Run the final plan-inclusive PR #236 head through all Maven PR Tes
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S5-C8 complete through merged PR #235 and activates P15-S5-C9 factual-audit-history import on a fresh branch from current main.
+This revision records P15-S5-C9 complete through merged PR #236 and activates P15-S5-C10 correction relationships, production commit UI, semantic round-trip, and final desktop acceptance on a fresh branch from current main.
 
 ## 2. Status values
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S5-C9; P15-S0 through P15-S4 and P15-S5-C1 through C8 DONE
+**Status:** IN_PROGRESS at P15-S5-C10; P15-S0 through P15-S4 and P15-S5-C1 through C9 DONE
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: VERIFYING at P15-S5-C9 on draft PR #236.
+Status: VERIFYING at P15-S5-C10 on draft PR #237.
 
 Startup scope:
 
@@ -1110,10 +1110,12 @@ Current validation status:
 - Implementation/plan head `fa7f19b57bfa2df2a8fde7c451575ebd1b840f32` passed Maven PR Tests run `30681932839`: `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance all succeeded.
 - Final C8 head `7a8014f255dbf2026bcc14512bca74e025a599a2` passed Maven PR Tests run `30682072520`, and PR #235 merged to `main` at `f0c1ab20a8f828b24ab2738acb498015e7708b09`.
 - P15-S5-C9 restores governed company-owned factual audit history through a caller-owned `AuditHistoryService` seam after the imported business graph exists.
+- Final C9 head `758934db92118a94546cd413d022c811315c080d` passed Maven PR Tests run `30721745588`, and PR #236 merged to `main` at `f2aa151c1fa7d61f997dc85938d5596a7c79b31d`.
+- P15-S5-C10 restores canonical reversal/replacement relationships, exposes the complete atomic import from Import Preview, verifies semantic re-export, and supplies the final owner desktop checklist.
 
 Next exact action:
 
-- Follow draft PR #236 through all Maven PR Tests gates and correct only concrete compiler or H2 diagnostics.
+- Publish P15-S5-C10 and run the complete Maven PR Tests workflow before owner desktop acceptance.
 
 ### P15-S5-C1 — Non-mutating SCLX import preview
 
@@ -1318,7 +1320,7 @@ Next exact action:
 
 ### P15-S5-C9 — Factual audit-history import
 
-Status: VERIFYING on draft PR #236.
+Status: DONE through merged PR #236.
 
 Scope:
 
@@ -1337,10 +1339,37 @@ Validation status:
 - Draft PR #236 contains exactly the eleven intended C9 implementation, test, and governing-document files from merged `main`.
 - Initial Maven PR Tests run `30721476025` compiled production and executed the suite but exposed two stale C8 operation-audit expectations in existing core and period-close fixtures; no production behavior or C9 test failed.
 - Corrected implementation head `738f4c7972c86945e6c9aac1b11033c406a90eb4` passed Maven PR Tests run `30721599317`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
+- Final head `758934db92118a94546cd413d022c811315c080d` passed Maven PR Tests run `30721745588`; PR #236 merged at `f2aa151c1fa7d61f997dc85938d5596a7c79b31d`.
 
 Next exact action:
 
-- Run the final plan-inclusive PR #236 head through `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
+- None; P15-S5-C9 is DONE.
+
+### P15-S5-C10 — Correction relationships and complete production import
+
+Status: VERIFYING on draft PR #237.
+
+Scope:
+
+- Strictly project every transaction correction relationship before mutation, requiring resolved same-file references, canonical `REVERSAL`/`REPLACEMENT` pairing and source statuses, one relationship of each kind per original, and an acyclic graph.
+- Restore correction links through a caller-owned `TransactionCorrectionService` seam after all canonical transactions exist, without replaying interactive correction commands or synthesizing historical audit rows.
+- Preserve the complete C2-C10 graph in the existing one-transaction boundary with portable identities, identical no-op reimport, populated-target protection, and late rollback after correction persistence.
+- Expose **Import Previewed SCLX…** only for the exact successful, nonblocking, `AS_IS`, empty-target or wholly identical preview; require a nonblank audit actor and explicit source/hash/target/count confirmation; re-read and re-preview inside the commit service.
+- Report committed or rolled-back results in Import Preview, invalidate approval after success or rollback, and keep all file/service work off the JavaFX application thread.
+- Prove semantic import/export preservation for representative core, budget, transaction-detail, fixed-asset, inventory, banking, reconciliation, period-close, audit-history, and correction facts.
+- Add and complete `doc/P15-S5-sclx-import-commit-ui-user-testing.md` before merge.
+
+Validation status:
+
+- All twelve changed Java sources pass a Java 17 grammar parse locally; Maven is unavailable in this container.
+- Focused tests cover correction validation, atomic write/idempotency, late rollback, semantic re-export, UI rendering/source guards, and the fixed-scope production route.
+- Draft PR #237 contains exactly the seventeen intended C10 implementation, test, governing-document, and desktop-checklist files from merged `main`.
+- Initial Maven PR Tests run `30765779256` compiled production and executed 497 tests but exposed one whitespace-sensitive malformed-correction fixture marker; no production behavior failed.
+- Corrected implementation head `305beec8c1b0c47b04403d06316dc83d8c25259d` uses a structural JSON-node mutation and passed Maven PR Tests run `30765868528`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
+
+Next exact action:
+
+- Run the final plan-inclusive PR #237 head through `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance; then complete the desktop checklist.
 
 Planned deliverables:
 
