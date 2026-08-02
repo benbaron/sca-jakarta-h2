@@ -80,6 +80,7 @@ public final class WorkspaceServicesFactory
                 sclxExportActions,
                 UiServiceRegistry::dashboardQuery,
                 UiServiceRegistry::diagnosticsQuery,
-                () -> UiServiceRegistry.sclxImportPreview(context.activeCompanyCode()));
+                () -> UiServiceRegistry.sclxImportPreview(context.activeCompanyCode()),
+                UiServiceRegistry::sclxImportCommit);
     }
 }
