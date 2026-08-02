@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 /** Previews and atomically persists strict OFX/QFX documents as durable review facts. */
 public final class BankStatementReviewService
@@ -58,9 +59,19 @@ public final class BankStatementReviewService
 
     public BankStatementReviewPreview preview(Path source, String companyCode, long bankAccountId)
     {
+        return preview(source, companyCode, bankAccountId, parser::parse);
+    }
+
+    BankStatementReviewPreview preview(
+            Path source,
+            String companyCode,
+            long bankAccountId,
+            Function<Path, BankStatementDocument> documentParser)
+    {
         Path exactSource = requireSource(source);
         String sourceHash = sha256(exactSource);
-        BankStatementDocument document = parser.parse(exactSource);
+        BankStatementDocument document = java.util.Objects.requireNonNull(
+                documentParser, "documentParser").apply(exactSource);
         try (EntityManager em = jpa.em())
         {
             Company company = company(em, companyCode);
@@ -100,6 +111,15 @@ public final class BankStatementReviewService
             boolean accountIdentityConfirmed,
             String actor)
     {
+        return commit(approvedPreview, accountIdentityConfirmed, actor, parser::parse);
+    }
+
+    BankStatementReviewResult commit(
+            BankStatementReviewPreview approvedPreview,
+            boolean accountIdentityConfirmed,
+            String actor,
+            Function<Path, BankStatementDocument> documentParser)
+    {
         if (approvedPreview == null)
         {
             throw new IllegalArgumentException("Approved bank-statement preview is required.");
@@ -111,7 +131,8 @@ public final class BankStatementReviewService
         BankStatementReviewPreview current = preview(
                 approvedPreview.source(),
                 approvedPreview.companyCode(),
-                approvedPreview.bankAccountId());
+                approvedPreview.bankAccountId(),
+                documentParser);
         if (!approvedPreview.sourceHash().equals(current.sourceHash()))
         {
             throw new IllegalArgumentException("Bank statement changed after preview; preview it again.");
@@ -480,8 +501,12 @@ public final class BankStatementReviewService
 
     private static BankImportBatch.SourceFormat sourceFormat(BankStatementDocument document)
     {
-        return document.format() == org.nonprofitbookkeeping.model.BankingDataFormat.QFX
-                ? BankImportBatch.SourceFormat.QFX : BankImportBatch.SourceFormat.OFX;
+        return switch (document.format())
+        {
+            case QFX -> BankImportBatch.SourceFormat.QFX;
+            case CSV -> BankImportBatch.SourceFormat.CSV;
+            default -> BankImportBatch.SourceFormat.OFX;
+        };
     }
 
     private static InterchangeMessageSeverity interchangeSeverity(
