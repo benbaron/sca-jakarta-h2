@@ -1,12 +1,12 @@
 ---
-plan_version: 111
+plan_version: 112
 active_phase: P15
 active_slice: P15-S6-C1
 active_status: VERIFYING
 active_branch: codex/P15-S6-C1-strict-ofx-qfx-preview
 active_pull_request: 238
-active_head: "d1050175c9812ec0e2596da6f31f8b9000e3d17b"
-next_action: "Run draft PR #238 through the complete Maven PR Tests workflow and correct only concrete compiler, fixture, or JavaFX diagnostics."
+active_head: "9ed4787759896bf2491d26c5c2d0c37a96f4d54d"
+next_action: "Run the final governance-inclusive PR #238 head through Maven PR Tests, complete the owner desktop checklist, and merge before starting P15-S6-C2."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Run draft PR #238 through the complete Maven PR Tests workflow and
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records all of P15-S5 complete through merged PR #237 and owner desktop acceptance, then activates P15-S6-C1 strict OFX/QFX parsing and non-mutating preview on a fresh branch from current main.
+This revision records P15-S6-C1 implementation validation on corrected head `9ed4787759896bf2491d26c5c2d0c37a96f4d54d` in Maven PR Tests run `30767054385`, including the one-test encoding-diagnostic correction, and leaves the slice VERIFYING for exact-head CI, owner desktop acceptance, and merge.
 
 ## 2. Status values
 
@@ -1439,12 +1439,13 @@ Validation status:
 
 - All changed Java sources pass a Java 17 grammar parse.
 - The strict parser compiles through the JDK compiler module and a focused runtime harness passes the three governed valid fixture families plus unsafe XML, duplicate FITID, multi-account, and encrypted-QFX rejection.
-- Full Maven validation remains CI-authoritative because this container has no `mvn` executable.
 - Draft PR #238 contains exactly the twelve intended implementation, test, governing-document, and owner-checklist files from merged `main`.
+- Initial Maven PR Tests run `30766866466` compiled production and passed 505 of 506 executed tests; the sole failure was the new UTF-16 rejection assertion because the generic NUL diagnostic ran before the more specific BOM diagnostic.
+- Corrected head `9ed4787759896bf2491d26c5c2d0c37a96f4d54d` checks the UTF-16/UTF-32 BOM before the generic NUL scan and passed `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance in run `30767054385`.
 
 Next exact action:
 
-- Follow draft PR #238 through `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance; correct only concrete diagnostics.
+- Run the final governance-inclusive PR #238 head through `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance; then complete the owner desktop checklist and merge before starting P15-S6-C2.
 
 ## P15-S7 — OFX 2.x/QFX and normalized bank CSV export
 
