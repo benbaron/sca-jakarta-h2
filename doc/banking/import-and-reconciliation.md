@@ -75,3 +75,19 @@ duplicate headers, missing mappings, mixed identities, and resource-limit violat
 and then delegates commit to `BankStatementReviewService`. CSV therefore shares configured-account
 validation, account confirmation, scoped duplicate detection, idempotent reimport, complete rollback,
 durable operation audit, and the prohibition on implicit canonical ledger creation.
+
+## P15-S6-C4 production durable-review workspace
+
+Import Preview is the production write route for OFX/QFX and mapped bank CSV. It captures the active
+company, selected active configured account, source hash, parsed facts, and—when CSV is used—the selected
+durable profile revision. The user sees normalized rows, original CSV logical rows, duplicate status,
+account-match status, and every blocking/warning message before an audit actor and an explicit exact-scope
+confirmation can authorize the atomic durable-review write. A suffix-only account match requires a
+separate visible confirmation. Any scope or source drift is rejected and requires a new preview.
+
+`BankReviewQueryService` is the read-only desktop authority for persisted review batches and statement
+lines. Banking reports company-scoped durable counts and navigates to the import and review workspaces.
+Bank Transactions shows persisted source/account/date/amount/currency/status and match facts, survives
+restart, and isolates active companies. It opens the canonical ledger only when the row has an explicit
+matched transaction. The former `UiWorkspaceDataStore.bankTransactions` session staging authority and
+the File-menu direct-import path are removed. Import alone still creates no `Txn` or `TxnSplit`.
