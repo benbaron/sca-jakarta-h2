@@ -81,6 +81,11 @@ public final class WorkspaceServicesFactory
                 UiServiceRegistry::dashboardQuery,
                 UiServiceRegistry::diagnosticsQuery,
                 () -> UiServiceRegistry.sclxImportPreview(context.activeCompanyCode()),
-                UiServiceRegistry::sclxImportCommit);
+                UiServiceRegistry::sclxImportCommit,
+                UiServiceRegistry::bankConfiguration,
+                UiServiceRegistry::bankStatementReview,
+                UiServiceRegistry::bankCsvReview,
+                UiServiceRegistry::bankCsvMappingProfiles,
+                UiServiceRegistry::bankReviewQuery);
     }
 }
