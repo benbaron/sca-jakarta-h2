@@ -138,13 +138,21 @@ class SclxImportCommitServiceTest
     void malformedCorrectionIsRejectedBeforeMutation(@TempDir Path tempDir) throws Exception
     {
         Path source = writeCorrectionSource(tempDir.resolve("corrections-invalid.sclx"));
-        String originalId = SclxPortableIdentity.transaction("SOURCE", TRANSACTION_UUID.toString());
-        String json = Files.readString(source);
-        String marker = "\"correctionOfTransactionId\": \"" + originalId + "\"";
-        assertTrue(json.contains(marker));
-        Files.writeString(source, json.replaceFirst(
-                java.util.regex.Pattern.quote(marker),
-                "\"correctionOfTransactionId\": \"transaction:SOURCE:missing\""));
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode malformed = (ObjectNode) mapper.readTree(source.toFile());
+        boolean changed = false;
+        for (JsonNode transaction : malformed.path("transactions"))
+        {
+            if (transaction.hasNonNull("correctionOfTransactionId"))
+            {
+                ((ObjectNode) transaction).put(
+                        "correctionOfTransactionId", "transaction:SOURCE:missing");
+                changed = true;
+                break;
+            }
+        }
+        assertTrue(changed, "correction fixture must contain a relationship to invalidate");
+        mapper.writerWithDefaultPrettyPrinter().writeValue(source.toFile(), malformed);
 
         try (Jpa jpa = new Jpa(tempDir.resolve("corrections-invalid")))
         {
