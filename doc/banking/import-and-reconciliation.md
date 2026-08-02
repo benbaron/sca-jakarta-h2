@@ -57,3 +57,21 @@ plus row-level currency, check/reference, and correction facts. Duplicate identi
 within the selected company and configured account. An identical file/format/target is a no-op returning
 the existing batch. A new batch, its lines and issues, and one factual operation audit share one
 resource-local transaction. The service never creates a canonical ledger transaction.
+
+## P15-S6-C3 mapped CSV profiles and durable review
+
+`BankCsvMappingProfileService` owns reusable mapping profiles in H2. Every profile belongs to exactly
+one company and configured bank account, is limited by the 1,000-profile company cap, and stores only
+validated versioned mapping JSON plus searchable format metadata. Saving, replacing, activating, and
+deactivating a profile are explicit configuration operations; raw financial rows and credentials are
+never stored in a profile.
+
+`BankCsvParser` maps explicit signed-amount or credit-minus-debit asset-account layouts into
+`BankStatementDocument`. It retains original logical rows for preview, requires one source account and
+currency, applies only declared date/encoding/decimal/grouping rules, and blocks malformed quoting,
+duplicate headers, missing mappings, mixed identities, and resource-limit violations before mutation.
+
+`BankCsvReviewService` binds the selected profile revision to the exact source/company/account preview
+and then delegates commit to `BankStatementReviewService`. CSV therefore shares configured-account
+validation, account confirmation, scoped duplicate detection, idempotent reimport, complete rollback,
+durable operation audit, and the prohibition on implicit canonical ledger creation.
