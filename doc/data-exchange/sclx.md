@@ -259,9 +259,9 @@ shows:
 
 The status text names the source, SCLX version, explicit target company, recommended account mode,
 new/identical/error totals, and whether the preview is blocked. It always states that no data was
-changed. The existing COA commit action is disabled after an SCLX preview, and this slice exposes no
-SCLX commit control. P15-S5-C2 adds a service-level core commit boundary but deliberately keeps the
-button absent until every exported section has a governed canonical writer.
+changed. The existing COA commit action is disabled after an SCLX preview. C1 initially exposed no
+SCLX commit control; C10 enables the complete commit only after every exported section has a governed
+canonical writer.
 
 ### 10.3 P15-S5-C2 core transactional-import boundary
 
@@ -446,6 +446,26 @@ operation. Existing audit-history-only targets are populated targets, and an ide
 remains a no-op. C9 still rejects correction relationships, populated unknown sections, and
 populated-target merge. The JavaFX SCLX commit action remains absent.
 
+### 10.11 P15-S5-C10 correction and complete production-import boundary
+
+P15-S5-C10 completes the selected-company writer with transaction correction relationships. Before
+mutation, `SclxCorrectionImportData` requires every correction reference to resolve within the source,
+allows only `REVERSAL` and `REPLACEMENT`, enforces canonical source statuses, permits at most one of
+each relationship per original, requires a reversal for every replacement, and rejects cycles.
+
+After all transactions exist, a caller-owned `TransactionCorrectionService` seam restores the native
+`Txn.reversalOf` and `Txn.replacementFor` relationships. It does not replay reverse/replace commands,
+create extra transactions, or manufacture historical audit rows. A successful complete import writes
+one distinct local `SCLX_IMPORTED` operation fact; an identical reimport remains a no-op.
+
+The production Import Preview workspace exposes **Import Previewed SCLX…** only while it retains the
+exact source path and a nonblocking `AS_IS` preview for an empty target or a wholly identical reimport.
+A nonblank audit actor is required. Confirmation names the source, fixed target, SHA-256, entity count, empty-target/identical rule, and
+atomic rollback risk. Commit runs away from the JavaFX thread and the service re-reads and re-previews
+the source before beginning the transaction. A changed source, changed target, newly populated target,
+or new blocking diagnostic prevents mutation. Success reports target, created/identical counts and
+SHA-256; failure reports rollback, and both success and rollback invalidate the approved preview.
+
 ## 11. Import transaction boundary and results
 
 Preview and validation MUST make no H2 changes. Commit MUST use one caller-owned transaction for the documented import boundary and route financial records through canonical services. A late failure MUST roll back all records in that boundary.
@@ -479,6 +499,10 @@ event. No interactive close/reopen audit rows are synthesized during restoration
 For P15-S5-C9, the same rollback boundary additionally includes imported factual audit events, their
 intrinsic UUIDs and source timestamps, their interchange identities, and the distinct C9 operation
 audit event. No historical business command is replayed during restoration.
+
+For P15-S5-C10, the same rollback boundary additionally includes native reversal/replacement links and
+the final `SCLX_IMPORTED` operation event. A failure after either relationship is written rolls back
+the complete C2-C10 company graph, including all imported factual audit history and identities.
 
 The result MUST report at least:
 
