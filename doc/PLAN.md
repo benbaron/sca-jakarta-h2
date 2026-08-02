@@ -1,12 +1,12 @@
 ---
-plan_version: 113
+plan_version: 114
 active_phase: P15
 active_slice: P15-S6-C2
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S6-C2-durable-ofx-qfx-review
 active_pull_request: 239
-active_head: "15ac5632d820505eb52763728d40bf6ed040a924"
-next_action: "Run PR #239 through Maven PR Tests, correct concrete diagnostics, and merge before starting mapped CSV profiles."
+active_head: "9c8d085b5fb056a66c62195e10e63aaf0159e076"
+next_action: "Verify this governance-inclusive C2 head, merge PR #239, then start mapped CSV profiles from the exact merged main."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Run PR #239 through Maven PR Tests, correct concrete diagnostics, 
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S6-C1 as DONE through merged PR #238 and owner desktop acceptance, then starts P15-S6-C2 for configured-account matching and complete atomic OFX/QFX durable review.
+This revision records the successful authoritative verification of P15-S6-C2 configured-account matching and complete atomic OFX/QFX durable review on draft PR #239.
 
 ## 2. Status values
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S6-C1; P15-S0 through P15-S5 DONE
+**Status:** IN_PROGRESS at P15-S6-C2; P15-S0 through P15-S5 DONE
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -1465,10 +1465,13 @@ Validation status:
 - All changed Java sources pass the Java 17 grammar parser locally; Maven is unavailable in this container.
 - Focused H2 tests cover exact configured-account commit, complete metadata preservation, suffix confirmation, blocking mismatch, identical no-op, no ledger writes, operation audit, migration columns, and late rollback.
 - Draft PR #239 contains exactly the nineteen intended implementation, migration, test, SCLX portability, and governing-document files from merged `main`.
+- The first authoritative workflow on plan-inclusive head `80916aaee9840aed2a22abb256e99bb52f7c749a` compiled production and passed 508 of 510 executed tests. The two failures exposed compatibility drift in the legacy uppercase FITID projection and persisted duplicate matching.
+- Corrected head `9c8d085b5fb056a66c62195e10e63aaf0159e076` restores canonical uppercase source and correction identities and canonicalizes legacy duplicate-context values before comparison.
+- Maven PR Tests run `30769684204` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance on that corrected implementation head.
 
 Next exact action:
 
-- Run PR #239 through the authoritative Maven/H2, repeated-suite, and JavaFX production-route gates; correct only concrete diagnostics.
+- Verify the governance-inclusive C2 head through the same three gates, merge PR #239, and start the mapped CSV profile slice from the exact merged `main`.
 
 ## P15-S7 — OFX 2.x/QFX and normalized bank CSV export
 
