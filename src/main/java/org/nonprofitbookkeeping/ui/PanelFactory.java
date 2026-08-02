@@ -25,7 +25,16 @@ public final class PanelFactory
                 () -> new ImportPreviewPanel(
                         new ImportPreviewService(),
                         services::sclxImportPreviewService,
-                        services::sclxImportCommitService));
+                        services::sclxImportCommitService,
+                        services.context()::activeCompanyCode,
+                        services::bankConfigurationService,
+                        services::bankStatementReviewService,
+                        services::bankCsvReviewService,
+                        services::bankCsvMappingProfileService));
+        factories.put(AppPanelId.BANKING,
+                () -> new BankingPanel(services.bankReviewQueryService(), services.context()::activeCompanyCode));
+        factories.put(AppPanelId.BANK_TRANSACTIONS,
+                () -> new BankTransactionsPanel(services.bankReviewQueryService(), services.context()::activeCompanyCode));
     }
 
     PanelFactory(CompanySessionController companySessionController)
@@ -55,7 +64,7 @@ public final class PanelFactory
     {
         factories.put(AppPanelId.DASHBOARD, dashboardFactory);
         factories.put(AppPanelId.JOURNAL_PANE, JournalWorkspaceCompliancePanel::new);
-        factories.put(AppPanelId.BANKING, BankingPanel::new);
+        factories.putIfAbsent(AppPanelId.BANKING, BankingPanel::new);
         factories.put(AppPanelId.BUDGET_EDITOR, BudgetEditorPanel::new);
         factories.put(AppPanelId.BUDGET_VS_ACTUAL, BudgetVsActualPanel::new);
         factories.put(AppPanelId.ASSETS_REGISTER, AssetsRegisterPanel::new);
@@ -65,7 +74,7 @@ public final class PanelFactory
         factories.put(AppPanelId.PERIOD_CLOSE_RUNS, PeriodCloseRunsPanel::new);
         factories.put(AppPanelId.IMPORT_PREVIEW, importPreviewFactory);
         factories.put(AppPanelId.APPROVAL_AUDIT, ApprovalAuditPanel::new);
-        factories.put(AppPanelId.BANK_TRANSACTIONS, BankTransactionsPanel::new);
+        factories.putIfAbsent(AppPanelId.BANK_TRANSACTIONS, BankTransactionsPanel::new);
         factories.put(AppPanelId.REPORT_LIBRARY, ReportLibraryPanel::new);
         factories.put(AppPanelId.CHART_OF_ACCOUNTS, ChartOfAccountsInterchangePanel::new);
         factories.put(AppPanelId.FUNDS, FundsPanel::new);
