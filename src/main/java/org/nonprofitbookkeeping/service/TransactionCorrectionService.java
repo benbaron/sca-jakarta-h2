@@ -170,6 +170,50 @@ public class TransactionCorrectionService
         }
     }
 
+    /**
+     * Restores one already-authoritative correction relationship during a caller-owned import
+     * transaction. This does not replay a correction command, create transactions, or synthesize
+     * audit history.
+     */
+    public void restoreRelationshipForImport(
+            EntityManager em,
+            Company company,
+            Txn correction,
+            String correctionType,
+            Txn correctedTransaction)
+    {
+        Objects.requireNonNull(em, "em");
+        Objects.requireNonNull(company, "company");
+        Objects.requireNonNull(correction, "correction");
+        Objects.requireNonNull(correctedTransaction, "correctedTransaction");
+        if (!em.getTransaction().isActive())
+        {
+            throw new IllegalStateException("Caller-owned transaction is required.");
+        }
+        ownership().ensureOwnedBy(em, company, correction, "Correction transaction");
+        ownership().ensureOwnedBy(em, company, correctedTransaction, "Corrected transaction");
+        if (correction == correctedTransaction)
+        {
+            throw new IllegalArgumentException("A transaction cannot correct itself.");
+        }
+        if (correction.getReversalOf() != null || correction.getReplacementFor() != null)
+        {
+            throw new IllegalStateException("Correction transaction already has a correction relationship.");
+        }
+        if ("REVERSAL".equals(correctionType))
+        {
+            correction.setReversalOf(correctedTransaction);
+        }
+        else if ("REPLACEMENT".equals(correctionType))
+        {
+            correction.setReplacementFor(correctedTransaction);
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unsupported correctionType: " + correctionType);
+        }
+    }
+
     private void validateSplitOwnership(EntityManager em, Company company, List<TxnSplit> splits)
     {
         for (TxnSplit split : splits)
