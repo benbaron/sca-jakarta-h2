@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.service;
 
 import org.junit.jupiter.api.Test;
+import org.nonprofitbookkeeping.interchange.bank.BankStatementDocument;
 import org.nonprofitbookkeeping.model.BankingDataFormat;
 
 import java.nio.file.Files;
@@ -117,38 +118,40 @@ public class ImportPreviewServiceTest
     @Test
     public void previewBankStatement_extractsFormatAndTransactionCount() throws Exception
     {
-        Path ofx = Files.createTempFile("bank-preview", ".ofx");
-        Files.writeString(ofx, """
-                <OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><BANKTRANLIST>
-                <STMTTRN><TRNTYPE>DEBIT</TRNTYPE><DTPOSTED>20260301000000</DTPOSTED><TRNAMT>-5.00</TRNAMT><FITID>FIT-1</FITID><NAME>Fee</NAME><MEMO>x</MEMO></STMTTRN>
-                </BANKTRANLIST></STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>
-                """);
+        Path ofx = Path.of("src/test/resources/data-exchange/bank-statement/ofx/valid/ofx2-checking.xml");
 
         ImportPreviewService.BankPreviewResult result = service.previewBankStatement(ofx);
 
         assertEquals(BankingDataFormat.OFX, result.format());
-        assertEquals(1, result.transactionCount());
+        assertEquals(BankStatementDocument.Variant.OFX_2_XML, result.variant());
+        assertEquals("220", result.version());
+        assertEquals("…4321", result.maskedAccountId());
+        assertEquals("USD", result.currency());
+        assertEquals(3, result.transactionCount());
     }
 
     @Test
-    public void previewNormalizedBankStatement_returnsNormalizedRowsAndDuplicateIssues() throws Exception
+    public void previewNormalizedBankStatement_returnsPersistedDuplicateIssue() throws Exception
     {
         Path ofx = Files.createTempFile("bank-preview-normalized", ".ofx");
         Files.writeString(ofx, """
-                <OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><BANKTRANLIST>
+                <?xml version="1.0" encoding="UTF-8"?>
+                <?OFX OFXHEADER="200" VERSION="220" SECURITY="NONE"?>
+                <OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><CURDEF>USD</CURDEF>
+                <BANKACCTFROM><BANKID>999000111</BANKID><ACCTID>FICTIONAL-4321</ACCTID><ACCTTYPE>CHECKING</ACCTTYPE></BANKACCTFROM><BANKTRANLIST>
                 <STMTTRN><TRNTYPE>DEBIT</TRNTYPE><DTPOSTED>20260301000000</DTPOSTED><TRNAMT>-5.00</TRNAMT><FITID>FIT-1</FITID><NAME>Fee</NAME><MEMO>x</MEMO></STMTTRN>
-                <STMTTRN><TRNTYPE>DEBIT</TRNTYPE><DTPOSTED>20260301000000</DTPOSTED><TRNAMT>-5.00</TRNAMT><FITID>fit-1</FITID><NAME>Fee</NAME><MEMO>x</MEMO></STMTTRN>
                 </BANKTRANLIST></STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>
                 """);
 
         ImportPreviewService.NormalizedBankPreviewResult result = service.previewNormalizedBankStatement(
                 ofx,
-                BankImportNormalizationService.DuplicateContext.empty());
+                new BankImportNormalizationService.DuplicateContext(
+                        java.util.Set.of("FIT-1"), java.util.Set.of(), java.util.List.of()));
 
         assertEquals(BankingDataFormat.OFX, result.format());
-        assertEquals(2, result.transactionCount());
+        assertEquals(1, result.transactionCount());
         assertEquals("FIT-1", result.lines().get(0).sourceTransactionId());
-        assertTrue(result.lines().get(1).exactDuplicate());
+        assertTrue(result.lines().get(0).exactDuplicate());
     }
     @Test
     public void commitAcceptedCoaRows_reportsCommittedAndFailedCounts()
