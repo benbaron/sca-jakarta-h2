@@ -1,12 +1,12 @@
 ---
-plan_version: 115
+plan_version: 116
 active_phase: P15
 active_slice: P15-S6-C3
 active_status: VERIFYING
 active_branch: codex/P15-S6-C3-mapped-bank-csv-review
 active_pull_request: 240
-active_head: "21033a616557e32e834c32ca2f219e1763533c21"
-next_action: "Run PR #240 through authoritative Maven/H2, repeated-suite, and JavaFX production-route verification; correct only concrete diagnostics."
+active_head: "ef21e6faef155cd21a1c3f0fe5cdb84971f247be"
+next_action: "Verify the governance-inclusive C3 head, merge PR #240, then start final S6 production wiring and temporary-staging removal from exact main."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1492,10 +1492,13 @@ Validation status:
 - All changed Java sources pass the Java 17 grammar parser locally; Maven is unavailable in this container.
 - Focused H2 tests cover signed and debit/credit profiles, original-row preview, durable review metadata, configured-account ownership, idempotency, malformed CSV rejection, stale/inactive profile rejection, no ledger writes, and late rollback.
 - Draft PR #240 contains exactly the sixteen intended implementation, migration, test, and governing-document files from merged C2.
+- The first plan-inclusive workflow on head `80c2336faa04ff54e2bc1f960737e0f4709d17a4` compiled production and passed 513 ordinary tests; only the two empty-Flyway-history recovery cases failed because V69 unconditionally created a table Hibernate had already materialized.
+- Corrected head `ef21e6faef155cd21a1c3f0fe5cdb84971f247be` uses recovery-safe table/index creation and independently idempotent constraints.
+- Maven PR Tests run `30770627629` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance on the corrected implementation head.
 
 Next exact action:
 
-- Run PR #240 through the authoritative Maven/H2, repeated-suite, and JavaFX production-route gates; correct only concrete diagnostics.
+- Verify the governance-inclusive C3 head through the same three gates, merge PR #240, and start final S6 production wiring and temporary-staging removal from exact merged `main`.
 
 ## P15-S7 — OFX 2.x/QFX and normalized bank CSV export
 
