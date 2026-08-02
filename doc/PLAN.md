@@ -1,12 +1,12 @@
 ---
-plan_version: 110
+plan_version: 111
 active_phase: P15
-active_slice: P15-S5-C10
-active_status: VERIFYING
-active_branch: codex/P15-S5-C10-complete-sclx-import
-active_pull_request: 237
-active_head: "305beec8c1b0c47b04403d06316dc83d8c25259d"
-next_action: "Run the final plan-inclusive PR #237 head through all Maven PR Tests gates, then complete the P15-S5 desktop checklist before merge."
+active_slice: P15-S6-C1
+active_status: IN_PROGRESS
+active_branch: codex/P15-S6-C1-strict-ofx-qfx-preview
+active_pull_request: null
+active_head: ""
+next_action: "Publish the strict bounded OFX/QFX parser and non-mutating production preview, then run the complete Maven PR Tests workflow."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Run the final plan-inclusive PR #237 head through all Maven PR Tes
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S5-C9 complete through merged PR #236 and activates P15-S5-C10 correction relationships, production commit UI, semantic round-trip, and final desktop acceptance on a fresh branch from current main.
+This revision records all of P15-S5 complete through merged PR #237 and owner desktop acceptance, then activates P15-S6-C1 strict OFX/QFX parsing and non-mutating preview on a fresh branch from current main.
 
 ## 2. Status values
 
@@ -47,7 +47,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
-| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S5 |
+| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S6 |
 
 ## 4. Governing documents
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S5-C10; P15-S0 through P15-S4 and P15-S5-C1 through C9 DONE
+**Status:** IN_PROGRESS at P15-S6-C1; P15-S0 through P15-S5 DONE
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -1068,7 +1068,7 @@ Next exact action:
 
 ## P15-S5 — SCLX preview, mapping, and transactional import
 
-Status: VERIFYING at P15-S5-C10 on draft PR #237.
+Status: DONE through merged PR #237 and owner desktop acceptance.
 
 Startup scope:
 
@@ -1112,10 +1112,12 @@ Current validation status:
 - P15-S5-C9 restores governed company-owned factual audit history through a caller-owned `AuditHistoryService` seam after the imported business graph exists.
 - Final C9 head `758934db92118a94546cd413d022c811315c080d` passed Maven PR Tests run `30721745588`, and PR #236 merged to `main` at `f2aa151c1fa7d61f997dc85938d5596a7c79b31d`.
 - P15-S5-C10 restores canonical reversal/replacement relationships, exposes the complete atomic import from Import Preview, verifies semantic re-export, and supplies the final owner desktop checklist.
+- Final C10 head `d5351b2d437dbacdf1f852e9cd513f7b06061baf` passed Maven PR Tests run `30766011352`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
+- PR #237 merged to `main` at `a3b802342cfdcbe3e286320215848842d27bdeea`; the owner confirmed the complete desktop checklist on 2026-08-02.
 
 Next exact action:
 
-- Publish P15-S5-C10 and run the complete Maven PR Tests workflow before owner desktop acceptance.
+- None; P15-S5 is DONE.
 
 ### P15-S5-C1 — Non-mutating SCLX import preview
 
@@ -1347,7 +1349,7 @@ Next exact action:
 
 ### P15-S5-C10 — Correction relationships and complete production import
 
-Status: VERIFYING on draft PR #237.
+Status: DONE through merged PR #237 and owner desktop acceptance.
 
 Scope:
 
@@ -1366,10 +1368,12 @@ Validation status:
 - Draft PR #237 contains exactly the seventeen intended C10 implementation, test, governing-document, and desktop-checklist files from merged `main`.
 - Initial Maven PR Tests run `30765779256` compiled production and executed 497 tests but exposed one whitespace-sensitive malformed-correction fixture marker; no production behavior failed.
 - Corrected implementation head `305beec8c1b0c47b04403d06316dc83d8c25259d` uses a structural JSON-node mutation and passed Maven PR Tests run `30765868528`, including `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance.
+- Final plan-inclusive head `d5351b2d437dbacdf1f852e9cd513f7b06061baf` passed Maven PR Tests run `30766011352`; PR #237 merged at `a3b802342cfdcbe3e286320215848842d27bdeea`.
+- The owner confirmed every item in `doc/P15-S5-sclx-import-commit-ui-user-testing.md` on 2026-08-02.
 
 Next exact action:
 
-- Run the final plan-inclusive PR #237 head through `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance; then complete the desktop checklist.
+- None; P15-S5-C10 is DONE.
 
 Planned deliverables:
 
@@ -1392,7 +1396,7 @@ Acceptance:
 
 ## P15-S6 — OFX 2.x/QFX and bank CSV import to durable review
 
-Status: BLOCKED until P15-S0 and P15-S1 merge.
+Status: IN_PROGRESS at P15-S6-C1.
 
 Purpose: replace temporary/session bank-transaction staging with a complete, company-scoped, configured-bank-account import and review path.
 
@@ -1416,6 +1420,30 @@ Acceptance:
 - Reimport is idempotent by source identity/fingerprint and reports skipped/conflicting rows.
 - A late failure leaves no partial batch, statement line, issue, or saved CSV profile.
 - Restart and company switching preserve only authoritative company-owned review state.
+
+### P15-S6-C1 — Strict OFX/QFX parser and non-mutating preview
+
+Status: IN_PROGRESS on branch `codex/P15-S6-C1-strict-ofx-qfx-preview`.
+
+Scope:
+
+- Replace the production Import Preview path's regex extraction and filename-sufficient recognition with a bounded, content-first parser for governed OFX 2.x XML, QFX 2.x XML envelopes, and QFX 1.x SGML envelopes.
+- Enforce secure XML processing, prohibited `DOCTYPE`/external entities, governed header/version/security/compression/encoding rules, one supported statement account, singleton fields, record/depth/attribute/text limits, nonzero `DECIMAL(19,4)` amounts, governed dates/offsets, unique FITIDs, and complete correction pairs.
+- Normalize and preview account identity, statement dates/balances, currency, transaction/posted dates, signed amounts, type, payee, memo, check/reference, and correction metadata without writing H2.
+- Make decoded content authoritative over filename and show a warning when they disagree.
+- Add and complete `doc/P15-S6-C1-ofx-qfx-preview-ui-user-testing.md` before merge.
+- Keep durable review commit, configured-account matching/override, CSV profiles, and removal of temporary bank-transaction staging for later P15-S6 slices.
+- Retain the existing canonical `bank_import_batch`/`bank_statement_line`/`import_issue` authority and do not create `Txn`/`TxnSplit` rows.
+
+Validation status:
+
+- All changed Java sources pass a Java 17 grammar parse.
+- The strict parser compiles through the JDK compiler module and a focused runtime harness passes the three governed valid fixture families plus unsafe XML, duplicate FITID, multi-account, and encrypted-QFX rejection.
+- Full Maven validation remains CI-authoritative because this container has no `mvn` executable.
+
+Next exact action:
+
+- Publish the focused branch and run `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance through Maven PR Tests.
 
 ## P15-S7 — OFX 2.x/QFX and normalized bank CSV export
 
