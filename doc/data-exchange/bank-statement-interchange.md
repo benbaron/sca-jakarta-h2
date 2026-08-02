@@ -249,3 +249,23 @@ Malformed documents, unsupported versions, encrypted/unsupported message sets, m
 - Whole-database transfer carries every database record and schema state.
 
 The UI and service names MUST say **Bank Statement Import/Export**, name the exact source variant, and never present these files as SCLX, COA, database backup, or ledger export.
+
+## 17. P15-S6 implementation sequence
+
+P15-S6-C1 replaces the production Import Preview route's permissive regex/suffix path with
+`BankStatementParser`. The parser reads at most 64 MiB, recognizes content before filename, securely
+parses governed OFX 2.x and QFX XML, deliberately normalizes governed QFX 1.x unclosed scalar tags,
+and returns immutable statement/account/transaction facts. It rejects unsafe XML, unsupported or
+encrypted/compressed headers, unsupported versions/message sets, multi-account ambiguity, duplicate
+singletons/FITIDs, invalid dates/amounts/corrections, and bounded-resource violations before any
+normalizer or H2 service is invoked.
+
+Import Preview displays the detected variant/version, masked source account, currency, transaction
+count, and content/filename warnings and explicitly states that no data changed. C1 does not authorize
+the legacy File-menu staging action as a durable import. Later P15-S6 slices own configured-account
+matching and override confirmation, mapped CSV profiles, the one-transaction durable review write,
+and removal of `UiWorkspaceDataStore.bankTransactions` after its last production consumer is replaced.
+
+The donor JAXB OFX field model informed supported field coverage. Its filename/manual-format selection,
+static current-company authority, direct alternate-ledger writes, and reconciliation queue are not
+ported.
