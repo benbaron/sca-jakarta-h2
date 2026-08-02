@@ -30,3 +30,16 @@ Invalid and duplicate rows remain durable review facts rather than being discard
 `BankClearedStateService` maps a reviewed `bank_statement_line` to the canonical `txn_split` line for the configured bank account. The service verifies that the statement line references a configured bank account and that the target split uses that configured account's chart-of-accounts bank ledger account.
 
 A confirmed match stores cleared state on `txn_split` (`bank_cleared`, `bank_cleared_on`, and the matched statement-line reference) and marks the imported statement line as `MATCHED` with its matched canonical transaction. This keeps the ledger split as the authoritative cleared-state location while preserving the reviewed statement fact as match evidence.
+
+## P15-S6-C1 strict external-statement preview
+
+`BankStatementParser` is the production non-mutating OFX/QFX preview authority. It uses decoded content
+and governed envelope structure rather than trusting a filename, supports the frozen OFX 2.x XML,
+QFX 2.x XML, and QFX 1.x SGML fixture families, and preserves statement account, currency, date,
+balance, transaction, check/reference, and correction facts in immutable DTOs.
+
+The parser runs before `BankImportNormalizationService` or `BankImportReviewService`. Blocking parser
+failure therefore leaves H2 untouched. P15-S6-C1 does not change the durable review transaction or
+create canonical ledger activity; later S6 slices will map the richer parser projection into the
+existing normalized-review boundary and retire temporary session staging only after every production
+consumer is rewired.
