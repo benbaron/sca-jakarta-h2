@@ -2,11 +2,11 @@
 plan_version: 111
 active_phase: P15
 active_slice: P15-S6-C1
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S6-C1-strict-ofx-qfx-preview
-active_pull_request: null
-active_head: ""
-next_action: "Publish the strict bounded OFX/QFX parser and non-mutating production preview, then run the complete Maven PR Tests workflow."
+active_pull_request: 238
+active_head: "d1050175c9812ec0e2596da6f31f8b9000e3d17b"
+next_action: "Run draft PR #238 through the complete Maven PR Tests workflow and correct only concrete compiler, fixture, or JavaFX diagnostics."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1423,7 +1423,7 @@ Acceptance:
 
 ### P15-S6-C1 — Strict OFX/QFX parser and non-mutating preview
 
-Status: IN_PROGRESS on branch `codex/P15-S6-C1-strict-ofx-qfx-preview`.
+Status: VERIFYING on draft PR #238.
 
 Scope:
 
@@ -1440,10 +1440,11 @@ Validation status:
 - All changed Java sources pass a Java 17 grammar parse.
 - The strict parser compiles through the JDK compiler module and a focused runtime harness passes the three governed valid fixture families plus unsafe XML, duplicate FITID, multi-account, and encrypted-QFX rejection.
 - Full Maven validation remains CI-authoritative because this container has no `mvn` executable.
+- Draft PR #238 contains exactly the twelve intended implementation, test, governing-document, and owner-checklist files from merged `main`.
 
 Next exact action:
 
-- Publish the focused branch and run `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance through Maven PR Tests.
+- Follow draft PR #238 through `mvn clean verify`, the repeated Maven suite, and JavaFX production-route compliance; correct only concrete diagnostics.
 
 ## P15-S7 — OFX 2.x/QFX and normalized bank CSV export
 
