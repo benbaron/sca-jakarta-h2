@@ -1,5 +1,8 @@
 package org.nonprofitbookkeeping.service;
 
+import org.nonprofitbookkeeping.interchange.InterchangeValidationMessage;
+import org.nonprofitbookkeeping.interchange.bank.BankStatementDocument;
+import org.nonprofitbookkeeping.interchange.bank.BankStatementParser;
 import org.nonprofitbookkeeping.model.BankingDataFormat;
 
 import java.io.IOException;
@@ -18,6 +21,7 @@ public class ImportPreviewService
 {
     private final ImportExportOrchestrationService orchestrationService;
     private final BankImportNormalizationService bankImportNormalizationService;
+    private final BankStatementParser bankStatementParser;
     public ImportPreviewService()
     {
         this(new ImportExportOrchestrationService());
@@ -33,6 +37,7 @@ public class ImportPreviewService
     {
         this.orchestrationService = orchestrationService;
         this.bankImportNormalizationService = bankImportNormalizationService;
+        this.bankStatementParser = new BankStatementParser();
     }
 
     public CoaPreviewResult previewCoaCsv(Path path)
@@ -120,21 +125,42 @@ public class ImportPreviewService
 
     public BankPreviewResult previewBankStatement(Path path)
     {
-        ImportExportOrchestrationService.BankImportResult result = orchestrationService.importBankDataFile(path);
-        return new BankPreviewResult(path.getFileName().toString(), result.format(), result.transactionCount(), result.transactions());
+        BankStatementDocument document = bankStatementParser.parse(path);
+        return new BankPreviewResult(
+                document.sourceName(),
+                document.format(),
+                document.variant(),
+                document.version(),
+                document.encoding(),
+                document.account().maskedAccountId(),
+                document.currency(),
+                document.transactions().size(),
+                document.transactions(),
+                document.messages());
     }
 
     public NormalizedBankPreviewResult previewNormalizedBankStatement(Path path,
                                                                       BankImportNormalizationService.DuplicateContext duplicateContext)
     {
-        ImportExportOrchestrationService.BankImportResult result = orchestrationService.importBankDataFile(path);
+        BankStatementDocument document = bankStatementParser.parse(path);
+        List<BankTransactionRecord> records = document.transactions().stream()
+                .map(transaction -> new BankTransactionRecord(
+                        transaction.sourceTransactionId(),
+                        (transaction.postedDate() == null
+                                ? transaction.transactionDate()
+                                : transaction.postedDate()).toString(),
+                        transaction.amount(),
+                        transaction.transactionType(),
+                        transaction.payeeName(),
+                        transaction.memo()))
+                .toList();
         BankImportNormalizationService.BankImportNormalizationResult normalized = bankImportNormalizationService.normalize(
-                result.transactions(),
+                records,
                 duplicateContext);
         return new NormalizedBankPreviewResult(
-                path.getFileName().toString(),
-                result.format(),
-                result.transactionCount(),
+                document.sourceName(),
+                document.format(),
+                document.transactions().size(),
                 normalized.lines());
     }
 
@@ -363,9 +389,20 @@ public class ImportPreviewService
 
     public record BankPreviewResult(String sourceName,
                                     BankingDataFormat format,
+                                    BankStatementDocument.Variant variant,
+                                    String version,
+                                    String encoding,
+                                    String maskedAccountId,
+                                    String currency,
                                     int transactionCount,
-                                    List<BankTransactionRecord> transactions)
+                                    List<BankStatementDocument.Transaction> transactions,
+                                    List<InterchangeValidationMessage> messages)
     {
+        public BankPreviewResult
+        {
+            transactions = transactions == null ? List.of() : List.copyOf(transactions);
+            messages = messages == null ? List.of() : List.copyOf(messages);
+        }
     }
 
     public record NormalizedBankPreviewResult(String sourceName,
