@@ -7,6 +7,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -38,6 +40,7 @@ public class BankTransactionsPanel implements AppPanel
     private final Button exportCsv = new Button("Export Bank CSV…");
     private final Button exportOfx = new Button("Export OFX 2.x…");
     private final Button exportQfx = new Button("Export QFX…");
+    private final ProgressIndicator exportProgress = new ProgressIndicator();
     private final BankReviewQueryService reviewQuery;
     private final Supplier<String> companyCode;
     private final Supplier<BankConfigurationService> bankConfigurationService;
@@ -73,17 +76,25 @@ public class BankTransactionsPanel implements AppPanel
         drill.setOnAction(e -> drillSelectedToLedger());
         configureStatementExport();
 
+        HBox exportControls = new HBox(8,
+                new Label("Account"), exportAccount,
+                new Label("From"), exportFrom,
+                new Label("Through"), exportThrough,
+                exportCsv, exportOfx, exportQfx, exportProgress);
+        ScrollPane exportControlsScroll = new ScrollPane(exportControls);
+        exportControlsScroll.setId("bankStatementExportControlsScroll");
+        exportControlsScroll.setFitToWidth(false);
+        exportControlsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        exportControlsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        exportControlsScroll.setPannable(true);
+
         root.setTop(new VBox(6,
                 title,
                 new HBox(8, refresh, drill),
                 status,
                 new Separator(),
                 new Label("Export durable statement activity"),
-                new HBox(8,
-                        new Label("Account"), exportAccount,
-                        new Label("From"), exportFrom,
-                        new Label("Through"), exportThrough,
-                        exportCsv, exportOfx, exportQfx),
+                exportControlsScroll,
                 exportStatus,
                 new Separator()));
         buildTable();
@@ -160,6 +171,10 @@ public class BankTransactionsPanel implements AppPanel
         exportCsv.disableProperty().bind(exportActions.busyProperty());
         exportOfx.disableProperty().bind(exportActions.busyProperty());
         exportQfx.disableProperty().bind(exportActions.busyProperty());
+        exportProgress.setId("bankStatementExportProgress");
+        exportProgress.setMaxSize(22.0, 22.0);
+        exportProgress.visibleProperty().bind(exportActions.busyProperty());
+        exportProgress.managedProperty().bind(exportProgress.visibleProperty());
         exportCsv.setOnAction(event -> requestStatementExport(BankStatementExportFormat.NORMALIZED_CSV));
         exportOfx.setOnAction(event -> requestStatementExport(BankStatementExportFormat.OFX_2_XML));
         exportQfx.setOnAction(event -> requestStatementExport(BankStatementExportFormat.QFX_2_XML));
