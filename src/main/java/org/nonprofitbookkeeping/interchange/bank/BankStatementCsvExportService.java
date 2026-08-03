@@ -281,7 +281,7 @@ public final class BankStatementCsvExportService
             List<BankStatementExportRow> rows,
             List<InterchangeValidationMessage> messages)
     {
-        private Snapshot
+        Snapshot
         {
             UUID.fromString(bankAccountExternalId);
             rows = List.copyOf(rows);
