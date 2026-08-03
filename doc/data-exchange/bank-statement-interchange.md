@@ -360,3 +360,24 @@ company. A missing or cross-company match is blocking and never creates a transa
 lines, issues, and the one factual operation audit commit together; the exact same file/target is an
 idempotent no-op and a late failure rolls the entire import back. Re-export uses retained identities and
 PAYEEID so a normalized CSV export/import/export cycle is byte-stable for governed facts.
+
+## 20. P15-S7-C3 OFX 2.x and governed QFX export boundary
+
+`BankStatementOfxExportService` reuses the C1 durable selected-company/configured-account/date-range
+snapshot and the shared atomic interchange writer. `OfxQfxStatementSerializer` emits either bare OFX
+2.x XML with the governed processing instruction or a QFX 2.x ASCII header followed by the same UTF-8
+XML statement body. Both contain one bank statement only and use deterministic ordering, transaction
+UID, LF endings, selected range, account/currency metadata, exact amounts, names/memos, check/reference
+fields, and supported correction pairs.
+
+A retained source FITID remains authoritative when it is nonblank and unique within the output. When
+OFX requires an identifier but the retained value is blank or duplicated, export derives a stable
+`SCA-` identifier from the statement-line portable identity and reports
+`BANK_OFX_FITID_DERIVED`; it does not change the durable source ID. Missing transaction type uses the
+neutral OFX `OTHER` value with a warning, and a missing posted date uses the retained transaction date
+with a warning.
+
+Only the latest unambiguous imported ledger or available balance is emitted, with its retained
+statement-end date as `DTASOF`. Missing or conflicting balances are omitted and disclosed. Output is
+validated by the strict production parser and remains statement activity only; no `Txn` or `TxnSplit`
+query or write participates in export.

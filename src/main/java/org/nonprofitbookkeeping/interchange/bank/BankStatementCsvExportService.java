@@ -71,7 +71,7 @@ public final class BankStatementCsvExportService
                 snapshot.messages());
     }
 
-    private Snapshot snapshot(BankStatementExportRequest request)
+    Snapshot snapshot(BankStatementExportRequest request)
     {
         try (EntityManager em = jpa.em())
         {
@@ -197,7 +197,14 @@ public final class BankStatementCsvExportService
             }
             List<InterchangeValidationMessage> messages = warnings(
                     missingPayeeIds, missingLedgerBalances, missingAvailableBalances);
-            return new Snapshot(account.getPortableId().toString(), List.copyOf(rows), messages);
+            return new Snapshot(
+                    account.getPortableId().toString(),
+                    firstTextOrBlank(account.getOfxBankId()),
+                    firstTextOrBlank(account.getOfxAccountId()),
+                    firstTextOrBlank(account.getAccountType()),
+                    account.getCompany().getDefaultCurrency(),
+                    List.copyOf(rows),
+                    messages);
         }
     }
 
@@ -248,6 +255,11 @@ public final class BankStatementCsvExportService
         throw new IllegalArgumentException("Exported bank row has no currency.");
     }
 
+    private static String firstTextOrBlank(String value)
+    {
+        return value == null ? "" : value.trim();
+    }
+
     private static String sha256(byte[] bytes)
     {
         try
@@ -260,12 +272,16 @@ public final class BankStatementCsvExportService
         }
     }
 
-    private record Snapshot(
+    record Snapshot(
             String bankAccountExternalId,
+            String configuredBankId,
+            String configuredAccountId,
+            String configuredAccountType,
+            String companyCurrency,
             List<BankStatementExportRow> rows,
             List<InterchangeValidationMessage> messages)
     {
-        private Snapshot
+        Snapshot
         {
             UUID.fromString(bankAccountExternalId);
             rows = List.copyOf(rows);

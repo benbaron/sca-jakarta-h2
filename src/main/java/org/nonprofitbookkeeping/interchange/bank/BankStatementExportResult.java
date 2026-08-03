@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 
-/** Result of one deterministic, atomically committed normalized bank CSV export. */
+/** Result of one deterministic, atomically committed bank-statement file export. */
 public record BankStatementExportResult(
         Path destination,
         String companyCode,
