@@ -1,12 +1,12 @@
 ---
-plan_version: 127
+plan_version: 128
 active_phase: P15
-active_slice: P15-S8-C4
+active_slice: P15-C1
 active_status: VERIFYING
-active_branch: codex/P15-S8-C4-interchange-progress-laptop-closure
-active_pull_request: 249
-active_head: 5ce4b8a3d43f01279e3d4971a38c7a965c72a243
-next_action: "Run all three automated gates once more on the governance-inclusive PR #249 head, then return the owner desktop checklist."
+active_branch: codex/P15-C1-finalize-plan-ledger
+active_pull_request: null
+active_head: 76bb90650efa2ac4a0a39bfcd4854642659ad171
+next_action: "Open and merge the documentation-only P15-C1 closure PR; no later phase is authorized without an explicit plan amendment."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Run all three automated gates once more on the governance-inclusiv
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S8-C3 as DONE through merged PR #248 and starts P15-S8-C4, the final visible progress, pre-commit cancellation, and laptop-width closure slice.
+This revision records P15-S8-C4 and P15-S8 as DONE through merged PR #249 and owner acceptance, then starts documentation-only P15-C1 to close the phase ledger. No later phase is authorized by this plan.
 
 ## 2. Status values
 
@@ -47,7 +47,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
-| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S8-C4 |
+| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | Product scope DONE through P15-S8; documentation-only P15-C1 VERIFYING |
 
 ## 4. Governing documents
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S8-C4; P15-S0 through P15-S7 and P15-S8-C1/C2/C3 DONE
+**Status:** Product scope DONE through P15-S8 and merged PR #249; documentation-only P15-C1 VERIFYING
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -1677,7 +1677,7 @@ Next exact action:
 
 ## P15-S8 — Integrated JavaFX workflow and end-to-end verification
 
-Status: IN_PROGRESS at P15-S8-C4.
+Status: DONE through merged PR #249 and owner acceptance.
 
 Planned deliverables:
 
@@ -1781,7 +1781,7 @@ Next exact action:
 
 ### P15-S8-C4 — Interchange progress, pre-commit cancellation, and laptop-width closure
 
-Status: VERIFYING in draft PR #249 from exact merged C3 commit `f8b9ae842d1636dedd1df2c7386c228489d2c0ec`.
+Status: DONE through merged PR #249 and owner acceptance.
 
 Branch: `codex/P15-S8-C4-interchange-progress-laptop-closure`
 
@@ -1802,11 +1802,33 @@ Validation status:
 - Draft PR #249 initially contained exactly the eleven intended production, test, contract, plan, and checklist paths on head `d6548d74344e6b373ce18587899c58fe5450ea67`, with no deletions or base drift from merge `f8b9ae842d1636dedd1df2c7386c228489d2c0ec`.
 - Maven PR Tests run `30842770143` compiled the slice and executed H2 but found two stale legacy source guards that still required the removed `UiAsync.run(...)` spelling; the two guards now require the governed preview/commit wrappers for the same OFX/QFX and SCLX routes.
 - Corrected implementation head `5ce4b8a3d43f01279e3d4971a38c7a965c72a243` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30843032117`.
-- The same three gates remain required once more on the governance-inclusive review head.
+- Final governance-inclusive head `ce987459c740c45399eb3debe6f2abd61f6e38d5` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30843385164`.
+- PR #249 merged to `main` at `76bb90650efa2ac4a0a39bfcd4854642659ad171` on 2026-08-03, and the owner authorized continuation after the desktop gate.
 
 Next exact action:
 
-- Run all three automated gates once more on the governance-inclusive PR head, then return the owner desktop checklist.
+- None; P15-S8-C4 and P15-S8 are DONE.
+
+### P15-C1 — Final plan-ledger reconciliation
+
+Status: VERIFYING in a documentation-only closure pull request.
+
+Branch: `codex/P15-C1-finalize-plan-ledger`
+
+Purpose:
+
+- Record the owner-accepted P15-S8-C4 desktop closure after product PR #249 merged with the plan still marked `VERIFYING`.
+- Mark P15-S8 product delivery complete, reconcile the phase index and active front matter, and close P15 without changing product code.
+- Leave later feature work unauthorized until a new phase is deliberately added to this plan.
+
+Validation status:
+
+- PR #249 final head `ce987459c740c45399eb3debe6f2abd61f6e38d5` passed all three repository gates in Maven PR Tests run `30843385164` before merging at `76bb90650efa2ac4a0a39bfcd4854642659ad171`.
+- This closure changes only `doc/PLAN.md`; the pull-request comparison and documentation workflow remain to be verified.
+
+Next exact action:
+
+- Open and merge the documentation-only P15-C1 closure PR. No P16 or other later phase is authorized by the current plan.
 
 
 # P06 — Bank reconciliation and cleared-state comparison
