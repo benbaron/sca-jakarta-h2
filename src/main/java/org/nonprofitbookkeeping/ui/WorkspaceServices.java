@@ -22,6 +22,7 @@ public final class WorkspaceServices
     private final CompanySessionController companySessionController;
     private final DatabaseTransferActions databaseTransferActions;
     private final SclxExportActions sclxExportActions;
+    private final BankStatementExportActions bankStatementExportActions;
     private final PanelFactory panelFactory;
     private final Supplier<DashboardQueryService> dashboardQueryService;
     private final Supplier<DiagnosticsQueryService> diagnosticsQueryService;
@@ -39,6 +40,7 @@ public final class WorkspaceServices
             CompanySessionController companySessionController,
             DatabaseTransferActions databaseTransferActions,
             SclxExportActions sclxExportActions,
+            BankStatementExportActions bankStatementExportActions,
             Supplier<DashboardQueryService> dashboardQueryService,
             Supplier<DiagnosticsQueryService> diagnosticsQueryService,
             Supplier<SclxImportPreviewService> sclxImportPreviewService,
@@ -54,6 +56,8 @@ public final class WorkspaceServices
         this.companySessionController = Objects.requireNonNull(companySessionController, "companySessionController");
         this.databaseTransferActions = Objects.requireNonNull(databaseTransferActions, "databaseTransferActions");
         this.sclxExportActions = Objects.requireNonNull(sclxExportActions, "sclxExportActions");
+        this.bankStatementExportActions = Objects.requireNonNull(
+                bankStatementExportActions, "bankStatementExportActions");
         this.dashboardQueryService = Objects.requireNonNull(dashboardQueryService, "dashboardQueryService");
         this.diagnosticsQueryService = Objects.requireNonNull(diagnosticsQueryService, "diagnosticsQueryService");
         this.sclxImportPreviewService = Objects.requireNonNull(
@@ -91,6 +95,11 @@ public final class WorkspaceServices
     SclxExportActions sclxExportActions()
     {
         return sclxExportActions;
+    }
+
+    BankStatementExportActions bankStatementExportActions()
+    {
+        return bankStatementExportActions;
     }
 
     PanelFactory panelFactory()
