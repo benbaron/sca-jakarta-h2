@@ -5,7 +5,7 @@ active_slice: P15-C1
 active_status: VERIFYING
 active_branch: codex/P15-C1-finalize-plan-ledger
 active_pull_request: 250
-active_head: f42432fd87d4f1ec39e68cd0cdb3ae5503d7e211
+active_head: 41cedb6f79932a57bcef8c213a8a46bca900235f
 next_action: "Open and merge the documentation-only P15-C1 closure PR; no later phase is authorized without an explicit plan amendment."
 ---
 
@@ -1825,7 +1825,8 @@ Validation status:
 
 - PR #249 final head `ce987459c740c45399eb3debe6f2abd61f6e38d5` passed all three repository gates in Maven PR Tests run `30843385164` before merging at `76bb90650efa2ac4a0a39bfcd4854642659ad171`.
 - Draft PR #250 was created from exact merge base `76bb90650efa2ac4a0a39bfcd4854642659ad171`; activation head `f42432fd87d4f1ec39e68cd0cdb3ae5503d7e211` changes only `doc/PLAN.md`, with no base drift.
-- The documentation workflow remains to be verified on the plan-bound review head.
+- Plan-bound review head `41cedb6f79932a57bcef8c213a8a46bca900235f` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30846540866`.
+- The final governance head must pass the same workflow once more before merge.
 
 Next exact action:
 
