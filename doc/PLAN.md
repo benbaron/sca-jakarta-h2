@@ -1,12 +1,12 @@
 ---
-plan_version: 120
+plan_version: 121
 active_phase: P15
-active_slice: P15-S7-C3
+active_slice: P15-S7-C4
 active_status: VERIFYING
-active_branch: codex/P15-S7-C3-ofx-qfx-statement-export
-active_pull_request: 244
-active_head: "47a34cfc7fa88b276d584289537c1c7b39183539"
-next_action: "Verify the governance-inclusive C3 handoff through the same three gates, then merge PR #244; no desktop checklist is required because C3 adds no enabled UI route."
+active_branch: codex/P15-S7-C4-bank-statement-export-ui
+active_pull_request: 245
+active_head: "d4dd35c18db768929ad3dfe6cc4443bc2cacc4be"
+next_action: "Verify the governance-inclusive C4 handoff through the same three automated gates, then complete the owner desktop checklist before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Verify the governance-inclusive C3 handoff through the same three 
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S7-C2 as DONE through merged PR #243 and starts P15-S7-C3 for deterministic OFX 2.x and governed QFX statement-activity export.
+This revision records P15-S7-C3 as DONE through merged PR #244 and starts the final P15-S7-C4 production bank-statement export UI.
 
 ## 2. Status values
 
@@ -47,7 +47,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
-| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S7-C3 |
+| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S7-C4 |
 
 ## 4. Governing documents
 
@@ -1533,7 +1533,7 @@ Next exact action:
 
 ## P15-S7 — OFX 2.x/QFX and normalized bank CSV export
 
-Status: IN_PROGRESS at P15-S7-C3.
+Status: IN_PROGRESS at P15-S7-C4.
 
 Purpose: export portable single-account bank-statement records without presenting OFX/QFX as a double-entry ledger export.
 
@@ -1617,7 +1617,7 @@ Next exact action:
 
 ### P15-S7-C3 — Deterministic OFX 2.x and governed QFX statement export
 
-Status: VERIFYING on draft PR #244 from merged C2 commit `77584946bcb12005151db50be80d8809aae86c7d`.
+Status: DONE through merged PR #244.
 
 Branch: `codex/P15-S7-C3-ofx-qfx-statement-export`
 
@@ -1639,10 +1639,39 @@ Validation status:
 - Published implementation/plan head `e273767ce384d198525221af5a114046dca03eaa` is nine commits ahead of exact merge base `77584946bcb12005151db50be80d8809aae86c7d`.
 - The first plan-inclusive workflow in run `30782384967` stopped at compilation because the newly package-visible `Snapshot` record retained a private compact constructor.
 - Corrected head `47a34cfc7fa88b276d584289537c1c7b39183539` aligns the constructor to package scope and passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30782431431`.
+- Final governance-inclusive head `796208dbb0ed1e7efc17a8fabc3220c8f152c835` passed the same three gates in Maven PR Tests run `30782601811`; PR #244 merged at `121d790a7139bcc8db4f9955f5c19b7df7801b27`.
 
 Next exact action:
 
-- Verify the governance-inclusive C3 handoff through the same three gates, then merge PR #244; C3 adds no enabled JavaFX route and requires no owner desktop checklist.
+- None; P15-S7-C3 is DONE.
+
+### P15-S7-C4 — Production bank-statement export controls
+
+Status: VERIFYING on draft PR #245 from exact merged C3 commit `121d790a7139bcc8db4f9955f5c19b7df7801b27`.
+
+Branch: `codex/P15-S7-C4-bank-statement-export-ui`
+
+Scope:
+
+- Replace the Bank Transactions selected-row compatibility exporter with the governed C1/C3 durable selected-company/configured-account/date-range services; do not retain or add a second serializer.
+- List only active configured accounts for the active company, default the inclusive range from the active accounting month, and expose separately labeled **Export Bank CSV…**, **Export OFX 2.x…**, and **Export QFX…** actions.
+- Capture the exact active company, configured-account ID, dates, format, destination, and overwrite decision before background work; revalidate company/account ownership inside the canonical service.
+- Choose a format-specific extension and filename, require explicit confirmation before replacing an existing file, run serialization/atomic commit away from JavaFX, and report destination, rows, bytes, warnings, SHA-256, and path-coded messages.
+- Keep Banking as the configuration/import hub with an explicit route to **Review / Export Statements…**; keep Bank Transactions as the sole production statement-export surface and add no File-menu or Import/Export Jobs route.
+- Preserve the no-ledger-query/no-ledger-write boundary and add production-composition/source coverage plus `doc/P15-S7-C4-bank-statement-export-ui-user-testing.md`.
+
+Validation status:
+
+- All eight changed Java files pass an independent Java 17 grammar parse.
+- Source coverage requires the three explicit formats, configured-account/date scope, background `Task`, overwrite confirmation, exact result facts, workspace service composition, and removal of the old `ImportExportOrchestrationService`/`BankTransactionRecord` selected-row route.
+- Local Maven/JDK are unavailable in this source snapshot; authoritative compilation, full H2 suite, repeated suite, and JavaFX production-route compliance will run through the PR workflow.
+- Draft PR #245 contains exactly the twelve intended production, test, governing-document, and owner-checklist paths, with no deletions or base drift from exact merge base `121d790a7139bcc8db4f9955f5c19b7df7801b27`.
+- Published implementation/documentation head `d4dd35c18db768929ad3dfe6cc4443bc2cacc4be` is twelve fast-forward commits ahead of that base.
+- Plan-inclusive head `cb44d61dad697f0e02cab951b9a24517a9802209` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30783262811`.
+
+Next exact action:
+
+- Verify the governance-inclusive C4 handoff through the same three automated gates, then complete owner desktop acceptance before merge.
 
 ## P15-S8 — Integrated JavaFX workflow and end-to-end verification
 

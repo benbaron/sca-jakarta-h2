@@ -34,7 +34,11 @@ public final class PanelFactory
         factories.put(AppPanelId.BANKING,
                 () -> new BankingPanel(services.bankReviewQueryService(), services.context()::activeCompanyCode));
         factories.put(AppPanelId.BANK_TRANSACTIONS,
-                () -> new BankTransactionsPanel(services.bankReviewQueryService(), services.context()::activeCompanyCode));
+                () -> new BankTransactionsPanel(
+                        services.bankReviewQueryService(),
+                        services.context()::activeCompanyCode,
+                        services::bankConfigurationService,
+                        services.bankStatementExportActions()));
     }
 
     PanelFactory(CompanySessionController companySessionController)
