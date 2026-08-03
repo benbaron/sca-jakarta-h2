@@ -24,7 +24,7 @@ A stricter user or organization preference may require a reason or a formal adju
 
 ## Imports
 
-Import staging is held in memory for the current session. Valid and invalid rows remain together with row-level errors. Exact duplicates use a stable source identifier when available and otherwise use a deterministic fingerprint. Probable duplicates compare date range, amount, payee, account, and reference.
+Raw import preview is held in memory for the current session. Valid and invalid rows remain together with row-level errors. After explicit exact-scope confirmation, bank-statement imports atomically create durable review facts in `bank_import_batch`, `bank_statement_line`, and `import_issue`; they do not create canonical ledger transactions. Exact duplicates use a stable source identifier when available and otherwise use a deterministic fingerprint. Probable duplicates compare date range, amount, payee, account, and reference.
 
 When an imported row matches an entered transaction, the user may discard it, save it as a copy, or cancel for manual review.
 

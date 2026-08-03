@@ -1,12 +1,12 @@
 ---
-plan_version: 121
+plan_version: 122
 active_phase: P15
-active_slice: P15-S7-C4
+active_slice: P15-S8-C1
 active_status: VERIFYING
-active_branch: codex/P15-S7-C4-bank-statement-export-ui
-active_pull_request: 245
-active_head: "d4dd35c18db768929ad3dfe6cc4443bc2cacc4be"
-next_action: "Verify the governance-inclusive C4 handoff through the same three automated gates, then complete the owner desktop checklist before merge."
+active_branch: codex/P15-S8-C1-normalized-bank-csv-import-ui
+active_pull_request: 246
+active_head: "0796a84ed80c26f81c12c456f6599bac4a778d3c"
+next_action: "Verify the governance-inclusive PR #246 head through the same three automated gates, then complete owner desktop acceptance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Verify the governance-inclusive C4 handoff through the same three 
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S7-C3 as DONE through merged PR #244 and starts the final P15-S7-C4 production bank-statement export UI.
+This revision records P15-S7 as DONE through merged and owner-verified PR #245 and starts P15-S8-C1, the missing production normalized bank CSV preview/commit route.
 
 ## 2. Status values
 
@@ -47,7 +47,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
-| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S7-C4 |
+| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S8-C1 |
 
 ## 4. Governing documents
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S7-C3; P15-S0 through P15-S6 DONE
+**Status:** IN_PROGRESS at P15-S8-C1; P15-S0 through P15-S7 DONE
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -1533,7 +1533,7 @@ Next exact action:
 
 ## P15-S7 — OFX 2.x/QFX and normalized bank CSV export
 
-Status: IN_PROGRESS at P15-S7-C4.
+Status: DONE through merged and owner-verified PR #245.
 
 Purpose: export portable single-account bank-statement records without presenting OFX/QFX as a double-entry ledger export.
 
@@ -1647,7 +1647,7 @@ Next exact action:
 
 ### P15-S7-C4 — Production bank-statement export controls
 
-Status: VERIFYING on draft PR #245 from exact merged C3 commit `121d790a7139bcc8db4f9955f5c19b7df7801b27`.
+Status: DONE through merged PR #245 and owner desktop acceptance.
 
 Branch: `codex/P15-S7-C4-bank-statement-export-ui`
 
@@ -1668,14 +1668,16 @@ Validation status:
 - Draft PR #245 contains exactly the twelve intended production, test, governing-document, and owner-checklist paths, with no deletions or base drift from exact merge base `121d790a7139bcc8db4f9955f5c19b7df7801b27`.
 - Published implementation/documentation head `d4dd35c18db768929ad3dfe6cc4443bc2cacc4be` is twelve fast-forward commits ahead of that base.
 - Plan-inclusive head `cb44d61dad697f0e02cab951b9a24517a9802209` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30783262811`.
+- Final governance-inclusive head `0dfaa09a45d33835d33dada7ea7f1d74ec28772a` passed the same three gates in Maven PR Tests run `30783469434`.
+- PR #245 merged at `83999de5afa80decf63068862fa897bbee3d8ce1`; the owner confirmed the complete desktop checklist on 2026-08-03.
 
 Next exact action:
 
-- Verify the governance-inclusive C4 handoff through the same three automated gates, then complete owner desktop acceptance before merge.
+- None; P15-S7-C4 and P15-S7 are DONE.
 
 ## P15-S8 — Integrated JavaFX workflow and end-to-end verification
 
-Status: BLOCKED until P15-S2 through P15-S7 merge.
+Status: IN_PROGRESS at P15-S8-C1.
 
 Planned deliverables:
 
@@ -1693,6 +1695,33 @@ Acceptance:
 - Each operation is labeled by exact scope and target; “database,” “active company,” “Chart of Accounts,” and “bank statement” are never used interchangeably.
 - No generic Import/Export Jobs destination or generic durable job log exists.
 - Every enabled action has a real service-backed operation and a preview/confirmation path appropriate to its risk.
+
+### P15-S8-C1 — Production normalized bank CSV import route
+
+Status: VERIFYING on draft PR #246 from exact merged S7 commit `83999de5afa80decf63068862fa897bbee3d8ce1`.
+
+Branch: `codex/P15-S8-C1-normalized-bank-csv-import-ui`
+
+Scope:
+
+- Compose the existing strict `NormalizedBankCsvReviewService` through `UiServiceRegistry`, `WorkspaceServices`, and `PanelFactory`; do not add another parser or writer.
+- Add an explicit **Preview Normalized Bank CSV…** action to Import Preview that requires the active company and one active configured bank account but no mapped-CSV profile.
+- Capture one service instance plus the exact file, company, and configured-account scope before background preview; display normalized rows, source-batch/row counts, account-match state, and path-coded messages without changing H2.
+- Retain the exact preview and service for explicit confirmation and background atomic commit. Revalidate source hash, company/account ownership, and suffix-only account confirmation through the canonical service.
+- Restore durable source batches, statement rows, issues, review/duplicate state, portable identities, PAYEEID, and valid same-company transaction matches without creating `Txn` or `TxnSplit` rows.
+- Add production-composition/source coverage, focused preview-row coverage, governing-document updates, and `doc/P15-S8-C1-normalized-bank-csv-import-ui-user-testing.md`.
+- Keep all-format stress, unsupported-version, malformed/oversized, cancellation-before-commit, multi-company, round-trip, and final laptop-width verification for later P15-S8 slices.
+
+Validation status:
+
+- All nine changed Java files pass an independent Java 17 grammar parse; Maven is unavailable in this source snapshot.
+- Draft PR #246 contains exactly the fifteen intended production, test, governing-document, and owner-checklist paths, with no deletions or base drift from exact merge base `83999de5afa80decf63068862fa897bbee3d8ce1`.
+- Plan-inclusive head `0796a84ed80c26f81c12c456f6599bac4a778d3c` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30829022583`.
+- The governance-inclusive head and owner desktop acceptance remain required before merge.
+
+Next exact action:
+
+- Verify the governance-inclusive PR #246 head through all automated gates, then complete owner desktop acceptance.
 
 
 # P06 — Bank reconciliation and cleared-state comparison

@@ -399,3 +399,22 @@ Completion reports the destination, row and byte counts, warnings, SHA-256, port
 and path-coded messages. Failure reports that no governed output was committed. The removed selected-row
 compatibility path may not return: a table selection is not export authority, and neither the UI nor the
 coordinator may reconstruct statement files from ad hoc `BankTransactionRecord` values.
+
+## 22. P15-S8-C1 production normalized CSV import route
+
+Import Preview exposes **Preview Normalized Bank CSV…** separately from **Preview Mapped Bank CSV…**.
+The normalized route recognizes only the frozen 29-column normalized CSV 1.0 header and never asks for,
+infers, or applies a mapping profile. It requires the active company and one active configured bank
+account, then captures one `NormalizedBankCsvReviewService` instance plus the exact file/company/account
+scope before preview runs away from the JavaFX thread.
+
+The preview displays normalized statement rows, retained source-batch and row counts, account-match
+state, duplicate/review facts, and path-coded messages without changing H2. Approval retains that exact
+preview and service instance, requires the audit actor and any suffix-only account confirmation, and
+names the source SHA-256, company, account, batch count, row count, no-ledger boundary, and complete
+rollback boundary before background commit.
+
+Commit remains owned by `NormalizedBankCsvReviewService`: it re-reads the file, revalidates the hash and
+company/account authority, restores every governed durable batch/line/issue/review fact atomically, and
+creates no `Txn` or `TxnSplit`. A company switch, source change, account change, blocking message, failed
+commit, or cancelled confirmation clears or invalidates approval and requires a new preview.

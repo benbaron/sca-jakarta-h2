@@ -30,7 +30,8 @@ public final class PanelFactory
                         services::bankConfigurationService,
                         services::bankStatementReviewService,
                         services::bankCsvReviewService,
-                        services::bankCsvMappingProfileService));
+                        services::bankCsvMappingProfileService,
+                        services::normalizedBankCsvReviewService));
         factories.put(AppPanelId.BANKING,
                 () -> new BankingPanel(services.bankReviewQueryService(), services.context()::activeCompanyCode));
         factories.put(AppPanelId.BANK_TRANSACTIONS,

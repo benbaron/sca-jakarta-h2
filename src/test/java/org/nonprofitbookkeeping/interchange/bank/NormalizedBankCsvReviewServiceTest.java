@@ -57,6 +57,10 @@ public class NormalizedBankCsvReviewServiceTest
             assertFalse(preview.hasBlockingMessages());
             assertEquals(2, preview.document().batches().size());
             assertEquals(2, preview.document().statement().transactions().size());
+            assertEquals(2, preview.lines().size());
+            assertTrue(preview.lines().get(0).probableDuplicate());
+            assertFalse(preview.lines().get(0).exactDuplicate());
+            assertEquals("PAYEE FIT-ONE", preview.lines().get(0).name().toUpperCase());
 
             NormalizedBankCsvReviewResult created = service.commit(preview, false, "exchequer");
             assertTrue(created.created());
