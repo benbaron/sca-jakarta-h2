@@ -317,3 +317,23 @@ through `BankReviewQueryService`; restart and company switching therefore never 
 staging list. Ledger drill-through is available only for an explicitly matched canonical transaction.
 The File menu opens these same workspaces and does not invoke the former direct parser/staging path.
 `UiWorkspaceDataStore.bankTransactions` is removed after its final production consumer is replaced.
+
+## 18. P15-S7-C1 normalized CSV export boundary
+
+`BankStatementCsvExportService` reconstructs normalized CSV exclusively from durable reviewed statement
+facts for one explicitly selected active company-owned configured bank account and inclusive date range.
+It never queries `Txn` or `TxnSplit` as statement activity. Batch, statement-line, and matched-transaction
+references use intrinsic portable UUIDs; local numeric database identifiers never enter the file.
+
+The serializer writes the frozen 29-column version 1.0 header, UTF-8 without BOM, LF record endings,
+RFC 4180 quoting, ISO dates, exact plain decimals, and deterministic row order. Source/account metadata,
+correction facts, durable review status, exact/probable duplicate classification, and matched transaction
+identity are preserved where authoritative. Missing optional source PAYEEID or statement balances remain
+empty and produce aggregate warnings rather than guessed values.
+
+The export rejects an empty date range, invalid or cross-company/inactive account scope, an unconfirmed
+overwrite, database-file targets, directories, and symlink paths. Final bytes are forced to a temporary
+file in the destination directory and committed by atomic move where supported, with a recoverable
+same-directory replacement fallback. The result reports the exact company/account/date scope, row and
+byte counts, warnings, and SHA-256. Normalized CSV import, OFX/QFX serialization, and JavaFX controls
+remain later P15-S7 slices.
