@@ -67,6 +67,13 @@ public final class WorkspaceServicesFactory
                 context,
                 ownerWindow);
         SclxExportUiRegistry.registerActions(sclxExportActions);
+        BankStatementExportActions bankStatementExportActions = new BankStatementExportCoordinator(
+                () -> UiServiceRegistry.bankStatementCsvExport(
+                        databaseSessionController.activeDatabasePath()),
+                () -> UiServiceRegistry.bankStatementOfxExport(
+                        databaseSessionController.activeDatabasePath()),
+                context,
+                ownerWindow);
 
         sessionState.onDatabaseSelectionChanged(context::applyDatabaseSelection);
         sessionState.onMultiCompanyChanged(context::applyMultiCompany);
@@ -78,6 +85,7 @@ public final class WorkspaceServicesFactory
                 companySessionController,
                 databaseTransferActions,
                 sclxExportActions,
+                bankStatementExportActions,
                 UiServiceRegistry::dashboardQuery,
                 UiServiceRegistry::diagnosticsQuery,
                 () -> UiServiceRegistry.sclxImportPreview(context.activeCompanyCode()),
