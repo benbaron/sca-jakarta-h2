@@ -381,3 +381,21 @@ Only the latest unambiguous imported ledger or available balance is emitted, wit
 statement-end date as `DTASOF`. Missing or conflicting balances are omitted and disclosed. Output is
 validated by the strict production parser and remains statement activity only; no `Txn` or `TxnSplit`
 query or write participates in export.
+
+## 21. P15-S7-C4 production export route
+
+Bank Transactions is the sole production statement-export surface. It lists active configured bank
+accounts for the active company, captures one inclusive date range, and exposes separately labeled
+**Export Bank CSV…**, **Export OFX 2.x…**, and **Export QFX…** actions. Banking routes users to this
+surface as **Review / Export Statements…**; no File-menu or generic Import/Export Jobs action creates a
+parallel route.
+
+`BankStatementExportCoordinator` captures the exact company, configured-account ID, dates, format,
+normalized destination, and overwrite decision before starting work. An existing target requires
+explicit confirmation. The selected C1 or C3 service then revalidates company/account authority and
+performs deterministic serialization plus atomic replacement away from the JavaFX thread.
+
+Completion reports the destination, row and byte counts, warnings, SHA-256, portable account identity,
+and path-coded messages. Failure reports that no governed output was committed. The removed selected-row
+compatibility path may not return: a table selection is not export authority, and neither the UI nor the
+coordinator may reconstruct statement files from ad hoc `BankTransactionRecord` values.
