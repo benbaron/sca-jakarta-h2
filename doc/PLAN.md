@@ -1,12 +1,12 @@
 ---
-plan_version: 125
+plan_version: 126
 active_phase: P15
 active_slice: P15-S8-C4
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S8-C4-interchange-progress-laptop-closure
-active_pull_request: null
-active_head: null
-next_action: "Publish the reviewed progress/cancellation and laptop-width closure slice from exact merged C3 commit f8b9ae842d1636dedd1df2c7386c228489d2c0ec, open its draft PR, and run all three automated gates."
+active_pull_request: 249
+active_head: d6548d74344e6b373ce18587899c58fe5450ea67
+next_action: "Run the three automated gates on exact plan-bound PR #249 head, reconcile any concrete failure, then return the owner desktop checklist."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1781,7 +1781,7 @@ Next exact action:
 
 ### P15-S8-C4 — Interchange progress, pre-commit cancellation, and laptop-width closure
 
-Status: IN_PROGRESS from exact merged C3 commit `f8b9ae842d1636dedd1df2c7386c228489d2c0ec`.
+Status: VERIFYING in draft PR #249 from exact merged C3 commit `f8b9ae842d1636dedd1df2c7386c228489d2c0ec`.
 
 Branch: `codex/P15-S8-C4-interchange-progress-laptop-closure`
 
@@ -1799,11 +1799,12 @@ Validation status:
 
 - Local Maven/JDK compilation is unavailable in this source snapshot; all five changed Java sources pass an independent Java 17 grammar parse.
 - Focused tests cover preview cancellation before execution, suppressed success delivery, commit-time cancellation lockout, bounded completion, production wiring for all five preview families, and laptop-safe import/export control viewports.
-- GitHub Maven/Flyway/H2, repeated-suite, and JavaFX production-route validation remain required after publication.
+- Draft PR #249 contains exactly the eleven intended production, test, contract, plan, and checklist paths on head `d6548d74344e6b373ce18587899c58fe5450ea67`, with no deletions or base drift from merge `f8b9ae842d1636dedd1df2c7386c228489d2c0ec`.
+- GitHub Maven/Flyway/H2, repeated-suite, and JavaFX production-route validation remain required on the plan-bound head.
 
 Next exact action:
 
-- Publish the reviewed slice, bind this record to its draft PR and exact head, then run all three automated gates before returning the owner desktop checklist.
+- Run all three automated gates on the exact plan-bound PR head, reconcile any concrete failure, then return the owner desktop checklist.
 
 
 # P06 — Bank reconciliation and cleared-state comparison
