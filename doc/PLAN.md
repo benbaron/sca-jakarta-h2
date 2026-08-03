@@ -1,12 +1,12 @@
 ---
-plan_version: 123
+plan_version: 124
 active_phase: P15
-active_slice: P15-S8-C2
-active_status: VERIFYING
-active_branch: codex/P15-S8-C2-bank-import-contract-matrix
-active_pull_request: 247
-active_head: "bd1b04de5dc79e2fccaf71775abe1a89051cba17"
-next_action: "Record the successful PR #247 workflow result on the governance-inclusive head, then rerun the same three automated gates for the exact review handoff."
+active_slice: P15-S8-C3
+active_status: IN_PROGRESS
+active_branch: codex/P15-S8-C3-bank-import-protection-round-trip
+active_pull_request: null
+active_head: "dd57ce5013c48f858c2d3d1444268f696413ed8b"
+next_action: "Publish the OFX/QFX semantic re-import and closed-period/reconciliation noninterference coverage from merged C2, then run the full PR workflow."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Record the successful PR #247 workflow result on the governance-in
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S8-C1 as DONE through merged and owner-verified PR #246 and starts P15-S8-C2, the all-format bank-import contract matrix.
+This revision records P15-S8-C2 as DONE through merged PR #247 and starts P15-S8-C3, bank-statement round-trip and ledger-protection noninterference verification.
 
 ## 2. Status values
 
@@ -47,7 +47,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
-| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S8-C2 |
+| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S8-C3 |
 
 ## 4. Governing documents
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S8-C2; P15-S0 through P15-S7 and P15-S8-C1 DONE
+**Status:** IN_PROGRESS at P15-S8-C3; P15-S0 through P15-S7 and P15-S8-C1/C2 DONE
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -1677,7 +1677,7 @@ Next exact action:
 
 ## P15-S8 — Integrated JavaFX workflow and end-to-end verification
 
-Status: IN_PROGRESS at P15-S8-C2.
+Status: IN_PROGRESS at P15-S8-C3.
 
 Planned deliverables:
 
@@ -1726,7 +1726,7 @@ Next exact action:
 
 ### P15-S8-C2 — All-format bank-import contract matrix
 
-Status: VERIFYING on draft PR #247 from exact merged C1 commit `30a71adf9545e31b2265c069379d9708cd92949b`.
+Status: DONE through merged PR #247.
 
 Branch: `codex/P15-S8-C2-bank-import-contract-matrix`
 
@@ -1746,10 +1746,34 @@ Validation status:
 - The new integration source passes an independent Java 17 grammar parse.
 - Draft PR #247 contains exactly the five intended test and governing-document paths on head `29d691e8dffeca9d382256f102db1bc6c3956142`, with no deletions or base drift.
 - Plan-bound head `bd1b04de5dc79e2fccaf71775abe1a89051cba17` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30831011571`.
+- Final governance-inclusive head `148c2a54abe539a09e99fa43e44f4caa65f4b1e0` passed the same three gates in Maven PR Tests run `30831368955`; PR #247 merged at `dd57ce5013c48f858c2d3d1444268f696413ed8b`.
 
 Next exact action:
 
-- Rerun all three automated gates on the governance-inclusive handoff head, then finalize the PR if it remains green.
+- None; P15-S8-C2 is DONE.
+
+### P15-S8-C3 — Bank-statement round trip and ledger-protection noninterference
+
+Status: IN_PROGRESS from exact merged C2 commit `dd57ce5013c48f858c2d3d1444268f696413ed8b`.
+
+Branch: `codex/P15-S8-C3-bank-import-protection-round-trip`
+
+Scope:
+
+- Import a governed OFX statement into durable review while the company already contains a closed statement period and a completed-reconciliation-protected balanced canonical bank transaction.
+- Export that durable review as deterministic OFX 2.x and QFX 2.x, prove both strict parser projections are semantically equivalent, and import each into a second company-owned configured account with the same external bank identity.
+- Prove the first target import remains reviewable, the equivalent second-format import is durably classified as duplicate review evidence, and both create no canonical ledger activity in the target company.
+- Assert that the source canonical transaction, its two balanced splits, completed-reconciliation protection, closed range, and close event remain unchanged throughout raw import/export/re-import.
+- Add no production source, schema, parser, UI, ledger, close, or reconciliation behavior; reuse the canonical services and the C2 matrix fixture.
+- Keep cancellation/progress controls and the final laptop-width desktop sweep for later P15-S8 slices.
+
+Validation status:
+
+- Local Java 17 is available but Maven is unavailable; Java grammar review and the GitHub Maven/Flyway/H2 workflow are required.
+
+Next exact action:
+
+- Publish the focused test/governance changes, open the draft PR, and follow all three automated gates.
 
 
 # P06 — Bank reconciliation and cleared-state comparison
