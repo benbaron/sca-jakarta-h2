@@ -33,4 +33,28 @@ class BankStatementPreviewProductionRouteSourceTest
         assertTrue(parser.contains("FILENAME_CONTENT_MISMATCH"));
         assertTrue(parser.contains("MULTI_ACCOUNT"));
     }
+
+    @Test
+    void productionImportPreviewComposesNormalizedCsvWithoutMappingProfile() throws Exception
+    {
+        String panel = Files.readString(Path.of(
+                "src/main/java/org/nonprofitbookkeeping/ui/ImportPreviewPanel.java"));
+        String factory = Files.readString(Path.of(
+                "src/main/java/org/nonprofitbookkeeping/ui/PanelFactory.java"));
+        String services = Files.readString(Path.of(
+                "src/main/java/org/nonprofitbookkeeping/ui/WorkspaceServicesFactory.java"));
+        String registry = Files.readString(Path.of(
+                "src/main/java/org/nonprofitbookkeeping/ui/UiServiceRegistry.java"));
+
+        assertTrue(panel.contains("Preview Normalized Bank CSV…"));
+        assertTrue(panel.contains("previewNormalizedBankCsvButton"));
+        assertTrue(panel.contains("fixedScopeService.preview(file, company, account.getId())"));
+        assertTrue(panel.contains("commitService.commit(preview, identityConfirmed, actor)"));
+        assertTrue(panel.contains("Confirm Atomic Normalized Bank CSV Import"));
+        assertTrue(panel.contains("No ledger transaction was created"));
+        assertFalse(panel.contains("normalizedBankCsvReviewService.get().preview"));
+        assertTrue(factory.contains("services::normalizedBankCsvReviewService"));
+        assertTrue(services.contains("UiServiceRegistry::normalizedBankCsvReview"));
+        assertTrue(registry.contains("new NormalizedBankCsvReviewService(services().jpa())"));
+    }
 }
