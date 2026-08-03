@@ -20,7 +20,7 @@ class BankStatementPreviewProductionRouteSourceTest
         String parser = Files.readString(Path.of(
                 "src/main/java/org/nonprofitbookkeeping/interchange/bank/BankStatementParser.java"));
 
-        assertTrue(panel.contains("UiAsync.run(\"import-preview-bank\""));
+        assertTrue(panel.contains("runPreviewOperation(\n                \"import-preview-bank\""));
         assertTrue(panel.contains("fixedScopeService.preview(file, company, account.getId())"));
         assertTrue(panel.contains("commitPreviewedBankReviewButton"));
         assertTrue(panel.contains("Confirm Atomic Bank Review Import"));
