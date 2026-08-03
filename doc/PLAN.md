@@ -4,8 +4,8 @@ active_phase: P15
 active_slice: P15-C1
 active_status: VERIFYING
 active_branch: codex/P15-C1-finalize-plan-ledger
-active_pull_request: null
-active_head: 76bb90650efa2ac4a0a39bfcd4854642659ad171
+active_pull_request: 250
+active_head: f42432fd87d4f1ec39e68cd0cdb3ae5503d7e211
 next_action: "Open and merge the documentation-only P15-C1 closure PR; no later phase is authorized without an explicit plan amendment."
 ---
 
@@ -1811,7 +1811,7 @@ Next exact action:
 
 ### P15-C1 — Final plan-ledger reconciliation
 
-Status: VERIFYING in a documentation-only closure pull request.
+Status: VERIFYING in documentation-only draft PR #250.
 
 Branch: `codex/P15-C1-finalize-plan-ledger`
 
@@ -1824,7 +1824,8 @@ Purpose:
 Validation status:
 
 - PR #249 final head `ce987459c740c45399eb3debe6f2abd61f6e38d5` passed all three repository gates in Maven PR Tests run `30843385164` before merging at `76bb90650efa2ac4a0a39bfcd4854642659ad171`.
-- This closure changes only `doc/PLAN.md`; the pull-request comparison and documentation workflow remain to be verified.
+- Draft PR #250 was created from exact merge base `76bb90650efa2ac4a0a39bfcd4854642659ad171`; activation head `f42432fd87d4f1ec39e68cd0cdb3ae5503d7e211` changes only `doc/PLAN.md`, with no base drift.
+- The documentation workflow remains to be verified on the plan-bound review head.
 
 Next exact action:
 
