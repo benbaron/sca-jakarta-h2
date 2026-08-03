@@ -1,12 +1,12 @@
 ---
-plan_version: 122
+plan_version: 123
 active_phase: P15
-active_slice: P15-S8-C1
+active_slice: P15-S8-C2
 active_status: VERIFYING
-active_branch: codex/P15-S8-C1-normalized-bank-csv-import-ui
-active_pull_request: 246
-active_head: "0796a84ed80c26f81c12c456f6599bac4a778d3c"
-next_action: "Verify the governance-inclusive PR #246 head through the same three automated gates, then complete owner desktop acceptance before merge."
+active_branch: codex/P15-S8-C2-bank-import-contract-matrix
+active_pull_request: 247
+active_head: "bd1b04de5dc79e2fccaf71775abe1a89051cba17"
+next_action: "Record the successful PR #247 workflow result on the governance-inclusive head, then rerun the same three automated gates for the exact review handoff."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Verify the governance-inclusive PR #246 head through the same thre
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S7 as DONE through merged and owner-verified PR #245 and starts P15-S8-C1, the missing production normalized bank CSV preview/commit route.
+This revision records P15-S8-C1 as DONE through merged and owner-verified PR #246 and starts P15-S8-C2, the all-format bank-import contract matrix.
 
 ## 2. Status values
 
@@ -47,7 +47,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
-| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S8-C1 |
+| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S8-C2 |
 
 ## 4. Governing documents
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S8-C1; P15-S0 through P15-S7 DONE
+**Status:** IN_PROGRESS at P15-S8-C2; P15-S0 through P15-S7 and P15-S8-C1 DONE
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -1677,7 +1677,7 @@ Next exact action:
 
 ## P15-S8 — Integrated JavaFX workflow and end-to-end verification
 
-Status: IN_PROGRESS at P15-S8-C1.
+Status: IN_PROGRESS at P15-S8-C2.
 
 Planned deliverables:
 
@@ -1698,7 +1698,7 @@ Acceptance:
 
 ### P15-S8-C1 — Production normalized bank CSV import route
 
-Status: VERIFYING on draft PR #246 from exact merged S7 commit `83999de5afa80decf63068862fa897bbee3d8ce1`.
+Status: DONE through merged PR #246 and owner desktop acceptance.
 
 Branch: `codex/P15-S8-C1-normalized-bank-csv-import-ui`
 
@@ -1717,11 +1717,39 @@ Validation status:
 - All nine changed Java files pass an independent Java 17 grammar parse; Maven is unavailable in this source snapshot.
 - Draft PR #246 contains exactly the fifteen intended production, test, governing-document, and owner-checklist paths, with no deletions or base drift from exact merge base `83999de5afa80decf63068862fa897bbee3d8ce1`.
 - Plan-inclusive head `0796a84ed80c26f81c12c456f6599bac4a778d3c` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30829022583`.
-- The governance-inclusive head and owner desktop acceptance remain required before merge.
+- Final governance-inclusive head `5d5355e86e42e784c4d849aed9660867614642b7` passed the same three gates in Maven PR Tests run `30829383420`.
+- The owner confirmed the complete desktop checklist on 2026-08-03, and PR #246 merged at `30a71adf9545e31b2265c069379d9708cd92949b`.
 
 Next exact action:
 
-- Verify the governance-inclusive PR #246 head through all automated gates, then complete owner desktop acceptance.
+- None; P15-S8-C1 is DONE.
+
+### P15-S8-C2 — All-format bank-import contract matrix
+
+Status: VERIFYING on draft PR #247 from exact merged C1 commit `30a71adf9545e31b2265c069379d9708cd92949b`.
+
+Branch: `codex/P15-S8-C2-bank-import-contract-matrix`
+
+Scope:
+
+- Drive OFX 2.x XML, QFX 2.x header/XML, QFX 1.x SGML, signed mapped CSV, debit/credit mapped CSV, and normalized CSV through their canonical preview/commit services against one configured company-owned account.
+- Prove every supported profile commits durable review facts, creates its factual operation audit, performs no canonical ledger write, and makes an identical second import a no-op.
+- Exercise malformed, unsupported-version/message-set, multi-account, XML external-entity/expansion, encrypted/compressed QFX, malformed/ambiguous mapped CSV, and invalid normalized-header rejection through the production service boundary.
+- Assert that every rejected input leaves batches, statement lines, issues, audit history, and canonical transactions unchanged while explicitly saved mapping profiles remain configuration facts.
+- Prove a configured account owned by another company cannot be selected through the active-company service scope.
+- Reuse governed fictional fixtures and existing parsers, mapping profiles, review services, and H2 authorities; add no parser, staging store, durable job log, UI route, migration, or ledger behavior.
+- Keep cancellation/progress controls, closed-period/reconciliation noninterference, all-family export/import semantic checks, and the final laptop-width desktop sweep for later P15-S8 slices.
+
+Validation status:
+
+- Local Java 17 is available but Maven is unavailable in this source snapshot; authoritative compilation, Flyway/H2 execution, repeated-suite, and JavaFX route compliance will run through the PR workflow.
+- The new integration source passes an independent Java 17 grammar parse.
+- Draft PR #247 contains exactly the five intended test and governing-document paths on head `29d691e8dffeca9d382256f102db1bc6c3956142`, with no deletions or base drift.
+- Plan-bound head `bd1b04de5dc79e2fccaf71775abe1a89051cba17` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30831011571`.
+
+Next exact action:
+
+- Rerun all three automated gates on the governance-inclusive handoff head, then finalize the PR if it remains green.
 
 
 # P06 — Bank reconciliation and cleared-state comparison
