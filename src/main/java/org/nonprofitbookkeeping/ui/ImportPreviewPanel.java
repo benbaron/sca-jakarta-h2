@@ -39,6 +39,9 @@ import org.nonprofitbookkeeping.interchange.bank.BankCsvReviewService;
 import org.nonprofitbookkeeping.interchange.bank.BankStatementReviewPreview;
 import org.nonprofitbookkeeping.interchange.bank.BankStatementReviewResult;
 import org.nonprofitbookkeeping.interchange.bank.BankStatementReviewService;
+import org.nonprofitbookkeeping.interchange.bank.NormalizedBankCsvReviewPreview;
+import org.nonprofitbookkeeping.interchange.bank.NormalizedBankCsvReviewResult;
+import org.nonprofitbookkeeping.interchange.bank.NormalizedBankCsvReviewService;
 import org.nonprofitbookkeeping.model.CompanyBankAccount;
 import org.nonprofitbookkeeping.service.BankConfigurationService;
 import org.nonprofitbookkeeping.service.BankImportNormalizationService;
@@ -68,7 +71,9 @@ public class ImportPreviewPanel implements AppPanel
     private final Supplier<BankStatementReviewService> bankStatementReviewService;
     private final Supplier<BankCsvReviewService> bankCsvReviewService;
     private final Supplier<BankCsvMappingProfileService> bankCsvProfileService;
-    private final Label status = new Label("Choose an SCLX, COA CSV, or OFX/QFX file to preview before import.");
+    private final Supplier<NormalizedBankCsvReviewService> normalizedBankCsvReviewService;
+    private final Label status = new Label(
+            "Choose an SCLX, COA CSV, OFX/QFX, mapped CSV, or normalized bank CSV file to preview before import.");
     private final ListView<String> warnings = new ListView<>();
     private final TableView<CoaCsvMapper.CoaCsvRow> acceptedCoaRows = new TableView<>();
     private final TableView<ImportPreviewService.RejectedCoaRow> rejectedCoaRows = new TableView<>();
@@ -82,6 +87,7 @@ public class ImportPreviewPanel implements AppPanel
     private final Button commitSclx = new Button("Import Previewed SCLX…");
     private final Button previewBank = new Button("Preview Bank OFX/QFX…");
     private final Button previewBankCsv = new Button("Preview Mapped Bank CSV…");
+    private final Button previewNormalizedBankCsv = new Button("Preview Normalized Bank CSV…");
     private final Button saveBankCsvProfile = new Button("Save CSV Profile…");
     private final Button commitBankReview = new Button("Commit Previewed Bank Review…");
     private final ComboBox<CompanyBankAccount> bankAccount = new ComboBox<>();
@@ -96,8 +102,10 @@ public class ImportPreviewPanel implements AppPanel
     private SclxImportCommitService lastSclxCommitService;
     private BankStatementReviewPreview lastBankReview;
     private BankCsvReviewPreview lastBankCsvReview;
+    private NormalizedBankCsvReviewPreview lastNormalizedBankCsvReview;
     private BankStatementReviewService lastBankCommitService;
     private BankCsvReviewService lastBankCsvCommitService;
+    private NormalizedBankCsvReviewService lastNormalizedBankCsvCommitService;
 
     public ImportPreviewPanel()
     {
@@ -108,7 +116,8 @@ public class ImportPreviewPanel implements AppPanel
                 UiServiceRegistry::bankConfiguration,
                 UiServiceRegistry::bankStatementReview,
                 UiServiceRegistry::bankCsvReview,
-                UiServiceRegistry::bankCsvMappingProfiles);
+                UiServiceRegistry::bankCsvMappingProfiles,
+                UiServiceRegistry::normalizedBankCsvReview);
     }
 
     ImportPreviewPanel(
@@ -125,7 +134,8 @@ public class ImportPreviewPanel implements AppPanel
                 UiServiceRegistry::bankConfiguration,
                 UiServiceRegistry::bankStatementReview,
                 UiServiceRegistry::bankCsvReview,
-                UiServiceRegistry::bankCsvMappingProfiles);
+                UiServiceRegistry::bankCsvMappingProfiles,
+                UiServiceRegistry::normalizedBankCsvReview);
     }
 
     ImportPreviewPanel(
@@ -141,7 +151,8 @@ public class ImportPreviewPanel implements AppPanel
                 UiServiceRegistry::bankConfiguration,
                 UiServiceRegistry::bankStatementReview,
                 UiServiceRegistry::bankCsvReview,
-                UiServiceRegistry::bankCsvMappingProfiles);
+                UiServiceRegistry::bankCsvMappingProfiles,
+                UiServiceRegistry::normalizedBankCsvReview);
     }
 
     ImportPreviewPanel(
@@ -152,12 +163,14 @@ public class ImportPreviewPanel implements AppPanel
             Supplier<BankConfigurationService> bankConfigurationService,
             Supplier<BankStatementReviewService> bankStatementReviewService,
             Supplier<BankCsvReviewService> bankCsvReviewService,
-            Supplier<BankCsvMappingProfileService> bankCsvProfileService)
+            Supplier<BankCsvMappingProfileService> bankCsvProfileService,
+            Supplier<NormalizedBankCsvReviewService> normalizedBankCsvReviewService)
     {
         this(previewService,
                 () -> Objects.requireNonNull(sclxPreviewService.get(), "sclxPreviewService result")::preview,
                 sclxCommitFactory, activeCompanyCode, bankConfigurationService,
-                bankStatementReviewService, bankCsvReviewService, bankCsvProfileService);
+                bankStatementReviewService, bankCsvReviewService, bankCsvProfileService,
+                normalizedBankCsvReviewService);
     }
 
     private ImportPreviewPanel(
@@ -168,7 +181,8 @@ public class ImportPreviewPanel implements AppPanel
             Supplier<BankConfigurationService> bankConfigurationService,
             Supplier<BankStatementReviewService> bankStatementReviewService,
             Supplier<BankCsvReviewService> bankCsvReviewService,
-            Supplier<BankCsvMappingProfileService> bankCsvProfileService)
+            Supplier<BankCsvMappingProfileService> bankCsvProfileService,
+            Supplier<NormalizedBankCsvReviewService> normalizedBankCsvReviewService)
     {
         this.previewService = Objects.requireNonNull(previewService, "previewService");
         this.sclxPreviewFactory = Objects.requireNonNull(sclxPreviewFactory, "sclxPreviewFactory");
@@ -178,6 +192,8 @@ public class ImportPreviewPanel implements AppPanel
         this.bankStatementReviewService = Objects.requireNonNull(bankStatementReviewService, "bankStatementReviewService");
         this.bankCsvReviewService = Objects.requireNonNull(bankCsvReviewService, "bankCsvReviewService");
         this.bankCsvProfileService = Objects.requireNonNull(bankCsvProfileService, "bankCsvProfileService");
+        this.normalizedBankCsvReviewService = Objects.requireNonNull(
+                normalizedBankCsvReviewService, "normalizedBankCsvReviewService");
         root.setPadding(new Insets(8));
 
         Label title = new Label("Import Preview");
@@ -200,6 +216,8 @@ public class ImportPreviewPanel implements AppPanel
         previewBank.setId("previewBankStatementButton");
         previewBankCsv.setOnAction(e -> chooseAndPreviewBankCsv());
         previewBankCsv.setId("previewBankCsvButton");
+        previewNormalizedBankCsv.setOnAction(e -> chooseAndPreviewNormalizedBankCsv());
+        previewNormalizedBankCsv.setId("previewNormalizedBankCsvButton");
         saveBankCsvProfile.setOnAction(e -> chooseAndSaveBankCsvProfile());
         saveBankCsvProfile.setId("saveBankCsvProfileButton");
         commitBankReview.setOnAction(e -> confirmAndCommitBankReview());
@@ -214,9 +232,11 @@ public class ImportPreviewPanel implements AppPanel
         status.setId("importPreviewStatus");
         status.setWrapText(true);
         root.setTop(new VBox(6, title,
-                new HBox(8, previewSclx, previewCoa, previewBank, commitAccepted),
+                new HBox(8, previewSclx, previewCoa, commitAccepted),
                 new HBox(8, new Label("Configured bank account"), bankAccount,
-                        new Label("CSV profile"), bankCsvProfile, saveBankCsvProfile, previewBankCsv),
+                        previewBank, previewNormalizedBankCsv),
+                new HBox(8, new Label("Mapped CSV profile"), bankCsvProfile,
+                        saveBankCsvProfile, previewBankCsv),
                 new HBox(8, new Label("Import actor"), sclxActor, commitSclx,
                         confirmBankIdentity, commitBankReview),
                 status, new Separator()));
@@ -372,7 +392,8 @@ public class ImportPreviewPanel implements AppPanel
                 stringColumn("Duplicate", value -> value.exactDuplicate() ? "Exact"
                         : value.probableDuplicate() ? "Probable" : "No"));
         bankRows.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        bankRows.setPlaceholder(new Label("Preview an OFX/QFX or mapped CSV statement."));
+        bankRows.setPlaceholder(new Label(
+                "Preview an OFX/QFX, mapped CSV, or normalized bank CSV statement."));
 
         bankCsvOriginalRows.setId("bankCsvOriginalPreviewRows");
         bankCsvOriginalRows.getColumns().addAll(
@@ -589,6 +610,21 @@ public class ImportPreviewPanel implements AppPanel
         }
         chooseOpenFile("Preview Mapped Bank CSV", new FileChooser.ExtensionFilter("Bank CSV Files", "*.csv"))
                 .ifPresent(this::previewBankCsv);
+    }
+
+    private void chooseAndPreviewNormalizedBankCsv()
+    {
+        reloadBankTargets();
+        if (bankAccount.getValue() == null)
+        {
+            status.setText(
+                    "Select an active configured bank account before previewing normalized bank CSV.");
+            return;
+        }
+        chooseOpenFile(
+                "Preview Normalized Bank CSV",
+                new FileChooser.ExtensionFilter("Normalized Bank CSV 1.0", "*.csv"))
+                .ifPresent(this::previewNormalizedBankCsv);
     }
 
     private void chooseAndSaveBankCsvProfile()
@@ -913,6 +949,56 @@ public class ImportPreviewPanel implements AppPanel
                 });
     }
 
+    private void previewNormalizedBankCsv(Path file)
+    {
+        clearBankPreview();
+        CompanyBankAccount account = bankAccount.getValue();
+        String company = activeCompanyCode.get();
+        NormalizedBankCsvReviewService fixedScopeService = normalizedBankCsvReviewService.get();
+        previewNormalizedBankCsv.setDisable(true);
+        status.setText("Previewing normalized bank CSV against " + account.getName()
+                + " without changing H2...");
+        UiAsync.run("import-preview-normalized-bank-csv",
+                () -> fixedScopeService.preview(file, company, account.getId()),
+                result ->
+                {
+                    previewNormalizedBankCsv.setDisable(false);
+                    lastNormalizedBankCsvCommitService = fixedScopeService;
+                    lastBankCommitService = null;
+                    lastBankCsvCommitService = null;
+                    lastBankCsvReview = null;
+                    applyNormalizedBankCsvPreview(result);
+                },
+                ex ->
+                {
+                    previewNormalizedBankCsv.setDisable(false);
+                    clearBankPreview();
+                    status.setText("Could not preview normalized bank CSV: "
+                            + UiErrors.safeMessage(ex));
+                });
+    }
+
+    private void applyNormalizedBankCsvPreview(NormalizedBankCsvReviewPreview result)
+    {
+        clearCoaPreview();
+        clearSclxPreview();
+        lastNormalizedBankCsvReview = result;
+        lastBankReview = null;
+        confirmBankIdentity.setSelected(false);
+        bankRows.getItems().setAll(result.lines());
+        bankCsvOriginalRows.getItems().clear();
+        warnings.getItems().setAll(result.messages().stream()
+                .map(ImportPreviewPanel::displayMessage)
+                .toList());
+        previewTabs.getSelectionModel().select(5);
+        updateBankCommitAvailability();
+        status.setText("Previewed normalized bank CSV 1.0 for "
+                + result.configuredAccountName() + " in " + result.companyCode()
+                + " with " + result.document().batches().size() + " source batch(es) and "
+                + result.lines().size() + " row(s), account match "
+                + result.accountMatchStatus() + ". No data was changed.");
+    }
+
     private void applyBankPreview(
             BankStatementReviewPreview result,
             List<org.nonprofitbookkeeping.interchange.bank.BankCsvParser.OriginalRow> originalRows)
@@ -936,16 +1022,26 @@ public class ImportPreviewPanel implements AppPanel
 
     private void updateBankCommitAvailability()
     {
-        boolean ready = lastBankReview != null
+        boolean regularReady = lastBankReview != null
                 && (lastBankCommitService != null || lastBankCsvCommitService != null)
                 && Objects.equals(lastBankReview.companyCode(), activeCompanyCode.get())
-                && lastBankReview.commitAllowed(confirmBankIdentity.isSelected())
-                && !sclxActor.getText().isBlank();
-        commitBankReview.setDisable(!ready);
+                && lastBankReview.commitAllowed(confirmBankIdentity.isSelected());
+        boolean normalizedReady = lastNormalizedBankCsvReview != null
+                && lastNormalizedBankCsvCommitService != null
+                && Objects.equals(
+                        lastNormalizedBankCsvReview.companyCode(), activeCompanyCode.get())
+                && lastNormalizedBankCsvReview.commitAllowed(confirmBankIdentity.isSelected());
+        commitBankReview.setDisable(
+                !(regularReady || normalizedReady) || sclxActor.getText().isBlank());
     }
 
     private void confirmAndCommitBankReview()
     {
+        if (lastNormalizedBankCsvReview != null)
+        {
+            confirmAndCommitNormalizedBankCsvReview();
+            return;
+        }
         BankStatementReviewPreview preview = lastBankReview;
         BankCsvReviewPreview csvPreview = lastBankCsvReview;
         BankStatementReviewService fixedStatementCommit = lastBankCommitService;
@@ -980,6 +1076,7 @@ public class ImportPreviewPanel implements AppPanel
 
         previewBank.setDisable(true);
         previewBankCsv.setDisable(true);
+        previewNormalizedBankCsv.setDisable(true);
         commitBankReview.setDisable(true);
         status.setText("Committing the exact previewed bank statement atomically...");
         UiAsync.run("import-preview-bank-commit",
@@ -991,8 +1088,62 @@ public class ImportPreviewPanel implements AppPanel
                 {
                     previewBank.setDisable(false);
                     previewBankCsv.setDisable(false);
+                    previewNormalizedBankCsv.setDisable(false);
                     clearBankPreview();
                     status.setText("Bank review import rolled back or was rejected: "
+                            + UiErrors.safeMessage(ex) + ". Preview again before retrying.");
+                });
+    }
+
+    private void confirmAndCommitNormalizedBankCsvReview()
+    {
+        NormalizedBankCsvReviewPreview preview = lastNormalizedBankCsvReview;
+        NormalizedBankCsvReviewService commitService = lastNormalizedBankCsvCommitService;
+        String actor = sclxActor.getText().strip();
+        boolean identityConfirmed = confirmBankIdentity.isSelected();
+        if (preview == null || commitService == null || actor.isBlank()
+                || !Objects.equals(preview.companyCode(), activeCompanyCode.get())
+                || !preview.commitAllowed(identityConfirmed))
+        {
+            status.setText("Normalized bank CSV import unavailable: preview a valid file, "
+                    + "resolve account confirmation, and provide an actor.");
+            updateBankCommitAvailability();
+            return;
+        }
+
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,
+                "Restore " + preview.document().batches().size() + " source batch(es) and "
+                        + preview.lines().size() + " review row(s) from "
+                        + preview.source().getFileName() + " into " + preview.companyCode()
+                        + " / " + preview.configuredAccountName() + "?\n\nSHA-256: "
+                        + preview.sourceHash()
+                        + "\n\nThis restores durable review facts only. It does not create ledger "
+                        + "transactions. The exact file and target will be revalidated; any failure "
+                        + "rolls back every source batch and row.",
+                ButtonType.OK, ButtonType.CANCEL);
+        confirmation.setTitle("Confirm Atomic Normalized Bank CSV Import");
+        confirmation.setHeaderText("Commit the exact previewed normalized bank CSV");
+        if (confirmation.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK)
+        {
+            status.setText("Normalized bank CSV import cancelled; no data was changed.");
+            return;
+        }
+
+        previewBank.setDisable(true);
+        previewBankCsv.setDisable(true);
+        previewNormalizedBankCsv.setDisable(true);
+        commitBankReview.setDisable(true);
+        status.setText("Committing the exact previewed normalized bank CSV atomically...");
+        UiAsync.run("import-preview-normalized-bank-csv-commit",
+                () -> commitService.commit(preview, identityConfirmed, actor),
+                this::applyNormalizedBankCsvReviewResult,
+                ex ->
+                {
+                    previewBank.setDisable(false);
+                    previewBankCsv.setDisable(false);
+                    previewNormalizedBankCsv.setDisable(false);
+                    clearBankPreview();
+                    status.setText("Normalized bank CSV import rolled back or was rejected: "
                             + UiErrors.safeMessage(ex) + ". Preview again before retrying.");
                 });
     }
@@ -1001,6 +1152,7 @@ public class ImportPreviewPanel implements AppPanel
     {
         previewBank.setDisable(false);
         previewBankCsv.setDisable(false);
+        previewNormalizedBankCsv.setDisable(false);
         clearBankPreview();
         status.setText((result.created() ? "Committed" : "Identical source already committed as")
                 + " durable bank review batch " + result.batchId() + ": total "
@@ -1010,12 +1162,29 @@ public class ImportPreviewPanel implements AppPanel
                 + ". No ledger transaction was created.");
     }
 
+    private void applyNormalizedBankCsvReviewResult(NormalizedBankCsvReviewResult result)
+    {
+        previewBank.setDisable(false);
+        previewBankCsv.setDisable(false);
+        previewNormalizedBankCsv.setDisable(false);
+        clearBankPreview();
+        status.setText((result.created() ? "Committed" : "Identical source already committed as")
+                + " normalized bank CSV review batch(es) " + result.batchIds()
+                + ": batches " + result.batchCount() + ", total " + result.totalLineCount()
+                + ", reviewable " + result.reviewableLineCount() + ", matched "
+                + result.matchedLineCount() + ", duplicates " + result.duplicateLineCount()
+                + ", issues " + result.issueCount()
+                + ". No ledger transaction was created.");
+    }
+
     private void clearBankPreview()
     {
         lastBankReview = null;
         lastBankCsvReview = null;
+        lastNormalizedBankCsvReview = null;
         lastBankCommitService = null;
         lastBankCsvCommitService = null;
+        lastNormalizedBankCsvCommitService = null;
         bankRows.getItems().clear();
         bankCsvOriginalRows.getItems().clear();
         confirmBankIdentity.setSelected(false);
