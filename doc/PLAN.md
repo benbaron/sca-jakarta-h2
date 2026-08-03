@@ -1797,9 +1797,10 @@ Scope:
 
 Validation status:
 
-- Local Maven/JDK compilation is unavailable in this source snapshot; all five changed Java sources pass an independent Java 17 grammar parse.
+- Local Maven/JDK compilation is unavailable in this source snapshot; all seven changed Java sources pass an independent Java 17 grammar parse.
 - Focused tests cover preview cancellation before execution, suppressed success delivery, commit-time cancellation lockout, bounded completion, production wiring for all five preview families, and laptop-safe import/export control viewports.
-- Draft PR #249 contains exactly the eleven intended production, test, contract, plan, and checklist paths on head `d6548d74344e6b373ce18587899c58fe5450ea67`, with no deletions or base drift from merge `f8b9ae842d1636dedd1df2c7386c228489d2c0ec`.
+- Draft PR #249 initially contained exactly the eleven intended production, test, contract, plan, and checklist paths on head `d6548d74344e6b373ce18587899c58fe5450ea67`, with no deletions or base drift from merge `f8b9ae842d1636dedd1df2c7386c228489d2c0ec`.
+- Maven PR Tests run `30842770143` compiled the slice and executed H2 but found two stale legacy source guards that still required the removed `UiAsync.run(...)` spelling; the two guards now require the governed preview/commit wrappers for the same OFX/QFX and SCLX routes.
 - GitHub Maven/Flyway/H2, repeated-suite, and JavaFX production-route validation remain required on the plan-bound head.
 
 Next exact action:
