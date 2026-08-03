@@ -1,6 +1,6 @@
 # Model and persistence authority inventory
 
-Status: P00 inventory of current main, updated through P15-S6-C4 durable bank-statement review UI. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
+Status: P00 inventory of current main, updated through P15-S8-C1 production normalized bank CSV import UI. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
 
 ## Current persistence map
 
@@ -14,7 +14,7 @@ Status: P00 inventory of current main, updated through P15-S6-C4 durable bank-st
 | Budget categories | `BudgetCategory` JPA plus V45 | yes for categories | categories are not budget targets | P04 |
 | Budget targets | `BudgetPlan`/`BudgetLine` JPA entities and `budget_plan`/`budget_line` tables | yes | version activation must remain through `BudgetPlanService`; no sidecar target store remains | P04 persistent budget model |
 | Import preview | `ImportPreviewService` in-memory accepted/rejected rows | no by design until acceptance | acceptable staging, but accepted writes must use canonical services | P05/P13 |
-| Bank statement review | `bank_import_batch`, `bank_statement_line`, `import_issue`, `bank_csv_mapping_profile`; strict OFX/QFX, mapped-CSV, and normalized-CSV preview/commit services; `BankReviewQueryService` | yes for committed review facts, retained normalized external identities/PAYEEID, and profiles | raw preview is intentionally in-memory; ledger acceptance/matching remains a separate explicit workflow | P05/P15-S6/P15-S7 |
+| Bank statement review | `bank_import_batch`, `bank_statement_line`, `import_issue`, `bank_csv_mapping_profile`; production-composed strict OFX/QFX, mapped-CSV, and normalized-CSV preview/commit services; `BankReviewQueryService` | yes for committed review facts, retained normalized external identities/PAYEEID, and profiles | raw preview is intentionally in-memory; normalized CSV restores governed review facts without a mapping profile; ledger acceptance/matching remains a separate explicit workflow | P05/P15-S6/P15-S7/P15-S8 |
 | Reconciliation runs | JDBC `ReconciliationRunRepository`, V6/V7 style workflow tables | yes for run records and P06-S2 unresolved report summaries | remaining mismatch-resolution/edit workflow is incomplete | P06/P10 |
 | Former Schedules panel | top-level panel, route, navigation item, and schedule runbook sidecar removed in P07 | no active top-level persistence remains | historical V2 schedule/open-item tables remain until a later migration decision | future domain-specific supplemental transaction records, not a Schedules function |
 | Fixed assets/depreciation | `FixedAsset` and `FixedAssetDepreciationRun` JPA entities with V55 tables; depreciation runs create canonical `Txn` rows | yes for P08-S1 asset records and completed depreciation runs | old asset/depreciation text sidecars removed from production paths | later hardening: richer disposal/impairment workflows, visual polish, and reports |
@@ -92,8 +92,8 @@ Status: P00 inventory of current main, updated through P15-S6-C4 durable bank-st
 ## Import staging versus accepted data
 
 - Import preview can remain in-memory while users review rows.
-- Accepted COA imports may write through admin services today; accepted bank/accounting activity must not write static `UiWorkspaceDataStore` rows as accounting truth.
-- P05 must persist statement lines and route accepted accounting effects through the P02 canonical transaction service.
+- Accepted COA imports may write through admin services today; accepted bank statements write durable review facts through the exact-scope OFX/QFX, mapped-CSV, or normalized-CSV service and never through static UI state.
+- Bank-statement import does not create canonical accounting effects. Any later promotion of one reviewed statement row into `Txn`/`TxnSplit` remains a separate explicit P02-owned workflow.
 - P15-S5-C2 through C10 SCLX import writes one empty target company graph in one caller-owned JPA transaction. Accounts and funds are created before normalized budgets and dependent canonical transactions; activities, counterparties, and merchants are created before transaction relationships; corrections follow transaction creation; fixed assets and completed runs follow their account, fund, and transaction references; inventory history follows its dependencies; banking/reconciliation follows chart, transaction, and statement creation; authoritative period-close and factual audit history are restored after the ledger graph exists.
 - SCLX budget categories are created from portable category codes through `BudgetCategoryAdminService`, and plans/lines are created through the caller-owned `BudgetPlanService` boundary. Budget lines preserve optional fund, period month, and exact amount; account-bearing budget lines are rejected because the normalized authority has no account relation.
 - Supplemental source `lineOrder` is preserved through the canonical supplemental command. Every imported SCLX entity, transaction, posting line, budget plan/line, supplemental row, bank/review fact, and reconciliation record receives a same-transaction `interchange_identity`; supporting category master rows remain canonical local data. A late failure rolls all business rows, transaction audit facts, identities, and the operation audit event back together.
