@@ -1,12 +1,12 @@
 ---
-plan_version: 126
+plan_version: 127
 active_phase: P15
 active_slice: P15-S8-C4
 active_status: VERIFYING
 active_branch: codex/P15-S8-C4-interchange-progress-laptop-closure
 active_pull_request: 249
-active_head: d6548d74344e6b373ce18587899c58fe5450ea67
-next_action: "Run the three automated gates on exact plan-bound PR #249 head, reconcile any concrete failure, then return the owner desktop checklist."
+active_head: 5ce4b8a3d43f01279e3d4971a38c7a965c72a243
+next_action: "Run all three automated gates once more on the governance-inclusive PR #249 head, then return the owner desktop checklist."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1801,11 +1801,12 @@ Validation status:
 - Focused tests cover preview cancellation before execution, suppressed success delivery, commit-time cancellation lockout, bounded completion, production wiring for all five preview families, and laptop-safe import/export control viewports.
 - Draft PR #249 initially contained exactly the eleven intended production, test, contract, plan, and checklist paths on head `d6548d74344e6b373ce18587899c58fe5450ea67`, with no deletions or base drift from merge `f8b9ae842d1636dedd1df2c7386c228489d2c0ec`.
 - Maven PR Tests run `30842770143` compiled the slice and executed H2 but found two stale legacy source guards that still required the removed `UiAsync.run(...)` spelling; the two guards now require the governed preview/commit wrappers for the same OFX/QFX and SCLX routes.
-- GitHub Maven/Flyway/H2, repeated-suite, and JavaFX production-route validation remain required on the plan-bound head.
+- Corrected implementation head `5ce4b8a3d43f01279e3d4971a38c7a965c72a243` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30843032117`.
+- The same three gates remain required once more on the governance-inclusive review head.
 
 Next exact action:
 
-- Run all three automated gates on the exact plan-bound PR head, reconcile any concrete failure, then return the owner desktop checklist.
+- Run all three automated gates once more on the governance-inclusive PR head, then return the owner desktop checklist.
 
 
 # P06 — Bank reconciliation and cleared-state comparison
