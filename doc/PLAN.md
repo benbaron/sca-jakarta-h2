@@ -2,11 +2,11 @@
 plan_version: 118
 active_phase: P15
 active_slice: P15-S7-C1
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S7-C1-normalized-bank-csv-export
-active_pull_request: null
-active_head: "c2efbe072edc2e20a5e88c08db6e09b049369897"
-next_action: "Complete and publish deterministic normalized bank CSV export from durable review, then run the authoritative Maven/H2 workflow."
+active_pull_request: 242
+active_head: "908ff761005382bd03e4f51d6f46a80b7f60bfea"
+next_action: "Run authoritative Maven/H2 and JavaFX route gates on draft PR #242, correct only concrete diagnostics, then reconcile the exact final head."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1558,7 +1558,7 @@ Acceptance:
 
 ### P15-S7-C1 — Deterministic normalized bank CSV export
 
-Status: IN_PROGRESS from merged S6 commit `c2efbe072edc2e20a5e88c08db6e09b049369897`.
+Status: VERIFYING on draft PR #242 from merged S6 commit `c2efbe072edc2e20a5e88c08db6e09b049369897`.
 
 Branch: `codex/P15-S7-C1-normalized-bank-csv-export`
 
@@ -1577,10 +1577,12 @@ Validation status:
 
 - Local Maven is unavailable in this source snapshot; authoritative compilation and H2 execution will run through the PR workflow after publication.
 - The donor OFX writers were inspected for field coverage only. Their direct alternate-ledger source, generated/random identifiers, fabricated balances, and direct non-atomic file replacement are not ported.
+- Draft PR #242 contains exactly the ten intended implementation, shared atomic-writer consolidation, test, and governing-document paths from merged S6, with no base drift.
+- Published implementation/plan head `908ff761005382bd03e4f51d6f46a80b7f60bfea` passed the local Java 17 grammar review; GitHub Actions is authoritative for compilation and H2 execution.
 
 Next exact action:
 
-- Finish source/test review, publish the branch, bind the plan to the actual PR/head, and run `mvn clean verify` in GitHub Actions.
+- Run `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance on PR #242; correct only concrete diagnostics and reconcile the final head.
 
 ## P15-S8 — Integrated JavaFX workflow and end-to-end verification
 
