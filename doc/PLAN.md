@@ -2,11 +2,11 @@
 plan_version: 121
 active_phase: P15
 active_slice: P15-S7-C4
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S7-C4-bank-statement-export-ui
-active_pull_request: null
-active_head: "121d790a7139bcc8db4f9955f5c19b7df7801b27"
-next_action: "Publish the final S7 production export controls from exact merged C3, open the draft C4 PR, run all three CI gates, and complete the owner desktop checklist before merge."
+active_pull_request: 245
+active_head: "d4dd35c18db768929ad3dfe6cc4443bc2cacc4be"
+next_action: "Run Maven PR Tests on the plan-inclusive C4 head; correct only concrete diagnostics, then complete the owner desktop checklist before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1647,7 +1647,7 @@ Next exact action:
 
 ### P15-S7-C4 — Production bank-statement export controls
 
-Status: IN_PROGRESS from exact merged C3 commit `121d790a7139bcc8db4f9955f5c19b7df7801b27`.
+Status: VERIFYING on draft PR #245 from exact merged C3 commit `121d790a7139bcc8db4f9955f5c19b7df7801b27`.
 
 Branch: `codex/P15-S7-C4-bank-statement-export-ui`
 
@@ -1665,10 +1665,12 @@ Validation status:
 - All eight changed Java files pass an independent Java 17 grammar parse.
 - Source coverage requires the three explicit formats, configured-account/date scope, background `Task`, overwrite confirmation, exact result facts, workspace service composition, and removal of the old `ImportExportOrchestrationService`/`BankTransactionRecord` selected-row route.
 - Local Maven/JDK are unavailable in this source snapshot; authoritative compilation, full H2 suite, repeated suite, and JavaFX production-route compliance will run through the PR workflow.
+- Draft PR #245 contains exactly the twelve intended production, test, governing-document, and owner-checklist paths, with no deletions or base drift from exact merge base `121d790a7139bcc8db4f9955f5c19b7df7801b27`.
+- Published implementation/documentation head `d4dd35c18db768929ad3dfe6cc4443bc2cacc4be` is twelve fast-forward commits ahead of that base.
 
 Next exact action:
 
-- Publish the reviewed C4 scope from exact merged C3, bind the plan to its draft PR and head, then run all three automated gates before owner desktop acceptance.
+- Run all three automated gates on the plan-inclusive PR head; correct only concrete diagnostics, then complete owner desktop acceptance before merge.
 
 ## P15-S8 — Integrated JavaFX workflow and end-to-end verification
 
