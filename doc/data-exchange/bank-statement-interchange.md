@@ -418,3 +418,22 @@ Commit remains owned by `NormalizedBankCsvReviewService`: it re-reads the file, 
 company/account authority, restores every governed durable batch/line/issue/review fact atomically, and
 creates no `Txn` or `TxnSplit`. A company switch, source change, account change, blocking message, failed
 commit, or cancelled confirmation clears or invalidates approval and requires a new preview.
+
+## 23. P15-S8-C2 all-format bank-import contract matrix
+
+`BankStatementImportContractMatrixTest` drives all six governed profiles through the same services used
+by production composition: OFX 2.x XML, QFX 2.x header/XML, QFX 1.x SGML, signed mapped CSV,
+debit/credit mapped CSV, and normalized CSV 1.0. Every successful profile must create only durable
+review facts and its factual operation audit; an identical second import must resolve to the same
+batch or batch set without another write, and no canonical transaction may be created.
+
+The rejection half of the matrix sends malformed XML/SGML, unsupported versions and message sets,
+multi-account input, external-entity and expansion payloads, encrypted/compressed QFX, malformed or
+ambiguous mapped CSV, and an invalid normalized header through the canonical preview services. These
+failures must occur before any batch, statement line, issue, operation audit, or ledger mutation.
+Explicitly saved mapping profiles remain configuration facts and are not rolled back merely because a
+later source preview is rejected. Active-company lookup must reject a configured account owned by a
+different company.
+
+C2 adds no new parser, file format, persistence table, migration, UI route, or ledger behavior. It
+verifies that the separate format implementations satisfy one integrated durable-review boundary.
