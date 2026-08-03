@@ -453,3 +453,21 @@ configured account with the same external bank identity. The first import remain
 equivalent second-format input is retained as duplicate review evidence. Neither operation creates a
 canonical transaction in the target company. This proves semantic compatibility while keeping raw
 statement interchange outside period-close and reconciliation mutation authority.
+
+## 25. P15-S8-C4 progress, cancellation, and laptop-width closure
+
+Import Preview uses one transient JavaFX operation at a time. OFX/QFX, mapped CSV, and normalized CSV
+preview work is non-mutating, reports bounded progress, and may be stopped with **Cancel Preview**.
+Cancellation discards the task result, clears its approval path, and writes no batch, line, issue,
+transaction, or audit event. The exact company, configured account, mapping profile, identity
+confirmation, and actor controls remain frozen while the task is active.
+
+After an explicit import confirmation, the progress display states that commit has begun and disables
+cancellation. The canonical service still re-reads and revalidates the exact scope, then either commits
+its documented durable-review transaction or rolls it back completely. Cancellation never interrupts
+a transaction after the write boundary has begun.
+
+The Import Preview control header and Bank Transactions export scope each own a horizontal viewport so
+their exact-scope controls remain reachable at laptop width. Bank Transactions also shows a busy
+indicator while its existing deterministic atomic export runs. These are transient display facts; no
+generic Import/Export Jobs route or durable job state is introduced.
