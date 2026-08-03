@@ -337,3 +337,26 @@ file in the destination directory and committed by atomic move where supported, 
 same-directory replacement fallback. The result reports the exact company/account/date scope, row and
 byte counts, warnings, and SHA-256. Normalized CSV import, OFX/QFX serialization, and JavaFX controls
 remain later P15-S7 slices.
+
+## 19. P15-S7-C2 normalized CSV direct re-import boundary
+
+`NormalizedBankCsvParser` recognizes only the exact frozen 29-column version 1.0 header and applies the
+same 64 MiB, 1,000,000-record, 128-column, 4 MiB logical-record, and 1 MiB field limits as mapped CSV.
+It accepts UTF-8 without a BOM, uses RFC 4180 quoting, and validates every version, external identity,
+source-batch grouping, account/currency value, ISO date, exact decimal, correction pair, review state,
+duplicate state, and matched-transaction reference before H2 mutation. It does not require or infer a
+mapping profile.
+
+`NormalizedBankCsvReviewService` binds preview and commit to the exact file SHA-256, active company,
+selected active configured account, and the same account-identity policy as OFX/QFX. The importer
+restores every source batch rather than collapsing a date-range export into a synthetic batch. Migration
+V70 retains the exact source batch/line external IDs and source PAYEEID; intrinsic UUID identities are
+preserved directly, while governed non-UUID compatibility identities receive deterministic internal
+UUIDs and retain their exact external text for re-export.
+
+Commit restores statement metadata, row dates/amounts/text/corrections, durable review status,
+exact/probable duplicate state, and only matched canonical transactions already present in the same
+company. A missing or cross-company match is blocking and never creates a transaction. All batches,
+lines, issues, and the one factual operation audit commit together; the exact same file/target is an
+idempotent no-op and a late failure rolls the entire import back. Re-export uses retained identities and
+PAYEEID so a normalized CSV export/import/export cycle is byte-stable for governed facts.
