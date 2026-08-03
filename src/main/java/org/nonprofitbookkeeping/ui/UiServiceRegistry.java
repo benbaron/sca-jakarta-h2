@@ -10,6 +10,7 @@ import org.nonprofitbookkeeping.interchange.bank.BankReviewQueryService;
 import org.nonprofitbookkeeping.interchange.bank.BankStatementCsvExportService;
 import org.nonprofitbookkeeping.interchange.bank.BankStatementOfxExportService;
 import org.nonprofitbookkeeping.interchange.bank.BankStatementReviewService;
+import org.nonprofitbookkeeping.interchange.bank.NormalizedBankCsvReviewService;
 import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
 import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.repository.ApprovalAuditRepository;
@@ -86,6 +87,10 @@ public final class UiServiceRegistry
     public static BankCsvMappingProfileService bankCsvMappingProfiles()
     {
         return new BankCsvMappingProfileService(services().jpa());
+    }
+    public static NormalizedBankCsvReviewService normalizedBankCsvReview()
+    {
+        return new NormalizedBankCsvReviewService(services().jpa());
     }
     public static BankReviewQueryService bankReviewQuery()
     {
