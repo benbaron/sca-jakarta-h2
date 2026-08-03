@@ -5,8 +5,8 @@ active_slice: P15-S7-C2
 active_status: VERIFYING
 active_branch: codex/P15-S7-C2-normalized-bank-csv-round-trip
 active_pull_request: 243
-active_head: "6e2a969e60383d8284e655eb0a4c74a70e9732a0"
-next_action: "Run the authoritative Maven/Flyway/H2, repeated-suite, and JavaFX production-route gates on draft PR #243, then correct only concrete CI diagnostics."
+active_head: "db3f9cfb1115e70130983d8b14414d471a2fae4f"
+next_action: "Verify the governance-inclusive C2 handoff through the same three gates, then merge PR #243; no desktop checklist is required because C2 adds no enabled UI route."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1608,10 +1608,11 @@ Validation status:
 - Local Maven/JDK are unavailable in this source snapshot; authoritative compilation, Flyway recovery, H2 integration, repeated-suite, and JavaFX checks will run through the PR workflow.
 - Draft PR #243 contains exactly the seventeen intended implementation, recovery-safe migration, test, and governing-document paths, with no deletions or base drift.
 - Published implementation/plan head `6e2a969e60383d8284e655eb0a4c74a70e9732a0` is seventeen commits ahead of exact merge base `5729705b6bf99d267f0995f1685527f5891b182c`.
+- Plan-inclusive head `db3f9cfb1115e70130983d8b14414d471a2fae4f` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30781760154`.
 
 Next exact action:
 
-- Run the three authoritative PR gates and correct only concrete compiler, Flyway, H2, or source-compliance diagnostics.
+- Verify the governance-inclusive C2 handoff through the same three gates, then merge PR #243; C2 adds no enabled JavaFX route and requires no owner desktop checklist.
 
 ## P15-S8 — Integrated JavaFX workflow and end-to-end verification
 
