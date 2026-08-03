@@ -50,6 +50,13 @@ Every mutating format-specific operation must:
 
 Cancellation is allowed only before commit begins. A failure after commit begins rolls back the caller-owned transaction. Atomic file export writes to a temporary target, validates the completed bytes, and replaces the destination only after success.
 
+The production Import Preview projects this boundary through one transient JavaFX task controller. Its
+five non-mutating preview families publish bounded `InterchangeProgress` and expose **Cancel Preview**.
+A cancellation suppresses the task result and cannot create an audit or durable business fact. Durable
+COA/profile/SCLX/bank writes use the same visible progress surface with `commitStarted=true`; at that
+point cancellation is disabled and failure is handled only by the canonical transaction rollback.
+This controller has no collection of jobs, persistence, retry history, scheduler, or cross-session state.
+
 ## 5. Authoritative company ownership
 
 Flyway migration `V61__company_ownership_and_interchange_identity.sql` adds nullable `company_id` ownership and foreign keys to:

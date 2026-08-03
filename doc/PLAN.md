@@ -1,12 +1,12 @@
 ---
-plan_version: 124
+plan_version: 127
 active_phase: P15
-active_slice: P15-S8-C3
+active_slice: P15-S8-C4
 active_status: VERIFYING
-active_branch: codex/P15-S8-C3-bank-import-protection-round-trip
-active_pull_request: 248
-active_head: "05726dc16f19f271979b7fdb2334a2b52cb62577"
-next_action: "Record the successful PR #248 workflow result on the governance-inclusive head, then rerun the same three automated gates for the exact review handoff."
+active_branch: codex/P15-S8-C4-interchange-progress-laptop-closure
+active_pull_request: 249
+active_head: 5ce4b8a3d43f01279e3d4971a38c7a965c72a243
+next_action: "Run all three automated gates once more on the governance-inclusive PR #249 head, then return the owner desktop checklist."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Record the successful PR #248 workflow result on the governance-in
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S8-C2 as DONE through merged PR #247 and starts P15-S8-C3, bank-statement round-trip and ledger-protection noninterference verification.
+This revision records P15-S8-C3 as DONE through merged PR #248 and starts P15-S8-C4, the final visible progress, pre-commit cancellation, and laptop-width closure slice.
 
 ## 2. Status values
 
@@ -47,7 +47,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
-| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S8-C3 |
+| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S8-C4 |
 
 ## 4. Governing documents
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S8-C3; P15-S0 through P15-S7 and P15-S8-C1/C2 DONE
+**Status:** IN_PROGRESS at P15-S8-C4; P15-S0 through P15-S7 and P15-S8-C1/C2/C3 DONE
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -1677,7 +1677,7 @@ Next exact action:
 
 ## P15-S8 — Integrated JavaFX workflow and end-to-end verification
 
-Status: IN_PROGRESS at P15-S8-C3.
+Status: IN_PROGRESS at P15-S8-C4.
 
 Planned deliverables:
 
@@ -1754,7 +1754,7 @@ Next exact action:
 
 ### P15-S8-C3 — Bank-statement round trip and ledger-protection noninterference
 
-Status: VERIFYING on draft PR #248 from exact merged C2 commit `dd57ce5013c48f858c2d3d1444268f696413ed8b`.
+Status: DONE through merged PR #248.
 
 Branch: `codex/P15-S8-C3-bank-import-protection-round-trip`
 
@@ -1773,10 +1773,40 @@ Validation status:
 - The changed integration source passes an independent Java 17 grammar parse.
 - Draft PR #248 contains exactly the five intended test/governance paths on head `78ddee19273bd919224c8479f4beeb1b2ae8297d`, with no deletions or base drift.
 - Plan-bound head `05726dc16f19f271979b7fdb2334a2b52cb62577` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30831952795`.
+- Final governance-inclusive head `e608cfbc48b3ab8e885a8207e05f9cde96b16148` passed the same three gates in Maven PR Tests run `30832272897`; PR #248 merged at `f8b9ae842d1636dedd1df2c7386c228489d2c0ec`.
 
 Next exact action:
 
-- Rerun all three automated gates on the governance-inclusive handoff head, then finalize the PR if it remains green.
+- None; P15-S8-C3 is DONE.
+
+### P15-S8-C4 — Interchange progress, pre-commit cancellation, and laptop-width closure
+
+Status: VERIFYING in draft PR #249 from exact merged C3 commit `f8b9ae842d1636dedd1df2c7386c228489d2c0ec`.
+
+Branch: `codex/P15-S8-C4-interchange-progress-laptop-closure`
+
+Scope:
+
+- Give Import Preview one transient JavaFX task owner with a visible bounded `InterchangeProgress` projection for every COA CSV, SCLX, OFX/QFX, mapped-bank-CSV, and normalized-bank-CSV preview.
+- Allow **Cancel Preview** only while a non-mutating preview is running; suppress a cancelled task's result and retain the guarantee that no H2 fact or audit event was written.
+- Display durable COA/profile/SCLX/bank commit progress through the same control while setting `commitStarted=true`, which disables cancellation for the complete canonical transaction boundary.
+- Prevent simultaneous import-preview operations and freeze company, account, profile, identity-confirmation, and actor controls while one exact-scope task is active.
+- Put the dense Import Preview and Bank Transactions export control rows in independently scrollable viewports, and show Bank Transactions export busy state without widening either workspace past laptop bounds.
+- Add focused controller behavior and source/layout guardrails plus `doc/P15-S8-C4-interchange-progress-ui-user-testing.md`.
+- Add no parser, schema, migration, persistence table, ledger write, sidecar state, generic durable job log, or second interchange authority.
+
+Validation status:
+
+- Local Maven/JDK compilation is unavailable in this source snapshot; all seven changed Java sources pass an independent Java 17 grammar parse.
+- Focused tests cover preview cancellation before execution, suppressed success delivery, commit-time cancellation lockout, bounded completion, production wiring for all five preview families, and laptop-safe import/export control viewports.
+- Draft PR #249 initially contained exactly the eleven intended production, test, contract, plan, and checklist paths on head `d6548d74344e6b373ce18587899c58fe5450ea67`, with no deletions or base drift from merge `f8b9ae842d1636dedd1df2c7386c228489d2c0ec`.
+- Maven PR Tests run `30842770143` compiled the slice and executed H2 but found two stale legacy source guards that still required the removed `UiAsync.run(...)` spelling; the two guards now require the governed preview/commit wrappers for the same OFX/QFX and SCLX routes.
+- Corrected implementation head `5ce4b8a3d43f01279e3d4971a38c7a965c72a243` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30843032117`.
+- The same three gates remain required once more on the governance-inclusive review head.
+
+Next exact action:
+
+- Run all three automated gates once more on the governance-inclusive PR head, then return the owner desktop checklist.
 
 
 # P06 — Bank reconciliation and cleared-state comparison

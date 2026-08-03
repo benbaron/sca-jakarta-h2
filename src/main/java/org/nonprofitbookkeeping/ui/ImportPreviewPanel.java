@@ -11,6 +11,8 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
@@ -55,6 +57,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -83,6 +86,7 @@ public class ImportPreviewPanel implements AppPanel
     private final TableView<SclxImportTransactionPreview> sclxTransactions = new TableView<>();
     private final TabPane previewTabs = new TabPane();
     private final Button commitAccepted = new Button("Commit Accepted COA Rows");
+    private final Button previewCoa = new Button("Preview COA CSV…");
     private final Button previewSclx = new Button("Preview SCLX…");
     private final Button commitSclx = new Button("Import Previewed SCLX…");
     private final Button previewBank = new Button("Preview Bank OFX/QFX…");
@@ -90,6 +94,10 @@ public class ImportPreviewPanel implements AppPanel
     private final Button previewNormalizedBankCsv = new Button("Preview Normalized Bank CSV…");
     private final Button saveBankCsvProfile = new Button("Save CSV Profile…");
     private final Button commitBankReview = new Button("Commit Previewed Bank Review…");
+    private final Button cancelOperation = new Button("Cancel Preview");
+    private final ProgressBar operationProgress = new ProgressBar(0.0);
+    private final Label operationStage = new Label();
+    private final InterchangeTaskController operationController = new InterchangeTaskController();
     private final ComboBox<CompanyBankAccount> bankAccount = new ComboBox<>();
     private final ComboBox<BankCsvMappingProfileService.ProfileSummary> bankCsvProfile = new ComboBox<>();
     private final CheckBox confirmBankIdentity = new CheckBox("Confirm suffix-only account identity");
@@ -209,8 +217,8 @@ public class ImportPreviewPanel implements AppPanel
         sclxActor.textProperty().addListener((observable, oldValue, newValue) -> updateSclxCommitAvailability());
         sclxActor.textProperty().addListener((observable, oldValue, newValue) -> updateBankCommitAvailability());
 
-        Button previewCoa = new Button("Preview COA CSV…");
         previewCoa.setOnAction(e -> chooseAndPreviewCoa());
+        previewCoa.setId("previewCoaCsvButton");
 
         previewBank.setOnAction(e -> chooseAndPreviewBank());
         previewBank.setId("previewBankStatementButton");
@@ -229,9 +237,11 @@ public class ImportPreviewPanel implements AppPanel
         commitAccepted.setId("commitAcceptedCoaRowsButton");
         commitAccepted.setDisable(true);
 
+        configureOperationProgress();
+
         status.setId("importPreviewStatus");
         status.setWrapText(true);
-        root.setTop(new VBox(6, title,
+        VBox controls = new VBox(6, title,
                 new HBox(8, previewSclx, previewCoa, commitAccepted),
                 new HBox(8, new Label("Configured bank account"), bankAccount,
                         previewBank, previewNormalizedBankCsv),
@@ -239,7 +249,15 @@ public class ImportPreviewPanel implements AppPanel
                         saveBankCsvProfile, previewBankCsv),
                 new HBox(8, new Label("Import actor"), sclxActor, commitSclx,
                         confirmBankIdentity, commitBankReview),
-                status, new Separator()));
+                new HBox(8, operationProgress, operationStage, cancelOperation),
+                status, new Separator());
+        ScrollPane controlsScroll = new ScrollPane(controls);
+        controlsScroll.setId("importPreviewControlsScroll");
+        controlsScroll.setFitToWidth(true);
+        controlsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        controlsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        controlsScroll.setPannable(true);
+        root.setTop(controlsScroll);
 
         buildAcceptedTable();
         buildRejectedTable();
@@ -279,6 +297,118 @@ public class ImportPreviewPanel implements AppPanel
         center.setDividerPositions(0.28);
         CompanySplitPaneStateBinder.bind(center, "import-preview-workspace", 0.28);
         root.setCenter(center);
+    }
+
+    private void configureOperationProgress()
+    {
+        operationProgress.setId("importPreviewOperationProgress");
+        operationProgress.setPrefWidth(220.0);
+        operationProgress.visibleProperty().bind(operationController.busyProperty());
+        operationProgress.managedProperty().bind(operationProgress.visibleProperty());
+        operationController.progressProperty().addListener((observable, oldValue, newValue) ->
+                operationProgress.setProgress(newValue.fraction()));
+
+        operationStage.setId("importPreviewOperationStage");
+        operationStage.visibleProperty().bind(operationController.busyProperty());
+        operationStage.managedProperty().bind(operationStage.visibleProperty());
+        operationController.progressProperty().addListener((observable, oldValue, newValue) ->
+                operationStage.setText(newValue.stage()
+                        + (newValue.commitStarted() ? " — commit cannot be cancelled" : "")));
+
+        cancelOperation.setId("cancelImportPreviewOperationButton");
+        cancelOperation.disableProperty().bind(operationController.cancelableProperty().not());
+        cancelOperation.visibleProperty().bind(operationController.busyProperty());
+        cancelOperation.managedProperty().bind(cancelOperation.visibleProperty());
+        cancelOperation.setOnAction(event -> operationController.cancelPreview());
+    }
+
+    private <T> void runPreviewOperation(
+            String threadName,
+            String stage,
+            String cancelledMessage,
+            Supplier<T> operation,
+            Consumer<T> onSuccess,
+            Consumer<Throwable> onFailure)
+    {
+        if (operationController.busyProperty().get())
+        {
+            status.setText("Another interchange operation is already running.");
+            return;
+        }
+        setOperationControlsDisabled(true);
+        operationController.runPreview(
+                threadName,
+                stage,
+                operation,
+                result ->
+                {
+                    setOperationControlsDisabled(false);
+                    onSuccess.accept(result);
+                },
+                failure ->
+                {
+                    setOperationControlsDisabled(false);
+                    onFailure.accept(failure);
+                },
+                () ->
+                {
+                    setOperationControlsDisabled(false);
+                    status.setText(cancelledMessage);
+                });
+    }
+
+    private <T> void runCommitOperation(
+            String threadName,
+            String stage,
+            Supplier<T> operation,
+            Consumer<T> onSuccess,
+            Consumer<Throwable> onFailure)
+    {
+        if (operationController.busyProperty().get())
+        {
+            status.setText("Another interchange operation is already running.");
+            return;
+        }
+        setOperationControlsDisabled(true);
+        operationController.runCommit(
+                threadName,
+                stage,
+                operation,
+                result ->
+                {
+                    setOperationControlsDisabled(false);
+                    onSuccess.accept(result);
+                },
+                failure ->
+                {
+                    setOperationControlsDisabled(false);
+                    onFailure.accept(failure);
+                });
+    }
+
+    private void setOperationControlsDisabled(boolean disabled)
+    {
+        previewCoa.setDisable(disabled);
+        previewSclx.setDisable(disabled);
+        previewBank.setDisable(disabled);
+        previewBankCsv.setDisable(disabled);
+        previewNormalizedBankCsv.setDisable(disabled);
+        saveBankCsvProfile.setDisable(disabled);
+        bankAccount.setDisable(disabled);
+        bankCsvProfile.setDisable(disabled);
+        confirmBankIdentity.setDisable(disabled);
+        sclxActor.setDisable(disabled);
+        if (disabled)
+        {
+            commitAccepted.setDisable(true);
+            commitSclx.setDisable(true);
+            commitBankReview.setDisable(true);
+            return;
+        }
+        commitAccepted.setDisable(
+                lastCoaPreview == null || lastCoaPreview.acceptedRows().isEmpty());
+        updateSclxCommitAvailability();
+        updateBankCommitAvailability();
     }
 
     private static Tab tab(String title, Node content)
@@ -517,7 +647,8 @@ public class ImportPreviewPanel implements AppPanel
         }
 
         status.setText("Committing accepted COA rows...");
-        UiAsync.run("import-preview-commit-coa", () -> previewService.commitAcceptedCoaRows(
+        runCommitOperation("import-preview-commit-coa", "Committing accepted COA rows",
+                () -> previewService.commitAcceptedCoaRows(
                 preview.acceptedRows(),
                 row -> UiServiceRegistry.accountAdmin().upsert(
                         row.code(),
@@ -644,14 +775,12 @@ public class ImportPreviewPanel implements AppPanel
     private void saveBankCsvProfile(Path profileFile, CompanyBankAccount account)
     {
         String company = activeCompanyCode.get();
-        saveBankCsvProfile.setDisable(true);
         status.setText("Validating and saving the selected bank CSV mapping profile...");
-        UiAsync.run("import-preview-save-bank-csv-profile",
+        runCommitOperation("import-preview-save-bank-csv-profile", "Saving mapped CSV profile",
                 () -> bankCsvProfileService.get().create(
                         company, account.getId(), readProfile(profileFile)),
                 result ->
                 {
-                    saveBankCsvProfile.setDisable(false);
                     reloadBankCsvProfiles();
                     bankCsvProfile.getItems().stream()
                             .filter(value -> value.id() == result.id())
@@ -661,15 +790,21 @@ public class ImportPreviewPanel implements AppPanel
                 },
                 ex ->
                 {
-                    saveBankCsvProfile.setDisable(false);
                     status.setText("Could not save bank CSV profile: " + UiErrors.safeMessage(ex));
                 });
     }
 
     private void previewCoa(Path file)
     {
+        clearCoaPreview();
+        clearSclxPreview();
         clearBankPreview();
-        UiAsync.run("import-preview-coa", () -> previewService.previewCoaCsv(file), result -> {
+        status.setText("Previewing COA CSV without changing the active company...");
+        runPreviewOperation(
+                "import-preview-coa",
+                "Reading and validating COA CSV",
+                "COA CSV preview cancelled before commit; no data was changed.",
+                () -> previewService.previewCoaCsv(file), result -> {
             clearSclxPreview();
             clearBankPreview();
             lastCoaPreview = result;
@@ -693,7 +828,10 @@ public class ImportPreviewPanel implements AppPanel
 
     private void previewSclx(Path file)
     {
+        clearCoaPreview();
+        clearSclxPreview();
         clearBankPreview();
+        warnings.getItems().clear();
         Function<Path, SclxImportPreview> fixedScopePreview;
         try
         {
@@ -711,7 +849,11 @@ public class ImportPreviewPanel implements AppPanel
         previewSclx.setDisable(true);
         commitAccepted.setDisable(true);
         status.setText("Previewing SCLX without changing the active company...");
-        UiAsync.run("import-preview-sclx", () -> fixedScopePreview.apply(file), result -> {
+        runPreviewOperation(
+                "import-preview-sclx",
+                "Reading and validating SCLX",
+                "SCLX preview cancelled before commit; no data was changed.",
+                () -> fixedScopePreview.apply(file), result -> {
             previewSclx.setDisable(false);
             applySclxPreview(file, result);
         }, ex -> {
@@ -834,7 +976,7 @@ public class ImportPreviewPanel implements AppPanel
         previewSclx.setDisable(true);
         commitSclx.setDisable(true);
         status.setText("Importing the exact previewed SCLX file atomically...");
-        UiAsync.run("import-preview-sclx-commit",
+        runCommitOperation("import-preview-sclx-commit", "Committing SCLX atomically",
                 () -> commitService.commit(source, preview, actor),
                 this::applySclxImportResult,
                 ex ->
@@ -898,13 +1040,19 @@ public class ImportPreviewPanel implements AppPanel
 
     private void previewBank(Path file)
     {
+        clearCoaPreview();
+        clearSclxPreview();
         clearBankPreview();
+        warnings.getItems().clear();
         CompanyBankAccount account = bankAccount.getValue();
         String company = activeCompanyCode.get();
         BankStatementReviewService fixedScopeService = bankStatementReviewService.get();
         previewBank.setDisable(true);
         status.setText("Previewing OFX/QFX against " + account.getName() + " without changing H2...");
-        UiAsync.run("import-preview-bank",
+        runPreviewOperation(
+                "import-preview-bank",
+                "Reading and validating OFX/QFX",
+                "OFX/QFX preview cancelled before commit; no data was changed.",
                 () -> fixedScopeService.preview(file, company, account.getId()),
                 result ->
                 {
@@ -924,14 +1072,20 @@ public class ImportPreviewPanel implements AppPanel
 
     private void previewBankCsv(Path file)
     {
+        clearCoaPreview();
+        clearSclxPreview();
         clearBankPreview();
+        warnings.getItems().clear();
         CompanyBankAccount account = bankAccount.getValue();
         BankCsvMappingProfileService.ProfileSummary profile = bankCsvProfile.getValue();
         String company = activeCompanyCode.get();
         BankCsvReviewService fixedScopeService = bankCsvReviewService.get();
         previewBankCsv.setDisable(true);
         status.setText("Previewing mapped CSV against " + account.getName() + " without changing H2...");
-        UiAsync.run("import-preview-bank-csv",
+        runPreviewOperation(
+                "import-preview-bank-csv",
+                "Reading and validating mapped bank CSV",
+                "Mapped bank CSV preview cancelled before commit; no data was changed.",
                 () -> fixedScopeService.preview(file, company, account.getId(), profile.id()),
                 result ->
                 {
@@ -951,14 +1105,20 @@ public class ImportPreviewPanel implements AppPanel
 
     private void previewNormalizedBankCsv(Path file)
     {
+        clearCoaPreview();
+        clearSclxPreview();
         clearBankPreview();
+        warnings.getItems().clear();
         CompanyBankAccount account = bankAccount.getValue();
         String company = activeCompanyCode.get();
         NormalizedBankCsvReviewService fixedScopeService = normalizedBankCsvReviewService.get();
         previewNormalizedBankCsv.setDisable(true);
         status.setText("Previewing normalized bank CSV against " + account.getName()
                 + " without changing H2...");
-        UiAsync.run("import-preview-normalized-bank-csv",
+        runPreviewOperation(
+                "import-preview-normalized-bank-csv",
+                "Reading and validating normalized bank CSV",
+                "Normalized bank CSV preview cancelled before commit; no data was changed.",
                 () -> fixedScopeService.preview(file, company, account.getId()),
                 result ->
                 {
@@ -1079,7 +1239,7 @@ public class ImportPreviewPanel implements AppPanel
         previewNormalizedBankCsv.setDisable(true);
         commitBankReview.setDisable(true);
         status.setText("Committing the exact previewed bank statement atomically...");
-        UiAsync.run("import-preview-bank-commit",
+        runCommitOperation("import-preview-bank-commit", "Committing bank review atomically",
                 () -> csvPreview == null
                         ? fixedStatementCommit.commit(preview, identityConfirmed, actor)
                         : fixedCsvCommit.commit(csvPreview, identityConfirmed, actor),
@@ -1134,7 +1294,9 @@ public class ImportPreviewPanel implements AppPanel
         previewNormalizedBankCsv.setDisable(true);
         commitBankReview.setDisable(true);
         status.setText("Committing the exact previewed normalized bank CSV atomically...");
-        UiAsync.run("import-preview-normalized-bank-csv-commit",
+        runCommitOperation(
+                "import-preview-normalized-bank-csv-commit",
+                "Committing normalized bank CSV atomically",
                 () -> commitService.commit(preview, identityConfirmed, actor),
                 this::applyNormalizedBankCsvReviewResult,
                 ex ->
