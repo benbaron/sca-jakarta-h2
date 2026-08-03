@@ -2,11 +2,11 @@
 plan_version: 119
 active_phase: P15
 active_slice: P15-S7-C2
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S7-C2-normalized-bank-csv-round-trip
-active_pull_request: null
-active_head: null
-next_action: "Publish C2 from merged PR #242 commit 5729705b6bf99d267f0995f1685527f5891b182c, open its draft PR, then run the authoritative Maven/H2 and JavaFX gates."
+active_pull_request: 243
+active_head: "6e2a969e60383d8284e655eb0a4c74a70e9732a0"
+next_action: "Run the authoritative Maven/Flyway/H2, repeated-suite, and JavaFX production-route gates on draft PR #243, then correct only concrete CI diagnostics."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1588,7 +1588,7 @@ Next exact action:
 
 ### P15-S7-C2 — Normalized bank CSV direct re-import and semantic round trip
 
-Status: IN_PROGRESS from merged C1 commit `5729705b6bf99d267f0995f1685527f5891b182c`.
+Status: VERIFYING on draft PR #243 from merged C1 commit `5729705b6bf99d267f0995f1685527f5891b182c`.
 
 Branch: `codex/P15-S7-C2-normalized-bank-csv-round-trip`
 
@@ -1606,10 +1606,12 @@ Validation status:
 
 - All twelve changed Java files pass an independent Java grammar parse.
 - Local Maven/JDK are unavailable in this source snapshot; authoritative compilation, Flyway recovery, H2 integration, repeated-suite, and JavaFX checks will run through the PR workflow.
+- Draft PR #243 contains exactly the seventeen intended implementation, recovery-safe migration, test, and governing-document paths, with no deletions or base drift.
+- Published implementation/plan head `6e2a969e60383d8284e655eb0a4c74a70e9732a0` is seventeen commits ahead of exact merge base `5729705b6bf99d267f0995f1685527f5891b182c`.
 
 Next exact action:
 
-- Publish the reviewed C2 scope, open its draft PR, bind this plan to the actual PR/head, and run the three authoritative gates.
+- Run the three authoritative PR gates and correct only concrete compiler, Flyway, H2, or source-compliance diagnostics.
 
 ## P15-S8 — Integrated JavaFX workflow and end-to-end verification
 
