@@ -49,6 +49,9 @@ public class BankImportBatch
     @Column(name = "source_name", nullable = false, length = 260)
     private String sourceName;
 
+    @Column(name = "source_external_id", length = 200)
+    private String sourceExternalId;
+
     @Column(name = "source_path", length = 1000)
     private String sourcePath;
 
@@ -144,6 +147,8 @@ public class BankImportBatch
     public void setBankAccount(CompanyBankAccount bankAccount) { this.bankAccount = bankAccount; }
     public String getSourceName() { return sourceName; }
     public void setSourceName(String sourceName) { this.sourceName = sourceName; }
+    public String getSourceExternalId() { return sourceExternalId; }
+    public void setSourceExternalId(String sourceExternalId) { this.sourceExternalId = sourceExternalId; }
     public String getSourcePath() { return sourcePath; }
     public void setSourcePath(String sourcePath) { this.sourcePath = sourcePath; }
     public String getSourceHash() { return sourceHash; }
