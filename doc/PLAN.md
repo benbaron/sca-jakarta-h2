@@ -5,8 +5,8 @@ active_slice: P15-S8-C1
 active_status: VERIFYING
 active_branch: codex/P15-S8-C1-normalized-bank-csv-import-ui
 active_pull_request: 246
-active_head: "8954ddf87c4625d383fdce48aaa8511c08c762c7"
-next_action: "Verify draft PR #246 through the primary Maven/H2 gate, repeated suite, JavaFX production-route compliance, and owner desktop checklist."
+active_head: "0796a84ed80c26f81c12c456f6599bac4a778d3c"
+next_action: "Verify the governance-inclusive PR #246 head through the same three automated gates, then complete owner desktop acceptance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1716,11 +1716,12 @@ Validation status:
 
 - All nine changed Java files pass an independent Java 17 grammar parse; Maven is unavailable in this source snapshot.
 - Draft PR #246 contains exactly the fifteen intended production, test, governing-document, and owner-checklist paths, with no deletions or base drift from exact merge base `83999de5afa80decf63068862fa897bbee3d8ce1`.
-- Authoritative compilation, H2 integration, repeated-suite, JavaFX production-route compliance, and owner desktop acceptance remain required before merge.
+- Plan-inclusive head `0796a84ed80c26f81c12c456f6599bac4a778d3c` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30829022583`.
+- The governance-inclusive head and owner desktop acceptance remain required before merge.
 
 Next exact action:
 
-- Verify the exact PR #246 handoff through all automated and owner desktop gates.
+- Verify the governance-inclusive PR #246 head through all automated gates, then complete owner desktop acceptance.
 
 
 # P06 — Bank reconciliation and cleared-state comparison
