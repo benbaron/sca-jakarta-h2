@@ -20,8 +20,8 @@ class SclxImportPreviewProductionRouteSourceTest
 
         assertTrue(panel.contains("Preview SCLX…"));
         assertTrue(panel.contains("SCLX Active Company Files"));
-        assertTrue(panel.contains("UiAsync.run(\"import-preview-sclx\""));
-        assertTrue(panel.contains("UiAsync.run(\"import-preview-sclx-commit\""));
+        assertTrue(panel.contains("runPreviewOperation(\n                \"import-preview-sclx\""));
+        assertTrue(panel.contains("runCommitOperation(\"import-preview-sclx-commit\""));
         assertTrue(panel.contains("commitService.commit(source, preview, actor)"));
         assertTrue(panel.contains("Import Previewed SCLX…"));
         assertTrue(panel.contains("No data was changed"));
