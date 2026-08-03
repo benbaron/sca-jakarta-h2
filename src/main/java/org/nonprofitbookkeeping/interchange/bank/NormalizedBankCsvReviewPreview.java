@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.interchange.bank;
 
 import org.nonprofitbookkeeping.interchange.InterchangeValidationMessage;
+import org.nonprofitbookkeeping.service.BankImportNormalizationService;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -14,6 +15,7 @@ public record NormalizedBankCsvReviewPreview(
         String configuredAccountName,
         NormalizedBankCsvDocument document,
         BankStatementAccountMatcher.Status accountMatchStatus,
+        List<BankImportNormalizationService.NormalizedBankStatementLine> lines,
         List<InterchangeValidationMessage> messages)
 {
     public NormalizedBankCsvReviewPreview
@@ -22,6 +24,7 @@ public record NormalizedBankCsvReviewPreview(
         sourceHash = sourceHash == null ? "" : sourceHash.trim();
         companyCode = companyCode == null ? "" : companyCode.trim();
         configuredAccountName = configuredAccountName == null ? "" : configuredAccountName.trim();
+        lines = lines == null ? List.of() : List.copyOf(lines);
         messages = messages == null ? List.of() : List.copyOf(messages);
         if (source == null || sourceHash.isBlank() || companyCode.isBlank() || document == null)
         {
