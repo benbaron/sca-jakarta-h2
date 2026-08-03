@@ -2,11 +2,11 @@
 plan_version: 123
 active_phase: P15
 active_slice: P15-S8-C2
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S8-C2-bank-import-contract-matrix
-active_pull_request: null
-active_head: "30a71adf9545e31b2265c069379d9708cd92949b"
-next_action: "Publish the all-format bank-import contract matrix from merged C1, open a draft PR, and run the full Maven/Flyway/H2 and JavaFX workflow."
+active_pull_request: 247
+active_head: "29d691e8dffeca9d382256f102db1bc6c3956142"
+next_action: "Follow draft PR #247 through the primary Maven/Flyway/H2 gate, repeated suite, and JavaFX production-route compliance; correct only concrete failures."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1726,7 +1726,7 @@ Next exact action:
 
 ### P15-S8-C2 — All-format bank-import contract matrix
 
-Status: IN_PROGRESS from exact merged C1 commit `30a71adf9545e31b2265c069379d9708cd92949b`.
+Status: VERIFYING on draft PR #247 from exact merged C1 commit `30a71adf9545e31b2265c069379d9708cd92949b`.
 
 Branch: `codex/P15-S8-C2-bank-import-contract-matrix`
 
@@ -1743,10 +1743,12 @@ Scope:
 Validation status:
 
 - Local Java 17 is available but Maven is unavailable in this source snapshot; authoritative compilation, Flyway/H2 execution, repeated-suite, and JavaFX route compliance will run through the PR workflow.
+- The new integration source passes an independent Java 17 grammar parse.
+- Draft PR #247 contains exactly the five intended test and governing-document paths on head `29d691e8dffeca9d382256f102db1bc6c3956142`, with no deletions or base drift.
 
 Next exact action:
 
-- Publish the focused test/governance scope, open the draft PR, and follow the exact head through all three automated gates.
+- Follow the exact PR head through all three automated gates and correct only concrete failures.
 
 
 # P06 — Bank reconciliation and cleared-state comparison
