@@ -5,8 +5,8 @@ active_slice: P15-S7-C3
 active_status: VERIFYING
 active_branch: codex/P15-S7-C3-ofx-qfx-statement-export
 active_pull_request: 244
-active_head: "e273767ce384d198525221af5a114046dca03eaa"
-next_action: "Run the authoritative Maven/H2, repeated-suite, and JavaFX production-route gates on draft PR #244, then correct only concrete CI diagnostics."
+active_head: "47a34cfc7fa88b276d584289537c1c7b39183539"
+next_action: "Verify the governance-inclusive C3 handoff through the same three gates, then merge PR #244; no desktop checklist is required because C3 adds no enabled UI route."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1637,10 +1637,12 @@ Validation status:
 - Local Maven/JDK are unavailable in this source snapshot; authoritative compilation, H2 integration, repeated-suite, and JavaFX checks will run through the PR workflow.
 - Draft PR #244 contains exactly the nine intended implementation, parser-round-trip test, and governing-document paths, with no deletions or base drift.
 - Published implementation/plan head `e273767ce384d198525221af5a114046dca03eaa` is nine commits ahead of exact merge base `77584946bcb12005151db50be80d8809aae86c7d`.
+- The first plan-inclusive workflow in run `30782384967` stopped at compilation because the newly package-visible `Snapshot` record retained a private compact constructor.
+- Corrected head `47a34cfc7fa88b276d584289537c1c7b39183539` aligns the constructor to package scope and passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30782431431`.
 
 Next exact action:
 
-- Run the three authoritative PR gates and correct only concrete compiler, H2, parser-round-trip, or source-compliance diagnostics.
+- Verify the governance-inclusive C3 handoff through the same three gates, then merge PR #244; C3 adds no enabled JavaFX route and requires no owner desktop checklist.
 
 ## P15-S8 — Integrated JavaFX workflow and end-to-end verification
 
