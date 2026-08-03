@@ -11,6 +11,7 @@ import org.nonprofitbookkeeping.model.CompanyBankAccount;
 import org.nonprofitbookkeeping.model.ImportIssue;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.persistence.Jpa;
+import org.nonprofitbookkeeping.service.BankImportNormalizationService;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -75,8 +76,47 @@ public final class NormalizedBankCsvReviewService
             }
             return new NormalizedBankCsvReviewPreview(
                     exact, hash, company.getCode(), account.getId(), account.getName(),
-                    document, match.status(), messages);
+                    document, match.status(), previewLines(document), messages);
         }
+    }
+
+    private static List<BankImportNormalizationService.NormalizedBankStatementLine> previewLines(
+            NormalizedBankCsvDocument document)
+    {
+        Map<Integer, BankStatementExportRow> sourceRows = new HashMap<>();
+        document.batches().stream()
+                .flatMap(batch -> batch.rows().stream())
+                .forEach(row -> sourceRows.put(row.sourceRowNumber(), row.value()));
+        return new BankImportNormalizationService()
+                .normalize(
+                        document.statement(),
+                        BankImportNormalizationService.DuplicateContext.empty())
+                .lines().stream()
+                .map(line ->
+                {
+                    BankStatementExportRow source = sourceRows.get(line.sourceRowNumber());
+                    boolean exact = source != null && "EXACT".equals(source.duplicateStatus());
+                    boolean probable = source != null && "PROBABLE".equals(source.duplicateStatus());
+                    return new BankImportNormalizationService.NormalizedBankStatementLine(
+                            line.sourceRowNumber(),
+                            line.sourceTransactionId(),
+                            line.deterministicFingerprint(),
+                            line.transactionDate(),
+                            line.postedDate(),
+                            line.amount(),
+                            line.transactionType(),
+                            line.name(),
+                            line.memo(),
+                            line.checkNumber(),
+                            line.reference(),
+                            line.currency(),
+                            line.correctionAction(),
+                            line.correctedSourceTransactionId(),
+                            exact,
+                            probable,
+                            line.issues());
+                })
+                .toList();
     }
 
     public NormalizedBankCsvReviewResult commit(
