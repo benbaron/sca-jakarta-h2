@@ -26,11 +26,11 @@ import java.util.Set;
 /** Bounded RFC 4180-style parser driven only by an explicit validated mapping profile. */
 public final class BankCsvParser
 {
-    private static final long MAX_FILE_BYTES = 64L * 1024L * 1024L;
-    private static final int MAX_RECORDS = 1_000_000;
-    private static final int MAX_COLUMNS = 128;
-    private static final int MAX_RECORD_CHARS = 4 * 1024 * 1024;
-    private static final int MAX_FIELD_CHARS = 1024 * 1024;
+    static final long MAX_FILE_BYTES = 64L * 1024L * 1024L;
+    static final int MAX_RECORDS = 1_000_000;
+    static final int MAX_COLUMNS = 128;
+    static final int MAX_RECORD_CHARS = 4 * 1024 * 1024;
+    static final int MAX_FIELD_CHARS = 1024 * 1024;
 
     public ParsedCsv parse(Path source, BankCsvMappingProfileDefinition profile)
     {
@@ -39,20 +39,7 @@ public final class BankCsvParser
             throw new IllegalArgumentException("Bank CSV source and mapping profile are required.");
         }
         Path exact = source.toAbsolutePath().normalize();
-        byte[] bytes;
-        try
-        {
-            long size = Files.size(exact);
-            if (size <= 0 || size > MAX_FILE_BYTES)
-            {
-                throw new IllegalArgumentException("Bank CSV must contain 1 to 67108864 bytes.");
-            }
-            bytes = Files.readAllBytes(exact);
-        }
-        catch (IOException ex)
-        {
-            throw new IllegalArgumentException("Cannot read bank CSV: " + exact, ex);
-        }
+        byte[] bytes = read(exact);
         String csv = decode(bytes, profile.encoding());
         List<CsvRecord> records = records(csv, profile.delimiter());
         if (records.size() < 2)
@@ -152,7 +139,24 @@ public final class BankCsvParser
         return new ParsedCsv(document, originalRows, header);
     }
 
-    private static String decode(byte[] bytes, String encoding)
+    static byte[] read(Path exact)
+    {
+        try
+        {
+            long size = Files.size(exact);
+            if (size <= 0 || size > MAX_FILE_BYTES)
+            {
+                throw new IllegalArgumentException("Bank CSV must contain 1 to 67108864 bytes.");
+            }
+            return Files.readAllBytes(exact);
+        }
+        catch (IOException ex)
+        {
+            throw new IllegalArgumentException("Cannot read bank CSV: " + exact, ex);
+        }
+    }
+
+    static String decode(byte[] bytes, String encoding)
     {
         if (bytes.length >= 2 && ((bytes[0] == (byte) 0xFF && bytes[1] == (byte) 0xFE)
                 || (bytes[0] == (byte) 0xFE && bytes[1] == (byte) 0xFF)))
@@ -183,7 +187,7 @@ public final class BankCsvParser
         }
     }
 
-    private static List<CsvRecord> records(String csv, char delimiter)
+    static List<CsvRecord> records(String csv, char delimiter)
     {
         List<CsvRecord> result = new ArrayList<>();
         List<String> fields = new ArrayList<>();
@@ -455,5 +459,5 @@ public final class BankCsvParser
         }
     }
 
-    private record CsvRecord(int lineNumber, String original, List<String> fields) { }
+    record CsvRecord(int lineNumber, String original, List<String> fields) { }
 }

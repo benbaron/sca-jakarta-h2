@@ -60,6 +60,12 @@ public class BankStatementLine
     @Column(name = "source_transaction_id", length = 160)
     private String sourceTransactionId;
 
+    @Column(name = "source_external_id", length = 200)
+    private String sourceExternalId;
+
+    @Column(name = "source_payee_id", length = 200)
+    private String sourcePayeeId;
+
     @Column(name = "deterministic_fingerprint", nullable = false, length = 128)
     private String deterministicFingerprint;
 
@@ -132,6 +138,10 @@ public class BankStatementLine
     public void setSourceRowNumber(int sourceRowNumber) { this.sourceRowNumber = sourceRowNumber; }
     public String getSourceTransactionId() { return sourceTransactionId; }
     public void setSourceTransactionId(String sourceTransactionId) { this.sourceTransactionId = sourceTransactionId; }
+    public String getSourceExternalId() { return sourceExternalId; }
+    public void setSourceExternalId(String sourceExternalId) { this.sourceExternalId = sourceExternalId; }
+    public String getSourcePayeeId() { return sourcePayeeId; }
+    public void setSourcePayeeId(String sourcePayeeId) { this.sourcePayeeId = sourcePayeeId; }
     public String getDeterministicFingerprint() { return deterministicFingerprint; }
     public void setDeterministicFingerprint(String deterministicFingerprint) { this.deterministicFingerprint = deterministicFingerprint; }
     public String getStatementAccountIdentifier() { return statementAccountIdentifier; }
