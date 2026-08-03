@@ -2,11 +2,11 @@
 plan_version: 124
 active_phase: P15
 active_slice: P15-S8-C3
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S8-C3-bank-import-protection-round-trip
-active_pull_request: null
-active_head: "dd57ce5013c48f858c2d3d1444268f696413ed8b"
-next_action: "Publish the OFX/QFX semantic re-import and closed-period/reconciliation noninterference coverage from merged C2, then run the full PR workflow."
+active_pull_request: 248
+active_head: "78ddee19273bd919224c8479f4beeb1b2ae8297d"
+next_action: "Follow draft PR #248 through the primary Maven/Flyway/H2 gate, repeated suite, and JavaFX production-route compliance; correct only concrete failures."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1754,7 +1754,7 @@ Next exact action:
 
 ### P15-S8-C3 — Bank-statement round trip and ledger-protection noninterference
 
-Status: IN_PROGRESS from exact merged C2 commit `dd57ce5013c48f858c2d3d1444268f696413ed8b`.
+Status: VERIFYING on draft PR #248 from exact merged C2 commit `dd57ce5013c48f858c2d3d1444268f696413ed8b`.
 
 Branch: `codex/P15-S8-C3-bank-import-protection-round-trip`
 
@@ -1770,10 +1770,12 @@ Scope:
 Validation status:
 
 - Local Java 17 is available but Maven is unavailable; Java grammar review and the GitHub Maven/Flyway/H2 workflow are required.
+- The changed integration source passes an independent Java 17 grammar parse.
+- Draft PR #248 contains exactly the five intended test/governance paths on head `78ddee19273bd919224c8479f4beeb1b2ae8297d`, with no deletions or base drift.
 
 Next exact action:
 
-- Publish the focused test/governance changes, open the draft PR, and follow all three automated gates.
+- Follow the exact PR head through all three automated gates and correct only concrete failures.
 
 
 # P06 — Bank reconciliation and cleared-state comparison
