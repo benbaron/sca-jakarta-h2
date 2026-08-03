@@ -109,10 +109,11 @@ public final class BankStatementCsvExportService
                     .getResultList());
 
             List<Object[]> values = em.createQuery("""
-                            select l.id, b.sourceFormat, b.portableId, b.sourceName, l.portableId,
+                            select l.id, b.sourceFormat, b.portableId, b.sourceExternalId, b.sourceName,
+                                   l.portableId, l.sourceExternalId,
                                    b.sourceInstitutionId, b.sourceBankId, b.sourceAccountId, b.sourceAccountType,
                                    l.transactionDate, l.postedDate, l.amount, l.currency, b.currency,
-                                   l.sourceTransactionId, l.transactionType, l.name, l.memo,
+                                   l.sourceTransactionId, l.transactionType, l.sourcePayeeId, l.name, l.memo,
                                    l.checkNumber, l.reference, l.correctionAction, l.correctedSourceTransactionId,
                                    b.statementStartDate, b.statementEndDate, b.ledgerBalance, b.availableBalance,
                                    l.status, mt.portableId, l.deterministicFingerprint, l.sourceRowNumber
@@ -147,46 +148,49 @@ public final class BankStatementCsvExportService
             for (Object[] value : values)
             {
                 long lineId = (Long) value[0];
-                BankStatementLine.Status status = (BankStatementLine.Status) value[26];
+                BankStatementLine.Status status = (BankStatementLine.Status) value[29];
                 String duplicateStatus = status == BankStatementLine.Status.DUPLICATE
                         ? "EXACT"
                         : probableDuplicateLines.contains(lineId) ? "PROBABLE" : "";
-                String currency = firstText((String) value[12], (String) value[13], account.getCompany().getDefaultCurrency());
+                String currency = firstText((String) value[14], (String) value[15], account.getCompany().getDefaultCurrency());
                 rows.add(new BankStatementExportRow(
                         value[1].toString(),
-                        value[2].toString(),
-                        (String) value[3],
-                        value[4].toString(),
-                        (String) value[5],
-                        (String) value[6],
+                        firstText((String) value[3], value[2].toString()),
+                        (String) value[4],
+                        firstText((String) value[6], value[5].toString()),
                         (String) value[7],
                         (String) value[8],
-                        (LocalDate) value[9],
-                        (LocalDate) value[10],
-                        (BigDecimal) value[11],
+                        (String) value[9],
+                        (String) value[10],
+                        (LocalDate) value[11],
+                        (LocalDate) value[12],
+                        (BigDecimal) value[13],
                         currency,
-                        (String) value[14],
-                        (String) value[15],
-                        "",
                         (String) value[16],
                         (String) value[17],
                         (String) value[18],
                         (String) value[19],
                         (String) value[20],
                         (String) value[21],
-                        (LocalDate) value[22],
-                        (LocalDate) value[23],
-                        (BigDecimal) value[24],
-                        (BigDecimal) value[25],
+                        (String) value[22],
+                        (String) value[23],
+                        (String) value[24],
+                        (LocalDate) value[25],
+                        (LocalDate) value[26],
+                        (BigDecimal) value[27],
+                        (BigDecimal) value[28],
                         status.name(),
                         duplicateStatus,
-                        value[27] == null ? "" : value[27].toString()));
-                missingPayeeIds++;
-                if (value[24] == null)
+                        value[30] == null ? "" : value[30].toString()));
+                if (value[18] == null)
+                {
+                    missingPayeeIds++;
+                }
+                if (value[27] == null)
                 {
                     missingLedgerBalances++;
                 }
-                if (value[25] == null)
+                if (value[28] == null)
                 {
                     missingAvailableBalances++;
                 }
