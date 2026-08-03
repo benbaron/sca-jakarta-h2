@@ -10,6 +10,7 @@ import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.service.BankAccountCommand;
 import org.nonprofitbookkeeping.service.BankCommand;
 import org.nonprofitbookkeeping.service.BankConfigurationService;
+import org.nonprofitbookkeeping.service.PeriodCloseRangeService;
 
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -158,6 +159,70 @@ public class BankStatementImportContractMatrixTest
         }
     }
 
+    @Test
+    public void exportReimportPreservesSemanticsWithoutTouchingClosedOrReconciledLedger(
+            @TempDir Path tempDir) throws Exception
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("bank-round-trip-protection")))
+        {
+            Seed seed = seed(jpa);
+            seedClosedAndReconciledLedger(jpa);
+            BankStatementReviewService review = new BankStatementReviewService(jpa);
+            BankStatementReviewResult source = review.commit(
+                    review.preview(valid("ofx/ofx2-checking.xml"), "SCA", seed.scaAccountId()),
+                    false, "Round Trip");
+            assertTrue(source.created());
+
+            BankStatementOfxExportService exporter = new BankStatementOfxExportService(
+                    jpa, () -> tempDir.resolve("active-database"));
+            Path ofx = tempDir.resolve("review.ofx");
+            Path qfx = tempDir.resolve("review.qfx");
+            exporter.export(new BankStatementOfxExportRequest(
+                    "SCA", seed.scaAccountId(), LocalDate.of(2026, 6, 1),
+                    LocalDate.of(2026, 6, 30), ofx, false,
+                    BankStatementOfxExportRequest.Profile.OFX_2_XML));
+            exporter.export(new BankStatementOfxExportRequest(
+                    "SCA", seed.scaAccountId(), LocalDate.of(2026, 6, 1),
+                    LocalDate.of(2026, 6, 30), qfx, false,
+                    BankStatementOfxExportRequest.Profile.QFX_2_XML));
+
+            BankStatementDocument ofxDocument = new BankStatementParser().parse(ofx);
+            BankStatementDocument qfxDocument = new BankStatementParser().parse(qfx);
+            assertEquals(ofxDocument.transactions(), qfxDocument.transactions());
+            assertEquals(ofxDocument.account(), qfxDocument.account());
+            assertEquals(ofxDocument.currency(), qfxDocument.currency());
+            assertEquals(ofxDocument.ledgerBalance(), qfxDocument.ledgerBalance());
+
+            BankStatementReviewResult importedOfx = review.commit(
+                    review.preview(ofx, "OTHER", seed.otherAccountId()),
+                    false, "Round Trip");
+            BankStatementReviewResult importedQfx = review.commit(
+                    review.preview(qfx, "OTHER", seed.otherAccountId()),
+                    false, "Round Trip");
+            assertTrue(importedOfx.created());
+            assertTrue(importedQfx.created());
+            assertEquals(3, importedOfx.reviewableLineCount());
+            assertEquals(3, importedQfx.duplicateLineCount());
+
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals(1L, count(em, "Txn"));
+                assertEquals(2L, count(em, "TxnSplit"));
+                assertEquals(1L, nativeCount(em, "txn_reconciliation_protection"));
+                assertEquals(1L, nativeCount(em, "period_close_range"));
+                assertEquals(1L, nativeCount(em, "period_close_event"));
+                assertEquals(2L, em.createQuery("""
+                                select count(b) from BankImportBatch b
+                                 where b.company.code = 'OTHER'
+                                """, Long.class).getSingleResult());
+                assertEquals(6L, em.createQuery("""
+                                select count(l) from BankStatementLine l
+                                 where l.company.code = 'OTHER'
+                                """, Long.class).getSingleResult());
+            }
+        }
+    }
+
     private static void commitTwice(
             BankStatementReviewService service, Path source, long accountId)
     {
@@ -200,6 +265,51 @@ public class BankStatementImportContractMatrixTest
     {
         return em.createQuery("select count(e) from " + entity + " e", Long.class)
                 .getSingleResult();
+    }
+
+    private static long nativeCount(EntityManager em, String table)
+    {
+        return ((Number) em.createNativeQuery("select count(*) from " + table)
+                .getSingleResult()).longValue();
+    }
+
+    private static void seedClosedAndReconciledLedger(Jpa jpa)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            em.getTransaction().begin();
+            em.createNativeQuery("INSERT INTO account "
+                    + "(id, chart_id, code, name, account_type, normal_balance) VALUES "
+                    + "(103, 101, '5000', 'Program Expense', 'EXPENSE', 'DEBIT')")
+                    .executeUpdate();
+            em.createNativeQuery("INSERT INTO fund "
+                    + "(id, company_id, code, name, fund_type) VALUES "
+                    + "(201, (SELECT id FROM company WHERE code = 'SCA'), "
+                    + "'OPERATING', 'Operating', 'UNRESTRICTED')").executeUpdate();
+            em.createNativeQuery("INSERT INTO txn "
+                    + "(id, company_id, txn_date, memo, status) VALUES "
+                    + "(501, (SELECT id FROM company WHERE code = 'SCA'), "
+                    + "DATE '2026-06-15', 'Protected bank expense', 'ENTERED')")
+                    .executeUpdate();
+            em.createNativeQuery("INSERT INTO txn_split "
+                    + "(id, txn_id, account_id, fund_id, amount_signed) VALUES "
+                    + "(501, 501, 101, 201, -75.2500), (502, 501, 103, 201, 75.2500)")
+                    .executeUpdate();
+            UUID runId = UUID.randomUUID();
+            em.createNativeQuery("INSERT INTO reconciliation_run "
+                    + "(id, group_code, statement_ending_on, bank_format, "
+                    + "imported_transaction_count, status, notes) VALUES "
+                    + "(?, 'SCA', DATE '2026-06-30', 'OFX', 1, 'COMPLETED', 'June')")
+                    .setParameter(1, runId).executeUpdate();
+            em.createNativeQuery("INSERT INTO txn_reconciliation_protection "
+                    + "(txn_id, reconciliation_run_id, protected_by, notes) VALUES "
+                    + "(501, ?, 'treasurer', 'Completed June reconciliation')")
+                    .setParameter(1, runId).executeUpdate();
+            em.getTransaction().commit();
+        }
+        new PeriodCloseRangeService(jpa).closeRange(
+                "SCA", LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30),
+                "CALCULATED", "treasurer", "June closed");
     }
 
     private static String profile(String name) throws Exception
@@ -251,12 +361,12 @@ public class BankStatementImportContractMatrixTest
                 LocalDate.of(2026, 1, 1), BigDecimal.ZERO, BankingDataFormat.OFX,
                 "999000111", "FICTIONAL-4321", null, true));
         Bank otherBank = configuration.createBank(new BankCommand(
-                "OTHER", "Other Example Bank", "888000222",
+                "OTHER", "Other Example Bank", "999000111",
                 null, null, null, null, null, null, true));
         CompanyBankAccount other = configuration.createBankAccount(new BankAccountCommand(
                 "OTHER", otherBank.getId(), 102L, "****9876", "Other Checking",
                 LocalDate.of(2026, 1, 1), BigDecimal.ZERO, BankingDataFormat.OFX,
-                "888000222", "OTHER-9876", null, true));
+                "999000111", "FICTIONAL-4321", null, true));
         return new Seed(sca.getId(), other.getId());
     }
 

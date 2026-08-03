@@ -437,3 +437,19 @@ different company.
 
 C2 adds no new parser, file format, persistence table, migration, UI route, or ledger behavior. It
 verifies that the separate format implementations satisfy one integrated durable-review boundary.
+
+## 24. P15-S8-C3 round trip and ledger-protection noninterference
+
+The governed OFX/QFX export services and strict review importer must remain semantically compatible
+without weakening accounting protections. C3 starts with a balanced canonical bank transaction that is
+protected by a completed reconciliation and whose statement month is authoritatively closed. Importing
+external statement activity for that month creates durable review only; it must not edit, clear,
+reverse, replace, delete, or otherwise change the transaction, its splits, its reconciliation
+protection, the close range, or the factual close event.
+
+Deterministic OFX 2.x and QFX 2.x exports of the resulting review must parse into equivalent account,
+currency, balance, and transaction projections. Each may then be imported into another company-owned
+configured account with the same external bank identity. The first import remains reviewable; the
+equivalent second-format input is retained as duplicate review evidence. Neither operation creates a
+canonical transaction in the target company. This proves semantic compatibility while keeping raw
+statement interchange outside period-close and reconciliation mutation authority.
