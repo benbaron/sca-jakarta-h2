@@ -119,6 +119,64 @@ public class BankStatementCsvExportServiceTest
         assertTrue(source.contains("mt.portableId"));
     }
 
+    @Test
+    public void exportsDeterministicParserCompatibleOfxAndQfxWithDisclosedFitIdDerivation(
+            @TempDir Path tempDir) throws Exception
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("ofx-qfx-export")))
+        {
+            Seed seed = seed(jpa);
+            persistReviewFacts(jpa, seed.scaAccountId(), "SCA");
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                BankStatementLine early = em.createQuery("""
+                                select l from BankStatementLine l
+                                 where l.sourceTransactionId = 'FIT-EARLY'
+                                """, BankStatementLine.class).getSingleResult();
+                early.setSourceTransactionId(null);
+                em.getTransaction().commit();
+            }
+
+            BankStatementOfxExportService service = new BankStatementOfxExportService(
+                    jpa, () -> tempDir.resolve("active-database"));
+            Path ofx = tempDir.resolve("statement.ofx");
+            BankStatementExportResult ofxResult = service.export(new BankStatementOfxExportRequest(
+                    "SCA", seed.scaAccountId(), LocalDate.of(2026, 6, 1),
+                    LocalDate.of(2026, 6, 30), ofx, false,
+                    BankStatementOfxExportRequest.Profile.OFX_2_XML));
+            BankStatementDocument parsedOfx = new BankStatementParser().parse(ofx);
+            assertEquals(BankingDataFormat.OFX, parsedOfx.format());
+            assertEquals(BankStatementDocument.Variant.OFX_2_XML, parsedOfx.variant());
+            assertEquals(2, parsedOfx.transactions().size());
+            assertTrue(parsedOfx.transactions().get(0).sourceTransactionId().startsWith("SCA-"));
+            assertEquals("FIT-LATE", parsedOfx.transactions().get(1).sourceTransactionId());
+            assertEquals(0, new BigDecimal("1250.2500").compareTo(parsedOfx.ledgerBalance()));
+            assertTrue(ofxResult.messages().stream()
+                    .anyMatch(value -> value.code().equals("BANK_OFX_FITID_DERIVED")));
+            assertFalse(ofxResult.messages().stream()
+                    .anyMatch(value -> value.code().equals("BANK_CSV_PAYEE_ID_UNAVAILABLE")));
+            byte[] first = Files.readAllBytes(ofx);
+            service.export(new BankStatementOfxExportRequest(
+                    "SCA", seed.scaAccountId(), LocalDate.of(2026, 6, 1),
+                    LocalDate.of(2026, 6, 30), ofx, true,
+                    BankStatementOfxExportRequest.Profile.OFX_2_XML));
+            assertArrayEquals(first, Files.readAllBytes(ofx));
+
+            Path qfx = tempDir.resolve("statement.qfx");
+            BankStatementExportResult qfxResult = service.export(new BankStatementOfxExportRequest(
+                    "SCA", seed.scaAccountId(), LocalDate.of(2026, 6, 1),
+                    LocalDate.of(2026, 6, 30), qfx, false,
+                    BankStatementOfxExportRequest.Profile.QFX_2_XML));
+            assertTrue(Files.readString(qfx).startsWith("OFXHEADER:200\nDATA:OFXXML\n"));
+            BankStatementDocument parsedQfx = new BankStatementParser().parse(qfx);
+            assertEquals(BankingDataFormat.QFX, parsedQfx.format());
+            assertEquals(BankStatementDocument.Variant.QFX_2_XML, parsedQfx.variant());
+            assertEquals(parsedOfx.transactions(), parsedQfx.transactions());
+            assertEquals(2, qfxResult.rowCount());
+        }
+    }
+
     private static Seed seed(Jpa jpa)
     {
         try (EntityManager em = jpa.em())
