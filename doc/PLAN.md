@@ -2,11 +2,11 @@
 plan_version: 122
 active_phase: P15
 active_slice: P15-S8-C1
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S8-C1-normalized-bank-csv-import-ui
-active_pull_request: null
-active_head: "83999de5afa80decf63068862fa897bbee3d8ce1"
-next_action: "Publish the production normalized bank CSV preview/commit route, verify the exact PR head through all automated gates, and complete owner desktop acceptance."
+active_pull_request: 246
+active_head: "8954ddf87c4625d383fdce48aaa8511c08c762c7"
+next_action: "Verify draft PR #246 through the primary Maven/H2 gate, repeated suite, JavaFX production-route compliance, and owner desktop checklist."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1698,7 +1698,7 @@ Acceptance:
 
 ### P15-S8-C1 — Production normalized bank CSV import route
 
-Status: IN_PROGRESS from exact merged S7 commit `83999de5afa80decf63068862fa897bbee3d8ce1`.
+Status: VERIFYING on draft PR #246 from exact merged S7 commit `83999de5afa80decf63068862fa897bbee3d8ce1`.
 
 Branch: `codex/P15-S8-C1-normalized-bank-csv-import-ui`
 
@@ -1714,12 +1714,13 @@ Scope:
 
 Validation status:
 
-- Local implementation and document reconciliation are in progress; Maven is unavailable in this source snapshot.
+- All nine changed Java files pass an independent Java 17 grammar parse; Maven is unavailable in this source snapshot.
+- Draft PR #246 contains exactly the fifteen intended production, test, governing-document, and owner-checklist paths, with no deletions or base drift from exact merge base `83999de5afa80decf63068862fa897bbee3d8ce1`.
 - Authoritative compilation, H2 integration, repeated-suite, JavaFX production-route compliance, and owner desktop acceptance remain required before merge.
 
 Next exact action:
 
-- Publish the reviewed branch, open its draft PR, and verify the exact handoff through all automated and owner desktop gates.
+- Verify the exact PR #246 handoff through all automated and owner desktop gates.
 
 
 # P06 — Bank reconciliation and cleared-state comparison
