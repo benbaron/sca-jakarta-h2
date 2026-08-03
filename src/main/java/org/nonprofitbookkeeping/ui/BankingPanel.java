@@ -118,7 +118,7 @@ public class BankingPanel implements AppPanel
         Button importStatement = new Button("Import Bank Statement…");
         importStatement.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(
                 AppPanelId.IMPORT_PREVIEW, "Banking: import statement"));
-        Button reviewRows = new Button("Review Imported Rows…");
+        Button reviewRows = new Button("Review / Export Statements…");
         reviewRows.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(
                 AppPanelId.BANK_TRANSACTIONS, "Banking: durable review rows"));
         root.setTop(new VBox(6, title,
