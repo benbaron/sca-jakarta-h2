@@ -15,20 +15,19 @@ class BankStatementPreviewProductionRouteSourceTest
     {
         String panel = Files.readString(Path.of(
                 "src/main/java/org/nonprofitbookkeeping/ui/ImportPreviewPanel.java"));
-        String previewService = Files.readString(Path.of(
-                "src/main/java/org/nonprofitbookkeeping/service/ImportPreviewService.java"));
+        String reviewService = Files.readString(Path.of(
+                "src/main/java/org/nonprofitbookkeeping/interchange/bank/BankStatementReviewService.java"));
         String parser = Files.readString(Path.of(
                 "src/main/java/org/nonprofitbookkeeping/interchange/bank/BankStatementParser.java"));
 
         assertTrue(panel.contains("UiAsync.run(\"import-preview-bank\""));
-        assertTrue(panel.contains("result.variant()"));
-        assertTrue(panel.contains("result.maskedAccountId()"));
+        assertTrue(panel.contains("fixedScopeService.preview(file, company, account.getId())"));
+        assertTrue(panel.contains("commitPreviewedBankReviewButton"));
+        assertTrue(panel.contains("Confirm Atomic Bank Review Import"));
         assertTrue(panel.contains("No data was changed"));
-        assertTrue(previewService.contains("bankStatementParser.parse(path)"));
-        assertFalse(previewService.substring(
-                previewService.indexOf("public BankPreviewResult previewBankStatement"),
-                previewService.indexOf("public NormalizedBankPreviewResult previewNormalizedBankStatement"))
-                .contains("importBankDataFile"));
+        assertTrue(reviewService.contains("parser::parse"));
+        assertTrue(reviewService.contains("transaction.rollback()"));
+        assertFalse(panel.contains("previewService.previewBankStatement"));
         assertTrue(parser.contains("FEATURE_SECURE_PROCESSING"));
         assertTrue(parser.contains("disallow-doctype-decl"));
         assertTrue(parser.contains("FILENAME_CONTENT_MISMATCH"));

@@ -2,6 +2,11 @@ package org.nonprofitbookkeeping.ui;
 
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportCommitService;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportPreviewService;
+import org.nonprofitbookkeeping.interchange.bank.BankCsvMappingProfileService;
+import org.nonprofitbookkeeping.interchange.bank.BankCsvReviewService;
+import org.nonprofitbookkeeping.interchange.bank.BankReviewQueryService;
+import org.nonprofitbookkeeping.interchange.bank.BankStatementReviewService;
+import org.nonprofitbookkeeping.service.BankConfigurationService;
 import org.nonprofitbookkeeping.service.dashboard.DashboardQueryService;
 import org.nonprofitbookkeeping.service.DiagnosticsQueryService;
 
@@ -22,6 +27,11 @@ public final class WorkspaceServices
     private final Supplier<DiagnosticsQueryService> diagnosticsQueryService;
     private final Supplier<SclxImportPreviewService> sclxImportPreviewService;
     private final Function<String, SclxImportCommitService> sclxImportCommitService;
+    private final Supplier<BankConfigurationService> bankConfigurationService;
+    private final Supplier<BankStatementReviewService> bankStatementReviewService;
+    private final Supplier<BankCsvReviewService> bankCsvReviewService;
+    private final Supplier<BankCsvMappingProfileService> bankCsvMappingProfileService;
+    private final Supplier<BankReviewQueryService> bankReviewQueryService;
 
     WorkspaceServices(
             WorkspaceContext context,
@@ -32,7 +42,12 @@ public final class WorkspaceServices
             Supplier<DashboardQueryService> dashboardQueryService,
             Supplier<DiagnosticsQueryService> diagnosticsQueryService,
             Supplier<SclxImportPreviewService> sclxImportPreviewService,
-            Function<String, SclxImportCommitService> sclxImportCommitService)
+            Function<String, SclxImportCommitService> sclxImportCommitService,
+            Supplier<BankConfigurationService> bankConfigurationService,
+            Supplier<BankStatementReviewService> bankStatementReviewService,
+            Supplier<BankCsvReviewService> bankCsvReviewService,
+            Supplier<BankCsvMappingProfileService> bankCsvMappingProfileService,
+            Supplier<BankReviewQueryService> bankReviewQueryService)
     {
         this.context = Objects.requireNonNull(context, "context");
         this.databaseSessionController = Objects.requireNonNull(databaseSessionController, "databaseSessionController");
@@ -45,6 +60,11 @@ public final class WorkspaceServices
                 sclxImportPreviewService, "sclxImportPreviewService");
         this.sclxImportCommitService = Objects.requireNonNull(
                 sclxImportCommitService, "sclxImportCommitService");
+        this.bankConfigurationService = Objects.requireNonNull(bankConfigurationService, "bankConfigurationService");
+        this.bankStatementReviewService = Objects.requireNonNull(bankStatementReviewService, "bankStatementReviewService");
+        this.bankCsvReviewService = Objects.requireNonNull(bankCsvReviewService, "bankCsvReviewService");
+        this.bankCsvMappingProfileService = Objects.requireNonNull(bankCsvMappingProfileService, "bankCsvMappingProfileService");
+        this.bankReviewQueryService = Objects.requireNonNull(bankReviewQueryService, "bankReviewQueryService");
         this.panelFactory = new PanelFactory(this);
     }
 
@@ -97,4 +117,10 @@ public final class WorkspaceServices
     {
         return sclxImportCommitService.apply(companyCode);
     }
+
+    BankConfigurationService bankConfigurationService() { return bankConfigurationService.get(); }
+    BankStatementReviewService bankStatementReviewService() { return bankStatementReviewService.get(); }
+    BankCsvReviewService bankCsvReviewService() { return bankCsvReviewService.get(); }
+    BankCsvMappingProfileService bankCsvMappingProfileService() { return bankCsvMappingProfileService.get(); }
+    BankReviewQueryService bankReviewQueryService() { return bankReviewQueryService.get(); }
 }

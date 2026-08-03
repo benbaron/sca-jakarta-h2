@@ -17,7 +17,6 @@ class ImportExportJobsEliminationSourceTest
         String navigation = source("NavigationPane.java");
         String mainWindow = source("MainWindow.java");
         String panelFactory = source("PanelFactory.java");
-        String workspaceStore = source("UiWorkspaceDataStore.java");
         String bankTransactions = source("BankTransactionsPanel.java");
 
         for (String source : new String[] {appPanelId, navigation, mainWindow, panelFactory})
@@ -27,18 +26,17 @@ class ImportExportJobsEliminationSourceTest
         }
         assertFalse(Files.exists(Path.of(
                 "src/main/java/org/nonprofitbookkeeping/ui/ImportExportJobsPanel.java")));
-        assertFalse(workspaceStore.contains("ImportExportJob"));
-        assertFalse(workspaceStore.contains("appendJob"));
-        assertFalse(workspaceStore.contains("jobs()"));
+        assertFalse(Files.exists(Path.of(
+                "src/main/java/org/nonprofitbookkeeping/ui/UiWorkspaceDataStore.java")));
         assertFalse(mainWindow.contains("appendJob"));
         assertFalse(bankTransactions.contains("appendJob"));
 
         assertTrue(mainWindow.contains("importChartOfAccountsCsvFile"));
-        assertTrue(mainWindow.contains("importBankDataFile"));
+        assertFalse(mainWindow.contains("importBankDataFile"));
         assertTrue(mainWindow.contains("exportChartOfAccountsCsvFile"));
-        assertTrue(mainWindow.contains("exportBankDataFile"));
-        assertTrue(mainWindow.contains("UiWorkspaceDataStore.replaceBankTransactions"));
-        assertTrue(workspaceStore.contains("bankTransactions"));
+        assertFalse(mainWindow.contains("UiWorkspaceDataStore"));
+        assertTrue(bankTransactions.contains("BankReviewQueryService"));
+        assertTrue(bankTransactions.contains("reviewQuery.listRows"));
     }
 
     private static String source(String fileName) throws Exception

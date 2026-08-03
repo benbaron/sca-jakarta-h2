@@ -4,6 +4,10 @@ import org.nonprofitbookkeeping.interchange.sclx.SclxCoreSnapshotQueryService;
 import org.nonprofitbookkeeping.interchange.sclx.SclxFileExportService;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportPreviewService;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportCommitService;
+import org.nonprofitbookkeeping.interchange.bank.BankCsvMappingProfileService;
+import org.nonprofitbookkeeping.interchange.bank.BankCsvReviewService;
+import org.nonprofitbookkeeping.interchange.bank.BankReviewQueryService;
+import org.nonprofitbookkeeping.interchange.bank.BankStatementReviewService;
 import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
 import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.repository.ApprovalAuditRepository;
@@ -69,6 +73,22 @@ public final class UiServiceRegistry
     public static BudgetCategoryAdminService budgetCategoryAdmin() { return services().budgetCategoryAdmin(); }
     public static BudgetPlanService budgetPlan() { return services().budgetPlan(); }
     public static BankConfigurationService bankConfiguration() { return services().bankConfiguration(); }
+    public static BankStatementReviewService bankStatementReview()
+    {
+        return new BankStatementReviewService(services().jpa());
+    }
+    public static BankCsvReviewService bankCsvReview()
+    {
+        return new BankCsvReviewService(services().jpa());
+    }
+    public static BankCsvMappingProfileService bankCsvMappingProfiles()
+    {
+        return new BankCsvMappingProfileService(services().jpa());
+    }
+    public static BankReviewQueryService bankReviewQuery()
+    {
+        return new BankReviewQueryService(services().jpa());
+    }
     public static FixedAssetService fixedAssets() { return services().fixedAssets(); }
     public static InventoryService inventory() { return services().inventory(); }
     public static CompanyAdminService companyAdmin() { return services().companyAdmin(); }

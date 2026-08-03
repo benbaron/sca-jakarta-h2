@@ -1,6 +1,6 @@
 # Model and persistence authority inventory
 
-Status: P00 inventory of current main, updated through P15-S5-C10 complete selected-company SCLX import. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
+Status: P00 inventory of current main, updated through P15-S6-C4 durable bank-statement review UI. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
 
 ## Current persistence map
 
@@ -14,7 +14,7 @@ Status: P00 inventory of current main, updated through P15-S5-C10 complete selec
 | Budget categories | `BudgetCategory` JPA plus V45 | yes for categories | categories are not budget targets | P04 |
 | Budget targets | `BudgetPlan`/`BudgetLine` JPA entities and `budget_plan`/`budget_line` tables | yes | version activation must remain through `BudgetPlanService`; no sidecar target store remains | P04 persistent budget model |
 | Import preview | `ImportPreviewService` in-memory accepted/rejected rows | no by design until acceptance | acceptable staging, but accepted writes must use canonical services | P05/P13 |
-| Bank transactions | P05-S1 `bank_import_batch`, `bank_statement_line`, and `import_issue`; current `UiWorkspaceDataStore.bankTransactions` static/session list | H2 schema exists for reviewed import facts; current panel remains unwired | parser normalization, duplicate detection, and review acceptance are still pending | P05 |
+| Bank statement review | `bank_import_batch`, `bank_statement_line`, `import_issue`, `bank_csv_mapping_profile`; strict OFX/QFX and mapped-CSV preview/commit services; `BankReviewQueryService` | yes for committed review facts and profiles | raw preview is intentionally in-memory; ledger acceptance/matching remains a separate explicit workflow | P05/P15-S6 |
 | Reconciliation runs | JDBC `ReconciliationRunRepository`, V6/V7 style workflow tables | yes for run records and P06-S2 unresolved report summaries | remaining mismatch-resolution/edit workflow is incomplete | P06/P10 |
 | Former Schedules panel | top-level panel, route, navigation item, and schedule runbook sidecar removed in P07 | no active top-level persistence remains | historical V2 schedule/open-item tables remain until a later migration decision | future domain-specific supplemental transaction records, not a Schedules function |
 | Fixed assets/depreciation | `FixedAsset` and `FixedAssetDepreciationRun` JPA entities with V55 tables; depreciation runs create canonical `Txn` rows | yes for P08-S1 asset records and completed depreciation runs | old asset/depreciation text sidecars removed from production paths | later hardening: richer disposal/impairment workflows, visual polish, and reports |
@@ -138,7 +138,7 @@ Status: P00 inventory of current main, updated through P15-S5-C10 complete selec
 
 ## Sidecar/static stores to eliminate or confine
 
-- `UiWorkspaceDataStore`: bank transactions remain a sidecar/static session list pending their owning bank-review workflow.
+- Former `UiWorkspaceDataStore`: removed in P15-S6-C4 after Import Preview, Banking, Bank Transactions, and the File-menu route moved to durable H2 review authority.
 - Unified Journal draft state: acceptable only as unsaved UI state; accepted headers, lines, and supplemental details must be written through `TransactionEntryService` to H2.
 - Legacy period-close run artifacts: compatibility-only; production close state and factual history belong to `period_close_range`/`period_close_event` and `AuditEvent`.
 
