@@ -2,11 +2,11 @@
 plan_version: 128
 active_phase: P15
 active_slice: P15-C1
-active_status: VERIFYING
-active_branch: codex/P15-C1-finalize-plan-ledger
+active_status: DONE
+active_branch: null
 active_pull_request: 250
-active_head: 41cedb6f79932a57bcef8c213a8a46bca900235f
-next_action: "Open and merge the documentation-only P15-C1 closure PR; no later phase is authorized without an explicit plan amendment."
+active_head: 8c0f4a10cd5b1be131c6b0250276688915aec53c
+next_action: "No later phase is authorized without an explicit plan amendment."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Open and merge the documentation-only P15-C1 closure PR; no later 
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S8-C4 and P15-S8 as DONE through merged PR #249 and owner acceptance, then starts documentation-only P15-C1 to close the phase ledger. No later phase is authorized by this plan.
+This revision records P15-S8-C4 and P15-S8 as DONE through merged PR #249 and owner acceptance, then closes the phase ledger through documentation-only P15-C1 / PR #250. No later phase is authorized by this plan.
 
 ## 2. Status values
 
@@ -47,7 +47,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
-| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | Product scope DONE through P15-S8; documentation-only P15-C1 VERIFYING |
+| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
 
 ## 4. Governing documents
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** Product scope DONE through P15-S8 and merged PR #249; documentation-only P15-C1 VERIFYING
+**Status:** DONE through P15-S8, merged PR #249, and documentation-only P15-C1 / PR #250
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -1811,7 +1811,7 @@ Next exact action:
 
 ### P15-C1 — Final plan-ledger reconciliation
 
-Status: VERIFYING in documentation-only draft PR #250.
+Status: DONE through documentation-only PR #250.
 
 Branch: `codex/P15-C1-finalize-plan-ledger`
 
@@ -1826,11 +1826,12 @@ Validation status:
 - PR #249 final head `ce987459c740c45399eb3debe6f2abd61f6e38d5` passed all three repository gates in Maven PR Tests run `30843385164` before merging at `76bb90650efa2ac4a0a39bfcd4854642659ad171`.
 - Draft PR #250 was created from exact merge base `76bb90650efa2ac4a0a39bfcd4854642659ad171`; activation head `f42432fd87d4f1ec39e68cd0cdb3ae5503d7e211` changes only `doc/PLAN.md`, with no base drift.
 - Plan-bound review head `41cedb6f79932a57bcef8c213a8a46bca900235f` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30846540866`.
-- The final governance head must pass the same workflow once more before merge.
+- Governance-inclusive head `8c0f4a10cd5b1be131c6b0250276688915aec53c` passed the same three gates in Maven PR Tests run `30846894412`.
+- The final post-merge-state head must pass the same workflow once more before PR #250 merges.
 
 Next exact action:
 
-- Open and merge the documentation-only P15-C1 closure PR. No P16 or other later phase is authorized by the current plan.
+- Merge documentation-only PR #250 after its exact final head passes. No P16 or other later phase is authorized by the current plan.
 
 
 # P06 — Bank reconciliation and cleared-state comparison
