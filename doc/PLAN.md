@@ -2,11 +2,11 @@
 plan_version: 120
 active_phase: P15
 active_slice: P15-S7-C3
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P15-S7-C3-ofx-qfx-statement-export
-active_pull_request: null
-active_head: null
-next_action: "Publish C3 from merged PR #243 commit 77584946bcb12005151db50be80d8809aae86c7d, open its draft PR, then run the authoritative Maven/H2 and JavaFX gates."
+active_pull_request: 244
+active_head: "e273767ce384d198525221af5a114046dca03eaa"
+next_action: "Run the authoritative Maven/H2, repeated-suite, and JavaFX production-route gates on draft PR #244, then correct only concrete CI diagnostics."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1617,7 +1617,7 @@ Next exact action:
 
 ### P15-S7-C3 — Deterministic OFX 2.x and governed QFX statement export
 
-Status: IN_PROGRESS from merged C2 commit `77584946bcb12005151db50be80d8809aae86c7d`.
+Status: VERIFYING on draft PR #244 from merged C2 commit `77584946bcb12005151db50be80d8809aae86c7d`.
 
 Branch: `codex/P15-S7-C3-ofx-qfx-statement-export`
 
@@ -1635,10 +1635,12 @@ Validation status:
 
 - All six changed Java files pass an independent Java grammar parse.
 - Local Maven/JDK are unavailable in this source snapshot; authoritative compilation, H2 integration, repeated-suite, and JavaFX checks will run through the PR workflow.
+- Draft PR #244 contains exactly the nine intended implementation, parser-round-trip test, and governing-document paths, with no deletions or base drift.
+- Published implementation/plan head `e273767ce384d198525221af5a114046dca03eaa` is nine commits ahead of exact merge base `77584946bcb12005151db50be80d8809aae86c7d`.
 
 Next exact action:
 
-- Publish the reviewed C3 scope, open its draft PR, bind this plan to the actual PR/head, and run the three authoritative gates.
+- Run the three authoritative PR gates and correct only concrete compiler, H2, parser-round-trip, or source-compliance diagnostics.
 
 ## P15-S8 — Integrated JavaFX workflow and end-to-end verification
 
