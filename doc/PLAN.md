@@ -5,8 +5,8 @@ active_slice: P15-S7-C1
 active_status: VERIFYING
 active_branch: codex/P15-S7-C1-normalized-bank-csv-export
 active_pull_request: 242
-active_head: "908ff761005382bd03e4f51d6f46a80b7f60bfea"
-next_action: "Run authoritative Maven/H2 and JavaFX route gates on draft PR #242, correct only concrete diagnostics, then reconcile the exact final head."
+active_head: "bf1cf48a110f1a7bd1518cc94aea9f166d4a4902"
+next_action: "Verify the governance-inclusive C1 handoff through the same three gates, then merge PR #242; no desktop checklist is required because C1 adds no enabled UI route."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1579,10 +1579,11 @@ Validation status:
 - The donor OFX writers were inspected for field coverage only. Their direct alternate-ledger source, generated/random identifiers, fabricated balances, and direct non-atomic file replacement are not ported.
 - Draft PR #242 contains exactly the ten intended implementation, shared atomic-writer consolidation, test, and governing-document paths from merged S6, with no base drift.
 - Published implementation/plan head `908ff761005382bd03e4f51d6f46a80b7f60bfea` passed the local Java 17 grammar review; GitHub Actions is authoritative for compilation and H2 execution.
+- Plan-inclusive head `bf1cf48a110f1a7bd1518cc94aea9f166d4a4902` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30778043165`.
 
 Next exact action:
 
-- Run `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance on PR #242; correct only concrete diagnostics and reconcile the final head.
+- Verify the governance-inclusive C1 handoff through the same three gates, then merge PR #242; C1 adds no enabled JavaFX route and requires no owner desktop checklist.
 
 ## P15-S8 — Integrated JavaFX workflow and end-to-end verification
 
