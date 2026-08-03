@@ -6,7 +6,7 @@ active_status: VERIFYING
 active_branch: codex/P15-S7-C4-bank-statement-export-ui
 active_pull_request: 245
 active_head: "d4dd35c18db768929ad3dfe6cc4443bc2cacc4be"
-next_action: "Run Maven PR Tests on the plan-inclusive C4 head; correct only concrete diagnostics, then complete the owner desktop checklist before merge."
+next_action: "Verify the governance-inclusive C4 handoff through the same three automated gates, then complete the owner desktop checklist before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1667,10 +1667,11 @@ Validation status:
 - Local Maven/JDK are unavailable in this source snapshot; authoritative compilation, full H2 suite, repeated suite, and JavaFX production-route compliance will run through the PR workflow.
 - Draft PR #245 contains exactly the twelve intended production, test, governing-document, and owner-checklist paths, with no deletions or base drift from exact merge base `121d790a7139bcc8db4f9955f5c19b7df7801b27`.
 - Published implementation/documentation head `d4dd35c18db768929ad3dfe6cc4443bc2cacc4be` is twelve fast-forward commits ahead of that base.
+- Plan-inclusive head `cb44d61dad697f0e02cab951b9a24517a9802209` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30783262811`.
 
 Next exact action:
 
-- Run all three automated gates on the plan-inclusive PR head; correct only concrete diagnostics, then complete owner desktop acceptance before merge.
+- Verify the governance-inclusive C4 handoff through the same three automated gates, then complete owner desktop acceptance before merge.
 
 ## P15-S8 — Integrated JavaFX workflow and end-to-end verification
 
