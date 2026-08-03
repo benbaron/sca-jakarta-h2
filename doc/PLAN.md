@@ -1,12 +1,12 @@
 ---
-plan_version: 119
+plan_version: 120
 active_phase: P15
-active_slice: P15-S7-C2
-active_status: VERIFYING
-active_branch: codex/P15-S7-C2-normalized-bank-csv-round-trip
-active_pull_request: 243
-active_head: "db3f9cfb1115e70130983d8b14414d471a2fae4f"
-next_action: "Verify the governance-inclusive C2 handoff through the same three gates, then merge PR #243; no desktop checklist is required because C2 adds no enabled UI route."
+active_slice: P15-S7-C3
+active_status: IN_PROGRESS
+active_branch: codex/P15-S7-C3-ofx-qfx-statement-export
+active_pull_request: null
+active_head: null
+next_action: "Publish C3 from merged PR #243 commit 77584946bcb12005151db50be80d8809aae86c7d, open its draft PR, then run the authoritative Maven/H2 and JavaFX gates."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Verify the governance-inclusive C2 handoff through the same three 
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S7-C1 as DONE through merged PR #242 and starts P15-S7-C2 for strict normalized CSV direct re-import and semantic round-trip preservation.
+This revision records P15-S7-C2 as DONE through merged PR #243 and starts P15-S7-C3 for deterministic OFX 2.x and governed QFX statement-activity export.
 
 ## 2. Status values
 
@@ -47,7 +47,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
-| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S7-C2 |
+| P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | IN_PROGRESS at P15-S7-C3 |
 
 ## 4. Governing documents
 
@@ -695,7 +695,7 @@ Next exact action:
 # P15 — Versioned data interchange and database transfer
 
 **Selector:** `PHASE=P15`  
-**Status:** IN_PROGRESS at P15-S7-C2; P15-S0 through P15-S6 DONE
+**Status:** IN_PROGRESS at P15-S7-C3; P15-S0 through P15-S6 DONE
 **Depends on:** P02, P05, P06, P12, P13, P14
 
 Purpose: provide safe, previewable, versioned transfer of active-company business data, reusable Charts of Accounts, complete database copies, and bank-statement records without creating a second ledger, a parallel persistence model, or the eliminated generic Import/Export Jobs framework.
@@ -1533,7 +1533,7 @@ Next exact action:
 
 ## P15-S7 — OFX 2.x/QFX and normalized bank CSV export
 
-Status: IN_PROGRESS at P15-S7-C2.
+Status: IN_PROGRESS at P15-S7-C3.
 
 Purpose: export portable single-account bank-statement records without presenting OFX/QFX as a double-entry ledger export.
 
@@ -1588,7 +1588,7 @@ Next exact action:
 
 ### P15-S7-C2 — Normalized bank CSV direct re-import and semantic round trip
 
-Status: VERIFYING on draft PR #243 from merged C1 commit `5729705b6bf99d267f0995f1685527f5891b182c`.
+Status: DONE through merged PR #243.
 
 Branch: `codex/P15-S7-C2-normalized-bank-csv-round-trip`
 
@@ -1609,10 +1609,36 @@ Validation status:
 - Draft PR #243 contains exactly the seventeen intended implementation, recovery-safe migration, test, and governing-document paths, with no deletions or base drift.
 - Published implementation/plan head `6e2a969e60383d8284e655eb0a4c74a70e9732a0` is seventeen commits ahead of exact merge base `5729705b6bf99d267f0995f1685527f5891b182c`.
 - Plan-inclusive head `db3f9cfb1115e70130983d8b14414d471a2fae4f` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30781760154`.
+- Final governance-inclusive head `0bce6fad68002349e0f0be2983970795111ee26a` passed the same three gates in Maven PR Tests run `30781932036`; PR #243 merged at `77584946bcb12005151db50be80d8809aae86c7d`.
 
 Next exact action:
 
-- Verify the governance-inclusive C2 handoff through the same three gates, then merge PR #243; C2 adds no enabled JavaFX route and requires no owner desktop checklist.
+- None; P15-S7-C2 is DONE.
+
+### P15-S7-C3 — Deterministic OFX 2.x and governed QFX statement export
+
+Status: IN_PROGRESS from merged C2 commit `77584946bcb12005151db50be80d8809aae86c7d`.
+
+Branch: `codex/P15-S7-C3-ofx-qfx-statement-export`
+
+Scope:
+
+- Reuse the C1 company/account/date-range snapshot and shared atomic writer; never query or flatten canonical ledger transactions as statement activity.
+- Emit deterministic UTF-8 OFX 2.x XML and governed QFX 2.x header/XML envelopes with one bank statement, selected-scope dates, account/currency metadata, ordered transactions, exact amounts, names/memos, check/reference fields, and supported correction metadata.
+- Preserve valid source FITIDs; derive a deterministic collision-free FITID from the statement-line portable identity only when a required FITID is missing or duplicated, and report every derivation without mutating durable review facts.
+- Include the latest unambiguous imported ledger/available balance and its authoritative statement date; omit unavailable or conflicting balances with explicit warnings rather than guessing.
+- Retain C1 company/account/date isolation, empty-range rejection, database/symlink/overwrite protection, counts, warnings, bytes, SHA-256, and atomic replacement.
+- Prove both output profiles parse through the strict production `BankStatementParser`, are deterministic on overwrite, preserve source FITIDs and balances, disclose derived FITIDs, and never emit CSV-only warnings.
+- Keep JavaFX export controls for the final P15-S7 slice.
+
+Validation status:
+
+- All six changed Java files pass an independent Java grammar parse.
+- Local Maven/JDK are unavailable in this source snapshot; authoritative compilation, H2 integration, repeated-suite, and JavaFX checks will run through the PR workflow.
+
+Next exact action:
+
+- Publish the reviewed C3 scope, open its draft PR, bind this plan to the actual PR/head, and run the three authoritative gates.
 
 ## P15-S8 — Integrated JavaFX workflow and end-to-end verification
 
