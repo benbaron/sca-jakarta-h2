@@ -7,6 +7,8 @@ import org.nonprofitbookkeeping.interchange.sclx.SclxImportCommitService;
 import org.nonprofitbookkeeping.interchange.bank.BankCsvMappingProfileService;
 import org.nonprofitbookkeeping.interchange.bank.BankCsvReviewService;
 import org.nonprofitbookkeeping.interchange.bank.BankReviewQueryService;
+import org.nonprofitbookkeeping.interchange.bank.BankStatementCsvExportService;
+import org.nonprofitbookkeeping.interchange.bank.BankStatementOfxExportService;
 import org.nonprofitbookkeeping.interchange.bank.BankStatementReviewService;
 import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
 import org.nonprofitbookkeeping.persistence.Jpa;
@@ -88,6 +90,20 @@ public final class UiServiceRegistry
     public static BankReviewQueryService bankReviewQuery()
     {
         return new BankReviewQueryService(services().jpa());
+    }
+    public static BankStatementCsvExportService bankStatementCsvExport(Path activeDatabasePath)
+    {
+        Path fixedDatabasePath = Objects.requireNonNull(activeDatabasePath, "activeDatabasePath")
+                .toAbsolutePath()
+                .normalize();
+        return new BankStatementCsvExportService(services().jpa(), () -> fixedDatabasePath);
+    }
+    public static BankStatementOfxExportService bankStatementOfxExport(Path activeDatabasePath)
+    {
+        Path fixedDatabasePath = Objects.requireNonNull(activeDatabasePath, "activeDatabasePath")
+                .toAbsolutePath()
+                .normalize();
+        return new BankStatementOfxExportService(services().jpa(), () -> fixedDatabasePath);
     }
     public static FixedAssetService fixedAssets() { return services().fixedAssets(); }
     public static InventoryService inventory() { return services().inventory(); }
