@@ -2,11 +2,11 @@
 plan_version: 129
 active_phase: P16
 active_slice: P16-S0
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P16-S0-interface-completion-plan
-active_pull_request: null
-active_head: null
-next_action: "Publish and validate the P16-S0 documentation-only plan amendment, then begin P16-S1 from its merge commit."
+active_pull_request: 251
+active_head: 84de548a68c818f6e94469b5b7100947a2a31fc0
+next_action: "Validate the exact final P16-S0 PR #251 head, merge the documentation-only amendment, then begin P16-S1 from its merge commit."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through planning slice P16-S0 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | VERIFYING through planning slice P16-S0 / PR #251 |
 
 ## 4. Governing documents
 
@@ -1877,7 +1877,7 @@ Required behavior: genuine Inventory item add/edit and movement history, no runb
 # P16 — Interface-to-authority completion and integrity corrections
 
 **Selector:** `PHASE=P16`  
-**Status:** IN_PROGRESS through documentation-only planning slice P16-S0  
+**Status:** VERIFYING through documentation-only planning slice P16-S0 / PR #251  
 **Depends on:** P03 through P15 except eliminated P07
 
 ## Purpose
@@ -1962,9 +1962,12 @@ Every implementation slice must:
 
 ## P16-S0 — Govern the post-P15 completion program
 
-Status: IN_PROGRESS.
+Status: VERIFYING in draft PR #251.
 
 Branch: `codex/P16-S0-interface-completion-plan`
+
+Pull request: #251  
+Activation head: `84de548a68c818f6e94469b5b7100947a2a31fc0`
 
 Scope:
 
@@ -1980,9 +1983,15 @@ Acceptance:
 - P16-S1 is the only first unblocked product slice after P16-S0 merges.
 - The plan does not mark any audited behavior complete before code, CI, desktop validation, and merge prove it.
 
+Validation status:
+
+- The branch was created from exact current `main` merge `1740de45b043553cca4e7bd3ba364019ec8fb99f`.
+- Activation head `84de548a68c818f6e94469b5b7100947a2a31fc0` changes only `doc/PLAN.md`: 473 additions, 11 deletions, no base drift, and no product source, migration, test, or fixture changes.
+- Repository CI must pass on the exact final plan-bound head before merge.
+
 Next exact action:
 
-- Publish the documentation-only plan amendment, run repository CI on its exact final head, merge it, then create P16-S1 from that merge commit.
+- Run repository CI on the exact final PR #251 head, merge the documentation-only amendment, then create P16-S1 from that merge commit.
 
 ## P16-S1 — Atomic monthly depreciation
 
