@@ -5,8 +5,8 @@ active_slice: P16-S0
 active_status: VERIFYING
 active_branch: codex/P16-S0-interface-completion-plan
 active_pull_request: 251
-active_head: 84de548a68c818f6e94469b5b7100947a2a31fc0
-next_action: "Validate the exact final P16-S0 PR #251 head, merge the documentation-only amendment, then begin P16-S1 from its merge commit."
+active_head: 43040253e7a43eff51c899ca96b6dddb5d1c7e71
+next_action: "Validate the exact final governance-inclusive P16-S0 PR #251 head, then merge the documentation-only amendment and begin P16-S1 from its merge commit."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1987,11 +1987,12 @@ Validation status:
 
 - The branch was created from exact current `main` merge `1740de45b043553cca4e7bd3ba364019ec8fb99f`.
 - Activation head `84de548a68c818f6e94469b5b7100947a2a31fc0` changes only `doc/PLAN.md`: 473 additions, 11 deletions, no base drift, and no product source, migration, test, or fixture changes.
-- Repository CI must pass on the exact final plan-bound head before merge.
+- Plan-bound head `43040253e7a43eff51c899ca96b6dddb5d1c7e71` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30975002920`.
+- Repository CI must pass once more on the exact final governance-inclusive head before merge.
 
 Next exact action:
 
-- Run repository CI on the exact final PR #251 head, merge the documentation-only amendment, then create P16-S1 from that merge commit.
+- Run repository CI on the exact final governance-inclusive PR #251 head, then merge the documentation-only amendment and create P16-S1 from that merge commit.
 
 ## P16-S1 — Atomic monthly depreciation
 
