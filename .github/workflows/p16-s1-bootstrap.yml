@@ -23,6 +23,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          wc -c .p16-bootstrap/patch.gz.b64.part-*
+          sha256sum .p16-bootstrap/patch.gz.b64.part-*
           cat .p16-bootstrap/patch.gz.b64.part-* > /tmp/p16-s1.patch.gz.b64
           echo 'dda4912ac2da5bf7464510f998205175e108d4043e30355d7d71a8292490732d  /tmp/p16-s1.patch.gz.b64' | sha256sum -c -
           base64 --decode /tmp/p16-s1.patch.gz.b64 > /tmp/p16-s1.patch.gz
