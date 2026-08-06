@@ -23,9 +23,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          wc -c .p16-bootstrap/patch.gz.b64.part-*
-          sha256sum .p16-bootstrap/patch.gz.b64.part-*
-          cat .p16-bootstrap/patch.gz.b64.part-* > /tmp/p16-s1.patch.gz.b64
+          echo '91dbb99a945d8ec0f95a3fe6da3ad516d2e7ac03ee3ee4f4a76537b0097d286f  .p16-bootstrap/patch.gz.b64.part-00a' | sha256sum -c -
+          echo '63444fcb4c7688b17ef8144c43c1467886e2d79e821acc5498d55c93e5fdc870  .p16-bootstrap/patch.gz.b64.part-00b' | sha256sum -c -
+          echo '47f180d8eee1ce10d71375cec5a7631a04080a02f9bb3e9ecabc3a2b90a78485  .p16-bootstrap/patch.gz.b64.part-01' | sha256sum -c -
+          echo '993c6e0cca030eacc9a52a6d40d9e28a955e71331886ea0182c81a172a29bd06  .p16-bootstrap/patch.gz.b64.part-02' | sha256sum -c -
+          echo '76c449f8a9e92457158d041489546973c25a3e7b946f1f0af6a77c5a0686e502  .p16-bootstrap/patch.gz.b64.part-03' | sha256sum -c -
+          cat \
+            .p16-bootstrap/patch.gz.b64.part-00a \
+            .p16-bootstrap/patch.gz.b64.part-00b \
+            .p16-bootstrap/patch.gz.b64.part-01 \
+            .p16-bootstrap/patch.gz.b64.part-02 \
+            .p16-bootstrap/patch.gz.b64.part-03 \
+            > /tmp/p16-s1.patch.gz.b64
           echo 'dda4912ac2da5bf7464510f998205175e108d4043e30355d7d71a8292490732d  /tmp/p16-s1.patch.gz.b64' | sha256sum -c -
           base64 --decode /tmp/p16-s1.patch.gz.b64 > /tmp/p16-s1.patch.gz
           echo '9e2bdcd09605a40dda49e10aaf1da3265ba870b259ef0b21496d3a443766d936  /tmp/p16-s1.patch.gz' | sha256sum -c -
