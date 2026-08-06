@@ -1,12 +1,12 @@
 ---
-plan_version: 128
-active_phase: P15
-active_slice: P15-C1
-active_status: DONE
-active_branch: null
-active_pull_request: 250
-active_head: 8c0f4a10cd5b1be131c6b0250276688915aec53c
-next_action: "No later phase is authorized without an explicit plan amendment."
+plan_version: 129
+active_phase: P16
+active_slice: P16-S0
+active_status: VERIFYING
+active_branch: codex/P16-S0-interface-completion-plan
+active_pull_request: 251
+active_head: 43040253e7a43eff51c899ca96b6dddb5d1c7e71
+next_action: "Validate the exact final governance-inclusive P16-S0 PR #251 head, then merge the documentation-only amendment and begin P16-S1 from its merge commit."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "No later phase is authorized without an explicit plan amendment."
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15-S8-C4 and P15-S8 as DONE through merged PR #249 and owner acceptance, then closes the phase ledger through documentation-only P15-C1 / PR #250. No later phase is authorized by this plan.
+This revision records P15 as DONE and authorizes P16 to correct the incomplete or misleading interface-to-service paths found by the post-P15 production audit. P16 is ordered by data-integrity risk and preserves the established single-ledger, company-ownership, reconciliation-protection, and explicit-acceptance boundaries.
 
 ## 2. Status values
 
@@ -48,6 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | VERIFYING through planning slice P16-S0 / PR #251 |
 
 ## 4. Governing documents
 
@@ -1827,11 +1828,12 @@ Validation status:
 - Draft PR #250 was created from exact merge base `76bb90650efa2ac4a0a39bfcd4854642659ad171`; activation head `f42432fd87d4f1ec39e68cd0cdb3ae5503d7e211` changes only `doc/PLAN.md`, with no base drift.
 - Plan-bound review head `41cedb6f79932a57bcef8c213a8a46bca900235f` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30846540866`.
 - Governance-inclusive head `8c0f4a10cd5b1be131c6b0250276688915aec53c` passed the same three gates in Maven PR Tests run `30846894412`.
-- The final post-merge-state head must pass the same workflow once more before PR #250 merges.
+- Final post-merge-state head `db8eb62790950e2b294be6f392af3979e13fb305` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30847200012`.
+- PR #250 merged to `main` at `1740de45b043553cca4e7bd3ba364019ec8fb99f` on 2026-08-03.
 
 Next exact action:
 
-- Merge documentation-only PR #250 after its exact final head passes. No P16 or other later phase is authorized by the current plan.
+- None; P15-C1 and P15 are DONE.
 
 
 # P06 — Bank reconciliation and cleared-state comparison
@@ -1871,3 +1873,473 @@ Completed deliverables: `FullTextTooltipInstaller`, production installation, UI-
 **Depends on:** P02
 
 Required behavior: genuine Inventory item add/edit and movement history, no runbook subpane, and canonical transactions when movements are financially relevant.
+
+# P16 — Interface-to-authority completion and integrity corrections
+
+**Selector:** `PHASE=P16`  
+**Status:** VERIFYING through documentation-only planning slice P16-S0 / PR #251  
+**Depends on:** P03 through P15 except eliminated P07
+
+## Purpose
+
+Correct production controls whose visible promise is stronger than their service, transaction, persistence, or query behavior. P16 begins with the highest-risk partial-write and authority defects, then completes the workflows implied by the panels, and ends with truthful commands, preferences, and reports.
+
+P16 must extend the existing application. It must not create a second ledger, a second bank-import path, another database-session authority, a generic posting queue, or generic durable job tracking.
+
+## Audit basis and slice ownership
+
+The interface-to-persistence review was performed on `main` at `1740de45b043553cca4e7bd3ba364019ec8fb99f`, following `MainApp` through production navigation, panel composition, application services, repositories, migrations, and tests.
+
+| Priority | Finding | Corrective owner |
+|---|---|---|
+| 1 | Monthly depreciation can commit a ledger transaction before the depreciation run fails | P16-S1 |
+| 2 | COA CSV accepted-row commit permits partial success | P16-S2 |
+| 3 | Finalized reconciliations remain mutable and some match operations are incompletely scoped | P16-S3 |
+| 4 | Reconciliation exposes a second weak CSV/OFX/QIF import authority | P16-S4 |
+| 5 | Preferences can change the remembered database path without changing the connected database | P16-S5 |
+| 6 | Saved budget drafts can become hidden or orphaned and budget periods assume calendar years | P16-S6 |
+| 7 | Audit History reads the obsolete approval audit table instead of current factual audit events | P16-S7 |
+| 8 | Reviewed statement rows have no explicit acceptance path into the canonical ledger | P16-S8 |
+| 9 | Financially relevant inventory movements can diverge from the ledger | P16-S9 |
+| 10 | Journal displays every bank transaction as Uncleared | P16-S10 |
+| 11 | Several saved preferences have no production consumer | P16-S11 |
+| 12 | Global commands and Help advertise operations that panels do not implement | P16-S12 |
+| 13 | Some report names overstate first-pass query semantics | P16-S13 |
+| Deferred completion | Asset disposal accounting and domain-specific asset/inventory reports are absent | P16-S14 and P16-S15 |
+| Deferred completion | User Admin cannot revoke assignments or maintain roles | P16-S16 |
+
+## Established boundaries
+
+- A bank-statement import creates durable review facts only. P16-S8 adds an explicit user-confirmed acceptance action; it must not auto-post imported rows.
+- An inventory movement creates a ledger transaction only under a documented financially relevant movement policy and explicit user confirmation. SCLX restoration of historical movement facts must not synthesize new ledger activity.
+- A reconciliation explanation is not an accounting correction. The UI must distinguish a factual explanation from a canonical adjusting transaction.
+- A finalized reconciliation is immutable. Correction requires a separately governed reopen or successor-session action with factual audit history.
+- Database selection remains owned by `DatabaseSessionController`; a preference value may not switch database authority.
+- Current `AuditEvent`/`audit_event` remains the factual accounting-operation history. Legacy approval records are compatibility data, not current audit authority.
+- Fixed-asset interchange remains governed by P15. Asset disposal, impairment, and specialized reports are product workflows, not interchange repairs.
+- Authentication remains outside P16 unless separately authorized. P16-S16 maintains durable users, roles, and assignments without pretending to enforce login identity.
+
+## Required reading
+
+- `doc/interface-operation-matrix.md`
+- `doc/persistence-authority-inventory.md`
+- `doc/ui_design_rules.md`
+- `doc/ui/editor-guidelines.md`
+- `doc/accounting/ledger-authority.md`
+- `doc/accounting/transaction-lifecycle.md`
+- `doc/accounting/period-and-correction-policy.md`
+- `doc/accounting/budget-model.md`
+- `doc/banking/banking-and-reconciliation.md`
+- `doc/banking/import-and-reconciliation.md`
+- `doc/data-exchange/bank-statement-interchange.md`
+- `doc/data-exchange/chart-of-accounts-json.md`
+- `doc/inventory/inventory-and-assets.md`
+- `doc/reporting/report-library.md`
+- `doc/administration/company-lifecycle.md`
+- `doc/workflow/development-workflow.md`
+
+## Required inspection
+
+- Production composition: `MainApp`, `ProductionWorkspaceWindow`, `PanelFactory`, `WorkspaceServices`, `UiServiceRegistry`, `AppPanel`, `AppPanelId`, `GlobalShortcuts`, and `HelpPanel`.
+- Integrity paths: `FixedAssetService`, `TransactionEntryService`, `ImportPreviewService`, `AccountAdminService`, `BankReconciliationWorkspaceService`, `DatabaseSessionController`, `UiSessionState`, and their repositories/migrations.
+- Incomplete panels: `ReconciliationRunsPanel`, `SettingsPanel`, `BudgetEditorPanel`, `BudgetVsActualPanel`, `ApprovalAuditPanel`, `ImportPreviewPanel`, `InventoryPanel`, `JournalWorkspacePanel`, `PeriodCloseRunsPanel`, `UserAdminPanel`, and report-library panels.
+- Query/report projections: `TransactionView`, `AuditHistoryService`, `BudgetPlanService`, `BankReviewQueryService`, and `WorkbookSemanticReportService`.
+- Existing H2 integration, migration, production-route, JavaFX behavior/layout, rollback, company-isolation, closed-period, and reconciliation-protection tests.
+
+## Execution order
+
+P16-S0 is documentation-only. After it merges, execute P16-S1 through P16-S17 in order unless a slice documents that it is safely independent and the plan is deliberately amended. Do not combine unrelated domain repairs merely because they were discovered in the same audit.
+
+Every implementation slice must:
+
+1. Reproduce the defect with a focused service or production-route test before changing behavior.
+2. Put validation and writes inside one authoritative service boundary.
+3. Preserve company ownership, closed-period protection, reconciliation protection, and factual audit history.
+4. Add late-failure rollback and restart/isolation coverage where durable state changes.
+5. Update the owning governing document, interface operation matrix, persistence inventory, and this ledger.
+6. Run focused tests, `mvn clean verify`, the deliberately repeated suite, and JavaFX production-route compliance.
+7. Add an owner desktop checklist for visible behavior and leave the slice `VERIFYING` until that checklist and merge are complete.
+
+## P16-S0 — Govern the post-P15 completion program
+
+Status: VERIFYING in draft PR #251.
+
+Branch: `codex/P16-S0-interface-completion-plan`
+
+Pull request: #251  
+Activation head: `84de548a68c818f6e94469b5b7100947a2a31fc0`
+
+Scope:
+
+- Record every material audit finding and the code authority implicated by it.
+- Establish one mergeable vertical slice per coherent correction.
+- Order partial-write, finalization, company/database isolation, and misleading-authority defects before feature-completion work.
+- Preserve deliberate P15 boundaries and distinguish deferred functionality from regressions.
+- Change only `doc/PLAN.md`; do not alter production behavior in this slice.
+
+Acceptance:
+
+- Every audit finding maps to one implementation slice and explicit completion criteria.
+- P16-S1 is the only first unblocked product slice after P16-S0 merges.
+- The plan does not mark any audited behavior complete before code, CI, desktop validation, and merge prove it.
+
+Validation status:
+
+- The branch was created from exact current `main` merge `1740de45b043553cca4e7bd3ba364019ec8fb99f`.
+- Activation head `84de548a68c818f6e94469b5b7100947a2a31fc0` changes only `doc/PLAN.md`: 473 additions, 11 deletions, no base drift, and no product source, migration, test, or fixture changes.
+- Plan-bound head `43040253e7a43eff51c899ca96b6dddb5d1c7e71` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30975002920`.
+- Repository CI must pass once more on the exact final governance-inclusive head before merge.
+
+Next exact action:
+
+- Run repository CI on the exact final governance-inclusive PR #251 head, then merge the documentation-only amendment and create P16-S1 from that merge commit.
+
+## P16-S1 — Atomic monthly depreciation
+
+Status: BLOCKED by P16-S0.
+
+Purpose: prevent a failed depreciation-run write from leaving an orphan canonical transaction.
+
+Implementation steps:
+
+1. Add a regression fixture that reproduces the late failure after transaction creation, including the same-asset/same-date unique constraint.
+2. Introduce or reuse a caller-owned transaction seam so canonical transaction creation and `DepreciationRun` persistence use one JPA transaction and one `EntityManager`.
+3. Validate company, asset status, account/fund ownership, amount, run date, closed period, completed-reconciliation protection, and prior run before the first mutation; retain the database unique constraint as the final concurrency guard.
+4. Persist the balanced depreciation transaction, completed run, portable identity, and factual audit event inside the same transaction.
+5. Return one result containing both durable identities only after commit; on failure return neither and refresh the panel without inventing success state.
+6. Remove any two-step service composition that permits the transaction to commit independently.
+
+Acceptance and tests:
+
+- Duplicate run, injected late failure, audit failure, and constraint race leave transaction, splits, run, identity, and audit counts unchanged.
+- Successful execution creates exactly one balanced transaction and one linked run; identical retry is rejected or reported as an idempotent no-op according to the governed policy.
+- Multi-company, closed-period, and finalized-reconciliation protections cannot be bypassed.
+
+## P16-S2 — Atomic COA CSV accepted-row commit
+
+Status: BLOCKED by P16-S1.
+
+Purpose: make **Commit Accepted COA Rows** all-or-nothing while leaving P15 Chart-of-Accounts JSON interchange unchanged.
+
+Implementation steps:
+
+1. Freeze the preview by source hash, active company, target chart, accepted rows, mappings, and confirmation state.
+2. Add a batch/caller-owned transaction boundary in `AccountAdminService` or a focused COA CSV commit service; do not call independently committing `upsert()` once per row.
+3. Revalidate every row before mutation, including duplicate codes, chart/company ownership, parent references/order, cycles, type/normal-balance rules, history-sensitive changes, and inactive parents.
+4. Order parent-before-child writes, then write all accounts, identities, and one factual operation audit in a single transaction.
+5. Replace catch-and-continue behavior with one rollback result containing the failing row/path and zero committed rows.
+6. Update UI counts so created/updated/skipped totals describe a committed batch, never attempted partial work.
+
+Acceptance and tests:
+
+- A failure on any row leaves all account fields, hierarchy, identities, and audit history unchanged.
+- Identical re-preview/recommit is idempotent; source or target drift requires a new preview.
+- Restart and company-isolation tests prove no partial chart is visible.
+
+## P16-S3 — Reconciliation finalization and mutation integrity
+
+Status: BLOCKED by P16-S2.
+
+Purpose: make finalized reconciliation sessions immutable and make all match/clear/resolution operations exact-scope and symmetric.
+
+Implementation steps:
+
+1. Centralize a session mutation guard in `BankReconciliationWorkspaceService`; every import, match, unmatch, clear, resolve, save, and finalize entry point must call it.
+2. Reject mutation of `FINALIZED` sessions and prevent Save from downgrading a finalized status. Define an audited reopen or successor-session command before any later edit is allowed.
+3. Validate that session, configured account, statement rows, transactions, and splits all belong to the same active company and bank account before mutation.
+4. Make unmatch clear both sides of the statement/split relationship in one transaction and reject already-broken pairs instead of silently worsening them.
+5. Separate **Record Difference Explanation** from **Create Adjustment Transaction**. The first stores factual explanation only; the second, if enabled, must preview and create a balanced canonical transaction through `TransactionEntryService` and then match it explicitly.
+6. Render finalized sessions read-only and disable mutation controls with an explanatory tooltip.
+
+Acceptance and tests:
+
+- Every mutation API rejects finalized sessions and cross-company/account identifiers without changing data.
+- Match/unmatch/clear operations are atomic and relationship-symmetric.
+- Finalize is idempotent, Save cannot reopen/downgrade, and reopening or successor creation is factual and audited.
+- UI tests prove finalized controls are disabled and explanations are not presented as accounting corrections.
+
+## P16-S4 — One governed bank-import authority
+
+Status: BLOCKED by P16-S3.
+
+Purpose: remove the weaker direct CSV/OFX/QIF import path from Reconciliation and retain Import Preview as the sole production statement-import authority.
+
+Implementation steps:
+
+1. Remove panel-local CSV splitting, OFX regular-expression extraction, QIF record parsing, and direct statement-row creation from `ReconciliationRunsPanel` and `BankReconciliationWorkspaceService`.
+2. Route supported OFX 2.x, QFX, mapped CSV, and normalized CSV actions to the canonical Import Preview services with exact active-company/configured-account scope.
+3. Remove QIF as an enabled production action unless a later governed QIF contract, strict parser, fixtures, limits, preview, and atomic durable-review service are separately authorized.
+4. Keep file reading, parsing, and preview off the JavaFX thread using the existing transient interchange operation controller.
+5. After successful durable import, refresh the selected reconciliation session from the canonical review query rather than copying transient rows.
+6. Add source guards that prohibit parser logic and direct import persistence in Reconciliation.
+
+Acceptance and tests:
+
+- Exactly one production service path can create imported bank-review facts.
+- Malformed/security/account-mismatch/duplicate behavior is identical whether import starts from Banking, Import Preview, or a Reconciliation navigation link.
+- No QIF action implies support that the governed parser does not provide.
+
+## P16-S5 — Connected-database session authority
+
+Status: BLOCKED by P16-S4.
+
+Purpose: prevent Preferences from displaying one database path while services remain connected to another.
+
+Implementation steps:
+
+1. Make the Preferences database field read-only factual state or replace it with **Select Existing Database…** and **Create New Database…** commands owned by `DatabaseSessionController`.
+2. Capture dirty-workspace confirmation before a switch; connect, migrate, validate, and load company state before changing the selected path.
+3. Update `UiSessionState`, datasource/JPA composition, active company, open panels, diagnostics, and recent-database state only after successful connection.
+4. On failure, retain the prior database, company, services, and displayed path exactly; report source/target paths and validation facts.
+5. Remove every direct preference write capable of changing active database authority.
+
+Acceptance and tests:
+
+- The displayed active path, JDBC/JPA datasource, Diagnostics path, and records always identify the same database.
+- Failed migration/validation and cancelled dirty-state confirmation preserve the prior session.
+- Successful switch rebuilds services and panels once, with no stale company data or split-brain reads.
+
+## P16-S6 — Budget draft lifecycle and fiscal-period authority
+
+Status: BLOCKED by P16-S5.
+
+Purpose: preserve the exact saved draft and calculate budgets from company fiscal settings and the active accounting period.
+
+Implementation steps:
+
+1. Add company-scoped queries for active plans and editable drafts, with stable IDs and deterministic ordering.
+2. Make Save return/select the same durable draft; reload must never replace it with a new blank draft.
+3. Make **Activate Version** act only on the explicitly selected draft and enforce one active version per company/fiscal year in one transaction.
+4. When creating a revision from an active plan, copy its governed lines and metadata into a new draft while preserving source plan history.
+5. Replace `LocalDate.now()` and calendar-year assumptions with a shared fiscal-period range derived from company fiscal-year start and the shell-selected accounting period.
+6. Align Budget Editor, Budget vs Actual, reports, and exports to the same immutable fiscal request.
+
+Acceptance and tests:
+
+- Save/reload/restart returns the same draft and lines; no blank or orphan draft is created implicitly.
+- Activation targets the chosen draft, copies/revisions are exact, and concurrent activation rolls back safely.
+- Non-January fiscal years and historical/future selected periods produce correct actual and budget ranges.
+
+## P16-S7 — Factual Audit History authority
+
+Status: BLOCKED by P16-S6.
+
+Purpose: show current `audit_event` facts in Audit History instead of presenting the obsolete approval table as current history.
+
+Implementation steps:
+
+1. Replace the production query used by `ApprovalAuditPanel` with company-scoped `AuditHistoryService` projections over `AuditEvent`.
+2. Display timestamp, actor, action, entity type/identifier, summary, before/after values, and reason with active-company formatting and bounded detail views.
+3. Preserve immutable read-only behavior and company isolation; add filtering by date, action, entity, and actor without SQL in the panel.
+4. If legacy `approval_audit_record` rows must remain visible, place them in an explicitly labeled compatibility view and never merge them into current factual history silently.
+5. Rename compatibility classes/panel labels where practical without breaking saved destination identifiers.
+
+Acceptance and tests:
+
+- Transaction, correction, period-close, SCLX, bank-import, and other current operation events appear after refresh and restart.
+- Other-company and unresolved global events do not leak into the active-company view.
+- The panel performs no writes and never implies approval/rejection workflow.
+
+## P16-S8 — Explicit reviewed-statement acceptance into the ledger
+
+Status: BLOCKED by P16-S7.
+
+Purpose: let a user turn one reviewed bank statement row into a canonical transaction without automatic posting or re-keying.
+
+Implementation steps:
+
+1. Add **Create Transaction from Reviewed Row…** only for an unmatched, eligible statement row in the active company/configured account.
+2. Freeze the statement-row identity, source amount/date/payee/memo/reference/currency, duplicate/review state, and target bank account before opening a transaction preview.
+3. Prefill the bank split and require the user to select or edit counter-account splits, funds, activity, counterparty/merchant, date, and description until the canonical transaction balances.
+4. Revalidate row eligibility, company/account ownership, source identity, closed period, duplicate state, and completed-reconciliation protection immediately before commit.
+5. In one transaction, create the canonical transaction through `TransactionEntryService`, link the statement row/match, update review state, and write factual audit history.
+6. Make retries idempotent and route the result to Journal/Reconciliation drill-through.
+
+Acceptance and tests:
+
+- Import alone still creates zero `Txn`/`TxnSplit` rows.
+- Explicit acceptance creates exactly one balanced transaction and one durable link; cancellation or late failure creates neither.
+- Exact/probable duplicates, already matched rows, closed periods, finalized reconciliations, and cross-company IDs are blocked or require the governed explicit resolution.
+- Batch auto-posting and rule-driven unattended posting remain out of scope.
+
+## P16-S9 — Financially relevant inventory movements
+
+Status: BLOCKED by P16-S8.
+
+Purpose: keep physical quantity and general-ledger inventory value synchronized when a movement has an accounting effect.
+
+Implementation steps:
+
+1. Amend `doc/inventory/inventory-and-assets.md` with explicit RECEIVE, ISSUE, and ADJUST valuation policies, required debit/credit accounts, fund behavior, rounding, zero-value handling, and correction rules.
+2. Add a non-mutating movement preview showing quantity before/after, unit and extended value, accounts/funds, and the proposed balanced canonical transaction.
+3. Require explicit confirmation for financially relevant movements; permit a clearly labeled nonfinancial movement only where the governing policy allows it.
+4. Persist the movement, resulting quantity, canonical transaction, portable identities, and factual audit event in one caller-owned transaction.
+5. Protect closed periods and completed reconciliations and implement reversal/correction through the canonical transaction correction policy rather than editing historical value silently.
+6. Preserve P15 SCLX import behavior: restoring a historical movement with existing transaction provenance must not synthesize a second transaction.
+
+Acceptance and tests:
+
+- Successful financial movement changes quantity and ledger value together; failure changes neither.
+- Restart, multi-company, rounding, negative-quantity, closed-period, duplicate, and late-failure scenarios are covered.
+- The movement table's `Txn` column is populated only by a real canonical link.
+
+## P16-S10 — Authoritative Journal cleared-state projection
+
+Status: BLOCKED by P16-S9.
+
+Purpose: replace the hard-coded `Uncleared` value with facts from canonical transaction splits.
+
+Implementation steps:
+
+1. Extend `TransactionView.Line` with `bankCleared` and `bankClearedOn` from `TxnSplit` and preserve line identity/account context.
+2. Define transaction-level display states: `Not bank`, `Uncleared`, `Cleared`, and `Mixed`; do not collapse mixed split state into a false boolean.
+3. Calculate the summary in the query/service projection, not in a JavaFX cell factory.
+4. Show cleared date at line detail and provide reconciliation drill-through where a durable match/session exists.
+5. Refresh Journal after reconciliation clear/unmatch/finalize operations without mutating ledger state from the view.
+
+Acceptance and tests:
+
+- Transactions with zero, one, or multiple bank splits render exact states and dates after restart.
+- Reconciliation changes are reflected on refresh and remain company/account isolated.
+- No bank transaction is labeled Uncleared merely because the projection omitted data.
+
+## P16-S11 — Production preference consumers
+
+Status: BLOCKED by P16-S10.
+
+Purpose: ensure every saved preference affects production behavior or is removed/relabeled as deferred.
+
+Implementation steps:
+
+1. Inventory every Settings field and its production read path; add an executable preference-to-consumer matrix.
+2. Apply theme and native-decoration choices at the supported lifecycle point, clearly marking restart-required settings.
+3. Implement window-size/state restoration only when **Remember window state** is enabled and keep it company/user scoped according to the governing preference model.
+4. Route closed-period defaults into `PeriodCloseRunsPanel`; remove hard-coded `WARN_AND_REOPEN`, reason flags, and actor text where preferences/session facts exist.
+5. Do not expose privilege as effective authorization until authentication is governed; remove it, label it informational/deferred, or give it a real non-security consumer.
+6. Remove retired `MainWindow` as the only consumer of any production-visible preference.
+
+Acceptance and tests:
+
+- Every enabled persisted setting has one observable production effect and one tested consumer.
+- Restart-required settings say so and apply after restart.
+- No preference changes accounting policy silently or pretends to enforce authentication.
+
+## P16-S12 — Truthful global command and shortcut capabilities
+
+Status: BLOCKED by P16-S11.
+
+Purpose: stop the shell from claiming that empty panel defaults handled New, Save, Copy, Paste, Find, or command-palette actions.
+
+Implementation steps:
+
+1. Replace empty `AppPanel` command defaults with explicit capability/query methods and handled/not-handled results.
+2. Enable toolbar/menu commands only when the active panel supports them; otherwise disable them with a concise explanation.
+3. Return `handled=true` only after a real operation starts or completes; propagate validation/failure messages accurately.
+4. Let standard JavaFX text controls handle Copy/Paste where appropriate and add panel delegates only for genuine table/editor semantics.
+5. Implement Ctrl+F and Ctrl+K/Ctrl+G in the production shell or remove them from Help; keep menu labels, accelerators, and Help generated from one command registry where practical.
+6. Add an all-destination capability matrix test covering navigation, toolbar, menu, shortcuts, dirty state, and no-op rejection.
+
+Acceptance and tests:
+
+- No enabled global command is a no-op.
+- Help lists only installed shortcuts and exact destination names.
+- Commands follow the selected Administration tab and canonical Journal workspace correctly.
+
+## P16-S13 — Truthful report semantics
+
+Status: BLOCKED by P16-S12.
+
+Purpose: make report names, filters, and exported content match authoritative accounting semantics.
+
+Implementation steps:
+
+1. Define exact row-selection contracts in `doc/reporting/report-library.md` for **All Checks/Transfers** and **Fund Transfers** before changing queries.
+2. Identify the authoritative transaction/reference/split facts that distinguish checks, bank transfers, and inter-fund transfers; add nondestructive classification data only if current facts cannot prove the distinction.
+3. Replace the unfiltered general-ledger implementation of **All Checks/Transfers** with the governed predicate and totals.
+4. Replace fund-activity grouping with true transfer-pair selection and balanced per-transaction/per-fund totals.
+5. If an existing schema cannot support a truthful report in the same slice, disable or accurately rename that catalog entry until its classification migration is delivered.
+6. Add preview/CSV/PDF/XLSX semantic equivalence, empty-range, company/fund/date isolation, correction, and drill-through tests.
+
+Acceptance and tests:
+
+- Report title, parameters, selected rows, totals, exports, and Journal drill-through describe the same immutable request.
+- Ordinary fund activity does not appear as a fund transfer.
+- No first-pass approximation remains under a completed-sounding report name.
+
+## P16-S14 — Fixed-asset disposal accounting
+
+Status: BLOCKED by P16-S13.
+
+Purpose: complete the visible `DISPOSED` lifecycle with disposal proceeds, accumulated depreciation, gain/loss, and canonical accounting.
+
+Implementation steps:
+
+1. Govern disposal, retirement, and impairment separately, including dates, proceeds, expense/gain/loss accounts, fund treatment, and closed-period rules.
+2. Add a disposal preview that calculates remaining book value and proposed balanced canonical entries without mutation.
+3. Persist disposal facts, status transition, canonical transaction link, portable identity, and factual audit history atomically.
+4. Prevent direct status editing to `DISPOSED` without the governed workflow; provide reversal/correction through canonical correction policy.
+5. Extend SCLX only after the disposal facts have a stable documented schema and round-trip tests.
+
+Acceptance and tests:
+
+- Disposal cannot leave asset status and ledger out of sync.
+- Full/partial proceeds, zero proceeds, fully depreciated assets, impairment, closed periods, retry, and late rollback are covered.
+
+## P16-S15 — Fixed-asset and inventory reports
+
+Status: BLOCKED by P16-S14.
+
+Purpose: add domain reports only after P16-S9 and P16-S14 establish authoritative movement and disposal facts.
+
+Implementation steps:
+
+1. Add typed immutable requests for asset register, depreciation history/schedule, inventory on hand/valuation, and inventory movement history.
+2. Query canonical domain facts and linked ledger identities with company, date, account, fund, status, and item/asset filters.
+3. Reuse Report Library formatting/export/drill-through behavior and active-company preferences.
+4. Reconcile domain totals to canonical ledger control accounts and disclose timing or nonfinancial-movement differences explicitly.
+5. Add preview/export semantic equivalence and reconciliation tests.
+
+Acceptance and tests:
+
+- Domain and ledger totals reconcile under the governed policy or show an exact explainable difference.
+- Reports remain company isolated and do not infer missing transactions.
+
+## P16-S16 — User role and assignment maintenance
+
+Status: BLOCKED by P16-S15.
+
+Purpose: complete the durable administration implied by User Admin without claiming authentication enforcement.
+
+Implementation steps:
+
+1. Add stable-ID role list/create/edit/deactivate behavior with uniqueness and referenced-role protections.
+2. Add explicit assignment revoke/end-date behavior and retain factual assignment history rather than deleting referenced records.
+3. Validate user/role/company ownership, overlapping active assignments, last-required-admin policy if adopted, and company switching.
+4. Add real Delete/Deactivate explanations consistent with the production UI rules.
+5. Record factual audit events for role and assignment changes.
+6. Label authentication and runtime authorization as deferred until a separate security phase is authorized.
+
+Acceptance and tests:
+
+- Roles and assignments can be created, changed, revoked/deactivated, reloaded, and audited without losing history.
+- UI wording never implies that login or permission enforcement exists when it does not.
+
+## P16-S17 — End-to-end closure
+
+Status: BLOCKED by P16-S16.
+
+Purpose: prove the corrected interface-to-authority chain and close P16 only after production desktop acceptance.
+
+Implementation steps:
+
+1. Run a migrated-file H2 scenario covering depreciation, COA CSV rollback, reconciliation finalization, database switching, budgets, audit history, bank acceptance, inventory accounting, Journal cleared state, preferences, commands, and reports.
+2. Repeat the scenario across restart and two companies, including injected late failures and closed-period/reconciliation protections.
+3. Run every canonical navigation destination at laptop width and verify command enablement, scrolling, split state, tooltips, dirty-state guards, and factual status text.
+4. Run full `mvn clean verify`, the deliberate repeated suite, JavaFX production-route compliance, and the owner desktop checklist on the exact final head.
+5. Reconcile the phase index, all slice statuses, governing documents, and next action in a documentation-only closure commit if needed.
+
+Acceptance:
+
+- Every finding in the P16 audit table is either DONE with merged evidence or explicitly deferred by a new owner-approved plan amendment.
+- No panel promises an operation that its authoritative service does not perform.
+- P16 is not marked DONE until the final merged head and owner desktop checklist pass.
