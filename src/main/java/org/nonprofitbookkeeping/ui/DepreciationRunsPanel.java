@@ -1,5 +1,7 @@
 package org.nonprofitbookkeeping.ui;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -29,6 +31,9 @@ public class DepreciationRunsPanel implements AppPanel
     private final DatePicker runDate = new DatePicker(LocalDate.now());
     private final TextField notes = new TextField();
     private final Label status = new Label();
+    private final Button refresh = new Button("Refresh");
+    private final Button run = new Button("Run Monthly Depreciation");
+    private final BooleanProperty busy = new SimpleBooleanProperty(false);
     private final CompanyUiFormat companyFormat = CompanyUiFormat.activeCompany();
 
     public DepreciationRunsPanel()
@@ -37,9 +42,13 @@ public class DepreciationRunsPanel implements AppPanel
         Label title = new Label("Depreciation Runs");
         title.getStyleClass().add("panel-title");
 
-        Button refresh = new Button("Refresh");
+        refresh.setId("depreciationRefreshButton");
+        run.setId("runMonthlyDepreciationButton");
+        refresh.disableProperty().bind(busy);
+        run.disableProperty().bind(busy.or(assets.getSelectionModel().selectedItemProperty().isNull()));
+        runDate.disableProperty().bind(busy);
+        notes.disableProperty().bind(busy);
         refresh.setOnAction(e -> reload());
-        Button run = new Button("Run Monthly Depreciation");
         run.setOnAction(e -> runDepreciation());
         HBox actions = new HBox(8, refresh, new Label("Run date"), runDate, new Label("Notes"), notes, run);
 
@@ -116,7 +125,15 @@ public class DepreciationRunsPanel implements AppPanel
 
     private void reload()
     {
-        status.setText("Loading fixed assets and depreciation runs...");
+        reload(null);
+    }
+
+    private void reload(String operationOutcome)
+    {
+        busy.set(true);
+        status.setText(operationOutcome == null
+                ? "Loading fixed assets and depreciation runs..."
+                : operationOutcome + " Refreshing authoritative depreciation data...");
         UiAsync.run("depreciation-run-load",
                 () -> new DepreciationPanelData(
                         UiServiceRegistry.fixedAssets().listAssets(activeCompanyCode()),
@@ -124,9 +141,16 @@ public class DepreciationRunsPanel implements AppPanel
                 data -> {
                     assets.getItems().setAll(data.assets());
                     runs.getItems().setAll(data.runs());
-                    status.setText("Loaded " + data.assets().size() + " fixed asset(s) and " + data.runs().size() + " depreciation run(s).");
+                    busy.set(false);
+                    String loaded = "Loaded " + data.assets().size() + " fixed asset(s) and "
+                            + data.runs().size() + " depreciation run(s).";
+                    status.setText(operationOutcome == null ? loaded : operationOutcome + " " + loaded);
                 },
-                ex -> status.setText("Could not load depreciation data: " + UiErrors.safeMessage(ex)));
+                ex -> {
+                    busy.set(false);
+                    String failure = "Could not load depreciation data: " + UiErrors.safeMessage(ex);
+                    status.setText(operationOutcome == null ? failure : operationOutcome + " " + failure);
+                });
     }
 
     private void runDepreciation()
@@ -137,16 +161,23 @@ public class DepreciationRunsPanel implements AppPanel
             status.setText("Select a fixed asset first.");
             return;
         }
-        try
+        LocalDate selectedRunDate = runDate.getValue();
+        if (selectedRunDate == null)
         {
-            DepreciationRunView run = UiServiceRegistry.fixedAssets().runMonthlyDepreciation(selected.id(), runDate.getValue(), notes.getText());
-            reload();
-            status.setText("Created depreciation transaction #" + run.transactionId() + " for " + run.assetName() + ".");
+            status.setText("Select a depreciation run date.");
+            return;
         }
-        catch (RuntimeException ex)
-        {
-            status.setText("Could not run depreciation: " + UiErrors.safeMessage(ex));
-        }
+        long assetId = selected.id();
+        String requestedNotes = notes.getText();
+        busy.set(true);
+        status.setText("Running monthly depreciation for " + selected.name() + "...");
+        UiAsync.run("monthly-depreciation-run",
+                () -> UiServiceRegistry.fixedAssets()
+                        .runMonthlyDepreciation(assetId, selectedRunDate, requestedNotes),
+                completed -> reload("Created committed depreciation transaction #"
+                        + completed.transactionId() + " for " + completed.assetName() + "."),
+                ex -> reload("Could not run depreciation: " + UiErrors.safeMessage(ex)
+                        + " No partial depreciation activity was retained."));
     }
 
     private static String activeCompanyCode()

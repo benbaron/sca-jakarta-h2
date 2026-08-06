@@ -90,7 +90,7 @@ Depreciation schedules support straight-line depreciation over:
 
 Adding a depreciation schedule defines how depreciation runs calculate entries. It does not automatically create future scheduled entries.
 
-When depreciation entries are run, they create actual accounting transactions through the canonical transaction service. Each completed run stores a durable H2 depreciation-run record linked to the fixed asset and to the created transaction.
+When depreciation entries are run, they create actual accounting transactions through the canonical transaction service. Each completed run stores a durable H2 depreciation-run record linked to the fixed asset and to the created transaction. The transaction header, balanced splits, completed run, portable identities, and factual audit event commit atomically in one JPA transaction. Company ownership, asset/account/fund eligibility, duplicate-run state, closed periods, and completed/finalized reconciliation protection are checked before the first mutation; database uniqueness remains the final concurrency guard. A late failure rolls back every write and the panel refreshes from authoritative persisted state rather than showing partial success.
 
 P08-S1 implementation notes:
 

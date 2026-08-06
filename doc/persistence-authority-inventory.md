@@ -114,7 +114,8 @@ Status: P00 inventory of current main, updated through P15-S8-C4 interchange pro
 
 - `FixedAsset` records are the H2 authority for asset-register facts.
 - `FixedAssetDepreciationRun` records are the H2 authority for completed depreciation runs.
-- Depreciation runs use `TransactionEntryService` to create the canonical accounting transaction and then store the run-to-transaction link.
+- Interactive monthly depreciation is owned by `FixedAssetService.runMonthlyDepreciation`. It reuses the caller-owned `TransactionEntryService.enter(...)` seam so the canonical transaction header/splits, linked completed run, both portable identities, and factual transaction audit event share one `EntityManager`, one JPA transaction, and one commit-or-rollback decision.
+- Duplicate prechecks provide actionable validation, while `uq_fixed_asset_dep_run_period` and portable-identity uniqueness remain database concurrency guards. Any late run, identity, audit, or constraint failure rolls back the complete operation; no canonical transaction is allowed to survive without its depreciation run.
 - The old asset lifecycle and depreciation text runbooks are no longer referenced by production code after P08-S1.
 - `FlywayMigrationVersionUniquenessTest` guards against duplicate `V#__*.sql` migration versions before service tests cascade into Flyway startup failures.
 
