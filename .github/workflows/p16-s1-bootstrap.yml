@@ -1,0 +1,43 @@
+name: P16-S1 Bootstrap
+
+on:
+  push:
+    branches:
+      - codex/P16-S1-atomic-monthly-depreciation
+    paths:
+      - .github/workflows/p16-s1-bootstrap.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-reviewed-patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify and apply exact P16-S1 patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .p16-bootstrap/patch.gz.b64.part-* > /tmp/p16-s1.patch.gz.b64
+          echo 'dda4912ac2da5bf7464510f998205175e108d4043e30355d7d71a8292490732d  /tmp/p16-s1.patch.gz.b64' | sha256sum -c -
+          base64 --decode /tmp/p16-s1.patch.gz.b64 > /tmp/p16-s1.patch.gz
+          echo '9e2bdcd09605a40dda49e10aaf1da3265ba870b259ef0b21496d3a443766d936  /tmp/p16-s1.patch.gz' | sha256sum -c -
+          gzip --decompress --stdout /tmp/p16-s1.patch.gz > /tmp/p16-s1.patch
+          echo 'c98c5cbeec8ae850ada25073833984f0708e227333a2bbe6ca0303430c164a25  /tmp/p16-s1.patch' | sha256sum -c -
+          git rm -r .p16-bootstrap
+          git apply --index --whitespace=error-all /tmp/p16-s1.patch
+          git diff --cached --check
+
+      - name: Commit reconstructed implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'P16-S1 make monthly depreciation atomic'
+          git push origin HEAD:codex/P16-S1-atomic-monthly-depreciation
