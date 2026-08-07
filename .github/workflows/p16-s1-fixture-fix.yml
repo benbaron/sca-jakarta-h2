@@ -1,0 +1,49 @@
+name: P16-S1 fixture correction
+
+on:
+  push:
+    branches:
+      - codex/P16-S1-atomic-monthly-depreciation
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fixture-fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/P16-S1-atomic-monthly-depreciation
+          fetch-depth: 0
+      - name: Correct deterministic fixtures
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('src/test/java/org/nonprofitbookkeeping/service/FixedAssetAtomicDepreciationTest.java')
+          source = path.read_text(encoding='utf-8')
+          replacements = {
+              'SCA.code(), RUN_DATE, RUN_DATE, "MONTH", "treasurer", "month closed");':
+                  'SCA.code(), RUN_DATE, RUN_DATE, "CALCULATED", "treasurer", "month closed");',
+              "values (cast(? as uuid), 'SCA', ?, 'CSV', 1, 'COMPLETED')":
+                  "values (cast(? as uuid), 'SCA', ?, 'OFX', 1, 'COMPLETED')",
+          }
+          updated = source
+          for before, after in replacements.items():
+              count = updated.count(before)
+              if count != 1:
+                  raise SystemExit(f'Expected exactly one occurrence of {before!r}; found {count}')
+              updated = updated.replace(before, after)
+          path.write_text(updated, encoding='utf-8')
+      - name: Commit correction and remove bootstrap workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/p16-s1-fixture-fix.yml
+          git add src/test/java/org/nonprofitbookkeeping/service/FixedAssetAtomicDepreciationTest.java
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "test: correct depreciation protection fixtures"
+          git push origin HEAD:codex/P16-S1-atomic-monthly-depreciation
