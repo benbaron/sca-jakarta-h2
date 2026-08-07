@@ -1,12 +1,12 @@
 ---
-plan_version: 131
+plan_version: 132
 active_phase: P16
-active_slice: P16-S1
+active_slice: P16-S2
 active_status: VERIFYING
-active_branch: codex/P16-S1-atomic-monthly-depreciation
-active_pull_request: 252
-active_head: 96175d54fd5c739ca29cf8bb35e49ebf89938d70
-next_action: "Complete the P16-S1 owner desktop checklist on draft PR #252; if accepted, record owner approval and await explicit merge authorization. Do not start P16-S2."
+active_branch: codex/P16-S2-atomic-coa-csv-commit
+active_pull_request: 253
+active_head: e495865b91a4979c1571f6ab61922ea43fedd839
+next_action: "Complete the P16-S2 owner desktop checklist on draft PR #253; if accepted, record owner approval and await explicit merge authorization. Do not start P16-S3."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | VERIFYING through P16-S1 / PR #252 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | VERIFYING through P16-S2 / PR #253 |
 
 ## 4. Governing documents
 
@@ -1998,7 +1998,7 @@ Next exact action:
 
 ## P16-S1 — Atomic monthly depreciation
 
-Status: VERIFYING in draft PR #252.
+Status: DONE through merged PR #252 and owner desktop acceptance.
 
 Branch: `codex/P16-S1-atomic-monthly-depreciation`
 
@@ -2030,15 +2030,24 @@ Validation status:
 - Deterministic protection fixtures use governed values: `CALCULATED` for the period-close range and `OFX` for the legacy reconciliation-run compatibility row. Applied migration V7 remains unchanged.
 - Exact implementation head `96175d54fd5c739ca29cf8bb35e49ebf89938d70` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `31147294296`.
 - The branch comparison contains only the 13 intended P16-S1 source, test, and governing-document files. No temporary workflow or migration change remains.
-- Automated acceptance is complete. The owner desktop checklist in `doc/P16-S1-atomic-monthly-depreciation-user-testing.md` remains required before merge.
+- Automated acceptance completed on implementation head `96175d54fd5c739ca29cf8bb35e49ebf89938d70` in Maven PR Tests run `31147294296`.
+- Final plan-inclusive head `501374df0318e4008291c53c2a00e2d7e8c857a3` passed the complete Maven PR Tests gate in run `31147729410`.
+- The owner completed and accepted `doc/P16-S1-atomic-monthly-depreciation-user-testing.md` and explicitly authorized merge.
+- PR #252 merged to `main` at `a88becddf7ede7fcf3d986e7d8861351ce5438d5` on 2026-08-07.
 
 Next exact action:
 
-- Complete the owner desktop checklist on draft PR #252. If accepted, record owner approval and await explicit merge authorization. Do not merge or start P16-S2 without authorization.
+- None; P16-S1 is DONE and P16-S2 is active.
 
 ## P16-S2 — Atomic COA CSV accepted-row commit
 
-Status: BLOCKED by P16-S1.
+Status: VERIFYING in draft PR #253.
+
+Branch: `codex/P16-S2-atomic-coa-csv-commit`
+
+Pull request: #253  
+Starting base: `a88becddf7ede7fcf3d986e7d8861351ce5438d5`  
+Validated implementation head: `e495865b91a4979c1571f6ab61922ea43fedd839`
 
 Purpose: make **Commit Accepted COA Rows** all-or-nothing while leaving P15 Chart-of-Accounts JSON interchange unchanged.
 
@@ -2056,6 +2065,21 @@ Acceptance and tests:
 - A failure on any row leaves all account fields, hierarchy, identities, and audit history unchanged.
 - Identical re-preview/recommit is idempotent; source or target drift requires a new preview.
 - Restart and company-isolation tests prove no partial chart is visible.
+
+Validation status:
+
+- Draft PR #253 is based on exact P16-S1 merge `a88becddf7ede7fcf3d986e7d8861351ce5438d5`.
+- `CoaCsvImportService` owns the frozen CSV preview and one caller-owned JPA commit boundary; the production JavaFX route no longer loops accepted rows through independently committing `AccountAdminService.upsert()` calls.
+- The batch freezes source SHA-256, company, target chart, target fingerprint, accepted/rejected rows, validation messages, and confirmation state; commit rejects source, company, chart, or target-state drift and requires a new preview.
+- All account writes, `COA_CSV` external identities, and one factual operation `AuditEvent` commit together or roll back together. Late failure reports zero committed created/updated/skipped counts.
+- Identical re-preview/recommit is idempotent and does not duplicate identities or operation audit history. P15 Chart-of-Accounts JSON import/export remains unchanged.
+- Public single-account `AccountAdminService.upsert(...)` now validates code/name/type/normal-balance before any persistence access; caller-owned batch validation remains independently enforced.
+- Exact implementation head `e495865b91a4979c1571f6ab61922ea43fedd839` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `31192123755`.
+- Automated acceptance is complete. The owner desktop checklist in `doc/P16-S2-atomic-coa-csv-user-testing.md` remains required before merge.
+
+Next exact action:
+
+- Complete the owner desktop checklist on draft PR #253. If accepted, record owner approval and await explicit merge authorization. Do not merge or start P16-S3 without authorization.
 
 ## P16-S3 — Reconciliation finalization and mutation integrity
 

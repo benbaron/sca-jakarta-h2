@@ -48,6 +48,7 @@ import org.nonprofitbookkeeping.model.CompanyBankAccount;
 import org.nonprofitbookkeeping.service.BankConfigurationService;
 import org.nonprofitbookkeeping.service.BankImportNormalizationService;
 import org.nonprofitbookkeeping.service.CoaCsvMapper;
+import org.nonprofitbookkeeping.service.CoaCsvImportService;
 import org.nonprofitbookkeeping.service.ImportPreviewService;
 
 import java.io.File;
@@ -104,7 +105,7 @@ public class ImportPreviewPanel implements AppPanel
     private final TableView<BankImportNormalizationService.NormalizedBankStatementLine> bankRows = new TableView<>();
     private final TableView<org.nonprofitbookkeeping.interchange.bank.BankCsvParser.OriginalRow> bankCsvOriginalRows = new TableView<>();
     private final TextField sclxActor = new TextField("ui-operator");
-    private ImportPreviewService.CoaPreviewResult lastCoaPreview;
+    private CoaCsvImportService.CoaCsvBatchPreview lastCoaPreview;
     private Path lastSclxSource;
     private SclxImportPreview lastSclxPreview;
     private SclxImportCommitService lastSclxCommitService;
@@ -634,7 +635,8 @@ public class ImportPreviewPanel implements AppPanel
 
     private void commitAcceptedCoaRows()
     {
-        ImportPreviewService.CoaPreviewResult preview = lastCoaPreview;
+        CoaCsvImportService.CoaCsvBatchPreview preview = lastCoaPreview;
+        String actor = sclxActor.getText().strip();
         if (preview == null)
         {
             status.setText("Commit unavailable: preview a COA CSV first.");
@@ -645,50 +647,71 @@ public class ImportPreviewPanel implements AppPanel
             status.setText("Commit skipped: there are no accepted COA rows to commit.");
             return;
         }
+        if (preview.hasBlockingErrors())
+        {
+            status.setText("Commit blocked: resolve the COA CSV preview errors and preview again.");
+            commitAccepted.setDisable(true);
+            return;
+        }
+        if (actor.isBlank())
+        {
+            status.setText("Commit blocked: enter an import actor for factual audit history.");
+            return;
+        }
 
-        status.setText("Committing accepted COA rows...");
-        runCommitOperation("import-preview-commit-coa", "Committing accepted COA rows",
-                () -> previewService.commitAcceptedCoaRows(
-                preview.acceptedRows(),
-                row -> UiServiceRegistry.accountAdmin().upsert(
-                        row.code(),
-                        row.name(),
-                        parseAccountTypeToken(row.accountType()),
-                        parseNormalBalanceToken(row.normalBalance()),
-                        null,
-                        row.parentCode(),
-                        true)),
-                result -> {
-                    status.setText("Committed " + result.committedCount() + " of " + result.totalAccepted()
-                            + " accepted COA row(s); failed=" + result.failedCount() + ".");
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,
+                "Commit " + preview.acceptedCount() + " accepted COA row(s) into "
+                        + preview.companyCode() + " / " + preview.targetChartLabel()
+                        + "?\n\nSHA-256: " + preview.sourceSha256()
+                        + "\nRejected rows remain excluded. The accepted batch, external identities, and audit fact "
+                        + "commit in one transaction; any failure rolls everything back.",
+                ButtonType.OK, ButtonType.CANCEL);
+        confirmation.setTitle("Confirm Atomic COA CSV Commit");
+        confirmation.setHeaderText("Commit the exact previewed accepted rows");
+        if (confirmation.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK)
+        {
+            status.setText("COA CSV commit cancelled; no data was changed.");
+            return;
+        }
+
+        CoaCsvImportService.CoaCsvBatchPreview confirmed = preview.confirmedCopy();
+        commitAccepted.setDisable(true);
+        status.setText("Committing the exact accepted COA CSV batch atomically...");
+        runCommitOperation("import-preview-commit-coa", "Committing accepted COA rows atomically",
+                () -> UiServiceRegistry.coaCsvImport().commit(confirmed, actor),
+                result ->
+                {
                     warnings.getItems().setAll(result.errors());
+                    if (result.committed())
+                    {
+                        status.setText("Committed accepted COA batch: created=" + result.createdCount()
+                                + ", updated=" + result.updatedCount()
+                                + ", skipped=" + result.skippedCount() + ".");
+                    }
+                    else
+                    {
+                        status.setText("COA CSV commit did not change data"
+                                + (result.rolledBack() ? "; the batch was rolled back" : "")
+                                + ". Preview again before retrying. "
+                                + String.join("; ", result.errors()));
+                    }
                 },
-                ex -> status.setText("Could not commit accepted COA rows: " + UiErrors.safeMessage(ex)));
+                ex ->
+                {
+                    status.setText("Could not commit accepted COA rows; no successful batch was reported: "
+                            + UiErrors.safeMessage(ex));
+                });
     }
 
 
     static AccountType parseAccountTypeToken(String token)
     {
-        String normalized = normalizeEnumToken(token);
-        if ("REVENUE".equals(normalized))
-        {
-            return AccountType.INCOME;
-        }
-        return AccountType.valueOf(normalized);
+        return CoaCsvImportService.parseAccountTypeToken(token);
     }
 
     static NormalBalance parseNormalBalanceToken(String token)
     {
-        String normalized = normalizeEnumToken(token);
-        if ("DR".equals(normalized))
-        {
-            return NormalBalance.DEBIT;
-        }
-        if ("CR".equals(normalized))
-        {
-            return NormalBalance.CREDIT;
-        }
-        return NormalBalance.valueOf(normalized);
+        return CoaCsvImportService.parseNormalBalanceToken(token);
     }
 
     static String normalizeEnumToken(String token)
@@ -804,26 +827,33 @@ public class ImportPreviewPanel implements AppPanel
                 "import-preview-coa",
                 "Reading and validating COA CSV",
                 "COA CSV preview cancelled before commit; no data was changed.",
-                () -> previewService.previewCoaCsv(file), result -> {
-            clearSclxPreview();
-            clearBankPreview();
-            lastCoaPreview = result;
-            acceptedCoaRows.getItems().setAll(result.acceptedRows());
-            rejectedCoaRows.getItems().setAll(result.rejectedRows());
-            warnings.getItems().setAll(result.warnings());
-            commitAccepted.setDisable(result.acceptedRows().isEmpty());
-            previewTabs.getSelectionModel().select(0);
-            status.setText("Previewed " + result.totalRowCount()
-                    + " COA row(s) from " + result.sourceName()
-                    + ": accepted " + result.acceptedCount() + ", rejected " + result.rejectedCount() + ".");
-        }, ex -> {
-            clearBankPreview();
-            warnings.getItems().clear();
-            acceptedCoaRows.getItems().clear();
-            rejectedCoaRows.getItems().clear();
-            commitAccepted.setDisable(true);
-            status.setText("Could not preview COA CSV: " + UiErrors.safeMessage(ex));
-        });
+                () -> UiServiceRegistry.coaCsvImport().preview(file), result ->
+                {
+                    clearSclxPreview();
+                    clearBankPreview();
+                    lastCoaPreview = result;
+                    acceptedCoaRows.getItems().setAll(result.acceptedRows());
+                    rejectedCoaRows.getItems().setAll(result.rejectedRows());
+                    ArrayList<String> messages = new ArrayList<>(result.warnings());
+                    result.blockingErrors().forEach(message -> messages.add("BLOCKING: " + message));
+                    warnings.getItems().setAll(messages);
+                    commitAccepted.setDisable(result.acceptedRows().isEmpty() || result.hasBlockingErrors());
+                    previewTabs.getSelectionModel().select(0);
+                    status.setText("Previewed " + result.totalRowCount()
+                            + " COA row(s) from " + result.sourceName()
+                            + " for " + result.companyCode() + " / " + result.targetChartLabel()
+                            + ": accepted " + result.acceptedCount() + ", rejected " + result.rejectedCount()
+                            + ", blocking " + result.blockingErrors().size()
+                            + ". SHA-256 " + result.sourceSha256() + ". No data was changed.");
+                }, ex ->
+                {
+                    clearBankPreview();
+                    warnings.getItems().clear();
+                    acceptedCoaRows.getItems().clear();
+                    rejectedCoaRows.getItems().clear();
+                    commitAccepted.setDisable(true);
+                    status.setText("Could not preview COA CSV: " + UiErrors.safeMessage(ex));
+                });
     }
 
     private void previewSclx(Path file)

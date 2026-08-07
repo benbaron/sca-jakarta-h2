@@ -1,6 +1,6 @@
 # Shared Data-Exchange Operation Contract
 
-Status: governing P15-S1 contract for operation lifecycle, company ownership, diagnostics, and external identity.
+Status: governing P15-S1 contract for operation lifecycle, company ownership, diagnostics, and external identity, clarified by P16-S2 atomic COA CSV commit semantics.
 
 ## 1. Purpose
 
@@ -56,6 +56,8 @@ A cancellation suppresses the task result and cannot create an audit or durable 
 COA/profile/SCLX/bank writes use the same visible progress surface with `commitStarted=true`; at that
 point cancellation is disabled and failure is handled only by the canonical transaction rollback.
 This controller has no collection of jobs, persistence, retry history, scheduler, or cross-session state.
+
+P16-S2 applies this same boundary to the production COA CSV **Commit Accepted COA Rows** path without changing the P15 Chart-of-Accounts JSON interchange. The COA CSV preview freezes the exact source SHA-256, active company, target chart, target fingerprint, accepted/rejected rows, validation messages, and confirmation state. Commit revalidates that frozen scope before mutation, orders parent-before-child writes, and persists all accepted accounts, `COA_CSV` external identities, and one factual operation audit in one caller-owned JPA transaction. Any row, identity, audit, or constraint failure rolls back the entire batch and reports zero committed created/updated/skipped counts. An identical re-preview/recommit is idempotent; source, company, chart, or target-state drift requires a new preview.
 
 ## 5. Authoritative company ownership
 
