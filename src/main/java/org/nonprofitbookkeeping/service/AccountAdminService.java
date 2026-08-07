@@ -48,7 +48,20 @@ public class AccountAdminService
                           String parentCode,
                           boolean active)
     {
+        // Validate the public command contract before opening persistence. In particular,
+        // do not allow an uninitialized/default-constructed service to mask invalid
+        // arguments with a NullPointerException from the JPA dependency.
         String cleanCode = requireText(code, "Account code");
+        String cleanName = requireText(name, "Account name");
+        if (accountType == null)
+        {
+            throw new IllegalArgumentException("Account type is required.");
+        }
+        if (normalBalance == null)
+        {
+            throw new IllegalArgumentException("Normal balance is required.");
+        }
+
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
@@ -62,7 +75,7 @@ public class AccountAdminService
                         company,
                         chart,
                         cleanCode,
-                        name,
+                        cleanName,
                         accountType,
                         normalBalance,
                         subtype,
