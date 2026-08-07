@@ -18,11 +18,9 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
       - name: Apply governance updates
-        env:
-          PATCH_SCRIPT_B64: "__B64__"
         run: |
-          printf '%s' "$PATCH_SCRIPT_B64" | base64 -d > /tmp/p16_s2_patch.py
-          python /tmp/p16_s2_patch.py
+          python .github/p16_s2_patch.py
+          rm .github/p16_s2_patch.py
           rm .github/workflows/p16-s2-governance-patch.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
