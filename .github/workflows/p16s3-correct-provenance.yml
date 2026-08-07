@@ -1,0 +1,348 @@
+name: P16-S3 provenance correction
+
+on:
+  push:
+    branches:
+      - codex/P16-S3-reconciliation-mutation-integrity
+
+permissions:
+  contents: write
+
+jobs:
+  apply-correction:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/P16-S3-reconciliation-mutation-integrity
+          fetch-depth: 0
+      - name: Apply reconciliation provenance correction and documentation
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          # Keep BankImportBatch as a faithful persistence model. Transport/path
+          # normalization belongs at the reconciliation import boundary.
+          model = Path('src/main/java/org/nonprofitbookkeeping/model/BankImportBatch.java')
+          s = model.read_text()
+          old = '''    public String getSourceName() { return sourceName; }
+              public void setSourceName(String sourceName)
+              {
+                  if (sourceName == null)
+                  {
+                      this.sourceName = null;
+                      return;
+                  }
+                  String value = sourceName.trim();
+                  int separator = Math.max(value.lastIndexOf('/'), value.lastIndexOf('\\\\'));
+                  String logicalName = separator >= 0 ? value.substring(separator + 1).trim() : value;
+                  if (logicalName.isEmpty())
+                  {
+                      throw new IllegalArgumentException("Bank import source name is required.");
+                  }
+                  if (logicalName.length() > MAX_SOURCE_NAME_LENGTH)
+                  {
+                      throw new IllegalArgumentException("Bank import source name must be at most "
+                              + MAX_SOURCE_NAME_LENGTH + " characters.");
+                  }
+                  this.sourceName = logicalName;
+              }
+          '''
+          new = '''    public String getSourceName() { return sourceName; }
+              public void setSourceName(String sourceName) { this.sourceName = sourceName; }
+          '''
+          assert old in s
+          model.write_text(s.replace(old, new, 1))
+
+          service = Path('src/main/java/org/nonprofitbookkeeping/service/BankReconciliationWorkspaceService.java')
+          s = service.read_text()
+          marker = 'public class BankReconciliationWorkspaceService\n{\n'
+          assert marker in s
+          s = s.replace(marker, marker + '    private static final int MAX_IMPORT_SOURCE_NAME_LENGTH = 260;\n\n', 1)
+          old = '''                persistStatementLines(em,
+                                  session.company(),
+                                  bankAccount,
+                                  sourceFormat(command.source()),
+                                  isBlank(command.sourceName()) ? command.source().name() + " statement import" : command.sourceName(),
+                                  parsed);
+          '''
+          new = '''                persistStatementLines(em,
+                                  session.company(),
+                                  bankAccount,
+                                  sourceFormat(command.source()),
+                                  logicalImportSourceName(command.sourceName(), command.source()),
+                                  parsed);
+          '''
+          assert old in s
+          s = s.replace(old, new, 1)
+          marker = '''    private static String requireText(String value, String label)
+              {
+          '''
+          helper = '''    private static String logicalImportSourceName(String sourceName, StatementSource source)
+              {
+                  String value = isBlank(sourceName) ? source.name() + " statement import" : sourceName.trim();
+                  int separator = Math.max(value.lastIndexOf('/'), value.lastIndexOf('\\\\'));
+                  String logicalName = separator >= 0 ? value.substring(separator + 1).trim() : value;
+                  if (logicalName.isEmpty())
+                  {
+                      throw new IllegalArgumentException("Statement source name is required.");
+                  }
+                  if (logicalName.length() > MAX_IMPORT_SOURCE_NAME_LENGTH)
+                  {
+                      throw new IllegalArgumentException("Statement source name must be at most "
+                              + MAX_IMPORT_SOURCE_NAME_LENGTH + " characters.");
+                  }
+                  return logicalName;
+              }
+
+          '''
+          assert marker in s
+          service.write_text(s.replace(marker, helper + marker, 1))
+
+          test = Path('src/test/java/org/nonprofitbookkeeping/service/BankReconciliationMutationIntegrityTest.java')
+          s = test.read_text()
+          anchor = '''    @Test
+              void unmatchRequiresExactSymmetricPairAndClearsBothRelationshipSides(@TempDir Path tempDir)
+          '''
+          regression = '''    @Test
+              void importPersistsLogicalSourceNameInsteadOfTemporaryPath(@TempDir Path tempDir)
+              {
+                  try (Jpa jpa = new Jpa(tempDir.resolve("logical-import-source-name")))
+                  {
+                      seed(jpa);
+                      BankReconciliationWorkspaceService service = new BankReconciliationWorkspaceService(jpa);
+                      long sessionId = startMarch(service);
+                      String logicalName = "march-owner-upload.csv";
+                      String temporaryPath = "/home/runner/work/_temp/"
+                              + "deep-temporary-directory/".repeat(20)
+                              + logicalName;
+                      assertTrue(temporaryPath.length() > 260);
+
+                      service.importStatementText(new ImportStatementCommand(
+                              sessionId,
+                              StatementSource.CSV,
+                              temporaryPath,
+                              "date,amount,description,reference\\n2026-03-22,12.34,Owner upload,row-long-path\\n"));
+
+                      assertEquals(logicalName, String.valueOf(scalar(jpa,
+                              "select source_name from bank_import_batch where source_name = '" + logicalName + "'")));
+                      assertEquals(0L, countWhere(jpa, "bank_import_batch",
+                              "source_name like '/home/runner/work/_temp/%'"));
+                  }
+              }
+
+          '''
+          assert anchor in s
+          test.write_text(s.replace(anchor, regression + anchor, 1))
+          Path('src/test/java/org/nonprofitbookkeeping/model/BankImportBatchSourceNameTest.java').unlink()
+
+          plan = Path('doc/PLAN.md')
+          s = plan.read_text()
+          old = '''---
+          plan_version: 132
+          active_phase: P16
+          active_slice: P16-S2
+          active_status: VERIFYING
+          active_branch: codex/P16-S2-atomic-coa-csv-commit
+          active_pull_request: 253
+          active_head: e495865b91a4979c1571f6ab61922ea43fedd839
+          next_action: "Complete the P16-S2 owner desktop checklist on draft PR #253; if accepted, record owner approval and await explicit merge authorization. Do not start P16-S3."
+          ---
+          '''
+          new = '''---
+          plan_version: 133
+          active_phase: P16
+          active_slice: P16-S3
+          active_status: VERIFYING
+          active_branch: codex/P16-S3-reconciliation-mutation-integrity
+          active_pull_request: 254
+          active_head: pending-exact-head-validation
+          next_action: "Make the exact P16-S3 PR #254 head fully green, then complete doc/P16-S3-reconciliation-mutation-integrity-user-testing.md. Do not start P16-S4."
+          ---
+          '''
+          assert old in s
+          s = s.replace(old, new, 1)
+          s = s.replace('| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | VERIFYING through P16-S2 / PR #253 |',
+                        '| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | VERIFYING through P16-S3 / PR #254 |', 1)
+          s = s.replace('''## P16-S2 — Atomic COA CSV accepted-row commit
+
+          Status: VERIFYING in draft PR #253.
+          ''', '''## P16-S2 — Atomic COA CSV accepted-row commit
+
+          Status: DONE through PR #253.
+          ''', 1)
+          old = '''- Automated acceptance is complete. The owner desktop checklist in `doc/P16-S2-atomic-coa-csv-user-testing.md` remains required before merge.
+
+          Next exact action:
+
+          - Complete the owner desktop checklist on draft PR #253. If accepted, record owner approval and await explicit merge authorization. Do not merge or start P16-S3 without authorization.
+          '''
+          new = '''- Automated acceptance completed on implementation head `e495865b91a4979c1571f6ab61922ea43fedd839` in Maven PR Tests run `31192123755`.
+          - The owner completed and accepted `doc/P16-S2-atomic-coa-csv-user-testing.md`, and PR #253 merged to `main` at `100644b84c6bcb799446374aa928e953085255dd` on 2026-08-07.
+
+          Next exact action:
+
+          - None; P16-S2 is DONE and P16-S3 is active.
+          '''
+          assert old in s
+          s = s.replace(old, new, 1)
+          old = '''## P16-S3 — Reconciliation finalization and mutation integrity
+
+          Status: BLOCKED by P16-S2.
+
+          Purpose: make finalized reconciliation sessions immutable and make all match/clear/resolution operations exact-scope and symmetric.
+          '''
+          new = '''## P16-S3 — Reconciliation finalization and mutation integrity
+
+          Status: VERIFYING in draft PR #254.
+
+          Branch: `codex/P16-S3-reconciliation-mutation-integrity`
+
+          Pull request: #254  
+          Starting base: `100644b84c6bcb799446374aa928e953085255dd`  
+          Validated implementation head: pending exact-head automated validation
+
+          Purpose: make finalized reconciliation sessions immutable and make all match/clear/resolution operations exact-scope and symmetric.
+          '''
+          assert old in s
+          s = s.replace(old, new, 1)
+          old = '''Acceptance and tests:
+
+          - Every mutation API rejects finalized sessions and cross-company/account identifiers without changing data.
+          - Match/unmatch/clear operations are atomic and relationship-symmetric.
+          - Finalize is idempotent, Save cannot reopen/downgrade, and reopening or successor creation is factual and audited.
+          - UI tests prove finalized controls are disabled and explanations are not presented as accounting corrections.
+          '''
+          new = '''Acceptance and tests:
+
+          - Every mutation API rejects finalized sessions and cross-company/account identifiers without changing data.
+          - Match/unmatch/clear operations are atomic and relationship-symmetric.
+          - Finalize is idempotent, Save cannot reopen/downgrade, and reopening or successor creation is factual and audited.
+          - UI tests prove finalized controls are disabled and explanations are not presented as accounting corrections.
+
+          Validation status:
+
+          - Draft PR #254 is based on exact P16-S2 merge `100644b84c6bcb799446374aa928e953085255dd`; `main` has not advanced beyond that merge.
+          - `BankReconciliationWorkspaceService` guards all live mutation paths, enforces exact company/account/session ownership, maintains symmetric match/unmatch relationships, keeps finalized sessions read-only, treats repeated finalization as idempotent, and creates an audited successor rather than editing finalized history.
+          - `ReconciliationRunsPanel` renders finalized sessions read-only, exposes explicit successor creation, and refreshes from the authoritative persisted snapshot after service results.
+          - Reconciliation statement import normalizes a caller-supplied temporary physical pathname to its logical leaf name at the reconciliation import boundary before `BankImportBatch` persistence. `BankImportBatch` itself remains a faithful persistence model so historical SCLX restoration is not silently rewritten. The `source_name` schema constraint is unchanged.
+          - `BankReconciliationMutationIntegrityTest` covers finalized-session immutability, symmetric unmatch, company/account scope rejection, factual difference explanations, successor audit/history, and the long-temporary-path provenance regression through real H2 persistence.
+          - Governing reconciliation, interface-operation, persistence-authority, and owner desktop acceptance documentation is updated in this slice.
+          - Exact-head Maven PR Tests validation is pending after the provenance correction. P16-S3 must remain VERIFYING until both exact-head CI and owner desktop acceptance are complete.
+
+          Next exact action:
+
+          - Make the exact PR #254 head pass the complete Maven PR Tests gate, then complete `doc/P16-S3-reconciliation-mutation-integrity-user-testing.md`. Do not start P16-S4.
+          '''
+          assert old in s
+          plan.write_text(s.replace(old, new, 1))
+
+          banking = Path('doc/banking/banking-and-reconciliation.md')
+          s = banking.read_text()
+          anchor = '''The Bank Reconciliation panel now exposes a configured-account selector, from date, statement ending date, and a comparison table. When requested, unresolved comparison summaries are saved as factual reconciliation run records. Saving an unresolved report is not an approval or rejection workflow; it records the comparison result so a later workflow can reopen or resolve it.
+          '''
+          addition = '''
+          ## P16-S3 finalized-session mutation integrity
+
+          The production reconciliation workspace is authoritative through `BankReconciliationWorkspaceService` and native H2 reconciliation sessions/matches. A finalized reconciliation session is an immutable historical accounting fact for normal interactive commands: statement-line import/manual entry, match, unmatch, cleared-state changes, factual difference explanations, unresolved Save, and other live mutation paths reject a finalized session before mutation. Repeating Finalize on the already-finalized session is idempotent and does not downgrade or rewrite it.
+
+          Match and unmatch commands validate the exact reconciliation session, company, configured bank account, statement line, canonical transaction, and bank-account split before mutation. A match is persisted symmetrically across the reconciliation relationship and the linked statement/split facts; unmatch requires that exact symmetric pair and removes the relationship atomically rather than clearing an unrelated identifier. Cleared-state changes apply only to the canonical split for the session's configured bank account. A difference explanation is factual reconciliation evidence only; it does not reserve an arbitrary transaction/split relationship or synthesize an adjustment transaction.
+
+          Correction after finalization uses the explicit successor command. The finalized predecessor remains unchanged, the successor starts as a new mutable session for the next statement period, and a factual audit event links the successor action to its predecessor, actor, and reason. The JavaFX panel mirrors this authority by disabling live mutation controls for finalized sessions, enabling successor controls only for finalized sessions, and applying the service-returned persisted snapshot after successful commands. Errors are reported without claiming a rolled-back mutation succeeded.
+
+          For reconciliation statement import, a temporary physical filesystem path is parsing/transport metadata, not `bank_import_batch.source_name`. The reconciliation import boundary reduces an accidental path-shaped source value to the logical/original leaf name before persistence and validates the logical name against the existing source-name limit. The `BankImportBatch` entity does not globally rewrite `source_name`, because historical SCLX restoration must preserve governed imported facts. No schema widening or truncation is part of P16-S3.
+          '''
+          assert anchor in s
+          banking.write_text(s.replace(anchor, anchor + addition, 1))
+
+          matrix = Path('doc/interface-operation-matrix.md')
+          s = matrix.read_text()
+          old = next(line for line in s.splitlines() if line.startswith('| `RECONCILIATION_RUNS` |'))
+          new = '| `RECONCILIATION_RUNS` | `ReconciliationRunsPanel` | configured-account/session selectors, start/load/reload, manual/pasted/file statement entry, auto-match, exact match/unmatch, mark cleared, factual difference explanation, Save Unresolved, Finalize, explicit successor controls | `BankReconciliationWorkspaceService` authoritative snapshots over configured bank account, `BankStatementLine`, canonical `Txn`/`TxnSplit`, reconciliation sessions/matches, and audit facts | `BankReconciliationWorkspaceService` caller-owned JPA transactions; finalized sessions reject live mutations, exact-scope match/unmatch is symmetric, difference explanation is factual only, and successor creation preserves finalized history with audit | yes | yes | `bank_reconciliation_session`, `bank_reconciliation_match`, `BankImportBatch`/`BankStatementLine`, canonical `Txn`/`TxnSplit`, configured `CompanyBankAccount`, `audit_event` | finalized sessions render read-only; mutation/successor results reapply authoritative persisted snapshots; temporary import paths are not persisted as logical source names | P16-S3 owner desktop acceptance; P16-S4 separately governs consolidation onto the canonical bank Import Preview path | P06/P16-S3 |'
+          matrix.write_text(s.replace(old, new, 1))
+
+          persistence = Path('doc/persistence-authority-inventory.md')
+          s = persistence.read_text()
+          anchor = '''## Reconciliation, open item, and former schedule authority
+
+          - Reconciliation run records are durable comparison facts after P06-S2, not an approval queue.
+          '''
+          new = '''## Reconciliation, open item, and former schedule authority
+
+          - Reconciliation run records are durable comparison facts after P06-S2, not an approval queue.
+          - Native `bank_reconciliation_session` and `bank_reconciliation_match` records are the production reconciliation authority. P16-S3 makes a `FINALIZED` native session immutable through ordinary live mutation APIs; repeated finalization is idempotent, while later correction proceeds through an explicit audited successor that preserves the finalized predecessor.
+          - P16-S3 validates session/company/configured-account/statement/split scope before mutation and requires exact symmetric relationship state for unmatch. A factual difference explanation does not create or reserve an arbitrary statement/split relationship.
+          - `bank_import_batch.source_name` is logical/original import provenance, not a temporary parser filesystem pathname. Reconciliation import normalizes path-shaped transport input at its service boundary while historical SCLX restoration continues to preserve governed source facts; the existing `VARCHAR(260)` constraint remains unchanged.
+          '''
+          assert anchor in s
+          persistence.write_text(s.replace(anchor, new, 1))
+
+          checklist = Path('doc/P16-S3-reconciliation-mutation-integrity-user-testing.md')
+          checklist.write_text('''# P16-S3 Owner Desktop Acceptance — Reconciliation Mutation Integrity
+
+          Use this checklist only after the exact PR #254 head has passed the complete Maven PR Tests gate. These steps verify observable desktop behavior; persistence-only invariants are covered by automated tests and are not duplicated as manual database exercises.
+
+          ## Preconditions
+
+          1. Build/run the PR #254 branch with a disposable test database or company data that can be safely changed.
+          2. Open **Accounting → Bank Reconciliation** for a company with one configured BANK/DEBIT/CASH account and at least one bank transaction/statement line suitable for matching.
+          3. If needed, start a reconciliation session whose statement period contains the test transaction.
+
+          ## A. Mutable-session workflow
+
+          1. Load an in-progress reconciliation session.
+          2. Confirm the normal mutation controls are enabled: statement entry/import, Auto Match, Match, Unmatch, Mark Cleared, Record Difference Explanation, Save Unresolved, and Finalize.
+          3. Match a statement row to the correct ledger bank line, then Unmatch it. Confirm the UI refresh shows both sides as unmatched; rematch the same pair for finalization.
+          4. Enter a factual difference explanation on an unresolved statement item. Confirm the text is represented as an explanation/resolution and is not presented as a newly created accounting transaction.
+          5. Use **Save Unresolved** once and confirm the session reloads as still editable rather than appearing finalized.
+
+          ## B. Finalize and read-only behavior
+
+          1. Resolve the session to the state required by the UI, then press **Finalize**.
+          2. Confirm the status reports the reconciliation as finalized and the displayed tables/balances refresh.
+          3. Confirm manual statement entry, pasted/file import, Auto Match, Match, Unmatch, Mark Cleared, Record Difference Explanation, Save Unresolved, and Finalize are disabled.
+          4. Confirm the statement source controls and difference-explanation editor are also disabled.
+          5. Select/reload the same finalized session from **Saved Reconciliations**. Confirm it remains read-only after reload; there is no ordinary Save path that makes it editable again.
+
+          ## C. Explicit successor
+
+          1. With the finalized session selected, confirm the successor controls are enabled and ordinary mutation controls remain disabled.
+          2. Enter the successor statement ending date/balance, actor, and a factual reason, then choose **Start Successor**.
+          3. Confirm a new in-progress reconciliation session opens for the next statement period.
+          4. Reload the predecessor from **Saved Reconciliations** and confirm it is still finalized and read-only.
+          5. Reload the successor and confirm it remains independently editable.
+
+          ## D. Error/refresh behavior
+
+          1. Deliberately make one validation error that the UI permits, such as omitting required successor actor/reason on a finalized session.
+          2. Confirm the UI displays an actionable error and does not claim the operation was saved/finalized.
+          3. Reload the session and confirm the displayed state agrees with persisted authority after the failed action.
+
+          ## Automated-only acceptance
+
+          The owner does **not** need to reproduce these by database manipulation. The P16-S3 automated suite proves finalized immutability, company/account/session scope rejection, exact atomic symmetric match/unmatch, idempotent finalization, factual-only difference explanations, audited successor history, and logical import-source provenance when parsing transport uses an overlong temporary filesystem pathname.
+
+          ## Acceptance record
+
+          - [ ] A. Mutable-session workflow passed
+          - [ ] B. Finalize/read-only behavior passed
+          - [ ] C. Explicit successor passed
+          - [ ] D. Error/refresh behavior passed
+          - [ ] Exact tested PR head recorded
+          - [ ] Owner acceptance recorded
+
+          Do not mark P16-S3 DONE or begin P16-S4 until this checklist is accepted and the repository workflow's merge/completion boundary has been satisfied.
+          ''')
+          PY
+      - name: Commit correction and remove temporary workflow
+        shell: bash
+        run: |
+          rm .github/workflows/p16s3-correct-provenance.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Fix reconciliation import provenance boundary"
+          git push origin HEAD:codex/P16-S3-reconciliation-mutation-integrity
