@@ -28,6 +28,8 @@ import java.util.UUID;
        })
 public class BankImportBatch
 {
+    private static final int MAX_SOURCE_NAME_LENGTH = 260;
+
     public enum SourceFormat { OFX, QFX, QIF, CSV, SCLX, OTHER }
     public enum Status { IMPORTED, PARTIALLY_ACCEPTED, ACCEPTED, REJECTED, FAILED, CANCELLED }
 
@@ -46,7 +48,7 @@ public class BankImportBatch
     @JoinColumn(name = "bank_account_id")
     private CompanyBankAccount bankAccount;
 
-    @Column(name = "source_name", nullable = false, length = 260)
+    @Column(name = "source_name", nullable = false, length = MAX_SOURCE_NAME_LENGTH)
     private String sourceName;
 
     @Column(name = "source_external_id", length = 200)
@@ -146,7 +148,27 @@ public class BankImportBatch
     public CompanyBankAccount getBankAccount() { return bankAccount; }
     public void setBankAccount(CompanyBankAccount bankAccount) { this.bankAccount = bankAccount; }
     public String getSourceName() { return sourceName; }
-    public void setSourceName(String sourceName) { this.sourceName = sourceName; }
+    public void setSourceName(String sourceName)
+    {
+        if (sourceName == null)
+        {
+            this.sourceName = null;
+            return;
+        }
+        String value = sourceName.trim();
+        int separator = Math.max(value.lastIndexOf('/'), value.lastIndexOf('\\'));
+        String logicalName = separator >= 0 ? value.substring(separator + 1).trim() : value;
+        if (logicalName.isEmpty())
+        {
+            throw new IllegalArgumentException("Bank import source name is required.");
+        }
+        if (logicalName.length() > MAX_SOURCE_NAME_LENGTH)
+        {
+            throw new IllegalArgumentException("Bank import source name must be at most "
+                    + MAX_SOURCE_NAME_LENGTH + " characters.");
+        }
+        this.sourceName = logicalName;
+    }
     public String getSourceExternalId() { return sourceExternalId; }
     public void setSourceExternalId(String sourceExternalId) { this.sourceExternalId = sourceExternalId; }
     public String getSourcePath() { return sourcePath; }
