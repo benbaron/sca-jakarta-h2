@@ -148,27 +148,7 @@ public class BankImportBatch
     public CompanyBankAccount getBankAccount() { return bankAccount; }
     public void setBankAccount(CompanyBankAccount bankAccount) { this.bankAccount = bankAccount; }
     public String getSourceName() { return sourceName; }
-    public void setSourceName(String sourceName)
-    {
-        if (sourceName == null)
-        {
-            this.sourceName = null;
-            return;
-        }
-        String value = sourceName.trim();
-        int separator = Math.max(value.lastIndexOf('/'), value.lastIndexOf('\\'));
-        String logicalName = separator >= 0 ? value.substring(separator + 1).trim() : value;
-        if (logicalName.isEmpty())
-        {
-            throw new IllegalArgumentException("Bank import source name is required.");
-        }
-        if (logicalName.length() > MAX_SOURCE_NAME_LENGTH)
-        {
-            throw new IllegalArgumentException("Bank import source name must be at most "
-                    + MAX_SOURCE_NAME_LENGTH + " characters.");
-        }
-        this.sourceName = logicalName;
-    }
+    public void setSourceName(String sourceName) { this.sourceName = sourceName; }
     public String getSourceExternalId() { return sourceExternalId; }
     public void setSourceExternalId(String sourceExternalId) { this.sourceExternalId = sourceExternalId; }
     public String getSourcePath() { return sourcePath; }

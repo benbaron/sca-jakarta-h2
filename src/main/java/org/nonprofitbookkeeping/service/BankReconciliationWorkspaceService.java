@@ -34,6 +34,8 @@ import java.util.regex.Pattern;
 /** Service boundary for the full Bank Reconciliation workspace. */
 public class BankReconciliationWorkspaceService
 {
+    private static final int MAX_IMPORT_SOURCE_NAME_LENGTH = 260;
+
     public enum ClearedStatePolicy
     {
         WARN_ONLY,
@@ -375,7 +377,7 @@ public class BankReconciliationWorkspaceService
                         session.company(),
                         bankAccount,
                         sourceFormat(command.source()),
-                        isBlank(command.sourceName()) ? command.source().name() + " statement import" : command.sourceName(),
+                        logicalImportSourceName(command.sourceName(), command.source()),
                         parsed);
                 tx.commit();
             }
@@ -1648,6 +1650,23 @@ public class BankReconciliationWorkspaceService
     private static ClearedStatePolicy policy(ClearedStatePolicy value)
     {
         return value == null ? ClearedStatePolicy.WARN_ONLY : value;
+    }
+
+    private static String logicalImportSourceName(String sourceName, StatementSource source)
+    {
+        String value = isBlank(sourceName) ? source.name() + " statement import" : sourceName.trim();
+        int separator = Math.max(value.lastIndexOf('/'), value.lastIndexOf('\\'));
+        String logicalName = separator >= 0 ? value.substring(separator + 1).trim() : value;
+        if (logicalName.isEmpty())
+        {
+            throw new IllegalArgumentException("Statement source name is required.");
+        }
+        if (logicalName.length() > MAX_IMPORT_SOURCE_NAME_LENGTH)
+        {
+            throw new IllegalArgumentException("Statement source name must be at most "
+                    + MAX_IMPORT_SOURCE_NAME_LENGTH + " characters.");
+        }
+        return logicalName;
     }
 
     private static String requireText(String value, String label)
