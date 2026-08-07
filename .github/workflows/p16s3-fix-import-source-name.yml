@@ -1,0 +1,131 @@
+name: P16-S3 import source-name correction
+
+on:
+  push:
+    branches:
+      - codex/P16-S3-reconciliation-mutation-integrity
+
+permissions:
+  contents: write
+
+jobs:
+  apply-correction:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/P16-S3-reconciliation-mutation-integrity
+          fetch-depth: 0
+      - name: Apply narrow service and regression correction
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          service = Path('src/main/java/org/nonprofitbookkeeping/service/BankReconciliationWorkspaceService.java')
+          s = service.read_text()
+          pattern = '    private static final Pattern OFX_TRANSACTION = Pattern.compile("<STMTTRN>(.*?)</STMTTRN>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);\n'
+          assert pattern in s
+          s = s.replace(pattern, pattern + '    private static final int MAX_IMPORT_SOURCE_NAME_LENGTH = 260;\n', 1)
+
+          old = '''        List<ParsedStatementLine> parsed = parse(command.source(), command.sourceText());
+          if (parsed.isEmpty())
+          {
+              throw new IllegalArgumentException("No statement lines could be parsed from the selected source.");
+          }
+          '''
+          new = '''        String sourceName = logicalImportSourceName(command.sourceName(), command.source());
+          List<ParsedStatementLine> parsed = parse(command.source(), command.sourceText());
+          if (parsed.isEmpty())
+          {
+              throw new IllegalArgumentException("No statement lines could be parsed from the selected source.");
+          }
+          '''
+          assert old in s
+          s = s.replace(old, new, 1)
+
+          old = '''                        sourceFormat(command.source()),
+                                  isBlank(command.sourceName()) ? command.source().name() + " statement import" : command.sourceName(),
+                                  parsed);'''
+          new = '''                        sourceFormat(command.source()),
+                                  sourceName,
+                                  parsed);'''
+          assert old in s
+          s = s.replace(old, new, 1)
+
+          marker = '''    private static String requireText(String value, String label)
+              {
+                  if (isBlank(value))
+                  {
+                      throw new IllegalArgumentException(label + " is required.");
+                  }
+                  return value.trim();
+              }
+          '''
+          helper = '''    private static String logicalImportSourceName(String sourceName, StatementSource source)
+              {
+                  String value = isBlank(sourceName) ? source.name() + " statement import" : sourceName.trim();
+                  int separator = Math.max(value.lastIndexOf('/'), value.lastIndexOf('\\\\'));
+                  String logicalName = separator >= 0 ? value.substring(separator + 1).trim() : value;
+                  if (logicalName.isEmpty())
+                  {
+                      throw new IllegalArgumentException("Statement source name is required.");
+                  }
+                  if (logicalName.length() > MAX_IMPORT_SOURCE_NAME_LENGTH)
+                  {
+                      throw new IllegalArgumentException("Statement source name must be at most "
+                              + MAX_IMPORT_SOURCE_NAME_LENGTH + " characters.");
+                  }
+                  return logicalName;
+              }
+
+          '''
+          assert marker in s
+          s = s.replace(marker, helper + marker, 1)
+          service.write_text(s)
+
+          test = Path('src/test/java/org/nonprofitbookkeeping/service/BankReconciliationMutationIntegrityTest.java')
+          t = test.read_text()
+          anchor = '''    @Test
+              void unmatchRequiresExactSymmetricPairAndClearsBothRelationshipSides(@TempDir Path tempDir)
+          '''
+          regression = '''    @Test
+              void importPersistsLogicalSourceNameInsteadOfTemporaryPath(@TempDir Path tempDir)
+              {
+                  try (Jpa jpa = new Jpa(tempDir.resolve("logical-import-source-name")))
+                  {
+                      seed(jpa);
+                      BankReconciliationWorkspaceService service = new BankReconciliationWorkspaceService(jpa);
+                      long sessionId = startMarch(service);
+                      String logicalName = "march-owner-upload.csv";
+                      String temporaryPath = "/home/runner/work/" + "deep-temporary-directory/".repeat(20) + logicalName;
+                      assertTrue(temporaryPath.length() > 260);
+
+                      service.importStatementText(new ImportStatementCommand(
+                              sessionId,
+                              StatementSource.CSV,
+                              temporaryPath,
+                              "date,amount,description,reference\\n2026-03-22,12.34,Owner upload,row-long-path\\n"));
+
+                      assertEquals(logicalName, String.valueOf(scalar(jpa,
+                              "select source_name from bank_import_batch where source_name = '" + logicalName + "'")));
+                  }
+              }
+
+          '''
+          assert anchor in t
+          t = t.replace(anchor, regression + anchor, 1)
+          test.write_text(t)
+          PY
+      - name: Commit correction and remove temporary workflow
+        shell: bash
+        run: |
+          rm .github/workflows/p16s3-fix-import-source-name.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/java/org/nonprofitbookkeeping/service/BankReconciliationWorkspaceService.java \
+                  src/test/java/org/nonprofitbookkeeping/service/BankReconciliationMutationIntegrityTest.java \
+                  .github/workflows/p16s3-fix-import-source-name.yml
+          git commit -m "Fix reconciliation import source metadata"
+          git push origin HEAD:codex/P16-S3-reconciliation-mutation-integrity
