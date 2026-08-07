@@ -50,7 +50,7 @@ public class ReconciliationRunsPanelSourceTest
         assertTrue(source.contains("Match Selected"));
         assertTrue(source.contains("Unmatch"));
         assertTrue(source.contains("Mark Cleared"));
-        assertTrue(source.contains("Resolve Difference"));
+        assertTrue(source.contains("Record Difference Explanation"));
         assertTrue(source.contains("TableView.UNCONSTRAINED_RESIZE_POLICY"));
         assertFalse(source.contains("TableView.CONSTRAINED_RESIZE_POLICY"));
         assertFalse(source.contains("Delete unavailable"));
