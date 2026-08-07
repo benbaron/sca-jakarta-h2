@@ -5,6 +5,7 @@ public enum InterchangeFormat
 {
     SCLX,
     COA_JSON,
+    COA_CSV,
     DATABASE_TRANSFER,
     OFX,
     QFX,
