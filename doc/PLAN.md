@@ -1,12 +1,12 @@
 ---
-plan_version: 130
+plan_version: 131
 active_phase: P16
 active_slice: P16-S1
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P16-S1-atomic-monthly-depreciation
-active_pull_request: null
-active_head: 88bae9870255630c53e057d2bb201e9b41389479
-next_action: "Reproduce the P16-S1 monthly-depreciation partial-write defect on current main, then implement one caller-owned atomic transaction with rollback coverage."
+active_pull_request: 252
+active_head: 96175d54fd5c739ca29cf8bb35e49ebf89938d70
+next_action: "Complete the P16-S1 owner desktop checklist on draft PR #252; if accepted, record owner approval and await explicit merge authorization. Do not start P16-S2."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S1 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | VERIFYING through P16-S1 / PR #252 |
 
 ## 4. Governing documents
 
@@ -1877,7 +1877,7 @@ Required behavior: genuine Inventory item add/edit and movement history, no runb
 # P16 — Interface-to-authority completion and integrity corrections
 
 **Selector:** `PHASE=P16`  
-**Status:** IN_PROGRESS through P16-S1
+**Status:** VERIFYING through P16-S1 / PR #252  
 **Depends on:** P03 through P15 except eliminated P07
 
 ## Purpose
@@ -1998,12 +1998,13 @@ Next exact action:
 
 ## P16-S1 — Atomic monthly depreciation
 
-Status: IN_PROGRESS.
+Status: VERIFYING in draft PR #252.
 
 Branch: `codex/P16-S1-atomic-monthly-depreciation`
 
-Pull request: not opened yet.
-Starting base: `88bae9870255630c53e057d2bb201e9b41389479`
+Pull request: #252  
+Starting base: `88bae9870255630c53e057d2bb201e9b41389479`  
+Validated implementation head: `96175d54fd5c739ca29cf8bb35e49ebf89938d70`
 
 Purpose: prevent a failed depreciation-run write from leaving an orphan canonical transaction.
 
@@ -2021,6 +2022,19 @@ Acceptance and tests:
 - Duplicate run, injected late failure, audit failure, and constraint race leave transaction, splits, run, identity, and audit counts unchanged.
 - Successful execution creates exactly one balanced transaction and one linked run; identical retry is rejected or reported as an idempotent no-op according to the governed policy.
 - Multi-company, closed-period, and finalized-reconciliation protections cannot be bypassed.
+
+Validation status:
+
+- The branch remains based on exact P16-S0 merge `88bae9870255630c53e057d2bb201e9b41389479` with no base drift.
+- Draft PR #252 implements one caller-owned JPA transaction for the canonical transaction, balanced splits, linked depreciation run, portable identities, and factual audit event, with authoritative refresh after commit or rollback.
+- Deterministic protection fixtures use governed values: `CALCULATED` for the period-close range and `OFX` for the legacy reconciliation-run compatibility row. Applied migration V7 remains unchanged.
+- Exact implementation head `96175d54fd5c739ca29cf8bb35e49ebf89938d70` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `31147294296`.
+- The branch comparison contains only the 13 intended P16-S1 source, test, and governing-document files. No temporary workflow or migration change remains.
+- Automated acceptance is complete. The owner desktop checklist in `doc/P16-S1-atomic-monthly-depreciation-user-testing.md` remains required before merge.
+
+Next exact action:
+
+- Complete the owner desktop checklist on draft PR #252. If accepted, record owner approval and await explicit merge authorization. Do not merge or start P16-S2 without authorization.
 
 ## P16-S2 — Atomic COA CSV accepted-row commit
 
