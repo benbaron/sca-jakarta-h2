@@ -18,7 +18,7 @@ jobs:
           ref: codex/P16-S2-atomic-coa-csv-commit
           fetch-depth: 0
       - name: Patch COA CSV production route
-        shell: python
+        shell: python {0}
         run: |
           from pathlib import Path
 
