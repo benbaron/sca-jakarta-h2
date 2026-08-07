@@ -49,16 +49,6 @@ public class AccountAdminService
                           boolean active)
     {
         String cleanCode = requireText(code, "Account code");
-        String cleanName = requireText(name, "Account name");
-        if (accountType == null)
-        {
-            throw new IllegalArgumentException("Account type is required.");
-        }
-        if (normalBalance == null)
-        {
-            throw new IllegalArgumentException("Normal balance is required.");
-        }
-
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
@@ -67,50 +57,17 @@ public class AccountAdminService
                 CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
                 Company company = ownership.requireCompany(em, companyCodeSupplier.get());
                 ChartOfAccounts chart = resolveChart(em, company, ownership);
-
-                List<Account> existingMatches = em.createQuery(
-                                "from Account a where a.chart = :chart and a.code = :code",
-                                Account.class)
-                        .setParameter("chart", chart)
-                        .setParameter("code", cleanCode)
-                        .setMaxResults(2)
-                        .getResultList();
-
-                Account account;
-                if (existingMatches.isEmpty())
-                {
-                    account = new Account();
-                    account.setChart(chart);
-                    account.setPosting(true);
-                }
-                else
-                {
-                    account = existingMatches.get(0);
-                }
-
-                Account parent = resolveParent(em, chart, cleanCode, parentCode);
-                if (parent != null)
-                {
-                    ownership.ensureOwnedBy(em, company, parent, "Parent account");
-                }
-
-                account.setCode(cleanCode);
-                account.setName(cleanName);
-                account.setAccountType(accountType);
-                account.setNormalBalance(normalBalance);
-                account.setSubtype(subtype);
-                account.setParent(parent);
-                account.setActive(active);
-
-                if (account.getId() == null)
-                {
-                    em.persist(account);
-                }
-                else
-                {
-                    account = em.merge(account);
-                }
-
+                Account account = upsert(
+                        em,
+                        company,
+                        chart,
+                        cleanCode,
+                        name,
+                        accountType,
+                        normalBalance,
+                        subtype,
+                        parentCode,
+                        active);
                 em.getTransaction().commit();
                 return account;
             }
@@ -123,6 +80,101 @@ public class AccountAdminService
                 throw mapPersistenceError(ex, cleanCode);
             }
         }
+    }
+
+    /**
+     * Caller-owned transaction seam for governed batch operations. This method never commits or rolls back.
+     */
+    public Account upsert(EntityManager em,
+                          Company company,
+                          ChartOfAccounts chart,
+                          String code,
+                          String name,
+                          AccountType accountType,
+                          NormalBalance normalBalance,
+                          AccountSubtype subtype,
+                          String parentCode,
+                          boolean active)
+    {
+        Objects.requireNonNull(em, "em");
+        Objects.requireNonNull(company, "company");
+        Objects.requireNonNull(chart, "chart");
+        if (!em.getTransaction().isActive())
+        {
+            throw new IllegalStateException("Caller-owned account upsert requires an active transaction.");
+        }
+
+        String cleanCode = requireText(code, "Account code");
+        String cleanName = requireText(name, "Account name");
+        if (accountType == null)
+        {
+            throw new IllegalArgumentException("Account type is required.");
+        }
+        if (normalBalance == null)
+        {
+            throw new IllegalArgumentException("Normal balance is required.");
+        }
+
+        Company managedCompany = em.find(Company.class, company.getId());
+        ChartOfAccounts managedChart = em.find(ChartOfAccounts.class, chart.getId());
+        if (managedCompany == null)
+        {
+            throw new CompanyOwnershipException("Company no longer exists.");
+        }
+        if (managedChart == null)
+        {
+            throw new CompanyOwnershipException("Chart of Accounts no longer exists.");
+        }
+        CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
+        ownership.requireOwnedBy(managedCompany, managedChart, "Chart of Accounts");
+
+        List<Account> existingMatches = em.createQuery(
+                        "from Account a where a.chart = :chart and a.code = :code",
+                        Account.class)
+                .setParameter("chart", managedChart)
+                .setParameter("code", cleanCode)
+                .setMaxResults(2)
+                .getResultList();
+        if (existingMatches.size() > 1)
+        {
+            throw new IllegalStateException("Account code is ambiguous in active chart: " + cleanCode + ".");
+        }
+
+        Account account;
+        if (existingMatches.isEmpty())
+        {
+            account = new Account();
+            account.setChart(managedChart);
+            account.setPosting(true);
+        }
+        else
+        {
+            account = existingMatches.get(0);
+        }
+
+        Account parent = resolveParent(em, managedChart, cleanCode, parentCode);
+        if (parent != null)
+        {
+            ownership.requireOwnedBy(managedCompany, parent, "Parent account");
+        }
+
+        account.setCode(cleanCode);
+        account.setName(cleanName);
+        account.setAccountType(accountType);
+        account.setNormalBalance(normalBalance);
+        account.setSubtype(subtype);
+        account.setParent(parent);
+        account.setActive(active);
+
+        if (account.getId() == null)
+        {
+            em.persist(account);
+        }
+        else
+        {
+            account = em.merge(account);
+        }
+        return account;
     }
 
     private static RuntimeException mapPersistenceError(RuntimeException ex, String code)
