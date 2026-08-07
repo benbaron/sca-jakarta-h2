@@ -245,7 +245,7 @@ class FixedAssetAtomicDepreciationTest
             FixedAssetService service = service(jpa, SCA.code());
             FixedAssetView asset = service.create(assetCommand(SCA, "Trailer"));
             new PeriodCloseRangeService(jpa).closeRange(
-                    SCA.code(), RUN_DATE, RUN_DATE, "MONTH", "treasurer", "month closed");
+                    SCA.code(), RUN_DATE, RUN_DATE, "CALCULATED", "treasurer", "month closed");
             Counts before = counts(jpa);
 
             RuntimeException failure = assertThrows(RuntimeException.class,
@@ -430,7 +430,7 @@ class FixedAssetAtomicDepreciationTest
             em.createNativeQuery("""
                     insert into reconciliation_run
                         (id, group_code, statement_ending_on, bank_format, imported_transaction_count, status)
-                    values (cast(? as uuid), 'SCA', ?, 'CSV', 1, 'COMPLETED')
+                    values (cast(? as uuid), 'SCA', ?, 'OFX', 1, 'COMPLETED')
                     """)
                     .setParameter(1, runId.toString())
                     .setParameter(2, java.sql.Date.valueOf(RUN_DATE))
