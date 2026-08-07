@@ -28,3 +28,8 @@ Use a disposable migrated database with an active company and active Chart of Ac
 4. For any surfaced commit-time failure, confirm the UI reports rollback/no committed batch rather than a partial row count. Restart and confirm no partial accepted-row hierarchy is visible.
 
 Automated migrated-H2 tests inject a failure after the first account write to prove accounts, external identities, and the operation audit fact roll back together.
+
+## Automated validation already completed
+
+- Implementation head `e495865b91a4979c1571f6ab61922ea43fedd839` passed `mvn clean verify`, the deliberately repeated Maven test suite, and production JavaFX route compliance in Maven PR Tests run `31192123755`.
+- The final documentation-inclusive PR head must pass the same complete gate before owner acceptance authorizes merge.
