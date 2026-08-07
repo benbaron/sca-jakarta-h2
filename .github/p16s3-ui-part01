@@ -1,0 +1,96 @@
+nAction(e -> runAction(
+                () -> service().markCleared(requireSession(), selectedSplitId()),
+                "Ledger line marked cleared."));
+        explainDifferenceButton.setOnAction(e -> runAction(
+                () -> service().recordDifferenceExplanation(requireSession(), selectedStatementId(), selectedSplitId(),
+                        differenceExplanation.getText()),
+                "Difference explanation recorded; no accounting transaction was created."));
+        successorButton.setOnAction(e -> startSuccessor());
+    }
+
+    private Node successorPane()
+    {
+        GridPane form = new GridPane();
+        form.setHgap(8);
+        form.setVgap(6);
+        form.addRow(0, new Label("Successor Through Date"), successorEndDate);
+        form.addRow(1, new Label("Successor Ending Balance"), successorEndingBalance);
+        form.addRow(2, new Label("Actor"), successorActor);
+        form.addRow(3, new Label("Reason"), successorReason);
+        Label help = new Label("Finalized sessions are immutable. Start a successor to continue reconciliation without changing the finalized predecessor.");
+        help.getStyleClass().add("help-text");
+        return new VBox(6, new Separator(), new Label("Continue After Finalization"), help, form, successorButton);
+    }
+
+'''+s[end:]
+
+one('''        runAction(() -> service().load(selected.id()), "Loaded reconciliation session " + selected.id() + ".");
+        workflowTabs.getSelectionModel().select(1);
+''',
+'''        runAction(() -> service().load(selected.id()), "Loaded reconciliation session " + selected.id() + ".");
+        workflowTabs.getSelectionModel().select(
+                snapshot != null && snapshot.status() == BankReconciliationWorkspaceService.SessionStatus.FINALIZED ? 3 : 1);
+''', 'edit finalized tab')
+
+one('''    private void save(boolean finalize)
+    {
+        runAction(() -> service().save(requireSession(), finalize), finalize ? "Reconciliation finalized if balanced." : "Unresolved reconciliation saved.");
+    }
+''',
+'''    private void save(boolean finalize)
+    {
+        runAction(() -> service().save(requireSession(), finalize),
+                finalize ? "Reconciliation finalized." : "Reconciliation saved without finalization.");
+    }
+
+    private void startSuccessor()
+    {
+        long predecessor = requireSession();
+        runAction(() -> service().startSuccessor(new SuccessorCommand(
+                        predecessor,
+                        successorEndDate.getValue(),
+                        parseMoney(successorEndingBalance.getText()),
+                        selectedPolicy(),
+                        notes.getText(),
+                        successorActor.getText(),
+                        successorReason.getText())),
+                "Started successor reconciliation; finalized predecessor remains read-only.");
+        workflowTabs.getSelectionModel().select(1);
+    }
+''', 'save and successor')
+
+one('''        sessionSummary.setText("Session " + next.sessionId() + " • " + next.bankAccountLabel() + " • " + companyFormat.formatDate(next.statementStartDate()) + " – " + companyFormat.formatDate(next.statementEndDate()) + " • " + next.status());
+    }
+''',
+'''        sessionSummary.setText("Session " + next.sessionId() + " • " + next.bankAccountLabel() + " • " + companyFormat.formatDate(next.statementStartDate()) + " – " + companyFormat.formatDate(next.statementEndDate()) + " • " + next.status());
+        successorEndDate.setValue(next.statementEndDate().plusMonths(1));
+        successorEndingBalance.setText(companyFormat.formatMoney(next.balances().statementEndingBalance()));
+        applyFinalizedReadOnly(next.status() == BankReconciliationWorkspaceService.SessionStatus.FINALIZED);
+    }
+
+    private void applyFinalizedReadOnly(boolean finalized)
+    {
+        Tooltip tooltip = new Tooltip("Finalized reconciliation is read-only. Start a successor reconciliation to continue.");
+        for (Button button : java.util.List.of(
+                addManualButton, importPastedButton, importFileButton,
+                autoMatchButton, matchButton, unmatchButton, markClearedButton,
+                explainDifferenceButton, saveUnresolvedButton, finalizeButton))
+        {
+            button.setDisable(finalized);
+            button.setTooltip(finalized ? tooltip : null);
+        }
+        sourceTabs.setDisable(finalized);
+        differenceExplanation.setDisable(finalized);
+        successorButton.setDisable(!finalized);
+        successorEndDate.setDisable(!finalized);
+        successorEndingBalance.setDisable(!finalized);
+        successorActor.setDisable(!finalized);
+        successorReason.setDisable(!finalized);
+        if (finalized)
+        {
+            status.setText("Finalized reconciliation is read-only. Start a successor reconciliation to continue.");
+        }
+    }
+''', 'apply readonly')
+
+PATH.write_text(s, encoding='utf-8')
