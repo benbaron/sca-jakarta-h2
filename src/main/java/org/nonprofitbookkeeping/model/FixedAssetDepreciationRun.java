@@ -71,14 +71,20 @@ public class FixedAssetDepreciationRun
     public void setNotes(String notes) { this.notes = notes; }
     public Instant getCreatedAt() { return createdAt; }
 
-    /** Initializes immutable source metadata before a governed interchange import persists this run. */
-    public void initializeImportMetadata(UUID portableId, Instant createdAt)
+    /** Initializes the immutable portable identity before this run is persisted. */
+    public void initializePortableIdentity(UUID portableId)
     {
         if (id != null)
         {
-            throw new IllegalStateException("Depreciation-run import metadata must be initialized before persistence");
+            throw new IllegalStateException("Depreciation-run portable identity must be initialized before persistence");
         }
         this.portableId = Objects.requireNonNull(portableId, "portableId");
+    }
+
+    /** Initializes immutable source metadata before a governed interchange import persists this run. */
+    public void initializeImportMetadata(UUID portableId, Instant createdAt)
+    {
+        initializePortableIdentity(portableId);
         this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
     }
 }

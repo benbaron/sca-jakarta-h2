@@ -31,7 +31,7 @@ public class FixedAssetServiceTest
         try (Jpa jpa = new Jpa(tempDir.resolve("fixed-assets")))
         {
             seedCompanyAccountsAndFund(jpa);
-            FixedAssetService service = new FixedAssetService(jpa);
+            FixedAssetService service = new FixedAssetService(jpa, new TransactionEntryService(jpa, () -> "SCA"), () -> "SCA");
 
             FixedAssetView asset = service.create(assetCommand("Laptop", new BigDecimal("1200.0000"), new BigDecimal("0.0000"), 36));
 
@@ -50,7 +50,7 @@ public class FixedAssetServiceTest
         try (Jpa jpa = new Jpa(tempDir.resolve("fixed-asset-depreciation")))
         {
             seedCompanyAccountsAndFund(jpa);
-            FixedAssetService service = new FixedAssetService(jpa);
+            FixedAssetService service = new FixedAssetService(jpa, new TransactionEntryService(jpa, () -> "SCA"), () -> "SCA");
             FixedAssetView asset = service.create(assetCommand("Trailer", new BigDecimal("840.0000"), new BigDecimal("0.0000"), 84));
 
             DepreciationRunView run = service.runMonthlyDepreciation(asset.id(), LocalDate.of(2026, 4, 30), "April depreciation");
@@ -71,7 +71,7 @@ public class FixedAssetServiceTest
         try (Jpa jpa = new Jpa(tempDir.resolve("fixed-asset-validation")))
         {
             seedCompanyAccountsAndFund(jpa);
-            FixedAssetService service = new FixedAssetService(jpa);
+            FixedAssetService service = new FixedAssetService(jpa, new TransactionEntryService(jpa, () -> "SCA"), () -> "SCA");
 
             FixedAssetCommand bad = new FixedAssetCommand(
                     "SCA",

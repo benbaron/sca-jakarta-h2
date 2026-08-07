@@ -1,12 +1,12 @@
 ---
-plan_version: 129
+plan_version: 131
 active_phase: P16
-active_slice: P16-S0
+active_slice: P16-S1
 active_status: VERIFYING
-active_branch: codex/P16-S0-interface-completion-plan
-active_pull_request: 251
-active_head: 43040253e7a43eff51c899ca96b6dddb5d1c7e71
-next_action: "Validate the exact final governance-inclusive P16-S0 PR #251 head, then merge the documentation-only amendment and begin P16-S1 from its merge commit."
+active_branch: codex/P16-S1-atomic-monthly-depreciation
+active_pull_request: 252
+active_head: 96175d54fd5c739ca29cf8bb35e49ebf89938d70
+next_action: "Complete the P16-S1 owner desktop checklist on draft PR #252; if accepted, record owner approval and await explicit merge authorization. Do not start P16-S2."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | VERIFYING through planning slice P16-S0 / PR #251 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | VERIFYING through P16-S1 / PR #252 |
 
 ## 4. Governing documents
 
@@ -1877,7 +1877,7 @@ Required behavior: genuine Inventory item add/edit and movement history, no runb
 # P16 — Interface-to-authority completion and integrity corrections
 
 **Selector:** `PHASE=P16`  
-**Status:** VERIFYING through documentation-only planning slice P16-S0 / PR #251  
+**Status:** VERIFYING through P16-S1 / PR #252  
 **Depends on:** P03 through P15 except eliminated P07
 
 ## Purpose
@@ -1962,7 +1962,7 @@ Every implementation slice must:
 
 ## P16-S0 — Govern the post-P15 completion program
 
-Status: VERIFYING in draft PR #251.
+Status: DONE through merged PR #251.
 
 Branch: `codex/P16-S0-interface-completion-plan`
 
@@ -1988,15 +1988,23 @@ Validation status:
 - The branch was created from exact current `main` merge `1740de45b043553cca4e7bd3ba364019ec8fb99f`.
 - Activation head `84de548a68c818f6e94469b5b7100947a2a31fc0` changes only `doc/PLAN.md`: 473 additions, 11 deletions, no base drift, and no product source, migration, test, or fixture changes.
 - Plan-bound head `43040253e7a43eff51c899ca96b6dddb5d1c7e71` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30975002920`.
-- Repository CI must pass once more on the exact final governance-inclusive head before merge.
+- Final governance-inclusive head `2a3b026f495413d5aab850add6e52fe55e509c5f` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `30975228164`.
+- PR #251 merged to `main` at `88bae9870255630c53e057d2bb201e9b41389479` on 2026-08-05.
+- Post-merge `main` run `31065210112` passed the same repository gates.
 
 Next exact action:
 
-- Run repository CI on the exact final governance-inclusive PR #251 head, then merge the documentation-only amendment and create P16-S1 from that merge commit.
+- None; P16-S0 is DONE and P16-S1 is active.
 
 ## P16-S1 — Atomic monthly depreciation
 
-Status: BLOCKED by P16-S0.
+Status: VERIFYING in draft PR #252.
+
+Branch: `codex/P16-S1-atomic-monthly-depreciation`
+
+Pull request: #252  
+Starting base: `88bae9870255630c53e057d2bb201e9b41389479`  
+Validated implementation head: `96175d54fd5c739ca29cf8bb35e49ebf89938d70`
 
 Purpose: prevent a failed depreciation-run write from leaving an orphan canonical transaction.
 
@@ -2014,6 +2022,19 @@ Acceptance and tests:
 - Duplicate run, injected late failure, audit failure, and constraint race leave transaction, splits, run, identity, and audit counts unchanged.
 - Successful execution creates exactly one balanced transaction and one linked run; identical retry is rejected or reported as an idempotent no-op according to the governed policy.
 - Multi-company, closed-period, and finalized-reconciliation protections cannot be bypassed.
+
+Validation status:
+
+- The branch remains based on exact P16-S0 merge `88bae9870255630c53e057d2bb201e9b41389479` with no base drift.
+- Draft PR #252 implements one caller-owned JPA transaction for the canonical transaction, balanced splits, linked depreciation run, portable identities, and factual audit event, with authoritative refresh after commit or rollback.
+- Deterministic protection fixtures use governed values: `CALCULATED` for the period-close range and `OFX` for the legacy reconciliation-run compatibility row. Applied migration V7 remains unchanged.
+- Exact implementation head `96175d54fd5c739ca29cf8bb35e49ebf89938d70` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `31147294296`.
+- The branch comparison contains only the 13 intended P16-S1 source, test, and governing-document files. No temporary workflow or migration change remains.
+- Automated acceptance is complete. The owner desktop checklist in `doc/P16-S1-atomic-monthly-depreciation-user-testing.md` remains required before merge.
+
+Next exact action:
+
+- Complete the owner desktop checklist on draft PR #252. If accepted, record owner approval and await explicit merge authorization. Do not merge or start P16-S2 without authorization.
 
 ## P16-S2 — Atomic COA CSV accepted-row commit
 

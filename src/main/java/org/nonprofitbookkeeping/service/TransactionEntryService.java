@@ -86,6 +86,24 @@ public class TransactionEntryService
             UUID portableId,
             String actor)
     {
+        return enter(em, company, command, portableId, actor, "caller-owned transactional import");
+    }
+
+    /**
+     * Caller-owned transaction variant with an operation-specific factual audit reason.
+     *
+     * <p>All command, period, reference, and company-ownership validation completes
+     * before the first entity is persisted. The caller still owns the single commit
+     * or rollback decision for the larger operation.</p>
+     */
+    public Txn enter(
+            EntityManager em,
+            Company company,
+            TransactionCommand command,
+            UUID portableId,
+            String actor,
+            String auditReason)
+    {
         Objects.requireNonNull(em, "em");
         Objects.requireNonNull(company, "company");
         Objects.requireNonNull(portableId, "portableId");
@@ -99,6 +117,7 @@ public class TransactionEntryService
             throw new IllegalArgumentException("Company must be managed by the caller-owned transaction.");
         }
         PeriodCloseRangeService.requireOpen(em, company.getCode(), command.date(), "enter transaction");
+        validateReferences(em, company, command);
 
         Txn txn = new Txn();
         txn.setCompany(company);
@@ -114,7 +133,7 @@ public class TransactionEntryService
                 txn,
                 null,
                 snapshot(txn),
-                "caller-owned transactional import"));
+                blankToNull(auditReason)));
         return txn;
     }
 
@@ -297,6 +316,43 @@ public class TransactionEntryService
             {
                 throw new PostingException(label + " start date must be on or before end date.");
             }
+        }
+    }
+
+    private void validateReferences(EntityManager em, Company company, TransactionCommand command)
+    {
+        Counterparty payee = command.payeeId() == null
+                ? null
+                : required(em, Counterparty.class, command.payeeId(), "Payee");
+        ownership().ensureOwnedBy(em, company, payee, "Payee");
+
+        Account bankAccount = command.bankAccountId() == null
+                ? null
+                : required(em, Account.class, command.bankAccountId(), "Bank account");
+        if (bankAccount != null)
+        {
+            ownership().ensureOwnedBy(em, company, bankAccount, "Bank account");
+        }
+
+        for (TransactionLineCommand line : command.lines())
+        {
+            Account account = required(em, Account.class, line.accountId(), "Account");
+            Fund fund = required(em, Fund.class, line.fundId(), "Fund");
+            BudgetCategory category = line.budgetCategoryId() == null
+                    ? null
+                    : required(em, BudgetCategory.class, line.budgetCategoryId(), "Budget category");
+            Activity activity = line.activityId() == null
+                    ? null
+                    : required(em, Activity.class, line.activityId(), "Activity");
+            Merchant merchant = line.merchantId() == null
+                    ? null
+                    : required(em, Merchant.class, line.merchantId(), "Merchant");
+            ownership().ensureOwnedBy(em, company, account, "Account");
+            ownership().ensureOwnedBy(em, company, fund, "Fund");
+            ownership().ensureOwnedBy(em, company, category, "Budget category");
+            ownership().ensureOwnedBy(em, company, activity, "Activity");
+            ownership().ensureOwnedBy(em, company, merchant, "Merchant");
+            toSignedAmount(account, line);
         }
     }
 

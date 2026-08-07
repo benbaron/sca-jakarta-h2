@@ -247,7 +247,7 @@ public final class UiServiceRegistry
                 new BudgetCategoryAdminService(jpa, UiServiceRegistry::activeCompanyCode),
                 new BudgetPlanService(jpa, UiServiceRegistry::activeCompanyCode),
                 new BankConfigurationService(jpa),
-                new FixedAssetService(jpa, transactionEntry),
+                new FixedAssetService(jpa, transactionEntry, UiServiceRegistry::activeCompanyCode),
                 new InventoryService(jpa),
                 new CompanyAdminService(jpa),
                 new UserAdminService(jpa),

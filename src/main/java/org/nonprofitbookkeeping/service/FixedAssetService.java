@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 /** Application service for H2-backed fixed assets and depreciation runs. */
 @ApplicationScoped
@@ -29,17 +30,62 @@ public class FixedAssetService
 
     private final Jpa jpa;
     private final TransactionEntryService transactionEntryService;
+    private final Supplier<String> companyCodeSupplier;
+    private final Supplier<UUID> transactionPortableIdSupplier;
+    private final Supplier<UUID> runPortableIdSupplier;
+    private final Supplier<String> auditActorSupplier;
+    private final DepreciationWriteHook depreciationWriteHook;
+
+    @FunctionalInterface
+    interface DepreciationWriteHook
+    {
+        void afterTransactionPersisted(
+                EntityManager em,
+                FixedAsset asset,
+                Txn transaction,
+                LocalDate runDate,
+                BigDecimal amount,
+                UUID runPortableId);
+    }
 
     @Inject
     public FixedAssetService(Jpa jpa)
     {
-        this(jpa, new TransactionEntryService(jpa));
+        this(jpa, new TransactionEntryService(jpa), () -> "DEFAULT");
     }
 
     public FixedAssetService(Jpa jpa, TransactionEntryService transactionEntryService)
     {
+        this(jpa, transactionEntryService, () -> "DEFAULT");
+    }
+
+    public FixedAssetService(
+            Jpa jpa,
+            TransactionEntryService transactionEntryService,
+            Supplier<String> companyCodeSupplier)
+    {
+        this(jpa, transactionEntryService, companyCodeSupplier,
+                UUID::randomUUID, UUID::randomUUID, () -> "system",
+                (em, asset, transaction, runDate, amount, runPortableId) -> { });
+    }
+
+    FixedAssetService(
+            Jpa jpa,
+            TransactionEntryService transactionEntryService,
+            Supplier<String> companyCodeSupplier,
+            Supplier<UUID> transactionPortableIdSupplier,
+            Supplier<UUID> runPortableIdSupplier,
+            Supplier<String> auditActorSupplier,
+            DepreciationWriteHook depreciationWriteHook)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.transactionEntryService = Objects.requireNonNull(transactionEntryService, "transactionEntryService");
+        this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
+        this.transactionPortableIdSupplier = Objects.requireNonNull(
+                transactionPortableIdSupplier, "transactionPortableIdSupplier");
+        this.runPortableIdSupplier = Objects.requireNonNull(runPortableIdSupplier, "runPortableIdSupplier");
+        this.auditActorSupplier = Objects.requireNonNull(auditActorSupplier, "auditActorSupplier");
+        this.depreciationWriteHook = Objects.requireNonNull(depreciationWriteHook, "depreciationWriteHook");
     }
 
     public FixedAssetView create(FixedAssetCommand command)
@@ -151,51 +197,98 @@ public class FixedAssetService
         {
             throw new IllegalArgumentException("runDate is required");
         }
-        FixedAssetView before = load(assetId);
-        if (before.status() != FixedAsset.Status.ACTIVE)
+        UUID transactionPortableId = requirePortableId(
+                transactionPortableIdSupplier.get(), "Depreciation transaction portable identity");
+        UUID runPortableId = requirePortableId(
+                runPortableIdSupplier.get(), "Depreciation run portable identity");
+        String companyCode = normalizeCompanyCode(companyCodeSupplier.get());
+        if (companyCode.isBlank())
         {
-            throw new IllegalStateException("Only active assets can be depreciated");
+            throw new IllegalArgumentException("Active company code is required");
         }
-        BigDecimal amount = before.nextDepreciationAmount();
-        if (amount.compareTo(BigDecimal.ZERO) <= 0)
-        {
-            throw new IllegalStateException("No remaining depreciable value for asset " + assetId);
-        }
-
-        TransactionEntryService companyTransactionEntryService = new TransactionEntryService(
-                jpa,
-                () -> before.companyCode());
-        TransactionView txn = companyTransactionEntryService.enter(new TransactionCommand(
-                runDate,
-                null,
-                "Depreciation: " + before.name(),
-                null,
-                List.of(
-                        new TransactionLineCommand(before.depreciationExpenseAccountId(), before.fundId(), null, null, null, amount, BigDecimal.ZERO, false, notes),
-                        new TransactionLineCommand(before.accumulatedDepreciationAccountId(), before.fundId(), null, null, null, BigDecimal.ZERO, amount, false, notes))));
 
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
             try
             {
+                CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
+                Company company = ownership.requireCompany(em, companyCode);
+                if (!company.isActive())
+                {
+                    throw new IllegalStateException("Company " + company.getCode() + " is inactive");
+                }
+
                 FixedAsset asset = require(em, FixedAsset.class, assetId, "Fixed asset");
+                ownership.requireOwnedBy(company, asset.getCompany(), "Fixed asset");
+                validateDepreciationEligibility(ownership, company, asset, runDate);
+                requireNoPriorRun(em, asset, runDate);
+                validatePortableIdentityAvailability(em, transactionPortableId, runPortableId);
+                PeriodCloseRangeService.requireOpen(
+                        em, company.getCode(), runDate, "run monthly depreciation");
+
+                BigDecimal accumulated = accumulatedDepreciation(em, asset);
+                BigDecimal amount = nextDepreciation(asset, accumulated);
+                if (amount.compareTo(BigDecimal.ZERO) <= 0)
+                {
+                    throw new IllegalStateException("No remaining depreciable value for asset " + assetId);
+                }
+
+                TransactionCommand command = new TransactionCommand(
+                        runDate,
+                        null,
+                        "Depreciation: " + asset.getName(),
+                        null,
+                        List.of(
+                                new TransactionLineCommand(
+                                        asset.getDepreciationExpenseAccount().getId(),
+                                        asset.getFund().getId(),
+                                        null,
+                                        null,
+                                        null,
+                                        amount,
+                                        BigDecimal.ZERO,
+                                        false,
+                                        notes),
+                                new TransactionLineCommand(
+                                        asset.getAccumulatedDepreciationAccount().getId(),
+                                        asset.getFund().getId(),
+                                        null,
+                                        null,
+                                        null,
+                                        BigDecimal.ZERO,
+                                        amount,
+                                        false,
+                                        notes)));
+
+                Txn transaction = transactionEntryService.enter(
+                        em,
+                        company,
+                        command,
+                        transactionPortableId,
+                        auditActorSupplier.get(),
+                        "Monthly fixed-asset depreciation");
+                depreciationWriteHook.afterTransactionPersisted(
+                        em, asset, transaction, runDate, amount, runPortableId);
+
                 FixedAssetDepreciationRun run = new FixedAssetDepreciationRun();
+                run.initializePortableIdentity(runPortableId);
                 run.setFixedAsset(asset);
                 run.setRunDate(runDate);
                 run.setDepreciationAmount(amount);
-                Txn depreciationTxn = require(em, Txn.class, txn.id(), "Depreciation transaction");
-                new CompanyOwnershipService(jpa).requireOwnedBy(asset.getCompany(), depreciationTxn, "Depreciation transaction");
-                run.setTransaction(depreciationTxn);
+                run.setTransaction(transaction);
                 run.setNotes(notes);
                 em.persist(run);
+                em.flush();
+
+                DepreciationRunView result = toRunView(run);
                 em.getTransaction().commit();
-                return toRunView(run);
+                return result;
             }
             catch (RuntimeException ex)
             {
                 rollback(em);
-                throw ex;
+                throw actionableDepreciationFailure(assetId, runDate, ex);
             }
         }
     }
@@ -280,6 +373,206 @@ public class FixedAssetService
         run.initializeImportMetadata(portableId, createdAt);
         em.persist(run);
         return run;
+    }
+
+    private static void validateDepreciationEligibility(
+            CompanyOwnershipService ownership,
+            Company company,
+            FixedAsset asset,
+            LocalDate runDate)
+    {
+        if (asset.getStatus() != FixedAsset.Status.ACTIVE)
+        {
+            throw new IllegalStateException("Only active assets can be depreciated");
+        }
+        if (asset.getDepreciationMethod() != FixedAsset.DepreciationMethod.STRAIGHT_LINE)
+        {
+            throw new IllegalStateException("Unsupported depreciation method for asset " + asset.getId());
+        }
+        if (runDate.isBefore(asset.getAcquisitionDate()))
+        {
+            throw new IllegalArgumentException(
+                    "Depreciation run date cannot be before the asset acquisition date "
+                            + asset.getAcquisitionDate());
+        }
+
+        ownership.requireOwnedBy(company, asset.getAssetAccount(), "Asset account");
+        ownership.requireOwnedBy(company, asset.getAccumulatedDepreciationAccount(),
+                "Accumulated depreciation account");
+        ownership.requireOwnedBy(company, asset.getDepreciationExpenseAccount(),
+                "Depreciation expense account");
+        ownership.requireOwnedBy(company, asset.getFund(), "Asset fund");
+
+        requireUsableAccount(asset.getAssetAccount(), "Asset account", runDate);
+        validateAssetAccount(asset.getAssetAccount());
+        requireUsableAccount(
+                asset.getAccumulatedDepreciationAccount(), "Accumulated depreciation account", runDate);
+        if (asset.getAccumulatedDepreciationAccount().getAccountType() != AccountType.ASSET)
+        {
+            throw new IllegalStateException("Accumulated depreciation account must be an ASSET account");
+        }
+        requireUsableAccount(
+                asset.getDepreciationExpenseAccount(), "Depreciation expense account", runDate);
+        if (asset.getDepreciationExpenseAccount().getAccountType() != AccountType.EXPENSE)
+        {
+            throw new IllegalStateException("Depreciation expense account must be an EXPENSE account");
+        }
+        Fund fund = asset.getFund();
+        if (!fund.isActive())
+        {
+            throw new IllegalStateException("Asset fund is inactive");
+        }
+        if (fund.getEffectiveFrom() != null && runDate.isBefore(fund.getEffectiveFrom()))
+        {
+            throw new IllegalStateException("Asset fund is not effective on " + runDate);
+        }
+        if (fund.getEffectiveTo() != null && runDate.isAfter(fund.getEffectiveTo()))
+        {
+            throw new IllegalStateException("Asset fund is not effective on " + runDate);
+        }
+    }
+
+    private static void requireUsableAccount(Account account, String label, LocalDate runDate)
+    {
+        if (!account.isActive())
+        {
+            throw new IllegalStateException(label + " is inactive");
+        }
+        if (!account.isPosting())
+        {
+            throw new IllegalStateException(label + " is not a posting account");
+        }
+        if (account.getEffectiveFrom() != null && runDate.isBefore(account.getEffectiveFrom()))
+        {
+            throw new IllegalStateException(label + " is not effective on " + runDate);
+        }
+        if (account.getEffectiveTo() != null && runDate.isAfter(account.getEffectiveTo()))
+        {
+            throw new IllegalStateException(label + " is not effective on " + runDate);
+        }
+    }
+
+    private static void requireNoPriorRun(EntityManager em, FixedAsset asset, LocalDate runDate)
+    {
+        List<Object[]> existing = em.createQuery("""
+                select r.id, r.transaction.id
+                from FixedAssetDepreciationRun r
+                where r.fixedAsset = :asset and r.runDate = :runDate
+                """, Object[].class)
+                .setParameter("asset", asset)
+                .setParameter("runDate", runDate)
+                .setMaxResults(1)
+                .getResultList();
+        if (existing.isEmpty())
+        {
+            return;
+        }
+
+        long transactionId = ((Number) existing.get(0)[1]).longValue();
+        boolean completedProtection = countNative(em, """
+                select count(*)
+                from txn_reconciliation_protection p
+                join reconciliation_run r on r.id = p.reconciliation_run_id
+                where p.txn_id = ? and r.status = 'COMPLETED'
+                """, transactionId) > 0;
+        boolean finalizedProtection = countNative(em, """
+                select count(*)
+                from bank_reconciliation_session s
+                join bank_reconciliation_match m on m.session_id = s.id
+                join txn_split ts on ts.id = m.txn_split_id
+                where ts.txn_id = ? and s.status = 'FINALIZED'
+                """, transactionId) > 0;
+        if (completedProtection || finalizedProtection)
+        {
+            throw new IllegalStateException(
+                    "A completed depreciation run already exists for " + runDate
+                            + " and its transaction is protected by a completed or finalized reconciliation");
+        }
+        throw new IllegalStateException("A completed depreciation run already exists for " + runDate);
+    }
+
+    private static long countNative(EntityManager em, String sql, long value)
+    {
+        return ((Number) em.createNativeQuery(sql)
+                .setParameter(1, value)
+                .getSingleResult()).longValue();
+    }
+
+    private static void validatePortableIdentityAvailability(
+            EntityManager em,
+            UUID transactionPortableId,
+            UUID runPortableId)
+    {
+        Long transactionCount = em.createQuery(
+                        "select count(t) from Txn t where t.portableId = :portableId", Long.class)
+                .setParameter("portableId", transactionPortableId)
+                .getSingleResult();
+        if (transactionCount > 0)
+        {
+            throw new IllegalStateException(
+                    "Depreciation transaction portable identity is already in use: " + transactionPortableId);
+        }
+        Long runCount = em.createQuery(
+                        "select count(r) from FixedAssetDepreciationRun r where r.portableId = :portableId",
+                        Long.class)
+                .setParameter("portableId", runPortableId)
+                .getSingleResult();
+        if (runCount > 0)
+        {
+            throw new IllegalStateException(
+                    "Depreciation run portable identity is already in use: " + runPortableId);
+        }
+    }
+
+    private static BigDecimal accumulatedDepreciation(EntityManager em, FixedAsset asset)
+    {
+        BigDecimal runTotal = em.createQuery("""
+                select coalesce(sum(r.depreciationAmount), 0)
+                from FixedAssetDepreciationRun r
+                where r.fixedAsset = :asset
+                """, BigDecimal.class)
+                .setParameter("asset", asset)
+                .getSingleResult();
+        return scale(asset.getOpeningAccumulatedDepreciation()).add(scale(runTotal));
+    }
+
+    private static UUID requirePortableId(UUID value, String label)
+    {
+        return Objects.requireNonNull(value, label + " is required");
+    }
+
+    private static RuntimeException actionableDepreciationFailure(
+            long assetId,
+            LocalDate runDate,
+            RuntimeException failure)
+    {
+        if (failure instanceof IllegalArgumentException
+                || failure instanceof IllegalStateException
+                || failure instanceof PostingException)
+        {
+            return failure;
+        }
+        String detail = deepestMessage(failure);
+        return new IllegalStateException(
+                "Monthly depreciation for asset " + assetId + " on " + runDate
+                        + " was not saved; all accounting changes were rolled back"
+                        + (detail.isBlank() ? "." : ": " + detail),
+                failure);
+    }
+
+    private static String deepestMessage(Throwable failure)
+    {
+        Throwable current = failure;
+        String message = "";
+        while (current != null)
+        {
+            if (current.getMessage() != null && !current.getMessage().isBlank())
+            {
+                message = current.getMessage().trim();
+            }
+            current = current.getCause();
+        }
+        return message;
     }
 
     private void apply(EntityManager em, FixedAsset asset, FixedAssetCommand command)
