@@ -2,6 +2,8 @@
 
 Use this checklist only after the exact PR #254 head has passed the complete Maven PR Tests gate. These steps verify observable desktop behavior; persistence-only invariants are covered by automated tests and are not duplicated as manual database exercises.
 
+The exact green head and Actions run are recorded in `doc/PLAN.md` before owner execution begins.
+
 ## Preconditions
 
 1. Build/run the PR #254 branch with a disposable test database or company data that can be safely changed.
