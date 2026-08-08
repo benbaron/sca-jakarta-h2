@@ -1,0 +1,335 @@
+-| Budget targets | `BudgetPlan`/`BudgetLine` JPA entities and `budget_plan`/`budget_line` tables | yes | version activation must remain through `BudgetPlanService`; no sidecar target store remains | P04 persistent budget model |
++| Budget targets | `BudgetPlan`/`BudgetLine` JPA entities and `budget_plan`/`budget_line` tables | yes | P16-S6 keeps draft creation/revision/save/activation in `BudgetPlanService`, selects versions by stable ID, and derives fiscal comparison ranges from company fiscal settings plus the shell-selected accounting period; no sidecar target store remains | P04/P16-S6 persistent budget model |
+ | Import preview | `ImportPreviewService` remains transient staging for legacy preview families; P16-S2 `CoaCsvImportService` owns the frozen COA CSV preview/commit scope | no by design until acceptance; yes for the resulting account/identity/audit facts after commit | preview data is intentionally in-memory, but accepted COA CSV writes now use one caller-owned transaction instead of independently committing rows | preserve transient preview; require atomic accepted-row commit, idempotent identical recommit, and new preview on source/company/chart/target drift |
+ | Bank statement review | `bank_import_batch`, `bank_statement_line`, `import_issue`, `bank_csv_mapping_profile`; production-composed strict OFX/QFX, mapped-CSV, and normalized-CSV preview/commit services; `BankReviewQueryService` | yes for committed review facts, retained normalized external identities/PAYEEID, and profiles | raw preview is intentionally in-memory; normalized CSV restores governed review facts without a mapping profile; C2 verifies all six profiles and rejection non-mutation, while C3 verifies OFX/QFX semantic re-import does not alter closed or reconciliation-protected ledger facts; ledger acceptance/matching remains a separate explicit workflow | P05/P15-S6/P15-S7/P15-S8 |
+ | Reconciliation runs | JDBC `ReconciliationRunRepository`, V6/V7 style workflow tables | yes for run records and P06-S2 unresolved report summaries | remaining mismatch-resolution/edit workflow is incomplete | P06/P10 |
+@@ -87,7 +87,7 @@ Status: P00 inventory of current main, updated through P16-S4 governed bank-impo
+ 
+ - `BudgetCategory` is a real JPA master-data concept and remains distinct from accounts and activities.
+ - P04 added `BudgetPlan` and `BudgetLine` as the normalized H2 authority for versioned budget targets.
+-- Budget editing, activation, dashboard comparison, and Budget vs Actual views must use `BudgetPlanService`; the former text sidecar keyed by fund code is no longer authoritative.
++- Budget editing and activation use `BudgetPlanService`; P16-S6 adds deterministic company/year draft+active queries, explicit revision copying, serialized activation, and fiscal-range variance through that same authority. Budget vs Actual uses the shared fiscal range. Dashboard retains its established `DashboardQueryService` projection and remains a separate read projection. The former text sidecar keyed by fund code is no longer authoritative.
+ 
+ ## Import staging versus accepted data
+ 
+diff --git a/doc/reporting/report-library.md b/doc/reporting/report-library.md
+index 7eb1aaf..904f799 100644
+--- a/doc/reporting/report-library.md
++++ b/doc/reporting/report-library.md
+@@ -18,6 +18,8 @@ A report must not appear in the catalog unless a real core service projection or
+ 
+ ## Request and execution boundary
+ 
++P16-S6 aligns the default Report Library date request with fiscal authority. When no explicit `DateRangeContext` range is supplied, the default start is the active company fiscal-year start and the default end/as-of is the end of the shell-selected accounting period, both from the same immutable `FiscalPeriodRange` used by budget comparison. An explicit report range remains user-controlled. Preview and every export format continue to consume the exact same immutable `ReportRequest`; export does not recalculate dates from the wall clock.
++
+ `ReportRequest` is the immutable validated parameter set shared by preview, export, and Journal drill-through. It contains:
+ 
+ - the typed report definition;
+diff --git a/src/main/java/org/nonprofitbookkeeping/service/BudgetPlanService.java b/src/main/java/org/nonprofitbookkeeping/service/BudgetPlanService.java
+index 28d5bde..2a29f28 100644
+--- a/src/main/java/org/nonprofitbookkeeping/service/BudgetPlanService.java
++++ b/src/main/java/org/nonprofitbookkeeping/service/BudgetPlanService.java
+@@ -3,6 +3,7 @@ package org.nonprofitbookkeeping.service;
+ import jakarta.enterprise.context.ApplicationScoped;
+ import jakarta.inject.Inject;
+ import jakarta.persistence.EntityManager;
++import jakarta.persistence.LockModeType;
+ import org.nonprofitbookkeeping.model.AccountType;
+ import org.nonprofitbookkeeping.model.BudgetCategory;
+ import org.nonprofitbookkeeping.model.BudgetLine;
+@@ -15,6 +16,7 @@ import java.math.BigDecimal;
+ import java.time.Instant;
+ import java.time.LocalDate;
+ import java.time.YearMonth;
++import java.util.Comparator;
+ import java.util.LinkedHashMap;
+ import java.util.List;
+ import java.util.Map;
+@@ -204,12 +206,10 @@ public class BudgetPlanService
+             try
+             {
+                 Company company = ownership().requireCompany(em, companyCodeSupplier.get());
++                em.lock(company, LockModeType.PESSIMISTIC_WRITE);
+                 BudgetPlan plan = requirePlan(em, planId);
+                 ownership().ensureOwnedBy(em, company, plan, "Budget plan");
+-                if (plan.getStatus() == BudgetPlan.Status.ARCHIVED)
+-                {
+-                    throw new IllegalStateException("Archived budgets cannot be activated");
+-                }
++                requireDraft(plan);
+                 Instant now = Instant.now();
+                 em.createQuery("select p from BudgetPlan p where p.company = :company and p.fiscalYear = :year and p.status = :status and p.id <> :id", BudgetPlan.class)
+                         .setParameter("company", company)
+@@ -262,6 +262,124 @@ public class BudgetPlanService
+         }
+     }
+ 
++    /** Returns the editable drafts and active plan for one company fiscal year in deterministic order. */
++    public List<BudgetPlanView> editableAndActiveForFiscalYear(int fiscalYear)
++    {
++        try (EntityManager em = jpa.em())
++        {
++            Company company = ownership().requireCompany(em, companyCodeSupplier.get());
++            return em.createQuery("""
++                    select p from BudgetPlan p
++                    where p.company = :company
++                      and p.fiscalYear = :year
++                      and p.status in :statuses
++                    """, BudgetPlan.class)
++                    .setParameter("company", company)
++                    .setParameter("year", fiscalYear)
++                    .setParameter("statuses", List.of(BudgetPlan.Status.DRAFT, BudgetPlan.Status.ACTIVE))
++                    .getResultList()
++                    .stream()
++                    .sorted(Comparator
++                            .comparing((BudgetPlan plan) -> plan.getStatus() == BudgetPlan.Status.DRAFT ? 0 : 1)
++                            .thenComparing(BudgetPlan::getUpdatedAt, Comparator.nullsLast(Comparator.reverseOrder()))
++                            .thenComparing(BudgetPlan::getId, Comparator.reverseOrder()))
++                    .map(plan -> toView(plan, lines(em, plan.getId())))
++                    .toList();
++        }
++    }
++
++    /** Creates an explicit empty draft for the supplied fiscal range. Reload never calls this implicitly. */
++    public BudgetPlanView createDraft(FiscalPeriodRange range)
++    {
++        Objects.requireNonNull(range, "range");
++        try (EntityManager em = jpa.em())
++        {
++            em.getTransaction().begin();
++            try
++            {
++                Company company = ownership().requireCompany(em, companyCodeSupplier.get());
++                em.lock(company, LockModeType.PESSIMISTIC_WRITE);
++                String version = nextVersionCode(em, company, range.fiscalYear(), "DRAFT");
++                BudgetPlan plan = new BudgetPlan();
++                plan.setCompany(company);
++                plan.setName("FY " + range.fiscalYear() + " Budget Draft");
++                plan.setFiscalYear(range.fiscalYear());
++                plan.setVersionCode(version);
++                plan.setPeriodStart(range.fiscalYearStart());
++                plan.setPeriodEnd(range.fiscalYearEnd());
++                plan.setNotes("Created explicitly from Budget Editor");
++                plan.setStatus(BudgetPlan.Status.DRAFT);
++                plan.touchUpdatedAt();
++                em.persist(plan);
++                em.getTransaction().commit();
++                return toView(plan, List.of());
++            }
++            catch (RuntimeException ex)
++            {
++                rollback(em);
++                throw ex;
++            }
++        }
++    }
++
++    /** Creates a line-for-line editable revision from the explicitly selected active plan. */
++    public BudgetPlanView createRevision(long sourcePlanId)
++    {
++        try (EntityManager em = jpa.em())
++        {
++            em.getTransaction().begin();
++            try
++            {
++                Company company = ownership().requireCompany(em, companyCodeSupplier.get());
++                em.lock(company, LockModeType.PESSIMISTIC_WRITE);
++                BudgetPlan source = requirePlan(em, sourcePlanId);
++                ownership().ensureOwnedBy(em, company, source, "Budget plan");
++                if (source.getStatus() != BudgetPlan.Status.ACTIVE)
++                {
++                    throw new IllegalStateException("A revision can be created only from the selected active budget version");
++                }
++
++                BudgetPlan revision = new BudgetPlan();
++                revision.setCompany(company);
++                revision.setName(source.getName() + " Revision");
++                revision.setFiscalYear(source.getFiscalYear());
++                revision.setVersionCode(nextVersionCode(em, company, source.getFiscalYear(), "REV"));
++                revision.setPeriodStart(source.getPeriodStart());
++                revision.setPeriodEnd(source.getPeriodEnd());
++                revision.setNotes(source.getNotes());
++                revision.setStatus(BudgetPlan.Status.DRAFT);
++                revision.touchUpdatedAt();
++                em.persist(revision);
++
++                List<BudgetLine> sourceLines = em.createQuery(
++                                "select l from BudgetLine l where l.budgetPlan.id = :planId order by l.id",
++                                BudgetLine.class)
++                        .setParameter("planId", sourcePlanId)
++                        .getResultList();
++                for (BudgetLine sourceLine : sourceLines)
++                {
++                    BudgetLine copy = new BudgetLine();
++                    copy.setBudgetPlan(revision);
++                    copy.setBudgetCategory(sourceLine.getBudgetCategory());
++                    copy.setFund(sourceLine.getFund());
++                    copy.setPeriodMonth(sourceLine.getPeriodMonth());
++                    copy.setAmount(sourceLine.getAmount());
++                    copy.setNotes(sourceLine.getNotes());
++                    em.persist(copy);
++                }
++                em.flush();
++                long revisionId = revision.getId();
++                em.getTransaction().commit();
++                return load(revisionId).orElseThrow();
++            }
++            catch (RuntimeException ex)
++            {
++                rollback(em);
++                throw ex;
++            }
++        }
++    }
++
+     public Optional<BudgetPlanView> activeForFiscalYear(int fiscalYear)
+     {
+         try (EntityManager em = jpa.em())
+@@ -296,25 +414,59 @@ public class BudgetPlanService
+         }
+     }
+ 
+-    public List<BudgetVarianceView> activeVariance(LocalDate asOfDate)
++    public FiscalPeriodRange fiscalRange(LocalDate selectedPeriodStart)
+     {
+-        if (asOfDate == null)
++        if (selectedPeriodStart == null)
++        {
++            throw new IllegalArgumentException("selectedPeriodStart is required");
++        }
++        try (EntityManager em = jpa.em())
+         {
+-            throw new IllegalArgumentException("asOfDate is required");
++            Company company = ownership().requireCompany(em, companyCodeSupplier.get());
++            return FiscalPeriodRange.of(
++                    company.getFiscalYearStartMonth(),
++                    company.getFiscalYearStartDay(),
++                    selectedPeriodStart);
+         }
++    }
++
++    public List<BudgetVarianceView> activeVariance(FiscalPeriodRange range)
++    {
++        Objects.requireNonNull(range, "range");
+         try (EntityManager em = jpa.em())
+         {
+-            Optional<BudgetPlanView> active = activeForFiscalYear(asOfDate.getYear());
++            Company company = ownership().requireCompany(em, companyCodeSupplier.get());
++            List<BudgetPlan> active = em.createQuery("""
++                    select p from BudgetPlan p
++                    where p.company = :company and p.fiscalYear = :year and p.status = :status
++                    order by p.activatedAt desc, p.id desc
++                    """, BudgetPlan.class)
++                    .setParameter("company", company)
++                    .setParameter("year", range.fiscalYear())
++                    .setParameter("status", BudgetPlan.Status.ACTIVE)
++                    .setMaxResults(1)
++                    .getResultList();
+             if (active.isEmpty())
+             {
+                 return List.of();
+             }
+-            Company company = ownership().requireCompany(em, companyCodeSupplier.get());
+-            return variances(em, company, active.orElseThrow().id(), asOfDate);
++            return variances(em, company, active.get(0).getId(), range);
+         }
+     }
+ 
+-    private static List<BudgetVarianceView> variances(EntityManager em, Company company, long planId, LocalDate asOfDate)
++    /** Compatibility overload that treats the supplied date as the exact as-of date while honoring fiscal-year boundaries. */
++    public List<BudgetVarianceView> activeVariance(LocalDate asOfDate)
++    {
++        FiscalPeriodRange fiscal = fiscalRange(asOfDate);
++        return activeVariance(new FiscalPeriodRange(
++                fiscal.fiscalYear(),
++                fiscal.fiscalYearStart(),
++                fiscal.fiscalYearEnd(),
++                asOfDate,
++                asOfDate));
++    }
++
++    private static List<BudgetVarianceView> variances(EntityManager em, Company company, long planId, FiscalPeriodRange range)
+     {
+         Map<String, VarianceAccumulator> rows = new LinkedHashMap<>();
+         List<Object[]> budgetRows = em.createQuery("""
+@@ -328,7 +480,7 @@ public class BudgetPlanService
+                 order by bc.code, f.code
+                 """, Object[].class)
+                 .setParameter("planId", planId)
+-                .setParameter("period", YearMonth.from(asOfDate).toString())
++                .setParameter("period", YearMonth.from(range.periodEnd()).toString())
+                 .getResultList();
+         for (Object[] row : budgetRows)
+         {
+@@ -355,8 +507,8 @@ public class BudgetPlanService
+                 .setParameter("company", company)
+                 .setParameter("incomeType", AccountType.INCOME)
+                 .setParameter("expenseType", AccountType.EXPENSE)
+-                .setParameter("start", LocalDate.of(asOfDate.getYear(), 1, 1))
+-                .setParameter("asOf", asOfDate)
++                .setParameter("start", range.fiscalYearStart())
++                .setParameter("asOf", range.periodEnd())
+                 .getResultList();
+         for (Object[] row : actualRows)
+         {
+@@ -384,8 +536,8 @@ public class BudgetPlanService
+         for (BudgetLineCommand command : commands)
+         {
+             if (command.periodMonth() != null
+-                    && (command.periodMonth().atDay(1).isBefore(plan.getPeriodStart())
+-                    || command.periodMonth().atEndOfMonth().isAfter(plan.getPeriodEnd())))
++                    && (command.periodMonth().atEndOfMonth().isBefore(plan.getPeriodStart())
++                    || command.periodMonth().atDay(1).isAfter(plan.getPeriodEnd())))
+             {
+                 throw new IllegalArgumentException("Budget line period is outside the plan period");
+             }
+@@ -397,6 +549,36 @@ public class BudgetPlanService
+         }
+     }
+ 
++    private static String nextVersionCode(EntityManager em, Company company, int fiscalYear, String kind)
++    {
++        String prefix = "FY" + fiscalYear + "-" + kind + "-";
++        List<String> versions = em.createQuery("""
++                select p.versionCode from BudgetPlan p
++                where p.company = :company and p.fiscalYear = :year and p.versionCode like :prefix
++                """, String.class)
++                .setParameter("company", company)
++                .setParameter("year", fiscalYear)
++                .setParameter("prefix", prefix + "%")
++                .getResultList();
++        int next = 1;
++        for (String version : versions)
++        {
++            if (version == null || !version.startsWith(prefix))
++            {
++                continue;
++            }
++            try
++            {
++                next = Math.max(next, Integer.parseInt(version.substring(prefix.length())) + 1);
++            }
++            catch (NumberFormatException ignored)
++            {
++                // Historical/custom version codes do not participate in the generated sequence.
++            }
++        }
++        return prefix + next;
++    }
++
+     private static void applyHeader(BudgetPlan plan, BudgetPlanCommand command)
+     {
+         plan.setName(command.name());
+diff --git a/src/main/java/org/nonprofitbookkeeping/ui/BudgetEditorPanel.java b/src/main/java/org/nonprofitbookkeeping/ui/BudgetEditorPanel.java
+index 5880d0b..a4e434a 100644
+--- a/src/main/java/org/nonprofitbookkeeping/ui/BudgetEditorPanel.java
++++ b/src/main/java/org/nonprofitbookkeeping/ui/BudgetEditorPanel.java
+@@ -7,6 +7,7 @@ import javafx.scene.Node;
+ import javafx.scene.control.Alert;
+ import javafx.scene.control.Button;
+ import javafx.scene.control.ButtonType;
++import javafx.scene.control.ComboBox;
+ import javafx.scene.control.Label;
+ import javafx.scene.control.ScrollPane;
+ import javafx.scene.control.Separator;
+@@ -18,11 +19,13 @@ import javafx.scene.layout.BorderPane;
