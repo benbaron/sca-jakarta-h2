@@ -1,0 +1,79 @@
+ | Fixed assets/depreciation | `FixedAsset` and `FixedAssetDepreciationRun` JPA entities with V55 tables; depreciation runs create canonical `Txn` rows | yes for P08-S1 asset records and completed depreciation runs | old asset/depreciation text sidecars removed from production paths | later hardening: richer disposal/impairment workflows, visual polish, and reports |
+ | Inventory/supplies | `InventoryItem` and `InventoryMovement` JPA entities with V56 tables; movement records reserve a nullable canonical `Txn` link | yes for P09-S1 item records and movement history | old inventory text runbook removed from production paths | later hardening: financially relevant movement-to-ledger automation and reports |
+-| Audit/approval | `AuditEvent` is company-owned factual JPA audit history with an intrinsic portable UUID; `ApprovalAuditRecord` remains a legacy approval-oriented repository/panel | yes for both stored record types | the two record families are distinct and legacy approval records are not selected-company SCLX authority | export only company-owned `AuditEvent`; retain the legacy surface as compatibility until deliberately replaced |
++| Audit history | `AuditEvent` is company-owned factual JPA audit history with an intrinsic portable UUID; production Audit History queries it through `AuditHistoryService` | yes for factual `audit_event`; legacy `approval_audit_record` remains stored compatibility data only | legacy approval records are a distinct family and are not queried or blended into the production factual history surface | export/query only company-owned `AuditEvent`; keep legacy approval repository/classes compatibility-only unless a future migration deliberately retires them |
+ | Preferences/app state | `FileAppStateStore`, `UserAppStateStore`, session state, company UI preference/state tables, production `CompanyTableStateBinder` | mixed; all production table order/width/sort state and company display state are H2, while shell convenience state remains a user file | connected database path is factual runtime authority and is read-only in Preferences; `FileAppStateStore.saveDatabaseSession` writes target database/company convenience together only after target preparation succeeds | database switching is owned by `DatabaseSessionController`; no preference editor may change active database authority |
+ | Former Import/Export Jobs function | panel, route, navigation destination, enum identifier, and `UiWorkspaceDataStore` generic job list removed in P13-S1 | no active generic job store remains | none; domain-specific import, banking, reconciliation, diagnostic, and audit facts remain in their owning models | do not reintroduce generic job tracking |
+ | Diagnostics and database recovery | `DiagnosticsQueryService.Report`, `DatabaseSessionController`, prepared `UiServiceRegistry` service bundles, and typed `DatabaseRecoveryCommand` dispatch | H2 remains authoritative for datasource/account/fund facts; runtime/session values are factual context only | migration, JPA/service construction, and target active-company resolution happen before activation; a cancelled or failed target retains the prior datasource, company, session path, Diagnostics path, and records | keep recovery explicit and non-destructive; publish database/company selection only with the successfully prepared service bundle |
+@@ -53,7 +53,8 @@ Status: P00 inventory of current main, updated through P16-S4 governed bank-impo
+ - `AuditEvent` is the selected-company authority for material-change audit facts. V61 supplies explicit nullable company ownership for recoverable historical data, and V67 supplies a non-null intrinsic UUID portable identity without rewriting local IDs or polymorphic subject text.
+ - New JPA and SQL-created business audit events receive a UUID through entity initialization or the H2 default. Existing events are backfilled nondestructively, and duplicate portable identities are rejected.
+ - SCLX exports only events whose `company_id` is the selected company. Application-global or unresolved historical rows remain outside active-company export rather than being guessed.
+-- `ApprovalAuditRecord` is a separate legacy workflow-oriented compatibility record and is not substituted for `AuditEvent` in SCLX.
++- `ApprovalAuditRecord` is a separate legacy workflow-oriented compatibility record and is not substituted for `AuditEvent` in SCLX. P16-S7 removes it from the production Audit History query path; legacy rows are not silently merged with current facts.
++- Production Audit History uses `AuditHistoryService` with an inner company join, so other-company and unresolved/null-company events cannot leak into the selected-company view. Filtering by action/entity/actor/date is service-owned, while JavaFX remains SQL-free and read-only.
+ 
+ ## Fund master-data authority
+ 
+diff --git a/src/main/java/org/nonprofitbookkeeping/interchange/sclx/SclxImportCommitService.java b/src/main/java/org/nonprofitbookkeeping/interchange/sclx/SclxImportCommitService.java
+index 586a0ca..cf9fdca 100644
+--- a/src/main/java/org/nonprofitbookkeeping/interchange/sclx/SclxImportCommitService.java
++++ b/src/main/java/org/nonprofitbookkeeping/interchange/sclx/SclxImportCommitService.java
+@@ -147,7 +147,7 @@ public final class SclxImportCommitService
+         this.bankClearedStateService = new BankClearedStateService(jpa);
+         this.bankReconciliationService = new BankReconciliationWorkspaceService(jpa);
+         this.periodCloseRangeService = new PeriodCloseRangeService(jpa);
+-        this.auditHistoryService = new AuditHistoryService();
++        this.auditHistoryService = new AuditHistoryService(jpa, companyCodeSupplier);
+         this.transactionEntryService = new TransactionEntryService(jpa, companyCodeSupplier);
+         this.transactionCorrectionService = new TransactionCorrectionService(jpa, companyCodeSupplier);
+     }
+diff --git a/src/main/java/org/nonprofitbookkeeping/service/AuditHistoryService.java b/src/main/java/org/nonprofitbookkeeping/service/AuditHistoryService.java
+index af9ebde..d7c9095 100644
+--- a/src/main/java/org/nonprofitbookkeeping/service/AuditHistoryService.java
++++ b/src/main/java/org/nonprofitbookkeeping/service/AuditHistoryService.java
+@@ -3,20 +3,93 @@ package org.nonprofitbookkeeping.service;
+ import jakarta.persistence.EntityManager;
+ import org.nonprofitbookkeeping.model.AuditEvent;
+ import org.nonprofitbookkeeping.model.Company;
++import org.nonprofitbookkeeping.persistence.Jpa;
+ 
+ import java.time.Instant;
++import java.time.LocalDate;
++import java.time.ZoneId;
++import java.util.ArrayList;
+ import java.util.LinkedHashMap;
+ import java.util.List;
++import java.util.Locale;
+ import java.util.Map;
+ import java.util.Objects;
+ import java.util.Set;
+ import java.util.UUID;
++import java.util.function.Supplier;
+ import java.util.stream.Collectors;
+ 
+-/** Canonical write boundary for selected-company factual audit history. */
++/** Canonical selected-company factual audit-history query and interchange-write boundary. */
+ public final class AuditHistoryService
+ {
+     private static final int MAX_LOB_TEXT = 1_048_576;
++    private static final int MAX_QUERY_ROWS = 1000;
++
++    private final Jpa jpa;
++    private final Supplier<String> companyCodeSupplier;
++
++    public AuditHistoryService(Jpa jpa, Supplier<String> companyCodeSupplier)
++    {
++        this.jpa = Objects.requireNonNull(jpa, "jpa");
++        this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
++    }
++
++    /** Returns immutable factual history for the authoritative active company. */
++    public List<AuditEventView> listRecent(AuditHistoryFilter filter, int maxRows)
++    {
++        return listRecent(companyCodeSupplier.get(), filter, maxRows);
++    }
++
++    /** Returns immutable factual history for one explicit company code. */
++    public List<AuditEventView> listRecent(String companyCode, AuditHistoryFilter filter, int maxRows)
++    {
