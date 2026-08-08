@@ -40,6 +40,10 @@ preferred for the company-isolation check.
 2. Reopen Audit History for the same company and confirm the company-owned layout state restores.
 3. Confirm Audit History offers no Save, Approve, Reject, Escalate, Delete, or other mutation action.
 
+## Automated validation record
+
+Exact implementation head `e140aae3c1d07ceeabbc93d179489d03faa15896` passed Maven PR Tests run `31282119224`, including clean headless `mvn clean verify`, the deliberately repeated test suite, and production JavaFX route compliance. Run this checklist only after the final documentation-inclusive PR head also passes the same complete gate.
+
 ## Acceptance record
 
 - [ ] A. Current factual events passed

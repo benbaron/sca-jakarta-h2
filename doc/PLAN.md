@@ -1,12 +1,12 @@
 ---
-plan_version: 141
+plan_version: 142
 active_phase: P16
 active_slice: P16-S7
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P16-S7-factual-audit-history-authority
-active_pull_request: null
-active_head: 4edb463a5e7ca80d91381e8f941413703b6237be
-next_action: "Implement P16-S7 from merged S6 main: replace the production ApprovalAuditPanel query with company-scoped AuditHistoryService projections over audit_event, add read-only factual filters/details and regression coverage, then open a draft PR and run the full Maven gate."
+active_pull_request: 259
+active_head: e140aae3c1d07ceeabbc93d179489d03faa15896
+next_action: "Validate the final P16-S7 documentation-inclusive PR #259 head, then complete doc/P16-S7-factual-audit-history-authority-user-testing.md. Keep P16-S8 blocked until P16-S7 is accepted and merged."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2253,9 +2253,11 @@ Next exact action:
 
 ## P16-S7 — Factual Audit History authority
 
-Status: IN_PROGRESS on `codex/P16-S7-factual-audit-history-authority`.
+Status: VERIFYING in draft PR #259.
 
 Starting base: `4edb463a5e7ca80d91381e8f941413703b6237be`
+Pull request: #259
+Validated implementation head: `e140aae3c1d07ceeabbc93d179489d03faa15896`
 
 Purpose: show current `audit_event` facts in Audit History instead of presenting the obsolete approval table as current history.
 
@@ -2272,6 +2274,19 @@ Acceptance and tests:
 - Transaction, correction, period-close, SCLX, bank-import, and other current operation events appear after refresh and restart.
 - Other-company and unresolved global events do not leak into the active-company view.
 - The panel performs no writes and never implies approval/rejection workflow.
+
+Execution state:
+
+- S6 owner acceptance and merge are recorded; S7 began from exact merged `main` commit `4edb463a5e7ca80d91381e8f941413703b6237be` on a fresh branch.
+- Production Audit History now queries company-scoped `AuditEvent` projections through `AuditHistoryService`; other-company and unresolved/global rows are excluded by the service query.
+- Action, entity, actor, and inclusive date filtering are service-owned. The JavaFX panel is SQL-free and exposes only immutable factual table/detail views with company-formatted timestamps and company-owned layout state.
+- Legacy `approval_audit_record` persistence and compatibility classes remain stored compatibility structures only; the production panel and `UiServiceRegistry` no longer query or expose the legacy approval service, and legacy rows are not blended into factual history.
+- Focused H2/JPA restart, company-isolation, global-event exclusion, filter, and production-source guard tests are included with `doc/audit/audit-history.md` and `doc/P16-S7-factual-audit-history-authority-user-testing.md`.
+- Exact implementation head `e140aae3c1d07ceeabbc93d179489d03faa15896` passed Maven PR Tests run `31282119224`, including clean headless `mvn clean verify`, the deliberately repeated test suite, and production JavaFX route compliance.
+
+Next exact action:
+
+- Validate the final documentation-inclusive PR #259 head, then complete `doc/P16-S7-factual-audit-history-authority-user-testing.md`. Keep P16-S8 blocked until owner acceptance and merge.
 
 ## P16-S8 — Explicit reviewed-statement acceptance into the ledger
 
