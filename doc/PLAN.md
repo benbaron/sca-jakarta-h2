@@ -1,12 +1,12 @@
 ---
-plan_version: 137
+plan_version: 138
 active_phase: P16
 active_slice: P16-S5
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P16-S5-connected-database-session-authority
-active_pull_request: null
-active_head: 4eef190adb8380d90356a94f24ef8d7f29e46f3a
-next_action: "Implement and validate P16-S5 on codex/P16-S5-connected-database-session-authority, then complete its owner desktop checklist before merge."
+active_pull_request: 257
+active_head: 6b226c8955e5a462e44f6938e59c9bd3a9d0cdeb
+next_action: "Validate the final P16-S5 documentation-inclusive head, then complete doc/P16-S5-connected-database-session-authority-user-testing.md. Keep P16-S6 blocked until P16-S5 is accepted and merged."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2168,11 +2168,11 @@ Next exact action:
 
 ## P16-S5 — Connected-database session authority
 
-Status: IN_PROGRESS on `codex/P16-S5-connected-database-session-authority`.
+Status: VERIFYING in draft PR #257.
 
 Starting base: `4eef190adb8380d90356a94f24ef8d7f29e46f3a`
-Pull request: pending
-Current implementation head: pending publication
+Pull request: #257
+Validated implementation head: `6b226c8955e5a462e44f6938e59c9bd3a9d0cdeb`
 
 Purpose: prevent Preferences from displaying one database path while services remain connected to another.
 
@@ -2189,6 +2189,21 @@ Acceptance and tests:
 - The displayed active path, JDBC/JPA datasource, Diagnostics path, and records always identify the same database.
 - Failed migration/validation and cancelled dirty-state confirmation preserve the prior session.
 - Successful switch rebuilds services and panels once, with no stale company data or split-brain reads.
+
+Execution state:
+
+- Settings displays the connected database path as read-only factual state and no longer writes `UiSessionState.databaseSelection` from Preferences.
+- `DatabaseSessionController` prepares the target database, migrated JPA/service bundle, and authoritative active-company selection before publishing any new session authority.
+- `UiServiceRegistry` keeps the prior service bundle active until the prepared target is validated; failed preparation closes only the target resources.
+- Dirty-workspace cancellation prevents target preparation. Failed target migration/validation preserves the prior database, company, services, displayed path, Diagnostics path, and healthy workspace state.
+- A successful switch publishes database/company shell state together, swaps the prepared service bundle, and refreshes open panels once without duplicate active-company refresh.
+- `FileAppStateStore` persists database selection and active-company shell convenience state in one properties-file write; the retired `MainWindow` database command also routes through the same session controller.
+- Focused controller/source/file-state tests plus real H2/JPA and JavaFX workspace regression coverage are included, along with `doc/P16-S5-connected-database-session-authority-user-testing.md`.
+- Exact implementation head `6b226c8955e5a462e44f6938e59c9bd3a9d0cdeb` passed Maven PR Tests run `31240324104`, including clean headless `mvn clean verify`, the deliberately repeated test suite, and production JavaFX route compliance.
+
+Next exact action:
+
+- Validate the final documentation-inclusive PR #257 head, then complete `doc/P16-S5-connected-database-session-authority-user-testing.md`. Keep P16-S6 blocked until owner acceptance and merge.
 
 ## P16-S6 — Budget draft lifecycle and fiscal-period authority
 
