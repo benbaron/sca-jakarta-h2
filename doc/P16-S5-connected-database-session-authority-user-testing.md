@@ -44,6 +44,11 @@ Use this checklist only after the exact P16-S5 PR head passes the complete Maven
 3. Exit and restart the application. Confirm the last successfully connected database and resolved company are restored together.
 4. Confirm a previously failed or cancelled target was not recorded as the active database.
 
+## Automated validation
+
+- Implementation head `6b226c8955e5a462e44f6938e59c9bd3a9d0cdeb` passed Maven PR Tests run `31240324104`: clean headless verification, the deliberately repeated test suite, and production JavaFX route compliance all passed.
+- The final documentation-inclusive PR head must also pass the same Maven PR Tests gate before this owner checklist is executed.
+
 ## Acceptance record
 
 - [ ] A. Preferences factual/read-only database state passed
