@@ -1,6 +1,6 @@
 # Model and persistence authority inventory
 
-Status: P00 inventory of current main, updated through P16-S2 atomic COA CSV commit, P15-S8-C4 interchange progress, pre-commit cancellation, and laptop-width closure. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
+Status: P00 inventory of current main, updated through P16-S4 governed bank-import authority, P16-S2 atomic COA CSV commit, P15-S8-C4 interchange progress, pre-commit cancellation, and laptop-width closure. This document identifies duplicate authority risks, non-H2 stores, and migration hazards before later phases choose canonical models.
 
 ## Current persistence map
 
@@ -109,7 +109,8 @@ Status: P00 inventory of current main, updated through P16-S2 atomic COA CSV com
 - Reconciliation run records are durable comparison facts after P06-S2, not an approval queue.
 - Native `bank_reconciliation_session` and `bank_reconciliation_match` records are the production reconciliation authority. P16-S3 makes a `FINALIZED` native session immutable through ordinary live mutation APIs; repeated finalization is idempotent, while later correction proceeds through an explicit audited successor that preserves the finalized predecessor.
 - P16-S3 validates session/company/configured-account/statement/split scope before mutation and requires exact symmetric relationship state for unmatch. A factual difference explanation does not create or reserve an arbitrary statement/split relationship.
-- `bank_import_batch.source_name` is logical/original import provenance, not a temporary parser filesystem pathname. Reconciliation import normalizes path-shaped transport input at its service boundary while historical SCLX restoration continues to preserve governed source facts; the existing `VARCHAR(260)` constraint remains unchanged.
+- `bank_import_batch.source_name` is logical/original import provenance, not a temporary parser filesystem pathname. P16-S4 removes external file-import persistence from Reconciliation; logical source provenance is owned by the governed Import Preview review services, while historical SCLX restoration continues to preserve governed source facts and the existing `VARCHAR(260)` constraint remains unchanged.
+- `BankReconciliationWorkspaceService` no longer contains CSV/OFX/QIF parsers or constructs imported `BankImportBatch`/`BankStatementLine` rows. Manual statement entry is a separate explicit fact persisted through `BankStatementManualEntryService` inside the reconciliation transaction; imported bank-review facts have one production write authority through Import Preview's canonical services.
 - The former Schedules top-level function and schedule runbook sidecar are removed.
 - Open-item and deferral concepts return only as domain-specific supplemental transaction records linked to canonical transaction/split IDs.
 - Open-item snapshot repositories and domain state enums must not become a second ledger.

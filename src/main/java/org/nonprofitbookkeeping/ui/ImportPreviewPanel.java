@@ -115,6 +115,8 @@ public class ImportPreviewPanel implements AppPanel
     private BankStatementReviewService lastBankCommitService;
     private BankCsvReviewService lastBankCsvCommitService;
     private NormalizedBankCsvReviewService lastNormalizedBankCsvCommitService;
+    private Long returnReconciliationSessionId;
+    private Long reconciliationImportBankAccountId;
 
     public ImportPreviewPanel()
     {
@@ -395,7 +397,7 @@ public class ImportPreviewPanel implements AppPanel
         previewBankCsv.setDisable(disabled);
         previewNormalizedBankCsv.setDisable(disabled);
         saveBankCsvProfile.setDisable(disabled);
-        bankAccount.setDisable(disabled);
+        bankAccount.setDisable(disabled || reconciliationImportBankAccountId != null);
         bankCsvProfile.setDisable(disabled);
         confirmBankIdentity.setDisable(disabled);
         sclxActor.setDisable(disabled);
@@ -437,6 +439,43 @@ public class ImportPreviewPanel implements AppPanel
     public Node root()
     {
         return root;
+    }
+
+    @Override
+    public void onPanelShown()
+    {
+        returnReconciliationSessionId = null;
+        reconciliationImportBankAccountId = null;
+        bankAccount.setDisable(false);
+        String context = DrillThroughCoordinator.consumeContext(AppPanelId.IMPORT_PREVIEW);
+        var request = BankImportNavigationContext.parseImportRequest(context);
+        if (request.isEmpty())
+        {
+            return;
+        }
+
+        reloadBankTargets();
+        BankImportNavigationContext.ImportRequest importRequest = request.get();
+        CompanyBankAccount target = bankAccount.getItems().stream()
+                .filter(value -> value.getId() != null && value.getId() == importRequest.bankAccountId())
+                .findFirst()
+                .orElse(null);
+        if (target == null)
+        {
+            bankAccount.setValue(null);
+            clearBankPreview();
+            status.setText("Bank import target is unavailable: configured account "
+                    + importRequest.bankAccountId()
+                    + " is not active for the current company.");
+            return;
+        }
+        bankAccount.setValue(target);
+        reconciliationImportBankAccountId = importRequest.bankAccountId();
+        bankAccount.setDisable(true);
+        returnReconciliationSessionId = importRequest.reconciliationSessionId();
+        status.setText("Reconciliation session " + importRequest.reconciliationSessionId()
+                + " selected configured account " + target.getName()
+                + ". Preview OFX/QFX, mapped CSV, or normalized CSV; QIF is not a governed production import format.");
     }
 
     private void buildAcceptedTable()
@@ -1352,6 +1391,7 @@ public class ImportPreviewPanel implements AppPanel
                 + ", duplicates " + result.duplicateLineCount() + ", errors "
                 + result.errorLineCount() + ", issues " + result.issueCount()
                 + ". No ledger transaction was created.");
+        returnToReconciliationAfterBankCommit();
     }
 
     private void applyNormalizedBankCsvReviewResult(NormalizedBankCsvReviewResult result)
@@ -1367,6 +1407,20 @@ public class ImportPreviewPanel implements AppPanel
                 + result.matchedLineCount() + ", duplicates " + result.duplicateLineCount()
                 + ", issues " + result.issueCount()
                 + ". No ledger transaction was created.");
+        returnToReconciliationAfterBankCommit();
+    }
+
+    private void returnToReconciliationAfterBankCommit()
+    {
+        Long sessionId = returnReconciliationSessionId;
+        if (sessionId == null)
+        {
+            return;
+        }
+        returnReconciliationSessionId = null;
+        DrillThroughCoordinator.openPanelWithContext(
+                AppPanelId.RECONCILIATION_RUNS,
+                BankImportNavigationContext.returnToReconciliation(sessionId));
     }
 
     private void clearBankPreview()

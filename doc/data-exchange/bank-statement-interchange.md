@@ -471,3 +471,12 @@ The Import Preview control header and Bank Transactions export scope each own a 
 their exact-scope controls remain reachable at laptop width. Bank Transactions also shows a busy
 indicator while its existing deterministic atomic export runs. These are transient display facts; no
 generic Import/Export Jobs route or durable job state is introduced.
+
+
+## P16-S4 production-route consolidation
+
+Import Preview is the single production desktop authority for external bank-statement import. Banking may navigate to it generically; Reconciliation may navigate to it with an exact configured-account/session context. Those entry points do not own parsers or writes and therefore cannot change the governed OFX 2.x, QFX, mapped CSV, normalized CSV, security, duplicate, idempotency, or atomic-commit semantics defined by this contract.
+
+A Reconciliation-origin request locks Import Preview to the exact active-company `CompanyBankAccount`. The same transient operation controller performs file read/preview off the JavaFX thread, and only the canonical review services may create imported `bank_import_batch`, `bank_statement_line`, and `import_issue` facts. On successful commit, Reconciliation reloads durable review facts; it never receives or persists transient parser rows directly.
+
+QIF is deliberately absent from the production UI. A `.qif` suffix, legacy donor behavior, or historical enum value does not constitute support. QIF may be added only by a later governed change with a strict format contract, fixtures, bounded parser, preview, exact-scope durable-review service, and tests.

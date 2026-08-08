@@ -4,7 +4,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.AuditEvent;
-import org.nonprofitbookkeeping.model.BankImportBatch;
 import org.nonprofitbookkeeping.model.BankStatementLine;
 import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.CompanyBankAccount;
@@ -13,29 +12,21 @@ import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.Instant;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /** Service boundary for the full Bank Reconciliation workspace. */
 public class BankReconciliationWorkspaceService
 {
-    private static final int MAX_IMPORT_SOURCE_NAME_LENGTH = 260;
-
     public enum ClearedStatePolicy
     {
         WARN_ONLY,
@@ -45,7 +36,6 @@ public class BankReconciliationWorkspaceService
     }
 
     public enum SessionStatus { IN_PROGRESS, UNRESOLVED, BALANCED, FINALIZED }
-    public enum StatementSource { MANUAL, CSV, OFX, QIF }
     public enum DifferenceCategory
     {
         MATCHED,
@@ -79,10 +69,6 @@ public class BankReconciliationWorkspaceService
                                              BigDecimal amount,
                                              String description,
                                              String reference) { }
-    public record ImportStatementCommand(long sessionId,
-                                         StatementSource source,
-                                         String sourceName,
-                                         String sourceText) { }
     public record BalanceCards(BigDecimal beginningBalance,
                                BigDecimal bookBalanceAllTransactions,
                                BigDecimal bookBalanceClearedOnly,
@@ -132,13 +118,18 @@ public class BankReconciliationWorkspaceService
                            List<DifferenceView> differences,
                            List<SessionSummary> savedSessions) { }
 
-    private static final Pattern OFX_TRANSACTION = Pattern.compile("<STMTTRN>(.*?)</STMTTRN>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-
     private final Jpa jpa;
+    private final BankStatementManualEntryService manualStatementService;
 
     public BankReconciliationWorkspaceService(Jpa jpa)
     {
+        this(jpa, new BankStatementManualEntryService());
+    }
+
+    BankReconciliationWorkspaceService(Jpa jpa, BankStatementManualEntryService manualStatementService)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
+        this.manualStatementService = Objects.requireNonNull(manualStatementService, "manualStatementService");
     }
 
     public List<BankAccountOption> listConfiguredBankAccounts(String companyCode)
@@ -336,49 +327,14 @@ public class BankReconciliationWorkspaceService
                 SessionRow session = requireMutableSession(em, command.sessionId());
                 CompanyBankAccount bankAccount = configuredBankAccount(em, session.bankAccountId(), session.company());
                 requireStatementDateInRange(session, command.date());
-                persistStatementLines(em,
+                manualStatementService.addLine(
+                        em,
                         session.company(),
                         bankAccount,
-                        BankImportBatch.SourceFormat.OTHER,
-                        "Manual reconciliation entry",
-                        List.of(new ParsedStatementLine(command.date(), command.amount(), command.description(), command.reference())));
-                tx.commit();
-            }
-            catch (RuntimeException ex)
-            {
-                rollback(tx);
-                throw ex;
-            }
-        }
-        return load(command.sessionId());
-    }
-
-    public Snapshot importStatementText(ImportStatementCommand command)
-    {
-        if (command == null || command.source() == null || isBlank(command.sourceText()))
-        {
-            throw new IllegalArgumentException("Statement import source and text are required.");
-        }
-        List<ParsedStatementLine> parsed = parse(command.source(), command.sourceText());
-        if (parsed.isEmpty())
-        {
-            throw new IllegalArgumentException("No statement lines could be parsed from the selected source.");
-        }
-        try (EntityManager em = jpa.em())
-        {
-            EntityTransaction tx = em.getTransaction();
-            tx.begin();
-            try
-            {
-                SessionRow session = requireMutableSession(em, command.sessionId());
-                CompanyBankAccount bankAccount = configuredBankAccount(em, session.bankAccountId(), session.company());
-                parsed.forEach(line -> requireStatementDateInRange(session, line.date()));
-                persistStatementLines(em,
-                        session.company(),
-                        bankAccount,
-                        sourceFormat(command.source()),
-                        logicalImportSourceName(command.sourceName(), command.source()),
-                        parsed);
+                        command.date(),
+                        command.amount(),
+                        command.description(),
+                        command.reference());
                 tx.commit();
             }
             catch (RuntimeException ex)
@@ -876,37 +832,6 @@ public class BankReconciliationWorkspaceService
                 .setParameter(4, amount(difference))
                 .setParameter(5, sessionId)
                 .executeUpdate();
-    }
-
-    private void persistStatementLines(EntityManager em, Company company, CompanyBankAccount bankAccount, BankImportBatch.SourceFormat format, String sourceName, List<ParsedStatementLine> lines)
-    {
-        BankImportBatch batch = new BankImportBatch();
-        batch.setCompany(company);
-        batch.setBankAccount(bankAccount);
-        batch.setSourceFormat(format);
-        batch.setSourceName(sourceName);
-        batch.setTotalLineCount(lines.size());
-        em.persist(batch);
-        int row = 1;
-        for (ParsedStatementLine parsed : lines)
-        {
-            BankStatementLine line = new BankStatementLine();
-            line.setBatch(batch);
-            line.setCompany(company);
-            line.setBankAccount(bankAccount);
-            line.setSourceRowNumber(row);
-            line.setSourceTransactionId(firstNonBlank(parsed.reference(), sourceName + "-" + row));
-            line.setDeterministicFingerprint(UUID.nameUUIDFromBytes((sourceName + row + parsed.date() + parsed.amount() + parsed.description()).getBytes(StandardCharsets.UTF_8)).toString());
-            line.setStatementAccountIdentifier(bankAccount.getMaskedAccountNumber());
-            line.setTransactionDate(parsed.date());
-            line.setPostedDate(parsed.date());
-            line.setAmount(amount(parsed.amount()));
-            line.setName(parsed.description());
-            line.setReference(parsed.reference());
-            line.setStatus(BankStatementLine.Status.IMPORTED);
-            em.persist(line);
-            row++;
-        }
     }
 
     private SessionRow session(EntityManager em, long sessionId)
@@ -1450,195 +1375,6 @@ public class BankReconciliationWorkspaceService
                 .orElseThrow(() -> new IllegalArgumentException("Company does not exist: " + code));
     }
 
-    private static List<ParsedStatementLine> parse(StatementSource source, String text)
-    {
-        return switch (source)
-        {
-            case MANUAL -> throw new IllegalArgumentException("Manual lines are added through the manual entry form.");
-            case CSV -> parseCsv(text);
-            case OFX -> parseOfx(text);
-            case QIF -> parseQif(text);
-        };
-    }
-
-    private static List<ParsedStatementLine> parseCsv(String text)
-    {
-        List<String> lines = text.lines().filter(line -> !line.isBlank()).toList();
-        if (lines.isEmpty())
-        {
-            return List.of();
-        }
-        String[] header = splitCsv(lines.get(0));
-        boolean hasHeader = contains(header, "date") && contains(header, "amount");
-        Map<String, Integer> index = hasHeader ? headerIndex(header) : Map.of();
-        List<ParsedStatementLine> output = new ArrayList<>();
-        for (int i = hasHeader ? 1 : 0; i < lines.size(); i++)
-        {
-            String[] cells = splitCsv(lines.get(i));
-            LocalDate date = parseDate(cell(cells, hasHeader ? index.getOrDefault("date", 0) : 0));
-            BigDecimal amount = parseAmount(cell(cells, hasHeader ? index.getOrDefault("amount", 1) : 1));
-            String description = cell(cells, hasHeader ? index.getOrDefault("description", index.getOrDefault("memo", 2)) : 2);
-            String reference = cell(cells, hasHeader ? index.getOrDefault("reference", index.getOrDefault("check", 3)) : 3);
-            output.add(new ParsedStatementLine(date, amount, description, reference));
-        }
-        return output;
-    }
-
-    private static List<ParsedStatementLine> parseOfx(String text)
-    {
-        List<ParsedStatementLine> output = new ArrayList<>();
-        Matcher matcher = OFX_TRANSACTION.matcher(text);
-        while (matcher.find())
-        {
-            String block = matcher.group(1);
-            output.add(new ParsedStatementLine(
-                    parseOfxDate(tag(block, "DTPOSTED")),
-                    parseAmount(tag(block, "TRNAMT")),
-                    firstNonBlank(tag(block, "NAME"), tag(block, "MEMO"), tag(block, "TRNTYPE")),
-                    firstNonBlank(tag(block, "FITID"), tag(block, "CHECKNUM"))));
-        }
-        return output;
-    }
-
-    private static List<ParsedStatementLine> parseQif(String text)
-    {
-        List<ParsedStatementLine> output = new ArrayList<>();
-        LocalDate date = null;
-        BigDecimal amount = null;
-        String payee = "";
-        String memo = "";
-        String reference = "";
-        for (String raw : text.split("\\R"))
-        {
-            String line = raw.trim();
-            if (line.equals("^"))
-            {
-                if (date != null && amount != null)
-                {
-                    output.add(new ParsedStatementLine(date, amount, firstNonBlank(payee, memo), reference));
-                }
-                date = null;
-                amount = null;
-                payee = "";
-                memo = "";
-                reference = "";
-            }
-            else if (line.startsWith("D"))
-            {
-                date = parseDate(line.substring(1));
-            }
-            else if (line.startsWith("T"))
-            {
-                amount = parseAmount(line.substring(1));
-            }
-            else if (line.startsWith("P"))
-            {
-                payee = line.substring(1);
-            }
-            else if (line.startsWith("M"))
-            {
-                memo = line.substring(1);
-            }
-            else if (line.startsWith("N"))
-            {
-                reference = line.substring(1);
-            }
-        }
-        return output;
-    }
-
-    private static BankImportBatch.SourceFormat sourceFormat(StatementSource source)
-    {
-        return switch (source)
-        {
-            case CSV -> BankImportBatch.SourceFormat.CSV;
-            case OFX -> BankImportBatch.SourceFormat.OFX;
-            case QIF -> BankImportBatch.SourceFormat.QIF;
-            case MANUAL -> BankImportBatch.SourceFormat.OTHER;
-        };
-    }
-
-    private static String[] splitCsv(String line)
-    {
-        return line.split(",", -1);
-    }
-
-    private static boolean contains(String[] values, String text)
-    {
-        for (String value : values)
-        {
-            if (value.trim().equalsIgnoreCase(text))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static Map<String, Integer> headerIndex(String[] header)
-    {
-        Map<String, Integer> output = new HashMap<>();
-        for (int i = 0; i < header.length; i++)
-        {
-            output.put(header[i].trim().toLowerCase(Locale.ROOT), i);
-        }
-        return output;
-    }
-
-    private static String cell(String[] cells, int index)
-    {
-        return index >= 0 && index < cells.length ? cells[index].trim().replaceAll("^\"|\"$", "") : "";
-    }
-
-    private static String tag(String block, String tag)
-    {
-        Matcher matcher = Pattern.compile("<" + tag + ">(.*?)(?=<[A-Z/]|$)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(block);
-        return matcher.find() ? matcher.group(1).replaceAll("<.*", "").trim() : "";
-    }
-
-    private static LocalDate parseOfxDate(String raw)
-    {
-        String digits = raw == null ? "" : raw.replaceAll("[^0-9]", "");
-        if (digits.length() < 8)
-        {
-            throw new IllegalArgumentException("OFX date is missing or invalid.");
-        }
-        return LocalDate.parse(digits.substring(0, 8), DateTimeFormatter.BASIC_ISO_DATE);
-    }
-
-    private static LocalDate parseDate(String raw)
-    {
-        if (isBlank(raw))
-        {
-            throw new IllegalArgumentException("Statement date is required.");
-        }
-        for (DateTimeFormatter formatter : List.of(DateTimeFormatter.ISO_LOCAL_DATE,
-                DateTimeFormatter.ofPattern("M/d/uuuu"),
-                DateTimeFormatter.ofPattern("M-d-uuuu"),
-                DateTimeFormatter.ofPattern("MM/dd/uuuu"),
-                DateTimeFormatter.ofPattern("MM-dd-uuuu")))
-        {
-            try
-            {
-                return LocalDate.parse(raw.trim(), formatter);
-            }
-            catch (DateTimeParseException ignored)
-            {
-                // Try the next common bank statement date format.
-            }
-        }
-        throw new IllegalArgumentException("Statement date is invalid: " + raw);
-    }
-
-    private static BigDecimal parseAmount(String raw)
-    {
-        if (isBlank(raw))
-        {
-            throw new IllegalArgumentException("Statement amount is required.");
-        }
-        return amount(new BigDecimal(raw.trim().replace("$", "").replace(",", "")));
-    }
-
     private static void validateStart(StartCommand command)
     {
         if (command == null || isBlank(command.companyCode()) || command.bankAccountId() == null || command.statementEndDate() == null)
@@ -1650,23 +1386,6 @@ public class BankReconciliationWorkspaceService
     private static ClearedStatePolicy policy(ClearedStatePolicy value)
     {
         return value == null ? ClearedStatePolicy.WARN_ONLY : value;
-    }
-
-    private static String logicalImportSourceName(String sourceName, StatementSource source)
-    {
-        String value = isBlank(sourceName) ? source.name() + " statement import" : sourceName.trim();
-        int separator = Math.max(value.lastIndexOf('/'), value.lastIndexOf('\\'));
-        String logicalName = separator >= 0 ? value.substring(separator + 1).trim() : value;
-        if (logicalName.isEmpty())
-        {
-            throw new IllegalArgumentException("Statement source name is required.");
-        }
-        if (logicalName.length() > MAX_IMPORT_SOURCE_NAME_LENGTH)
-        {
-            throw new IllegalArgumentException("Statement source name must be at most "
-                    + MAX_IMPORT_SOURCE_NAME_LENGTH + " characters.");
-        }
-        return logicalName;
     }
 
     private static String requireText(String value, String label)
@@ -1780,7 +1499,6 @@ public class BankReconciliationWorkspaceService
         }
     }
 
-    private record ParsedStatementLine(LocalDate date, BigDecimal amount, String description, String reference) { }
     private record MatchRow(Long statementLineId, Long splitId, DifferenceCategory status, String note) { }
     private record SessionRow(long id,
                               Company company,
