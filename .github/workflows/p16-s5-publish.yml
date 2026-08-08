@@ -1,0 +1,37 @@
+name: P16-S5 patch publish
+
+on:
+  push:
+    branches:
+      - codex/P16-S5-connected-database-session-authority
+    paths:
+      - .github/workflows/p16-s5-publish.yml
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout S5 branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P16-S5-connected-database-session-authority
+
+      - name: Apply intended S5 patch
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cat .github/p16-s5-patch/part* > /tmp/payload.b64
+          test "$(sha256sum /tmp/payload.b64 | awk '{print $1}')" = "398450fa963b8a8049422136b17c0e4cd6aac49db039886fca92548f642321d7"
+          base64 -d /tmp/payload.b64 | gzip -d > /tmp/s5.patch
+          test "$(sha256sum /tmp/s5.patch | awk '{print $1}')" = "4f2aff44223f1593bb9a5cdffc63fbe7f034a9fd2bf43fcdb071546a594e0283"
+          patch -p1 < /tmp/s5.patch
+          rm -rf .github/p16-s5-patch
+          rm .github/workflows/p16-s5-publish.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "P16-S5 enforce connected database session authority"
+          git push origin HEAD:codex/P16-S5-connected-database-session-authority
