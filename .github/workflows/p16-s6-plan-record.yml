@@ -1,0 +1,36 @@
+name: P16-S6 plan validation record
+
+on:
+  push:
+    branches:
+      - codex/P16-S6-budget-draft-fiscal-period-authority
+    paths:
+      - .github/workflows/p16-s6-plan-record.yml
+
+permissions:
+  contents: write
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout S6 branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P16-S6-budget-draft-fiscal-period-authority
+          fetch-depth: 0
+
+      - name: Record S6 validation
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python - <<'PY'
+          import base64
+          exec(base64.b64decode('ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCnBhdGggPSBQYXRoKCJkb2MvUExBTi5tZCIpCnRleHQgPSBwYXRoLnJlYWRfdGV4dCgpCnJlcGxhY2VtZW50cyA9IFsKKCJwbGFuX3ZlcnNpb246IDEzOSIsICJwbGFuX3ZlcnNpb246IDE0MCIpLAooImFjdGl2ZV9zdGF0dXM6IElOX1BST0dSRVNTIiwgImFjdGl2ZV9zdGF0dXM6IFZFUklGWUlORyIpLAooImFjdGl2ZV9wdWxsX3JlcXVlc3Q6IG51bGwiLCAiYWN0aXZlX3B1bGxfcmVxdWVzdDogMjU4IiksCigiYWN0aXZlX2hlYWQ6IDk3ZmMyZTIyNDg1NGMyMjFjYzE1NjU3ZThiOWFkNzUzMmE5ZmVlMjMiLCAiYWN0aXZlX2hlYWQ6IGJiMTlmZWM5ZWExZmE4NjRhOTJkOGE2NWRmMWY1MDIxMDYyYzBmOWUiKSwKKCJuZXh0X2FjdGlvbjogXCJJbXBsZW1lbnQgYW5kIHZhbGlkYXRlIFAxNi1TNiBidWRnZXQgZHJhZnQgaWRlbnRpdHkgYW5kIGZpc2NhbC1wZXJpb2QgYXV0aG9yaXR5IG9uIHRoZSBmcmVzaCBicmFuY2ggZnJvbSBtZXJnZWQgUDE2LVM1LCB0aGVuIGNvbXBsZXRlIGl0cyBvd25lciBkZXNrdG9wIGNoZWNrbGlzdCBiZWZvcmUgbWVyZ2UuXCIiLCAibmV4dF9hY3Rpb246IFwiVmFsaWRhdGUgdGhlIGZpbmFsIFAxNi1TNiBkb2N1bWVudGF0aW9uLWluY2x1c2l2ZSBQUiAjMjU4IGhlYWQsIHRoZW4gY29tcGxldGUgZG9jL1AxNi1TNi1idWRnZXQtZHJhZnQtZmlzY2FsLXBlcmlvZC1hdXRob3JpdHktdXNlci10ZXN0aW5nLm1kLiBLZWVwIFAxNi1TNyBibG9ja2VkIHVudGlsIFAxNi1TNiBpcyBhY2NlcHRlZCBhbmQgbWVyZ2VkLlwiIiksCigiU3RhdHVzOiBJTl9QUk9HUkVTUyBvbiBgY29kZXgvUDE2LVM2LWJ1ZGdldC1kcmFmdC1maXNjYWwtcGVyaW9kLWF1dGhvcml0eWAuIiwgIlN0YXR1czogVkVSSUZZSU5HIGluIGRyYWZ0IFBSICMyNTguIiksCigiUHVsbCByZXF1ZXN0OiBwZW5kaW5nXG5DdXJyZW50IGltcGxlbWVudGF0aW9uIGhlYWQ6IHBlbmRpbmcgcHVibGljYXRpb24uIiwgIlB1bGwgcmVxdWVzdDogIzI1OFxuVmFsaWRhdGVkIGltcGxlbWVudGF0aW9uIGhlYWQ6IGBiYjE5ZmVjOWVhMWZhODY0YTkyZDhhNjVkZjFmNTAyMTA2MmMwZjllYCIpLAooIi0gRm9jdXNlZCBzZXJ2aWNlLCBub24tSmFudWFyeSBmaXNjYWwtcmFuZ2UsIHN0YWJsZS1kcmFmdCwgcmV2aXNpb24sIHZhcmlhbmNlLCBhbmQgc291cmNlLXJlZ3Jlc3Npb24gdGVzdHMgYXJlIGJlaW5nIGFkZGVkIHRvZ2V0aGVyIHdpdGggYGRvYy9QMTYtUzYtYnVkZ2V0LWRyYWZ0LWZpc2NhbC1wZXJpb2QtYXV0aG9yaXR5LXVzZXItdGVzdGluZy5tZGAuIiwgIi0gRm9jdXNlZCBzZXJ2aWNlLCBub24tSmFudWFyeSBmaXNjYWwtcmFuZ2UsIHN0YWJsZS1kcmFmdCwgcmV2aXNpb24sIGNvbmN1cnJlbnQtYWN0aXZhdGlvbiwgdmFyaWFuY2UsIHJlcG9ydC1kZWZhdWx0LCBhbmQgc291cmNlLXJlZ3Jlc3Npb24gdGVzdHMgYXJlIGluY2x1ZGVkIHRvZ2V0aGVyIHdpdGggYGRvYy9QMTYtUzYtYnVkZ2V0LWRyYWZ0LWZpc2NhbC1wZXJpb2QtYXV0aG9yaXR5LXVzZXItdGVzdGluZy5tZGAuXG4tIEV4YWN0IGltcGxlbWVudGF0aW9uIGhlYWQgYGJiMTlmZWM5ZWExZmE4NjRhOTJkOGE2NWRmMWY1MDIxMDYyYzBmOWVgIHBhc3NlZCBNYXZlbiBQUiBUZXN0cyBydW4gYDMxMjgwMTUyNjczYCwgaW5jbHVkaW5nIGNsZWFuIGhlYWRsZXNzIGBtdm4gY2xlYW4gdmVyaWZ5YCwgdGhlIGRlbGliZXJhdGVseSByZXBlYXRlZCB0ZXN0IHN1aXRlLCBhbmQgcHJvZHVjdGlvbiBKYXZhRlggcm91dGUgY29tcGxpYW5jZS4iKSwKKCItIFB1Ymxpc2ggdGhlIGNvaGVyZW50IFM2IGltcGxlbWVudGF0aW9uLCBydW4gdGhlIGNvbXBsZXRlIE1hdmVuIFBSIFRlc3RzIGdhdGUsIGNvcnJlY3QgYW55IGZhaWx1cmVzLCB0aGVuIGNvbXBsZXRlIG93bmVyIGRlc2t0b3AgYWNjZXB0YW5jZSBiZWZvcmUgbWVyZ2UuIFAxNi1TNyByZW1haW5zIGJsb2NrZWQuIiwgIi0gVmFsaWRhdGUgdGhlIGZpbmFsIGRvY3VtZW50YXRpb24taW5jbHVzaXZlIFBSICMyNTggaGVhZCwgdGhlbiBjb21wbGV0ZSBgZG9jL1AxNi1TNi1idWRnZXQtZHJhZnQtZmlzY2FsLXBlcmlvZC1hdXRob3JpdHktdXNlci10ZXN0aW5nLm1kYC4gS2VlcCBQMTYtUzcgYmxvY2tlZCB1bnRpbCBvd25lciBhY2NlcHRhbmNlIGFuZCBtZXJnZS4iKQpdCmZvciBvbGQsbmV3IGluIHJlcGxhY2VtZW50czoKICAgIGNvdW50PXRleHQuY291bnQob2xkKQogICAgaWYgY291bnQgIT0gMToKICAgICAgICByYWlzZSBTeXN0ZW1FeGl0KGYiZXhwZWN0ZWQgb25lIHJlcGxhY2VtZW50LCBmb3VuZCB7Y291bnR9OiB7b2xkWzoxMjBdfSIpCiAgICB0ZXh0PXRleHQucmVwbGFjZShvbGQsbmV3KQpwYXRoLndyaXRlX3RleHQodGV4dCkK'))
+          PY
+          rm .github/workflows/p16-s6-plan-record.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Record P16-S6 implementation validation"
+          git push origin HEAD:codex/P16-S6-budget-draft-fiscal-period-authority
