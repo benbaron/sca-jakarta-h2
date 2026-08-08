@@ -1,0 +1,163 @@
++    private final Label selectedIdentity = new Label("Select an audit event to inspect its factual details.");
+ 
+     public ApprovalAuditPanel()
+     {
+         root.setPadding(new Insets(8));
++        root.setMinSize(0, 0);
+ 
+         Label title = new Label("Audit History");
+         title.getStyleClass().add("panel-title");
+ 
+-        workflowTypeFilter.setPromptText("Workflow type");
+-        decisionFilter.setPromptText("Decision");
+-        actorFilter.setPromptText("Actor");
+-        runIdFilter.setPromptText("Run ID");
++        actionFilter.setPromptText("Action contains");
++        entityFilter.setPromptText("Entity type or ID contains");
++        actorFilter.setPromptText("Actor contains");
+         companyFormat.install(fromDate);
+         companyFormat.install(toDate);
+ 
+@@ -54,41 +61,73 @@ public class ApprovalAuditPanel implements AppPanel
+         apply.setOnAction(e -> reload());
+         Button reset = new Button("Reset");
+         reset.setOnAction(e -> {
+-            workflowTypeFilter.clear();
+-            decisionFilter.clear();
++            actionFilter.clear();
++            entityFilter.clear();
+             actorFilter.clear();
+-            runIdFilter.clear();
+             fromDate.setValue(null);
+             toDate.setValue(null);
+             reload();
+         });
++        Button refresh = new Button("Refresh");
++        refresh.setOnAction(e -> reload());
++
++        GridPane filters = new GridPane();
++        filters.setHgap(8);
++        filters.setVgap(6);
++        filters.add(new Label("Action"), 0, 0);
++        filters.add(actionFilter, 1, 0);
++        filters.add(new Label("Entity"), 2, 0);
++        filters.add(entityFilter, 3, 0);
++        filters.add(new Label("Actor"), 0, 1);
++        filters.add(actorFilter, 1, 1);
++        filters.add(new Label("From"), 2, 1);
++        filters.add(fromDate, 3, 1);
++        filters.add(new Label("To"), 4, 1);
++        filters.add(toDate, 5, 1);
++        GridPane.setHgrow(actionFilter, Priority.ALWAYS);
++        GridPane.setHgrow(entityFilter, Priority.ALWAYS);
++        GridPane.setHgrow(actorFilter, Priority.ALWAYS);
++
++        HBox actions = new HBox(8, apply, reset, refresh);
++        actions.getStyleClass().add("panel-action-row");
++        status.setWrapText(true);
++        root.setTop(new VBox(6, title, filters, actions, status, new Separator()));
+ 
+-        HBox filters = new HBox(8,
+-                new Label("Workflow"), workflowTypeFilter,
+-                new Label("Decision"), decisionFilter,
+-                new Label("Actor"), actorFilter,
+-                new Label("Run ID"), runIdFilter,
+-                new Label("From"), fromDate,
+-                new Label("To"), toDate,
+-                apply,
+-                reset);
+-        HBox.setHgrow(workflowTypeFilter, Priority.ALWAYS);
+-        HBox.setHgrow(actorFilter, Priority.ALWAYS);
+-
+-        root.setTop(new VBox(6, title, filters, status, new Separator()));
+         buildTable();
+-        root.setCenter(table);
++        table.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, selected) -> showDetails(selected));
++
++        VBox tablePane = new VBox(6, new Label("Factual events"), table);
++        VBox.setVgrow(table, Priority.ALWAYS);
++        tablePane.setMinSize(0, 0);
++
++        GridPane details = new GridPane();
++        details.setHgap(8);
++        details.setVgap(6);
++        details.add(new Label("Before"), 0, 0);
++        details.add(beforeValue, 1, 0);
++        details.add(new Label("After"), 0, 1);
++        details.add(afterValue, 1, 1);
++        details.add(new Label("Reason"), 0, 2);
++        details.add(reason, 1, 2);
++        GridPane.setHgrow(beforeValue, Priority.ALWAYS);
++        GridPane.setHgrow(afterValue, Priority.ALWAYS);
++        GridPane.setHgrow(reason, Priority.ALWAYS);
++        GridPane.setVgrow(beforeValue, Priority.ALWAYS);
++        GridPane.setVgrow(afterValue, Priority.ALWAYS);
++        GridPane.setVgrow(reason, Priority.ALWAYS);
++
++        VBox detailPane = new VBox(6, new Label("Selected factual event"), selectedIdentity, details);
++        VBox.setVgrow(details, Priority.ALWAYS);
++        detailPane.setMinSize(0, 0);
++
++        SplitPane split = new SplitPane(tablePane, detailPane);
++        split.setOrientation(Orientation.VERTICAL);
++        split.setDividerPositions(0.62);
++        split.setMinSize(0, 0);
++        split.setId("auditHistoryTableDetailsSplit");
++        CompanySplitPaneStateBinder.bind(split, "audit-history-table-details", 0.62);
++        root.setCenter(split);
+ 
+-        String incomingContext = DrillThroughCoordinator.consumeContext(AppPanelId.APPROVAL_AUDIT);
+-        if (!incomingContext.isBlank())
+-        {
+-            String[] parts = incomingContext.split("::", 2);
+-            workflowTypeFilter.setText(parts[0]);
+-            if (parts.length == 2)
+-            {
+-                runIdFilter.setText(parts[1]);
+-            }
+-        }
+         reload();
+     }
+ 
+@@ -106,76 +145,105 @@ public class ApprovalAuditPanel implements AppPanel
+ 
+     private void buildTable()
+     {
+-        TableColumn<ApprovalAuditRecord, String> created = new TableColumn<>("Created");
+-        created.setCellValueFactory(v -> new SimpleStringProperty(companyFormat.formatDateTime(v.getValue().createdAt())));
+-        TableColumn<ApprovalAuditRecord, String> workflow = new TableColumn<>("Workflow");
+-        workflow.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().workflowType()));
+-        TableColumn<ApprovalAuditRecord, String> runId = new TableColumn<>("Run ID");
+-        runId.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().workflowRunId() == null ? "" : v.getValue().workflowRunId().toString()));
+-        TableColumn<ApprovalAuditRecord, String> decision = new TableColumn<>("Decision");
+-        decision.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().decision().name()));
+-        TableColumn<ApprovalAuditRecord, String> actor = new TableColumn<>("Actor");
+-        actor.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().actor()));
+-        TableColumn<ApprovalAuditRecord, String> rationale = new TableColumn<>("Rationale");
+-        rationale.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().rationale()));
+-        table.getColumns().addAll(created, workflow, runId, decision, actor, rationale);
++        table.setId("auditHistoryTable");
+         table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+-        table.setPlaceholder(new Label("No approval/audit records found for current filters."));
++        table.setPlaceholder(new Label("No factual audit events found for the active company and filters."));
++
++        table.getColumns().add(column("Occurred", "occurred", 190,
++                row -> companyFormat.formatDateTime(row.occurredAt())));
++        table.getColumns().add(column("Actor", "actor", 150, AuditEventView::actor));
++        table.getColumns().add(column("Action", "action", 190, AuditEventView::actionType));
++        table.getColumns().add(column("Entity Type", "entityType", 160, AuditEventView::entityType));
++        table.getColumns().add(column("Entity ID", "entityId", 180, row -> safe(row.entityId())));
++        table.getColumns().add(column("Summary", "summary", 360, AuditEventView::summary));
+     }
+ 
+     private void reload()
+     {
+-        status.setText("Loading approval/audit records...");
+-        UiAsync.run("approval-audit-load", () -> {
+-            String group = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
+-            List<ApprovalAuditRecord> rows = UiServiceRegistry.approvalAuditService().listRecent(group, 500);
+-            return filter(rows,
+-                    workflowTypeFilter.getText(),
+-                    decisionFilter.getText(),
++        AuditEventView selected = table.getSelectionModel().getSelectedItem();
++        var selectedPortableId = selected == null ? null : selected.portableId();
