@@ -42,7 +42,7 @@ preferred for the company-isolation check.
 
 ## Automated validation record
 
-Exact implementation head `e140aae3c1d07ceeabbc93d179489d03faa15896` passed Maven PR Tests run `31282119224`, including clean headless `mvn clean verify`, the deliberately repeated test suite, and production JavaFX route compliance. Run this checklist only after the final documentation-inclusive PR head also passes the same complete gate.
+Exact implementation head `e140aae3c1d07ceeabbc93d179489d03faa15896` passed Maven PR Tests run `31282119224`, including clean headless `mvn clean verify`, the deliberately repeated test suite, and production JavaFX route compliance. The final documentation-inclusive PR head must pass the same complete gate before owner acceptance is recorded.
 
 ## Acceptance record
 
