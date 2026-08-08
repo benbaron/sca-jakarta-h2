@@ -25,8 +25,32 @@ jobs:
         run: |
           set -euxo pipefail
           cat .p16-s7.patch.0 .p16-s7.patch.1 .p16-s7.patch.2 .p16-s7.patch.3 .p16-s7.patch.4 .p16-s7.patch.5 .p16-s7.patch.6 > /tmp/p16-s7.patch
-          git apply --check /tmp/p16-s7.patch
-          git apply --index /tmp/p16-s7.patch
+          REGISTRY=src/main/java/org/nonprofitbookkeeping/ui/UiServiceRegistry.java
+          git apply --check --exclude="$REGISTRY" /tmp/p16-s7.patch
+          git apply --index --exclude="$REGISTRY" /tmp/p16-s7.patch
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/main/java/org/nonprofitbookkeeping/ui/UiServiceRegistry.java")
+          text = path.read_text()
+          replacements = [
+              ("import org.nonprofitbookkeeping.repository.ApprovalAuditRepository;\nimport org.nonprofitbookkeeping.repository.JdbcApprovalAuditRepository;\n", ""),
+              ("import org.nonprofitbookkeeping.service.ApprovalAuditService;\n", "import org.nonprofitbookkeeping.service.AuditHistoryService;\n"),
+              ("    public static PeriodCloseRangeService periodCloseRangeService() { return services().periodCloseRangeService(); }\n", "    public static PeriodCloseRangeService periodCloseRangeService() { return services().periodCloseRangeService(); }\n    public static AuditHistoryService auditHistory() { return services().auditHistory(); }\n"),
+              ("                new BankReconciliationWorkspaceService(jpa),\n                periodCloseRange);", "                new BankReconciliationWorkspaceService(jpa),\n                periodCloseRange,\n                new AuditHistoryService(jpa, UiServiceRegistry::activeCompanyCode));"),
+              ("    public static ApprovalAuditRepository approvalAuditRepository()\n    {\n        return new JdbcApprovalAuditRepository(UiDataSources.forCurrentSessionDatabase());\n    }\n\n    public static ApprovalAuditService approvalAuditService()\n    {\n        return new ApprovalAuditService(approvalAuditRepository());\n    }\n\n", ""),
+              ("            BankReconciliationWorkspaceService bankReconciliationWorkspace,\n            PeriodCloseRangeService periodCloseRangeService)\n", "            BankReconciliationWorkspaceService bankReconciliationWorkspace,\n            PeriodCloseRangeService periodCloseRangeService,\n            AuditHistoryService auditHistory)\n"),
+          ]
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit(f"UiServiceRegistry expected source context missing: {old[:80]!r}")
+              text = text.replace(old, new, 1)
+          path.write_text(text)
+
+          audit = Path("src/main/java/org/nonprofitbookkeeping/service/AuditHistoryService.java")
+          audit_text = audit.read_text().replace("import java.util.ArrayList;\n", "")
+          audit.write_text(audit_text)
+          PY
           rm .p16-s7.patch.0 .p16-s7.patch.1 .p16-s7.patch.2 .p16-s7.patch.3 .p16-s7.patch.4 .p16-s7.patch.5 .p16-s7.patch.6
           rm .github/workflows/p16-s7-publish.yml
           git config user.name "github-actions[bot]"
