@@ -1,0 +1,372 @@
+         {
+-            status.setText("Load or save a draft budget before activation.");
++            status.setText("Select the draft budget version to activate.");
+             return;
+         }
+-        UiAsync.run("budget-editor-activate", () -> UiServiceRegistry.budgetPlan().activate(currentPlan.id()), plan -> {
+-            currentPlan = plan;
+-            status.setText("Activated budget version " + plan.versionCode() + " for fiscal year " + plan.fiscalYear() + ".");
+-            reload();
+-        }, ex -> status.setText("Could not activate budget version: " + UiErrors.safeMessage(ex)));
++        long planId = currentPlan.id();
++        UiAsync.run("budget-editor-activate", () -> UiServiceRegistry.budgetPlan().activate(planId),
++                plan -> reloadPreferred(plan.id()),
++                ex -> status.setText("Could not activate budget version: " + UiErrors.safeMessage(ex)));
+     }
+ 
+     static BigDecimal parseTargetAmount(String input)
+@@ -236,10 +376,31 @@ public class BudgetEditorPanel implements AppPanel
+         }
+     }
+ 
++    private static BudgetPlanView findPlan(List<BudgetPlanView> plans, Long planId)
++    {
++        if (planId == null)
++        {
++            return null;
++        }
++        return plans.stream().filter(plan -> plan.id().equals(planId)).findFirst().orElse(null);
++    }
++
+     record CategoryBudgetRow(Long categoryId, String categoryCode, String categoryName, BigDecimal budgetAmount)
+     {
+     }
+ 
++    private record BudgetEditorSnapshot(
++            FiscalPeriodRange range,
++            List<BudgetPlanView> plans,
++            List<BudgetCategory> categories)
++    {
++        private BudgetEditorSnapshot
++        {
++            plans = List.copyOf(plans);
++            categories = List.copyOf(categories);
++        }
++    }
++
+     @Override public String title() { return "Budget Editor"; }
+     @Override public Node root() { return root; }
+     @Override public void onSave() { saveTarget(); }
+@@ -248,7 +409,10 @@ public class BudgetEditorPanel implements AppPanel
+     private BudgetFormSnapshot formSnapshot()
+     {
+         CategoryBudgetRow selected = table.getSelectionModel().getSelectedItem();
+-        return new BudgetFormSnapshot(selected == null ? null : selected.categoryId(), amountField.getText());
++        return new BudgetFormSnapshot(
++                currentPlan == null ? null : currentPlan.id(),
++                selected == null ? null : selected.categoryId(),
++                amountField.getText());
+     }
+ 
+     private void reloadWithDiscardProtection()
+@@ -258,7 +422,7 @@ public class BudgetEditorPanel implements AppPanel
+             table.getSelectionModel().clearSelection();
+             amountField.clear();
+             dirtyState.markClean();
+-            reload();
++            reloadPreferred(currentPlan == null ? null : currentPlan.id());
+         }
+     }
+ 
+@@ -267,11 +431,11 @@ public class BudgetEditorPanel implements AppPanel
+         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+         confirmation.setTitle("Discard budget edit");
+         confirmation.setHeaderText("Discard the unsaved budget amount?");
+-        confirmation.setContentText("Choose Cancel to remain on the selected budget category.");
++        confirmation.setContentText("Choose Cancel to remain on the selected budget category and budget version.");
+         return confirmation.showAndWait().filter(ButtonType.OK::equals).isPresent();
+     }
+ 
+-    private record BudgetFormSnapshot(Long categoryId, String amount)
++    private record BudgetFormSnapshot(Long planId, Long categoryId, String amount)
+     {
+     }
+ 
+diff --git a/src/main/java/org/nonprofitbookkeeping/ui/BudgetVsActualPanel.java b/src/main/java/org/nonprofitbookkeeping/ui/BudgetVsActualPanel.java
+index dce4ca8..3ba9789 100644
+--- a/src/main/java/org/nonprofitbookkeeping/ui/BudgetVsActualPanel.java
++++ b/src/main/java/org/nonprofitbookkeeping/ui/BudgetVsActualPanel.java
+@@ -14,6 +14,7 @@ import javafx.scene.layout.BorderPane;
+ import javafx.scene.layout.HBox;
+ import javafx.scene.layout.VBox;
+ import org.nonprofitbookkeeping.service.BudgetVarianceView;
++import org.nonprofitbookkeeping.service.FiscalPeriodRange;
+ 
+ import java.math.BigDecimal;
+ import java.time.LocalDate;
+@@ -63,23 +64,38 @@ public class BudgetVsActualPanel implements AppPanel
+         splitPane.setDividerPositions(0.82);
+         CompanySplitPaneStateBinder.bind(splitPane, "budget-vs-actual", 0.82);
+         root.setCenter(splitPane);
++        ActivePeriodContext.activeDateProperty().addListener((obs, oldDate, newDate) -> reload());
+         reload();
+     }
+ 
+     private void reload()
+     {
+-        LocalDate asOfDate = LocalDate.now();
+-        status.setText("Running active budget comparison...");
+-        UiAsync.run("budget-vs-actual", () -> UiServiceRegistry.budgetPlan().activeVariance(asOfDate), rows -> {
++        LocalDate selectedPeriodStart = ActivePeriodContext.get();
++        status.setText("Running active budget comparison for the selected accounting period...");
++        UiAsync.run("budget-vs-actual", () -> {
++            FiscalPeriodRange range = UiServiceRegistry.budgetPlan().fiscalRange(selectedPeriodStart);
++            return new VarianceResult(range, UiServiceRegistry.budgetPlan().activeVariance(range));
++        }, result -> {
++            List<BudgetVarianceView> rows = result.rows();
+             table.getItems().setAll(rows);
+             BigDecimal netActual = total(rows, BudgetVarianceView::actual);
+             BigDecimal netBudget = total(rows, BudgetVarianceView::budget);
+             BigDecimal netVariance = total(rows, BudgetVarianceView::variance);
+-            status.setText("Loaded " + rows.size() + " active budget row(s). Net actual = " + companyFormat.formatMoney(netActual)
+-                    + ", net budget = " + companyFormat.formatMoney(netBudget) + ", net variance = " + companyFormat.formatMoney(netVariance));
++            status.setText("Loaded " + rows.size() + " active budget row(s) for " + result.range().displayLabel()
++                    + " through " + companyFormat.formatDate(result.range().periodEnd()) + ". Net actual = "
++                    + companyFormat.formatMoney(netActual) + ", net budget = " + companyFormat.formatMoney(netBudget)
++                    + ", net variance = " + companyFormat.formatMoney(netVariance));
+         }, ex -> status.setText("Could not compute Budget vs Actual view: " + UiErrors.safeMessage(ex)));
+     }
+ 
++    private record VarianceResult(FiscalPeriodRange range, List<BudgetVarianceView> rows)
++    {
++        private VarianceResult
++        {
++            rows = List.copyOf(rows);
++        }
++    }
++
+     private static BigDecimal total(List<BudgetVarianceView> rows, java.util.function.Function<BudgetVarianceView, BigDecimal> mapper)
+     {
+         return rows.stream().map(mapper).reduce(BigDecimal.ZERO, BigDecimal::add);
+diff --git a/src/main/java/org/nonprofitbookkeeping/ui/ReportLibraryPanel.java b/src/main/java/org/nonprofitbookkeeping/ui/ReportLibraryPanel.java
+index 7bdf656..9f05193 100644
+--- a/src/main/java/org/nonprofitbookkeeping/ui/ReportLibraryPanel.java
++++ b/src/main/java/org/nonprofitbookkeeping/ui/ReportLibraryPanel.java
+@@ -26,6 +26,7 @@ import org.nonprofitbookkeeping.report.ReportExecutionService;
+ import org.nonprofitbookkeeping.report.ReportFundOption;
+ import org.nonprofitbookkeeping.report.ReportRequest;
+ import org.nonprofitbookkeeping.report.ReportResult;
++import org.nonprofitbookkeeping.service.FiscalPeriodRange;
+ import org.nonprofitbookkeeping.service.CompanyUiPreferencesService;
+ import org.nonprofitbookkeeping.service.FinancialReportExportAdapter;
+ import org.nonprofitbookkeeping.service.FinancialReportExportFormat;
+@@ -129,9 +130,24 @@ public class ReportLibraryPanel implements AppPanel
+     private void configureParameters()
+     {
+         DateRange defaults = DateRangeContext.get();
+-        LocalDate end = defaults.endInclusive() == null ? LocalDate.now() : defaults.endInclusive();
+-        startDate.setValue(defaults.startInclusive() == null ? end.withDayOfYear(1) : defaults.startInclusive());
+-        endDate.setValue(end);
++        if (defaults.startInclusive() == null && defaults.endInclusive() == null)
++        {
++            FiscalPeriodRange fiscal = UiServiceRegistry.budgetPlan().fiscalRange(ActivePeriodContext.get());
++            startDate.setValue(fiscal.fiscalYearStart());
++            endDate.setValue(fiscal.periodEnd());
++        }
++        else
++        {
++            FiscalPeriodRange activeFiscal = UiServiceRegistry.budgetPlan().fiscalRange(ActivePeriodContext.get());
++            LocalDate end = defaults.endInclusive() == null ? activeFiscal.periodEnd() : defaults.endInclusive();
++            LocalDate start = defaults.startInclusive();
++            if (start == null)
++            {
++                start = UiServiceRegistry.budgetPlan().fiscalRange(end).fiscalYearStart();
++            }
++            startDate.setValue(start);
++            endDate.setValue(end);
++        }
+         companyFormat.install(startDate);
+         companyFormat.install(endDate);
+ 
+diff --git a/src/test/java/org/nonprofitbookkeeping/service/BudgetPlanServiceTest.java b/src/test/java/org/nonprofitbookkeeping/service/BudgetPlanServiceTest.java
+index ed8ef61..efb6771 100644
+--- a/src/test/java/org/nonprofitbookkeeping/service/BudgetPlanServiceTest.java
++++ b/src/test/java/org/nonprofitbookkeeping/service/BudgetPlanServiceTest.java
+@@ -11,6 +11,10 @@ import java.nio.file.Path;
+ import java.time.LocalDate;
+ import java.time.YearMonth;
+ import java.util.List;
++import java.util.concurrent.CountDownLatch;
++import java.util.concurrent.ExecutorService;
++import java.util.concurrent.Executors;
++import java.util.concurrent.Future;
+ 
+ import static org.junit.jupiter.api.Assertions.assertEquals;
+ import static org.junit.jupiter.api.Assertions.assertFalse;
+@@ -101,6 +105,125 @@ public class BudgetPlanServiceTest
+         }
+     }
+ 
++
++
++    @Test
++    public void concurrentActivationLeavesExactlyOneActiveVersion(@TempDir Path tempDir) throws Exception
++    {
++        try (Jpa jpa = new Jpa(tempDir.resolve("budget-concurrent-activation")))
++        {
++            seedReferences(jpa);
++            BudgetPlanService service = new BudgetPlanService(jpa);
++            BudgetPlanView first = service.createDraft(command("concurrent-1"));
++            BudgetPlanView second = service.createDraft(command("concurrent-2"));
++            CountDownLatch start = new CountDownLatch(1);
++            ExecutorService pool = Executors.newFixedThreadPool(2);
++            try
++            {
++                Future<BudgetPlanView> one = pool.submit(() -> {
++                    start.await();
++                    return service.activate(first.id());
++                });
++                Future<BudgetPlanView> two = pool.submit(() -> {
++                    start.await();
++                    return service.activate(second.id());
++                });
++                start.countDown();
++                one.get();
++                two.get();
++            }
++            finally
++            {
++                pool.shutdownNow();
++            }
++
++            List<BudgetPlanView> visible = service.editableAndActiveForFiscalYear(2026);
++            assertEquals(1, visible.stream().filter(plan -> plan.status() == BudgetPlan.Status.ACTIVE).count());
++            assertEquals(1, List.of(
++                    service.load(first.id()).orElseThrow(),
++                    service.load(second.id()).orElseThrow()).stream()
++                    .filter(plan -> plan.status() == BudgetPlan.Status.ARCHIVED).count());
++        }
++    }
++
++    @Test
++    public void explicitDraftReloadPreservesStableIdentity(@TempDir Path tempDir)
++    {
++        try (Jpa jpa = new Jpa(tempDir.resolve("budget-stable-draft")))
++        {
++            seedReferences(jpa);
++            setFiscalStart(jpa, 7, 1);
++            BudgetPlanService service = new BudgetPlanService(jpa);
++            FiscalPeriodRange range = service.fiscalRange(LocalDate.of(2027, 2, 15));
++
++            BudgetPlanView draft = service.createDraft(range);
++            BudgetPlanView saved = service.replaceDraftLines(draft.id(), List.of(
++                    new BudgetLineCommand(1L, null, null, new BigDecimal("125.0000"), "Saved draft")));
++
++            assertEquals(draft.id(), saved.id());
++            List<BudgetPlanView> versions = service.editableAndActiveForFiscalYear(2026);
++            assertEquals(1, versions.size());
++            assertEquals(draft.id(), versions.get(0).id());
++            assertEquals(new BigDecimal("125.0000"), versions.get(0).lines().get(0).amount());
++            assertEquals(LocalDate.of(2026, 7, 1), versions.get(0).periodStart());
++            assertEquals(LocalDate.of(2027, 6, 30), versions.get(0).periodEnd());
++        }
++    }
++
++    @Test
++    public void revisionCopiesSelectedActivePlanAndActivationTargetsSelectedDraft(@TempDir Path tempDir)
++    {
++        try (Jpa jpa = new Jpa(tempDir.resolve("budget-revision")))
++        {
++            seedReferences(jpa);
++            BudgetPlanService service = new BudgetPlanService(jpa);
++            BudgetPlanView firstDraft = service.createDraft(command("draft-1"));
++            service.replaceDraftLines(firstDraft.id(), List.of(
++                    new BudgetLineCommand(1L, 1L, null, new BigDecimal("300.0000"), "Original")));
++            BudgetPlanView firstActive = service.activate(firstDraft.id());
++
++            BudgetPlanView revision = service.createRevision(firstActive.id());
++
++            assertEquals(BudgetPlan.Status.DRAFT, revision.status());
++            assertEquals(firstActive.fiscalYear(), revision.fiscalYear());
++            assertEquals(firstActive.periodStart(), revision.periodStart());
++            assertEquals(firstActive.periodEnd(), revision.periodEnd());
++            assertEquals(1, revision.lines().size());
++            assertEquals(new BigDecimal("300.0000"), revision.lines().get(0).amount());
++            assertEquals("Original", revision.lines().get(0).notes());
++
++            BudgetPlanView activatedRevision = service.activate(revision.id());
++            assertEquals(revision.id(), activatedRevision.id());
++            assertEquals(BudgetPlan.Status.ARCHIVED, service.load(firstActive.id()).orElseThrow().status());
++            assertEquals(revision.id(), service.activeForFiscalYear(2026).orElseThrow().id());
++        }
++    }
++
++    @Test
++    public void nonJanuaryFiscalVarianceUsesFiscalStartAndSelectedPeriodEnd(@TempDir Path tempDir)
++    {
++        try (Jpa jpa = new Jpa(tempDir.resolve("budget-non-january")))
++        {
++            seedReferences(jpa);
++            setFiscalStart(jpa, 7, 1);
++            seedActualOn(jpa, 1L, LocalDate.of(2026, 6, 30), new BigDecimal("10.0000"));
++            seedActualOn(jpa, 2L, LocalDate.of(2026, 8, 10), new BigDecimal("50.0000"));
++            seedActualOn(jpa, 3L, LocalDate.of(2027, 3, 1), new BigDecimal("25.0000"));
++            BudgetPlanService service = new BudgetPlanService(jpa);
++            FiscalPeriodRange range = service.fiscalRange(LocalDate.of(2027, 2, 15));
++            BudgetPlanView draft = service.createDraft(range);
++            service.replaceDraftLines(draft.id(), List.of(
++                    new BudgetLineCommand(1L, 1L, null, new BigDecimal("100.0000"), "Annual")));
++            service.activate(draft.id());
++
++            BudgetVarianceView row = service.activeVariance(range).get(0);
++
++            assertEquals(new BigDecimal("100.0000"), row.budget());
++            assertEquals(new BigDecimal("75.0000"), row.actual());
++            assertEquals(new BigDecimal("-25.0000"), row.variance());
++        }
++    }
++
+     private static BudgetPlanCommand command(String version)
+     {
+         return new BudgetPlanCommand(
+@@ -112,6 +235,50 @@ public class BudgetPlanServiceTest
+                 "Test budget");
+     }
+ 
++    private static void setFiscalStart(Jpa jpa, int month, int day)
++    {
++        try (EntityManager em = jpa.em())
++        {
++            em.getTransaction().begin();
++            em.createNativeQuery("UPDATE company SET fiscal_year_start_month = ?1, fiscal_year_start_day = ?2 WHERE id = 1")
++                    .setParameter(1, month)
++                    .setParameter(2, day)
++                    .executeUpdate();
++            em.getTransaction().commit();
++        }
++    }
++
++    private static void seedActualOn(Jpa jpa, long txnId, LocalDate date, BigDecimal amount)
++    {
++        try (EntityManager em = jpa.em())
++        {
++            em.getTransaction().begin();
++            long splitBase = txnId * 10L;
++            long chartCount = ((Number) em.createNativeQuery("SELECT COUNT(*) FROM chart_of_accounts WHERE id = 1").getSingleResult()).longValue();
++            if (chartCount == 0L)
++            {
++                em.createNativeQuery("INSERT INTO chart_of_accounts (id, company_id, name, version, status) VALUES (1, 1, 'Test', '1', 'ACTIVE')").executeUpdate();
++                em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (1, 1, '1000', 'Checking', 'BANK', 'DEBIT')").executeUpdate();
++                em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (2, 1, '5000', 'Expense', 'EXPENSE', 'DEBIT')").executeUpdate();
++            }
++            em.createNativeQuery("INSERT INTO txn (id, company_id, txn_date, memo, status) VALUES (?1, 1, ?2, 'Expense', 'ENTERED')")
++                    .setParameter(1, txnId)
++                    .setParameter(2, date)
++                    .executeUpdate();
++            em.createNativeQuery("INSERT INTO txn_split (id, txn_id, account_id, fund_id, amount_signed) VALUES (?1, ?2, 1, 1, ?3)")
++                    .setParameter(1, splitBase + 1)
++                    .setParameter(2, txnId)
++                    .setParameter(3, amount.negate())
++                    .executeUpdate();
++            em.createNativeQuery("INSERT INTO txn_split (id, txn_id, account_id, fund_id, budget_category_id, amount_signed) VALUES (?1, ?2, 2, 1, 1, ?3)")
++                    .setParameter(1, splitBase + 2)
++                    .setParameter(2, txnId)
++                    .setParameter(3, amount)
++                    .executeUpdate();
++            em.getTransaction().commit();
++        }
++    }
++
+     private static void seedReferences(Jpa jpa)
+     {
+         try (EntityManager em = jpa.em())
