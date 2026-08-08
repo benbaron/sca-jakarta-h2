@@ -1,0 +1,36 @@
+name: P16-S7 source publish
+
+on:
+  push:
+    branches:
+      - codex/P16-S7-factual-audit-history-authority
+    paths:
+      - .github/workflows/p16-s7-publish.yml
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout S7 branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P16-S7-factual-audit-history-authority
+          fetch-depth: 0
+
+      - name: Apply intended S7 patch
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cat .p16-s7.patch.0 .p16-s7.patch.1 .p16-s7.patch.2 .p16-s7.patch.3 .p16-s7.patch.4 .p16-s7.patch.5 .p16-s7.patch.6 > /tmp/p16-s7.patch
+          git apply --check /tmp/p16-s7.patch
+          git apply --index /tmp/p16-s7.patch
+          rm .p16-s7.patch.0 .p16-s7.patch.1 .p16-s7.patch.2 .p16-s7.patch.3 .p16-s7.patch.4 .p16-s7.patch.5 .p16-s7.patch.6
+          rm .github/workflows/p16-s7-publish.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "P16-S7 use factual audit history authority"
+          git push origin HEAD:codex/P16-S7-factual-audit-history-authority
