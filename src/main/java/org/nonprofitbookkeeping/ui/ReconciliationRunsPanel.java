@@ -17,6 +17,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
@@ -36,6 +37,7 @@ import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.Snaps
 import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.StartCommand;
 import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.StatementEntryView;
 import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.StatementSource;
+import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.SuccessorCommand;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -83,6 +85,22 @@ public class ReconciliationRunsPanel implements AppPanel
     private final TextArea ofxImportText = new TextArea();
     private final TextArea qifImportText = new TextArea();
     private final TabPane sourceTabs = new TabPane();
+    private final Button addManualButton = new Button("Add Manual Line");
+    private final Button importPastedButton = new Button("Import Pasted Text");
+    private final Button importFileButton = new Button("Import File");
+    private final Button autoMatchButton = new Button("Auto Match");
+    private final Button matchButton = new Button("Match Selected");
+    private final Button unmatchButton = new Button("Unmatch");
+    private final Button markClearedButton = new Button("Mark Cleared");
+    private final Button explainDifferenceButton = new Button("Record Difference Explanation");
+    private final Button saveUnresolvedButton = new Button("Save Unresolved");
+    private final Button finalizeButton = new Button("Finalize");
+    private final Button successorButton = new Button("Start Successor Reconciliation");
+    private final TextField differenceExplanation = new TextField();
+    private final DatePicker successorEndDate = new DatePicker(LocalDate.now());
+    private final TextField successorEndingBalance = new TextField("0.00");
+    private final TextField successorActor = new TextField();
+    private final TextField successorReason = new TextField();
 
     private Snapshot snapshot;
 
@@ -98,7 +116,9 @@ public class ReconciliationRunsPanel implements AppPanel
         configureStatementSources();
         configureWorkflowTabs();
         companyFormat.install(statementEndDate);
+        companyFormat.install(successorEndDate);
         warnOnly.setSelected(true);
+        configureMutationActions();
         root.setTop(new VBox(6, title, subtitle, sessionSummary, status, new Separator()));
         root.setCenter(workflowTabs);
         loadBankAccountsAndSessions();
@@ -204,18 +224,16 @@ public class ReconciliationRunsPanel implements AppPanel
     {
         VBox reportPane = new VBox(6, new Label("Comparison Report"), differenceTable);
         VBox.setVgrow(differenceTable, Priority.ALWAYS);
-        Button saveUnresolved = new Button("Save Unresolved");
-        saveUnresolved.setOnAction(e -> save(false));
-        Button finalize = new Button("Finalize");
-        finalize.setOnAction(e -> save(true));
-        VBox summary = new VBox(10, new Label("Review and Save"), balances());
+        saveUnresolvedButton.setOnAction(e -> save(false));
+        finalizeButton.setOnAction(e -> save(true));
+        VBox summary = new VBox(10, new Label("Review and Save"), balances(), successorPane());
         SplitPane split = new SplitPane(summary, reportPane);
         split.setId("reconciliationReviewSplit");
         split.setOrientation(Orientation.VERTICAL);
         split.setDividerPositions(0.28);
         CompanySplitPaneStateBinder.bind(split, "reconciliation-review", 0.28);
         VBox pane = new VBox(10, split,
-                new HBox(8, backButton("Back: Match", 2), saveUnresolved, finalize));
+                new HBox(8, backButton("Back: Match", 2), saveUnresolvedButton, finalizeButton));
         pane.setPadding(new Insets(8));
         VBox.setVgrow(split, Priority.ALWAYS);
         return pane;
@@ -250,32 +268,59 @@ public class ReconciliationRunsPanel implements AppPanel
 
     private HBox sourceActions()
     {
-        Button addManual = new Button("Add Manual Line");
-        addManual.setOnAction(e -> addManualLine());
-        Button importPasted = new Button("Import Pasted Text");
-        importPasted.setOnAction(e -> importPastedText());
-        Button importFile = new Button("Import File");
-        importFile.setOnAction(e -> importFile());
         Button validate = new Button("Validate");
         validate.setOnAction(e -> reloadSnapshot());
         Button clearPreview = new Button("Clear Imported Lines");
         clearPreview.setOnAction(e -> selectedImportText().clear());
-        return new HBox(8, addManual, importPasted, importFile, validate, clearPreview);
+        return new HBox(8, addManualButton, importPastedButton, importFileButton, validate, clearPreview);
     }
 
     private HBox matchingActions()
     {
-        Button autoMatch = new Button("Auto Match");
-        autoMatch.setOnAction(e -> runAction(() -> service().autoMatch(requireSession()), "Auto match complete."));
-        Button match = new Button("Match Selected");
-        match.setOnAction(e -> runAction(() -> service().matchSelected(requireSession(), selectedStatementId(), selectedSplitId(), perLine.isSelected() || overwrite.isSelected()), "Selected lines matched."));
-        Button unmatch = new Button("Unmatch");
-        unmatch.setOnAction(e -> runAction(() -> service().unmatchSelected(requireSession(), selectedStatementId(), selectedSplitId()), "Selected match removed."));
-        Button markCleared = new Button("Mark Cleared");
-        markCleared.setOnAction(e -> runAction(() -> service().markCleared(requireSession(), selectedSplitId()), "Ledger line marked cleared."));
-        Button resolve = new Button("Resolve Difference");
-        resolve.setOnAction(e -> runAction(() -> service().resolveDifference(requireSession(), selectedStatementId(), selectedSplitId(), "Resolved from reconciliation workspace."), "Difference resolved."));
-        return new HBox(8, autoMatch, match, unmatch, markCleared, resolve);
+        differenceExplanation.setPromptText("Explain the reconciliation difference; no accounting entry is created");
+        differenceExplanation.setPrefWidth(320);
+        Label explanationHelp = new Label("Explanation records a reconciliation fact only; it does not create or change a Journal transaction.");
+        explanationHelp.getStyleClass().add("help-text");
+        VBox explanation = new VBox(3, new HBox(8, explainDifferenceButton, differenceExplanation), explanationHelp);
+        return new HBox(8, autoMatchButton, matchButton, unmatchButton, markClearedButton, explanation);
+    }
+
+    private void configureMutationActions()
+    {
+        addManualButton.setOnAction(e -> addManualLine());
+        importPastedButton.setOnAction(e -> importPastedText());
+        importFileButton.setOnAction(e -> importFile());
+        autoMatchButton.setOnAction(e -> runAction(
+                () -> service().autoMatch(requireSession()), "Auto match complete."));
+        matchButton.setOnAction(e -> runAction(
+                () -> service().matchSelected(requireSession(), selectedStatementId(), selectedSplitId(),
+                        perLine.isSelected() || overwrite.isSelected()),
+                "Selected lines matched."));
+        unmatchButton.setOnAction(e -> runAction(
+                () -> service().unmatchSelected(requireSession(), selectedStatementId(), selectedSplitId()),
+                "Selected match removed."));
+        markClearedButton.setOnAction(e -> runAction(
+                () -> service().markCleared(requireSession(), selectedSplitId()),
+                "Ledger line marked cleared."));
+        explainDifferenceButton.setOnAction(e -> runAction(
+                () -> service().recordDifferenceExplanation(requireSession(), selectedStatementId(), selectedSplitId(),
+                        differenceExplanation.getText()),
+                "Difference explanation recorded; no accounting transaction was created."));
+        successorButton.setOnAction(e -> startSuccessor());
+    }
+
+    private Node successorPane()
+    {
+        GridPane form = new GridPane();
+        form.setHgap(8);
+        form.setVgap(6);
+        form.addRow(0, new Label("Successor Through Date"), successorEndDate);
+        form.addRow(1, new Label("Successor Ending Balance"), successorEndingBalance);
+        form.addRow(2, new Label("Actor"), successorActor);
+        form.addRow(3, new Label("Reason"), successorReason);
+        Label help = new Label("Finalized sessions are immutable. Start a successor to continue reconciliation without changing the finalized predecessor.");
+        help.getStyleClass().add("help-text");
+        return new VBox(6, new Separator(), new Label("Continue After Finalization"), help, form, successorButton);
     }
 
     private void configureStatementSources()
@@ -401,7 +446,8 @@ public class ReconciliationRunsPanel implements AppPanel
             return;
         }
         runAction(() -> service().load(selected.id()), "Loaded reconciliation session " + selected.id() + ".");
-        workflowTabs.getSelectionModel().select(1);
+        workflowTabs.getSelectionModel().select(
+                snapshot != null && snapshot.status() == BankReconciliationWorkspaceService.SessionStatus.FINALIZED ? 3 : 1);
     }
 
     private void reloadSnapshot()
@@ -452,7 +498,23 @@ public class ReconciliationRunsPanel implements AppPanel
 
     private void save(boolean finalize)
     {
-        runAction(() -> service().save(requireSession(), finalize), finalize ? "Reconciliation finalized if balanced." : "Unresolved reconciliation saved.");
+        runAction(() -> service().save(requireSession(), finalize),
+                finalize ? "Reconciliation finalized." : "Reconciliation saved without finalization.");
+    }
+
+    private void startSuccessor()
+    {
+        long predecessor = requireSession();
+        runAction(() -> service().startSuccessor(new SuccessorCommand(
+                        predecessor,
+                        successorEndDate.getValue(),
+                        parseMoney(successorEndingBalance.getText()),
+                        selectedPolicy(),
+                        notes.getText(),
+                        successorActor.getText(),
+                        successorReason.getText())),
+                "Started successor reconciliation; finalized predecessor remains read-only.");
+        workflowTabs.getSelectionModel().select(1);
     }
 
     private void runAction(java.util.function.Supplier<Snapshot> action, String success)
@@ -484,6 +546,33 @@ public class ReconciliationRunsPanel implements AppPanel
         dateRange.setText("Period: " + companyFormat.formatDate(next.statementStartDate()) + " – " + companyFormat.formatDate(next.statementEndDate()));
         result.setText(next.differences().isEmpty() && next.balances().difference().compareTo(BigDecimal.ZERO) == 0 ? "Result: Balances Match" : "Result: Unresolved Differences");
         sessionSummary.setText("Session " + next.sessionId() + " • " + next.bankAccountLabel() + " • " + companyFormat.formatDate(next.statementStartDate()) + " – " + companyFormat.formatDate(next.statementEndDate()) + " • " + next.status());
+        successorEndDate.setValue(next.statementEndDate().plusMonths(1));
+        successorEndingBalance.setText(companyFormat.formatMoney(next.balances().statementEndingBalance()));
+        applyFinalizedReadOnly(next.status() == BankReconciliationWorkspaceService.SessionStatus.FINALIZED);
+    }
+
+    private void applyFinalizedReadOnly(boolean finalized)
+    {
+        Tooltip tooltip = new Tooltip("Finalized reconciliation is read-only. Start a successor reconciliation to continue.");
+        for (Button button : java.util.List.of(
+                addManualButton, importPastedButton, importFileButton,
+                autoMatchButton, matchButton, unmatchButton, markClearedButton,
+                explainDifferenceButton, saveUnresolvedButton, finalizeButton))
+        {
+            button.setDisable(finalized);
+            button.setTooltip(finalized ? tooltip : null);
+        }
+        sourceTabs.setDisable(finalized);
+        differenceExplanation.setDisable(finalized);
+        successorButton.setDisable(!finalized);
+        successorEndDate.setDisable(!finalized);
+        successorEndingBalance.setDisable(!finalized);
+        successorActor.setDisable(!finalized);
+        successorReason.setDisable(!finalized);
+        if (finalized)
+        {
+            status.setText("Finalized reconciliation is read-only. Start a successor reconciliation to continue.");
+        }
     }
 
     private long requireSession()

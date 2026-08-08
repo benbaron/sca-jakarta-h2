@@ -1,12 +1,12 @@
 ---
-plan_version: 132
+plan_version: 133
 active_phase: P16
-active_slice: P16-S2
+active_slice: P16-S3
 active_status: VERIFYING
-active_branch: codex/P16-S2-atomic-coa-csv-commit
-active_pull_request: 253
-active_head: e495865b91a4979c1571f6ab61922ea43fedd839
-next_action: "Complete the P16-S2 owner desktop checklist on draft PR #253; if accepted, record owner approval and await explicit merge authorization. Do not start P16-S3."
+active_branch: codex/P16-S3-reconciliation-mutation-integrity
+active_pull_request: 254
+active_head: pending-exact-head-validation
+next_action: "Make the exact P16-S3 PR #254 head fully green, then complete doc/P16-S3-reconciliation-mutation-integrity-user-testing.md. Do not start P16-S4."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | VERIFYING through P16-S2 / PR #253 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | VERIFYING through P16-S3 / PR #254 |
 
 ## 4. Governing documents
 
@@ -2041,7 +2041,7 @@ Next exact action:
 
 ## P16-S2 — Atomic COA CSV accepted-row commit
 
-Status: VERIFYING in draft PR #253.
+Status: DONE through PR #253.
 
 Branch: `codex/P16-S2-atomic-coa-csv-commit`
 
@@ -2075,15 +2075,22 @@ Validation status:
 - Identical re-preview/recommit is idempotent and does not duplicate identities or operation audit history. P15 Chart-of-Accounts JSON import/export remains unchanged.
 - Public single-account `AccountAdminService.upsert(...)` now validates code/name/type/normal-balance before any persistence access; caller-owned batch validation remains independently enforced.
 - Exact implementation head `e495865b91a4979c1571f6ab61922ea43fedd839` passed `mvn clean verify`, the deliberately repeated Maven suite, and JavaFX production-route compliance in Maven PR Tests run `31192123755`.
-- Automated acceptance is complete. The owner desktop checklist in `doc/P16-S2-atomic-coa-csv-user-testing.md` remains required before merge.
+- Automated acceptance completed on implementation head `e495865b91a4979c1571f6ab61922ea43fedd839` in Maven PR Tests run `31192123755`.
+- The owner completed and accepted `doc/P16-S2-atomic-coa-csv-user-testing.md`, and PR #253 merged to `main` at `100644b84c6bcb799446374aa928e953085255dd` on 2026-08-07.
 
 Next exact action:
 
-- Complete the owner desktop checklist on draft PR #253. If accepted, record owner approval and await explicit merge authorization. Do not merge or start P16-S3 without authorization.
+- None; P16-S2 is DONE and P16-S3 is active.
 
 ## P16-S3 — Reconciliation finalization and mutation integrity
 
-Status: BLOCKED by P16-S2.
+Status: VERIFYING in draft PR #254.
+
+Branch: `codex/P16-S3-reconciliation-mutation-integrity`
+
+Pull request: #254
+Starting base: `100644b84c6bcb799446374aa928e953085255dd`
+Validated implementation head: pending exact-head automated validation
 
 Purpose: make finalized reconciliation sessions immutable and make all match/clear/resolution operations exact-scope and symmetric.
 
@@ -2102,6 +2109,20 @@ Acceptance and tests:
 - Match/unmatch/clear operations are atomic and relationship-symmetric.
 - Finalize is idempotent, Save cannot reopen/downgrade, and reopening or successor creation is factual and audited.
 - UI tests prove finalized controls are disabled and explanations are not presented as accounting corrections.
+
+Validation status:
+
+- Draft PR #254 is based on exact P16-S2 merge `100644b84c6bcb799446374aa928e953085255dd`; `main` has not advanced beyond that merge.
+- `BankReconciliationWorkspaceService` guards all live mutation paths, enforces exact company/account/session ownership, maintains symmetric match/unmatch relationships, keeps finalized sessions read-only, treats repeated finalization as idempotent, and creates an audited successor rather than editing finalized history.
+- `ReconciliationRunsPanel` renders finalized sessions read-only, exposes explicit successor creation, and refreshes from the authoritative persisted snapshot after service results.
+- Reconciliation statement import normalizes a caller-supplied temporary physical pathname to its logical leaf name at the reconciliation import boundary before `BankImportBatch` persistence. `BankImportBatch` itself remains a faithful persistence model so historical SCLX restoration is not silently rewritten. The `source_name` schema constraint is unchanged.
+- `BankReconciliationMutationIntegrityTest` covers finalized-session immutability, symmetric unmatch, company/account scope rejection, factual difference explanations, successor audit/history, and the long-temporary-path provenance regression through real H2 persistence.
+- Governing reconciliation, interface-operation, persistence-authority, and owner desktop acceptance documentation is updated in this slice.
+- Exact-head Maven PR Tests validation is pending after the provenance correction. P16-S3 must remain VERIFYING until both exact-head CI and owner desktop acceptance are complete.
+
+Next exact action:
+
+- Make the exact PR #254 head pass the complete Maven PR Tests gate, then complete `doc/P16-S3-reconciliation-mutation-integrity-user-testing.md`. Do not start P16-S4.
 
 ## P16-S4 — One governed bank-import authority
 

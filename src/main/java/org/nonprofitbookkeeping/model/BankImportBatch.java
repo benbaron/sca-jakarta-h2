@@ -28,6 +28,8 @@ import java.util.UUID;
        })
 public class BankImportBatch
 {
+    private static final int MAX_SOURCE_NAME_LENGTH = 260;
+
     public enum SourceFormat { OFX, QFX, QIF, CSV, SCLX, OTHER }
     public enum Status { IMPORTED, PARTIALLY_ACCEPTED, ACCEPTED, REJECTED, FAILED, CANCELLED }
 
@@ -46,7 +48,7 @@ public class BankImportBatch
     @JoinColumn(name = "bank_account_id")
     private CompanyBankAccount bankAccount;
 
-    @Column(name = "source_name", nullable = false, length = 260)
+    @Column(name = "source_name", nullable = false, length = MAX_SOURCE_NAME_LENGTH)
     private String sourceName;
 
     @Column(name = "source_external_id", length = 200)
