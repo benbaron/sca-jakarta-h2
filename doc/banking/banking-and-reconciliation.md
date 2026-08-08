@@ -97,12 +97,12 @@ If a transaction contains multiple bank-account lines, each bank-account ledger 
 
 ## Statement sources
 
-Bank statements may be provided by:
+Reconciliation accepts two deliberately separate statement-source paths:
 
-- manual entry;
-- CSV;
-- OFX;
-- QIF.
+- **Manual Entry** records one user-entered statement fact for the selected mutable reconciliation session.
+- **Import Bank Statement…** opens the governed Import Preview workspace, locked to the reconciliation's exact configured bank account. Supported production file families are OFX 2.x, governed QFX, mapped CSV, and normalized CSV.
+
+Reconciliation does not parse or persist imported CSV/OFX/QFX files itself. QIF is not an enabled production format because the governed Import Preview parser contract does not define QIF.
 
 ## Cleared-state mismatch handling
 
@@ -178,4 +178,12 @@ Match and unmatch commands validate the exact reconciliation session, company, c
 
 Correction after finalization uses the explicit successor command. The finalized predecessor remains unchanged, the successor starts as a new mutable session for the next statement period, and a factual audit event links the successor action to its predecessor, actor, and reason. The JavaFX panel mirrors this authority by disabling live mutation controls for finalized sessions, enabling successor controls only for finalized sessions, and applying the service-returned persisted snapshot after successful commands. Errors are reported without claiming a rolled-back mutation succeeded.
 
-For reconciliation statement import, a temporary physical filesystem path is parsing/transport metadata, not `bank_import_batch.source_name`. The reconciliation import boundary reduces an accidental path-shaped source value to the logical/original leaf name before persistence and validates the logical name against the existing source-name limit. The `BankImportBatch` entity does not globally rewrite `source_name`, because historical SCLX restoration must preserve governed imported facts. No schema widening or truncation is part of P16-S3.
+P16-S3 also prevented temporary parsing paths from leaking into logical import provenance while the reconciliation-local file-import path still existed. P16-S4 removes that duplicate file-import path entirely; logical file provenance is now owned only by the governed Import Preview review services. `BankImportBatch` remains a faithful persistence model so historical SCLX restoration is not silently rewritten, and no schema widening or truncation is introduced.
+
+## P16-S4 one governed bank-import authority
+
+The Bank Reconciliation workspace no longer owns CSV splitting, OFX regular-expression parsing, QIF parsing, file reading, or direct persistence of imported `BankImportBatch`/`BankStatementLine` facts. Its file-import command navigates to Import Preview with the exact reconciliation session and configured bank-account identity. Import Preview resolves that account only inside the active company, locks the selector for the reconciliation-origin operation, and exposes only the governed OFX/QFX, mapped CSV, and normalized CSV preview paths.
+
+All file reading, secure parsing, source hashing, identity checks, duplicate handling, preview, and durable review commit continue through the existing Import Preview services and transient `InterchangeTaskController`; Reconciliation does not copy staged rows. After a successful canonical commit, navigation returns to the originating reconciliation session and reloads its authoritative H2 snapshot, which sees the newly durable review facts through the normal statement query. Failed or cancelled previews do not return a false success state.
+
+Manual statement entry remains available because it is not an external file import. A focused `BankStatementManualEntryService` persists that single explicit statement fact inside the reconciliation service's caller-owned transaction while preserving the existing durable representation. QIF remains disabled unless a later slice separately governs a strict QIF contract, parser, fixtures, limits, preview, and atomic review service.

@@ -6,11 +6,9 @@ import org.nonprofitbookkeeping.model.BankStatementLine;
 import org.nonprofitbookkeeping.model.TxnSplit;
 import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.ClearedStatePolicy;
-import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.ImportStatementCommand;
 import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.ManualStatementLineCommand;
 import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.SessionStatus;
 import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.StartCommand;
-import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.StatementSource;
 import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.SuccessorCommand;
 
 import java.math.BigDecimal;
@@ -55,11 +53,6 @@ public class BankReconciliationMutationIntegrityTest
 
             assertReadOnly(() -> service.addManualLine(new ManualStatementLineCommand(
                     sessionId, LocalDate.of(2026, 3, 20), new BigDecimal("1.00"), "late", "manual")));
-            assertReadOnly(() -> service.importStatementText(new ImportStatementCommand(
-                    sessionId,
-                    StatementSource.CSV,
-                    "late.csv",
-                    "date,amount,description,reference\n2026-03-20,1.00,Late,row-1\n")));
             assertReadOnly(() -> service.autoMatch(sessionId));
             assertReadOnly(() -> service.matchSelected(sessionId, STATEMENT, BANK_SPLIT, true));
             assertReadOnly(() -> service.unmatchSelected(sessionId, STATEMENT, BANK_SPLIT));
@@ -83,33 +76,6 @@ public class BankReconciliationMutationIntegrityTest
             assertEquals(finalizedUpdatedAt, scalar(restarted,
                     "select updated_at from bank_reconciliation_session where id = " + sessionId));
             assertReadOnly(() -> service.markCleared(sessionId, BANK_SPLIT));
-        }
-    }
-
-    @Test
-    void importPersistsLogicalSourceNameInsteadOfTemporaryPath(@TempDir Path tempDir)
-    {
-        try (Jpa jpa = new Jpa(tempDir.resolve("logical-import-source-name")))
-        {
-            seed(jpa);
-            BankReconciliationWorkspaceService service = new BankReconciliationWorkspaceService(jpa);
-            long sessionId = startMarch(service);
-            String logicalName = "march-owner-upload.csv";
-            String temporaryPath = "/home/runner/work/_temp/"
-                    + "deep-temporary-directory/".repeat(20)
-                    + logicalName;
-            assertTrue(temporaryPath.length() > 260);
-
-            service.importStatementText(new ImportStatementCommand(
-                    sessionId,
-                    StatementSource.CSV,
-                    temporaryPath,
-                    "date,amount,description,reference\n2026-03-22,12.34,Owner upload,row-long-path\n"));
-
-            assertEquals(logicalName, String.valueOf(scalar(jpa,
-                    "select source_name from bank_import_batch where source_name = '" + logicalName + "'")));
-            assertEquals(0L, countWhere(jpa, "bank_import_batch",
-                    "source_name like '/home/runner/work/_temp/%'"));
         }
     }
 

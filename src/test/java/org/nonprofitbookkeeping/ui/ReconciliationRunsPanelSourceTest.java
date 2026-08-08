@@ -38,10 +38,12 @@ public class ReconciliationRunsPanelSourceTest
         assertTrue(source.contains("Edit Existing"));
         assertTrue(source.contains("Save Unresolved"));
         assertTrue(source.contains("Finalize"));
-        assertTrue(source.contains("Manual Entry"));
-        assertTrue(source.contains("CSV Import"));
-        assertTrue(source.contains("OFX Import"));
-        assertTrue(source.contains("QIF Import"));
+        assertTrue(source.contains("Add Manual Line"));
+        assertTrue(source.contains("Import Bank Statement…"));
+        assertTrue(source.contains("OFX/QFX, mapped CSV, and normalized CSV"));
+        assertFalse(source.contains("CSV Import"));
+        assertFalse(source.contains("OFX Import"));
+        assertFalse(source.contains("QIF Import"));
         assertTrue(source.contains("Warn only"));
         assertTrue(source.contains("Overwrite ledger cleared state"));
         assertTrue(source.contains("Never overwrite; require manual resolution"));

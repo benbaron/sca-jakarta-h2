@@ -15,7 +15,6 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.ToggleGroup;
@@ -24,7 +23,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
 import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService;
 import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.BankAccountOption;
@@ -36,13 +34,9 @@ import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.Sessi
 import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.Snapshot;
 import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.StartCommand;
 import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.StatementEntryView;
-import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.StatementSource;
 import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService.SuccessorCommand;
 
-import java.io.File;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.time.LocalDate;
 
 /** Full bank statement-to-ledger reconciliation workspace. */
@@ -81,13 +75,8 @@ public class ReconciliationRunsPanel implements AppPanel
     private final TextField manualDescription = new TextField();
     private final TextField manualReference = new TextField();
     private final TextField manualAmount = new TextField();
-    private final TextArea csvImportText = new TextArea();
-    private final TextArea ofxImportText = new TextArea();
-    private final TextArea qifImportText = new TextArea();
-    private final TabPane sourceTabs = new TabPane();
     private final Button addManualButton = new Button("Add Manual Line");
-    private final Button importPastedButton = new Button("Import Pasted Text");
-    private final Button importFileButton = new Button("Import File");
+    private final Button importBankStatementButton = new Button("Import Bank Statement…");
     private final Button autoMatchButton = new Button("Auto Match");
     private final Button matchButton = new Button("Match Selected");
     private final Button unmatchButton = new Button("Unmatch");
@@ -113,7 +102,6 @@ public class ReconciliationRunsPanel implements AppPanel
         subtitle.getStyleClass().add("help-text");
         configureSelectors();
         configureTables();
-        configureStatementSources();
         configureWorkflowTabs();
         companyFormat.install(statementEndDate);
         companyFormat.install(successorEndDate);
@@ -122,6 +110,34 @@ public class ReconciliationRunsPanel implements AppPanel
         root.setTop(new VBox(6, title, subtitle, sessionSummary, status, new Separator()));
         root.setCenter(workflowTabs);
         loadBankAccountsAndSessions();
+    }
+
+    @Override
+    public void onPanelShown()
+    {
+        String context = DrillThroughCoordinator.consumeContext(AppPanelId.RECONCILIATION_RUNS);
+        var returnSession = BankImportNavigationContext.parseReconciliationReturn(context);
+        if (returnSession.isPresent())
+        {
+            try
+            {
+                apply(service().load(returnSession.getAsLong()));
+                status.setText("Bank import committed; reconciliation refreshed from durable bank-review facts.");
+            }
+            catch (RuntimeException ex)
+            {
+                status.setText("Could not refresh reconciliation after bank import: " + UiErrors.safeMessage(ex));
+            }
+            return;
+        }
+        if (snapshot == null)
+        {
+            loadBankAccountsAndSessions();
+        }
+        else
+        {
+            reloadSnapshot();
+        }
     }
 
     @Override public String title() { return "Bank Reconciliation"; }
@@ -189,14 +205,26 @@ public class ReconciliationRunsPanel implements AppPanel
 
     private Node statementPane()
     {
+        GridPane manual = new GridPane();
+        manual.setHgap(6);
+        manual.setVgap(6);
+        manual.addRow(0, new Label("Date"), manualDate);
+        manual.addRow(1, new Label("Description"), manualDescription);
+        manual.addRow(2, new Label("Reference"), manualReference);
+        manual.addRow(3, new Label("Amount"), manualAmount);
+
+        Label importHelp = new Label(
+                "File imports use the governed Import Preview workspace for OFX/QFX, mapped CSV, and normalized CSV. "
+                        + "QIF is not a supported production import format.");
+        importHelp.getStyleClass().add("help-text");
         VBox pane = new VBox(8,
                 new Label("Statement Source"),
-                new Label("Add manual statement lines or import statement text from CSV, OFX, or QIF before moving to matching."),
-                sourceTabs,
-                sourceActions(),
+                new Label("Enter a manual statement line here, or open the governed bank-statement import workflow."),
+                manual,
+                new HBox(8, addManualButton, importBankStatementButton),
+                importHelp,
                 new HBox(8, backButton("Back: Setup", 0), nextButton("Next: Match", 2)));
         pane.setPadding(new Insets(8));
-        VBox.setVgrow(sourceTabs, Priority.ALWAYS);
         return pane;
     }
 
@@ -266,15 +294,6 @@ public class ReconciliationRunsPanel implements AppPanel
         return cards;
     }
 
-    private HBox sourceActions()
-    {
-        Button validate = new Button("Validate");
-        validate.setOnAction(e -> reloadSnapshot());
-        Button clearPreview = new Button("Clear Imported Lines");
-        clearPreview.setOnAction(e -> selectedImportText().clear());
-        return new HBox(8, addManualButton, importPastedButton, importFileButton, validate, clearPreview);
-    }
-
     private HBox matchingActions()
     {
         differenceExplanation.setPromptText("Explain the reconciliation difference; no accounting entry is created");
@@ -288,8 +307,7 @@ public class ReconciliationRunsPanel implements AppPanel
     private void configureMutationActions()
     {
         addManualButton.setOnAction(e -> addManualLine());
-        importPastedButton.setOnAction(e -> importPastedText());
-        importFileButton.setOnAction(e -> importFile());
+        importBankStatementButton.setOnAction(e -> openGovernedBankImport());
         autoMatchButton.setOnAction(e -> runAction(
                 () -> service().autoMatch(requireSession()), "Auto match complete."));
         matchButton.setOnAction(e -> runAction(
@@ -321,29 +339,6 @@ public class ReconciliationRunsPanel implements AppPanel
         Label help = new Label("Finalized sessions are immutable. Start a successor to continue reconciliation without changing the finalized predecessor.");
         help.getStyleClass().add("help-text");
         return new VBox(6, new Separator(), new Label("Continue After Finalization"), help, form, successorButton);
-    }
-
-    private void configureStatementSources()
-    {
-        GridPane manual = new GridPane();
-        manual.setHgap(6);
-        manual.setVgap(6);
-        manual.addRow(0, new Label("Date"), manualDate);
-        manual.addRow(1, new Label("Description"), manualDescription);
-        manual.addRow(2, new Label("Reference"), manualReference);
-        manual.addRow(3, new Label("Amount"), manualAmount);
-        sourceTabs.getTabs().setAll(
-                new Tab("Manual Entry", manual),
-                new Tab("CSV Import", importTab("Paste CSV with date, amount, description, reference columns.", csvImportText)),
-                new Tab("OFX Import", importTab("Paste OFX/QFX statement text or import a file.", ofxImportText)),
-                new Tab("QIF Import", importTab("Paste QIF statement text or import a file.", qifImportText)));
-        sourceTabs.getTabs().forEach(tab -> tab.setClosable(false));
-    }
-
-    private Node importTab(String helper, TextArea area)
-    {
-        area.setPrefRowCount(16);
-        return new VBox(6, new Label(helper), area);
     }
 
     private void configureSelectors()
@@ -465,35 +460,16 @@ public class ReconciliationRunsPanel implements AppPanel
         runAction(() -> service().addManualLine(new ManualStatementLineCommand(requireSession(), requireManualDate(), parseMoney(manualAmount.getText()), manualDescription.getText(), manualReference.getText())), "Manual statement line added.");
     }
 
-    private void importPastedText()
-    {
-        runAction(() -> service().importStatementText(new BankReconciliationWorkspaceService.ImportStatementCommand(requireSession(), selectedSource(), selectedSource().name() + " pasted statement", selectedImportText().getText())), "Pasted statement text imported.");
-    }
-
-    private void importFile()
+    private void openGovernedBankImport()
     {
         if (snapshot == null)
         {
-            status.setText("Start or load a reconciliation session before importing statement lines.");
+            status.setText("Start or load a reconciliation session before importing a bank statement.");
             return;
         }
-        try
-        {
-            FileChooser chooser = new FileChooser();
-            chooser.setTitle("Import bank statement");
-            File file = chooser.showOpenDialog(root.getScene() == null ? null : root.getScene().getWindow());
-            if (file == null)
-            {
-                return;
-            }
-            String text = Files.readString(file.toPath(), StandardCharsets.UTF_8);
-            selectedImportText().setText(text);
-            runAction(() -> service().importStatementText(new BankReconciliationWorkspaceService.ImportStatementCommand(requireSession(), selectedSource(), file.getName(), text)), "Statement file imported.");
-        }
-        catch (RuntimeException | java.io.IOException ex)
-        {
-            status.setText("Could not import statement file: " + UiErrors.safeMessage(ex));
-        }
+        DrillThroughCoordinator.openPanelWithContext(
+                AppPanelId.IMPORT_PREVIEW,
+                BankImportNavigationContext.forReconciliation(snapshot.bankAccountId(), snapshot.sessionId()));
     }
 
     private void save(boolean finalize)
@@ -555,14 +531,13 @@ public class ReconciliationRunsPanel implements AppPanel
     {
         Tooltip tooltip = new Tooltip("Finalized reconciliation is read-only. Start a successor reconciliation to continue.");
         for (Button button : java.util.List.of(
-                addManualButton, importPastedButton, importFileButton,
+                addManualButton, importBankStatementButton,
                 autoMatchButton, matchButton, unmatchButton, markClearedButton,
                 explainDifferenceButton, saveUnresolvedButton, finalizeButton))
         {
             button.setDisable(finalized);
             button.setTooltip(finalized ? tooltip : null);
         }
-        sourceTabs.setDisable(finalized);
         differenceExplanation.setDisable(finalized);
         successorButton.setDisable(!finalized);
         successorEndDate.setDisable(!finalized);
@@ -594,28 +569,6 @@ public class ReconciliationRunsPanel implements AppPanel
     {
         LedgerLineView selected = ledgerTable.getSelectionModel().getSelectedItem();
         return selected == null ? null : selected.splitId();
-    }
-
-    private TextArea selectedImportText()
-    {
-        return switch (sourceTabs.getSelectionModel().getSelectedIndex())
-        {
-            case 2 -> ofxImportText;
-            case 3 -> qifImportText;
-            default -> csvImportText;
-        };
-    }
-
-    private StatementSource selectedSource()
-    {
-        int index = sourceTabs.getSelectionModel().getSelectedIndex();
-        return switch (index)
-        {
-            case 1 -> StatementSource.CSV;
-            case 2 -> StatementSource.OFX;
-            case 3 -> StatementSource.QIF;
-            default -> StatementSource.MANUAL;
-        };
     }
 
     private ClearedStatePolicy selectedPolicy()

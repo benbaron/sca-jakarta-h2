@@ -91,3 +91,14 @@ Bank Transactions shows persisted source/account/date/amount/currency/status and
 restart, and isolates active companies. It opens the canonical ledger only when the row has an explicit
 matched transaction. The former `UiWorkspaceDataStore.bankTransactions` session staging authority and
 the File-menu direct-import path are removed. Import alone still creates no `Txn` or `TxnSplit`.
+
+
+## P16-S4 single production bank-import authority
+
+P16-S4 removes the remaining reconciliation-local CSV/OFX/QIF parsing and imported-file persistence path. `ReconciliationRunsPanel` exposes one **Import Bank Statement…** navigation command instead of pasted/file parsers, and `BankReconciliationWorkspaceService` no longer creates imported `BankImportBatch` or `BankStatementLine` records.
+
+A reconciliation-origin import passes the exact reconciliation session and configured bank-account ID to Import Preview. Import Preview re-resolves that configured account from the active company, locks the selector for the operation, and then uses the same `BankStatementReviewService`, `BankCsvReviewService`, or `NormalizedBankCsvReviewService` preview/commit path used elsewhere. Parsing and preview remain off the JavaFX thread through `InterchangeTaskController`; commit remains atomic and non-cancelable once begun.
+
+After a successful durable review commit, Import Preview returns to the originating reconciliation session. Reconciliation reloads its persisted snapshot and therefore observes the newly committed review facts from H2 rather than copying transient preview rows. Parser rejection, unsafe input, account mismatch, duplicate classification, source drift, and idempotent re-import semantics are consequently identical regardless of whether the user reached Import Preview from Banking or Reconciliation.
+
+Manual reconciliation statement entry is intentionally separate from external import and is persisted through `BankStatementManualEntryService` inside the reconciliation transaction. QIF is not exposed as a production action because it is not part of the governed bank-statement interchange contract.
