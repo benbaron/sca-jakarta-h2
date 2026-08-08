@@ -46,11 +46,11 @@ The owner does **not** need to reproduce these by database manipulation. The P16
 
 ## Acceptance record
 
-- [ ] A. Mutable-session workflow passed
-- [ ] B. Finalize/read-only behavior passed
-- [ ] C. Explicit successor passed
-- [ ] D. Error/refresh behavior passed
-- [ ] Exact tested PR head recorded
-- [ ] Owner acceptance recorded
+- [x] A. Mutable-session workflow passed
+- [x] B. Finalize/read-only behavior passed
+- [x] C. Explicit successor passed
+- [x] D. Error/refresh behavior passed
+- [x] Exact tested PR head recorded: `2a7df0c7aa085c602928e759a1b4ff01d41a0851`; Maven PR Tests run `31225841857` passed
+- [x] Owner acceptance recorded: 2026-08-07
 
-Do not mark P16-S3 DONE or begin P16-S4 until this checklist is accepted and the repository workflow's merge/completion boundary has been satisfied.
+P16-S3 acceptance is complete. PR #254 merged to `main` at `8f94ca2ef3581e37b6918b593c0f30176c01776f`; P16-S3 is DONE and P16-S4 may begin.
