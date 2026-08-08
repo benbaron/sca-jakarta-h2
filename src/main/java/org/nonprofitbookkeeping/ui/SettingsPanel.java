@@ -20,7 +20,6 @@ import org.nonprofitbookkeeping.model.ClosedPeriodPolicy;
 import org.nonprofitbookkeeping.model.CompanyUiPreferences;
 import org.nonprofitbookkeeping.model.DateDisplayFormat;
 import org.nonprofitbookkeeping.model.CorrectionMethod;
-import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.MoneyPrintFormat;
 import org.nonprofitbookkeeping.model.ReopenScope;
@@ -52,7 +51,7 @@ public class SettingsPanel implements AppPanel
     private final ComboBox<MoneyPrintFormat> moneyPrintFormat = new ComboBox<>();
     private final ComboBox<DateDisplayFormat> dateDisplayFormat = new ComboBox<>();
     private final ComboBox<String> activeCompany = new ComboBox<>();
-    private final ComboBox<String> activeDatabase = new ComboBox<>();
+    private final TextField activeDatabase = new TextField();
 
     private final UiSessionState session;
     private final CompanySessionController companyController;
@@ -123,8 +122,8 @@ public class SettingsPanel implements AppPanel
         activeCompany.setEditable(false);
         activeCompany.setOnAction(event -> loadCompanyUiPreferences(activeCompany.getValue()));
 
-        activeDatabase.setEditable(true);
-        activeDatabase.getItems().addAll(session.databaseSelection().recentDatabasePaths());
+        activeDatabase.setEditable(false);
+        activeDatabase.setFocusTraversable(true);
 
         int row = 0;
         grid.add(new Label("Theme"), 0, row);
@@ -164,8 +163,14 @@ public class SettingsPanel implements AppPanel
         grid.add(new Label("Active company"), 0, row);
         grid.add(activeCompany, 1, row++);
 
-        grid.add(new Label("Active database file"), 0, row);
+        grid.add(new Label("Connected database file"), 0, row);
         grid.add(activeDatabase, 1, row++);
+
+        Label databaseHelp = new Label(
+                "Database selection is connected session state. Use File → Select Database File… "
+                        + "or Create New Database… so the target is migrated and validated before this path changes.");
+        databaseHelp.setWrapText(true);
+        grid.add(databaseHelp, 0, row++, 2, 1);
 
         Button apply = new Button("Apply");
         apply.setOnAction(e -> applyToSession());
@@ -180,7 +185,7 @@ public class SettingsPanel implements AppPanel
     {
         AppPreferencesState p = session.preferences();
         MultiCompanyState c = session.multiCompany();
-        DatabaseSelectionState d = session.databaseSelection();
+        var d = session.databaseSelection();
 
         theme.getSelectionModel().select(p.themePreference());
         nativeWindow.setSelected(p.useNativeWindowDecorations());
@@ -207,12 +212,7 @@ public class SettingsPanel implements AppPanel
         activeCompany.getSelectionModel().select(c.activeCompanyCode());
         loadCompanyUiPreferences(c.activeCompanyCode());
 
-        activeDatabase.getItems().setAll(d.recentDatabasePaths());
-        if (!d.recentDatabasePaths().contains(d.activeDatabasePath()))
-        {
-            activeDatabase.getItems().add(d.activeDatabasePath());
-        }
-        activeDatabase.getSelectionModel().select(d.activeDatabasePath());
+        activeDatabase.setText(d.activeDatabasePath());
         dirtyState.markClean();
     }
 
@@ -225,7 +225,6 @@ public class SettingsPanel implements AppPanel
             return;
         }
         session.setPreferences(readPreferences());
-        session.setDatabaseSelection(readDatabaseSelection());
         saveCompanyUiPreferences(selectedCompany);
         CompanySessionController.SelectionResult selection = companyController.select(selectedCompany);
         status.setText(selection.selected()
@@ -296,39 +295,19 @@ public class SettingsPanel implements AppPanel
         return new MultiCompanyState(selected, recents);
     }
 
-    DatabaseSelectionState readDatabaseSelection()
+    String activeDatabaseTextForTests()
     {
-        String selected = activeDatabase.getEditor().getText();
-        if (selected == null || selected.isBlank())
-        {
-            selected = org.nonprofitbookkeeping.persistence.DatabaseLocationService.defaultUserDatabasePath().toString();
-        }
-
-        List<String> recents = new ArrayList<>();
-        recents.add(selected);
-        for (String candidate : activeDatabase.getItems())
-        {
-            if (candidate == null || candidate.isBlank() || candidate.equals(selected))
-            {
-                continue;
-            }
-            if (!recents.contains(candidate))
-            {
-                recents.add(candidate);
-            }
-        }
-
-        return new DatabaseSelectionState(selected, recents);
+        return activeDatabase.getText();
     }
 
-    void setActiveDatabaseForTests(String value)
+    boolean activeDatabaseEditableForTests()
     {
-        activeDatabase.getEditor().setText(value);
+        return activeDatabase.isEditable();
     }
 
-    void setRecentDatabasesForTests(List<String> values)
+    void setPeriodStartDayForTests(int value)
     {
-        activeDatabase.getItems().setAll(values);
+        periodStartDay.getValueFactory().setValue(value);
     }
 
     @Override
@@ -362,7 +341,7 @@ public class SettingsPanel implements AppPanel
                 readPreferences(),
                 readCompanyUiPreferences(),
                 activeCompany.getValue(),
-                activeDatabase.getEditor().getText());
+                activeDatabase.getText());
     }
 
     private record SettingsSnapshot(

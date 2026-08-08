@@ -42,7 +42,7 @@ class ProductionPanelRouteComplianceTest
             {
                 ProductionWorkspaceWindow window = new ProductionWorkspaceWindow(
                         stateStore,
-                        UiServiceRegistry::reconnectToDatabase);
+                        UiServiceRegistry::prepareDatabaseConnection);
                 PanelFactory routeInventory = new PanelFactory();
                 Set<AppPanelId> canonicalRoutes = new LinkedHashSet<>();
                 routeInventory.supportedPanelIds().stream()

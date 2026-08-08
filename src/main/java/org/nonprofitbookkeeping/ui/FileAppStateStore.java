@@ -238,9 +238,24 @@ public class FileAppStateStore implements AppStateStore
     public void saveDatabaseSelection(DatabaseSelectionState state)
     {
         Properties p = read();
-        p.setProperty(K_ACTIVE_DB, state.activeDatabasePath());
-        p.setProperty(K_DB_RECENTS, String.join(",", state.recentDatabasePaths()));
+        putDatabaseSelection(p, state);
         write(p);
+    }
+
+    @Override
+    public void saveDatabaseSession(DatabaseSelectionState database, MultiCompanyState company)
+    {
+        Properties p = read();
+        putDatabaseSelection(p, database);
+        p.setProperty(K_ACTIVE_COMPANY, company.activeCompanyCode());
+        p.setProperty(K_RECENTS, String.join(",", company.recentCompanyCodes()));
+        write(p);
+    }
+
+    private static void putDatabaseSelection(Properties properties, DatabaseSelectionState state)
+    {
+        properties.setProperty(K_ACTIVE_DB, state.activeDatabasePath());
+        properties.setProperty(K_DB_RECENTS, String.join(",", state.recentDatabasePaths()));
     }
 
     private static <E extends Enum<E>> E enumValue(Properties properties, String key, E fallback)

@@ -49,6 +49,17 @@ public interface AppStateStore
     {
     }
 
+    /**
+     * Persists the database and active-company selection as one session choice.
+     * Production stores should override this when they can commit both values in
+     * one physical write.
+     */
+    default void saveDatabaseSession(DatabaseSelectionState database, MultiCompanyState company)
+    {
+        saveDatabaseSelection(database);
+        saveMultiCompany(company);
+    }
+
 
     default void saveViewPresets(List<ViewPresetState> presets)
     {

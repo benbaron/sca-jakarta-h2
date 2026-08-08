@@ -812,12 +812,13 @@ public class MainWindow extends BorderPane
 
     void applySelectedDatabasePath(Path path)
     {
-        String selected = path.toString();
+        DatabaseSessionController controller = new DatabaseSessionController(
+                SESSION_STATE,
+                stateStore,
+                UiServiceRegistry::prepareDatabaseConnection);
         try
         {
-            DatabaseBootstrap.migrate(path);
-            UiServiceRegistry.reconnectToDatabase(path);
-            companySessionController.restoreAuthoritativeSelection();
+            controller.connect(path);
         }
         catch (RuntimeException ex)
         {
@@ -825,10 +826,6 @@ public class MainWindow extends BorderPane
             return;
         }
 
-        List<String> recents = new ArrayList<>(SESSION_STATE.databaseSelection().recentDatabasePaths());
-        recents.remove(selected);
-        recents.add(0, selected);
-        SESSION_STATE.setDatabaseSelection(new DatabaseSelectionState(selected, recents));
         panelHost.refreshOpenPanels();
         info("Database switched to: " + path.getFileName());
     }

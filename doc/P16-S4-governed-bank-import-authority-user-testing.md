@@ -45,12 +45,12 @@ Use this checklist only after the exact PR head passes the complete Maven PR Tes
 
 ## Acceptance record
 
-- [ ] A. Reconciliation route and exact configured-account lock passed
-- [ ] B. Canonical failure/cancellation behavior passed
-- [ ] C. Successful commit, return, durable refresh, and re-import behavior passed
-- [ ] D. Manual-entry and finalized-session boundaries passed
-- [ ] E. Banking entry point remains governed
-- [ ] Exact tested PR head recorded
-- [ ] Owner acceptance recorded
+- [x] A. Reconciliation route and exact configured-account lock passed
+- [x] B. Canonical failure/cancellation behavior passed
+- [x] C. Successful commit, return, durable refresh, and re-import behavior passed
+- [x] D. Manual-entry and finalized-session boundaries passed
+- [x] E. Banking entry point remains governed
+- [x] Exact tested PR head recorded — `2edcb313efa09a4032c5483a22ac4c991347924f`, Maven PR Tests run `31238920536`
+- [x] Owner acceptance recorded — accepted before proceeding to P16-S5; PR #256 merged at `4eef190adb8380d90356a94f24ef8d7f29e46f3a`
 
-Do not mark P16-S4 DONE or begin P16-S5 until this checklist is accepted and the PR has merged.
+P16-S4 acceptance is complete. PR #256 is merged; P16-S5 may proceed.

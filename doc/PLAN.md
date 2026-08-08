@@ -1,12 +1,12 @@
 ---
-plan_version: 136
+plan_version: 138
 active_phase: P16
-active_slice: P16-S4
+active_slice: P16-S5
 active_status: VERIFYING
-active_branch: codex/P16-S4-governed-bank-import-authority
-active_pull_request: 256
-active_head: 229065580d44171f5ceb93f0dad217797c4bb9ff
-next_action: "Complete doc/P16-S4-governed-bank-import-authority-user-testing.md on the exact green PR #256 head. Keep P16-S5 blocked until P16-S4 is accepted and merged."
+active_branch: codex/P16-S5-connected-database-session-authority
+active_pull_request: 257
+active_head: 6b226c8955e5a462e44f6938e59c9bd3a9d0cdeb
+next_action: "Validate the final P16-S5 documentation-inclusive head, then complete doc/P16-S5-connected-database-session-authority-user-testing.md. Keep P16-S6 blocked until P16-S5 is accepted and merged."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S4; P16-S3 DONE through PR #254 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S5; P16-S4 DONE through PR #256 |
 
 ## 4. Governing documents
 
@@ -1877,7 +1877,7 @@ Required behavior: genuine Inventory item add/edit and movement history, no runb
 # P16 — Interface-to-authority completion and integrity corrections
 
 **Selector:** `PHASE=P16`  
-**Status:** VERIFYING through P16-S1 / PR #252  
+**Status:** IN_PROGRESS through P16-S5; P16-S4 DONE through PR #256  
 **Depends on:** P03 through P15 except eliminated P07
 
 ## Purpose
@@ -2128,12 +2128,12 @@ Next exact action:
 
 ## P16-S4 — One governed bank-import authority
 
-Status: VERIFYING in draft PR #256.
+Status: DONE through merged PR #256 and owner acceptance.
 
 Branch: `codex/P16-S4-governed-bank-import-authority`
 Starting base: `ba3a6ccc4bb75fd61baf899afd5edde120c5fc5e`
-Pull request: #256
-Validated implementation head: `229065580d44171f5ceb93f0dad217797c4bb9ff`
+Pull request: #256, merged to `main` at `4eef190adb8380d90356a94f24ef8d7f29e46f3a` on 2026-08-07
+Validated implementation head: `2edcb313efa09a4032c5483a22ac4c991347924f`
 
 Purpose: remove the weaker direct CSV/OFX/QIF import path from Reconciliation and retain Import Preview as the sole production statement-import authority.
 
@@ -2159,15 +2159,20 @@ Execution state:
 - Import Preview consumes the reconciliation context, locks the exact configured account, continues to use the existing off-FX-thread transient operation controller, and returns only after canonical durable-review commit so Reconciliation reloads H2 facts rather than transient rows.
 - QIF remains outside the governed production formats.
 - Source guards, governing documents, and `doc/P16-S4-governed-bank-import-authority-user-testing.md` are part of this slice.
-- Validated implementation head `229065580d44171f5ceb93f0dad217797c4bb9ff` passed Maven PR Tests run `31238705987`, including clean headless verification, the deliberately repeated test suite, and production JavaFX route compliance.
+- Exact final PR head `2edcb313efa09a4032c5483a22ac4c991347924f` passed Maven PR Tests run `31238920536`, including clean headless verification, the deliberately repeated test suite, and production JavaFX route compliance.
+- The owner accepted `doc/P16-S4-governed-bank-import-authority-user-testing.md`, and PR #256 merged to `main` at `4eef190adb8380d90356a94f24ef8d7f29e46f3a` on 2026-08-07.
 
 Next exact action:
 
-- Complete `doc/P16-S4-governed-bank-import-authority-user-testing.md` on the exact green PR #256 head. Keep P16-S5 blocked until P16-S4 is accepted and merged.
+- None; P16-S4 is DONE and P16-S5 is active.
 
 ## P16-S5 — Connected-database session authority
 
-Status: BLOCKED by P16-S4.
+Status: VERIFYING in draft PR #257.
+
+Starting base: `4eef190adb8380d90356a94f24ef8d7f29e46f3a`
+Pull request: #257
+Validated implementation head: `6b226c8955e5a462e44f6938e59c9bd3a9d0cdeb`
 
 Purpose: prevent Preferences from displaying one database path while services remain connected to another.
 
@@ -2184,6 +2189,21 @@ Acceptance and tests:
 - The displayed active path, JDBC/JPA datasource, Diagnostics path, and records always identify the same database.
 - Failed migration/validation and cancelled dirty-state confirmation preserve the prior session.
 - Successful switch rebuilds services and panels once, with no stale company data or split-brain reads.
+
+Execution state:
+
+- Settings displays the connected database path as read-only factual state and no longer writes `UiSessionState.databaseSelection` from Preferences.
+- `DatabaseSessionController` prepares the target database, migrated JPA/service bundle, and authoritative active-company selection before publishing any new session authority.
+- `UiServiceRegistry` keeps the prior service bundle active until the prepared target is validated; failed preparation closes only the target resources.
+- Dirty-workspace cancellation prevents target preparation. Failed target migration/validation preserves the prior database, company, services, displayed path, Diagnostics path, and healthy workspace state.
+- A successful switch publishes database/company shell state together, swaps the prepared service bundle, and refreshes open panels once without duplicate active-company refresh.
+- `FileAppStateStore` persists database selection and active-company shell convenience state in one properties-file write; the retired `MainWindow` database command also routes through the same session controller.
+- Focused controller/source/file-state tests plus real H2/JPA and JavaFX workspace regression coverage are included, along with `doc/P16-S5-connected-database-session-authority-user-testing.md`.
+- Exact implementation head `6b226c8955e5a462e44f6938e59c9bd3a9d0cdeb` passed Maven PR Tests run `31240324104`, including clean headless `mvn clean verify`, the deliberately repeated test suite, and production JavaFX route compliance.
+
+Next exact action:
+
+- Validate the final documentation-inclusive PR #257 head, then complete `doc/P16-S5-connected-database-session-authority-user-testing.md`. Keep P16-S6 blocked until owner acceptance and merge.
 
 ## P16-S6 — Budget draft lifecycle and fiscal-period authority
 

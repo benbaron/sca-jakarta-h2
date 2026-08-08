@@ -51,7 +51,7 @@ class CoreEditorComplianceTest
                 assertTrue(accounts.hasUnsavedChanges());
 
                 SettingsPanel settings = new SettingsPanel(session);
-                settings.setActiveDatabaseForTests(database.resolveSibling("changed").toString());
+                settings.setPeriodStartDayForTests(2);
                 assertTrue(settings.hasUnsavedChanges());
 
                 UserAdminPanel users = new UserAdminPanel();
@@ -59,8 +59,7 @@ class CoreEditorComplianceTest
                 assertTrue(users.hasUnsavedChanges());
 
                 AdministrationPanel administration = new AdministrationPanel();
-                administration.settingsForTests().setActiveDatabaseForTests(
-                        database.resolveSibling("administration-changed").toString());
+                administration.settingsForTests().setPeriodStartDayForTests(2);
                 assertTrue(administration.hasUnsavedChanges(),
                         "Administration must aggregate dirty state from non-selected child tabs.");
                 return null;

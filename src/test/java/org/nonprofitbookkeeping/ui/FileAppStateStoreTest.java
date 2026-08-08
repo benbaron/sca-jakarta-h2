@@ -59,6 +59,23 @@ public class FileAppStateStoreTest
     }
 
     @Test
+    public void saveDatabaseSession_roundTripsDatabaseAndResolvedCompanyTogether(@TempDir Path tempDir)
+    {
+        FileAppStateStore store = new FileAppStateStore(tempDir.resolve("ui-state.properties"));
+        DatabaseSelectionState database = new DatabaseSelectionState(
+                "/data/target.mv.db",
+                List.of("/data/target.mv.db", "/data/source.mv.db"));
+        MultiCompanyState company = new MultiCompanyState(
+                "TARGET",
+                List.of("TARGET", "OTHER"));
+
+        store.saveDatabaseSession(database, company);
+
+        assertEquals(database, store.loadDatabaseSelection().orElseThrow());
+        assertEquals(company, store.loadMultiCompany().orElseThrow());
+    }
+
+    @Test
     public void loadPreferences_oldFileUsesProductionDefaults(@TempDir Path tempDir) throws IOException
     {
         Path file = tempDir.resolve("ui-state.properties");

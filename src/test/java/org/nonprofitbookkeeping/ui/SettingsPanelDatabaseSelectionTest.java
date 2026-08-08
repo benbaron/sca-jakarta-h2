@@ -2,19 +2,18 @@ package org.nonprofitbookkeeping.ui;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.nonprofitbookkeeping.model.AppPreferencesState;
 import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
-import org.nonprofitbookkeeping.model.UiThemePreference;
-import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * SettingsPanelDatabaseSelectionTest component.
- */
+/** Proves Preferences displays database authority rather than mutating it. */
 public class SettingsPanelDatabaseSelectionTest
 {
     @BeforeAll
@@ -24,37 +23,34 @@ public class SettingsPanelDatabaseSelectionTest
     }
 
     @Test
-    public void readDatabaseSelection_prioritizesSelectedPathAtFront()
+    public void connectedDatabasePathIsReadOnlyFactualState()
     {
-        DatabaseSelectionState state = FxTestSupport.onFx(() -> {
+        FxTestSupport.onFx(() -> {
             UiSessionState session = new UiSessionState();
-            session.setPreferences(new AppPreferencesState(UiThemePreference.SYSTEM_DEFAULT, false, true, UserPrivilegeLevel.ACCOUNTANT));
             session.setMultiCompany(new MultiCompanyState("DEFAULT", List.of("DEFAULT")));
-            session.setDatabaseSelection(new DatabaseSelectionState("/data/old.mv.db", List.of("/data/old.mv.db", "/data/other.mv.db")));
+            session.setDatabaseSelection(new DatabaseSelectionState(
+                    "/data/connected.mv.db",
+                    List.of("/data/connected.mv.db", "/data/older.mv.db")));
 
             SettingsPanel panel = new SettingsPanel(session);
-            panel.readDatabaseSelection();
-            panel.setActiveDatabaseForTests("/data/new.mv.db");
-            return panel.readDatabaseSelection();
-        });
 
-        assertEquals("/data/new.mv.db", state.activeDatabasePath());
-        assertEquals("/data/new.mv.db", state.recentDatabasePaths().get(0));
+            assertEquals("/data/connected.mv.db", panel.activeDatabaseTextForTests());
+            assertFalse(panel.activeDatabaseEditableForTests());
+            return null;
+        });
     }
 
     @Test
-    public void readDatabaseSelection_deduplicatesRecents()
+    public void sourceContainsNoPreferencesDatabaseSelectionWriter() throws Exception
     {
-        DatabaseSelectionState state = FxTestSupport.onFx(() -> {
-            UiSessionState session = new UiSessionState();
-            session.setDatabaseSelection(new DatabaseSelectionState("/data/a.mv.db", List.of("/data/a.mv.db", "/data/a.mv.db", "/data/b.mv.db")));
+        String source = Files.readString(Path.of(
+                "src/main/java/org/nonprofitbookkeeping/ui/SettingsPanel.java"));
 
-            SettingsPanel panel = new SettingsPanel(session);
-            panel.setRecentDatabasesForTests(List.of("/data/a.mv.db", "/data/a.mv.db", "/data/b.mv.db", "/data/b.mv.db"));
-            panel.setActiveDatabaseForTests("/data/a.mv.db");
-            return panel.readDatabaseSelection();
-        });
-
-        assertEquals(List.of("/data/a.mv.db", "/data/b.mv.db"), state.recentDatabasePaths());
+        assertTrue(source.contains("Connected database file"));
+        assertTrue(source.contains("activeDatabase.setEditable(false)"));
+        assertTrue(source.contains("Use File → Select Database File…"));
+        assertFalse(source.contains("session.setDatabaseSelection("));
+        assertFalse(source.contains("readDatabaseSelection()"));
+        assertFalse(source.contains("activeDatabase.setEditable(true)"));
     }
 }
