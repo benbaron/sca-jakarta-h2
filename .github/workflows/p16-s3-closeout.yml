@@ -1,0 +1,116 @@
+name: P16-S3 closeout
+
+on:
+  push:
+    branches:
+      - codex/P16-S3-validation-closeout
+    paths:
+      - .github/workflows/p16-s3-closeout.yml
+
+permissions:
+  contents: write
+
+jobs:
+  closeout:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout closeout branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P16-S3-validation-closeout
+
+      - name: Mark P16-S3 done and ready P16-S4
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('doc/PLAN.md')
+          text = path.read_text()
+
+          replacements = [
+              (
+                  '''plan_version: 133
+active_phase: P16
+active_slice: P16-S3
+active_status: VERIFYING
+active_branch: codex/P16-S3-reconciliation-mutation-integrity
+active_pull_request: 254
+active_head: pending-exact-head-validation
+next_action: "Make the exact P16-S3 PR #254 head fully green, then complete doc/P16-S3-reconciliation-mutation-integrity-user-testing.md. Do not start P16-S4."''',
+                  '''plan_version: 134
+active_phase: P16
+active_slice: P16-S4
+active_status: READY
+active_branch: null
+active_pull_request: null
+active_head: 8f94ca2ef3581e37b6918b593c0f30176c01776f
+next_action: "Start P16-S4 from current origin/main and replace the weaker reconciliation-local bank import path with the governed Import Preview authority."'''
+              ),
+              (
+                  '| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | VERIFYING through P16-S3 / PR #254 |',
+                  '| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | READY for P16-S4; P16-S3 DONE through PR #254 |'
+              ),
+              (
+                  '''## P16-S3 — Reconciliation finalization and mutation integrity
+
+Status: VERIFYING in draft PR #254.
+
+Branch: `codex/P16-S3-reconciliation-mutation-integrity`
+
+Pull request: #254
+Starting base: `100644b84c6bcb799446374aa928e953085255dd`
+Validated implementation head: pending exact-head automated validation''',
+                  '''## P16-S3 — Reconciliation finalization and mutation integrity
+
+Status: DONE through merged PR #254 and owner desktop acceptance.
+
+Branch: `codex/P16-S3-reconciliation-mutation-integrity`
+
+Pull request: #254, merged to `main` at `8f94ca2ef3581e37b6918b593c0f30176c01776f` on 2026-08-07
+Starting base: `100644b84c6bcb799446374aa928e953085255dd`
+Validated implementation head: `2a7df0c7aa085c602928e759a1b4ff01d41a0851`'''
+              ),
+              (
+                  '- Draft PR #254 is based on exact P16-S2 merge `100644b84c6bcb799446374aa928e953085255dd`; `main` has not advanced beyond that merge.',
+                  '- PR #254 was based on exact P16-S2 merge `100644b84c6bcb799446374aa928e953085255dd` and merged to `main` at `8f94ca2ef3581e37b6918b593c0f30176c01776f` on 2026-08-07.'
+              ),
+              (
+                  '''- Exact-head Maven PR Tests validation is pending after the provenance correction. P16-S3 must remain VERIFYING until both exact-head CI and owner desktop acceptance are complete.
+
+Next exact action:
+
+- Make the exact PR #254 head pass the complete Maven PR Tests gate, then complete `doc/P16-S3-reconciliation-mutation-integrity-user-testing.md`. Do not start P16-S4.
+
+## P16-S4 — One governed bank-import authority
+
+Status: BLOCKED by P16-S3.''',
+                  '''- Exact implementation head `2a7df0c7aa085c602928e759a1b4ff01d41a0851` passed Maven PR Tests run `31225841857`, including clean headless verification, the deliberately repeated test suite, and production JavaFX route compliance.
+- The owner completed and accepted `doc/P16-S3-reconciliation-mutation-integrity-user-testing.md` on 2026-08-07.
+- PR #254 merged to `main` at `8f94ca2ef3581e37b6918b593c0f30176c01776f`.
+
+Next exact action:
+
+- None; P16-S3 is DONE and P16-S4 is READY.
+
+## P16-S4 — One governed bank-import authority
+
+Status: READY.'''
+              ),
+          ]
+
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'Expected exactly one PLAN replacement match, found {count}: {old[:80]!r}')
+              text = text.replace(old, new)
+
+          path.write_text(text)
+          PY
+
+          rm .github/workflows/p16-s3-closeout.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Close P16-S3 and ready P16-S4"
+          git push origin HEAD:codex/P16-S3-validation-closeout
