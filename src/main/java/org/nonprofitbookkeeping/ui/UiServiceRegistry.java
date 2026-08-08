@@ -29,6 +29,7 @@ import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
 import org.nonprofitbookkeeping.service.BudgetCategoryLookupService;
 import org.nonprofitbookkeeping.service.BudgetPlanService;
 import org.nonprofitbookkeeping.service.CompanyAdminService;
+import org.nonprofitbookkeeping.service.CompanyView;
 import org.nonprofitbookkeeping.service.CompanyUiPreferencesService;
 import org.nonprofitbookkeeping.service.CoaCsvImportService;
 import org.nonprofitbookkeeping.service.DiagnosticsQueryService;
@@ -53,6 +54,7 @@ import org.nonprofitbookkeeping.service.dashboard.DashboardQueryService;
 import org.nonprofitbookkeeping.service.dashboard.JpaDashboardQueryService;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -312,31 +314,150 @@ public final class UiServiceRegistry
         return new ApprovalAuditService(approvalAuditRepository());
     }
 
+    /**
+     * Prepares a target database completely without changing the currently active
+     * service bundle. Migration, JPA construction, service composition, and
+     * authoritative active-company resolution must all succeed before the
+     * returned connection can be activated.
+     */
+    static DatabaseSessionController.PreparedConnection prepareDatabaseConnection(
+            Path databaseFile,
+            String preferredCompanyCode)
+    {
+        Path resolved = DatabaseLocationService.ensureParentDirectory(databaseFile);
+        System.err.println("[NPBK] UiServiceRegistry preparing database: " + resolved.toAbsolutePath());
+
+        Jpa nextJpa = new Jpa(resolved);
+        ServiceBundle nextServices;
+        try
+        {
+            nextServices = buildServices(nextJpa);
+        }
+        catch (RuntimeException ex)
+        {
+            nextJpa.close();
+            throw ex;
+        }
+
+        try
+        {
+            CompanyView selected = nextServices.companyAdmin().resolveActiveCompany(preferredCompanyCode);
+            List<String> activeCompanies = nextServices.companyAdmin().listActiveCompanyViews().stream()
+                    .map(CompanyView::code)
+                    .toList();
+            if (activeCompanies.isEmpty())
+            {
+                throw new IllegalStateException(
+                        "The selected database has no active company and cannot become the active session.");
+            }
+            return new PreparedServiceBundle(resolved, selected.code(), activeCompanies, nextServices);
+        }
+        catch (RuntimeException ex)
+        {
+            nextServices.close();
+            throw ex;
+        }
+    }
+
+    /**
+     * Compatibility entry point used outside the production session controller.
+     * New production switching goes through {@link DatabaseSessionController}.
+     */
     public static void reconnectToDatabase(Path databaseFile)
     {
-        synchronized (LOCK)
+        try (DatabaseSessionController.PreparedConnection prepared = prepareDatabaseConnection(
+                databaseFile,
+                activeCompanyCode()))
         {
-            Path resolved = DatabaseLocationService.ensureParentDirectory(databaseFile);
-            System.err.println("[NPBK] UiServiceRegistry reconnecting to database: " + resolved.toAbsolutePath());
-            ServiceBundle oldServices = services;
-            Jpa nextJpa = new Jpa(resolved);
-            ServiceBundle nextServices;
-            try
+            prepared.activate();
+        }
+    }
+
+    private static final class PreparedServiceBundle implements DatabaseSessionController.PreparedConnection
+    {
+        private final Path databasePath;
+        private final String activeCompanyCode;
+        private final List<String> activeCompanyCodes;
+        private ServiceBundle preparedServices;
+        private boolean activated;
+
+        private PreparedServiceBundle(
+                Path databasePath,
+                String activeCompanyCode,
+                List<String> activeCompanyCodes,
+                ServiceBundle preparedServices)
+        {
+            this.databasePath = databasePath;
+            this.activeCompanyCode = activeCompanyCode;
+            this.activeCompanyCodes = List.copyOf(activeCompanyCodes);
+            this.preparedServices = preparedServices;
+        }
+
+        @Override
+        public Path databasePath()
+        {
+            return databasePath;
+        }
+
+        @Override
+        public String activeCompanyCode()
+        {
+            return activeCompanyCode;
+        }
+
+        @Override
+        public List<String> activeCompanyCodes()
+        {
+            return activeCompanyCodes;
+        }
+
+        @Override
+        public void activate()
+        {
+            if (activated)
             {
-                nextServices = buildServices(nextJpa);
+                return;
             }
-            catch (RuntimeException ex)
+            synchronized (LOCK)
             {
-                nextJpa.close();
-                throw ex;
+                ServiceBundle oldServices = services;
+                services = Objects.requireNonNull(preparedServices, "preparedServices");
+                preparedServices = null;
+                lastInitializationFailure = null;
+                activated = true;
+                if (oldServices != null)
+                {
+                    try
+                    {
+                        oldServices.close();
+                    }
+                    catch (RuntimeException ex)
+                    {
+                        // The replacement session is already authoritative. A close
+                        // failure on the superseded bundle must not undo the swap.
+                        System.err.println("[NPBK] Could not close previous database services: "
+                                + ex.getMessage());
+                    }
+                }
             }
-            services = nextServices;
-            lastInitializationFailure = null;
-            if (oldServices != null)
+            System.err.println("[NPBK] UiServiceRegistry activated database: "
+                    + databasePath.toAbsolutePath());
+        }
+
+        @Override
+        public void close()
+        {
+            if (!activated && preparedServices != null)
             {
-                oldServices.close();
+                try
+                {
+                    preparedServices.close();
+                }
+                finally
+                {
+                    preparedServices = null;
+                }
             }
-            System.err.println("[NPBK] UiServiceRegistry reconnected to database: " + resolved.toAbsolutePath());
         }
     }
 

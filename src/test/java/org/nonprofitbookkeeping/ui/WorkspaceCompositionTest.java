@@ -28,7 +28,7 @@ public class WorkspaceCompositionTest
         WorkspaceServices services = WorkspaceServicesFactory.create(
                 session,
                 new NoopAppStateStore(),
-                path -> { });
+                WorkspaceCompositionTest::preparedConnection);
         WorkspaceContext context = services.context();
 
         session.setDatabaseSelection(new DatabaseSelectionState("data/next.mv.db", List.of("data/next.mv.db")));
@@ -50,7 +50,7 @@ public class WorkspaceCompositionTest
         WorkspaceServices services = WorkspaceServicesFactory.create(
                 session,
                 new NoopAppStateStore(),
-                path -> { });
+                WorkspaceCompositionTest::preparedConnection);
         FxTestSupport.onFx(() -> {
             PanelHost host = new PanelHost(services.panelFactory());
             host.show(AppPanelId.HELP);
@@ -73,12 +73,53 @@ public class WorkspaceCompositionTest
         WorkspaceServices services = WorkspaceServicesFactory.create(
                 session,
                 new NoopAppStateStore(),
-                connected::set);
+                (path, preferred) ->
+                {
+                    connected.set(path);
+                    return preparedConnection(path, preferred);
+                });
 
         services.databaseSessionController().connect(Path.of("data/connected.mv.db"));
 
         assertEquals(Path.of("data/connected.mv.db").toAbsolutePath().normalize(), connected.get());
         assertEquals(Path.of("data/connected.mv.db").toAbsolutePath().normalize(), services.context().activeDatabasePath());
+    }
+
+
+    private static DatabaseSessionController.PreparedConnection preparedConnection(Path path, String preferred)
+    {
+        String company = preferred == null || preferred.isBlank() ? "DEFAULT" : preferred;
+        Path resolved = path.toAbsolutePath().normalize();
+        return new DatabaseSessionController.PreparedConnection()
+        {
+            @Override
+            public Path databasePath()
+            {
+                return resolved;
+            }
+
+            @Override
+            public String activeCompanyCode()
+            {
+                return company;
+            }
+
+            @Override
+            public List<String> activeCompanyCodes()
+            {
+                return List.of(company);
+            }
+
+            @Override
+            public void activate()
+            {
+            }
+
+            @Override
+            public void close()
+            {
+            }
+        };
     }
 
     private static final class NoopAppStateStore implements AppStateStore

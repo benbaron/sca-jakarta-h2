@@ -50,7 +50,17 @@ The production toolbar lists only active H2 companies. A company change:
 4. persists the recent-selection convenience; and
 5. recreates open panels so cached services, company formatting, and company-owned layout state use the new active company.
 
-Database changes reconcile the persisted company preference against the newly active database before accounting workspaces are refreshed.
+Database changes are owned by `DatabaseSessionController`, not Preferences. The Preferences tab displays the connected database path as read-only factual state and directs database selection/creation to the File and recovery commands.
+
+A production database change:
+
+1. captures the current connected path and dirty open-workspace titles, and requires confirmation before discarding edits;
+2. prepares the target without changing the current session: create/locate the path, run Flyway, build JPA/services, and resolve an active company from target H2;
+3. builds target-only database/company recent-selection convenience state and persists those two shell facts together;
+4. activates the prepared service bundle, then publishes the same database path and resolved company to `UiSessionState`/`WorkspaceContext`; and
+5. refreshes the company selector and recreates open panels once so no panel keeps stale target/source service state.
+
+If target preparation, migration, validation, company resolution, or dirty-state confirmation fails, the prior database service bundle, active company, displayed path, Diagnostics path, and open records remain authoritative. A failed target switch is reported as a target failure; it does not incorrectly replace a healthy source session with the recovery dashboard.
 
 ## Donor-reference decision
 

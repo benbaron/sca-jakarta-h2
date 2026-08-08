@@ -143,7 +143,36 @@ public class ProductionWorkspaceCommandRoutingTest
     {
         return new ProductionWorkspaceWindow(
                 UserAppStateStore.create(),
-                path -> Path.of("data/sca-ledger.mv.db"));
+                (path, preferred) -> new DatabaseSessionController.PreparedConnection()
+                {
+                    @Override
+                    public Path databasePath()
+                    {
+                        return path.toAbsolutePath().normalize();
+                    }
+
+                    @Override
+                    public String activeCompanyCode()
+                    {
+                        return preferred == null || preferred.isBlank() ? "DEFAULT" : preferred;
+                    }
+
+                    @Override
+                    public java.util.List<String> activeCompanyCodes()
+                    {
+                        return java.util.List.of(activeCompanyCode());
+                    }
+
+                    @Override
+                    public void activate()
+                    {
+                    }
+
+                    @Override
+                    public void close()
+                    {
+                    }
+                });
     }
 
     private static MenuItem closeAllTabsMenuItem(ProductionWorkspaceWindow window)

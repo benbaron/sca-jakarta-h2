@@ -55,14 +55,16 @@ public class ProductionWorkspaceWindow extends BorderPane
     private final Label activeDatabaseLabel = new Label();
     private final ComboBox<CompanyView> activeCompanySelector = new ComboBox<>();
     private CloseAllTabsPrompt closeAllTabsPrompt = this::confirmCloseAllTabs;
+    private DatabaseChangePrompt databaseChangePrompt = this::confirmDatabaseChange;
     private RuntimeException databaseFailure;
     private WorkspaceDividerState rememberedDividerState;
     private boolean restoringDividers;
     private boolean updatingCompanySelector;
+    private boolean databaseSwitchInProgress;
 
     public ProductionWorkspaceWindow()
     {
-        this(UserAppStateStore.create(), UiServiceRegistry::reconnectToDatabase);
+        this(UserAppStateStore.create(), UiServiceRegistry::prepareDatabaseConnection);
     }
 
     ProductionWorkspaceWindow(
@@ -272,6 +274,11 @@ public class ProductionWorkspaceWindow extends BorderPane
     void connectDatabaseForTests(Path databaseFile)
     {
         connectDatabase(databaseFile);
+    }
+
+    void databaseChangePromptForTests(DatabaseChangePrompt prompt)
+    {
+        databaseChangePrompt = Objects.requireNonNull(prompt, "prompt");
     }
 
     private VBox buildTopChrome()
@@ -489,6 +496,31 @@ public class ProductionWorkspaceWindow extends BorderPane
         return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
     }
 
+    private boolean confirmDatabaseChange(Path source, Path target, List<String> dirtyTitles)
+    {
+        if (dirtyTitles.isEmpty())
+        {
+            return true;
+        }
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Change database");
+        alert.setHeaderText("Discard unsaved edits before changing databases?");
+        alert.setContentText("Changing from " + source.toAbsolutePath() + " to "
+                + target.toAbsolutePath() + " will recreate open workspaces. Unsaved edits are present in: "
+                + String.join(", ", dirtyTitles) + ".");
+        if (getScene() != null && getScene().getWindow() != null)
+        {
+            alert.initOwner(getScene().getWindow());
+        }
+        return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
+    }
+
+    @FunctionalInterface
+    interface DatabaseChangePrompt
+    {
+        boolean confirmDiscard(Path source, Path target, List<String> dirtyTitles);
+    }
+
     @FunctionalInterface
     interface CloseAllTabsPrompt
     {
@@ -559,22 +591,49 @@ public class ProductionWorkspaceWindow extends BorderPane
 
     private void connectDatabase(Path databaseFile)
     {
+        Path source = databaseSessionController.activeDatabasePath();
+        Path target = org.nonprofitbookkeeping.persistence.DatabaseLocationService.resolveDatabasePath(
+                Objects.requireNonNull(databaseFile, "databaseFile").toString());
+        List<String> dirtyTitles = panelHost.dirtyPanelTitles();
+        if (!dirtyTitles.isEmpty() && !databaseChangePrompt.confirmDiscard(source, target, dirtyTitles))
+        {
+            inspectorPane.show(
+                    "Database switch cancelled",
+                    "Still connected to " + source.toAbsolutePath()
+                            + ". Target was " + target.toAbsolutePath() + ".");
+            return;
+        }
+
+        RuntimeException previousFailure = databaseFailure;
         try
         {
-            databaseSessionController.connect(databaseFile);
-            companySessionController.restoreAuthoritativeSelection();
+            databaseSwitchInProgress = true;
+            DatabaseSessionController.ConnectionResult result = databaseSessionController.connect(target);
             databaseFailure = null;
             workspaceContext.setDatabaseFailure(null);
+            refreshActiveCompanySelector();
             panelHost.refreshOpenPanels();
             updateActiveDatabaseLabel();
             inspectorPane.show(
                     "Database connected",
-                    "Active database: " + workspaceContext.activeDatabasePath().toAbsolutePath());
+                    "Connected database: " + result.activeDatabasePath().toAbsolutePath()
+                            + ". Active company: " + result.activeCompanyCode() + ".");
             showDashboardOrRecovery(null);
         }
         catch (RuntimeException ex)
         {
-            showRecoveryDashboard(ex);
+            databaseFailure = previousFailure;
+            workspaceContext.setDatabaseFailure(previousFailure);
+            updateActiveDatabaseLabel();
+            refreshActiveCompanySelector();
+            inspectorPane.show(
+                    "Database switch failed",
+                    "Still connected to " + source.toAbsolutePath() + ". Target "
+                            + target.toAbsolutePath() + " was not activated. " + UiErrors.safeMessage(ex));
+        }
+        finally
+        {
+            databaseSwitchInProgress = false;
         }
     }
 
@@ -677,7 +736,10 @@ public class ProductionWorkspaceWindow extends BorderPane
     private void activeCompanyChanged(String oldCode, String newCode)
     {
         refreshActiveCompanySelector();
-        if (oldCode != null && !oldCode.equalsIgnoreCase(newCode) && panelHost.openPanelCount() > 0)
+        if (!databaseSwitchInProgress
+                && oldCode != null
+                && !oldCode.equalsIgnoreCase(newCode)
+                && panelHost.openPanelCount() > 0)
         {
             panelHost.refreshOpenPanels();
             activePanelLabel.setText("Workspace: " + panelHost.getActiveTitle());
