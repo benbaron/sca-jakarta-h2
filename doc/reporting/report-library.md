@@ -18,6 +18,8 @@ A report must not appear in the catalog unless a real core service projection or
 
 ## Request and execution boundary
 
+P16-S6 aligns the default Report Library date request with fiscal authority. When no explicit `DateRangeContext` range is supplied, the default start is the active company fiscal-year start and the default end/as-of is the end of the shell-selected accounting period, both from the same immutable `FiscalPeriodRange` used by budget comparison. An explicit report range remains user-controlled. Preview and every export format continue to consume the exact same immutable `ReportRequest`; export does not recalculate dates from the wall clock.
+
 `ReportRequest` is the immutable validated parameter set shared by preview, export, and Journal drill-through. It contains:
 
 - the typed report definition;

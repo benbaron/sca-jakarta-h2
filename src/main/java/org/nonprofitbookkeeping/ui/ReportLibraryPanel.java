@@ -26,6 +26,7 @@ import org.nonprofitbookkeeping.report.ReportExecutionService;
 import org.nonprofitbookkeeping.report.ReportFundOption;
 import org.nonprofitbookkeeping.report.ReportRequest;
 import org.nonprofitbookkeeping.report.ReportResult;
+import org.nonprofitbookkeeping.service.FiscalPeriodRange;
 import org.nonprofitbookkeeping.service.CompanyUiPreferencesService;
 import org.nonprofitbookkeeping.service.FinancialReportExportAdapter;
 import org.nonprofitbookkeeping.service.FinancialReportExportFormat;
@@ -129,9 +130,24 @@ public class ReportLibraryPanel implements AppPanel
     private void configureParameters()
     {
         DateRange defaults = DateRangeContext.get();
-        LocalDate end = defaults.endInclusive() == null ? LocalDate.now() : defaults.endInclusive();
-        startDate.setValue(defaults.startInclusive() == null ? end.withDayOfYear(1) : defaults.startInclusive());
-        endDate.setValue(end);
+        if (defaults.startInclusive() == null && defaults.endInclusive() == null)
+        {
+            FiscalPeriodRange fiscal = UiServiceRegistry.budgetPlan().fiscalRange(ActivePeriodContext.get());
+            startDate.setValue(fiscal.fiscalYearStart());
+            endDate.setValue(fiscal.periodEnd());
+        }
+        else
+        {
+            FiscalPeriodRange activeFiscal = UiServiceRegistry.budgetPlan().fiscalRange(ActivePeriodContext.get());
+            LocalDate end = defaults.endInclusive() == null ? activeFiscal.periodEnd() : defaults.endInclusive();
+            LocalDate start = defaults.startInclusive();
+            if (start == null)
+            {
+                start = UiServiceRegistry.budgetPlan().fiscalRange(end).fiscalYearStart();
+            }
+            startDate.setValue(start);
+            endDate.setValue(end);
+        }
         companyFormat.install(startDate);
         companyFormat.install(endDate);
 

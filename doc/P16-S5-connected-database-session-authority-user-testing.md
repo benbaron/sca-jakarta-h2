@@ -51,12 +51,16 @@ Use this checklist only after the exact P16-S5 PR head passes the complete Maven
 
 ## Acceptance record
 
-- [ ] A. Preferences factual/read-only database state passed
-- [ ] B. Dirty-workspace cancellation preservation passed
-- [ ] C. Successful coherent database/company/service switch passed
-- [ ] D. Failed-target source-session preservation passed
-- [ ] E. Create/restart/recent-selection behavior passed
-- [ ] Exact tested PR head recorded
-- [ ] Owner acceptance recorded
+- [x] A. Preferences factual/read-only database state passed
+- [x] B. Dirty-workspace cancellation preservation passed
+- [x] C. Successful coherent database/company/service switch passed
+- [x] D. Failed-target source-session preservation passed
+- [x] E. Create/restart/recent-selection behavior passed
+- [x] Exact tested PR head recorded
+- [x] Owner acceptance recorded
 
 Do not mark P16-S5 DONE or begin P16-S6 until this checklist is accepted and the P16-S5 PR has merged.
+
+## Completed acceptance
+
+Owner desktop acceptance was confirmed on 2026-08-08. Exact tested PR head `53d80e30c1338534f09935227eb3d9bf4f931e14` passed Maven PR Tests run `31240620992`, and PR #257 merged to `main` at `97fc2e224854c221cc15657e8b9ad7532a9fee23`.
