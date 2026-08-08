@@ -1,12 +1,12 @@
 ---
-plan_version: 139
+plan_version: 140
 active_phase: P16
 active_slice: P16-S6
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P16-S6-budget-draft-fiscal-period-authority
-active_pull_request: null
-active_head: 97fc2e224854c221cc15657e8b9ad7532a9fee23
-next_action: "Implement and validate P16-S6 budget draft identity and fiscal-period authority on the fresh branch from merged P16-S5, then complete its owner desktop checklist before merge."
+active_pull_request: 258
+active_head: bb19fec9ea1fa864a92d8a65df1f5021062c0f9e
+next_action: "Validate the final P16-S6 documentation-inclusive PR #258 head, then complete doc/P16-S6-budget-draft-fiscal-period-authority-user-testing.md. Keep P16-S7 blocked until P16-S6 is accepted and merged."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2210,11 +2210,11 @@ Next exact action:
 
 ## P16-S6 — Budget draft lifecycle and fiscal-period authority
 
-Status: IN_PROGRESS on `codex/P16-S6-budget-draft-fiscal-period-authority`.
+Status: VERIFYING in draft PR #258.
 
 Starting base: `97fc2e224854c221cc15657e8b9ad7532a9fee23`
-Pull request: pending
-Current implementation head: pending publication.
+Pull request: #258
+Validated implementation head: `bb19fec9ea1fa864a92d8a65df1f5021062c0f9e`
 
 Purpose: preserve the exact saved draft and calculate budgets from company fiscal settings and the active accounting period.
 
@@ -2237,11 +2237,12 @@ Execution state:
 
 - S5 owner acceptance and merge are recorded; S6 began from exact merged `main` commit `97fc2e224854c221cc15657e8b9ad7532a9fee23` on a fresh branch.
 - The current implementation replaces implicit draft creation with explicit stable-ID draft/version selection, adds exact active-to-draft revision copying, serializes activation by company, and derives budget/report date authority from `FiscalPeriodRange` using company fiscal settings plus the shell-selected accounting period.
-- Focused service, non-January fiscal-range, stable-draft, revision, variance, and source-regression tests are being added together with `doc/P16-S6-budget-draft-fiscal-period-authority-user-testing.md`.
+- Focused service, non-January fiscal-range, stable-draft, revision, concurrent-activation, variance, report-default, and source-regression tests are included together with `doc/P16-S6-budget-draft-fiscal-period-authority-user-testing.md`.
+- Exact implementation head `bb19fec9ea1fa864a92d8a65df1f5021062c0f9e` passed Maven PR Tests run `31280152673`, including clean headless `mvn clean verify`, the deliberately repeated test suite, and production JavaFX route compliance.
 
 Next exact action:
 
-- Publish the coherent S6 implementation, run the complete Maven PR Tests gate, correct any failures, then complete owner desktop acceptance before merge. P16-S7 remains blocked.
+- Validate the final documentation-inclusive PR #258 head, then complete `doc/P16-S6-budget-draft-fiscal-period-authority-user-testing.md`. Keep P16-S7 blocked until owner acceptance and merge.
 
 ## P16-S7 — Factual Audit History authority
 
