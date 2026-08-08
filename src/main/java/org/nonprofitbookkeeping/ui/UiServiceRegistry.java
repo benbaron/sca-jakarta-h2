@@ -13,8 +13,6 @@ import org.nonprofitbookkeeping.interchange.bank.BankStatementReviewService;
 import org.nonprofitbookkeeping.interchange.bank.NormalizedBankCsvReviewService;
 import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
 import org.nonprofitbookkeeping.persistence.Jpa;
-import org.nonprofitbookkeeping.repository.ApprovalAuditRepository;
-import org.nonprofitbookkeeping.repository.JdbcApprovalAuditRepository;
 import org.nonprofitbookkeeping.repository.JdbcCompanyUiPreferenceRepository;
 import org.nonprofitbookkeeping.repository.JdbcPeriodCloseRunRepository;
 import org.nonprofitbookkeeping.repository.JdbcReconciliationRunRepository;
@@ -22,7 +20,7 @@ import org.nonprofitbookkeeping.repository.PeriodCloseRunRepository;
 import org.nonprofitbookkeeping.repository.ReconciliationRunRepository;
 import org.nonprofitbookkeeping.service.AccountAdminService;
 import org.nonprofitbookkeeping.service.AccountLookupService;
-import org.nonprofitbookkeeping.service.ApprovalAuditService;
+import org.nonprofitbookkeeping.service.AuditHistoryService;
 import org.nonprofitbookkeeping.service.BankConfigurationService;
 import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService;
 import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
@@ -174,6 +172,7 @@ public final class UiServiceRegistry
     }
     public static BankReconciliationWorkspaceService bankReconciliationWorkspace() { return services().bankReconciliationWorkspace(); }
     public static PeriodCloseRangeService periodCloseRangeService() { return services().periodCloseRangeService(); }
+    public static AuditHistoryService auditHistory() { return services().auditHistory(); }
     public static DiagnosticsQueryService diagnosticsQuery()
     {
         ServiceBundle current = services();
@@ -268,7 +267,8 @@ public final class UiServiceRegistry
                 new FinancialReportService(jpa),
                 new JpaDashboardQueryService(jpa),
                 new BankReconciliationWorkspaceService(jpa),
-                periodCloseRange);
+                periodCloseRange,
+                new AuditHistoryService(jpa, UiServiceRegistry::activeCompanyCode));
     }
 
     private static String activeCompanyCode()
@@ -302,16 +302,6 @@ public final class UiServiceRegistry
     public static PeriodCloseService periodCloseService()
     {
         return new PeriodCloseService(periodCloseRunRepository());
-    }
-
-    public static ApprovalAuditRepository approvalAuditRepository()
-    {
-        return new JdbcApprovalAuditRepository(UiDataSources.forCurrentSessionDatabase());
-    }
-
-    public static ApprovalAuditService approvalAuditService()
-    {
-        return new ApprovalAuditService(approvalAuditRepository());
     }
 
     /**
@@ -485,7 +475,8 @@ public final class UiServiceRegistry
             FinancialReportService financialReports,
             DashboardQueryService dashboardQuery,
             BankReconciliationWorkspaceService bankReconciliationWorkspace,
-            PeriodCloseRangeService periodCloseRangeService)
+            PeriodCloseRangeService periodCloseRangeService,
+            AuditHistoryService auditHistory)
     {
         void close()
         {

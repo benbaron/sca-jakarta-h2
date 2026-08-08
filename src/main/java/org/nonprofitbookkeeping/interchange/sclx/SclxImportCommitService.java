@@ -147,7 +147,7 @@ public final class SclxImportCommitService
         this.bankClearedStateService = new BankClearedStateService(jpa);
         this.bankReconciliationService = new BankReconciliationWorkspaceService(jpa);
         this.periodCloseRangeService = new PeriodCloseRangeService(jpa);
-        this.auditHistoryService = new AuditHistoryService();
+        this.auditHistoryService = new AuditHistoryService(jpa, companyCodeSupplier);
         this.transactionEntryService = new TransactionEntryService(jpa, companyCodeSupplier);
         this.transactionCorrectionService = new TransactionCorrectionService(jpa, companyCodeSupplier);
     }

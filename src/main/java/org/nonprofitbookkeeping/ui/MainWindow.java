@@ -329,7 +329,7 @@ public class MainWindow extends BorderPane
         {
             case JOURNAL_PANE -> "Grouped journal review, New/Edit/Save, Delete/Reverse, validation, and supplemental details";
             case IMPORT_PREVIEW -> "Import review and preview workflow";
-            case APPROVAL_AUDIT -> "Factual audit filters by workflow/decision/actor/date; run-id visibility";
+            case APPROVAL_AUDIT -> "Factual audit filters by action/entity/actor/date; immutable before/after/reason details";
             case BANK_TRANSACTIONS -> "Imported bank transactions, drill to ledger, export selected";
             case SETTINGS -> "Preferences, H2 company lifecycle, active-company selection, and user administration";
             case DIAGNOSTICS -> "Health checks and duplicate-code diagnostics";
