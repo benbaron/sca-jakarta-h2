@@ -41,16 +41,16 @@ Use this checklist after the exact P16-S6 PR head passes the complete Maven PR T
 
 ## Automated validation record
 
-Implementation head `bb19fec9ea1fa864a92d8a65df1f5021062c0f9e` passed Maven PR Tests run `31280152673`, including clean headless `mvn clean verify`, the deliberately repeated test suite, and production JavaFX route compliance. Run this checklist only after the final documentation-inclusive PR head also passes the same complete gate.
+Implementation head `bb19fec9ea1fa864a92d8a65df1f5021062c0f9e` passed Maven PR Tests run `31280152673`, including clean headless `mvn clean verify`, the deliberately repeated test suite, and production JavaFX route compliance. Final tested PR head `2e80f9ad3d433099f2f6ba600ae91d99536318e5` also passed Maven PR Tests run `31280381274`, including the same complete gate.
 
 ## Acceptance record
 
-- [ ] A. Stable draft save/reload identity passed
-- [ ] B. Explicit revision and selected-draft activation passed
-- [ ] C. Non-January fiscal-year range passed
-- [ ] D. Budget vs Actual selected-period range passed
-- [ ] E. Report default/export request alignment passed
-- [ ] Exact tested PR head recorded
-- [ ] Owner acceptance recorded
+- [x] A. Stable draft save/reload identity passed
+- [x] B. Explicit revision and selected-draft activation passed
+- [x] C. Non-January fiscal-year range passed
+- [x] D. Budget vs Actual selected-period range passed
+- [x] E. Report default/export request alignment passed
+- [x] Exact tested PR head recorded: `2e80f9ad3d433099f2f6ba600ae91d99536318e5`
+- [x] Owner acceptance recorded: 2026-08-08
 
-Do not mark P16-S6 DONE or begin P16-S7 until this checklist is accepted and the P16-S6 PR has merged.
+P16-S6 acceptance is complete. PR #258 merged to `main` at `4edb463a5e7ca80d91381e8f941413703b6237be`; P16-S6 is DONE and P16-S7 may proceed.
