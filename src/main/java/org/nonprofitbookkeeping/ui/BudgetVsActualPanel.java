@@ -14,6 +14,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.service.BudgetVarianceView;
+import org.nonprofitbookkeeping.service.FiscalPeriodRange;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -63,21 +64,36 @@ public class BudgetVsActualPanel implements AppPanel
         splitPane.setDividerPositions(0.82);
         CompanySplitPaneStateBinder.bind(splitPane, "budget-vs-actual", 0.82);
         root.setCenter(splitPane);
+        ActivePeriodContext.activeDateProperty().addListener((obs, oldDate, newDate) -> reload());
         reload();
     }
 
     private void reload()
     {
-        LocalDate asOfDate = LocalDate.now();
-        status.setText("Running active budget comparison...");
-        UiAsync.run("budget-vs-actual", () -> UiServiceRegistry.budgetPlan().activeVariance(asOfDate), rows -> {
+        LocalDate selectedPeriodStart = ActivePeriodContext.get();
+        status.setText("Running active budget comparison for the selected accounting period...");
+        UiAsync.run("budget-vs-actual", () -> {
+            FiscalPeriodRange range = UiServiceRegistry.budgetPlan().fiscalRange(selectedPeriodStart);
+            return new VarianceResult(range, UiServiceRegistry.budgetPlan().activeVariance(range));
+        }, result -> {
+            List<BudgetVarianceView> rows = result.rows();
             table.getItems().setAll(rows);
             BigDecimal netActual = total(rows, BudgetVarianceView::actual);
             BigDecimal netBudget = total(rows, BudgetVarianceView::budget);
             BigDecimal netVariance = total(rows, BudgetVarianceView::variance);
-            status.setText("Loaded " + rows.size() + " active budget row(s). Net actual = " + companyFormat.formatMoney(netActual)
-                    + ", net budget = " + companyFormat.formatMoney(netBudget) + ", net variance = " + companyFormat.formatMoney(netVariance));
+            status.setText("Loaded " + rows.size() + " active budget row(s) for " + result.range().displayLabel()
+                    + " through " + companyFormat.formatDate(result.range().periodEnd()) + ". Net actual = "
+                    + companyFormat.formatMoney(netActual) + ", net budget = " + companyFormat.formatMoney(netBudget)
+                    + ", net variance = " + companyFormat.formatMoney(netVariance));
         }, ex -> status.setText("Could not compute Budget vs Actual view: " + UiErrors.safeMessage(ex)));
+    }
+
+    private record VarianceResult(FiscalPeriodRange range, List<BudgetVarianceView> rows)
+    {
+        private VarianceResult
+        {
+            rows = List.copyOf(rows);
+        }
     }
 
     private static BigDecimal total(List<BudgetVarianceView> rows, java.util.function.Function<BudgetVarianceView, BigDecimal> mapper)

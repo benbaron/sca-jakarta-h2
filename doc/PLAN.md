@@ -1,12 +1,12 @@
 ---
-plan_version: 138
+plan_version: 139
 active_phase: P16
-active_slice: P16-S5
-active_status: VERIFYING
-active_branch: codex/P16-S5-connected-database-session-authority
-active_pull_request: 257
-active_head: 6b226c8955e5a462e44f6938e59c9bd3a9d0cdeb
-next_action: "Validate the final P16-S5 documentation-inclusive head, then complete doc/P16-S5-connected-database-session-authority-user-testing.md. Keep P16-S6 blocked until P16-S5 is accepted and merged."
+active_slice: P16-S6
+active_status: IN_PROGRESS
+active_branch: codex/P16-S6-budget-draft-fiscal-period-authority
+active_pull_request: null
+active_head: 97fc2e224854c221cc15657e8b9ad7532a9fee23
+next_action: "Implement and validate P16-S6 budget draft identity and fiscal-period authority on the fresh branch from merged P16-S5, then complete its owner desktop checklist before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S5; P16-S4 DONE through PR #256 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S6; P16-S5 DONE through PR #257 |
 
 ## 4. Governing documents
 
@@ -2168,11 +2168,13 @@ Next exact action:
 
 ## P16-S5 — Connected-database session authority
 
-Status: VERIFYING in draft PR #257.
+Status: DONE through merged PR #257 and owner desktop acceptance.
 
 Starting base: `4eef190adb8380d90356a94f24ef8d7f29e46f3a`
 Pull request: #257
 Validated implementation head: `6b226c8955e5a462e44f6938e59c9bd3a9d0cdeb`
+Final tested PR head: `53d80e30c1338534f09935227eb3d9bf4f931e14`
+Merge commit: `97fc2e224854c221cc15657e8b9ad7532a9fee23`
 
 Purpose: prevent Preferences from displaying one database path while services remain connected to another.
 
@@ -2199,15 +2201,20 @@ Execution state:
 - A successful switch publishes database/company shell state together, swaps the prepared service bundle, and refreshes open panels once without duplicate active-company refresh.
 - `FileAppStateStore` persists database selection and active-company shell convenience state in one properties-file write; the retired `MainWindow` database command also routes through the same session controller.
 - Focused controller/source/file-state tests plus real H2/JPA and JavaFX workspace regression coverage are included, along with `doc/P16-S5-connected-database-session-authority-user-testing.md`.
-- Exact implementation head `6b226c8955e5a462e44f6938e59c9bd3a9d0cdeb` passed Maven PR Tests run `31240324104`, including clean headless `mvn clean verify`, the deliberately repeated test suite, and production JavaFX route compliance.
+- Exact implementation head `6b226c8955e5a462e44f6938e59c9bd3a9d0cdeb` passed Maven PR Tests run `31240324104`. Final tested PR head `53d80e30c1338534f09935227eb3d9bf4f931e14` passed the complete Maven PR Tests gate in run `31240620992`, including clean headless `mvn clean verify`, the deliberately repeated test suite, and production JavaFX route compliance.
+- The owner completed and accepted `doc/P16-S5-connected-database-session-authority-user-testing.md` on 2026-08-08, and PR #257 merged to `main` at `97fc2e224854c221cc15657e8b9ad7532a9fee23`.
 
 Next exact action:
 
-- Validate the final documentation-inclusive PR #257 head, then complete `doc/P16-S5-connected-database-session-authority-user-testing.md`. Keep P16-S6 blocked until owner acceptance and merge.
+- None; P16-S5 is DONE and P16-S6 is active.
 
 ## P16-S6 — Budget draft lifecycle and fiscal-period authority
 
-Status: BLOCKED by P16-S5.
+Status: IN_PROGRESS on `codex/P16-S6-budget-draft-fiscal-period-authority`.
+
+Starting base: `97fc2e224854c221cc15657e8b9ad7532a9fee23`
+Pull request: pending
+Current implementation head: pending publication.
 
 Purpose: preserve the exact saved draft and calculate budgets from company fiscal settings and the active accounting period.
 
@@ -2225,6 +2232,16 @@ Acceptance and tests:
 - Save/reload/restart returns the same draft and lines; no blank or orphan draft is created implicitly.
 - Activation targets the chosen draft, copies/revisions are exact, and concurrent activation rolls back safely.
 - Non-January fiscal years and historical/future selected periods produce correct actual and budget ranges.
+
+Execution state:
+
+- S5 owner acceptance and merge are recorded; S6 began from exact merged `main` commit `97fc2e224854c221cc15657e8b9ad7532a9fee23` on a fresh branch.
+- The current implementation replaces implicit draft creation with explicit stable-ID draft/version selection, adds exact active-to-draft revision copying, serializes activation by company, and derives budget/report date authority from `FiscalPeriodRange` using company fiscal settings plus the shell-selected accounting period.
+- Focused service, non-January fiscal-range, stable-draft, revision, variance, and source-regression tests are being added together with `doc/P16-S6-budget-draft-fiscal-period-authority-user-testing.md`.
+
+Next exact action:
+
+- Publish the coherent S6 implementation, run the complete Maven PR Tests gate, correct any failures, then complete owner desktop acceptance before merge. P16-S7 remains blocked.
 
 ## P16-S7 — Factual Audit History authority
 
