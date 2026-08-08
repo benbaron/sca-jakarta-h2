@@ -39,6 +39,10 @@ Use this checklist after the exact P16-S6 PR head passes the complete Maven PR T
 3. Run a report, export it, and confirm export uses the same visible request dates as preview.
 4. Enter an explicit custom report range and confirm it remains user-controlled rather than being replaced by fiscal defaults.
 
+## Automated validation record
+
+Implementation head `bb19fec9ea1fa864a92d8a65df1f5021062c0f9e` passed Maven PR Tests run `31280152673`, including clean headless `mvn clean verify`, the deliberately repeated test suite, and production JavaFX route compliance. Run this checklist only after the final documentation-inclusive PR head also passes the same complete gate.
+
 ## Acceptance record
 
 - [ ] A. Stable draft save/reload identity passed
