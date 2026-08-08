@@ -24,7 +24,12 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          cat .p16-s6.patch.part0 .p16-s6.patch.part1 .p16-s6.patch.part2 .p16-s6.patch.part3 > /tmp/p16-s6.patch
+          {
+            cat .p16-s6.patch.part0; printf '\n'
+            cat .p16-s6.patch.part1; printf '\n'
+            cat .p16-s6.patch.part2; printf '\n'
+            cat .p16-s6.patch.part3; printf '\n'
+          } > /tmp/p16-s6.patch
           git apply --index /tmp/p16-s6.patch
           rm .p16-s6.patch.part0 .p16-s6.patch.part1 .p16-s6.patch.part2 .p16-s6.patch.part3
           rm .github/workflows/p16-s6-publish.yml
