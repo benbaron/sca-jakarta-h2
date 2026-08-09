@@ -33,9 +33,10 @@ Use a disposable database with one active company, two configured BANK accounts,
 
 ## Automated validation record
 
-- Local `git diff --check` passes. This container has a Java 17 runtime but no Maven executable, Maven wrapper, or Java compiler; GitHub Maven PR Tests is the authoritative compile/test environment.
+- Local `git diff --check` and independent Java grammar parsing pass. This container has a Java 17 runtime but no Maven executable, Maven wrapper, or Java compiler; GitHub Maven PR Tests is the authoritative compile/test environment.
 - Focused H2 coverage exercises `Not bank`, `Uncleared`, `Cleared`, `Mixed`, cleared dates, exact reconciliation-session projection, and restart persistence.
 - Source guard coverage requires service-owned split facts and exact-session navigation and prohibits the former hard-coded Journal `Uncleared` expression.
+- Draft PR #262 implementation head `e17773f5d44ef89b33176a77cad8f9c23125c9e8` passed Maven PR Tests run `31341377340`: clean verification and the deliberate repeated suite each ran 595 tests with 0 failures, 0 errors, and 31 profile skips; JavaFX production-route compliance ran 9 tests with 0 failures, 0 errors, and 0 skips.
 
 ## Acceptance record
 
@@ -43,7 +44,7 @@ Use a disposable database with one active company, two configured BANK accounts,
 - [ ] B. Persisted line detail and exact reconciliation drill-through passed
 - [ ] C. Authority, refresh, restart, and company isolation passed
 - [ ] D. Laptop-width layout and existing Journal regression passed
-- [ ] Exact tested PR head and Maven PR Tests run recorded
+- [x] Exact tested PR head and Maven PR Tests run recorded
 - [ ] Owner acceptance recorded
 
 Do not mark P16-S10 DONE or begin P16-S11 until this checklist is accepted and the P16-S10 PR has merged.
