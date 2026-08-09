@@ -46,12 +46,12 @@ Exact implementation head `e140aae3c1d07ceeabbc93d179489d03faa15896` passed Mave
 
 ## Acceptance record
 
-- [ ] A. Current factual events passed
-- [ ] B. Read-only details and divider passed
-- [ ] C. Service-backed filtering passed
-- [ ] D. Company isolation and restart passed
-- [ ] E. Table state and no-write behavior passed
-- [ ] Exact tested PR head recorded
-- [ ] Owner acceptance recorded
+- [x] A. Current factual events passed
+- [x] B. Read-only details and divider passed
+- [x] C. Service-backed filtering passed
+- [x] D. Company isolation and restart passed
+- [x] E. Table state and no-write behavior passed
+- [x] Exact tested PR head recorded: `92fa35a6d434f2ab06fb38e09629da3dcc419e2a` / Maven PR Tests `31282307364`
+- [x] Owner acceptance recorded: 2026-08-08
 
 Do not mark P16-S7 DONE or begin P16-S8 until this checklist is accepted and the P16-S7 PR has merged.

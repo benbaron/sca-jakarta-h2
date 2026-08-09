@@ -18,6 +18,8 @@ import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.interchange.bank.BankReviewQueryService;
 import org.nonprofitbookkeeping.model.CompanyBankAccount;
 import org.nonprofitbookkeeping.service.BankConfigurationService;
+import org.nonprofitbookkeeping.service.ReviewedStatementAcceptanceService;
+import org.nonprofitbookkeeping.service.TransactionReferenceDataService;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -45,26 +47,35 @@ public class BankTransactionsPanel implements AppPanel
     private final Supplier<String> companyCode;
     private final Supplier<BankConfigurationService> bankConfigurationService;
     private final BankStatementExportActions exportActions;
+    private final Supplier<ReviewedStatementAcceptanceService> acceptanceService;
+    private final Supplier<TransactionReferenceDataService> transactionReferenceData;
+    private final Button acceptReviewedRow = new Button("Create Transaction from Reviewed Row…");
 
     public BankTransactionsPanel()
     {
         this(UiServiceRegistry.bankReviewQuery(), () ->
                         MainWindow.sharedSessionState().multiCompany().activeCompanyCode(),
                 UiServiceRegistry::bankConfiguration,
-                BankStatementExportActions.unavailable());
+                BankStatementExportActions.unavailable(),
+                UiServiceRegistry::reviewedStatementAcceptance,
+                UiServiceRegistry::transactionReferenceData);
     }
 
     BankTransactionsPanel(
             BankReviewQueryService reviewQuery,
             Supplier<String> companyCode,
             Supplier<BankConfigurationService> bankConfigurationService,
-            BankStatementExportActions exportActions)
+            BankStatementExportActions exportActions,
+            Supplier<ReviewedStatementAcceptanceService> acceptanceService,
+            Supplier<TransactionReferenceDataService> transactionReferenceData)
     {
         this.reviewQuery = Objects.requireNonNull(reviewQuery, "reviewQuery");
         this.companyCode = Objects.requireNonNull(companyCode, "companyCode");
         this.bankConfigurationService = Objects.requireNonNull(
                 bankConfigurationService, "bankConfigurationService");
         this.exportActions = Objects.requireNonNull(exportActions, "exportActions");
+        this.acceptanceService = Objects.requireNonNull(acceptanceService, "acceptanceService");
+        this.transactionReferenceData = Objects.requireNonNull(transactionReferenceData, "transactionReferenceData");
         root.setPadding(new Insets(8));
 
         Label title = new Label("Bank Transactions");
@@ -74,6 +85,9 @@ public class BankTransactionsPanel implements AppPanel
         refresh.setOnAction(e -> reload());
         Button drill = new Button("Drill to Ledger");
         drill.setOnAction(e -> drillSelectedToLedger());
+        acceptReviewedRow.setId("bankTransactionsAcceptReviewedRowButton");
+        acceptReviewedRow.setDisable(true);
+        acceptReviewedRow.setOnAction(e -> acceptSelectedReviewedRow());
         configureStatementExport();
 
         HBox exportControls = new HBox(8,
@@ -90,7 +104,7 @@ public class BankTransactionsPanel implements AppPanel
 
         root.setTop(new VBox(6,
                 title,
-                new HBox(8, refresh, drill),
+                new HBox(8, refresh, acceptReviewedRow, drill),
                 status,
                 new Separator(),
                 new Label("Export durable statement activity"),
@@ -142,6 +156,8 @@ public class BankTransactionsPanel implements AppPanel
         table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         table.getSelectionModel().setCellSelectionEnabled(false);
         table.getSelectionModel().setSelectionMode(javafx.scene.control.SelectionMode.MULTIPLE);
+        table.getSelectionModel().getSelectedItems().addListener(
+                (javafx.collections.ListChangeListener<BankReviewQueryService.ReviewRow>) change -> updateAcceptanceEnablement());
         table.setPlaceholder(new Label("No durable bank review rows for the active company."));
     }
 
@@ -223,6 +239,72 @@ public class BankTransactionsPanel implements AppPanel
         exportActions.requestExport(account.id(), fromDate, throughDate, format);
     }
 
+    private void updateAcceptanceEnablement()
+    {
+        List<BankReviewQueryService.ReviewRow> selected = selectedRows();
+        boolean enabled = selected.size() == 1
+                && "IMPORTED".equals(selected.get(0).status())
+                && selected.get(0).matchedTransactionId() == null
+                && selected.get(0).acceptedTransactionId() == null;
+        acceptReviewedRow.setDisable(!enabled);
+    }
+
+    private void acceptSelectedReviewedRow()
+    {
+        List<BankReviewQueryService.ReviewRow> selected = selectedRows();
+        if (selected.size() != 1)
+        {
+            status.setText("Select exactly one unmatched imported review row to create a transaction.");
+            return;
+        }
+        BankReviewQueryService.ReviewRow row = selected.get(0);
+        try
+        {
+            ReviewedStatementAcceptanceService acceptanceService = this.acceptanceService.get();
+            ReviewedStatementAcceptanceService.AcceptancePreview preview =
+                    acceptanceService.preview(companyCode.get(), row.statementLineId());
+            if (!preview.eligible())
+            {
+                status.setText("Reviewed row cannot be accepted: " + preview.eligibilityMessage());
+                return;
+            }
+            TransactionLineEditorModel.ReferenceData references =
+                    transactionReferenceData.get().loadActiveReferenceData();
+            ReviewedStatementAcceptanceDialog dialog = new ReviewedStatementAcceptanceDialog(preview, references);
+            dialog.showAndWait().ifPresent(draft -> commitAcceptance(preview, draft));
+        }
+        catch (RuntimeException ex)
+        {
+            status.setText("Could not prepare reviewed-row acceptance: " + UiErrors.safeMessage(ex));
+        }
+    }
+
+    private void commitAcceptance(
+            ReviewedStatementAcceptanceService.AcceptancePreview preview,
+            ReviewedStatementAcceptanceDialog.AcceptanceDraft draft)
+    {
+        status.setText("Creating canonical transaction from reviewed row " + preview.statementLineId() + "...");
+        UiAsync.run(
+                "bank-review-accept-" + preview.statementLineId(),
+                () -> {
+                    ReviewedStatementAcceptanceService acceptanceService = this.acceptanceService.get();
+                    return acceptanceService.accept(
+                            preview, draft.command(), draft.probableDuplicateConfirmed(), "ui");
+                },
+                result -> {
+                    reload();
+                    status.setText(result.message());
+                    DrillThroughCoordinator.openLedgerWithContext(
+                            "Accepted reviewed bank row " + result.statementLineId()
+                                    + " → transaction " + result.transactionId());
+                },
+                ex -> {
+                    reload();
+                    status.setText("Reviewed-row acceptance failed; no partial ledger acceptance was kept: "
+                            + UiErrors.safeMessage(ex));
+                });
+    }
+
     private void drillSelectedToLedger()
     {
         List<BankReviewQueryService.ReviewRow> selected = selectedRows();
@@ -232,13 +314,16 @@ public class BankTransactionsPanel implements AppPanel
             return;
         }
         BankReviewQueryService.ReviewRow first = selected.get(0);
-        if (first.matchedTransactionId() == null)
+        Long transactionId = first.matchedTransactionId() != null
+                ? first.matchedTransactionId()
+                : first.acceptedTransactionId();
+        if (transactionId == null)
         {
-            status.setText("Selected durable review row is not matched to a canonical ledger transaction.");
+            status.setText("Selected durable review row is not linked to a canonical ledger transaction.");
             return;
         }
-        DrillThroughCoordinator.openLedgerWithContext("Matched bank review row " + first.statementLineId()
-                + " → transaction " + first.matchedTransactionId()
+        DrillThroughCoordinator.openLedgerWithContext("Bank review row " + first.statementLineId()
+                + " → transaction " + transactionId
                 + " (selected=" + selected.size() + ")");
     }
 
