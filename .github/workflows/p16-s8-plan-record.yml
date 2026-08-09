@@ -1,0 +1,53 @@
+name: P16 S8 plan record
+
+on:
+  push:
+    branches:
+      - codex/P16-S8-reviewed-statement-ledger-acceptance
+    paths:
+      - .github/workflows/p16-s8-plan-record.yml
+
+permissions:
+  contents: write
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/P16-S8-reviewed-statement-ledger-acceptance
+          fetch-depth: 0
+      - name: Record validated S8 state
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("doc/PLAN.md")
+          text = path.read_text(encoding="utf-8")
+
+          replacements = [
+              ("plan_version: 143", "plan_version: 144"),
+              ("active_status: IN_PROGRESS", "active_status: VERIFYING"),
+              ("active_pull_request: null", "active_pull_request: 260"),
+              ("active_head: 01b37364d68ea9388c8b704dadd442cb0122b3db", "active_head: 73ce3a2a966f690490de705058916519a741b635"),
+              ('next_action: "Implement P16-S8 from merged S7 main: add explicit reviewed-row preview/atomic canonical transaction acceptance with idempotent accepted_txn_id linkage, duplicate/close/finalized-reconciliation revalidation, UI completion, focused tests, and the full Maven gate. Keep P16-S9 blocked."', 'next_action: "Complete doc/P16-S8-reviewed-statement-ledger-acceptance-user-testing.md on the validated PR #260 implementation. Keep P16-S9 blocked until P16-S8 owner acceptance and merge."'),
+              ("Status: IN_PROGRESS on `codex/P16-S8-reviewed-statement-ledger-acceptance`.", "Status: VERIFYING in draft PR #260."),
+              ("Starting base: `01b37364d68ea9388c8b704dadd442cb0122b3db`\n\nPurpose:", "Starting base: `01b37364d68ea9388c8b704dadd442cb0122b3db`\nPull request: #260\nValidated implementation head: `73ce3a2a966f690490de705058916519a741b635`\n\nPurpose:"),
+              ("- Bank Transactions exposes the explicit acceptance dialog with a frozen source summary, prefilled bank split, editable balanced counter splits/reference data, and Journal drill-through after successful commit. Import remains non-posting.\n\nNext exact action:\n\n- Complete focused service/UI/source tests and governing documentation, publish draft PR, and run the full Maven gate. Keep P16-S9 blocked until S8 owner acceptance and merge.", "- Bank Transactions exposes the explicit acceptance dialog with a frozen source summary, prefilled bank split, editable balanced counter splits/reference data, and Journal drill-through after successful commit. Import remains non-posting.\n- The initial PR head `e15ed7de60bf56880963e0813736d450d77d3ca7` failed the production source guard because the panel spelled the injected calls as `acceptanceService.get().preview(...)` / `.accept(...)`; the correction binds the supplier result locally and preserves the same service-owned preview/accept authority.\n- Exact corrected implementation head `73ce3a2a966f690490de705058916519a741b635` passed Maven PR Tests run `31291318707`, including clean headless `mvn clean verify`, the deliberately repeated Maven test suite, and production JavaFX route compliance.\n- `doc/P16-S8-reviewed-statement-ledger-acceptance-user-testing.md` records the exact automated validation and remains pending owner desktop acceptance.\n\nNext exact action:\n\n- Complete the P16-S8 owner desktop checklist on the validated PR #260 behavior. Keep P16-S9 blocked until owner acceptance and merge.")
+          ]
+
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit(f"Expected PLAN text not found: {old[:120]}")
+              text = text.replace(old, new, 1)
+
+          path.write_text(text, encoding="utf-8")
+      - name: Commit plan record and remove helper
+        run: |
+          rm .github/workflows/p16-s8-plan-record.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add doc/PLAN.md .github/workflows/p16-s8-plan-record.yml
+          git commit -m "Record P16-S8 validation state"
+          git push origin HEAD:codex/P16-S8-reviewed-statement-ledger-acceptance
