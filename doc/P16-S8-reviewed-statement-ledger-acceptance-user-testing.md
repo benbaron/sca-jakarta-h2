@@ -45,16 +45,16 @@ Use a disposable database with one configured bank account and imported durable 
 - Initial implementation head `e15ed7de60bf56880963e0813736d450d77d3ca7` reached the Maven verification suite but failed `ReviewedStatementAcceptanceSourceTest.bankTransactionsOffersOnlyExplicitReviewedRowAcceptance` because the production panel delegated through `acceptanceService.get().preview(...)` / `.accept(...)` while the source guard required explicit local-service delegation.
 - Corrected implementation head `73ce3a2a966f690490de705058916519a741b635` binds the injected supplier result to a local `ReviewedStatementAcceptanceService` and calls the existing `acceptanceService.preview(...)` / `acceptanceService.accept(...)` operations without changing the service contract or persistence authority.
 - Maven PR Tests run `31291318707` passed on exact head `73ce3a2a966f690490de705058916519a741b635`, including clean headless `mvn clean verify`, the deliberately repeated Maven test suite, and production JavaFX route compliance.
-- `doc/PLAN.md` now records P16-S8 as `VERIFYING` in PR #260 with the validated implementation head. The final documentation-inclusive handoff head is validated by the PR workflow and recorded in the PR body so the plan does not create a self-referential validation loop.
+- Final PR head `f701aa4d495f9ab1c291578dd70de3f5221a42c7` passed Maven PR Tests run `31291581055`, and PR #260 merged to `main` at `2edc47d862643b5e131a7825dbf7b6e5b662febe`.
 
 ## Acceptance record
 
-- [ ] A. Import remains review-only and enablement passed
-- [ ] B. Frozen preview and balanced transaction passed
-- [ ] C. Atomic accepted link/restart/drill-through passed
-- [ ] D. Duplicate, close, reconciliation, and company guards passed
-- [ ] E. Cancellation/failure non-mutation passed
+- [x] A. Import remains review-only and enablement passed
+- [x] B. Frozen preview and balanced transaction passed
+- [x] C. Atomic accepted link/restart/drill-through passed
+- [x] D. Duplicate, close, reconciliation, and company guards passed
+- [x] E. Cancellation/failure non-mutation passed
 - [x] Exact tested PR head recorded
-- [ ] Owner acceptance recorded
+- [x] Owner acceptance recorded on 2026-08-09
 
-Do not mark P16-S8 DONE or begin P16-S9 until this checklist is accepted and the P16-S8 PR has merged.
+P16-S8 is accepted and merged. P16-S9 began from the exact merged `main` commit recorded above.

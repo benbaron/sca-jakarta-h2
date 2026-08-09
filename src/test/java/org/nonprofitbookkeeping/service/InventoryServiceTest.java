@@ -26,22 +26,23 @@ public class InventoryServiceTest
     private static final long CASH_ACCOUNT_ID = 20_002L;
 
     @Test
-    public void createItemPersistsInventoryAndInitialMovement(@TempDir Path tempDir)
+    public void valuedItemStartsAtZeroAndAwaitsGovernedReceipt(@TempDir Path tempDir)
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("inventory-create")))
         {
             seedCompanyAccountsAndFund(jpa);
-            InventoryService service = new InventoryService(jpa);
+            InventoryService service = service(jpa);
 
-            InventoryItemView item = service.create(itemCommand("Loaner Feast Kit", new BigDecimal("3.0000")));
+            InventoryItemView item = service.create(itemCommand("Loaner Feast Kit", BigDecimal.ZERO));
 
             assertNotNull(item.id());
             assertEquals("Loaner Feast Kit", item.name());
-            assertEquals(new BigDecimal("3.0000"), item.quantity());
-            assertEquals(new BigDecimal("15.0000"), item.totalValue());
+            assertEquals(new BigDecimal("0.0000"), item.quantity());
+            assertEquals(new BigDecimal("0.0000"), item.totalValue());
             assertEquals(1, service.listItems(COMPANY_CODE).size());
-            assertEquals(1, service.listMovements(COMPANY_CODE).size());
-            assertEquals(InventoryMovement.MovementType.RECEIPT, service.listMovements(COMPANY_CODE).get(0).movementType());
+            assertEquals(0, service.listMovements(COMPANY_CODE).size());
+            assertThrows(IllegalArgumentException.class,
+                    () -> service.create(itemCommand("Ungoverned", new BigDecimal("3.0000"))));
         }
     }
 
@@ -51,28 +52,42 @@ public class InventoryServiceTest
         try (Jpa jpa = new Jpa(tempDir.resolve("inventory-movement")))
         {
             seedCompanyAccountsAndFund(jpa);
-            InventoryService service = new InventoryService(jpa);
-            InventoryItemView item = service.create(itemCommand("Serving Trays", new BigDecimal("10.0000")));
+            InventoryService service = service(jpa);
+            InventoryItemView item = service.create(itemCommand("Serving Trays", BigDecimal.ZERO));
 
+            service.recordMovement(item.id(), new InventoryMovementCommand(
+                    InventoryMovement.MovementType.RECEIPT,
+                    new BigDecimal("10.0000"),
+                    LocalDate.of(2026, 2, 1),
+                    CASH_ACCOUNT_ID,
+                    false,
+                    "Received ten trays"));
             service.recordMovement(item.id(), new InventoryMovementCommand(
                     InventoryMovement.MovementType.RECEIPT,
                     new BigDecimal("2.0000"),
                     LocalDate.of(2026, 2, 1),
+                    CASH_ACCOUNT_ID,
+                    false,
                     "Received two trays"));
             service.recordMovement(item.id(), new InventoryMovementCommand(
                     InventoryMovement.MovementType.ISSUE,
                     new BigDecimal("4.0000"),
                     LocalDate.of(2026, 2, 2),
+                    CASH_ACCOUNT_ID,
+                    false,
                     "Issued four trays"));
             InventoryMovementView adjustment = service.recordMovement(item.id(), new InventoryMovementCommand(
                     InventoryMovement.MovementType.ADJUSTMENT,
                     new BigDecimal("7.0000"),
                     LocalDate.of(2026, 2, 3),
+                    CASH_ACCOUNT_ID,
+                    false,
                     "Counted seven trays"));
 
             assertEquals(new BigDecimal("7.0000"), adjustment.resultingQuantity());
             assertEquals(new BigDecimal("7.0000"), service.load(item.id()).quantity());
             assertEquals(4, service.listMovements(COMPANY_CODE).size());
+            assertNotNull(adjustment.transactionId());
         }
     }
 
@@ -82,13 +97,22 @@ public class InventoryServiceTest
         try (Jpa jpa = new Jpa(tempDir.resolve("inventory-negative")))
         {
             seedCompanyAccountsAndFund(jpa);
-            InventoryService service = new InventoryService(jpa);
-            InventoryItemView item = service.create(itemCommand("Banners", new BigDecimal("1.0000")));
+            InventoryService service = service(jpa);
+            InventoryItemView item = service.create(itemCommand("Banners", BigDecimal.ZERO));
+            service.recordMovement(item.id(), new InventoryMovementCommand(
+                    InventoryMovement.MovementType.RECEIPT,
+                    new BigDecimal("1.0000"),
+                    LocalDate.of(2026, 1, 31),
+                    CASH_ACCOUNT_ID,
+                    false,
+                    "One banner"));
 
             assertThrows(IllegalArgumentException.class, () -> service.recordMovement(item.id(), new InventoryMovementCommand(
                     InventoryMovement.MovementType.ISSUE,
                     new BigDecimal("2.0000"),
                     LocalDate.of(2026, 2, 1),
+                    CASH_ACCOUNT_ID,
+                    false,
                     "Too many issued")));
         }
     }
@@ -99,7 +123,7 @@ public class InventoryServiceTest
         try (Jpa jpa = new Jpa(tempDir.resolve("inventory-validation")))
         {
             seedCompanyAccountsAndFund(jpa);
-            InventoryService service = new InventoryService(jpa);
+            InventoryService service = service(jpa);
 
             InventoryItemCommand bad = new InventoryItemCommand(
                     COMPANY_CODE,
@@ -138,6 +162,14 @@ public class InventoryServiceTest
                 InventoryItem.Condition.GOOD,
                 InventoryItem.Status.ACTIVE,
                 "Test inventory item");
+    }
+
+    private static InventoryService service(Jpa jpa)
+    {
+        return new InventoryService(
+                jpa,
+                new TransactionEntryService(jpa, () -> COMPANY_CODE),
+                () -> COMPANY_CODE);
     }
 
     private static void seedCompanyAccountsAndFund(Jpa jpa)

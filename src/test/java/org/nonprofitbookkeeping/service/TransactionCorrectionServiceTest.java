@@ -44,7 +44,7 @@ public class TransactionCorrectionServiceTest
                         .setParameter("id", result.reversalTransactionId())
                         .getResultList();
                 assertEquals(new BigDecimal("-100.0000"), reversalLines.get(0).getAmountSigned());
-                assertEquals(new BigDecimal("100.0000"), reversalLines.get(1).getAmountSigned());
+                assertEquals(new BigDecimal("-100.0000"), reversalLines.get(1).getAmountSigned());
 
                 List<AuditEvent> audits = em.createQuery(
                         "from AuditEvent a where a.actionType = 'TRANSACTION_REVERSED'", AuditEvent.class)
@@ -112,7 +112,7 @@ public class TransactionCorrectionServiceTest
             em.createNativeQuery("INSERT INTO fund (id, code, name, fund_type) VALUES (1, 'OPERATING', 'Operating', 'UNRESTRICTED')").executeUpdate();
             em.createNativeQuery("INSERT INTO txn (id, txn_date, memo) VALUES (1, DATE '2026-01-10', 'Original')").executeUpdate();
             em.createNativeQuery("INSERT INTO txn_split (id, txn_id, account_id, fund_id, amount_signed) VALUES (1, 1, 1, 1, 100.0000)").executeUpdate();
-            em.createNativeQuery("INSERT INTO txn_split (id, txn_id, account_id, fund_id, amount_signed) VALUES (2, 1, 2, 1, -100.0000)").executeUpdate();
+            em.createNativeQuery("INSERT INTO txn_split (id, txn_id, account_id, fund_id, amount_signed) VALUES (2, 1, 2, 1, 100.0000)").executeUpdate();
             em.createNativeQuery("ALTER TABLE txn ALTER COLUMN id RESTART WITH 2").executeUpdate();
             em.createNativeQuery("ALTER TABLE txn_split ALTER COLUMN id RESTART WITH 3").executeUpdate();
             em.getTransaction().commit();

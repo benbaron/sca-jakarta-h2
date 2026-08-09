@@ -1,12 +1,12 @@
 ---
-plan_version: 144
+plan_version: 146
 active_phase: P16
-active_slice: P16-S8
+active_slice: P16-S9
 active_status: VERIFYING
-active_branch: codex/P16-S8-reviewed-statement-ledger-acceptance
-active_pull_request: 260
-active_head: 73ce3a2a966f690490de705058916519a741b635
-next_action: "Complete doc/P16-S8-reviewed-statement-ledger-acceptance-user-testing.md on the validated PR #260 implementation. Keep P16-S9 blocked until P16-S8 owner acceptance and merge."
+active_branch: codex/P16-S9-inventory-movement-accounting
+active_pull_request: 261
+active_head: 3c2c6663b0f0c5b28c9d7bb877cfe9197b225412
+next_action: "Validate the final documentation-inclusive PR #261 head, then complete doc/P16-S9-inventory-movement-accounting-user-testing.md. Keep P16-S10 blocked until P16-S9 owner acceptance and merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S8; P16-S7 DONE through PR #259 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S9; P16-S8 DONE through PR #260 |
 
 ## 4. Governing documents
 
@@ -1879,7 +1879,7 @@ Required behavior: genuine Inventory item add/edit and movement history, no runb
 # P16 — Interface-to-authority completion and integrity corrections
 
 **Selector:** `PHASE=P16`  
-**Status:** IN_PROGRESS through P16-S8; P16-S7 DONE through PR #259
+**Status:** IN_PROGRESS through P16-S9; P16-S8 DONE through PR #260
 **Depends on:** P03 through P15 except eliminated P07
 
 ## Purpose
@@ -2294,11 +2294,13 @@ Next exact action:
 
 ## P16-S8 — Explicit reviewed-statement acceptance into the ledger
 
-Status: VERIFYING in draft PR #260.
+Status: DONE through PR #260.
 
 Starting base: `01b37364d68ea9388c8b704dadd442cb0122b3db`
 Pull request: #260
 Validated implementation head: `73ce3a2a966f690490de705058916519a741b635`
+Final PR head: `f701aa4d495f9ab1c291578dd70de3f5221a42c7`
+Merged `main` commit: `2edc47d862643b5e131a7825dbf7b6e5b662febe`
 
 Purpose: let a user turn one reviewed bank statement row into a canonical transaction without automatic posting or re-keying.
 
@@ -2327,15 +2329,21 @@ Execution state:
 - Bank Transactions exposes the explicit acceptance dialog with a frozen source summary, prefilled bank split, editable balanced counter splits/reference data, and Journal drill-through after successful commit. Import remains non-posting.
 - The initial PR head `e15ed7de60bf56880963e0813736d450d77d3ca7` failed the production source guard because the panel spelled the injected calls as `acceptanceService.get().preview(...)` / `.accept(...)`; the correction binds the supplier result locally and preserves the same service-owned preview/accept authority.
 - Exact corrected implementation head `73ce3a2a966f690490de705058916519a741b635` passed Maven PR Tests run `31291318707`, including clean headless `mvn clean verify`, the deliberately repeated Maven test suite, and production JavaFX route compliance.
-- `doc/P16-S8-reviewed-statement-ledger-acceptance-user-testing.md` records the exact automated validation and remains pending owner desktop acceptance.
+- Exact final PR head `f701aa4d495f9ab1c291578dd70de3f5221a42c7` passed Maven PR Tests run `31291581055`.
+- The owner completed and accepted `doc/P16-S8-reviewed-statement-ledger-acceptance-user-testing.md` on 2026-08-09, and PR #260 merged to `main` at `2edc47d862643b5e131a7825dbf7b6e5b662febe`.
 
 Next exact action:
 
-- Complete the P16-S8 owner desktop checklist on the validated PR #260 behavior. Keep P16-S9 blocked until owner acceptance and merge.
+- None; P16-S8 is DONE and P16-S9 is active.
 
 ## P16-S9 — Financially relevant inventory movements
 
-Status: BLOCKED by P16-S8.
+Status: VERIFYING in draft PR #261.
+
+Starting base: `2edc47d862643b5e131a7825dbf7b6e5b662febe`
+Branch: `codex/P16-S9-inventory-movement-accounting`
+Pull request: #261
+Validated implementation head: `3c2c6663b0f0c5b28c9d7bb877cfe9197b225412`
 
 Purpose: keep physical quantity and general-ledger inventory value synchronized when a movement has an accounting effect.
 
@@ -2353,6 +2361,22 @@ Acceptance and tests:
 - Successful financial movement changes quantity and ledger value together; failure changes neither.
 - Restart, multi-company, rounding, negative-quantity, closed-period, duplicate, and late-failure scenarios are covered.
 - The movement table's `Txn` column is populated only by a real canonical link.
+
+Execution state:
+
+- P16-S8 owner acceptance and merge are recorded; S9 began from exact merged `main` commit `2edc47d862643b5e131a7825dbf7b6e5b662febe` on a fresh branch.
+- The working implementation adds a frozen non-mutating movement preview, fixed-unit valuation at four-decimal half-up ledger precision, explicit zero-value nonfinancial confirmation, active-company/account/fund/date validation, pessimistic revalidation, canonical caller-owned transaction entry, real movement transaction links, and factual inventory audit in one atomic operation.
+- Financial correction is append-only: `InventoryService` uses a new caller-owned `TransactionCorrectionService` reversal seam so the canonical reversal and inverse adjustment movement commit together. Both legacy completed and native finalized reconciliation protections are enforced, and canonical balance validation now interprets stored split signs using account normal balance.
+- Valued items must begin at zero quantity; account/fund/unit-value edits are blocked while quantity is on hand. P15 SCLX `createForImport(...)` and `recordMovementForImport(...)` remain non-synthesizing historical restore seams.
+- Focused tests cover non-mutation, atomic success, rounding, idempotent retry, stale preview, late rollback, multi-company, negative quantity, close/finalized reconciliation, explicit nonfinancial behavior, canonical reversal, duplicate reversal, and restart persistence. The owner checklist is `doc/P16-S9-inventory-movement-accounting-user-testing.md`.
+- Local Java syntax parsing and `git diff --check` pass. Java 17 is present, but the container has no Maven executable or wrapper, so the GitHub Maven PR Tests workflow is the authoritative compile/test environment. Publication uses local Git plus the connected GitHub service; no `gh` CLI is required.
+- Initial PR head `73c261635917372c8e34452d8e65f6b24b93378b` exposed two obsolete transaction-correction fixtures that stored a credit-normal income credit with the pre-canonical negative sign. The fixtures and reversal expectation now use the same normal-balance-relative storage convention as `TransactionEntryService`; the production canonical balance validation remains intact.
+- Exact corrected implementation head `3c2c6663b0f0c5b28c9d7bb877cfe9197b225412` passed Maven PR Tests run `31337956279`: clean headless `mvn clean verify` passed with 593 tests, 0 failures/errors, and 31 skips; the deliberately repeated 593-test suite passed; and the 9-test production JavaFX route/source compliance suite passed.
+- `doc/P16-S9-inventory-movement-accounting-user-testing.md` records the automated validation and remains pending owner desktop acceptance.
+
+Next exact action:
+
+- Validate the final documentation-inclusive PR #261 head, then complete `doc/P16-S9-inventory-movement-accounting-user-testing.md`. Keep P16-S10 blocked until owner acceptance and merge.
 
 ## P16-S10 — Authoritative Journal cleared-state projection
 

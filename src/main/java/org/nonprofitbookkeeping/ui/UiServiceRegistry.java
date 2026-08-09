@@ -249,6 +249,8 @@ public final class UiServiceRegistry
     {
         System.err.println("[NPBK] Building UI service bundle.");
         TransactionEntryService transactionEntry = new TransactionEntryService(jpa, UiServiceRegistry::activeCompanyCode);
+        TransactionCorrectionService transactionCorrection = new TransactionCorrectionService(
+                jpa, UiServiceRegistry::activeCompanyCode);
         PeriodCloseRangeService periodCloseRange = new PeriodCloseRangeService(jpa);
         return new ServiceBundle(
                 jpa,
@@ -261,14 +263,15 @@ public final class UiServiceRegistry
                 new BudgetPlanService(jpa, UiServiceRegistry::activeCompanyCode),
                 new BankConfigurationService(jpa),
                 new FixedAssetService(jpa, transactionEntry, UiServiceRegistry::activeCompanyCode),
-                new InventoryService(jpa),
+                new InventoryService(
+                        jpa, transactionEntry, transactionCorrection, UiServiceRegistry::activeCompanyCode),
                 new CompanyAdminService(jpa),
                 new UserAdminService(jpa),
                 new FundBalanceService(jpa),
                 new ScheduleEligibilityService(jpa),
                 new LedgerQueryService(jpa),
                 transactionEntry,
-                new TransactionCorrectionService(jpa, UiServiceRegistry::activeCompanyCode),
+                transactionCorrection,
                 new TransactionReferenceDataService(jpa, UiServiceRegistry::activeCompanyCode),
                 new SampleCompanyService(jpa),
                 new FinancialReportService(jpa),

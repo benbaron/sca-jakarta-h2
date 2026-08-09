@@ -5,6 +5,9 @@ import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Alert;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
@@ -30,6 +33,7 @@ import org.nonprofitbookkeeping.service.InventoryItemCommand;
 import org.nonprofitbookkeeping.service.InventoryItemView;
 import org.nonprofitbookkeeping.service.InventoryMovementCommand;
 import org.nonprofitbookkeeping.service.InventoryMovementView;
+import org.nonprofitbookkeeping.service.InventoryService;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -67,6 +71,10 @@ public class InventoryPanel implements AppPanel
     private final TextField movementQuantity = new TextField("1.0000");
     private final DatePicker movementDate = new DatePicker(LocalDate.now());
     private final TextField movementNotes = new TextField();
+    private final ComboBox<Account> movementOffsetAccount = new ComboBox<>();
+    private final TextField movementActor = new TextField("ui");
+    private final CheckBox confirmNonfinancial = new CheckBox(
+            "Zero-value nonfinancial movement (no ledger transaction)");
 
     private boolean suppressDirty;
     private boolean dirty;
@@ -133,16 +141,25 @@ public class InventoryPanel implements AppPanel
         issue.setOnAction(e -> recordMovement(InventoryMovement.MovementType.ISSUE));
         Button adjust = new Button("Adjust Count To Quantity");
         adjust.setOnAction(e -> recordMovement(InventoryMovement.MovementType.ADJUSTMENT));
+        Button reverse = new Button("Reverse Selected Movement");
+        reverse.setOnAction(e -> reverseSelectedMovement());
+        Button drill = new Button("Drill Selected Txn to Ledger");
+        drill.setOnAction(e -> drillSelectedMovement());
 
         HBox itemActions = new HBox(8, refresh, newItem, editItem);
-        HBox movementActions = new HBox(8,
+        HBox movementInputs = new HBox(8,
                 new Label("Movement qty"), movementQuantity,
                 new Label("Movement date"), movementDate,
                 new Label("Movement notes"), movementNotes,
-                receive, issue, adjust);
+                new Label("Offset account"), movementOffsetAccount,
+                new Label("Actor"), movementActor);
+        HBox movementActions = new HBox(8,
+                confirmNonfinancial, receive, issue, adjust, reverse, drill);
         movementQuantity.setPrefWidth(90);
         movementDate.setPrefWidth(130);
         movementNotes.setPrefWidth(240);
+        movementOffsetAccount.setPrefWidth(260);
+        movementActor.setPrefWidth(110);
 
         SplitPane split = new SplitPane(new VBox(6, new Label("Inventory Items"), itemTable), new VBox(6, new Label("Movement History"), movementTable));
         split.setOrientation(Orientation.VERTICAL);
@@ -152,7 +169,7 @@ public class InventoryPanel implements AppPanel
         VBox.setVgrow(itemTable, Priority.ALWAYS);
         VBox.setVgrow(movementTable, Priority.ALWAYS);
         VBox.setVgrow(split, Priority.ALWAYS);
-        listPanel.getChildren().setAll(itemActions, movementActions, split);
+        listPanel.getChildren().setAll(itemActions, movementInputs, movementActions, split);
     }
 
     private void configureItemEditorPanel()
@@ -267,6 +284,7 @@ public class InventoryPanel implements AppPanel
             @Override public String toString(Fund f) { return f == null ? "" : f.getCode() + " — " + f.getName(); }
             @Override public Fund fromString(String string) { return null; }
         });
+        movementOffsetAccount.setConverter(inventoryAccount.getConverter());
         condition.getItems().setAll(InventoryItem.Condition.values());
         itemStatus.getItems().setAll(InventoryItem.Status.values());
     }
@@ -280,6 +298,14 @@ public class InventoryPanel implements AppPanel
                     .filter(a -> a.getSubtype() == AccountSubtype.INVENTORY)
                     .toList();
             inventoryAccount.getItems().setAll(inventoryAccounts);
+            List<Account> postingAccounts = UiServiceRegistry.accountLookup().listActivePostingAccounts();
+            Long selectedOffsetId = movementOffsetAccount.getValue() == null
+                    ? null : movementOffsetAccount.getValue().getId();
+            movementOffsetAccount.getItems().setAll(postingAccounts);
+            if (selectedOffsetId != null)
+            {
+                selectAccountById(movementOffsetAccount, selectedOffsetId);
+            }
             fund.getItems().setAll(UiServiceRegistry.fundLookup().listActiveFunds());
             Long selectedId = selectedItemId();
             itemTable.getItems().setAll(UiServiceRegistry.inventory().listItems(activeCompanyCode()));
@@ -377,11 +403,22 @@ public class InventoryPanel implements AppPanel
         try
         {
             clearValidation();
-            UiServiceRegistry.inventory().recordMovement(selected.id(), new InventoryMovementCommand(
+            InventoryService inventoryService = UiServiceRegistry.inventory();
+            Account offset = movementOffsetAccount.getValue();
+            InventoryService.MovementPreview preview = inventoryService.previewMovement(
+                    selected.id(), new InventoryMovementCommand(
                     type,
                     parseQuantityField(movementQuantity, "Movement quantity"),
                     requiredDate(movementDate, "Movement date"),
+                    offset == null ? null : offset.getId(),
+                    confirmNonfinancial.isSelected(),
                     movementNotes.getText()));
+            if (!confirmMovement(preview))
+            {
+                status.setText("Inventory movement cancelled; no quantity or ledger change was made.");
+                return;
+            }
+            inventoryService.recordMovement(preview, requiredText(movementActor, "Actor"));
             reload();
             selectItem(selected.id());
             status.setText("Recorded inventory " + type + " for " + selected.name() + ".");
@@ -390,6 +427,83 @@ public class InventoryPanel implements AppPanel
         {
             status.setText("Could not record inventory movement: " + UiErrors.safeMessage(ex));
         }
+    }
+
+    private boolean confirmMovement(InventoryService.MovementPreview preview)
+    {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle("Confirm Inventory Movement");
+        confirmation.setHeaderText(preview.financial()
+                ? "Create this inventory movement and balanced canonical transaction?"
+                : "Record this explicitly nonfinancial zero-value movement?");
+        String accounting = preview.financial()
+                ? "Debit/Credit accounts: " + preview.inventoryAccountCode() + " — "
+                        + preview.inventoryAccountName() + " / " + preview.offsetAccountCode() + " — "
+                        + preview.offsetAccountName()
+                : "No canonical transaction will be created.";
+        confirmation.setContentText(
+                "Item: " + preview.inventoryItemName()
+                        + "\nQuantity: " + formatQuantity(preview.quantityBefore())
+                        + " → " + formatQuantity(preview.quantityAfter())
+                        + " (change " + formatQuantity(preview.quantityChange()) + ")"
+                        + "\nUnit value: " + formatMoney(preview.unitValue())
+                        + "\nExtended value: " + formatMoney(preview.extendedValue())
+                        + "\nFund: " + preview.fundCode() + " — " + preview.fundName()
+                        + "\n" + accounting);
+        return confirmation.showAndWait().filter(ButtonType.OK::equals).isPresent();
+    }
+
+    private void reverseSelectedMovement()
+    {
+        InventoryMovementView selected = movementTable.getSelectionModel().getSelectedItem();
+        if (selected == null)
+        {
+            status.setText("Select one financial movement to reverse.");
+            return;
+        }
+        try
+        {
+            InventoryService inventoryService = UiServiceRegistry.inventory();
+            InventoryService.MovementReversalPreview preview = inventoryService.previewMovementReversal(
+                    selected.id(),
+                    requiredDate(movementDate, "Reversal date"),
+                    requiredText(movementNotes, "Reversal reason"));
+            Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmation.setTitle("Reverse Inventory Movement");
+            confirmation.setHeaderText("Reverse the canonical transaction and record the inverse quantity movement?");
+            confirmation.setContentText(
+                    "Original movement: " + preview.originalMovementId()
+                            + " / transaction " + preview.originalTransactionId()
+                            + "\nItem: " + preview.inventoryItemName()
+                            + "\nQuantity: " + formatQuantity(preview.quantityBefore())
+                            + " → " + formatQuantity(preview.quantityAfter())
+                            + "\nReversal value: " + formatMoney(preview.extendedValue())
+                            + "\nReason: " + preview.reason());
+            if (confirmation.showAndWait().filter(ButtonType.OK::equals).isEmpty())
+            {
+                status.setText("Inventory reversal cancelled; no quantity or ledger change was made.");
+                return;
+            }
+            inventoryService.reverseMovement(preview, requiredText(movementActor, "Actor"));
+            reload();
+            status.setText("Reversed inventory movement " + selected.id() + ".");
+        }
+        catch (RuntimeException ex)
+        {
+            status.setText("Could not reverse inventory movement: " + UiErrors.safeMessage(ex));
+        }
+    }
+
+    private void drillSelectedMovement()
+    {
+        InventoryMovementView selected = movementTable.getSelectionModel().getSelectedItem();
+        if (selected == null || selected.transactionId() == null)
+        {
+            status.setText("Select a movement linked to a real canonical transaction.");
+            return;
+        }
+        DrillThroughCoordinator.openLedgerWithContext(
+                "Inventory movement " + selected.id() + " → transaction " + selected.transactionId());
     }
 
     private InventoryItemCommand commandFromForm()

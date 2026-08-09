@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.AuditEvent;
 import org.nonprofitbookkeeping.model.Company;
+import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
 import org.nonprofitbookkeeping.persistence.Jpa;
@@ -13,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
@@ -132,6 +134,7 @@ public class TransactionCorrectionService
                 validateBalanced(originalSplits);
 
                 validateSplitOwnership(em, company, originalSplits);
+                String before = snapshot(original);
                 Txn reversal = copyHeader(original, reversalDate);
                 reversal.setReversalOf(original);
                 reversal.setCorrectionNote(blankToNull(reason));
@@ -158,7 +161,7 @@ public class TransactionCorrectionService
                     }
                 }
 
-                em.persist(audit(company, actor, "TRANSACTION_REVERSED", original, snapshot(original), snapshot(reversal), reason));
+                em.persist(audit(company, actor, "TRANSACTION_REVERSED", original, before, snapshot(reversal), reason));
                 em.getTransaction().commit();
                 return new CorrectionResult(reversal.getId(), replacement == null ? null : replacement.getId());
             }
@@ -168,6 +171,75 @@ public class TransactionCorrectionService
                 throw ex;
             }
         }
+    }
+
+    /**
+     * Creates one canonical reversal inside a caller-owned transaction.
+     * The caller may atomically attach a domain correction fact before committing.
+     */
+    public Txn reverse(
+            EntityManager em,
+            Company company,
+            Txn original,
+            LocalDate reversalDate,
+            String actor,
+            String reason,
+            UUID reversalPortableId)
+    {
+        Objects.requireNonNull(em, "em");
+        Objects.requireNonNull(company, "company");
+        Objects.requireNonNull(original, "original");
+        Objects.requireNonNull(reversalPortableId, "reversalPortableId");
+        String normalizedActor = requireText(actor, "actor");
+        if (reversalDate == null)
+        {
+            throw new IllegalArgumentException("reversalDate is required");
+        }
+        if (!em.getTransaction().isActive())
+        {
+            throw new IllegalStateException("Caller-owned transaction is required.");
+        }
+        if (!em.contains(company) || !em.contains(original))
+        {
+            throw new IllegalArgumentException("Company and original transaction must be managed by the caller.");
+        }
+
+        ownership().ensureOwnedBy(em, company, original, "Transaction");
+        requireEntered(original);
+        requireNotReconciled(em, original.getId(), "reverse transaction");
+        PeriodCloseRangeService.requireOpen(em, company.getCode(), reversalDate, "create reversal");
+        Long identityCount = em.createQuery(
+                        "select count(t) from Txn t where t.portableId = :portableId", Long.class)
+                .setParameter("portableId", reversalPortableId)
+                .getSingleResult();
+        if (identityCount > 0)
+        {
+            throw new IllegalStateException(
+                    "Reversal transaction portable identity is already in use: " + reversalPortableId);
+        }
+
+        List<TxnSplit> originalSplits = em.createQuery(
+                        "from TxnSplit s where s.txn = :txn order by s.id", TxnSplit.class)
+                .setParameter("txn", original)
+                .getResultList();
+        validateBalanced(originalSplits);
+        validateSplitOwnership(em, company, originalSplits);
+        String before = snapshot(original);
+
+        Txn reversal = copyHeader(original, reversalDate);
+        reversal.setPortableId(reversalPortableId);
+        reversal.setReversalOf(original);
+        reversal.setCorrectionNote(blankToNull(reason));
+        em.persist(reversal);
+        for (TxnSplit split : originalSplits)
+        {
+            em.persist(copySplit(split, reversal, split.getAmountSigned().negate()));
+        }
+        original.setStatus("REVERSED");
+        original.touchUpdatedAt();
+        em.persist(audit(
+                company, normalizedActor, "TRANSACTION_REVERSED", original, before, snapshot(reversal), reason));
+        return reversal;
     }
 
     /**
@@ -252,6 +324,21 @@ public class TransactionCorrectionService
             throw new IllegalStateException("Cannot " + operation + " because transaction "
                     + transactionId + " is protected by a completed reconciliation.");
         }
+        Number finalizedCount = (Number) em.createNativeQuery("""
+                SELECT COUNT(*)
+                FROM bank_reconciliation_session s
+                JOIN bank_reconciliation_match m ON m.session_id = s.id
+                JOIN txn_split ts ON ts.id = m.txn_split_id
+                WHERE ts.txn_id = ?
+                  AND s.status = 'FINALIZED'
+                """)
+                .setParameter(1, transactionId)
+                .getSingleResult();
+        if (finalizedCount.longValue() > 0)
+        {
+            throw new IllegalStateException("Cannot " + operation + " because transaction "
+                    + transactionId + " is protected by a finalized reconciliation.");
+        }
     }
 
     private void requireOpenRange(EntityManager em, LocalDate date, String operation)
@@ -291,10 +378,24 @@ public class TransactionCorrectionService
         {
             throw new IllegalStateException("An entered transaction requires at least two lines");
         }
-        BigDecimal total = splits.stream()
-                .map(TxnSplit::getAmountSigned)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        if (total.compareTo(BigDecimal.ZERO) != 0)
+        BigDecimal debits = BigDecimal.ZERO;
+        BigDecimal credits = BigDecimal.ZERO;
+        for (TxnSplit split : splits)
+        {
+            BigDecimal amount = split.getAmountSigned();
+            boolean debit = split.getAccount().getNormalBalance() == NormalBalance.DEBIT
+                    ? amount.signum() >= 0
+                    : amount.signum() < 0;
+            if (debit)
+            {
+                debits = debits.add(amount.abs());
+            }
+            else
+            {
+                credits = credits.add(amount.abs());
+            }
+        }
+        if (debits.compareTo(credits) != 0)
         {
             throw new IllegalStateException("Transaction is not balanced");
         }
