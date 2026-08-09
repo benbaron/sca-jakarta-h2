@@ -157,7 +157,7 @@ public class TransactionCorrectionClosedPeriodTest
             em.createNativeQuery("INSERT INTO fund (id, code, name, fund_type) VALUES (1, 'OPERATING', 'Operating', 'UNRESTRICTED')").executeUpdate();
             em.createNativeQuery("INSERT INTO txn (id, txn_date, memo) VALUES (1, DATE '2026-01-10', 'Original')").executeUpdate();
             em.createNativeQuery("INSERT INTO txn_split (id, txn_id, account_id, fund_id, amount_signed) VALUES (1, 1, 1, 1, 100.0000)").executeUpdate();
-            em.createNativeQuery("INSERT INTO txn_split (id, txn_id, account_id, fund_id, amount_signed) VALUES (2, 1, 2, 1, -100.0000)").executeUpdate();
+            em.createNativeQuery("INSERT INTO txn_split (id, txn_id, account_id, fund_id, amount_signed) VALUES (2, 1, 2, 1, 100.0000)").executeUpdate();
             em.createNativeQuery("ALTER TABLE txn ALTER COLUMN id RESTART WITH 2").executeUpdate();
             em.createNativeQuery("ALTER TABLE txn_split ALTER COLUMN id RESTART WITH 3").executeUpdate();
             em.getTransaction().commit();
