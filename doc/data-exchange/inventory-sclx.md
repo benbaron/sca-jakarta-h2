@@ -90,4 +90,6 @@ P15-S5-C6 strictly validates the complete version 1 extension before mutation. I
 
 Import preserves the intrinsic item and movement UUIDs, item facts, movement facts, source timestamps, status, condition, notes, and exact decimal values. It does not synthesize an initial receipt, recalculate source quantities, or create another ledger transaction. Every item and movement receives a durable SCLX interchange identity, identical reimport is a no-op, and any late failure rolls the complete imported company graph back.
 
+P16-S9 does not route restore through the interactive movement preview/posting command. `createForImport(...)` and `recordMovementForImport(...)` remain the only SCLX inventory seams: an imported `transactionId` reattaches the already restored canonical transaction, while an absent reference stays null. Neither case synthesizes a second transaction or movement audit fact.
+
 The target must remain empty under the governed P15-S5 merge policy. A populated inventory item is sufficient to block preview and commit. Banking, reconciliation, period-close, imported audit-history, correction, and unknown populated extensions remain blocked after C6.

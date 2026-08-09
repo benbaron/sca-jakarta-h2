@@ -95,6 +95,16 @@ public class InventoryMovement
     public void setNotes(String notes) { this.notes = notes; }
     public Instant getCreatedAt() { return createdAt; }
 
+    /** Assigns the operation identity chosen by a governed interactive preview. */
+    public void initializePortableIdentity(UUID portableId)
+    {
+        if (id != null)
+        {
+            throw new IllegalStateException("Inventory-movement identity must be initialized before persistence");
+        }
+        this.portableId = Objects.requireNonNull(portableId, "portableId");
+    }
+
     /** Initializes immutable source metadata before a governed interchange import persists this movement. */
     public void initializeImportMetadata(UUID portableId, Instant createdAt)
     {
