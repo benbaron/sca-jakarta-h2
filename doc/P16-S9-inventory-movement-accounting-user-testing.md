@@ -48,9 +48,9 @@ Use a disposable database with one active company, an active inventory account, 
 
 ## Automated validation record
 
-- Local Java syntax parsing passed for every changed Java source and test file.
-- The work container has Java 17 but no Maven executable or Maven wrapper, so `mvn clean verify` must run in the pull-request workflow.
-- Exact tested PR head and Maven PR Tests run: pending.
+- Local Java syntax parsing and `git diff --check` passed for the changed production and test scope.
+- Initial PR head `73c261635917372c8e34452d8e65f6b24b93378b` reached the full suite but exposed two obsolete transaction-correction fixtures that used a pre-canonical sign for a credit-normal income credit. The corrected fixtures use the same normal-balance-relative storage convention as `TransactionEntryService`; production balance validation was not weakened.
+- Exact corrected implementation head `3c2c6663b0f0c5b28c9d7bb877cfe9197b225412` passed Maven PR Tests run `31337956279`, including clean headless `mvn clean verify` (593 tests, 0 failures/errors, 31 skips), the deliberately repeated 593-test suite, and the 9-test production JavaFX route/source compliance suite.
 
 ## Acceptance record
 
@@ -60,7 +60,7 @@ Use a disposable database with one active company, an active inventory account, 
 - [ ] D. Atomicity, close, reconciliation, company, and restart guards passed
 - [ ] E. Canonical immutable correction passed
 - [ ] F. Item edit and SCLX no-duplicate integrity passed
-- [ ] Exact tested PR head recorded
+- [x] Exact tested PR head recorded: `3c2c6663b0f0c5b28c9d7bb877cfe9197b225412` / Maven PR Tests `31337956279`
 - [ ] Owner acceptance recorded
 
 Do not mark P16-S9 DONE or begin P16-S10 until this checklist is accepted and the P16-S9 PR has merged.

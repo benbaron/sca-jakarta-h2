@@ -1,12 +1,12 @@
 ---
-plan_version: 145
+plan_version: 146
 active_phase: P16
 active_slice: P16-S9
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P16-S9-inventory-movement-accounting
-active_pull_request: null
-active_head: 2edc47d862643b5e131a7825dbf7b6e5b662febe
-next_action: "Publish the reviewed P16-S9 branch with Git and the connected GitHub service, then use Maven PR Tests for authoritative compile/test verification."
+active_pull_request: 261
+active_head: 3c2c6663b0f0c5b28c9d7bb877cfe9197b225412
+next_action: "Validate the final documentation-inclusive PR #261 head, then complete doc/P16-S9-inventory-movement-accounting-user-testing.md. Keep P16-S10 blocked until P16-S9 owner acceptance and merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2338,10 +2338,12 @@ Next exact action:
 
 ## P16-S9 — Financially relevant inventory movements
 
-Status: IN_PROGRESS.
+Status: VERIFYING in draft PR #261.
 
 Starting base: `2edc47d862643b5e131a7825dbf7b6e5b662febe`
 Branch: `codex/P16-S9-inventory-movement-accounting`
+Pull request: #261
+Validated implementation head: `3c2c6663b0f0c5b28c9d7bb877cfe9197b225412`
 
 Purpose: keep physical quantity and general-ledger inventory value synchronized when a movement has an accounting effect.
 
@@ -2368,10 +2370,13 @@ Execution state:
 - Valued items must begin at zero quantity; account/fund/unit-value edits are blocked while quantity is on hand. P15 SCLX `createForImport(...)` and `recordMovementForImport(...)` remain non-synthesizing historical restore seams.
 - Focused tests cover non-mutation, atomic success, rounding, idempotent retry, stale preview, late rollback, multi-company, negative quantity, close/finalized reconciliation, explicit nonfinancial behavior, canonical reversal, duplicate reversal, and restart persistence. The owner checklist is `doc/P16-S9-inventory-movement-accounting-user-testing.md`.
 - Local Java syntax parsing and `git diff --check` pass. Java 17 is present, but the container has no Maven executable or wrapper, so the GitHub Maven PR Tests workflow is the authoritative compile/test environment. Publication uses local Git plus the connected GitHub service; no `gh` CLI is required.
+- Initial PR head `73c261635917372c8e34452d8e65f6b24b93378b` exposed two obsolete transaction-correction fixtures that stored a credit-normal income credit with the pre-canonical negative sign. The fixtures and reversal expectation now use the same normal-balance-relative storage convention as `TransactionEntryService`; the production canonical balance validation remains intact.
+- Exact corrected implementation head `3c2c6663b0f0c5b28c9d7bb877cfe9197b225412` passed Maven PR Tests run `31337956279`: clean headless `mvn clean verify` passed with 593 tests, 0 failures/errors, and 31 skips; the deliberately repeated 593-test suite passed; and the 9-test production JavaFX route/source compliance suite passed.
+- `doc/P16-S9-inventory-movement-accounting-user-testing.md` records the automated validation and remains pending owner desktop acceptance.
 
 Next exact action:
 
-- Publish the reviewed branch as a draft PR and use its Maven PR Tests result to finish compile/test correction before owner handoff.
+- Validate the final documentation-inclusive PR #261 head, then complete `doc/P16-S9-inventory-movement-accounting-user-testing.md`. Keep P16-S10 blocked until owner acceptance and merge.
 
 ## P16-S10 — Authoritative Journal cleared-state projection
 
