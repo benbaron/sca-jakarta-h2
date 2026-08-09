@@ -239,7 +239,6 @@ public class BankTransactionsPanel implements AppPanel
         exportActions.requestExport(account.id(), fromDate, throughDate, format);
     }
 
-
     private void updateAcceptanceEnablement()
     {
         List<BankReviewQueryService.ReviewRow> selected = selectedRows();
@@ -261,8 +260,9 @@ public class BankTransactionsPanel implements AppPanel
         BankReviewQueryService.ReviewRow row = selected.get(0);
         try
         {
+            ReviewedStatementAcceptanceService acceptanceService = this.acceptanceService.get();
             ReviewedStatementAcceptanceService.AcceptancePreview preview =
-                    acceptanceService.get().preview(companyCode.get(), row.statementLineId());
+                    acceptanceService.preview(companyCode.get(), row.statementLineId());
             if (!preview.eligible())
             {
                 status.setText("Reviewed row cannot be accepted: " + preview.eligibilityMessage());
@@ -286,8 +286,11 @@ public class BankTransactionsPanel implements AppPanel
         status.setText("Creating canonical transaction from reviewed row " + preview.statementLineId() + "...");
         UiAsync.run(
                 "bank-review-accept-" + preview.statementLineId(),
-                () -> acceptanceService.get().accept(
-                        preview, draft.command(), draft.probableDuplicateConfirmed(), "ui"),
+                () -> {
+                    ReviewedStatementAcceptanceService acceptanceService = this.acceptanceService.get();
+                    return acceptanceService.accept(
+                            preview, draft.command(), draft.probableDuplicateConfirmed(), "ui");
+                },
                 result -> {
                     reload();
                     status.setText(result.message());
