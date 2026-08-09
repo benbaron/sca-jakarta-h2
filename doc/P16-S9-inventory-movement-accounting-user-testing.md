@@ -51,16 +51,17 @@ Use a disposable database with one active company, an active inventory account, 
 - Local Java syntax parsing and `git diff --check` passed for the changed production and test scope.
 - Initial PR head `73c261635917372c8e34452d8e65f6b24b93378b` reached the full suite but exposed two obsolete transaction-correction fixtures that used a pre-canonical sign for a credit-normal income credit. The corrected fixtures use the same normal-balance-relative storage convention as `TransactionEntryService`; production balance validation was not weakened.
 - Exact corrected implementation head `3c2c6663b0f0c5b28c9d7bb877cfe9197b225412` passed Maven PR Tests run `31337956279`, including clean headless `mvn clean verify` (593 tests, 0 failures/errors, 31 skips), the deliberately repeated 593-test suite, and the 9-test production JavaFX route/source compliance suite.
+- Exact final PR head `75fb30ed1fe2c7e118e20774608524db211c8ce4` passed Maven PR Tests run `31338180450` before PR #261 merged at `05ff95be58c650072c308670840b389d72f7c0c1`.
 
 ## Acceptance record
 
-- [ ] A. Frozen financial preview/receipt/cancel/drill-through passed
-- [ ] B. Issue and adjustment direction/negative/no-op guards passed
-- [ ] C. Explicit zero-value nonfinancial behavior passed
-- [ ] D. Atomicity, close, reconciliation, company, and restart guards passed
-- [ ] E. Canonical immutable correction passed
-- [ ] F. Item edit and SCLX no-duplicate integrity passed
-- [x] Exact tested PR head recorded: `3c2c6663b0f0c5b28c9d7bb877cfe9197b225412` / Maven PR Tests `31337956279`
-- [ ] Owner acceptance recorded
+- [x] A. Frozen financial preview/receipt/cancel/drill-through passed
+- [x] B. Issue and adjustment direction/negative/no-op guards passed
+- [x] C. Explicit zero-value nonfinancial behavior passed
+- [x] D. Atomicity, close, reconciliation, company, and restart guards passed
+- [x] E. Canonical immutable correction passed
+- [x] F. Item edit and SCLX no-duplicate integrity passed
+- [x] Exact tested PR head recorded: `75fb30ed1fe2c7e118e20774608524db211c8ce4` / Maven PR Tests `31338180450`
+- [x] Owner acceptance recorded on 2026-08-09
 
-Do not mark P16-S9 DONE or begin P16-S10 until this checklist is accepted and the P16-S9 PR has merged.
+P16-S9 is accepted and merged. P16-S10 began from the exact merged `main` commit recorded in `doc/PLAN.md`.

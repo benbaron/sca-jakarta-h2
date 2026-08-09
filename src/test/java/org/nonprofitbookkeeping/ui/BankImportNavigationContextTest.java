@@ -19,6 +19,8 @@ public class BankImportNavigationContextTest
         assertEquals(9007L, request.orElseThrow().reconciliationSessionId());
         assertEquals(9007L, BankImportNavigationContext.parseReconciliationReturn(
                 BankImportNavigationContext.returnToReconciliation(9007L)).orElseThrow());
+        assertEquals(9007L, BankImportNavigationContext.parseReconciliationSession(
+                BankImportNavigationContext.forReconciliationSession(9007L)).orElseThrow());
     }
 
     @Test
@@ -29,5 +31,7 @@ public class BankImportNavigationContextTest
                 "bank-import:account=abc;reconciliation=4").isEmpty());
         assertFalse(BankImportNavigationContext.parseReconciliationReturn(
                 "bank-import-return:reconciliation=0").isPresent());
+        assertFalse(BankImportNavigationContext.parseReconciliationSession(
+                "reconciliation:session=not-a-number").isPresent());
     }
 }

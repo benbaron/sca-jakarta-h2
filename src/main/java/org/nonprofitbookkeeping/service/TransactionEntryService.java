@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.BudgetCategory;
 import org.nonprofitbookkeeping.model.Counterparty;
@@ -20,7 +21,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -443,9 +446,11 @@ public class TransactionEntryService
                                 "left join fetch s.budgetCategory " +
                                 "left join fetch s.activity " +
                                 "left join fetch s.merchant " +
+                                "left join fetch s.matchedBankStatementLine " +
                                 "where s.txn = :txn order by s.id", TxnSplit.class)
                 .setParameter("txn", txn)
                 .getResultList();
+        Map<Long, Long> reconciliationSessions = reconciliationSessions(em, txn.getId());
         List<TransactionView.Line> lines = new ArrayList<>();
         for (TxnSplit split : splits)
         {
@@ -480,7 +485,9 @@ public class TransactionEntryService
                     split.getBudgetCategory() == null ? null : split.getBudgetCategory().getId(),
                     split.getActivity() == null ? null : split.getActivity().getId(),
                     split.getMerchant() == null ? null : split.getMerchant().getId(),
-                    debit, credit, split.isNmr(), split.getNotes()));
+                    debit, credit, split.isNmr(), split.getNotes(),
+                    split.getAccount().getAccountType() == AccountType.BANK,
+                    split.isBankCleared(), split.getBankClearedOn(), reconciliationSessions.get(split.getId())));
         }
         List<TxnSupplementalLine> supplementalEntities = em.createQuery(
                         "from TxnSupplementalLine l where l.txn = :txn order by l.lineOrder, l.id", TxnSupplementalLine.class)
@@ -500,6 +507,35 @@ public class TransactionEntryService
                 payee == null ? null : payee.getDisplayName(), txn.getMemo(),
                 bankAccount == null ? null : bankAccount.getId(), bankAccount == null ? null : bankAccount.getName(),
                 txn.getStatus(), lines, supplementalLines);
+    }
+
+    private static Map<Long, Long> reconciliationSessions(EntityManager em, long transactionId)
+    {
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = em.createNativeQuery("""
+                select m.txn_split_id, m.session_id
+                  from bank_reconciliation_match m
+                  join bank_reconciliation_session s on s.id = m.session_id
+                  join txn_split ts on ts.id = m.txn_split_id
+                  join txn t on t.id = ts.txn_id
+                  join company_bank_account cba on cba.id = s.bank_account_id
+                 where ts.txn_id = ?
+                   and s.company_id = t.company_id
+                   and cba.company_id = t.company_id
+                   and cba.account_id = ts.account_id
+                   and m.txn_split_id is not null
+                   and m.match_status in
+                       ('MATCHED', 'AMOUNT_MISMATCH', 'DATE_MISMATCH', 'CLEARED_STATE_MISMATCH', 'RESOLVED')
+                 order by s.statement_end_date desc, s.id desc, m.id desc
+                """)
+                .setParameter(1, transactionId)
+                .getResultList();
+        Map<Long, Long> sessions = new LinkedHashMap<>();
+        for (Object[] row : rows)
+        {
+            sessions.putIfAbsent(((Number) row[0]).longValue(), ((Number) row[1]).longValue());
+        }
+        return sessions;
     }
 
     private static void requireNotReconciled(EntityManager em, long transactionId, String operation)

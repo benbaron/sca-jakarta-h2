@@ -160,6 +160,8 @@ The panel exposes a disabled Delete explanation instead of a destructive delete 
 
 P05-S4 adds cleared-state columns to canonical `txn_split` rows. A matched imported statement line may mark only the split whose account equals the configured bank account's linked Chart of Accounts account. The imported statement row records the matched transaction for traceability, but the cleared flag and cleared date live on the ledger split.
 
+P16-S10 makes those existing split facts visible in the canonical Journal projection. Transactions with no BANK lines display `Not bank`; bank transactions display `Uncleared`, `Cleared`, or `Mixed` according to all BANK lines. The entry-line detail shows each bank line's cleared date, and an exact company/account-consistent reconciliation match may drill to its durable session. Refresh or reopening Journal re-queries H2 after reconciliation changes; Journal receives no cleared-state mutation authority.
+
 ## P06-S1 reconciliation workflow note
 
 P06 starts by removing approval/rejection semantics from the Reconciliation Runs workspace. Reconciliation remains a comparison workflow over configured bank accounts, imported/manual statement facts, and canonical ledger bank lines; it does not create an approve/reject queue or write approval decisions. The current run list may record started/completed/failed run facts while later P06 slices add configured-account comparison, mismatch resolution, and saved unresolved reconciliation reports.

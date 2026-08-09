@@ -1,12 +1,12 @@
 ---
-plan_version: 146
+plan_version: 147
 active_phase: P16
-active_slice: P16-S9
-active_status: VERIFYING
-active_branch: codex/P16-S9-inventory-movement-accounting
-active_pull_request: 261
-active_head: 3c2c6663b0f0c5b28c9d7bb877cfe9197b225412
-next_action: "Validate the final documentation-inclusive PR #261 head, then complete doc/P16-S9-inventory-movement-accounting-user-testing.md. Keep P16-S10 blocked until P16-S9 owner acceptance and merge."
+active_slice: P16-S10
+active_status: IN_PROGRESS
+active_branch: codex/P16-S10-journal-cleared-state
+active_pull_request: null
+active_head: 05ff95be58c650072c308670840b389d72f7c0c1
+next_action: "Implement and verify the authoritative Journal cleared-state projection on P16-S10, then open a draft PR and complete its automated and owner desktop gates."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S9; P16-S8 DONE through PR #260 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S10; P16-S9 DONE through PR #261 |
 
 ## 4. Governing documents
 
@@ -1879,7 +1879,7 @@ Required behavior: genuine Inventory item add/edit and movement history, no runb
 # P16 — Interface-to-authority completion and integrity corrections
 
 **Selector:** `PHASE=P16`  
-**Status:** IN_PROGRESS through P16-S9; P16-S8 DONE through PR #260
+**Status:** IN_PROGRESS through P16-S10; P16-S9 DONE through PR #261
 **Depends on:** P03 through P15 except eliminated P07
 
 ## Purpose
@@ -2338,12 +2338,14 @@ Next exact action:
 
 ## P16-S9 — Financially relevant inventory movements
 
-Status: VERIFYING in draft PR #261.
+Status: DONE through merged PR #261 and owner desktop acceptance.
 
 Starting base: `2edc47d862643b5e131a7825dbf7b6e5b662febe`
 Branch: `codex/P16-S9-inventory-movement-accounting`
 Pull request: #261
 Validated implementation head: `3c2c6663b0f0c5b28c9d7bb877cfe9197b225412`
+Final tested PR head: `75fb30ed1fe2c7e118e20774608524db211c8ce4`
+Merged `main` commit: `05ff95be58c650072c308670840b389d72f7c0c1`
 
 Purpose: keep physical quantity and general-ledger inventory value synchronized when a movement has an accounting effect.
 
@@ -2372,15 +2374,18 @@ Execution state:
 - Local Java syntax parsing and `git diff --check` pass. Java 17 is present, but the container has no Maven executable or wrapper, so the GitHub Maven PR Tests workflow is the authoritative compile/test environment. Publication uses local Git plus the connected GitHub service; no `gh` CLI is required.
 - Initial PR head `73c261635917372c8e34452d8e65f6b24b93378b` exposed two obsolete transaction-correction fixtures that stored a credit-normal income credit with the pre-canonical negative sign. The fixtures and reversal expectation now use the same normal-balance-relative storage convention as `TransactionEntryService`; the production canonical balance validation remains intact.
 - Exact corrected implementation head `3c2c6663b0f0c5b28c9d7bb877cfe9197b225412` passed Maven PR Tests run `31337956279`: clean headless `mvn clean verify` passed with 593 tests, 0 failures/errors, and 31 skips; the deliberately repeated 593-test suite passed; and the 9-test production JavaFX route/source compliance suite passed.
-- `doc/P16-S9-inventory-movement-accounting-user-testing.md` records the automated validation and remains pending owner desktop acceptance.
+- Exact final PR head `75fb30ed1fe2c7e118e20774608524db211c8ce4` passed Maven PR Tests run `31338180450`, including clean headless `mvn clean verify`, the deliberately repeated test suite, and production JavaFX route compliance.
+- The owner completed and accepted `doc/P16-S9-inventory-movement-accounting-user-testing.md` on 2026-08-09, and PR #261 merged to `main` at `05ff95be58c650072c308670840b389d72f7c0c1`.
 
 Next exact action:
 
-- Validate the final documentation-inclusive PR #261 head, then complete `doc/P16-S9-inventory-movement-accounting-user-testing.md`. Keep P16-S10 blocked until owner acceptance and merge.
+- None; P16-S9 is DONE and P16-S10 is active.
 
 ## P16-S10 — Authoritative Journal cleared-state projection
 
-Status: BLOCKED by P16-S9.
+Status: IN_PROGRESS on branch `codex/P16-S10-journal-cleared-state`.
+
+Starting base: `05ff95be58c650072c308670840b389d72f7c0c1`
 
 Purpose: replace the hard-coded `Uncleared` value with facts from canonical transaction splits.
 
@@ -2397,6 +2402,19 @@ Acceptance and tests:
 - Transactions with zero, one, or multiple bank splits render exact states and dates after restart.
 - Reconciliation changes are reflected on refresh and remain company/account isolated.
 - No bank transaction is labeled Uncleared merely because the projection omitted data.
+
+Execution state:
+
+- P16-S9 owner acceptance and merge are recorded; S10 began from exact merged `main` commit `05ff95be58c650072c308670840b389d72f7c0c1` on a fresh branch.
+- `TransactionView.Line` now carries service-projected BANK classification, `TxnSplit.bankCleared`, `bankClearedOn`, and an optional durable reconciliation-session ID selected only through company/account-consistent native reconciliation facts.
+- `TransactionView.clearedState()` summarizes all BANK lines as `Not bank`, `Uncleared`, `Cleared`, or `Mixed`; Journal no longer infers state from the transaction header or hard-codes `Uncleared`.
+- The integrated entry-line table shows read-only bank state and company-formatted cleared date. **Open Selected Line Reconciliation** is enabled only for a projected durable session and routes the exact session into the existing reconciliation workspace; Journal gains no cleared-state write path.
+- Focused H2 coverage exercises the four summary states, line dates, exact reconciliation-session projection, and restart persistence. Source guards prohibit the former hard-coded expression and require service-owned facts/navigation. The owner checklist is `doc/P16-S10-journal-cleared-state-user-testing.md`.
+- Local `git diff --check` passes. This container has a Java 17 runtime but no Maven executable, wrapper, or Java compiler, so GitHub Maven PR Tests is the authoritative compile/test environment.
+
+Next exact action:
+
+- Review and publish the P16-S10 branch as a draft PR, run the complete Maven PR Tests workflow, correct any failures on the same branch, then complete the owner desktop checklist before merge. Keep P16-S11 blocked.
 
 ## P16-S11 — Production preference consumers
 

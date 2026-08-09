@@ -242,6 +242,10 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
             {
                 column.setCellFactory(ignored -> new MoneyEditCell(format));
             }
+            else if ("journalWorkspaceEntryLineTable".equals(tableId) && "clearedOn".equals(key))
+            {
+                column.setCellFactory(ignored -> new ReadOnlyDateCell(format));
+            }
             else if (tableId.startsWith("journalWorkspaceSupplemental"))
             {
                 if ("amount".equals(key))

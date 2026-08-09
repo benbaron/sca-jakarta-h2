@@ -108,6 +108,7 @@ public final class JournalWorkspacePanel implements AppPanel
     private final Button saveButton = new Button("Save Entry");
     private final Button deleteButton = new Button("Delete");
     private final Button removeLineButton = new Button("Remove Line");
+    private final Button drillReconciliationButton = new Button("Open Selected Line Reconciliation");
     private final SplitPane outerSplit = new SplitPane();
     private final SplitPane editorSplit = new SplitPane();
     private final SplitPane detailSplit = new SplitPane();
@@ -351,8 +352,9 @@ public final class JournalWorkspacePanel implements AppPanel
         Button duplicateLine = new Button("Duplicate Line");
         addLine.setOnAction(event -> addEditorLine(null));
         duplicateLine.setOnAction(event -> duplicateSelectedLine());
+        drillReconciliationButton.setOnAction(event -> openSelectedLineReconciliation());
         removeLineButton.setOnAction(event -> removeSelectedLine());
-        ToolBar tools = new ToolBar(addLine, duplicateLine, removeLineButton);
+        ToolBar tools = new ToolBar(addLine, duplicateLine, removeLineButton, drillReconciliationButton);
         VBox region = new VBox(6, sectionHeading("Entry Lines"), tools, lineTable);
         region.setPadding(new Insets(4));
         region.setMinSize(0, 0);
@@ -373,6 +375,10 @@ public final class JournalWorkspacePanel implements AppPanel
         lineTable.getColumns().add(optionColumn("Fund", "fund", 185,
                 EditorLine::fundProperty,
                 () -> referenceData.funds()));
+        lineTable.getColumns().add(readOnlyTextColumn("Bank state", "bankState", 115,
+                EditorLine::bankStateProperty));
+        lineTable.getColumns().add(readOnlyTextColumn("Cleared on", "clearedOn", 120,
+                EditorLine::clearedOnProperty));
         lineTable.getColumns().add(optionColumn("Budget", "budget", 170,
                 EditorLine::budgetProperty,
                 () -> referenceData.budgetCategories()));
@@ -456,6 +462,19 @@ public final class JournalWorkspacePanel implements AppPanel
             recalculateTotals();
             lineTable.refresh();
         });
+    }
+
+    private TableColumn<EditorLine, String> readOnlyTextColumn(
+            String title,
+            String key,
+            double width,
+            Function<EditorLine, StringProperty> property)
+    {
+        TableColumn<EditorLine, String> column = new TableColumn<>(title);
+        configureColumn(column, key, width);
+        column.setEditable(false);
+        column.setCellValueFactory(value -> property.apply(value.getValue()));
+        return column;
     }
 
     private TableColumn<EditorLine, String> textColumn(
@@ -791,8 +810,26 @@ public final class JournalWorkspacePanel implements AppPanel
         row.setCredit(line.credit().signum() == 0 ? "" : normalizeMoney(line.credit().toPlainString()));
         row.setNmr(line.nmr());
         row.setNotes(safe(line.notes()));
+        row.setBankState(line.clearedDisplay());
+        row.setClearedOn(line.bankClearedOn() == null ? "" : line.bankClearedOn().toString());
+        row.setReconciliationSessionId(line.reconciliationSessionId());
         attachLineListeners(row);
         return row;
+    }
+
+    private void openSelectedLineReconciliation()
+    {
+        EditorLine selected = lineTable.getSelectionModel().getSelectedItem();
+        if (selected == null || selected.getReconciliationSessionId() == null)
+        {
+            status.setText("Select a persisted bank line with a durable reconciliation match.");
+            return;
+        }
+        long sessionId = selected.getReconciliationSessionId();
+        DrillThroughCoordinator.openPanelWithContext(
+                AppPanelId.RECONCILIATION_RUNS,
+                BankImportNavigationContext.forReconciliationSession(sessionId));
+        status.setText("Opening reconciliation session #" + sessionId + ".");
     }
 
     private void saveCurrentEntry()
@@ -1195,6 +1232,9 @@ public final class JournalWorkspacePanel implements AppPanel
         editButton.setDisable(journalTable.getSelectionModel().getSelectedItem() == null);
         deleteButton.setDisable(editTransactionId == null && journalTable.getSelectionModel().getSelectedItem() == null);
         removeLineButton.setDisable(lineTable.getSelectionModel().getSelectedItem() == null || lineTable.getItems().size() <= 2);
+        EditorLine selectedLine = lineTable.getSelectionModel().getSelectedItem();
+        drillReconciliationButton.setDisable(
+                selectedLine == null || selectedLine.getReconciliationSessionId() == null);
         deleteButton.setText(deleteActionLabel());
     }
 
@@ -1827,7 +1867,7 @@ public final class JournalWorkspacePanel implements AppPanel
 
         String cleared()
         {
-            return view.bankAccountId() == null ? "" : "Uncleared";
+            return view.clearedState().displayText();
         }
 
         String debits()
@@ -1872,6 +1912,9 @@ public final class JournalWorkspacePanel implements AppPanel
         private final StringProperty credit = new SimpleStringProperty("");
         private final BooleanProperty nmr = new SimpleBooleanProperty(false);
         private final StringProperty notes = new SimpleStringProperty("");
+        private final StringProperty bankState = new SimpleStringProperty("");
+        private final StringProperty clearedOn = new SimpleStringProperty("");
+        private Long reconciliationSessionId;
 
         ObjectProperty<TransactionLineEditorModel.Option> accountProperty() { return account; }
         ObjectProperty<TransactionLineEditorModel.Option> fundProperty() { return fund; }
@@ -1882,6 +1925,8 @@ public final class JournalWorkspacePanel implements AppPanel
         StringProperty creditProperty() { return credit; }
         BooleanProperty nmrProperty() { return nmr; }
         StringProperty notesProperty() { return notes; }
+        StringProperty bankStateProperty() { return bankState; }
+        StringProperty clearedOnProperty() { return clearedOn; }
 
         TransactionLineEditorModel.Option getAccount() { return account.get(); }
         void setAccount(TransactionLineEditorModel.Option value) { account.set(value); }
@@ -1901,6 +1946,10 @@ public final class JournalWorkspacePanel implements AppPanel
         void setNmr(boolean value) { nmr.set(value); }
         String getNotes() { return notes.get(); }
         void setNotes(String value) { notes.set(safe(value)); }
+        void setBankState(String value) { bankState.set(safe(value)); }
+        void setClearedOn(String value) { clearedOn.set(safe(value)); }
+        Long getReconciliationSessionId() { return reconciliationSessionId; }
+        void setReconciliationSessionId(Long value) { reconciliationSessionId = value; }
 
         boolean hasAnyInput()
         {

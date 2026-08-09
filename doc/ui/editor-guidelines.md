@@ -27,9 +27,9 @@ The production Accounting navigation exposes one **Journal** destination. `LEDGE
 
 The Journal workspace contains:
 
-1. A grouped transaction journal with date and text filters. One row represents one complete canonical transaction and displays account lines, funds, debit and credit lines, transaction ID, supplemental count, and memo/details.
+1. A grouped transaction journal with date and text filters. One row represents one complete canonical transaction and displays account lines, funds, authoritative `Not bank`/`Uncleared`/`Cleared`/`Mixed` state, debit and credit lines, transaction ID, supplemental count, and memo/details.
 2. An integrated New/Edit header with date, memo, transaction identity/status, live debit/credit/difference totals, and validation text.
-3. An editable entry-line table with Add Line, Duplicate Line, Remove Line, stable-ID reference selectors, one-sided Debit/Credit behavior, NMR, notes, and per-company table state.
+3. An editable entry-line table with Add Line, Duplicate Line, Remove Line, stable-ID reference selectors, one-sided Debit/Credit behavior, NMR, notes, read-only persisted bank state/cleared date, exact-session reconciliation drill-through when available, and per-company table state. Journal never edits the read-only reconciliation facts.
 4. An Additional Details region containing only transaction fields currently backed by H2 services.
 5. Persisted supplemental-detail regions for Receivable, Payable, Prepaid Expense, Deferred Revenue, Other Asset, and Other Liability.
 

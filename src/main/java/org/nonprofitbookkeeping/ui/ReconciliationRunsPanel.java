@@ -116,6 +116,21 @@ public class ReconciliationRunsPanel implements AppPanel
     public void onPanelShown()
     {
         String context = DrillThroughCoordinator.consumeContext(AppPanelId.RECONCILIATION_RUNS);
+        var requestedSession = BankImportNavigationContext.parseReconciliationSession(context);
+        if (requestedSession.isPresent())
+        {
+            try
+            {
+                long sessionId = requestedSession.getAsLong();
+                apply(service().load(sessionId));
+                status.setText("Loaded reconciliation session #" + sessionId + " from Journal cleared-state detail.");
+            }
+            catch (RuntimeException ex)
+            {
+                status.setText("Could not load the Journal reconciliation: " + UiErrors.safeMessage(ex));
+            }
+            return;
+        }
         var returnSession = BankImportNavigationContext.parseReconciliationReturn(context);
         if (returnSession.isPresent())
         {
