@@ -39,7 +39,9 @@ public final class PanelFactory
                         services.bankReviewQueryService(),
                         services.context()::activeCompanyCode,
                         services::bankConfigurationService,
-                        services.bankStatementExportActions()));
+                        services.bankStatementExportActions(),
+                        services::reviewedStatementAcceptanceService,
+                        services::transactionReferenceDataService));
     }
 
     PanelFactory(CompanySessionController companySessionController)

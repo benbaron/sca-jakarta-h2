@@ -26,11 +26,12 @@ public final class BankReviewQueryService
                             select l.id, b.id, b.sourceName, a.name,
                                    l.sourceTransactionId, l.transactionDate, l.postedDate,
                                    l.amount, l.currency, l.transactionType, l.name, l.memo,
-                                   l.status, mt.id
+                                   l.status, mt.id, acceptedTxn.id
                               from BankStatementLine l
                               join l.batch b
                               left join l.bankAccount a
                               left join l.matchedTransaction mt
+                              left join l.acceptedTransaction acceptedTxn
                              where l.company.code = :companyCode
                              order by coalesce(l.postedDate, l.transactionDate) desc,
                                       l.sourceTransactionId, l.deterministicFingerprint, l.id
@@ -43,7 +44,7 @@ public final class BankReviewQueryService
                             (String) row[4], (LocalDate) row[5], (LocalDate) row[6],
                             (BigDecimal) row[7], (String) row[8], (String) row[9],
                             (String) row[10], (String) row[11],
-                            ((BankStatementLine.Status) row[12]).name(), (Long) row[13]))
+                            ((BankStatementLine.Status) row[12]).name(), (Long) row[13], (Long) row[14]))
                     .toList();
         }
     }
@@ -100,7 +101,8 @@ public final class BankReviewQueryService
             String payeeName,
             String memo,
             String status,
-            Long matchedTransactionId) { }
+            Long matchedTransactionId,
+            Long acceptedTransactionId) { }
 
     public record ReviewSummary(
             long batchCount,

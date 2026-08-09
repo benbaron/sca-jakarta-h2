@@ -202,7 +202,7 @@ Output is deterministic for a fixed request and operation timestamp, secure XML,
 
 Creating a review batch is one transaction. Preview is in-memory. No parser, mapper, normalizer, or batch-creation operation automatically creates `Txn` or `TxnSplit`.
 
-A later explicit accept/match operation may invoke canonical transaction services under current transaction, correction, period-close, and reconciliation protections. That later action is outside raw statement parsing.
+P16-S8 supplies the later explicit acceptance operation. **Create Transaction from Reviewed Row…** freezes one active-company/configured-account reviewed row, pre-fills its canonical bank split, and requires the user to complete a balanced `TransactionCommand`. Commit revalidates the frozen source, ownership, duplicate state, matched/accepted state, closed period, and finalized-reconciliation range, then uses `TransactionEntryService` inside one caller-owned transaction. The canonical transaction, existing `accepted_txn_id` link, `ACCEPTED` review state, batch disposition, and factual audit event commit together or roll back together. A successful retry reuses the same accepted transaction. Probable duplicates require explicit confirmation; exact duplicates remain blocked. Acceptance does not mark the bank split cleared or create a reconciliation match. Batch auto-posting and unattended posting rules remain outside the contract.
 
 ## 14. Determinism, atomic writing, and results
 

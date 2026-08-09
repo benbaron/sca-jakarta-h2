@@ -95,6 +95,8 @@ public final class WorkspaceServicesFactory
                 UiServiceRegistry::bankCsvReview,
                 UiServiceRegistry::bankCsvMappingProfiles,
                 UiServiceRegistry::normalizedBankCsvReview,
-                UiServiceRegistry::bankReviewQuery);
+                UiServiceRegistry::bankReviewQuery,
+                UiServiceRegistry::reviewedStatementAcceptance,
+                UiServiceRegistry::transactionReferenceData);
     }
 }

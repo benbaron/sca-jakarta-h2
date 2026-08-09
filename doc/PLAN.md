@@ -1,12 +1,12 @@
 ---
-plan_version: 142
+plan_version: 143
 active_phase: P16
-active_slice: P16-S7
-active_status: VERIFYING
-active_branch: codex/P16-S7-factual-audit-history-authority
-active_pull_request: 259
-active_head: e140aae3c1d07ceeabbc93d179489d03faa15896
-next_action: "Validate the final P16-S7 documentation-inclusive PR #259 head, then complete doc/P16-S7-factual-audit-history-authority-user-testing.md. Keep P16-S8 blocked until P16-S7 is accepted and merged."
+active_slice: P16-S8
+active_status: IN_PROGRESS
+active_branch: codex/P16-S8-reviewed-statement-ledger-acceptance
+active_pull_request: null
+active_head: 01b37364d68ea9388c8b704dadd442cb0122b3db
+next_action: "Implement P16-S8 from merged S7 main: add explicit reviewed-row preview/atomic canonical transaction acceptance with idempotent accepted_txn_id linkage, duplicate/close/finalized-reconciliation revalidation, UI completion, focused tests, and the full Maven gate. Keep P16-S9 blocked."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S7; P16-S6 DONE through PR #258 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S8; P16-S7 DONE through PR #259 |
 
 ## 4. Governing documents
 
@@ -1879,7 +1879,7 @@ Required behavior: genuine Inventory item add/edit and movement history, no runb
 # P16 — Interface-to-authority completion and integrity corrections
 
 **Selector:** `PHASE=P16`  
-**Status:** IN_PROGRESS through P16-S5; P16-S4 DONE through PR #256  
+**Status:** IN_PROGRESS through P16-S8; P16-S7 DONE through PR #259
 **Depends on:** P03 through P15 except eliminated P07
 
 ## Purpose
@@ -2253,11 +2253,13 @@ Next exact action:
 
 ## P16-S7 — Factual Audit History authority
 
-Status: VERIFYING in draft PR #259.
+Status: DONE through merged PR #259 and owner desktop acceptance.
 
 Starting base: `4edb463a5e7ca80d91381e8f941413703b6237be`
 Pull request: #259
 Validated implementation head: `e140aae3c1d07ceeabbc93d179489d03faa15896`
+Final tested PR head: `92fa35a6d434f2ab06fb38e09629da3dcc419e2a`
+Merge commit: `01b37364d68ea9388c8b704dadd442cb0122b3db`
 
 Purpose: show current `audit_event` facts in Audit History instead of presenting the obsolete approval table as current history.
 
@@ -2283,14 +2285,18 @@ Execution state:
 - Legacy `approval_audit_record` persistence and compatibility classes remain stored compatibility structures only; the production panel and `UiServiceRegistry` no longer query or expose the legacy approval service, and legacy rows are not blended into factual history.
 - Focused H2/JPA restart, company-isolation, global-event exclusion, filter, and production-source guard tests are included with `doc/audit/audit-history.md` and `doc/P16-S7-factual-audit-history-authority-user-testing.md`.
 - Exact implementation head `e140aae3c1d07ceeabbc93d179489d03faa15896` passed Maven PR Tests run `31282119224`, including clean headless `mvn clean verify`, the deliberately repeated test suite, and production JavaFX route compliance.
+- Exact final PR head `92fa35a6d434f2ab06fb38e09629da3dcc419e2a` passed Maven PR Tests run `31282307364`, including clean headless `mvn clean verify`, the deliberately repeated test suite, and production JavaFX route compliance.
+- The owner completed and accepted `doc/P16-S7-factual-audit-history-authority-user-testing.md` on 2026-08-08, and PR #259 merged to `main` at `01b37364d68ea9388c8b704dadd442cb0122b3db`.
 
 Next exact action:
 
-- Validate the final documentation-inclusive PR #259 head, then complete `doc/P16-S7-factual-audit-history-authority-user-testing.md`. Keep P16-S8 blocked until owner acceptance and merge.
+- None; P16-S7 is DONE and P16-S8 is active.
 
 ## P16-S8 — Explicit reviewed-statement acceptance into the ledger
 
-Status: BLOCKED by P16-S7.
+Status: IN_PROGRESS on `codex/P16-S8-reviewed-statement-ledger-acceptance`.
+
+Starting base: `01b37364d68ea9388c8b704dadd442cb0122b3db`
 
 Purpose: let a user turn one reviewed bank statement row into a canonical transaction without automatic posting or re-keying.
 
@@ -2309,6 +2315,18 @@ Acceptance and tests:
 - Explicit acceptance creates exactly one balanced transaction and one durable link; cancellation or late failure creates neither.
 - Exact/probable duplicates, already matched rows, closed periods, finalized reconciliations, and cross-company IDs are blocked or require the governed explicit resolution.
 - Batch auto-posting and rule-driven unattended posting remain out of scope.
+
+Execution state:
+
+- S7 owner acceptance and merge are recorded; S8 began from exact merged `main` commit `01b37364d68ea9388c8b704dadd442cb0122b3db` on a fresh branch.
+- The existing `bank_statement_line.accepted_txn_id` relationship is the durable acceptance link; S8 adds no schema, queue, or parallel ledger/import store.
+- `ReviewedStatementAcceptanceService` freezes source identity in a non-mutating preview, revalidates company/account/source/duplicate/close/finalized-reconciliation state under a row lock, calls canonical `TransactionEntryService` inside one caller-owned transaction, then links the row, sets `ACCEPTED`, updates batch disposition, and writes a factual acceptance audit event atomically.
+- Probable duplicates require explicit confirmation; exact duplicates, already matched rows, finalized reconciliation ranges, foreign-company IDs, unsupported currency conversion, and canonical closed-period/reference/balance failures remain blocked. Successful retries reuse the existing accepted transaction.
+- Bank Transactions exposes the explicit acceptance dialog with a frozen source summary, prefilled bank split, editable balanced counter splits/reference data, and Journal drill-through after successful commit. Import remains non-posting.
+
+Next exact action:
+
+- Complete focused service/UI/source tests and governing documentation, publish draft PR, and run the full Maven gate. Keep P16-S9 blocked until S8 owner acceptance and merge.
 
 ## P16-S9 — Financially relevant inventory movements
 

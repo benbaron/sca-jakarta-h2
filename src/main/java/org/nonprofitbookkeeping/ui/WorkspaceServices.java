@@ -8,6 +8,8 @@ import org.nonprofitbookkeeping.interchange.bank.BankReviewQueryService;
 import org.nonprofitbookkeeping.interchange.bank.BankStatementReviewService;
 import org.nonprofitbookkeeping.interchange.bank.NormalizedBankCsvReviewService;
 import org.nonprofitbookkeeping.service.BankConfigurationService;
+import org.nonprofitbookkeeping.service.ReviewedStatementAcceptanceService;
+import org.nonprofitbookkeeping.service.TransactionReferenceDataService;
 import org.nonprofitbookkeeping.service.dashboard.DashboardQueryService;
 import org.nonprofitbookkeeping.service.DiagnosticsQueryService;
 
@@ -35,6 +37,8 @@ public final class WorkspaceServices
     private final Supplier<BankCsvMappingProfileService> bankCsvMappingProfileService;
     private final Supplier<NormalizedBankCsvReviewService> normalizedBankCsvReviewService;
     private final Supplier<BankReviewQueryService> bankReviewQueryService;
+    private final Supplier<ReviewedStatementAcceptanceService> reviewedStatementAcceptanceService;
+    private final Supplier<TransactionReferenceDataService> transactionReferenceDataService;
 
     WorkspaceServices(
             WorkspaceContext context,
@@ -52,7 +56,9 @@ public final class WorkspaceServices
             Supplier<BankCsvReviewService> bankCsvReviewService,
             Supplier<BankCsvMappingProfileService> bankCsvMappingProfileService,
             Supplier<NormalizedBankCsvReviewService> normalizedBankCsvReviewService,
-            Supplier<BankReviewQueryService> bankReviewQueryService)
+            Supplier<BankReviewQueryService> bankReviewQueryService,
+            Supplier<ReviewedStatementAcceptanceService> reviewedStatementAcceptanceService,
+            Supplier<TransactionReferenceDataService> transactionReferenceDataService)
     {
         this.context = Objects.requireNonNull(context, "context");
         this.databaseSessionController = Objects.requireNonNull(databaseSessionController, "databaseSessionController");
@@ -74,6 +80,10 @@ public final class WorkspaceServices
         this.normalizedBankCsvReviewService = Objects.requireNonNull(
                 normalizedBankCsvReviewService, "normalizedBankCsvReviewService");
         this.bankReviewQueryService = Objects.requireNonNull(bankReviewQueryService, "bankReviewQueryService");
+        this.reviewedStatementAcceptanceService = Objects.requireNonNull(
+                reviewedStatementAcceptanceService, "reviewedStatementAcceptanceService");
+        this.transactionReferenceDataService = Objects.requireNonNull(
+                transactionReferenceDataService, "transactionReferenceDataService");
         this.panelFactory = new PanelFactory(this);
     }
 
@@ -141,4 +151,12 @@ public final class WorkspaceServices
         return normalizedBankCsvReviewService.get();
     }
     BankReviewQueryService bankReviewQueryService() { return bankReviewQueryService.get(); }
+    ReviewedStatementAcceptanceService reviewedStatementAcceptanceService()
+    {
+        return reviewedStatementAcceptanceService.get();
+    }
+    TransactionReferenceDataService transactionReferenceDataService()
+    {
+        return transactionReferenceDataService.get();
+    }
 }

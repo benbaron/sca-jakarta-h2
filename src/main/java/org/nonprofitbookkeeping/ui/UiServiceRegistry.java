@@ -42,6 +42,7 @@ import org.nonprofitbookkeeping.service.PeriodCloseRangeService;
 import org.nonprofitbookkeeping.service.PeriodCloseService;
 import org.nonprofitbookkeeping.service.ReconciliationComparisonService;
 import org.nonprofitbookkeeping.service.ReconciliationService;
+import org.nonprofitbookkeeping.service.ReviewedStatementAcceptanceService;
 import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
 import org.nonprofitbookkeeping.service.SampleCompanyService;
 import org.nonprofitbookkeeping.service.TransactionEntryService;
@@ -130,6 +131,12 @@ public final class UiServiceRegistry
     public static TransactionEntryService transactionEntry() { return services().transactionEntry(); }
     public static TransactionCorrectionService transactionCorrection() { return services().transactionCorrection(); }
     public static TransactionReferenceDataService transactionReferenceData() { return services().transactionReferenceData(); }
+    public static ReviewedStatementAcceptanceService reviewedStatementAcceptance()
+    {
+        ServiceBundle current = services();
+        return new ReviewedStatementAcceptanceService(
+                current.jpa(), current.transactionEntry(), UiServiceRegistry::activeCompanyCode);
+    }
     public static SampleCompanyService sampleCompany() { return services().sampleCompany(); }
     public static FinancialReportService financialReports() { return services().financialReports(); }
     public static DashboardQueryService dashboardQuery() { return services().dashboardQuery(); }
