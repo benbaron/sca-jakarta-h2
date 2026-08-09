@@ -24,10 +24,12 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          cat .github/p16-s8-patch/part00 .github/p16-s8-patch/part01 | base64 -d | gzip -d > /tmp/p16-s8.patch
+          cat .github/p16-s8-patch2/p00 .github/p16-s8-patch2/p01 .github/p16-s8-patch2/p02 .github/p16-s8-patch2/p03 .github/p16-s8-patch2/p04 .github/p16-s8-patch2/p05 .github/p16-s8-patch2/p06 .github/p16-s8-patch2/p07 .github/p16-s8-patch2/p08 > /tmp/payload.b64
+          echo "e622e546e58775c33ae6667c4baa5f284da935fa38cde35d11e0f815ef198a01  /tmp/payload.b64" | sha256sum -c -
+          base64 -d /tmp/payload.b64 | gzip -d > /tmp/p16-s8.patch
           git apply --check /tmp/p16-s8.patch
           git apply --index /tmp/p16-s8.patch
-          rm -rf .github/p16-s8-patch
+          rm -rf .github/p16-s8-patch .github/p16-s8-patch2
           rm .github/workflows/p16-s8-publish.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
