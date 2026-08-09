@@ -42,7 +42,9 @@ Use a disposable database with one configured bank account and imported durable 
 
 ## Automated validation record
 
-Pending exact S8 PR-head Maven validation.
+- Initial implementation head `e15ed7de60bf56880963e0813736d450d77d3ca7` reached the Maven verification suite but failed `ReviewedStatementAcceptanceSourceTest.bankTransactionsOffersOnlyExplicitReviewedRowAcceptance` because the production panel delegated through `acceptanceService.get().preview(...)` / `.accept(...)` while the source guard required explicit local-service delegation.
+- Corrected implementation head `73ce3a2a966f690490de705058916519a741b635` binds the injected supplier result to a local `ReviewedStatementAcceptanceService` and calls the existing `acceptanceService.preview(...)` / `acceptanceService.accept(...)` operations without changing the service contract or persistence authority.
+- Maven PR Tests run `31291318707` passed on exact head `73ce3a2a966f690490de705058916519a741b635`, including clean headless `mvn clean verify`, the deliberately repeated Maven test suite, and production JavaFX route compliance.
 
 ## Acceptance record
 
@@ -51,7 +53,7 @@ Pending exact S8 PR-head Maven validation.
 - [ ] C. Atomic accepted link/restart/drill-through passed
 - [ ] D. Duplicate, close, reconciliation, and company guards passed
 - [ ] E. Cancellation/failure non-mutation passed
-- [ ] Exact tested PR head recorded
+- [x] Exact tested PR head recorded
 - [ ] Owner acceptance recorded
 
 Do not mark P16-S8 DONE or begin P16-S9 until this checklist is accepted and the P16-S8 PR has merged.
