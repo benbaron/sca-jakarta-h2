@@ -1,12 +1,12 @@
 ---
-plan_version: 143
+plan_version: 144
 active_phase: P16
 active_slice: P16-S8
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P16-S8-reviewed-statement-ledger-acceptance
-active_pull_request: null
-active_head: 01b37364d68ea9388c8b704dadd442cb0122b3db
-next_action: "Implement P16-S8 from merged S7 main: add explicit reviewed-row preview/atomic canonical transaction acceptance with idempotent accepted_txn_id linkage, duplicate/close/finalized-reconciliation revalidation, UI completion, focused tests, and the full Maven gate. Keep P16-S9 blocked."
+active_pull_request: 260
+active_head: 73ce3a2a966f690490de705058916519a741b635
+next_action: "Complete doc/P16-S8-reviewed-statement-ledger-acceptance-user-testing.md on the validated PR #260 implementation. Keep P16-S9 blocked until P16-S8 owner acceptance and merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2294,9 +2294,11 @@ Next exact action:
 
 ## P16-S8 — Explicit reviewed-statement acceptance into the ledger
 
-Status: IN_PROGRESS on `codex/P16-S8-reviewed-statement-ledger-acceptance`.
+Status: VERIFYING in draft PR #260.
 
 Starting base: `01b37364d68ea9388c8b704dadd442cb0122b3db`
+Pull request: #260
+Validated implementation head: `73ce3a2a966f690490de705058916519a741b635`
 
 Purpose: let a user turn one reviewed bank statement row into a canonical transaction without automatic posting or re-keying.
 
@@ -2323,10 +2325,13 @@ Execution state:
 - `ReviewedStatementAcceptanceService` freezes source identity in a non-mutating preview, revalidates company/account/source/duplicate/close/finalized-reconciliation state under a row lock, calls canonical `TransactionEntryService` inside one caller-owned transaction, then links the row, sets `ACCEPTED`, updates batch disposition, and writes a factual acceptance audit event atomically.
 - Probable duplicates require explicit confirmation; exact duplicates, already matched rows, finalized reconciliation ranges, foreign-company IDs, unsupported currency conversion, and canonical closed-period/reference/balance failures remain blocked. Successful retries reuse the existing accepted transaction.
 - Bank Transactions exposes the explicit acceptance dialog with a frozen source summary, prefilled bank split, editable balanced counter splits/reference data, and Journal drill-through after successful commit. Import remains non-posting.
+- The initial PR head `e15ed7de60bf56880963e0813736d450d77d3ca7` failed the production source guard because the panel spelled the injected calls as `acceptanceService.get().preview(...)` / `.accept(...)`; the correction binds the supplier result locally and preserves the same service-owned preview/accept authority.
+- Exact corrected implementation head `73ce3a2a966f690490de705058916519a741b635` passed Maven PR Tests run `31291318707`, including clean headless `mvn clean verify`, the deliberately repeated Maven test suite, and production JavaFX route compliance.
+- `doc/P16-S8-reviewed-statement-ledger-acceptance-user-testing.md` records the exact automated validation and remains pending owner desktop acceptance.
 
 Next exact action:
 
-- Complete focused service/UI/source tests and governing documentation, publish draft PR, and run the full Maven gate. Keep P16-S9 blocked until S8 owner acceptance and merge.
+- Complete the P16-S8 owner desktop checklist on the validated PR #260 behavior. Keep P16-S9 blocked until owner acceptance and merge.
 
 ## P16-S9 — Financially relevant inventory movements
 
