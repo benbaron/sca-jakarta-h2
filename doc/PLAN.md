@@ -1,12 +1,12 @@
 ---
-plan_version: 148
+plan_version: 151
 active_phase: P16
-active_slice: P16-S10
-active_status: VERIFYING
-active_branch: codex/P16-S10-journal-cleared-state
-active_pull_request: 262
-active_head: e17773f5d44ef89b33176a77cad8f9c23125c9e8
-next_action: "Complete the P16-S10 owner desktop checklist on draft PR #262, then merge it before beginning blocked P16-S11."
+active_slice: P16-S11
+active_status: IN_PROGRESS
+active_branch: codex/P16-S11-production-preference-consumers
+active_pull_request: null
+active_head: e616dd391f8f2279a4b6735b2ecfc4a2da659109
+next_action: "After explicit owner authorization, push local P16-S11 commit e616dd391f8f2279a4b6735b2ecfc4a2da659109, open the draft pull request, and run the authoritative Maven PR Tests workflow."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S10; P16-S9 DONE through PR #261 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S11; P16-S10 DONE through PR #262 |
 
 ## 4. Governing documents
 
@@ -1879,7 +1879,7 @@ Required behavior: genuine Inventory item add/edit and movement history, no runb
 # P16 — Interface-to-authority completion and integrity corrections
 
 **Selector:** `PHASE=P16`  
-**Status:** VERIFYING through P16-S10; P16-S9 DONE through PR #261
+**Status:** IN_PROGRESS through P16-S11; P16-S10 DONE through PR #262
 **Depends on:** P03 through P15 except eliminated P07
 
 ## Purpose
@@ -2379,13 +2379,18 @@ Execution state:
 
 Next exact action:
 
-- None; P16-S9 is DONE and P16-S10 is active.
+- None; P16-S9 and P16-S10 are DONE.
 
 ## P16-S10 — Authoritative Journal cleared-state projection
 
-Status: VERIFYING in draft PR #262 on branch `codex/P16-S10-journal-cleared-state`.
+Status: DONE through merged PR #262 and owner desktop acceptance.
 
 Starting base: `05ff95be58c650072c308670840b389d72f7c0c1`
+Branch: `codex/P16-S10-journal-cleared-state`
+Pull request: #262
+Validated implementation head: `e17773f5d44ef89b33176a77cad8f9c23125c9e8`
+Final tested PR head: `f8e755374e65ceba2709837804ab6aaa07072753`
+Merged `main` commit: `556a8216125bc4bcb7916451049da25648850350`
 
 Purpose: replace the hard-coded `Uncleared` value with facts from canonical transaction splits.
 
@@ -2412,14 +2417,18 @@ Execution state:
 - Focused H2 coverage exercises the four summary states, line dates, exact reconciliation-session projection, and restart persistence. Source guards prohibit the former hard-coded expression and require service-owned facts/navigation. The owner checklist is `doc/P16-S10-journal-cleared-state-user-testing.md`.
 - Local `git diff --check` and independent Java grammar parsing pass. This container has a Java 17 runtime but no Maven executable, wrapper, or Java compiler, so GitHub Maven PR Tests is the authoritative compile/test environment.
 - Draft PR #262 was opened from implementation head `e17773f5d44ef89b33176a77cad8f9c23125c9e8`. Maven PR Tests run `31341377340` passed on that exact head: clean verification and the deliberate repeated suite each ran 595 tests with 0 failures, 0 errors, and 31 profile skips; JavaFX production-route compliance ran 9 tests with 0 failures, 0 errors, and 0 skips.
+- Exact final PR head `f8e755374e65ceba2709837804ab6aaa07072753` passed Maven PR Tests run `31341722534`, including clean verification, the deliberately repeated suite, and JavaFX production-route compliance.
+- The owner completed and accepted `doc/P16-S10-journal-cleared-state-user-testing.md` on 2026-08-10, and PR #262 merged to `main` at `556a8216125bc4bcb7916451049da25648850350`.
 
 Next exact action:
 
-- Complete `doc/P16-S10-journal-cleared-state-user-testing.md` on draft PR #262, record owner acceptance, and merge the PR before beginning P16-S11. Keep P16-S11 blocked.
+- None; P16-S10 is DONE and P16-S11 is active.
 
 ## P16-S11 — Production preference consumers
 
-Status: BLOCKED by P16-S10.
+Status: IN_PROGRESS on branch `codex/P16-S11-production-preference-consumers`.
+
+Starting base: `556a8216125bc4bcb7916451049da25648850350`
 
 Purpose: ensure every saved preference affects production behavior or is removed/relabeled as deferred.
 
@@ -2437,6 +2446,22 @@ Acceptance and tests:
 - Every enabled persisted setting has one observable production effect and one tested consumer.
 - Restart-required settings say so and apply after restart.
 - No preference changes accounting policy silently or pretends to enforce authentication.
+
+Execution state:
+
+- P16-S10 owner acceptance and merge are recorded; S11 began from exact merged `main` commit `556a8216125bc4bcb7916451049da25648850350` on a fresh branch.
+- Startup inspection confirms production `MainApp` does not load or apply the persisted theme/native/window-state preferences, `SettingsPanel` does not save shell preferences through the production `AppStateStore`, `PeriodCloseRunsPanel` hard-codes reopening policy/reason and actor defaults, the entered-transaction delete-confirmation setting has no Journal consumer, and default privilege is presented only through retired/informational UI despite authentication remaining outside P16.
+- `PreferenceConsumerMatrix` now enumerates every enabled or compatibility-only value. Settings disables and explains `defaultPrivilege` and `defaultReopenScope`; retired/reference shells no longer treat the former as authorization or an effective session role.
+- Production startup loads user-machine preferences through the workspace-owned `AppStateStore`; theme classes update immediately, native/unified decoration is selected before stage creation, and top-level geometry/maximized state plus shell dividers restore and persist only while **Remember window state** is enabled. Disabling the preference clears those saved shell values.
+- Period Close now defaults its reopening policy and require-reason control from the active desktop session whenever shown and uses the factual local operating-system user as its editable actor default. Journal now consumes the direct-delete confirmation preference while keeping reversal explicit and using the same factual actor identity for correction audit commands.
+- Governing scope, operation, persistence, accounting, and Journal documentation now distinguish user-machine shell preferences from company-owned H2 display state. The owner checklist is `doc/P16-S11-production-preference-consumers-user-testing.md`.
+- Focused tests cover the executable matrix, shell persistence round-trip/clearing, remembered-geometry clamping, decoration mapping, factual actor resolution, privilege non-gating, and JavaFX production-consumer source routes. All 681 Java sources/tests pass independent Java grammar parsing; dependency-free new policy classes compile with the JDK compiler module; CSS braces and `git diff --check` pass.
+- Local Maven verification is unavailable because this container has no Maven executable or wrapper and no resolved project dependency repository. The JDK compiler module validates the dependency-free new policies, while GitHub Maven PR Tests remains the authoritative full compile/test environment after publication.
+- The complete implementation is committed locally at `e616dd391f8f2279a4b6735b2ecfc4a2da659109`. GitHub publication was not attempted through an alternate path after the environment rejected `git push` pending explicit owner authorization.
+
+Next exact action:
+
+- After explicit owner authorization, push local commit `e616dd391f8f2279a4b6735b2ecfc4a2da659109`, open the draft pull request, and run the complete GitHub Maven PR Tests gate. Keep P16-S12 blocked until P16-S11 is merged and owner desktop verification is accepted.
 
 ## P16-S12 — Truthful global command and shortcut capabilities
 

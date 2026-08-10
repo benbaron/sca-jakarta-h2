@@ -7,7 +7,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.ButtonBase;
 import javafx.scene.control.Separator;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.ToolBar;
@@ -26,7 +25,6 @@ import org.nonprofitbookkeeping.model.AppPreferencesState;
 import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
-import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
 import org.nonprofitbookkeeping.model.ViewPresetState;
 import org.nonprofitbookkeeping.service.CoaCsvMapper;
 import org.nonprofitbookkeeping.service.ImportExportOrchestrationService;
@@ -68,8 +66,6 @@ public class MainWindow extends BorderPane
     private Label authStatusLabel;
     private List<CoaCsvMapper.CoaCsvRow> lastImportedCoaRows = List.of();
     private final Map<String, ViewPreset> viewPresets = new LinkedHashMap<>();
-    private final Map<MenuItem, UserPrivilegeLevel> gatedMenuItems = new LinkedHashMap<>();
-    private final Map<ButtonBase, UserPrivilegeLevel> gatedButtons = new LinkedHashMap<>();
     private String renderedCompanyCode;
 
     public MainWindow()
@@ -213,9 +209,9 @@ public class MainWindow extends BorderPane
                 item("Import Bank OFX/QFX…", null, this::importBankEnvelopeFromFile),
                 item("Import Preview…", null, () -> openPanel(AppPanelId.IMPORT_PREVIEW)),
                 item("Bank Transactions…", null, () -> openPanel(AppPanelId.BANK_TRANSACTIONS)),
-                gatedItem("Audit History…", null, () -> openPanel(AppPanelId.APPROVAL_AUDIT), UserPrivilegeLevel.MANAGER),
-                gatedItem("Diagnostics…", null, () -> openPanel(AppPanelId.DIAGNOSTICS), UserPrivilegeLevel.ADMIN),
-                gatedItem("Preferences…", null, () -> openPanel(AppPanelId.SETTINGS), UserPrivilegeLevel.ADMIN)
+                item("Audit History…", null, () -> openPanel(AppPanelId.APPROVAL_AUDIT)),
+                item("Diagnostics…", null, () -> openPanel(AppPanelId.DIAGNOSTICS)),
+                item("Preferences…", null, () -> openPanel(AppPanelId.SETTINGS))
         );
 
         Menu account = new Menu("Account");
@@ -240,19 +236,15 @@ public class MainWindow extends BorderPane
     {
         Button btnNew = new Button("New");
         btnNew.setOnAction(e -> newItemInActivePanel());
-        gate(btnNew, UserPrivilegeLevel.ACCOUNTANT);
 
         Button btnSave = new Button("Save");
         btnSave.setOnAction(e -> saveActivePanel());
-        gate(btnSave, UserPrivilegeLevel.ACCOUNTANT);
 
         Button btnFind = new Button("Find");
         btnFind.setOnAction(e -> openSearch());
-        gate(btnFind, UserPrivilegeLevel.ACCOUNTANT);
 
         Button btnJournal = new Button("Journal");
         btnJournal.setOnAction(e -> openInspectorJournal());
-        gate(btnJournal, UserPrivilegeLevel.ACCOUNTANT);
 
         DateRangeSelector dr = new DateRangeSelector();
         this.dateRangeSelector = dr;
@@ -335,21 +327,6 @@ public class MainWindow extends BorderPane
             case DIAGNOSTICS -> "Health checks and duplicate-code diagnostics";
             default -> "Open panel, inspect context, panel-local actions";
         };
-    }
-
-    static UserPrivilegeLevel requiredPrivilegeForPanel(AppPanelId id)
-    {
-        return switch (id)
-        {
-            case APPROVAL_AUDIT, PERIOD_CLOSE_RUNS -> UserPrivilegeLevel.MANAGER;
-            case SETTINGS, DIAGNOSTICS -> UserPrivilegeLevel.ADMIN;
-            default -> UserPrivilegeLevel.ACCOUNTANT;
-        };
-    }
-
-    static boolean canAccessPanelForPrivilege(AppPanelId id, UserPrivilegeLevel privilege)
-    {
-        return privilege.ordinal() >= requiredPrivilegeForPanel(id).ordinal();
     }
 
     private static String panelLabel(AppPanelId id)
@@ -888,26 +865,6 @@ public class MainWindow extends BorderPane
         return mi;
     }
 
-    private MenuItem gatedItem(String text, String accel, Runnable action, UserPrivilegeLevel required)
-    {
-        MenuItem item = item(text, accel, action);
-        gatedMenuItems.put(item, required);
-        return item;
-    }
-
-    private void gate(ButtonBase button, UserPrivilegeLevel required)
-    {
-        gatedButtons.put(button, required);
-    }
-
-    private void refreshPrivilegeGating()
-    {
-        UserPrivilegeLevel privilege = SESSION_STATE.preferences().defaultPrivilege();
-        gatedMenuItems.forEach((item, required) -> item.setDisable(privilege.ordinal() < required.ordinal()));
-        gatedButtons.forEach((button, required) -> button.setDisable(privilege.ordinal() < required.ordinal()));
-    }
-
-
     List<String> menuItemTextsForTests()
     {
         if (!(getTop() instanceof VBox vbox) || vbox.getChildren().isEmpty() || !(vbox.getChildren().get(0) instanceof MenuBar menuBar))
@@ -942,20 +899,6 @@ public class MainWindow extends BorderPane
         return authStatusLabel == null ? "" : authStatusLabel.getText();
     }
 
-    Map<String, Boolean> gatedToolItemDisabledStatesForTests()
-    {
-        Map<String, Boolean> states = new LinkedHashMap<>();
-        gatedMenuItems.forEach((item, required) -> states.put(item.getText(), item.isDisable()));
-        return states;
-    }
-
-    Map<String, Boolean> gatedToolbarDisabledStatesForTests()
-    {
-        Map<String, Boolean> states = new LinkedHashMap<>();
-        gatedButtons.forEach((button, required) -> states.put(button.getText(), button.isDisable()));
-        return states;
-    }
-
     void applyPreferences(AppPreferencesState state)
     {
         getStyleClass().removeAll("theme-light", "theme-dark", "theme-system", "native-window-enabled", "native-window-disabled");
@@ -973,7 +916,6 @@ public class MainWindow extends BorderPane
         }
 
         getStyleClass().add(state.useNativeWindowDecorations() ? "native-window-enabled" : "native-window-disabled");
-        refreshPrivilegeGating();
     }
 
     void applyMultiCompany(MultiCompanyState state)
@@ -1043,12 +985,6 @@ public class MainWindow extends BorderPane
     public void openPanel(AppPanelId id)
     {
         AppPanelId canonicalId = AppPanelId.canonical(id);
-        UserPrivilegeLevel privilege = SESSION_STATE.preferences().defaultPrivilege();
-        if (!canAccessPanelForPrivilege(canonicalId, privilege))
-        {
-            info("Access denied: " + panelLabel(canonicalId) + " requires " + requiredPrivilegeForPanel(canonicalId) + " privilege.");
-            return;
-        }
         panelHost.show(canonicalId);
         nav.highlight(canonicalId);
         if (activePanelLabel != null)

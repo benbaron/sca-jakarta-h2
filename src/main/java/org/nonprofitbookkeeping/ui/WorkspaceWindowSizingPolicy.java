@@ -1,5 +1,7 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.model.WorkspaceWindowState;
+
 /**
  * Calculates a laptop-friendly startup window inside the usable screen area.
  */
@@ -54,6 +56,42 @@ public final class WorkspaceWindowSizingPolicy
                 minimumHeight,
                 x,
                 y);
+    }
+
+    /**
+     * Restores remembered geometry inside the current usable screen, falling
+     * back to the standard laptop-safe geometry when no state is supplied.
+     */
+    public static WindowGeometry forRememberedState(
+            double visualMinX,
+            double visualMinY,
+            double visualWidth,
+            double visualHeight,
+            WorkspaceWindowState remembered)
+    {
+        WindowGeometry defaults = forVisualBounds(
+                visualMinX, visualMinY, visualWidth, visualHeight);
+        if (remembered == null)
+        {
+            return defaults;
+        }
+
+        double width = clamp(remembered.width(), defaults.minimumWidth(), visualWidth);
+        double height = clamp(remembered.height(), defaults.minimumHeight(), visualHeight);
+        double x = clamp(remembered.x(), visualMinX, visualMinX + visualWidth - width);
+        double y = clamp(remembered.y(), visualMinY, visualMinY + visualHeight - height);
+        return new WindowGeometry(
+                width,
+                height,
+                defaults.minimumWidth(),
+                defaults.minimumHeight(),
+                x,
+                y);
+    }
+
+    private static double clamp(double value, double minimum, double maximum)
+    {
+        return Math.max(minimum, Math.min(maximum, value));
     }
 
     private static void requirePositive(double value, String name)

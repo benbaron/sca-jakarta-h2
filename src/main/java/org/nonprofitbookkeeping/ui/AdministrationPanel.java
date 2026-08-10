@@ -27,7 +27,8 @@ public final class AdministrationPanel implements AppPanel
                         UserAppStateStore.create(),
                         UiServiceRegistry::companyAdmin),
                 DatabaseTransferActions.unavailable(() -> DatabaseLocationService.resolveDatabasePath(
-                        MainWindow.sharedSessionState().databaseSelection().activeDatabasePath())));
+                        MainWindow.sharedSessionState().databaseSelection().activeDatabasePath())),
+                UserAppStateStore.create());
     }
 
     AdministrationPanel(CompanySessionController companyController)
@@ -35,14 +36,23 @@ public final class AdministrationPanel implements AppPanel
         this(
                 companyController,
                 DatabaseTransferActions.unavailable(() -> DatabaseLocationService.resolveDatabasePath(
-                        MainWindow.sharedSessionState().databaseSelection().activeDatabasePath())));
+                        MainWindow.sharedSessionState().databaseSelection().activeDatabasePath())),
+                UserAppStateStore.create());
     }
 
     AdministrationPanel(
             CompanySessionController companyController,
             DatabaseTransferActions databaseTransferActions)
     {
-        settings = new SettingsPanel(MainWindow.sharedSessionState(), companyController);
+        this(companyController, databaseTransferActions, UserAppStateStore.create());
+    }
+
+    AdministrationPanel(
+            CompanySessionController companyController,
+            DatabaseTransferActions databaseTransferActions,
+            AppStateStore stateStore)
+    {
+        settings = new SettingsPanel(MainWindow.sharedSessionState(), companyController, stateStore);
         transfers = new DatabaseTransferPanel(databaseTransferActions);
         companies = new CompanyAdminPanel(companyController);
         users = new UserAdminPanel();

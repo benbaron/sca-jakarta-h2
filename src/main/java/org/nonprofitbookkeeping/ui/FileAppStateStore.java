@@ -10,6 +10,7 @@ import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
 import org.nonprofitbookkeeping.model.ViewPresetState;
 import org.nonprofitbookkeeping.model.WorkspaceDividerState;
+import org.nonprofitbookkeeping.model.WorkspaceWindowState;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,6 +50,11 @@ public class FileAppStateStore implements AppStateStore
     private static final String K_VIEW_PRESET_ROWS = "viewPresets.rows";
     private static final String K_WORKSPACE_LEFT_DIVIDER = "workspace.divider.left";
     private static final String K_WORKSPACE_RIGHT_DIVIDER = "workspace.divider.right";
+    private static final String K_WINDOW_X = "window.x";
+    private static final String K_WINDOW_Y = "window.y";
+    private static final String K_WINDOW_WIDTH = "window.width";
+    private static final String K_WINDOW_HEIGHT = "window.height";
+    private static final String K_WINDOW_MAXIMIZED = "window.maximized";
 
     private final Path file;
 
@@ -148,6 +154,33 @@ public class FileAppStateStore implements AppStateStore
     }
 
     @Override
+    public Optional<WorkspaceWindowState> loadWindowState()
+    {
+        Properties p = read();
+        String x = p.getProperty(K_WINDOW_X);
+        String y = p.getProperty(K_WINDOW_Y);
+        String width = p.getProperty(K_WINDOW_WIDTH);
+        String height = p.getProperty(K_WINDOW_HEIGHT);
+        if (x == null || y == null || width == null || height == null)
+        {
+            return Optional.empty();
+        }
+        try
+        {
+            return Optional.of(new WorkspaceWindowState(
+                    Double.parseDouble(x),
+                    Double.parseDouble(y),
+                    Double.parseDouble(width),
+                    Double.parseDouble(height),
+                    Boolean.parseBoolean(p.getProperty(K_WINDOW_MAXIMIZED, "false"))));
+        }
+        catch (IllegalArgumentException ex)
+        {
+            return Optional.empty();
+        }
+    }
+
+    @Override
     public List<ViewPresetState> loadViewPresets()
     {
         Properties p = read();
@@ -222,6 +255,39 @@ public class FileAppStateStore implements AppStateStore
         Properties p = read();
         p.setProperty(K_WORKSPACE_LEFT_DIVIDER, Double.toString(state.leftDividerPosition()));
         p.setProperty(K_WORKSPACE_RIGHT_DIVIDER, Double.toString(state.rightDividerPosition()));
+        write(p);
+    }
+
+    @Override
+    public void saveWindowState(WorkspaceWindowState state)
+    {
+        Properties p = read();
+        p.setProperty(K_WINDOW_X, Double.toString(state.x()));
+        p.setProperty(K_WINDOW_Y, Double.toString(state.y()));
+        p.setProperty(K_WINDOW_WIDTH, Double.toString(state.width()));
+        p.setProperty(K_WINDOW_HEIGHT, Double.toString(state.height()));
+        p.setProperty(K_WINDOW_MAXIMIZED, Boolean.toString(state.maximized()));
+        write(p);
+    }
+
+    @Override
+    public void clearWorkspaceDividers()
+    {
+        Properties p = read();
+        p.remove(K_WORKSPACE_LEFT_DIVIDER);
+        p.remove(K_WORKSPACE_RIGHT_DIVIDER);
+        write(p);
+    }
+
+    @Override
+    public void clearWindowState()
+    {
+        Properties p = read();
+        p.remove(K_WINDOW_X);
+        p.remove(K_WINDOW_Y);
+        p.remove(K_WINDOW_WIDTH);
+        p.remove(K_WINDOW_HEIGHT);
+        p.remove(K_WINDOW_MAXIMIZED);
         write(p);
     }
 

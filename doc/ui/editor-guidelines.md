@@ -10,6 +10,7 @@ P03 provides one spreadsheet-like transaction editor inside the unified Journal 
 - Live totals show debit total, credit total, and debit-minus-credit difference before any save attempt.
 - Row validation rejects missing account/fund IDs, negative values, zero-value accounting rows, both-sided rows, fewer than two meaningful rows, and unbalanced totals.
 - Dirty state belongs to the unified Journal editor and is cleared only after a deliberate save or discard.
+- The saved direct-delete confirmation preference controls the extra prompt only for `DIRECT_EDIT`; reversal/replacement always remains explicit and all correction service protections still apply.
 
 ## Service and authority boundaries
 

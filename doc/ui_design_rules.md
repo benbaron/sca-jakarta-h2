@@ -10,7 +10,14 @@ Text boxes and other `TextInputControl` instances are excluded so user-entered o
 
 ## Preference storage scope
 
-Any preference mentioned in this document is a per-company preference. It must be saved with that company and restored when that company is active. User-interface state that changes how company data is displayed or edited must not be stored only as a global user preference when the behavior is company-specific.
+Preferences have two explicit scopes:
+
+- user-machine shell preferences cover theme, native/unified window decoration, and whether window geometry and shell dividers are restored; `UserAppStateStore` owns these values outside H2 because they describe one desktop installation rather than company accounting facts;
+- per-company preferences cover money/date display and company-specific table/divider state; H2 `company_ui_preference` and `company_ui_state` rows own these values and restore them only for the active company.
+
+User-interface state that changes how company data is displayed or edited must not be stored only as a global user preference. Conversely, a company switch must not change user-machine theme or top-level window geometry. Settings must label restart-time shell choices, and **Remember window state** must be the sole gate for reading or writing top-level geometry and shell divider state.
+
+Compatibility values such as `defaultPrivilege` and `defaultReopenScope` are not enabled Settings controls until a governed production consumer exists. In particular, a stored privilege label is not authentication or effective authorization.
 
 ## Tables
 

@@ -20,7 +20,10 @@ public final class PanelFactory
                 () -> new DashboardHomePanel(
                         services.dashboardQueryService(),
                         services.context()),
-                () -> new AdministrationPanel(services.companySessionController(), services.databaseTransferActions()),
+                () -> new AdministrationPanel(
+                        services.companySessionController(),
+                        services.databaseTransferActions(),
+                        services.stateStore()),
                 () -> new DiagnosticsPanel(services.diagnosticsQueryService()),
                 () -> new ImportPreviewPanel(
                         new ImportPreviewService(),

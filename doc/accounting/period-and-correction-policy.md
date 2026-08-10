@@ -30,7 +30,7 @@ The default policy is warning-based reopening:
 3. The user may cancel or reopen the range through the Period Close workspace.
 4. After reopening, the original accounting operation may be retried.
 
-Any user authorized to enter transactions may reopen under the default policy. A reason is optional by default.
+Authentication and effective authorization are not governed by the current desktop preference model. The saved closed-period policy is an interaction default for the Period Close workspace, not a privilege grant. A reason is optional under the default policy.
 
 Supported policy levels are:
 
@@ -39,6 +39,8 @@ Supported policy levels are:
 - `REQUIRE_FORMAL_ADJUSTMENT`: do not reopen directly; require the later formal-adjustment workflow.
 
 The default is `WARN_AND_REOPEN`.
+
+The production Period Close workspace initializes its policy and require-reason controls from the active desktop-session preferences whenever the panel is shown. The visible actor defaults to the factual local operating-system user when available and remains editable; it must not use a fictional privilege or operator identity.
 
 `TransactionEntryService` checks both the original and proposed dates when updating a transaction. `TransactionCorrectionService` checks the relevant original and destination dates for direct edit, delete, and reversal. These checks run inside the same transaction as the ledger change.
 
@@ -58,6 +60,8 @@ Every durable maintenance function should expose Delete or explain why deletion 
 
 - `DIRECT_EDIT`: Delete may remove the entered transaction after the checks below and must write the audit snapshot in the same transaction.
 - Any non-direct correction method: Delete must not hard-delete the entered transaction. The UI must ask whether the user wants to auto-fill a reversing entry, default the reversal date from the active accounting period, and perform the reversal if the user confirms. If the user declines, no ledger change is made.
+
+For `DIRECT_EDIT`, the **Confirm before deleting an entered transaction** preference controls only the extra JavaFX confirmation prompt. It never bypasses closed-period, reconciliation, audit, or transactional service checks. Reversal remains an explicit confirmed correction even when direct-delete confirmation is disabled.
 
 Entered transactions may be deleted only when the active correction policy permits hard deletion. Deletion must:
 

@@ -5,6 +5,7 @@ import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.ViewPresetState;
 import org.nonprofitbookkeeping.model.WorkspaceDividerState;
+import org.nonprofitbookkeeping.model.WorkspaceWindowState;
 
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +32,11 @@ public interface AppStateStore
         return Optional.empty();
     }
 
+    default Optional<WorkspaceWindowState> loadWindowState()
+    {
+        return Optional.empty();
+    }
+
     default List<ViewPresetState> loadViewPresets()
     {
         return List.of();
@@ -41,6 +47,18 @@ public interface AppStateStore
 
 
     default void saveWorkspaceDividers(WorkspaceDividerState state)
+    {
+    }
+
+    default void clearWorkspaceDividers()
+    {
+    }
+
+    default void saveWindowState(WorkspaceWindowState state)
+    {
+    }
+
+    default void clearWindowState()
     {
     }
 

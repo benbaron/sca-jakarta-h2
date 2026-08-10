@@ -72,6 +72,8 @@ public class ProductionWorkspaceWindow extends BorderPane
             DatabaseSessionController.Connector connector)
     {
         this.stateStore = Objects.requireNonNull(stateStore, "stateStore");
+        this.stateStore.loadPreferences().ifPresent(
+                MainWindow.sharedSessionState()::setPreferences);
         this.workspaceServices = WorkspaceServicesFactory.create(
                 MainWindow.sharedSessionState(),
                 stateStore,
@@ -81,6 +83,9 @@ public class ProductionWorkspaceWindow extends BorderPane
         this.companySessionController = workspaceServices.companySessionController();
         this.panelHost = new PanelHost(workspaceServices.panelFactory());
         this.companySessionController.setChangeGuard(this::confirmCompanyChange);
+        getStyleClass().add("production-workspace");
+        MainWindow.sharedSessionState().onPreferencesChanged(this::applyPreferences);
+        applyPreferences(MainWindow.sharedSessionState().preferences());
 
         try
         {
@@ -406,7 +411,9 @@ public class ProductionWorkspaceWindow extends BorderPane
     private SplitPane buildWorkspace()
     {
         workspace.getItems().setAll(navigationPane, panelHost, inspectorPane);
-        rememberedDividerState = stateStore.loadWorkspaceDividers()
+        rememberedDividerState = (MainWindow.sharedSessionState().preferences().rememberWindowState()
+                ? stateStore.loadWorkspaceDividers()
+                : Optional.<WorkspaceDividerState>empty())
                 .orElseGet(() -> WorkspaceShellLayoutPolicy
                         .forWidth(WorkspaceShellLayoutPolicy.FALLBACK_WORKSPACE_WIDTH)
                         .dividerState());
@@ -821,7 +828,9 @@ public class ProductionWorkspaceWindow extends BorderPane
 
     private void rememberCurrentDividerPositions()
     {
-        if (restoringDividers || workspace.getItems().size() != 3)
+        if (restoringDividers
+                || workspace.getItems().size() != 3
+                || !MainWindow.sharedSessionState().preferences().rememberWindowState())
         {
             return;
         }
@@ -847,6 +856,17 @@ public class ProductionWorkspaceWindow extends BorderPane
         {
             rememberedDividerState = candidate;
             stateStore.saveWorkspaceDividers(candidate);
+        }
+    }
+
+    private void applyPreferences(org.nonprofitbookkeeping.model.AppPreferencesState preferences)
+    {
+        getStyleClass().removeAll("theme-light", "theme-dark", "theme-system");
+        switch (preferences.themePreference())
+        {
+            case LIGHT -> getStyleClass().add("theme-light");
+            case DARK -> getStyleClass().add("theme-dark");
+            case SYSTEM_DEFAULT -> getStyleClass().add("theme-system");
         }
     }
 }

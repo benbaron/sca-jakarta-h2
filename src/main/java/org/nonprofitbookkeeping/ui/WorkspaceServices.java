@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 public final class WorkspaceServices
 {
     private final WorkspaceContext context;
+    private final AppStateStore stateStore;
     private final DatabaseSessionController databaseSessionController;
     private final CompanySessionController companySessionController;
     private final DatabaseTransferActions databaseTransferActions;
@@ -42,6 +43,7 @@ public final class WorkspaceServices
 
     WorkspaceServices(
             WorkspaceContext context,
+            AppStateStore stateStore,
             DatabaseSessionController databaseSessionController,
             CompanySessionController companySessionController,
             DatabaseTransferActions databaseTransferActions,
@@ -61,6 +63,7 @@ public final class WorkspaceServices
             Supplier<TransactionReferenceDataService> transactionReferenceDataService)
     {
         this.context = Objects.requireNonNull(context, "context");
+        this.stateStore = Objects.requireNonNull(stateStore, "stateStore");
         this.databaseSessionController = Objects.requireNonNull(databaseSessionController, "databaseSessionController");
         this.companySessionController = Objects.requireNonNull(companySessionController, "companySessionController");
         this.databaseTransferActions = Objects.requireNonNull(databaseTransferActions, "databaseTransferActions");
@@ -90,6 +93,11 @@ public final class WorkspaceServices
     public WorkspaceContext context()
     {
         return context;
+    }
+
+    AppStateStore stateStore()
+    {
+        return stateStore;
     }
 
     DatabaseSessionController databaseSessionController()

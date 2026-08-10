@@ -1011,7 +1011,10 @@ public final class JournalWorkspacePanel implements AppPanel
         CorrectionMethod method = MainWindow.sharedSessionState().preferences().correctionMethod();
         if (method == CorrectionMethod.DIRECT_EDIT)
         {
-            if (!confirm("Delete transaction #" + targetId + "?",
+            boolean confirmationRequired = MainWindow.sharedSessionState()
+                    .preferences()
+                    .confirmEnteredTransactionDeletion();
+            if (confirmationRequired && !confirm("Delete transaction #" + targetId + "?",
                     "This removes the entered transaction after period and reconciliation checks and writes an audit snapshot."))
             {
                 status.setText("Delete cancelled for transaction #" + targetId + ".");
@@ -1019,7 +1022,10 @@ public final class JournalWorkspacePanel implements AppPanel
             }
             UiAsync.run("journal-workspace-delete-" + targetId,
                     () -> {
-                        UiServiceRegistry.transactionCorrection().delete(targetId, "ui", "Deleted from unified Journal workspace");
+                        UiServiceRegistry.transactionCorrection().delete(
+                                targetId,
+                                DesktopActorIdentity.current(),
+                                "Deleted from unified Journal workspace");
                         return targetId;
                     },
                     deletedId -> {
@@ -1041,7 +1047,7 @@ public final class JournalWorkspacePanel implements AppPanel
                     () -> UiServiceRegistry.transactionCorrection().reverse(
                             targetId,
                             ActivePeriodContext.get(),
-                            "ui",
+                            DesktopActorIdentity.current(),
                             "Reversed from unified Journal workspace",
                             false),
                     result -> {

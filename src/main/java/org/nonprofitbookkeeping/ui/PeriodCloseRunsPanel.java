@@ -37,7 +37,7 @@ public class PeriodCloseRunsPanel implements AppPanel
     private final ComboBox<String> rangeKind = new ComboBox<>();
     private final ComboBox<ClosedPeriodPolicy> reopenPolicy = new ComboBox<>();
     private final CheckBox requireReason = new CheckBox("Require reopening reason");
-    private final TextField actor = new TextField("ui-operator");
+    private final TextField actor = new TextField(DesktopActorIdentity.current());
     private final TextField reason = new TextField();
     private final TableView<PeriodCloseRangeView> ranges = new TableView<>();
     private final TableView<PeriodCloseEventView> history = new TableView<>();
@@ -55,7 +55,7 @@ public class PeriodCloseRunsPanel implements AppPanel
         rangeKind.getItems().setAll("CALCULATED", "CUSTOM");
         rangeKind.setValue("CALCULATED");
         reopenPolicy.getItems().setAll(ClosedPeriodPolicy.values());
-        reopenPolicy.setValue(ClosedPeriodPolicy.WARN_AND_REOPEN);
+        applyPreferenceDefaults();
         reason.setPromptText("Optional close/reopen reason");
         companyFormat.install(startDate);
         companyFormat.install(endDate);
@@ -110,6 +110,12 @@ public class PeriodCloseRunsPanel implements AppPanel
 
         setCalculatedMonth();
         reload();
+    }
+
+    @Override
+    public void onPanelShown()
+    {
+        applyPreferenceDefaults();
     }
 
     @Override
@@ -253,6 +259,28 @@ public class PeriodCloseRunsPanel implements AppPanel
                             + data.events().size() + " history event(s) for " + company + ".");
                 },
                 ex -> status.setText("Could not load period close state: " + UiErrors.safeMessage(ex)));
+    }
+
+    private void applyPreferenceDefaults()
+    {
+        var preferences = MainWindow.sharedSessionState().preferences();
+        reopenPolicy.setValue(preferences.closedPeriodPolicy());
+        requireReason.setSelected(preferences.requireReopenReason());
+    }
+
+    ClosedPeriodPolicy reopenPolicyForTests()
+    {
+        return reopenPolicy.getValue();
+    }
+
+    boolean requireReasonForTests()
+    {
+        return requireReason.isSelected();
+    }
+
+    String actorForTests()
+    {
+        return actor.getText();
     }
 
     private static PeriodCloseRangeService service()
