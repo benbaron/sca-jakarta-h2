@@ -2,12 +2,18 @@
   "schemaVersion": "npbk-semantic-report-1",
   "templateId": "FundTransfers",
   "sourceSheet": "FundTransfers",
-  "title": "FundTransfers - SCA Workbook Modeled Fund Transfers",
-  "subtitle": "Fund summary derived from live ledger detail.",
+  "title": "Fund Transfers",
+  "subtitle": "Explicit POSTED fund-transfer records linked to canonical transactions; ordinary fund activity is excluded.",
   "type": "tableReport",
   "tableKey": "fundTransfers.rows",
   "columns": [
-    { "label": "Fund", "field": "fundCode", "width": 16 },
-    { "label": "Net Effect", "field": "netEffect", "format": "currency", "width": 14 }
+    { "label": "Row", "field": "rowType", "width": 20 },
+    { "label": "Date", "field": "transferDate", "format": "date", "width": 10 },
+    { "label": "Txn", "field": "txnId", "width": 10 },
+    { "label": "Transfer", "field": "transferId", "width": 10 },
+    { "label": "Fund", "field": "fundCode", "width": 12 },
+    { "label": "Counter Fund", "field": "counterFundCode", "width": 14 },
+    { "label": "Net Effect", "field": "netEffect", "format": "currency", "width": 14 },
+    { "label": "Memo", "field": "memo", "width": 38 }
   ]
 }

@@ -2,19 +2,20 @@
   "schemaVersion": "npbk-semantic-report-1",
   "templateId": "AllChecksTfrs",
   "sourceSheet": "AllChecksTfrs",
-  "title": "AllChecksTfrs - SCA Workbook Modeled Checks and Transfers",
-  "subtitle": "First-pass check/transfer listing using live ledger detail until bank/check classifications are fully mapped.",
+  "title": "Bank Account Activity",
+  "subtitle": "Persisted BANK-account splits only. The legacy template ID is retained for interchange traceability.",
   "type": "tableReport",
   "tableKey": "allChecksTfrs.rows",
   "columns": [
+    { "label": "Row", "field": "rowType", "width": 16 },
     { "label": "Date", "field": "txnDate", "format": "date", "width": 10 },
     { "label": "Txn", "field": "txnId", "width": 10 },
     { "label": "Payee", "field": "payee", "width": 18 },
-    { "label": "Account", "field": "accountCode", "width": 12 },
+    { "label": "Bank Account", "field": "accountCode", "width": 12 },
     { "label": "Account Name", "field": "accountName", "width": 24 },
     { "label": "Fund", "field": "fundCode", "width": 10 },
     { "label": "Debit", "field": "debit", "format": "currency", "width": 12 },
     { "label": "Credit", "field": "credit", "format": "currency", "width": 12 },
-    { "label": "Memo", "field": "memo", "width": 28 }
+    { "label": "Memo", "field": "memo", "width": 34 }
   ]
 }

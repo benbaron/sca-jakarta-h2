@@ -72,7 +72,7 @@ public enum ReportDefinition
             true),
     ALL_CHECKS_TFRS(
             "all-checks-transfers",
-            "AllChecksTfrs (SCA workbook)",
+            "Bank Account Activity (SCA workbook)",
             ReportSource.SEMANTIC,
             "AllChecksTfrs",
             DateMode.RANGE,
