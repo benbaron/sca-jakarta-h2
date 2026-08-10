@@ -1,12 +1,12 @@
 ---
-plan_version: 155
+plan_version: 156
 active_phase: P16
 active_slice: P16-S12
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P16-S12-truthful-global-command-capabilities
-active_pull_request: null
-active_head: f7cce74e5d0cf93661df7673dcfa80a02e5761f9
-next_action: "Complete P16-S12 static validation, commit the capability/shortcut contract, and publish a draft PR for GitHub Actions and owner desktop verification."
+active_pull_request: 264
+active_head: 6accaf3ff1c86f0bce09fa732a40d68005a49d4a
+next_action: "Validate draft PR #264 through Maven PR Tests on its exact head, then complete doc/P16-S12-truthful-global-command-capabilities-user-testing.md and merge only after owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2469,7 +2469,7 @@ Next exact action:
 
 ## P16-S12 — Truthful global command and shortcut capabilities
 
-Status: IN_PROGRESS on branch `codex/P16-S12-truthful-global-command-capabilities`.
+Status: VERIFYING through draft PR #264 on branch `codex/P16-S12-truthful-global-command-capabilities`.
 
 Starting base: `f7cce74e5d0cf93661df7673dcfa80a02e5761f9`
 
@@ -2497,6 +2497,12 @@ Implementation progress:
 - The production menu and toolbar follow the active panel capability set. Administration delegates to the selected Preferences, Database Transfer, Company Admin, or User Admin tab and notifies the shell when selection changes.
 - Focused tests cover default no-op rejection, thrown failures, every production destination and Journal alias, Administration tab changes, exact registry shortcuts, menu/toolbar enablement, and dirty-tab close protection.
 - Governing operation, composition, UI-rule, and persistence-authority documents are updated. Owner verification is recorded in `doc/P16-S12-truthful-global-command-capabilities-user-testing.md`.
+- All Java sources pass independent Java 17 parsing; the command core passes an isolated JavaFX compiler check; focused source guards and `git diff --check` pass. Maven is unavailable in the local container, so GitHub Maven PR Tests is the authoritative full compile/test gate.
+- The complete 33-file implementation tree was published through the connected GitHub service after explicit owner authorization. Draft PR #264 opened at exact remote head `6accaf3ff1c86f0bce09fa732a40d68005a49d4a`; its tree SHA `7fd4396a77fab930aace1b93c6395ffe25015c50` exactly matches the reviewed local implementation tree.
+
+Next exact action:
+
+- Validate draft PR #264 through clean `mvn clean verify`, the deliberately repeated full suite, and production JavaFX route compliance. Correct any failure on the same branch, then complete `doc/P16-S12-truthful-global-command-capabilities-user-testing.md` and merge only after owner acceptance. Keep P16-S13 blocked.
 
 ## P16-S13 — Truthful report semantics
 
