@@ -1,12 +1,12 @@
 ---
-plan_version: 161
+plan_version: 162
 active_phase: P16
 active_slice: P16-S13
 active_status: VERIFYING
 active_branch: codex/P16-S13-truthful-report-semantics
 active_pull_request: 265
-active_head: 2c16bc6c0777ee170ea8d3ee11868a2098aac2d4
-next_action: "Validate the final documentation-only P16-S13 handoff head, then complete doc/P16-S13-truthful-report-semantics-user-testing.md and merge draft PR #265 after owner acceptance."
+active_head: d7425a5451121a277b527b546e1f316c1b27d136
+next_action: "Complete doc/P16-S13-truthful-report-semantics-user-testing.md on draft PR #265, then merge only after owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2542,10 +2542,11 @@ Implementation progress:
 - Focused H2 integration tests cover BANK-only selection, fund/date/company isolation, reversals, explicit posted transfers, balanced pair expansion, exclusions, totals, empty ranges, and preview/CSV semantic parity.
 - Local Maven execution is unavailable in this environment. Draft PR #265 opened at implementation head `0f32bd755ac6a924e72bcea0098b9fe3e1fda36f`.
 - Exact plan-inclusive head `2c16bc6c0777ee170ea8d3ee11868a2098aac2d4` passed Maven PR Tests run `31439706723`: clean `mvn clean verify` and the deliberate repeated suite each ran 621 tests with 0 failures/errors and 33 skips; all 9 production JavaFX route/source compliance tests passed.
+- Exact documentation-inclusive head `d7425a5451121a277b527b546e1f316c1b27d136` passed Maven PR Tests run `31440051765` with the same clean verification, repeated 621-test suite, and 9-test JavaFX compliance result.
 
 Next exact action:
 
-- Validate the final documentation-only handoff head, then complete `doc/P16-S13-truthful-report-semantics-user-testing.md` before merge.
+- Complete `doc/P16-S13-truthful-report-semantics-user-testing.md` on draft PR #265, then merge only after owner acceptance. Keep P16-S14 blocked.
 
 ## P16-S14 — Fixed-asset disposal accounting
 
