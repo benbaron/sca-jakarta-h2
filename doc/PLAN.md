@@ -1,12 +1,12 @@
 ---
-plan_version: 158
+plan_version: 159
 active_phase: P16
-active_slice: P16-S12
-active_status: VERIFYING
-active_branch: codex/P16-S12-truthful-global-command-capabilities
-active_pull_request: 264
-active_head: dcb65f300d93832ee6d7f00cd5f76d2e2e68e1a5
-next_action: "Complete doc/P16-S12-truthful-global-command-capabilities-user-testing.md on draft PR #264, then merge only after owner acceptance."
+active_slice: P16-S13
+active_status: IN_PROGRESS
+active_branch: codex/P16-S13-truthful-report-semantics
+active_pull_request: null
+active_head: c2497f69f443b6b7e9368c2c69a8910950629728
+next_action: "Open the P16-S13 draft PR, run the complete Maven PR Tests gate, correct failures on the same branch, then complete owner desktop acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S12; P16-S11 DONE through PR #263 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S13; P16-S12 DONE through PR #264 |
 
 ## 4. Governing documents
 
@@ -1879,7 +1879,7 @@ Required behavior: genuine Inventory item add/edit and movement history, no runb
 # P16 — Interface-to-authority completion and integrity corrections
 
 **Selector:** `PHASE=P16`  
-**Status:** IN_PROGRESS through P16-S12; P16-S11 DONE through PR #263
+**Status:** IN_PROGRESS through P16-S13; P16-S12 DONE through PR #264
 **Depends on:** P03 through P15 except eliminated P07
 
 ## Purpose
@@ -2469,7 +2469,7 @@ Next exact action:
 
 ## P16-S12 — Truthful global command and shortcut capabilities
 
-Status: VERIFYING through draft PR #264 on branch `codex/P16-S12-truthful-global-command-capabilities`.
+Status: DONE through merged PR #264 and owner desktop acceptance.
 
 Starting base: `f7cce74e5d0cf93661df7673dcfa80a02e5761f9`
 
@@ -2502,14 +2502,18 @@ Implementation progress:
 - Initial plan-inclusive Maven PR Tests run `31427773070` compiled the production sources until `ReferenceWorkspaceWindow` and exposed two stale Edit-menu method references to the removed global `copySelection()` and `paste()` hooks. The compatibility shell now leaves native text-control Copy/Paste un-intercepted, and the focused source guard covers that boundary.
 - Exact corrected head `8fdd8b636ad23a9545f8bb79300346f2f75e2734` passed Maven PR Tests run `31427958302`: clean `mvn clean verify` ran 616 tests with 0 failures/errors and 33 skips; the deliberate repeated 616-test suite passed; and all 9 production JavaFX route/source compliance tests passed.
 - Exact documentation-inclusive head `dcb65f300d93832ee6d7f00cd5f76d2e2e68e1a5` passed Maven PR Tests run `31428418987`, including clean `mvn clean verify`, the deliberately repeated full suite, and production JavaFX route/source compliance.
+- Exact final PR head `fcd063685c7dd741d39b1714af3e221989509825` passed Maven PR Tests run `31428868161`.
+- The owner completed and accepted `doc/P16-S12-truthful-global-command-capabilities-user-testing.md` on 2026-08-10, and PR #264 merged to `main` at `6ff2c23649cede30e68fcd335d662eaf7d99b978`.
 
 Next exact action:
 
-- Complete `doc/P16-S12-truthful-global-command-capabilities-user-testing.md` on draft PR #264, then merge only after owner acceptance. Keep P16-S13 blocked.
+- None; P16-S12 is DONE and P16-S13 is active.
 
 ## P16-S13 — Truthful report semantics
 
-Status: BLOCKED by P16-S12.
+Status: IN_PROGRESS on branch `codex/P16-S13-truthful-report-semantics`.
+
+Starting base: `6ff2c23649cede30e68fcd335d662eaf7d99b978`
 
 Purpose: make report names, filters, and exported content match authoritative accounting semantics.
 
@@ -2527,6 +2531,20 @@ Acceptance and tests:
 - Report title, parameters, selected rows, totals, exports, and Journal drill-through describe the same immutable request.
 - Ordinary fund activity does not appear as a fund transfer.
 - No first-pass approximation remains under a completed-sounding report name.
+
+Implementation progress:
+
+- The legacy stable ID and workbook template ID `all-checks-transfers` / `AllChecksTfrs` remain for traceability, but the visible report is now **Bank Account Activity** because current schema facts can prove BANK-account splits, not a general check/transfer classification.
+- `SemanticAccountingReportQueryService` owns company-scoped predicates. Bank activity selects only canonical `TxnSplit` rows on `AccountType.BANK`, with inclusive request dates and optional fund scope. Displayed totals are calculated only from the returned BANK rows.
+- Fund Transfers selects only explicit `POSTED` `FundTransfer` records linked to a canonical transaction owned by the active company. Each selected record expands into a negative source leg and equal positive destination leg, followed by per-fund totals and a zero all-funds net. Draft, void, unlinked, ordinary multi-fund, out-of-range, and other-company facts are excluded.
+- Report Library injects the company-scoped query service into the existing `ReportExecutionService`; preview, export, and drill-through continue to share one immutable `ReportRequest`. No second ledger or report store was introduced.
+- The governed predicates and row-limit semantics are recorded in `doc/reporting/report-library.md`. The owner checklist is `doc/P16-S13-truthful-report-semantics-user-testing.md`.
+- Focused H2 integration tests cover BANK-only selection, fund/date/company isolation, reversals, explicit posted transfers, balanced pair expansion, exclusions, totals, empty ranges, and preview/CSV semantic parity.
+- Local Maven execution is unavailable in this environment; GitHub Maven PR Tests is the authoritative full compile/test, deliberate repeat, and JavaFX route gate after the draft PR opens.
+
+Next exact action:
+
+- Open the P16-S13 draft PR, run the complete Maven PR Tests workflow, fix any failures on this branch, and leave the slice `VERIFYING` for owner desktop acceptance.
 
 ## P16-S14 — Fixed-asset disposal accounting
 
