@@ -32,10 +32,33 @@ P16-S6 aligns the default Report Library date request with fiscal authority. Whe
 ## Parameters
 
 - Trial Balance and Balance Sheet use an as-of date.
-- General Ledger Detail, Income Statement, Workbook Summary, Transactions List, All Checks/Transfers, and Fund Transfers use a date range.
+- General Ledger Detail, Income Statement, Workbook Summary, Transactions List, Bank Account Activity, and Fund Transfers use a date range.
 - Fund filtering is available where the underlying report has a meaningful single-fund projection.
 - General Ledger and semantic ledger-list reports expose a maximum row count from 1 through 5000.
 - Fund Transfers intentionally uses all funds because comparison between funds is the subject of the report.
+
+## Governed bank and fund-transfer predicates
+
+P16-S13 preserves the legacy stable IDs and workbook template IDs so saved selections and donor traceability remain intact, but the visible names and results must state only what current authoritative facts can prove.
+
+### Bank Account Activity (legacy ID `all-checks-transfers`)
+
+The schema does not contain a durable check-number/type classification that can distinguish checks from every other BANK-account movement. The former **All Checks/Transfers** title is therefore retired. **Bank Account Activity** selects exactly:
+
+- a persisted `TxnSplit` whose account has `AccountType.BANK`;
+- a canonical `Txn` owned by the active company;
+- a transaction date within the immutable request range, inclusive;
+- the selected fund when a fund filter is present.
+
+It returns the BANK split itself, not every split in the transaction. Corrections and reversals appear only when their own canonical BANK splits satisfy the same predicate. The displayed debit and credit totals are calculated only from the returned BANK rows; a row limit therefore limits both the detail and its explicitly labeled displayed total. No memo, payee, reference string, or amount pattern is treated as proof that a movement was a check or transfer.
+
+### Fund Transfers (legacy ID `fund-transfers`)
+
+A row qualifies only when an explicit `FundTransfer` is `POSTED`, has a non-null canonical `postedTxn`, the transaction and both funds belong to the active company, and the transfer date is within the immutable request range, inclusive. Draft, void, ordinary multi-fund journal activity, and unlinked records are excluded.
+
+Each selected transfer expands into two report legs: a negative source-fund effect and an equal positive destination-fund effect. Per-fund totals are the sum of those explicit legs and the all-funds net must be zero. The request row limit selects complete transfer records; both legs and their totals are then emitted so a transfer pair is never truncated into an unbalanced report.
+
+Preview, TEXT, CSV, PDF, XLSX, and Journal drill-through retain the same `ReportRequest`. Export never reclassifies rows or widens company/date/fund scope.
 
 ## Formatting and exports
 
