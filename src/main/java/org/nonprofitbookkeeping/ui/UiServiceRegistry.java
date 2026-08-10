@@ -18,6 +18,7 @@ import org.nonprofitbookkeeping.repository.JdbcPeriodCloseRunRepository;
 import org.nonprofitbookkeeping.repository.JdbcReconciliationRunRepository;
 import org.nonprofitbookkeeping.repository.PeriodCloseRunRepository;
 import org.nonprofitbookkeeping.repository.ReconciliationRunRepository;
+import org.nonprofitbookkeeping.report.SemanticAccountingReportQueryService;
 import org.nonprofitbookkeeping.service.AccountAdminService;
 import org.nonprofitbookkeeping.service.AccountLookupService;
 import org.nonprofitbookkeeping.service.AuditHistoryService;
@@ -139,6 +140,11 @@ public final class UiServiceRegistry
     }
     public static SampleCompanyService sampleCompany() { return services().sampleCompany(); }
     public static FinancialReportService financialReports() { return services().financialReports(); }
+    public static SemanticAccountingReportQueryService semanticAccountingReports()
+    {
+        return new SemanticAccountingReportQueryService(
+                services().jpa(), UiServiceRegistry::activeCompanyCode);
+    }
     public static DashboardQueryService dashboardQuery() { return services().dashboardQuery(); }
     public static SclxFileExportService sclxFileExport(String companyCode, Path activeDatabasePath)
     {
