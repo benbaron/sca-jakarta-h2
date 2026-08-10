@@ -1,12 +1,12 @@
 ---
-plan_version: 152
+plan_version: 153
 active_phase: P16
 active_slice: P16-S11
 active_status: VERIFYING
 active_branch: codex/P16-S11-production-preference-consumers
 active_pull_request: 263
-active_head: c4b477289ddbea22261286dc3e8e539d5e299892
-next_action: "Run the complete GitHub Maven PR Tests gate for draft PR #263 at exact head c4b477289ddbea22261286dc3e8e539d5e299892, correct any failures on the same branch, then complete owner desktop verification before merge."
+active_head: a7df25d5b6ac5c2353ab923d4ef82d5d62c352f5
+next_action: "Validate the final documentation-inclusive P16-S11 head through GitHub Maven PR Tests, then complete doc/P16-S11-production-preference-consumers-user-testing.md and merge draft PR #263 after owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2458,10 +2458,12 @@ Execution state:
 - Focused tests cover the executable matrix, shell persistence round-trip/clearing, remembered-geometry clamping, decoration mapping, factual actor resolution, privilege non-gating, and JavaFX production-consumer source routes. All 681 Java sources/tests pass independent Java grammar parsing; dependency-free new policy classes compile with the JDK compiler module; CSS braces and `git diff --check` pass.
 - Local Maven verification is unavailable because this container has no Maven executable or wrapper and no resolved project dependency repository. The JDK compiler module validates the dependency-free new policies, while GitHub Maven PR Tests remains the authoritative full compile/test environment after publication.
 - The complete reviewed local tree was published through the connected GitHub service after explicit owner authorization because this checkout has no HTTPS push credentials. Draft PR #263 opened at exact remote head `c4b477289ddbea22261286dc3e8e539d5e299892`; that remote tree matches the reviewed local tree byte-for-byte.
+- Initial documentation-inclusive run `31407639101` reached the full 607-test suite and exposed one incorrect source-guard ownership assertion: it searched `ProductionWorkspaceWindow` for the remember-window-state lifecycle check even though `MainApp` owns the JavaFX `Stage` and the production check. The guard now inspects `MainApp`; production preference behavior was not weakened or relocated.
+- Exact corrected head `a7df25d5b6ac5c2353ab923d4ef82d5d62c352f5` passed Maven PR Tests run `31407997190`: clean `mvn clean verify` ran 607 tests with 0 failures/errors and 31 skips; the deliberate repeated 607-test suite passed; and all 9 production JavaFX route/source compliance tests passed.
 
 Next exact action:
 
-- Run the complete GitHub Maven PR Tests gate for draft PR #263 at exact head `c4b477289ddbea22261286dc3e8e539d5e299892`, correct any failures on the same branch, and then complete `doc/P16-S11-production-preference-consumers-user-testing.md`. Keep P16-S12 blocked until P16-S11 is merged and owner desktop verification is accepted.
+- Validate the final documentation-inclusive P16-S11 head through GitHub Maven PR Tests, then complete `doc/P16-S11-production-preference-consumers-user-testing.md` and merge draft PR #263 after owner acceptance. Keep P16-S12 blocked until P16-S11 is merged and owner desktop verification is accepted.
 
 ## P16-S12 — Truthful global command and shortcut capabilities
 
