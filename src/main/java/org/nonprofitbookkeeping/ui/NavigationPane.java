@@ -165,7 +165,7 @@ public class NavigationPane extends VBox
                 context.dateRange(),
                 context.panelCapabilities(),
                 "single-select, Enter, or double-click.",
-                "use toolbar Find/Journal for cross-panel queries.");
+                "open Journal or the relevant report destination for cross-panel queries.");
     }
 
     private void addItem(VBox target, AppPanelId id, String label, UiIcons.Glyph glyph)

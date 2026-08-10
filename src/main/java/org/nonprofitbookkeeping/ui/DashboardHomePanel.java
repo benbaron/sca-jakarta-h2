@@ -133,6 +133,12 @@ public final class DashboardHomePanel implements AppPanel
     }
 
     @Override
+    public java.util.Set<AppCommand> commandCapabilities()
+    {
+        return AppPanel.capabilities(AppCommand.NEW_ACTIVE);
+    }
+
+    @Override
     public void onNew()
     {
         UiDebug.log("dashboard", "New action requested; opening Transaction Editor.");

@@ -103,6 +103,12 @@ public class InventoryPanel implements AppPanel
     }
 
     @Override
+    public java.util.Set<AppCommand> commandCapabilities()
+    {
+        return AppPanel.capabilities(AppCommand.NEW_ACTIVE, AppCommand.SAVE_ACTIVE);
+    }
+
+    @Override
     public void onNew()
     {
         openNewItemEditor();
@@ -119,6 +125,12 @@ public class InventoryPanel implements AppPanel
         {
             status.setText("Open New Item or Edit Selected before using Save for inventory items.");
         }
+    }
+
+    @Override
+    public String commandResultMessage(AppCommand command)
+    {
+        return status.getText();
     }
 
     @Override

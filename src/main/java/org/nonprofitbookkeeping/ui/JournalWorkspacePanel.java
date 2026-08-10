@@ -709,6 +709,7 @@ public final class JournalWorkspacePanel implements AppPanel
     {
         if (confirmDiscard && !confirmDiscardIfDirty())
         {
+            status.setText("New journal entry cancelled; unsaved changes remain.");
             return;
         }
         loading = true;
@@ -1295,6 +1296,15 @@ public final class JournalWorkspacePanel implements AppPanel
     }
 
     @Override
+    public java.util.Set<AppCommand> commandCapabilities()
+    {
+        return AppPanel.capabilities(
+                AppCommand.NEW_ACTIVE,
+                AppCommand.SAVE_ACTIVE,
+                AppCommand.POST_VALIDATE);
+    }
+
+    @Override
     public void onNew()
     {
         startNew(true);
@@ -1304,6 +1314,12 @@ public final class JournalWorkspacePanel implements AppPanel
     public void onSave()
     {
         saveCurrentEntry();
+    }
+
+    @Override
+    public String commandResultMessage(AppCommand command)
+    {
+        return status.getText();
     }
 
     @Override

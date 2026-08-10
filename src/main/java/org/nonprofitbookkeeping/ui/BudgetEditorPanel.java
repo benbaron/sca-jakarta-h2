@@ -403,7 +403,17 @@ public class BudgetEditorPanel implements AppPanel
 
     @Override public String title() { return "Budget Editor"; }
     @Override public Node root() { return root; }
+    @Override
+    public java.util.Set<AppCommand> commandCapabilities()
+    {
+        return AppPanel.capabilities(AppCommand.SAVE_ACTIVE);
+    }
     @Override public void onSave() { saveTarget(); }
+    @Override
+    public String commandResultMessage(AppCommand command)
+    {
+        return status.getText();
+    }
     @Override public boolean hasUnsavedChanges() { return dirtyState.isDirty(); }
 
     private BudgetFormSnapshot formSnapshot()

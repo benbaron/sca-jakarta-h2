@@ -409,8 +409,29 @@ public class AssetsRegisterPanel implements AppPanel
 
     @Override public String title() { return "Asset Register"; }
     @Override public Node root() { return root; }
-    @Override public void onNew() { if (!dirtyState.isDirty() || confirmDiscard()) clearForm(); }
+    @Override
+    public java.util.Set<AppCommand> commandCapabilities()
+    {
+        return AppPanel.capabilities(AppCommand.NEW_ACTIVE, AppCommand.SAVE_ACTIVE);
+    }
+    @Override
+    public void onNew()
+    {
+        if (!dirtyState.isDirty() || confirmDiscard())
+        {
+            clearForm();
+        }
+        else
+        {
+            status.setText("New asset cancelled; unsaved changes remain.");
+        }
+    }
     @Override public void onSave() { saveAsset(); }
+    @Override
+    public String commandResultMessage(AppCommand command)
+    {
+        return status.getText();
+    }
     @Override public boolean hasUnsavedChanges() { return dirtyState.isDirty(); }
 
     private record AssetFormSnapshot(

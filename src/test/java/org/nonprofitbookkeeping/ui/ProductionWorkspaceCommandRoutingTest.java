@@ -2,10 +2,13 @@ package org.nonprofitbookkeeping.ui;
 
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.control.Button;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToolBar;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -106,7 +109,45 @@ public class ProductionWorkspaceCommandRoutingTest
         });
 
         assertTrue(result.handled());
-        assertTrue(result.message().contains("delegated"));
+        assertFalse(result.message().isBlank());
+    }
+
+    @Test
+    public void newAndSaveAvailabilityFollowsActiveDestination()
+    {
+        ProductionWorkspaceWindow window = FxTestSupport.onFx(ProductionWorkspaceCommandRoutingTest::newWindow);
+
+        FxTestSupport.onFx(() ->
+        {
+            assertCommandDisabled(window, "New", false);
+            assertCommandDisabled(window, "Save", true);
+
+            window.openPanel(AppPanelId.HELP);
+            assertCommandDisabled(window, "New", true);
+            assertCommandDisabled(window, "Save", true);
+            AppPanel.RunCommandResult unsupported = window.executeCommand(AppCommand.SAVE_ACTIVE);
+            assertFalse(unsupported.handled());
+            assertTrue(unsupported.message().contains("not available"));
+
+            window.openPanel(AppPanelId.JOURNAL_PANE);
+            assertCommandDisabled(window, "New", false);
+            assertCommandDisabled(window, "Save", false);
+
+            window.openPanel(AppPanelId.SETTINGS);
+            TabPane administrationTabs = findTabPane(
+                    window.panelHost().activeRoot(),
+                    "administrationTabs");
+            administrationTabs.getSelectionModel().select(0);
+            assertCommandDisabled(window, "New", true);
+            assertCommandDisabled(window, "Save", false);
+            administrationTabs.getSelectionModel().select(1);
+            assertCommandDisabled(window, "New", true);
+            assertCommandDisabled(window, "Save", true);
+            administrationTabs.getSelectionModel().select(2);
+            assertCommandDisabled(window, "New", false);
+            assertCommandDisabled(window, "Save", false);
+            return null;
+        });
     }
 
     @Test
@@ -189,6 +230,43 @@ public class ProductionWorkspaceCommandRoutingTest
                 .orElseThrow();
     }
 
+    private static void assertCommandDisabled(
+            ProductionWorkspaceWindow window,
+            String label,
+            boolean expectedDisabled)
+    {
+        VBox top = (VBox) window.getTop();
+        MenuBar menuBar = (MenuBar) top.getChildren().get(0);
+        Menu file = menuBar.getMenus().stream()
+                .filter(menu -> "File".equals(menu.getText()))
+                .findFirst()
+                .orElseThrow();
+        MenuItem menuItem = file.getItems().stream()
+                .filter(item -> item.getText().startsWith(label))
+                .findFirst()
+                .orElseThrow();
+        ToolBar toolBar = (ToolBar) top.getChildren().get(1);
+        Button button = toolBar.getItems().stream()
+                .filter(Button.class::isInstance)
+                .map(Button.class::cast)
+                .filter(candidate -> label.equals(candidate.getText()))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(expectedDisabled, menuItem.isDisable(), label + " menu state");
+        assertEquals(expectedDisabled, button.isDisable(), label + " toolbar state");
+        if (expectedDisabled)
+        {
+            assertTrue(menuItem.getText().contains("not available"));
+        }
+        else
+        {
+            assertEquals(label, menuItem.getText());
+        }
+        assertTrue(button.getTooltip().getText().contains(
+                expectedDisabled ? "not available" : "is available"));
+    }
+
     private static TextField firstTextField(Node node)
     {
         if (node instanceof TextField textField)
@@ -210,5 +288,28 @@ public class ProductionWorkspaceCommandRoutingTest
             }
         }
         throw new IllegalStateException("No text field found under node " + node);
+    }
+
+    private static TabPane findTabPane(Node node, String id)
+    {
+        if (node instanceof TabPane tabPane && id.equals(tabPane.getId()))
+        {
+            return tabPane;
+        }
+        if (node instanceof Parent parent)
+        {
+            for (Node child : parent.getChildrenUnmodifiable())
+            {
+                try
+                {
+                    return findTabPane(child, id);
+                }
+                catch (IllegalStateException ignored)
+                {
+                    // Continue searching siblings.
+                }
+            }
+        }
+        throw new IllegalStateException("No tab pane with id " + id + " found under node " + node);
     }
 }

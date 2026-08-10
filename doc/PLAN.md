@@ -1,12 +1,12 @@
 ---
-plan_version: 153
+plan_version: 155
 active_phase: P16
-active_slice: P16-S11
-active_status: VERIFYING
-active_branch: codex/P16-S11-production-preference-consumers
-active_pull_request: 263
-active_head: a7df25d5b6ac5c2353ab923d4ef82d5d62c352f5
-next_action: "Validate the final documentation-inclusive P16-S11 head through GitHub Maven PR Tests, then complete doc/P16-S11-production-preference-consumers-user-testing.md and merge draft PR #263 after owner acceptance."
+active_slice: P16-S12
+active_status: IN_PROGRESS
+active_branch: codex/P16-S12-truthful-global-command-capabilities
+active_pull_request: null
+active_head: f7cce74e5d0cf93661df7673dcfa80a02e5761f9
+next_action: "Complete P16-S12 static validation, commit the capability/shortcut contract, and publish a draft PR for GitHub Actions and owner desktop verification."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S11; P16-S10 DONE through PR #262 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S12; P16-S11 DONE through PR #263 |
 
 ## 4. Governing documents
 
@@ -1879,7 +1879,7 @@ Required behavior: genuine Inventory item add/edit and movement history, no runb
 # P16 — Interface-to-authority completion and integrity corrections
 
 **Selector:** `PHASE=P16`  
-**Status:** IN_PROGRESS through P16-S11; P16-S10 DONE through PR #262
+**Status:** IN_PROGRESS through P16-S12; P16-S11 DONE through PR #263
 **Depends on:** P03 through P15 except eliminated P07
 
 ## Purpose
@@ -2426,7 +2426,7 @@ Next exact action:
 
 ## P16-S11 — Production preference consumers
 
-Status: VERIFYING through draft PR #263 on branch `codex/P16-S11-production-preference-consumers`.
+Status: DONE through merged PR #263 and owner desktop acceptance.
 
 Starting base: `556a8216125bc4bcb7916451049da25648850350`
 
@@ -2460,14 +2460,18 @@ Execution state:
 - The complete reviewed local tree was published through the connected GitHub service after explicit owner authorization because this checkout has no HTTPS push credentials. Draft PR #263 opened at exact remote head `c4b477289ddbea22261286dc3e8e539d5e299892`; that remote tree matches the reviewed local tree byte-for-byte.
 - Initial documentation-inclusive run `31407639101` reached the full 607-test suite and exposed one incorrect source-guard ownership assertion: it searched `ProductionWorkspaceWindow` for the remember-window-state lifecycle check even though `MainApp` owns the JavaFX `Stage` and the production check. The guard now inspects `MainApp`; production preference behavior was not weakened or relocated.
 - Exact corrected head `a7df25d5b6ac5c2353ab923d4ef82d5d62c352f5` passed Maven PR Tests run `31407997190`: clean `mvn clean verify` ran 607 tests with 0 failures/errors and 31 skips; the deliberate repeated 607-test suite passed; and all 9 production JavaFX route/source compliance tests passed.
+- Exact final PR head `7fd2e1f05bee991083a0e84d66c5749965fefd1f` passed Maven PR Tests run `31408499739`.
+- The owner completed and accepted `doc/P16-S11-production-preference-consumers-user-testing.md` on 2026-08-10, and PR #263 merged to `main` at `f7cce74e5d0cf93661df7673dcfa80a02e5761f9`.
 
 Next exact action:
 
-- Validate the final documentation-inclusive P16-S11 head through GitHub Maven PR Tests, then complete `doc/P16-S11-production-preference-consumers-user-testing.md` and merge draft PR #263 after owner acceptance. Keep P16-S12 blocked until P16-S11 is merged and owner desktop verification is accepted.
+- None; P16-S11 is DONE and P16-S12 is active.
 
 ## P16-S12 — Truthful global command and shortcut capabilities
 
-Status: BLOCKED by P16-S11.
+Status: IN_PROGRESS on branch `codex/P16-S12-truthful-global-command-capabilities`.
+
+Starting base: `f7cce74e5d0cf93661df7673dcfa80a02e5761f9`
 
 Purpose: stop the shell from claiming that empty panel defaults handled New, Save, Copy, Paste, Find, or command-palette actions.
 
@@ -2485,6 +2489,14 @@ Acceptance and tests:
 - No enabled global command is a no-op.
 - Help lists only installed shortcuts and exact destination names.
 - Commands follow the selected Administration tab and canonical Journal workspace correctly.
+
+Implementation progress:
+
+- `AppPanel` now exposes explicit command capabilities and handled/not-handled execution; empty New/Save defaults no longer report success, and clipboard hooks are removed.
+- `GlobalCommandRegistry` owns production New, Save, Close All Tabs, and Close Inspector labels/accelerators/Help text. Production no longer intercepts Copy/Paste or advertises uninstalled Find/command-palette shortcuts.
+- The production menu and toolbar follow the active panel capability set. Administration delegates to the selected Preferences, Database Transfer, Company Admin, or User Admin tab and notifies the shell when selection changes.
+- Focused tests cover default no-op rejection, thrown failures, every production destination and Journal alias, Administration tab changes, exact registry shortcuts, menu/toolbar enablement, and dirty-tab close protection.
+- Governing operation, composition, UI-rule, and persistence-authority documents are updated. Owner verification is recorded in `doc/P16-S12-truthful-global-command-capabilities-user-testing.md`.
 
 ## P16-S13 — Truthful report semantics
 

@@ -13,9 +13,7 @@ import javafx.scene.control.Separator;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.ToolBar;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -51,9 +49,14 @@ public class ProductionWorkspaceWindow extends BorderPane
     private final NavigationPane navigationPane;
     private final SplitPane workspace = new SplitPane();
     private final Label activePanelLabel = new Label();
+    private final Label commandStatusLabel = new Label();
     private final Label activePeriodLabel = new Label();
     private final Label activeDatabaseLabel = new Label();
     private final ComboBox<CompanyView> activeCompanySelector = new ComboBox<>();
+    private MenuItem newMenuItem;
+    private MenuItem saveMenuItem;
+    private Button newButton;
+    private Button saveButton;
     private CloseAllTabsPrompt closeAllTabsPrompt = this::confirmCloseAllTabs;
     private DatabaseChangePrompt databaseChangePrompt = this::confirmDatabaseChange;
     private RuntimeException databaseFailure;
@@ -116,6 +119,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         setTop(buildTopChrome());
         setCenter(buildWorkspace());
         setBottom(buildStatusBar());
+        panelHost.setCommandCapabilitiesChangedListener(this::refreshGlobalCommandState);
 
         updateActiveDatabaseLabel();
         refreshActiveCompanySelector();
@@ -153,25 +157,22 @@ public class ProductionWorkspaceWindow extends BorderPane
         }
     }
 
-    public void saveActivePanel()
+    public AppPanel.RunCommandResult saveActivePanel()
     {
-        panelHost.saveActive();
-        stateStore.saveDatabaseSelection(MainWindow.sharedSessionState().databaseSelection());
+        AppPanel.RunCommandResult result = panelHost.saveActive();
+        if (result.handled())
+        {
+            stateStore.saveDatabaseSelection(MainWindow.sharedSessionState().databaseSelection());
+        }
+        presentCommandResult(result);
+        return result;
     }
 
-    public void newItemInActivePanel()
+    public AppPanel.RunCommandResult newItemInActivePanel()
     {
-        panelHost.newItemActive();
-    }
-
-    public void copySelection()
-    {
-        panelHost.copySelectionActive();
-    }
-
-    public void paste()
-    {
-        panelHost.pasteActive();
+        AppPanel.RunCommandResult result = panelHost.newItemActive();
+        presentCommandResult(result);
+        return result;
     }
 
     public void closeInspector()
@@ -200,31 +201,24 @@ public class ProductionWorkspaceWindow extends BorderPane
     public AppPanel.RunCommandResult executeCommand(AppCommand command)
     {
         Objects.requireNonNull(command, "command");
-        return switch (command)
+        AppPanel.RunCommandResult result = switch (command)
         {
-            case NEW_ACTIVE ->
-            {
-                newItemInActivePanel();
-                yield new AppPanel.RunCommandResult(true, "New command routed to active panel.");
-            }
-            case SAVE_ACTIVE ->
-            {
-                saveActivePanel();
-                yield new AppPanel.RunCommandResult(true, "Save command routed to active panel.");
-            }
-            case COPY_ACTIVE ->
-            {
-                copySelection();
-                yield new AppPanel.RunCommandResult(true, "Copy command routed to active panel.");
-            }
-            case PASTE_ACTIVE ->
-            {
-                paste();
-                yield new AppPanel.RunCommandResult(true, "Paste command routed to active panel.");
-            }
+            case NEW_ACTIVE -> panelHost.newItemActive();
+            case SAVE_ACTIVE -> panelHost.saveActive();
             case CLOSE_ALL_TABS -> closeAllWorkspaceTabs();
-            case POST_VALIDATE -> panelHost.runCommandActive(command);
+            case CLOSE_INSPECTOR ->
+            {
+                closeInspector();
+                yield new AppPanel.RunCommandResult(true, "Closed the inspector.");
+            }
+            case POST_VALIDATE -> panelHost.executeActive(command);
         };
+        if (command == AppCommand.SAVE_ACTIVE && result.handled())
+        {
+            stateStore.saveDatabaseSelection(MainWindow.sharedSessionState().databaseSelection());
+        }
+        presentCommandResult(result);
+        return result;
     }
 
     LocalDate activePeriodDate()
@@ -304,8 +298,16 @@ public class ProductionWorkspaceWindow extends BorderPane
         repairDatabase.setOnAction(event -> executeDatabaseRecoveryCommand(DatabaseRecoveryCommand.RETRY_CURRENT));
         MenuItem sampleCompany = new MenuItem("Create / Refresh Sample Company Data");
         sampleCompany.setOnAction(event -> createOrRefreshSampleCompany());
-        MenuItem save = new MenuItem("Save");
-        save.setOnAction(event -> saveActivePanel());
+        GlobalCommandRegistry.Definition newDefinition =
+                GlobalCommandRegistry.definition(AppCommand.NEW_ACTIVE);
+        newMenuItem = new MenuItem(newDefinition.label());
+        newMenuItem.setAccelerator(newDefinition.accelerator());
+        newMenuItem.setOnAction(event -> executeCommand(AppCommand.NEW_ACTIVE));
+        GlobalCommandRegistry.Definition saveDefinition =
+                GlobalCommandRegistry.definition(AppCommand.SAVE_ACTIVE);
+        saveMenuItem = new MenuItem(saveDefinition.label());
+        saveMenuItem.setAccelerator(saveDefinition.accelerator());
+        saveMenuItem.setOnAction(event -> executeCommand(AppCommand.SAVE_ACTIVE));
         MenuItem exit = new MenuItem("Exit");
         exit.setOnAction(event ->
         {
@@ -320,15 +322,15 @@ public class ProductionWorkspaceWindow extends BorderPane
                 repairDatabase,
                 sampleCompany,
                 new SeparatorMenuItem(),
-                save,
+                newMenuItem,
+                saveMenuItem,
                 exit);
 
         Menu workspaceMenu = new Menu("Workspace");
-        MenuItem closeAllTabs = new MenuItem("Close All Tabs");
-        closeAllTabs.setAccelerator(new KeyCodeCombination(
-                KeyCode.W,
-                KeyCombination.CONTROL_DOWN,
-                KeyCombination.SHIFT_DOWN));
+        GlobalCommandRegistry.Definition closeDefinition =
+                GlobalCommandRegistry.definition(AppCommand.CLOSE_ALL_TABS);
+        MenuItem closeAllTabs = new MenuItem(closeDefinition.label());
+        closeAllTabs.setAccelerator(closeDefinition.accelerator());
         closeAllTabs.setOnAction(event -> executeCommand(AppCommand.CLOSE_ALL_TABS));
         workspaceMenu.getItems().add(closeAllTabs);
 
@@ -355,11 +357,11 @@ public class ProductionWorkspaceWindow extends BorderPane
 
     private ToolBar buildToolBar()
     {
-        Button newButton = new Button("New");
-        newButton.setOnAction(event -> newItemInActivePanel());
+        newButton = new Button(GlobalCommandRegistry.label(AppCommand.NEW_ACTIVE));
+        newButton.setOnAction(event -> executeCommand(AppCommand.NEW_ACTIVE));
 
-        Button saveButton = new Button("Save");
-        saveButton.setOnAction(event -> saveActivePanel());
+        saveButton = new Button(GlobalCommandRegistry.label(AppCommand.SAVE_ACTIVE));
+        saveButton.setOnAction(event -> executeCommand(AppCommand.SAVE_ACTIVE));
 
         Button navigationButton = new Button("Navigation");
         navigationButton.setOnAction(event -> setNavigationVisible(!workspace.getItems().contains(navigationPane)));
@@ -427,10 +429,56 @@ public class ProductionWorkspaceWindow extends BorderPane
     private HBox buildStatusBar()
     {
         activePanelLabel.getStyleClass().add("status-label");
-        HBox statusBar = new HBox(activePanelLabel);
+        commandStatusLabel.getStyleClass().add("status-label");
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox statusBar = new HBox(activePanelLabel, spacer, commandStatusLabel);
         statusBar.setPadding(new Insets(4, 10, 6, 10));
         statusBar.getStyleClass().add("status-bar");
         return statusBar;
+    }
+
+    private void refreshGlobalCommandState()
+    {
+        if (newMenuItem == null || saveMenuItem == null || newButton == null || saveButton == null)
+        {
+            return;
+        }
+        java.util.Set<AppCommand> capabilities = panelHost.activeCommandCapabilities();
+        updateCommandControl(
+                AppCommand.NEW_ACTIVE,
+                capabilities,
+                newMenuItem,
+                newButton);
+        updateCommandControl(
+                AppCommand.SAVE_ACTIVE,
+                capabilities,
+                saveMenuItem,
+                saveButton);
+    }
+
+    private void updateCommandControl(
+            AppCommand command,
+            java.util.Set<AppCommand> capabilities,
+            MenuItem menuItem,
+            Button button)
+    {
+        boolean supported = capabilities.contains(command);
+        menuItem.setDisable(!supported);
+        button.setDisable(!supported);
+        String explanation = supported
+                ? GlobalCommandRegistry.label(command) + " is available in " + panelHost.getActiveTitle() + "."
+                : GlobalCommandRegistry.label(command) + " is not available in " + panelHost.getActiveTitle() + ".";
+        menuItem.setText(supported
+                ? GlobalCommandRegistry.label(command)
+                : GlobalCommandRegistry.label(command) + " — not available in " + panelHost.getActiveTitle());
+        button.setTooltip(new Tooltip(explanation));
+    }
+
+    private void presentCommandResult(AppPanel.RunCommandResult result)
+    {
+        commandStatusLabel.setText(result.message());
+        refreshGlobalCommandState();
     }
 
     private void showDashboardOrRecovery(RuntimeException startupFailure)

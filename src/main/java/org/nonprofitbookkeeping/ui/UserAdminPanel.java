@@ -258,8 +258,29 @@ public class UserAdminPanel implements AppPanel
 
     @Override public String title() { return "User Admin"; }
     @Override public Node root() { return root; }
+    @Override
+    public java.util.Set<AppCommand> commandCapabilities()
+    {
+        return AppPanel.capabilities(AppCommand.NEW_ACTIVE, AppCommand.SAVE_ACTIVE);
+    }
     @Override public void onSave() { if (userDirty.isDirty()) saveUser(); else if (assignmentDirty.isDirty()) assignRole(); else saveUser(); }
-    @Override public void onNew() { if (!userDirty.isDirty() || confirmDiscard("user")) clearUserForm(); }
+    @Override
+    public void onNew()
+    {
+        if (!userDirty.isDirty() || confirmDiscard("user"))
+        {
+            clearUserForm();
+        }
+        else
+        {
+            status.setText("New user cancelled; unsaved changes remain.");
+        }
+    }
+    @Override
+    public String commandResultMessage(AppCommand command)
+    {
+        return status.getText();
+    }
     @Override public boolean hasUnsavedChanges() { return userDirty.isDirty() || assignmentDirty.isDirty(); }
 
     private Node tableEditorSplit(String id,

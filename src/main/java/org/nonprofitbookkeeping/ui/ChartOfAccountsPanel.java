@@ -133,6 +133,12 @@ public class ChartOfAccountsPanel implements AppPanel
     @Override public Node root() { return root; }
 
     @Override
+    public java.util.Set<AppCommand> commandCapabilities()
+    {
+        return AppPanel.capabilities(AppCommand.NEW_ACTIVE, AppCommand.SAVE_ACTIVE);
+    }
+
+    @Override
     public void onNew()
     {
         if (!dirtyState.isDirty() || confirmDiscard())
@@ -140,6 +146,16 @@ public class ChartOfAccountsPanel implements AppPanel
             clearFormForNew();
             status.setText("Create mode: enter account details and click Save.");
         }
+        else
+        {
+            status.setText("New account cancelled; unsaved changes remain.");
+        }
+    }
+
+    @Override
+    public String commandResultMessage(AppCommand command)
+    {
+        return status.getText();
     }
 
     private Node buildEditorForm()
