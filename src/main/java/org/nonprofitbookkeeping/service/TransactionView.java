@@ -47,6 +47,46 @@ public record TransactionView(Long id,
         return lines.stream().map(Line::credit).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+    public ClearedState clearedState()
+    {
+        return summarizeClearedState(lines);
+    }
+
+    private static ClearedState summarizeClearedState(List<Line> lines)
+    {
+        List<Line> bankLines = lines == null ? List.of() : lines.stream().filter(Line::bankAccount).toList();
+        if (bankLines.isEmpty())
+        {
+            return ClearedState.NOT_BANK;
+        }
+        long cleared = bankLines.stream().filter(Line::bankCleared).count();
+        if (cleared == 0)
+        {
+            return ClearedState.UNCLEARED;
+        }
+        return cleared == bankLines.size() ? ClearedState.CLEARED : ClearedState.MIXED;
+    }
+
+    public enum ClearedState
+    {
+        NOT_BANK("Not bank"),
+        UNCLEARED("Uncleared"),
+        CLEARED("Cleared"),
+        MIXED("Mixed");
+
+        private final String displayText;
+
+        ClearedState(String displayText)
+        {
+            this.displayText = displayText;
+        }
+
+        public String displayText()
+        {
+            return displayText;
+        }
+    }
+
     public record Line(Long id,
                        Long accountId,
                        String accountCode,
@@ -60,12 +100,51 @@ public record TransactionView(Long id,
                        BigDecimal debit,
                        BigDecimal credit,
                        boolean nmr,
-                       String notes)
+                       String notes,
+                       boolean bankAccount,
+                       boolean bankCleared,
+                       LocalDate bankClearedOn,
+                       Long reconciliationSessionId)
     {
+        public Line(Long id,
+                    Long accountId,
+                    String accountCode,
+                    String accountName,
+                    Long fundId,
+                    String fundCode,
+                    String fundName,
+                    Long budgetCategoryId,
+                    Long activityId,
+                    Long merchantId,
+                    BigDecimal debit,
+                    BigDecimal credit,
+                    boolean nmr,
+                    String notes)
+        {
+            this(id, accountId, accountCode, accountName, fundId, fundCode, fundName,
+                    budgetCategoryId, activityId, merchantId, debit, credit, nmr, notes,
+                    false, false, null, null);
+        }
+
         public Line
         {
             debit = debit == null ? BigDecimal.ZERO : debit;
             credit = credit == null ? BigDecimal.ZERO : credit;
+            if (!bankAccount)
+            {
+                bankCleared = false;
+                bankClearedOn = null;
+                reconciliationSessionId = null;
+            }
+        }
+
+        public String clearedDisplay()
+        {
+            if (!bankAccount)
+            {
+                return ClearedState.NOT_BANK.displayText();
+            }
+            return bankCleared ? ClearedState.CLEARED.displayText() : ClearedState.UNCLEARED.displayText();
         }
     }
 }

@@ -9,6 +9,7 @@ final class BankImportNavigationContext
     private static final String IMPORT_PREFIX = "bank-import:account=";
     private static final String SESSION_SEPARATOR = ";reconciliation=";
     private static final String RETURN_PREFIX = "bank-import-return:reconciliation=";
+    private static final String RECONCILIATION_PREFIX = "reconciliation:session=";
 
     private BankImportNavigationContext()
     {
@@ -68,6 +69,32 @@ final class BankImportNavigationContext
         try
         {
             long sessionId = Long.parseLong(context.substring(RETURN_PREFIX.length()));
+            return sessionId > 0 ? OptionalLong.of(sessionId) : OptionalLong.empty();
+        }
+        catch (NumberFormatException ex)
+        {
+            return OptionalLong.empty();
+        }
+    }
+
+    static String forReconciliationSession(long reconciliationSessionId)
+    {
+        if (reconciliationSessionId <= 0)
+        {
+            throw new IllegalArgumentException("Reconciliation session ID must be positive.");
+        }
+        return RECONCILIATION_PREFIX + reconciliationSessionId;
+    }
+
+    static OptionalLong parseReconciliationSession(String context)
+    {
+        if (context == null || !context.startsWith(RECONCILIATION_PREFIX))
+        {
+            return OptionalLong.empty();
+        }
+        try
+        {
+            long sessionId = Long.parseLong(context.substring(RECONCILIATION_PREFIX.length()));
             return sessionId > 0 ? OptionalLong.of(sessionId) : OptionalLong.empty();
         }
         catch (NumberFormatException ex)
