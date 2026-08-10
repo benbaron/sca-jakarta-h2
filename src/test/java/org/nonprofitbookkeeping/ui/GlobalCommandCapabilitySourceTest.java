@@ -30,6 +30,7 @@ class GlobalCommandCapabilitySourceTest
         String help = source("HelpPanel.java");
         String navigation = source("NavigationPane.java");
         String production = source("ProductionWorkspaceWindow.java");
+        String reference = source("ReferenceWorkspaceWindow.java");
 
         assertTrue(shortcuts.contains("GlobalCommandRegistry.installed()"));
         assertFalse(shortcuts.contains("KeyCode.C,"));
@@ -42,6 +43,8 @@ class GlobalCommandCapabilitySourceTest
         assertFalse(help.contains("Ctrl+K"));
         assertFalse(help.contains("Ctrl+G"));
         assertFalse(navigation.contains("toolbar Find/Journal"));
+        assertFalse(reference.contains("item(\"Copy\""));
+        assertFalse(reference.contains("item(\"Paste\""));
         assertTrue(production.contains("panelHost.activeCommandCapabilities()"));
         assertTrue(production.contains("menuItem.setDisable(!supported)"));
         assertTrue(production.contains("button.setDisable(!supported)"));

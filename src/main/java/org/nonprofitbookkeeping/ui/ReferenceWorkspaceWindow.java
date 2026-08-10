@@ -109,9 +109,6 @@ final class ReferenceWorkspaceWindow extends ProductionWorkspaceWindow
         }
 
         Menu file = existing.getMenus().isEmpty() ? new Menu("File") : existing.getMenus().remove(0);
-        Menu edit = menu("Edit",
-                item("Copy", this::copySelection),
-                item("Paste", this::paste));
         Menu transactions = menu("Transactions",
                 item("New Transaction", () -> openPanel(AppPanelId.TXN_EDITOR)),
                 item("Ledger Register", () -> openPanel(AppPanelId.LEDGER_REGISTER)));
@@ -135,7 +132,6 @@ final class ReferenceWorkspaceWindow extends ProductionWorkspaceWindow
 
         MenuBar replacement = new MenuBar(
                 file,
-                edit,
                 transactions,
                 workspace,
                 reports,

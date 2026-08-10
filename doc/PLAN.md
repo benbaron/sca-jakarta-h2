@@ -2499,6 +2499,7 @@ Implementation progress:
 - Governing operation, composition, UI-rule, and persistence-authority documents are updated. Owner verification is recorded in `doc/P16-S12-truthful-global-command-capabilities-user-testing.md`.
 - All Java sources pass independent Java 17 parsing; the command core passes an isolated JavaFX compiler check; focused source guards and `git diff --check` pass. Maven is unavailable in the local container, so GitHub Maven PR Tests is the authoritative full compile/test gate.
 - The complete 33-file implementation tree was published through the connected GitHub service after explicit owner authorization. Draft PR #264 opened at exact remote head `6accaf3ff1c86f0bce09fa732a40d68005a49d4a`; its tree SHA `7fd4396a77fab930aace1b93c6395ffe25015c50` exactly matches the reviewed local implementation tree.
+- Initial plan-inclusive Maven PR Tests run `31427773070` compiled the production sources until `ReferenceWorkspaceWindow` and exposed two stale Edit-menu method references to the removed global `copySelection()` and `paste()` hooks. The compatibility shell now leaves native text-control Copy/Paste un-intercepted, and the focused source guard covers that boundary.
 
 Next exact action:
 
