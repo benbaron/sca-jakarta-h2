@@ -72,7 +72,10 @@ public class ReportLibraryPanel implements AppPanel
     private final String companyCode = activeCompanyCode();
     private final CompanyUiFormat companyFormat = new CompanyUiFormat(preferencesService.load(companyCode));
     private final ReportExecutionService executionService =
-            new ReportExecutionService(UiServiceRegistry.financialReports(), companyFormat);
+            new ReportExecutionService(
+                    UiServiceRegistry.financialReports(),
+                    companyFormat,
+                    UiServiceRegistry.semanticAccountingReports());
     private final PauseTransition dividerSaveDelay = new PauseTransition(Duration.millis(350));
 
     private SplitPane workspaceSplit;
