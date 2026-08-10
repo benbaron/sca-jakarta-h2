@@ -1,12 +1,12 @@
 ---
-plan_version: 151
+plan_version: 152
 active_phase: P16
 active_slice: P16-S11
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P16-S11-production-preference-consumers
-active_pull_request: null
-active_head: e616dd391f8f2279a4b6735b2ecfc4a2da659109
-next_action: "After explicit owner authorization, push local P16-S11 commit e616dd391f8f2279a4b6735b2ecfc4a2da659109, open the draft pull request, and run the authoritative Maven PR Tests workflow."
+active_pull_request: 263
+active_head: c4b477289ddbea22261286dc3e8e539d5e299892
+next_action: "Run the complete GitHub Maven PR Tests gate for draft PR #263 at exact head c4b477289ddbea22261286dc3e8e539d5e299892, correct any failures on the same branch, then complete owner desktop verification before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2426,7 +2426,7 @@ Next exact action:
 
 ## P16-S11 — Production preference consumers
 
-Status: IN_PROGRESS on branch `codex/P16-S11-production-preference-consumers`.
+Status: VERIFYING through draft PR #263 on branch `codex/P16-S11-production-preference-consumers`.
 
 Starting base: `556a8216125bc4bcb7916451049da25648850350`
 
@@ -2457,11 +2457,11 @@ Execution state:
 - Governing scope, operation, persistence, accounting, and Journal documentation now distinguish user-machine shell preferences from company-owned H2 display state. The owner checklist is `doc/P16-S11-production-preference-consumers-user-testing.md`.
 - Focused tests cover the executable matrix, shell persistence round-trip/clearing, remembered-geometry clamping, decoration mapping, factual actor resolution, privilege non-gating, and JavaFX production-consumer source routes. All 681 Java sources/tests pass independent Java grammar parsing; dependency-free new policy classes compile with the JDK compiler module; CSS braces and `git diff --check` pass.
 - Local Maven verification is unavailable because this container has no Maven executable or wrapper and no resolved project dependency repository. The JDK compiler module validates the dependency-free new policies, while GitHub Maven PR Tests remains the authoritative full compile/test environment after publication.
-- The complete implementation is committed locally at `e616dd391f8f2279a4b6735b2ecfc4a2da659109`. GitHub publication was not attempted through an alternate path after the environment rejected `git push` pending explicit owner authorization.
+- The complete reviewed local tree was published through the connected GitHub service after explicit owner authorization because this checkout has no HTTPS push credentials. Draft PR #263 opened at exact remote head `c4b477289ddbea22261286dc3e8e539d5e299892`; that remote tree matches the reviewed local tree byte-for-byte.
 
 Next exact action:
 
-- After explicit owner authorization, push local commit `e616dd391f8f2279a4b6735b2ecfc4a2da659109`, open the draft pull request, and run the complete GitHub Maven PR Tests gate. Keep P16-S12 blocked until P16-S11 is merged and owner desktop verification is accepted.
+- Run the complete GitHub Maven PR Tests gate for draft PR #263 at exact head `c4b477289ddbea22261286dc3e8e539d5e299892`, correct any failures on the same branch, and then complete `doc/P16-S11-production-preference-consumers-user-testing.md`. Keep P16-S12 blocked until P16-S11 is merged and owner desktop verification is accepted.
 
 ## P16-S12 — Truthful global command and shortcut capabilities
 
