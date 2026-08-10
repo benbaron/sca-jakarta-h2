@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.report.template;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.nonprofitbookkeeping.report.SemanticAccountingReportQueryService;
 import org.nonprofitbookkeeping.service.FinancialReportService;
 
 import java.math.BigDecimal;
@@ -16,11 +17,20 @@ public class WorkbookSemanticReportService
     private static final int DEFAULT_ROW_LIMIT = 500;
 
     private final FinancialReportService financialReports;
+    private final SemanticAccountingReportQueryService semanticQueries;
     private final SemanticReportRenderer renderer = new SemanticReportRenderer();
 
     public WorkbookSemanticReportService(FinancialReportService financialReports)
     {
+        this(financialReports, null);
+    }
+
+    public WorkbookSemanticReportService(
+            FinancialReportService financialReports,
+            SemanticAccountingReportQueryService semanticQueries)
+    {
         this.financialReports = financialReports;
+        this.semanticQueries = semanticQueries;
     }
 
     public JsonNode loadTemplate(String templateId)
@@ -67,9 +77,10 @@ public class WorkbookSemanticReportService
             case "WorkbookSummary" -> summaryValues(effectiveStart, effectiveEnd, fundCode);
             case "TransactionsList" -> ledgerTableValues(
                     "transactionsList.rows", effectiveStart, effectiveEnd, fundCode, effectiveLimit);
-            case "AllChecksTfrs" -> ledgerTableValues(
-                    "allChecksTfrs.rows", effectiveStart, effectiveEnd, fundCode, effectiveLimit);
-            case "FundTransfers" -> fundTransferValues(effectiveStart, effectiveEnd, effectiveLimit);
+            case "AllChecksTfrs" -> bankActivityValues(
+                    effectiveStart, effectiveEnd, fundCode, effectiveLimit);
+            case "FundTransfers" -> fundTransferValues(
+                    effectiveStart, effectiveEnd, effectiveLimit);
             default -> throw new IllegalArgumentException("Unknown semantic report template: " + templateId);
         };
     }
@@ -133,27 +144,121 @@ public class WorkbookSemanticReportService
         return values;
     }
 
-    private SemanticReportValueSet fundTransferValues(LocalDate start, LocalDate end, int rowLimit)
+    private SemanticReportValueSet bankActivityValues(
+            LocalDate start,
+            LocalDate end,
+            String fundCode,
+            int rowLimit)
     {
-        List<FinancialReportService.GeneralLedgerRow> rows =
-                financialReports.generalLedgerDetail(start, end, null, rowLimit);
-        Map<String, BigDecimal> byFund = new LinkedHashMap<>();
-        for (FinancialReportService.GeneralLedgerRow row : rows)
-        {
-            String fund = row.fundCode() == null || row.fundCode().isBlank() ? "(none)" : row.fundCode();
-            byFund.merge(fund, row.debit().subtract(row.credit()), BigDecimal::add);
-        }
-        List<Map<String, Object>> out = new ArrayList<>();
-        for (Map.Entry<String, BigDecimal> entry : byFund.entrySet())
+        SemanticAccountingReportQueryService.BankActivityResult report =
+                requireSemanticQueries().bankAccountActivity(start, end, fundCode, rowLimit);
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (SemanticAccountingReportQueryService.BankActivityRow source : report.rows())
         {
             Map<String, Object> row = new LinkedHashMap<>();
-            row.put("fundCode", entry.getKey());
-            row.put("netEffect", entry.getValue());
-            out.add(row);
+            row.put("rowType", "BANK split");
+            row.put("txnDate", source.transactionDate());
+            row.put("txnId", source.transactionId());
+            row.put("payee", source.payee());
+            row.put("accountCode", source.accountCode());
+            row.put("accountName", source.accountName());
+            row.put("fundCode", source.fundCode());
+            row.put("debit", source.debit());
+            row.put("credit", source.credit());
+            row.put("memo", source.memo());
+            rows.add(row);
         }
+
+        Map<String, Object> total = new LinkedHashMap<>();
+        total.put("rowType", "Displayed total");
+        total.put("debit", report.totalDebits());
+        total.put("credit", report.totalCredits());
+        total.put("memo", "Totals include only the returned BANK-account splits.");
+        rows.add(total);
+
         SemanticReportValueSet values = new SemanticReportValueSet();
-        values.putTable("fundTransfers.rows", out);
+        values.put("bankActivity.totalDebits", report.totalDebits());
+        values.put("bankActivity.totalCredits", report.totalCredits());
+        values.putTable("allChecksTfrs.rows", rows);
         return values;
+    }
+
+    private SemanticReportValueSet fundTransferValues(LocalDate start, LocalDate end, int rowLimit)
+    {
+        List<SemanticAccountingReportQueryService.PostedFundTransferRow> transfers =
+                requireSemanticQueries().postedFundTransfers(start, end, rowLimit);
+        List<Map<String, Object>> rows = new ArrayList<>();
+        Map<String, BigDecimal> byFund = new LinkedHashMap<>();
+
+        for (SemanticAccountingReportQueryService.PostedFundTransferRow transfer : transfers)
+        {
+            rows.add(transferLeg(
+                    transfer,
+                    "Transfer source",
+                    transfer.sourceFundCode(),
+                    transfer.destinationFundCode(),
+                    transfer.amount().negate()));
+            rows.add(transferLeg(
+                    transfer,
+                    "Transfer destination",
+                    transfer.destinationFundCode(),
+                    transfer.sourceFundCode(),
+                    transfer.amount()));
+            byFund.merge(transfer.sourceFundCode(), transfer.amount().negate(), BigDecimal::add);
+            byFund.merge(transfer.destinationFundCode(), transfer.amount(), BigDecimal::add);
+        }
+
+        BigDecimal allFundsNet = BigDecimal.ZERO;
+        for (Map.Entry<String, BigDecimal> entry : byFund.entrySet())
+        {
+            Map<String, Object> total = new LinkedHashMap<>();
+            total.put("rowType", "Fund total");
+            total.put("fundCode", entry.getKey());
+            total.put("netEffect", entry.getValue());
+            total.put("memo", "Net of explicit posted transfer legs for this fund.");
+            rows.add(total);
+            allFundsNet = allFundsNet.add(entry.getValue());
+        }
+
+        Map<String, Object> total = new LinkedHashMap<>();
+        total.put("rowType", "All funds net");
+        total.put("netEffect", allFundsNet);
+        total.put("memo", "Must be zero for complete posted transfer pairs.");
+        rows.add(total);
+
+        SemanticReportValueSet values = new SemanticReportValueSet();
+        values.put("fundTransfers.allFundsNet", allFundsNet);
+        values.putTable("fundTransfers.rows", rows);
+        return values;
+    }
+
+    private Map<String, Object> transferLeg(
+            SemanticAccountingReportQueryService.PostedFundTransferRow transfer,
+            String rowType,
+            String fundCode,
+            String counterFundCode,
+            BigDecimal effect)
+    {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("rowType", rowType);
+        row.put("transferDate", transfer.transferDate());
+        row.put("txnId", transfer.transactionId());
+        row.put("transferId", transfer.transferId());
+        row.put("fundCode", fundCode);
+        row.put("counterFundCode", counterFundCode);
+        row.put("netEffect", effect);
+        row.put("memo", transfer.memo());
+        return row;
+    }
+
+    private SemanticAccountingReportQueryService requireSemanticQueries()
+    {
+        if (semanticQueries == null)
+        {
+            throw new IllegalStateException(
+                    "Bank activity and fund transfer reports require a company-scoped semantic query service.");
+        }
+        return semanticQueries;
     }
 
     private void putRowsByAccount(
