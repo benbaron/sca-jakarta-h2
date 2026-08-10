@@ -1,12 +1,12 @@
 ---
-plan_version: 159
+plan_version: 160
 active_phase: P16
 active_slice: P16-S13
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P16-S13-truthful-report-semantics
-active_pull_request: null
-active_head: c2497f69f443b6b7e9368c2c69a8910950629728
-next_action: "Open the P16-S13 draft PR, run the complete Maven PR Tests gate, correct failures on the same branch, then complete owner desktop acceptance."
+active_pull_request: 265
+active_head: 0f32bd755ac6a924e72bcea0098b9fe3e1fda36f
+next_action: "Validate draft PR #265 through the complete Maven PR Tests gate, correct failures on the same branch, then complete doc/P16-S13-truthful-report-semantics-user-testing.md."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2511,7 +2511,7 @@ Next exact action:
 
 ## P16-S13 — Truthful report semantics
 
-Status: IN_PROGRESS on branch `codex/P16-S13-truthful-report-semantics`.
+Status: VERIFYING through draft PR #265 on branch `codex/P16-S13-truthful-report-semantics`.
 
 Starting base: `6ff2c23649cede30e68fcd335d662eaf7d99b978`
 
@@ -2540,11 +2540,11 @@ Implementation progress:
 - Report Library injects the company-scoped query service into the existing `ReportExecutionService`; preview, export, and drill-through continue to share one immutable `ReportRequest`. No second ledger or report store was introduced.
 - The governed predicates and row-limit semantics are recorded in `doc/reporting/report-library.md`. The owner checklist is `doc/P16-S13-truthful-report-semantics-user-testing.md`.
 - Focused H2 integration tests cover BANK-only selection, fund/date/company isolation, reversals, explicit posted transfers, balanced pair expansion, exclusions, totals, empty ranges, and preview/CSV semantic parity.
-- Local Maven execution is unavailable in this environment; GitHub Maven PR Tests is the authoritative full compile/test, deliberate repeat, and JavaFX route gate after the draft PR opens.
+- Local Maven execution is unavailable in this environment. Draft PR #265 opened at implementation head `0f32bd755ac6a924e72bcea0098b9fe3e1fda36f`; GitHub Maven PR Tests is the authoritative full compile/test, deliberate repeat, and JavaFX route gate.
 
 Next exact action:
 
-- Open the P16-S13 draft PR, run the complete Maven PR Tests workflow, fix any failures on this branch, and leave the slice `VERIFYING` for owner desktop acceptance.
+- Validate draft PR #265 through the complete Maven PR Tests workflow, fix any failures on this branch, then complete the owner desktop checklist before merge.
 
 ## P16-S14 — Fixed-asset disposal accounting
 
