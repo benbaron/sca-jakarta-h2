@@ -1,12 +1,12 @@
 ---
-plan_version: 157
+plan_version: 158
 active_phase: P16
 active_slice: P16-S12
 active_status: VERIFYING
 active_branch: codex/P16-S12-truthful-global-command-capabilities
 active_pull_request: 264
-active_head: 8fdd8b636ad23a9545f8bb79300346f2f75e2734
-next_action: "Validate the final documentation-inclusive P16-S12 head through Maven PR Tests, then complete doc/P16-S12-truthful-global-command-capabilities-user-testing.md and merge only after owner acceptance."
+active_head: dcb65f300d93832ee6d7f00cd5f76d2e2e68e1a5
+next_action: "Complete doc/P16-S12-truthful-global-command-capabilities-user-testing.md on draft PR #264, then merge only after owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2501,10 +2501,11 @@ Implementation progress:
 - The complete 33-file implementation tree was published through the connected GitHub service after explicit owner authorization. Draft PR #264 opened at exact remote head `6accaf3ff1c86f0bce09fa732a40d68005a49d4a`; its tree SHA `7fd4396a77fab930aace1b93c6395ffe25015c50` exactly matches the reviewed local implementation tree.
 - Initial plan-inclusive Maven PR Tests run `31427773070` compiled the production sources until `ReferenceWorkspaceWindow` and exposed two stale Edit-menu method references to the removed global `copySelection()` and `paste()` hooks. The compatibility shell now leaves native text-control Copy/Paste un-intercepted, and the focused source guard covers that boundary.
 - Exact corrected head `8fdd8b636ad23a9545f8bb79300346f2f75e2734` passed Maven PR Tests run `31427958302`: clean `mvn clean verify` ran 616 tests with 0 failures/errors and 33 skips; the deliberate repeated 616-test suite passed; and all 9 production JavaFX route/source compliance tests passed.
+- Exact documentation-inclusive head `dcb65f300d93832ee6d7f00cd5f76d2e2e68e1a5` passed Maven PR Tests run `31428418987`, including clean `mvn clean verify`, the deliberately repeated full suite, and production JavaFX route/source compliance.
 
 Next exact action:
 
-- Validate the final documentation-inclusive P16-S12 head through Maven PR Tests, then complete `doc/P16-S12-truthful-global-command-capabilities-user-testing.md` and merge only after owner acceptance. Keep P16-S13 blocked.
+- Complete `doc/P16-S12-truthful-global-command-capabilities-user-testing.md` on draft PR #264, then merge only after owner acceptance. Keep P16-S13 blocked.
 
 ## P16-S13 — Truthful report semantics
 
