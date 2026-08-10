@@ -6,6 +6,9 @@ import javafx.scene.control.TabPane;
 import javafx.scene.layout.BorderPane;
 import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
 
+import java.util.Objects;
+import java.util.Set;
+
 /**
  * Production Administration workspace that makes preferences, database transfer,
  * company, and user administration reachable through one stable shell destination.
@@ -18,6 +21,7 @@ public final class AdministrationPanel implements AppPanel
     private final DatabaseTransferPanel transfers;
     private final CompanyAdminPanel companies;
     private final UserAdminPanel users;
+    private Runnable commandCapabilitiesChangedListener = () -> { };
 
     public AdministrationPanel()
     {
@@ -62,6 +66,14 @@ public final class AdministrationPanel implements AppPanel
                 tab("Database Transfer", transfers),
                 tab("Company Admin", companies),
                 tab("User Admin", users));
+        tabs.getTabs().stream()
+                .map(Tab::getUserData)
+                .filter(AppPanel.class::isInstance)
+                .map(AppPanel.class::cast)
+                .forEach(panel -> panel.setCommandCapabilitiesChangedListener(
+                        this::notifyCommandCapabilitiesChanged));
+        tabs.getSelectionModel().selectedItemProperty().addListener(
+                (observable, oldTab, newTab) -> notifyCommandCapabilitiesChanged());
         root.setCenter(tabs);
     }
 
@@ -83,6 +95,29 @@ public final class AdministrationPanel implements AppPanel
     public Node root()
     {
         return root;
+    }
+
+    @Override
+    public Set<AppCommand> commandCapabilities()
+    {
+        AppPanel selected = selectedPanel();
+        return selected == null ? Set.of() : Set.copyOf(selected.commandCapabilities());
+    }
+
+    @Override
+    public RunCommandResult executeCommand(AppCommand command)
+    {
+        AppPanel selected = selectedPanel();
+        return selected == null
+                ? new RunCommandResult(false, "Administration has no selected tab.")
+                : selected.executeCommand(command);
+    }
+
+    @Override
+    public void setCommandCapabilitiesChangedListener(Runnable listener)
+    {
+        commandCapabilitiesChangedListener = Objects.requireNonNull(listener, "listener");
+        commandCapabilitiesChangedListener.run();
     }
 
     @Override
@@ -129,6 +164,11 @@ public final class AdministrationPanel implements AppPanel
     {
         Tab selected = tabs.getSelectionModel().getSelectedItem();
         return selected != null && selected.getUserData() instanceof AppPanel panel ? panel : null;
+    }
+
+    private void notifyCommandCapabilitiesChanged()
+    {
+        commandCapabilitiesChangedListener.run();
     }
 
     SettingsPanel settingsForTests()

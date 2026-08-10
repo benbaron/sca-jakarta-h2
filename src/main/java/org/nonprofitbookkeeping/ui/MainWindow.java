@@ -1005,27 +1005,48 @@ public class MainWindow extends BorderPane
 
     public void saveActivePanel()
     {
-        panelHost.saveActive();
-        stateStore.savePreferences(SESSION_STATE.preferences());
-        stateStore.saveMultiCompany(SESSION_STATE.multiCompany());
-        stateStore.saveDatabaseSelection(SESSION_STATE.databaseSelection());
-        stateStore.saveViewPresets(viewPresetStatesForPersistence());
-        info("Save: " + panelHost.getActiveTitle());
+        AppPanel.RunCommandResult result = panelHost.saveActive();
+        if (result.handled())
+        {
+            stateStore.savePreferences(SESSION_STATE.preferences());
+            stateStore.saveMultiCompany(SESSION_STATE.multiCompany());
+            stateStore.saveDatabaseSelection(SESSION_STATE.databaseSelection());
+            stateStore.saveViewPresets(viewPresetStatesForPersistence());
+        }
+        info(result.message());
     }
 
     public void newItemInActivePanel()
     {
-        panelHost.newItemActive();
+        info(panelHost.newItemActive().message());
     }
 
     public void copySelection()
     {
-        panelHost.copySelectionActive();
+        javafx.scene.Node focusOwner = getScene() == null ? null : getScene().getFocusOwner();
+        if (focusOwner instanceof javafx.scene.control.TextInputControl textInput)
+        {
+            textInput.copy();
+            info("Copied from the focused text control.");
+        }
+        else
+        {
+            info("Copy is available only from a focused text control in this compatibility shell.");
+        }
     }
 
     public void paste()
     {
-        panelHost.pasteActive();
+        javafx.scene.Node focusOwner = getScene() == null ? null : getScene().getFocusOwner();
+        if (focusOwner instanceof javafx.scene.control.TextInputControl textInput)
+        {
+            textInput.paste();
+            info("Pasted into the focused text control.");
+        }
+        else
+        {
+            info("Paste is available only in a focused editable text control in this compatibility shell.");
+        }
     }
 
     public void openSearch()
@@ -1251,26 +1272,24 @@ public class MainWindow extends BorderPane
                 int closed = panelHost.closeAllClosableTabs();
                 yield new AppPanel.RunCommandResult(true, "Closed " + closed + " non-dashboard tab(s). Dashboard remains open.");
             }
-            case POST_VALIDATE -> panelHost.runCommandActive(command);
-            case NEW_ACTIVE ->
+            case CLOSE_INSPECTOR ->
             {
-                newItemInActivePanel();
-                yield new AppPanel.RunCommandResult(true, "New command routed to active panel.");
+                closeInspector();
+                yield new AppPanel.RunCommandResult(true, "Closed the inspector.");
             }
+            case POST_VALIDATE -> panelHost.runCommandActive(command);
+            case NEW_ACTIVE -> panelHost.newItemActive();
             case SAVE_ACTIVE ->
             {
-                saveActivePanel();
-                yield new AppPanel.RunCommandResult(true, "Save command routed to active panel.");
-            }
-            case COPY_ACTIVE ->
-            {
-                copySelection();
-                yield new AppPanel.RunCommandResult(true, "Copy command routed to active panel.");
-            }
-            case PASTE_ACTIVE ->
-            {
-                paste();
-                yield new AppPanel.RunCommandResult(true, "Paste command routed to active panel.");
+                AppPanel.RunCommandResult result = panelHost.saveActive();
+                if (result.handled())
+                {
+                    stateStore.savePreferences(SESSION_STATE.preferences());
+                    stateStore.saveMultiCompany(SESSION_STATE.multiCompany());
+                    stateStore.saveDatabaseSelection(SESSION_STATE.databaseSelection());
+                    stateStore.saveViewPresets(viewPresetStatesForPersistence());
+                }
+                yield result;
             }
         };
     }

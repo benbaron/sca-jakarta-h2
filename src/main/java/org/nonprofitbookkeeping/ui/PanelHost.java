@@ -9,6 +9,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /** Hosts one reusable workspace tab per panel type. */
 public class PanelHost extends TabPane
@@ -17,6 +18,7 @@ public class PanelHost extends TabPane
     private final Map<AppPanelId, AppPanel> panels = new EnumMap<>(AppPanelId.class);
     private final Map<AppPanelId, Tab> tabs = new EnumMap<>(AppPanelId.class);
     private AppPanelId activeId;
+    private Runnable commandCapabilitiesChangedListener = () -> { };
 
     public PanelHost()
     {
@@ -31,6 +33,7 @@ public class PanelHost extends TabPane
         getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) ->
         {
             activeId = newTab == null ? null : panelIdFor(newTab);
+            commandCapabilitiesChangedListener.run();
         });
     }
 
@@ -66,6 +69,7 @@ public class PanelHost extends TabPane
         {
             panel.onPanelShown();
         }
+        commandCapabilitiesChangedListener.run();
     }
 
     public void showReplacement(AppPanelId requestedId, AppPanel replacement)
@@ -84,6 +88,7 @@ public class PanelHost extends TabPane
         getTabs().add(tab);
         getSelectionModel().select(tab);
         activeId = id;
+        commandCapabilitiesChangedListener.run();
     }
 
     public void reset()
@@ -92,6 +97,7 @@ public class PanelHost extends TabPane
         tabs.clear();
         panels.clear();
         activeId = null;
+        commandCapabilitiesChangedListener.run();
     }
 
     /**
@@ -205,48 +211,39 @@ public class PanelHost extends TabPane
         return panel == null ? "(none)" : panel.title();
     }
 
-    public void saveActive()
+    public AppPanel.RunCommandResult saveActive()
     {
-        AppPanel panel = getActive();
-        if (panel != null)
-        {
-            panel.onSave();
-        }
+        return executeActive(AppCommand.SAVE_ACTIVE);
     }
 
-    public void newItemActive()
+    public AppPanel.RunCommandResult newItemActive()
     {
-        AppPanel panel = getActive();
-        if (panel != null)
-        {
-            panel.onNew();
-        }
+        return executeActive(AppCommand.NEW_ACTIVE);
     }
 
-    public void copySelectionActive()
+    public Set<AppCommand> activeCommandCapabilities()
     {
         AppPanel panel = getActive();
-        if (panel != null)
-        {
-            panel.onCopy();
-        }
+        return panel == null ? Set.of() : Set.copyOf(panel.commandCapabilities());
     }
 
-    public void pasteActive()
+    public void setCommandCapabilitiesChangedListener(Runnable listener)
     {
-        AppPanel panel = getActive();
-        if (panel != null)
-        {
-            panel.onPaste();
-        }
+        commandCapabilitiesChangedListener = Objects.requireNonNull(listener, "listener");
+        commandCapabilitiesChangedListener.run();
     }
 
-    public AppPanel.RunCommandResult runCommandActive(AppCommand command)
+    public AppPanel.RunCommandResult executeActive(AppCommand command)
     {
         AppPanel panel = getActive();
         return panel == null
                 ? new AppPanel.RunCommandResult(false, "No active panel selected.")
-                : panel.onRunCommand(command);
+                : panel.executeCommand(command);
+    }
+
+    public AppPanel.RunCommandResult runCommandActive(AppCommand command)
+    {
+        return executeActive(command);
     }
 
     public java.util.Optional<AppPanel.JournalSelection> activeJournalSelection()
@@ -276,10 +273,12 @@ public class PanelHost extends TabPane
         Tab tab = new Tab(panel.title(), panel.root());
         tab.setUserData(id);
         tab.setClosable(!WorkspaceLayoutPolicy.isPermanentTab(id));
+        panel.setCommandCapabilitiesChangedListener(this::notifyCommandCapabilitiesChanged);
         tab.setOnClosed(event ->
         {
             tabs.remove(id);
             panels.remove(id);
+            commandCapabilitiesChangedListener.run();
         });
         return tab;
     }
@@ -293,5 +292,13 @@ public class PanelHost extends TabPane
     private AppPanel create(AppPanelId id)
     {
         return panelFactory.create(id);
+    }
+
+    private void notifyCommandCapabilitiesChanged()
+    {
+        if (getActive() != null)
+        {
+            commandCapabilitiesChangedListener.run();
+        }
     }
 }

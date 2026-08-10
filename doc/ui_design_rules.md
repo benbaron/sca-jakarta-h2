@@ -19,6 +19,12 @@ User-interface state that changes how company data is displayed or edited must n
 
 Compatibility values such as `defaultPrivilege` and `defaultReopenScope` are not enabled Settings controls until a governed production consumer exists. In particular, a stored privilege label is not authentication or effective authorization.
 
+## Global commands and shortcuts
+
+An enabled global command must identify a real operation in the active production panel. Panels publish current New, Save, and typed validation support through `AppPanel.commandCapabilities()`; the shell disables unsupported menu and toolbar controls and provides a concise explanation. Composite panels must recalculate capabilities when their selected mode changes.
+
+Production labels, accelerators, and Help shortcut text come from `GlobalCommandRegistry`. Help must not advertise an uninstalled shortcut. The workspace must not intercept standard Copy/Paste accelerators merely to route them to empty panel hooks; focused JavaFX text controls own their native editing behavior. A handled result is returned only after a declared operation has been invoked successfully; undeclared commands and thrown failures return a factual not-handled result.
+
 ## Tables
 
 Every production table must support the following column behavior:

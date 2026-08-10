@@ -521,11 +521,21 @@ public class CompanyAdminPanel implements AppPanel
     }
 
     @Override
+    public java.util.Set<AppCommand> commandCapabilities()
+    {
+        return AppPanel.capabilities(AppCommand.NEW_ACTIVE, AppCommand.SAVE_ACTIVE);
+    }
+
+    @Override
     public void onNew()
     {
         if (!dirty || confirmDiscard())
         {
             clearForm(true);
+        }
+        else
+        {
+            status.setText("New company cancelled; unsaved changes remain.");
         }
     }
 
@@ -533,6 +543,12 @@ public class CompanyAdminPanel implements AppPanel
     public void onSave()
     {
         saveCompany();
+    }
+
+    @Override
+    public String commandResultMessage(AppCommand command)
+    {
+        return status.getText();
     }
 
     @Override

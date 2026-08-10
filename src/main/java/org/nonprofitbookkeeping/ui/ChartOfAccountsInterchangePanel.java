@@ -545,6 +545,18 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
     }
 
     @Override
+    public java.util.Set<AppCommand> commandCapabilities()
+    {
+        return delegate.commandCapabilities();
+    }
+
+    @Override
+    public RunCommandResult executeCommand(AppCommand command)
+    {
+        return delegate.executeCommand(command);
+    }
+
+    @Override
     public void onNew()
     {
         delegate.onNew();

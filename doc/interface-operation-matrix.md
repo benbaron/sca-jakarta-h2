@@ -1,6 +1,6 @@
 # Interface operation matrix
 
-Status: P00 inventory of current main, updated through P16-S4 governed bank-import authority, P16-S2 atomic COA CSV commit, P15-S8-C4 interchange progress, pre-commit cancellation, and laptop-width closure. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
+Status: P00 inventory of current main, updated through P16-S12 truthful global-command capabilities. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
 
 ## Scope and evidence
 
@@ -10,7 +10,7 @@ Status: P00 inventory of current main, updated through P16-S4 governed bank-impo
 - `PanelFactory` routes the Journal destination to `JournalWorkspaceCompliancePanel`, which delegates all accounting behavior to `JournalWorkspacePanel` and applies the company UI formatting/state/layout contract.
 - `PanelFactory` also applies `CompanyTableStateBinder` at the production composition boundary. Every table on every canonical route is unconstrained, sortable, resizable, reorderable, and registered to H2 company-owned order/width/sort state; Journal, Funds, and Company Admin retain their richer existing H2 state owners.
 - The stable `SETTINGS` destination now opens `AdministrationPanel`, which hosts Preferences, Company Admin, and User Admin tabs without introducing additional shell identifiers or a second administration framework.
-- Global commands route from `MainWindow`/toolbar/menu through `PanelHost` to `AppPanel` hooks (`onNew`, `onSave`, `onCopy`, `onPaste`, `onRunCommand`).
+- Production global commands route from menu, toolbar, and installed accelerators through `GlobalCommandRegistry`, `ProductionWorkspaceWindow`, and `PanelHost` to explicit `AppPanel.commandCapabilities()` and handled/not-handled results. Standard JavaFX text controls retain native Copy/Paste behavior because the workspace does not intercept those accelerators.
 - `UiServiceRegistry` creates JPA-backed lookup/admin/report, reconciliation-workspace, and period-close-range services, plus compatibility JDBC repositories for legacy run records and approval audit.
 - Search evidence: `UiWorkspaceDataStore` and its temporary bank-transaction staging are removed in P15-S6-C4. The generic Import/Export Jobs panel, route, destination, and session job list were removed in P13-S1; the former top-level Schedules panel, asset/depreciation runbook sidecars, and inventory runbook sidecar were removed in P07/P08-S1/P09-S1.
 
@@ -18,12 +18,30 @@ Status: P00 inventory of current main, updated through P16-S4 governed bank-impo
 
 | Command/source | Visible control | Query source | Write source | Survives restart | H2 authoritative | Placeholder/sidecar risk | Owning phase |
 |---|---|---|---|---|---|---|---|
-| New | menu/toolbar button | active `AppPanel` | active panel `onNew` | panel-dependent | panel-dependent | generic dispatch hides whether command is genuine | P01/P03 |
-| Save | menu/toolbar button | active `AppPanel` | active panel `onSave` | panel-dependent | panel-dependent | unified Journal delegates to `TransactionEntryService`; other panels remain panel-dependent | P01/P02/P03 |
-| Copy/Paste | menu/toolbar button | active selection | active panel hooks | no accounting persistence | no | mostly UI clipboard/status behavior | P01 |
-| Find/Journal/command runner | toolbar/global shortcuts | active panel selection and services | active panel `onRunCommand` | panel-dependent | panel-dependent | text-command dispatch should become typed commands | P01 |
+| New | File menu, toolbar, `Ctrl+N` | active `AppPanel.commandCapabilities()` | declared panel `onNew` only | panel-dependent | panel-dependent | disabled with an explanation when undeclared; an empty default cannot report success | P01/P03/P16-S12 |
+| Save | File menu, toolbar, `Ctrl+S` | active `AppPanel.commandCapabilities()` | declared panel `onSave` only | panel-dependent | panel-dependent | disabled with an explanation when undeclared; thrown failures return `handled=false` | P01/P02/P03/P16-S12 |
+| Copy/Paste | focused standard JavaFX text control | JavaFX focus owner and selection | native text-control edit behavior | no accounting persistence | no | no workspace-level `Ctrl+C`/`Ctrl+V` interception or empty panel delegate | P16-S12 |
+| Validate | Journal-local command path | canonical Journal editor state | Journal validation only | no accounting persistence | no | typed `POST_VALIDATE`; supported only by canonical Journal and its aliases | P03/P16-S12 |
+| Find/command palette | none in production | none | none | no | no | `Ctrl+F`, `Ctrl+K`, and `Ctrl+G` are not installed or advertised by production Help | P16-S12 |
+| Close All Tabs | Workspace menu, `Ctrl+Shift+W` | open/dirty workspace tabs | shell tab lifecycle | no accounting persistence | no | shell-owned; prompts before discarding dirty closable tabs | P01/P16-S12 |
+| Close Inspector | `Esc` | inspector visibility | shell view state | no accounting persistence | no | shell-owned and registered with the other installed shortcuts | P01/P16-S12 |
 | Legacy Import/Export actions | main-window file actions | COA services plus explicit durable bank/SCLX workspaces | COA import services; bank menu routes to exact-scope Import Preview rather than direct staging | yes for committed domain facts | yes for committed domain facts | no session bank staging or generic job log; legacy orchestration helpers remain non-production compatibility code | P05/P13/P15 |
 | Database wizard/switch | production File actions and Dashboard recovery surface | `DatabaseLocationService`, `DatabaseMigrationService`, `DatabaseSessionController`, `UiServiceRegistry` | prepared H2/JPA/service bundle plus authoritative target-company resolution through typed `DatabaseRecoveryCommand` dispatch | yes | yes after successful prepared-session activation | dirty workspaces are confirmed before switching; migration/service/company validation completes before path/company state changes; failure retains the prior services, company, displayed path, and records; no automatic destructive repair | P01/P12/P13/P16-S5 |
+
+### Production global-command capability matrix
+
+`Close All Tabs` and `Close Inspector` are shell-owned and remain available independently of the active panel. Panel-owned capabilities are exact:
+
+| Destination | New | Save | Validate | Notes |
+|---|---:|---:|---:|---|
+| Dashboard | yes | no | no | New opens the canonical Journal entry workflow. |
+| Journal (`JOURNAL_PANE`, `LEDGER_REGISTER`, `TXN_EDITOR`) | yes | yes | yes | Both retired identifiers normalize to the same Journal panel and capability set. |
+| Banking, Asset Register, Inventory, Chart of Accounts, Funds | yes | yes | no | Commands invoke the destination's real editor operations. |
+| Budget Editor | no | yes | no | Version creation remains an explicit panel-local operation. |
+| Administration — Preferences | no | yes | no | Capabilities follow the selected inner tab. |
+| Administration — Database Transfer | no | no | no | Transfer commands remain explicit panel-local operations. |
+| Administration — Company Admin or User Admin | yes | yes | no | Selection changes notify the shell immediately. |
+| Budget vs Actual, Depreciation Runs, Reconciliation, Period Close, Import Preview, Audit History, Bank Transactions, Report Library, Diagnostics, Help | no | no | no | Read/run/import/report operations stay panel-local; no global command is enabled as a placeholder. |
 
 ## Delete operation rule
 

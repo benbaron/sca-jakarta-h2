@@ -46,12 +46,9 @@ public class HelpPanel implements AppPanel
                 + "Reports: Report Library\n"
                 + "Administration: Chart of Accounts, Funds, Administration, Diagnostics");
 
-        Label shortcuts = wrapped("Common shortcuts\n"
-                + "Ctrl+N: New item in the active workspace\n"
-                + "Ctrl+S: Save the active workspace\n"
-                + "Ctrl+F: Open Find\n"
-                + "Ctrl+K or Ctrl+G: Open the command palette\n"
-                + "Ctrl+Shift+W: Close all closable workspace tabs");
+        Label shortcuts = wrapped(GlobalCommandRegistry.shortcutHelpText()
+                + "\n\nCopy and Paste use the standard shortcuts of the focused text control; "
+                + "the workspace does not intercept them.");
 
         VBox links = new VBox(4,
                 externalLink("Project repository", REPOSITORY_URL),

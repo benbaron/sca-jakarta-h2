@@ -619,11 +619,21 @@ public class FundsPanel implements AppPanel
     }
 
     @Override
+    public java.util.Set<AppCommand> commandCapabilities()
+    {
+        return AppPanel.capabilities(AppCommand.NEW_ACTIVE, AppCommand.SAVE_ACTIVE);
+    }
+
+    @Override
     public void onNew()
     {
         if (!dirty || confirmDiscard())
         {
             clearFormForNew(true);
+        }
+        else
+        {
+            status.setText("New fund cancelled; unsaved changes remain.");
         }
     }
 
@@ -631,6 +641,12 @@ public class FundsPanel implements AppPanel
     public void onSave()
     {
         saveForm();
+    }
+
+    @Override
+    public String commandResultMessage(AppCommand command)
+    {
+        return status.getText();
     }
 
     @Override

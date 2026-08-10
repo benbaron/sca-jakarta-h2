@@ -82,6 +82,18 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
     }
 
     @Override
+    public java.util.Set<AppCommand> commandCapabilities()
+    {
+        return delegate.commandCapabilities();
+    }
+
+    @Override
+    public RunCommandResult executeCommand(AppCommand command)
+    {
+        return delegate.executeCommand(command);
+    }
+
+    @Override
     public void onSave()
     {
         delegate.onSave();
@@ -91,18 +103,6 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
     public void onNew()
     {
         delegate.onNew();
-    }
-
-    @Override
-    public void onCopy()
-    {
-        delegate.onCopy();
-    }
-
-    @Override
-    public void onPaste()
-    {
-        delegate.onPaste();
     }
 
     @Override

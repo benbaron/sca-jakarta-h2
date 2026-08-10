@@ -136,6 +136,12 @@ public class BankingPanel implements AppPanel
     @Override public Node root() { return root; }
 
     @Override
+    public java.util.Set<AppCommand> commandCapabilities()
+    {
+        return AppPanel.capabilities(AppCommand.NEW_ACTIVE, AppCommand.SAVE_ACTIVE);
+    }
+
+    @Override
     public void onNew()
     {
         if (!hasUnsavedChanges() || confirmDiscard())
@@ -143,6 +149,10 @@ public class BankingPanel implements AppPanel
             clearBankForm();
             clearAccountForm();
             status.setText("Create mode: enter a Bank, then save linked bank-account configuration.");
+        }
+        else
+        {
+            status.setText("New banking configuration cancelled; unsaved changes remain.");
         }
     }
 
@@ -600,6 +610,11 @@ public class BankingPanel implements AppPanel
     }
 
     @Override public void onSave() { if (bankDirty.isDirty()) saveBank(); else saveBankAccount(); }
+    @Override
+    public String commandResultMessage(AppCommand command)
+    {
+        return status.getText();
+    }
     @Override public boolean hasUnsavedChanges() { return bankDirty.isDirty() || accountDirty.isDirty(); }
 
     private record BankFormSnapshot(

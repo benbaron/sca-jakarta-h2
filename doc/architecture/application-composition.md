@@ -4,7 +4,9 @@ P01-S1 establishes `ProductionWorkspaceWindow` as the production shell owner. Th
 
 `ReferenceWorkspaceWindow` remains a package-local compatibility subclass only for existing reference-chrome tests while the P01-S2 composition slice moves construction into explicit workspace factories. New production routes must use `ProductionWorkspaceWindow` directly and must not add another window shell.
 
-Global shell actions use typed `AppCommand` values. The shell and `PanelHost` route commands by enum identity instead of discovering behavior from button text. Panel-local operations continue through the `AppPanel` contract until P01-S2 introduces the lifecycle-owned panel factory.
+Global shell actions use typed `AppCommand` values. `GlobalCommandRegistry` is the production source for installed labels, accelerators, and Help shortcut text. The shell and `PanelHost` route commands by enum identity instead of discovering behavior from button text.
+
+P16-S12 makes support explicit: each `AppPanel` publishes its current `commandCapabilities()` and returns a handled/not-handled result from `executeCommand`. The production File menu and toolbar enable New and Save only when the active panel declares them. Composite Administration delegates both the query and execution to its selected inner tab and notifies the shell when that selection changes. Undeclared commands cannot fall through to empty New/Save/Copy/Paste hooks. Copy and Paste remain native focused-text-control behavior; production does not capture `Ctrl+C` or `Ctrl+V`. Unimplemented production Find and command-palette shortcuts are neither installed nor listed in Help.
 
 User-facing global navigation uses factual audit-history terminology. Approval/rejection workflows are not introduced by the production shell.
 

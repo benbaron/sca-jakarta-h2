@@ -327,9 +327,21 @@ public class SettingsPanel implements AppPanel
     }
 
     @Override
+    public java.util.Set<AppCommand> commandCapabilities()
+    {
+        return AppPanel.capabilities(AppCommand.SAVE_ACTIVE);
+    }
+
+    @Override
     public void onSave()
     {
         applyToSession(true);
+    }
+
+    @Override
+    public String commandResultMessage(AppCommand command)
+    {
+        return status.getText();
     }
 
     @Override
