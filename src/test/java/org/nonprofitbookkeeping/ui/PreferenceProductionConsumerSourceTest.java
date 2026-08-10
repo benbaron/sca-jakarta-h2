@@ -20,7 +20,7 @@ class PreferenceProductionConsumerSourceTest
 
         assertTrue(workspace.contains("stateStore.loadPreferences()"));
         assertTrue(workspace.contains("onPreferencesChanged(this::applyPreferences)"));
-        assertTrue(workspace.contains("preferences.rememberWindowState()"));
+        assertTrue(mainApp.contains("preferences.rememberWindowState()"));
         assertTrue(mainApp.contains("WindowDecorationPolicy.stageStyle(preferences)"));
         assertTrue(mainApp.contains("stateStore.loadWindowState()"));
         assertTrue(mainApp.contains("persistWindowState(stage, stateStore)"));
