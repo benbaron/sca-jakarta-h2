@@ -22,9 +22,7 @@ import org.nonprofitbookkeeping.model.DateDisplayFormat;
 import org.nonprofitbookkeeping.model.CorrectionMethod;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.MoneyPrintFormat;
-import org.nonprofitbookkeeping.model.ReopenScope;
 import org.nonprofitbookkeeping.model.UiThemePreference;
-import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,13 +36,11 @@ public class SettingsPanel implements AppPanel
     private final Label status = new Label("Preferences and administration settings can be saved for next startup.");
 
     private final ComboBox<UiThemePreference> theme = new ComboBox<>();
-    private final CheckBox nativeWindow = new CheckBox("Use native window decorations when available");
-    private final CheckBox rememberState = new CheckBox("Remember window/state on startup");
-    private final ComboBox<UserPrivilegeLevel> defaultPrivilege = new ComboBox<>();
+    private final CheckBox nativeWindow = new CheckBox("Use unified native window decorations (restart required)");
+    private final CheckBox rememberState = new CheckBox("Restore window size, position, and maximized state on startup");
     private final ComboBox<CorrectionMethod> correctionMethod = new ComboBox<>();
     private final ComboBox<ClosedPeriodPolicy> closedPeriodPolicy = new ComboBox<>();
     private final CheckBox requireReopenReason = new CheckBox("Require a reason when reopening a closed period");
-    private final ComboBox<ReopenScope> defaultReopenScope = new ComboBox<>();
     private final Spinner<Integer> periodStartDay = new Spinner<>();
     private final CheckBox confirmDeletion = new CheckBox("Confirm before deleting an entered transaction");
     private final TextField currencySymbol = new TextField();
@@ -55,6 +51,7 @@ public class SettingsPanel implements AppPanel
 
     private final UiSessionState session;
     private final CompanySessionController companyController;
+    private final AppStateStore stateStore;
     private final FormDirtyTracker dirtyState;
 
     public SettingsPanel()
@@ -64,7 +61,8 @@ public class SettingsPanel implements AppPanel
                 new CompanySessionController(
                         MainWindow.sharedSessionState(),
                         UserAppStateStore.create(),
-                        UiServiceRegistry::companyAdmin));
+                        UiServiceRegistry::companyAdmin),
+                UserAppStateStore.create());
     }
 
     SettingsPanel(UiSessionState session)
@@ -74,13 +72,23 @@ public class SettingsPanel implements AppPanel
                 new CompanySessionController(
                         session,
                         UserAppStateStore.create(),
-                        UiServiceRegistry::companyAdmin));
+                        UiServiceRegistry::companyAdmin),
+                UserAppStateStore.create());
     }
 
     SettingsPanel(UiSessionState session, CompanySessionController companyController)
     {
+        this(session, companyController, UserAppStateStore.create());
+    }
+
+    SettingsPanel(
+            UiSessionState session,
+            CompanySessionController companyController,
+            AppStateStore stateStore)
+    {
         this.session = session;
         this.companyController = companyController;
+        this.stateStore = stateStore;
 
         root.setPadding(new Insets(8));
 
@@ -108,10 +116,8 @@ public class SettingsPanel implements AppPanel
         grid.setPadding(new Insets(4));
 
         theme.getItems().addAll(UiThemePreference.values());
-        defaultPrivilege.getItems().addAll(UserPrivilegeLevel.values());
         correctionMethod.getItems().addAll(CorrectionMethod.values());
         closedPeriodPolicy.getItems().addAll(ClosedPeriodPolicy.values());
-        defaultReopenScope.getItems().addAll(ReopenScope.values());
         periodStartDay.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 28, 1));
         periodStartDay.setEditable(true);
         currencySymbol.setPromptText("$");
@@ -126,14 +132,13 @@ public class SettingsPanel implements AppPanel
         activeDatabase.setFocusTraversable(true);
 
         int row = 0;
-        grid.add(new Label("Theme"), 0, row);
+        grid.add(new Label("Theme (applies immediately)"), 0, row);
         grid.add(theme, 1, row++);
 
         grid.add(nativeWindow, 0, row++, 2, 1);
         grid.add(rememberState, 0, row++, 2, 1);
 
-        grid.add(new Label("Default privilege"), 0, row);
-        grid.add(defaultPrivilege, 1, row++);
+        grid.add(deferredPreferenceLabel("defaultPrivilege"), 0, row++, 2, 1);
 
         grid.add(new Label("Correction method"), 0, row);
         grid.add(correctionMethod, 1, row++);
@@ -143,8 +148,7 @@ public class SettingsPanel implements AppPanel
 
         grid.add(requireReopenReason, 0, row++, 2, 1);
 
-        grid.add(new Label("Default reopening scope"), 0, row);
-        grid.add(defaultReopenScope, 1, row++);
+        grid.add(deferredPreferenceLabel("defaultReopenScope"), 0, row++, 2, 1);
 
         grid.add(new Label("Period start day"), 0, row);
         grid.add(periodStartDay, 1, row++);
@@ -173,7 +177,7 @@ public class SettingsPanel implements AppPanel
         grid.add(databaseHelp, 0, row++, 2, 1);
 
         Button apply = new Button("Apply");
-        apply.setOnAction(e -> applyToSession());
+        apply.setOnAction(e -> applyToSession(false));
 
         Button save = new Button("Save");
         save.setOnAction(e -> onSave());
@@ -190,11 +194,9 @@ public class SettingsPanel implements AppPanel
         theme.getSelectionModel().select(p.themePreference());
         nativeWindow.setSelected(p.useNativeWindowDecorations());
         rememberState.setSelected(p.rememberWindowState());
-        defaultPrivilege.getSelectionModel().select(p.defaultPrivilege());
         correctionMethod.getSelectionModel().select(p.correctionMethod());
         closedPeriodPolicy.getSelectionModel().select(p.closedPeriodPolicy());
         requireReopenReason.setSelected(p.requireReopenReason());
-        defaultReopenScope.getSelectionModel().select(p.defaultReopenScope());
         periodStartDay.getValueFactory().setValue(p.periodStartDayOfMonth());
         confirmDeletion.setSelected(p.confirmEnteredTransactionDeletion());
 
@@ -216,7 +218,7 @@ public class SettingsPanel implements AppPanel
         dirtyState.markClean();
     }
 
-    private void applyToSession()
+    private void applyToSession(boolean persistShellPreferences)
     {
         String selectedCompany = activeCompany.getValue();
         if (selectedCompany == null || selectedCompany.isBlank())
@@ -224,12 +226,25 @@ public class SettingsPanel implements AppPanel
             status.setText("Choose an active H2 company before applying preferences.");
             return;
         }
-        session.setPreferences(readPreferences());
+        AppPreferencesState preferences = readPreferences();
+        session.setPreferences(preferences);
+        if (persistShellPreferences)
+        {
+            stateStore.savePreferences(preferences);
+            if (!preferences.rememberWindowState())
+            {
+                stateStore.clearWindowState();
+                stateStore.clearWorkspaceDividers();
+            }
+        }
         saveCompanyUiPreferences(selectedCompany);
         CompanySessionController.SelectionResult selection = companyController.select(selectedCompany);
         status.setText(selection.selected()
-                ? "Applied settings and company display preferences. " + selection.message()
-                : "Preferences saved, but active-company selection failed: " + selection.message());
+                ? (persistShellPreferences ? "Saved" : "Applied")
+                        + " settings and company display preferences. Theme applies immediately; window decoration and geometry apply after restart. "
+                        + selection.message()
+                : (persistShellPreferences ? "Preferences saved" : "Preferences applied")
+                        + ", but active-company selection failed: " + selection.message());
         dirtyState.markClean();
     }
 
@@ -267,15 +282,16 @@ public class SettingsPanel implements AppPanel
 
     AppPreferencesState readPreferences()
     {
+        AppPreferencesState current = session.preferences();
         return new AppPreferencesState(
                 theme.getValue() == null ? UiThemePreference.SYSTEM_DEFAULT : theme.getValue(),
                 nativeWindow.isSelected(),
                 rememberState.isSelected(),
-                defaultPrivilege.getValue() == null ? UserPrivilegeLevel.ACCOUNTANT : defaultPrivilege.getValue(),
+                current.defaultPrivilege(),
                 correctionMethod.getValue() == null ? CorrectionMethod.DIRECT_EDIT : correctionMethod.getValue(),
                 closedPeriodPolicy.getValue() == null ? ClosedPeriodPolicy.WARN_AND_REOPEN : closedPeriodPolicy.getValue(),
                 requireReopenReason.isSelected(),
-                defaultReopenScope.getValue() == null ? ReopenScope.UNTIL_MANUALLY_CLOSED : defaultReopenScope.getValue(),
+                current.defaultReopenScope(),
                 confirmDeletion.isSelected(),
                 periodStartDay.getValue() == null ? 1 : periodStartDay.getValue());
     }
@@ -313,8 +329,7 @@ public class SettingsPanel implements AppPanel
     @Override
     public void onSave()
     {
-        applyToSession();
-        status.setText("Saved settings and company display preferences. They will be restored for the active company.");
+        applyToSession(true);
     }
 
     @Override
@@ -342,6 +357,15 @@ public class SettingsPanel implements AppPanel
                 readCompanyUiPreferences(),
                 activeCompany.getValue(),
                 activeDatabase.getText());
+    }
+
+    private static Label deferredPreferenceLabel(String key)
+    {
+        PreferenceConsumerMatrix.Entry entry = PreferenceConsumerMatrix.entry(key);
+        Label label = new Label(entry.userMessage());
+        label.setWrapText(true);
+        label.getStyleClass().add("preference-deferred-note");
+        return label;
     }
 
     private record SettingsSnapshot(

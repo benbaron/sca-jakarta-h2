@@ -81,6 +81,7 @@ public final class WorkspaceServicesFactory
                 (observable, oldDate, newDate) -> context.setActivePeriodDate(newDate));
         return new WorkspaceServices(
                 context,
+                stateStore,
                 databaseSessionController,
                 companySessionController,
                 databaseTransferActions,

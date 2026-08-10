@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.ui;
 
 import org.junit.jupiter.api.Test;
+import org.nonprofitbookkeeping.model.WorkspaceWindowState;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -59,5 +60,31 @@ public class WorkspaceWindowSizingPolicyTest
                 WorkspaceWindowSizingPolicy.forVisualBounds(0.0, 0.0, 0.0, 700.0));
         assertThrows(IllegalArgumentException.class, () ->
                 WorkspaceWindowSizingPolicy.forVisualBounds(0.0, 0.0, 1200.0, Double.NaN));
+    }
+
+    @Test
+    public void rememberedGeometryIsRestoredInsideCurrentVisualBounds()
+    {
+        WorkspaceWindowSizingPolicy.WindowGeometry geometry =
+                WorkspaceWindowSizingPolicy.forRememberedState(
+                        0.0,
+                        0.0,
+                        1366.0,
+                        728.0,
+                        new WorkspaceWindowState(-400.0, 900.0, 1800.0, 800.0, false));
+
+        assertEquals(1366.0, geometry.width(), TOLERANCE);
+        assertEquals(728.0, geometry.height(), TOLERANCE);
+        assertEquals(0.0, geometry.x(), TOLERANCE);
+        assertEquals(0.0, geometry.y(), TOLERANCE);
+    }
+
+    @Test
+    public void missingRememberedGeometryUsesLaptopSafeDefaults()
+    {
+        assertEquals(
+                WorkspaceWindowSizingPolicy.forVisualBounds(0.0, 0.0, 1366.0, 728.0),
+                WorkspaceWindowSizingPolicy.forRememberedState(
+                        0.0, 0.0, 1366.0, 728.0, null));
     }
 }

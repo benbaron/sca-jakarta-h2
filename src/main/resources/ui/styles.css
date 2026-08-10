@@ -526,3 +526,127 @@ dashboard-footer-link,
 {
     -fx-border-color: transparent;
 }
+
+/* The persisted shell theme is applied to the production root at runtime. */
+.production-workspace.theme-dark
+{
+    -fx-background-color: #171c24;
+    -fx-text-fill: #e7edf5;
+    -fx-accent: #69aaf5;
+    -fx-focus-color: #69aaf5;
+    -fx-faint-focus-color: rgba(105, 170, 245, 0.18);
+}
+
+.production-workspace.theme-dark .label,
+.production-workspace.theme-dark .check-box,
+.production-workspace.theme-dark .radio-button,
+.production-workspace.theme-dark .tab-label
+{
+    -fx-text-fill: #e7edf5;
+}
+
+.production-workspace.theme-dark .top-chrome,
+.production-workspace.theme-dark .menu-bar,
+.production-workspace.theme-dark .tool-bar,
+.production-workspace.theme-dark .reference-toolbar,
+.production-workspace.theme-dark .navigation-pane,
+.production-workspace.theme-dark .inspector-pane,
+.production-workspace.theme-dark .inspector-tabs,
+.production-workspace.theme-dark .inspector-tabs > .tab-content-area,
+.production-workspace.theme-dark .inspector-scroll,
+.production-workspace.theme-dark .inspector-scroll > .viewport,
+.production-workspace.theme-dark .workspace-tabs > .tab-header-area > .tab-header-background,
+.production-workspace.theme-dark .inspector-tabs > .tab-header-area > .tab-header-background
+{
+    -fx-background-color: #202733;
+    -fx-border-color: #343e4d;
+}
+
+.production-workspace.theme-dark .workspace-tabs,
+.production-workspace.theme-dark .workspace-tabs > .tab-content-area,
+.production-workspace.theme-dark .workspace-split,
+.production-workspace.theme-dark .split-pane,
+.production-workspace.theme-dark .scroll-pane,
+.production-workspace.theme-dark .scroll-pane > .viewport,
+.production-workspace.theme-dark .dashboard-grid,
+.production-workspace.theme-dark .dashboard-home,
+.production-workspace.theme-dark .dashboard-workspace,
+.production-workspace.theme-dark .dashboard-scroll,
+.production-workspace.theme-dark .dashboard-scroll > .viewport
+{
+    -fx-background-color: #171c24;
+}
+
+.production-workspace.theme-dark .button,
+.production-workspace.theme-dark .menu-button,
+.production-workspace.theme-dark .toggle-button,
+.production-workspace.theme-dark .date-picker,
+.production-workspace.theme-dark .combo-box-base,
+.production-workspace.theme-dark .text-field,
+.production-workspace.theme-dark .password-field,
+.production-workspace.theme-dark .text-area,
+.production-workspace.theme-dark .context-menu
+{
+    -fx-background-color: #252d3a;
+    -fx-border-color: #465266;
+    -fx-text-fill: #e7edf5;
+}
+
+.production-workspace.theme-dark .button:hover,
+.production-workspace.theme-dark .menu-button:hover,
+.production-workspace.theme-dark .toggle-button:hover,
+.production-workspace.theme-dark .menu-item:focused
+{
+    -fx-background-color: #303d50;
+    -fx-border-color: #6385ad;
+}
+
+.production-workspace.theme-dark .table-view,
+.production-workspace.theme-dark .table-view .table-row-cell,
+.production-workspace.theme-dark .dashboard-card,
+.production-workspace.theme-dark .inspector-card
+{
+    -fx-background-color: #202733;
+    -fx-border-color: #3b4657;
+}
+
+.production-workspace.theme-dark .table-view .column-header-background,
+.production-workspace.theme-dark .table-view .column-header,
+.production-workspace.theme-dark .table-view .filler
+{
+    -fx-background-color: #252d3a;
+    -fx-border-color: #3b4657;
+}
+
+.production-workspace.theme-dark .table-view .column-header .label,
+.production-workspace.theme-dark .workspace-tabs .tab .tab-label,
+.production-workspace.theme-dark .inspector-tabs .tab .tab-label,
+.production-workspace.theme-dark .dashboard-card-title,
+.production-workspace.theme-dark .dashboard-value,
+.production-workspace.theme-dark .dashboard-key-value,
+.production-workspace.theme-dark .dashboard-emphasis,
+.production-workspace.theme-dark .inspector-strong,
+.production-workspace.theme-dark .inspector-primary-value,
+.production-workspace.theme-dark .inspector-value
+{
+    -fx-text-fill: #d7e0eb;
+}
+
+.production-workspace.theme-dark .table-view .table-row-cell:filled:hover,
+.production-workspace.theme-dark .workspace-tabs .tab:selected,
+.production-workspace.theme-dark .inspector-tabs .tab:selected
+{
+    -fx-background-color: #2b3748;
+}
+
+.production-workspace.theme-dark .table-view .table-row-cell:selected
+{
+    -fx-background-color: #35557a;
+    -fx-text-background-color: #ffffff;
+}
+
+.production-workspace.theme-dark .workspace-split > .split-pane-divider,
+.production-workspace.theme-dark .split-pane > .split-pane-divider
+{
+    -fx-background-color: #3b4657;
+}

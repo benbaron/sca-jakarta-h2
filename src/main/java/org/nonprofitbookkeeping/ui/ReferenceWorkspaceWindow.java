@@ -190,7 +190,7 @@ final class ReferenceWorkspaceWindow extends ProductionWorkspaceWindow
                 statusItem(UiIcons.Glyph.DATABASE, databaseLabel),
                 separator(),
                 statusItem(UiIcons.Glyph.USER, new Label(
-                        MainWindow.sharedSessionState().preferences().defaultPrivilege().name())),
+                        "Local desktop session")),
                 separator(),
                 statusItem(UiIcons.Glyph.ACCOUNTS, companyLabel),
                 separator(),

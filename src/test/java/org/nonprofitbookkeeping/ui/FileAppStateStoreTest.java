@@ -15,6 +15,7 @@ import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
 import org.nonprofitbookkeeping.model.ViewPresetState;
 import org.nonprofitbookkeeping.model.WorkspaceDividerState;
+import org.nonprofitbookkeeping.model.WorkspaceWindowState;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -131,6 +132,38 @@ public class FileAppStateStoreTest
                 + "workspace.divider.right=0.20\n");
 
         assertTrue(new FileAppStateStore(file).loadWorkspaceDividers().isEmpty());
+    }
+
+    @Test
+    public void saveThenLoad_roundTripsAndClearsWindowAndDividerState(@TempDir Path tempDir)
+    {
+        FileAppStateStore store = new FileAppStateStore(tempDir.resolve("ui-state.properties"));
+        WorkspaceWindowState window = new WorkspaceWindowState(40.0, 50.0, 1200.0, 760.0, true);
+        WorkspaceDividerState dividers = new WorkspaceDividerState(0.22, 0.80);
+
+        store.saveWindowState(window);
+        store.saveWorkspaceDividers(dividers);
+
+        assertEquals(window, store.loadWindowState().orElseThrow());
+        assertEquals(dividers, store.loadWorkspaceDividers().orElseThrow());
+
+        store.clearWindowState();
+        store.clearWorkspaceDividers();
+
+        assertTrue(store.loadWindowState().isEmpty());
+        assertTrue(store.loadWorkspaceDividers().isEmpty());
+    }
+
+    @Test
+    public void loadWindowState_invalidValuesAreIgnored(@TempDir Path tempDir) throws IOException
+    {
+        Path file = tempDir.resolve("ui-state.properties");
+        Files.writeString(file, "window.x=10\n"
+                + "window.y=20\n"
+                + "window.width=-1\n"
+                + "window.height=700\n");
+
+        assertTrue(new FileAppStateStore(file).loadWindowState().isEmpty());
     }
 
     @Test
