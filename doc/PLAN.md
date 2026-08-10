@@ -1,12 +1,12 @@
 ---
-plan_version: 160
+plan_version: 161
 active_phase: P16
 active_slice: P16-S13
 active_status: VERIFYING
 active_branch: codex/P16-S13-truthful-report-semantics
 active_pull_request: 265
-active_head: 0f32bd755ac6a924e72bcea0098b9fe3e1fda36f
-next_action: "Validate draft PR #265 through the complete Maven PR Tests gate, correct failures on the same branch, then complete doc/P16-S13-truthful-report-semantics-user-testing.md."
+active_head: 2c16bc6c0777ee170ea8d3ee11868a2098aac2d4
+next_action: "Validate the final documentation-only P16-S13 handoff head, then complete doc/P16-S13-truthful-report-semantics-user-testing.md and merge draft PR #265 after owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2540,11 +2540,12 @@ Implementation progress:
 - Report Library injects the company-scoped query service into the existing `ReportExecutionService`; preview, export, and drill-through continue to share one immutable `ReportRequest`. No second ledger or report store was introduced.
 - The governed predicates and row-limit semantics are recorded in `doc/reporting/report-library.md`. The owner checklist is `doc/P16-S13-truthful-report-semantics-user-testing.md`.
 - Focused H2 integration tests cover BANK-only selection, fund/date/company isolation, reversals, explicit posted transfers, balanced pair expansion, exclusions, totals, empty ranges, and preview/CSV semantic parity.
-- Local Maven execution is unavailable in this environment. Draft PR #265 opened at implementation head `0f32bd755ac6a924e72bcea0098b9fe3e1fda36f`; GitHub Maven PR Tests is the authoritative full compile/test, deliberate repeat, and JavaFX route gate.
+- Local Maven execution is unavailable in this environment. Draft PR #265 opened at implementation head `0f32bd755ac6a924e72bcea0098b9fe3e1fda36f`.
+- Exact plan-inclusive head `2c16bc6c0777ee170ea8d3ee11868a2098aac2d4` passed Maven PR Tests run `31439706723`: clean `mvn clean verify` and the deliberate repeated suite each ran 621 tests with 0 failures/errors and 33 skips; all 9 production JavaFX route/source compliance tests passed.
 
 Next exact action:
 
-- Validate draft PR #265 through the complete Maven PR Tests workflow, fix any failures on this branch, then complete the owner desktop checklist before merge.
+- Validate the final documentation-only handoff head, then complete `doc/P16-S13-truthful-report-semantics-user-testing.md` before merge.
 
 ## P16-S14 — Fixed-asset disposal accounting
 
