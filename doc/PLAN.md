@@ -1,12 +1,12 @@
 ---
-plan_version: 156
+plan_version: 157
 active_phase: P16
 active_slice: P16-S12
 active_status: VERIFYING
 active_branch: codex/P16-S12-truthful-global-command-capabilities
 active_pull_request: 264
-active_head: 6accaf3ff1c86f0bce09fa732a40d68005a49d4a
-next_action: "Validate draft PR #264 through Maven PR Tests on its exact head, then complete doc/P16-S12-truthful-global-command-capabilities-user-testing.md and merge only after owner acceptance."
+active_head: 8fdd8b636ad23a9545f8bb79300346f2f75e2734
+next_action: "Validate the final documentation-inclusive P16-S12 head through Maven PR Tests, then complete doc/P16-S12-truthful-global-command-capabilities-user-testing.md and merge only after owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2500,10 +2500,11 @@ Implementation progress:
 - All Java sources pass independent Java 17 parsing; the command core passes an isolated JavaFX compiler check; focused source guards and `git diff --check` pass. Maven is unavailable in the local container, so GitHub Maven PR Tests is the authoritative full compile/test gate.
 - The complete 33-file implementation tree was published through the connected GitHub service after explicit owner authorization. Draft PR #264 opened at exact remote head `6accaf3ff1c86f0bce09fa732a40d68005a49d4a`; its tree SHA `7fd4396a77fab930aace1b93c6395ffe25015c50` exactly matches the reviewed local implementation tree.
 - Initial plan-inclusive Maven PR Tests run `31427773070` compiled the production sources until `ReferenceWorkspaceWindow` and exposed two stale Edit-menu method references to the removed global `copySelection()` and `paste()` hooks. The compatibility shell now leaves native text-control Copy/Paste un-intercepted, and the focused source guard covers that boundary.
+- Exact corrected head `8fdd8b636ad23a9545f8bb79300346f2f75e2734` passed Maven PR Tests run `31427958302`: clean `mvn clean verify` ran 616 tests with 0 failures/errors and 33 skips; the deliberate repeated 616-test suite passed; and all 9 production JavaFX route/source compliance tests passed.
 
 Next exact action:
 
-- Validate draft PR #264 through clean `mvn clean verify`, the deliberately repeated full suite, and production JavaFX route compliance. Correct any failure on the same branch, then complete `doc/P16-S12-truthful-global-command-capabilities-user-testing.md` and merge only after owner acceptance. Keep P16-S13 blocked.
+- Validate the final documentation-inclusive P16-S12 head through Maven PR Tests, then complete `doc/P16-S12-truthful-global-command-capabilities-user-testing.md` and merge only after owner acceptance. Keep P16-S13 blocked.
 
 ## P16-S13 — Truthful report semantics
 
