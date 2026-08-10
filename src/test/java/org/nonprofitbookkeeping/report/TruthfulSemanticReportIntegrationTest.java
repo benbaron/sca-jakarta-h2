@@ -51,7 +51,7 @@ class TruthfulSemanticReportIntegrationTest
                     result.semanticValues().table("allChecksTfrs.rows");
 
             assertEquals("Bank Account Activity (SCA workbook)", request.definition().displayName());
-            assertEquals(3, rows.size());
+            assertEquals(4, rows.size());
             assertTrue(rows.stream().anyMatch(row -> Long.valueOf(fixture.bankTransactionId())
                     .equals(row.get("txnId"))));
             assertTrue(rows.stream().anyMatch(row -> Long.valueOf(fixture.bankReversalId())
@@ -59,8 +59,9 @@ class TruthfulSemanticReportIntegrationTest
             assertFalse(rows.stream().anyMatch(row -> "5000".equals(row.get("accountCode"))));
             assertFalse(rows.stream().anyMatch(row -> Long.valueOf(fixture.otherCompanyTransactionId())
                     .equals(row.get("txnId"))));
-            assertEquals(new BigDecimal("40.0000"), rows.get(2).get("debit"));
-            assertEquals(new BigDecimal("40.0000"), rows.get(2).get("credit"));
+            Map<String, Object> displayedTotal = rows.get(rows.size() - 1);
+            assertEquals(new BigDecimal("40.0000"), displayedTotal.get("debit"));
+            assertEquals(new BigDecimal("80.0000"), displayedTotal.get("credit"));
             assertTrue(result.csv().contains("BANK split"));
             assertTrue(result.csv().contains("Displayed total"));
             assertFalse(result.csv().contains("Other company"));
