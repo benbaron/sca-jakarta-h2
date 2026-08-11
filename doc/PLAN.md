@@ -1,12 +1,12 @@
 ---
-plan_version: 170
+plan_version: 171
 active_phase: P16
 active_slice: P16-S15
 active_status: VERIFYING
 active_branch: codex/P16-S15-fixed-asset-inventory-reports
 active_pull_request: 267
-active_head: e9f0e0224253f003c6e686d0c6d8d49e5b529a1d
-next_action: "Run authoritative Maven PR Tests on draft PR #267, correct any confirmed failure, then complete the owner desktop checklist before merge."
+active_head: 1751d706a7cb733f48c3e381449f67f9ce1826e2
+next_action: "Validate the documentation-inclusive P16-S15 handoff head, then complete the owner desktop checklist before merging draft PR #267."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2619,10 +2619,12 @@ Implementation progress:
 - Exact local implementation commit `8723c09dcd9c6055a6eb1667fdb89dc5b050aea8` passes full Java-source syntax parsing for all 696 main/test sources, JSON parsing for every semantic template, and `git diff --check`. Maven remains unavailable because the container has no `mvn` executable; authoritative focused/full execution is pending publication and GitHub CI.
 - The approved two-commit, 24-file tree was reconstructed through the connected GitHub service without `gh`; remote implementation tree `63364c32e76d73952e9f2bd70ffc8b16421efa44` and handoff tree `8f7e0fe7a50c8d4c6d47d22961ade3706d6fc4e2` exactly match their local Git trees.
 - Draft PR #267 opened at exact remote handoff head `e9f0e0224253f003c6e686d0c6d8d49e5b529a1d`; authoritative Maven PR Tests and owner desktop acceptance remain pending.
+- Initial plan-inclusive Maven PR Tests run `31456857434` compiled production and ran 638 tests before one new integration assertion exposed truncated formatted money in semantic text output; the repeated suite and JavaFX compliance correctly did not run on that failed head.
+- `SemanticReportRenderer` now preserves complete currency, date, and numeric facts in text output while retaining bounded truncation for descriptive text. Exact corrected head `1751d706a7cb733f48c3e381449f67f9ce1826e2` passed Maven PR Tests run `31457080329`: clean `mvn clean verify` and the deliberate repeated suite each ran 638 tests with 0 failures/errors and 33 skips; all 9 production JavaFX route/source compliance tests passed.
 
 Next exact action:
 
-- Run the complete Maven PR Tests workflow on draft PR #267, correct any confirmed failure on the same branch, then complete `doc/P16-S15-fixed-asset-inventory-reports-user-testing.md` before merge.
+- Validate the documentation-inclusive handoff head through the complete Maven PR Tests workflow, then complete `doc/P16-S15-fixed-asset-inventory-reports-user-testing.md` before merging draft PR #267.
 
 ## P16-S16 — User role and assignment maintenance
 
