@@ -1,12 +1,12 @@
 ---
-plan_version: 166
+plan_version: 167
 active_phase: P16
 active_slice: P16-S14
 active_status: VERIFYING
 active_branch: codex/P16-S14-fixed-asset-disposal-accounting
 active_pull_request: "#266"
-active_head: a279fa16181670340a290ea1e0313f4c84fdc49b
-next_action: "Run Maven PR Tests on the exact plan-inclusive P16-S14 head, correct any failure on PR #266, then complete the owner desktop checklist before merge."
+active_head: bbab5c7530b045975c22a8f2ce1b226333597278
+next_action: "Validate the documentation-inclusive P16-S14 handoff head, then complete the owner desktop checklist before merging PR #266."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2579,6 +2579,8 @@ Implementation progress:
 - Owner desktop verification is governed by `doc/P16-S14-fixed-asset-disposal-accounting-user-testing.md`.
 - Local implementation commit `c8bd75bdd0b32684dd0566de8ba7d97f0e7a13cf` passes full Java-source syntax parsing and `git diff --check`. Maven execution is unavailable because this environment has Java 17 but no `mvn` executable; focused and full verification must therefore run through the repository PR workflow after publishing authorization.
 - Draft PR #266 opened from `codex/P16-S14-fixed-asset-disposal-accounting` at exact remote handoff head `a279fa16181670340a290ea1e0313f4c84fdc49b`; GitHub Maven PR Tests and owner desktop acceptance remain pending.
+- Initial Maven PR Tests run `31448898022` exposed one real chronology gap and two test-helper errors: backdated depreciation did not reject a later impairment, while native H2 UUID values were cast directly instead of read through typed entity projections.
+- Exact corrected head `bbab5c7530b045975c22a8f2ce1b226333597278` passed Maven PR Tests run `31449177523`: clean `mvn clean verify` and the deliberate repeated suite each ran 633 tests with 0 failures/errors and 33 skips; all 9 production JavaFX route/source compliance tests passed.
 
 ## P16-S15 — Fixed-asset and inventory reports
 
