@@ -125,7 +125,10 @@ public class SemanticReportRenderer
                 String format = col.path("format").asText("text");
                 String display = formatDisplay(source, format);
                 String raw = formatRaw(source, format);
-                text.append(pad(truncate(display, widths[i]), widths[i])).append(' ');
+                String visible = preservesExactDisplay(source, format)
+                        ? display
+                        : truncate(display, widths[i]);
+                text.append(pad(visible, widths[i])).append(' ');
                 if (i > 0) csv.append(',');
                 csv.append(csv(raw));
             }
@@ -137,6 +140,13 @@ public class SemanticReportRenderer
             text.append("No rows for the selected reporting period.\n");
         }
         return new RenderedSemanticReport(text.toString(), csv.toString());
+    }
+
+    private static boolean preservesExactDisplay(Object value, String format)
+    {
+        return "currency".equals(format)
+                || "date".equals(format)
+                || value instanceof Number;
     }
 
     private int[] columnWidths(JsonNode columns)
