@@ -607,9 +607,19 @@ class FixedAssetLifecycleAccountingTest
     {
         try (EntityManager em = jpa.em())
         {
-            return (UUID) em.createNativeQuery("select portable_id from " + table + " where id = ?")
-                    .setParameter(1, id)
-                    .getSingleResult();
+            return switch (table)
+            {
+                case "txn" -> em.createQuery(
+                                "select t.portableId from Txn t where t.id = :id", UUID.class)
+                        .setParameter("id", id)
+                        .getSingleResult();
+                case "fixed_asset_lifecycle_event" -> em.createQuery(
+                                "select e.portableId from FixedAssetLifecycleEvent e where e.id = :id",
+                                UUID.class)
+                        .setParameter("id", id)
+                        .getSingleResult();
+                default -> throw new IllegalArgumentException("Unsupported portable-id table: " + table);
+            };
         }
     }
 

@@ -1123,16 +1123,18 @@ public class FixedAssetService
             FixedAsset asset,
             LocalDate accountingDate)
     {
-        return em.createQuery("""
-                select count(e) from FixedAssetLifecycleEvent e
-                where e.fixedAsset = :asset
-                  and (e.eventDate > :accountingDate
-                       or (e.reversalTransaction is not null
-                           and e.reversalTransaction.txnDate > :accountingDate))
-                """, Long.class)
-                .setParameter("asset", asset)
-                .setParameter("accountingDate", accountingDate)
+        Number count = (Number) em.createNativeQuery("""
+                select count(*)
+                from fixed_asset_lifecycle_event e
+                left join txn reversal on reversal.id = e.reversal_transaction_id
+                where e.fixed_asset_id = ?
+                  and (e.event_date > ? or reversal.txn_date > ?)
+                """)
+                .setParameter(1, asset.getId())
+                .setParameter(2, accountingDate)
+                .setParameter(3, accountingDate)
                 .getSingleResult();
+        return count.longValue();
     }
 
     private static void requireUsableFund(Fund fund, LocalDate eventDate)
