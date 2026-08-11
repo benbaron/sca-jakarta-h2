@@ -17,12 +17,13 @@ public final class ReportExecutionService
     private final FinancialReportService reports;
     private final FinancialReportDisplayFormat displayFormat;
     private final SemanticAccountingReportQueryService semanticQueries;
+    private final AssetInventoryReportQueryService assetInventoryQueries;
 
     public ReportExecutionService(
             FinancialReportService reports,
             FinancialReportDisplayFormat displayFormat)
     {
-        this(reports, displayFormat, null);
+        this(reports, displayFormat, null, null);
     }
 
     public ReportExecutionService(
@@ -30,11 +31,21 @@ public final class ReportExecutionService
             FinancialReportDisplayFormat displayFormat,
             SemanticAccountingReportQueryService semanticQueries)
     {
+        this(reports, displayFormat, semanticQueries, null);
+    }
+
+    public ReportExecutionService(
+            FinancialReportService reports,
+            FinancialReportDisplayFormat displayFormat,
+            SemanticAccountingReportQueryService semanticQueries,
+            AssetInventoryReportQueryService assetInventoryQueries)
+    {
         this.reports = Objects.requireNonNull(reports, "reports");
         this.displayFormat = displayFormat == null
                 ? FinancialReportDisplayFormat.plain()
                 : displayFormat;
         this.semanticQueries = semanticQueries;
+        this.assetInventoryQueries = assetInventoryQueries;
     }
 
     public ReportResult execute(ReportRequest request)
@@ -106,16 +117,13 @@ public final class ReportExecutionService
     private ReportResult executeSemantic(ReportRequest request)
     {
         WorkbookSemanticReportService semantic =
-                new WorkbookSemanticReportService(reports, semanticQueries);
+                new WorkbookSemanticReportService(
+                        reports, semanticQueries, assetInventoryQueries);
         String templateId = request.definition().templateId();
         JsonNode template = semantic.loadTemplate(templateId);
-        SemanticReportValueSet values = semantic.loadValues(
-                templateId,
-                request.startDate(),
-                request.endDate(),
-                request.fundCode(),
-                request.rowLimit());
-        RenderedSemanticReport rendered = new SemanticReportRenderer().render(template, values);
+        SemanticReportValueSet values = semantic.loadValues(request);
+        RenderedSemanticReport rendered =
+                new SemanticReportRenderer(displayFormat).render(template, values);
         return new ReportResult(
                 request,
                 rendered.text(),

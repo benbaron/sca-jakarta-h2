@@ -125,6 +125,7 @@ Status: P00 inventory of current main, updated through P16-S14 fixed-asset lifec
 - Duplicate prechecks provide actionable validation, while `uq_fixed_asset_dep_run_period` and portable-identity uniqueness remain database concurrency guards. Any late run, identity, audit, or constraint failure rolls back the complete operation; no canonical transaction is allowed to survive without its depreciation run.
 - The old asset lifecycle and depreciation text runbooks are no longer referenced by production code after P08-S1.
 - `FlywayMigrationVersionUniquenessTest` guards against duplicate `V#__*.sql` migration versions before service tests cascade into Flyway startup failures.
+- P16-S15 `AssetInventoryReportQueryService` reads fixed-asset register, completed-run, immutable lifecycle/reversal, and canonical control-account facts under the active-company boundary. It persists nothing and retains exact domain-minus-ledger differences in the rendered report.
 
 ## Inventory authority
 
@@ -135,6 +136,7 @@ Status: P00 inventory of current main, updated through P16-S14 fixed-asset lifec
 - Financial correction is append-only: the canonical reversal transaction and inverse adjustment movement commit together. Historical item quantity/value and movement rows are never silently edited.
 - The old inventory text runbook and `RunbookPersistence` path are no longer referenced by production code after P09-S1.
 - `InventoryMovement.transaction_id` is nullable only because explicitly confirmed zero-value movements may be nonfinancial and historical SCLX provenance may be absent. A populated value is always a real canonical `Txn` relationship; there is no sidecar inventory ledger.
+- P16-S15 inventory valuation and movement reports read `InventoryItem`/`InventoryMovement` facts and canonical inventory-account splits through the same company-scoped query service. Null transaction links are reported as nonfinancial/unlinked facts; no report creates a synthetic identity or inferred posting.
 
 ## Migration risks
 

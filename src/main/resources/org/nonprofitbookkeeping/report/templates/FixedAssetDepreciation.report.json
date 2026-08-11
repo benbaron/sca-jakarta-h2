@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "npbk-semantic-report-1",
+  "templateId": "FixedAssetDepreciation",
+  "sourceSheet": "FixedAssetDepreciation",
+  "title": "Fixed Asset Depreciation History & Schedule",
+  "subtitle": "Completed depreciation and impairment facts in the range plus an as-of straight-line schedule summary; projections do not create transactions.",
+  "type": "tableReport",
+  "tableKey": "fixedAssetDepreciation.rows",
+  "columns": [
+    { "label": "Row", "field": "rowType", "width": 24 },
+    { "label": "Date", "field": "date", "format": "date", "width": 10 },
+    { "label": "Txn", "field": "txnId", "width": 10 },
+    { "label": "Asset ID", "field": "assetId", "width": 10 },
+    { "label": "Asset", "field": "assetName", "width": 24 },
+    { "label": "Account", "field": "accountCode", "width": 11 },
+    { "label": "Fund", "field": "fundCode", "width": 10 },
+    { "label": "Amount / Next", "field": "amount", "format": "currency", "width": 15 },
+    { "label": "Remaining", "field": "remainingDepreciable", "format": "currency", "width": 14 },
+    { "label": "Periods", "field": "remainingPeriods", "width": 10 },
+    { "label": "Notes", "field": "notes", "width": 52 }
+  ]
+}

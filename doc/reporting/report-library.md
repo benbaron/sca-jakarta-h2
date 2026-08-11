@@ -13,6 +13,7 @@ The Report Library is the single production surface for financial and operationa
 - as-of-date or date-range behavior;
 - whether a fund filter applies;
 - whether a maximum-row parameter applies.
+- whether the report accepts stable-ID fixed-asset or inventory filters.
 
 A report must not appear in the catalog unless a real core service projection or semantic template exists. The UI must not expose selectable “Report not implemented” entries.
 
@@ -26,16 +27,46 @@ P16-S6 aligns the default Report Library date request with fiscal authority. Whe
 - normalized start/end or as-of dates;
 - an All Funds selection or a persisted fund ID/code/name;
 - a bounded row limit where applicable.
+- a typed `None`, `FixedAssetSelection`, or `InventorySelection` domain filter. Asset/item and control-account choices retain persisted IDs; status remains the domain enum.
 
 `ReportExecutionService` executes that request through `FinancialReportService` or `WorkbookSemanticReportService` and returns one `ReportResult`. Export reuses the current result when its request still matches the controls; otherwise it executes the newly validated request once.
 
 ## Parameters
 
-- Trial Balance and Balance Sheet use an as-of date.
-- General Ledger Detail, Income Statement, Workbook Summary, Transactions List, Bank Account Activity, and Fund Transfers use a date range.
+- Trial Balance, Balance Sheet, Fixed Asset Register, and Inventory On Hand & Valuation use an as-of date.
+- General Ledger Detail, Income Statement, Workbook Summary, Transactions List, Bank Account Activity, Fund Transfers, Fixed Asset Depreciation History & Schedule, and Inventory Movement History use a date range.
 - Fund filtering is available where the underlying report has a meaningful single-fund projection.
 - General Ledger and semantic ledger-list reports expose a maximum row count from 1 through 5000.
 - Fund Transfers intentionally uses all funds because comparison between funds is the subject of the report.
+- The four asset/inventory reports expose optional control-account, asset/item, and current/as-of status filters. The UI choices are loaded from the active company only.
+
+## Fixed-asset and inventory predicates
+
+P16-S15 adds four specialized projections without introducing a reporting store. Their immutable request, semantic value table, preview, TEXT/CSV/PDF/XLSX export, and Journal drill-through context are shared.
+
+### Fixed Asset Register
+
+An asset row qualifies when its `FixedAsset.company.code` is the active company, acquisition date is on or before the as-of date, and optional fund, fixed-asset account, asset ID, and status-as-of filters match. Status as of the report date is reconstructed from immutable Sale/Retirement lifecycle events and their dated canonical reversals. Recognized cost is acquisition cost while the asset is in service and zero after an unreversed final disposition. Accumulated depreciation is opening accumulated depreciation plus completed `FixedAssetDepreciationRun` amounts through the as-of date. Unreversed impairment events through that date are shown separately and included in recognized contra value. Book value is `max(recognized cost - accumulated depreciation - unreversed impairment, 0)`.
+
+Displayed domain gross, contra, and net totals reconcile to natural-balance amounts on the qualifying source assets' fixed-asset and accumulated-depreciation control accounts through the same date. Reversal transactions net through their own canonical splits. Status filters and row limits may display fewer assets than those shared control accounts contain, so the exact displayed-domain-minus-ledger difference is retained. A fund-scoped control total excludes account opening balance because `Account.openingBalance` has no fund dimension; the excluded amount is labeled separately.
+
+### Fixed Asset Depreciation History & Schedule
+
+Completed depreciation rows select persisted runs whose run date is in the inclusive request range and retain their canonical transaction IDs. Impairment rows select immutable lifecycle events; a canonical reversal in the range appears as its own negative row even when the original impairment predates the range. One schedule-summary row per qualifying asset is calculated at the end date using the persisted straight-line basis, accumulated completed runs, unreversed impairment, and remaining depreciable amount. It states the next monthly amount and estimated remaining periods but creates no future transaction and claims no posted future date.
+
+The reconciliation is the same end-date domain contra value and canonical accumulated-depreciation control-account balance used by the register. It is not the sum of the displayed range rows, because that would mix period activity with an as-of balance.
+
+### Inventory On Hand & Valuation
+
+An item qualifies when its `InventoryItem.company.code` is the active company, acquisition date is on or before the as-of date, and optional fund, inventory account, item ID, and current status filters match. Quantity and unit value come from the latest persisted `InventoryMovement` on or before the as-of date. If the first movement is later, the prior quantity is reconstructed exactly as `first resulting quantity - first quantity change`; an item with no movement uses its persisted item facts. Valuation is `quantity × unit value` at four decimal places.
+
+Displayed domain value reconciles to natural-balance canonical activity plus account opening balance on the qualifying inventory control accounts through the as-of date. The report separately totals selected movements without a canonical transaction. Fund-scoped opening balance and all remaining differences stay explicit.
+
+### Inventory Movement History
+
+A movement row qualifies through its active-company-owned item, inclusive movement date range, and optional fund, inventory account, item ID, and current item-status filters. Signed domain value is `quantity change × persisted movement unit value`; receipt/upward adjustment is positive and issue/downward adjustment is negative. A populated transaction link displays the real canonical transaction ID. A null link is labeled **Nonfinancial / no canonical transaction** and is never replaced with a synthetic identifier.
+
+Displayed domain movement net reconciles to canonical natural-balance split activity on the qualifying inventory control accounts within the same inclusive range. The report also shows the exact unlinked-movement net. Account activity without a matching displayed movement, nonfinancial history, filters, and row limits therefore remain visible as differences rather than being inferred away.
 
 ## Governed bank and fund-transfer predicates
 
@@ -62,7 +93,7 @@ Preview, TEXT, CSV, PDF, XLSX, and Journal drill-through retain the same `Report
 
 ## Formatting and exports
 
-Visible core report previews use active-company date and money preferences through `CompanyUiFormat` and `FinancialReportDisplayFormat`.
+Visible core and semantic report previews use active-company date and money preferences through `CompanyUiFormat` and `FinancialReportDisplayFormat`.
 
 CSV remains machine-readable and stable:
 
@@ -85,5 +116,6 @@ Required automated coverage includes:
 - selected-fund filtering against authoritative ledger data;
 - company-formatted visible text with stable raw CSV;
 - source guardrails for typed catalog/request use and company-owned divider state.
+- fixed-asset lifecycle/as-of reconstruction, inventory historical quantity, company isolation, stable-ID filters, linked/unlinked identities, exact control-account differences, and semantic preview/CSV parity.
 
 Desktop validation must confirm report selection, parameter visibility, fund loading, preview, all export formats, Journal drill-through context, split-pane resizing, and laptop-width behavior.

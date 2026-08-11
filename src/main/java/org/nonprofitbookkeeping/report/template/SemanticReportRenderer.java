@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.report.template;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.nonprofitbookkeeping.service.FinancialReportDisplayFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -10,6 +11,20 @@ import java.util.Map;
 /** Renders compact semantic report templates to text and CSV. */
 public class SemanticReportRenderer
 {
+    private final FinancialReportDisplayFormat displayFormat;
+
+    public SemanticReportRenderer()
+    {
+        this(FinancialReportDisplayFormat.plain());
+    }
+
+    public SemanticReportRenderer(FinancialReportDisplayFormat displayFormat)
+    {
+        this.displayFormat = displayFormat == null
+                ? FinancialReportDisplayFormat.plain()
+                : displayFormat;
+    }
+
     public RenderedSemanticReport render(JsonNode template, SemanticReportValueSet values)
     {
         String type = template.path("type").asText("sectionReport");
@@ -50,9 +65,13 @@ public class SemanticReportRenderer
                 String note = row.path("note").asText("");
                 String sourceCell = row.path("sourceCell").asText("");
                 String value = "";
+                String rawValue = "";
                 if (row.hasNonNull("valueKey"))
                 {
-                    value = format(values.get(row.path("valueKey").asText()), row.path("format").asText("text"));
+                    Object source = values.get(row.path("valueKey").asText());
+                    String format = row.path("format").asText("text");
+                    value = formatDisplay(source, format);
+                    rawValue = formatRaw(source, format);
                 }
                 text.append(String.format("%-10s %-48s %14s  %s%n",
                         line,
@@ -63,7 +82,7 @@ public class SemanticReportRenderer
                         .append(csv(sectionTitle)).append(',')
                         .append(csv(line)).append(',')
                         .append(csv(label)).append(',')
-                        .append(csv(value)).append(',')
+                        .append(csv(rawValue)).append(',')
                         .append(csv(note)).append(',')
                         .append(csv(sourceCell)).append('\n');
             }
@@ -102,10 +121,13 @@ public class SemanticReportRenderer
             for (int i = 0; i < columns.size(); i++)
             {
                 JsonNode col = columns.get(i);
-                String display = format(row.get(col.path("field").asText()), col.path("format").asText("text"));
+                Object source = row.get(col.path("field").asText());
+                String format = col.path("format").asText("text");
+                String display = formatDisplay(source, format);
+                String raw = formatRaw(source, format);
                 text.append(pad(truncate(display, widths[i]), widths[i])).append(' ');
                 if (i > 0) csv.append(',');
-                csv.append(csv(display));
+                csv.append(csv(raw));
             }
             text.append('\n');
             csv.append('\n');
@@ -131,7 +153,24 @@ public class SemanticReportRenderer
         return widths;
     }
 
-    private static String format(Object value, String format)
+    private String formatDisplay(Object value, String format)
+    {
+        if (value == null)
+        {
+            return "currency".equals(format) ? "-" : "";
+        }
+        if ("currency".equals(format) && value instanceof BigDecimal bd)
+        {
+            return bd.signum() == 0 ? "-" : displayFormat.formatMoney(bd);
+        }
+        if ("date".equals(format) && value instanceof LocalDate date)
+        {
+            return displayFormat.formatDate(date);
+        }
+        return String.valueOf(value);
+    }
+
+    private static String formatRaw(Object value, String format)
     {
         if (value == null)
         {

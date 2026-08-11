@@ -21,8 +21,11 @@ class ReportLibraryTypedSourceTest
         assertTrue(source.contains("new ReportRequest("));
         assertTrue(source.contains("ReportFundOption.ALL_FUNDS"));
         assertTrue(source.contains("new CompanyUiFormat("));
+        assertTrue(source.contains("new SemanticReportFxRenderer(companyFormat)"));
         assertTrue(source.contains("currentResult.request().equals(request)"));
         assertTrue(source.contains("preferencesService.saveState"));
+        assertTrue(source.contains("ComboBox<AssetInventoryReportQueryService.FilterOption>"));
+        assertTrue(source.contains("domainFilterMode()"));
         assertFalse(source.contains("Report not implemented"));
         assertFalse(source.contains("ListView<String>"));
     }

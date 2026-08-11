@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "npbk-semantic-report-1",
+  "templateId": "InventoryMovementHistory",
+  "sourceSheet": "InventoryMovementHistory",
+  "title": "Inventory Movement History",
+  "subtitle": "Persisted quantity movements in the selected range with canonical transaction identity or an explicit nonfinancial/unlinked state.",
+  "type": "tableReport",
+  "tableKey": "inventoryMovementHistory.rows",
+  "columns": [
+    { "label": "Row", "field": "rowType", "width": 24 },
+    { "label": "Date", "field": "date", "format": "date", "width": 10 },
+    { "label": "Txn", "field": "txnId", "width": 10 },
+    { "label": "Movement", "field": "movementId", "width": 10 },
+    { "label": "Item ID", "field": "itemId", "width": 10 },
+    { "label": "Item", "field": "itemName", "width": 24 },
+    { "label": "Account", "field": "accountCode", "width": 11 },
+    { "label": "Fund", "field": "fundCode", "width": 10 },
+    { "label": "Qty Change", "field": "quantityChange", "width": 12 },
+    { "label": "On Hand", "field": "resultingQuantity", "width": 12 },
+    { "label": "Unit Value", "field": "unitValue", "format": "currency", "width": 12 },
+    { "label": "Signed Value", "field": "signedValue", "format": "currency", "width": 14 },
+    { "label": "Accounting", "field": "accountingState", "width": 34 },
+    { "label": "Notes", "field": "notes", "width": 42 }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "npbk-semantic-report-1",
+  "templateId": "FixedAssetRegister",
+  "sourceSheet": "FixedAssetRegister",
+  "title": "Fixed Asset Register",
+  "subtitle": "Company-scoped asset facts as of the selected date, followed by explicit canonical control-account reconciliation.",
+  "type": "tableReport",
+  "tableKey": "fixedAssetRegister.rows",
+  "columns": [
+    { "label": "Row", "field": "rowType", "width": 22 },
+    { "label": "Asset ID", "field": "assetId", "width": 10 },
+    { "label": "Asset", "field": "assetName", "width": 24 },
+    { "label": "Status", "field": "status", "width": 10 },
+    { "label": "Acquired", "field": "acquisitionDate", "format": "date", "width": 10 },
+    { "label": "Account", "field": "accountCode", "width": 11 },
+    { "label": "Fund", "field": "fundCode", "width": 10 },
+    { "label": "Recognized Cost", "field": "recognizedCost", "format": "currency", "width": 16 },
+    { "label": "Accum. Dep.", "field": "accumulatedDepreciation", "format": "currency", "width": 14 },
+    { "label": "Impairment", "field": "impairment", "format": "currency", "width": 12 },
+    { "label": "Contra Total", "field": "recognizedContra", "format": "currency", "width": 14 },
+    { "label": "Book Value", "field": "bookValue", "format": "currency", "width": 14 },
+    { "label": "Notes", "field": "notes", "width": 46 }
+  ]
+}

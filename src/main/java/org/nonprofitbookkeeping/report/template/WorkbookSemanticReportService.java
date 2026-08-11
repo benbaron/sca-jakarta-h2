@@ -1,6 +1,9 @@
 package org.nonprofitbookkeeping.report.template;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.nonprofitbookkeeping.report.AssetInventoryReportQueryService;
+import org.nonprofitbookkeeping.report.ReportDomainFilter;
+import org.nonprofitbookkeeping.report.ReportRequest;
 import org.nonprofitbookkeeping.report.SemanticAccountingReportQueryService;
 import org.nonprofitbookkeeping.service.FinancialReportService;
 
@@ -18,19 +21,29 @@ public class WorkbookSemanticReportService
 
     private final FinancialReportService financialReports;
     private final SemanticAccountingReportQueryService semanticQueries;
+    private final AssetInventoryReportQueryService assetInventoryQueries;
     private final SemanticReportRenderer renderer = new SemanticReportRenderer();
 
     public WorkbookSemanticReportService(FinancialReportService financialReports)
     {
-        this(financialReports, null);
+        this(financialReports, null, null);
     }
 
     public WorkbookSemanticReportService(
             FinancialReportService financialReports,
             SemanticAccountingReportQueryService semanticQueries)
     {
+        this(financialReports, semanticQueries, null);
+    }
+
+    public WorkbookSemanticReportService(
+            FinancialReportService financialReports,
+            SemanticAccountingReportQueryService semanticQueries,
+            AssetInventoryReportQueryService assetInventoryQueries)
+    {
         this.financialReports = financialReports;
         this.semanticQueries = semanticQueries;
+        this.assetInventoryQueries = assetInventoryQueries;
     }
 
     public JsonNode loadTemplate(String templateId)
@@ -82,6 +95,21 @@ public class WorkbookSemanticReportService
             case "FundTransfers" -> fundTransferValues(
                     effectiveStart, effectiveEnd, effectiveLimit);
             default -> throw new IllegalArgumentException("Unknown semantic report template: " + templateId);
+        };
+    }
+
+    public SemanticReportValueSet loadValues(ReportRequest request)
+    {
+        return switch (request.definition().domainFilterMode())
+        {
+            case NONE -> loadValues(
+                    request.definition().templateId(),
+                    request.startDate(),
+                    request.endDate(),
+                    request.fundCode(),
+                    request.rowLimit());
+            case FIXED_ASSET -> fixedAssetValues(request);
+            case INVENTORY -> inventoryValues(request);
         };
     }
 
@@ -251,6 +279,246 @@ public class WorkbookSemanticReportService
         return row;
     }
 
+    private SemanticReportValueSet fixedAssetValues(ReportRequest request)
+    {
+        ReportDomainFilter.FixedAssetSelection filter =
+                (ReportDomainFilter.FixedAssetSelection) request.domainFilter();
+        AssetInventoryReportQueryService.FixedAssetReportRequest query =
+                new AssetInventoryReportQueryService.FixedAssetReportRequest(
+                        request.startDate(),
+                        request.endDate(),
+                        request.fund().id(),
+                        filter.accountId(),
+                        filter.assetId(),
+                        filter.status(),
+                        request.rowLimit());
+        return switch (request.definition().templateId())
+        {
+            case "FixedAssetRegister" -> fixedAssetRegisterValues(
+                    requireAssetInventoryQueries().fixedAssetRegister(query));
+            case "FixedAssetDepreciation" -> fixedAssetDepreciationValues(
+                    requireAssetInventoryQueries().fixedAssetDepreciation(query));
+            default -> throw new IllegalArgumentException(
+                    "Unknown fixed-asset report template: " + request.definition().templateId());
+        };
+    }
+
+    private SemanticReportValueSet inventoryValues(ReportRequest request)
+    {
+        ReportDomainFilter.InventorySelection filter =
+                (ReportDomainFilter.InventorySelection) request.domainFilter();
+        AssetInventoryReportQueryService.InventoryReportRequest query =
+                new AssetInventoryReportQueryService.InventoryReportRequest(
+                        request.startDate(),
+                        request.endDate(),
+                        request.fund().id(),
+                        filter.accountId(),
+                        filter.itemId(),
+                        filter.status(),
+                        request.rowLimit());
+        return switch (request.definition().templateId())
+        {
+            case "InventoryValuation" -> inventoryValuationValues(
+                    requireAssetInventoryQueries().inventoryValuation(query));
+            case "InventoryMovementHistory" -> inventoryMovementValues(
+                    requireAssetInventoryQueries().inventoryMovementHistory(query));
+            default -> throw new IllegalArgumentException(
+                    "Unknown inventory report template: " + request.definition().templateId());
+        };
+    }
+
+    private SemanticReportValueSet fixedAssetRegisterValues(
+            AssetInventoryReportQueryService.FixedAssetRegisterResult report)
+    {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (AssetInventoryReportQueryService.FixedAssetRegisterRow source : report.rows())
+        {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("rowType", "Asset");
+            row.put("assetId", source.assetId());
+            row.put("assetName", source.assetName());
+            row.put("status", source.status());
+            row.put("acquisitionDate", source.acquisitionDate());
+            row.put("accountCode", source.assetAccountCode());
+            row.put("fundCode", source.fundCode());
+            row.put("recognizedCost", source.recognizedCost());
+            row.put("accumulatedDepreciation", source.accumulatedDepreciation());
+            row.put("impairment", source.impairment());
+            row.put("recognizedContra", source.recognizedContra());
+            row.put("bookValue", source.bookValue());
+            rows.add(row);
+        }
+        rows.add(reconciliationRow("Domain total", report.domainGross(), report.domainContra(),
+                report.domainNet(), null));
+        rows.add(reconciliationRow("Ledger control total", report.ledgerGross(), report.ledgerContra(),
+                report.ledgerNet(), null));
+        rows.add(reconciliationRow("Difference", null, null, report.difference(),
+                report.explanation()));
+        if (report.openingBalanceExcluded().signum() != 0)
+        {
+            rows.add(reconciliationRow("Fund-unallocated opening balance", null, null,
+                    report.openingBalanceExcluded(), report.explanation()));
+        }
+        SemanticReportValueSet values = new SemanticReportValueSet();
+        values.putTable("fixedAssetRegister.rows", rows);
+        return values;
+    }
+
+    private Map<String, Object> reconciliationRow(
+            String type,
+            BigDecimal gross,
+            BigDecimal contra,
+            BigDecimal net,
+            String notes)
+    {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("rowType", type);
+        row.put("recognizedCost", gross);
+        row.put("recognizedContra", contra);
+        row.put("bookValue", net);
+        row.put("notes", notes);
+        return row;
+    }
+
+    private SemanticReportValueSet fixedAssetDepreciationValues(
+            AssetInventoryReportQueryService.FixedAssetDepreciationResult report)
+    {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (AssetInventoryReportQueryService.DepreciationReportRow source : report.rows())
+        {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("rowType", source.rowType());
+            row.put("date", source.date());
+            row.put("txnId", source.transactionId());
+            row.put("assetId", source.assetId());
+            row.put("assetName", source.assetName());
+            row.put("accountCode", source.accountCode());
+            row.put("fundCode", source.fundCode());
+            row.put("amount", source.amount());
+            row.put("remainingDepreciable", source.remainingDepreciable());
+            row.put("remainingPeriods", source.remainingPeriods());
+            row.put("notes", source.notes());
+            rows.add(row);
+        }
+        rows.add(depreciationSummaryRow("Domain contra total", report.domainContra(), null));
+        rows.add(depreciationSummaryRow("Ledger contra total", report.ledgerContra(), null));
+        rows.add(depreciationSummaryRow("Difference", report.difference(), report.explanation()));
+        if (report.truncated())
+        {
+            rows.add(depreciationSummaryRow("Row limit reached", null,
+                    "Detail and schedule rows were limited by the request."));
+        }
+        SemanticReportValueSet values = new SemanticReportValueSet();
+        values.putTable("fixedAssetDepreciation.rows", rows);
+        return values;
+    }
+
+    private Map<String, Object> depreciationSummaryRow(
+            String rowType,
+            BigDecimal amount,
+            String notes)
+    {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("rowType", rowType);
+        row.put("amount", amount);
+        row.put("notes", notes);
+        return row;
+    }
+
+    private SemanticReportValueSet inventoryValuationValues(
+            AssetInventoryReportQueryService.InventoryValuationResult report)
+    {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (AssetInventoryReportQueryService.InventoryValuationRow source : report.rows())
+        {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("rowType", "Item");
+            row.put("itemId", source.itemId());
+            row.put("itemName", source.itemName());
+            row.put("itemType", source.itemType());
+            row.put("status", source.status());
+            row.put("accountCode", source.accountCode());
+            row.put("fundCode", source.fundCode());
+            row.put("quantity", source.quantity());
+            row.put("unit", source.unit());
+            row.put("unitValue", source.unitValue());
+            row.put("totalValue", source.totalValue());
+            row.put("movementId", source.latestMovementId());
+            row.put("txnId", source.transactionId());
+            rows.add(row);
+        }
+        rows.add(inventorySummaryRow("Domain valuation", report.domainValue(), null));
+        rows.add(inventorySummaryRow("Ledger control total", report.ledgerValue(), null));
+        rows.add(inventorySummaryRow("Difference", report.difference(), report.explanation()));
+        rows.add(inventorySummaryRow("Unlinked movement net", report.unlinkedMovementNet(),
+                "Signed value of selected movements without a canonical transaction."));
+        if (report.openingBalanceExcluded().signum() != 0)
+        {
+            rows.add(inventorySummaryRow("Fund-unallocated opening balance",
+                    report.openingBalanceExcluded(), report.explanation()));
+        }
+        SemanticReportValueSet values = new SemanticReportValueSet();
+        values.putTable("inventoryValuation.rows", rows);
+        return values;
+    }
+
+    private Map<String, Object> inventorySummaryRow(
+            String rowType,
+            BigDecimal value,
+            String notes)
+    {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("rowType", rowType);
+        row.put("totalValue", value);
+        row.put("notes", notes);
+        return row;
+    }
+
+    private SemanticReportValueSet inventoryMovementValues(
+            AssetInventoryReportQueryService.InventoryMovementResult report)
+    {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (AssetInventoryReportQueryService.InventoryMovementReportRow source : report.rows())
+        {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("rowType", source.movementType());
+            row.put("date", source.movementDate());
+            row.put("txnId", source.transactionId());
+            row.put("movementId", source.movementId());
+            row.put("itemId", source.itemId());
+            row.put("itemName", source.itemName());
+            row.put("accountCode", source.accountCode());
+            row.put("fundCode", source.fundCode());
+            row.put("quantityChange", source.quantityChange());
+            row.put("resultingQuantity", source.resultingQuantity());
+            row.put("unitValue", source.unitValue());
+            row.put("signedValue", source.signedValue());
+            row.put("accountingState", source.accountingState());
+            row.put("notes", source.notes());
+            rows.add(row);
+        }
+        rows.add(inventoryMovementSummaryRow("Domain movement net", report.domainNet(), null));
+        rows.add(inventoryMovementSummaryRow("Ledger account activity", report.ledgerActivity(), null));
+        rows.add(inventoryMovementSummaryRow("Difference", report.difference(), report.explanation()));
+        rows.add(inventoryMovementSummaryRow("Unlinked movement net", report.unlinkedMovementNet(),
+                "Signed value of displayed movements without a canonical transaction."));
+        SemanticReportValueSet values = new SemanticReportValueSet();
+        values.putTable("inventoryMovementHistory.rows", rows);
+        return values;
+    }
+
+    private Map<String, Object> inventoryMovementSummaryRow(
+            String rowType,
+            BigDecimal value,
+            String notes)
+    {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("rowType", rowType);
+        row.put("signedValue", value);
+        row.put("notes", notes);
+        return row;
+    }
+
     private SemanticAccountingReportQueryService requireSemanticQueries()
     {
         if (semanticQueries == null)
@@ -259,6 +527,16 @@ public class WorkbookSemanticReportService
                     "Bank activity and fund transfer reports require a company-scoped semantic query service.");
         }
         return semanticQueries;
+    }
+
+    private AssetInventoryReportQueryService requireAssetInventoryQueries()
+    {
+        if (assetInventoryQueries == null)
+        {
+            throw new IllegalStateException(
+                    "Fixed-asset and inventory reports require a company-scoped query service.");
+        }
+        return assetInventoryQueries;
     }
 
     private void putRowsByAccount(

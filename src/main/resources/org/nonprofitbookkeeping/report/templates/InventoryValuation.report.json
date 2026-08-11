@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "npbk-semantic-report-1",
+  "templateId": "InventoryValuation",
+  "sourceSheet": "InventoryValuation",
+  "title": "Inventory On Hand & Valuation",
+  "subtitle": "Latest persisted quantity and unit value at the as-of date, followed by explicit inventory control-account reconciliation.",
+  "type": "tableReport",
+  "tableKey": "inventoryValuation.rows",
+  "columns": [
+    { "label": "Row", "field": "rowType", "width": 24 },
+    { "label": "Item ID", "field": "itemId", "width": 10 },
+    { "label": "Item", "field": "itemName", "width": 24 },
+    { "label": "Type", "field": "itemType", "width": 16 },
+    { "label": "Status", "field": "status", "width": 10 },
+    { "label": "Account", "field": "accountCode", "width": 11 },
+    { "label": "Fund", "field": "fundCode", "width": 10 },
+    { "label": "Quantity", "field": "quantity", "width": 12 },
+    { "label": "Unit", "field": "unit", "width": 10 },
+    { "label": "Unit Value", "field": "unitValue", "format": "currency", "width": 12 },
+    { "label": "Total Value", "field": "totalValue", "format": "currency", "width": 14 },
+    { "label": "Movement", "field": "movementId", "width": 10 },
+    { "label": "Txn", "field": "txnId", "width": 10 },
+    { "label": "Notes", "field": "notes", "width": 48 }
+  ]
+}
