@@ -1,12 +1,12 @@
 ---
-plan_version: 169
+plan_version: 170
 active_phase: P16
 active_slice: P16-S15
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P16-S15-fixed-asset-inventory-reports
-active_pull_request: null
-active_head: 8723c09dcd9c6055a6eb1667fdb89dc5b050aea8
-next_action: "Obtain publication authorization, push the exact reviewed S15 branch, open a draft PR, and run authoritative Maven CI plus owner desktop testing."
+active_pull_request: 267
+active_head: e9f0e0224253f003c6e686d0c6d8d49e5b529a1d
+next_action: "Run authoritative Maven PR Tests on draft PR #267, correct any confirmed failure, then complete the owner desktop checklist before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2590,7 +2590,7 @@ Next exact action:
 
 ## P16-S15 — Fixed-asset and inventory reports
 
-Status: IN_PROGRESS on branch `codex/P16-S15-fixed-asset-inventory-reports` from exact P16-S14 merge `4504fdbd17ae50d5b03c36a6f5128bed6ee81c28`.
+Status: VERIFYING through draft PR #267 on branch `codex/P16-S15-fixed-asset-inventory-reports`, based on exact P16-S14 merge `4504fdbd17ae50d5b03c36a6f5128bed6ee81c28`.
 
 Purpose: add domain reports only after P16-S9 and P16-S14 establish authoritative movement and disposal facts.
 
@@ -2617,10 +2617,12 @@ Implementation progress:
 - Four semantic templates reuse the Report Library preview and TEXT/CSV/PDF/XLSX adapters. The owner checklist is `doc/P16-S15-fixed-asset-inventory-reports-user-testing.md`.
 - Focused database-backed tests cover company isolation, lifecycle impairment reversal, depreciation schedule identity, historical inventory position, linked/unlinked movements, filters, reconciliation differences, and semantic preview/CSV parity. Local Maven execution remains unavailable because this environment has no `mvn` or `javac`; Java syntax, JSON, whitespace, and repository source contracts are verified locally before PR handoff.
 - Exact local implementation commit `8723c09dcd9c6055a6eb1667fdb89dc5b050aea8` passes full Java-source syntax parsing for all 696 main/test sources, JSON parsing for every semantic template, and `git diff --check`. Maven remains unavailable because the container has no `mvn` executable; authoritative focused/full execution is pending publication and GitHub CI.
+- The approved two-commit, 24-file tree was reconstructed through the connected GitHub service without `gh`; remote implementation tree `63364c32e76d73952e9f2bd70ffc8b16421efa44` and handoff tree `8f7e0fe7a50c8d4c6d47d22961ade3706d6fc4e2` exactly match their local Git trees.
+- Draft PR #267 opened at exact remote handoff head `e9f0e0224253f003c6e686d0c6d8d49e5b529a1d`; authoritative Maven PR Tests and owner desktop acceptance remain pending.
 
 Next exact action:
 
-- Complete static review, commit the S15 implementation locally, then request authorization to publish the branch and open the draft PR so authoritative Maven CI and owner desktop testing can run.
+- Run the complete Maven PR Tests workflow on draft PR #267, correct any confirmed failure on the same branch, then complete `doc/P16-S15-fixed-asset-inventory-reports-user-testing.md` before merge.
 
 ## P16-S16 — User role and assignment maintenance
 
