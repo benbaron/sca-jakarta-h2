@@ -1,12 +1,12 @@
 ---
-plan_version: 165
+plan_version: 166
 active_phase: P16
 active_slice: P16-S14
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P16-S14-fixed-asset-disposal-accounting
-active_pull_request: none
-active_head: c8bd75bdd0b32684dd0566de8ba7d97f0e7a13cf
-next_action: "After publishing authorization, push the P16-S14 branch, open a draft PR, and run Maven PR Tests on the exact plan-inclusive head."
+active_pull_request: "#266"
+active_head: a279fa16181670340a290ea1e0313f4c84fdc49b
+next_action: "Run Maven PR Tests on the exact plan-inclusive P16-S14 head, correct any failure on PR #266, then complete the owner desktop checklist before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2578,6 +2578,7 @@ Implementation progress:
 - The lifecycle schema and semantics are documented here and in `doc/inventory/inventory-and-assets.md`. SCLX fixed-assets extension v1 remains unchanged in this product-workflow slice; lifecycle facts are not inferred from `DISPOSED`. Any extension must be separately versioned and pass semantic round-trip tests before it can claim coverage.
 - Owner desktop verification is governed by `doc/P16-S14-fixed-asset-disposal-accounting-user-testing.md`.
 - Local implementation commit `c8bd75bdd0b32684dd0566de8ba7d97f0e7a13cf` passes full Java-source syntax parsing and `git diff --check`. Maven execution is unavailable because this environment has Java 17 but no `mvn` executable; focused and full verification must therefore run through the repository PR workflow after publishing authorization.
+- Draft PR #266 opened from `codex/P16-S14-fixed-asset-disposal-accounting` at exact remote handoff head `a279fa16181670340a290ea1e0313f4c84fdc49b`; GitHub Maven PR Tests and owner desktop acceptance remain pending.
 
 ## P16-S15 — Fixed-asset and inventory reports
 
