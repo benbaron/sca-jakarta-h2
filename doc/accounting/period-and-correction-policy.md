@@ -54,6 +54,8 @@ Direct editing preserves the transaction identifier and writes an audit record o
 
 Reversal creates an opposite transaction linked to the original. The reversal date is selected by the user and defaults to the active accounting period. The user may optionally create a linked replacement transaction.
 
+Domain-linked transactions whose reversal changes authoritative operational state must be corrected through their owning workflow. In particular, a transaction linked as the original or reversal of a `fixed_asset_lifecycle_event` cannot be edited, deleted, or generically reversed in Journal. **Reverse Selected Lifecycle Event** in Asset Register invokes the canonical reversal service inside the same transaction that links the reversal fact and restores the governed asset status. Closed-period and completed/finalized reconciliation protections remain mandatory.
+
 ## Deletion
 
 Every durable maintenance function should expose Delete or explain why deletion is not available. Transaction Delete is governed by the active correction method:

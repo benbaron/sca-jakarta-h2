@@ -159,6 +159,7 @@ public class TransactionEntryService
                 {
                     throw new PostingException("Only ENTERED transactions can be updated by the entry service.");
                 }
+                requireNotFixedAssetLifecycleTransaction(em, transactionId);
                 requireNotReconciled(em, transactionId, "update transaction");
                 requireOpenRange(em, txn.getTxnDate(), "update transaction");
                 requireOpenRange(em, command.date(), "update transaction");
@@ -553,6 +554,24 @@ public class TransactionEntryService
         {
             throw new PostingException("Cannot " + operation + " because transaction "
                     + transactionId + " is protected by a completed reconciliation.");
+        }
+    }
+
+    private static void requireNotFixedAssetLifecycleTransaction(EntityManager em, long transactionId)
+    {
+        Number linked = (Number) em.createNativeQuery("""
+                select count(*)
+                  from fixed_asset_lifecycle_event
+                 where transaction_id = ? or reversal_transaction_id = ?
+                """)
+                .setParameter(1, transactionId)
+                .setParameter(2, transactionId)
+                .getSingleResult();
+        if (linked.longValue() > 0)
+        {
+            throw new PostingException(
+                    "Transaction " + transactionId
+                            + " belongs to fixed-asset lifecycle accounting; use the Asset Register reversal workflow.");
         }
     }
 

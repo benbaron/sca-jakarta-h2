@@ -111,3 +111,41 @@ P08-S1 implementation notes:
 - `fixed_asset_depreciation_run` stores completed depreciation runs and links each run to the canonical `txn` row created by the run.
 - `FixedAssetService` validates fixed asset account type/subtype, depreciation expense account type, useful-life limits, nonnegative cost/salvage/opening-depreciation values, and remaining depreciable basis.
 - `AssetsRegisterPanel` and `DepreciationRunsPanel` read/write through `FixedAssetService`; their old asset/depreciation runbook sidecars are removed.
+
+## Fixed-asset lifecycle accounting
+
+P16-S14 distinguishes three financially authoritative lifecycle operations:
+
+- **Sale** removes the asset from service and records any proceeds plus the resulting gain or loss.
+- **Retirement** removes the asset from service with no proceeds and recognizes the remaining carrying amount as a loss.
+- **Impairment** keeps the asset active while reducing its carrying amount by an explicitly entered impairment loss.
+
+The editable Asset Register status is limited to `ACTIVE` and `INACTIVE`. `DISPOSED` is a service-owned result of a confirmed Sale or Retirement; it cannot be selected or cleared through ordinary asset editing. A disposed asset returns to its former lifecycle state only when its linked canonical transaction is reversed through the asset lifecycle workflow.
+
+### Preview and accounting policy
+
+Every lifecycle operation begins with a frozen, non-mutating preview. The preview identifies the active company, asset and portable identity, operation type/date, asset account, accumulated-depreciation account, proceeds account when applicable, gain/loss account when applicable, fund, acquisition cost, accumulated depreciation, prior unreversed impairment, carrying amount, proceeds, impairment, gain or loss, exact debit/credit proposal, notes, and new portable identities.
+
+All monetary values use ledger precision of four decimal places with half-up rounding. The service uses the asset's one existing fund on every line and never creates an implicit inter-fund transfer.
+
+Sale and Retirement remove the complete asset record from service; partial physical disposals are not inferred. Their accounting is:
+
+- debit the proceeds account for positive proceeds;
+- debit accumulated depreciation for completed/opening depreciation plus prior unreversed impairment;
+- debit the selected loss expense account when proceeds are below carrying amount;
+- credit the fixed-asset account for acquisition cost; and
+- credit the selected gain income account when proceeds exceed carrying amount.
+
+A zero-proceeds Sale or Retirement has no proceeds-account line. A fully depreciated asset therefore posts only the accumulated-depreciation debit and fixed-asset credit. A zero-cost asset cannot enter this financial disposal workflow because canonical accounting forbids zero-value transaction lines.
+
+Impairment must be positive and cannot exceed the asset's current carrying amount. It debits the selected loss expense account and credits the asset's accumulated-depreciation/contra-asset account. Impairment does not change the asset status, acquisition cost, historical depreciation, or salvage estimate. Current book value is acquisition cost less accumulated depreciation and unreversed impairment, never below zero.
+
+The proceeds account must be an active posting `BANK` or `ASSET` account and must differ from both fixed-asset contra accounts. The fixed-asset and accumulated-depreciation accounts must also differ. A gain account must be an active posting `INCOME` account, and a loss/impairment account must be an active posting `EXPENSE` account. Every account and the asset fund must belong to the active company and be effective on the event date. Positive proceeds require a proceeds account and a nonzero gain/loss requires its matching account. An unused selection creates no line and is not retained as event provenance; the frozen preview identifies only the accounts actually used by its exact proposal.
+
+### Atomic persistence and correction
+
+After confirmation, `FixedAssetService` locks and revalidates the asset and recomputes the complete preview. The canonical `Txn`/`TxnSplit` rows, durable fixed-asset lifecycle event, asset status transition, portable identities, transaction audit, and asset-lifecycle audit commit in one caller-owned JPA transaction. Lifecycle dates cannot precede already-recorded later depreciation, lifecycle, or lifecycle-reversal activity; depreciation dates likewise cannot precede a later lifecycle fact. A stale preview, company switch, duplicate final disposition, identity collision, closed date, finalized bank-account reconciliation range, invalid account/fund, chronology conflict, retry conflict, or injected late failure leaves no partial status, event, transaction, split, or audit change. An identical retry of the committed preview returns the existing event.
+
+Lifecycle events are immutable financial facts. **Reverse Selected Lifecycle Event** creates the canonical opposite transaction through `TransactionCorrectionService`, links it to the lifecycle event, and restores the asset's prior status in the same transaction. Reversal requires an open date and is blocked by completed/finalized reconciliation protection. An impairment cannot be reversed while a later unreversed Sale or Retirement remains in effect. Generic Journal edit/delete/reversal is blocked for both original and reversal transactions linked to a fixed-asset lifecycle event; corrections must use the domain workflow so asset state and ledger state cannot diverge.
+
+The lifecycle history remains visible after reversal, including both canonical transaction links. SCLX disposal interchange is not inferred from the legacy asset status field; it may be extended only through a separately versioned fixed-assets extension that preserves these stable lifecycle facts and passes semantic round-trip tests.
