@@ -1,12 +1,12 @@
 ---
-plan_version: 162
+plan_version: 167
 active_phase: P16
-active_slice: P16-S13
+active_slice: P16-S14
 active_status: VERIFYING
-active_branch: codex/P16-S13-truthful-report-semantics
-active_pull_request: 265
-active_head: d7425a5451121a277b527b546e1f316c1b27d136
-next_action: "Complete doc/P16-S13-truthful-report-semantics-user-testing.md on draft PR #265, then merge only after owner acceptance."
+active_branch: codex/P16-S14-fixed-asset-disposal-accounting
+active_pull_request: "#266"
+active_head: bbab5c7530b045975c22a8f2ce1b226333597278
+next_action: "Validate the documentation-inclusive P16-S14 handoff head, then complete the owner desktop checklist before merging PR #266."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S13; P16-S12 DONE through PR #264 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S14; P16-S13 DONE through PR #265 |
 
 ## 4. Governing documents
 
@@ -2511,7 +2511,7 @@ Next exact action:
 
 ## P16-S13 — Truthful report semantics
 
-Status: VERIFYING through draft PR #265 on branch `codex/P16-S13-truthful-report-semantics`.
+Status: DONE through merged PR #265 and owner desktop acceptance.
 
 Starting base: `6ff2c23649cede30e68fcd335d662eaf7d99b978`
 
@@ -2543,14 +2543,16 @@ Implementation progress:
 - Local Maven execution is unavailable in this environment. Draft PR #265 opened at implementation head `0f32bd755ac6a924e72bcea0098b9fe3e1fda36f`.
 - Exact plan-inclusive head `2c16bc6c0777ee170ea8d3ee11868a2098aac2d4` passed Maven PR Tests run `31439706723`: clean `mvn clean verify` and the deliberate repeated suite each ran 621 tests with 0 failures/errors and 33 skips; all 9 production JavaFX route/source compliance tests passed.
 - Exact documentation-inclusive head `d7425a5451121a277b527b546e1f316c1b27d136` passed Maven PR Tests run `31440051765` with the same clean verification, repeated 621-test suite, and 9-test JavaFX compliance result.
+- Exact final PR head `e34311a43325c769a2512a5dd4ce3875cd6ee738` passed Maven PR Tests run `31440376358` with 621 tests passing twice, 33 skips, and all 9 production JavaFX compliance tests passing.
+- The owner completed and accepted `doc/P16-S13-truthful-report-semantics-user-testing.md`, and PR #265 merged to `main` at `8c0717b2fc3b7de5f247044b30ff9951d5df7cfc` on 2026-08-10.
 
 Next exact action:
 
-- Complete `doc/P16-S13-truthful-report-semantics-user-testing.md` on draft PR #265, then merge only after owner acceptance. Keep P16-S14 blocked.
+- None; P16-S13 is DONE and P16-S14 is active.
 
 ## P16-S14 — Fixed-asset disposal accounting
 
-Status: BLOCKED by P16-S13.
+Status: IN_PROGRESS on branch `codex/P16-S14-fixed-asset-disposal-accounting` from exact P16-S13 merge `8c0717b2fc3b7de5f247044b30ff9951d5df7cfc`.
 
 Purpose: complete the visible `DISPOSED` lifecycle with disposal proceeds, accumulated depreciation, gain/loss, and canonical accounting.
 
@@ -2566,6 +2568,19 @@ Acceptance and tests:
 
 - Disposal cannot leave asset status and ledger out of sync.
 - Full/partial proceeds, zero proceeds, fully depreciated assets, impairment, closed periods, retry, and late rollback are covered.
+
+Implementation progress:
+
+- V71 and `FixedAssetLifecycleEvent` establish immutable Sale, Retirement, and Impairment facts with intrinsic UUID identity, carrying-value snapshots, account provenance, original/reversal transaction links, and database constraints.
+- `FixedAssetService` owns frozen previews, pessimistic revalidation, exact balanced entries, asset status changes, canonical transaction/audit writes, idempotent retry, and domain reversal in one transaction. Direct `DISPOSED` edits and generic Journal mutation of linked transactions are rejected.
+- Asset Register exposes responsive preview-confirm actions, persistent lifecycle history, governed reversal, and Ledger drill-through. Disposed assets remain visible but their status cannot be edited directly.
+- Focused H2 tests cover gain and loss sales, zero-proceeds fully depreciated retirement, impairment and reversal, chronological ordering, closed periods, finalized proceeds-account reconciliation, retry, stale preview, company isolation, generic-correction rejection, late rollback across restart, and V71 schema constraints.
+- The lifecycle schema and semantics are documented here and in `doc/inventory/inventory-and-assets.md`. SCLX fixed-assets extension v1 remains unchanged in this product-workflow slice; lifecycle facts are not inferred from `DISPOSED`. Any extension must be separately versioned and pass semantic round-trip tests before it can claim coverage.
+- Owner desktop verification is governed by `doc/P16-S14-fixed-asset-disposal-accounting-user-testing.md`.
+- Local implementation commit `c8bd75bdd0b32684dd0566de8ba7d97f0e7a13cf` passes full Java-source syntax parsing and `git diff --check`. Maven execution is unavailable because this environment has Java 17 but no `mvn` executable; focused and full verification must therefore run through the repository PR workflow after publishing authorization.
+- Draft PR #266 opened from `codex/P16-S14-fixed-asset-disposal-accounting` at exact remote handoff head `a279fa16181670340a290ea1e0313f4c84fdc49b`; GitHub Maven PR Tests and owner desktop acceptance remain pending.
+- Initial Maven PR Tests run `31448898022` exposed one real chronology gap and two test-helper errors: backdated depreciation did not reject a later impairment, while native H2 UUID values were cast directly instead of read through typed entity projections.
+- Exact corrected head `bbab5c7530b045975c22a8f2ce1b226333597278` passed Maven PR Tests run `31449177523`: clean `mvn clean verify` and the deliberate repeated suite each ran 633 tests with 0 failures/errors and 33 skips; all 9 production JavaFX route/source compliance tests passed.
 
 ## P16-S15 — Fixed-asset and inventory reports
 

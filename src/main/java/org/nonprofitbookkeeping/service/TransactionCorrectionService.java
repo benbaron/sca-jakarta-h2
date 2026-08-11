@@ -55,6 +55,7 @@ public class TransactionCorrectionService
                 Txn txn = requireTransaction(em, transactionId);
                 ownership().ensureOwnedBy(em, company, txn, "Transaction");
                 requireEntered(txn);
+                requireNotFixedAssetLifecycleTransaction(em, transactionId, "edit transaction");
                 requireNotReconciled(em, transactionId, "edit transaction");
                 requireOpenRange(em, txn.getTxnDate(), "edit transaction");
                 requireOpenRange(em, transactionDate, "move transaction");
@@ -88,6 +89,7 @@ public class TransactionCorrectionService
                 Txn txn = requireTransaction(em, transactionId);
                 ownership().ensureOwnedBy(em, company, txn, "Transaction");
                 requireEntered(txn);
+                requireNotFixedAssetLifecycleTransaction(em, transactionId, "delete transaction");
                 requireNotReconciled(em, transactionId, "delete transaction");
                 requireOpenRange(em, txn.getTxnDate(), "delete transaction");
 
@@ -123,6 +125,7 @@ public class TransactionCorrectionService
                 Txn original = requireTransaction(em, transactionId);
                 ownership().ensureOwnedBy(em, company, original, "Transaction");
                 requireEntered(original);
+                requireNotFixedAssetLifecycleTransaction(em, transactionId, "reverse transaction");
                 requireNotReconciled(em, transactionId, "reverse transaction");
                 requireOpenRange(em, reversalDate, "create reversal");
 
@@ -338,6 +341,27 @@ public class TransactionCorrectionService
         {
             throw new IllegalStateException("Cannot " + operation + " because transaction "
                     + transactionId + " is protected by a finalized reconciliation.");
+        }
+    }
+
+    private static void requireNotFixedAssetLifecycleTransaction(
+            EntityManager em,
+            long transactionId,
+            String operation)
+    {
+        Number linked = (Number) em.createNativeQuery("""
+                select count(*)
+                  from fixed_asset_lifecycle_event
+                 where transaction_id = ? or reversal_transaction_id = ?
+                """)
+                .setParameter(1, transactionId)
+                .setParameter(2, transactionId)
+                .getSingleResult();
+        if (linked.longValue() > 0)
+        {
+            throw new IllegalStateException(
+                    "Cannot " + operation + " because transaction " + transactionId
+                            + " belongs to fixed-asset lifecycle accounting; use the Asset Register reversal workflow");
         }
     }
 
