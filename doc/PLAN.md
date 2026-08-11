@@ -1,12 +1,12 @@
 ---
-plan_version: 167
+plan_version: 172
 active_phase: P16
-active_slice: P16-S14
+active_slice: P16-S15
 active_status: VERIFYING
-active_branch: codex/P16-S14-fixed-asset-disposal-accounting
-active_pull_request: "#266"
-active_head: bbab5c7530b045975c22a8f2ce1b226333597278
-next_action: "Validate the documentation-inclusive P16-S14 handoff head, then complete the owner desktop checklist before merging PR #266."
+active_branch: codex/P16-S15-fixed-asset-inventory-reports
+active_pull_request: 267
+active_head: c536a8ff6c348b14b13f8185d1bd8d0e32b8ae62
+next_action: "Complete doc/P16-S15-fixed-asset-inventory-reports-user-testing.md on the exact green PR #267 head, then merge only after owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S14; P16-S13 DONE through PR #265 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S15; P16-S14 DONE through PR #266 |
 
 ## 4. Governing documents
 
@@ -1879,7 +1879,7 @@ Required behavior: genuine Inventory item add/edit and movement history, no runb
 # P16 — Interface-to-authority completion and integrity corrections
 
 **Selector:** `PHASE=P16`  
-**Status:** IN_PROGRESS through P16-S13; P16-S12 DONE through PR #264
+**Status:** IN_PROGRESS through P16-S15; P16-S14 DONE through PR #266
 **Depends on:** P03 through P15 except eliminated P07
 
 ## Purpose
@@ -2552,7 +2552,7 @@ Next exact action:
 
 ## P16-S14 — Fixed-asset disposal accounting
 
-Status: IN_PROGRESS on branch `codex/P16-S14-fixed-asset-disposal-accounting` from exact P16-S13 merge `8c0717b2fc3b7de5f247044b30ff9951d5df7cfc`.
+Status: DONE through merged PR #266 and owner desktop acceptance.
 
 Purpose: complete the visible `DISPOSED` lifecycle with disposal proceeds, accumulated depreciation, gain/loss, and canonical accounting.
 
@@ -2581,10 +2581,16 @@ Implementation progress:
 - Draft PR #266 opened from `codex/P16-S14-fixed-asset-disposal-accounting` at exact remote handoff head `a279fa16181670340a290ea1e0313f4c84fdc49b`; GitHub Maven PR Tests and owner desktop acceptance remain pending.
 - Initial Maven PR Tests run `31448898022` exposed one real chronology gap and two test-helper errors: backdated depreciation did not reject a later impairment, while native H2 UUID values were cast directly instead of read through typed entity projections.
 - Exact corrected head `bbab5c7530b045975c22a8f2ce1b226333597278` passed Maven PR Tests run `31449177523`: clean `mvn clean verify` and the deliberate repeated suite each ran 633 tests with 0 failures/errors and 33 skips; all 9 production JavaFX route/source compliance tests passed.
+- Exact final PR head `b9021448f0ff8a068edb3600e5cde7e4d061b6a4` passed Maven PR Tests run `31449443954` with 633 tests passing twice, 33 skips, and all 9 production JavaFX compliance tests passing.
+- The owner completed and accepted `doc/P16-S14-fixed-asset-disposal-accounting-user-testing.md`, and PR #266 merged to `main` at `4504fdbd17ae50d5b03c36a6f5128bed6ee81c28` on 2026-08-11.
+
+Next exact action:
+
+- None; P16-S14 is DONE and P16-S15 is active.
 
 ## P16-S15 — Fixed-asset and inventory reports
 
-Status: BLOCKED by P16-S14.
+Status: VERIFYING through draft PR #267 on branch `codex/P16-S15-fixed-asset-inventory-reports`, based on exact P16-S14 merge `4504fdbd17ae50d5b03c36a6f5128bed6ee81c28`.
 
 Purpose: add domain reports only after P16-S9 and P16-S14 establish authoritative movement and disposal facts.
 
@@ -2600,6 +2606,26 @@ Acceptance and tests:
 
 - Domain and ledger totals reconcile under the governed policy or show an exact explainable difference.
 - Reports remain company isolated and do not infer missing transactions.
+
+Implementation progress:
+
+- `ReportDefinition` now exposes four real semantic reports and a domain-filter mode. `ReportRequest` retains typed immutable fixed-asset or inventory selections by persisted asset/item and control-account ID plus domain status; the same request continues through preview, export, and Journal drill-through.
+- Company-scoped `AssetInventoryReportQueryService` queries fixed assets, completed depreciation runs, lifecycle events/reversals, inventory items/movements, and canonical control-account splits. Register and valuation are as-of projections; depreciation and movement history use inclusive ranges.
+- Fixed-asset register values reconstruct lifecycle status as of the request date, include opening/completed depreciation and unreversed impairment, and derecognize final dispositions. Depreciation history retains original/reversal transaction identities and adds projection-only straight-line schedule summaries without fabricating future transactions.
+- Inventory valuation reconstructs quantity from persisted movement history, including the exact state before a later first movement. Movement history exposes real canonical transaction IDs or an explicit nonfinancial/unlinked state.
+- Every report emits domain, canonical ledger, and exact difference rows. Fund-unallocated account opening balances, unlinked movement net, shared control accounts, filtering, and row-limit effects remain visibly disclosed rather than inferred away.
+- Four semantic templates reuse the Report Library preview and TEXT/CSV/PDF/XLSX adapters. The owner checklist is `doc/P16-S15-fixed-asset-inventory-reports-user-testing.md`.
+- Focused database-backed tests cover company isolation, lifecycle impairment reversal, depreciation schedule identity, historical inventory position, linked/unlinked movements, filters, reconciliation differences, and semantic preview/CSV parity. Local Maven execution remains unavailable because this environment has no `mvn` or `javac`; Java syntax, JSON, whitespace, and repository source contracts are verified locally before PR handoff.
+- Exact local implementation commit `8723c09dcd9c6055a6eb1667fdb89dc5b050aea8` passes full Java-source syntax parsing for all 696 main/test sources, JSON parsing for every semantic template, and `git diff --check`. Maven remains unavailable because the container has no `mvn` executable; authoritative focused/full execution is pending publication and GitHub CI.
+- The approved two-commit, 24-file tree was reconstructed through the connected GitHub service without `gh`; remote implementation tree `63364c32e76d73952e9f2bd70ffc8b16421efa44` and handoff tree `8f7e0fe7a50c8d4c6d47d22961ade3706d6fc4e2` exactly match their local Git trees.
+- Draft PR #267 opened at exact remote handoff head `e9f0e0224253f003c6e686d0c6d8d49e5b529a1d`; authoritative Maven PR Tests and owner desktop acceptance remain pending.
+- Initial plan-inclusive Maven PR Tests run `31456857434` compiled production and ran 638 tests before one new integration assertion exposed truncated formatted money in semantic text output; the repeated suite and JavaFX compliance correctly did not run on that failed head.
+- `SemanticReportRenderer` now preserves complete currency, date, and numeric facts in text output while retaining bounded truncation for descriptive text. Exact corrected head `1751d706a7cb733f48c3e381449f67f9ce1826e2` passed Maven PR Tests run `31457080329`: clean `mvn clean verify` and the deliberate repeated suite each ran 638 tests with 0 failures/errors and 33 skips; all 9 production JavaFX route/source compliance tests passed.
+- Exact documentation-inclusive handoff head `c536a8ff6c348b14b13f8185d1bd8d0e32b8ae62` passed Maven PR Tests run `31457388822` with the same clean verification, repeated 638-test suite, 33 skips, and 9-test JavaFX compliance result.
+
+Next exact action:
+
+- Complete `doc/P16-S15-fixed-asset-inventory-reports-user-testing.md` on the exact final green head, then merge draft PR #267 only after owner acceptance. Keep P16-S16 blocked until that merge.
 
 ## P16-S16 — User role and assignment maintenance
 

@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.report;
 
 import org.junit.jupiter.api.Test;
+import org.nonprofitbookkeeping.model.FixedAsset;
 
 import java.time.LocalDate;
 
@@ -14,7 +15,7 @@ class ReportRequestTest
     @Test
     void catalogHasOnlyRealCoreOrSemanticDefinitions()
     {
-        assertEquals(10, ReportDefinition.catalog().size());
+        assertEquals(14, ReportDefinition.catalog().size());
         assertTrue(ReportDefinition.catalog().stream()
                 .allMatch(definition -> definition.source() == ReportDefinition.ReportSource.CORE
                         || definition.templateId() != null));
@@ -75,5 +76,38 @@ class ReportRequestTest
                 LocalDate.of(2026, 1, 31),
                 fund,
                 500));
+    }
+
+    @Test
+    void fixedAssetRequestRetainsTypedStableIdentityFilters()
+    {
+        ReportRequest request = new ReportRequest(
+                ReportDefinition.FIXED_ASSET_REGISTER,
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 6, 30),
+                new ReportFundOption(3L, "GEN", "General"),
+                250,
+                new ReportDomainFilter.FixedAssetSelection(
+                        17L, 21L, FixedAsset.Status.ACTIVE));
+
+        ReportDomainFilter.FixedAssetSelection filter =
+                (ReportDomainFilter.FixedAssetSelection) request.domainFilter();
+        assertEquals(17L, filter.assetId());
+        assertEquals(21L, filter.accountId());
+        assertEquals(FixedAsset.Status.ACTIVE, filter.status());
+        assertEquals(request.endDate(), request.startDate());
+        assertTrue(request.contextSummary().contains("asset=17"));
+    }
+
+    @Test
+    void reportRejectsWrongDomainFilterType()
+    {
+        assertThrows(IllegalArgumentException.class, () -> new ReportRequest(
+                ReportDefinition.INVENTORY_VALUATION,
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 6, 30),
+                ReportFundOption.ALL_FUNDS,
+                250,
+                new ReportDomainFilter.FixedAssetSelection(null, null, null)));
     }
 }

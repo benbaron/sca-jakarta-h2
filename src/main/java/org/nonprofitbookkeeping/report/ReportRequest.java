@@ -9,16 +9,28 @@ public record ReportRequest(
         LocalDate startDate,
         LocalDate endDate,
         ReportFundOption fund,
-        int rowLimit)
+        int rowLimit,
+        ReportDomainFilter domainFilter)
 {
     public static final int DEFAULT_ROW_LIMIT = 400;
     public static final int MAX_ROW_LIMIT = 5000;
+
+    public ReportRequest(
+            ReportDefinition definition,
+            LocalDate startDate,
+            LocalDate endDate,
+            ReportFundOption fund,
+            int rowLimit)
+    {
+        this(definition, startDate, endDate, fund, rowLimit, ReportDomainFilter.NONE);
+    }
 
     public ReportRequest
     {
         definition = Objects.requireNonNull(definition, "definition");
         endDate = Objects.requireNonNull(endDate, "endDate");
         fund = fund == null ? ReportFundOption.ALL_FUNDS : fund;
+        domainFilter = normalizeDomainFilter(definition, domainFilter);
 
         if (definition.dateMode() == ReportDefinition.DateMode.AS_OF)
         {
@@ -69,6 +81,49 @@ public record ReportRequest(
                 : startDate + " through " + endDate;
         String fundText = fund.allFunds() ? "all funds" : fund.displayLabel();
         String rows = definition.supportsRowLimit() ? ", max " + rowLimit + " rows" : "";
-        return definition.displayName() + " | " + dates + " | " + fundText + rows;
+        String domain = domainFilter.summary().isBlank() ? "" : " | " + domainFilter.summary();
+        return definition.displayName() + " | " + dates + " | " + fundText + domain + rows;
+    }
+
+    private static ReportDomainFilter normalizeDomainFilter(
+            ReportDefinition definition,
+            ReportDomainFilter supplied)
+    {
+        ReportDomainFilter value = supplied == null ? ReportDomainFilter.NONE : supplied;
+        return switch (definition.domainFilterMode())
+        {
+            case NONE -> {
+                if (!(value instanceof ReportDomainFilter.None))
+                {
+                    throw new IllegalArgumentException(
+                            definition.displayName() + " does not support asset or inventory filters.");
+                }
+                yield ReportDomainFilter.NONE;
+            }
+            case FIXED_ASSET -> {
+                if (value instanceof ReportDomainFilter.None)
+                {
+                    yield new ReportDomainFilter.FixedAssetSelection(null, null, null);
+                }
+                if (!(value instanceof ReportDomainFilter.FixedAssetSelection))
+                {
+                    throw new IllegalArgumentException(
+                            definition.displayName() + " requires fixed-asset filters.");
+                }
+                yield value;
+            }
+            case INVENTORY -> {
+                if (value instanceof ReportDomainFilter.None)
+                {
+                    yield new ReportDomainFilter.InventorySelection(null, null, null);
+                }
+                if (!(value instanceof ReportDomainFilter.InventorySelection))
+                {
+                    throw new IllegalArgumentException(
+                            definition.displayName() + " requires inventory filters.");
+                }
+                yield value;
+            }
+        };
     }
 }

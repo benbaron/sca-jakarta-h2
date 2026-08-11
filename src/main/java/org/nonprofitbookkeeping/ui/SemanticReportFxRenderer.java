@@ -11,6 +11,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.report.template.SemanticReportValueSet;
+import org.nonprofitbookkeeping.service.FinancialReportDisplayFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -23,6 +24,19 @@ public class SemanticReportFxRenderer
     private static final double CHAR_WIDTH = 8.0;
     private static final double CELL_PADDING = 28.0;
     private static final double MIN_COLUMN_WIDTH = 10 * CHAR_WIDTH + CELL_PADDING;
+    private final FinancialReportDisplayFormat displayFormat;
+
+    public SemanticReportFxRenderer()
+    {
+        this(FinancialReportDisplayFormat.plain());
+    }
+
+    public SemanticReportFxRenderer(FinancialReportDisplayFormat displayFormat)
+    {
+        this.displayFormat = displayFormat == null
+                ? FinancialReportDisplayFormat.plain()
+                : displayFormat;
+    }
 
     public Node render(JsonNode template, SemanticReportValueSet values)
     {
@@ -252,7 +266,7 @@ public class SemanticReportFxRenderer
         {
             if (value instanceof BigDecimal bd)
             {
-                return bd.signum() == 0 ? "-" : bd.toPlainString();
+                return bd.signum() == 0 ? "-" : displayFormat.formatMoney(bd);
             }
             if (value instanceof Number n)
             {
@@ -261,7 +275,7 @@ public class SemanticReportFxRenderer
         }
         if ("date".equals(format) && value instanceof LocalDate date)
         {
-            return date.toString();
+            return displayFormat.formatDate(date);
         }
         return String.valueOf(value);
     }

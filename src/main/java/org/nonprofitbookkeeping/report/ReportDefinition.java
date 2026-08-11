@@ -85,7 +85,43 @@ public enum ReportDefinition
             "FundTransfers",
             DateMode.RANGE,
             false,
-            true);
+            true),
+    FIXED_ASSET_REGISTER(
+            "fixed-asset-register",
+            "Fixed Asset Register",
+            ReportSource.SEMANTIC,
+            "FixedAssetRegister",
+            DateMode.AS_OF,
+            true,
+            true,
+            DomainFilterMode.FIXED_ASSET),
+    FIXED_ASSET_DEPRECIATION(
+            "fixed-asset-depreciation-history-schedule",
+            "Fixed Asset Depreciation History & Schedule",
+            ReportSource.SEMANTIC,
+            "FixedAssetDepreciation",
+            DateMode.RANGE,
+            true,
+            true,
+            DomainFilterMode.FIXED_ASSET),
+    INVENTORY_VALUATION(
+            "inventory-on-hand-valuation",
+            "Inventory On Hand & Valuation",
+            ReportSource.SEMANTIC,
+            "InventoryValuation",
+            DateMode.AS_OF,
+            true,
+            true,
+            DomainFilterMode.INVENTORY),
+    INVENTORY_MOVEMENT_HISTORY(
+            "inventory-movement-history",
+            "Inventory Movement History",
+            ReportSource.SEMANTIC,
+            "InventoryMovementHistory",
+            DateMode.RANGE,
+            true,
+            true,
+            DomainFilterMode.INVENTORY);
 
     private final String id;
     private final String displayName;
@@ -94,6 +130,7 @@ public enum ReportDefinition
     private final DateMode dateMode;
     private final boolean supportsFund;
     private final boolean supportsRowLimit;
+    private final DomainFilterMode domainFilterMode;
 
     ReportDefinition(
             String id,
@@ -104,6 +141,20 @@ public enum ReportDefinition
             boolean supportsFund,
             boolean supportsRowLimit)
     {
+        this(id, displayName, source, templateId, dateMode, supportsFund, supportsRowLimit,
+                DomainFilterMode.NONE);
+    }
+
+    ReportDefinition(
+            String id,
+            String displayName,
+            ReportSource source,
+            String templateId,
+            DateMode dateMode,
+            boolean supportsFund,
+            boolean supportsRowLimit,
+            DomainFilterMode domainFilterMode)
+    {
         this.id = id;
         this.displayName = displayName;
         this.source = source;
@@ -111,6 +162,7 @@ public enum ReportDefinition
         this.dateMode = dateMode;
         this.supportsFund = supportsFund;
         this.supportsRowLimit = supportsRowLimit;
+        this.domainFilterMode = domainFilterMode;
     }
 
     public String id()
@@ -148,6 +200,11 @@ public enum ReportDefinition
         return supportsRowLimit;
     }
 
+    public DomainFilterMode domainFilterMode()
+    {
+        return domainFilterMode;
+    }
+
     public static List<ReportDefinition> catalog()
     {
         return List.copyOf(Arrays.asList(values()));
@@ -163,5 +220,12 @@ public enum ReportDefinition
     {
         AS_OF,
         RANGE
+    }
+
+    public enum DomainFilterMode
+    {
+        NONE,
+        FIXED_ASSET,
+        INVENTORY
     }
 }
