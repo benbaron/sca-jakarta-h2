@@ -1,12 +1,12 @@
 ---
-plan_version: 168
+plan_version: 169
 active_phase: P16
 active_slice: P16-S15
 active_status: IN_PROGRESS
 active_branch: codex/P16-S15-fixed-asset-inventory-reports
 active_pull_request: null
-active_head: 4504fdbd17ae50d5b03c36a6f5128bed6ee81c28
-next_action: "Implement P16-S15 fixed-asset and inventory reports from authoritative domain and canonical-ledger facts, then run focused and full verification."
+active_head: 8723c09dcd9c6055a6eb1667fdb89dc5b050aea8
+next_action: "Obtain publication authorization, push the exact reviewed S15 branch, open a draft PR, and run authoritative Maven CI plus owner desktop testing."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2616,6 +2616,7 @@ Implementation progress:
 - Every report emits domain, canonical ledger, and exact difference rows. Fund-unallocated account opening balances, unlinked movement net, shared control accounts, filtering, and row-limit effects remain visibly disclosed rather than inferred away.
 - Four semantic templates reuse the Report Library preview and TEXT/CSV/PDF/XLSX adapters. The owner checklist is `doc/P16-S15-fixed-asset-inventory-reports-user-testing.md`.
 - Focused database-backed tests cover company isolation, lifecycle impairment reversal, depreciation schedule identity, historical inventory position, linked/unlinked movements, filters, reconciliation differences, and semantic preview/CSV parity. Local Maven execution remains unavailable because this environment has no `mvn` or `javac`; Java syntax, JSON, whitespace, and repository source contracts are verified locally before PR handoff.
+- Exact local implementation commit `8723c09dcd9c6055a6eb1667fdb89dc5b050aea8` passes full Java-source syntax parsing for all 696 main/test sources, JSON parsing for every semantic template, and `git diff --check`. Maven remains unavailable because the container has no `mvn` executable; authoritative focused/full execution is pending publication and GitHub CI.
 
 Next exact action:
 
