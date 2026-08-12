@@ -1,12 +1,12 @@
 ---
-plan_version: 183
+plan_version: 184
 active_phase: P16
 active_slice: P16-C1
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P16-C1-finalize-plan-ledger
-active_pull_request: pending
-active_head: 58c12cb6af4cc437b6c52827ad717f324d8ce1e8
-next_action: "Publish the documentation-only P16-C1 branch, open a draft PR to main, record its exact PR/head, and run Maven PR Tests before final closure."
+active_pull_request: 270
+active_head: acad647994ff087d579ff2e66b23fc76dbf35d80
+next_action: "Run Maven PR Tests on the exact final P16-C1 head, then merge PR #270 before marking P16-C1 and P16 DONE."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2712,10 +2712,10 @@ Next exact action:
 
 ## P16-C1 — Final plan-ledger reconciliation
 
-Status: IN_PROGRESS.
+Status: VERIFYING in draft PR #270.
 
 Branch: `codex/P16-C1-finalize-plan-ledger`
-Pull request: pending documentation-only PR
+Pull request: #270
 Base head: `929ff7c80e191f5dd616197918dfa7daef3c75bc`
 
 Purpose:
@@ -2730,8 +2730,10 @@ Validation status:
 - PR #269 final head `105afc559ac662b70e5d250753e5edef17be1f90` passed all three repository gates in Maven PR Tests run `31567672108` before merging at `929ff7c80e191f5dd616197918dfa7daef3c75bc`.
 - The owner confirmed the complete P16-S17 desktop checklist after that exact-head validation and merge.
 - Activation commit `58c12cb6af4cc437b6c52827ad717f324d8ce1e8` is based on that exact merge and changes only `doc/PLAN.md`; `git diff --check` passes.
+- The two approved local trees were published through the connected GitHub service as remote commits `ffc5dde86dc84fb41fbe2542aebd545134d0ebac` and `acad647994ff087d579ff2e66b23fc76dbf35d80`; their tree and `PLAN.md` blob SHAs exactly match local commits `58c12cb6af4cc437b6c52827ad717f324d8ce1e8` and `9979d0d6881f0a09dba3aa2a6bb5539c66ed0007`.
+- Draft PR #270 targets `main` from `codex/P16-C1-finalize-plan-ledger` and contains only `doc/PLAN.md`.
 - This closure slice changes only `doc/PLAN.md`; authoritative PR validation remains required before P16-C1 and P16 may be marked DONE.
 
 Next exact action:
 
-- Open the documentation-only corrective PR, record its exact PR/head, run Maven PR Tests, then finalize and merge the P16 ledger closure. No P17 or other later phase is authorized by the current plan.
+- Run Maven PR Tests on the exact final PR #270 head, then merge the documentation-only closure. No P17 or other later phase is authorized by the current plan.
