@@ -1,12 +1,12 @@
 ---
-plan_version: 180
+plan_version: 181
 active_phase: P16
 active_slice: P16-S17
 active_status: VERIFYING
 active_branch: codex/P16-S17-end-to-end-closure
 active_pull_request: 269
-active_head: 1e0e075967445939a63488dc87c50a79f1c58728
-next_action: "Run full/repeated Maven and JavaFX gates on the exact PR #269 head, correct any confirmed S17 defect, then complete the exact-head owner desktop checklist before merge or marking P16 DONE."
+active_head: 9fb7156c2422a372cb79436e63430e9f2e2b840d
+next_action: "Validate the CI-evidence handoff commit, then complete doc/P16-S17-end-to-end-closure-user-testing.md on the exact final green PR #269 head before merge or marking P16 DONE."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2702,8 +2702,8 @@ Implementation progress:
 - The closure audit reconciles stale governance text: the nonexistent `architecture/dashboard-composition.md` requirement is removed, authority inventories are current through active S17, and the COA JSON contract records the already-accepted/merged PR #197 state.
 - Local implementation commit `a2e5fb03e0116e40bd4d3abeece8db1391c90d6e` contains the focused seven-file closure boundary. Both modified Java sources pass Java 17 grammar parsing, every test named by the closure evidence manifest resolves to an existing source, and `git diff --check` passes.
 - The approved local implementation and plan-handoff trees were published without rewriting their content as remote commits `122a916350575c6f87265e5d63342bb27fadb403` and `1e0e075967445939a63488dc87c50a79f1c58728`; draft PR #269 targets `main`, and both remote tree SHAs exactly match the reviewed local trees.
-- Maven compilation and test execution remain unavailable locally because this container has no `mvn` executable or resolved dependency cache. Full `mvn clean verify`, the deliberate repeated suite, focused JavaFX compliance, and owner desktop acceptance remain pending on PR #269.
+- Exact plan-inclusive head `9fb7156c2422a372cb79436e63430e9f2e2b840d` passed Maven PR Tests run `31567353726`: clean `mvn clean verify` and the deliberate repeated suite each ran 646 tests with 0 failures/errors and 34 skips; all 9 production JavaFX route/source compliance tests passed. Owner desktop acceptance remains pending.
 
 Next exact action:
 
-- Run the full/repeated Maven and JavaFX gates on the exact PR #269 head, correct any confirmed S17 defect on the same branch, then complete the exact-head owner checklist. Keep P16 and P16-S17 out of DONE until the accepted final head merges.
+- Validate the CI-evidence handoff commit, then complete `doc/P16-S17-end-to-end-closure-user-testing.md` on the exact final green PR #269 head. Keep P16 and P16-S17 out of DONE until the accepted final head merges.
