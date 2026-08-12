@@ -105,7 +105,29 @@ The selected mode and complete effective mapping MUST be included in the operati
 
 Canonical imported transactions MUST be balanced, have at least two nonzero posting lines, and satisfy current transaction, closed-period, correction, and reconciliation protections.
 
-Compatibility behavior for donor documents is a separate future SCLX mapping unit.
+The reader recognizes the bounded SCLX 1.3 dialect emitted by the governed donor workbook exporter.
+Compatibility normalization occurs after strict JSON/version parsing and before structure validation; the
+SHA-256 remains the hash of the exact source bytes. Preview and final confirmation report every applied
+decision with stable `SCLX_DONOR_*` codes.
+
+The compatibility boundary:
+
+- accepts a numeric `exportedAt` only as exact epoch seconds with at most nanosecond precision and
+  normalizes it to RFC 3339 UTC;
+- maps donor account aliases (`Number`, `Name`, `Type`, `Parent`, `IncreaseSide`, and
+  `OpeningBalance`) and donor fund defaults to canonical import fields;
+- maps donor `people` to canonical counterparties and preserves transaction person links;
+- converts donor `[year, month, day]` arrays to ISO dates and donor `POSTED` status to canonical
+  `ENTERED`;
+- preserves donor transaction references in the canonical transaction memo;
+- assigns otherwise fundless donor transaction lines to the uniquely named `General Fund`, and blocks
+  when that fund cannot be identified;
+- preserves the target company's currency and fiscal-year start when the donor omits those settings; and
+- skips noncanonical donor budget shells only when every contained amount is zero, while removing their
+  workbook-only transaction annotations. A non-zero donor budget remains blocking.
+
+Populated unsupported donor root sections remain blocking. They are reported by section and are never
+silently reinterpreted as unrelated canonical data.
 
 ## 8. Application extensions
 

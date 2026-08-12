@@ -6,8 +6,11 @@ import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
@@ -46,7 +49,8 @@ public final class SclxDocumentParser
                 .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
                 .build();
         mapper = new ObjectMapper(factory)
-                .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+                .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
     }
 
     public SclxParsedDocument parse(Path source)
@@ -110,22 +114,46 @@ public final class SclxDocumentParser
             throw new IllegalArgumentException("SCLX version is required and must be a string");
         }
         SclxVersion version = SclxVersion.parseReadable(versionNode.textValue());
-        Instant exportedAt = parseExportedAt(root.get("exportedAt"));
+        ExportedAt exportedAt = parseExportedAt(root.get("exportedAt"));
+        SclxDonorCompatibilityNormalizer.Normalization normalization =
+                SclxDonorCompatibilityNormalizer.normalize(
+                        (ObjectNode) root, exportedAt.value(), exportedAt.numeric());
 
         return new SclxParsedDocument(
                 version,
-                exportedAt,
-                root.deepCopy(),
+                exportedAt.value(),
+                normalization.root(),
                 originalBytes.length,
                 sha256(originalBytes),
-                bomStripped);
+                bomStripped,
+                normalization.notices());
     }
 
-    private static Instant parseExportedAt(JsonNode node)
+    private static ExportedAt parseExportedAt(JsonNode node)
     {
         if (node == null || node.isNull())
         {
-            return null;
+            return new ExportedAt(null, false);
+        }
+        if (node.isNumber())
+        {
+            try
+            {
+                BigDecimal seconds = node.decimalValue();
+                if (seconds.stripTrailingZeros().scale() > 9)
+                {
+                    throw new ArithmeticException("more than nanosecond precision");
+                }
+                BigDecimal whole = seconds.setScale(0, RoundingMode.DOWN);
+                long epochSecond = whole.longValueExact();
+                long nanos = seconds.subtract(whole).movePointRight(9).longValueExact();
+                return new ExportedAt(Instant.ofEpochSecond(epochSecond, nanos), true);
+            }
+            catch (ArithmeticException | DateTimeException ex)
+            {
+                throw new IllegalArgumentException(
+                        "SCLX numeric exportedAt must be finite epoch seconds with nanosecond precision", ex);
+            }
         }
         if (!node.isTextual())
         {
@@ -133,12 +161,16 @@ public final class SclxDocumentParser
         }
         try
         {
-            return Instant.parse(node.textValue());
+            return new ExportedAt(Instant.parse(node.textValue()), false);
         }
         catch (DateTimeException ex)
         {
             throw new IllegalArgumentException("SCLX exportedAt must be an RFC 3339 UTC instant", ex);
         }
+    }
+
+    private record ExportedAt(Instant value, boolean numeric)
+    {
     }
 
     private static String decodeStrictUtf8(byte[] bytes, int offset)
