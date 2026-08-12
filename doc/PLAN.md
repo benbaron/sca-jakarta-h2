@@ -1,12 +1,12 @@
 ---
-plan_version: 182
+plan_version: 183
 active_phase: P16
 active_slice: P16-C1
 active_status: IN_PROGRESS
 active_branch: codex/P16-C1-finalize-plan-ledger
 active_pull_request: pending
-active_head: pending
-next_action: "Open the documentation-only P16-C1 closure PR from current main, record its exact PR/head, run Maven PR Tests, and merge only after the closure ledger is green."
+active_head: 58c12cb6af4cc437b6c52827ad717f324d8ce1e8
+next_action: "Publish the documentation-only P16-C1 branch, open a draft PR to main, record its exact PR/head, and run Maven PR Tests before final closure."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2729,6 +2729,7 @@ Validation status:
 
 - PR #269 final head `105afc559ac662b70e5d250753e5edef17be1f90` passed all three repository gates in Maven PR Tests run `31567672108` before merging at `929ff7c80e191f5dd616197918dfa7daef3c75bc`.
 - The owner confirmed the complete P16-S17 desktop checklist after that exact-head validation and merge.
+- Activation commit `58c12cb6af4cc437b6c52827ad717f324d8ce1e8` is based on that exact merge and changes only `doc/PLAN.md`; `git diff --check` passes.
 - This closure slice changes only `doc/PLAN.md`; authoritative PR validation remains required before P16-C1 and P16 may be marked DONE.
 
 Next exact action:
