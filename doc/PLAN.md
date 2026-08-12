@@ -1,12 +1,12 @@
 ---
-plan_version: 184
+plan_version: 185
 active_phase: P16
 active_slice: P16-C1
 active_status: VERIFYING
 active_branch: codex/P16-C1-finalize-plan-ledger
 active_pull_request: 270
-active_head: acad647994ff087d579ff2e66b23fc76dbf35d80
-next_action: "Run Maven PR Tests on the exact final P16-C1 head, then merge PR #270 before marking P16-C1 and P16 DONE."
+active_head: e7277ae987d4a508cecff60de584b1083b9d16a8
+next_action: "Validate the CI-evidence commit on PR #270, then merge the documentation-only closure before marking P16-C1 and P16 DONE."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2732,8 +2732,9 @@ Validation status:
 - Activation commit `58c12cb6af4cc437b6c52827ad717f324d8ce1e8` is based on that exact merge and changes only `doc/PLAN.md`; `git diff --check` passes.
 - The two approved local trees were published through the connected GitHub service as remote commits `ffc5dde86dc84fb41fbe2542aebd545134d0ebac` and `acad647994ff087d579ff2e66b23fc76dbf35d80`; their tree and `PLAN.md` blob SHAs exactly match local commits `58c12cb6af4cc437b6c52827ad717f324d8ce1e8` and `9979d0d6881f0a09dba3aa2a6bb5539c66ed0007`.
 - Draft PR #270 targets `main` from `codex/P16-C1-finalize-plan-ledger` and contains only `doc/PLAN.md`.
+- Exact plan-inclusive PR head `e7277ae987d4a508cecff60de584b1083b9d16a8` passed Maven PR Tests run `31611849457`: clean `mvn clean verify`, the deliberately repeated full suite, and production JavaFX route compliance all succeeded.
 - This closure slice changes only `doc/PLAN.md`; authoritative PR validation remains required before P16-C1 and P16 may be marked DONE.
 
 Next exact action:
 
-- Run Maven PR Tests on the exact final PR #270 head, then merge the documentation-only closure. No P17 or other later phase is authorized by the current plan.
+- Validate the CI-evidence commit on PR #270, then merge the documentation-only closure. No P17 or other later phase is authorized by the current plan.
