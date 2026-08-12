@@ -1,4 +1,3 @@
-
 package org.nonprofitbookkeeping.ui;
 
 import javafx.beans.property.SimpleStringProperty;

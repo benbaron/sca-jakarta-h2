@@ -82,6 +82,9 @@ public final class SclxImportPreviewService
         Objects.requireNonNull(source, "source");
         SclxParsedDocument document = parser.parse(source);
         List<InterchangeValidationMessage> messages = new ArrayList<>();
+        document.compatibilityNotices().forEach(notice -> messages.add(message(
+                notice.blocking() ? InterchangeMessageSeverity.ERROR : InterchangeMessageSeverity.WARNING,
+                notice.code(), notice.path(), notice.message(), notice.blocking())));
         SclxStructureValidation structure = structureValidator.validate(document);
         structure.errors().forEach(error -> messages.add(message(
                 InterchangeMessageSeverity.ERROR, "SCLX_STRUCTURE_ERROR", pathOf(error), error, true)));

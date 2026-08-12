@@ -68,14 +68,24 @@ class ImportPreviewPanelSclxTest
         });
     }
 
+    @Test
+    void confirmationNamesDonorCompatibilityAssignments()
+    {
+        String text = ImportPreviewPanel.sclxCompatibilityConfirmationText(preview());
+
+        assertTrue(text.contains("Donor compatibility decisions applied"));
+        assertTrue(text.contains("32 fundless transaction line(s) to General Fund"));
+    }
+
     private static SclxImportPreview preview()
     {
         SclxImportEntityPreview entity = new SclxImportEntityPreview(
                 "ORGANIZATION", "organization:TEST", "$.organization", "a".repeat(64),
                 InterchangeIdentityMatch.NEW, null);
         InterchangeValidationMessage warning = new InterchangeValidationMessage(
-                InterchangeMessageSeverity.WARNING, "SCLX_TEST_WARNING", "$.extensions",
-                "An unsupported test extension was reported.", false);
+                InterchangeMessageSeverity.WARNING, "SCLX_DONOR_GENERAL_FUND_ASSIGNED",
+                "$.transactions[*].lines[*].fundId",
+                "Assigned 32 fundless transaction line(s) to General Fund (General Fund).", false);
         InterchangePreview<SclxImportEntityPreview> operation = new InterchangePreview<>(
                 InterchangeFormat.SCLX,
                 InterchangeOperationMode.PREVIEW_ONLY,

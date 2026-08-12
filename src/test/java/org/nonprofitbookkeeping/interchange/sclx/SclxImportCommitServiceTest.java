@@ -31,12 +31,14 @@ import org.nonprofitbookkeeping.service.PeriodCloseEventView;
 import org.nonprofitbookkeeping.service.PeriodCloseRangeService;
 import org.nonprofitbookkeeping.service.PeriodCloseRangeView;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -65,6 +67,58 @@ class SclxImportCommitServiceTest
     private static final UUID AUDIT_EVENT_UUID = UUID.fromString("12345678-90ab-cdef-1234-567890abcdef");
     private static final UUID REVERSAL_TRANSACTION_UUID = UUID.fromString("23456789-0abc-def1-2345-67890abcdef1");
     private static final UUID REPLACEMENT_TRANSACTION_UUID = UUID.fromString("34567890-abcd-ef12-3456-7890abcdef12");
+
+    @Test
+    void importsNormalizedDonorDocumentAndPreservesOmittedTargetSettings(@TempDir Path tempDir)
+    {
+        Path source = Path.of("src/test/resources/compatibility/sclx/donor-sclx-1.3.json");
+        try (Jpa jpa = new Jpa(tempDir.resolve("donor-compatibility")))
+        {
+            seedEmptyTarget(jpa);
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                Company target = company(em);
+                target.setDefaultCurrency("EUR");
+                target.setFiscalYearStartMonth(4);
+                target.setFiscalYearStartDay(15);
+                em.getTransaction().commit();
+            }
+
+            SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
+            assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+
+            SclxImportResult result = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, preview, "tester");
+
+            assertTrue(result.committed(), () -> result.messages().toString());
+            try (EntityManager em = jpa.em())
+            {
+                Company target = company(em);
+                assertEquals("Donor Test", target.getDisplayName());
+                assertEquals("EUR", target.getDefaultCurrency());
+                assertEquals(4, target.getFiscalYearStartMonth());
+                assertEquals(15, target.getFiscalYearStartDay());
+                assertEquals(2L, count(em, "select count(a) from Account a"));
+                assertEquals(1L, count(em, "select count(f) from Fund f"));
+                assertEquals(0L, count(em, "select count(p) from BudgetPlan p"));
+                assertEquals(1L, count(em, "select count(c) from Counterparty c"));
+
+                UUID donorTransactionId = UUID.nameUUIDFromBytes(
+                        "SCLX:txn-donor-1".getBytes(StandardCharsets.UTF_8));
+                Txn imported = transaction(em, donorTransactionId);
+                assertEquals("ENTERED", imported.getStatus());
+                assertEquals("Donation [Reference: deposit 1]", imported.getMemo());
+                assertEquals("Donor Counterparty", imported.getPayee().getDisplayName());
+                List<TxnSplit> splits = em.createQuery(
+                                "select s from TxnSplit s join fetch s.fund where s.txn = :txn", TxnSplit.class)
+                        .setParameter("txn", imported)
+                        .getResultList();
+                assertEquals(2, splits.size());
+                assertTrue(splits.stream().allMatch(split -> "General Fund".equals(split.getFund().getName())));
+            }
+        }
+    }
 
     @Test
     void importsCorrectionRelationshipsAtomicallyAndReimportIsIdempotent(@TempDir Path tempDir) throws Exception
