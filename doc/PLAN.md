@@ -4,9 +4,9 @@ active_phase: P16
 active_slice: P16-C3
 active_status: VERIFYING
 active_branch: codex/P16-C3-donor-sclx-compatibility
-active_pull_request: null
-active_head: 53ae336fd4ce3058a2383d9965fc83bd541dee88
-next_action: "Obtain explicit owner authorization to publish P16-C3 commit 53ae336 and open a draft pull request for authoritative Maven PR Tests."
+active_pull_request: 272
+active_head: ca165ff788a97d317d498ccfb018c4dabb460658
+next_action: "Publish the P16-C3 fixture-classification correction and rerun authoritative Maven PR Tests on draft PR #272."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2771,7 +2771,7 @@ Next exact action:
 Status: VERIFYING.
 
 Branch: `codex/P16-C3-donor-sclx-compatibility`
-Pull request: not opened
+Pull request: #272
 Base head: `9286e99a751c832c9af09b90840005a36946890e`
 
 Purpose:
@@ -2791,8 +2791,11 @@ Implementation and validation status:
 - Local implementation commit `53ae336fd4ce3058a2383d9965fc83bd541dee88` contains the governed compatibility boundary, contract update, compact fixture, and focused regressions.
 - The JDK compiler module parsed all 707 production and test Java sources without syntax errors, the compact fixture passes strict JSON parsing, and `git diff --check` passes.
 - Local Maven and standalone `javac` executables remain unavailable; authoritative type-checking and Maven PR Tests require publication.
-- No publication occurred: the approval boundary rejected the requested push because the owner confirmed the compatibility policy and prerequisite merge, but has not explicitly authorized exporting this new P16-C3 commit to GitHub.
+- The owner explicitly authorized publication. GitHub remote commits `bbe883cd3b0ae56e5c68f4d73b048b2b6cb105ab` and `5e75ee604ca0fc781582b16145d132b4b52ab1b0` exactly match the implementation and plan trees of approved local commits `53ae336fd4ce3058a2383d9965fc83bd541dee88` and `30f233d535e08c74e75a05d661243dfbcd3626ba`.
+- Draft PR #272 targets `main` from `codex/P16-C3-donor-sclx-compatibility` and is mergeable.
+- Maven PR Tests run `31639828090` compiled the implementation and ran 653 tests, then found two fixture-contract failures: the donor compatibility fixture was incorrectly placed under the governed canonical `data-exchange/sclx/valid` directory, so it appeared both absent from the frozen manifest and invalid before compatibility normalization.
+- Corrective local commit `ca165ff788a97d317d498ccfb018c4dabb460658` moves the fictional fixture to `src/test/resources/compatibility/sclx`, updates its focused consumers, passes strict JSON parsing and `git diff --check`, and preserves all 707 Java sources under Java 17 grammar parsing.
 
 Next exact action:
 
-- Obtain explicit owner authorization to publish P16-C3 commit `53ae336fd4ce3058a2383d9965fc83bd541dee88` and open a draft pull request to `main` for authoritative Maven PR Tests.
+- Publish corrective commit `ca165ff788a97d317d498ccfb018c4dabb460658` to draft PR #272 and rerun authoritative Maven PR Tests.
