@@ -1,12 +1,12 @@
 ---
-plan_version: 174
+plan_version: 175
 active_phase: P16
 active_slice: P16-S16
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P16-S16-user-role-assignment-maintenance
-active_pull_request: null
-active_head: 5860bf7afad2e867169787ce7a28cfb7d0dd07e0
-next_action: "After explicit owner authorization, publish the focused P16-S16 branch, open a draft PR to main, and run authoritative Maven/JavaFX CI before owner desktop acceptance."
+active_pull_request: 268
+active_head: 22a547621a2ef1c16ebb4d0d500a65bc2f980097
+next_action: "Run authoritative Maven/JavaFX CI on draft PR #268, correct any confirmed P16-S16 failure, then complete owner desktop acceptance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2662,10 +2662,12 @@ Implementation decisions and progress:
 - Focused migration, service, rollback, restart, isolation, history, command-capability, and source-contract tests are being added. Local Maven remains unavailable in this container.
 - Static local verification passes Java 17 grammar parsing for all 704 main/test sources, isolated JDK compilation for the five immutable command/usage records, and `git diff --check`. Full compilation and focused/full test execution remain pending GitHub Maven CI because this container has no `mvn` executable or resolved Java dependency cache.
 - Exact local implementation commit `5860bf7afad2e867169787ce7a28cfb7d0dd07e0` contains the focused 22-file vertical slice. The worktree is clean at that implementation boundary; publication, draft PR creation, and authoritative CI require explicit owner authorization.
+- The owner authorized publication. The two reviewed local trees were reconstructed through the connected GitHub service without `gh`: remote implementation commit `6083f40888bc611642111c66583ff61f95d1facd` has exact tree `284b5a0a0e028f20f197f320261adc39728058f4`, and remote handoff commit `22a547621a2ef1c16ebb4d0d500a65bc2f980097` has exact tree `49a316c26b976a839ea6a207df1ea02cd23fabba`; both trees match their local Git counterparts byte-for-byte.
+- Draft PR #268 is open from `codex/P16-S16-user-role-assignment-maintenance` to `main` at exact remote head `22a547621a2ef1c16ebb4d0d500a65bc2f980097`. Authoritative Maven PR Tests and owner desktop acceptance remain pending.
 
 Next exact action:
 
-- Obtain explicit owner authorization to publish `5860bf7afad2e867169787ce7a28cfb7d0dd07e0` plus the plan-only handoff commit on `codex/P16-S16-user-role-assignment-maintenance`, then open a draft PR and run authoritative CI without merging.
+- Run authoritative Maven PR Tests on draft PR #268, correct any confirmed P16-S16 failure on the same branch, and complete `doc/P16-S16-user-role-assignment-maintenance-user-testing.md` on the final green head before merge.
 
 ## P16-S17 — End-to-end closure
 
