@@ -1,12 +1,12 @@
 ---
-plan_version: 176
+plan_version: 177
 active_phase: P16
 active_slice: P16-S16
 active_status: VERIFYING
 active_branch: codex/P16-S16-user-role-assignment-maintenance
 active_pull_request: 268
-active_head: 539aae6b0358ca2ec900cc1ac34ec0c46814bd9d
-next_action: "Validate the documentation-inclusive P16-S16 handoff head, then complete doc/P16-S16-user-role-assignment-maintenance-user-testing.md before merging PR #268."
+active_head: 75baea3b22003fa3b4cb4ed18bf7c8931690c0b0
+next_action: "Complete doc/P16-S16-user-role-assignment-maintenance-user-testing.md on the exact final green PR #268 head, then merge only after owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2666,10 +2666,11 @@ Implementation decisions and progress:
 - Draft PR #268 is open from `codex/P16-S16-user-role-assignment-maintenance` to `main` at exact remote head `22a547621a2ef1c16ebb4d0d500a65bc2f980097`. Authoritative Maven PR Tests and owner desktop acceptance remain pending.
 - Initial Maven PR Tests run `31556972371` compiled production and ran 645 tests before exposing one V72 recovery defect and one metadata assertion defect: complete-schema Flyway-history recovery encountered existing V72 constraints, and the migration test assumed uppercase H2 metadata despite `DATABASE_TO_LOWER=TRUE`. The repeated suite and JavaFX compliance correctly did not run on that failed head.
 - V72 now uses `ADD CONSTRAINT IF NOT EXISTS` for all three lifecycle constraints, preserving the repository's nondestructive complete-schema recovery contract, and the migration test compares H2 metadata case-insensitively. Exact corrected head `539aae6b0358ca2ec900cc1ac34ec0c46814bd9d` passed Maven PR Tests run `31557199558`: clean `mvn clean verify` and the deliberate repeated suite each ran 645 tests with 0 failures/errors and 34 skips; all 9 production JavaFX route/source compliance tests passed.
+- Exact documentation-inclusive handoff head `75baea3b22003fa3b4cb4ed18bf7c8931690c0b0` passed Maven PR Tests run `31557505169` with the same clean verification, repeated 645-test suite, 34 skips, and all 9 production JavaFX compliance tests passing. Only owner desktop acceptance remains before merge.
 
 Next exact action:
 
-- Validate the documentation-inclusive P16-S16 handoff head, then complete `doc/P16-S16-user-role-assignment-maintenance-user-testing.md` on the final green head before merging draft PR #268. Keep P16-S17 blocked until that merge and owner acceptance.
+- Complete `doc/P16-S16-user-role-assignment-maintenance-user-testing.md` on the exact final green PR #268 head, then merge only after owner acceptance. Keep P16-S17 blocked until that merge.
 
 ## P16-S17 — End-to-end closure
 
