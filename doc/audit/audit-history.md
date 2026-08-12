@@ -47,3 +47,8 @@ Any current operation that persists an `AuditEvent` for the active company is vi
 query after refresh and restart, including transaction entry/update/correction, period-close/reopen,
 COA CSV import, governed bank-review import, reconciliation events, and SCLX-restored factual history.
 The panel itself performs no writes.
+
+P16-S16 adds stable user/role create, update, and deactivate events plus assignment create, end, and
+revoke events. Global user and role maintenance is audited in the active-company context from which the
+operation was performed; assignment events are owned by the assignment company. The editable actor is
+a factual local-operator label and is not an authenticated identity.

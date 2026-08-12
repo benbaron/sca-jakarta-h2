@@ -3,25 +3,67 @@ package org.nonprofitbookkeeping.service;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.nonprofitbookkeeping.model.AppRole;
 import org.nonprofitbookkeeping.model.AppUser;
+import org.nonprofitbookkeeping.model.AuditEvent;
 import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.UserCompanyRole;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.function.Supplier;
 
+/**
+ * Stable-ID user and role maintenance plus dated, company-scoped assignment
+ * history. These records are administrative facts; this service does not
+ * authenticate users or enforce runtime permissions.
+ */
 @ApplicationScoped
 public class UserAdminService
 {
+    @FunctionalInterface
+    interface CommitHook
+    {
+        void afterDomainWrite();
+    }
+
     @Inject
     Jpa jpa;
 
-    public UserAdminService() {}
+    private Supplier<String> companyCodeSupplier = () -> "DEFAULT";
+    private Clock clock = Clock.systemDefaultZone();
+    private CommitHook commitHook = () -> { };
+
+    public UserAdminService()
+    {
+    }
 
     public UserAdminService(Jpa jpa)
     {
-        this.jpa = jpa;
+        this(jpa, () -> "DEFAULT");
+    }
+
+    public UserAdminService(Jpa jpa, Supplier<String> companyCodeSupplier)
+    {
+        this(jpa, companyCodeSupplier, Clock.systemDefaultZone(), () -> { });
+    }
+
+    UserAdminService(
+            Jpa jpa,
+            Supplier<String> companyCodeSupplier,
+            Clock clock,
+            CommitHook commitHook)
+    {
+        this.jpa = Objects.requireNonNull(jpa, "jpa");
+        this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
+        this.clock = Objects.requireNonNull(clock, "clock");
+        this.commitHook = Objects.requireNonNull(commitHook, "commitHook");
     }
 
     public List<AppUser> listUsers()
@@ -40,125 +82,487 @@ public class UserAdminService
         }
     }
 
+    /** Lists assignment history only for the authoritative active company. */
     public List<UserCompanyRole> listAssignments()
     {
         try (EntityManager em = jpa.em())
         {
+            Company company = requireActiveCompany(em);
             return em.createQuery("""
                     from UserCompanyRole a
                     join fetch a.user
                     join fetch a.company
                     join fetch a.role
-                    order by a.company.code, a.user.username, a.role.code
-                    """, UserCompanyRole.class).getResultList();
+                    where a.company = :company
+                    order by a.user.username, a.role.code, a.startDate desc, a.id desc
+                    """, UserCompanyRole.class)
+                    .setParameter("company", company)
+                    .getResultList();
         }
     }
 
-    public AppUser upsertUser(String username, String displayName, String email, boolean active)
+    /** Creates or updates one user by stable database ID. */
+    public AppUser saveUser(AppUserCommand command)
     {
-        String cleanUsername = requireText(username, "Username").toLowerCase();
-        String cleanDisplayName = requireText(displayName, "Display name");
+        Objects.requireNonNull(command, "User details are required.");
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
             try
             {
-                AppUser user = em.createQuery("from AppUser u where u.username = :username", AppUser.class)
-                        .setParameter("username", cleanUsername)
-                        .setMaxResults(1)
-                        .getResultStream()
-                        .findFirst()
-                        .orElseGet(AppUser::new);
+                Company auditCompany = requireActiveCompany(em);
+                AppUser user = command.id() == null
+                        ? new AppUser()
+                        : require(em, AppUser.class, command.id(), "user", LockModeType.PESSIMISTIC_WRITE);
+                String before = user.getId() == null ? null : userSnapshot(user);
+                String cleanUsername = normalizeUsername(command.username());
+                requireUniqueUsername(em, user.getId(), cleanUsername);
+                if (!command.active() && user.isActive())
+                {
+                    long activeAssignments = countActiveAssignmentsForUser(em, user.getId());
+                    if (activeAssignments > 0)
+                    {
+                        throw new IllegalStateException("End or revoke " + activeAssignments
+                                + " active assignment(s) before deactivating user " + user.getUsername() + ".");
+                    }
+                }
+
                 user.setUsername(cleanUsername);
-                user.setDisplayName(cleanDisplayName);
-                user.setEmail(blankToNull(email));
-                user.setActive(active);
+                user.setDisplayName(requireText(command.displayName(), "Display name", 160));
+                user.setEmail(optionalText(command.email(), "Email", 254));
+                user.setActive(command.active());
                 user.touchUpdatedAt();
                 if (user.getId() == null)
                 {
                     em.persist(user);
                 }
-                else
-                {
-                    user = em.merge(user);
-                }
+                em.flush();
+                String action = before == null ? "APP_USER_CREATED"
+                        : command.active() ? "APP_USER_UPDATED" : "APP_USER_DEACTIVATED";
+                em.persist(audit(auditCompany, command.actor(), action, "AppUser", user.getId(),
+                        actionSummary(action, user.getUsername()), before, userSnapshot(user), null));
+                em.flush();
+                commitHook.afterDomainWrite();
                 em.getTransaction().commit();
                 return user;
             }
             catch (RuntimeException ex)
             {
-                if (em.getTransaction().isActive()) em.getTransaction().rollback();
+                rollback(em);
                 throw ex;
             }
         }
     }
 
-    public UserCompanyRole assignRole(String username, String companyCode, String roleCode)
+    /** Creates or updates one global role by stable database ID. */
+    public AppRole saveRole(AppRoleCommand command)
     {
-        String cleanUsername = requireText(username, "Username").toLowerCase();
-        String cleanCompany = requireText(companyCode, "Company code").toUpperCase();
-        String cleanRole = requireText(roleCode, "Role code").toUpperCase();
+        Objects.requireNonNull(command, "Role details are required.");
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
             try
             {
-                AppUser user = single(em, "from AppUser u where u.username = :value", AppUser.class, cleanUsername, "user");
-                Company company = single(em, "from Company c where c.code = :value", Company.class, cleanCompany, "company");
-                AppRole role = single(em, "from AppRole r where r.code = :value", AppRole.class, cleanRole, "role");
+                Company auditCompany = requireActiveCompany(em);
+                AppRole role = command.id() == null
+                        ? new AppRole()
+                        : require(em, AppRole.class, command.id(), "role", LockModeType.PESSIMISTIC_WRITE);
+                String before = role.getId() == null ? null : roleSnapshot(role);
+                String cleanCode = normalizeRoleCode(command.code());
+                requireUniqueRoleCode(em, role.getId(), cleanCode);
+                if (role.getId() != null && !command.active() && role.isActive())
+                {
+                    AppRoleUsage usage = roleUsage(em, role.getId());
+                    if (!usage.canDeactivate())
+                    {
+                        throw new IllegalStateException("End or revoke " + usage.activeAssignments()
+                                + " active assignment(s) before deactivating role " + role.getCode() + ".");
+                    }
+                }
 
-                UserCompanyRole assignment = em.createQuery("""
-                        from UserCompanyRole a
-                        where a.user = :user and a.company = :company and a.role = :role
-                        """, UserCompanyRole.class)
-                        .setParameter("user", user)
-                        .setParameter("company", company)
-                        .setParameter("role", role)
-                        .setMaxResults(1)
-                        .getResultStream()
-                        .findFirst()
-                        .orElseGet(UserCompanyRole::new);
-                assignment.setUser(user);
-                assignment.setCompany(company);
-                assignment.setRole(role);
-                assignment.setActive(true);
-                if (assignment.getId() == null)
+                role.setCode(cleanCode);
+                role.setName(requireText(command.name(), "Role name", 160));
+                role.setDescription(optionalText(command.description(), "Role description", 1000));
+                role.setActive(command.active());
+                role.touchUpdatedAt();
+                if (role.getId() == null)
                 {
-                    em.persist(assignment);
+                    em.persist(role);
                 }
-                else
-                {
-                    assignment = em.merge(assignment);
-                }
+                em.flush();
+                String action = before == null ? "APP_ROLE_CREATED"
+                        : command.active() ? "APP_ROLE_UPDATED" : "APP_ROLE_DEACTIVATED";
+                em.persist(audit(auditCompany, command.actor(), action, "AppRole", role.getId(),
+                        actionSummary(action, role.getCode()), before, roleSnapshot(role), null));
+                em.flush();
+                commitHook.afterDomainWrite();
                 em.getTransaction().commit();
-                return assignment;
+                return role;
             }
             catch (RuntimeException ex)
             {
-                if (em.getTransaction().isActive()) em.getTransaction().rollback();
+                rollback(em);
                 throw ex;
             }
         }
     }
 
-    private static <T> T single(EntityManager em, String jpql, Class<T> type, String value, String label)
+    public AppRoleUsage roleUsage(long roleId)
     {
-        return em.createQuery(jpql, type)
-                .setParameter("value", value)
+        try (EntityManager em = jpa.em())
+        {
+            require(em, AppRole.class, roleId, "role", LockModeType.NONE);
+            return roleUsage(em, roleId);
+        }
+    }
+
+    /** Creates a new history row; a previously ended row is never reactivated. */
+    public UserCompanyRole assignRole(UserRoleAssignmentCommand command)
+    {
+        Objects.requireNonNull(command, "Assignment details are required.");
+        if (command.userId() == null || command.roleId() == null)
+        {
+            throw new IllegalArgumentException("User and role are required.");
+        }
+        LocalDate startDate = Objects.requireNonNull(command.startDate(), "Assignment start date is required.");
+
+        try (EntityManager em = jpa.em())
+        {
+            em.getTransaction().begin();
+            try
+            {
+                Company company = requireActiveCompany(em);
+                AppUser user = require(em, AppUser.class, command.userId(), "user", LockModeType.PESSIMISTIC_WRITE);
+                AppRole role = require(em, AppRole.class, command.roleId(), "role", LockModeType.PESSIMISTIC_READ);
+                if (!user.isActive())
+                {
+                    throw new IllegalStateException("Inactive users cannot receive new assignments.");
+                }
+                if (!role.isActive())
+                {
+                    throw new IllegalStateException("Inactive roles cannot receive new assignments.");
+                }
+                rejectOverlappingAssignment(em, user, company, role, startDate);
+
+                UserCompanyRole assignment = new UserCompanyRole();
+                assignment.setUser(user);
+                assignment.setCompany(company);
+                assignment.setRole(role);
+                assignment.setStartDate(startDate);
+                assignment.setActive(true);
+                assignment.touchUpdatedAt();
+                em.persist(assignment);
+                em.flush();
+                em.persist(audit(company, command.actor(), "USER_ROLE_ASSIGNED", "UserCompanyRole",
+                        assignment.getId(), "assigned " + role.getCode() + " to " + user.getUsername()
+                                + " for " + company.getCode(), null, assignmentSnapshot(assignment), null));
+                em.flush();
+                commitHook.afterDomainWrite();
+                em.getTransaction().commit();
+                return assignment;
+            }
+            catch (RuntimeException ex)
+            {
+                rollback(em);
+                throw ex;
+            }
+        }
+    }
+
+    /** Ends or revokes an assignment while retaining its stable history row. */
+    public UserCompanyRole endAssignment(UserRoleAssignmentEndCommand command)
+    {
+        Objects.requireNonNull(command, "Assignment end details are required.");
+        if (command.assignmentId() == null)
+        {
+            throw new IllegalArgumentException("Select an assignment to end or revoke.");
+        }
+        LocalDate endDate = Objects.requireNonNull(command.endDate(), "Assignment end date is required.");
+        if (endDate.isAfter(LocalDate.now(clock)))
+        {
+            throw new IllegalArgumentException("Assignment end date cannot be in the future.");
+        }
+        String reason = optionalText(command.reason(), "Assignment reason", 1000);
+        if (command.revoked() && reason == null)
+        {
+            throw new IllegalArgumentException("A revocation reason is required.");
+        }
+
+        try (EntityManager em = jpa.em())
+        {
+            em.getTransaction().begin();
+            try
+            {
+                Company company = requireActiveCompany(em);
+                UserCompanyRole assignment = requireAssignment(
+                        em, company, command.assignmentId(), LockModeType.PESSIMISTIC_WRITE);
+                if (!assignment.isActive())
+                {
+                    throw new IllegalStateException("The selected assignment already ended or was revoked.");
+                }
+                if (endDate.isBefore(assignment.getStartDate()))
+                {
+                    throw new IllegalArgumentException("Assignment end date cannot precede its start date.");
+                }
+
+                String before = assignmentSnapshot(assignment);
+                assignment.setEndDate(endDate);
+                assignment.setActive(false);
+                assignment.setRevokedAt(command.revoked() ? Instant.now(clock) : null);
+                assignment.setEndReason(reason);
+                assignment.touchUpdatedAt();
+                String action = command.revoked() ? "USER_ROLE_REVOKED" : "USER_ROLE_ENDED";
+                em.persist(audit(company, command.actor(), action, "UserCompanyRole", assignment.getId(),
+                        (command.revoked() ? "revoked " : "ended ") + assignment.getRole().getCode()
+                                + " for " + assignment.getUser().getUsername() + " in " + company.getCode(),
+                        before, assignmentSnapshot(assignment), reason));
+                em.flush();
+                commitHook.afterDomainWrite();
+                em.getTransaction().commit();
+                return assignment;
+            }
+            catch (RuntimeException ex)
+            {
+                rollback(em);
+                throw ex;
+            }
+        }
+    }
+
+    private Company requireActiveCompany(EntityManager em)
+    {
+        Company company = new CompanyOwnershipService(jpa).requireCompany(em, companyCodeSupplier.get());
+        if (!company.isActive())
+        {
+            throw new IllegalStateException("User administration requires an active company.");
+        }
+        return company;
+    }
+
+    private static void rejectOverlappingAssignment(
+            EntityManager em,
+            AppUser user,
+            Company company,
+            AppRole role,
+            LocalDate startDate)
+    {
+        boolean overlap = em.createQuery("""
+                        select a.id from UserCompanyRole a
+                        where a.user = :user and a.company = :company and a.role = :role
+                          and (a.endDate is null or a.endDate >= :startDate)
+                        """, Long.class)
+                .setParameter("user", user)
+                .setParameter("company", company)
+                .setParameter("role", role)
+                .setParameter("startDate", startDate)
                 .setMaxResults(1)
                 .getResultStream()
+                .findAny()
+                .isPresent();
+        if (overlap)
+        {
+            throw new IllegalStateException("This user already has an overlapping assignment for that role and company.");
+        }
+    }
+
+    private static UserCompanyRole requireAssignment(
+            EntityManager em,
+            Company company,
+            long assignmentId,
+            LockModeType lockMode)
+    {
+        return em.createQuery("""
+                        from UserCompanyRole a
+                        join fetch a.user
+                        join fetch a.company
+                        join fetch a.role
+                        where a.id = :id and a.company = :company
+                        """, UserCompanyRole.class)
+                .setParameter("id", assignmentId)
+                .setParameter("company", company)
+                .setLockMode(lockMode)
+                .getResultStream()
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Unknown " + label + ": " + value));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Unknown assignment for active company: " + assignmentId + "."));
     }
 
-    private static String requireText(String value, String label)
+    private static AppRoleUsage roleUsage(EntityManager em, long roleId)
     {
-        if (value == null || value.isBlank()) throw new IllegalArgumentException(label + " is required.");
-        return value.trim();
+        long active = em.createQuery(
+                        "select count(a) from UserCompanyRole a where a.role.id = :id and a.active = true",
+                        Long.class)
+                .setParameter("id", roleId)
+                .getSingleResult();
+        long historical = em.createQuery(
+                        "select count(a) from UserCompanyRole a where a.role.id = :id and a.active = false",
+                        Long.class)
+                .setParameter("id", roleId)
+                .getSingleResult();
+        return new AppRoleUsage(active, historical);
     }
 
-    private static String blankToNull(String value)
+    private static long countActiveAssignmentsForUser(EntityManager em, Long userId)
     {
-        return value == null || value.isBlank() ? null : value.trim();
+        if (userId == null)
+        {
+            return 0;
+        }
+        return em.createQuery(
+                        "select count(a) from UserCompanyRole a where a.user.id = :id and a.active = true",
+                        Long.class)
+                .setParameter("id", userId)
+                .getSingleResult();
+    }
+
+    private static void requireUniqueUsername(EntityManager em, Long userId, String username)
+    {
+        String jpql = userId == null
+                ? "select u.id from AppUser u where lower(u.username) = :username"
+                : "select u.id from AppUser u where lower(u.username) = :username and u.id <> :id";
+        var query = em.createQuery(jpql, Long.class)
+                .setParameter("username", username)
+                .setMaxResults(1);
+        if (userId != null)
+        {
+            query.setParameter("id", userId);
+        }
+        if (query.getResultStream().findAny().isPresent())
+        {
+            throw new IllegalArgumentException("Username already exists: " + username + ".");
+        }
+    }
+
+    private static void requireUniqueRoleCode(EntityManager em, Long roleId, String code)
+    {
+        String jpql = roleId == null
+                ? "select r.id from AppRole r where upper(r.code) = :code"
+                : "select r.id from AppRole r where upper(r.code) = :code and r.id <> :id";
+        var query = em.createQuery(jpql, Long.class)
+                .setParameter("code", code)
+                .setMaxResults(1);
+        if (roleId != null)
+        {
+            query.setParameter("id", roleId);
+        }
+        if (query.getResultStream().findAny().isPresent())
+        {
+            throw new IllegalArgumentException("Role code already exists: " + code + ".");
+        }
+    }
+
+    private static <T> T require(
+            EntityManager em,
+            Class<T> type,
+            long id,
+            String label,
+            LockModeType lockMode)
+    {
+        T value = em.find(type, id, lockMode);
+        if (value == null)
+        {
+            throw new IllegalArgumentException("Unknown " + label + " ID: " + id + ".");
+        }
+        return value;
+    }
+
+    private static AuditEvent audit(
+            Company company,
+            String actor,
+            String action,
+            String entityType,
+            Long entityId,
+            String summary,
+            String before,
+            String after,
+            String reason)
+    {
+        AuditEvent event = new AuditEvent();
+        event.setCompany(company);
+        event.setActor(requireText(actor, "Actor", 200));
+        event.setActionType(action);
+        event.setEntityType(entityType);
+        event.setEntityId(entityId == null ? null : Long.toString(entityId));
+        event.setSummary(requireText(summary, "Audit summary", 500));
+        event.setBeforeValue(before);
+        event.setAfterValue(after);
+        event.setReason(reason);
+        return event;
+    }
+
+    private static String userSnapshot(AppUser user)
+    {
+        return "id=" + user.getId() + ",username=" + user.getUsername() + ",displayName="
+                + user.getDisplayName() + ",email=" + nullToBlank(user.getEmail()) + ",active=" + user.isActive();
+    }
+
+    private static String roleSnapshot(AppRole role)
+    {
+        return "id=" + role.getId() + ",code=" + role.getCode() + ",name=" + role.getName()
+                + ",description=" + nullToBlank(role.getDescription()) + ",active=" + role.isActive();
+    }
+
+    private static String assignmentSnapshot(UserCompanyRole assignment)
+    {
+        return "id=" + assignment.getId() + ",userId=" + assignment.getUser().getId()
+                + ",companyId=" + assignment.getCompany().getId() + ",roleId=" + assignment.getRole().getId()
+                + ",startDate=" + assignment.getStartDate() + ",endDate=" + assignment.getEndDate()
+                + ",active=" + assignment.isActive() + ",revokedAt=" + assignment.getRevokedAt();
+    }
+
+    private static String actionSummary(String action, String subject)
+    {
+        return action.toLowerCase(Locale.ROOT).replace('_', ' ') + " " + subject;
+    }
+
+    private static String normalizeUsername(String value)
+    {
+        return requireText(value, "Username", 80).toLowerCase(Locale.ROOT);
+    }
+
+    private static String normalizeRoleCode(String value)
+    {
+        return requireText(value, "Role code", 80).toUpperCase(Locale.ROOT);
+    }
+
+    private static String requireText(String value, String label, int maxLength)
+    {
+        if (value == null || value.isBlank())
+        {
+            throw new IllegalArgumentException(label + " is required.");
+        }
+        String clean = value.trim();
+        if (clean.length() > maxLength)
+        {
+            throw new IllegalArgumentException(label + " must be at most " + maxLength + " characters.");
+        }
+        return clean;
+    }
+
+    private static String optionalText(String value, String label, int maxLength)
+    {
+        if (value == null || value.isBlank())
+        {
+            return null;
+        }
+        String clean = value.trim();
+        if (clean.length() > maxLength)
+        {
+            throw new IllegalArgumentException(label + " must be at most " + maxLength + " characters.");
+        }
+        return clean;
+    }
+
+    private static String nullToBlank(String value)
+    {
+        return value == null ? "" : value;
+    }
+
+    private static void rollback(EntityManager em)
+    {
+        if (em.getTransaction().isActive())
+        {
+            em.getTransaction().rollback();
+        }
     }
 }

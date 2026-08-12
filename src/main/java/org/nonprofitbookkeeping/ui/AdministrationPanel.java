@@ -185,4 +185,9 @@ public final class AdministrationPanel implements AppPanel
     {
         return tabs;
     }
+
+    UserAdminPanel usersForTests()
+    {
+        return users;
+    }
 }

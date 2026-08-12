@@ -11,6 +11,7 @@ Status: P00 inventory of current main, updated through P16-S14 fixed-asset lifec
 | Corrections/period close | `period_close_range`, `period_close_event`, `audit_event`, `PeriodCloseRangeService`, canonical transaction services | yes for active company close state and factual history | legacy `AccountingPeriod` rows and period-close run records remain compatibility data but are not the P10 business authority | preserve range authority; retire or remap legacy period/run surfaces deliberately |
 | Fund master data | `Fund` JPA entity, stable-ID `FundCommand`, `FundAdminService`, `FundLookupService` | yes for fund identity and lifecycle fields | code-keyed compatibility `upsert` remains for older callers but the production editor uses stable IDs | preserve referenced funds through deactivation; delete only zero-reference funds |
 | Company master data and active selection | `Company` JPA entity, stable-ID `CompanyCommand`, `CompanyAdminService`, `CompanySessionController` | yes for existence, profile, and active/inactive lifecycle | `MultiCompanyState` remains sidecar recent-selection convenience only | require an existing active H2 row for selection; deactivate rather than hard-delete; protect current and last active companies |
+| User, role, and company-assignment administration | `AppUser`, `AppRole`, `UserCompanyRole`, stable-ID `AppUserCommand`/`AppRoleCommand`, dated assignment/end commands, `UserAdminService` | yes for administrative facts and history; no for authentication or runtime authorization | former code-keyed user upsert and assignment-row reactivation are removed from the production path | scope assignment queries/mutations to the active company; end/revoke instead of delete; block overlapping intervals and user/role deactivation while actively referenced; audit every material change atomically |
 | Budget categories | `BudgetCategory` JPA plus V45 | yes for categories | categories are not budget targets | P04 |
 | Budget targets | `BudgetPlan`/`BudgetLine` JPA entities and `budget_plan`/`budget_line` tables | yes | P16-S6 keeps draft creation/revision/save/activation in `BudgetPlanService`, selects versions by stable ID, and derives fiscal comparison ranges from company fiscal settings plus the shell-selected accounting period; no sidecar target store remains | P04/P16-S6 persistent budget model |
 | Import preview | `ImportPreviewService` remains transient staging for legacy preview families; P16-S2 `CoaCsvImportService` owns the frozen COA CSV preview/commit scope | no by design until acceptance; yes for the resulting account/identity/audit facts after commit | preview data is intentionally in-memory, but accepted COA CSV writes now use one caller-owned transaction instead of independently committing rows | preserve transient preview; require atomic accepted-row commit, idempotent identical recommit, and new preview on source/company/chart/target drift |
@@ -75,6 +76,15 @@ Status: P00 inventory of current main, updated through P16-S14 fixed-asset lifec
 - `MultiCompanyState` contains only active codes confirmed in the current H2 database. Missing and inactive recent codes are discarded rather than materialized as companies.
 - Open production workspaces are recreated after an active-company change so cached formatting, layout ownership, and company context do not remain bound to the prior company.
 - No hard-delete company operation is exposed. Existing foreign keys to company-owned banking, reconciliation, asset, inventory, tax, and role records remain intact.
+
+### User, role, and assignment authority
+
+- V72 adds active/timestamp facts to global roles and dated end/revocation facts to company assignments.
+- Stable IDs, not editable usernames or role codes, select rows for update.
+- One user/company/role may have multiple non-overlapping assignment history rows. Ending or revoking a row never reactivates or deletes prior history.
+- User and role deactivation is rejected while an active assignment references the row. Historical references remain valid.
+- `UserAdminService` writes the administration fact and a company-owned `AuditEvent` in one transaction. Assignment operations require the authoritative active company and reject cross-company IDs.
+- Authentication, login identity, last-administrator enforcement, and effective permission checks are not persistence consumers in P16-S16.
 
 ## Production table-state authority
 

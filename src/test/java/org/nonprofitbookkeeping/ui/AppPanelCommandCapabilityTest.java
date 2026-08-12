@@ -113,6 +113,32 @@ class AppPanelCommandCapabilityTest
 
             panel.tabsForTests().getSelectionModel().select(3);
             assertEquals(editorCommands(), panel.commandCapabilities());
+            panel.usersForTests().tabsForTests().getSelectionModel().select(3);
+            assertEquals(Set.of(), panel.commandCapabilities());
+            panel.usersForTests().tabsForTests().getSelectionModel().select(1);
+            assertEquals(editorCommands(), panel.commandCapabilities());
+            assertTrue(notifications.get() >= 4);
+            return null;
+        });
+    }
+
+    @Test
+    void userAdminCapabilitiesFollowMaintenanceAndAuthenticationTabs()
+    {
+        FxTestSupport.onFx(() ->
+        {
+            UserAdminPanel panel = new UserAdminPanel();
+            AtomicInteger notifications = new AtomicInteger();
+            panel.setCommandCapabilitiesChangedListener(notifications::incrementAndGet);
+
+            panel.tabsForTests().getSelectionModel().select(0);
+            assertEquals(editorCommands(), panel.commandCapabilities());
+            panel.tabsForTests().getSelectionModel().select(1);
+            assertEquals(editorCommands(), panel.commandCapabilities());
+            panel.tabsForTests().getSelectionModel().select(2);
+            assertEquals(editorCommands(), panel.commandCapabilities());
+            panel.tabsForTests().getSelectionModel().select(3);
+            assertEquals(Set.of(), panel.commandCapabilities());
             assertTrue(notifications.get() >= 4);
             return null;
         });

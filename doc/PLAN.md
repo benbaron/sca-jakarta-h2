@@ -1,12 +1,12 @@
 ---
-plan_version: 172
+plan_version: 177
 active_phase: P16
-active_slice: P16-S15
+active_slice: P16-S16
 active_status: VERIFYING
-active_branch: codex/P16-S15-fixed-asset-inventory-reports
-active_pull_request: 267
-active_head: c536a8ff6c348b14b13f8185d1bd8d0e32b8ae62
-next_action: "Complete doc/P16-S15-fixed-asset-inventory-reports-user-testing.md on the exact green PR #267 head, then merge only after owner acceptance."
+active_branch: codex/P16-S16-user-role-assignment-maintenance
+active_pull_request: 268
+active_head: 75baea3b22003fa3b4cb4ed18bf7c8931690c0b0
+next_action: "Complete doc/P16-S16-user-role-assignment-maintenance-user-testing.md on the exact final green PR #268 head, then merge only after owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S15; P16-S14 DONE through PR #266 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S16; P16-S15 DONE through PR #267 |
 
 ## 4. Governing documents
 
@@ -73,6 +73,7 @@ Focused documents for current UI/accounting work:
 - `doc/reporting/report-library.md`
 - `doc/administration/fund-lifecycle.md`
 - `doc/administration/company-lifecycle.md`
+- `doc/administration/user-role-maintenance.md`
 - `doc/workflow/development-workflow.md`
 
 `doc/architecture/production-workspace.md` was removed. Do not re-add it or list it as required reading.
@@ -1879,7 +1880,7 @@ Required behavior: genuine Inventory item add/edit and movement history, no runb
 # P16 — Interface-to-authority completion and integrity corrections
 
 **Selector:** `PHASE=P16`  
-**Status:** IN_PROGRESS through P16-S15; P16-S14 DONE through PR #266
+**Status:** IN_PROGRESS through P16-S16; P16-S15 DONE through PR #267
 **Depends on:** P03 through P15 except eliminated P07
 
 ## Purpose
@@ -1939,6 +1940,7 @@ The interface-to-persistence review was performed on `main` at `1740de45b043553c
 - `doc/inventory/inventory-and-assets.md`
 - `doc/reporting/report-library.md`
 - `doc/administration/company-lifecycle.md`
+- `doc/administration/user-role-maintenance.md`
 - `doc/workflow/development-workflow.md`
 
 ## Required inspection
@@ -2590,7 +2592,7 @@ Next exact action:
 
 ## P16-S15 — Fixed-asset and inventory reports
 
-Status: VERIFYING through draft PR #267 on branch `codex/P16-S15-fixed-asset-inventory-reports`, based on exact P16-S14 merge `4504fdbd17ae50d5b03c36a6f5128bed6ee81c28`.
+Status: DONE through merged PR #267 and owner desktop acceptance.
 
 Purpose: add domain reports only after P16-S9 and P16-S14 establish authoritative movement and disposal facts.
 
@@ -2622,14 +2624,16 @@ Implementation progress:
 - Initial plan-inclusive Maven PR Tests run `31456857434` compiled production and ran 638 tests before one new integration assertion exposed truncated formatted money in semantic text output; the repeated suite and JavaFX compliance correctly did not run on that failed head.
 - `SemanticReportRenderer` now preserves complete currency, date, and numeric facts in text output while retaining bounded truncation for descriptive text. Exact corrected head `1751d706a7cb733f48c3e381449f67f9ce1826e2` passed Maven PR Tests run `31457080329`: clean `mvn clean verify` and the deliberate repeated suite each ran 638 tests with 0 failures/errors and 33 skips; all 9 production JavaFX route/source compliance tests passed.
 - Exact documentation-inclusive handoff head `c536a8ff6c348b14b13f8185d1bd8d0e32b8ae62` passed Maven PR Tests run `31457388822` with the same clean verification, repeated 638-test suite, 33 skips, and 9-test JavaFX compliance result.
+- Exact final PR head `cd9b3ab7984b55ad9615837b8be4580f0c4a0cba` passed Maven PR Tests run `31457659645` with 638 tests passing twice, 33 skips, and all 9 production JavaFX compliance tests passing.
+- The owner completed and accepted `doc/P16-S15-fixed-asset-inventory-reports-user-testing.md`, and PR #267 merged to `main` at `ca2505fc4388211cd2dbf166ee29556d0f51f8df` on 2026-08-11.
 
 Next exact action:
 
-- Complete `doc/P16-S15-fixed-asset-inventory-reports-user-testing.md` on the exact final green head, then merge draft PR #267 only after owner acceptance. Keep P16-S16 blocked until that merge.
+- None; P16-S15 is DONE and P16-S16 is active.
 
 ## P16-S16 — User role and assignment maintenance
 
-Status: BLOCKED by P16-S15.
+Status: IN_PROGRESS on branch `codex/P16-S16-user-role-assignment-maintenance` from exact P16-S15 merge `ca2505fc4388211cd2dbf166ee29556d0f51f8df`.
 
 Purpose: complete the durable administration implied by User Admin without claiming authentication enforcement.
 
@@ -2646,6 +2650,27 @@ Acceptance and tests:
 
 - Roles and assignments can be created, changed, revoked/deactivated, reloaded, and audited without losing history.
 - UI wording never implies that login or permission enforcement exists when it does not.
+
+Implementation decisions and progress:
+
+- `doc/administration/user-role-maintenance.md` governs global stable-ID users/roles and active-company assignment history. Authentication, login identity, and runtime permission enforcement remain explicitly deferred.
+- V72 adds role lifecycle timestamps/status plus assignment start/end/revocation facts, replaces the one-row-per-user/company/role constraint with dated history identity, and enforces coherent active/end state without deleting existing rows.
+- `UserAdminService` owns stable-ID user/role writes, active-reference deactivation guards, active-company assignment queries/mutations, interval-overlap rejection, immutable ended/revoked history, pessimistic revalidation, and same-transaction factual audit events.
+- No last-administrator authorization rule is adopted because the application has no authenticated operator or effective permission consumer. Active users and roles still cannot be deactivated while any active assignments reference them.
+- User Admin now provides real Users, Roles, and Company Assignments table/editor regions with dynamic global New/Save capabilities, ID-backed selectors, company-formatted dates, explicit End/Revoke operations, and a factual Authentication deferral tab.
+- Owner desktop verification is governed by `doc/P16-S16-user-role-assignment-maintenance-user-testing.md`.
+- Focused migration, service, rollback, restart, isolation, history, command-capability, and source-contract tests are being added. Local Maven remains unavailable in this container.
+- Static local verification passes Java 17 grammar parsing for all 704 main/test sources, isolated JDK compilation for the five immutable command/usage records, and `git diff --check`. Full compilation and focused/full test execution remain pending GitHub Maven CI because this container has no `mvn` executable or resolved Java dependency cache.
+- Exact local implementation commit `5860bf7afad2e867169787ce7a28cfb7d0dd07e0` contains the focused 22-file vertical slice. The worktree is clean at that implementation boundary; publication, draft PR creation, and authoritative CI require explicit owner authorization.
+- The owner authorized publication. The two reviewed local trees were reconstructed through the connected GitHub service without `gh`: remote implementation commit `6083f40888bc611642111c66583ff61f95d1facd` has exact tree `284b5a0a0e028f20f197f320261adc39728058f4`, and remote handoff commit `22a547621a2ef1c16ebb4d0d500a65bc2f980097` has exact tree `49a316c26b976a839ea6a207df1ea02cd23fabba`; both trees match their local Git counterparts byte-for-byte.
+- Draft PR #268 is open from `codex/P16-S16-user-role-assignment-maintenance` to `main` at exact remote head `22a547621a2ef1c16ebb4d0d500a65bc2f980097`. Authoritative Maven PR Tests and owner desktop acceptance remain pending.
+- Initial Maven PR Tests run `31556972371` compiled production and ran 645 tests before exposing one V72 recovery defect and one metadata assertion defect: complete-schema Flyway-history recovery encountered existing V72 constraints, and the migration test assumed uppercase H2 metadata despite `DATABASE_TO_LOWER=TRUE`. The repeated suite and JavaFX compliance correctly did not run on that failed head.
+- V72 now uses `ADD CONSTRAINT IF NOT EXISTS` for all three lifecycle constraints, preserving the repository's nondestructive complete-schema recovery contract, and the migration test compares H2 metadata case-insensitively. Exact corrected head `539aae6b0358ca2ec900cc1ac34ec0c46814bd9d` passed Maven PR Tests run `31557199558`: clean `mvn clean verify` and the deliberate repeated suite each ran 645 tests with 0 failures/errors and 34 skips; all 9 production JavaFX route/source compliance tests passed.
+- Exact documentation-inclusive handoff head `75baea3b22003fa3b4cb4ed18bf7c8931690c0b0` passed Maven PR Tests run `31557505169` with the same clean verification, repeated 645-test suite, 34 skips, and all 9 production JavaFX compliance tests passing. Only owner desktop acceptance remains before merge.
+
+Next exact action:
+
+- Complete `doc/P16-S16-user-role-assignment-maintenance-user-testing.md` on the exact final green PR #268 head, then merge only after owner acceptance. Keep P16-S17 blocked until that merge.
 
 ## P16-S17 — End-to-end closure
 
