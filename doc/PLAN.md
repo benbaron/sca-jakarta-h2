@@ -1,12 +1,12 @@
 ---
-plan_version: 187
+plan_version: 188
 active_phase: P16
-active_slice: P16-C2
-active_status: IN_PROGRESS
-active_branch: codex/P16-C2-import-preview-constructor-ambiguity
+active_slice: P16-C3
+active_status: VERIFYING
+active_branch: codex/P16-C3-donor-sclx-compatibility
 active_pull_request: null
-active_head: 8aa57a72caf141775154d7aacc320b0a7e664a76
-next_action: "Obtain owner authorization to publish P16-C2 and open a draft pull request for authoritative Maven PR Tests."
+active_head: 53ae336fd4ce3058a2383d9965fc83bd541dee88
+next_action: "Obtain explicit owner authorization to publish P16-C3 commit 53ae336 and open a draft pull request for authoritative Maven PR Tests."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Obtain owner authorization to publish P16-C2 and open a draft pull
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, then closes P16 through documentation-only P16-C1 / PR #270. P16-C2 is a narrow corrective slice for an Eclipse compiler ambiguity in `ImportPreviewPanel`; it does not authorize P17 or any later feature phase.
+This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, and activates P16-C3 for bounded donor SCLX 1.3 compatibility. It does not authorize P17 or any later feature phase.
 
 ## 2. Status values
 
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | Corrective P16-C2 IN_PROGRESS after P16-C1 / PR #270 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | Corrective P16-C3 IN_PROGRESS after P16-C2 / PR #271 |
 
 ## 4. Governing documents
 
@@ -1880,7 +1880,7 @@ Required behavior: genuine Inventory item add/edit and movement history, no runb
 # P16 — Interface-to-authority completion and integrity corrections
 
 **Selector:** `PHASE=P16`  
-**Status:** DONE through P16-S17, merged PR #269, owner acceptance, and documentation-only P16-C1 / PR #270
+**Status:** DONE through P16-S17, merged PR #269, owner acceptance, and documentation-only P16-C1 / PR #270; corrective P16-C3 IN_PROGRESS after P16-C2 / PR #271
 **Depends on:** P03 through P15 except eliminated P07
 
 ## Purpose
@@ -2708,7 +2708,7 @@ Implementation progress:
 
 Next exact action:
 
-- None; P16-S17 is DONE and documentation-only P16-C1 is active.
+- None; P16-S17 and P16-C1 are DONE, P16-C2 is merged, and corrective P16-C3 is active.
 
 ## P16-C1 — Final plan-ledger reconciliation
 
@@ -2742,10 +2742,10 @@ Next exact action:
 
 ## P16-C2 — Import Preview Eclipse constructor disambiguation
 
-Status: IN_PROGRESS.
+Status: DONE through PR #271.
 
 Branch: `codex/P16-C2-import-preview-constructor-ambiguity`
-Pull request: not opened
+Pull request: #271
 Base head: `e659a9140c12cdf4c88449f58503b25b1bd57a47`
 
 Purpose:
@@ -2758,10 +2758,41 @@ Implementation and validation status:
 
 - Replace the two untyped forwarding lambdas with a named adapter returning the exact private `SclxPreviewOperationFactory` type, so overload resolution no longer depends on compiler-specific lambda target inference.
 - Add a focused source guard that requires the typed adapter and rejects the ambiguous inline lambda form.
-- Local implementation commit `8aa57a72caf141775154d7aacc320b0a7e664a76` contains only the production constructor repair and focused regression guard.
-- The JDK compiler module parsed all 705 production and test Java sources without syntax errors, and `git diff --check` passes.
-- Local Maven and standalone `javac` executables are unavailable in this container; authoritative type-checking and Maven PR Tests require owner-authorized publication.
+- PR #271 contains only the production constructor repair, focused regression guard, and plan handoff.
+- Exact PR head `87c30c662877a7f55d9987bd9c7f173d38bec330` passed Maven PR Tests run `31620785858`, including clean `mvn clean verify`, the deliberately repeated full suite, and production JavaFX route compliance.
+- PR #271 merged to `main` at `9286e99a751c832c9af09b90840005a36946890e` on 2026-08-12.
 
 Next exact action:
 
-- Obtain owner authorization to publish the two P16-C2 commits and open a draft pull request to `main` for authoritative Maven PR Tests.
+- None; P16-C2 is merged and P16-C3 is active.
+
+## P16-C3 — Bounded donor SCLX 1.3 compatibility
+
+Status: VERIFYING.
+
+Branch: `codex/P16-C3-donor-sclx-compatibility`
+Pull request: not opened
+Base head: `9286e99a751c832c9af09b90840005a36946890e`
+
+Purpose:
+
+- Make the production SCLX preview and atomic import accept the bounded donor SCLX 1.3 dialect represented by the owner-supplied `company.sclx.json` without weakening strict JSON, version, size, identity, balance, or transaction-boundary checks.
+- Normalize donor numeric epoch timestamps, account/fund aliases, date arrays, people/counterparty links, transaction references, statuses, and missing fund assignments into existing canonical authority.
+- Preserve target currency and fiscal-year settings when absent from the donor document.
+- Skip only zero-value noncanonical donor budget shells and workbook-only budget annotations, with visible warnings; non-zero donor budget data remains blocking.
+- Require preview and the existing final confirmation to name every donor compatibility decision, including assignment of 32 fundless lines to the unique `General Fund` in the supplied document.
+
+Implementation and validation status:
+
+- A bounded parser-side compatibility normalizer keeps source byte count and SHA-256 exact while supplying canonical fields to the existing structure validator, preview, identity comparison, and atomic commit path.
+- Donor people become canonical counterparties and their transaction links are preserved; transaction references are retained in canonical memos rather than discarded.
+- The supplied document's 72 accounts, four funds, 58 people, 14 balanced transactions, 32 transaction lines, 13 nonblank references, and ten zero-value/noncanonical budget shells define the corrective acceptance boundary.
+- Focused parser, preview, commit, and JavaFX confirmation regressions use a compact fictional donor fixture; the owner-supplied file is diagnostic evidence and is not committed as a repository fixture.
+- Local implementation commit `53ae336fd4ce3058a2383d9965fc83bd541dee88` contains the governed compatibility boundary, contract update, compact fixture, and focused regressions.
+- The JDK compiler module parsed all 707 production and test Java sources without syntax errors, the compact fixture passes strict JSON parsing, and `git diff --check` passes.
+- Local Maven and standalone `javac` executables remain unavailable; authoritative type-checking and Maven PR Tests require publication.
+- No publication occurred: the approval boundary rejected the requested push because the owner confirmed the compatibility policy and prerequisite merge, but has not explicitly authorized exporting this new P16-C3 commit to GitHub.
+
+Next exact action:
+
+- Obtain explicit owner authorization to publish P16-C3 commit `53ae336fd4ce3058a2383d9965fc83bd541dee88` and open a draft pull request to `main` for authoritative Maven PR Tests.
