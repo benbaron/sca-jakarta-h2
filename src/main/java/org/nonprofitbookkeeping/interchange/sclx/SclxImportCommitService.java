@@ -525,10 +525,18 @@ public final class SclxImportCommitService
     private static void applyOrganization(Company company, JsonNode organization)
     {
         company.setDisplayName(text(organization, "name"));
-        company.setDefaultCurrency(text(organization, "baseCurrency").toUpperCase(Locale.ROOT));
-        LocalDate fiscalStart = LocalDate.parse(text(organization, "fiscalYearStart"));
-        company.setFiscalYearStartMonth(fiscalStart.getMonthValue());
-        company.setFiscalYearStartDay(fiscalStart.getDayOfMonth());
+        String currency = optionalText(organization, "baseCurrency");
+        if (currency != null)
+        {
+            company.setDefaultCurrency(currency.toUpperCase(Locale.ROOT));
+        }
+        String fiscalYearStart = optionalText(organization, "fiscalYearStart");
+        if (fiscalYearStart != null)
+        {
+            LocalDate fiscalStart = LocalDate.parse(fiscalYearStart);
+            company.setFiscalYearStartMonth(fiscalStart.getMonthValue());
+            company.setFiscalYearStartDay(fiscalStart.getDayOfMonth());
+        }
         company.touchUpdatedAt();
     }
 

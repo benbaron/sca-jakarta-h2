@@ -1,9 +1,14 @@
 package org.nonprofitbookkeeping.interchange.sclx;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -52,6 +57,56 @@ class SclxDocumentParserTest
         assertTrue(document.bomStripped());
         assertEquals(bytes.length, document.byteCount());
         assertEquals(SclxVersion.V1_3, document.version());
+    }
+
+    @Test
+    void normalizesBoundedDonorAliasesWithoutChangingSourceIdentity() throws Exception
+    {
+        byte[] bytes = Files.readAllBytes(Path.of(
+                "src/test/resources/data-exchange/sclx/valid/donor-sclx-1.3.json"));
+
+        SclxParsedDocument document = parser.parse(bytes);
+
+        assertEquals(Instant.parse("2026-07-16T03:32:07.301594800Z"), document.exportedAt());
+        assertEquals(bytes.length, document.byteCount());
+        assertEquals("2026-07-16T03:32:07.301594800Z",
+                document.root().path("exportedAt").textValue());
+        assertEquals("1000", document.root().path("chartOfAccounts").get(0).path("code").textValue());
+        assertEquals("DEBIT", document.root().path("chartOfAccounts").get(0)
+                .path("increaseSide").textValue());
+        assertEquals("CREDIT", document.root().path("chartOfAccounts").get(1)
+                .path("increaseSide").textValue());
+        assertTrue(document.root().path("budgets").isEmpty());
+        assertTrue(document.root().path("people").isEmpty());
+        assertEquals(1, document.root().path("extensions").path("scaJakartaH2")
+                .path("counterparties").path("counterparties").size());
+        JsonNode transaction = document.root().path("transactions").get(0);
+        assertEquals("2026-07-15", transaction.path("transactionDate").textValue());
+        assertEquals("ENTERED", transaction.path("status").textValue());
+        assertEquals("Donation [Reference: deposit 1]", transaction.path("description").textValue());
+        assertEquals("General Fund", transaction.path("lines").get(0).path("fundId").textValue());
+        assertEquals("person-donor", transaction.path("lines").get(0)
+                .path("counterpartyId").textValue());
+        Set<String> codes = document.compatibilityNotices().stream()
+                .map(SclxCompatibilityNotice::code)
+                .collect(Collectors.toSet());
+        assertTrue(codes.contains("SCLX_DONOR_NUMERIC_EXPORTED_AT_NORMALIZED"));
+        assertTrue(codes.contains("SCLX_DONOR_EMPTY_BUDGETS_SKIPPED"));
+        assertTrue(codes.contains("SCLX_DONOR_GENERAL_FUND_ASSIGNED"));
+        assertTrue(codes.contains("SCLX_DONOR_PEOPLE_MAPPED"));
+    }
+
+    @Test
+    void rejectsNumericExportedAtBeyondNanosecondPrecision()
+    {
+        byte[] bytes = """
+                {"format":"SCLX","version":"1.3","exportedAt":1.0000000001}
+                """.getBytes(StandardCharsets.UTF_8);
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class, () -> parser.parse(bytes));
+
+        assertTrue(exception.getMessage().contains("nanosecond precision"));
     }
 
     @Test

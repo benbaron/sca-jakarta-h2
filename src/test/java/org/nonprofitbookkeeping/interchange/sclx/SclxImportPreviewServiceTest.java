@@ -120,6 +120,61 @@ class SclxImportPreviewServiceTest
         assertTrue(preview.transactions().get(0).finalizedReconciliationConflict());
     }
 
+    @Test
+    void previewsDonorCompatibilityDecisionsAsExplicitNonBlockingWarnings()
+    {
+        Path source = Path.of("src/test/resources/data-exchange/sclx/valid/donor-sclx-1.3.json");
+
+        SclxImportPreview preview = service(emptyTarget("TEST")).preview(source);
+        Set<String> codes = preview.operation().messages().stream()
+                .map(message -> message.code())
+                .collect(Collectors.toSet());
+
+        assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+        assertEquals(SclxAccountMode.AS_IS, preview.recommendedAccountMode());
+        assertEquals(2L, preview.sectionCounts().count("accounts"));
+        assertEquals(1L, preview.sectionCounts().count("counterparties"));
+        assertEquals(0L, preview.sectionCounts().count("budgets"));
+        assertEquals(0L, preview.sectionCounts().unsupportedSectionCount());
+        assertEquals(8L, preview.sectionCounts().totalEntities());
+        assertTrue(codes.contains("SCLX_DONOR_TARGET_SETTINGS_PRESERVED"));
+        assertTrue(codes.contains("SCLX_DONOR_REFERENCES_PRESERVED"));
+        assertTrue(codes.contains("SCLX_DONOR_COUNTERPARTY_LINKS_NORMALIZED"));
+        assertTrue(codes.contains("SCLX_DONOR_BUDGET_REFERENCES_SKIPPED"));
+        assertTrue(preview.transactions().get(0).balanced());
+    }
+
+    @Test
+    void blocksNonZeroDonorBudgetsInsteadOfDiscardingThem() throws Exception
+    {
+        String donor = Files.readString(Path.of(
+                "src/test/resources/data-exchange/sclx/valid/donor-sclx-1.3.json"));
+        Path source = tempDir.resolve("non-zero-donor-budget.sclx");
+        Files.writeString(source, donor.replace(
+                "\"budgetedAmount\": 0.00", "\"budgetedAmount\": 1.00"));
+
+        SclxImportPreview preview = service(emptyTarget("TEST")).preview(source);
+
+        assertTrue(preview.hasBlockingErrors());
+        assertTrue(preview.operation().messages().stream().anyMatch(message ->
+                message.code().equals("SCLX_DONOR_BUDGET_DATA_UNSUPPORTED") && message.blocking()));
+    }
+
+    @Test
+    void blocksFundlessDonorLinesWhenGeneralFundCannotBeIdentified() throws Exception
+    {
+        String donor = Files.readString(Path.of(
+                "src/test/resources/data-exchange/sclx/valid/donor-sclx-1.3.json"));
+        Path source = tempDir.resolve("missing-general-fund.sclx");
+        Files.writeString(source, donor.replace("General Fund", "Operating Fund"));
+
+        SclxImportPreview preview = service(emptyTarget("TEST")).preview(source);
+
+        assertTrue(preview.hasBlockingErrors());
+        assertTrue(preview.operation().messages().stream().anyMatch(message ->
+                message.code().equals("SCLX_DONOR_GENERAL_FUND_REQUIRED") && message.blocking()));
+    }
+
     private SclxImportPreviewService service(SclxImportTargetSnapshot target)
     {
         return new SclxImportPreviewService(

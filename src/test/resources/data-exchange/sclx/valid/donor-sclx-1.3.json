@@ -1,0 +1,113 @@
+{
+  "format": "SCLX",
+  "version": "1.3",
+  "exportedAt": 1784172727.301594800,
+  "organization": {
+    "organizationId": "org-donor-test",
+    "name": "Donor Test",
+    "baseCurrency": null,
+    "fiscalYearStart": null
+  },
+  "chartOfAccounts": [
+    {
+      "Number": "1000",
+      "Name": "Cash",
+      "Type": "ASSET",
+      "Parent": null,
+      "IncreaseSide": null,
+      "OpeningBalance": 0.00,
+      "accountId": "1000",
+      "code": null,
+      "active": true
+    },
+    {
+      "Number": "4000",
+      "Name": "Contributions",
+      "Type": "INCOME",
+      "Parent": null,
+      "IncreaseSide": null,
+      "OpeningBalance": 0.00,
+      "accountId": "4000",
+      "code": null,
+      "active": true
+    }
+  ],
+  "funds": [
+    {
+      "fundId": "General Fund",
+      "name": "General Fund",
+      "restricted": null,
+      "description": null
+    }
+  ],
+  "budgets": [
+    {
+      "budgetId": "budget-shell",
+      "name": "Empty donor budget",
+      "fiscalYear": 2026,
+      "lines": [
+        {
+          "eventName": "",
+          "budgetedAmount": 0.00,
+          "accountId": ""
+        }
+      ]
+    }
+  ],
+  "people": [
+    {
+      "personId": "person-donor",
+      "displayName": "Donor Counterparty",
+      "kind": "OTHER",
+      "email": null,
+      "phone": null
+    }
+  ],
+  "bankAccounts": [],
+  "officeAssignments": [],
+  "committeeMemberships": [],
+  "events": [],
+  "documents": [],
+  "transactions": [
+    {
+      "transactionId": "txn-donor-1",
+      "transactionDate": [2026, 7, 15],
+      "postingDate": [2026, 7, 15],
+      "description": "Donation",
+      "reference": "deposit 1",
+      "personId": "person-donor",
+      "status": "POSTED",
+      "budgetId": "workbook annotation",
+      "lines": [
+        {
+          "lineId": "txn-donor-1-line-1",
+          "accountId": "1000",
+          "debit": 25.00,
+          "credit": 0,
+          "fundId": null,
+          "budgetId": "workbook annotation",
+          "personId": "person-donor",
+          "memo": ""
+        },
+        {
+          "lineId": "txn-donor-1-line-2",
+          "accountId": "4000",
+          "debit": 0,
+          "credit": 25.00,
+          "fundId": null,
+          "budgetId": "workbook annotation",
+          "personId": "person-donor",
+          "memo": ""
+        }
+      ]
+    }
+  ],
+  "bankingItems": [],
+  "outstandingItems": [],
+  "otherAssetItems": [],
+  "supplementalItems": [],
+  "assets": [],
+  "supplies": [],
+  "bankStatementImports": [],
+  "extensions": {}
+}
