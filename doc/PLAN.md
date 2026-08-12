@@ -1,12 +1,12 @@
 ---
-plan_version: 175
+plan_version: 176
 active_phase: P16
 active_slice: P16-S16
 active_status: VERIFYING
 active_branch: codex/P16-S16-user-role-assignment-maintenance
 active_pull_request: 268
-active_head: 22a547621a2ef1c16ebb4d0d500a65bc2f980097
-next_action: "Run authoritative Maven/JavaFX CI on draft PR #268, correct any confirmed P16-S16 failure, then complete owner desktop acceptance before merge."
+active_head: 539aae6b0358ca2ec900cc1ac34ec0c46814bd9d
+next_action: "Validate the documentation-inclusive P16-S16 handoff head, then complete doc/P16-S16-user-role-assignment-maintenance-user-testing.md before merging PR #268."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2664,10 +2664,12 @@ Implementation decisions and progress:
 - Exact local implementation commit `5860bf7afad2e867169787ce7a28cfb7d0dd07e0` contains the focused 22-file vertical slice. The worktree is clean at that implementation boundary; publication, draft PR creation, and authoritative CI require explicit owner authorization.
 - The owner authorized publication. The two reviewed local trees were reconstructed through the connected GitHub service without `gh`: remote implementation commit `6083f40888bc611642111c66583ff61f95d1facd` has exact tree `284b5a0a0e028f20f197f320261adc39728058f4`, and remote handoff commit `22a547621a2ef1c16ebb4d0d500a65bc2f980097` has exact tree `49a316c26b976a839ea6a207df1ea02cd23fabba`; both trees match their local Git counterparts byte-for-byte.
 - Draft PR #268 is open from `codex/P16-S16-user-role-assignment-maintenance` to `main` at exact remote head `22a547621a2ef1c16ebb4d0d500a65bc2f980097`. Authoritative Maven PR Tests and owner desktop acceptance remain pending.
+- Initial Maven PR Tests run `31556972371` compiled production and ran 645 tests before exposing one V72 recovery defect and one metadata assertion defect: complete-schema Flyway-history recovery encountered existing V72 constraints, and the migration test assumed uppercase H2 metadata despite `DATABASE_TO_LOWER=TRUE`. The repeated suite and JavaFX compliance correctly did not run on that failed head.
+- V72 now uses `ADD CONSTRAINT IF NOT EXISTS` for all three lifecycle constraints, preserving the repository's nondestructive complete-schema recovery contract, and the migration test compares H2 metadata case-insensitively. Exact corrected head `539aae6b0358ca2ec900cc1ac34ec0c46814bd9d` passed Maven PR Tests run `31557199558`: clean `mvn clean verify` and the deliberate repeated suite each ran 645 tests with 0 failures/errors and 34 skips; all 9 production JavaFX route/source compliance tests passed.
 
 Next exact action:
 
-- Run authoritative Maven PR Tests on draft PR #268, correct any confirmed P16-S16 failure on the same branch, and complete `doc/P16-S16-user-role-assignment-maintenance-user-testing.md` on the final green head before merge.
+- Validate the documentation-inclusive P16-S16 handoff head, then complete `doc/P16-S16-user-role-assignment-maintenance-user-testing.md` on the final green head before merging draft PR #268. Keep P16-S17 blocked until that merge and owner acceptance.
 
 ## P16-S17 — End-to-end closure
 
