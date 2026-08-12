@@ -1,12 +1,12 @@
 ---
-plan_version: 179
+plan_version: 180
 active_phase: P16
 active_slice: P16-S17
 active_status: VERIFYING
 active_branch: codex/P16-S17-end-to-end-closure
-active_pull_request: null
-active_head: a2e5fb03e0116e40bd4d3abeece8db1391c90d6e
-next_action: "After owner publication authorization, publish P16-S17 and open a draft PR; run full/repeated Maven and JavaFX gates, then complete the exact-head owner desktop checklist before merge or marking P16 DONE."
+active_pull_request: 269
+active_head: 1e0e075967445939a63488dc87c50a79f1c58728
+next_action: "Run full/repeated Maven and JavaFX gates on the exact PR #269 head, correct any confirmed S17 defect, then complete the exact-head owner desktop checklist before merge or marking P16 DONE."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2676,7 +2676,7 @@ Next exact action:
 
 ## P16-S17 — End-to-end closure
 
-Status: VERIFYING on branch `codex/P16-S17-end-to-end-closure` from exact P16-S16 merge `3776bcd3df29550c4acf615fe6376375de3e29fc`.
+Status: VERIFYING in draft PR #269 on branch `codex/P16-S17-end-to-end-closure` from exact P16-S16 merge `3776bcd3df29550c4acf615fe6376375de3e29fc`.
 
 Purpose: prove the corrected interface-to-authority chain and close P16 only after production desktop acceptance.
 
@@ -2701,8 +2701,9 @@ Implementation progress:
 - `doc/P16-S17-end-to-end-closure-user-testing.md` is the exact-head desktop acceptance checklist and maps every S17 contract to its authoritative focused test evidence. Owner result remains PENDING.
 - The closure audit reconciles stale governance text: the nonexistent `architecture/dashboard-composition.md` requirement is removed, authority inventories are current through active S17, and the COA JSON contract records the already-accepted/merged PR #197 state.
 - Local implementation commit `a2e5fb03e0116e40bd4d3abeece8db1391c90d6e` contains the focused seven-file closure boundary. Both modified Java sources pass Java 17 grammar parsing, every test named by the closure evidence manifest resolves to an existing source, and `git diff --check` passes.
-- Maven compilation and test execution remain unavailable locally because this container has no `mvn` executable or resolved dependency cache. Full `mvn clean verify`, the deliberate repeated suite, focused JavaFX compliance, and owner desktop acceptance remain pending publication and the repository PR workflow.
+- The approved local implementation and plan-handoff trees were published without rewriting their content as remote commits `122a916350575c6f87265e5d63342bb27fadb403` and `1e0e075967445939a63488dc87c50a79f1c58728`; draft PR #269 targets `main`, and both remote tree SHAs exactly match the reviewed local trees.
+- Maven compilation and test execution remain unavailable locally because this container has no `mvn` executable or resolved dependency cache. Full `mvn clean verify`, the deliberate repeated suite, focused JavaFX compliance, and owner desktop acceptance remain pending on PR #269.
 
 Next exact action:
 
-- After owner publication authorization, publish the reviewed implementation and plan-handoff commits, open a draft PR, run the full/repeated Maven and JavaFX gates, then complete the exact-head owner checklist. Keep P16 and P16-S17 out of DONE until the accepted final head merges.
+- Run the full/repeated Maven and JavaFX gates on the exact PR #269 head, correct any confirmed S17 defect on the same branch, then complete the exact-head owner checklist. Keep P16 and P16-S17 out of DONE until the accepted final head merges.
