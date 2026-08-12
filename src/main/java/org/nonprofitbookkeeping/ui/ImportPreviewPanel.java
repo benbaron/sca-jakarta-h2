@@ -155,8 +155,7 @@ public class ImportPreviewPanel implements AppPanel
             Function<String, SclxImportCommitService> sclxCommitFactory)
     {
         this(previewService,
-                () -> Objects.requireNonNull(
-                        sclxPreviewService.get(), "sclxPreviewService result")::preview,
+                sclxPreviewOperationFactory(sclxPreviewService),
                 sclxCommitFactory,
                 () -> MainWindow.sharedSessionState().multiCompany().activeCompanyCode(),
                 UiServiceRegistry::bankConfiguration,
@@ -178,10 +177,19 @@ public class ImportPreviewPanel implements AppPanel
             Supplier<NormalizedBankCsvReviewService> normalizedBankCsvReviewService)
     {
         this(previewService,
-                () -> Objects.requireNonNull(sclxPreviewService.get(), "sclxPreviewService result")::preview,
+                sclxPreviewOperationFactory(sclxPreviewService),
                 sclxCommitFactory, activeCompanyCode, bankConfigurationService,
                 bankStatementReviewService, bankCsvReviewService, bankCsvProfileService,
                 normalizedBankCsvReviewService);
+    }
+
+    private static SclxPreviewOperationFactory sclxPreviewOperationFactory(
+            Supplier<SclxImportPreviewService> sclxPreviewService)
+    {
+        Supplier<SclxImportPreviewService> requiredService = Objects.requireNonNull(
+                sclxPreviewService, "sclxPreviewService");
+        return () -> Objects.requireNonNull(
+                requiredService.get(), "sclxPreviewService result")::preview;
     }
 
     private ImportPreviewPanel(

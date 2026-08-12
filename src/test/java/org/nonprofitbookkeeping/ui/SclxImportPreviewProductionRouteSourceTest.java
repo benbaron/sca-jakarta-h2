@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SclxImportPreviewProductionRouteSourceTest
@@ -25,6 +26,8 @@ class SclxImportPreviewProductionRouteSourceTest
         assertTrue(panel.contains("commitService.commit(source, preview, actor)"));
         assertTrue(panel.contains("Import Previewed SCLX…"));
         assertTrue(panel.contains("No data was changed"));
+        assertTrue(panel.contains("sclxPreviewOperationFactory(sclxPreviewService)"));
+        assertFalse(panel.contains("() -> Objects.requireNonNull(sclxPreviewService.get()"));
         assertTrue(factory.contains("services::sclxImportPreviewService"));
         assertTrue(factory.contains("services::sclxImportCommitService"));
         assertTrue(workspaceServices.contains("Supplier<SclxImportPreviewService>"));
