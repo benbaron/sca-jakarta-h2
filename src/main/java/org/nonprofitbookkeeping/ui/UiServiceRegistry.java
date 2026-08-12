@@ -278,7 +278,7 @@ public final class UiServiceRegistry
                 new InventoryService(
                         jpa, transactionEntry, transactionCorrection, UiServiceRegistry::activeCompanyCode),
                 new CompanyAdminService(jpa),
-                new UserAdminService(jpa),
+                new UserAdminService(jpa, UiServiceRegistry::activeCompanyCode),
                 new FundBalanceService(jpa),
                 new ScheduleEligibilityService(jpa),
                 new LedgerQueryService(jpa),

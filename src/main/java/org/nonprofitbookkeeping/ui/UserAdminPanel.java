@@ -10,6 +10,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
@@ -17,42 +18,70 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.util.StringConverter;
 import org.nonprofitbookkeeping.model.AppRole;
 import org.nonprofitbookkeeping.model.AppUser;
-import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.UserCompanyRole;
+import org.nonprofitbookkeeping.service.AppRoleCommand;
+import org.nonprofitbookkeeping.service.AppRoleUsage;
+import org.nonprofitbookkeeping.service.AppUserCommand;
+import org.nonprofitbookkeeping.service.UserRoleAssignmentCommand;
+import org.nonprofitbookkeeping.service.UserRoleAssignmentEndCommand;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
-/** User, role, and company-assignment administration foundation panel. */
+/** Durable user, role, and active-company assignment-history maintenance. */
 public class UserAdminPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
+    private final TabPane tabs = new TabPane();
     private final TableView<AppUser> users = new TableView<>();
     private final TableView<AppRole> roles = new TableView<>();
     private final TableView<UserCompanyRole> assignments = new TableView<>();
     private final Label status = new Label("Ready.");
+    private final Label assignmentCompany = new Label(activeCompanyCode());
+    private final CompanyUiFormat companyFormat = CompanyUiFormat.activeCompany();
 
+    private final TextField actor = new TextField(factualActor());
     private final TextField username = new TextField();
     private final TextField displayName = new TextField();
     private final TextField email = new TextField();
-    private final CheckBox active = new CheckBox("Active");
-    private final ComboBox<String> assignUser = new ComboBox<>();
-    private final ComboBox<String> assignCompany = new ComboBox<>();
-    private final ComboBox<String> assignRole = new ComboBox<>();
+    private final CheckBox userActive = new CheckBox("Active");
+    private final TextField roleCode = new TextField();
+    private final TextField roleName = new TextField();
+    private final TextArea roleDescription = new TextArea();
+    private final CheckBox roleActive = new CheckBox("Active");
+    private final ComboBox<AppUser> assignUser = new ComboBox<>();
+    private final ComboBox<AppRole> assignRole = new ComboBox<>();
+    private final DatePicker assignmentStart = new DatePicker(LocalDate.now());
+    private final DatePicker assignmentEnd = new DatePicker(LocalDate.now());
+    private final TextField assignmentReason = new TextField();
+    private final Button endAssignment = new Button("End Selected");
+    private final Button revokeAssignment = new Button("Revoke Selected");
+
     private final FormDirtyTracker userDirty;
+    private final FormDirtyTracker roleDirty;
     private final FormDirtyTracker assignmentDirty;
+    private Long editingUserId;
+    private Long editingRoleId;
     private boolean suppressUserSelection;
+    private boolean suppressRoleSelection;
+    private Runnable commandCapabilitiesChangedListener = () -> { };
 
     public UserAdminPanel()
     {
         userDirty = new FormDirtyTracker(this::userSnapshot);
+        roleDirty = new FormDirtyTracker(this::roleSnapshot);
         assignmentDirty = new FormDirtyTracker(this::assignmentSnapshot);
         build();
         refresh();
@@ -62,15 +91,13 @@ public class UserAdminPanel implements AppPanel
     {
         Label title = new Label("User Admin");
         title.getStyleClass().add("panel-title");
-        Label help = new Label("Manage application users, roles, and company-specific role assignments. Authentication enforcement is a later slice.");
+        Label help = new Label("Maintain durable users, global role definitions, and dated role-assignment history for the active company. These records do not authenticate a login or enforce permissions.");
         help.setWrapText(true);
+        actor.setPromptText("Factual operator");
         Button refresh = new Button("Refresh");
-        refresh.setOnAction(e -> refreshWithDiscardProtection());
-        Button saveUser = new Button("Save User");
-        saveUser.setOnAction(e -> saveUser());
-        Button assign = new Button("Assign Role");
-        assign.setOnAction(e -> assignRole());
-        HBox actions = new HBox(8, refresh, saveUser, assign, status);
+        refresh.setOnAction(event -> refreshWithDiscardProtection());
+        HBox actions = new HBox(8, refresh, new Label("Audit actor"), actor, status);
+        HBox.setHgrow(actor, Priority.ALWAYS);
         VBox header = new VBox(6, title, help, actions);
         header.setPadding(new Insets(8));
         root.setTop(header);
@@ -78,59 +105,451 @@ public class UserAdminPanel implements AppPanel
         configureUsersTable();
         configureRolesTable();
         configureAssignmentsTable();
+        companyFormat.install(assignmentStart);
+        companyFormat.install(assignmentEnd);
+        configureConverters();
 
-        GridPane userForm = new GridPane();
-        userForm.setHgap(8);
-        userForm.setVgap(6);
-        userForm.setPadding(new Insets(8));
-        int r = 0;
-        userForm.addRow(r++, new Label("Username"), username);
-        userForm.addRow(r++, new Label("Display Name"), displayName);
-        userForm.addRow(r++, new Label("Email"), email);
-        userForm.add(active, 1, r++);
-        active.setSelected(true);
+        tabs.setId("userAdminMaintenanceTabs");
+        tabs.getTabs().setAll(
+                tab("Users", tableEditorSplit("userAdminUsersSplit", "Users", users,
+                        userEditor(), "user-admin-users")),
+                tab("Roles", tableEditorSplit("userAdminRolesSplit", "Roles", roles,
+                        roleEditor(), "user-admin-roles")),
+                tab("Company Assignments", tableEditorSplit(
+                        "userAdminAssignmentsSplit", "Assignment history for " + activeCompanyCode(),
+                        assignments, assignmentEditor(), "user-admin-assignments")),
+                tab("Authentication", authenticationDeferral()));
+        tabs.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, newTab) ->
+                commandCapabilitiesChangedListener.run());
+        root.setCenter(tabs);
+
+        users.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) ->
+                selectUser(oldValue, newValue));
+        roles.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) ->
+                selectRole(oldValue, newValue));
+        assignments.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            updateAssignmentActions(newValue);
+            assignmentEnd.setValue(LocalDate.now());
+            assignmentReason.clear();
+            assignmentDirty.markClean();
+        });
+    }
+
+    private Node userEditor()
+    {
+        GridPane form = formGrid();
+        int row = 0;
+        form.addRow(row++, new Label("Username"), username);
+        form.addRow(row++, new Label("Display Name"), displayName);
+        form.addRow(row++, new Label("Email"), email);
+        form.add(userActive, 1, row++);
+        Label lifecycle = explanatoryLabel("Users are never hard-deleted. End or revoke every active assignment before deactivating a user.");
+        form.add(lifecycle, 0, row++, 2, 1);
+        Button add = new Button("New User");
+        add.setOnAction(event -> newUser());
+        Button save = new Button("Save User");
+        save.setOnAction(event -> saveUser());
+        form.add(new HBox(8, add, save), 1, row);
+        return form;
+    }
+
+    private Node roleEditor()
+    {
+        GridPane form = formGrid();
+        int row = 0;
+        form.addRow(row++, new Label("Code"), roleCode);
+        form.addRow(row++, new Label("Name"), roleName);
+        form.addRow(row++, new Label("Description"), roleDescription);
+        form.add(roleActive, 1, row++);
+        roleDescription.setPrefRowCount(4);
+        Label lifecycle = explanatoryLabel("Roles are global definitions and are never hard-deleted. A role with active assignments must be ended or revoked before the role can be deactivated; historical assignments remain.");
+        form.add(lifecycle, 0, row++, 2, 1);
+        Button add = new Button("New Role");
+        add.setOnAction(event -> newRole());
+        Button save = new Button("Save Role");
+        save.setOnAction(event -> saveRole());
+        form.add(new HBox(8, add, save), 1, row);
+        return form;
+    }
+
+    private Node assignmentEditor()
+    {
+        GridPane form = formGrid();
+        int row = 0;
+        form.addRow(row++, new Label("Company"), assignmentCompany);
+        form.addRow(row++, new Label("User"), assignUser);
+        form.addRow(row++, new Label("Role"), assignRole);
+        form.addRow(row++, new Label("Start Date"), assignmentStart);
+        Label boundary = explanatoryLabel("Assignments are scoped to the active company. To change a user or role, end the existing assignment and create a new dated history row. Ending and revocation dates cannot be in the future.");
+        form.add(boundary, 0, row++, 2, 1);
+        Button add = new Button("New Assignment");
+        add.setOnAction(event -> newAssignment());
+        Button assign = new Button("Assign Role");
+        assign.setOnAction(event -> assignRole());
+        form.add(new HBox(8, add, assign), 1, row++);
+        form.addRow(row++, new Label("End / Revoke Date"), assignmentEnd);
+        form.addRow(row++, new Label("Reason"), assignmentReason);
+        endAssignment.setDisable(true);
+        endAssignment.setOnAction(event -> endAssignment(false));
+        revokeAssignment.setDisable(true);
+        revokeAssignment.setOnAction(event -> endAssignment(true));
+        form.add(new HBox(8, endAssignment, revokeAssignment), 1, row);
+        return form;
+    }
+
+    private Node authenticationDeferral()
+    {
+        Label deferred = explanatoryLabel("Authentication, passwords, login policy, identity providers, and runtime permission enforcement are intentionally deferred to a separately authorized security phase. The records maintained here are administrative history only.");
+        VBox content = new VBox(8, deferred);
+        content.setPadding(new Insets(12));
+        return content;
+    }
+
+    private GridPane formGrid()
+    {
+        GridPane form = new GridPane();
+        form.setHgap(8);
+        form.setVgap(6);
+        form.setPadding(new Insets(8));
         GridPane.setHgrow(username, Priority.ALWAYS);
         GridPane.setHgrow(displayName, Priority.ALWAYS);
         GridPane.setHgrow(email, Priority.ALWAYS);
-
-        GridPane assignForm = new GridPane();
-        assignForm.setHgap(8);
-        assignForm.setVgap(6);
-        assignForm.setPadding(new Insets(8));
-        int ar = 0;
-        assignForm.addRow(ar++, new Label("User"), assignUser);
-        assignForm.addRow(ar++, new Label("Company"), assignCompany);
-        assignForm.addRow(ar++, new Label("Role"), assignRole);
+        GridPane.setHgrow(roleCode, Priority.ALWAYS);
+        GridPane.setHgrow(roleName, Priority.ALWAYS);
+        GridPane.setHgrow(roleDescription, Priority.ALWAYS);
         GridPane.setHgrow(assignUser, Priority.ALWAYS);
-        GridPane.setHgrow(assignCompany, Priority.ALWAYS);
         GridPane.setHgrow(assignRole, Priority.ALWAYS);
+        GridPane.setHgrow(assignmentStart, Priority.ALWAYS);
+        GridPane.setHgrow(assignmentEnd, Priority.ALWAYS);
+        GridPane.setHgrow(assignmentReason, Priority.ALWAYS);
+        return form;
+    }
 
-        users.getSelectionModel().selectedItemProperty().addListener((obs, old, next) -> {
-            if (suppressUserSelection || next == null)
+    private Label explanatoryLabel(String text)
+    {
+        Label label = new Label(text);
+        label.setWrapText(true);
+        GridPane.setHgrow(label, Priority.ALWAYS);
+        return label;
+    }
+
+    private void configureUsersTable()
+    {
+        users.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        users.getColumns().setAll(
+                column("Username", AppUser::getUsername),
+                column("Display Name", AppUser::getDisplayName),
+                column("Email", AppUser::getEmail),
+                column("Status", user -> user.isActive() ? "Active" : "Inactive"));
+        users.setMinHeight(0.0);
+    }
+
+    private void configureRolesTable()
+    {
+        roles.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        roles.getColumns().setAll(
+                column("Code", AppRole::getCode),
+                column("Name", AppRole::getName),
+                column("Description", AppRole::getDescription),
+                column("Status", role -> role.isActive() ? "Active" : "Inactive"));
+        roles.setMinHeight(0.0);
+    }
+
+    private void configureAssignmentsTable()
+    {
+        assignments.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        assignments.getColumns().setAll(
+                column("User", assignment -> assignment.getUser().getUsername()),
+                column("Company", assignment -> assignment.getCompany().getCode()),
+                column("Role", assignment -> assignment.getRole().getCode()),
+                column("Start", assignment -> companyFormat.formatDate(assignment.getStartDate())),
+                column("End", assignment -> companyFormat.formatDate(assignment.getEndDate())),
+                column("Status", this::assignmentStatus),
+                column("Reason", UserCompanyRole::getEndReason));
+        assignments.setMinHeight(0.0);
+    }
+
+    private void configureConverters()
+    {
+        assignUser.setConverter(new StringConverter<>()
+        {
+            @Override public String toString(AppUser value)
             {
-                return;
+                return value == null ? "" : value.getUsername() + " — " + value.getDisplayName();
             }
-            if (userDirty.isDirty() && !confirmDiscard("user"))
+
+            @Override public AppUser fromString(String value)
             {
-                suppressUserSelection = true;
-                users.getSelectionModel().select(old);
-                suppressUserSelection = false;
-                return;
+                return null;
             }
-            populate(next);
         });
+        assignRole.setConverter(new StringConverter<>()
+        {
+            @Override public String toString(AppRole value)
+            {
+                return value == null ? "" : value.getCode() + " — " + value.getName();
+            }
 
-        TabPane tabs = new TabPane();
-        tabs.getTabs().add(tab("Users", tableEditorSplit(
-                "userAdminUsersSplit", "Users", users, userForm, "user-admin-users")));
-        VBox rolesRegion = new VBox(6, new Label("Roles"), roles);
-        rolesRegion.setMinHeight(0.0);
-        VBox.setVgrow(roles, Priority.ALWAYS);
-        tabs.getTabs().add(tab("Roles", rolesRegion));
-        tabs.getTabs().add(tab("Company Assignments", tableEditorSplit(
-                "userAdminAssignmentsSplit", "Company assignments", assignments, assignForm, "user-admin-assignments")));
-        tabs.getTabs().add(tab("Authentication", new Label("Password hashing, login policy, and local/external authentication are intentionally deferred to a later security slice.")));
-        root.setCenter(tabs);
+            @Override public AppRole fromString(String value)
+            {
+                return null;
+            }
+        });
+    }
+
+    private <T> TableColumn<T, String> column(
+            String title,
+            java.util.function.Function<T, String> extractor)
+    {
+        TableColumn<T, String> column = new TableColumn<>(title);
+        column.setCellValueFactory(data -> new SimpleStringProperty(
+                nullToBlank(extractor.apply(data.getValue()))));
+        column.setMinWidth(100);
+        column.setPrefWidth(Math.max(130, title.length() * 12));
+        return column;
+    }
+
+    private void refresh()
+    {
+        Long selectedUserId = selectedId(users.getSelectionModel().getSelectedItem());
+        Long selectedRoleId = selectedId(roles.getSelectionModel().getSelectedItem());
+        Long selectedAssignmentId = selectedId(assignments.getSelectionModel().getSelectedItem());
+        try
+        {
+            userDirty.markClean();
+            roleDirty.markClean();
+            assignmentDirty.markClean();
+            List<AppUser> userRows = UiServiceRegistry.userAdmin().listUsers();
+            List<AppRole> roleRows = UiServiceRegistry.userAdmin().listRoles();
+            List<UserCompanyRole> assignmentRows = UiServiceRegistry.userAdmin().listAssignments();
+            users.setItems(FXCollections.observableArrayList(userRows));
+            roles.setItems(FXCollections.observableArrayList(roleRows));
+            assignments.setItems(FXCollections.observableArrayList(assignmentRows));
+            assignUser.setItems(FXCollections.observableArrayList(
+                    userRows.stream().filter(AppUser::isActive).toList()));
+            assignRole.setItems(FXCollections.observableArrayList(
+                    roleRows.stream().filter(AppRole::isActive).toList()));
+            selectById(users, selectedUserId);
+            selectById(roles, selectedRoleId);
+            selectById(assignments, selectedAssignmentId);
+            if (users.getSelectionModel().getSelectedItem() == null && !userRows.isEmpty())
+            {
+                users.getSelectionModel().select(0);
+            }
+            if (roles.getSelectionModel().getSelectedItem() == null && !roleRows.isEmpty())
+            {
+                roles.getSelectionModel().select(0);
+            }
+            status.setText("Loaded " + userRows.size() + " user(s), " + roleRows.size()
+                    + " role(s), and " + assignmentRows.size() + " assignment history row(s) for "
+                    + activeCompanyCode() + ".");
+            userDirty.markClean();
+            roleDirty.markClean();
+            assignmentDirty.markClean();
+            updateAssignmentActions(assignments.getSelectionModel().getSelectedItem());
+        }
+        catch (RuntimeException ex)
+        {
+            status.setText("Could not load User Admin: " + UiErrors.safeMessage(ex));
+        }
+    }
+
+    private void saveUser()
+    {
+        try
+        {
+            AppUser saved = UiServiceRegistry.userAdmin().saveUser(new AppUserCommand(
+                    editingUserId, username.getText(), displayName.getText(), email.getText(),
+                    userActive.isSelected(), actor.getText()));
+            editingUserId = saved.getId();
+            status.setText("Saved user " + saved.getUsername() + " by stable ID " + saved.getId() + ".");
+            refresh();
+            selectById(users, saved.getId());
+        }
+        catch (RuntimeException ex)
+        {
+            status.setText("Could not save user: " + UiErrors.safeMessage(ex));
+        }
+    }
+
+    private void saveRole()
+    {
+        try
+        {
+            AppRole saved = UiServiceRegistry.userAdmin().saveRole(new AppRoleCommand(
+                    editingRoleId, roleCode.getText(), roleName.getText(), roleDescription.getText(),
+                    roleActive.isSelected(), actor.getText()));
+            editingRoleId = saved.getId();
+            AppRoleUsage usage = UiServiceRegistry.userAdmin().roleUsage(saved.getId());
+            status.setText("Saved role " + saved.getCode() + " by stable ID " + saved.getId()
+                    + "; " + usage.activeAssignments() + " active and "
+                    + usage.historicalAssignments() + " historical assignment(s).");
+            refresh();
+            selectById(roles, saved.getId());
+        }
+        catch (RuntimeException ex)
+        {
+            status.setText("Could not save role: " + UiErrors.safeMessage(ex));
+        }
+    }
+
+    private void assignRole()
+    {
+        try
+        {
+            AppUser user = assignUser.getValue();
+            AppRole role = assignRole.getValue();
+            UserCompanyRole saved = UiServiceRegistry.userAdmin().assignRole(
+                    new UserRoleAssignmentCommand(
+                            user == null ? null : user.getId(),
+                            role == null ? null : role.getId(),
+                            assignmentStart.getValue(),
+                            actor.getText()));
+            status.setText("Assigned " + saved.getRole().getCode() + " to "
+                    + saved.getUser().getUsername() + " for " + activeCompanyCode() + ".");
+            refresh();
+            selectById(assignments, saved.getId());
+        }
+        catch (RuntimeException ex)
+        {
+            status.setText("Could not assign role: " + UiErrors.safeMessage(ex));
+        }
+    }
+
+    private void endAssignment(boolean revoked)
+    {
+        UserCompanyRole selected = assignments.getSelectionModel().getSelectedItem();
+        if (selected == null)
+        {
+            status.setText("Select an active assignment to end or revoke.");
+            return;
+        }
+        try
+        {
+            UserCompanyRole saved = UiServiceRegistry.userAdmin().endAssignment(
+                    new UserRoleAssignmentEndCommand(
+                            selected.getId(), assignmentEnd.getValue(), revoked,
+                            assignmentReason.getText(), actor.getText()));
+            status.setText((revoked ? "Revoked " : "Ended ") + saved.getRole().getCode()
+                    + " for " + saved.getUser().getUsername() + "; history row "
+                    + saved.getId() + " was retained.");
+            refresh();
+            selectById(assignments, saved.getId());
+        }
+        catch (RuntimeException ex)
+        {
+            status.setText("Could not " + (revoked ? "revoke" : "end")
+                    + " assignment: " + UiErrors.safeMessage(ex));
+        }
+    }
+
+    private void selectUser(AppUser oldValue, AppUser newValue)
+    {
+        if (suppressUserSelection || newValue == null)
+        {
+            return;
+        }
+        if (userDirty.isDirty() && !confirmDiscard("user"))
+        {
+            suppressUserSelection = true;
+            users.getSelectionModel().select(oldValue);
+            suppressUserSelection = false;
+            return;
+        }
+        editingUserId = newValue.getId();
+        username.setText(newValue.getUsername());
+        displayName.setText(newValue.getDisplayName());
+        email.setText(nullToBlank(newValue.getEmail()));
+        userActive.setSelected(newValue.isActive());
+        userDirty.markClean();
+    }
+
+    private void selectRole(AppRole oldValue, AppRole newValue)
+    {
+        if (suppressRoleSelection || newValue == null)
+        {
+            return;
+        }
+        if (roleDirty.isDirty() && !confirmDiscard("role"))
+        {
+            suppressRoleSelection = true;
+            roles.getSelectionModel().select(oldValue);
+            suppressRoleSelection = false;
+            return;
+        }
+        editingRoleId = newValue.getId();
+        roleCode.setText(newValue.getCode());
+        roleName.setText(newValue.getName());
+        roleDescription.setText(nullToBlank(newValue.getDescription()));
+        roleActive.setSelected(newValue.isActive());
+        roleDirty.markClean();
+    }
+
+    private void newUser()
+    {
+        if (userDirty.isDirty() && !confirmDiscard("user"))
+        {
+            status.setText("New user cancelled; unsaved changes remain.");
+            return;
+        }
+        suppressUserSelection = true;
+        users.getSelectionModel().clearSelection();
+        suppressUserSelection = false;
+        editingUserId = null;
+        username.clear();
+        displayName.clear();
+        email.clear();
+        userActive.setSelected(true);
+        userDirty.markClean();
+        status.setText("Ready to create a user.");
+    }
+
+    private void newRole()
+    {
+        if (roleDirty.isDirty() && !confirmDiscard("role"))
+        {
+            status.setText("New role cancelled; unsaved changes remain.");
+            return;
+        }
+        suppressRoleSelection = true;
+        roles.getSelectionModel().clearSelection();
+        suppressRoleSelection = false;
+        editingRoleId = null;
+        roleCode.clear();
+        roleName.clear();
+        roleDescription.clear();
+        roleActive.setSelected(true);
+        roleDirty.markClean();
+        status.setText("Ready to create a global role definition.");
+    }
+
+    private void newAssignment()
+    {
+        assignments.getSelectionModel().clearSelection();
+        assignUser.getSelectionModel().clearSelection();
+        assignRole.getSelectionModel().clearSelection();
+        assignmentStart.setValue(LocalDate.now());
+        assignmentEnd.setValue(LocalDate.now());
+        assignmentReason.clear();
+        assignmentDirty.markClean();
+        updateAssignmentActions(null);
+        status.setText("Ready to create an assignment for " + activeCompanyCode() + ".");
+    }
+
+    private void updateAssignmentActions(UserCompanyRole selected)
+    {
+        boolean unavailable = selected == null || !selected.isActive();
+        endAssignment.setDisable(unavailable);
+        revokeAssignment.setDisable(unavailable);
+    }
+
+    private String assignmentStatus(UserCompanyRole assignment)
+    {
+        if (assignment.isActive())
+        {
+            return assignment.getStartDate().isAfter(LocalDate.now()) ? "Scheduled" : "Active";
+        }
+        return assignment.getRevokedAt() == null ? "Ended" : "Revoked";
     }
 
     private Tab tab(String label, Node content)
@@ -140,154 +559,12 @@ public class UserAdminPanel implements AppPanel
         return tab;
     }
 
-    private void configureUsersTable()
-    {
-        users.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        users.getColumns().setAll(
-                col("Username", AppUser::getUsername),
-                col("Display Name", AppUser::getDisplayName),
-                col("Email", AppUser::getEmail),
-                col("Active", u -> String.valueOf(u.isActive()))
-        );
-        users.setMinHeight(0.0);
-    }
-
-    private void configureRolesTable()
-    {
-        roles.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        roles.getColumns().setAll(
-                col("Code", AppRole::getCode),
-                col("Name", AppRole::getName),
-                col("Description", AppRole::getDescription)
-        );
-        roles.setMinHeight(0.0);
-    }
-
-    private void configureAssignmentsTable()
-    {
-        assignments.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        assignments.getColumns().setAll(
-                col("User", a -> a.getUser().getUsername()),
-                col("Company", a -> a.getCompany().getCode()),
-                col("Role", a -> a.getRole().getCode()),
-                col("Active", a -> String.valueOf(a.isActive()))
-        );
-        assignments.setMinHeight(0.0);
-    }
-
-    private <T> TableColumn<T, String> col(String title, java.util.function.Function<T, String> extractor)
-    {
-        TableColumn<T, String> col = new TableColumn<>(title);
-        col.setCellValueFactory(data -> new SimpleStringProperty(nullToBlank(extractor.apply(data.getValue()))));
-        col.setMinWidth(120);
-        col.setPrefWidth(Math.max(140, title.length() * 12));
-        return col;
-    }
-
-    private void populate(AppUser user)
-    {
-        username.setText(user.getUsername());
-        displayName.setText(user.getDisplayName());
-        email.setText(nullToBlank(user.getEmail()));
-        active.setSelected(user.isActive());
-        userDirty.markClean();
-    }
-
-    private void refresh()
-    {
-        try
-        {
-            List<AppUser> userRows = UiServiceRegistry.userAdmin().listUsers();
-            List<AppRole> roleRows = UiServiceRegistry.userAdmin().listRoles();
-            List<Company> companyRows = UiServiceRegistry.companyAdmin().listCompanies();
-            List<UserCompanyRole> assignmentRows = UiServiceRegistry.userAdmin().listAssignments();
-            users.setItems(FXCollections.observableArrayList(userRows));
-            roles.setItems(FXCollections.observableArrayList(roleRows));
-            assignments.setItems(FXCollections.observableArrayList(assignmentRows));
-            assignUser.setItems(FXCollections.observableArrayList(userRows.stream().map(AppUser::getUsername).toList()));
-            assignRole.setItems(FXCollections.observableArrayList(roleRows.stream().map(AppRole::getCode).toList()));
-            assignCompany.setItems(FXCollections.observableArrayList(companyRows.stream().map(Company::getCode).toList()));
-            if (!userRows.isEmpty() && users.getSelectionModel().getSelectedItem() == null)
-            {
-                users.getSelectionModel().select(0);
-            }
-            status.setText("Loaded " + userRows.size() + " user(s), " + assignmentRows.size() + " assignment(s).");
-            userDirty.markClean();
-            assignmentDirty.markClean();
-        }
-        catch (RuntimeException ex)
-        {
-            status.setText("Could not load users: " + UiErrors.safeMessage(ex));
-        }
-    }
-
-    private void saveUser()
-    {
-        try
-        {
-            AppUser saved = UiServiceRegistry.userAdmin().upsertUser(username.getText(), displayName.getText(), email.getText(), active.isSelected());
-            userDirty.markClean();
-            status.setText("Saved user " + saved.getUsername() + ".");
-            refresh();
-        }
-        catch (RuntimeException ex)
-        {
-            status.setText("Could not save user: " + UiErrors.safeMessage(ex));
-        }
-    }
-
-    private void assignRole()
-    {
-        try
-        {
-            UserCompanyRole assignment = UiServiceRegistry.userAdmin().assignRole(assignUser.getValue(), assignCompany.getValue(), assignRole.getValue());
-            assignmentDirty.markClean();
-            status.setText("Assigned " + assignment.getRole().getCode() + " to " + assignment.getUser().getUsername() + " for " + assignment.getCompany().getCode() + ".");
-            refresh();
-        }
-        catch (RuntimeException ex)
-        {
-            status.setText("Could not assign role: " + UiErrors.safeMessage(ex));
-        }
-    }
-
-    private String nullToBlank(String value)
-    {
-        return value == null ? "" : value;
-    }
-
-    @Override public String title() { return "User Admin"; }
-    @Override public Node root() { return root; }
-    @Override
-    public java.util.Set<AppCommand> commandCapabilities()
-    {
-        return AppPanel.capabilities(AppCommand.NEW_ACTIVE, AppCommand.SAVE_ACTIVE);
-    }
-    @Override public void onSave() { if (userDirty.isDirty()) saveUser(); else if (assignmentDirty.isDirty()) assignRole(); else saveUser(); }
-    @Override
-    public void onNew()
-    {
-        if (!userDirty.isDirty() || confirmDiscard("user"))
-        {
-            clearUserForm();
-        }
-        else
-        {
-            status.setText("New user cancelled; unsaved changes remain.");
-        }
-    }
-    @Override
-    public String commandResultMessage(AppCommand command)
-    {
-        return status.getText();
-    }
-    @Override public boolean hasUnsavedChanges() { return userDirty.isDirty() || assignmentDirty.isDirty(); }
-
-    private Node tableEditorSplit(String id,
-                                  String tableLabel,
-                                  TableView<?> table,
-                                  Node editor,
-                                  String stateKey)
+    private Node tableEditorSplit(
+            String id,
+            String tableLabel,
+            TableView<?> table,
+            Node editor,
+            String stateKey)
     {
         VBox tableRegion = new VBox(6, new Label(tableLabel), table);
         tableRegion.setMinHeight(0.0);
@@ -307,30 +584,26 @@ public class UserAdminPanel implements AppPanel
 
     private UserSnapshot userSnapshot()
     {
-        return new UserSnapshot(username.getText(), displayName.getText(), email.getText(), active.isSelected());
+        return new UserSnapshot(
+                editingUserId, username.getText(), displayName.getText(), email.getText(), userActive.isSelected());
+    }
+
+    private RoleSnapshot roleSnapshot()
+    {
+        return new RoleSnapshot(
+                editingRoleId, roleCode.getText(), roleName.getText(), roleDescription.getText(),
+                roleActive.isSelected());
     }
 
     private AssignmentSnapshot assignmentSnapshot()
     {
-        return new AssignmentSnapshot(assignUser.getValue(), assignCompany.getValue(), assignRole.getValue());
-    }
-
-    private void clearUserForm()
-    {
-        suppressUserSelection = true;
-        users.getSelectionModel().clearSelection();
-        suppressUserSelection = false;
-        username.clear();
-        displayName.clear();
-        email.clear();
-        active.setSelected(true);
-        userDirty.markClean();
-        status.setText("Ready to create a user.");
+        return new AssignmentSnapshot(
+                selectedId(assignUser.getValue()), selectedId(assignRole.getValue()), assignmentStart.getValue());
     }
 
     private void refreshWithDiscardProtection()
     {
-        if (!hasUnsavedChanges() || confirmDiscard("user or assignment"))
+        if (!hasUnsavedChanges() || confirmDiscard("user, role, or assignment"))
         {
             refresh();
         }
@@ -345,16 +618,128 @@ public class UserAdminPanel implements AppPanel
         return confirmation.showAndWait().filter(ButtonType.OK::equals).isPresent();
     }
 
-    private record UserSnapshot(String username, String displayName, String email, boolean active)
+    @Override public String title() { return "User Admin"; }
+    @Override public Node root() { return root; }
+
+    @Override
+    public Set<AppCommand> commandCapabilities()
+    {
+        return selectedMaintenanceTab() ? AppPanel.capabilities(AppCommand.NEW_ACTIVE, AppCommand.SAVE_ACTIVE)
+                : Set.of();
+    }
+
+    @Override
+    public void onSave()
+    {
+        switch (selectedTabIndex())
+        {
+            case 0 -> saveUser();
+            case 1 -> saveRole();
+            case 2 -> assignRole();
+            default -> throw new UnsupportedOperationException("Save is not available on Authentication.");
+        }
+    }
+
+    @Override
+    public void onNew()
+    {
+        switch (selectedTabIndex())
+        {
+            case 0 -> newUser();
+            case 1 -> newRole();
+            case 2 -> newAssignment();
+            default -> throw new UnsupportedOperationException("New is not available on Authentication.");
+        }
+    }
+
+    @Override
+    public void setCommandCapabilitiesChangedListener(Runnable listener)
+    {
+        commandCapabilitiesChangedListener = Objects.requireNonNull(listener, "listener");
+        commandCapabilitiesChangedListener.run();
+    }
+
+    @Override public String commandResultMessage(AppCommand command) { return status.getText(); }
+    @Override public boolean hasUnsavedChanges()
+    {
+        return userDirty.isDirty() || roleDirty.isDirty() || assignmentDirty.isDirty();
+    }
+
+    private boolean selectedMaintenanceTab()
+    {
+        return selectedTabIndex() >= 0 && selectedTabIndex() <= 2;
+    }
+
+    private int selectedTabIndex()
+    {
+        return tabs.getSelectionModel().getSelectedIndex();
+    }
+
+    private static Long selectedId(Object value)
+    {
+        if (value instanceof AppUser user)
+        {
+            return user.getId();
+        }
+        if (value instanceof AppRole role)
+        {
+            return role.getId();
+        }
+        if (value instanceof UserCompanyRole assignment)
+        {
+            return assignment.getId();
+        }
+        return null;
+    }
+
+    private static <T> void selectById(TableView<T> table, Long id)
+    {
+        if (id == null)
+        {
+            return;
+        }
+        table.getItems().stream()
+                .filter(value -> id.equals(selectedId(value)))
+                .findFirst()
+                .ifPresent(value -> table.getSelectionModel().select(value));
+    }
+
+    private static String activeCompanyCode()
+    {
+        String value = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
+        return value == null || value.isBlank() ? "DEFAULT" : value.trim().toUpperCase();
+    }
+
+    private static String factualActor()
+    {
+        String value = System.getProperty("user.name");
+        return value == null || value.isBlank() ? "local operator" : value.trim();
+    }
+
+    private static String nullToBlank(String value)
+    {
+        return value == null ? "" : value;
+    }
+
+    private record UserSnapshot(Long id, String username, String displayName, String email, boolean active)
     {
     }
 
-    private record AssignmentSnapshot(String user, String company, String role)
+    private record RoleSnapshot(Long id, String code, String name, String description, boolean active)
+    {
+    }
+
+    private record AssignmentSnapshot(Long userId, Long roleId, LocalDate startDate)
     {
     }
 
     void setUsernameForTests(String value)
     {
         username.setText(value);
+    }
+
+    TabPane tabsForTests()
+    {
+        return tabs;
     }
 }
