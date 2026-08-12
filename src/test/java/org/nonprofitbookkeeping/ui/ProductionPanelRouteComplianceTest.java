@@ -43,6 +43,11 @@ class ProductionPanelRouteComplianceTest
                 ProductionWorkspaceWindow window = new ProductionWorkspaceWindow(
                         stateStore,
                         UiServiceRegistry::prepareDatabaseConnection);
+                javafx.scene.Scene scene = new javafx.scene.Scene(window, 1280, 800);
+                window.applyCss();
+                window.layout();
+                assertEquals(1280.0, scene.getWidth(),
+                        "Production smoke must exercise the canonical laptop-width contract.");
                 PanelFactory routeInventory = new PanelFactory();
                 Set<AppPanelId> canonicalRoutes = new LinkedHashSet<>();
                 routeInventory.supportedPanelIds().stream()
@@ -59,8 +64,27 @@ class ProductionPanelRouteComplianceTest
                 for (AppPanelId panelId : canonicalRoutes)
                 {
                     window.openPanel(panelId);
+                    window.applyCss();
+                    window.layout();
                     javafx.scene.Node root = window.panelHost().activeRoot();
                     assertNotNull(root, panelId + " must create a production root.");
+                    Set<AppCommand> capabilities = window.panelHost().activeCommandCapabilities();
+                    assertNotNull(capabilities, panelId + " must declare factual command capabilities.");
+                    for (AppCommand command : EnumSet.of(
+                            AppCommand.NEW_ACTIVE,
+                            AppCommand.SAVE_ACTIVE,
+                            AppCommand.POST_VALIDATE))
+                    {
+                        if (!capabilities.contains(command))
+                        {
+                            AppPanel.RunCommandResult unavailable =
+                                    window.panelHost().executeActive(command);
+                            assertFalse(unavailable.handled(),
+                                    panelId + " must not claim an unsupported command.");
+                            assertTrue(unavailable.message().contains("not available"),
+                                    panelId + " must explain why " + command + " is unavailable.");
+                        }
+                    }
                     for (javafx.scene.control.TableView<?> table
                             : CompanyTableStateBinder.findTables(root))
                     {

@@ -220,7 +220,6 @@ All UI designs must consult these UI design rules:
 doc/interface-operation-matrix.md
 doc/ui_design_rules.md
 doc/ui/editor-guidelines.md
-architecture/dashboard-composition.md
 Schedule or make any changes needed to conform with these requirements. If there are changes, this returns to Step 3.
 
 ### Step 6 — GitHub validation
@@ -394,7 +393,6 @@ All UI designs must consult these UI design rules:
 doc/interface-operation-matrix.md
 doc/ui_design_rules.md
 doc/ui/editor-guidelines.md
-architecture/dashboard-composition.md
 
 The approved compact white-and-blue reference is the visual direction.
 
