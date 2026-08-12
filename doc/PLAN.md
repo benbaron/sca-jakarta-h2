@@ -1,12 +1,12 @@
 ---
-plan_version: 181
+plan_version: 186
 active_phase: P16
-active_slice: P16-S17
-active_status: VERIFYING
-active_branch: codex/P16-S17-end-to-end-closure
-active_pull_request: 269
-active_head: 9fb7156c2422a372cb79436e63430e9f2e2b840d
-next_action: "Validate the CI-evidence handoff commit, then complete doc/P16-S17-end-to-end-closure-user-testing.md on the exact final green PR #269 head before merge or marking P16 DONE."
+active_slice: P16-C1
+active_status: DONE
+active_branch: null
+active_pull_request: 270
+active_head: 172422fcb9ea44f5f6f0c40294d6b48272413c21
+next_action: "No P17 or other later phase is authorized without an explicit owner-approved plan amendment."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Validate the CI-evidence handoff commit, then complete doc/P16-S17
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P15 as DONE and authorizes P16 to correct the incomplete or misleading interface-to-service paths found by the post-P15 production audit. P16 is ordered by data-integrity risk and preserves the established single-ledger, company-ownership, reconciliation-protection, and explicit-acceptance boundaries.
+This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, then closes P16 through documentation-only P16-C1 / PR #270. No P17 or other later feature phase is authorized without an explicit owner-approved plan amendment.
 
 ## 2. Status values
 
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS through P16-S17; P16-S16 DONE through PR #268 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | DONE through P16-C1 / PR #270 |
 
 ## 4. Governing documents
 
@@ -1880,7 +1880,7 @@ Required behavior: genuine Inventory item add/edit and movement history, no runb
 # P16 — Interface-to-authority completion and integrity corrections
 
 **Selector:** `PHASE=P16`  
-**Status:** IN_PROGRESS through P16-S17; P16-S16 DONE through PR #268
+**Status:** DONE through P16-S17, merged PR #269, owner acceptance, and documentation-only P16-C1 / PR #270
 **Depends on:** P03 through P15 except eliminated P07
 
 ## Purpose
@@ -2676,7 +2676,7 @@ Next exact action:
 
 ## P16-S17 — End-to-end closure
 
-Status: VERIFYING in draft PR #269 on branch `codex/P16-S17-end-to-end-closure` from exact P16-S16 merge `3776bcd3df29550c4acf615fe6376375de3e29fc`.
+Status: DONE through merged PR #269 and owner desktop acceptance.
 
 Purpose: prove the corrected interface-to-authority chain and close P16 only after production desktop acceptance.
 
@@ -2698,12 +2698,44 @@ Implementation progress:
 
 - `P16EndToEndClosureTest` now exercises one migrated file across two companies and restart, combining injected late COA rollback with depreciation, inventory accounting, stable budget activation, canonical bank/Journaling facts, finalized-reconciliation mutation protection, closed-period rejection, company-switched asset/inventory report catalogs, and factual audit durability.
 - `ProductionPanelRouteComplianceTest` now composes every canonical route at 1280 × 800 and verifies each panel's declared command capabilities, factual unsupported-command response, company-owned table state, unconstrained resize policy, and sortable/resizable/reorderable columns.
-- `doc/P16-S17-end-to-end-closure-user-testing.md` is the exact-head desktop acceptance checklist and maps every S17 contract to its authoritative focused test evidence. Owner result remains PENDING.
+- `doc/P16-S17-end-to-end-closure-user-testing.md` is the exact-head desktop acceptance checklist and maps every S17 contract to its authoritative focused test evidence. The owner completed and accepted that checklist.
 - The closure audit reconciles stale governance text: the nonexistent `architecture/dashboard-composition.md` requirement is removed, authority inventories are current through active S17, and the COA JSON contract records the already-accepted/merged PR #197 state.
 - Local implementation commit `a2e5fb03e0116e40bd4d3abeece8db1391c90d6e` contains the focused seven-file closure boundary. Both modified Java sources pass Java 17 grammar parsing, every test named by the closure evidence manifest resolves to an existing source, and `git diff --check` passes.
 - The approved local implementation and plan-handoff trees were published without rewriting their content as remote commits `122a916350575c6f87265e5d63342bb27fadb403` and `1e0e075967445939a63488dc87c50a79f1c58728`; draft PR #269 targets `main`, and both remote tree SHAs exactly match the reviewed local trees.
-- Exact plan-inclusive head `9fb7156c2422a372cb79436e63430e9f2e2b840d` passed Maven PR Tests run `31567353726`: clean `mvn clean verify` and the deliberate repeated suite each ran 646 tests with 0 failures/errors and 34 skips; all 9 production JavaFX route/source compliance tests passed. Owner desktop acceptance remains pending.
+- Exact plan-inclusive head `9fb7156c2422a372cb79436e63430e9f2e2b840d` passed Maven PR Tests run `31567353726`: clean `mvn clean verify` and the deliberate repeated suite each ran 646 tests with 0 failures/errors and 34 skips; all 9 production JavaFX route/source compliance tests passed. Owner desktop acceptance remained pending at that intermediate head.
+- Exact final PR head `105afc559ac662b70e5d250753e5edef17be1f90` passed Maven PR Tests run `31567672108`: clean `mvn clean verify` and the deliberate repeated suite each ran 646 tests with 0 failures/errors and 34 skips; all 9 production JavaFX route/source compliance tests passed.
+- The owner completed and accepted the P16-S17 desktop checklist, and PR #269 merged to `main` at `929ff7c80e191f5dd616197918dfa7daef3c75bc` on 2026-08-12.
 
 Next exact action:
 
-- Validate the CI-evidence handoff commit, then complete `doc/P16-S17-end-to-end-closure-user-testing.md` on the exact final green PR #269 head. Keep P16 and P16-S17 out of DONE until the accepted final head merges.
+- None; P16-S17 is DONE and documentation-only P16-C1 is active.
+
+## P16-C1 — Final plan-ledger reconciliation
+
+Status: DONE through documentation-only PR #270.
+
+Branch: `codex/P16-C1-finalize-plan-ledger`
+Pull request: #270
+Base head: `929ff7c80e191f5dd616197918dfa7daef3c75bc`
+
+Purpose:
+
+- Record the owner-confirmed P16-S17 desktop closure after product PR #269 merged with the slice still marked `VERIFYING`.
+- Mark P16-S17 and P16 DONE only through a fresh documentation-only PR from current `main`.
+- Reconcile the phase index, active front matter, P16 status, final CI evidence, merge evidence, and next action without changing product code.
+- Leave P17 and all other later feature work unauthorized until an explicit owner-approved plan amendment defines it.
+
+Validation status:
+
+- PR #269 final head `105afc559ac662b70e5d250753e5edef17be1f90` passed all three repository gates in Maven PR Tests run `31567672108` before merging at `929ff7c80e191f5dd616197918dfa7daef3c75bc`.
+- The owner confirmed the complete P16-S17 desktop checklist after that exact-head validation and merge.
+- Activation commit `58c12cb6af4cc437b6c52827ad717f324d8ce1e8` is based on that exact merge and changes only `doc/PLAN.md`; `git diff --check` passes.
+- The two approved local trees were published through the connected GitHub service as remote commits `ffc5dde86dc84fb41fbe2542aebd545134d0ebac` and `acad647994ff087d579ff2e66b23fc76dbf35d80`; their tree and `PLAN.md` blob SHAs exactly match local commits `58c12cb6af4cc437b6c52827ad717f324d8ce1e8` and `9979d0d6881f0a09dba3aa2a6bb5539c66ed0007`.
+- Draft PR #270 targets `main` from `codex/P16-C1-finalize-plan-ledger` and contains only `doc/PLAN.md`.
+- Exact plan-inclusive PR head `e7277ae987d4a508cecff60de584b1083b9d16a8` passed Maven PR Tests run `31611849457`: clean `mvn clean verify`, the deliberately repeated full suite, and production JavaFX route compliance all succeeded.
+- Exact CI-evidence head `172422fcb9ea44f5f6f0c40294d6b48272413c21` passed Maven PR Tests run `31612424174`: clean `mvn clean verify`, the deliberately repeated full suite, and production JavaFX route compliance all succeeded.
+- This closure slice changes only `doc/PLAN.md`; the exact completion-state head must pass authoritative PR validation before PR #270 merges these DONE records to `main`.
+
+Next exact action:
+
+- Merge PR #270 only after its exact completion-state head passes Maven PR Tests. No P17 or other later phase is authorized by the current plan.
