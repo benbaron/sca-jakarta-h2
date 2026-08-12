@@ -19,21 +19,22 @@ class UserRoleAssignmentLifecycleMigrationTest
         {
             assertEquals(1L, count(em, """
                     select count(*) from information_schema.columns
-                    where table_name = 'APP_ROLE' and column_name = 'IS_ACTIVE'
+                    where lower(table_name) = 'app_role' and lower(column_name) = 'is_active'
                     """));
             assertEquals(1L, count(em, """
                     select count(*) from information_schema.columns
-                    where table_name = 'USER_COMPANY_ROLE' and column_name = 'START_DATE'
+                    where lower(table_name) = 'user_company_role'
+                      and lower(column_name) = 'start_date'
                     """));
             assertEquals(1L, count(em, """
                     select count(*) from information_schema.table_constraints
-                    where table_name = 'USER_COMPANY_ROLE'
-                      and constraint_name = 'UQ_USER_COMPANY_ROLE_PERIOD'
+                    where lower(table_name) = 'user_company_role'
+                      and lower(constraint_name) = 'uq_user_company_role_period'
                     """));
             assertEquals(1L, count(em, """
                     select count(*) from information_schema.table_constraints
-                    where table_name = 'USER_COMPANY_ROLE'
-                      and constraint_name = 'CK_USER_COMPANY_ROLE_ACTIVE_END'
+                    where lower(table_name) = 'user_company_role'
+                      and lower(constraint_name) = 'ck_user_company_role_active_end'
                     """));
 
             em.getTransaction().begin();

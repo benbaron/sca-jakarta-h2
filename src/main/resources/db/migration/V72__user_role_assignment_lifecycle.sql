@@ -28,11 +28,11 @@ UPDATE user_company_role SET end_date = start_date
 WHERE is_active = FALSE AND end_date IS NULL;
 
 ALTER TABLE user_company_role DROP CONSTRAINT IF EXISTS uq_user_company_role;
-ALTER TABLE user_company_role ADD CONSTRAINT uq_user_company_role_period
+ALTER TABLE user_company_role ADD CONSTRAINT IF NOT EXISTS uq_user_company_role_period
     UNIQUE (user_id, company_id, role_id, start_date);
-ALTER TABLE user_company_role ADD CONSTRAINT ck_user_company_role_dates
+ALTER TABLE user_company_role ADD CONSTRAINT IF NOT EXISTS ck_user_company_role_dates
     CHECK (end_date IS NULL OR end_date >= start_date);
-ALTER TABLE user_company_role ADD CONSTRAINT ck_user_company_role_active_end
+ALTER TABLE user_company_role ADD CONSTRAINT IF NOT EXISTS ck_user_company_role_active_end
     CHECK ((is_active = TRUE AND end_date IS NULL AND revoked_at IS NULL)
         OR (is_active = FALSE AND end_date IS NOT NULL));
 
