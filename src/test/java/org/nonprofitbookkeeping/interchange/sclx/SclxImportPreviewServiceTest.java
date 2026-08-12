@@ -123,7 +123,7 @@ class SclxImportPreviewServiceTest
     @Test
     void previewsDonorCompatibilityDecisionsAsExplicitNonBlockingWarnings()
     {
-        Path source = Path.of("src/test/resources/data-exchange/sclx/valid/donor-sclx-1.3.json");
+        Path source = Path.of("src/test/resources/compatibility/sclx/donor-sclx-1.3.json");
 
         SclxImportPreview preview = service(emptyTarget("TEST")).preview(source);
         Set<String> codes = preview.operation().messages().stream()
@@ -148,7 +148,7 @@ class SclxImportPreviewServiceTest
     void blocksNonZeroDonorBudgetsInsteadOfDiscardingThem() throws Exception
     {
         String donor = Files.readString(Path.of(
-                "src/test/resources/data-exchange/sclx/valid/donor-sclx-1.3.json"));
+                "src/test/resources/compatibility/sclx/donor-sclx-1.3.json"));
         Path source = tempDir.resolve("non-zero-donor-budget.sclx");
         Files.writeString(source, donor.replace(
                 "\"budgetedAmount\": 0.00", "\"budgetedAmount\": 1.00"));
@@ -164,7 +164,7 @@ class SclxImportPreviewServiceTest
     void blocksFundlessDonorLinesWhenGeneralFundCannotBeIdentified() throws Exception
     {
         String donor = Files.readString(Path.of(
-                "src/test/resources/data-exchange/sclx/valid/donor-sclx-1.3.json"));
+                "src/test/resources/compatibility/sclx/donor-sclx-1.3.json"));
         Path source = tempDir.resolve("missing-general-fund.sclx");
         Files.writeString(source, donor.replace("General Fund", "Operating Fund"));
 

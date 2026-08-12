@@ -63,7 +63,7 @@ class SclxDocumentParserTest
     void normalizesBoundedDonorAliasesWithoutChangingSourceIdentity() throws Exception
     {
         byte[] bytes = Files.readAllBytes(Path.of(
-                "src/test/resources/data-exchange/sclx/valid/donor-sclx-1.3.json"));
+                "src/test/resources/compatibility/sclx/donor-sclx-1.3.json"));
 
         SclxParsedDocument document = parser.parse(bytes);
 

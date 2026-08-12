@@ -71,7 +71,7 @@ class SclxImportCommitServiceTest
     @Test
     void importsNormalizedDonorDocumentAndPreservesOmittedTargetSettings(@TempDir Path tempDir)
     {
-        Path source = Path.of("src/test/resources/data-exchange/sclx/valid/donor-sclx-1.3.json");
+        Path source = Path.of("src/test/resources/compatibility/sclx/donor-sclx-1.3.json");
         try (Jpa jpa = new Jpa(tempDir.resolve("donor-compatibility")))
         {
             seedEmptyTarget(jpa);
