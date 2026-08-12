@@ -1,12 +1,12 @@
 ---
-plan_version: 173
+plan_version: 174
 active_phase: P16
 active_slice: P16-S16
 active_status: IN_PROGRESS
 active_branch: codex/P16-S16-user-role-assignment-maintenance
 active_pull_request: null
-active_head: ca2505fc4388211cd2dbf166ee29556d0f51f8df
-next_action: "Complete and locally verify the P16-S16 user, role, and assignment-history vertical slice before requesting publication authorization."
+active_head: 5860bf7afad2e867169787ce7a28cfb7d0dd07e0
+next_action: "After explicit owner authorization, publish the focused P16-S16 branch, open a draft PR to main, and run authoritative Maven/JavaFX CI before owner desktop acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2661,10 +2661,11 @@ Implementation decisions and progress:
 - Owner desktop verification is governed by `doc/P16-S16-user-role-assignment-maintenance-user-testing.md`.
 - Focused migration, service, rollback, restart, isolation, history, command-capability, and source-contract tests are being added. Local Maven remains unavailable in this container.
 - Static local verification passes Java 17 grammar parsing for all 704 main/test sources, isolated JDK compilation for the five immutable command/usage records, and `git diff --check`. Full compilation and focused/full test execution remain pending GitHub Maven CI because this container has no `mvn` executable or resolved Java dependency cache.
+- Exact local implementation commit `5860bf7afad2e867169787ce7a28cfb7d0dd07e0` contains the focused 22-file vertical slice. The worktree is clean at that implementation boundary; publication, draft PR creation, and authoritative CI require explicit owner authorization.
 
 Next exact action:
 
-- Finish focused static/type verification, reconcile governing matrices and the owner checklist, then freeze a local implementation handoff for publication authorization.
+- Obtain explicit owner authorization to publish `5860bf7afad2e867169787ce7a28cfb7d0dd07e0` plus the plan-only handoff commit on `codex/P16-S16-user-role-assignment-maintenance`, then open a draft PR and run authoritative CI without merging.
 
 ## P16-S17 — End-to-end closure
 
