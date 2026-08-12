@@ -1,12 +1,12 @@
 ---
-plan_version: 185
+plan_version: 186
 active_phase: P16
 active_slice: P16-C1
-active_status: VERIFYING
-active_branch: codex/P16-C1-finalize-plan-ledger
+active_status: DONE
+active_branch: null
 active_pull_request: 270
-active_head: e7277ae987d4a508cecff60de584b1083b9d16a8
-next_action: "Validate the CI-evidence commit on PR #270, then merge the documentation-only closure before marking P16-C1 and P16 DONE."
+active_head: 172422fcb9ea44f5f6f0c40294d6b48272413c21
+next_action: "No P17 or other later phase is authorized without an explicit owner-approved plan amendment."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Validate the CI-evidence commit on PR #270, then merge the documen
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records merged and owner-verified P16-S17 as DONE and activates documentation-only P16-C1 to reconcile the final phase ledger. No P17 or other later feature phase is authorized without an explicit owner-approved plan amendment.
+This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, then closes P16 through documentation-only P16-C1 / PR #270. No P17 or other later feature phase is authorized without an explicit owner-approved plan amendment.
 
 ## 2. Status values
 
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | IN_PROGRESS at P16-C1; P16-S17 DONE through PR #269 and owner acceptance |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | DONE through P16-C1 / PR #270 |
 
 ## 4. Governing documents
 
@@ -1880,7 +1880,7 @@ Required behavior: genuine Inventory item add/edit and movement history, no runb
 # P16 — Interface-to-authority completion and integrity corrections
 
 **Selector:** `PHASE=P16`  
-**Status:** IN_PROGRESS at documentation-only P16-C1; P16-S17 DONE through PR #269 and owner acceptance
+**Status:** DONE through P16-S17, merged PR #269, owner acceptance, and documentation-only P16-C1 / PR #270
 **Depends on:** P03 through P15 except eliminated P07
 
 ## Purpose
@@ -2712,7 +2712,7 @@ Next exact action:
 
 ## P16-C1 — Final plan-ledger reconciliation
 
-Status: VERIFYING in draft PR #270.
+Status: DONE through documentation-only PR #270.
 
 Branch: `codex/P16-C1-finalize-plan-ledger`
 Pull request: #270
@@ -2733,8 +2733,9 @@ Validation status:
 - The two approved local trees were published through the connected GitHub service as remote commits `ffc5dde86dc84fb41fbe2542aebd545134d0ebac` and `acad647994ff087d579ff2e66b23fc76dbf35d80`; their tree and `PLAN.md` blob SHAs exactly match local commits `58c12cb6af4cc437b6c52827ad717f324d8ce1e8` and `9979d0d6881f0a09dba3aa2a6bb5539c66ed0007`.
 - Draft PR #270 targets `main` from `codex/P16-C1-finalize-plan-ledger` and contains only `doc/PLAN.md`.
 - Exact plan-inclusive PR head `e7277ae987d4a508cecff60de584b1083b9d16a8` passed Maven PR Tests run `31611849457`: clean `mvn clean verify`, the deliberately repeated full suite, and production JavaFX route compliance all succeeded.
-- This closure slice changes only `doc/PLAN.md`; authoritative PR validation remains required before P16-C1 and P16 may be marked DONE.
+- Exact CI-evidence head `172422fcb9ea44f5f6f0c40294d6b48272413c21` passed Maven PR Tests run `31612424174`: clean `mvn clean verify`, the deliberately repeated full suite, and production JavaFX route compliance all succeeded.
+- This closure slice changes only `doc/PLAN.md`; the exact completion-state head must pass authoritative PR validation before PR #270 merges these DONE records to `main`.
 
 Next exact action:
 
-- Validate the CI-evidence commit on PR #270, then merge the documentation-only closure. No P17 or other later phase is authorized by the current plan.
+- Merge PR #270 only after its exact completion-state head passes Maven PR Tests. No P17 or other later phase is authorized by the current plan.
