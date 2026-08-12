@@ -190,7 +190,7 @@ UI labels, services, DTOs, tests, and file choosers MUST retain the explicit nam
 
 ## 12. P15-S3 implementation and owner verification
 
-Draft PR #197 implements the contract through DTOs under `org.nonprofitbookkeeping.interchange.coa`, `ChartOfAccountsJsonService`, `ChartOfAccountsJsonImportService`, and the production `ChartOfAccountsInterchangePanel` wrapper. The wrapper preserves the established single-account editor and adds explicit **Import JSON…** and **Export JSON…** actions without creating a new navigation destination or generic import/export job log.
+Merged PR #197 implements the contract through DTOs under `org.nonprofitbookkeeping.interchange.coa`, `ChartOfAccountsJsonService`, `ChartOfAccountsJsonImportService`, and the production `ChartOfAccountsInterchangePanel` wrapper. The wrapper preserves the established single-account editor and adds explicit **Import JSON…** and **Export JSON…** actions without creating a new navigation destination or generic import/export job log.
 
 Automated coverage includes donor-fixture conversion, deterministic byte-identical export, duplicate-key rejection, hierarchy-cycle blocking, new-chart import, merge idempotency, absent-local-account retention, durable identity writes, and injected late rollback.
 
@@ -209,4 +209,4 @@ Owner desktop verification for this slice:
 
 Final automated verification passed in GitHub Actions run `30141967625`: proxy-free `mvn clean verify`, the repeated normal Maven test suite, and the focused JavaFX route-compliance suite all completed successfully on clean-verification head `555206c60009410fe0a51afe9a1fff6957572cd6`.
 
-PR #197 remains draft until the owner confirms the desktop verification checklist above.
+The owner confirmed the desktop verification checklist, and PR #197 merged to `main` at `80fc7367d5b66f77a0d8d4414b1fc20a224b93e7`.

@@ -1,6 +1,6 @@
 # Interface operation matrix
 
-Status: P00 inventory of current main, updated through P16-S16 user-role and assignment maintenance. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
+Status: P00 inventory of current main, updated through active P16-S17 end-to-end closure. This document records visible operations and data authority so later phases can replace placeholders without rescanning the whole UI.
 
 ## Scope and evidence
 
