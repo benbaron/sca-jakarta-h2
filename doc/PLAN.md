@@ -1,12 +1,12 @@
 ---
-plan_version: 188
+plan_version: 189
 active_phase: P16
 active_slice: P16-C3
 active_status: VERIFYING
 active_branch: codex/P16-C3-donor-sclx-compatibility
 active_pull_request: 272
-active_head: ca165ff788a97d317d498ccfb018c4dabb460658
-next_action: "Publish the P16-C3 fixture-classification correction and rerun authoritative Maven PR Tests on draft PR #272."
+active_head: c350e984e55bd1893d2b8387487e7188144f7b69
+next_action: "Publish this CI-evidence plan commit, validate the exact plan-inclusive PR head, then obtain owner desktop verification of the supplied SCLX before merging draft PR #272."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2795,7 +2795,9 @@ Implementation and validation status:
 - Draft PR #272 targets `main` from `codex/P16-C3-donor-sclx-compatibility` and is mergeable.
 - Maven PR Tests run `31639828090` compiled the implementation and ran 653 tests, then found two fixture-contract failures: the donor compatibility fixture was incorrectly placed under the governed canonical `data-exchange/sclx/valid` directory, so it appeared both absent from the frozen manifest and invalid before compatibility normalization.
 - Corrective local commit `ca165ff788a97d317d498ccfb018c4dabb460658` moves the fictional fixture to `src/test/resources/compatibility/sclx`, updates its focused consumers, passes strict JSON parsing and `git diff --check`, and preserves all 707 Java sources under Java 17 grammar parsing.
+- Remote corrective commits `0c0ada8767ed75330bd6e209601dd3c460f9efd3` and `c350e984e55bd1893d2b8387487e7188144f7b69` exactly match local corrective trees `1542dd63a6c64ef7e4e9f0ead255b7daf7c66306` and `213b2b431abba89a36c275179838bc2dcb595f3f`.
+- Exact corrected PR head `c350e984e55bd1893d2b8387487e7188144f7b69` passed Maven PR Tests run `31640303069`: clean `mvn clean verify` and the deliberately repeated suite each ran 653 tests with 0 failures/errors and 34 skips; all 9 production JavaFX route/source compliance tests passed.
 
 Next exact action:
 
-- Publish corrective commit `ca165ff788a97d317d498ccfb018c4dabb460658` to draft PR #272 and rerun authoritative Maven PR Tests.
+- Publish this CI-evidence plan commit, require authoritative Maven PR Tests on the exact plan-inclusive head, then obtain owner desktop verification with the supplied SCLX before merging draft PR #272.
