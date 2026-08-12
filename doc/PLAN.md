@@ -1,12 +1,12 @@
 ---
-plan_version: 186
+plan_version: 187
 active_phase: P16
-active_slice: P16-C1
-active_status: DONE
-active_branch: null
-active_pull_request: 270
-active_head: 172422fcb9ea44f5f6f0c40294d6b48272413c21
-next_action: "No P17 or other later phase is authorized without an explicit owner-approved plan amendment."
+active_slice: P16-C2
+active_status: IN_PROGRESS
+active_branch: codex/P16-C2-import-preview-constructor-ambiguity
+active_pull_request: null
+active_head: 8aa57a72caf141775154d7aacc320b0a7e664a76
+next_action: "Obtain owner authorization to publish P16-C2 and open a draft pull request for authoritative Maven PR Tests."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "No P17 or other later phase is authorized without an explicit owne
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, then closes P16 through documentation-only P16-C1 / PR #270. No P17 or other later feature phase is authorized without an explicit owner-approved plan amendment.
+This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, then closes P16 through documentation-only P16-C1 / PR #270. P16-C2 is a narrow corrective slice for an Eclipse compiler ambiguity in `ImportPreviewPanel`; it does not authorize P17 or any later feature phase.
 
 ## 2. Status values
 
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | DONE through P16-C1 / PR #270 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | Corrective P16-C2 IN_PROGRESS after P16-C1 / PR #270 |
 
 ## 4. Governing documents
 
@@ -2739,3 +2739,29 @@ Validation status:
 Next exact action:
 
 - Merge PR #270 only after its exact completion-state head passes Maven PR Tests. No P17 or other later phase is authorized by the current plan.
+
+## P16-C2 — Import Preview Eclipse constructor disambiguation
+
+Status: IN_PROGRESS.
+
+Branch: `codex/P16-C2-import-preview-constructor-ambiguity`
+Pull request: not opened
+Base head: `e659a9140c12cdf4c88449f58503b25b1bd57a47`
+
+Purpose:
+
+- Correct the Eclipse Java compiler ambiguity between the package-visible and private nine-argument `ImportPreviewPanel` constructors.
+- Preserve the existing shell-owned SCLX preview and commit service composition without changing import behavior or data authority.
+- Keep P16 closed except for this narrowly scoped source-compatibility correction; no P17 or later feature phase is authorized.
+
+Implementation and validation status:
+
+- Replace the two untyped forwarding lambdas with a named adapter returning the exact private `SclxPreviewOperationFactory` type, so overload resolution no longer depends on compiler-specific lambda target inference.
+- Add a focused source guard that requires the typed adapter and rejects the ambiguous inline lambda form.
+- Local implementation commit `8aa57a72caf141775154d7aacc320b0a7e664a76` contains only the production constructor repair and focused regression guard.
+- The JDK compiler module parsed all 705 production and test Java sources without syntax errors, and `git diff --check` passes.
+- Local Maven and standalone `javac` executables are unavailable in this container; authoritative type-checking and Maven PR Tests require owner-authorized publication.
+
+Next exact action:
+
+- Obtain owner authorization to publish the two P16-C2 commits and open a draft pull request to `main` for authoritative Maven PR Tests.
