@@ -17,6 +17,7 @@ public class ReconciliationBankImportAuthoritySourceTest
         String panel = source("src/main/java/org/nonprofitbookkeeping/ui/ReconciliationRunsPanel.java");
         String service = source("src/main/java/org/nonprofitbookkeeping/service/BankReconciliationWorkspaceService.java");
         String preview = source("src/main/java/org/nonprofitbookkeeping/ui/ImportPreviewPanel.java");
+        String compactPreview = preview.replaceAll("\\s+", "");
 
         assertTrue(panel.contains("Import Bank Statement…"));
         assertTrue(panel.contains("AppPanelId.IMPORT_PREVIEW"));
@@ -41,7 +42,7 @@ public class ReconciliationBankImportAuthoritySourceTest
 
         assertTrue(preview.contains("BankImportNavigationContext.parseImportRequest"));
         assertTrue(preview.contains("reconciliationImportBankAccountId"));
-        assertTrue(preview.contains("bankAccount.setDisable(disabled || reconciliationImportBankAccountId != null)"));
+        assertTrue(compactPreview.contains("bankAccount.setDisable(disabled||reconciliationImportBankAccountId!=null)"));
         assertTrue(preview.contains("returnToReconciliationAfterBankCommit"));
         assertTrue(preview.contains("Preview Bank OFX/QFX…"));
         assertTrue(preview.contains("Preview Mapped Bank CSV…"));

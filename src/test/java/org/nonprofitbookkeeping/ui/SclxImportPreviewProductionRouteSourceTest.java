@@ -18,16 +18,17 @@ class SclxImportPreviewProductionRouteSourceTest
         String factory = source("PanelFactory.java");
         String workspaceServices = source("WorkspaceServices.java");
         String registry = source("UiServiceRegistry.java");
+        String compactPanel = panel.replaceAll("\\s+", "");
 
         assertTrue(panel.contains("Preview SCLX…"));
         assertTrue(panel.contains("SCLX Active Company Files"));
-        assertTrue(panel.contains("runPreviewOperation(\n                \"import-preview-sclx\""));
-        assertTrue(panel.contains("runCommitOperation(\"import-preview-sclx-commit\""));
-        assertTrue(panel.contains("commitService.commit(source, preview, actor)"));
+        assertTrue(compactPanel.contains("runPreviewOperation(\"import-preview-sclx\""));
+        assertTrue(compactPanel.contains("runCommitOperation(\"import-preview-sclx-commit\""));
+        assertTrue(compactPanel.contains("commitService.commit(source,preview,actor)"));
         assertTrue(panel.contains("Import Previewed SCLX…"));
         assertTrue(panel.contains("No data was changed"));
-        assertTrue(panel.contains("sclxPreviewOperationFactory(sclxPreviewService)"));
-        assertFalse(panel.contains("() -> Objects.requireNonNull(sclxPreviewService.get()"));
+        assertTrue(compactPanel.contains("sclxPreviewOperationFactory(sclxPreviewService)"));
+        assertFalse(compactPanel.contains("()->Objects.requireNonNull(sclxPreviewService.get()"));
         assertTrue(factory.contains("services::sclxImportPreviewService"));
         assertTrue(factory.contains("services::sclxImportCommitService"));
         assertTrue(workspaceServices.contains("Supplier<SclxImportPreviewService>"));
