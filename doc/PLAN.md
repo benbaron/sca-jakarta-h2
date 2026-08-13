@@ -5,8 +5,8 @@ active_slice: P16-C4
 active_status: VERIFYING
 active_branch: codex/P16-C4-restore-sclx-confirmation
 active_pull_request: 273
-active_head: 592ac02ff91d03c8e8565bbf86427d94e15ca8c7
-next_action: "Validate the exact plan-inclusive PR #273 head through authoritative Maven PR Tests, then merge and resume owner desktop verification of the supplied SCLX."
+active_head: d23a2de90ff61aafeef31c101e2831c25aab4023
+next_action: "Publish the focused source-guard correction and this plan handoff, validate the exact PR #273 head through authoritative Maven PR Tests, then merge and resume owner desktop verification of the supplied SCLX."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2827,7 +2827,9 @@ Implementation and validation status:
 - Maven remains unavailable in this container; authoritative type-checking, focused execution, and the full suite require publication and Maven PR Tests.
 - The two approved local trees were published through the connected GitHub service as remote commits `74d771128d9c6dffe116544e3180e33d41e629eb` and `592ac02ff91d03c8e8565bbf86427d94e15ca8c7`; their full tree SHAs exactly match local commits `3f743548a65a0b018325ebcf9687453d83cb7c76` and `1d05958c87bfc37c3560f7d973b1b1acf4e3e4a8`.
 - Draft PR #273 targets `main` from `codex/P16-C4-restore-sclx-confirmation` at published handoff head `592ac02ff91d03c8e8565bbf86427d94e15ca8c7`.
+- Plan-inclusive remote head `a2e107576d19ae10ecb0818840ba73760b92bd3f` compiled the restored method and ran 653 tests in Maven PR Tests run `31659531247`, then failed five pre-existing source-text guardrails because the intervening whole-file reformat changed indentation and line wrapping. The repeated suite and JavaFX compliance correctly did not run on that failed head.
+- Owner-approved corrective commit `d23a2de90ff61aafeef31c101e2831c25aab4023` makes only those five code-shape assertions whitespace-insensitive while retaining exact visible-text assertions and forbidden-route checks. The compacted assertions resolve against current production source, all 707 Java sources parse under the Java 17 compiler module, and `git diff --check` passes.
 
 Next exact action:
 
-- Validate the exact plan-inclusive PR #273 head through authoritative Maven PR Tests, then merge and repeat the owner desktop import verification.
+- Publish the source-guard correction and plan handoff, validate the exact PR #273 head through authoritative Maven PR Tests, then merge and repeat the owner desktop import verification.
