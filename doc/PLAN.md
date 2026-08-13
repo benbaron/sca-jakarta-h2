@@ -1,12 +1,12 @@
 ---
-plan_version: 189
+plan_version: 190
 active_phase: P16
-active_slice: P16-C3
+active_slice: P16-C4
 active_status: VERIFYING
-active_branch: codex/P16-C3-donor-sclx-compatibility
-active_pull_request: 272
-active_head: c350e984e55bd1893d2b8387487e7188144f7b69
-next_action: "Publish this CI-evidence plan commit, validate the exact plan-inclusive PR head, then obtain owner desktop verification of the supplied SCLX before merging draft PR #272."
+active_branch: codex/P16-C4-restore-sclx-confirmation
+active_pull_request: 273
+active_head: 636b9e641e6987c0c87c787098aa2be98825acf3
+next_action: "Publish this CI-evidence plan commit, validate the exact documentation-inclusive PR #273 head, then merge and resume owner desktop verification of the supplied SCLX."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Publish this CI-evidence plan commit, validate the exact plan-incl
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, and activates P16-C3 for bounded donor SCLX 1.3 compatibility. It does not authorize P17 or any later feature phase.
+This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, records P16-C3 as merged but still awaiting owner desktop acceptance, and activates P16-C4 to repair the donor-confirmation method dropped by a later merge into `main`. It does not authorize P17 or any later feature phase.
 
 ## 2. Status values
 
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | Corrective P16-C3 IN_PROGRESS after P16-C2 / PR #271 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | Corrective P16-C4 IN_PROGRESS after merged P16-C3 / PR #272 |
 
 ## 4. Governing documents
 
@@ -2797,7 +2797,41 @@ Implementation and validation status:
 - Corrective local commit `ca165ff788a97d317d498ccfb018c4dabb460658` moves the fictional fixture to `src/test/resources/compatibility/sclx`, updates its focused consumers, passes strict JSON parsing and `git diff --check`, and preserves all 707 Java sources under Java 17 grammar parsing.
 - Remote corrective commits `0c0ada8767ed75330bd6e209601dd3c460f9efd3` and `c350e984e55bd1893d2b8387487e7188144f7b69` exactly match local corrective trees `1542dd63a6c64ef7e4e9f0ead255b7daf7c66306` and `213b2b431abba89a36c275179838bc2dcb595f3f`.
 - Exact corrected PR head `c350e984e55bd1893d2b8387487e7188144f7b69` passed Maven PR Tests run `31640303069`: clean `mvn clean verify` and the deliberately repeated suite each ran 653 tests with 0 failures/errors and 34 skips; all 9 production JavaFX route/source compliance tests passed.
+- Exact final plan-inclusive PR head `a8165a3a42f695c15424b4e78bb0fb14fcc020e4` passed all three Maven PR Tests gates in run `31640809823`, and PR #272 merged at `8d2c18c3ae7cf58c8495911e75320216df87830e` on 2026-08-12.
+- Owner desktop acceptance did not complete because later live-main merge `cc6679052132df03f16e054675063665959f097d` retained `ImportPreviewPanelSclxTest.confirmationNamesDonorCompatibilityAssignments()` while dropping both the production `sclxCompatibilityConfirmationText(...)` helper and its confirmation-dialog call. P16-C4 owns that narrow post-merge repair.
 
 Next exact action:
 
-- Publish this CI-evidence plan commit, require authoritative Maven PR Tests on the exact plan-inclusive head, then obtain owner desktop verification with the supplied SCLX before merging draft PR #272.
+- Complete and merge P16-C4, then resume owner desktop verification with the supplied SCLX before marking P16-C3 DONE.
+
+## P16-C4 — Restore donor SCLX confirmation after merge
+
+Status: VERIFYING.
+
+Branch: `codex/P16-C4-restore-sclx-confirmation`
+Pull request: #273
+Base head: `cc6679052132df03f16e054675063665959f097d`
+
+Purpose:
+
+- Repair the exact source/test inconsistency on current `main` that produces Eclipse error `The method sclxCompatibilityConfirmationText(SclxImportPreview) is undefined for the type ImportPreviewPanel`.
+- Restore the P16-C3 final-confirmation disclosure for donor compatibility decisions without reverting the owner's intervening `ImportPreviewPanel` reformat.
+- Preserve the existing P16-C3 parser, preview, identity, and atomic-commit behavior; no new interchange scope is authorized.
+
+Implementation and validation status:
+
+- PR #272's tested merge commit contained the helper and its call, but later merge `cc6679052132df03f16e054675063665959f097d` selected the independently reformatted pre-P16-C3 panel body while retaining the new focused test.
+- The repair reintroduces only the helper and confirmation-dialog concatenation in the current formatting style.
+- The existing `ImportPreviewPanelSclxTest.confirmationNamesDonorCompatibilityAssignments()` remains the focused regression guard.
+- Local implementation commit `3f743548a65a0b018325ebcf9687453d83cb7c76` contains the one-file production correction. All 707 production and test Java sources parse under the Java 17 compiler module, and `git diff --check` passes.
+- Maven remains unavailable in this container; authoritative type-checking, focused execution, and the full suite require publication and Maven PR Tests.
+- The two approved local trees were published through the connected GitHub service as remote commits `74d771128d9c6dffe116544e3180e33d41e629eb` and `592ac02ff91d03c8e8565bbf86427d94e15ca8c7`; their full tree SHAs exactly match local commits `3f743548a65a0b018325ebcf9687453d83cb7c76` and `1d05958c87bfc37c3560f7d973b1b1acf4e3e4a8`.
+- Draft PR #273 targets `main` from `codex/P16-C4-restore-sclx-confirmation` at published handoff head `592ac02ff91d03c8e8565bbf86427d94e15ca8c7`.
+- Plan-inclusive remote head `a2e107576d19ae10ecb0818840ba73760b92bd3f` compiled the restored method and ran 653 tests in Maven PR Tests run `31659531247`, then failed five pre-existing source-text guardrails because the intervening whole-file reformat changed indentation and line wrapping. The repeated suite and JavaFX compliance correctly did not run on that failed head.
+- Owner-approved corrective commit `d23a2de90ff61aafeef31c101e2831c25aab4023` makes only those five code-shape assertions whitespace-insensitive while retaining exact visible-text assertions and forbidden-route checks. The compacted assertions resolve against current production source, all 707 Java sources parse under the Java 17 compiler module, and `git diff --check` passes.
+- Remote corrective commits `22d190730c3c39beca083a313cb498bae331619a` and `636b9e641e6987c0c87c787098aa2be98825acf3` exactly match local corrective trees `874104029fdd9e8eec5f4fe6bd966bb25b4f6717` and `6368f09dc3ea8eb9055380ff4afd088c142f26f6`.
+- Exact corrected PR head `636b9e641e6987c0c87c787098aa2be98825acf3` passed Maven PR Tests run `31659982583`: clean `mvn clean verify` and the deliberately repeated suite each ran 653 tests with 0 failures/errors and 34 skips; all 9 production JavaFX route/source compliance tests passed.
+
+Next exact action:
+
+- Publish this CI-evidence plan commit, validate the exact documentation-inclusive PR #273 head, then merge and repeat the owner desktop import verification.

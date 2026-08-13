@@ -16,19 +16,20 @@ class InterchangeProgressUiSourceTest
     {
         String panel = source("ImportPreviewPanel.java");
         String controller = source("InterchangeTaskController.java");
+        String compactPanel = panel.replaceAll("\\s+", "");
 
         assertTrue(panel.contains("importPreviewOperationProgress"));
         assertTrue(panel.contains("cancelImportPreviewOperationButton"));
         assertTrue(panel.contains("importPreviewControlsScroll"));
-        assertTrue(panel.contains("runPreviewOperation(\n                \"import-preview-coa\""));
-        assertTrue(panel.contains("runPreviewOperation(\n                \"import-preview-sclx\""));
-        assertTrue(panel.contains("runPreviewOperation(\n                \"import-preview-bank\""));
-        assertTrue(panel.contains("runPreviewOperation(\n                \"import-preview-bank-csv\""));
-        assertTrue(panel.contains("runPreviewOperation(\n                \"import-preview-normalized-bank-csv\""));
-        assertTrue(panel.contains("runCommitOperation(\"import-preview-sclx-commit\""));
-        assertTrue(panel.contains("runCommitOperation(\"import-preview-bank-commit\""));
+        assertTrue(compactPanel.contains("runPreviewOperation(\"import-preview-coa\""));
+        assertTrue(compactPanel.contains("runPreviewOperation(\"import-preview-sclx\""));
+        assertTrue(compactPanel.contains("runPreviewOperation(\"import-preview-bank\""));
+        assertTrue(compactPanel.contains("runPreviewOperation(\"import-preview-bank-csv\""));
+        assertTrue(compactPanel.contains("runPreviewOperation(\"import-preview-normalized-bank-csv\""));
+        assertTrue(compactPanel.contains("runCommitOperation(\"import-preview-sclx-commit\""));
+        assertTrue(compactPanel.contains("runCommitOperation(\"import-preview-bank-commit\""));
         assertTrue(panel.contains("commit cannot be cancelled"));
-        assertFalse(panel.contains("UiAsync.run("));
+        assertFalse(compactPanel.contains("UiAsync.run("));
 
         assertTrue(controller.contains("InterchangeProgress"));
         assertTrue(controller.contains("task.cancel(true)"));

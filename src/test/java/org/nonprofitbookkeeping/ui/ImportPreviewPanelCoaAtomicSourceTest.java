@@ -18,15 +18,16 @@ public class ImportPreviewPanelCoaAtomicSourceTest
                 "src/main/java/org/nonprofitbookkeeping/ui/ImportPreviewPanel.java"));
         String registry = Files.readString(Path.of(
                 "src/main/java/org/nonprofitbookkeeping/ui/UiServiceRegistry.java"));
+        String compactPanel = panel.replaceAll("\\s+", "");
 
-        assertTrue(panel.contains("UiServiceRegistry.coaCsvImport().preview(file)"));
-        assertTrue(panel.contains("UiServiceRegistry.coaCsvImport().commit(confirmed, actor)"));
+        assertTrue(compactPanel.contains("UiServiceRegistry.coaCsvImport().preview(file)"));
+        assertTrue(compactPanel.contains("UiServiceRegistry.coaCsvImport().commit(confirmed,actor)"));
         assertTrue(panel.contains("Confirm Atomic COA CSV Commit"));
-        assertTrue(panel.contains("created=\" + result.createdCount()"));
-        assertTrue(panel.contains("updated=\" + result.updatedCount()"));
-        assertTrue(panel.contains("skipped=\" + result.skippedCount()"));
-        assertFalse(panel.contains("previewService.commitAcceptedCoaRows("));
-        assertFalse(panel.contains("row -> UiServiceRegistry.accountAdmin().upsert("));
+        assertTrue(compactPanel.contains("created=\"+result.createdCount()"));
+        assertTrue(compactPanel.contains("updated=\"+result.updatedCount()"));
+        assertTrue(compactPanel.contains("skipped=\"+result.skippedCount()"));
+        assertFalse(compactPanel.contains("previewService.commitAcceptedCoaRows("));
+        assertFalse(compactPanel.contains("row->UiServiceRegistry.accountAdmin().upsert("));
         assertTrue(registry.contains("public static CoaCsvImportService coaCsvImport()"));
     }
 }
