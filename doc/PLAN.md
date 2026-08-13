@@ -4,9 +4,9 @@ active_phase: P16
 active_slice: P16-C4
 active_status: VERIFYING
 active_branch: codex/P16-C4-restore-sclx-confirmation
-active_pull_request: null
-active_head: 3f743548a65a0b018325ebcf9687453d83cb7c76
-next_action: "Publish the focused P16-C4 repair and plan handoff, require authoritative Maven PR Tests, then resume owner desktop verification of the supplied SCLX after merge."
+active_pull_request: 273
+active_head: 592ac02ff91d03c8e8565bbf86427d94e15ca8c7
+next_action: "Validate the exact plan-inclusive PR #273 head through authoritative Maven PR Tests, then merge and resume owner desktop verification of the supplied SCLX."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2809,7 +2809,7 @@ Next exact action:
 Status: VERIFYING.
 
 Branch: `codex/P16-C4-restore-sclx-confirmation`
-Pull request: not yet opened
+Pull request: #273
 Base head: `cc6679052132df03f16e054675063665959f097d`
 
 Purpose:
@@ -2825,7 +2825,9 @@ Implementation and validation status:
 - The existing `ImportPreviewPanelSclxTest.confirmationNamesDonorCompatibilityAssignments()` remains the focused regression guard.
 - Local implementation commit `3f743548a65a0b018325ebcf9687453d83cb7c76` contains the one-file production correction. All 707 production and test Java sources parse under the Java 17 compiler module, and `git diff --check` passes.
 - Maven remains unavailable in this container; authoritative type-checking, focused execution, and the full suite require publication and Maven PR Tests.
+- The two approved local trees were published through the connected GitHub service as remote commits `74d771128d9c6dffe116544e3180e33d41e629eb` and `592ac02ff91d03c8e8565bbf86427d94e15ca8c7`; their full tree SHAs exactly match local commits `3f743548a65a0b018325ebcf9687453d83cb7c76` and `1d05958c87bfc37c3560f7d973b1b1acf4e3e4a8`.
+- Draft PR #273 targets `main` from `codex/P16-C4-restore-sclx-confirmation` at published handoff head `592ac02ff91d03c8e8565bbf86427d94e15ca8c7`.
 
 Next exact action:
 
-- Publish the focused correction for authoritative Maven PR Tests, and repeat the owner desktop import verification after merge.
+- Validate the exact plan-inclusive PR #273 head through authoritative Maven PR Tests, then merge and repeat the owner desktop import verification.
