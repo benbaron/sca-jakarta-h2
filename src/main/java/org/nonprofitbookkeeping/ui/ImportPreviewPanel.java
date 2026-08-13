@@ -1305,7 +1305,8 @@ public class ImportPreviewPanel implements AppPanel
 				" into " + preview.operation().targetLabel() +
 				"?\n\nSHA-256: " + preview.operation().sourceSha256() +
 				"\n\nThe target must remain empty unless every governed identity is identical. " +
-				"Every section commits in one transaction; any failure rolls everything back.",
+				"Every section commits in one transaction; any failure rolls everything back." +
+				sclxCompatibilityConfirmationText(preview),
 			ButtonType.OK, ButtonType.CANCEL);
 		confirmation.setTitle("Confirm Atomic SCLX Import");
 		confirmation.setHeaderText("Import the exact previewed SCLX file");
@@ -1334,6 +1335,24 @@ public class ImportPreviewPanel implements AppPanel
 			
 	}
 	
+	static String sclxCompatibilityConfirmationText(SclxImportPreview preview)
+	{
+		List<String> decisions = preview.operation().messages().stream()
+			.filter(message -> message.code().startsWith("SCLX_DONOR_"))
+			.map(InterchangeValidationMessage::message)
+			.distinct()
+			.toList();
+
+		if (decisions.isEmpty())
+		{
+			return "";
+		}
+
+		return "\n\nDonor compatibility decisions applied:\n- " +
+			String.join("\n- ", decisions);
+
+	}
+
 	private void applySclxImportResult(SclxImportResult result)
 	{
 		previewSclx.setDisable(false);
