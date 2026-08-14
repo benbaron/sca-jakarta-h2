@@ -5,8 +5,8 @@ active_slice: P16-C6
 active_status: IN_PROGRESS
 active_branch: codex/P16-C6-sclx-existing-company-merge
 active_pull_request: null
-active_head: null
-next_action: "Complete the P16-C6 focused tests and documentation, run every available local check, then request owner authorization to publish the existing-company SCLX merge slice for Maven PR Tests."
+active_head: 113b843c0274e19e79e973215b59fc6244c75f1a
+next_action: "After owner authorization, publish the exact P16-C6 implementation and plan-handoff commits, open a draft PR, and run Maven PR Tests before the owner desktop checklist."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2861,9 +2861,11 @@ Planned deliverables:
 
 Validation status:
 
-- Implementation and focused coverage are in progress.
-- Java grammar parsing is available through the JDK compiler module; Maven is unavailable in this container, so authoritative compile/test verification will require Maven PR Tests after owner-authorized publication.
+- Implementation commit `113b843c0274e19e79e973215b59fc6244c75f1a` adds the bounded target-state projection, create/reuse mapping choices, compatible target selection, two explicit approvals, atomic mapped-master reuse, target-setting preservation, durable identity/audit details, and focused preview/commit/JavaFX/source coverage.
+- All 708 production and test Java sources parse under the Java 17 compiler module; the three new/changed dependency-free mapping projection types type-compile; the updated production-route source assertions match the five-argument guarded commit; and `git diff --check` passes.
+- Local Maven and its dependency cache are unavailable in this container. Authoritative production/test type-checking, focused H2/JavaFX execution, and `mvn clean verify` require owner-authorized publication and Maven PR Tests.
+- Owner desktop verification is documented in `doc/P16-C6-sclx-existing-company-import-user-testing.md` and remains pending.
 
 Next exact action:
 
-- Complete focused tests and documentation, inspect the final diff, run local grammar/type checks, and prepare the exact implementation head for owner review.
+- Obtain owner authorization to publish the exact implementation and plan-handoff commits, open a draft PR, and run Maven PR Tests.
