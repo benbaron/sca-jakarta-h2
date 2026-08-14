@@ -1,12 +1,12 @@
 ---
-plan_version: 192
+plan_version: 193
 active_phase: P16
 active_slice: P16-C6
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P16-C6-sclx-existing-company-merge
-active_pull_request: null
-active_head: 113b843c0274e19e79e973215b59fc6244c75f1a
-next_action: "After owner authorization, publish the exact P16-C6 implementation and plan-handoff commits, open a draft PR, and run Maven PR Tests before the owner desktop checklist."
+active_pull_request: 274
+active_head: 33381e8a460c8be0300fb6ed1567f0dba8e27d37
+next_action: "Publish this CI-evidence plan commit, validate the exact documentation-inclusive PR #274 head, then complete the owner desktop checklist before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2838,10 +2838,10 @@ Next exact action:
 
 ## P16-C6 — Nondestructive SCLX import into an existing company
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P16-C6-sclx-existing-company-merge`
-Pull request: not opened
+Pull request: #274
 Base head: `913a056781a656e68cfc548c74b62ca3099c1906`
 
 Purpose:
@@ -2863,9 +2863,13 @@ Validation status:
 
 - Implementation commit `113b843c0274e19e79e973215b59fc6244c75f1a` adds the bounded target-state projection, create/reuse mapping choices, compatible target selection, two explicit approvals, atomic mapped-master reuse, target-setting preservation, durable identity/audit details, and focused preview/commit/JavaFX/source coverage.
 - All 708 production and test Java sources parse under the Java 17 compiler module; the three new/changed dependency-free mapping projection types type-compile; the updated production-route source assertions match the five-argument guarded commit; and `git diff --check` passes.
-- Local Maven and its dependency cache are unavailable in this container. Authoritative production/test type-checking, focused H2/JavaFX execution, and `mvn clean verify` require owner-authorized publication and Maven PR Tests.
+- Local Maven and a JDK executable are unavailable in this container. Authoritative production/test type-checking, focused H2/JavaFX execution, and `mvn clean verify` therefore run in Maven PR Tests.
+- The approved implementation and handoff trees were published through the connected GitHub service as remote commits `3752201480113a7a246a1f85f84a914d949c4b9a` and `89b8a924abe55712433225d31a01435c820deec2`; their full tree SHAs exactly match local commits `113b843c0274e19e79e973215b59fc6244c75f1a` and `b6a445470e9135c993b1c474cf5ab46ca2891141`.
+- Draft PR #274 initially failed Maven PR Tests run `31767108927` during production compilation because the test-only `ImportPreviewPanel` constructor's nested lambda was ambiguous between the supplier and operation-factory overloads.
+- Owner-approved local correction `aa4f7dace29c26afb76ec29a1963a0e2d022ec57` explicitly types that one constructor argument as `SclxPreviewOperationFactory`. Remote correction `33381e8a460c8be0300fb6ed1567f0dba8e27d37` has the exact same full tree SHA.
+- Exact corrected PR head `33381e8a460c8be0300fb6ed1567f0dba8e27d37` passed all three Maven PR Tests gates in run `31767335496`: clean `mvn clean verify` and the deliberately repeated suite each ran 657 tests with 0 failures/errors and 35 skips; all 9 production JavaFX route/source compliance tests passed.
 - Owner desktop verification is documented in `doc/P16-C6-sclx-existing-company-import-user-testing.md` and remains pending.
 
 Next exact action:
 
-- Obtain owner authorization to publish the exact implementation and plan-handoff commits, open a draft PR, and run Maven PR Tests.
+- Publish this CI-evidence plan commit, validate the exact documentation-inclusive PR #274 head, then complete the owner desktop checklist before merge.
