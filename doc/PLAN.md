@@ -1,12 +1,12 @@
 ---
-plan_version: 190
+plan_version: 193
 active_phase: P16
-active_slice: P16-C4
+active_slice: P16-C6
 active_status: VERIFYING
-active_branch: codex/P16-C4-restore-sclx-confirmation
-active_pull_request: 273
-active_head: 636b9e641e6987c0c87c787098aa2be98825acf3
-next_action: "Publish this CI-evidence plan commit, validate the exact documentation-inclusive PR #273 head, then merge and resume owner desktop verification of the supplied SCLX."
+active_branch: codex/P16-C6-sclx-existing-company-merge
+active_pull_request: 274
+active_head: 33381e8a460c8be0300fb6ed1567f0dba8e27d37
+next_action: "Publish this CI-evidence plan commit, validate the exact documentation-inclusive PR #274 head, then complete the owner desktop checklist before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Publish this CI-evidence plan commit, validate the exact documenta
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, records P16-C3 as merged but still awaiting owner desktop acceptance, and activates P16-C4 to repair the donor-confirmation method dropped by a later merge into `main`. It does not authorize P17 or any later feature phase.
+This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, records P16-C3 and P16-C4 through merged PRs #272 and #273, and activates the owner-requested P16-C6 nondestructive existing-company SCLX import option. P16-C5 message guidance remains a separate unpublished local slice and is not mixed into this branch. It does not authorize P17 or any later feature phase.
 
 ## 2. Status values
 
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | Corrective P16-C4 IN_PROGRESS after merged P16-C3 / PR #272 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | Corrective P16-C6 IN_PROGRESS after merged P16-C4 / PR #273 |
 
 ## 4. Governing documents
 
@@ -1359,8 +1359,8 @@ Scope:
 
 - Strictly project every transaction correction relationship before mutation, requiring resolved same-file references, canonical `REVERSAL`/`REPLACEMENT` pairing and source statuses, one relationship of each kind per original, and an acyclic graph.
 - Restore correction links through a caller-owned `TransactionCorrectionService` seam after all canonical transactions exist, without replaying interactive correction commands or synthesizing historical audit rows.
-- Preserve the complete C2-C10 graph in the existing one-transaction boundary with portable identities, identical no-op reimport, populated-target protection, and late rollback after correction persistence.
-- Expose **Import Previewed SCLX…** only for the exact successful, nonblocking, `AS_IS`, empty-target or wholly identical preview; require a nonblank audit actor and explicit source/hash/target/count confirmation; re-read and re-preview inside the commit service.
+- Preserve the complete C2-C10 graph in the existing one-transaction boundary with portable identities, identical no-op reimport, operational-history protection, and late rollback after correction persistence.
+- Expose **Import Previewed SCLX…** only for the exact successful, nonblocking empty-target, approved chart/fund mapping-merge, or wholly identical preview; require a nonblank audit actor and explicit source/hash/target/count confirmation; re-read the exact source and effective mappings inside the commit service.
 - Report committed or rolled-back results in Import Preview, invalidate approval after success or rollback, and keep all file/service work off the JavaFX application thread.
 - Prove semantic import/export preservation for representative core, budget, transaction-detail, fixed-asset, inventory, banking, reconciliation, period-close, audit-history, and correction facts.
 - Add and complete `doc/P15-S5-sclx-import-commit-ui-user-testing.md` before merge.
@@ -1386,7 +1386,7 @@ Planned deliverables:
 - For single-sided or unbalanced source transactions, require an explicitly selected active posting cash account and display every generated balancing line before commit.
 - Skip zero-value lines and transactions with no posting lines with explicit warnings and counts.
 - Import masters before dependent history, then route financial records through transaction-aware canonical services inside one caller-owned transaction.
-- Default to a new or empty target company; reject accidental populated-company merge until explicit conflict rules are implemented and tested.
+- Default to a new or empty target company; P16-C6 supersedes the former blanket populated-target rejection only for an explicitly mapped, nondestructive chart/fund merge before operational history exists.
 - Preserve external identity for idempotent reimport; skip identical records and require explicit resolution for conflicts.
 - Write one factual audit event with source name/hash, version, mappings, target, counts, warnings, and user after successful commit.
 - Roll back the entire documented commit boundary on any failure.
@@ -2768,7 +2768,7 @@ Next exact action:
 
 ## P16-C3 — Bounded donor SCLX 1.3 compatibility
 
-Status: VERIFYING.
+Status: DONE through merged PR #273; owner desktop SCLX acceptance continues under the later corrective slices.
 
 Branch: `codex/P16-C3-donor-sclx-compatibility`
 Pull request: #272
@@ -2834,4 +2834,42 @@ Implementation and validation status:
 
 Next exact action:
 
-- Publish this CI-evidence plan commit, validate the exact documentation-inclusive PR #273 head, then merge and repeat the owner desktop import verification.
+- None; PR #273 merged to `main` at `913a056781a656e68cfc548c74b62ca3099c1906`.
+
+## P16-C6 — Nondestructive SCLX import into an existing company
+
+Status: VERIFYING.
+
+Branch: `codex/P16-C6-sclx-existing-company-merge`
+Pull request: #274
+Base head: `913a056781a656e68cfc548c74b62ca3099c1906`
+
+Purpose:
+
+- Add the owner-requested option to import SCLX into an existing active company without replacing its identity, preferences, chart metadata, or existing account/fund records.
+- Permit only the bounded safe target state represented by an existing company with chart/accounts, funds, and ordinary factual audit history but no competing operational history.
+- Preserve the one-transaction SCLX authority and every existing closed-period, reconciliation, identity, and rollback protection.
+
+Planned deliverables:
+
+- Split target occupancy into chart/fund/audit facts versus transactions, budgets/categories, linked masters, banking/reconciliation, assets, inventory, and period-close history.
+- Project each account/fund as `CREATE`, direct identical reuse, explicit compatible `MAPPED` reuse, or blocking conflict/unresolved state.
+- Offer compatible target choices for a same-code collision, apply the choices through a fresh non-mutating preview, and require both explicit approval of the final displayed mappings and separate consent to import into the existing company while preserving its settings.
+- Re-read the exact source and mapping set at commit, preserve target organization/chart settings, reuse approved accounts/funds, create missing masters, record durable identities, and add the remaining graph atomically.
+- Continue to block destructive replacement and any merge into a target with competing operational history.
+- Add focused preview, commit, JavaFX, governing-document, and owner desktop verification coverage.
+
+Validation status:
+
+- Implementation commit `113b843c0274e19e79e973215b59fc6244c75f1a` adds the bounded target-state projection, create/reuse mapping choices, compatible target selection, two explicit approvals, atomic mapped-master reuse, target-setting preservation, durable identity/audit details, and focused preview/commit/JavaFX/source coverage.
+- All 708 production and test Java sources parse under the Java 17 compiler module; the three new/changed dependency-free mapping projection types type-compile; the updated production-route source assertions match the five-argument guarded commit; and `git diff --check` passes.
+- Local Maven and a JDK executable are unavailable in this container. Authoritative production/test type-checking, focused H2/JavaFX execution, and `mvn clean verify` therefore run in Maven PR Tests.
+- The approved implementation and handoff trees were published through the connected GitHub service as remote commits `3752201480113a7a246a1f85f84a914d949c4b9a` and `89b8a924abe55712433225d31a01435c820deec2`; their full tree SHAs exactly match local commits `113b843c0274e19e79e973215b59fc6244c75f1a` and `b6a445470e9135c993b1c474cf5ab46ca2891141`.
+- Draft PR #274 initially failed Maven PR Tests run `31767108927` during production compilation because the test-only `ImportPreviewPanel` constructor's nested lambda was ambiguous between the supplier and operation-factory overloads.
+- Owner-approved local correction `aa4f7dace29c26afb76ec29a1963a0e2d022ec57` explicitly types that one constructor argument as `SclxPreviewOperationFactory`. Remote correction `33381e8a460c8be0300fb6ed1567f0dba8e27d37` has the exact same full tree SHA.
+- Exact corrected PR head `33381e8a460c8be0300fb6ed1567f0dba8e27d37` passed all three Maven PR Tests gates in run `31767335496`: clean `mvn clean verify` and the deliberately repeated suite each ran 657 tests with 0 failures/errors and 35 skips; all 9 production JavaFX route/source compliance tests passed.
+- Owner desktop verification is documented in `doc/P16-C6-sclx-existing-company-import-user-testing.md` and remains pending.
+
+Next exact action:
+
+- Publish this CI-evidence plan commit, validate the exact documentation-inclusive PR #274 head, then complete the owner desktop checklist before merge.

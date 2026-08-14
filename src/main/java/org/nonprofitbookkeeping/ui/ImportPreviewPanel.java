@@ -18,6 +18,7 @@ import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
@@ -31,6 +32,7 @@ import org.nonprofitbookkeeping.interchange.InterchangeValidationMessage;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportEntityPreview;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportCommitService;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportMappingRequirement;
+import org.nonprofitbookkeeping.interchange.sclx.SclxImportMappingSelection;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportPreview;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportPreviewService;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportResult;
@@ -54,6 +56,7 @@ import org.nonprofitbookkeeping.service.ImportPreviewService;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -99,6 +102,7 @@ public class ImportPreviewPanel implements AppPanel
 	private final Button previewCoa = new Button("Preview COA CSV…");
 	private final Button previewSclx = new Button("Preview SCLX…");
 	private final Button commitSclx = new Button("Import Previewed SCLX…");
+	private final Button applySclxMappings = new Button("Apply SCLX Mappings");
 	private final Button previewBank = new Button("Preview Bank OFX/QFX…");
 	private final Button previewBankCsv =
 		new Button("Preview Mapped Bank CSV…");
@@ -118,6 +122,13 @@ public class ImportPreviewPanel implements AppPanel
 			new ComboBox<>();
 	private final CheckBox confirmBankIdentity =
 		new CheckBox("Confirm suffix-only account identity");
+	private final CheckBox confirmSclxMappings =
+		new CheckBox("Approve shown SCLX account/fund mappings");
+	private final CheckBox confirmExistingCompanyImport =
+		new CheckBox("Import into existing company (preserve settings)");
+	private final java.util.Map<String, String> sclxMappingSelections =
+		new LinkedHashMap<>();
+	private boolean sclxMappingsDirty;
 	private final TableView<
 		BankImportNormalizationService.NormalizedBankStatementLine> bankRows =
 			new TableView<>();
@@ -151,7 +162,7 @@ public class ImportPreviewPanel implements AppPanel
 			UiServiceRegistry::bankCsvReview,
 			UiServiceRegistry::bankCsvMappingProfiles,
 			UiServiceRegistry::normalizedBankCsvReview);
-		
+
 	}
 	
 	ImportPreviewPanel(
@@ -159,7 +170,9 @@ public class ImportPreviewPanel implements AppPanel
 		Function<Path, SclxImportPreview> sclxPreview)
 	{
 		this(previewService,
-			() -> Objects.requireNonNull(sclxPreview, "sclxPreview"),
+			(SclxPreviewOperationFactory) () ->
+				(source, selections) -> Objects.requireNonNull(
+				sclxPreview, "sclxPreview").apply(source),
 			companyCode ->
 			{
 				throw new IllegalStateException(
@@ -218,8 +231,12 @@ public class ImportPreviewPanel implements AppPanel
 		Supplier<SclxImportPreviewService> requiredService =
 			Objects.requireNonNull(
 				sclxPreviewService, "sclxPreviewService");
-		return () -> Objects.requireNonNull(
-			requiredService.get(), "sclxPreviewService result")::preview;
+		return () ->
+		{
+			SclxImportPreviewService service = Objects.requireNonNull(
+				requiredService.get(), "sclxPreviewService result");
+			return service::preview;
+		};
 		
 	}
 	
@@ -262,6 +279,19 @@ public class ImportPreviewPanel implements AppPanel
 		commitSclx.setId("commitPreviewedSclxButton");
 		commitSclx.setDisable(true);
 		commitSclx.setOnAction(e -> confirmAndCommitSclx());
+		applySclxMappings.setId("applySclxMappingsButton");
+		applySclxMappings.setDisable(true);
+		applySclxMappings.setOnAction(e -> repreviewSclxMappings());
+		confirmSclxMappings.setId("confirmSclxMappings");
+		confirmSclxMappings.setVisible(false);
+		confirmSclxMappings.setManaged(false);
+		confirmSclxMappings.selectedProperty().addListener(
+			(observable, oldValue, newValue) -> updateSclxCommitAvailability());
+		confirmExistingCompanyImport.setId("confirmExistingCompanySclxImport");
+		confirmExistingCompanyImport.setVisible(false);
+		confirmExistingCompanyImport.setManaged(false);
+		confirmExistingCompanyImport.selectedProperty().addListener(
+			(observable, oldValue, newValue) -> updateSclxCommitAvailability());
 		sclxActor.setId("sclxImportActor");
 		sclxActor.setPromptText("Audit actor");
 		sclxActor.textProperty().addListener(
@@ -301,7 +331,9 @@ public class ImportPreviewPanel implements AppPanel
 				previewBank, previewNormalizedBankCsv),
 			new HBox(8, new Label("Mapped CSV profile"), bankCsvProfile,
 				saveBankCsvProfile, previewBankCsv),
-			new HBox(8, new Label("Import actor"), sclxActor, commitSclx,
+			new HBox(8, new Label("Import actor"), sclxActor,
+				applySclxMappings, confirmExistingCompanyImport,
+				confirmSclxMappings, commitSclx,
 				confirmBankIdentity, commitBankReview),
 			new HBox(8, operationProgress, operationStage, cancelOperation),
 			status, new Separator());
@@ -636,10 +668,79 @@ public class ImportPreviewPanel implements AppPanel
 	private void buildSclxMappingTable()
 	{
 		sclxMappings.setId("sclxPreviewMappings");
+		TableColumn<SclxImportMappingRequirement, String> target =
+			stringColumn("Target / Select", SclxImportMappingRequirement::targetCode);
+		target.setCellFactory(column -> new TableCell<>()
+		{
+			private final ComboBox<String> selector = new ComboBox<>();
+			private boolean updating;
+			{
+				selector.setPromptText("Select compatible target");
+				selector.setOnAction(event ->
+				{
+					if (updating)
+						return;
+					SclxImportMappingRequirement mapping =
+						getTableRow() == null ? null : getTableRow().getItem();
+					String selected = selector.getValue();
+					if (mapping != null && selected != null &&
+						!selected.isBlank())
+					{
+						sclxMappingSelections.put(mapping.sourceId(), selected);
+						sclxMappingsDirty = true;
+						confirmSclxMappings.setSelected(false);
+						confirmExistingCompanyImport.setSelected(false);
+						applySclxMappings.setDisable(false);
+						updateSclxCommitAvailability();
+						status.setText(
+							"Apply the selected SCLX mappings to run a fresh validation preview.");
+					}
+				});
+			}
+
+			@Override
+			protected void updateItem(String value, boolean empty)
+			{
+				super.updateItem(value, empty);
+				if (empty || getTableRow() == null || getTableRow().getItem() == null)
+				{
+					setText(null);
+					setGraphic(null);
+					return;
+				}
+				SclxImportMappingRequirement mapping = getTableRow().getItem();
+				if (mapping.compatibleTargetCodes().isEmpty() ||
+					mapping.resolution() == SclxImportMappingRequirement.Resolution.CREATE ||
+					mapping.resolution() == SclxImportMappingRequirement.Resolution.AS_IS)
+				{
+					setText(Objects.toString(value, ""));
+					setGraphic(null);
+					return;
+				}
+				updating = true;
+				try
+				{
+					selector.getItems().setAll(mapping.compatibleTargetCodes());
+					String selected = sclxMappingSelections.get(mapping.sourceId());
+					if (selected == null && mapping.resolution() ==
+						SclxImportMappingRequirement.Resolution.MAPPED)
+					{
+						selected = mapping.targetCode();
+					}
+					selector.setValue(selected);
+				}
+				finally
+				{
+					updating = false;
+				}
+				setText(null);
+				setGraphic(selector);
+			}
+		});
 		sclxMappings.getColumns().addAll(
 			stringColumn("Kind", value -> value.kind().name()),
 			stringColumn("Source", SclxImportMappingRequirement::sourceCode),
-			stringColumn("Target", SclxImportMappingRequirement::targetCode),
+			target,
 			stringColumn("Resolution", value -> value.resolution().name()),
 			stringColumn("Used", value -> value.used() ? "Yes" : "No"),
 			stringColumn("Blocking", value -> value.blocking() ? "Yes" : "No"),
@@ -1143,11 +1244,18 @@ public class ImportPreviewPanel implements AppPanel
 	
 	private void previewSclx(Path file)
 	{
+		previewSclx(file, List.of());
+	}
+
+	private void previewSclx(
+		Path file,
+		List<SclxImportMappingSelection> selections)
+	{
 		clearCoaPreview();
 		clearSclxPreview();
 		clearBankPreview();
 		warnings.getItems().clear();
-		Function<Path, SclxImportPreview> fixedScopePreview;
+		SclxPreviewOperation fixedScopePreview;
 		
 		try
 		{
@@ -1173,9 +1281,11 @@ public class ImportPreviewPanel implements AppPanel
 			"import-preview-sclx",
 			"Reading and validating SCLX",
 			"SCLX preview cancelled before commit; no data was changed.",
-			() -> fixedScopePreview.apply(file), result ->
+			() -> fixedScopePreview.preview(file, selections), result ->
 			{
 				previewSclx.setDisable(false);
+				selections.forEach(selection -> sclxMappingSelections.put(
+					selection.sourceId(), selection.targetCode()));
 				applySclxPreview(file, result);
 			}, ex -> {
 				previewSclx.setDisable(false);
@@ -1186,6 +1296,29 @@ public class ImportPreviewPanel implements AppPanel
 					"Could not preview SCLX: " + UiErrors.safeMessage(ex));
 			});
 			
+	}
+
+	private void repreviewSclxMappings()
+	{
+		Path source = lastSclxSource;
+		SclxImportPreview preview = lastSclxPreview;
+		if (source == null || preview == null)
+		{
+			status.setText("Preview an SCLX file before applying account or fund mappings.");
+			return;
+		}
+		List<SclxImportMappingSelection> selections = preview.mappings().stream()
+			.filter(mapping -> sclxMappingSelections.containsKey(mapping.sourceId()))
+			.map(mapping -> new SclxImportMappingSelection(
+				mapping.kind(), mapping.sourceId(),
+				sclxMappingSelections.get(mapping.sourceId())))
+			.toList();
+		if (selections.isEmpty())
+		{
+			status.setText("Select at least one compatible target account or fund first.");
+			return;
+		}
+		previewSclx(source, selections);
 	}
 	
 	void applySclxPreview(SclxImportPreview result)
@@ -1203,8 +1336,20 @@ public class ImportPreviewPanel implements AppPanel
 			source == null ? null : source.toAbsolutePath().normalize();
 		lastSclxPreview = result;
 		lastSclxCommitService = null;
-		
-		if (lastSclxSource != null && sclxCommitReady(result))
+		sclxMappingsDirty = false;
+		boolean mappingsRequired = result.recommendedAccountMode() ==
+			org.nonprofitbookkeeping.interchange.sclx.SclxAccountMode.MAPPED;
+		boolean existingCompanyApprovalRequired = result.targetPopulated() &&
+			(result.operation().counts().created() > 0L ||
+				result.operation().counts().updated() > 0L);
+		confirmSclxMappings.setSelected(false);
+		confirmSclxMappings.setVisible(mappingsRequired);
+		confirmSclxMappings.setManaged(mappingsRequired);
+		confirmExistingCompanyImport.setSelected(false);
+		confirmExistingCompanyImport.setVisible(existingCompanyApprovalRequired);
+		confirmExistingCompanyImport.setManaged(existingCompanyApprovalRequired);
+
+		if (lastSclxSource != null && sclxPreviewEligible(result))
 		{
 			
 			try
@@ -1241,13 +1386,17 @@ public class ImportPreviewPanel implements AppPanel
 		previewTabs.getSelectionModel().select(1);
 		
 		updateSclxCommitAvailability();
-		String outcome =
-			sclxCommitReady(result) ? "READY TO IMPORT" : "BLOCKED";
+		String outcome = result.hasBlockingErrors() ? "BLOCKED" :
+			existingCompanyApprovalRequired && mappingsRequired ?
+				"APPROVE EXISTING-COMPANY IMPORT AND MAPPINGS" :
+			existingCompanyApprovalRequired ? "APPROVE EXISTING-COMPANY IMPORT" :
+			mappingsRequired ? "APPROVE MAPPINGS TO IMPORT" : "READY TO IMPORT";
 		status.setText("Previewed SCLX " + result.version().externalValue() +
 			" from " + result.operation().sourceName() + " for target " +
 			result.targetCompanyCode() + ": " +
 			result.sectionCounts().totalEntities() + " entities, " +
 			result.operation().counts().created() + " new, " +
+			result.operation().counts().updated() + " mapped, " +
 			result.operation().counts().identical() + " identical, " +
 			result.operation().counts().errors() +
 			" blocking error(s); account mode " +
@@ -1256,21 +1405,20 @@ public class ImportPreviewPanel implements AppPanel
 		
 	}
 	
-	private static boolean sclxCommitReady(SclxImportPreview preview)
+	private static boolean sclxPreviewEligible(SclxImportPreview preview)
 	{
-		return !preview.hasBlockingErrors() &&
-			(!preview.targetPopulated() || identicalReimport(preview)) &&
-			preview.recommendedAccountMode() ==
-				org.nonprofitbookkeeping.interchange.sclx.SclxAccountMode.AS_IS;
+		return !preview.hasBlockingErrors();
 		
 	}
 	
-	private static boolean identicalReimport(SclxImportPreview preview)
+	private boolean sclxCommitReady(SclxImportPreview preview)
 	{
-		return !preview.operation().items().isEmpty() && preview.operation()
-			.items().stream()
-			.allMatch(item -> item.identityMatch() ==
-				org.nonprofitbookkeeping.interchange.InterchangeIdentityMatch.IDENTICAL);
+		return sclxPreviewEligible(preview) && !sclxMappingsDirty &&
+			(!confirmExistingCompanyImport.isManaged() ||
+				confirmExistingCompanyImport.isSelected()) &&
+			(preview.recommendedAccountMode() !=
+				org.nonprofitbookkeeping.interchange.sclx.SclxAccountMode.MAPPED ||
+				confirmSclxMappings.isSelected());
 		
 	}
 	
@@ -1289,12 +1437,15 @@ public class ImportPreviewPanel implements AppPanel
 		SclxImportPreview preview = lastSclxPreview;
 		SclxImportCommitService commitService = lastSclxCommitService;
 		String actor = sclxActor.getText().strip();
+		boolean mappingsApproved = confirmSclxMappings.isSelected();
+		boolean existingCompanyImportApproved =
+			confirmExistingCompanyImport.isSelected();
 		
 		if (source == null || preview == null || commitService == null ||
 			actor.isBlank() || !sclxCommitReady(preview))
 		{
 			status.setText(
-				"Import unavailable: preview a valid SCLX file for an empty target first.");
+				"Import unavailable: resolve preview errors and approve every displayed account/fund mapping first.");
 			updateSclxCommitAvailability();
 			return;
 		}
@@ -1304,8 +1455,8 @@ public class ImportPreviewPanel implements AppPanel
 				" governed entities from " + preview.operation().sourceName() +
 				" into " + preview.operation().targetLabel() +
 				"?\n\nSHA-256: " + preview.operation().sourceSha256() +
-				"\n\nThe target must remain empty unless every governed identity is identical. " +
-				"Every section commits in one transaction; any failure rolls everything back." +
+				"\n\nExisting company settings and approved mapped accounts/funds are preserved. " +
+				"New governed entities are added in one transaction; any failure rolls everything back." +
 				sclxCompatibilityConfirmationText(preview),
 			ButtonType.OK, ButtonType.CANCEL);
 		confirmation.setTitle("Confirm Atomic SCLX Import");
@@ -1323,7 +1474,8 @@ public class ImportPreviewPanel implements AppPanel
 		status.setText("Importing the exact previewed SCLX file atomically...");
 		runCommitOperation("import-preview-sclx-commit",
 			"Committing SCLX atomically",
-			() -> commitService.commit(source, preview, actor),
+			() -> commitService.commit(source, preview, actor, mappingsApproved,
+				existingCompanyImportApproved),
 			this::applySclxImportResult,
 			ex ->
 			{
@@ -1366,9 +1518,19 @@ public class ImportPreviewPanel implements AppPanel
 			lastSclxPreview = null;
 			lastSclxCommitService = null;
 			commitSclx.setDisable(true);
+			applySclxMappings.setDisable(true);
+			sclxMappingSelections.clear();
+			sclxMappingsDirty = false;
+			confirmSclxMappings.setSelected(false);
+			confirmSclxMappings.setVisible(false);
+			confirmSclxMappings.setManaged(false);
+			confirmExistingCompanyImport.setSelected(false);
+			confirmExistingCompanyImport.setVisible(false);
+			confirmExistingCompanyImport.setManaged(false);
 			status.setText(
 				"Imported SCLX atomically into " + result.targetLabel() +
-					": created " + result.counts().created() + ", identical " +
+					": created " + result.counts().created() + ", mapped " +
+					result.counts().updated() + ", identical " +
 					result.counts().identical() + ", SHA-256 " +
 					result.sourceSha256() +
 					". Reopen other workspaces to refresh imported data.");
@@ -1379,6 +1541,15 @@ public class ImportPreviewPanel implements AppPanel
 		lastSclxPreview = null;
 		lastSclxCommitService = null;
 		commitSclx.setDisable(true);
+		applySclxMappings.setDisable(true);
+		sclxMappingSelections.clear();
+		sclxMappingsDirty = false;
+		confirmSclxMappings.setSelected(false);
+		confirmSclxMappings.setVisible(false);
+		confirmSclxMappings.setManaged(false);
+		confirmExistingCompanyImport.setSelected(false);
+		confirmExistingCompanyImport.setVisible(false);
+		confirmExistingCompanyImport.setManaged(false);
 		status.setText(
 			"SCLX import rolled back; no partial data was kept. Review the reported errors and preview again.");
 		
@@ -1408,6 +1579,15 @@ public class ImportPreviewPanel implements AppPanel
 		lastSclxPreview = null;
 		lastSclxCommitService = null;
 		commitSclx.setDisable(true);
+		applySclxMappings.setDisable(true);
+		sclxMappingSelections.clear();
+		sclxMappingsDirty = false;
+		confirmSclxMappings.setSelected(false);
+		confirmSclxMappings.setVisible(false);
+		confirmSclxMappings.setManaged(false);
+		confirmExistingCompanyImport.setSelected(false);
+		confirmExistingCompanyImport.setVisible(false);
+		confirmExistingCompanyImport.setManaged(false);
 		sclxCounts.getItems().clear();
 		sclxEntities.getItems().clear();
 		sclxMappings.getItems().clear();
@@ -1845,8 +2025,16 @@ public class ImportPreviewPanel implements AppPanel
 	@FunctionalInterface
 	private interface SclxPreviewOperationFactory
 	{
-		Function<Path, SclxImportPreview> capture();
+		SclxPreviewOperation capture();
 		
+	}
+
+	@FunctionalInterface
+	private interface SclxPreviewOperation
+	{
+		SclxImportPreview preview(
+			Path source,
+			List<SclxImportMappingSelection> selections);
 	}
 	
 }

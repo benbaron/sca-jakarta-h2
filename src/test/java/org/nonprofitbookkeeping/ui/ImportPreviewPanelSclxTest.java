@@ -2,6 +2,7 @@ package org.nonprofitbookkeeping.ui;
 
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableView;
@@ -55,6 +56,7 @@ class ImportPreviewPanelSclxTest
             TableView<?> transactions = (TableView<?>) panel.root().lookup("#sclxPreviewTransactions");
             Button commitCoa = (Button) panel.root().lookup("#commitAcceptedCoaRowsButton");
             Button commitSclx = (Button) panel.root().lookup("#commitPreviewedSclxButton");
+            Button applyMappings = (Button) panel.root().lookup("#applySclxMappingsButton");
 
             assertTrue(status.getText().contains("READY TO IMPORT"));
             assertTrue(status.getText().contains("No data was changed"));
@@ -64,6 +66,7 @@ class ImportPreviewPanelSclxTest
             assertEquals(1, transactions.getItems().size());
             assertTrue(commitCoa.isDisabled());
             assertTrue(commitSclx.isDisabled(), "a rendered result without its exact source cannot commit");
+            assertTrue(applyMappings.isDisabled());
             return null;
         });
     }
@@ -75,6 +78,51 @@ class ImportPreviewPanelSclxTest
 
         assertTrue(text.contains("Donor compatibility decisions applied"));
         assertTrue(text.contains("32 fundless transaction line(s) to General Fund"));
+    }
+
+    @Test
+    void existingCompanyMappingPreviewRequiresExplicitApproval()
+    {
+        FxTestSupport.onFx(() -> {
+            ImportPreviewPanel panel = new ImportPreviewPanel(
+                    new ImportPreviewService(), source -> mappedPreview());
+            new Scene((javafx.scene.Parent) panel.root(), 1000, 700);
+
+            panel.applySclxPreview(mappedPreview());
+
+            Label status = (Label) panel.root().lookup("#importPreviewStatus");
+            CheckBox approval = (CheckBox) panel.root().lookup("#confirmSclxMappings");
+            CheckBox existingCompany =
+                    (CheckBox) panel.root().lookup("#confirmExistingCompanySclxImport");
+            Button commit = (Button) panel.root().lookup("#commitPreviewedSclxButton");
+            assertTrue(status.getText().contains("APPROVE EXISTING-COMPANY IMPORT"));
+            assertTrue(approval.isVisible());
+            assertTrue(approval.isManaged());
+            assertTrue(existingCompany.isVisible());
+            assertTrue(existingCompany.isManaged());
+            assertTrue(commit.isDisabled());
+            return null;
+        });
+    }
+
+    private static SclxImportPreview mappedPreview()
+    {
+        SclxImportPreview base = preview();
+        SclxImportMappingRequirement mapping = new SclxImportMappingRequirement(
+                SclxImportMappingRequirement.Kind.ACCOUNT,
+                "account:SOURCE:1010", "1010", "account:TEST:1010", "1010",
+                true, SclxImportMappingRequirement.Resolution.MAPPED,
+                "Approve the compatible target account.", false, List.of("1010", "1020"));
+        InterchangePreview<SclxImportEntityPreview> operation = new InterchangePreview<>(
+                base.operation().format(), base.operation().mode(), base.operation().sourceName(),
+                base.operation().targetLabel(), base.operation().sourceSha256(),
+                base.operation().items(), base.operation().messages(), base.operation().confirmations(),
+                new InterchangeOperationCounts(1, 0, 1, 0, 0, 1, 0));
+        return new SclxImportPreview(
+                operation, base.version(), base.exportedAt(), base.sourceOrganizationId(),
+                base.sourceOrganizationCode(), base.sourceOrganizationName(), base.sourceSystem(),
+                base.targetCompanyCode(), base.targetCompanyName(), true, SclxAccountMode.MAPPED,
+                base.sectionCounts(), List.of(mapping), base.transactions());
     }
 
     private static SclxImportPreview preview()
@@ -99,8 +147,8 @@ class ImportPreviewPanelSclxTest
         SclxImportMappingRequirement mapping = new SclxImportMappingRequirement(
                 SclxImportMappingRequirement.Kind.ACCOUNT,
                 "account:SOURCE:1010", "1010", "account:TEST:1010", "1010",
-                true, SclxImportMappingRequirement.Resolution.AS_IS,
-                "The empty target can create this account under AS_IS rules.", false);
+                true, SclxImportMappingRequirement.Resolution.CREATE,
+                "The import will create this account in the target chart.", false);
         SclxImportTransactionPreview transaction = new SclxImportTransactionPreview(
                 "transaction:SOURCE:1", LocalDate.of(2026, 7, 1), "Test transaction",
                 2, 2, 0, new BigDecimal("10.00"), new BigDecimal("10.00"),

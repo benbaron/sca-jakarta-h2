@@ -43,7 +43,7 @@ class SclxImportPreviewServiceTest
         assertEquals(2L, first.sectionCounts().unsupportedSectionCount());
         assertEquals(13L, first.operation().counts().created());
         assertTrue(first.mappings().stream().allMatch(
-                mapping -> mapping.resolution() == SclxImportMappingRequirement.Resolution.AS_IS));
+                mapping -> mapping.resolution() == SclxImportMappingRequirement.Resolution.CREATE));
         assertTrue(first.transactions().get(0).balanced());
 
         SclxImportEntityPreview transaction = first.operation().items().stream()
@@ -54,7 +54,7 @@ class SclxImportPreviewServiceTest
                 Map.of(new SclxImportTargetSnapshot.ExternalIdentityKey("TRANSACTION", transaction.externalId()),
                         new SclxImportTargetSnapshot.IdentityFact(transaction.normalizedContentHash(), "42"));
         SclxImportTargetSnapshot withIdentity = new SclxImportTargetSnapshot(
-                empty.companyCode(), empty.companyName(), false, Map.of(), Map.of(), identities,
+                empty.companyCode(), empty.companyName(), false, false, Map.of(), Map.of(), identities,
                 List.of(), Set.of());
         SclxImportPreview second = service(withIdentity).preview(source);
 
@@ -95,7 +95,7 @@ class SclxImportPreviewServiceTest
                 Map.of(new SclxImportTargetSnapshot.ExternalIdentityKey("TRANSACTION", transactionId),
                         new SclxImportTargetSnapshot.IdentityFact("0".repeat(64), "42"));
         SclxImportTargetSnapshot target = new SclxImportTargetSnapshot(
-                "OTHER", "Other Company", true, accounts, funds, identities,
+                "OTHER", "Other Company", true, true, accounts, funds, identities,
                 List.of(new SclxImportTargetSnapshot.ClosedRange(
                         LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 31))),
                 Set.of("42"));
@@ -107,8 +107,8 @@ class SclxImportPreviewServiceTest
 
         assertTrue(preview.hasBlockingErrors());
         assertEquals(SclxAccountMode.MAPPED, preview.recommendedAccountMode());
-        assertTrue(codes.contains("SCLX_POPULATED_TARGET_UNSUPPORTED"));
-        assertTrue(codes.contains("SCLX_EXPLICIT_MAPPING_REQUIRED"));
+        assertTrue(codes.contains("SCLX_OPERATIONAL_DATA_MERGE_UNSUPPORTED"));
+        assertTrue(codes.contains("SCLX_MAPPING_APPROVAL_REQUIRED"));
         assertTrue(codes.contains("SCLX_BALANCING_ACCOUNT_REQUIRED"));
         assertTrue(codes.contains("SCLX_CLOSED_PERIOD_CONFLICT"));
         assertTrue(codes.contains("SCLX_FINALIZED_RECONCILIATION_CONFLICT"));
@@ -142,6 +142,99 @@ class SclxImportPreviewServiceTest
         assertTrue(codes.contains("SCLX_DONOR_COUNTERPARTY_LINKS_NORMALIZED"));
         assertTrue(codes.contains("SCLX_DONOR_BUDGET_REFERENCES_SKIPPED"));
         assertTrue(preview.transactions().get(0).balanced());
+    }
+
+    @Test
+    void allowsExistingCompatibleChartAndFundsWithApprovedMappings() throws Exception
+    {
+        Path source = write(SclxJsonSerializerTest.document(), "existing-masters.sclx");
+        JsonNode root = new ObjectMapper().readTree(source.toFile());
+        Map<String, SclxImportTargetSnapshot.TargetAccount> accounts = new java.util.LinkedHashMap<>();
+        for (JsonNode value : root.path("chartOfAccounts"))
+        {
+            String code = value.path("code").textValue();
+            accounts.put(code, account("TARGET", code,
+                    value.path("type").textValue(), value.path("increaseSide").textValue()));
+        }
+        Map<String, SclxImportTargetSnapshot.TargetFund> funds = new java.util.LinkedHashMap<>();
+        for (JsonNode value : root.path("funds"))
+        {
+            String code = value.path("code").textValue();
+            funds.put(code, new SclxImportTargetSnapshot.TargetFund(
+                    SclxPortableIdentity.fund("TARGET", code), code,
+                    value.path("type").textValue(), true, code));
+        }
+        SclxImportTargetSnapshot target = new SclxImportTargetSnapshot(
+                "TARGET", "Existing Company", true, false, accounts, funds,
+                Map.of(), List.of(), Set.of());
+
+        SclxImportPreview preview = service(target).preview(source);
+        Set<String> codes = preview.operation().messages().stream()
+                .map(message -> message.code())
+                .collect(Collectors.toSet());
+
+        assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+        assertEquals(SclxAccountMode.MAPPED, preview.recommendedAccountMode());
+        assertTrue(preview.mappings().stream().allMatch(mapping ->
+                mapping.resolution() == SclxImportMappingRequirement.Resolution.MAPPED));
+        assertTrue(codes.contains("SCLX_MAPPING_APPROVAL_REQUIRED"));
+        assertFalse(codes.contains("SCLX_OPERATIONAL_DATA_MERGE_UNSUPPORTED"));
+        assertEquals(preview.sectionCounts().totalEntities() - preview.mappings().size() - 1L,
+                preview.operation().counts().created());
+    }
+
+    @Test
+    void selectedCompatibleTargetResolvesSameCodeAccountConflict() throws Exception
+    {
+        Path source = write(SclxJsonSerializerTest.document(), "selected-mapping.sclx");
+        JsonNode sourceAccount = new ObjectMapper().readTree(source.toFile())
+                .path("chartOfAccounts").get(0);
+        String sourceId = sourceAccount.path("accountId").textValue();
+        String sourceCode = sourceAccount.path("code").textValue();
+        Map<String, SclxImportTargetSnapshot.TargetAccount> accounts = Map.of(
+                sourceCode, account("TARGET", sourceCode, "LIABILITY", "CREDIT"),
+                "ALT", account("TARGET", "ALT", sourceAccount.path("type").textValue(),
+                        sourceAccount.path("increaseSide").textValue()));
+        SclxImportTargetSnapshot target = new SclxImportTargetSnapshot(
+                "TARGET", "Existing Company", true, false, accounts, Map.of(),
+                Map.of(), List.of(), Set.of());
+        SclxImportPreviewService service = service(target);
+
+        SclxImportPreview initial = service.preview(source);
+        assertTrue(initial.hasBlockingErrors());
+        SclxImportMappingRequirement conflict = initial.mappings().stream()
+                .filter(mapping -> mapping.sourceId().equals(sourceId))
+                .findFirst().orElseThrow();
+        assertEquals(SclxImportMappingRequirement.Resolution.CONFLICT, conflict.resolution());
+        assertEquals(List.of("ALT"), conflict.compatibleTargetCodes());
+
+        SclxImportPreview resolved = service.preview(source, List.of(
+                new SclxImportMappingSelection(
+                        SclxImportMappingRequirement.Kind.ACCOUNT, sourceId, "ALT")));
+
+        assertFalse(resolved.hasBlockingErrors(), () -> resolved.operation().messages().toString());
+        SclxImportMappingRequirement mapping = resolved.mappings().stream()
+                .filter(value -> value.sourceId().equals(sourceId))
+                .findFirst().orElseThrow();
+        assertEquals(SclxImportMappingRequirement.Resolution.MAPPED, mapping.resolution());
+        assertEquals("ALT", mapping.targetCode());
+
+        String accountHash = resolved.operation().items().stream()
+                .filter(value -> value.entityType().equals("ACCOUNT")
+                        && value.externalId().equals(sourceId))
+                .findFirst().orElseThrow().normalizedContentHash();
+        SclxImportTargetSnapshot importedTarget = new SclxImportTargetSnapshot(
+                target.companyCode(), target.companyName(), true, false,
+                target.accountsByCode(), target.fundsByCode(),
+                Map.of(new SclxImportTargetSnapshot.ExternalIdentityKey("ACCOUNT", sourceId),
+                        new SclxImportTargetSnapshot.IdentityFact(accountHash, "ALT")),
+                List.of(), Set.of());
+        SclxImportPreview identical = service(importedTarget).preview(source);
+        SclxImportMappingRequirement durableMapping = identical.mappings().stream()
+                .filter(value -> value.sourceId().equals(sourceId))
+                .findFirst().orElseThrow();
+        assertEquals(SclxImportMappingRequirement.Resolution.AS_IS, durableMapping.resolution());
+        assertEquals("ALT", durableMapping.targetCode());
     }
 
     @Test
@@ -193,7 +286,7 @@ class SclxImportPreviewServiceTest
     private static SclxImportTargetSnapshot emptyTarget(String companyCode)
     {
         return new SclxImportTargetSnapshot(
-                companyCode, "Test Company", false, Map.of(), Map.of(), Map.of(), List.of(), Set.of());
+                companyCode, "Test Company", false, false, Map.of(), Map.of(), Map.of(), List.of(), Set.of());
     }
 
     private static SclxImportTargetSnapshot.TargetAccount account(
