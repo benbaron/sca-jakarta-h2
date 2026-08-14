@@ -10,6 +10,9 @@ import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Company;
+import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountSubtype;
+import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.AuditEvent;
 import org.nonprofitbookkeeping.model.FixedAsset;
 import org.nonprofitbookkeeping.model.FixedAssetDepreciationRun;
@@ -23,6 +26,9 @@ import org.nonprofitbookkeeping.model.BankImportBatch;
 import org.nonprofitbookkeeping.model.BankStatementLine;
 import org.nonprofitbookkeeping.model.CompanyBankAccount;
 import org.nonprofitbookkeeping.model.ImportIssue;
+import org.nonprofitbookkeeping.model.Fund;
+import org.nonprofitbookkeeping.model.FundType;
+import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
 import org.nonprofitbookkeeping.model.TxnSupplementalLine;
@@ -373,7 +379,7 @@ class SclxImportCommitServiceTest
     }
 
     @Test
-    void previewBlocksTargetContainingOnlyAuditHistory(@TempDir Path tempDir) throws Exception
+    void previewAllowsTargetContainingOnlyAuditHistory(@TempDir Path tempDir) throws Exception
     {
         Path source = writeSource(tempDir.resolve("audit-only-target.sclx"));
         try (Jpa jpa = new Jpa(tempDir.resolve("audit-only-target")))
@@ -395,9 +401,76 @@ class SclxImportCommitServiceTest
             SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
 
             assertTrue(preview.targetPopulated());
-            assertTrue(preview.hasBlockingErrors());
-            assertTrue(preview.operation().messages().stream()
-                    .anyMatch(message -> message.code().equals("SCLX_POPULATED_TARGET_UNSUPPORTED")));
+            assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+            assertFalse(preview.operation().messages().stream()
+                    .anyMatch(message -> message.code().equals(
+                            "SCLX_OPERATIONAL_DATA_MERGE_UNSUPPORTED")));
+        }
+    }
+
+    @Test
+    void importsIntoExistingCompatibleChartAndFundsWithoutReplacingTargetSettings(@TempDir Path tempDir)
+            throws Exception
+    {
+        Path source = writeSource(tempDir.resolve("existing-company.sclx"));
+        try (Jpa jpa = new Jpa(tempDir.resolve("existing-company")))
+        {
+            seedEmptyTarget(jpa);
+            seedExistingChartAndFund(jpa);
+            SclxImportPreviewService previews = new SclxImportPreviewService(jpa, () -> TARGET);
+            SclxImportPreview preview = previews.preview(source);
+
+            assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+            assertTrue(preview.targetPopulated());
+            assertEquals(SclxAccountMode.MAPPED, preview.recommendedAccountMode());
+            assertEquals(6L, preview.mappings().stream()
+                    .filter(mapping -> mapping.resolution()
+                            == SclxImportMappingRequirement.Resolution.MAPPED)
+                    .count());
+            IllegalStateException approval = assertThrows(IllegalStateException.class,
+                    () -> new SclxImportCommitService(jpa, () -> TARGET)
+                            .commit(source, preview, "tester"));
+            assertTrue(approval.getMessage().contains("Approve the displayed"));
+
+            IllegalStateException existingApproval = assertThrows(IllegalStateException.class,
+                    () -> new SclxImportCommitService(jpa, () -> TARGET)
+                            .commit(source, preview, "tester", true));
+            assertTrue(existingApproval.getMessage().contains("existing company"));
+
+            SclxImportResult result = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, preview, "tester", true, true);
+
+            assertTrue(result.committed(), () -> result.messages().toString());
+            assertEquals(preview.sectionCounts().totalEntities() - 7L, result.counts().created());
+            try (EntityManager em = jpa.em())
+            {
+                Company target = company(em);
+                assertEquals("Empty Target", target.getDisplayName());
+                assertEquals("USD", target.getDefaultCurrency());
+                assertEquals("Empty Chart", target.getActiveChartOfAccounts().getName());
+                assertEquals("EMPTY", target.getActiveChartOfAccounts().getVersion());
+                assertEquals(5L, count(em, "select count(a) from Account a"));
+                assertEquals(1L, count(em, "select count(f) from Fund f"));
+                assertEquals(1L, count(em, "select count(t) from Txn t"));
+                assertEquals(1L, count(em, "select count(a) from AuditEvent a where a.actionType = 'SCLX_IMPORTED'"));
+                AuditEvent importAudit = em.createQuery(
+                                "from AuditEvent a where a.actionType = 'SCLX_IMPORTED'", AuditEvent.class)
+                        .getSingleResult();
+                assertTrue(importAudit.getAfterValue().contains("mapped=6"));
+                assertTrue(importAudit.getAfterValue().contains("ACCOUNT:1000->1000(MAPPED)"));
+                assertEquals(preview.sectionCounts().totalEntities(), count(em,
+                        "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
+            }
+            SclxImportPreview secondPreview = previews.preview(source);
+            assertFalse(secondPreview.hasBlockingErrors(),
+                    () -> secondPreview.operation().messages().toString());
+            assertEquals(secondPreview.sectionCounts().totalEntities(),
+                    secondPreview.operation().counts().identical());
+            assertEquals(SclxAccountMode.AS_IS, secondPreview.recommendedAccountMode());
+            SclxImportResult second = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, secondPreview, "tester");
+            assertTrue(second.committed());
+            assertEquals(0L, second.counts().created());
         }
     }
 
@@ -855,7 +928,8 @@ class SclxImportCommitServiceTest
 
             assertTrue(preview.hasBlockingErrors());
             assertTrue(preview.operation().messages().stream()
-                    .anyMatch(message -> message.code().equals("SCLX_POPULATED_TARGET_UNSUPPORTED")));
+                    .anyMatch(message -> message.code().equals(
+                            "SCLX_OPERATIONAL_DATA_MERGE_UNSUPPORTED")));
         }
     }
 
@@ -878,7 +952,8 @@ class SclxImportCommitServiceTest
 
             assertTrue(preview.hasBlockingErrors());
             assertTrue(preview.operation().messages().stream()
-                    .anyMatch(message -> message.code().equals("SCLX_POPULATED_TARGET_UNSUPPORTED")));
+                    .anyMatch(message -> message.code().equals(
+                            "SCLX_OPERATIONAL_DATA_MERGE_UNSUPPORTED")));
         }
     }
 
@@ -966,6 +1041,56 @@ class SclxImportCommitServiceTest
             company.setActiveChartOfAccounts(chart);
             em.getTransaction().commit();
         }
+    }
+
+    private static void seedExistingChartAndFund(Jpa jpa)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            em.getTransaction().begin();
+            Company company = company(em);
+            ChartOfAccounts chart = company.getActiveChartOfAccounts();
+            addAccount(em, chart, "1000", "Cash", AccountType.BANK,
+                    AccountSubtype.CASH, NormalBalance.DEBIT);
+            addAccount(em, chart, "1500", "Equipment", AccountType.ASSET,
+                    AccountSubtype.FIXED_ASSET, NormalBalance.DEBIT);
+            addAccount(em, chart, "1590", "Accumulated Depreciation", AccountType.ASSET,
+                    AccountSubtype.FIXED_ASSET, NormalBalance.CREDIT);
+            addAccount(em, chart, "1600", "Inventory", AccountType.ASSET,
+                    AccountSubtype.INVENTORY, NormalBalance.DEBIT);
+            addAccount(em, chart, "6100", "Supplies", AccountType.EXPENSE,
+                    null, NormalBalance.DEBIT);
+            Fund fund = new Fund();
+            fund.setCompany(company);
+            fund.setCode("GENERAL");
+            fund.setName("Existing General Fund");
+            fund.setFundType(FundType.UNRESTRICTED);
+            fund.setActive(true);
+            em.persist(fund);
+            em.getTransaction().commit();
+        }
+    }
+
+    private static void addAccount(
+            EntityManager em,
+            ChartOfAccounts chart,
+            String code,
+            String name,
+            AccountType type,
+            AccountSubtype subtype,
+            NormalBalance balance)
+    {
+        Account account = new Account();
+        account.setChart(chart);
+        account.setCode(code);
+        account.setName(name);
+        account.setAccountType(type);
+        account.setSubtype(subtype);
+        account.setNormalBalance(balance);
+        account.setOpeningBalance(BigDecimal.ZERO);
+        account.setPosting(true);
+        account.setActive(true);
+        em.persist(account);
     }
 
     private static Company company(EntityManager em)

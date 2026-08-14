@@ -11,6 +11,7 @@ record SclxImportTargetSnapshot(
         String companyCode,
         String companyName,
         boolean populated,
+        boolean operationalDataPopulated,
         Map<String, TargetAccount> accountsByCode,
         Map<String, TargetFund> fundsByCode,
         Map<ExternalIdentityKey, IdentityFact> identities,

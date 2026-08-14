@@ -24,8 +24,12 @@ class SclxImportPreviewProductionRouteSourceTest
         assertTrue(panel.contains("SCLX Active Company Files"));
         assertTrue(compactPanel.contains("runPreviewOperation(\"import-preview-sclx\""));
         assertTrue(compactPanel.contains("runCommitOperation(\"import-preview-sclx-commit\""));
-        assertTrue(compactPanel.contains("commitService.commit(source,preview,actor)"));
+        assertTrue(compactPanel.contains(
+                "commitService.commit(source,preview,actor,mappingsApproved,existingCompanyImportApproved)"));
         assertTrue(panel.contains("Import Previewed SCLX…"));
+        assertTrue(panel.contains("Apply SCLX Mappings"));
+        assertTrue(panel.contains("Approve shown SCLX account/fund mappings"));
+        assertTrue(panel.contains("Import into existing company (preserve settings)"));
         assertTrue(panel.contains("No data was changed"));
         assertTrue(compactPanel.contains("sclxPreviewOperationFactory(sclxPreviewService)"));
         assertFalse(compactPanel.contains("()->Objects.requireNonNull(sclxPreviewService.get()"));

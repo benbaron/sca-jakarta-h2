@@ -52,8 +52,8 @@ final class JpaSclxImportTargetReader implements SclxImportTargetReader
                     identities(em, company, source);
             List<SclxImportTargetSnapshot.ClosedRange> closedRanges = closedRanges(em, company);
             Set<String> finalizedTransactions = finalizedTransactionIds(em, company);
-            boolean populated = !accounts.isEmpty() || !funds.isEmpty()
-                    || count(em, "select count(t) from Txn t where t.company = :company", company) > 0L
+            boolean operationalDataPopulated =
+                    count(em, "select count(t) from Txn t where t.company = :company", company) > 0L
                     || count(em, "select count(c) from BudgetCategory c where c.company = :company", company) > 0L
                     || count(em, "select count(p) from BudgetPlan p where p.company = :company", company) > 0L
                     || count(em, "select count(a) from Activity a where a.company = :company", company) > 0L
@@ -66,13 +66,15 @@ final class JpaSclxImportTargetReader implements SclxImportTargetReader
                     || count(em, "select count(b) from BankImportBatch b where b.company = :company", company) > 0L
                     || nativeCount(em, "bank_reconciliation_session", company) > 0L
                     || nativeCount(em, "period_close_range", company) > 0L
-                    || nativeCount(em, "period_close_event", company) > 0L
+                    || nativeCount(em, "period_close_event", company) > 0L;
+            boolean populated = !accounts.isEmpty() || !funds.isEmpty() || operationalDataPopulated
                     || count(em, "select count(a) from AuditEvent a where a.company = :company", company) > 0L;
 
             return new SclxImportTargetSnapshot(
                     company.getCode(),
                     company.getDisplayName(),
                     populated,
+                    operationalDataPopulated,
                     accounts,
                     funds,
                     identities,

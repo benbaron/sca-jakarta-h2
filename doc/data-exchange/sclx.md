@@ -93,13 +93,24 @@ Import supports exactly two account-reference modes:
 
 ### 6.1 `AS_IS`
 
-The SCLX account reference is resolved without translation. For a new or empty target company, the imported chart may create the referenced accounts under the governed Chart of Accounts rules. For a populated target, every reference MUST resolve uniquely and compatibly.
+The SCLX account reference is resolved without translation. For a new or empty target company, the imported chart may create the referenced accounts under the governed Chart of Accounts rules. For an existing company, a direct resolution is limited to an already imported identical identity; all other reuse is displayed as an explicit mapping.
 
 ### 6.2 `MAPPED`
 
 The user supplies an explicit source-to-target account mapping. Every used source account reference MUST map to one active target account. The preview MUST display every mapping and every unmapped or multiply mapped source reference. Mapping MUST NOT be inferred solely from account names.
 
 The selected mode and complete effective mapping MUST be included in the operation result and factual audit record.
+
+The production existing-company option is a nondestructive merge into a target whose existing data is
+limited to its company settings, active chart/accounts, funds, and ordinary factual audit history.
+Preview distinguishes `CREATE` from `MAPPED`, offers only type/balance/active/posting-compatible target
+choices, and requires a fresh preview plus explicit approval of the complete effective mapping. The
+import preserves target organization settings and chart metadata, records durable SCLX identities for
+reused accounts/funds, and adds the remaining governed graph atomically. Existing transactions,
+budgets/categories, activities/parties/merchants, assets, inventory, banking/reconciliation, or
+period-close history remain blocking because this option does not combine competing operational histories.
+Any non-identical import into a populated target also requires the explicit **Import into existing
+company (preserve settings)** confirmation; mapping approval does not imply that broader consent.
 
 ## 7. Transactions, zero values, and generated balancing lines
 
@@ -275,12 +286,12 @@ shows:
 
 - exact entity counts by governed section plus total entities, references, relationships, and unsupported sections;
 - every external identity disposition as `NEW`, `IDENTICAL`, or `CONFLICT`;
-- every account and fund mapping with `AS_IS`, `MAPPED`, `CONFLICT`, or `UNRESOLVED` resolution;
+- every account and fund mapping with `CREATE`, `AS_IS`, `MAPPED`, `CONFLICT`, or `UNRESOLVED` resolution;
 - transaction posting-line, zero-value-line, balance, closed-period, and finalized-reconciliation diagnostics; and
 - every warning and blocking error with its stable code and source path.
 
 The status text names the source, SCLX version, explicit target company, recommended account mode,
-new/identical/error totals, and whether the preview is blocked. It always states that no data was
+new/mapped/identical/error totals, and whether the preview is blocked. It always states that no data was
 changed. The existing COA commit action is disabled after an SCLX preview. C1 initially exposed no
 SCLX commit control; C10 enables the complete commit only after every exported section has a governed
 canonical writer.
@@ -481,11 +492,13 @@ create extra transactions, or manufacture historical audit rows. A successful co
 one distinct local `SCLX_IMPORTED` operation fact; an identical reimport remains a no-op.
 
 The production Import Preview workspace exposes **Import Previewed SCLX…** only while it retains the
-exact source path and a nonblocking `AS_IS` preview for an empty target or a wholly identical reimport.
-A nonblank audit actor is required. Confirmation names the source, fixed target, SHA-256, entity count, empty-target/identical rule, and
-atomic rollback risk. Commit runs away from the JavaFX thread and the service re-reads and re-previews
-the source before beginning the transaction. A changed source, changed target, newly populated target,
-or new blocking diagnostic prevents mutation. Success reports target, created/identical counts and
+exact source path and a nonblocking preview for an empty target, a governed chart-and-funds merge, or a
+wholly identical reimport. A `MAPPED` preview additionally requires explicit approval of every displayed
+account/fund mapping after the last mapping selection and fresh preview. A nonblank audit actor is required.
+Confirmation names the source, fixed target, SHA-256, entity count, target-preservation rule, and atomic
+rollback risk. Commit runs away from the JavaFX thread and the service re-reads and re-previews the exact
+approved mapping set before beginning the transaction. A changed source, changed target, newly populated
+operational history, changed mapping, or new blocking diagnostic prevents mutation. Success reports target, created/mapped/identical counts and
 SHA-256; failure reports rollback, and both success and rollback invalidate the approved preview.
 
 ## 11. Import transaction boundary and results

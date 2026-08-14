@@ -1,5 +1,7 @@
 package org.nonprofitbookkeeping.interchange.sclx;
 
+import java.util.List;
+
 /** Explicit source-to-target account or fund resolution shown before any SCLX commit. */
 public record SclxImportMappingRequirement(
         Kind kind,
@@ -10,10 +12,11 @@ public record SclxImportMappingRequirement(
         boolean used,
         Resolution resolution,
         String detail,
-        boolean blocking)
+        boolean blocking,
+        List<String> compatibleTargetCodes)
 {
     public enum Kind { ACCOUNT, FUND }
-    public enum Resolution { AS_IS, MAPPED, CONFLICT, UNRESOLVED }
+    public enum Resolution { AS_IS, CREATE, MAPPED, CONFLICT, UNRESOLVED }
 
     public SclxImportMappingRequirement
     {
@@ -26,15 +29,34 @@ public record SclxImportMappingRequirement(
         targetId = optional(targetId);
         targetCode = optional(targetCode);
         detail = requireText(detail, "detail");
-        if ((resolution == Resolution.AS_IS || resolution == Resolution.MAPPED)
+        compatibleTargetCodes = List.copyOf(compatibleTargetCodes == null
+                ? List.of()
+                : compatibleTargetCodes);
+        if ((resolution == Resolution.AS_IS || resolution == Resolution.CREATE
+                || resolution == Resolution.MAPPED)
                 && (targetCode == null || targetId == null))
         {
             throw new IllegalArgumentException("resolved mappings require a target identity and code");
         }
         if (resolution == Resolution.UNRESOLVED || resolution == Resolution.CONFLICT)
         {
-            blocking = used || blocking;
+            blocking = true;
         }
+    }
+
+    public SclxImportMappingRequirement(
+            Kind kind,
+            String sourceId,
+            String sourceCode,
+            String targetId,
+            String targetCode,
+            boolean used,
+            Resolution resolution,
+            String detail,
+            boolean blocking)
+    {
+        this(kind, sourceId, sourceCode, targetId, targetCode, used,
+                resolution, detail, blocking, List.of());
     }
 
     private static String requireText(String value, String label)

@@ -85,7 +85,9 @@ import java.util.function.Supplier;
  * activities, counterparties, merchants, normalized budgets, balanced canonical
  * transactions, supplemental transaction details, fixed assets, and completed
  * depreciation runs, inventory, banking, reconciliation, period-close facts, and factual audit
- * history and correction relationships into an empty selected company.</p>
+ * history and correction relationships into an empty selected company or a
+ * selected company whose existing data is limited to a chart, funds, and
+ * ordinary factual audit history.</p>
  */
 public final class SclxImportCommitService
 {
@@ -162,9 +164,33 @@ public final class SclxImportCommitService
             SclxImportPreview approvedPreview,
             String actor)
     {
+        return commit(source, approvedPreview, actor, false);
+    }
+
+    public SclxImportResult commit(
+            Path source,
+            SclxImportPreview approvedPreview,
+            String actor,
+            boolean approvedMappings)
+    {
+        return commit(source, approvedPreview, actor, approvedMappings, false);
+    }
+
+    public SclxImportResult commit(
+            Path source,
+            SclxImportPreview approvedPreview,
+            String actor,
+            boolean approvedMappings,
+            boolean approvedExistingCompanyImport)
+    {
         Objects.requireNonNull(source, "source");
         Objects.requireNonNull(approvedPreview, "approvedPreview");
-        SclxImportPreview current = previewService.preview(source);
+        List<SclxImportMappingSelection> approvedSelections = approvedPreview.mappings().stream()
+                .filter(value -> value.resolution() == SclxImportMappingRequirement.Resolution.MAPPED)
+                .map(value -> new SclxImportMappingSelection(
+                        value.kind(), value.sourceId(), value.targetCode()))
+                .toList();
+        SclxImportPreview current = previewService.preview(source, approvedSelections);
         if (!approvedPreview.operation().sourceSha256().equals(current.operation().sourceSha256()))
         {
             throw new IllegalStateException("SCLX source changed after preview; preview it again before importing.");
@@ -176,6 +202,23 @@ public final class SclxImportCommitService
         if (current.hasBlockingErrors())
         {
             throw new IllegalStateException("SCLX has blocking validation or target conflicts.");
+        }
+        if (!approvedPreview.mappings().equals(current.mappings()))
+        {
+            throw new IllegalStateException("The SCLX account or fund mappings changed after preview.");
+        }
+        if (current.recommendedAccountMode() == SclxAccountMode.MAPPED && !approvedMappings)
+        {
+            throw new IllegalStateException(
+                    "Approve the displayed SCLX account and fund mappings before importing.");
+        }
+        boolean existingCompanyMerge = current.targetPopulated()
+                && (current.operation().counts().created() > 0L
+                || current.operation().counts().updated() > 0L);
+        if (existingCompanyMerge && !approvedExistingCompanyImport)
+        {
+            throw new IllegalStateException(
+                    "Approve the nondestructive SCLX import into the existing company before importing.");
         }
         SclxParsedDocument parsed = parser.parse(source);
         if (!parsed.sha256().equals(current.operation().sourceSha256()))
@@ -220,19 +263,22 @@ public final class SclxImportCommitService
                             "SCLX_IDENTICAL_REIMPORT",
                             "Every governed core, extension, banking, reconciliation, period-close, audit-history, and correction fact was identical; no data changed.");
                 }
-                requireEmptyTarget(em, company);
+                requireChartAndFundOnlyTarget(em, company);
 
                 int writes = 0;
-                applyOrganization(company, root.path("organization"));
-                afterBusinessWrite.accept(++writes);
+                if (!current.targetPopulated())
+                {
+                    applyOrganization(company, root.path("organization"));
+                    afterBusinessWrite.accept(++writes);
+                }
 
-                ChartOfAccounts chart = targetChart(em, company, root);
+                ChartOfAccounts chart = targetChart(em, company, root, current.targetPopulated());
                 Map<String, Account> accounts = writeAccounts(
-                        em, chart, root.path("chartOfAccounts"), previews, writes);
-                writes += accounts.size();
+                        em, chart, root.path("chartOfAccounts"), current.mappings(), previews, writes);
+                writes += newMasterCount(current.mappings(), SclxImportMappingRequirement.Kind.ACCOUNT);
                 Map<String, Fund> funds = writeFunds(
-                        em, company, root.path("funds"), previews, writes);
-                writes += funds.size();
+                        em, company, root.path("funds"), current.mappings(), previews, writes);
+                writes += newMasterCount(current.mappings(), SclxImportMappingRequirement.Kind.FUND);
                 BudgetWrite writtenBudgets = writeBudgets(
                         em, company, budgets, funds, previews, writes);
                 writes += writtenBudgets.businessWriteCount();
@@ -295,7 +341,10 @@ public final class SclxImportCommitService
                 operationAudit.setAfterValue("source=" + current.operation().sourceName()
                         + ",version=" + current.version().externalValue()
                         + ",sha256=" + current.operation().sourceSha256()
-                        + ",created=" + actualCreatedCount(current));
+                        + ",created=" + actualCreatedCount(current)
+                        + ",mapped=" + current.operation().counts().updated()
+                        + ",accountMode=" + current.recommendedAccountMode()
+                        + ",mappings=" + mappingAudit(current.mappings()));
                 operationAudit.setReason(
                         "Atomic SCLX core, supported extension, banking, reconciliation, period-close, factual audit-history, and correction-relationship import.");
                 em.persist(operationAudit);
@@ -448,16 +497,8 @@ public final class SclxImportCommitService
         return source.relationships().size();
     }
 
-    private static void requireEmptyTarget(EntityManager em, Company company)
+    private static void requireChartAndFundOnlyTarget(EntityManager em, Company company)
     {
-        ChartOfAccounts chart = company.getActiveChartOfAccounts();
-        long accounts = chart == null ? 0L : em.createQuery(
-                        "select count(a) from Account a where a.chart = :chart", Long.class)
-                .setParameter("chart", chart)
-                .getSingleResult();
-        long funds = em.createQuery("select count(f) from Fund f where f.company = :company", Long.class)
-                .setParameter("company", company)
-                .getSingleResult();
         long transactions = em.createQuery("select count(t) from Txn t where t.company = :company", Long.class)
                 .setParameter("company", company)
                 .getSingleResult();
@@ -509,16 +550,13 @@ public final class SclxImportCommitService
                         "select count(*) from period_close_event where company_id = ?")
                 .setParameter(1, company.getId())
                 .getSingleResult()).longValue();
-        long auditEvents = em.createQuery(
-                        "select count(a) from AuditEvent a where a.company = :company", Long.class)
-                .setParameter("company", company)
-                .getSingleResult();
-        if (accounts + funds + transactions + budgets + budgetCategories
+        if (transactions + budgets + budgetCategories
                 + activities + counterparties + merchants + fixedAssets + inventoryItems
                 + banks + bankAccounts + importBatches + reconciliationSessions
-                + periodCloseRanges + periodCloseEvents + auditEvents != 0L)
+                + periodCloseRanges + periodCloseEvents != 0L)
         {
-            throw new IllegalStateException("SCLX import requires an empty target company.");
+            throw new IllegalStateException(
+                    "SCLX existing-company import requires a target without operational data.");
         }
     }
 
@@ -540,7 +578,11 @@ public final class SclxImportCommitService
         company.touchUpdatedAt();
     }
 
-    private ChartOfAccounts targetChart(EntityManager em, Company company, JsonNode root)
+    private ChartOfAccounts targetChart(
+            EntityManager em,
+            Company company,
+            JsonNode root,
+            boolean preserveExisting)
     {
         ChartOfAccounts chart = company.getActiveChartOfAccounts();
         JsonNode app = root.path("extensions").path("scaJakartaH2");
@@ -555,10 +597,15 @@ public final class SclxImportCommitService
             company.setActiveChartOfAccounts(chart);
         }
         ownership.ensureOwnedBy(em, company, chart, "Active Chart of Accounts");
-        chart.setName(chartName == null ? company.getDisplayName() + " Chart of Accounts" : chartName);
-        chart.setVersion(chartVersion == null ? "SCLX-" + SclxVersion.writerVersion().externalValue() : chartVersion);
-        chart.setStatus(ChartStatus.ACTIVE);
-        chart.touchUpdatedAt();
+        if (!preserveExisting)
+        {
+            chart.setName(chartName == null ? company.getDisplayName() + " Chart of Accounts" : chartName);
+            chart.setVersion(chartVersion == null
+                    ? "SCLX-" + SclxVersion.writerVersion().externalValue()
+                    : chartVersion);
+            chart.setStatus(ChartStatus.ACTIVE);
+            chart.touchUpdatedAt();
+        }
         return chart;
     }
 
@@ -566,6 +613,7 @@ public final class SclxImportCommitService
             EntityManager em,
             ChartOfAccounts chart,
             JsonNode values,
+            List<SclxImportMappingRequirement> mappings,
             Map<EntityKey, SclxImportEntityPreview> previews,
             int writesBefore)
     {
@@ -575,7 +623,28 @@ public final class SclxImportCommitService
         for (JsonNode value : ordered)
         {
             String externalId = text(value, "accountId");
+            SclxImportMappingRequirement mapping = requiredMapping(
+                    mappings, SclxImportMappingRequirement.Kind.ACCOUNT, externalId);
+            Account existing = findAccount(em, chart, mapping.targetCode());
+            if ((mapping.resolution() == SclxImportMappingRequirement.Resolution.AS_IS
+                    || mapping.resolution() == SclxImportMappingRequirement.Resolution.MAPPED)
+                    && existing != null)
+            {
+                requireCompatibleMappedAccount(value, mapping, existing);
+                result.put(externalId, existing);
+                continue;
+            }
+            if (mapping.resolution() != SclxImportMappingRequirement.Resolution.CREATE)
+            {
+                throw new IllegalStateException(
+                        "SCLX account mapping is not resolved: " + mapping.sourceCode() + ".");
+            }
             requireNew(previews, "ACCOUNT", externalId);
+            if (existing != null)
+            {
+                throw new IllegalStateException(
+                        "SCLX account mapping no longer matches the target chart: " + mapping.sourceCode() + ".");
+            }
             Account account = new Account();
             account.setChart(chart);
             account.setCode(text(value, "code"));
@@ -600,6 +669,7 @@ public final class SclxImportCommitService
             EntityManager em,
             Company company,
             JsonNode values,
+            List<SclxImportMappingRequirement> mappings,
             Map<EntityKey, SclxImportEntityPreview> previews,
             int writesBefore)
     {
@@ -609,7 +679,28 @@ public final class SclxImportCommitService
         for (JsonNode value : ordered)
         {
             String externalId = text(value, "fundId");
+            SclxImportMappingRequirement mapping = requiredMapping(
+                    mappings, SclxImportMappingRequirement.Kind.FUND, externalId);
+            Fund existing = findFund(em, company, mapping.targetCode());
+            if ((mapping.resolution() == SclxImportMappingRequirement.Resolution.AS_IS
+                    || mapping.resolution() == SclxImportMappingRequirement.Resolution.MAPPED)
+                    && existing != null)
+            {
+                requireCompatibleMappedFund(value, mapping, existing);
+                result.put(externalId, existing);
+                continue;
+            }
+            if (mapping.resolution() != SclxImportMappingRequirement.Resolution.CREATE)
+            {
+                throw new IllegalStateException(
+                        "SCLX fund mapping is not resolved: " + mapping.sourceCode() + ".");
+            }
             requireNew(previews, "FUND", externalId);
+            if (existing != null)
+            {
+                throw new IllegalStateException(
+                        "SCLX fund mapping no longer matches the target company: " + mapping.sourceCode() + ".");
+            }
             Fund fund = new Fund();
             fund.setCompany(company);
             fund.setCode(text(value, "code"));
@@ -1508,6 +1599,89 @@ public final class SclxImportCommitService
         return Map.copyOf(result);
     }
 
+    private static SclxImportMappingRequirement requiredMapping(
+            List<SclxImportMappingRequirement> mappings,
+            SclxImportMappingRequirement.Kind kind,
+            String sourceId)
+    {
+        return mappings.stream()
+                .filter(value -> value.kind() == kind && value.sourceId().equals(sourceId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Missing SCLX " + kind.name().toLowerCase(Locale.ROOT)
+                                + " mapping for " + sourceId + "."));
+    }
+
+    private static int newMasterCount(
+            List<SclxImportMappingRequirement> mappings,
+            SclxImportMappingRequirement.Kind kind)
+    {
+        return (int) mappings.stream()
+                .filter(value -> value.kind() == kind)
+                .filter(value -> value.resolution() == SclxImportMappingRequirement.Resolution.CREATE)
+                .count();
+    }
+
+    private static String mappingAudit(List<SclxImportMappingRequirement> mappings)
+    {
+        return mappings.stream()
+                .map(value -> value.kind().name() + ":" + value.sourceCode()
+                        + "->" + value.targetCode() + "(" + value.resolution().name() + ")")
+                .collect(java.util.stream.Collectors.joining("|"));
+    }
+
+    private static void requireCompatibleMappedAccount(
+            JsonNode source,
+            SclxImportMappingRequirement mapping,
+            Account target)
+    {
+        AccountType sourceType = enumValue(AccountType.class, text(source, "type"), "account type");
+        NormalBalance sourceSide = enumValue(
+                NormalBalance.class, text(source, "increaseSide"), "increase side");
+        if (sourceType != target.getAccountType()
+                || sourceSide != target.getNormalBalance()
+                || (mapping.used() && (!target.isActive() || !target.isPosting())))
+        {
+            throw new IllegalStateException(
+                    "The approved target account is no longer compatible: " + target.getCode() + ".");
+        }
+    }
+
+    private static void requireCompatibleMappedFund(
+            JsonNode source,
+            SclxImportMappingRequirement mapping,
+            Fund target)
+    {
+        FundType sourceType = enumValue(FundType.class, text(source, "type"), "fund type");
+        if (sourceType != target.getFundType() || (mapping.used() && !target.isActive()))
+        {
+            throw new IllegalStateException(
+                    "The approved target fund is no longer compatible: " + target.getCode() + ".");
+        }
+    }
+
+    private static Account findAccount(EntityManager em, ChartOfAccounts chart, String code)
+    {
+        return em.createQuery(
+                        "from Account a where a.chart = :chart and a.code = :code", Account.class)
+                .setParameter("chart", chart)
+                .setParameter("code", code)
+                .getResultStream()
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static Fund findFund(EntityManager em, Company company, String code)
+    {
+        return em.createQuery(
+                        "from Fund f where f.company = :company and f.code = :code", Fund.class)
+                .setParameter("company", company)
+                .setParameter("code", code)
+                .getResultStream()
+                .findFirst()
+                .orElse(null);
+    }
+
     private static void requireNew(
             Map<EntityKey, SclxImportEntityPreview> previews,
             String type,
@@ -1586,7 +1760,7 @@ public final class SclxImportCommitService
         InterchangeOperationCounts counts = new InterchangeOperationCounts(
                 preview.operation().counts().total(),
                 created,
-                0L,
+                preview.operation().counts().updated(),
                 identical,
                 preview.operation().counts().skipped(),
                 preview.operation().counts().warnings(),

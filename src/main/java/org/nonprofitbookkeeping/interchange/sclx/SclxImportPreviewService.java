@@ -53,6 +53,8 @@ public final class SclxImportPreviewService
             "accountId", "ledgerAccountId", "assetAccountId", "accumulatedDepreciationAccountId",
             "depreciationExpenseAccountId", "inventoryAccountId");
     private static final Set<String> FUND_REFERENCE_FIELDS = Set.of("fundId");
+    private static final Set<String> MERGE_REUSABLE_ENTITY_TYPES =
+            Set.of("ORGANIZATION", "ACCOUNT", "FUND");
 
     private final SclxDocumentParser parser;
     private final SclxStructureValidator structureValidator;
@@ -79,7 +81,15 @@ public final class SclxImportPreviewService
 
     public SclxImportPreview preview(Path source)
     {
+        return preview(source, List.of());
+    }
+
+    public SclxImportPreview preview(
+            Path source,
+            List<SclxImportMappingSelection> mappingSelections)
+    {
         Objects.requireNonNull(source, "source");
+        Objects.requireNonNull(mappingSelections, "mappingSelections");
         SclxParsedDocument document = parser.parse(source);
         List<InterchangeValidationMessage> messages = new ArrayList<>();
         document.compatibilityNotices().forEach(notice -> messages.add(message(
@@ -96,20 +106,37 @@ public final class SclxImportPreviewService
         SclxImportTargetSnapshot target = targetReader.read(targetCode, organization.sourceSystem());
         Extraction extraction = extract(document.root(), messages);
         List<SclxImportEntityPreview> entities = classify(extraction.entities(), target, messages);
-        MappingResult mapping = mappings(document.root(), target, messages);
+        MappingResult mapping = mappings(document.root(), target, messages, mappingSelections);
         TransactionResult transactionResult = transactions(document.root(), target, messages);
 
-        boolean populatedMerge = target.populated() && entities.stream()
+        boolean populatedMerge = target.operationalDataPopulated() && entities.stream()
                 .anyMatch(value -> value.identityMatch() != InterchangeIdentityMatch.IDENTICAL);
         if (populatedMerge)
         {
             messages.add(message(
                     InterchangeMessageSeverity.ERROR,
-                    "SCLX_POPULATED_TARGET_UNSUPPORTED",
+                    "SCLX_OPERATIONAL_DATA_MERGE_UNSUPPORTED",
                     "targetCompany",
-                    "The target company already contains accounting or master data. Populated-company merge "
-                            + "of new or conflicting identities is blocked until explicit conflict rules are implemented. "
-                            + "A completely identical reimport remains an idempotent no-op.",
+                    "The target company already contains transactions, budgets, linked masters, banking, assets, "
+                            + "inventory, reconciliation, or period-close history. This import option can merge into "
+                            + "an existing chart-and-funds company, but it will not combine competing operational histories. "
+                            + "Use a company without operational data or reimport a completely identical SCLX file.",
+                    true));
+        }
+        boolean mixedUnsupportedIdentity = entities.stream()
+                .anyMatch(value -> value.identityMatch() == InterchangeIdentityMatch.NEW)
+                && entities.stream().anyMatch(value ->
+                        value.identityMatch() == InterchangeIdentityMatch.IDENTICAL
+                                && !MERGE_REUSABLE_ENTITY_TYPES.contains(value.entityType()));
+        if (mixedUnsupportedIdentity)
+        {
+            messages.add(message(
+                    InterchangeMessageSeverity.ERROR,
+                    "SCLX_MIXED_IDENTITY_MERGE_UNSUPPORTED",
+                    "targetCompany",
+                    "This target already contains an identical imported operational or audit-history entity while "
+                            + "the source also contains new entities. Use a target without that prior SCLX history "
+                            + "or reimport a completely identical file.",
                     true));
         }
         if (!organization.code().equalsIgnoreCase(target.companyCode()))
@@ -127,15 +154,28 @@ public final class SclxImportPreviewService
                 .filter(value -> value.severity() == InterchangeMessageSeverity.WARNING)
                 .count();
         long errors = messages.stream().filter(InterchangeValidationMessage::blocking).count();
+        Set<String> mappedMasterIds = mapping.requirements().stream()
+                .filter(value -> value.resolution() == SclxImportMappingRequirement.Resolution.MAPPED)
+                .map(SclxImportMappingRequirement::sourceId)
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        Set<String> reusedEntityIds = new HashSet<>(mappedMasterIds);
+        if (target.populated() && entities.stream().anyMatch(value ->
+                value.externalId().equals(organization.organizationId())
+                        && value.identityMatch() == InterchangeIdentityMatch.NEW))
+        {
+            reusedEntityIds.add(organization.organizationId());
+        }
         long created = entities.stream()
                 .filter(value -> value.identityMatch() == InterchangeIdentityMatch.NEW)
+                .filter(value -> !reusedEntityIds.contains(value.externalId()))
                 .count();
         long identical = entities.stream()
                 .filter(value -> value.identityMatch() == InterchangeIdentityMatch.IDENTICAL)
                 .count();
         long skipped = transactionResult.zeroValueLines() + transactionResult.emptyTransactions();
         InterchangeOperationCounts operationCounts = new InterchangeOperationCounts(
-                extraction.counts().totalEntities(), created, 0L, identical, skipped, warnings, errors);
+                extraction.counts().totalEntities(), created, mappedMasterIds.size(),
+                identical, skipped, warnings, errors);
         String sourceName = source.getFileName() == null ? source.toString() : source.getFileName().toString();
         InterchangePreview<SclxImportEntityPreview> operation = new InterchangePreview<>(
                 InterchangeFormat.SCLX,
@@ -308,7 +348,8 @@ public final class SclxImportPreviewService
     private static MappingResult mappings(
             JsonNode root,
             SclxImportTargetSnapshot target,
-            List<InterchangeValidationMessage> messages)
+            List<InterchangeValidationMessage> messages,
+            List<SclxImportMappingSelection> selections)
     {
         Set<String> usedAccounts = new LinkedHashSet<>();
         Set<String> usedFunds = new LinkedHashSet<>();
@@ -317,6 +358,17 @@ public final class SclxImportPreviewService
         collectReferences(root.path("extensions"), usedAccounts, usedFunds);
 
         List<SclxImportMappingRequirement> requirements = new ArrayList<>();
+        Map<MappingKey, String> selectedTargets = new HashMap<>();
+        for (SclxImportMappingSelection selection : selections)
+        {
+            MappingKey key = new MappingKey(selection.kind(), selection.sourceId());
+            if (selectedTargets.put(key, selection.targetCode()) != null)
+            {
+                messages.add(message(InterchangeMessageSeverity.ERROR,
+                        "SCLX_DUPLICATE_MAPPING_SELECTION", "mapping",
+                        "More than one target was selected for " + selection.sourceId() + ".", true));
+            }
+        }
         JsonNode accounts = root.path("chartOfAccounts");
         if (accounts.isArray())
         {
@@ -328,7 +380,10 @@ public final class SclxImportPreviewService
                 String sourceCode = text(source, "code");
                 if (sourceId == null || sourceCode == null) continue;
                 boolean used = usedAccounts.contains(sourceId);
-                SclxImportMappingRequirement requirement = accountMapping(source, sourceId, sourceCode, used, target);
+                SclxImportMappingRequirement requirement = accountMapping(
+                        source, sourceId, sourceCode, used, target,
+                        selectedTargets.get(new MappingKey(
+                                SclxImportMappingRequirement.Kind.ACCOUNT, sourceId)));
                 requirements.add(requirement);
                 mappingMessage(requirement, messages);
             }
@@ -344,14 +399,48 @@ public final class SclxImportPreviewService
                 String sourceCode = text(source, "code");
                 if (sourceId == null || sourceCode == null) continue;
                 boolean used = usedFunds.contains(sourceId);
-                SclxImportMappingRequirement requirement = fundMapping(source, sourceId, sourceCode, used, target);
+                SclxImportMappingRequirement requirement = fundMapping(
+                        source, sourceId, sourceCode, used, target,
+                        selectedTargets.get(new MappingKey(
+                                SclxImportMappingRequirement.Kind.FUND, sourceId)));
                 requirements.add(requirement);
                 mappingMessage(requirement, messages);
             }
         }
+        Set<MappingKey> projectedKeys = requirements.stream()
+                .map(value -> new MappingKey(value.kind(), value.sourceId()))
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        selectedTargets.keySet().stream()
+                .filter(key -> !projectedKeys.contains(key))
+                .forEach(key -> messages.add(message(
+                        InterchangeMessageSeverity.ERROR,
+                        "SCLX_MAPPING_SELECTION_UNKNOWN",
+                        "mapping",
+                        "The selected source account or fund is no longer present: " + key.sourceId() + ".",
+                        true)));
+        Map<TargetMappingKey, List<SclxImportMappingRequirement>> byTarget = requirements.stream()
+                .filter(value -> value.resolution() == SclxImportMappingRequirement.Resolution.AS_IS
+                        || value.resolution() == SclxImportMappingRequirement.Resolution.MAPPED)
+                .collect(java.util.stream.Collectors.groupingBy(
+                        value -> new TargetMappingKey(value.kind(), value.targetCode())));
+        byTarget.entrySet().stream()
+                .filter(entry -> entry.getValue().size() > 1)
+                .sorted(Comparator.comparing(
+                                (Map.Entry<TargetMappingKey, List<SclxImportMappingRequirement>> entry) ->
+                                        entry.getKey().kind())
+                        .thenComparing(entry -> entry.getKey().targetCode()))
+                .forEach(entry -> messages.add(message(
+                        InterchangeMessageSeverity.ERROR,
+                        "SCLX_MAPPING_TARGET_REUSED",
+                        "mapping." + entry.getKey().kind().name().toLowerCase(Locale.ROOT)
+                                + "." + entry.getKey().targetCode(),
+                        "More than one source " + entry.getKey().kind().name().toLowerCase(Locale.ROOT)
+                                + " maps to target " + entry.getKey().targetCode()
+                                + ". Select a distinct target for each source record.",
+                        true)));
         SclxAccountMode mode = requirements.stream()
-                .filter(value -> value.kind() == SclxImportMappingRequirement.Kind.ACCOUNT)
-                .allMatch(value -> value.resolution() == SclxImportMappingRequirement.Resolution.AS_IS)
+                .allMatch(value -> value.resolution() == SclxImportMappingRequirement.Resolution.AS_IS
+                        || value.resolution() == SclxImportMappingRequirement.Resolution.CREATE)
                 ? SclxAccountMode.AS_IS : SclxAccountMode.MAPPED;
         return new MappingResult(mode, requirements.stream()
                 .sorted(Comparator.comparing(SclxImportMappingRequirement::kind)
@@ -361,120 +450,206 @@ public final class SclxImportPreviewService
 
     private static SclxImportMappingRequirement accountMapping(
             JsonNode source, String sourceId, String sourceCode, boolean used,
-            SclxImportTargetSnapshot target)
+            SclxImportTargetSnapshot target, String selectedTargetCode)
     {
         String targetId = SclxPortableIdentity.account(target.companyCode(), sourceCode);
         if (!target.populated())
         {
             return new SclxImportMappingRequirement(
                     SclxImportMappingRequirement.Kind.ACCOUNT, sourceId, sourceCode,
-                    targetId, sourceCode, used, SclxImportMappingRequirement.Resolution.AS_IS,
-                    "The empty target can create this account under AS_IS rules.", false);
-        }
-        SclxImportTargetSnapshot.TargetAccount local = target.accountsByCode().get(sourceCode);
-        if (local == null)
-        {
-            return unresolved(SclxImportMappingRequirement.Kind.ACCOUNT, sourceId, sourceCode, used,
-                    "No target account has this code.");
-        }
-        String sourceType = normalizeAccountType(text(source, "type"));
-        String sourceSide = normalizeToken(text(source, "increaseSide"));
-        boolean compatible = sourceType.equals(normalizeAccountType(local.type()))
-                && sourceSide.equals(normalizeToken(local.increaseSide()));
-        if (!compatible || (used && (!local.active() || !local.posting())))
-        {
-            return new SclxImportMappingRequirement(
-                    SclxImportMappingRequirement.Kind.ACCOUNT, sourceId, sourceCode,
-                    local.portableId(), local.code(), used,
-                    SclxImportMappingRequirement.Resolution.CONFLICT,
-                    !compatible
-                            ? "The target account type or increase side is incompatible."
-                            : "A used target account must be active and posting.",
-                    used);
+                    targetId, sourceCode, used, SclxImportMappingRequirement.Resolution.CREATE,
+                    "The import will create this account in the target chart.", false);
         }
         SclxImportTargetSnapshot.IdentityFact imported = target.identities().get(
                 new SclxImportTargetSnapshot.ExternalIdentityKey("ACCOUNT", sourceId));
         if (imported != null && imported.normalizedContentHash().equals(hash(source)))
         {
+            SclxImportTargetSnapshot.TargetAccount importedTarget = target.accountsByCode().values().stream()
+                    .filter(value -> value.localEntityId().equals(imported.localEntityId()))
+                    .findFirst()
+                    .orElse(null);
+            if (importedTarget == null)
+            {
+                return new SclxImportMappingRequirement(
+                        SclxImportMappingRequirement.Kind.ACCOUNT, sourceId, sourceCode,
+                        null, null, used, SclxImportMappingRequirement.Resolution.UNRESOLVED,
+                        "The identical imported account identity no longer resolves to a target account.",
+                        true);
+            }
             return new SclxImportMappingRequirement(
                     SclxImportMappingRequirement.Kind.ACCOUNT, sourceId, sourceCode,
-                    local.portableId(), local.code(), used,
+                    importedTarget.portableId(), importedTarget.code(), used,
                     SclxImportMappingRequirement.Resolution.AS_IS,
                     "The identical imported identity already resolves to this target account.", false);
         }
-        boolean exact = sourceId.equals(local.portableId());
+        List<String> candidates = compatibleAccountCodes(source, used, target);
+        String resolvedCode = selectedTargetCode == null ? sourceCode : selectedTargetCode;
+        SclxImportTargetSnapshot.TargetAccount local = target.accountsByCode().get(resolvedCode);
+        if (local == null)
+        {
+            if (selectedTargetCode != null)
+            {
+                return new SclxImportMappingRequirement(
+                        SclxImportMappingRequirement.Kind.ACCOUNT, sourceId, sourceCode,
+                        null, null, used, SclxImportMappingRequirement.Resolution.UNRESOLVED,
+                        "The selected target account no longer exists. Choose another compatible account.",
+                        used, candidates);
+            }
+            return new SclxImportMappingRequirement(
+                    SclxImportMappingRequirement.Kind.ACCOUNT, sourceId, sourceCode,
+                    targetId, sourceCode, used, SclxImportMappingRequirement.Resolution.CREATE,
+                    "No target account uses this code; the import will create it in the existing chart.", false);
+        }
+        boolean compatible = compatibleAccount(source, used, local);
+        if (!compatible)
+        {
+            return new SclxImportMappingRequirement(
+                    SclxImportMappingRequirement.Kind.ACCOUNT, sourceId, sourceCode,
+                    local.portableId(), local.code(), used,
+                    SclxImportMappingRequirement.Resolution.CONFLICT,
+                    "The target account type, increase side, posting state, or active state is incompatible. "
+                            + (candidates.isEmpty()
+                                    ? "Create a compatible target account with a different code, then preview again."
+                                    : "Choose a compatible target account from the mapping selector."),
+                    used, candidates);
+        }
         return new SclxImportMappingRequirement(
                 SclxImportMappingRequirement.Kind.ACCOUNT, sourceId, sourceCode,
                 local.portableId(), local.code(), used,
-                exact ? SclxImportMappingRequirement.Resolution.AS_IS
-                        : SclxImportMappingRequirement.Resolution.MAPPED,
-                exact ? "The portable identity resolves directly."
-                        : "A compatible code match exists but requires an explicit source-to-target mapping.",
-                used && !exact);
+                SclxImportMappingRequirement.Resolution.MAPPED,
+                "A compatible code match exists. Approve the shown source-to-target mapping before import.",
+                false, candidates);
     }
 
     private static SclxImportMappingRequirement fundMapping(
             JsonNode source, String sourceId, String sourceCode, boolean used,
-            SclxImportTargetSnapshot target)
+            SclxImportTargetSnapshot target, String selectedTargetCode)
     {
         String targetId = SclxPortableIdentity.fund(target.companyCode(), sourceCode);
         if (!target.populated())
         {
             return new SclxImportMappingRequirement(
                     SclxImportMappingRequirement.Kind.FUND, sourceId, sourceCode,
-                    targetId, sourceCode, used, SclxImportMappingRequirement.Resolution.AS_IS,
-                    "The empty target can create this fund under AS_IS rules.", false);
-        }
-        SclxImportTargetSnapshot.TargetFund local = target.fundsByCode().get(sourceCode);
-        if (local == null)
-        {
-            return unresolved(SclxImportMappingRequirement.Kind.FUND, sourceId, sourceCode, used,
-                    "No target fund has this code.");
-        }
-        boolean compatible = normalizeToken(text(source, "type")).equals(normalizeToken(local.type()));
-        if (!compatible || (used && !local.active()))
-        {
-            return new SclxImportMappingRequirement(
-                    SclxImportMappingRequirement.Kind.FUND, sourceId, sourceCode,
-                    local.portableId(), local.code(), used,
-                    SclxImportMappingRequirement.Resolution.CONFLICT,
-                    !compatible ? "The target fund type is incompatible."
-                            : "A used target fund must be active.",
-                    used);
+                    targetId, sourceCode, used, SclxImportMappingRequirement.Resolution.CREATE,
+                    "The import will create this fund in the target company.", false);
         }
         SclxImportTargetSnapshot.IdentityFact imported = target.identities().get(
                 new SclxImportTargetSnapshot.ExternalIdentityKey("FUND", sourceId));
         if (imported != null && imported.normalizedContentHash().equals(hash(source)))
         {
+            SclxImportTargetSnapshot.TargetFund importedTarget = target.fundsByCode().values().stream()
+                    .filter(value -> value.localEntityId().equals(imported.localEntityId()))
+                    .findFirst()
+                    .orElse(null);
+            if (importedTarget == null)
+            {
+                return new SclxImportMappingRequirement(
+                        SclxImportMappingRequirement.Kind.FUND, sourceId, sourceCode,
+                        null, null, used, SclxImportMappingRequirement.Resolution.UNRESOLVED,
+                        "The identical imported fund identity no longer resolves to a target fund.", true);
+            }
             return new SclxImportMappingRequirement(
                     SclxImportMappingRequirement.Kind.FUND, sourceId, sourceCode,
-                    local.portableId(), local.code(), used,
+                    importedTarget.portableId(), importedTarget.code(), used,
                     SclxImportMappingRequirement.Resolution.AS_IS,
                     "The identical imported identity already resolves to this target fund.", false);
         }
-        boolean exact = sourceId.equals(local.portableId());
+        List<String> candidates = compatibleFundCodes(source, used, target);
+        String resolvedCode = selectedTargetCode == null ? sourceCode : selectedTargetCode;
+        SclxImportTargetSnapshot.TargetFund local = target.fundsByCode().get(resolvedCode);
+        if (local == null)
+        {
+            if (selectedTargetCode != null)
+            {
+                return new SclxImportMappingRequirement(
+                        SclxImportMappingRequirement.Kind.FUND, sourceId, sourceCode,
+                        null, null, used, SclxImportMappingRequirement.Resolution.UNRESOLVED,
+                        "The selected target fund no longer exists. Choose another compatible fund.",
+                        used, candidates);
+            }
+            return new SclxImportMappingRequirement(
+                    SclxImportMappingRequirement.Kind.FUND, sourceId, sourceCode,
+                    targetId, sourceCode, used, SclxImportMappingRequirement.Resolution.CREATE,
+                    "No target fund uses this code; the import will create it in the existing company.", false);
+        }
+        boolean compatible = compatibleFund(source, used, local);
+        if (!compatible)
+        {
+            return new SclxImportMappingRequirement(
+                    SclxImportMappingRequirement.Kind.FUND, sourceId, sourceCode,
+                    local.portableId(), local.code(), used,
+                    SclxImportMappingRequirement.Resolution.CONFLICT,
+                    "The target fund type or active state is incompatible. "
+                            + (candidates.isEmpty()
+                                    ? "Create a compatible target fund with a different code, then preview again."
+                                    : "Choose a compatible target fund from the mapping selector."),
+                    used, candidates);
+        }
         return new SclxImportMappingRequirement(
                 SclxImportMappingRequirement.Kind.FUND, sourceId, sourceCode,
                 local.portableId(), local.code(), used,
-                exact ? SclxImportMappingRequirement.Resolution.AS_IS
-                        : SclxImportMappingRequirement.Resolution.MAPPED,
-                exact ? "The portable identity resolves directly."
-                        : "A compatible code match exists but requires an explicit source-to-target mapping.",
-                used && !exact);
+                SclxImportMappingRequirement.Resolution.MAPPED,
+                "A compatible code match exists. Approve the shown source-to-target mapping before import.",
+                false, candidates);
     }
 
-    private static SclxImportMappingRequirement unresolved(
-            SclxImportMappingRequirement.Kind kind, String sourceId, String sourceCode,
-            boolean used, String detail)
+    private static List<String> compatibleAccountCodes(
+            JsonNode source,
+            boolean used,
+            SclxImportTargetSnapshot target)
     {
-        return new SclxImportMappingRequirement(kind, sourceId, sourceCode, null, null, used,
-                SclxImportMappingRequirement.Resolution.UNRESOLVED, detail, used);
+        return target.accountsByCode().values().stream()
+                .filter(value -> compatibleAccount(source, used, value))
+                .map(SclxImportTargetSnapshot.TargetAccount::code)
+                .sorted()
+                .toList();
+    }
+
+    private static boolean compatibleAccount(
+            JsonNode source,
+            boolean used,
+            SclxImportTargetSnapshot.TargetAccount local)
+    {
+        String sourceType = normalizeAccountType(text(source, "type"));
+        String sourceSide = normalizeToken(text(source, "increaseSide"));
+        return sourceType.equals(normalizeAccountType(local.type()))
+                && sourceSide.equals(normalizeToken(local.increaseSide()))
+                && (!used || (local.active() && local.posting()));
+    }
+
+    private static List<String> compatibleFundCodes(
+            JsonNode source,
+            boolean used,
+            SclxImportTargetSnapshot target)
+    {
+        return target.fundsByCode().values().stream()
+                .filter(value -> compatibleFund(source, used, value))
+                .map(SclxImportTargetSnapshot.TargetFund::code)
+                .sorted()
+                .toList();
+    }
+
+    private static boolean compatibleFund(
+            JsonNode source,
+            boolean used,
+            SclxImportTargetSnapshot.TargetFund local)
+    {
+        return normalizeToken(text(source, "type")).equals(normalizeToken(local.type()))
+                && (!used || local.active());
     }
 
     private static void mappingMessage(
             SclxImportMappingRequirement mapping,
             List<InterchangeValidationMessage> messages)
     {
+        if (mapping.resolution() == SclxImportMappingRequirement.Resolution.MAPPED)
+        {
+            messages.add(message(InterchangeMessageSeverity.WARNING,
+                    "SCLX_MAPPING_APPROVAL_REQUIRED",
+                    "mapping." + mapping.kind().name().toLowerCase(Locale.ROOT) + "." + mapping.sourceCode(),
+                    mapping.detail(), false));
+            return;
+        }
         if (!mapping.blocking())
         {
             return;
@@ -484,7 +659,7 @@ public final class SclxImportPreviewService
             case MAPPED -> "SCLX_EXPLICIT_MAPPING_REQUIRED";
             case CONFLICT -> "SCLX_MAPPING_CONFLICT";
             case UNRESOLVED -> "SCLX_MAPPING_UNRESOLVED";
-            case AS_IS -> "SCLX_MAPPING_BLOCKED";
+            case AS_IS, CREATE -> "SCLX_MAPPING_BLOCKED";
         };
         messages.add(message(InterchangeMessageSeverity.ERROR, code,
                 "mapping." + mapping.kind().name().toLowerCase(Locale.ROOT) + "." + mapping.sourceCode(),
@@ -966,6 +1141,8 @@ public final class SclxImportPreviewService
     private record Extraction(SclxImportPreviewCounts counts, List<IncomingEntity> entities) { }
     private record MappingResult(
             SclxAccountMode recommendedMode, List<SclxImportMappingRequirement> requirements) { }
+    private record MappingKey(SclxImportMappingRequirement.Kind kind, String sourceId) { }
+    private record TargetMappingKey(SclxImportMappingRequirement.Kind kind, String targetCode) { }
     private record TransactionResult(
             List<SclxImportTransactionPreview> previews, long zeroValueLines, long emptyTransactions) { }
     private record ArraySpec(String field, String idField, String entityType, String countKey) { }
