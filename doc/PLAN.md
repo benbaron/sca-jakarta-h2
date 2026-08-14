@@ -1,11 +1,11 @@
 ---
-plan_version: 194
+plan_version: 195
 active_phase: P16
 active_slice: P16-C6
 active_status: VERIFYING
 active_branch: codex/P16-C6-sclx-existing-company-merge
 active_pull_request: 274
-active_head: 3bf721a1eb0432460335f69ea55070e0278b3278
+active_head: 28745748950891533b655018b109a615c46a0b4c
 next_action: "Validate and publish the owner-reported ownership-preview repair on PR #274, then rerun the updated owner desktop checklist before merge."
 ---
 
@@ -2873,6 +2873,7 @@ Validation status:
 - Owner desktop testing exposed a pre-commit contract defect: a newly created target showed only donor warnings during preview, then commit failed on 14 global ownership diagnostics beginning with `ACTIVITY 1`. The corrective local tree adds the missing preview gate, selects the first blocker into a persistent resolution subpane, and adds **Administration -> Company Ownership Diagnostics** with transactional per-record assignment, active-company validation, actor/reason evidence, confirmation, rollback, and audit coverage. Cross-company conflicts remain read-only and actionable rather than being silently dismissed.
 - Focused service, preview, JavaFX, and source-level regressions cover actionable blocker projection, direct `ACTIVITY` repair plus audit, cross-company repair rejection, Administration reachability, and selected-message resolution visibility. Local Maven and the `javac` launcher remain unavailable, so authoritative compile and execution require the next PR-head Maven PR Tests run.
 - The JDK compiler module parses all 710 production and test Java sources under Java 17 grammar with no syntax errors, and `git diff --check` passes. The ordinary `javac` launcher, Maven, and resolved Maven dependency cache remain unavailable, so semantic compilation and runtime tests still require Maven PR Tests.
+- Local corrective implementation commit `28745748950891533b655018b109a615c46a0b4c` contains the preview blocker projection, evidence-aware audited repair service, Administration workflow, focused regressions, governing-contract updates, and revised owner checklist.
 
 Next exact action:
 
