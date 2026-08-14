@@ -6,11 +6,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.interchange.InterchangeIdentityMatch;
+import org.nonprofitbookkeeping.service.CompanyOwnershipIssueView;
 
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -142,6 +144,45 @@ class SclxImportPreviewServiceTest
         assertTrue(codes.contains("SCLX_DONOR_COUNTERPARTY_LINKS_NORMALIZED"));
         assertTrue(codes.contains("SCLX_DONOR_BUDGET_REFERENCES_SKIPPED"));
         assertTrue(preview.transactions().get(0).balanced());
+    }
+
+    @Test
+    void surfacesEveryOpenOwnershipDiagnosticAsAnActionableBlockingPreviewError()
+    {
+        Path source = Path.of("src/test/resources/compatibility/sclx/donor-sclx-1.3.json");
+        List<CompanyOwnershipIssueView> ownershipIssues = List.of(
+                new CompanyOwnershipIssueView(
+                        11L, "ACTIVITY", "1", "EVENT — Annual event", List.of(), "UNRESOLVED_OWNER", 0,
+                        "Activity has no deterministic company owner.", Instant.parse("2026-08-14T00:00:00Z")),
+                new CompanyOwnershipIssueView(
+                        12L, "TXN_SPLIT", "7", "TXN_SPLIT 7", List.of("DEFAULT", "OTHER"),
+                        "CROSS_COMPANY_REFERENCE", 2,
+                        "Transaction split account belongs to another company.",
+                        Instant.parse("2026-08-14T00:00:00Z")));
+        SclxImportTargetSnapshot target = emptyTarget("TEST");
+        SclxImportPreviewService service = new SclxImportPreviewService(
+                new SclxDocumentParser(), new SclxStructureValidator(),
+                (companyCode, sourceSystem) -> target,
+                target::companyCode,
+                () -> ownershipIssues);
+
+        SclxImportPreview preview = service.preview(source);
+        List<org.nonprofitbookkeeping.interchange.InterchangeValidationMessage> blockers =
+                preview.operation().messages().stream()
+                        .filter(message -> message.code().equals("SCLX_COMPANY_OWNERSHIP_UNRESOLVED"))
+                        .toList();
+
+        assertTrue(preview.hasBlockingErrors());
+        assertEquals(2, blockers.size());
+        assertTrue(blockers.stream().allMatch(message -> message.blocking()
+                && message.message().contains("Resolution:")
+                && message.message().contains("Administration -> Company Ownership Diagnostics")));
+        assertTrue(blockers.stream().anyMatch(message ->
+                message.path().equals("companyOwnership.ACTIVITY.1")
+                        && message.message().contains("Assign Owner")));
+        assertTrue(blockers.stream().anyMatch(message ->
+                message.path().equals("companyOwnership.TXN_SPLIT.7")
+                        && message.message().contains("will not guess")));
     }
 
     @Test

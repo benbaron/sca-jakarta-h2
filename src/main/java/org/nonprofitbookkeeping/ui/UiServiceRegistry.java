@@ -29,6 +29,7 @@ import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
 import org.nonprofitbookkeeping.service.BudgetCategoryLookupService;
 import org.nonprofitbookkeeping.service.BudgetPlanService;
 import org.nonprofitbookkeeping.service.CompanyAdminService;
+import org.nonprofitbookkeeping.service.CompanyOwnershipService;
 import org.nonprofitbookkeeping.service.CompanyView;
 import org.nonprofitbookkeeping.service.CompanyUiPreferencesService;
 import org.nonprofitbookkeeping.service.CoaCsvImportService;
@@ -121,6 +122,10 @@ public final class UiServiceRegistry
     public static FixedAssetService fixedAssets() { return services().fixedAssets(); }
     public static InventoryService inventory() { return services().inventory(); }
     public static CompanyAdminService companyAdmin() { return services().companyAdmin(); }
+    public static CompanyOwnershipService companyOwnership()
+    {
+        return new CompanyOwnershipService(services().jpa());
+    }
     public static CompanyUiPreferencesService companyUiPreferences()
     {
         return new CompanyUiPreferencesService(

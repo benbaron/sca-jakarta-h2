@@ -24,6 +24,8 @@ class AdministrationNavigationSourceTest
         assertTrue(administrationPanel.contains("tab(\"Preferences\", settings)"));
         assertTrue(administrationPanel.contains("tab(\"Database Transfer\", transfers)"));
         assertTrue(administrationPanel.contains("tab(\"Company Admin\", companies)"));
+        assertTrue(administrationPanel.contains(
+                "tab(\"Company Ownership Diagnostics\", ownershipDiagnostics)"));
         assertTrue(administrationPanel.contains("tab(\"User Admin\", users)"));
     }
 
@@ -50,5 +52,24 @@ class AdministrationNavigationSourceTest
         assertTrue(service.contains("Select another active company before deactivating"));
         assertTrue(workspace.contains("activeCompanySelector"));
         assertTrue(workspace.contains("panelHost.refreshOpenPanels()"));
+    }
+
+    @Test
+    void ownershipDiagnosticsExposeExplicitAuditedRepairWithoutBulkGuessing() throws Exception
+    {
+        String panel = Files.readString(Path.of(
+                "src/main/java/org/nonprofitbookkeeping/ui/CompanyOwnershipDiagnosticsPanel.java"));
+        String service = Files.readString(Path.of(
+                "src/main/java/org/nonprofitbookkeeping/service/CompanyOwnershipService.java"));
+
+        assertTrue(panel.contains("ownershipDiagnosticsTable"));
+        assertTrue(panel.contains("ownershipDiagnosticsTargetCompany"));
+        assertTrue(panel.contains("ownershipDiagnosticsActor"));
+        assertTrue(panel.contains("ownershipDiagnosticsReason"));
+        assertTrue(panel.contains("Assign Owner…"));
+        assertTrue(panel.contains("No accounting reference is changed automatically"));
+        assertTrue(service.contains("COMPANY_OWNERSHIP_ASSIGNED"));
+        assertTrue(service.contains("PESSIMISTIC_WRITE"));
+        assertTrue(!panel.contains("Assign All"));
     }
 }

@@ -6,6 +6,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -105,6 +106,28 @@ class ImportPreviewPanelSclxTest
         });
     }
 
+    @Test
+    void blockingMessageIsSelectedAndItsResolutionRemainsVisible()
+    {
+        FxTestSupport.onFx(() -> {
+            SclxImportPreview blocked = ownershipBlockedPreview();
+            ImportPreviewPanel panel = new ImportPreviewPanel(
+                    new ImportPreviewService(), source -> blocked);
+            new Scene((javafx.scene.Parent) panel.root(), 1000, 700);
+
+            panel.applySclxPreview(blocked);
+
+            Label status = (Label) panel.root().lookup("#importPreviewStatus");
+            ListView<?> messages = (ListView<?>) panel.root().lookup("#importPreviewMessages");
+            TextArea resolution = (TextArea) panel.root().lookup("#importPreviewMessageResolution");
+            assertTrue(status.getText().contains("BLOCKED"));
+            assertEquals(0, messages.getSelectionModel().getSelectedIndex());
+            assertTrue(resolution.getText().contains("Administration -> Company Ownership Diagnostics"));
+            assertTrue(resolution.getText().contains("Resolution:"));
+            return null;
+        });
+    }
+
     private static SclxImportPreview mappedPreview()
     {
         SclxImportPreview base = preview();
@@ -169,5 +192,27 @@ class ImportPreviewPanelSclxTest
                 new SclxImportPreviewCounts(Map.of("accounts", 1L, "organizations", 1L), 2, 3, 0, 0),
                 List.of(mapping),
                 List.of(transaction));
+    }
+
+    private static SclxImportPreview ownershipBlockedPreview()
+    {
+        SclxImportPreview base = preview();
+        InterchangeValidationMessage error = new InterchangeValidationMessage(
+                InterchangeMessageSeverity.ERROR,
+                "SCLX_COMPANY_OWNERSHIP_UNRESOLVED",
+                "companyOwnership.ACTIVITY.1",
+                "Activity has no deterministic company owner. Resolution: Select the actual owner in "
+                        + "Administration -> Company Ownership Diagnostics.",
+                true);
+        InterchangePreview<SclxImportEntityPreview> operation = new InterchangePreview<>(
+                base.operation().format(), base.operation().mode(), base.operation().sourceName(),
+                base.operation().targetLabel(), base.operation().sourceSha256(),
+                base.operation().items(), List.of(error), base.operation().confirmations(),
+                new InterchangeOperationCounts(1, 1, 0, 0, 0, 0, 1));
+        return new SclxImportPreview(
+                operation, base.version(), base.exportedAt(), base.sourceOrganizationId(),
+                base.sourceOrganizationCode(), base.sourceOrganizationName(), base.sourceSystem(),
+                base.targetCompanyCode(), base.targetCompanyName(), false, base.recommendedAccountMode(),
+                base.sectionCounts(), base.mappings(), base.transactions());
     }
 }

@@ -1,12 +1,12 @@
 ---
-plan_version: 193
+plan_version: 194
 active_phase: P16
 active_slice: P16-C6
 active_status: VERIFYING
 active_branch: codex/P16-C6-sclx-existing-company-merge
 active_pull_request: 274
-active_head: 33381e8a460c8be0300fb6ed1567f0dba8e27d37
-next_action: "Publish this CI-evidence plan commit, validate the exact documentation-inclusive PR #274 head, then complete the owner desktop checklist before merge."
+active_head: 3bf721a1eb0432460335f69ea55070e0278b3278
+next_action: "Validate and publish the owner-reported ownership-preview repair on PR #274, then rerun the updated owner desktop checklist before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2858,6 +2858,7 @@ Planned deliverables:
 - Re-read the exact source and mapping set at commit, preserve target organization/chart settings, reuse approved accounts/funds, create missing masters, record durable identities, and add the remaining graph atomically.
 - Continue to block destructive replacement and any merge into a target with competing operational history.
 - Add focused preview, commit, JavaFX, governing-document, and owner desktop verification coverage.
+- Correct the owner-reported preview/commit mismatch by surfacing every open ownership diagnostic as an actionable blocking SCLX preview message, and add an explicit audited Administration repair for direct ownerless legacy records without bulk guessing or cross-company reference rewrites.
 
 Validation status:
 
@@ -2869,7 +2870,10 @@ Validation status:
 - Owner-approved local correction `aa4f7dace29c26afb76ec29a1963a0e2d022ec57` explicitly types that one constructor argument as `SclxPreviewOperationFactory`. Remote correction `33381e8a460c8be0300fb6ed1567f0dba8e27d37` has the exact same full tree SHA.
 - Exact corrected PR head `33381e8a460c8be0300fb6ed1567f0dba8e27d37` passed all three Maven PR Tests gates in run `31767335496`: clean `mvn clean verify` and the deliberately repeated suite each ran 657 tests with 0 failures/errors and 35 skips; all 9 production JavaFX route/source compliance tests passed.
 - Owner desktop verification is documented in `doc/P16-C6-sclx-existing-company-import-user-testing.md` and remains pending.
+- Owner desktop testing exposed a pre-commit contract defect: a newly created target showed only donor warnings during preview, then commit failed on 14 global ownership diagnostics beginning with `ACTIVITY 1`. The corrective local tree adds the missing preview gate, selects the first blocker into a persistent resolution subpane, and adds **Administration -> Company Ownership Diagnostics** with transactional per-record assignment, active-company validation, actor/reason evidence, confirmation, rollback, and audit coverage. Cross-company conflicts remain read-only and actionable rather than being silently dismissed.
+- Focused service, preview, JavaFX, and source-level regressions cover actionable blocker projection, direct `ACTIVITY` repair plus audit, cross-company repair rejection, Administration reachability, and selected-message resolution visibility. Local Maven and the `javac` launcher remain unavailable, so authoritative compile and execution require the next PR-head Maven PR Tests run.
+- The JDK compiler module parses all 710 production and test Java sources under Java 17 grammar with no syntax errors, and `git diff --check` passes. The ordinary `javac` launcher, Maven, and resolved Maven dependency cache remain unavailable, so semantic compilation and runtime tests still require Maven PR Tests.
 
 Next exact action:
 
-- Publish this CI-evidence plan commit, validate the exact documentation-inclusive PR #274 head, then complete the owner desktop checklist before merge.
+- Validate the corrective source tree, publish it only with owner authorization, run Maven PR Tests on the exact PR #274 head, and repeat the updated ownership plus existing-company desktop checklist before merge.

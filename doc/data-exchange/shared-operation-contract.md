@@ -94,6 +94,22 @@ Rows with zero, multiple, or conflicting candidate owners remain unchanged. V61 
 
 `CompanyOwnershipService.requireNoOpenOwnershipIssues()` is the fail-closed gate for selected-company interchange. A later repair operation may resolve diagnostics deliberately; P15-S1 does not invent or silently repair ambiguous history. Nullable ownership remains necessary for such retained rows. Non-null enforcement is deferred until supported databases have no unresolved ownership diagnostics.
 
+P16-C6 makes that later repair operation user-reachable. Every open diagnostic is copied into SCLX
+preview as a blocking `SCLX_COMPANY_OWNERSHIP_UNRESOLVED` message before commit can be enabled. The
+message identifies the entity type and stable record ID and directs the operator to **Administration ->
+Company Ownership Diagnostics**. That Administration surface shows a human-readable record description
+and any company ownership found through related records, then permits only an explicit owner assignment
+for a direct ownerless record: the operator selects a compatible active company, supplies an actor and evidence/reason,
+and confirms one row. The service locks the diagnostic and record, rejects stale or already-owned rows,
+sets the owner and resolves the diagnostic in one transaction, and writes a factual
+`COMPANY_OWNERSHIP_ASSIGNED` audit event. Close-range events additionally require the selected owner to
+match the already-owned parent range. Any failure rolls the entire repair back.
+
+Cross-company reference diagnostics are displayed with corrective guidance but cannot be marked resolved
+or bulk-rewritten by this surface. Their accounting references must be corrected through the appropriate
+owning workflow or a consistent backup must be restored. No selected company, active UI context, display
+name, or bulk action is treated as ownership evidence.
+
 ## 7. Company-scoped business keys
 
 V61 replaces global uniqueness with company-scoped uniqueness for:

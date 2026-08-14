@@ -27,6 +27,14 @@ Tax filing, chart assignment, and expanded reporting-default editors are not exp
 
 The existing Administration destination continues to use `AppPanelId.SETTINGS`. Its Company Admin tab provides New, Save, Select Active, and Refresh operations. It does not add a second shell destination or administration framework.
 
+The adjacent **Company Ownership Diagnostics** tab is a corrective legacy-data workflow, not another
+company editor. It lists the unresolved rows that block governed interchange, preserves the entity type,
+stable record ID, human-readable record description, diagnostic code, candidate count, cause, and
+resolution guidance, and permits a single
+direct ownerless row to be assigned only after an active target company, actor, and reason are supplied.
+The confirmation and result name the exact row and company. Cross-company reference conflicts remain
+non-assignable and explain that the underlying accounting links must be corrected in their owning workflow.
+
 The center workspace stacks the company table above the profile editor. A horizontal draggable divider separates them, and the editor keeps its own vertical scrolling so the full-width form remains usable at laptop dimensions. The divider position remains company-owned UI state.
 
 ## Active lifecycle
@@ -77,3 +85,6 @@ The donor `CompanyManagementService`, `CompanyManagementPanelFX`, and `CompanySe
 7. Select another company, deactivate the former company, and confirm it remains listed as inactive.
 8. Attempt to deactivate the final active company and confirm it is rejected.
 9. Resize, reorder, and sort the company table, move the divider, reopen the company, and confirm company-owned layout restoration.
+10. Open **Company Ownership Diagnostics**. For a direct ownerless test row, select its actual company,
+    enter an actor and evidence, confirm the assignment, and verify the row disappears and an audit event
+    exists. Confirm a cross-company reference row cannot be assigned or silently dismissed.
