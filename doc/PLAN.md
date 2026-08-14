@@ -1,12 +1,12 @@
 ---
-plan_version: 195
+plan_version: 196
 active_phase: P16
 active_slice: P16-C6
 active_status: VERIFYING
 active_branch: codex/P16-C6-sclx-existing-company-merge
 active_pull_request: 274
 active_head: 28745748950891533b655018b109a615c46a0b4c
-next_action: "Validate and publish the owner-reported ownership-preview repair on PR #274, then rerun the updated owner desktop checklist before merge."
+next_action: "Publish the authorized ownership-preview repair to PR #274 through the connected GitHub service, validate the exact remote head, then rerun the updated owner desktop checklist before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2874,7 +2874,8 @@ Validation status:
 - Focused service, preview, JavaFX, and source-level regressions cover actionable blocker projection, direct `ACTIVITY` repair plus audit, cross-company repair rejection, Administration reachability, and selected-message resolution visibility. Local Maven and the `javac` launcher remain unavailable, so authoritative compile and execution require the next PR-head Maven PR Tests run.
 - The JDK compiler module parses all 710 production and test Java sources under Java 17 grammar with no syntax errors, and `git diff --check` passes. The ordinary `javac` launcher, Maven, and resolved Maven dependency cache remain unavailable, so semantic compilation and runtime tests still require Maven PR Tests.
 - Local corrective implementation commit `28745748950891533b655018b109a615c46a0b4c` contains the preview blocker projection, evidence-aware audited repair service, Administration workflow, focused regressions, governing-contract updates, and revised owner checklist.
+- The owner authorized publication and clarified that `gh` is not required. Repository governance now permits authenticated connected-GitHub-service publication when the CLI is absent, provided the remote update is fast-forward-only and every published tree SHA is verified against the reviewed local commit tree.
 
 Next exact action:
 
-- Validate the corrective source tree, publish it only with owner authorization, run Maven PR Tests on the exact PR #274 head, and repeat the updated ownership plus existing-company desktop checklist before merge.
+- Publish the authorized corrective commits through the connected GitHub service, verify exact local/remote tree equality and the PR #274 head, run Maven PR Tests on that exact head, and repeat the updated ownership plus existing-company desktop checklist before merge.

@@ -228,6 +228,24 @@ Use the repository workflow to run or inspect `mvn clean verify`.
 
 Read failing logs. Correct every failure. Update the pull-request description with actual results. Never claim that GitHub confirmed a result when it did not.
 
+#### GitHub publication transport
+
+The GitHub CLI is optional, not a prerequisite. After the owner explicitly authorizes publication,
+Codex may publish through either authenticated local Git transport or the connected GitHub service.
+When `gh` is unavailable, the connected service is the preferred route for creating blobs, trees,
+commits, fast-forwarding the authorized branch, updating the pull request, and inspecting CI.
+
+Connected-service publication must preserve the same safeguards as a normal push:
+
+- confirm the repository, branch, pull request, local commits, and clean worktree before writing;
+- confirm the remote branch head is the expected parent and never force-update it;
+- reproduce the reviewed local commit sequence and messages without adding unrelated files;
+- compare each published tree SHA with its corresponding local tree SHA;
+- verify the final remote branch and pull-request head after the update; and
+- record publication and CI evidence in `doc/PLAN.md`.
+
+Do not block an otherwise supported publication merely because the `gh` executable is absent.
+
 ### Step 7 - User testing
 
 Add user testing notes stating:
