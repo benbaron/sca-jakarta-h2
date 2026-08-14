@@ -11,6 +11,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
@@ -21,6 +22,8 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -84,6 +87,7 @@ public class ImportPreviewPanel implements AppPanel
 	private final Label status = new Label(
 		"Choose an SCLX, COA CSV, OFX/QFX, mapped CSV, or normalized bank CSV file to preview before import.");
 	private final ListView<String> warnings = new ListView<>();
+	private final TextArea messageDetails = new TextArea();
 	private final TableView<CoaCsvMapper.CoaCsvRow> acceptedCoaRows =
 		new TableView<>();
 	private final TableView<
@@ -353,7 +357,25 @@ public class ImportPreviewPanel implements AppPanel
 		buildBankTables();
 		
 		warnings.setId("importPreviewMessages");
-		warnings.setPlaceholder(new Label("No validation warnings."));
+		warnings.setPlaceholder(new Label("No validation messages."));
+		warnings.setCellFactory(list -> new ListCell<>()
+		{
+			@Override
+			protected void updateItem(String item, boolean empty)
+			{
+				super.updateItem(item, empty);
+				setText(empty ? null : item);
+				setTooltip(empty || item == null ? null : new Tooltip(item));
+			}
+		});
+		warnings.getSelectionModel().selectedItemProperty().addListener(
+			(observable, oldValue, newValue) -> messageDetails.setText(
+				newValue == null ? "Select a message to see its complete text and resolution." : newValue));
+		messageDetails.setId("importPreviewMessageResolution");
+		messageDetails.setEditable(false);
+		messageDetails.setWrapText(true);
+		messageDetails.setPrefRowCount(3);
+		messageDetails.setText("Select a message to see its complete text and resolution.");
 		sclxCounts.setId("sclxPreviewCounts");
 		sclxCounts.setPlaceholder(
 			new Label("Preview an SCLX file to see exact section counts."));
@@ -383,7 +405,8 @@ public class ImportPreviewPanel implements AppPanel
 				tableRegion("Original CSV Logical Rows", bankCsvOriginalRows)));
 		
 		VBox warningRegion =
-			new VBox(6, new Label("Preview Warnings"), warnings);
+			new VBox(6, new Label("Preview Messages"), warnings,
+				new Label("Selected message and resolution"), messageDetails);
 		VBox.setVgrow(warnings, Priority.ALWAYS);
 		SplitPane center = new SplitPane(warningRegion, previewTabs);
 		center.setId("importPreviewWorkspaceSplit");
@@ -1372,6 +1395,21 @@ public class ImportPreviewPanel implements AppPanel
 		warnings.getItems().setAll(result.operation().messages().stream()
 			.map(ImportPreviewPanel::displayMessage)
 			.toList());
+		int firstBlockingMessage = -1;
+		for (int index = 0; index < result.operation().messages().size(); index++)
+		{
+			if (result.operation().messages().get(index).blocking())
+			{
+				firstBlockingMessage = index;
+				break;
+			}
+		}
+		if (!warnings.getItems().isEmpty())
+		{
+			int selectedMessage = firstBlockingMessage >= 0 ? firstBlockingMessage : 0;
+			warnings.getSelectionModel().select(selectedMessage);
+			messageDetails.setText(warnings.getItems().get(selectedMessage));
+		}
 		sclxCounts.getItems()
 			.setAll(result.sectionCounts().entitiesByType().entrySet().stream()
 				.sorted(java.util.Map.Entry.comparingByKey())

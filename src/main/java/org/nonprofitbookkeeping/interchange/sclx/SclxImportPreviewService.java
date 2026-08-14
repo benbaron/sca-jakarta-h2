@@ -10,6 +10,8 @@ import org.nonprofitbookkeeping.interchange.InterchangeOperationMode;
 import org.nonprofitbookkeeping.interchange.InterchangePreview;
 import org.nonprofitbookkeeping.interchange.InterchangeValidationMessage;
 import org.nonprofitbookkeeping.persistence.Jpa;
+import org.nonprofitbookkeeping.service.CompanyOwnershipIssueView;
+import org.nonprofitbookkeeping.service.CompanyOwnershipService;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -60,11 +62,13 @@ public final class SclxImportPreviewService
     private final SclxStructureValidator structureValidator;
     private final SclxImportTargetReader targetReader;
     private final Supplier<String> companyCodeSupplier;
+    private final Supplier<List<CompanyOwnershipIssueView>> ownershipIssuesSupplier;
 
     public SclxImportPreviewService(Jpa jpa, Supplier<String> companyCodeSupplier)
     {
         this(new SclxDocumentParser(), new SclxStructureValidator(),
-                new JpaSclxImportTargetReader(jpa), companyCodeSupplier);
+                new JpaSclxImportTargetReader(jpa), companyCodeSupplier,
+                new CompanyOwnershipService(jpa)::listOpenIssues);
     }
 
     SclxImportPreviewService(
@@ -73,10 +77,22 @@ public final class SclxImportPreviewService
             SclxImportTargetReader targetReader,
             Supplier<String> companyCodeSupplier)
     {
+        this(parser, structureValidator, targetReader, companyCodeSupplier, List::of);
+    }
+
+    SclxImportPreviewService(
+            SclxDocumentParser parser,
+            SclxStructureValidator structureValidator,
+            SclxImportTargetReader targetReader,
+            Supplier<String> companyCodeSupplier,
+            Supplier<List<CompanyOwnershipIssueView>> ownershipIssuesSupplier)
+    {
         this.parser = Objects.requireNonNull(parser, "parser");
         this.structureValidator = Objects.requireNonNull(structureValidator, "structureValidator");
         this.targetReader = Objects.requireNonNull(targetReader, "targetReader");
         this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
+        this.ownershipIssuesSupplier = Objects.requireNonNull(
+                ownershipIssuesSupplier, "ownershipIssuesSupplier");
     }
 
     public SclxImportPreview preview(Path source)
@@ -104,6 +120,7 @@ public final class SclxImportPreviewService
         OrganizationData organization = organization(document.root(), messages);
         String targetCode = requireText(companyCodeSupplier.get(), "target company code");
         SclxImportTargetSnapshot target = targetReader.read(targetCode, organization.sourceSystem());
+        addOwnershipDiagnostics(messages, ownershipIssuesSupplier.get());
         Extraction extraction = extract(document.root(), messages);
         List<SclxImportEntityPreview> entities = classify(extraction.entities(), target, messages);
         MappingResult mapping = mappings(document.root(), target, messages, mappingSelections);
@@ -202,6 +219,26 @@ public final class SclxImportPreviewService
                 extraction.counts(),
                 mapping.requirements(),
                 transactionResult.previews());
+    }
+
+    private static void addOwnershipDiagnostics(
+            List<InterchangeValidationMessage> messages,
+            List<CompanyOwnershipIssueView> issues)
+    {
+        for (CompanyOwnershipIssueView issue : List.copyOf(issues))
+        {
+            messages.add(message(
+                    InterchangeMessageSeverity.ERROR,
+                    "SCLX_COMPANY_OWNERSHIP_UNRESOLVED",
+                    "companyOwnership." + issue.entityType() + "." + issue.entityId(),
+                    issue.recordLabel() + ". " + issue.details()
+                            + (issue.relationshipCompanyCodes().isEmpty() ? ""
+                            : " Related company evidence: "
+                                    + String.join(", ", issue.relationshipCompanyCodes()) + ".")
+                            + " Resolution: " + issue.resolutionGuidance()
+                            + " Open Administration -> Company Ownership Diagnostics.",
+                    true));
+        }
     }
 
     private static OrganizationData organization(

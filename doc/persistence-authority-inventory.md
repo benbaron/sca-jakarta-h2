@@ -243,6 +243,14 @@ Migration `V61__company_ownership_and_interchange_identity.sql` implements the n
 
 The migration deliberately does not make every new ownership column non-null. Ambiguous historical rows must remain recoverable and diagnosed rather than guessed. Non-null enforcement is a later migration step after explicit repair has reduced open diagnostics to zero for supported records.
 
+P16-C6 adds the bounded repair boundary for that retained ambiguity. `CompanyOwnershipService.assignOwner(...)`
+is the only writer introduced: it accepts one open `UNRESOLVED_OWNER` diagnostic, one active company stable
+ID, actor, and reason; locks and validates the diagnostic and entity; changes only that entity's direct
+owner; resolves the diagnostic; and appends one company-owned audit fact in the same transaction. The
+Administration UI exposes no bulk assignment. `CROSS_COMPANY_REFERENCE` and related diagnostics remain
+read-only because changing accounting links requires their canonical owning workflows rather than an
+ownership-table shortcut.
+
 ## P15 exchange authority boundaries
 
 - SCLX is selected-company business data reconstructed from current canonical H2 authority after the ownership gate passes.

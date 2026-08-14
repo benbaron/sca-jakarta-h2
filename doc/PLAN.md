@@ -1,12 +1,12 @@
 ---
-plan_version: 193
+plan_version: 197
 active_phase: P16
-active_slice: P16-C6
+active_slice: P16-C7
 active_status: VERIFYING
-active_branch: codex/P16-C6-sclx-existing-company-merge
-active_pull_request: 274
-active_head: 33381e8a460c8be0300fb6ed1567f0dba8e27d37
-next_action: "Publish this CI-evidence plan commit, validate the exact documentation-inclusive PR #274 head, then complete the owner desktop checklist before merge."
+active_branch: codex/P16-C7-ownership-diagnostics-repair
+active_pull_request: null
+active_head: 1daa05902e7a04e9f7c161f9950708ce1b9dc11c
+next_action: "Publish the authorized P16-C7 ownership-diagnostics repair from merged PR #274's exact main head, open a fresh draft PR, validate its exact remote head, then rerun the updated owner desktop checklist."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Publish this CI-evidence plan commit, validate the exact documenta
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, records P16-C3 and P16-C4 through merged PRs #272 and #273, and activates the owner-requested P16-C6 nondestructive existing-company SCLX import option. P16-C5 message guidance remains a separate unpublished local slice and is not mixed into this branch. It does not authorize P17 or any later feature phase.
+This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, records P16-C3 and P16-C4 through merged PRs #272 and #273, records the owner-requested P16-C6 nondestructive existing-company SCLX import through merged PR #274, and activates P16-C7 to make global company-ownership blockers visible and repairable before import. P16-C5 message guidance remains a separate unpublished local slice and is not mixed into this branch. It does not authorize P17 or any later feature phase.
 
 ## 2. Status values
 
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | Corrective P16-C6 IN_PROGRESS after merged P16-C4 / PR #273 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | Corrective P16-C7 VERIFYING after merged P16-C6 / PR #274 |
 
 ## 4. Governing documents
 
@@ -2838,7 +2838,7 @@ Next exact action:
 
 ## P16-C6 — Nondestructive SCLX import into an existing company
 
-Status: VERIFYING.
+Status: DONE through merged PR #274; owner desktop SCLX acceptance continues under P16-C7.
 
 Branch: `codex/P16-C6-sclx-existing-company-merge`
 Pull request: #274
@@ -2869,7 +2869,34 @@ Validation status:
 - Owner-approved local correction `aa4f7dace29c26afb76ec29a1963a0e2d022ec57` explicitly types that one constructor argument as `SclxPreviewOperationFactory`. Remote correction `33381e8a460c8be0300fb6ed1567f0dba8e27d37` has the exact same full tree SHA.
 - Exact corrected PR head `33381e8a460c8be0300fb6ed1567f0dba8e27d37` passed all three Maven PR Tests gates in run `31767335496`: clean `mvn clean verify` and the deliberately repeated suite each ran 657 tests with 0 failures/errors and 35 skips; all 9 production JavaFX route/source compliance tests passed.
 - Owner desktop verification is documented in `doc/P16-C6-sclx-existing-company-import-user-testing.md` and remains pending.
+- PR #274 merged to `main` at `ec64a0ddd50759686542a6739d127df45b1a7974` after its exact corrected head passed all Maven PR Tests gates.
 
 Next exact action:
 
-- Publish this CI-evidence plan commit, validate the exact documentation-inclusive PR #274 head, then complete the owner desktop checklist before merge.
+- None; the owner-reported global ownership preview/commit mismatch is isolated to P16-C7.
+
+## P16-C7 — Actionable company-ownership blockers and audited repair
+
+Status: VERIFYING.
+
+Branch: `codex/P16-C7-ownership-diagnostics-repair`
+Pull request: pending
+Base head: `ec64a0ddd50759686542a6739d127df45b1a7974`
+
+Purpose:
+
+- Correct the owner-reported preview/commit mismatch where a newly created target displayed only donor warnings, then import failed on 14 global ownership diagnostics beginning with `ACTIVITY 1`.
+- Surface every open ownership diagnostic as an actionable blocking SCLX preview message, with the selected message's resolution kept visible without requiring horizontal scrolling or truncated hover text.
+- Add an explicit audited Administration repair for direct ownerless legacy records without bulk guessing, destructive replacement, or cross-company reference rewrites.
+
+Implementation and validation status:
+
+- Corrective implementation commit `1f91b7a` adds the missing preview gate, selects the first blocker into a persistent resolution subpane, and adds **Administration -> Company Ownership Diagnostics** with transactional per-record assignment, active-company validation, actor/reason evidence, confirmation, rollback, and audit coverage. Cross-company conflicts remain read-only and actionable rather than being silently dismissed.
+- Focused service, preview, JavaFX, and source-level regressions cover actionable blocker projection, direct `ACTIVITY` repair plus audit, cross-company repair rejection, Administration reachability, and selected-message resolution visibility.
+- The JDK compiler module parses all 710 production and test Java sources under Java 17 grammar with no syntax errors, and `git diff --check` passes. The ordinary `javac` launcher, Maven, and resolved Maven dependency cache remain unavailable, so semantic compilation and runtime tests require Maven PR Tests.
+- Handoff commit `9b960a5` records the revised owner desktop verification step, and governance commit `1daa059` records that authenticated connected-GitHub publication is valid without the optional `gh` CLI.
+- The owner explicitly authorized publication. This branch was created from the live `main` head after PR #274 merged, and the three reviewed commits were cleanly replayed without changing their patches.
+
+Next exact action:
+
+- Publish this fresh branch without force, open a draft PR targeting `main`, verify the exact remote tree and PR head, run Maven PR Tests on that head, and repeat the updated ownership plus existing-company desktop checklist before merge.
