@@ -170,7 +170,8 @@ public class ImportPreviewPanel implements AppPanel
 		Function<Path, SclxImportPreview> sclxPreview)
 	{
 		this(previewService,
-			() -> (source, selections) -> Objects.requireNonNull(
+			(SclxPreviewOperationFactory) () ->
+				(source, selections) -> Objects.requireNonNull(
 				sclxPreview, "sclxPreview").apply(source),
 			companyCode ->
 			{
