@@ -1,12 +1,12 @@
 ---
-plan_version: 200
+plan_version: 202
 active_phase: P16
 active_slice: P16-C9
 active_status: VERIFYING
-active_branch: codex/P16-C9-sclx-identity-aware-operational-merge
-active_pull_request: null
-active_head: c1dd824
-next_action: "Obtain owner authorization, publish P16-C9, open a draft PR to main, and run Maven PR Tests for semantic compilation and the focused/runtime suites unavailable locally."
+active_branch: codex/P16-C9-journal-refresh-correction
+active_pull_request: 278
+active_head: 74f7719
+next_action: "Inspect Maven PR Tests on draft PR #278, correct any failure, and repeat the owner SCLX-to-Journal desktop check on the corrected build."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2957,7 +2957,10 @@ Implementation and validation status:
 - Commit re-previews the exact source with the approved mapping and conflict-choice sets, compares the full entity projection, revalidates local ownership/references, advances a selected source identity hash only with the corresponding local record, and retains one-transaction rollback.
 - Focused regressions cover removal of the operational-presence blocker, import beside unrelated target audit/budget/period-close history, mixed identical/new graph reuse, Activity target/source winner projection, Activity source-winner commit, and production-route conflict controls.
 - All 712 production and test Java sources parse under the Java 17 compiler module; the four dependency-free conflict/preview projection sources type-compile; focused source assertions and `git diff --check` pass. Maven and the standalone `javac` launcher are unavailable locally, so semantic compilation and runtime/H2/JavaFX tests require Maven PR Tests.
+- The reviewed identity-aware merge implementation and handoff trees were published through the connected GitHub service as two commits on PR #277. Maven PR Tests run `31901329323` passed on that published head, and PR #277 subsequently merged to `main` at `771a152081f77a61656fe1d9c41a5dc299f1c4f0`.
+- Owner desktop acceptance then confirmed that SCLX commit reported imported records but an already-open Journal tab retained its pre-import rows. The canonical commit path still persisted a `Txn`, and `TransactionEntryService.search(...)` could query it; the defect was that direct reusable-tab selection updated only `PanelHost.activeId` and did not invoke the selected panel's `onPanelShown()` refresh hook.
+- Local correction commit `74f7719` invokes `onPanelShown()` whenever an existing tab is selected, avoids duplicate refresh when `PanelHost.show(...)` itself changes selection, updates the import success guidance, and adds both a JavaFX tab-lifecycle regression and an SCLX-to-`TransactionEntryService.search(...)` integration assertion. The correction was rebased onto merged PR #277 as remote commit `22605f44f5dd57bf96a2bd806593bc969f1bedaf` on fresh draft PR #278. All 712 Java sources parse under the Java 17 compiler module and `git diff --check` passes; Maven execution remains unavailable locally.
 
 Next exact action:
 
-- Obtain owner authorization, publish the fresh branch, open a draft PR to `main`, and inspect Maven PR Tests.
+- Inspect Maven PR Tests on draft PR #278, correct any failure, and repeat the owner SCLX-to-Journal desktop check on the corrected build.
