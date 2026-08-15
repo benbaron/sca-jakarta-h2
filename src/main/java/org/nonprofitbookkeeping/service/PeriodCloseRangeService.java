@@ -50,12 +50,16 @@ public class PeriodCloseRangeService
             EntityManager em,
             Company company,
             List<RangeImport> ranges,
-            List<EventImport> events)
+            List<EventImport> events,
+            Map<String, UUID> existingRanges,
+            Map<String, UUID> existingEvents)
     {
         Objects.requireNonNull(em, "em");
         Company owner = Objects.requireNonNull(company, "company");
         List<RangeImport> sourceRanges = List.copyOf(Objects.requireNonNull(ranges, "ranges"));
         List<EventImport> sourceEvents = List.copyOf(Objects.requireNonNull(events, "events"));
+        Objects.requireNonNull(existingRanges, "existingRanges");
+        Objects.requireNonNull(existingEvents, "existingEvents");
         if (!em.getTransaction().isActive())
         {
             throw new IllegalStateException("Period-close interchange import requires an active transaction");
@@ -64,20 +68,7 @@ public class PeriodCloseRangeService
         {
             throw new IllegalArgumentException("Period-close interchange company must be persisted");
         }
-        long existingRanges = ((Number) em.createNativeQuery(
-                        "SELECT COUNT(*) FROM period_close_range WHERE company_id = ?")
-                .setParameter(1, owner.getId())
-                .getSingleResult()).longValue();
-        long existingEvents = ((Number) em.createNativeQuery(
-                        "SELECT COUNT(*) FROM period_close_event WHERE company_id = ?")
-                .setParameter(1, owner.getId())
-                .getSingleResult()).longValue();
-        if (existingRanges + existingEvents != 0L)
-        {
-            throw new IllegalStateException("Period-close interchange import requires an empty target history");
-        }
-
-        Map<String, UUID> rangeIds = new LinkedHashMap<>();
+        Map<String, UUID> rangeIds = new LinkedHashMap<>(existingRanges);
         for (RangeImport range : sourceRanges)
         {
             if (rangeIds.put(range.externalId(), range.id()) != null)
@@ -85,7 +76,7 @@ public class PeriodCloseRangeService
                 throw new IllegalArgumentException("Duplicate period-close range identity: " + range.externalId());
             }
         }
-        Map<String, UUID> eventIds = new LinkedHashMap<>();
+        Map<String, UUID> eventIds = new LinkedHashMap<>(existingEvents);
         for (EventImport event : sourceEvents)
         {
             if (eventIds.put(event.externalId(), event.id()) != null)
@@ -100,6 +91,29 @@ public class PeriodCloseRangeService
         }
         requireCompleteFactualHistory(sourceRanges, sourceEvents);
         requireNoClosedOverlap(sourceRanges);
+
+        for (RangeImport range : sourceRanges)
+        {
+            if (!"CLOSED".equals(range.status()))
+            {
+                continue;
+            }
+            long overlapping = ((Number) em.createNativeQuery("""
+                            SELECT COUNT(*) FROM period_close_range
+                            WHERE company_id = ? AND status = 'CLOSED'
+                              AND start_date <= ? AND end_date >= ?
+                            """)
+                    .setParameter(1, owner.getId())
+                    .setParameter(2, Date.valueOf(range.endDate()))
+                    .setParameter(3, Date.valueOf(range.startDate()))
+                    .getSingleResult()).longValue();
+            if (overlapping != 0L)
+            {
+                throw new IllegalStateException(
+                        "Imported period-close range overlaps existing target history: "
+                                + range.startDate() + " through " + range.endDate());
+            }
+        }
 
         String companyCode = normalizeCompanyCode(owner.getCode());
         for (RangeImport range : sourceRanges)

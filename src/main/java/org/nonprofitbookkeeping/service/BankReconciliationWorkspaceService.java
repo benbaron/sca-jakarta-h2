@@ -963,19 +963,28 @@ public class BankReconciliationWorkspaceService
             List<MatchImport> matchValues,
             Map<String, CompanyBankAccount> bankAccounts,
             Map<String, BankStatementLine> statementLines,
-            Map<String, TxnSplit> transactionLines)
+            Map<String, TxnSplit> transactionLines,
+            Map<String, Long> existingSessions,
+            Map<String, Long> existingMatches)
     {
         Objects.requireNonNull(em, "em");
         Objects.requireNonNull(company, "company");
         Objects.requireNonNull(sessionValues, "sessionValues");
         Objects.requireNonNull(matchValues, "matchValues");
+        Objects.requireNonNull(existingSessions, "existingSessions");
+        Objects.requireNonNull(existingMatches, "existingMatches");
         if (!em.getTransaction().isActive())
         {
             throw new IllegalStateException("Reconciliation import requires an active caller-owned transaction");
         }
-        Map<String, Long> sessions = new LinkedHashMap<>();
+        Map<String, Long> sessions = new LinkedHashMap<>(existingSessions);
         for (SessionImport value : sessionValues)
         {
+            if (sessions.containsKey(value.externalId()))
+            {
+                throw new IllegalArgumentException(
+                        "Duplicate reconciliation session identity: " + value.externalId());
+            }
             CompanyBankAccount bankAccount = required(bankAccounts, value.bankAccountId(), "configured bank account");
             if (bankAccount.getCompany() == null
                     || !company.getId().equals(bankAccount.getCompany().getId()))
@@ -1013,9 +1022,14 @@ public class BankReconciliationWorkspaceService
             sessions.put(value.externalId(), id);
         }
 
-        Map<String, Long> matches = new LinkedHashMap<>();
+        Map<String, Long> matches = new LinkedHashMap<>(existingMatches);
         for (MatchImport value : matchValues)
         {
+            if (matches.containsKey(value.externalId()))
+            {
+                throw new IllegalArgumentException(
+                        "Duplicate reconciliation match identity: " + value.externalId());
+            }
             long sessionId = required(sessions, value.reconciliationSessionId(), "reconciliation session");
             BankStatementLine statementLine = optional(
                     statementLines, value.statementLineId(), "bank statement line");

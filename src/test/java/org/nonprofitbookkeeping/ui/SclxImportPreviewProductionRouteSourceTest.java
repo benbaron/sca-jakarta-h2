@@ -29,7 +29,8 @@ class SclxImportPreviewProductionRouteSourceTest
         assertTrue(compactPanel.contains(
                 "commitService.commit(source,preview,actor,mappingsApproved,existingCompanyImportApproved)"));
         assertTrue(panel.contains("Import Previewed SCLX…"));
-        assertTrue(panel.contains("Apply SCLX Mappings"));
+        assertTrue(panel.contains("Apply SCLX Choices"));
+        assertTrue(panel.contains("Conflict Choice"));
         assertTrue(panel.contains("Approve shown SCLX account/fund mappings"));
         assertTrue(panel.contains("Import into existing company (preserve settings)"));
         assertTrue(panel.contains("No data was changed"));

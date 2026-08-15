@@ -55,8 +55,9 @@
    and one local `SCLX_IMPORTED` fact exists.
 12. Preview the same file again. Confirm every governed identity is identical and importing is a no-op.
 13. Confirm a compatible pre-assigned Activity is reported as reused and is not duplicated. In a separate
-    company that already has a transaction or another operational-history family, preview
-    the file and confirm `SCLX_OPERATIONAL_DATA_MERGE_UNSUPPORTED` blocks import with guidance to use a
-    target without operational data or an identical reimport.
+    company that already has unrelated transactions or another operational-history family, preview and
+    import the file; confirm those target records remain and the new SCLX records are added. Create a
+    same-identity/different-content Activity conflict and confirm the entity row offers **Keep target** and
+    **Take SCLX**; apply each choice in turn and confirm a fresh preview records the selected winner.
 14. Cancel one confirmation and confirm no data changes. If practical, exercise an injected/test late
     failure and confirm the entire import rolls back without partial masters, history, or identities.

@@ -85,9 +85,10 @@ import java.util.function.Supplier;
  * activities, counterparties, merchants, normalized budgets, balanced canonical
  * transactions, supplemental transaction details, fixed assets, and completed
  * depreciation runs, inventory, banking, reconciliation, period-close facts, and factual audit
- * history and correction relationships into an empty selected company or a
- * selected company whose existing data is limited to a chart, funds, and
- * ordinary factual audit history.</p>
+ * history and correction relationships into the selected company. Existing
+ * unrelated target history is preserved; identical identities are reused,
+ * new identities are added, and explicitly resolved safe master conflicts are
+ * applied under the same transaction.</p>
  */
 public final class SclxImportCommitService
 {
@@ -190,7 +191,13 @@ public final class SclxImportCommitService
                 .map(value -> new SclxImportMappingSelection(
                         value.kind(), value.sourceId(), value.targetCode()))
                 .toList();
-        SclxImportPreview current = previewService.preview(source, approvedSelections);
+        List<SclxImportConflictSelection> approvedConflictSelections = approvedPreview.operation().items().stream()
+                .filter(value -> value.conflictChoice() != null)
+                .map(value -> new SclxImportConflictSelection(
+                        value.entityType(), value.externalId(), value.conflictChoice()))
+                .toList();
+        SclxImportPreview current = previewService.preview(
+                source, approvedSelections, approvedConflictSelections);
         if (!approvedPreview.operation().sourceSha256().equals(current.operation().sourceSha256()))
         {
             throw new IllegalStateException("SCLX source changed after preview; preview it again before importing.");
@@ -206,6 +213,11 @@ public final class SclxImportCommitService
         if (!approvedPreview.mappings().equals(current.mappings()))
         {
             throw new IllegalStateException("The SCLX account or fund mappings changed after preview.");
+        }
+        if (!approvedPreview.operation().items().equals(current.operation().items()))
+        {
+            throw new IllegalStateException(
+                    "The SCLX identity or conflict choices changed after preview.");
         }
         if (current.recommendedAccountMode() == SclxAccountMode.MAPPED && !approvedMappings)
         {
@@ -263,8 +275,6 @@ public final class SclxImportCommitService
                             "SCLX_IDENTICAL_REIMPORT",
                             "Every governed core, extension, banking, reconciliation, period-close, audit-history, and correction fact was identical; no data changed.");
                 }
-                requireNoCompetingOperationalHistory(em, company);
-
                 int writes = 0;
                 if (!current.targetPopulated())
                 {
@@ -487,76 +497,24 @@ public final class SclxImportCommitService
             int writesBefore)
     {
         int writes = writesBefore;
+        int restored = 0;
         for (SclxCorrectionImportData.CorrectionValue value : source.relationships())
         {
             Txn correction = required(transactions, value.transactionId(), "correction transaction");
             Txn corrected = required(
                     transactions, value.correctedTransactionId(), "corrected transaction");
+            Txn current = "REVERSAL".equals(value.correctionType())
+                    ? correction.getReversalOf() : correction.getReplacementFor();
+            if (current != null && current.getId().equals(corrected.getId()))
+            {
+                continue;
+            }
             transactionCorrectionService.restoreRelationshipForImport(
                     em, company, correction, value.correctionType(), corrected);
             afterBusinessWrite.accept(++writes);
+            restored++;
         }
-        return source.relationships().size();
-    }
-
-    private static void requireNoCompetingOperationalHistory(EntityManager em, Company company)
-    {
-        long transactions = em.createQuery("select count(t) from Txn t where t.company = :company", Long.class)
-                .setParameter("company", company)
-                .getSingleResult();
-        long budgets = em.createQuery("select count(p) from BudgetPlan p where p.company = :company", Long.class)
-                .setParameter("company", company)
-                .getSingleResult();
-        long budgetCategories = em.createQuery(
-                        "select count(c) from BudgetCategory c where c.company = :company", Long.class)
-                .setParameter("company", company)
-                .getSingleResult();
-        long counterparties = em.createQuery(
-                        "select count(c) from Counterparty c where c.company = :company", Long.class)
-                .setParameter("company", company)
-                .getSingleResult();
-        long merchants = em.createQuery("select count(m) from Merchant m where m.company = :company", Long.class)
-                .setParameter("company", company)
-                .getSingleResult();
-        long fixedAssets = em.createQuery(
-                        "select count(a) from FixedAsset a where a.company = :company", Long.class)
-                .setParameter("company", company)
-                .getSingleResult();
-        long inventoryItems = em.createQuery(
-                        "select count(i) from InventoryItem i where i.company = :company", Long.class)
-                .setParameter("company", company)
-                .getSingleResult();
-        long banks = em.createQuery("select count(b) from Bank b where b.company = :company", Long.class)
-                .setParameter("company", company)
-                .getSingleResult();
-        long bankAccounts = em.createQuery(
-                        "select count(a) from CompanyBankAccount a where a.company = :company", Long.class)
-                .setParameter("company", company)
-                .getSingleResult();
-        long importBatches = em.createQuery(
-                        "select count(b) from BankImportBatch b where b.company = :company", Long.class)
-                .setParameter("company", company)
-                .getSingleResult();
-        long reconciliationSessions = ((Number) em.createNativeQuery(
-                        "select count(*) from bank_reconciliation_session where company_id = ?")
-                .setParameter(1, company.getId())
-                .getSingleResult()).longValue();
-        long periodCloseRanges = ((Number) em.createNativeQuery(
-                        "select count(*) from period_close_range where company_id = ?")
-                .setParameter(1, company.getId())
-                .getSingleResult()).longValue();
-        long periodCloseEvents = ((Number) em.createNativeQuery(
-                        "select count(*) from period_close_event where company_id = ?")
-                .setParameter(1, company.getId())
-                .getSingleResult()).longValue();
-        if (transactions + budgets + budgetCategories
-                + counterparties + merchants + fixedAssets + inventoryItems
-                + banks + bankAccounts + importBatches + reconciliationSessions
-                + periodCloseRanges + periodCloseEvents != 0L)
-        {
-            throw new IllegalStateException(
-                    "SCLX existing-company import requires a target without operational data.");
-        }
+        return restored;
     }
 
     private static void applyOrganization(Company company, JsonNode organization)
@@ -731,10 +689,19 @@ public final class SclxImportCommitService
         {
             SclxImportEntityPreview preview = required(
                     previews, new EntityKey("ACTIVITY", value.externalId()), "preview identity");
-            if (preview.identityMatch() != InterchangeIdentityMatch.NEW)
+            if (reuseExisting(preview))
             {
-                throw new IllegalStateException("Mixed new/identical SCLX core import is not supported: ACTIVITY "
-                        + value.externalId() + ".");
+                Activity existing = localEntity(em, preview, Activity.class);
+                ownership.requireOwnedBy(company, existing, "SCLX Activity");
+                if (preview.conflictChoice() == SclxImportConflictChoice.TAKE_SOURCE)
+                {
+                    existing.setCode(value.code());
+                    existing.setName(value.name());
+                    existing.setActive(value.active());
+                    afterBusinessWrite.accept(++writes);
+                }
+                result.put(value.externalId(), existing);
+                continue;
             }
             if (preview.localEntityId() != null)
             {
@@ -781,12 +748,25 @@ public final class SclxImportCommitService
         }
 
         int writes = writesBefore;
+        int businessWrites = 0;
         Map<String, BudgetCategory> categories = new LinkedHashMap<>();
         for (String code : categoryCodes.stream().sorted().toList())
         {
-            BudgetCategory category = budgetCategoryAdminService.createForImport(em, company, code);
+            BudgetCategory category = em.createQuery(
+                            "from BudgetCategory c where c.company = :company and c.code = :code",
+                            BudgetCategory.class)
+                    .setParameter("company", company)
+                    .setParameter("code", code)
+                    .getResultStream()
+                    .findFirst()
+                    .orElse(null);
+            if (category == null)
+            {
+                category = budgetCategoryAdminService.createForImport(em, company, code);
+                afterBusinessWrite.accept(++writes);
+                businessWrites++;
+            }
             categories.put(code, category);
-            afterBusinessWrite.accept(++writes);
         }
         em.flush();
 
@@ -794,6 +774,44 @@ public final class SclxImportCommitService
         Map<String, BudgetLine> lines = new LinkedHashMap<>();
         for (SclxBudgetImportData.BudgetValue budget : source.budgets())
         {
+            SclxImportEntityPreview budgetPreview = required(
+                    previews, new EntityKey("BUDGET", budget.externalId()), "preview identity");
+            if (reuseExisting(budgetPreview))
+            {
+                BudgetPlan existing = localEntity(em, budgetPreview, BudgetPlan.class);
+                ownership.requireOwnedBy(company, existing, "SCLX budget");
+                plans.put(budget.externalId(), existing);
+                for (SclxBudgetImportData.LineValue line : budget.lines())
+                {
+                    SclxImportEntityPreview linePreview = required(
+                            previews, new EntityKey("BUDGET_LINE", line.externalId()), "preview identity");
+                    if (reuseExisting(linePreview))
+                    {
+                        BudgetLine existingLine = localEntity(em, linePreview, BudgetLine.class);
+                        if (!existingLine.getBudgetPlan().getId().equals(existing.getId()))
+                        {
+                            throw new IllegalStateException(
+                                    "SCLX budget line no longer belongs to its previewed budget.");
+                        }
+                        lines.put(line.externalId(), existingLine);
+                        continue;
+                    }
+                    requireNew(previews, "BUDGET_LINE", line.externalId());
+                    BudgetLine added = new BudgetLine();
+                    added.setBudgetPlan(existing);
+                    added.setBudgetCategory(required(categories, line.categoryCode(), "budget category"));
+                    added.setFund(line.fundId() == null ? null
+                            : required(funds, line.fundId(), "budget fund"));
+                    added.setPeriodMonth(line.periodMonth());
+                    added.setAmount(line.amount());
+                    added.setNotes("");
+                    em.persist(added);
+                    lines.put(line.externalId(), added);
+                    afterBusinessWrite.accept(++writes);
+                    businessWrites++;
+                }
+                continue;
+            }
             requireNew(previews, "BUDGET", budget.externalId());
             List<BudgetLineCommand> commands = new ArrayList<>();
             for (SclxBudgetImportData.LineValue line : budget.lines())
@@ -839,15 +857,17 @@ public final class SclxImportCommitService
                 lines.put(budget.lines().get(index).externalId(), persistedLines.get(index));
             }
             afterBusinessWrite.accept(++writes);
+            businessWrites++;
             for (int index = 0; index < persistedLines.size(); index++)
             {
                 afterBusinessWrite.accept(++writes);
+                businessWrites++;
             }
         }
         return new BudgetWrite(
                 plans,
                 lines,
-                categories.size() + plans.size() + lines.size());
+                businessWrites);
     }
 
     private Map<String, Counterparty> writeCounterparties(
@@ -861,6 +881,25 @@ public final class SclxImportCommitService
         int writes = writesBefore;
         for (SclxTransactionDetailImportData.CounterpartyValue value : values)
         {
+            SclxImportEntityPreview preview = required(
+                    previews, new EntityKey("COUNTERPARTY", value.externalId()), "preview identity");
+            if (reuseExisting(preview))
+            {
+                Counterparty existing = localEntity(em, preview, Counterparty.class);
+                ownership.requireOwnedBy(company, existing, "SCLX counterparty");
+                if (preview.conflictChoice() == SclxImportConflictChoice.TAKE_SOURCE)
+                {
+                    existing.setDisplayName(value.displayName());
+                    existing.setKind(value.kind());
+                    existing.setEmail(value.email());
+                    existing.setPhone(value.phone());
+                    existing.setNotes(value.notes());
+                    existing.setActive(value.active());
+                    afterBusinessWrite.accept(++writes);
+                }
+                result.put(value.externalId(), existing);
+                continue;
+            }
             requireNew(previews, "COUNTERPARTY", value.externalId());
             Counterparty counterparty = new Counterparty();
             counterparty.setPortableId(portableUuid(value.externalId()));
@@ -889,6 +928,22 @@ public final class SclxImportCommitService
         int writes = writesBefore;
         for (SclxTransactionDetailImportData.MerchantValue value : values)
         {
+            SclxImportEntityPreview preview = required(
+                    previews, new EntityKey("MERCHANT", value.externalId()), "preview identity");
+            if (reuseExisting(preview))
+            {
+                Merchant existing = localEntity(em, preview, Merchant.class);
+                ownership.requireOwnedBy(company, existing, "SCLX merchant");
+                if (preview.conflictChoice() == SclxImportConflictChoice.TAKE_SOURCE)
+                {
+                    existing.setName(value.name());
+                    existing.setNotes(value.notes());
+                    existing.setActive(value.active());
+                    afterBusinessWrite.accept(++writes);
+                }
+                result.put(value.externalId(), existing);
+                continue;
+            }
             requireNew(previews, "MERCHANT", value.externalId());
             Merchant merchant = new Merchant();
             merchant.setPortableId(portableUuid(value.externalId()));
@@ -925,6 +980,59 @@ public final class SclxImportCommitService
         for (JsonNode value : values)
         {
             String transactionId = text(value, "transactionId");
+            SclxImportEntityPreview transactionPreview = required(
+                    previews, new EntityKey("TRANSACTION", transactionId), "preview identity");
+            if (reuseExisting(transactionPreview))
+            {
+                Txn existing = localEntity(em, transactionPreview, Txn.class);
+                ownership.requireOwnedBy(company, existing, "SCLX transaction");
+                transactions.put(transactionId, existing);
+                for (JsonNode line : value.path("lines"))
+                {
+                    String lineId = text(line, "lineId");
+                    SclxImportEntityPreview linePreview = required(
+                            previews, new EntityKey("TRANSACTION_LINE", lineId), "preview identity");
+                    if (!reuseExisting(linePreview))
+                    {
+                        throw new IllegalStateException("A retained SCLX transaction cannot import a replacement line: "
+                                + lineId + ".");
+                    }
+                    if (linePreview.localEntityId() == null)
+                    {
+                        skippedLines.add(lineId);
+                        continue;
+                    }
+                    TxnSplit existingLine = localEntity(em, linePreview, TxnSplit.class);
+                    if (!existingLine.getTxn().getId().equals(existing.getId()))
+                    {
+                        throw new IllegalStateException(
+                                "SCLX transaction line no longer belongs to its previewed transaction.");
+                    }
+                    lines.put(lineId, existingLine);
+                }
+                for (SclxTransactionDetailImportData.SupplementalValue detail
+                        : details.supplementalForTransaction(transactionId))
+                {
+                    SclxImportEntityPreview detailPreview = required(
+                            previews, new EntityKey("SUPPLEMENTAL_DETAIL", detail.externalId()),
+                            "preview identity");
+                    if (!reuseExisting(detailPreview))
+                    {
+                        throw new IllegalStateException(
+                                "A retained SCLX transaction cannot import a replacement supplemental detail: "
+                                        + detail.externalId() + ".");
+                    }
+                    TxnSupplementalLine existingDetail = localEntity(
+                            em, detailPreview, TxnSupplementalLine.class);
+                    if (!existingDetail.getTxn().getId().equals(existing.getId()))
+                    {
+                        throw new IllegalStateException(
+                                "SCLX supplemental detail no longer belongs to its previewed transaction.");
+                    }
+                    supplementalLines.put(detail.externalId(), existingDetail);
+                }
+                continue;
+            }
             requireNew(previews, "TRANSACTION", transactionId);
             List<TransactionLineCommand> commands = new ArrayList<>();
             List<String> postingLineIds = new ArrayList<>();
@@ -1033,9 +1141,19 @@ public final class SclxImportCommitService
             int writesBefore)
     {
         int writes = writesBefore;
+        int businessWrites = 0;
         Map<String, FixedAsset> assets = new LinkedHashMap<>();
         for (SclxFixedAssetImportData.AssetValue value : source.assets())
         {
+            SclxImportEntityPreview assetPreview = required(
+                    previews, new EntityKey("FIXED_ASSET", value.externalId()), "preview identity");
+            if (reuseExisting(assetPreview))
+            {
+                FixedAsset existing = localEntity(em, assetPreview, FixedAsset.class);
+                ownership.requireOwnedBy(company, existing, "SCLX fixed asset");
+                assets.put(value.externalId(), existing);
+                continue;
+            }
             requireNew(previews, "FIXED_ASSET", value.externalId());
             Account assetAccount = required(accounts, value.assetAccountId(), "fixed-asset account");
             Account accumulatedAccount = required(
@@ -1066,12 +1184,28 @@ public final class SclxImportCommitService
                     value.updatedAt());
             assets.put(value.externalId(), asset);
             afterBusinessWrite.accept(++writes);
+            businessWrites++;
         }
         em.flush();
 
         Map<String, FixedAssetDepreciationRun> runs = new LinkedHashMap<>();
         for (SclxFixedAssetImportData.RunValue value : source.runs())
         {
+            SclxImportEntityPreview runPreview = required(
+                    previews, new EntityKey("DEPRECIATION_RUN", value.externalId()), "preview identity");
+            if (reuseExisting(runPreview))
+            {
+                FixedAssetDepreciationRun existing = localEntity(
+                        em, runPreview, FixedAssetDepreciationRun.class);
+                FixedAsset expectedAsset = required(assets, value.assetId(), "depreciation-run fixed asset");
+                if (!existing.getFixedAsset().getId().equals(expectedAsset.getId()))
+                {
+                    throw new IllegalStateException(
+                            "SCLX depreciation run no longer belongs to its previewed fixed asset.");
+                }
+                runs.put(value.externalId(), existing);
+                continue;
+            }
             requireNew(previews, "DEPRECIATION_RUN", value.externalId());
             FixedAsset asset = required(assets, value.assetId(), "depreciation-run fixed asset");
             Txn transaction = required(transactions, value.transactionId(), "depreciation-run transaction");
@@ -1087,8 +1221,9 @@ public final class SclxImportCommitService
                     value.createdAt());
             runs.put(value.externalId(), run);
             afterBusinessWrite.accept(++writes);
+            businessWrites++;
         }
-        return new FixedAssetWrite(assets, runs, assets.size() + runs.size());
+        return new FixedAssetWrite(assets, runs, businessWrites);
     }
 
     private InventoryWrite writeInventory(
@@ -1102,9 +1237,19 @@ public final class SclxImportCommitService
             int writesBefore)
     {
         int writes = writesBefore;
+        int businessWrites = 0;
         Map<String, InventoryItem> items = new LinkedHashMap<>();
         for (SclxInventoryImportData.ItemValue value : source.items())
         {
+            SclxImportEntityPreview itemPreview = required(
+                    previews, new EntityKey("INVENTORY_ITEM", value.externalId()), "preview identity");
+            if (reuseExisting(itemPreview))
+            {
+                InventoryItem existing = localEntity(em, itemPreview, InventoryItem.class);
+                ownership.requireOwnedBy(company, existing, "SCLX inventory item");
+                items.put(value.externalId(), existing);
+                continue;
+            }
             requireNew(previews, "INVENTORY_ITEM", value.externalId());
             Account account = required(accounts, value.inventoryAccountId(), "inventory account");
             Fund fund = required(funds, value.fundId(), "inventory fund");
@@ -1131,12 +1276,27 @@ public final class SclxImportCommitService
                     value.updatedAt());
             items.put(value.externalId(), item);
             afterBusinessWrite.accept(++writes);
+            businessWrites++;
         }
         em.flush();
 
         Map<String, InventoryMovement> movements = new LinkedHashMap<>();
         for (SclxInventoryImportData.MovementValue value : source.movements())
         {
+            SclxImportEntityPreview movementPreview = required(
+                    previews, new EntityKey("INVENTORY_MOVEMENT", value.externalId()), "preview identity");
+            if (reuseExisting(movementPreview))
+            {
+                InventoryMovement existing = localEntity(em, movementPreview, InventoryMovement.class);
+                InventoryItem expectedItem = required(items, value.itemId(), "inventory movement item");
+                if (!existing.getInventoryItem().getId().equals(expectedItem.getId()))
+                {
+                    throw new IllegalStateException(
+                            "SCLX inventory movement no longer belongs to its previewed item.");
+                }
+                movements.put(value.externalId(), existing);
+                continue;
+            }
             requireNew(previews, "INVENTORY_MOVEMENT", value.externalId());
             InventoryItem item = required(items, value.itemId(), "inventory movement item");
             Txn transaction = value.transactionId() == null
@@ -1157,8 +1317,9 @@ public final class SclxImportCommitService
                     value.createdAt());
             movements.put(value.externalId(), movement);
             afterBusinessWrite.accept(++writes);
+            businessWrites++;
         }
-        return new InventoryWrite(items, movements, items.size() + movements.size());
+        return new InventoryWrite(items, movements, businessWrites);
     }
 
     private BankingWrite writeBanking(
@@ -1174,6 +1335,15 @@ public final class SclxImportCommitService
         Map<String, Bank> banks = new LinkedHashMap<>();
         for (SclxBankingImportData.BankValue value : source.banks())
         {
+            SclxImportEntityPreview bankPreview = required(
+                    previews, new EntityKey("BANK", value.externalId()), "preview identity");
+            if (reuseExisting(bankPreview))
+            {
+                Bank existing = localEntity(em, bankPreview, Bank.class);
+                ownership.requireOwnedBy(company, existing.getCompany(), "SCLX bank");
+                banks.put(value.externalId(), existing);
+                continue;
+            }
             requireNew(previews, "BANK", value.externalId());
             Bank bank = bankConfigurationService.createBankForImport(
                     em,
@@ -1191,6 +1361,15 @@ public final class SclxImportCommitService
         Map<String, CompanyBankAccount> bankAccounts = new LinkedHashMap<>();
         for (SclxBankingImportData.BankAccountValue value : source.bankAccounts())
         {
+            SclxImportEntityPreview accountPreview = required(
+                    previews, new EntityKey("BANK_ACCOUNT", value.externalId()), "preview identity");
+            if (reuseExisting(accountPreview))
+            {
+                CompanyBankAccount existing = localEntity(em, accountPreview, CompanyBankAccount.class);
+                ownership.requireOwnedBy(company, existing.getCompany(), "SCLX bank account");
+                bankAccounts.put(value.externalId(), existing);
+                continue;
+            }
             requireNew(previews, "BANK_ACCOUNT", value.externalId());
             Bank bank = value.bankId() == null ? null : required(banks, value.bankId(), "bank");
             Account account = value.ledgerAccountId() == null
@@ -1211,14 +1390,43 @@ public final class SclxImportCommitService
         }
         em.flush();
 
-        source.batches().forEach(value -> requireNew(previews, "BANK_IMPORT_BATCH", value.externalId()));
-        source.statementLines().forEach(
-                value -> requireNew(previews, "BANK_STATEMENT_LINE", value.externalId()));
-        source.issues().forEach(value -> requireNew(previews, "BANK_IMPORT_ISSUE", value.externalId()));
+        Map<String, BankImportBatch> existingBatches = new LinkedHashMap<>();
+        source.batches().stream().filter(value -> reuseExisting(required(
+                        previews, new EntityKey("BANK_IMPORT_BATCH", value.externalId()), "preview identity")))
+                .forEach(value -> existingBatches.put(value.externalId(), localEntity(
+                        em, required(previews, new EntityKey("BANK_IMPORT_BATCH", value.externalId()),
+                                "preview identity"), BankImportBatch.class)));
+        Map<String, BankStatementLine> existingStatementLines = new LinkedHashMap<>();
+        source.statementLines().stream().filter(value -> reuseExisting(required(
+                        previews, new EntityKey("BANK_STATEMENT_LINE", value.externalId()), "preview identity")))
+                .forEach(value -> existingStatementLines.put(value.externalId(), localEntity(
+                        em, required(previews, new EntityKey("BANK_STATEMENT_LINE", value.externalId()),
+                                "preview identity"), BankStatementLine.class)));
+        Map<String, ImportIssue> existingIssues = new LinkedHashMap<>();
+        source.issues().stream().filter(value -> reuseExisting(required(
+                        previews, new EntityKey("BANK_IMPORT_ISSUE", value.externalId()), "preview identity")))
+                .forEach(value -> existingIssues.put(value.externalId(), localEntity(
+                        em, required(previews, new EntityKey("BANK_IMPORT_ISSUE", value.externalId()),
+                                "preview identity"), ImportIssue.class)));
+        List<SclxBankingImportData.BatchValue> newBatches = source.batches().stream()
+                .filter(value -> !reuseExisting(required(previews,
+                        new EntityKey("BANK_IMPORT_BATCH", value.externalId()), "preview identity")))
+                .peek(value -> requireNew(previews, "BANK_IMPORT_BATCH", value.externalId()))
+                .toList();
+        List<SclxBankingImportData.StatementLineValue> newStatementLines = source.statementLines().stream()
+                .filter(value -> !reuseExisting(required(previews,
+                        new EntityKey("BANK_STATEMENT_LINE", value.externalId()), "preview identity")))
+                .peek(value -> requireNew(previews, "BANK_STATEMENT_LINE", value.externalId()))
+                .toList();
+        List<SclxBankingImportData.IssueValue> newIssues = source.issues().stream()
+                .filter(value -> !reuseExisting(required(previews,
+                        new EntityKey("BANK_IMPORT_ISSUE", value.externalId()), "preview identity")))
+                .peek(value -> requireNew(previews, "BANK_IMPORT_ISSUE", value.externalId()))
+                .toList();
         BankImportReviewService.ImportedFacts importedFacts = bankImportReviewService.importForInterchange(
                 em,
                 company,
-                source.batches().stream().map(value -> new BankImportReviewService.BatchImport(
+                newBatches.stream().map(value -> new BankImportReviewService.BatchImport(
                         value.externalId(), portableUuid(value.externalId()), value.bankAccountId(),
                         value.sourceName(), value.sourceHash(), value.sourceFormat(),
                         value.sourceVariant(), value.sourceVersion(), value.sourceEncoding(),
@@ -1229,7 +1437,7 @@ public final class SclxImportCommitService
                         value.importedAt(), value.completedAt(), value.totalLineCount(),
                         value.acceptedLineCount(), value.rejectedLineCount(), value.issueCount(),
                         value.notes())).toList(),
-                source.statementLines().stream().map(value -> new BankImportReviewService.StatementLineImport(
+                newStatementLines.stream().map(value -> new BankImportReviewService.StatementLineImport(
                         value.externalId(), portableUuid(value.externalId()), value.importBatchId(),
                         value.bankAccountId(), value.sourceRowNumber(), value.sourceTransactionId(),
                         value.deterministicFingerprint(), value.statementAccountIdentifier(),
@@ -1238,13 +1446,16 @@ public final class SclxImportCommitService
                         value.correctionAction(), value.correctedSourceTransactionId(), value.status(),
                         value.dispositionNote(), value.acceptedTransactionId(),
                         value.matchedTransactionId())).toList(),
-                source.issues().stream().map(value -> new BankImportReviewService.IssueImport(
+                newIssues.stream().map(value -> new BankImportReviewService.IssueImport(
                         value.externalId(), portableUuid(value.externalId()), value.importBatchId(),
                         value.statementLineId(), value.sourceRowNumber(), value.severity(), value.code(),
                         value.message(), value.createdAt())).toList(),
                 bankAccounts,
-                transactions.transactions());
-        if (!source.batches().isEmpty() || !source.statementLines().isEmpty() || !source.issues().isEmpty())
+                transactions.transactions(),
+                existingBatches,
+                existingStatementLines,
+                existingIssues);
+        if (!newBatches.isEmpty() || !newStatementLines.isEmpty() || !newIssues.isEmpty())
         {
             afterBusinessWrite.accept(++writes);
         }
@@ -1261,15 +1472,33 @@ public final class SclxImportCommitService
             afterBusinessWrite.accept(++writes);
         }
 
-        source.sessions().forEach(
-                value -> requireNew(previews, "RECONCILIATION_SESSION", value.externalId()));
-        source.matches().forEach(
-                value -> requireNew(previews, "RECONCILIATION_MATCH", value.externalId()));
+        Map<String, Long> existingSessions = new LinkedHashMap<>();
+        source.sessions().stream().filter(value -> reuseExisting(required(
+                        previews, new EntityKey("RECONCILIATION_SESSION", value.externalId()), "preview identity")))
+                .forEach(value -> existingSessions.put(value.externalId(), localLongId(required(
+                        previews, new EntityKey("RECONCILIATION_SESSION", value.externalId()),
+                        "preview identity"))));
+        Map<String, Long> existingMatches = new LinkedHashMap<>();
+        source.matches().stream().filter(value -> reuseExisting(required(
+                        previews, new EntityKey("RECONCILIATION_MATCH", value.externalId()), "preview identity")))
+                .forEach(value -> existingMatches.put(value.externalId(), localLongId(required(
+                        previews, new EntityKey("RECONCILIATION_MATCH", value.externalId()),
+                        "preview identity"))));
+        List<SclxBankingImportData.SessionValue> newSessions = source.sessions().stream()
+                .filter(value -> !reuseExisting(required(previews,
+                        new EntityKey("RECONCILIATION_SESSION", value.externalId()), "preview identity")))
+                .peek(value -> requireNew(previews, "RECONCILIATION_SESSION", value.externalId()))
+                .toList();
+        List<SclxBankingImportData.MatchValue> newMatches = source.matches().stream()
+                .filter(value -> !reuseExisting(required(previews,
+                        new EntityKey("RECONCILIATION_MATCH", value.externalId()), "preview identity")))
+                .peek(value -> requireNew(previews, "RECONCILIATION_MATCH", value.externalId()))
+                .toList();
         BankReconciliationWorkspaceService.ImportedReconciliation reconciliations =
                 bankReconciliationService.importForInterchange(
                         em,
                         company,
-                        source.sessions().stream().map(value ->
+                        newSessions.stream().map(value ->
                                 new BankReconciliationWorkspaceService.SessionImport(
                                         value.externalId(), portableUuid(value.externalId()), value.bankAccountId(),
                                         value.statementStartDate(), value.statementEndDate(),
@@ -1277,7 +1506,7 @@ public final class SclxImportCommitService
                                         value.notes(), value.beginningBalance(), value.bookBalanceAll(),
                                         value.bookBalanceCleared(), value.differenceAmount(), value.createdAt(),
                                         value.updatedAt())).toList(),
-                        source.matches().stream().map(value ->
+                        newMatches.stream().map(value ->
                                 new BankReconciliationWorkspaceService.MatchImport(
                                         value.externalId(), portableUuid(value.externalId()),
                                         value.reconciliationSessionId(), value.statementLineId(),
@@ -1285,8 +1514,10 @@ public final class SclxImportCommitService
                                         value.createdAt(), value.updatedAt())).toList(),
                         bankAccounts,
                         importedFacts.lines(),
-                        transactions.lines());
-        if (!source.sessions().isEmpty() || !source.matches().isEmpty())
+                        transactions.lines(),
+                        existingSessions,
+                        existingMatches);
+        if (!newSessions.isEmpty() || !newMatches.isEmpty())
         {
             afterBusinessWrite.accept(++writes);
         }
@@ -1303,14 +1534,32 @@ public final class SclxImportCommitService
             int writesBefore)
     {
         int writes = writesBefore;
-        source.ranges().forEach(value -> requireNew(
-                previews, "PERIOD_CLOSE_RANGE", value.externalId()));
-        source.events().forEach(value -> requireNew(
-                previews, "PERIOD_CLOSE_EVENT", value.externalId()));
+        Map<String, UUID> existingRanges = new LinkedHashMap<>();
+        source.ranges().stream().filter(value -> reuseExisting(required(
+                        previews, new EntityKey("PERIOD_CLOSE_RANGE", value.externalId()), "preview identity")))
+                .forEach(value -> existingRanges.put(value.externalId(), localUuid(required(
+                        previews, new EntityKey("PERIOD_CLOSE_RANGE", value.externalId()),
+                        "preview identity"))));
+        Map<String, UUID> existingEvents = new LinkedHashMap<>();
+        source.events().stream().filter(value -> reuseExisting(required(
+                        previews, new EntityKey("PERIOD_CLOSE_EVENT", value.externalId()), "preview identity")))
+                .forEach(value -> existingEvents.put(value.externalId(), localUuid(required(
+                        previews, new EntityKey("PERIOD_CLOSE_EVENT", value.externalId()),
+                        "preview identity"))));
+        List<SclxPeriodCloseImportData.RangeValue> newRanges = source.ranges().stream()
+                .filter(value -> !reuseExisting(required(previews,
+                        new EntityKey("PERIOD_CLOSE_RANGE", value.externalId()), "preview identity")))
+                .peek(value -> requireNew(previews, "PERIOD_CLOSE_RANGE", value.externalId()))
+                .toList();
+        List<SclxPeriodCloseImportData.EventValue> newEvents = source.events().stream()
+                .filter(value -> !reuseExisting(required(previews,
+                        new EntityKey("PERIOD_CLOSE_EVENT", value.externalId()), "preview identity")))
+                .peek(value -> requireNew(previews, "PERIOD_CLOSE_EVENT", value.externalId()))
+                .toList();
         PeriodCloseRangeService.ImportedPeriodClose imported = periodCloseRangeService.importForInterchange(
                 em,
                 company,
-                source.ranges().stream().map(value -> new PeriodCloseRangeService.RangeImport(
+                newRanges.stream().map(value -> new PeriodCloseRangeService.RangeImport(
                         value.externalId(),
                         portableUuid(value.externalId()),
                         value.startDate(),
@@ -1323,15 +1572,17 @@ public final class SclxImportCommitService
                         value.reopenedAt(),
                         value.reopenedBy(),
                         value.reopenReason())).toList(),
-                source.events().stream().map(value -> new PeriodCloseRangeService.EventImport(
+                newEvents.stream().map(value -> new PeriodCloseRangeService.EventImport(
                         value.externalId(),
                         portableUuid(value.externalId()),
                         value.rangeId(),
                         value.eventType(),
                         value.actor(),
                         value.reason(),
-                        value.eventAt())).toList());
-        for (int index = 0; index < source.ranges().size() + source.events().size(); index++)
+                        value.eventAt())).toList(),
+                existingRanges,
+                existingEvents);
+        for (int index = 0; index < newRanges.size() + newEvents.size(); index++)
         {
             afterBusinessWrite.accept(++writes);
         }
@@ -1347,11 +1598,21 @@ public final class SclxImportCommitService
             int writesBefore)
     {
         int writes = writesBefore;
-        source.events().forEach(value -> requireNew(previews, "AUDIT_EVENT", value.externalId()));
+        Map<String, AuditEvent> existingEvents = new LinkedHashMap<>();
+        source.events().stream().filter(value -> reuseExisting(required(
+                        previews, new EntityKey("AUDIT_EVENT", value.externalId()), "preview identity")))
+                .forEach(value -> existingEvents.put(value.externalId(), localEntity(
+                        em, required(previews, new EntityKey("AUDIT_EVENT", value.externalId()),
+                                "preview identity"), AuditEvent.class)));
+        List<SclxAuditHistoryImportData.EventValue> newEvents = source.events().stream()
+                .filter(value -> !reuseExisting(required(previews,
+                        new EntityKey("AUDIT_EVENT", value.externalId()), "preview identity")))
+                .peek(value -> requireNew(previews, "AUDIT_EVENT", value.externalId()))
+                .toList();
         AuditHistoryService.ImportedAuditHistory imported = auditHistoryService.importForInterchange(
                 em,
                 company,
-                source.events().stream().map(value -> new AuditHistoryService.AuditEventImport(
+                newEvents.stream().map(value -> new AuditHistoryService.AuditEventImport(
                         value.externalId(),
                         portableUuid(value.externalId()),
                         value.occurredAt(),
@@ -1362,8 +1623,9 @@ public final class SclxImportCommitService
                         value.summary(),
                         value.beforeValue(),
                         value.afterValue(),
-                        value.reason())).toList());
-        for (int index = 0; index < source.events().size(); index++)
+                        value.reason())).toList(),
+                existingEvents);
+        for (int index = 0; index < newEvents.size(); index++)
         {
             afterBusinessWrite.accept(++writes);
         }
@@ -1594,6 +1856,28 @@ public final class SclxImportCommitService
             String localId)
     {
         SclxImportEntityPreview item = required(previews, new EntityKey(type, externalId), "preview identity");
+        if (item.identityMatch() == InterchangeIdentityMatch.CONFLICT)
+        {
+            if (item.conflictChoice() == SclxImportConflictChoice.KEEP_TARGET)
+            {
+                return;
+            }
+            if (item.conflictChoice() == SclxImportConflictChoice.TAKE_SOURCE)
+            {
+                identityService.acceptSourceConflict(
+                        em,
+                        company,
+                        InterchangeFormat.SCLX,
+                        preview.sourceSystem(),
+                        type,
+                        externalId,
+                        item.normalizedContentHash(),
+                        localId);
+                return;
+            }
+            throw new IllegalStateException("SCLX conflict has no selected winner: "
+                    + type + " " + externalId + ".");
+        }
         identityService.record(
                 em,
                 company,
@@ -1712,6 +1996,78 @@ public final class SclxImportCommitService
         {
             throw new IllegalStateException("Mixed new/identical SCLX core import is not supported: "
                     + type + " " + externalId + ".");
+        }
+    }
+
+    private static boolean reuseExisting(SclxImportEntityPreview item)
+    {
+        return item.identityMatch() == InterchangeIdentityMatch.IDENTICAL
+                || (item.identityMatch() == InterchangeIdentityMatch.CONFLICT
+                        && item.conflictChoice() != null);
+    }
+
+    private static <T> T localEntity(
+            EntityManager em,
+            SclxImportEntityPreview item,
+            Class<T> entityType)
+    {
+        if (item.localEntityId() == null)
+        {
+            throw new IllegalStateException("SCLX identity no longer resolves to a local record: "
+                    + item.entityType() + " " + item.externalId() + ".");
+        }
+        final Long id;
+        try
+        {
+            id = Long.valueOf(item.localEntityId());
+        }
+        catch (NumberFormatException ex)
+        {
+            throw new IllegalStateException("SCLX identity has an invalid local record ID: "
+                    + item.entityType() + " " + item.externalId() + ".", ex);
+        }
+        T entity = em.find(entityType, id);
+        if (entity == null)
+        {
+            throw new IllegalStateException("SCLX identity local record disappeared after preview: "
+                    + item.entityType() + " " + item.externalId() + ".");
+        }
+        return entity;
+    }
+
+    private static long localLongId(SclxImportEntityPreview item)
+    {
+        if (item.localEntityId() == null)
+        {
+            throw new IllegalStateException("SCLX identity no longer resolves to a local record: "
+                    + item.entityType() + " " + item.externalId() + ".");
+        }
+        try
+        {
+            return Long.parseLong(item.localEntityId());
+        }
+        catch (NumberFormatException ex)
+        {
+            throw new IllegalStateException("SCLX identity has an invalid local record ID: "
+                    + item.entityType() + " " + item.externalId() + ".", ex);
+        }
+    }
+
+    private static UUID localUuid(SclxImportEntityPreview item)
+    {
+        if (item.localEntityId() == null)
+        {
+            throw new IllegalStateException("SCLX identity no longer resolves to a local record: "
+                    + item.entityType() + " " + item.externalId() + ".");
+        }
+        try
+        {
+            return UUID.fromString(item.localEntityId());
+        }
+        catch (IllegalArgumentException ex)
+        {
+            throw new IllegalStateException("SCLX identity has an invalid local UUID: "
+                    + item.entityType() + " " + item.externalId() + ".", ex);
         }
     }
 

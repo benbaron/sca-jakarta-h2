@@ -97,11 +97,13 @@ public final class AuditHistoryService
     public ImportedAuditHistory importForInterchange(
             EntityManager em,
             Company company,
-            List<AuditEventImport> events)
+            List<AuditEventImport> events,
+            Map<String, AuditEvent> existingEvents)
     {
         Objects.requireNonNull(em, "em");
         Company owner = Objects.requireNonNull(company, "company");
         List<AuditEventImport> source = List.copyOf(Objects.requireNonNull(events, "events"));
+        Objects.requireNonNull(existingEvents, "existingEvents");
         if (!em.getTransaction().isActive())
         {
             throw new IllegalStateException("Audit-history interchange import requires an active transaction");
@@ -130,7 +132,7 @@ public final class AuditHistoryService
             }
         }
 
-        Map<String, AuditEvent> imported = new LinkedHashMap<>();
+        Map<String, AuditEvent> imported = new LinkedHashMap<>(existingEvents);
         for (AuditEventImport value : source)
         {
             if (imported.containsKey(value.externalId()))
