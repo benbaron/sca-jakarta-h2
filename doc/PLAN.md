@@ -1,12 +1,12 @@
 ---
-plan_version: 199
+plan_version: 200
 active_phase: P16
 active_slice: P16-C9
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P16-C9-sclx-identity-aware-operational-merge
 active_pull_request: null
-active_head: ca0a50ea9670a91e46ef5093d4ae2bd70bd0369e
-next_action: "Implement and locally validate P16-C9 identity-aware operational merge, then request authorization before publishing the fresh corrective branch and opening a draft PR."
+active_head: c1dd824
+next_action: "Obtain owner authorization, publish P16-C9, open a draft PR to main, and run Maven PR Tests for semantic compilation and the focused/runtime suites unavailable locally."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2931,7 +2931,7 @@ Next exact action:
 
 ## P16-C9 — Identity-aware SCLX operational merge
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P16-C9-sclx-identity-aware-operational-merge`
 Pull request: pending
@@ -2950,6 +2950,14 @@ Planned deliverables:
 - Keep structurally unsafe choices unavailable when they would rewrite cross-company ownership, a closed period, or finalized reconciliation history, with an actionable reason shown in preview.
 - Add focused preview, commit, rollback, documentation, and owner-checklist coverage.
 
+Implementation and validation status:
+
+- Local implementation commit `c1dd824` removes the coarse operational-occupancy preview and commit gates, reuses identical imported records across the supported graph, adds new records beside unrelated target history, and extends banking, reconciliation, period-close, and audit service seams with existing-record maps for incremental import.
+- `CONFLICT` rows now require an explicit record-level **A — Keep target** or **B — Take SCLX** choice. Source-winner mutation is enabled for Activity, counterparty, and merchant masters; protected accounting-history records keep the target choice available and explain why source replacement is unsafe.
+- Commit re-previews the exact source with the approved mapping and conflict-choice sets, compares the full entity projection, revalidates local ownership/references, advances a selected source identity hash only with the corresponding local record, and retains one-transaction rollback.
+- Focused regressions cover removal of the operational-presence blocker, import beside unrelated target audit/budget/period-close history, mixed identical/new graph reuse, Activity target/source winner projection, Activity source-winner commit, and production-route conflict controls.
+- All 712 production and test Java sources parse under the Java 17 compiler module; the four dependency-free conflict/preview projection sources type-compile; focused source assertions and `git diff --check` pass. Maven and the standalone `javac` launcher are unavailable locally, so semantic compilation and runtime/H2/JavaFX tests require Maven PR Tests.
+
 Next exact action:
 
-- Implement identity-aware reuse across the imported graph, validate locally, and prepare the fresh branch for owner-authorized publication.
+- Obtain owner authorization, publish the fresh branch, open a draft PR to `main`, and inspect Maven PR Tests.
