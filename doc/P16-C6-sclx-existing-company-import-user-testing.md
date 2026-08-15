@@ -10,8 +10,11 @@
   Mappings** runs a fresh preview; **Approve shown SCLX account/fund mappings** is required before import.
 - Existing company name, currency, fiscal-year settings, active-chart name/version, mapped accounts,
   and mapped funds are preserved.
-- A target with transactions, budgets/categories, parties/merchants, banking/reconciliation,
-  assets, inventory, or period-close history remains blocked.
+- If the target company has no active Chart of Accounts, import creates and names the chart from the
+  SCLX metadata; unrelated existing target records do not cause an unnamed-chart rollback.
+- Unrelated target transactions, budgets/categories, parties/merchants, banking/reconciliation,
+  assets, inventory, and period-close history are retained. Competing durable identities are handled
+  by the record-level conflict rules rather than by a company-wide presence blocker.
 - Activities assigned to the active import company are target master data, not a competing historical
   company. A compatible same-code Activity is reused and linked to the SCLX identity; different content
   remains a blocking conflict.

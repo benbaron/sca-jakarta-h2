@@ -329,6 +329,12 @@ operation writes one company-owned `SCLX_CORE_IMPORTED` factual audit event cont
 version, SHA-256, and counts. An identical second import is a committed no-op and creates no duplicate
 business rows, identities, or operation audit event.
 
+Target-setting preservation applies only to an active Chart of Accounts that actually exists. If a
+populated target company has no active chart, import creates one and assigns its required name,
+version, owner, and active status from the governed SCLX chart metadata before any accounts are
+written. It must not persist a nameless chart merely because some unrelated target record makes the
+company populated.
+
 This boundary rejects budgets, activities, counterparties, merchants, supplemental details, banking,
 reconciliation, fixed assets, inventory, period-close facts, imported audit history, correction
 relationships, and non-empty unknown sections. Those facts are not dropped or partially imported;
