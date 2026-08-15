@@ -37,6 +37,8 @@ import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.service.PeriodCloseEventView;
 import org.nonprofitbookkeeping.service.PeriodCloseRangeService;
 import org.nonprofitbookkeeping.service.PeriodCloseRangeView;
+import org.nonprofitbookkeeping.service.TransactionEntryService;
+import org.nonprofitbookkeeping.service.TransactionView;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -564,6 +566,11 @@ class SclxImportCommitServiceTest
                 assertEquals(preview.sectionCounts().totalEntities(), count(em,
                         "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
             }
+            List<TransactionView> journalTransactions = new TransactionEntryService(jpa, () -> TARGET)
+                    .search(null, null, null, 500);
+            assertEquals(1, journalTransactions.size());
+            assertEquals("Purchase supplies", journalTransactions.get(0).memo());
+
             SclxImportPreview secondPreview = previews.preview(source);
             assertFalse(secondPreview.hasBlockingErrors(),
                     () -> secondPreview.operation().messages().toString());

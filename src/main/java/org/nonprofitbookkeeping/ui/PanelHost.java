@@ -33,6 +33,11 @@ public class PanelHost extends TabPane
         getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) ->
         {
             activeId = newTab == null ? null : panelIdFor(newTab);
+            AppPanel panel = activeId == null ? null : panels.get(activeId);
+            if (panel != null)
+            {
+                panel.onPanelShown();
+            }
             commandCapabilitiesChangedListener.run();
         });
     }
@@ -57,6 +62,7 @@ public class PanelHost extends TabPane
     public void show(AppPanelId requestedId)
     {
         AppPanelId id = canonicalPanelId(Objects.requireNonNull(requestedId, "requestedId"));
+        Tab previouslySelected = getSelectionModel().getSelectedItem();
         Tab tab = tabs.computeIfAbsent(id, this::createTab);
         if (!getTabs().contains(tab))
         {
@@ -65,7 +71,7 @@ public class PanelHost extends TabPane
         getSelectionModel().select(tab);
         activeId = id;
         AppPanel panel = panels.get(id);
-        if (panel != null)
+        if (panel != null && previouslySelected == tab)
         {
             panel.onPanelShown();
         }
