@@ -11,6 +11,7 @@ import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.AuditEvent;
@@ -405,6 +406,48 @@ class SclxImportCommitServiceTest
             assertFalse(preview.operation().messages().stream()
                     .anyMatch(message -> message.code().equals(
                             "SCLX_OPERATIONAL_DATA_MERGE_UNSUPPORTED")));
+        }
+    }
+
+    @Test
+    void importsByReusingCompatibleActivityAssignedToCurrentTarget(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writeSource(tempDir.resolve("assigned-activity-target.sclx"));
+        try (Jpa jpa = new Jpa(tempDir.resolve("assigned-activity-target")))
+        {
+            seedEmptyTarget(jpa);
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                Activity activity = new Activity();
+                activity.setCompany(company(em));
+                activity.setCode("EVENT");
+                activity.setName("Portable Event");
+                activity.setActive(true);
+                em.persist(activity);
+                em.getTransaction().commit();
+            }
+
+            SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
+
+            assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+            assertTrue(preview.operation().messages().stream().anyMatch(message ->
+                    message.code().equals("SCLX_TARGET_ACTIVITY_REUSED")));
+
+            SclxImportResult result = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, preview, "tester", true, true);
+
+            assertTrue(result.committed(), () -> result.messages().toString());
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals(1L, count(em, "select count(a) from Activity a"));
+                assertEquals(1L, count(em,
+                        "select count(i) from InterchangeIdentity i where i.entityType = 'ACTIVITY'"));
+                AuditEvent audit = em.createQuery(
+                                "from AuditEvent a where a.actionType = 'SCLX_IMPORTED'", AuditEvent.class)
+                        .getSingleResult();
+                assertTrue(audit.getAfterValue().contains("targetReuses=ACTIVITY:"));
+            }
         }
     }
 

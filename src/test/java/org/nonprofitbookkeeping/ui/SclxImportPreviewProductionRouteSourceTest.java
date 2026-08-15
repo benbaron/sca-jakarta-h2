@@ -21,6 +21,8 @@ class SclxImportPreviewProductionRouteSourceTest
         String compactPanel = panel.replaceAll("\\s+", "");
 
         assertTrue(panel.contains("Preview SCLX…"));
+        assertTrue(panel.contains("Re-preview Same SCLX"));
+        assertTrue(panel.contains("repreviewSameSclxButton"));
         assertTrue(panel.contains("SCLX Active Company Files"));
         assertTrue(compactPanel.contains("runPreviewOperation(\"import-preview-sclx\""));
         assertTrue(compactPanel.contains("runCommitOperation(\"import-preview-sclx-commit\""));

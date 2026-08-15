@@ -10,13 +10,17 @@
   Mappings** runs a fresh preview; **Approve shown SCLX account/fund mappings** is required before import.
 - Existing company name, currency, fiscal-year settings, active-chart name/version, mapped accounts,
   and mapped funds are preserved.
-- A target with transactions, budgets/categories, activities/parties/merchants, banking/reconciliation,
+- A target with transactions, budgets/categories, parties/merchants, banking/reconciliation,
   assets, inventory, or period-close history remains blocked.
+- Activities assigned to the active import company are target master data, not a competing historical
+  company. A compatible same-code Activity is reused and linked to the SCLX identity; different content
+  remains a blocking conflict.
 - Open legacy ownership diagnostics now appear as blocking preview errors, not only as a commit-time
   exception. Selecting a message keeps its complete resolution visible below the list.
 - **Administration -> Company Ownership Diagnostics** supports confirmed, audited assignment of one
-  direct ownerless record to its actual active company. It does not bulk-guess owners or rewrite
+  direct ownerless record to the active company receiving the import. It does not bulk-guess owners or rewrite
   cross-company accounting references.
+- **Re-preview Same SCLX** reruns the exact retained file after ownership repair without reopening the chooser.
 
 ## Manual verification
 
@@ -28,12 +32,12 @@
    database has legacy ownership diagnostics, confirm the preview is `BLOCKED`, every diagnostic is an
    error in **Preview Messages**, and the selected error directs you to **Administration -> Company
    Ownership Diagnostics**.
-4. In **Administration -> Company Ownership Diagnostics**, select each direct ownerless row only when its
-   actual historical company is known, review the record description and related-company evidence, choose
-   the compatible active company, enter the actor and evidence, and
-   confirm **Assign Owner…**. Confirm the remaining count decreases and a failed/stale assignment changes
+4. In **Administration -> Company Ownership Diagnostics**, select each direct ownerless row, review the
+   record description and any related-company constraint, confirm the preselected active import company,
+   enter the actor and audit note, and confirm **Assign to Import Company…**. Confirm the remaining count decreases and a failed/stale assignment changes
    nothing. Confirm cross-company reference rows are non-assignable and explain the appropriate next step.
-5. Preview the same SCLX file again after the open diagnostic count reaches zero.
+5. Return to Import Preview and click **Re-preview Same SCLX** after the open diagnostic count reaches zero.
+   Confirm no file chooser is required and the same normalized path is used.
 6. Confirm the status reports created, mapped, and identical counts and still says no data changed.
 7. Open **SCLX Mappings**. Confirm missing noncolliding account/fund codes say `CREATE`; compatible
    existing records say `MAPPED` and identify the exact target code.
@@ -50,7 +54,8 @@
    mapped master records are unchanged, missing masters and the SCLX business graph were added once,
    and one local `SCLX_IMPORTED` fact exists.
 12. Preview the same file again. Confirm every governed identity is identical and importing is a no-op.
-13. In a separate company that already has a transaction or another operational-history family, preview
+13. Confirm a compatible pre-assigned Activity is reported as reused and is not duplicated. In a separate
+    company that already has a transaction or another operational-history family, preview
     the file and confirm `SCLX_OPERATIONAL_DATA_MERGE_UNSUPPORTED` blocks import with guidance to use a
     target without operational data or an identical reimport.
 14. Cancel one confirmation and confirm no data changes. If practical, exercise an injected/test late

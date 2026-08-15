@@ -56,7 +56,7 @@ public final class SclxImportPreviewService
             "depreciationExpenseAccountId", "inventoryAccountId");
     private static final Set<String> FUND_REFERENCE_FIELDS = Set.of("fundId");
     private static final Set<String> MERGE_REUSABLE_ENTITY_TYPES =
-            Set.of("ORGANIZATION", "ACCOUNT", "FUND");
+            Set.of("ORGANIZATION", "ACCOUNT", "FUND", "ACTIVITY");
 
     private final SclxDocumentParser parser;
     private final SclxStructureValidator structureValidator;
@@ -134,7 +134,7 @@ public final class SclxImportPreviewService
                     InterchangeMessageSeverity.ERROR,
                     "SCLX_OPERATIONAL_DATA_MERGE_UNSUPPORTED",
                     "targetCompany",
-                    "The target company already contains transactions, budgets, linked masters, banking, assets, "
+                    "The target company already contains transactions, budgets, parties/merchants, banking, assets, "
                             + "inventory, reconciliation, or period-close history. This import option can merge into "
                             + "an existing chart-and-funds company, but it will not combine competing operational histories. "
                             + "Use a company without operational data or reimport a completely identical SCLX file.",
@@ -176,6 +176,11 @@ public final class SclxImportPreviewService
                 .map(SclxImportMappingRequirement::sourceId)
                 .collect(java.util.stream.Collectors.toUnmodifiableSet());
         Set<String> reusedEntityIds = new HashSet<>(mappedMasterIds);
+        entities.stream()
+                .filter(value -> value.identityMatch() == InterchangeIdentityMatch.NEW)
+                .filter(value -> value.localEntityId() != null)
+                .map(SclxImportEntityPreview::externalId)
+                .forEach(reusedEntityIds::add);
         if (target.populated() && entities.stream().anyMatch(value ->
                 value.externalId().equals(organization.organizationId())
                         && value.identityMatch() == InterchangeIdentityMatch.NEW))
@@ -190,8 +195,13 @@ public final class SclxImportPreviewService
                 .filter(value -> value.identityMatch() == InterchangeIdentityMatch.IDENTICAL)
                 .count();
         long skipped = transactionResult.zeroValueLines() + transactionResult.emptyTransactions();
+        long reusedTargetMasters = entities.stream()
+                .filter(value -> value.identityMatch() == InterchangeIdentityMatch.NEW)
+                .filter(value -> value.localEntityId() != null)
+                .count();
         InterchangeOperationCounts operationCounts = new InterchangeOperationCounts(
-                extraction.counts().totalEntities(), created, mappedMasterIds.size(),
+                extraction.counts().totalEntities(), created,
+                mappedMasterIds.size() + reusedTargetMasters,
                 identical, skipped, warnings, errors);
         String sourceName = source.getFileName() == null ? source.toString() : source.getFileName().toString();
         InterchangePreview<SclxImportEntityPreview> operation = new InterchangePreview<>(
@@ -359,6 +369,35 @@ public final class SclxImportPreviewService
             if (local == null)
             {
                 match = InterchangeIdentityMatch.NEW;
+                if ("ACTIVITY".equals(entity.entityType()))
+                {
+                    SclxImportTargetSnapshot.TargetActivity activity = target.activitiesByCode().get(
+                            text(entity.value(), "code"));
+                    if (activity != null && activity.name().equals(text(entity.value(), "name"))
+                            && activity.active() == entity.value().path("active").asBoolean())
+                    {
+                        localId = activity.localEntityId();
+                        messages.add(message(
+                                InterchangeMessageSeverity.WARNING,
+                                "SCLX_TARGET_ACTIVITY_REUSED",
+                                entity.path(),
+                                "The import target already contains compatible Activity " + activity.code()
+                                        + "; it will be reused and linked to this SCLX identity.",
+                                false));
+                    }
+                    else if (activity != null)
+                    {
+                        match = InterchangeIdentityMatch.CONFLICT;
+                        localId = activity.localEntityId();
+                        messages.add(message(
+                                InterchangeMessageSeverity.ERROR,
+                                "SCLX_ACTIVITY_CODE_CONFLICT",
+                                entity.path(),
+                                "The import target already contains Activity " + activity.code()
+                                        + " with a different name or active state.",
+                                true));
+                    }
+                }
             }
             else if (local.normalizedContentHash().equals(entity.normalizedHash()))
             {
@@ -890,7 +929,7 @@ public final class SclxImportPreviewService
                     path + "." + idField, idField + " is required for " + entityType + ".", true));
             return;
         }
-        entities.add(new IncomingEntity(entityType, id.textValue(), path, hash(value)));
+        entities.add(new IncomingEntity(entityType, id.textValue(), path, hash(value), value));
     }
 
     private static long unsupportedSections(
@@ -1174,7 +1213,7 @@ public final class SclxImportPreviewService
     private record OrganizationData(
             String organizationId, String code, String name, String sourceSystem) { }
     private record IncomingEntity(
-            String entityType, String externalId, String path, String normalizedHash) { }
+            String entityType, String externalId, String path, String normalizedHash, JsonNode value) { }
     private record Extraction(SclxImportPreviewCounts counts, List<IncomingEntity> entities) { }
     private record MappingResult(
             SclxAccountMode recommendedMode, List<SclxImportMappingRequirement> requirements) { }

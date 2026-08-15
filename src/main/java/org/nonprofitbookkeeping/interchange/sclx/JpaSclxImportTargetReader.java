@@ -3,6 +3,7 @@ package org.nonprofitbookkeeping.interchange.sclx;
 import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.interchange.InterchangeFormat;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.Fund;
@@ -48,6 +49,7 @@ final class JpaSclxImportTargetReader implements SclxImportTargetReader
 
             Map<String, SclxImportTargetSnapshot.TargetAccount> accounts = accounts(em, company);
             Map<String, SclxImportTargetSnapshot.TargetFund> funds = funds(em, company);
+            Map<String, SclxImportTargetSnapshot.TargetActivity> activities = activities(em, company);
             Map<SclxImportTargetSnapshot.ExternalIdentityKey, SclxImportTargetSnapshot.IdentityFact> identities =
                     identities(em, company, source);
             List<SclxImportTargetSnapshot.ClosedRange> closedRanges = closedRanges(em, company);
@@ -56,7 +58,6 @@ final class JpaSclxImportTargetReader implements SclxImportTargetReader
                     count(em, "select count(t) from Txn t where t.company = :company", company) > 0L
                     || count(em, "select count(c) from BudgetCategory c where c.company = :company", company) > 0L
                     || count(em, "select count(p) from BudgetPlan p where p.company = :company", company) > 0L
-                    || count(em, "select count(a) from Activity a where a.company = :company", company) > 0L
                     || count(em, "select count(c) from Counterparty c where c.company = :company", company) > 0L
                     || count(em, "select count(m) from Merchant m where m.company = :company", company) > 0L
                     || count(em, "select count(a) from FixedAsset a where a.company = :company", company) > 0L
@@ -67,7 +68,8 @@ final class JpaSclxImportTargetReader implements SclxImportTargetReader
                     || nativeCount(em, "bank_reconciliation_session", company) > 0L
                     || nativeCount(em, "period_close_range", company) > 0L
                     || nativeCount(em, "period_close_event", company) > 0L;
-            boolean populated = !accounts.isEmpty() || !funds.isEmpty() || operationalDataPopulated
+            boolean populated = !accounts.isEmpty() || !funds.isEmpty() || !activities.isEmpty()
+                    || operationalDataPopulated
                     || count(em, "select count(a) from AuditEvent a where a.company = :company", company) > 0L;
 
             return new SclxImportTargetSnapshot(
@@ -77,10 +79,31 @@ final class JpaSclxImportTargetReader implements SclxImportTargetReader
                     operationalDataPopulated,
                     accounts,
                     funds,
+                    activities,
                     identities,
                     closedRanges,
                     finalizedTransactions);
         }
+    }
+
+    private static Map<String, SclxImportTargetSnapshot.TargetActivity> activities(
+            EntityManager em, Company company)
+    {
+        List<Activity> values = em.createQuery("""
+                select a from Activity a
+                where a.company = :company
+                order by a.code
+                """, Activity.class)
+                .setParameter("company", company)
+                .getResultList();
+        Map<String, SclxImportTargetSnapshot.TargetActivity> result = new LinkedHashMap<>();
+        for (Activity activity : values)
+        {
+            result.put(activity.getCode(), new SclxImportTargetSnapshot.TargetActivity(
+                    activity.getCode(), activity.getName(), activity.isActive(),
+                    String.valueOf(activity.getId())));
+        }
+        return result;
     }
 
     private static Map<String, SclxImportTargetSnapshot.TargetAccount> accounts(

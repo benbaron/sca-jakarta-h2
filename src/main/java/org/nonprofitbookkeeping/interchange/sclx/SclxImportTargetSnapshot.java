@@ -14,6 +14,7 @@ record SclxImportTargetSnapshot(
         boolean operationalDataPopulated,
         Map<String, TargetAccount> accountsByCode,
         Map<String, TargetFund> fundsByCode,
+        Map<String, TargetActivity> activitiesByCode,
         Map<ExternalIdentityKey, IdentityFact> identities,
         List<ClosedRange> closedRanges,
         Set<String> finalizedTransactionLocalIds)
@@ -24,10 +25,28 @@ record SclxImportTargetSnapshot(
         companyName = requireText(companyName, "companyName");
         accountsByCode = Map.copyOf(Objects.requireNonNull(accountsByCode, "accountsByCode"));
         fundsByCode = Map.copyOf(Objects.requireNonNull(fundsByCode, "fundsByCode"));
+        activitiesByCode = Map.copyOf(Objects.requireNonNull(activitiesByCode, "activitiesByCode"));
         identities = Map.copyOf(Objects.requireNonNull(identities, "identities"));
         closedRanges = List.copyOf(Objects.requireNonNull(closedRanges, "closedRanges"));
         finalizedTransactionLocalIds = Set.copyOf(Objects.requireNonNull(
                 finalizedTransactionLocalIds, "finalizedTransactionLocalIds"));
+    }
+
+    /** Compatibility constructor for snapshots that do not model pre-existing activities. */
+    SclxImportTargetSnapshot(
+            String companyCode,
+            String companyName,
+            boolean populated,
+            boolean operationalDataPopulated,
+            Map<String, TargetAccount> accountsByCode,
+            Map<String, TargetFund> fundsByCode,
+            Map<ExternalIdentityKey, IdentityFact> identities,
+            List<ClosedRange> closedRanges,
+            Set<String> finalizedTransactionLocalIds)
+    {
+        this(companyCode, companyName, populated, operationalDataPopulated,
+                accountsByCode, fundsByCode, Map.of(), identities, closedRanges,
+                finalizedTransactionLocalIds);
     }
 
     boolean isClosed(LocalDate date)
@@ -66,6 +85,20 @@ record SclxImportTargetSnapshot(
             portableId = requireText(portableId, "portableId");
             code = requireText(code, "code");
             type = requireText(type, "type");
+            localEntityId = requireText(localEntityId, "localEntityId");
+        }
+    }
+
+    record TargetActivity(
+            String code,
+            String name,
+            boolean active,
+            String localEntityId)
+    {
+        TargetActivity
+        {
+            code = requireText(code, "code");
+            name = requireText(name, "name");
             localEntityId = requireText(localEntityId, "localEntityId");
         }
     }

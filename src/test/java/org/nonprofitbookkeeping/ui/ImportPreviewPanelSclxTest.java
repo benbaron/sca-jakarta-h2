@@ -30,6 +30,7 @@ import org.nonprofitbookkeeping.service.ImportPreviewService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -128,6 +129,23 @@ class ImportPreviewPanelSclxTest
         });
     }
 
+    @Test
+    void blockedPreviewRetainsExactSourceForSameFileRepreview()
+    {
+        FxTestSupport.onFx(() -> {
+            SclxImportPreview blocked = ownershipBlockedPreview();
+            ImportPreviewPanel panel = new ImportPreviewPanel(
+                    new ImportPreviewService(), source -> blocked);
+            new Scene((javafx.scene.Parent) panel.root(), 1000, 700);
+
+            panel.applySclxPreview(Path.of("owner-selected.sclx"), blocked);
+
+            Button repreview = (Button) panel.root().lookup("#repreviewSameSclxButton");
+            assertTrue(!repreview.isDisabled());
+            return null;
+        });
+    }
+
     private static SclxImportPreview mappedPreview()
     {
         SclxImportPreview base = preview();
@@ -201,7 +219,7 @@ class ImportPreviewPanelSclxTest
                 InterchangeMessageSeverity.ERROR,
                 "SCLX_COMPANY_OWNERSHIP_UNRESOLVED",
                 "companyOwnership.ACTIVITY.1",
-                "Activity has no deterministic company owner. Resolution: Select the actual owner in "
+                "Activity has no deterministic company owner. Resolution: Assign it to the active import company in "
                         + "Administration -> Company Ownership Diagnostics.",
                 true);
         InterchangePreview<SclxImportEntityPreview> operation = new InterchangePreview<>(

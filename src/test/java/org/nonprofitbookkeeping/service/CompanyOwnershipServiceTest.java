@@ -119,10 +119,13 @@ class CompanyOwnershipServiceTest
             }
 
             CompanyOwnershipService service = new CompanyOwnershipService(jpa);
-            assertEquals("LEGACY-ACTIVITY — Legacy Activity", service.listOpenIssues().get(0).recordLabel());
+            CompanyOwnershipIssueView open = service.listOpenIssues().get(0);
+            assertEquals("LEGACY-ACTIVITY — Legacy Activity", open.recordLabel());
+            assertTrue(open.resolutionGuidance().contains("company receiving the import"));
+            assertTrue(!open.resolutionGuidance().contains("historical owner"));
 
             CompanyOwnershipRepairResult result = service.assignOwner(
-                    issueId, companyId, "test-operator", "Legacy register identifies DEFAULT as owner.");
+                    issueId, companyId, "test-operator", "DEFAULT is the active SCLX import company.");
 
             assertEquals("ACTIVITY", result.entityType());
             assertEquals("DEFAULT", result.companyCode());

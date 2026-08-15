@@ -263,7 +263,7 @@ public final class SclxImportCommitService
                             "SCLX_IDENTICAL_REIMPORT",
                             "Every governed core, extension, banking, reconciliation, period-close, audit-history, and correction fact was identical; no data changed.");
                 }
-                requireChartAndFundOnlyTarget(em, company);
+                requireNoCompetingOperationalHistory(em, company);
 
                 int writes = 0;
                 if (!current.targetPopulated())
@@ -284,7 +284,8 @@ public final class SclxImportCommitService
                 writes += writtenBudgets.businessWriteCount();
                 Map<String, Activity> activities = writeActivities(
                         em, company, details.activities(), previews, writes);
-                writes += activities.size();
+                writes += newEntityCount(previews, "ACTIVITY", details.activities().stream()
+                        .map(SclxTransactionDetailImportData.ActivityValue::externalId).toList());
                 Map<String, Counterparty> counterparties = writeCounterparties(
                         em, company, details.counterparties(), previews, writes);
                 writes += counterparties.size();
@@ -344,7 +345,8 @@ public final class SclxImportCommitService
                         + ",created=" + actualCreatedCount(current)
                         + ",mapped=" + current.operation().counts().updated()
                         + ",accountMode=" + current.recommendedAccountMode()
-                        + ",mappings=" + mappingAudit(current.mappings()));
+                        + ",mappings=" + mappingAudit(current.mappings())
+                        + ",targetReuses=" + targetReuseAudit(current));
                 operationAudit.setReason(
                         "Atomic SCLX core, supported extension, banking, reconciliation, period-close, factual audit-history, and correction-relationship import.");
                 em.persist(operationAudit);
@@ -497,7 +499,7 @@ public final class SclxImportCommitService
         return source.relationships().size();
     }
 
-    private static void requireChartAndFundOnlyTarget(EntityManager em, Company company)
+    private static void requireNoCompetingOperationalHistory(EntityManager em, Company company)
     {
         long transactions = em.createQuery("select count(t) from Txn t where t.company = :company", Long.class)
                 .setParameter("company", company)
@@ -507,9 +509,6 @@ public final class SclxImportCommitService
                 .getSingleResult();
         long budgetCategories = em.createQuery(
                         "select count(c) from BudgetCategory c where c.company = :company", Long.class)
-                .setParameter("company", company)
-                .getSingleResult();
-        long activities = em.createQuery("select count(a) from Activity a where a.company = :company", Long.class)
                 .setParameter("company", company)
                 .getSingleResult();
         long counterparties = em.createQuery(
@@ -551,7 +550,7 @@ public final class SclxImportCommitService
                 .setParameter(1, company.getId())
                 .getSingleResult()).longValue();
         if (transactions + budgets + budgetCategories
-                + activities + counterparties + merchants + fixedAssets + inventoryItems
+                + counterparties + merchants + fixedAssets + inventoryItems
                 + banks + bankAccounts + importBatches + reconciliationSessions
                 + periodCloseRanges + periodCloseEvents != 0L)
         {
@@ -730,7 +729,28 @@ public final class SclxImportCommitService
         int writes = writesBefore;
         for (SclxTransactionDetailImportData.ActivityValue value : values)
         {
-            requireNew(previews, "ACTIVITY", value.externalId());
+            SclxImportEntityPreview preview = required(
+                    previews, new EntityKey("ACTIVITY", value.externalId()), "preview identity");
+            if (preview.identityMatch() != InterchangeIdentityMatch.NEW)
+            {
+                throw new IllegalStateException("Mixed new/identical SCLX core import is not supported: ACTIVITY "
+                        + value.externalId() + ".");
+            }
+            if (preview.localEntityId() != null)
+            {
+                Activity existing = em.find(Activity.class, Long.valueOf(preview.localEntityId()));
+                if (existing == null || existing.getCompany() == null
+                        || !existing.getCompany().getId().equals(company.getId())
+                        || !existing.getCode().equals(value.code())
+                        || !existing.getName().equals(value.name())
+                        || existing.isActive() != value.active())
+                {
+                    throw new IllegalStateException(
+                            "The compatible target Activity changed after preview: " + value.code() + ".");
+                }
+                result.put(value.externalId(), existing);
+                continue;
+            }
             Activity activity = new Activity();
             activity.setCompany(company);
             activity.setCode(value.code());
@@ -1695,6 +1715,19 @@ public final class SclxImportCommitService
         }
     }
 
+    private static long newEntityCount(
+            Map<EntityKey, SclxImportEntityPreview> previews,
+            String type,
+            List<String> externalIds)
+    {
+        return externalIds.stream()
+                .map(externalId -> required(
+                        previews, new EntityKey(type, externalId), "preview identity"))
+                .filter(item -> item.identityMatch() == InterchangeIdentityMatch.NEW)
+                .filter(item -> item.localEntityId() == null)
+                .count();
+    }
+
     private static List<JsonNode> parentFirst(
             JsonNode values,
             String idField,
@@ -1781,6 +1814,16 @@ public final class SclxImportCommitService
                 .mapToLong(SclxImportTransactionPreview::zeroValueLineCount)
                 .sum();
         return Math.max(0L, preview.operation().counts().created() - skippedZeroLines);
+    }
+
+    private static String targetReuseAudit(SclxImportPreview preview)
+    {
+        return preview.operation().items().stream()
+                .filter(item -> item.identityMatch() == InterchangeIdentityMatch.NEW)
+                .filter(item -> item.localEntityId() != null)
+                .map(item -> item.entityType() + ":" + item.externalId() + "->" + item.localEntityId())
+                .sorted()
+                .collect(java.util.stream.Collectors.joining("|"));
     }
 
     private static InterchangeValidationMessage message(

@@ -102,12 +102,15 @@ The user supplies an explicit source-to-target account mapping. Every used sourc
 The selected mode and complete effective mapping MUST be included in the operation result and factual audit record.
 
 The production existing-company option is a nondestructive merge into a target whose existing data is
-limited to its company settings, active chart/accounts, funds, and ordinary factual audit history.
+limited to its company settings, active chart/accounts, funds, compatible Activity masters, and ordinary factual audit history.
 Preview distinguishes `CREATE` from `MAPPED`, offers only type/balance/active/posting-compatible target
 choices, and requires a fresh preview plus explicit approval of the complete effective mapping. The
 import preserves target organization settings and chart metadata, records durable SCLX identities for
-reused accounts/funds, and adds the remaining governed graph atomically. Existing transactions,
-budgets/categories, activities/parties/merchants, assets, inventory, banking/reconciliation, or
+reused accounts/funds, and adds the remaining governed graph atomically. A direct ownerless Activity
+assigned to the selected active import company is treated as target master data, not evidence of a
+different historical company. An identical code/name/active Activity is reused and receives the incoming
+durable identity; a different same-code Activity is a blocking conflict. Existing transactions,
+budgets/categories, parties/merchants, assets, inventory, banking/reconciliation, or
 period-close history remain blocking because this option does not combine competing operational histories.
 Any non-identical import into a populated target also requires the explicit **Import into existing
 company (preserve settings)** confirmation; mapping approval does not imply that broader consent.
@@ -500,6 +503,8 @@ rollback risk. Commit runs away from the JavaFX thread and the service re-reads 
 approved mapping set before beginning the transaction. A changed source, changed target, newly populated
 operational history, changed mapping, or new blocking diagnostic prevents mutation. Success reports target, created/mapped/identical counts and
 SHA-256; failure reports rollback, and both success and rollback invalidate the approved preview.
+When ownership repair blocks the first preview, **Re-preview Same SCLX** reruns the retained normalized
+source path and applied account/fund selections without reopening the file chooser.
 
 ## 11. Import transaction boundary and results
 
