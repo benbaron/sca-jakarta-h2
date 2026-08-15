@@ -1,12 +1,12 @@
 ---
-plan_version: 197
+plan_version: 198
 active_phase: P16
-active_slice: P16-C7
-active_status: VERIFYING
-active_branch: codex/P16-C7-ownership-diagnostics-repair
+active_slice: P16-C8
+active_status: IN_PROGRESS
+active_branch: codex/P16-C8-sclx-target-company-authority
 active_pull_request: null
-active_head: 1daa05902e7a04e9f7c161f9950708ce1b9dc11c
-next_action: "Publish the authorized P16-C7 ownership-diagnostics repair from merged PR #274's exact main head, open a fresh draft PR, validate its exact remote head, then rerun the updated owner desktop checklist."
+active_head: 2f0bf9bf4a5520059e43b8e404c3807ccb312dc8
+next_action: "Complete and locally validate P16-C8, then request authorization before publishing the fresh corrective branch and opening a draft PR."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Publish the authorized P16-C7 ownership-diagnostics repair from me
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, records P16-C3 and P16-C4 through merged PRs #272 and #273, records the owner-requested P16-C6 nondestructive existing-company SCLX import through merged PR #274, and activates P16-C7 to make global company-ownership blockers visible and repairable before import. P16-C5 message guidance remains a separate unpublished local slice and is not mixed into this branch. It does not authorize P17 or any later feature phase.
+This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, records P16-C3 and P16-C4 through merged PRs #272 and #273, records the owner-requested P16-C6 nondestructive existing-company SCLX import through merged PR #274, records P16-C7 ownership diagnostics through merged PR #275, and activates P16-C8 so the operator-selected active import company is authoritative for direct ownerless records and compatible assigned Activities do not create a false competing-history blocker. P16-C5 message guidance remains a separate unpublished local slice and is not mixed into this branch. It does not authorize P17 or any later feature phase.
 
 ## 2. Status values
 
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | Corrective P16-C7 VERIFYING after merged P16-C6 / PR #274 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | Corrective P16-C8 IN_PROGRESS after merged P16-C7 / PR #275 |
 
 ## 4. Governing documents
 
@@ -2806,7 +2806,7 @@ Next exact action:
 
 ## P16-C4 — Restore donor SCLX confirmation after merge
 
-Status: VERIFYING.
+Status: DONE through merged PR #275.
 
 Branch: `codex/P16-C4-restore-sclx-confirmation`
 Pull request: #273
@@ -2838,7 +2838,7 @@ Next exact action:
 
 ## P16-C6 — Nondestructive SCLX import into an existing company
 
-Status: DONE through merged PR #274; owner desktop SCLX acceptance continues under P16-C7.
+Status: DONE through merged PR #274; owner desktop SCLX acceptance continues under P16-C8.
 
 Branch: `codex/P16-C6-sclx-existing-company-merge`
 Pull request: #274
@@ -2852,7 +2852,7 @@ Purpose:
 
 Planned deliverables:
 
-- Split target occupancy into chart/fund/audit facts versus transactions, budgets/categories, linked masters, banking/reconciliation, assets, inventory, and period-close history.
+- Split target occupancy into chart/fund/audit facts versus transactions, budgets/categories, transaction-linked masters, banking/reconciliation, assets, inventory, and period-close history.
 - Project each account/fund as `CREATE`, direct identical reuse, explicit compatible `MAPPED` reuse, or blocking conflict/unresolved state.
 - Offer compatible target choices for a same-code collision, apply the choices through a fresh non-mutating preview, and require both explicit approval of the final displayed mappings and separate consent to import into the existing company while preserving its settings.
 - Re-read the exact source and mapping set at commit, preserve target organization/chart settings, reuse approved accounts/funds, create missing masters, record durable identities, and add the remaining graph atomically.
@@ -2880,7 +2880,7 @@ Next exact action:
 Status: VERIFYING.
 
 Branch: `codex/P16-C7-ownership-diagnostics-repair`
-Pull request: pending
+Pull request: #275
 Base head: `ec64a0ddd50759686542a6739d127df45b1a7974`
 
 Purpose:
@@ -2899,4 +2899,31 @@ Implementation and validation status:
 
 Next exact action:
 
-- Publish this fresh branch without force, open a draft PR targeting `main`, verify the exact remote tree and PR head, run Maven PR Tests on that head, and repeat the updated ownership plus existing-company desktop checklist before merge.
+- None; PR #275 merged to `main` at `2f0bf9bf4a5520059e43b8e404c3807ccb312dc8`, and the owner-selected target-company correction continues under P16-C8.
+
+## P16-C8 — SCLX import-target authority for direct ownerless records
+
+Status: IN_PROGRESS.
+
+Branch: `codex/P16-C8-sclx-target-company-authority`
+Pull request: pending
+Base head: `2f0bf9bf4a5520059e43b8e404c3807ccb312dc8`
+
+Purpose:
+
+- Treat the active company selected for SCLX import as the operator's authoritative assignment for a direct ownerless record; do not ask the operator to infer a distinct historical company.
+- Keep structural cross-company reference conflicts blocking because assigning a row cannot safely rewrite incompatible accounting links.
+- Permit an Activity assigned to the target company to coexist with existing-company import, reuse an identical code/name/active record, and attach the incoming durable SCLX identity instead of creating a duplicate.
+- Retain the exact previewed SCLX path and provide **Re-preview Same SCLX** after ownership repair.
+
+Implementation and validation status:
+
+- Company Ownership Diagnostics now defaults to the active company receiving the import and describes the required reason as an audit note, without historical-owner language.
+- Target occupancy excludes Activity master rows from competing operational history. Preview reports compatible Activity reuse as `SCLX_TARGET_ACTIVITY_REUSED`; a same-code record with different name or active state remains a blocking `SCLX_ACTIVITY_CODE_CONFLICT`.
+- Atomic commit revalidates the compatible Activity under the same target company, reuses it, records its SCLX identity, and continues to reject transactions, budgets, banking, assets, inventory, reconciliation, close history, and other existing operational families.
+- Import Preview exposes **Re-preview Same SCLX** and reuses the normalized exact source path plus any applied account/fund selections.
+- Focused preview, commit, ownership-service, Administration-source, and Import Preview production-route regressions cover the correction. All 710 production/test Java sources pass Java 17 grammar parsing, the changed dependency-free SCLX snapshot/preview records type-compile through the JDK compiler module, source guards and `git diff --check` pass. Local semantic Maven execution remains pending because Maven and the standalone `javac` launcher are unavailable in the current workspace.
+
+Next exact action:
+
+- Review the locally validated corrective diff, then request authorization before publishing this branch for Maven PR Tests and owner desktop verification.

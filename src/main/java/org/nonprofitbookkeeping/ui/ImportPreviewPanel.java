@@ -105,6 +105,7 @@ public class ImportPreviewPanel implements AppPanel
 		new Button("Commit Accepted COA Rows");
 	private final Button previewCoa = new Button("Preview COA CSV…");
 	private final Button previewSclx = new Button("Preview SCLX…");
+	private final Button repreviewSclx = new Button("Re-preview Same SCLX");
 	private final Button commitSclx = new Button("Import Previewed SCLX…");
 	private final Button applySclxMappings = new Button("Apply SCLX Mappings");
 	private final Button previewBank = new Button("Preview Bank OFX/QFX…");
@@ -280,6 +281,9 @@ public class ImportPreviewPanel implements AppPanel
 		
 		previewSclx.setOnAction(e -> chooseAndPreviewSclx());
 		previewSclx.setId("previewSclxButton");
+		repreviewSclx.setId("repreviewSameSclxButton");
+		repreviewSclx.setDisable(true);
+		repreviewSclx.setOnAction(e -> repreviewSameSclx());
 		commitSclx.setId("commitPreviewedSclxButton");
 		commitSclx.setDisable(true);
 		commitSclx.setOnAction(e -> confirmAndCommitSclx());
@@ -330,7 +334,7 @@ public class ImportPreviewPanel implements AppPanel
 		status.setId("importPreviewStatus");
 		status.setWrapText(true);
 		VBox controls = new VBox(6, title,
-			new HBox(8, previewSclx, previewCoa, commitAccepted),
+			new HBox(8, previewSclx, repreviewSclx, previewCoa, commitAccepted),
 			new HBox(8, new Label("Configured bank account"), bankAccount,
 				previewBank, previewNormalizedBankCsv),
 			new HBox(8, new Label("Mapped CSV profile"), bankCsvProfile,
@@ -525,6 +529,7 @@ public class ImportPreviewPanel implements AppPanel
 	{
 		previewCoa.setDisable(disabled);
 		previewSclx.setDisable(disabled);
+		repreviewSclx.setDisable(disabled || lastSclxSource == null);
 		previewBank.setDisable(disabled);
 		previewBankCsv.setDisable(disabled);
 		previewNormalizedBankCsv.setDisable(disabled);
@@ -1343,6 +1348,24 @@ public class ImportPreviewPanel implements AppPanel
 		}
 		previewSclx(source, selections);
 	}
+
+	private void repreviewSameSclx()
+	{
+		Path source = lastSclxSource;
+		SclxImportPreview preview = lastSclxPreview;
+		if (source == null || preview == null)
+		{
+			status.setText("Preview an SCLX file before re-previewing it.");
+			return;
+		}
+		List<SclxImportMappingSelection> selections = preview.mappings().stream()
+			.filter(mapping -> sclxMappingSelections.containsKey(mapping.sourceId()))
+			.map(mapping -> new SclxImportMappingSelection(
+				mapping.kind(), mapping.sourceId(),
+				sclxMappingSelections.get(mapping.sourceId())))
+			.toList();
+		previewSclx(source, selections);
+	}
 	
 	void applySclxPreview(SclxImportPreview result)
 	{
@@ -1357,6 +1380,7 @@ public class ImportPreviewPanel implements AppPanel
 		clearBankPreview();
 		lastSclxSource =
 			source == null ? null : source.toAbsolutePath().normalize();
+		repreviewSclx.setDisable(lastSclxSource == null);
 		lastSclxPreview = result;
 		lastSclxCommitService = null;
 		sclxMappingsDirty = false;
@@ -1553,6 +1577,7 @@ public class ImportPreviewPanel implements AppPanel
 		if (result.committed())
 		{
 			lastSclxSource = null;
+			repreviewSclx.setDisable(true);
 			lastSclxPreview = null;
 			lastSclxCommitService = null;
 			commitSclx.setDisable(true);
@@ -1576,6 +1601,7 @@ public class ImportPreviewPanel implements AppPanel
 		}
 		
 		lastSclxSource = null;
+		repreviewSclx.setDisable(true);
 		lastSclxPreview = null;
 		lastSclxCommitService = null;
 		commitSclx.setDisable(true);
@@ -1614,6 +1640,7 @@ public class ImportPreviewPanel implements AppPanel
 	private void clearSclxPreview()
 	{
 		lastSclxSource = null;
+		repreviewSclx.setDisable(true);
 		lastSclxPreview = null;
 		lastSclxCommitService = null;
 		commitSclx.setDisable(true);

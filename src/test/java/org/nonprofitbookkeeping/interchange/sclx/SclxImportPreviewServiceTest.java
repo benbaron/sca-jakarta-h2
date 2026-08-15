@@ -179,7 +179,7 @@ class SclxImportPreviewServiceTest
                 && message.message().contains("Administration -> Company Ownership Diagnostics")));
         assertTrue(blockers.stream().anyMatch(message ->
                 message.path().equals("companyOwnership.ACTIVITY.1")
-                        && message.message().contains("Assign Owner")));
+                        && message.message().contains("Assign to Import Company")));
         assertTrue(blockers.stream().anyMatch(message ->
                 message.path().equals("companyOwnership.TXN_SPLIT.7")
                         && message.message().contains("will not guess")));
@@ -222,6 +222,54 @@ class SclxImportPreviewServiceTest
         assertFalse(codes.contains("SCLX_OPERATIONAL_DATA_MERGE_UNSUPPORTED"));
         assertEquals(preview.sectionCounts().totalEntities() - preview.mappings().size() - 1L,
                 preview.operation().counts().created());
+    }
+
+    @Test
+    void reusesCompatibleActivityAssignedToTheImportTarget() throws Exception
+    {
+        Path source = write(SclxJsonSerializerTest.document(), "assigned-activity.sclx");
+        JsonNode activity = new ObjectMapper().readTree(source.toFile())
+                .path("extensions").path("scaJakartaH2").path("activities").get(0);
+        String code = activity.path("code").textValue();
+        SclxImportTargetSnapshot target = new SclxImportTargetSnapshot(
+                "TARGET", "Import Target", true, false, Map.of(), Map.of(),
+                Map.of(code, new SclxImportTargetSnapshot.TargetActivity(
+                        code, activity.path("name").textValue(), activity.path("active").booleanValue(), "91")),
+                Map.of(), List.of(), Set.of());
+
+        SclxImportPreview preview = service(target).preview(source);
+        SclxImportEntityPreview activityPreview = preview.operation().items().stream()
+                .filter(item -> item.entityType().equals("ACTIVITY"))
+                .findFirst().orElseThrow();
+
+        assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+        assertEquals(InterchangeIdentityMatch.NEW, activityPreview.identityMatch());
+        assertEquals("91", activityPreview.localEntityId());
+        assertEquals(1L, preview.operation().counts().updated());
+        assertTrue(preview.operation().messages().stream().anyMatch(message ->
+                message.code().equals("SCLX_TARGET_ACTIVITY_REUSED") && !message.blocking()));
+        assertFalse(preview.operation().messages().stream().anyMatch(message ->
+                message.code().equals("SCLX_OPERATIONAL_DATA_MERGE_UNSUPPORTED")));
+    }
+
+    @Test
+    void blocksDifferentActivityUsingTheSameTargetCode() throws Exception
+    {
+        Path source = write(SclxJsonSerializerTest.document(), "activity-conflict.sclx");
+        JsonNode activity = new ObjectMapper().readTree(source.toFile())
+                .path("extensions").path("scaJakartaH2").path("activities").get(0);
+        String code = activity.path("code").textValue();
+        SclxImportTargetSnapshot target = new SclxImportTargetSnapshot(
+                "TARGET", "Import Target", true, false, Map.of(), Map.of(),
+                Map.of(code, new SclxImportTargetSnapshot.TargetActivity(
+                        code, "Different activity", activity.path("active").booleanValue(), "91")),
+                Map.of(), List.of(), Set.of());
+
+        SclxImportPreview preview = service(target).preview(source);
+
+        assertTrue(preview.hasBlockingErrors());
+        assertTrue(preview.operation().messages().stream().anyMatch(message ->
+                message.code().equals("SCLX_ACTIVITY_CODE_CONFLICT") && message.blocking()));
     }
 
     @Test

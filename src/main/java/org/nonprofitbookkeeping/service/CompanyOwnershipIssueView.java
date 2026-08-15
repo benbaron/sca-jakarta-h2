@@ -37,10 +37,10 @@ public record CompanyOwnershipIssueView(
         if (directlyAssignable())
         {
             String evidence = relationshipCompanyCodes.isEmpty()
-                    ? "No company-owned relationship identifies the owner, so verify it from external historical evidence. "
-                    : "Related records identify " + relationshipCompanyCodes.get(0) + " as the only compatible owner. ";
-            return evidence + "Select the active company that actually owned this historical record, enter the actor "
-                    + "and reason, then choose Assign Owner. Preview the SCLX file again afterward.";
+                    ? "No company-owned relationship conflicts with the selected import target. "
+                    : "Related records require " + relationshipCompanyCodes.get(0) + " as the compatible target. ";
+            return evidence + "Confirm the active company receiving the import, enter the actor and an audit note, "
+                    + "then choose Assign to Import Company. Re-preview the same SCLX file afterward.";
         }
         return "This diagnostic describes conflicting accounting references, not a missing owner. "
                 + "Correct the referenced records in their owning workspace or restore a consistent backup; "

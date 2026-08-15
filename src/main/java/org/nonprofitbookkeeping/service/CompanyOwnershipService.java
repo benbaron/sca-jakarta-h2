@@ -347,7 +347,7 @@ public class CompanyOwnershipService
 
     /**
      * Assigns one ownerless legacy entity after an administrator explicitly
-     * identifies its real company. Cross-company reference diagnostics are not
+     * confirms the company receiving the record. Cross-company reference diagnostics are not
      * rewritten here because doing so would guess at accounting relationships.
      */
     public CompanyOwnershipRepairResult assignOwner(

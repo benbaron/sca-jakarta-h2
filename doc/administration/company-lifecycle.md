@@ -30,8 +30,9 @@ The existing Administration destination continues to use `AppPanelId.SETTINGS`. 
 The adjacent **Company Ownership Diagnostics** tab is a corrective legacy-data workflow, not another
 company editor. It lists the unresolved rows that block governed interchange, preserves the entity type,
 stable record ID, human-readable record description, diagnostic code, candidate count, cause, and
-resolution guidance, and permits a single
-direct ownerless row to be assigned only after an active target company, actor, and reason are supplied.
+resolution guidance, and permits a single direct ownerless row to be assigned to the active company
+receiving the import after an actor and audit note are supplied. The operator's selected import target is
+authoritative; the workflow does not require reconstructing a separate historical company.
 The confirmation and result name the exact row and company. Cross-company reference conflicts remain
 non-assignable and explain that the underlying accounting links must be corrected in their owning workflow.
 
@@ -85,6 +86,6 @@ The donor `CompanyManagementService`, `CompanyManagementPanelFX`, and `CompanySe
 7. Select another company, deactivate the former company, and confirm it remains listed as inactive.
 8. Attempt to deactivate the final active company and confirm it is rejected.
 9. Resize, reorder, and sort the company table, move the divider, reopen the company, and confirm company-owned layout restoration.
-10. Open **Company Ownership Diagnostics**. For a direct ownerless test row, select its actual company,
-    enter an actor and evidence, confirm the assignment, and verify the row disappears and an audit event
+10. Open **Company Ownership Diagnostics**. For a direct ownerless test row, confirm the preselected active
+    import company, enter an actor and audit note, confirm the assignment, and verify the row disappears and an audit event
     exists. Confirm a cross-company reference row cannot be assigned or silently dismissed.

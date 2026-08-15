@@ -66,7 +66,9 @@ class AdministrationNavigationSourceTest
         assertTrue(panel.contains("ownershipDiagnosticsTargetCompany"));
         assertTrue(panel.contains("ownershipDiagnosticsActor"));
         assertTrue(panel.contains("ownershipDiagnosticsReason"));
-        assertTrue(panel.contains("Assign Owner…"));
+        assertTrue(panel.contains("Assign to Import Company…"));
+        assertTrue(panel.contains("active company receiving the import is authoritative"));
+        assertTrue(panel.contains("activeCompanyCode"));
         assertTrue(panel.contains("No accounting reference is changed automatically"));
         assertTrue(service.contains("COMPANY_OWNERSHIP_ASSIGNED"));
         assertTrue(service.contains("PESSIMISTIC_WRITE"));
