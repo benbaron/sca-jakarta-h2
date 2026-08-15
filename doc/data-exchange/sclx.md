@@ -507,6 +507,9 @@ rollback risk. Commit runs away from the JavaFX thread and the service re-reads 
 approved mapping and conflict-choice set before beginning the transaction. A changed source, changed target,
 changed selected record, changed mapping, or new blocking diagnostic prevents mutation. Success reports target, created/mapped/identical counts and
 SHA-256; failure reports rollback, and both success and rollback invalidate the approved preview.
+Selecting an already-open Journal or other workspace after a successful import invokes its normal
+`onPanelShown()` refresh hook. The Journal then re-queries `TransactionEntryService` for the active
+company, so newly committed canonical transactions appear without closing and recreating the tab.
 When ownership repair blocks the first preview, **Re-preview Same SCLX** reruns the retained normalized
 source path and applied account/fund selections and record-level conflict choices without reopening the file chooser.
 

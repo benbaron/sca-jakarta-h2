@@ -1688,7 +1688,7 @@ public class ImportPreviewPanel implements AppPanel
 					result.counts().updated() + ", identical " +
 					result.counts().identical() + ", SHA-256 " +
 					result.sourceSha256() +
-					". Reopen other workspaces to refresh imported data.");
+					". Select Journal or another open workspace to refresh imported data.");
 			return;
 		}
 		

@@ -5,7 +5,7 @@ Status: P00 inventory of current main, updated through active P16-S17 end-to-end
 ## Scope and evidence
 
 - `AppPanelId` retains stable identifiers, but `LEDGER_REGISTER` and `TXN_EDITOR` are retired compatibility aliases normalized to canonical `JOURNAL_PANE`.
-- `PanelHost` creates one reusable workspace tab per canonical destination. Requests for either retired P03 alias select the same Journal tab.
+- `PanelHost` creates one reusable workspace tab per canonical destination. Requests for either retired P03 alias select the same Journal tab. Selecting an already-open tab invokes that panel's `onPanelShown()` refresh hook, so imported or otherwise externally changed H2 data is re-queried without closing the tab.
 - `NavigationPane` exposes one **Journal** destination under Accounting rather than separate Ledger Register, Transaction Editor, and Inspect Journal items.
 - `PanelFactory` routes the Journal destination to `JournalWorkspaceCompliancePanel`, which delegates all accounting behavior to `JournalWorkspacePanel` and applies the company UI formatting/state/layout contract.
 - `PanelFactory` also applies `CompanyTableStateBinder` at the production composition boundary. Every table on every canonical route is unconstrained, sortable, resizable, reorderable, and registered to H2 company-owned order/width/sort state; Journal, Funds, and Company Admin retain their richer existing H2 state owners.

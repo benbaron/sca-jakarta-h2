@@ -49,8 +49,9 @@
    account/fund mappings** are selected and the audit actor is nonblank.
 10. Import, accept the final confirmation, and confirm the result reports created, mapped, and identical
    counts with the exact target and SHA-256.
-11. Reopen Administration, Chart of Accounts, Funds, Journal, Budgets, Assets, Inventory, Banking,
-   Reconciliation, Period Close, and Audit History. Confirm the original company/chart settings and
+11. Select the already-open Journal tab and confirm its normal refresh displays the imported canonical
+   transactions without closing the tab or requiring a separate **Refresh** click. Select Administration,
+   Chart of Accounts, Funds, Budgets, Assets, Inventory, Banking, Reconciliation, Period Close, and Audit History. Confirm the original company/chart settings and
    mapped master records are unchanged, missing masters and the SCLX business graph were added once,
    and one local `SCLX_IMPORTED` fact exists.
 12. Preview the same file again. Confirm every governed identity is identical and importing is a no-op.

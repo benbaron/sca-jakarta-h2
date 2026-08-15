@@ -1,8 +1,12 @@
 package org.nonprofitbookkeeping.ui;
 
+import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -68,6 +72,27 @@ public class PanelHostBehaviorTest
     }
 
     @Test
+    public void selectingAnExistingTabInvokesItsRefreshHook()
+    {
+        FxTestSupport.onFx(() -> {
+            PanelHost host = new PanelHost();
+            CountingPanel journal = new CountingPanel("Journal");
+            CountingPanel help = new CountingPanel("Help");
+
+            host.showReplacement(AppPanelId.JOURNAL_PANE, journal);
+            Tab journalTab = host.getSelectionModel().getSelectedItem();
+            host.showReplacement(AppPanelId.HELP, help);
+            int shownBeforeReselection = journal.shownCount();
+
+            host.getSelectionModel().select(journalTab);
+
+            assertEquals(shownBeforeReselection + 1, journal.shownCount());
+            assertEquals(AppPanelId.JOURNAL_PANE, host.activePanelId());
+            return null;
+        });
+    }
+
+    @Test
     public void refreshOpenPanelsPreservesOpenDestinationsAndActivePanel()
     {
         FxTestSupport.onFx(() -> {
@@ -85,5 +110,39 @@ public class PanelHostBehaviorTest
             assertNotSame(originalHelpTab, host.getSelectionModel().getSelectedItem());
             return null;
         });
+    }
+
+    private static final class CountingPanel implements AppPanel
+    {
+        private final String title;
+        private final AtomicInteger shown = new AtomicInteger();
+
+        private CountingPanel(String title)
+        {
+            this.title = title;
+        }
+
+        @Override
+        public String title()
+        {
+            return title;
+        }
+
+        @Override
+        public Node root()
+        {
+            return new Label(title);
+        }
+
+        @Override
+        public void onPanelShown()
+        {
+            shown.incrementAndGet();
+        }
+
+        private int shownCount()
+        {
+            return shown.get();
+        }
     }
 }
