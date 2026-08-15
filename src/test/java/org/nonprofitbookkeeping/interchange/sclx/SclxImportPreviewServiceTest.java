@@ -109,13 +109,12 @@ class SclxImportPreviewServiceTest
 
         assertTrue(preview.hasBlockingErrors());
         assertEquals(SclxAccountMode.MAPPED, preview.recommendedAccountMode());
-        assertTrue(codes.contains("SCLX_OPERATIONAL_DATA_MERGE_UNSUPPORTED"));
         assertTrue(codes.contains("SCLX_MAPPING_APPROVAL_REQUIRED"));
         assertTrue(codes.contains("SCLX_BALANCING_ACCOUNT_REQUIRED"));
         assertTrue(codes.contains("SCLX_CLOSED_PERIOD_CONFLICT"));
         assertTrue(codes.contains("SCLX_FINALIZED_RECONCILIATION_CONFLICT"));
         assertTrue(codes.contains("SCLX_ZERO_VALUE_LINE_SKIPPED"));
-        assertTrue(codes.contains("SCLX_EXTERNAL_ID_CONFLICT"));
+        assertTrue(codes.contains("SCLX_CONFLICT_CHOICE_REQUIRED"));
         assertEquals(1, preview.transactions().get(0).postingLineCount());
         assertTrue(preview.transactions().get(0).requiresBalancingAccount());
         assertTrue(preview.transactions().get(0).closedPeriodConflict());
@@ -269,7 +268,23 @@ class SclxImportPreviewServiceTest
 
         assertTrue(preview.hasBlockingErrors());
         assertTrue(preview.operation().messages().stream().anyMatch(message ->
-                message.code().equals("SCLX_ACTIVITY_CODE_CONFLICT") && message.blocking()));
+                message.code().equals("SCLX_CONFLICT_CHOICE_REQUIRED") && message.blocking()));
+
+        String externalId = activity.path("activityId").textValue();
+        SclxImportPreview keepTarget = service(target).preview(source, List.of(), List.of(
+                new SclxImportConflictSelection(
+                        "ACTIVITY", externalId, SclxImportConflictChoice.KEEP_TARGET)));
+        assertFalse(keepTarget.hasBlockingErrors(), () -> keepTarget.operation().messages().toString());
+        assertEquals(SclxImportConflictChoice.KEEP_TARGET,
+                keepTarget.operation().items().stream()
+                        .filter(item -> item.entityType().equals("ACTIVITY"))
+                        .findFirst().orElseThrow().conflictChoice());
+
+        SclxImportPreview takeSource = service(target).preview(source, List.of(), List.of(
+                new SclxImportConflictSelection(
+                        "ACTIVITY", externalId, SclxImportConflictChoice.TAKE_SOURCE)));
+        assertFalse(takeSource.hasBlockingErrors(), () -> takeSource.operation().messages().toString());
+        assertEquals(1L, takeSource.operation().counts().updated());
     }
 
     @Test

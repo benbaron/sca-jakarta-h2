@@ -133,6 +133,52 @@ public class InterchangeIdentityService
         return identity;
     }
 
+    /**
+     * Caller-owned transaction variant for an explicitly selected source winner.
+     * The durable identity stays linked to the same local record and only its
+     * normalized content version advances.
+     */
+    public InterchangeIdentity acceptSourceConflict(
+            EntityManager em,
+            Company company,
+            InterchangeFormat format,
+            String sourceSystem,
+            String entityType,
+            String externalId,
+            String normalizedContentHash,
+            String localEntityId)
+    {
+        Objects.requireNonNull(em, "em");
+        Objects.requireNonNull(company, "company");
+        Objects.requireNonNull(format, "format");
+        String cleanSource = requireText(sourceSystem, "Source system", 160);
+        String cleanType = requireText(entityType, "Entity type", 80).toUpperCase(Locale.ROOT);
+        String cleanExternalId = requireText(externalId, "External ID", 160);
+        String cleanHash = normalizeHash(normalizedContentHash);
+        String cleanLocalId = optionalText(localEntityId, 120, "Local entity ID");
+        List<InterchangeIdentity> matches = find(
+                em, company, format, cleanSource, cleanType, cleanExternalId);
+        if (matches.isEmpty())
+        {
+            return record(em, company, format, cleanSource, cleanType, cleanExternalId,
+                    cleanHash, cleanLocalId);
+        }
+        if (matches.size() != 1)
+        {
+            throw new IllegalStateException("Conflicting external identity changed after preview: "
+                    + cleanType + " " + cleanExternalId + ".");
+        }
+        InterchangeIdentity identity = matches.get(0);
+        if (!Objects.equals(identity.getLocalEntityId(), cleanLocalId))
+        {
+            throw new IllegalStateException("Conflicting external identity is linked to a different local record: "
+                    + cleanType + " " + cleanExternalId + ".");
+        }
+        identity.setNormalizedContentHash(cleanHash);
+        identity.touchUpdatedAt();
+        return identity;
+    }
+
     private InterchangeIdentityMatch classify(
             EntityManager em,
             Company company,

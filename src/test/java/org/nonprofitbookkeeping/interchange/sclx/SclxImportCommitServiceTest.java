@@ -406,6 +406,19 @@ class SclxImportCommitServiceTest
             assertFalse(preview.operation().messages().stream()
                     .anyMatch(message -> message.code().equals(
                             "SCLX_OPERATIONAL_DATA_MERGE_UNSUPPORTED")));
+
+            SclxImportResult result = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, preview, "tester", false, true);
+            assertTrue(result.committed(), () -> result.messages().toString());
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals(1L, count(em, "select count(c) from BudgetCategory c"));
+                assertEquals(1L, count(em, "select count(t) from Txn t"));
+                assertEquals(1L, count(em,
+                        "select count(a) from AuditEvent a where a.actionType = 'EXISTING_FACT'"));
+                assertEquals(1L, count(em,
+                        "select count(a) from AuditEvent a where a.actionType = 'SCLX_IMPORTED'"));
+            }
         }
     }
 
@@ -447,6 +460,53 @@ class SclxImportCommitServiceTest
                                 "from AuditEvent a where a.actionType = 'SCLX_IMPORTED'", AuditEvent.class)
                         .getSingleResult();
                 assertTrue(audit.getAfterValue().contains("targetReuses=ACTIVITY:"));
+            }
+        }
+    }
+
+    @Test
+    void appliesPerRecordSourceWinnerForConflictingActivity(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writeSource(tempDir.resolve("activity-source-winner.sclx"));
+        try (Jpa jpa = new Jpa(tempDir.resolve("activity-source-winner")))
+        {
+            seedEmptyTarget(jpa);
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                Activity activity = new Activity();
+                activity.setCompany(company(em));
+                activity.setCode("EVENT");
+                activity.setName("Target activity name");
+                activity.setActive(false);
+                em.persist(activity);
+                em.getTransaction().commit();
+            }
+
+            SclxImportPreview initial = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
+            SclxImportEntityPreview activity = initial.operation().items().stream()
+                    .filter(item -> item.entityType().equals("ACTIVITY"))
+                    .findFirst().orElseThrow();
+            assertTrue(initial.hasBlockingErrors());
+
+            SclxImportPreview resolved = new SclxImportPreviewService(jpa, () -> TARGET).preview(
+                    source,
+                    List.of(),
+                    List.of(new SclxImportConflictSelection(
+                            activity.entityType(), activity.externalId(),
+                            SclxImportConflictChoice.TAKE_SOURCE)));
+            assertFalse(resolved.hasBlockingErrors(), () -> resolved.operation().messages().toString());
+
+            SclxImportResult result = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, resolved, "tester", true, true);
+            assertTrue(result.committed(), () -> result.messages().toString());
+            try (EntityManager em = jpa.em())
+            {
+                Activity imported = em.createQuery("from Activity a", Activity.class).getSingleResult();
+                assertEquals("Portable Event", imported.getName());
+                assertTrue(imported.isActive());
+                assertEquals(1L, count(em,
+                        "select count(i) from InterchangeIdentity i where i.entityType = 'ACTIVITY'"));
             }
         }
     }
@@ -866,6 +926,57 @@ class SclxImportCommitServiceTest
     }
 
     @Test
+    void importsNewRecordWhileReusingIdenticalOperationalGraph(@TempDir Path tempDir) throws Exception
+    {
+        Path database = tempDir.resolve("incremental-import");
+        Path source = writeAuditHistorySource(tempDir.resolve("incremental.sclx"));
+        try (Jpa jpa = new Jpa(database))
+        {
+            seedEmptyTarget(jpa);
+            SclxImportPreviewService previews = new SclxImportPreviewService(jpa, () -> TARGET);
+            SclxImportCommitService service = new SclxImportCommitService(jpa, () -> TARGET);
+            SclxImportPreview firstPreview = previews.preview(source);
+            assertTrue(service.commit(source, firstPreview, "tester").committed());
+
+            ObjectMapper mapper = new ObjectMapper();
+            ObjectNode root = (ObjectNode) mapper.readTree(source.toFile());
+            ArrayNode events = (ArrayNode) root.path("extensions").path("scaJakartaH2")
+                    .path("auditHistory").path("events");
+            ObjectNode additional = events.get(0).deepCopy();
+            UUID additionalId = UUID.fromString("abcdef12-3456-7890-abcd-ef1234567890");
+            additional.put("auditEventId", SclxPortableIdentity.auditEvent("SOURCE", additionalId.toString()));
+            additional.put("summary", "Later portable audit fact");
+            events.add(additional);
+            mapper.writerWithDefaultPrettyPrinter().writeValue(source.toFile(), root);
+
+            SclxImportPreview incremental = previews.preview(source);
+            assertFalse(incremental.hasBlockingErrors(), () -> incremental.operation().messages().toString());
+            assertEquals(21L, incremental.operation().counts().identical());
+            assertEquals(1L, incremental.operation().counts().created());
+
+            SclxImportResult result = service.commit(source, incremental, "tester", true, true);
+            assertTrue(result.committed(), () -> result.messages().toString());
+            assertEquals(1L, result.counts().created());
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals(1L, count(em, "select count(t) from Txn t"));
+                assertEquals(1L, count(em, "select count(a) from FixedAsset a"));
+                assertEquals(1L, count(em, "select count(i) from InventoryItem i"));
+                assertEquals(1L, em.createQuery(
+                                "select count(a) from AuditEvent a where a.portableId = :id", Long.class)
+                        .setParameter("id", AUDIT_EVENT_UUID)
+                        .getSingleResult());
+                assertEquals(1L, em.createQuery(
+                                "select count(a) from AuditEvent a where a.portableId = :id", Long.class)
+                        .setParameter("id", additionalId)
+                        .getSingleResult());
+                assertEquals(22L, count(em,
+                        "select count(i) from InterchangeIdentity i where i.formatCode = 'SCLX'"));
+            }
+        }
+    }
+
+    @Test
     void lateFailureRollsBackProfileMastersTransactionsIdentitiesAndAudit(@TempDir Path tempDir) throws Exception
     {
         Path database = tempDir.resolve("rollback");
@@ -950,7 +1061,7 @@ class SclxImportCommitServiceTest
     }
 
     @Test
-    void previewBlocksTargetContainingOnlyBudgetCategory(@TempDir Path tempDir) throws Exception
+    void previewAllowsTargetContainingUnrelatedBudgetCategory(@TempDir Path tempDir) throws Exception
     {
         Path source = writeSource(tempDir.resolve("budget-category-target.sclx"));
         try (Jpa jpa = new Jpa(tempDir.resolve("budget-category-target")))
@@ -969,15 +1080,24 @@ class SclxImportCommitServiceTest
 
             SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
 
-            assertTrue(preview.hasBlockingErrors());
-            assertTrue(preview.operation().messages().stream()
+            assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+            assertFalse(preview.operation().messages().stream()
                     .anyMatch(message -> message.code().equals(
                             "SCLX_OPERATIONAL_DATA_MERGE_UNSUPPORTED")));
+
+            SclxImportResult result = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, preview, "tester", false, true);
+            assertTrue(result.committed(), () -> result.messages().toString());
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals(2L, count(em, "select count(c) from BudgetCategory c"));
+                assertEquals(1L, count(em, "select count(t) from Txn t"));
+            }
         }
     }
 
     @Test
-    void previewBlocksTargetContainingOnlyPeriodCloseHistory(@TempDir Path tempDir) throws Exception
+    void previewAllowsTargetContainingUnrelatedPeriodCloseHistory(@TempDir Path tempDir) throws Exception
     {
         Path source = writeSource(tempDir.resolve("period-close-target.sclx"));
         try (Jpa jpa = new Jpa(tempDir.resolve("period-close-target")))
@@ -993,8 +1113,8 @@ class SclxImportCommitServiceTest
 
             SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
 
-            assertTrue(preview.hasBlockingErrors());
-            assertTrue(preview.operation().messages().stream()
+            assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+            assertFalse(preview.operation().messages().stream()
                     .anyMatch(message -> message.code().equals(
                             "SCLX_OPERATIONAL_DATA_MERGE_UNSUPPORTED")));
         }

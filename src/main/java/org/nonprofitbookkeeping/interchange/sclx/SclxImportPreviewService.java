@@ -55,8 +55,8 @@ public final class SclxImportPreviewService
             "accountId", "ledgerAccountId", "assetAccountId", "accumulatedDepreciationAccountId",
             "depreciationExpenseAccountId", "inventoryAccountId");
     private static final Set<String> FUND_REFERENCE_FIELDS = Set.of("fundId");
-    private static final Set<String> MERGE_REUSABLE_ENTITY_TYPES =
-            Set.of("ORGANIZATION", "ACCOUNT", "FUND", "ACTIVITY");
+    private static final Set<String> SOURCE_WIN_SUPPORTED_ENTITY_TYPES =
+            Set.of("ACTIVITY", "COUNTERPARTY", "MERCHANT");
 
     private final SclxDocumentParser parser;
     private final SclxStructureValidator structureValidator;
@@ -97,15 +97,24 @@ public final class SclxImportPreviewService
 
     public SclxImportPreview preview(Path source)
     {
-        return preview(source, List.of());
+        return preview(source, List.of(), List.of());
     }
 
     public SclxImportPreview preview(
             Path source,
             List<SclxImportMappingSelection> mappingSelections)
     {
+        return preview(source, mappingSelections, List.of());
+    }
+
+    public SclxImportPreview preview(
+            Path source,
+            List<SclxImportMappingSelection> mappingSelections,
+            List<SclxImportConflictSelection> conflictSelections)
+    {
         Objects.requireNonNull(source, "source");
         Objects.requireNonNull(mappingSelections, "mappingSelections");
+        Objects.requireNonNull(conflictSelections, "conflictSelections");
         SclxParsedDocument document = parser.parse(source);
         List<InterchangeValidationMessage> messages = new ArrayList<>();
         document.compatibilityNotices().forEach(notice -> messages.add(message(
@@ -122,40 +131,11 @@ public final class SclxImportPreviewService
         SclxImportTargetSnapshot target = targetReader.read(targetCode, organization.sourceSystem());
         addOwnershipDiagnostics(messages, ownershipIssuesSupplier.get());
         Extraction extraction = extract(document.root(), messages);
-        List<SclxImportEntityPreview> entities = classify(extraction.entities(), target, messages);
+        List<SclxImportEntityPreview> entities = classify(
+                extraction.entities(), target, messages, conflictSelections);
         MappingResult mapping = mappings(document.root(), target, messages, mappingSelections);
         TransactionResult transactionResult = transactions(document.root(), target, messages);
 
-        boolean populatedMerge = target.operationalDataPopulated() && entities.stream()
-                .anyMatch(value -> value.identityMatch() != InterchangeIdentityMatch.IDENTICAL);
-        if (populatedMerge)
-        {
-            messages.add(message(
-                    InterchangeMessageSeverity.ERROR,
-                    "SCLX_OPERATIONAL_DATA_MERGE_UNSUPPORTED",
-                    "targetCompany",
-                    "The target company already contains transactions, budgets, parties/merchants, banking, assets, "
-                            + "inventory, reconciliation, or period-close history. This import option can merge into "
-                            + "an existing chart-and-funds company, but it will not combine competing operational histories. "
-                            + "Use a company without operational data or reimport a completely identical SCLX file.",
-                    true));
-        }
-        boolean mixedUnsupportedIdentity = entities.stream()
-                .anyMatch(value -> value.identityMatch() == InterchangeIdentityMatch.NEW)
-                && entities.stream().anyMatch(value ->
-                        value.identityMatch() == InterchangeIdentityMatch.IDENTICAL
-                                && !MERGE_REUSABLE_ENTITY_TYPES.contains(value.entityType()));
-        if (mixedUnsupportedIdentity)
-        {
-            messages.add(message(
-                    InterchangeMessageSeverity.ERROR,
-                    "SCLX_MIXED_IDENTITY_MERGE_UNSUPPORTED",
-                    "targetCompany",
-                    "This target already contains an identical imported operational or audit-history entity while "
-                            + "the source also contains new entities. Use a target without that prior SCLX history "
-                            + "or reimport a completely identical file.",
-                    true));
-        }
         if (!organization.code().equalsIgnoreCase(target.companyCode()))
         {
             messages.add(message(
@@ -192,7 +172,11 @@ public final class SclxImportPreviewService
                 .filter(value -> !reusedEntityIds.contains(value.externalId()))
                 .count();
         long identical = entities.stream()
-                .filter(value -> value.identityMatch() == InterchangeIdentityMatch.IDENTICAL)
+                .filter(value -> value.identityMatch() == InterchangeIdentityMatch.IDENTICAL
+                        || value.conflictChoice() == SclxImportConflictChoice.KEEP_TARGET)
+                .count();
+        long sourceWins = entities.stream()
+                .filter(value -> value.conflictChoice() == SclxImportConflictChoice.TAKE_SOURCE)
                 .count();
         long skipped = transactionResult.zeroValueLines() + transactionResult.emptyTransactions();
         long reusedTargetMasters = entities.stream()
@@ -201,7 +185,7 @@ public final class SclxImportPreviewService
                 .count();
         InterchangeOperationCounts operationCounts = new InterchangeOperationCounts(
                 extraction.counts().totalEntities(), created,
-                mappedMasterIds.size() + reusedTargetMasters,
+                mappedMasterIds.size() + reusedTargetMasters + sourceWins,
                 identical, skipped, warnings, errors);
         String sourceName = source.getFileName() == null ? source.toString() : source.getFileName().toString();
         InterchangePreview<SclxImportEntityPreview> operation = new InterchangePreview<>(
@@ -349,14 +333,31 @@ public final class SclxImportPreviewService
     private static List<SclxImportEntityPreview> classify(
             List<IncomingEntity> incoming,
             SclxImportTargetSnapshot target,
-            List<InterchangeValidationMessage> messages)
+            List<InterchangeValidationMessage> messages,
+            List<SclxImportConflictSelection> selections)
     {
         List<SclxImportEntityPreview> result = new ArrayList<>(incoming.size());
         Set<SclxImportTargetSnapshot.ExternalIdentityKey> seen = new HashSet<>();
+        Map<SclxImportTargetSnapshot.ExternalIdentityKey, SclxImportConflictChoice> selected = new HashMap<>();
+        for (SclxImportConflictSelection selection : selections)
+        {
+            SclxImportTargetSnapshot.ExternalIdentityKey key =
+                    new SclxImportTargetSnapshot.ExternalIdentityKey(
+                            selection.entityType(), selection.externalId());
+            if (selected.put(key, selection.choice()) != null)
+            {
+                messages.add(message(InterchangeMessageSeverity.ERROR,
+                        "SCLX_DUPLICATE_CONFLICT_SELECTION", "conflict",
+                        "More than one winner was selected for " + selection.entityType() + " "
+                                + selection.externalId() + ".", true));
+            }
+        }
+        Set<SclxImportTargetSnapshot.ExternalIdentityKey> projected = new HashSet<>();
         for (IncomingEntity entity : incoming)
         {
             SclxImportTargetSnapshot.ExternalIdentityKey key = new SclxImportTargetSnapshot.ExternalIdentityKey(
                     entity.entityType(), entity.externalId());
+            projected.add(key);
             if (!seen.add(key))
             {
                 messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_DUPLICATE_EXTERNAL_ID",
@@ -366,6 +367,7 @@ public final class SclxImportPreviewService
             SclxImportTargetSnapshot.IdentityFact local = target.identities().get(key);
             InterchangeIdentityMatch match;
             String localId = null;
+            String conflictDetail = null;
             if (local == null)
             {
                 match = InterchangeIdentityMatch.NEW;
@@ -389,13 +391,10 @@ public final class SclxImportPreviewService
                     {
                         match = InterchangeIdentityMatch.CONFLICT;
                         localId = activity.localEntityId();
-                        messages.add(message(
-                                InterchangeMessageSeverity.ERROR,
-                                "SCLX_ACTIVITY_CODE_CONFLICT",
-                                entity.path(),
-                                "The import target already contains Activity " + activity.code()
-                                        + " with a different name or active state.",
-                                true));
+                        conflictDetail = "Target Activity " + activity.code() + " is name='"
+                                + activity.name() + "', active=" + activity.active()
+                                + "; SCLX is name='" + text(entity.value(), "name") + "', active="
+                                + entity.value().path("active").asBoolean() + ".";
                     }
                 }
             }
@@ -408,13 +407,52 @@ public final class SclxImportPreviewService
             {
                 match = InterchangeIdentityMatch.CONFLICT;
                 localId = local.localEntityId();
-                messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_EXTERNAL_ID_CONFLICT",
-                        entity.path(), entity.entityType() + " identity " + entity.externalId()
-                                + " already exists with different normalized content.", true));
+                conflictDetail = entity.entityType() + " identity " + entity.externalId()
+                        + " has target hash " + local.normalizedContentHash().substring(0, 12)
+                        + " and SCLX hash " + entity.normalizedHash().substring(0, 12) + ".";
+            }
+            SclxImportConflictChoice choice = match == InterchangeIdentityMatch.CONFLICT
+                    ? selected.get(key) : null;
+            boolean sourceAllowed = match == InterchangeIdentityMatch.CONFLICT
+                    && SOURCE_WIN_SUPPORTED_ENTITY_TYPES.contains(entity.entityType());
+            if (match == InterchangeIdentityMatch.CONFLICT)
+            {
+                if (choice == SclxImportConflictChoice.TAKE_SOURCE && !sourceAllowed)
+                {
+                    messages.add(message(InterchangeMessageSeverity.ERROR,
+                            "SCLX_CONFLICT_SOURCE_UNSAFE", entity.path(),
+                            conflictDetail + " Taking the SCLX version is unavailable because this record may own "
+                                    + "accounting history. Keep the target version or resolve the protected history first.",
+                            true));
+                    choice = null;
+                }
+                else if (choice == null)
+                {
+                    messages.add(message(InterchangeMessageSeverity.ERROR,
+                            "SCLX_CONFLICT_CHOICE_REQUIRED", entity.path(),
+                            conflictDetail + " Choose Keep target"
+                                    + (sourceAllowed ? " or Take SCLX" : " (Take SCLX is unsafe for this record)")
+                                    + ", then apply the choices to preview again.", true));
+                }
+                else
+                {
+                    messages.add(message(InterchangeMessageSeverity.WARNING,
+                            "SCLX_CONFLICT_RESOLVED", entity.path(),
+                            conflictDetail + " Selected winner: "
+                                    + (choice == SclxImportConflictChoice.KEEP_TARGET
+                                            ? "target record." : "SCLX record."), false));
+                }
             }
             result.add(new SclxImportEntityPreview(
-                    entity.entityType(), entity.externalId(), entity.path(), entity.normalizedHash(), match, localId));
+                    entity.entityType(), entity.externalId(), entity.path(), entity.normalizedHash(), match, localId,
+                    choice, sourceAllowed, conflictDetail));
         }
+        selected.keySet().stream()
+                .filter(key -> !projected.contains(key))
+                .forEach(key -> messages.add(message(InterchangeMessageSeverity.ERROR,
+                        "SCLX_CONFLICT_SELECTION_UNKNOWN", "conflict",
+                        "The selected conflicting record is no longer present: " + key.entityType() + " "
+                                + key.externalId() + ".", true)));
         return result.stream()
                 .sorted(Comparator.comparing(SclxImportEntityPreview::entityType)
                         .thenComparing(SclxImportEntityPreview::externalId))

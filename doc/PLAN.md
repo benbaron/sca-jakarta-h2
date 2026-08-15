@@ -1,12 +1,12 @@
 ---
-plan_version: 198
+plan_version: 200
 active_phase: P16
-active_slice: P16-C8
-active_status: IN_PROGRESS
-active_branch: codex/P16-C8-sclx-target-company-authority
+active_slice: P16-C9
+active_status: VERIFYING
+active_branch: codex/P16-C9-sclx-identity-aware-operational-merge
 active_pull_request: null
-active_head: 8d12385af178972193f9f413e89ec760b799d44f
-next_action: "Complete and locally validate P16-C8, then request authorization before publishing the fresh corrective branch and opening a draft PR."
+active_head: c1dd824
+next_action: "Obtain owner authorization, publish P16-C9, open a draft PR to main, and run Maven PR Tests for semantic compilation and the focused/runtime suites unavailable locally."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Complete and locally validate P16-C8, then request authorization b
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, records P16-C3 and P16-C4 through merged PRs #272 and #273, records the owner-requested P16-C6 nondestructive existing-company SCLX import through merged PR #274, records P16-C7 ownership diagnostics through merged PR #275, and activates P16-C8 so the operator-selected active import company is authoritative for direct ownerless records and compatible assigned Activities do not create a false competing-history blocker. P16-C5 message guidance remains a separate unpublished local slice and is not mixed into this branch. It does not authorize P17 or any later feature phase.
+This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, records P16-C3 and P16-C4 through merged PRs #272 and #273, records the owner-requested P16-C6 nondestructive existing-company SCLX import through merged PR #274, records P16-C7 ownership diagnostics through merged PR #275, records P16-C8 target-company authority through merged PR #276, and activates P16-C9 so existing unrelated operational history is permitted while durable identity/content conflicts remain blocking. P16-C5 message guidance remains a separate unpublished local slice and is not mixed into this branch. It does not authorize P17 or any later feature phase.
 
 ## 2. Status values
 
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | Corrective P16-C8 IN_PROGRESS after merged P16-C7 / PR #275 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | Corrective P16-C9 IN_PROGRESS after merged P16-C8 / PR #276 |
 
 ## 4. Governing documents
 
@@ -2903,10 +2903,10 @@ Next exact action:
 
 ## P16-C8 — SCLX import-target authority for direct ownerless records
 
-Status: IN_PROGRESS.
+Status: DONE through merged PR #276.
 
 Branch: `codex/P16-C8-sclx-target-company-authority`
-Pull request: pending
+Pull request: #276
 Base head: `2f0bf9bf4a5520059e43b8e404c3807ccb312dc8`
 
 Purpose:
@@ -2927,4 +2927,37 @@ Implementation and validation status:
 
 Next exact action:
 
-- Review the locally validated corrective diff, then request authorization before publishing this branch for Maven PR Tests and owner desktop verification.
+- None; PR #276 merged to `main` at `ca0a50ea9670a91e46ef5093d4ae2bd70bd0369e` after exact head `3fed37069e2b5c6670363a6fa3f4f4a21c8ef1cf` passed Maven PR Tests run `31861442762`.
+
+## P16-C9 — Identity-aware SCLX operational merge
+
+Status: VERIFYING.
+
+Branch: `codex/P16-C9-sclx-identity-aware-operational-merge`
+Pull request: pending
+Base head: `ca0a50ea9670a91e46ef5093d4ae2bd70bd0369e`
+
+Purpose:
+
+- Permit an SCLX import into a target that already contains unrelated operational history.
+- Classify each durable identity as `IDENTICAL`, `NEW`, or `CONFLICT`: skip identical records, import new records, and require an explicit per-record target-versus-SCLX choice for each resolvable conflict.
+- Preserve the target company's existing records and settings and retain company ownership, closed-period, finalized-reconciliation, business-key, and rollback protections.
+
+Planned deliverables:
+
+- Remove the coarse target-occupancy preview and commit guards.
+- Permit mixed identical/new identity graphs, reuse identical records during the same atomic commit, and project a record-by-record conflict selector whose final choices are revalidated at commit.
+- Keep structurally unsafe choices unavailable when they would rewrite cross-company ownership, a closed period, or finalized reconciliation history, with an actionable reason shown in preview.
+- Add focused preview, commit, rollback, documentation, and owner-checklist coverage.
+
+Implementation and validation status:
+
+- Local implementation commit `c1dd824` removes the coarse operational-occupancy preview and commit gates, reuses identical imported records across the supported graph, adds new records beside unrelated target history, and extends banking, reconciliation, period-close, and audit service seams with existing-record maps for incremental import.
+- `CONFLICT` rows now require an explicit record-level **A — Keep target** or **B — Take SCLX** choice. Source-winner mutation is enabled for Activity, counterparty, and merchant masters; protected accounting-history records keep the target choice available and explain why source replacement is unsafe.
+- Commit re-previews the exact source with the approved mapping and conflict-choice sets, compares the full entity projection, revalidates local ownership/references, advances a selected source identity hash only with the corresponding local record, and retains one-transaction rollback.
+- Focused regressions cover removal of the operational-presence blocker, import beside unrelated target audit/budget/period-close history, mixed identical/new graph reuse, Activity target/source winner projection, Activity source-winner commit, and production-route conflict controls.
+- All 712 production and test Java sources parse under the Java 17 compiler module; the four dependency-free conflict/preview projection sources type-compile; focused source assertions and `git diff --check` pass. Maven and the standalone `javac` launcher are unavailable locally, so semantic compilation and runtime/H2/JavaFX tests require Maven PR Tests.
+
+Next exact action:
+
+- Obtain owner authorization, publish the fresh branch, open a draft PR to `main`, and inspect Maven PR Tests.

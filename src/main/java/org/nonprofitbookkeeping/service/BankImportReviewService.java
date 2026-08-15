@@ -139,7 +139,10 @@ public class BankImportReviewService
             List<StatementLineImport> lineValues,
             List<IssueImport> issueValues,
             Map<String, CompanyBankAccount> bankAccounts,
-            Map<String, Txn> transactions)
+            Map<String, Txn> transactions,
+            Map<String, BankImportBatch> existingBatches,
+            Map<String, BankStatementLine> existingLines,
+            Map<String, ImportIssue> existingIssues)
     {
         Objects.requireNonNull(em, "em");
         Objects.requireNonNull(company, "company");
@@ -148,14 +151,21 @@ public class BankImportReviewService
         Objects.requireNonNull(issueValues, "issueValues");
         Objects.requireNonNull(bankAccounts, "bankAccounts");
         Objects.requireNonNull(transactions, "transactions");
+        Objects.requireNonNull(existingBatches, "existingBatches");
+        Objects.requireNonNull(existingLines, "existingLines");
+        Objects.requireNonNull(existingIssues, "existingIssues");
         if (!em.getTransaction().isActive())
         {
             throw new IllegalStateException("Bank-fact import requires an active caller-owned transaction");
         }
 
-        Map<String, BankImportBatch> batches = new LinkedHashMap<>();
+        Map<String, BankImportBatch> batches = new LinkedHashMap<>(existingBatches);
         for (BatchImport value : batchValues)
         {
+            if (batches.containsKey(value.externalId()))
+            {
+                throw new IllegalArgumentException("Duplicate bank import batch identity: " + value.externalId());
+            }
             CompanyBankAccount bankAccount = optional(bankAccounts, value.bankAccountId(), "configured bank account");
             requireCompany(company, bankAccount == null ? null : bankAccount.getCompany(), "Configured bank account");
             BankImportBatch batch = new BankImportBatch();
@@ -192,9 +202,13 @@ public class BankImportReviewService
         }
         em.flush();
 
-        Map<String, BankStatementLine> lines = new LinkedHashMap<>();
+        Map<String, BankStatementLine> lines = new LinkedHashMap<>(existingLines);
         for (StatementLineImport value : lineValues)
         {
+            if (lines.containsKey(value.externalId()))
+            {
+                throw new IllegalArgumentException("Duplicate bank statement line identity: " + value.externalId());
+            }
             BankImportBatch batch = required(batches, value.importBatchId(), "bank import batch");
             CompanyBankAccount bankAccount = optional(bankAccounts, value.bankAccountId(), "configured bank account");
             if (bankAccount != null)
@@ -239,9 +253,13 @@ public class BankImportReviewService
         }
         em.flush();
 
-        Map<String, ImportIssue> issues = new LinkedHashMap<>();
+        Map<String, ImportIssue> issues = new LinkedHashMap<>(existingIssues);
         for (IssueImport value : issueValues)
         {
+            if (issues.containsKey(value.externalId()))
+            {
+                throw new IllegalArgumentException("Duplicate bank import issue identity: " + value.externalId());
+            }
             BankImportBatch batch = required(batches, value.importBatchId(), "bank import batch");
             BankStatementLine line = optional(lines, value.statementLineId(), "bank statement line");
             if (line != null && !line.getBatch().getId().equals(batch.getId()))

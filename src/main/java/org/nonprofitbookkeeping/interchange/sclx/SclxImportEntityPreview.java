@@ -9,7 +9,10 @@ public record SclxImportEntityPreview(
         String path,
         String normalizedContentHash,
         InterchangeIdentityMatch identityMatch,
-        String localEntityId)
+        String localEntityId,
+        SclxImportConflictChoice conflictChoice,
+        boolean sourceChoiceAllowed,
+        String conflictDetail)
 {
     public SclxImportEntityPreview
     {
@@ -26,6 +29,37 @@ public record SclxImportEntityPreview(
             throw new IllegalArgumentException("identityMatch is required");
         }
         localEntityId = localEntityId == null || localEntityId.isBlank() ? null : localEntityId.trim();
+        conflictDetail = conflictDetail == null || conflictDetail.isBlank() ? null : conflictDetail.trim();
+        if (identityMatch != InterchangeIdentityMatch.CONFLICT && conflictChoice != null)
+        {
+            throw new IllegalArgumentException("Only conflicting identities may have a conflict choice");
+        }
+        if (identityMatch != InterchangeIdentityMatch.CONFLICT)
+        {
+            sourceChoiceAllowed = false;
+            conflictDetail = null;
+        }
+        if (conflictChoice == SclxImportConflictChoice.TAKE_SOURCE && !sourceChoiceAllowed)
+        {
+            throw new IllegalArgumentException("The source choice is unavailable for this conflict");
+        }
+    }
+
+    public SclxImportEntityPreview(
+            String entityType,
+            String externalId,
+            String path,
+            String normalizedContentHash,
+            InterchangeIdentityMatch identityMatch,
+            String localEntityId)
+    {
+        this(entityType, externalId, path, normalizedContentHash, identityMatch, localEntityId,
+                null, false, null);
+    }
+
+    public boolean conflictResolved()
+    {
+        return identityMatch != InterchangeIdentityMatch.CONFLICT || conflictChoice != null;
     }
 
     private static String requireText(String value, String label)
