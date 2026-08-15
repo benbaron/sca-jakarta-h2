@@ -5,7 +5,7 @@ active_slice: P16-C8
 active_status: IN_PROGRESS
 active_branch: codex/P16-C8-sclx-target-company-authority
 active_pull_request: null
-active_head: 2f0bf9bf4a5520059e43b8e404c3807ccb312dc8
+active_head: 8d12385af178972193f9f413e89ec760b799d44f
 next_action: "Complete and locally validate P16-C8, then request authorization before publishing the fresh corrective branch and opening a draft PR."
 ---
 
@@ -2923,6 +2923,7 @@ Implementation and validation status:
 - Atomic commit revalidates the compatible Activity under the same target company, reuses it, records its SCLX identity, and continues to reject transactions, budgets, banking, assets, inventory, reconciliation, close history, and other existing operational families.
 - Import Preview exposes **Re-preview Same SCLX** and reuses the normalized exact source path plus any applied account/fund selections.
 - Focused preview, commit, ownership-service, Administration-source, and Import Preview production-route regressions cover the correction. All 710 production/test Java sources pass Java 17 grammar parsing, the changed dependency-free SCLX snapshot/preview records type-compile through the JDK compiler module, source guards and `git diff --check` pass. Local semantic Maven execution remains pending because Maven and the standalone `javac` launcher are unavailable in the current workspace.
+- Local implementation commit `8d12385af178972193f9f413e89ec760b799d44f` contains the reviewed production, regression, contract, checklist, and plan activation boundary on current `main` merge `2f0bf9bf4a5520059e43b8e404c3807ccb312dc8`.
 
 Next exact action:
 
