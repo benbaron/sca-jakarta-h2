@@ -545,16 +545,13 @@ public final class SclxImportCommitService
         JsonNode app = root.path("extensions").path("scaJakartaH2");
         String chartName = optionalText(app, "activeChartName");
         String chartVersion = optionalText(app, "activeChartVersion");
+        boolean created = chart == null;
         if (chart == null)
         {
             chart = new ChartOfAccounts();
             chart.setCompany(company);
-            chart.setStatus(ChartStatus.ACTIVE);
-            em.persist(chart);
-            company.setActiveChartOfAccounts(chart);
         }
-        ownership.ensureOwnedBy(em, company, chart, "Active Chart of Accounts");
-        if (!preserveExisting)
+        if (created || !preserveExisting)
         {
             chart.setName(chartName == null ? company.getDisplayName() + " Chart of Accounts" : chartName);
             chart.setVersion(chartVersion == null
@@ -563,6 +560,12 @@ public final class SclxImportCommitService
             chart.setStatus(ChartStatus.ACTIVE);
             chart.touchUpdatedAt();
         }
+        if (created)
+        {
+            em.persist(chart);
+            company.setActiveChartOfAccounts(chart);
+        }
+        ownership.ensureOwnedBy(em, company, chart, "Active Chart of Accounts");
         return chart;
     }
 

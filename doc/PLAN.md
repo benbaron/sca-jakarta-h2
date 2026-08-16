@@ -1,12 +1,12 @@
 ---
-plan_version: 202
+plan_version: 204
 active_phase: P16
 active_slice: P16-C9
 active_status: VERIFYING
-active_branch: codex/P16-C9-journal-refresh-correction
-active_pull_request: 278
-active_head: 74f7719
-next_action: "Inspect Maven PR Tests on draft PR #278, correct any failure, and repeat the owner SCLX-to-Journal desktop check on the corrected build."
+active_branch: codex/P16-C9-target-chart-correction
+active_pull_request: 279
+active_head: 11ec206
+next_action: "Inspect Maven PR Tests on draft PR #279, correct any failure, and repeat the SCLX import desktop check on the corrected build."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2933,9 +2933,9 @@ Next exact action:
 
 Status: VERIFYING.
 
-Branch: `codex/P16-C9-sclx-identity-aware-operational-merge`
-Pull request: pending
-Base head: `ca0a50ea9670a91e46ef5093d4ae2bd70bd0369e`
+Branch: `codex/P16-C9-target-chart-correction`
+Pull request: #279
+Base head: `11530b5314df4e5e8359f849a78343a801704760`
 
 Purpose:
 
@@ -2960,7 +2960,10 @@ Implementation and validation status:
 - The reviewed identity-aware merge implementation and handoff trees were published through the connected GitHub service as two commits on PR #277. Maven PR Tests run `31901329323` passed on that published head, and PR #277 subsequently merged to `main` at `771a152081f77a61656fe1d9c41a5dc299f1c4f0`.
 - Owner desktop acceptance then confirmed that SCLX commit reported imported records but an already-open Journal tab retained its pre-import rows. The canonical commit path still persisted a `Txn`, and `TransactionEntryService.search(...)` could query it; the defect was that direct reusable-tab selection updated only `PanelHost.activeId` and did not invoke the selected panel's `onPanelShown()` refresh hook.
 - Local correction commit `74f7719` invokes `onPanelShown()` whenever an existing tab is selected, avoids duplicate refresh when `PanelHost.show(...)` itself changes selection, updates the import success guidance, and adds both a JavaFX tab-lifecycle regression and an SCLX-to-`TransactionEntryService.search(...)` integration assertion. The correction was rebased onto merged PR #277 as remote commit `22605f44f5dd57bf96a2bd806593bc969f1bedaf` on fresh draft PR #278. All 712 Java sources parse under the Java 17 compiler module and `git diff --check` passes; Maven execution remains unavailable locally.
+- Draft PR #278 head `e16224dc3c220f4ef4e2b5cf8b15259e619be67d` passed Maven PR Tests run `31909872616`, and PR #278 subsequently merged to `main` at `11530b5314df4e5e8359f849a78343a801704760` before the next owner desktop import attempt.
+- That attempt rolled back with `ChartOfAccounts.name` null when the populated target had no active chart. Existing-target preservation caused `targetChart(...)` to create a chart but skip the metadata initialization intended to protect a genuinely existing chart.
+- Local correction commit `11ec206` distinguishes a newly created target chart from an existing chart, assigns the new chart's required governed name/version/owner/status before account writes, and retains target-setting preservation only for a chart that already exists. A focused H2 regression covers a populated audit-history target with no active chart through successful canonical transaction import. The correction was rebased onto merged PR #278 as remote commit `6957496a1abd68f8af853eb0c3b04fff4034d10b` on fresh draft PR #279. All 712 Java sources parse under the Java 17 compiler module and `git diff --check` passes; Maven execution remains unavailable locally.
 
 Next exact action:
 
-- Inspect Maven PR Tests on draft PR #278, correct any failure, and repeat the owner SCLX-to-Journal desktop check on the corrected build.
+- Inspect Maven PR Tests on draft PR #279, correct any failure, and repeat the owner SCLX import desktop check on the corrected build.

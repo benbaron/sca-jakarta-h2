@@ -425,6 +425,51 @@ class SclxImportCommitServiceTest
     }
 
     @Test
+    void initializesMissingChartForPopulatedTarget(@TempDir Path tempDir) throws Exception
+    {
+        Path source = writeSource(tempDir.resolve("populated-target-without-chart.sclx"));
+        try (Jpa jpa = new Jpa(tempDir.resolve("populated-target-without-chart")))
+        {
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                Company target = new Company();
+                target.setCode(TARGET);
+                target.setDisplayName("Target Without Chart");
+                target.setDefaultCurrency("USD");
+                em.persist(target);
+
+                AuditEvent existing = new AuditEvent();
+                existing.setCompany(target);
+                existing.setActor("tester");
+                existing.setActionType("EXISTING_FACT");
+                existing.setEntityType("Company");
+                existing.setSummary("Existing factual audit history");
+                em.persist(existing);
+                em.getTransaction().commit();
+            }
+
+            SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
+            assertTrue(preview.targetPopulated());
+            assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+
+            SclxImportResult result = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, preview, "tester", false, true);
+
+            assertTrue(result.committed(), () -> result.messages().toString());
+            try (EntityManager em = jpa.em())
+            {
+                Company target = company(em);
+                assertEquals("Target Without Chart", target.getDisplayName());
+                assertEquals("Portable Chart", target.getActiveChartOfAccounts().getName());
+                assertEquals("2026", target.getActiveChartOfAccounts().getVersion());
+                assertEquals(5L, count(em, "select count(a) from Account a"));
+                assertEquals(1L, count(em, "select count(t) from Txn t"));
+            }
+        }
+    }
+
+    @Test
     void importsByReusingCompatibleActivityAssignedToCurrentTarget(@TempDir Path tempDir) throws Exception
     {
         Path source = writeSource(tempDir.resolve("assigned-activity-target.sclx"));
