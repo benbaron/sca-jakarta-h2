@@ -550,11 +550,7 @@ public final class SclxImportCommitService
         {
             chart = new ChartOfAccounts();
             chart.setCompany(company);
-            chart.setStatus(ChartStatus.ACTIVE);
-            em.persist(chart);
-            company.setActiveChartOfAccounts(chart);
         }
-        ownership.ensureOwnedBy(em, company, chart, "Active Chart of Accounts");
         if (created || !preserveExisting)
         {
             chart.setName(chartName == null ? company.getDisplayName() + " Chart of Accounts" : chartName);
@@ -564,6 +560,12 @@ public final class SclxImportCommitService
             chart.setStatus(ChartStatus.ACTIVE);
             chart.touchUpdatedAt();
         }
+        if (created)
+        {
+            em.persist(chart);
+            company.setActiveChartOfAccounts(chart);
+        }
+        ownership.ensureOwnedBy(em, company, chart, "Active Chart of Accounts");
         return chart;
     }
 
