@@ -1,12 +1,12 @@
 ---
-plan_version: 204
+plan_version: 205
 active_phase: P16
-active_slice: P16-C9
+active_slice: P16-C10
 active_status: VERIFYING
-active_branch: codex/P16-C9-target-chart-correction
-active_pull_request: 279
-active_head: 11ec206
-next_action: "Inspect Maven PR Tests on draft PR #279, correct any failure, and repeat the SCLX import desktop check on the corrected build."
+active_branch: codex/P16-C10-sclx-preview-resolutions
+active_pull_request: null
+active_head: 5101646
+next_action: "Review the local P16-C10 implementation and artifacts; if accepted, explicitly authorize pushing the two local commits and opening a draft PR to main so Maven PR Tests can run."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Inspect Maven PR Tests on draft PR #279, correct any failure, and 
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, records P16-C3 and P16-C4 through merged PRs #272 and #273, records the owner-requested P16-C6 nondestructive existing-company SCLX import through merged PR #274, records P16-C7 ownership diagnostics through merged PR #275, records P16-C8 target-company authority through merged PR #276, and activates P16-C9 so existing unrelated operational history is permitted while durable identity/content conflicts remain blocking. P16-C5 message guidance remains a separate unpublished local slice and is not mixed into this branch. It does not authorize P17 or any later feature phase.
+This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, records P16-C3 and P16-C4 through merged PRs #272 and #273, records the owner-requested P16-C6 nondestructive existing-company SCLX import through merged PR #274, records P16-C7 ownership diagnostics through merged PR #275, records P16-C8 target-company authority through merged PR #276, records the identity-aware P16-C9 corrections through merged PRs #277-#279, and activates P16-C10 for owner-approved donor-export reconciliation and interactive preview choices. P16-C5 message guidance remains a separate unpublished local slice and is not mixed into this branch. It does not authorize P17 or any later feature phase.
 
 ## 2. Status values
 
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | Corrective P16-C9 IN_PROGRESS after merged P16-C8 / PR #276 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | Corrective P16-C10 IN_PROGRESS after merged P16-C9 corrections / PRs #277-#279 |
 
 ## 4. Governing documents
 
@@ -2877,7 +2877,7 @@ Next exact action:
 
 ## P16-C7 — Actionable company-ownership blockers and audited repair
 
-Status: VERIFYING.
+Status: DONE.
 
 Branch: `codex/P16-C7-ownership-diagnostics-repair`
 Pull request: #275
@@ -2931,7 +2931,7 @@ Next exact action:
 
 ## P16-C9 — Identity-aware SCLX operational merge
 
-Status: VERIFYING.
+Status: DONE.
 
 Branch: `codex/P16-C9-target-chart-correction`
 Pull request: #279
@@ -2966,4 +2966,66 @@ Implementation and validation status:
 
 Next exact action:
 
-- Inspect Maven PR Tests on draft PR #279, correct any failure, and repeat the owner SCLX import desktop check on the corrected build.
+- None; PR #279 merged to `main` at `2386d6e37c6f5226f2dbb7813036ce291e08a8a7`.
+
+## P16-C10 — SCLX donor-export reconciliation and preview resolutions
+
+Status: VERIFYING.
+
+Branch: `codex/P16-C10-sclx-preview-resolutions`
+Pull request: not opened
+Base head: `2386d6e37c6f5226f2dbb7813036ce291e08a8a7`
+
+Purpose:
+
+- Produce a clean canonical import from the owner-supplied workbook exporter without representing the
+  assumed Cash/Asset counter-line as another transaction.
+- Make preview diagnostics reviewable in a two-column message/disposition table and carry applied
+  choices through fresh preview and exact-source commit revalidation.
+- Make every safely selectable SCLX account/fund target an explicit combo-box choice and keep complete
+  mapping detail visible through wrapping plus normal table scrolling.
+- Retain strict canonical accounting, ownership, closed-period, finalized-reconciliation, and atomic
+  rollback rules; a preview disposition cannot bypass a canonical invariant that has no safe correction.
+
+Planned deliverables:
+
+- Accept the donor `REVENUE` account alias as canonical `INCOME`, skip workbook annotation rows that
+  contain no nonzero posting lines, and expose unsupported donor records individually so they may be
+  deliberately dropped without silently discarding a whole section.
+- Add immutable SCLX message-disposition selections for **No change**, **Ignore**, **Make suggested
+  correction**, and **Drop record**. Re-preview applies only policy-supported choices, records the
+  effective choices in the preview, and commit reuses the same choices against the unchanged source.
+- Replace the Import Preview message list with a message/disposition table, retain full-text selection
+  detail, and use combo-box mapping cells for alternate compatible target choices including create-mode
+  defaults.
+- Publish a revised standalone workbook `.bas` exporter that attaches one generated Cash line to the
+  owning transaction, emits `INCOME`, omits empty budgets and unsupported template-only sections,
+  bounds transactions to the reporting period, and emits transaction-linked supplemental details only
+  where the workbook provides a resolvable ledger reference.
+- Add focused preview, commit, donor-normalizer, JavaFX behavior/source, exporter fixture, governing
+  contract, and owner desktop-check coverage.
+
+Validation status:
+
+- Current `main` through merged PR #279 is the base. The prior P16-C9 task branch was not reused.
+- Local implementation commit `5101646` adds bounded preview-message dispositions, exact-source commit
+  reapplication, donor normalization/record paths, alternate compatible mapping targets, the two-column
+  message table, and wrapped mapping details with focused parser, preview, commit, JavaFX, and source
+  regressions.
+- The revised v14 workbook bridge contains 111 paired VBA procedures with no duplicate procedure names;
+  its one generated Cash/Asset balancing line is appended only to the owning transaction's line array.
+  The clean reference product contains 61 balanced in-period transactions, 13 accounts, 2 funds, 16
+  counterparties, and 2 linked supplemental details, with no unresolved references, `REVENUE` types, or
+  populated unsupported donor sections.
+- All 715 production and test Java sources parse under the Java 17 compiler module, the two new
+  dependency-free disposition types compile, the exporter/export-product invariant checks pass, and
+  `git diff --check` passes. Maven and the standalone `javac` launcher are unavailable in this workspace,
+  so semantic compilation and the H2/JavaFX/full suite require Maven PR Tests after owner-authorized
+  publication.
+- The revised `.bas` and clean `.sclx.json` artifacts are preserved outside the Git-backed worktree. No
+  commit has been pushed and no pull request has been opened for P16-C10.
+
+Next exact action:
+
+- Review the local implementation and artifacts; if accepted, explicitly authorize pushing the two
+  local commits and opening a draft pull request to `main`.
