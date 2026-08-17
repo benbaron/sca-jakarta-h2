@@ -2429,7 +2429,8 @@ public class ImportPreviewPanel implements AppPanel
 			InterchangeValidationMessage message,
 			SclxImportDisposition selected)
 		{
-			List<SclxImportDisposition> available = availableDispositions(message);
+			List<SclxImportDisposition> available =
+				ImportPreviewPanel.availableDispositions(message);
 			SclxImportDisposition effective = available.contains(selected)
 				? selected : SclxImportDisposition.NO_CHANGE;
 			return new PreviewMessageRow(displayMessage(message), message,
