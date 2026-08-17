@@ -97,6 +97,45 @@ class SclxDocumentParserTest
     }
 
     @Test
+    void normalizesRevenueAndSkipsWorkbookRowsWithoutPostingLines()
+    {
+        byte[] bytes = """
+                {
+                  "format": "SCLX",
+                  "version": "1.3",
+                  "exportedAt": 1,
+                  "organization": {"organizationId":"org-source","name":"Source"},
+                  "chartOfAccounts": [
+                    {"accountId":"Donations Received","Number":"4000","Name":"Donations Received",
+                     "Type":"REVENUE","IncreaseSide":"CREDIT","OpeningBalance":"0"}
+                  ],
+                  "funds": [{"fundId":"General Fund","name":"General Fund"}],
+                  "transactions": [
+                    {"transactionId":"annotation","transactionDate":null,"status":"POSTED","lines":[]},
+                    {"transactionId":"posted","transactionDate":[2026,7,1],"status":"POSTED",
+                     "lines":[
+                       {"lineId":"posted-1","accountId":"Donations Received","credit":"10","debit":"0"},
+                       {"lineId":"posted-2","accountId":"Donations Received","credit":"0","debit":"10"}
+                     ]}
+                  ]
+                }
+                """.getBytes(StandardCharsets.UTF_8);
+
+        SclxParsedDocument document = parser.parse(bytes);
+        Set<String> codes = document.compatibilityNotices().stream()
+                .map(SclxCompatibilityNotice::code)
+                .collect(Collectors.toSet());
+
+        assertEquals("INCOME", document.root().path("chartOfAccounts").get(0)
+                .path("type").textValue());
+        assertEquals(1, document.root().path("transactions").size());
+        assertEquals("posted", document.root().path("transactions").get(0)
+                .path("transactionId").textValue());
+        assertTrue(codes.contains("SCLX_DONOR_REVENUE_TYPE_NORMALIZED"));
+        assertTrue(codes.contains("SCLX_DONOR_NONPOSTING_TRANSACTIONS_SKIPPED"));
+    }
+
+    @Test
     void rejectsNumericExportedAtBeyondNanosecondPrecision()
     {
         byte[] bytes = """

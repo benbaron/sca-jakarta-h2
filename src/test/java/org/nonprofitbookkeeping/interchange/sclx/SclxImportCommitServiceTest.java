@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.nonprofitbookkeeping.interchange.InterchangeValidationMessage;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Company;
@@ -125,6 +126,45 @@ class SclxImportCommitServiceTest
                         .getResultList();
                 assertEquals(2, splits.size());
                 assertTrue(splits.stream().allMatch(split -> "General Fund".equals(split.getFund().getName())));
+            }
+        }
+    }
+
+    @Test
+    void commitReappliesApprovedRecordDropsToTheExactDonorSource(@TempDir Path tempDir) throws Exception
+    {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode donor = (ObjectNode) mapper.readTree(Files.readString(Path.of(
+                "src/test/resources/compatibility/sclx/donor-sclx-1.3.json")));
+        donor.putArray("assets").addObject()
+                .put("assetId", "legacy-trailer")
+                .put("description", "Trailer without canonical depreciation fields");
+        Path source = tempDir.resolve("donor-with-legacy-asset.sclx");
+        Files.writeString(source, mapper.writerWithDefaultPrettyPrinter().writeValueAsString(donor));
+
+        try (Jpa jpa = new Jpa(tempDir.resolve("donor-disposition")))
+        {
+            seedEmptyTarget(jpa);
+            SclxImportPreviewService previews = new SclxImportPreviewService(jpa, () -> TARGET);
+            SclxImportPreview blocked = previews.preview(source);
+            InterchangeValidationMessage unsupported = blocked.operation().messages().stream()
+                    .filter(message -> message.code().equals("SCLX_DONOR_UNSUPPORTED_SECTION"))
+                    .findFirst()
+                    .orElseThrow();
+            SclxImportDispositionSelection drop = new SclxImportDispositionSelection(
+                    unsupported.code(), unsupported.path(), SclxImportDisposition.DROP_RECORD);
+            SclxImportPreview corrected = previews.preview(
+                    source, List.of(), List.of(), List.of(drop));
+
+            assertFalse(corrected.hasBlockingErrors(), () -> corrected.operation().messages().toString());
+            SclxImportResult result = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, corrected, "tester");
+
+            assertTrue(result.committed(), () -> result.messages().toString());
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals(1L, count(em, "select count(t) from Txn t"));
+                assertEquals(0L, count(em, "select count(a) from FixedAsset a"));
             }
         }
     }

@@ -121,9 +121,11 @@ final class SclxDonorCompatibilityNormalizer
         }
 
         int normalized = 0;
+        int revenueAliases = 0;
         Set<String> codes = new HashSet<>();
-        for (JsonNode value : accounts)
+        for (int index = 0; index < accounts.size(); index++)
         {
+            JsonNode value = accounts.get(index);
             if (!(value instanceof ObjectNode account)) continue;
             boolean aliases = account.has("Number") || account.has("Name") || account.has("Type")
                     || account.has("IncreaseSide") || account.has("OpeningBalance");
@@ -133,11 +135,13 @@ final class SclxDonorCompatibilityNormalizer
             account.put("name", clipped(firstText(account, "name", "Name", "code", "accountId"), 200));
             String type = upper(firstText(account, "type", "Type"));
             String normalizedType = normalizeAccountType(type);
+            if ("REVENUE".equals(type) && "INCOME".equals(normalizedType)) revenueAliases++;
             account.put("type", normalizedType);
             if (!Set.of("ASSET", "LIABILITY", "EQUITY", "INCOME", "EXPENSE", "BANK")
                     .contains(normalizedType))
             {
-                error(notices, "SCLX_DONOR_ACCOUNT_TYPE_UNSUPPORTED", "$.chartOfAccounts",
+                error(notices, "SCLX_DONOR_ACCOUNT_TYPE_UNSUPPORTED",
+                        "$.chartOfAccounts[" + index + "]",
                         "Donor account " + externalId + " has unsupported type " + type + ".");
             }
             String side = upper(firstText(account, "increaseSide", "IncreaseSide"));
@@ -168,7 +172,8 @@ final class SclxDonorCompatibilityNormalizer
                 String resolved = idsByNumber.get(parent);
                 if (resolved == null)
                 {
-                    error(notices, "SCLX_DONOR_ACCOUNT_PARENT_UNRESOLVED", "$.chartOfAccounts",
+                    error(notices, "SCLX_DONOR_ACCOUNT_PARENT_UNRESOLVED",
+                            "$.chartOfAccounts[" + index + "]",
                             "Donor account " + externalId + " names an unresolved parent " + parent + ".");
                 }
                 else
@@ -182,6 +187,12 @@ final class SclxDonorCompatibilityNormalizer
         {
             warning(notices, "SCLX_DONOR_ACCOUNT_ALIASES_NORMALIZED", "$.chartOfAccounts",
                     "Normalized donor aliases and defaults for " + normalized + " account(s).");
+        }
+        if (revenueAliases > 0)
+        {
+            warning(notices, "SCLX_DONOR_REVENUE_TYPE_NORMALIZED", "$.chartOfAccounts",
+                    "Converted " + revenueAliases
+                            + " donor REVENUE account type value(s) to canonical INCOME.");
         }
     }
 
@@ -330,6 +341,7 @@ final class SclxDonorCompatibilityNormalizer
         int budgetReferences = 0;
         int fallbackDescriptions = 0;
         boolean missingGeneralFund = false;
+        int skippedNonposting = removeNonpostingTransactions(transactions);
         for (JsonNode item : transactions)
         {
             if (!(item instanceof ObjectNode transaction)) continue;
@@ -412,6 +424,40 @@ final class SclxDonorCompatibilityNormalizer
         if (fallbackDescriptions > 0) warning(notices, "SCLX_DONOR_DESCRIPTIONS_DERIVED",
                 "$.transactions[*].description", "Derived a non-blank memo for " + fallbackDescriptions
                         + " donor transaction(s) that omitted a description.");
+        if (skippedNonposting > 0) warning(notices, "SCLX_DONOR_NONPOSTING_TRANSACTIONS_SKIPPED",
+                "$.transactions", "Skipped " + skippedNonposting
+                        + " workbook annotation row(s) because they contain no nonzero posting lines.");
+    }
+
+    private static int removeNonpostingTransactions(ArrayNode transactions)
+    {
+        int removed = 0;
+        for (int index = transactions.size() - 1; index >= 0; index--)
+        {
+            JsonNode transaction = transactions.get(index);
+            if (!hasNonzeroPostingLine(transaction.path("lines")))
+            {
+                transactions.remove(index);
+                removed++;
+            }
+        }
+        return removed;
+    }
+
+    private static boolean hasNonzeroPostingLine(JsonNode lines)
+    {
+        if (!lines.isArray())
+        {
+            return false;
+        }
+        for (JsonNode line : lines)
+        {
+            if (nonZero(line.get("debit")) || nonZero(line.get("credit")))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static int normalizeDate(ObjectNode value, String field)
@@ -440,7 +486,20 @@ final class SclxDonorCompatibilityNormalizer
         for (String section : UNSUPPORTED_ROOT_SECTIONS)
         {
             JsonNode value = root.get(section);
-            if (nonEmpty(value))
+            if (value instanceof ArrayNode records)
+            {
+                for (int index = 0; index < records.size(); index++)
+                {
+                    if (nonEmpty(records.get(index)))
+                    {
+                        error(notices, "SCLX_DONOR_UNSUPPORTED_SECTION",
+                                "$." + section + "[" + index + "]",
+                                "Donor " + section + " record " + (index + 1)
+                                        + " has no safe canonical mapping.");
+                    }
+                }
+            }
+            else if (nonEmpty(value))
             {
                 error(notices, "SCLX_DONOR_UNSUPPORTED_SECTION", "$." + section,
                         "Donor section " + section + " contains data that has no safe canonical mapping.");
@@ -494,6 +553,7 @@ final class SclxDonorCompatibilityNormalizer
 
     private static String normalizeAccountType(String value)
     {
+        if ("REVENUE".equals(value)) return "INCOME";
         if (Set.of("ASSET", "LIABILITY", "EQUITY", "INCOME", "EXPENSE", "BANK").contains(value))
         {
             return value;

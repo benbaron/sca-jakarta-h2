@@ -146,6 +146,113 @@ class SclxImportPreviewServiceTest
     }
 
     @Test
+    void dropsUnsupportedDonorRecordsIndividuallyAndCarriesChoicesIntoFreshPreview() throws Exception
+    {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode donor = (ObjectNode) mapper.readTree(Files.readString(Path.of(
+                "src/test/resources/compatibility/sclx/donor-sclx-1.3.json")));
+        var assets = mapper.createArrayNode();
+        assets.addObject().put("assetId", "asset-one").put("description", "Trailer");
+        assets.addObject().put("assetId", "asset-two").put("description", "Tent");
+        donor.set("assets", assets);
+        Path source = tempDir.resolve("unsupported-donor-assets.sclx");
+        Files.writeString(source, mapper.writerWithDefaultPrettyPrinter().writeValueAsString(donor));
+        SclxImportPreviewService service = service(emptyTarget("TEST"));
+
+        SclxImportPreview blocked = service.preview(source);
+        List<org.nonprofitbookkeeping.interchange.InterchangeValidationMessage> assetErrors =
+                blocked.operation().messages().stream()
+                        .filter(message -> message.code().equals("SCLX_DONOR_UNSUPPORTED_SECTION"))
+                        .toList();
+        assertEquals(List.of("$.assets[0]", "$.assets[1]"), assetErrors.stream()
+                .map(message -> message.path()).toList());
+
+        List<SclxImportDispositionSelection> dispositions = assetErrors.stream()
+                .map(message -> new SclxImportDispositionSelection(
+                        message.code(), message.path(), SclxImportDisposition.DROP_RECORD))
+                .toList();
+        SclxImportPreview corrected = service.preview(
+                source, List.of(), List.of(), dispositions);
+
+        assertFalse(corrected.hasBlockingErrors(), () -> corrected.operation().messages().toString());
+        assertEquals(0L, corrected.sectionCounts().unsupportedSectionCount());
+        assertEquals(dispositions, corrected.dispositions());
+        assertEquals(2L, corrected.operation().messages().stream()
+                .filter(message -> message.code().equals("SCLX_DISPOSITION_APPLIED"))
+                .count());
+    }
+
+    @Test
+    void ignoresOnlyAnExactNonblockingMessage() throws Exception
+    {
+        Path source = Path.of("src/test/resources/compatibility/sclx/donor-sclx-1.3.json");
+        SclxImportPreviewService service = service(emptyTarget("TEST"));
+        SclxImportPreview initial = service.preview(source);
+        var warning = initial.operation().messages().stream()
+                .filter(message -> message.code().equals("SCLX_DONOR_TARGET_SETTINGS_PRESERVED"))
+                .findFirst().orElseThrow();
+
+        SclxImportPreview ignored = service.preview(source, List.of(), List.of(), List.of(
+                new SclxImportDispositionSelection(
+                        warning.code(), warning.path(), SclxImportDisposition.IGNORE)));
+
+        assertFalse(ignored.hasBlockingErrors(), () -> ignored.operation().messages().toString());
+        assertFalse(ignored.operation().messages().stream()
+                .anyMatch(message -> message.code().equals(warning.code())
+                        && message.path().equals(warning.path())));
+        assertTrue(ignored.operation().messages().stream()
+                .anyMatch(message -> message.code().equals("SCLX_DISPOSITION_APPLIED")));
+
+        ObjectNode donor = (ObjectNode) new ObjectMapper().readTree(Files.readString(source));
+        donor.putArray("assets").addObject().put("assetId", "blocked-asset");
+        Path blockedSource = tempDir.resolve("ignore-blocking.sclx");
+        Files.writeString(blockedSource,
+                new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(donor));
+        SclxImportPreview blocked = service.preview(blockedSource);
+        var blocker = blocked.operation().messages().stream()
+                .filter(message -> message.code().equals("SCLX_DONOR_UNSUPPORTED_SECTION"))
+                .findFirst().orElseThrow();
+        SclxImportPreview rejected = service.preview(blockedSource, List.of(), List.of(), List.of(
+                new SclxImportDispositionSelection(
+                        blocker.code(), blocker.path(), SclxImportDisposition.IGNORE)));
+        assertTrue(rejected.hasBlockingErrors());
+        assertTrue(rejected.operation().messages().stream()
+                .anyMatch(message -> message.code().equals("SCLX_DISPOSITION_UNSUPPORTED")));
+    }
+
+    @Test
+    void suggestedCorrectionDropsUndatedNonpostingAnnotationRecord() throws Exception
+    {
+        ObjectNode root = (ObjectNode) new ObjectMapper().valueToTree(
+                SclxJsonSerializerTest.document());
+        ObjectNode annotation = root.withArray("transactions").addObject();
+        annotation.put("transactionId", "workbook-annotation");
+        annotation.put("description", "Workbook note only");
+        annotation.put("status", "ENTERED");
+        annotation.putArray("lines");
+        Path source = tempDir.resolve("suggested-date-correction.sclx");
+        Files.writeString(source,
+                new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(root));
+        SclxImportPreviewService service = service(emptyTarget("TEST"));
+        SclxImportPreview initial = service.preview(source);
+        var missingDate = initial.operation().messages().stream()
+                .filter(message -> message.code().equals("SCLX_DATE_REQUIRED"))
+                .filter(message -> message.path().contains("transactionDate"))
+                .findFirst().orElseThrow();
+
+        SclxImportPreview corrected = service.preview(source, List.of(), List.of(), List.of(
+                new SclxImportDispositionSelection(
+                        missingDate.code(), missingDate.path(),
+                        SclxImportDisposition.MAKE_SUGGESTED_CORRECTION)));
+
+        assertFalse(corrected.hasBlockingErrors(), () -> corrected.operation().messages().toString());
+        assertTrue(corrected.operation().messages().stream()
+                .anyMatch(message -> message.code().equals("SCLX_DISPOSITION_APPLIED")));
+        assertTrue(corrected.transactions().stream()
+                .noneMatch(transaction -> transaction.transactionId().equals("workbook-annotation")));
+    }
+
+    @Test
     void surfacesEveryOpenOwnershipDiagnosticAsAnActionableBlockingPreviewError()
     {
         Path source = Path.of("src/test/resources/compatibility/sclx/donor-sclx-1.3.json");
@@ -339,6 +446,39 @@ class SclxImportPreviewServiceTest
                 .findFirst().orElseThrow();
         assertEquals(SclxImportMappingRequirement.Resolution.AS_IS, durableMapping.resolution());
         assertEquals("ALT", durableMapping.targetCode());
+    }
+
+    @Test
+    void createDefaultAlsoOffersCompatibleAlternateTarget() throws Exception
+    {
+        Path source = write(SclxJsonSerializerTest.document(), "create-alternate-mapping.sclx");
+        JsonNode sourceAccount = new ObjectMapper().readTree(source.toFile())
+                .path("chartOfAccounts").get(0);
+        String sourceId = sourceAccount.path("accountId").textValue();
+        String sourceCode = sourceAccount.path("code").textValue();
+        SclxImportTargetSnapshot target = new SclxImportTargetSnapshot(
+                "TARGET", "Existing Company", true, false,
+                Map.of("ALT", account("TARGET", "ALT",
+                        sourceAccount.path("type").textValue(),
+                        sourceAccount.path("increaseSide").textValue())),
+                Map.of(), Map.of(), List.of(), Set.of());
+        SclxImportPreviewService service = service(target);
+
+        SclxImportMappingRequirement create = service.preview(source).mappings().stream()
+                .filter(mapping -> mapping.sourceId().equals(sourceId))
+                .findFirst().orElseThrow();
+        assertEquals(SclxImportMappingRequirement.Resolution.CREATE, create.resolution());
+        assertEquals(sourceCode, create.targetCode());
+        assertEquals(List.of("ALT"), create.compatibleTargetCodes());
+
+        SclxImportMappingRequirement mapped = service.preview(source, List.of(
+                        new SclxImportMappingSelection(
+                                SclxImportMappingRequirement.Kind.ACCOUNT, sourceId, "ALT")))
+                .mappings().stream()
+                .filter(mapping -> mapping.sourceId().equals(sourceId))
+                .findFirst().orElseThrow();
+        assertEquals(SclxImportMappingRequirement.Resolution.MAPPED, mapped.resolution());
+        assertEquals("ALT", mapped.targetCode());
     }
 
     @Test

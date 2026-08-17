@@ -21,7 +21,8 @@ public record SclxImportPreview(
         SclxAccountMode recommendedAccountMode,
         SclxImportPreviewCounts sectionCounts,
         List<SclxImportMappingRequirement> mappings,
-        List<SclxImportTransactionPreview> transactions)
+        List<SclxImportTransactionPreview> transactions,
+        List<SclxImportDispositionSelection> dispositions)
 {
     public SclxImportPreview
     {
@@ -37,6 +38,29 @@ public record SclxImportPreview(
         Objects.requireNonNull(sectionCounts, "sectionCounts");
         mappings = List.copyOf(Objects.requireNonNull(mappings, "mappings"));
         transactions = List.copyOf(Objects.requireNonNull(transactions, "transactions"));
+        dispositions = List.copyOf(Objects.requireNonNull(dispositions, "dispositions"));
+    }
+
+    public SclxImportPreview(
+            InterchangePreview<SclxImportEntityPreview> operation,
+            SclxVersion version,
+            Instant exportedAt,
+            String sourceOrganizationId,
+            String sourceOrganizationCode,
+            String sourceOrganizationName,
+            String sourceSystem,
+            String targetCompanyCode,
+            String targetCompanyName,
+            boolean targetPopulated,
+            SclxAccountMode recommendedAccountMode,
+            SclxImportPreviewCounts sectionCounts,
+            List<SclxImportMappingRequirement> mappings,
+            List<SclxImportTransactionPreview> transactions)
+    {
+        this(operation, version, exportedAt, sourceOrganizationId, sourceOrganizationCode,
+                sourceOrganizationName, sourceSystem, targetCompanyCode, targetCompanyName,
+                targetPopulated, recommendedAccountMode, sectionCounts, mappings, transactions,
+                List.of());
     }
 
     public boolean hasBlockingErrors()
