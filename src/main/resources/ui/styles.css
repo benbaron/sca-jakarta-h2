@@ -10,6 +10,103 @@
     -fx-faint-focus-color: rgba(11, 114, 231, 0.14);
 }
 
+/* Workbook-style Report Library previews. */
+.formatted-report-preview
+{
+    -fx-background-color: white;
+}
+
+.formatted-report-subtitle
+{
+    -fx-text-fill: #5f6b7a;
+}
+
+.table-view.formatted-report-table
+{
+    -fx-background-color: white;
+    -fx-border-color: #8c98a6;
+    -fx-border-width: 1;
+    -fx-table-cell-border-color: #c5ced8;
+}
+
+.table-view.formatted-report-table .column-header-background,
+.table-view.formatted-report-table .column-header,
+.table-view.formatted-report-table .filler
+{
+    -fx-background-color: #d9eaf7;
+    -fx-border-color: #8c98a6;
+    -fx-border-width: 0 0.5 1 0;
+}
+
+.table-view.formatted-report-table .column-header .label
+{
+    -fx-font-weight: bold;
+    -fx-alignment: center;
+    -fx-padding: 6;
+}
+
+.table-view.formatted-report-table .table-cell
+{
+    -fx-padding: 4 6 4 6;
+    -fx-border-color: transparent #c5ced8 #d7dde5 transparent;
+    -fx-border-width: 0 0.5 0.5 0;
+}
+
+.formatted-report-detail-row .table-cell
+{
+    -fx-background-color: white;
+}
+
+.formatted-report-section-row .table-cell
+{
+    -fx-background-color: #cfe2f3;
+    -fx-font-weight: bold;
+}
+
+.formatted-report-total-row .table-cell
+{
+    -fx-background-color: #eef3f8;
+    -fx-font-weight: bold;
+    -fx-border-color: #8c98a6 #c5ced8 #8c98a6 transparent;
+    -fx-border-width: 1 0.5 1 0;
+}
+
+.formatted-report-success-row .table-cell
+{
+    -fx-background-color: #e2f0d9;
+    -fx-font-weight: bold;
+    -fx-text-fill: #245524;
+}
+
+.formatted-report-success-row .table-cell .label
+{
+    -fx-text-fill: #245524;
+}
+
+.formatted-report-warning-row .table-cell
+{
+    -fx-background-color: #fff2cc;
+    -fx-font-weight: bold;
+    -fx-text-fill: #6b4d00;
+}
+
+.formatted-report-warning-row .table-cell .label
+{
+    -fx-text-fill: #6b4d00;
+}
+
+.formatted-report-note-row .table-cell
+{
+    -fx-background-color: #fffdf2;
+    -fx-text-fill: #5f6b7a;
+    -fx-font-style: italic;
+}
+
+.formatted-report-note-row .table-cell .label
+{
+    -fx-text-fill: #5f6b7a;
+}
+
 .label
 {
     -fx-text-fill: #172033;

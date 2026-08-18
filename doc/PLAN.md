@@ -1,12 +1,12 @@
 ---
-plan_version: 206
-active_phase: P16
-active_slice: P16-C11
-active_status: VERIFYING
-active_branch: codex/P16-C11-native-portable-identity-reconciliation
-active_pull_request: 281
-active_head: 7039f06
-next_action: "Confirm the final plan-inclusive PR #281 head passes Maven PR Tests, then retry the supplied SCLX import in the owner desktop build."
+plan_version: 207
+active_phase: P11
+active_slice: P11-C1
+active_status: IN_PROGRESS
+active_branch: codex/P11-C1-formatted-report-preview
+active_pull_request: null
+active_head: 3e95d42
+next_action: "Replace every core plain-text Report Library preview with a company-formatted JavaFX table, add focused coverage, and run the available validation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Confirm the final plan-inclusive PR #281 head passes Maven PR Test
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, records P16-C3 and P16-C4 through merged PRs #272 and #273, records the owner-requested P16-C6 nondestructive existing-company SCLX import through merged PR #274, records P16-C7 ownership diagnostics through merged PR #275, records P16-C8 target-company authority through merged PR #276, records the identity-aware P16-C9 corrections through merged PRs #277-#279, records P16-C10 through merged PR #280, and activates P16-C11 for the owner-reported native portable-identity reconciliation failure. P16-C5 message guidance remains a separate unpublished local slice and is not mixed into this branch. It does not authorize P17 or any later feature phase.
+This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, records P16-C3 and P16-C4 through merged PRs #272 and #273, records the owner-requested P16-C6 nondestructive existing-company SCLX import through merged PR #274, records P16-C7 ownership diagnostics through merged PR #275, records P16-C8 target-company authority through merged PR #276, records the identity-aware P16-C9 corrections through merged PRs #277-#279, records P16-C10 through merged PR #280, and closes P16-C11 through merged PR #281. It activates the owner-requested P11-C1 correction for formatted core-report previews. P16-C5 message guidance remains a separate unpublished local slice and is not mixed into this branch. It does not authorize P17 or any later feature phase.
 
 ## 2. Status values
 
@@ -43,12 +43,12 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 DONE through PR #144 |
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
-| P11 | Report Library | P02, P04, P06, P08, P09, P10 | DONE through P11-S1 / PR #158 |
+| P11 | Report Library | P02, P04, P06, P08, P09, P10 | Corrective P11-C1 IN_PROGRESS after P11-S1 / PR #158 |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | Corrective P16-C11 VERIFYING after merged P16-C10 / PR #280 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | DONE through corrective P16-C11 / merged PR #281 |
 
 ## 4. Governing documents
 
@@ -190,7 +190,7 @@ Known P10 follow-up:
 
 ### P11 — Report Library
 
-Status: DONE through P11-S1 / merged PR #158 and owner verification.
+Status: Corrective P11-C1 IN_PROGRESS after P11-S1 / merged PR #158 and owner verification.
 
 #### P11-S1 — Typed report catalog and parameters
 
@@ -208,6 +208,34 @@ Completed deliverables:
 - Maven PR Tests run `29179022737` passed on the final head.
 - PR #158 merged on 2026-07-13.
 - The owner verified the desktop/laptop-width Report Library behavior.
+
+#### P11-C1 — Formatted core-report previews
+
+Status: IN_PROGRESS.
+
+Branch: `codex/P11-C1-formatted-report-preview`
+Base head: `3e95d42f56800b729cc01c6b7d3741c3b0345fb6`
+
+Purpose:
+
+- Replace every core report's monospaced plain-text preview with a structured JavaFX table matching
+  the workbook-style report presentation.
+- Preserve the immutable report request, authoritative H2 projections, company money/date formatting,
+  machine-stable CSV, and existing TEXT/PDF/XLSX export behavior.
+- Give Trial Balance, General Ledger Detail, Balance Sheet, and Income Statement complete named columns,
+  colored section/total/status rows, independent table scrolling, and company-owned column state.
+
+Planned deliverables:
+
+- Add an immutable UI-neutral table model generated directly from each core service projection rather
+  than parsing rendered text or CSV.
+- Add one JavaFX table renderer with company date/money formatting, full-text tooltips, workbook colors,
+  wrapping text columns, and sortable/resizable/reorderable columns.
+- Put the parameter and preview regions behind a horizontal draggable divider and persist both Report
+  Library divider positions for the active company.
+- Add focused model, execution, renderer/source, documentation, and layout coverage.
+- Run focused source validation and `mvn clean verify` where tooling is available; retain a desktop
+  visual check for laptop-width color, wrapping, scrolling, and divider behavior.
 
 ## 7. P12 — Administration, company lifecycle, preferences, and Funds edit
 
@@ -3033,7 +3061,7 @@ Next exact action:
 
 ## P16-C11 — Native SCLX portable-identity reconciliation
 
-Status: VERIFYING.
+Status: DONE through merged PR #281.
 
 Branch: `codex/P16-C11-native-portable-identity-reconciliation`
 Pull request: #281
@@ -3080,8 +3108,10 @@ Implementation and validation status:
 - Exact corrected plan-inclusive head `7039f06f14b44fdd73db1d7781803612c0da58de` passed all three
   Maven PR Tests gates in run `32089850888`: clean `mvn clean verify`, the deliberately repeated test
   suite, and production JavaFX route compliance.
+- Final PR head `bb0b53dbd4407c7a7f6493d77a40e95609967613` passed Maven PR Tests and PR #281
+  merged to `main` at `3e95d42f56800b729cc01c6b7d3741c3b0345fb6`.
 
 Next exact action:
 
-- Confirm the final plan-inclusive PR #281 head passes Maven PR Tests, then retry the supplied SCLX import
-  in the owner desktop build.
+- None; P16-C11 and P16 are DONE. The explicit owner-requested Report Library correction proceeds under
+  P11-C1.

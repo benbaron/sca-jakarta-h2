@@ -65,6 +65,11 @@ class ReportExecutionServiceIntegrationTest
             assertTrue(result.csv().contains("GEN"));
             assertFalse(result.csv().contains("MONEY["));
             assertFalse(result.csv().contains("RES"));
+            assertTrue(result.tabular());
+            assertTrue(result.tableModel().columns().stream()
+                    .anyMatch(column -> "Memo".equals(column.label())));
+            assertTrue(result.tableModel().rows().stream()
+                    .anyMatch(row -> "General donation".equals(row.value("memo"))));
         }
     }
 

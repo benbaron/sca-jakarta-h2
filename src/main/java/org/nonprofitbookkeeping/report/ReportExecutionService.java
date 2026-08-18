@@ -70,7 +70,8 @@ public final class ReportExecutionService
                         FinancialReportRenderer.renderTrialBalanceText(report, displayFormat),
                         FinancialReportRenderer.renderTrialBalanceCsv(report),
                         null,
-                        null);
+                        null,
+                        CoreFinancialReportTableBuilder.trialBalance(report, displayFormat));
             }
             case GENERAL_LEDGER_DETAIL -> {
                 java.util.List<FinancialReportService.GeneralLedgerRow> rows =
@@ -84,7 +85,8 @@ public final class ReportExecutionService
                         FinancialReportRenderer.renderGeneralLedgerText(rows, displayFormat),
                         FinancialReportRenderer.renderGeneralLedgerCsv(rows),
                         null,
-                        null);
+                        null,
+                        CoreFinancialReportTableBuilder.generalLedger(rows));
             }
             case BALANCE_SHEET -> {
                 FinancialReportService.BalanceSheetReport report =
@@ -94,7 +96,8 @@ public final class ReportExecutionService
                         FinancialReportRenderer.renderBalanceSheetText(report, displayFormat),
                         FinancialReportRenderer.renderBalanceSheetCsv(report),
                         null,
-                        null);
+                        null,
+                        CoreFinancialReportTableBuilder.balanceSheet(report, displayFormat));
             }
             case INCOME_STATEMENT -> {
                 FinancialReportService.IncomeStatementReport report =
@@ -107,7 +110,8 @@ public final class ReportExecutionService
                         FinancialReportRenderer.renderIncomeStatementText(report, displayFormat),
                         FinancialReportRenderer.renderIncomeStatementCsv(report),
                         null,
-                        null);
+                        null,
+                        CoreFinancialReportTableBuilder.incomeStatement(report, displayFormat));
             }
             default -> throw new IllegalArgumentException(
                     "Report is not a core report: " + request.definition().displayName());
