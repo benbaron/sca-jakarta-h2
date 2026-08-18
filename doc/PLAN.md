@@ -4,9 +4,9 @@ active_phase: P16
 active_slice: P16-C11
 active_status: VERIFYING
 active_branch: codex/P16-C11-native-portable-identity-reconciliation
-active_pull_request: null
-active_head: 80ffd6b
-next_action: "Publish the approved P16-C11 commits on the fresh branch, open a draft pull request to main, and inspect Maven PR Tests."
+active_pull_request: 281
+active_head: adf5926
+next_action: "Inspect Maven PR Tests on draft PR #281 and correct any semantic, H2, or full-suite failure before owner desktop re-import."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -3036,7 +3036,7 @@ Next exact action:
 Status: VERIFYING.
 
 Branch: `codex/P16-C11-native-portable-identity-reconciliation`
-Pull request: not opened
+Pull request: #281
 Base head: `8838bc7a0f8d6092cb33e1801558129bf5eac2be`
 
 Purpose:
@@ -3067,8 +3067,12 @@ Implementation and validation status:
   dependency-free snapshot/preview records type-compile, and `git diff --check` passes. Maven and the
   standalone `javac` launcher remain unavailable locally, so semantic compilation and focused/full H2
   execution require Maven PR Tests after publication.
+- The owner authorized publication after confirming PR #280 merge state. Connected-GitHub remote
+  implementation commit `add3002e16c8247535eca729d4d6481cd168c57c` and handoff commit
+  `adf59267b7ab7b6faf1c8bb326f93af1f798d8c3` exactly match local trees `09a71654` and `a8c47aca`.
+- Draft PR #281 targets `main` from the fresh P16-C11 branch.
 
 Next exact action:
 
-- Publish the approved implementation and plan commits on the fresh branch, open a draft pull request to
-  `main`, and inspect Maven PR Tests.
+- Inspect Maven PR Tests on draft PR #281 and correct any semantic, H2, or full-suite failure before the
+  owner retries the supplied SCLX import.
