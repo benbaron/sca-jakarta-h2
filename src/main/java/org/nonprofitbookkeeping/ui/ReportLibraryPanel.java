@@ -2,6 +2,7 @@ package org.nonprofitbookkeeping.ui;
 
 import javafx.animation.PauseTransition;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -51,6 +52,7 @@ import java.util.Map;
 public class ReportLibraryPanel implements AppPanel
 {
     private static final String STATE_DIVIDER = "reportLibrary.divider";
+    private static final String STATE_PREVIEW_DIVIDER = "reportLibrary.previewDivider";
 
     private final BorderPane root = new BorderPane();
     private final ListView<ReportDefinition> reportList = new ListView<>();
@@ -92,8 +94,10 @@ public class ReportLibraryPanel implements AppPanel
                     UiServiceRegistry.semanticAccountingReports(),
                     assetInventoryReportService);
     private final PauseTransition dividerSaveDelay = new PauseTransition(Duration.millis(350));
+    private final PauseTransition previewDividerSaveDelay = new PauseTransition(Duration.millis(350));
 
     private SplitPane workspaceSplit;
+    private SplitPane parameterPreviewSplit;
     private ReportResult currentResult;
     private AssetInventoryReportQueryService.FilterCatalog domainFilterCatalog;
 
@@ -255,27 +259,48 @@ public class ReportLibraryPanel implements AppPanel
         parameters.add(domainStatusLabel, 0, 6);
         parameters.add(domainStatus, 1, 6);
 
-        VBox right = new VBox(8,
+        VBox parameterRegion = new VBox(8,
                 new Label("Report Parameters"),
-                parameters,
-                new Separator(),
+                parameters);
+        parameterRegion.setPadding(new Insets(8));
+        parameterRegion.setMinWidth(0.0);
+        parameterRegion.setMinHeight(0.0);
+
+        VBox previewRegion = new VBox(8,
                 new Label("Preview"),
                 previewHost);
-        right.setPadding(new Insets(8));
-        right.setMinWidth(0.0);
-        right.setMinHeight(0.0);
+        previewRegion.setPadding(new Insets(8));
+        previewRegion.setMinWidth(0.0);
+        previewRegion.setMinHeight(0.0);
         VBox.setVgrow(previewHost, Priority.ALWAYS);
 
-        workspaceSplit = new SplitPane(reportList, right);
+        parameterPreviewSplit = new SplitPane(parameterRegion, previewRegion);
+        parameterPreviewSplit.setId("reportLibraryParameterPreviewSplit");
+        parameterPreviewSplit.setOrientation(Orientation.VERTICAL);
+        parameterPreviewSplit.setDividerPositions(loadDividerPosition(
+                STATE_PREVIEW_DIVIDER, 0.32, 0.16, 0.68));
+        installDividerPersistence(
+                parameterPreviewSplit,
+                STATE_PREVIEW_DIVIDER,
+                previewDividerSaveDelay);
+
+        workspaceSplit = new SplitPane(reportList, parameterPreviewSplit);
         workspaceSplit.setId("reportLibrarySplit");
         workspaceSplit.setDividerPositions(loadDividerPosition());
-        workspaceSplit.getDividers().get(0).positionProperty().addListener((obs, oldValue, newValue) -> {
-            dividerSaveDelay.setOnFinished(event -> preferencesService.saveState(
-                    companyCode,
-                    Map.of(STATE_DIVIDER, Double.toString(newValue.doubleValue()))));
-            dividerSaveDelay.playFromStart();
-        });
+        installDividerPersistence(workspaceSplit, STATE_DIVIDER, dividerSaveDelay);
         root.setCenter(workspaceSplit);
+    }
+
+    private void installDividerPersistence(
+            SplitPane split,
+            String stateKey,
+            PauseTransition delay)
+    {
+        delay.setOnFinished(event -> preferencesService.saveState(
+                companyCode,
+                Map.of(stateKey, Double.toString(split.getDividerPositions()[0]))));
+        split.getDividers().get(0).positionProperty().addListener(
+                (obs, oldValue, newValue) -> delay.playFromStart());
     }
 
     private void configureActions(Button run, Button export, Button drillLedger)
@@ -475,6 +500,17 @@ public class ReportLibraryPanel implements AppPanel
                     result.semanticTemplate(),
                     result.semanticValues()));
         }
+        else if (result.tabular())
+        {
+            Node tablePreview = new FormattedReportFxRenderer(companyFormat).render(
+                    result.tableModel());
+            CompanyTableStateBinder.apply(
+                    tablePreview,
+                    AppPanelId.REPORT_LIBRARY,
+                    preferencesService,
+                    companyCode);
+            previewHost.setCenter(tablePreview);
+        }
         else
         {
             preview.setText(result.text());
@@ -588,16 +624,25 @@ public class ReportLibraryPanel implements AppPanel
 
     private double loadDividerPosition()
     {
+        return loadDividerPosition(STATE_DIVIDER, 0.28, 0.15, 0.60);
+    }
+
+    private double loadDividerPosition(
+            String stateKey,
+            double fallback,
+            double minimum,
+            double maximum)
+    {
         String value = preferencesService.loadState(companyCode, "reportLibrary.")
-                .get(STATE_DIVIDER);
+                .get(stateKey);
         try
         {
-            double position = value == null ? 0.28 : Double.parseDouble(value);
-            return Math.max(0.15, Math.min(0.60, position));
+            double position = value == null ? fallback : Double.parseDouble(value);
+            return Math.max(minimum, Math.min(maximum, position));
         }
         catch (NumberFormatException ex)
         {
-            return 0.28;
+            return fallback;
         }
     }
 

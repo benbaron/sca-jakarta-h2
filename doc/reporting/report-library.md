@@ -95,6 +95,24 @@ Preview, TEXT, CSV, PDF, XLSX, and Journal drill-through retain the same `Report
 
 Visible core and semantic report previews use active-company date and money preferences through `CompanyUiFormat` and `FinancialReportDisplayFormat`.
 
+Trial Balance, General Ledger Detail, Balance Sheet, and Income Statement do not display their TEXT
+export as the production preview. Each core projection is also mapped directly to an immutable,
+UI-neutral table model and rendered as a JavaFX `TableView` with workbook-style colored headers,
+section rows, totals, status rows, named columns, wrapping text, and full-text tooltips. General Ledger
+Detail exposes every projected field: date, transaction ID, account code/name, fund code/name, payee,
+memo, debit, and credit. The model retains typed dates and money until the JavaFX formatting boundary;
+the preview never reparses TEXT or CSV.
+
+Each core preview table remains independently scrollable. Its columns are sortable, resizable, and
+reorderable, and their order, width, and sort state are stored for the active company. The report
+parameter region and preview region are separated by a horizontal draggable divider so a large table
+can use the available workspace without hiding the controls.
+
+The donor `SemanticReportFxRenderer` remains a visual reference for the white/blue workbook hierarchy.
+Its static `GridPane` and alternate report workspace are not ported. The production correction uses the
+existing Report Library plus `TableView` so column interaction, scrolling, tooltips, and company-owned
+state follow the application-wide table contract.
+
 CSV remains machine-readable and stable:
 
 - dates remain ISO-8601;
@@ -105,7 +123,10 @@ TEXT, CSV, PDF, and XLSX exports remain available. PDF/XLSX adapters consume the
 
 ## UI state
 
-The Report Library split-pane divider is stored in company-owned UI state under the `reportLibrary.` prefix. The panel uses the global date range as an initial default, but report-specific date controls form the actual request.
+The Report Library catalog divider and parameter/preview divider are stored in company-owned UI state
+under the `reportLibrary.` prefix. Per-report core table layout is stored through the shared company
+table-state authority. The panel uses the global date range as an initial default, but report-specific
+date controls form the actual request.
 
 ## Validation
 
@@ -116,6 +137,8 @@ Required automated coverage includes:
 - selected-fund filtering against authoritative ledger data;
 - company-formatted visible text with stable raw CSV;
 - source guardrails for typed catalog/request use and company-owned divider state.
+- structured core-table coverage for every core report, complete General Ledger columns, workbook row
+  styles, dynamic company table-state binding, and the horizontal parameter/preview divider.
 - fixed-asset lifecycle/as-of reconstruction, inventory historical quantity, company isolation, stable-ID filters, linked/unlinked identities, exact control-account differences, and semantic preview/CSV parity.
 
 Desktop validation must confirm report selection, parameter visibility, fund loading, preview, all export formats, Journal drill-through context, split-pane resizing, and laptop-width behavior.

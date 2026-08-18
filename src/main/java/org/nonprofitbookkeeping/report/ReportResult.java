@@ -9,8 +9,19 @@ public record ReportResult(
         String text,
         String csv,
         JsonNode semanticTemplate,
-        SemanticReportValueSet semanticValues)
+        SemanticReportValueSet semanticValues,
+        ReportTableModel tableModel)
 {
+    public ReportResult(
+            ReportRequest request,
+            String text,
+            String csv,
+            JsonNode semanticTemplate,
+            SemanticReportValueSet semanticValues)
+    {
+        this(request, text, csv, semanticTemplate, semanticValues, null);
+    }
+
     public ReportResult
     {
         if (request == null)
@@ -23,10 +34,20 @@ public record ReportResult(
         {
             throw new IllegalArgumentException("Semantic template and values must be supplied together.");
         }
+        if (semanticTemplate != null && tableModel != null)
+        {
+            throw new IllegalArgumentException(
+                    "A report preview cannot use semantic and core table models together.");
+        }
     }
 
     public boolean semantic()
     {
         return semanticTemplate != null;
+    }
+
+    public boolean tabular()
+    {
+        return tableModel != null;
     }
 }

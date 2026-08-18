@@ -22,11 +22,40 @@ class ReportLibraryTypedSourceTest
         assertTrue(source.contains("ReportFundOption.ALL_FUNDS"));
         assertTrue(source.contains("new CompanyUiFormat("));
         assertTrue(source.contains("new SemanticReportFxRenderer(companyFormat)"));
+        assertTrue(source.contains("new FormattedReportFxRenderer(companyFormat)"));
+        assertTrue(source.contains("result.tabular()"));
+        assertTrue(source.contains("CompanyTableStateBinder.apply("));
+        assertTrue(source.contains("Orientation.VERTICAL"));
+        assertTrue(source.contains("STATE_PREVIEW_DIVIDER"));
         assertTrue(source.contains("currentResult.request().equals(request)"));
         assertTrue(source.contains("preferencesService.saveState"));
         assertTrue(source.contains("ComboBox<AssetInventoryReportQueryService.FilterOption>"));
         assertTrue(source.contains("domainFilterMode()"));
         assertFalse(source.contains("Report not implemented"));
         assertFalse(source.contains("ListView<String>"));
+    }
+
+    @Test
+    void corePreviewsDefineCompleteTablesWrappingAndWorkbookColors() throws Exception
+    {
+        String execution = Files.readString(Path.of(
+                "src/main/java/org/nonprofitbookkeeping/report/ReportExecutionService.java"));
+        String renderer = Files.readString(Path.of(
+                "src/main/java/org/nonprofitbookkeeping/ui/FormattedReportFxRenderer.java"));
+        String styles = Files.readString(Path.of("src/main/resources/ui/styles.css"));
+
+        assertTrue(execution.contains("CoreFinancialReportTableBuilder.trialBalance"));
+        assertTrue(execution.contains("CoreFinancialReportTableBuilder.generalLedger"));
+        assertTrue(execution.contains("CoreFinancialReportTableBuilder.balanceSheet"));
+        assertTrue(execution.contains("CoreFinancialReportTableBuilder.incomeStatement"));
+        assertTrue(renderer.contains("TableView<ReportTableModel.Row>"));
+        assertTrue(renderer.contains("content.setWrapText"));
+        assertTrue(renderer.contains("new Tooltip(display)"));
+        assertTrue(renderer.contains("UNCONSTRAINED_RESIZE_POLICY"));
+        assertTrue(styles.contains(".formatted-report-section-row"));
+        assertTrue(styles.contains(".formatted-report-total-row"));
+        assertTrue(styles.contains(".formatted-report-success-row"));
+        assertTrue(styles.contains("#d9eaf7"));
+        assertTrue(styles.contains("#cfe2f3"));
     }
 }
