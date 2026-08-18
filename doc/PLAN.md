@@ -5,7 +5,7 @@ active_slice: P16-C11
 active_status: VERIFYING
 active_branch: codex/P16-C11-native-portable-identity-reconciliation
 active_pull_request: 281
-active_head: adf5926
+active_head: 8ae4d07
 next_action: "Inspect Maven PR Tests on draft PR #281 and correct any semantic, H2, or full-suite failure before owner desktop re-import."
 ---
 
@@ -3071,6 +3071,12 @@ Implementation and validation status:
   implementation commit `add3002e16c8247535eca729d4d6481cd168c57c` and handoff commit
   `adf59267b7ab7b6faf1c8bb326f93af1f798d8c3` exactly match local trees `09a71654` and `a8c47aca`.
 - Draft PR #281 targets `main` from the fresh P16-C11 branch.
+- Maven PR Tests run `32089615271` compiled the implementation and ran 681 tests, then exposed nine H2
+  integration errors because this Hibernate/native-query path returns UUID columns as 16-byte arrays
+  rather than `java.util.UUID` values. The repeated suite and JavaFX gate correctly skipped after failure.
+- Corrective local commit `9aa4a33` decodes both native `UUID` objects and H2 16-byte UUID values without
+  changing portable-identity derivation. Connected-GitHub commit
+  `8ae4d07a004189e159613fa8e6395b3cb9cb6d91` exactly matches local corrected tree `b1f0c3ac`.
 
 Next exact action:
 
