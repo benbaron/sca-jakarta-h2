@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.EntityManager;
 
 import java.net.URLDecoder;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -243,7 +244,16 @@ final class SclxNativePortableIdentity
 
     private static UUID uuid(Object value)
     {
-        return value instanceof UUID uuid ? uuid : UUID.fromString(String.valueOf(value));
+        if (value instanceof UUID uuid)
+        {
+            return uuid;
+        }
+        if (value instanceof byte[] bytes && bytes.length == 16)
+        {
+            ByteBuffer buffer = ByteBuffer.wrap(bytes);
+            return new UUID(buffer.getLong(), buffer.getLong());
+        }
+        return UUID.fromString(String.valueOf(value));
     }
 
     private static String text(JsonNode value, String field)
