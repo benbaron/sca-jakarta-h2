@@ -33,8 +33,18 @@ final class JpaSclxImportTargetReader implements SclxImportTargetReader
     @Override
     public SclxImportTargetSnapshot read(String companyCode, String sourceSystem)
     {
+        return read(companyCode, sourceSystem, Set.of());
+    }
+
+    @Override
+    public SclxImportTargetSnapshot read(
+            String companyCode,
+            String sourceSystem,
+            Set<SclxImportTargetSnapshot.NativePortableKey> nativePortableKeys)
+    {
         String code = requireText(companyCode, "companyCode").toUpperCase(Locale.ROOT);
         String source = requireText(sourceSystem, "sourceSystem");
+        Objects.requireNonNull(nativePortableKeys, "nativePortableKeys");
         try (EntityManager em = jpa.em())
         {
             Company company = em.createQuery("""
@@ -52,6 +62,9 @@ final class JpaSclxImportTargetReader implements SclxImportTargetReader
             Map<String, SclxImportTargetSnapshot.TargetActivity> activities = activities(em, company);
             Map<SclxImportTargetSnapshot.ExternalIdentityKey, SclxImportTargetSnapshot.IdentityFact> identities =
                     identities(em, company, source);
+            Map<SclxImportTargetSnapshot.NativePortableKey,
+                    SclxImportTargetSnapshot.NativePortableFact> nativePortableIdentities =
+                    SclxNativePortableIdentity.read(em, nativePortableKeys);
             List<SclxImportTargetSnapshot.ClosedRange> closedRanges = closedRanges(em, company);
             Set<String> finalizedTransactions = finalizedTransactionIds(em, company);
             boolean operationalDataPopulated =
@@ -81,6 +94,7 @@ final class JpaSclxImportTargetReader implements SclxImportTargetReader
                     funds,
                     activities,
                     identities,
+                    nativePortableIdentities,
                     closedRanges,
                     finalizedTransactions);
         }

@@ -12,7 +12,8 @@ public record SclxImportEntityPreview(
         String localEntityId,
         SclxImportConflictChoice conflictChoice,
         boolean sourceChoiceAllowed,
-        String conflictDetail)
+        String conflictDetail,
+        String nativePortableId)
 {
     public SclxImportEntityPreview
     {
@@ -30,6 +31,8 @@ public record SclxImportEntityPreview(
         }
         localEntityId = localEntityId == null || localEntityId.isBlank() ? null : localEntityId.trim();
         conflictDetail = conflictDetail == null || conflictDetail.isBlank() ? null : conflictDetail.trim();
+        nativePortableId = nativePortableId == null || nativePortableId.isBlank()
+                ? null : nativePortableId.trim();
         if (identityMatch != InterchangeIdentityMatch.CONFLICT && conflictChoice != null)
         {
             throw new IllegalArgumentException("Only conflicting identities may have a conflict choice");
@@ -51,10 +54,25 @@ public record SclxImportEntityPreview(
             String path,
             String normalizedContentHash,
             InterchangeIdentityMatch identityMatch,
+            String localEntityId,
+            SclxImportConflictChoice conflictChoice,
+            boolean sourceChoiceAllowed,
+            String conflictDetail)
+    {
+        this(entityType, externalId, path, normalizedContentHash, identityMatch, localEntityId,
+                conflictChoice, sourceChoiceAllowed, conflictDetail, null);
+    }
+
+    public SclxImportEntityPreview(
+            String entityType,
+            String externalId,
+            String path,
+            String normalizedContentHash,
+            InterchangeIdentityMatch identityMatch,
             String localEntityId)
     {
         this(entityType, externalId, path, normalizedContentHash, identityMatch, localEntityId,
-                null, false, null);
+                null, false, null, null);
     }
 
     public boolean conflictResolved()

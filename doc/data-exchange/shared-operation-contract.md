@@ -159,6 +159,12 @@ Recording identical content is idempotent. A conflicting hash or a different alr
 
 Durable local portable identities are separate from source-specific `interchange_identity` rows. `Txn`, `Counterparty`, `Merchant`, `Bank`, `CompanyBankAccount`, `BankImportBatch`, `BankStatementLine`, `ImportIssue`, `FixedAsset`, `FixedAssetDepreciationRun`, and `AuditEvent` carry UUID portable identities that survive mutable business labels and never expose local numeric primary keys. The native `bank_reconciliation_session` and `bank_reconciliation_match` tables carry the same durable UUID identity contract. A depreciation run keeps its own intrinsic identity even though it references a canonical transaction; the transaction identity is not a substitute for the run identity. Imported factual audit history preserves each event's intrinsic identity and timestamp independently from the new local operation audit that records the import itself. The shared identity table continues to record import-source idempotency and traceability for a particular format/source/external ID; it is not used as a substitute for any intrinsic local entity identity.
 
+An importer that can deterministically recover an intrinsic portable UUID MUST reconcile that native UUID
+before classifying a source identity as new. A same-company native match may be reused only through an
+explicit format policy and same-transaction source-identity write; a differing record is a conflict, and a
+record owned by another company is blocking. The commit boundary rechecks the native UUID, local record,
+and owner so a missing source-specific identity cannot degrade into a late unique-constraint failure.
+
 ## 10. Validation and operational visibility
 
 P15-S1 validation includes:

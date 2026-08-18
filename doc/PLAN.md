@@ -1,12 +1,12 @@
 ---
-plan_version: 205
+plan_version: 206
 active_phase: P16
-active_slice: P16-C10
+active_slice: P16-C11
 active_status: VERIFYING
-active_branch: codex/P16-C10-sclx-preview-resolutions
-active_pull_request: null
-active_head: 5101646
-next_action: "Review the local P16-C10 implementation and artifacts; if accepted, explicitly authorize pushing the two local commits and opening a draft PR to main so Maven PR Tests can run."
+active_branch: codex/P16-C11-native-portable-identity-reconciliation
+active_pull_request: 281
+active_head: 7039f06
+next_action: "Confirm the final plan-inclusive PR #281 head passes Maven PR Tests, then retry the supplied SCLX import in the owner desktop build."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Review the local P16-C10 implementation and artifacts; if accepted
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, records P16-C3 and P16-C4 through merged PRs #272 and #273, records the owner-requested P16-C6 nondestructive existing-company SCLX import through merged PR #274, records P16-C7 ownership diagnostics through merged PR #275, records P16-C8 target-company authority through merged PR #276, records the identity-aware P16-C9 corrections through merged PRs #277-#279, and activates P16-C10 for owner-approved donor-export reconciliation and interactive preview choices. P16-C5 message guidance remains a separate unpublished local slice and is not mixed into this branch. It does not authorize P17 or any later feature phase.
+This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, records P16-C3 and P16-C4 through merged PRs #272 and #273, records the owner-requested P16-C6 nondestructive existing-company SCLX import through merged PR #274, records P16-C7 ownership diagnostics through merged PR #275, records P16-C8 target-company authority through merged PR #276, records the identity-aware P16-C9 corrections through merged PRs #277-#279, records P16-C10 through merged PR #280, and activates P16-C11 for the owner-reported native portable-identity reconciliation failure. P16-C5 message guidance remains a separate unpublished local slice and is not mixed into this branch. It does not authorize P17 or any later feature phase.
 
 ## 2. Status values
 
@@ -48,7 +48,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
-| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | Corrective P16-C10 IN_PROGRESS after merged P16-C9 corrections / PRs #277-#279 |
+| P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | Corrective P16-C11 VERIFYING after merged P16-C10 / PR #280 |
 
 ## 4. Governing documents
 
@@ -2970,10 +2970,10 @@ Next exact action:
 
 ## P16-C10 — SCLX donor-export reconciliation and preview resolutions
 
-Status: VERIFYING.
+Status: DONE through merged PR #280.
 
 Branch: `codex/P16-C10-sclx-preview-resolutions`
-Pull request: not opened
+Pull request: #280
 Base head: `2386d6e37c6f5226f2dbb7813036ce291e08a8a7`
 
 Purpose:
@@ -3022,10 +3022,66 @@ Validation status:
   `git diff --check` passes. Maven and the standalone `javac` launcher are unavailable in this workspace,
   so semantic compilation and the H2/JavaFX/full suite require Maven PR Tests after owner-authorized
   publication.
-- The revised `.bas` and clean `.sclx.json` artifacts are preserved outside the Git-backed worktree. No
-  commit has been pushed and no pull request has been opened for P16-C10.
+- The revised `.bas` and clean `.sclx.json` artifacts are preserved outside the Git-backed worktree.
+- Draft PR #280 published the exact approved branch, and head
+  `69c792bd81d53a2a3179080c3abad743b912556f` passed Maven PR Tests run `32084588634`.
+- PR #280 merged to `main` at `8838bc7a0f8d6092cb33e1801558129bf5eac2be`.
 
 Next exact action:
 
-- Review the local implementation and artifacts; if accepted, explicitly authorize pushing the two
-  local commits and opening a draft pull request to `main`.
+- None; the later owner-reported native counterparty portable-identity collision is isolated to P16-C11.
+
+## P16-C11 — Native SCLX portable-identity reconciliation
+
+Status: VERIFYING.
+
+Branch: `codex/P16-C11-native-portable-identity-reconciliation`
+Pull request: #281
+Base head: `8838bc7a0f8d6092cb33e1801558129bf5eac2be`
+
+Purpose:
+
+- Correct the owner-reported atomic rollback where the target already owns counterparty portable UUID
+  `b6b3cbc4-c5bf-3178-8330-e492d5b0f5b6`, but the source-scoped `interchange_identity` row is absent.
+- Reconcile native portable UUID authority during preview instead of classifying the incoming record as
+  new and discovering the collision through `uq_counterparty_portable_id` during commit.
+- Preserve record-level target/SCLX conflict choice, company isolation, exact-source re-preview, and the
+  one-transaction rollback boundary.
+
+Implementation and validation status:
+
+- Current `main` through merged PR #280 is the base; its merged branch was not reused.
+- Implementation commit `80ffd6b` adds bounded native UUID lookup for every SCLX entity family with an
+  intrinsic portable identity, while querying only the UUIDs present in the current normalized source.
+- An identical same-company counterparty or merchant is reused and receives the missing source identity;
+  differing master content becomes the existing record-level **Keep target** / **Take SCLX** conflict.
+  Protected accounting-history types retain only the safe target winner, and a UUID owned by another
+  company remains blocking.
+- Commit rechecks the native UUID, local record ID, and company owner inside the import transaction before
+  any business write. A native master source winner records a new source identity rather than calling the
+  update-only source-conflict path that requires an existing identity row.
+- Focused preview regressions cover identical reuse, differing master conflict, and cross-company
+  ownership. H2 commit regressions cover exact reuse plus missing-identity creation and the native
+  **Take SCLX** master update without a duplicate insert.
+- All 716 production and test Java sources parse under the Java 17 compiler module; the changed
+  dependency-free snapshot/preview records type-compile, and `git diff --check` passes. Maven and the
+  standalone `javac` launcher remain unavailable locally, so semantic compilation and focused/full H2
+  execution require Maven PR Tests after publication.
+- The owner authorized publication after confirming PR #280 merge state. Connected-GitHub remote
+  implementation commit `add3002e16c8247535eca729d4d6481cd168c57c` and handoff commit
+  `adf59267b7ab7b6faf1c8bb326f93af1f798d8c3` exactly match local trees `09a71654` and `a8c47aca`.
+- Draft PR #281 targets `main` from the fresh P16-C11 branch.
+- Maven PR Tests run `32089615271` compiled the implementation and ran 681 tests, then exposed nine H2
+  integration errors because this Hibernate/native-query path returns UUID columns as 16-byte arrays
+  rather than `java.util.UUID` values. The repeated suite and JavaFX gate correctly skipped after failure.
+- Corrective local commit `9aa4a33` decodes both native `UUID` objects and H2 16-byte UUID values without
+  changing portable-identity derivation. Connected-GitHub commit
+  `8ae4d07a004189e159613fa8e6395b3cb9cb6d91` exactly matches local corrected tree `b1f0c3ac`.
+- Exact corrected plan-inclusive head `7039f06f14b44fdd73db1d7781803612c0da58de` passed all three
+  Maven PR Tests gates in run `32089850888`: clean `mvn clean verify`, the deliberately repeated test
+  suite, and production JavaFX route compliance.
+
+Next exact action:
+
+- Confirm the final plan-inclusive PR #281 head passes Maven PR Tests, then retry the supplied SCLX import
+  in the owner desktop build.

@@ -146,6 +146,88 @@ class SclxImportPreviewServiceTest
     }
 
     @Test
+    void reusesIdenticalNativeCounterpartyWhenSourceIdentityRowIsMissing()
+    {
+        Path source = Path.of("src/test/resources/compatibility/sclx/donor-sclx-1.3.json");
+        String externalId = "person-donor";
+        SclxImportTargetSnapshot.NativePortableKey nativeKey =
+                SclxNativePortableIdentity.key("COUNTERPARTY", externalId);
+        ObjectNode canonicalCounterparty = new ObjectMapper().createObjectNode();
+        canonicalCounterparty.put("displayName", "Donor Counterparty");
+        canonicalCounterparty.put("kind", "OTHER");
+        canonicalCounterparty.putNull("email");
+        canonicalCounterparty.putNull("phone");
+        canonicalCounterparty.putNull("notes");
+        canonicalCounterparty.put("active", true);
+        SclxImportTargetSnapshot target = new SclxImportTargetSnapshot(
+                "TEST", "Test Company", true, true, Map.of(), Map.of(), Map.of(), Map.of(),
+                Map.of(nativeKey, new SclxImportTargetSnapshot.NativePortableFact(
+                        "63", "TEST", SclxNativePortableIdentity.incomingFingerprint(
+                                "COUNTERPARTY", canonicalCounterparty))),
+                List.of(), Set.of());
+
+        SclxImportPreview preview = service(target).preview(source);
+        SclxImportEntityPreview counterparty = preview.operation().items().stream()
+                .filter(item -> item.entityType().equals("COUNTERPARTY"))
+                .findFirst().orElseThrow();
+
+        assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+        assertEquals(InterchangeIdentityMatch.NEW, counterparty.identityMatch());
+        assertEquals("63", counterparty.localEntityId());
+        assertEquals(nativeKey.portableId().toString(), counterparty.nativePortableId());
+        assertTrue(preview.operation().messages().stream().anyMatch(message ->
+                message.code().equals("SCLX_NATIVE_PORTABLE_ID_REUSED")
+                        && message.path().equals(counterparty.path())));
+    }
+
+    @Test
+    void requiresRecordChoiceForDifferentNativeCounterpartyContent()
+    {
+        Path source = Path.of("src/test/resources/compatibility/sclx/donor-sclx-1.3.json");
+        String externalId = "person-donor";
+        SclxImportTargetSnapshot.NativePortableKey nativeKey =
+                SclxNativePortableIdentity.key("COUNTERPARTY", externalId);
+        SclxImportTargetSnapshot target = new SclxImportTargetSnapshot(
+                "TEST", "Test Company", true, true, Map.of(), Map.of(), Map.of(), Map.of(),
+                Map.of(nativeKey, new SclxImportTargetSnapshot.NativePortableFact(
+                        "63", "TEST", "0".repeat(64))),
+                List.of(), Set.of());
+
+        SclxImportPreview preview = service(target).preview(source);
+        SclxImportEntityPreview counterparty = preview.operation().items().stream()
+                .filter(item -> item.entityType().equals("COUNTERPARTY"))
+                .findFirst().orElseThrow();
+
+        assertTrue(preview.hasBlockingErrors());
+        assertEquals(InterchangeIdentityMatch.CONFLICT, counterparty.identityMatch());
+        assertTrue(counterparty.sourceChoiceAllowed());
+        assertTrue(preview.operation().messages().stream().anyMatch(message ->
+                message.code().equals("SCLX_CONFLICT_CHOICE_REQUIRED")
+                        && message.path().equals(counterparty.path())));
+    }
+
+    @Test
+    void blocksNativePortableIdentityOwnedByAnotherCompany()
+    {
+        Path source = Path.of("src/test/resources/compatibility/sclx/donor-sclx-1.3.json");
+        String externalId = "person-donor";
+        SclxImportTargetSnapshot.NativePortableKey nativeKey =
+                SclxNativePortableIdentity.key("COUNTERPARTY", externalId);
+        SclxImportTargetSnapshot target = new SclxImportTargetSnapshot(
+                "TEST", "Test Company", true, false, Map.of(), Map.of(), Map.of(), Map.of(),
+                Map.of(nativeKey, new SclxImportTargetSnapshot.NativePortableFact(
+                        "63", "OTHER", "0".repeat(64))),
+                List.of(), Set.of());
+
+        SclxImportPreview preview = service(target).preview(source);
+
+        assertTrue(preview.hasBlockingErrors());
+        assertTrue(preview.operation().messages().stream().anyMatch(message ->
+                message.code().equals("SCLX_NATIVE_PORTABLE_ID_OTHER_COMPANY")
+                        && message.path().contains("counterparties")));
+    }
+
+    @Test
     void dropsUnsupportedDonorRecordsIndividuallyAndCarriesChoicesIntoFreshPreview() throws Exception
     {
         ObjectMapper mapper = new ObjectMapper();
