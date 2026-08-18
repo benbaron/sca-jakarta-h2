@@ -11,7 +11,6 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
-import javafx.scene.control.ListCell;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
@@ -28,12 +27,15 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.interchange.InterchangeValidationMessage;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportConflictChoice;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportConflictSelection;
+import org.nonprofitbookkeeping.interchange.sclx.SclxImportDisposition;
+import org.nonprofitbookkeeping.interchange.sclx.SclxImportDispositionSelection;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportEntityPreview;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportCommitService;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportMappingRequirement;
@@ -65,6 +67,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -88,7 +91,7 @@ public class ImportPreviewPanel implements AppPanel
 		NormalizedBankCsvReviewService> normalizedBankCsvReviewService;
 	private final Label status = new Label(
 		"Choose an SCLX, COA CSV, OFX/QFX, mapped CSV, or normalized bank CSV file to preview before import.");
-	private final ListView<String> warnings = new ListView<>();
+	private final TableView<PreviewMessageRow> warnings = new TableView<>();
 	private final TextArea messageDetails = new TextArea();
 	private final TableView<CoaCsvMapper.CoaCsvRow> acceptedCoaRows =
 		new TableView<>();
@@ -109,7 +112,7 @@ public class ImportPreviewPanel implements AppPanel
 	private final Button previewSclx = new Button("Preview SCLX…");
 	private final Button repreviewSclx = new Button("Re-preview Same SCLX");
 	private final Button commitSclx = new Button("Import Previewed SCLX…");
-	private final Button applySclxMappings = new Button("Apply SCLX Choices");
+	private final Button applySclxMappings = new Button("Re-preview with SCLX Choices");
 	private final Button previewBank = new Button("Preview Bank OFX/QFX…");
 	private final Button previewBankCsv =
 		new Button("Preview Mapped Bank CSV…");
@@ -136,6 +139,8 @@ public class ImportPreviewPanel implements AppPanel
 	private final java.util.Map<String, String> sclxMappingSelections =
 		new LinkedHashMap<>();
 	private final java.util.Map<String, SclxImportConflictChoice> sclxConflictSelections =
+		new LinkedHashMap<>();
+	private final java.util.Map<String, SclxImportDisposition> sclxDispositionSelections =
 		new LinkedHashMap<>();
 	private boolean sclxMappingsDirty;
 	private final TableView<
@@ -180,7 +185,7 @@ public class ImportPreviewPanel implements AppPanel
 	{
 		this(previewService,
 			(SclxPreviewOperationFactory) () ->
-				(source, selections, conflicts) -> Objects.requireNonNull(
+				(source, selections, conflicts, dispositions) -> Objects.requireNonNull(
 				sclxPreview, "sclxPreview").apply(source),
 			companyCode ->
 			{
@@ -366,19 +371,11 @@ public class ImportPreviewPanel implements AppPanel
 		
 		warnings.setId("importPreviewMessages");
 		warnings.setPlaceholder(new Label("No validation messages."));
-		warnings.setCellFactory(list -> new ListCell<>()
-		{
-			@Override
-			protected void updateItem(String item, boolean empty)
-			{
-				super.updateItem(item, empty);
-				setText(empty ? null : item);
-				setTooltip(empty || item == null ? null : new Tooltip(item));
-			}
-		});
+		buildPreviewMessageTable();
 		warnings.getSelectionModel().selectedItemProperty().addListener(
 			(observable, oldValue, newValue) -> messageDetails.setText(
-				newValue == null ? "Select a message to see its complete text and resolution." : newValue));
+				newValue == null ? "Select a message to see its complete text and resolution."
+					: newValue.displayText()));
 		messageDetails.setId("importPreviewMessageResolution");
 		messageDetails.setEditable(false);
 		messageDetails.setWrapText(true);
@@ -682,6 +679,70 @@ public class ImportPreviewPanel implements AppPanel
 			.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
 		
 	}
+
+	private void buildPreviewMessageTable()
+	{
+		TableColumn<PreviewMessageRow, String> message =
+			wrappingColumn("Preview message", PreviewMessageRow::displayText);
+		message.setPrefWidth(760.0);
+		TableColumn<PreviewMessageRow, String> disposition =
+			stringColumn("Disposition", value -> value.selectedDisposition().displayName());
+		disposition.setPrefWidth(220.0);
+		disposition.setCellFactory(column -> new TableCell<>()
+		{
+			private final ComboBox<SclxImportDisposition> selector = new ComboBox<>();
+			private boolean updating;
+			{
+				selector.setOnAction(event ->
+				{
+					if (updating || getTableRow() == null || getTableRow().getItem() == null)
+						return;
+					PreviewMessageRow row = getTableRow().getItem();
+					SclxImportDisposition selected = selector.getValue();
+					if (row.message() == null || selected == null)
+						return;
+					String key = dispositionKey(row.message());
+					if (selected == SclxImportDisposition.NO_CHANGE)
+						sclxDispositionSelections.remove(key);
+					else
+						sclxDispositionSelections.put(key, selected);
+					markSclxChoicesDirty(
+						"Re-preview to apply the selected message disposition and retry validation.");
+				});
+			}
+
+			@Override
+			protected void updateItem(String value, boolean empty)
+			{
+				super.updateItem(value, empty);
+				PreviewMessageRow row = getTableRow() == null ? null : getTableRow().getItem();
+				if (empty || row == null)
+				{
+					setText(null);
+					setGraphic(null);
+					return;
+				}
+				updating = true;
+				try
+				{
+					selector.getItems().setAll(row.availableDispositions());
+					selector.setValue(row.selectedDisposition());
+					selector.setDisable(row.message() == null || row.availableDispositions().size() == 1);
+					selector.setTooltip(new Tooltip(row.message() == null
+						? "This preview family has no SCLX source correction."
+						: "Choose how the next SCLX preview should handle this message."));
+				}
+				finally
+				{
+					updating = false;
+				}
+				setText(null);
+				setGraphic(selector);
+			}
+		});
+		warnings.getColumns().addAll(message, disposition);
+		warnings.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+	}
 	
 	private void buildSclxEntityTable()
 	{
@@ -703,12 +764,8 @@ public class ImportPreviewPanel implements AppPanel
 					if (selected != null)
 					{
 						sclxConflictSelections.put(conflictKey(item), selected);
-						sclxMappingsDirty = true;
-						confirmSclxMappings.setSelected(false);
-						confirmExistingCompanyImport.setSelected(false);
-						applySclxMappings.setDisable(false);
-						updateSclxCommitAvailability();
-						status.setText("Apply the selected SCLX choices to run a fresh validation preview.");
+						markSclxChoicesDirty(
+							"Re-preview to apply the selected conflicting-record winner and retry validation.");
 					}
 				});
 			}
@@ -781,14 +838,14 @@ public class ImportPreviewPanel implements AppPanel
 					if (mapping != null && selected != null &&
 						!selected.isBlank())
 					{
-						sclxMappingSelections.put(mapping.sourceId(), selected);
-						sclxMappingsDirty = true;
-						confirmSclxMappings.setSelected(false);
-						confirmExistingCompanyImport.setSelected(false);
-						applySclxMappings.setDisable(false);
-						updateSclxCommitAvailability();
-						status.setText(
-							"Apply the selected SCLX mappings to run a fresh validation preview.");
+						String key = mappingKey(mapping);
+						if (mapping.resolution() == SclxImportMappingRequirement.Resolution.CREATE &&
+							selected.equals(mapping.targetCode()))
+							sclxMappingSelections.remove(key);
+						else
+							sclxMappingSelections.put(key, selected);
+						markSclxChoicesDirty(
+							"Re-preview to apply the selected SCLX target mapping and retry validation.");
 					}
 				});
 			}
@@ -805,7 +862,6 @@ public class ImportPreviewPanel implements AppPanel
 				}
 				SclxImportMappingRequirement mapping = getTableRow().getItem();
 				if (mapping.compatibleTargetCodes().isEmpty() ||
-					mapping.resolution() == SclxImportMappingRequirement.Resolution.CREATE ||
 					mapping.resolution() == SclxImportMappingRequirement.Resolution.AS_IS)
 				{
 					setText(Objects.toString(value, ""));
@@ -815,10 +871,16 @@ public class ImportPreviewPanel implements AppPanel
 				updating = true;
 				try
 				{
-					selector.getItems().setAll(mapping.compatibleTargetCodes());
-					String selected = sclxMappingSelections.get(mapping.sourceId());
-					if (selected == null && mapping.resolution() ==
-						SclxImportMappingRequirement.Resolution.MAPPED)
+					List<String> targets = new ArrayList<>();
+					if (mapping.targetCode() != null) targets.add(mapping.targetCode());
+					mapping.compatibleTargetCodes().stream()
+						.filter(candidate -> !targets.contains(candidate))
+						.forEach(targets::add);
+					selector.getItems().setAll(targets);
+					String selected = sclxMappingSelections.get(mappingKey(mapping));
+					if (selected == null &&
+						(mapping.resolution() == SclxImportMappingRequirement.Resolution.MAPPED ||
+						 mapping.resolution() == SclxImportMappingRequirement.Resolution.CREATE))
 					{
 						selected = mapping.targetCode();
 					}
@@ -839,7 +901,7 @@ public class ImportPreviewPanel implements AppPanel
 			stringColumn("Resolution", value -> value.resolution().name()),
 			stringColumn("Used", value -> value.used() ? "Yes" : "No"),
 			stringColumn("Blocking", value -> value.blocking() ? "Yes" : "No"),
-			stringColumn("Detail", SclxImportMappingRequirement::detail));
+			wrappingColumn("Detail", SclxImportMappingRequirement::detail));
 		sclxMappings
 			.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
 		
@@ -1028,8 +1090,49 @@ public class ImportPreviewPanel implements AppPanel
 		TableColumn<T, String> column = new TableColumn<>(title);
 		column.setCellValueFactory(cell -> new SimpleStringProperty(
 			Objects.toString(value.apply(cell.getValue()), "")));
+		column.setCellFactory(ignored -> new TableCell<>()
+		{
+			@Override
+			protected void updateItem(String item, boolean empty)
+			{
+				super.updateItem(item, empty);
+				setText(empty ? null : item);
+				setTooltip(empty || item == null || item.isBlank()
+					? null : new Tooltip(item));
+			}
+		});
 		return column;
 		
+	}
+
+	private static <T> TableColumn<T, String> wrappingColumn(String title,
+		Function<T, String> value)
+	{
+		TableColumn<T, String> column = stringColumn(title, value);
+		column.setCellFactory(ignored -> new TableCell<>()
+		{
+			private final Text text = new Text();
+			{
+				text.wrappingWidthProperty().bind(column.widthProperty().subtract(18.0));
+			}
+
+			@Override
+			protected void updateItem(String item, boolean empty)
+			{
+				super.updateItem(item, empty);
+				if (empty || item == null)
+				{
+					text.setText("");
+					setGraphic(null);
+					setTooltip(null);
+					return;
+				}
+				text.setText(item);
+				setGraphic(text);
+				setTooltip(item.isBlank() ? null : new Tooltip(item));
+			}
+		});
+		return column;
 	}
 	
 	private static
@@ -1116,7 +1219,7 @@ public class ImportPreviewPanel implements AppPanel
 			() -> UiServiceRegistry.coaCsvImport().commit(confirmed, actor),
 			result ->
 			{
-				warnings.getItems().setAll(result.errors());
+				showTextMessages(result.errors());
 				
 				if (result.committed())
 				{
@@ -1314,7 +1417,7 @@ public class ImportPreviewPanel implements AppPanel
 				ArrayList<String> messages = new ArrayList<>(result.warnings());
 				result.blockingErrors()
 					.forEach(message -> messages.add("BLOCKING: " + message));
-				warnings.getItems().setAll(messages);
+				showTextMessages(messages);
 				commitAccepted.setDisable(result.acceptedRows().isEmpty() ||
 					result.hasBlockingErrors());
 				previewTabs.getSelectionModel().select(0);
@@ -1339,13 +1442,14 @@ public class ImportPreviewPanel implements AppPanel
 	
 	private void previewSclx(Path file)
 	{
-		previewSclx(file, List.of(), List.of());
+		previewSclx(file, List.of(), List.of(), List.of());
 	}
 
 	private void previewSclx(
 		Path file,
 		List<SclxImportMappingSelection> selections,
-		List<SclxImportConflictSelection> conflictSelections)
+		List<SclxImportConflictSelection> conflictSelections,
+		List<SclxImportDispositionSelection> dispositionSelections)
 	{
 		clearCoaPreview();
 		clearSclxPreview();
@@ -1377,13 +1481,21 @@ public class ImportPreviewPanel implements AppPanel
 			"import-preview-sclx",
 			"Reading and validating SCLX",
 			"SCLX preview cancelled before commit; no data was changed.",
-			() -> fixedScopePreview.preview(file, selections, conflictSelections), result ->
+			() -> fixedScopePreview.preview(
+				file, selections, conflictSelections, dispositionSelections), result ->
 			{
 				previewSclx.setDisable(false);
 				selections.forEach(selection -> sclxMappingSelections.put(
-					selection.sourceId(), selection.targetCode()));
+					mappingKey(selection.kind(), selection.sourceId()), selection.targetCode()));
 				conflictSelections.forEach(selection -> sclxConflictSelections.put(
 					conflictKey(selection.entityType(), selection.externalId()), selection.choice()));
+				dispositionSelections.forEach(selection ->
+				{
+					if (selection.disposition() == SclxImportDisposition.NO_CHANGE)
+						sclxDispositionSelections.remove(selection.key());
+					else
+						sclxDispositionSelections.put(selection.key(), selection.disposition());
+				});
 				applySclxPreview(file, result);
 			}, ex -> {
 				previewSclx.setDisable(false);
@@ -1406,18 +1518,21 @@ public class ImportPreviewPanel implements AppPanel
 			return;
 		}
 		List<SclxImportMappingSelection> selections = preview.mappings().stream()
-			.filter(mapping -> sclxMappingSelections.containsKey(mapping.sourceId()))
+			.filter(mapping -> sclxMappingSelections.containsKey(mappingKey(mapping)))
 			.map(mapping -> new SclxImportMappingSelection(
 				mapping.kind(), mapping.sourceId(),
-				sclxMappingSelections.get(mapping.sourceId())))
+				sclxMappingSelections.get(mappingKey(mapping))))
 			.toList();
 		List<SclxImportConflictSelection> conflictSelections = conflictSelections(preview);
-		if (selections.isEmpty() && conflictSelections.isEmpty())
+		List<SclxImportDispositionSelection> dispositionSelections =
+			dispositionSelections(preview);
+		if (selections.isEmpty() && conflictSelections.isEmpty() &&
+			dispositionSelections.isEmpty())
 		{
 			status.setText("Select at least one account/fund mapping or conflicting-record winner first.");
 			return;
 		}
-		previewSclx(source, selections, conflictSelections);
+		previewSclx(source, selections, conflictSelections, dispositionSelections);
 	}
 
 	private void repreviewSameSclx()
@@ -1430,12 +1545,35 @@ public class ImportPreviewPanel implements AppPanel
 			return;
 		}
 		List<SclxImportMappingSelection> selections = preview.mappings().stream()
-			.filter(mapping -> sclxMappingSelections.containsKey(mapping.sourceId()))
+			.filter(mapping -> sclxMappingSelections.containsKey(mappingKey(mapping)))
 			.map(mapping -> new SclxImportMappingSelection(
 				mapping.kind(), mapping.sourceId(),
-				sclxMappingSelections.get(mapping.sourceId())))
+				sclxMappingSelections.get(mappingKey(mapping))))
 			.toList();
-		previewSclx(source, selections, conflictSelections(preview));
+		previewSclx(source, selections, conflictSelections(preview),
+			dispositionSelections(preview));
+	}
+
+	private List<SclxImportDispositionSelection> dispositionSelections(
+		SclxImportPreview preview)
+	{
+		java.util.Map<String, InterchangeValidationMessage> messages =
+			new LinkedHashMap<>();
+		preview.operation().messages().forEach(message ->
+			messages.put(dispositionKey(message), message));
+		preview.dispositions().forEach(selection -> messages.putIfAbsent(
+			selection.key(), new InterchangeValidationMessage(
+				org.nonprofitbookkeeping.interchange.InterchangeMessageSeverity.INFO,
+				selection.code(), selection.path(), "Previously selected disposition.", false)));
+		return sclxDispositionSelections.entrySet().stream()
+			.filter(entry -> messages.containsKey(entry.getKey()))
+			.map(entry ->
+			{
+				InterchangeValidationMessage message = messages.get(entry.getKey());
+				return new SclxImportDispositionSelection(
+					message.code(), message.path(), entry.getValue());
+			})
+			.toList();
 	}
 
 	private List<SclxImportConflictSelection> conflictSelections(SclxImportPreview preview)
@@ -1457,6 +1595,27 @@ public class ImportPreviewPanel implements AppPanel
 	{
 		return entityType + "\u0000" + externalId;
 	}
+
+	private static String mappingKey(SclxImportMappingRequirement mapping)
+	{
+		return mappingKey(mapping.kind(), mapping.sourceId());
+	}
+
+	private static String mappingKey(
+		SclxImportMappingRequirement.Kind kind, String sourceId)
+	{
+		return kind.name() + "\u0000" + sourceId;
+	}
+
+	private void markSclxChoicesDirty(String message)
+	{
+		sclxMappingsDirty = true;
+		confirmSclxMappings.setSelected(false);
+		confirmExistingCompanyImport.setSelected(false);
+		applySclxMappings.setDisable(false);
+		updateSclxCommitAvailability();
+		status.setText(message);
+	}
 	
 	void applySclxPreview(SclxImportPreview result)
 	{
@@ -1475,6 +1634,8 @@ public class ImportPreviewPanel implements AppPanel
 		lastSclxPreview = result;
 		lastSclxCommitService = null;
 		sclxMappingsDirty = false;
+		result.dispositions().forEach(selection ->
+			sclxDispositionSelections.put(selection.key(), selection.disposition()));
 		boolean mappingsRequired = result.recommendedAccountMode() ==
 			org.nonprofitbookkeeping.interchange.sclx.SclxAccountMode.MAPPED;
 		boolean existingCompanyApprovalRequired = result.targetPopulated() &&
@@ -1507,9 +1668,7 @@ public class ImportPreviewPanel implements AppPanel
 		sclxEntities.getItems().setAll(result.operation().items());
 		sclxMappings.getItems().setAll(result.mappings());
 		sclxTransactions.getItems().setAll(result.transactions());
-		warnings.getItems().setAll(result.operation().messages().stream()
-			.map(ImportPreviewPanel::displayMessage)
-			.toList());
+		showSclxMessages(result.operation().messages());
 		int firstBlockingMessage = -1;
 		for (int index = 0; index < result.operation().messages().size(); index++)
 		{
@@ -1523,7 +1682,7 @@ public class ImportPreviewPanel implements AppPanel
 		{
 			int selectedMessage = firstBlockingMessage >= 0 ? firstBlockingMessage : 0;
 			warnings.getSelectionModel().select(selectedMessage);
-			messageDetails.setText(warnings.getItems().get(selectedMessage));
+			messageDetails.setText(warnings.getItems().get(selectedMessage).displayText());
 		}
 		sclxCounts.getItems()
 			.setAll(result.sectionCounts().entitiesByType().entrySet().stream()
@@ -1642,11 +1801,15 @@ public class ImportPreviewPanel implements AppPanel
 	
 	static String sclxCompatibilityConfirmationText(SclxImportPreview preview)
 	{
-		List<String> decisions = preview.operation().messages().stream()
+		List<String> decisions = new ArrayList<>(preview.operation().messages().stream()
 			.filter(message -> message.code().startsWith("SCLX_DONOR_"))
 			.map(InterchangeValidationMessage::message)
 			.distinct()
-			.toList();
+			.toList());
+		preview.dispositions().stream()
+			.map(selection -> selection.disposition().displayName() + " — " +
+				selection.code() + " [" + selection.path() + "]")
+			.forEach(decisions::add);
 
 		if (decisions.isEmpty())
 		{
@@ -1661,9 +1824,8 @@ public class ImportPreviewPanel implements AppPanel
 	private void applySclxImportResult(SclxImportResult result)
 	{
 		previewSclx.setDisable(false);
-		warnings.getItems().setAll(result.messages().stream()
-			.map(ImportPreviewPanel::displayMessage)
-			.toList());
+		showTextMessages(result.messages().stream()
+			.map(ImportPreviewPanel::displayMessage).toList());
 		
 		if (result.committed())
 		{
@@ -1675,6 +1837,7 @@ public class ImportPreviewPanel implements AppPanel
 			applySclxMappings.setDisable(true);
 			sclxMappingSelections.clear();
 			sclxConflictSelections.clear();
+			sclxDispositionSelections.clear();
 			sclxMappingsDirty = false;
 			confirmSclxMappings.setSelected(false);
 			confirmSclxMappings.setVisible(false);
@@ -1700,6 +1863,7 @@ public class ImportPreviewPanel implements AppPanel
 		applySclxMappings.setDisable(true);
 		sclxMappingSelections.clear();
 		sclxConflictSelections.clear();
+		sclxDispositionSelections.clear();
 		sclxMappingsDirty = false;
 		confirmSclxMappings.setSelected(false);
 		confirmSclxMappings.setVisible(false);
@@ -1719,6 +1883,49 @@ public class ImportPreviewPanel implements AppPanel
 		return message.severity() + " " + message.code() + path + ": " +
 			message.message();
 		
+	}
+
+	private void showTextMessages(List<String> messages)
+	{
+		warnings.getItems().setAll(messages.stream()
+			.map(PreviewMessageRow::textOnly)
+			.toList());
+	}
+
+	private void showSclxMessages(List<InterchangeValidationMessage> messages)
+	{
+		warnings.getItems().setAll(messages.stream()
+			.map(message -> PreviewMessageRow.sclx(
+				message,
+				sclxDispositionSelections.getOrDefault(
+					dispositionKey(message), SclxImportDisposition.NO_CHANGE)))
+			.toList());
+	}
+
+	private static String dispositionKey(InterchangeValidationMessage message)
+	{
+		return SclxImportDispositionSelection.key(message.code(), message.path());
+	}
+
+	private static List<SclxImportDisposition> availableDispositions(
+		InterchangeValidationMessage message)
+	{
+		List<SclxImportDisposition> result = new ArrayList<>();
+		result.add(SclxImportDisposition.NO_CHANGE);
+		if (!message.blocking())
+			result.add(SclxImportDisposition.IGNORE);
+		if (Set.of("SCLX_DATE_REQUIRED", "SCLX_DATE_INVALID",
+			"SCLX_DONOR_ACCOUNT_TYPE_UNSUPPORTED").contains(message.code()))
+			result.add(SclxImportDisposition.MAKE_SUGGESTED_CORRECTION);
+		if (droppablePath(message.path()))
+			result.add(SclxImportDisposition.DROP_RECORD);
+		return List.copyOf(result);
+	}
+
+	private static boolean droppablePath(String path)
+	{
+		return path != null && path.startsWith("$.") &&
+			(path.matches(".*\\[\\d+\\].*") || path.indexOf('.', 2) < 0);
 	}
 	
 	private void clearCoaPreview()
@@ -1740,6 +1947,7 @@ public class ImportPreviewPanel implements AppPanel
 		applySclxMappings.setDisable(true);
 		sclxMappingSelections.clear();
 		sclxConflictSelections.clear();
+		sclxDispositionSelections.clear();
 		sclxMappingsDirty = false;
 		confirmSclxMappings.setSelected(false);
 		confirmSclxMappings.setVisible(false);
@@ -1875,9 +2083,8 @@ public class ImportPreviewPanel implements AppPanel
 		confirmBankIdentity.setSelected(false);
 		bankRows.getItems().setAll(result.lines());
 		bankCsvOriginalRows.getItems().clear();
-		warnings.getItems().setAll(result.messages().stream()
-			.map(ImportPreviewPanel::displayMessage)
-			.toList());
+		showTextMessages(result.messages().stream()
+			.map(ImportPreviewPanel::displayMessage).toList());
 		previewTabs.getSelectionModel().select(5);
 		updateBankCommitAvailability();
 		status.setText("Previewed normalized bank CSV 1.0 for " +
@@ -1900,9 +2107,8 @@ public class ImportPreviewPanel implements AppPanel
 		confirmBankIdentity.setSelected(false);
 		bankRows.getItems().setAll(result.lines());
 		bankCsvOriginalRows.getItems().setAll(originalRows);
-		warnings.getItems().setAll(result.messages().stream()
-			.map(ImportPreviewPanel::displayMessage)
-			.toList());
+		showTextMessages(result.messages().stream()
+			.map(ImportPreviewPanel::displayMessage).toList());
 		previewTabs.getSelectionModel().select(5);
 		updateBankCommitAvailability();
 		status.setText("Previewed " + result.document().variant() + " " +
@@ -2194,7 +2400,42 @@ public class ImportPreviewPanel implements AppPanel
 		SclxImportPreview preview(
 			Path source,
 			List<SclxImportMappingSelection> selections,
-			List<SclxImportConflictSelection> conflictSelections);
+			List<SclxImportConflictSelection> conflictSelections,
+			List<SclxImportDispositionSelection> dispositionSelections);
+	}
+
+	private record PreviewMessageRow(
+		String displayText,
+		InterchangeValidationMessage message,
+		List<SclxImportDisposition> availableDispositions,
+		SclxImportDisposition selectedDisposition)
+	{
+		private PreviewMessageRow
+		{
+			displayText = Objects.toString(displayText, "");
+			availableDispositions = List.copyOf(availableDispositions);
+			selectedDisposition = selectedDisposition == null
+				? SclxImportDisposition.NO_CHANGE : selectedDisposition;
+		}
+
+		static PreviewMessageRow textOnly(String text)
+		{
+			return new PreviewMessageRow(text, null,
+				List.of(SclxImportDisposition.NO_CHANGE),
+				SclxImportDisposition.NO_CHANGE);
+		}
+
+		static PreviewMessageRow sclx(
+			InterchangeValidationMessage message,
+			SclxImportDisposition selected)
+		{
+			List<SclxImportDisposition> available =
+				ImportPreviewPanel.availableDispositions(message);
+			SclxImportDisposition effective = available.contains(selected)
+				? selected : SclxImportDisposition.NO_CHANGE;
+			return new PreviewMessageRow(displayMessage(message), message,
+				available, effective);
+		}
 	}
 	
 }

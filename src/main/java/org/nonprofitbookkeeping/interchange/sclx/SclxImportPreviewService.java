@@ -97,14 +97,14 @@ public final class SclxImportPreviewService
 
     public SclxImportPreview preview(Path source)
     {
-        return preview(source, List.of(), List.of());
+        return preview(source, List.of(), List.of(), List.of());
     }
 
     public SclxImportPreview preview(
             Path source,
             List<SclxImportMappingSelection> mappingSelections)
     {
-        return preview(source, mappingSelections, List.of());
+        return preview(source, mappingSelections, List.of(), List.of());
     }
 
     public SclxImportPreview preview(
@@ -112,10 +112,20 @@ public final class SclxImportPreviewService
             List<SclxImportMappingSelection> mappingSelections,
             List<SclxImportConflictSelection> conflictSelections)
     {
+        return preview(source, mappingSelections, conflictSelections, List.of());
+    }
+
+    public SclxImportPreview preview(
+            Path source,
+            List<SclxImportMappingSelection> mappingSelections,
+            List<SclxImportConflictSelection> conflictSelections,
+            List<SclxImportDispositionSelection> dispositionSelections)
+    {
         Objects.requireNonNull(source, "source");
         Objects.requireNonNull(mappingSelections, "mappingSelections");
         Objects.requireNonNull(conflictSelections, "conflictSelections");
-        SclxParsedDocument document = parser.parse(source);
+        Objects.requireNonNull(dispositionSelections, "dispositionSelections");
+        SclxParsedDocument document = parser.parse(source, dispositionSelections);
         List<InterchangeValidationMessage> messages = new ArrayList<>();
         document.compatibilityNotices().forEach(notice -> messages.add(message(
                 notice.blocking() ? InterchangeMessageSeverity.ERROR : InterchangeMessageSeverity.WARNING,
@@ -146,6 +156,8 @@ public final class SclxImportPreviewService
                             + target.companyCode() + ". The target scope remains explicit and unchanged.",
                     false));
         }
+
+        applyIgnoredDispositions(messages, dispositionSelections);
 
         long warnings = messages.stream()
                 .filter(value -> value.severity() == InterchangeMessageSeverity.WARNING)
@@ -212,7 +224,59 @@ public final class SclxImportPreviewService
                 mapping.recommendedMode(),
                 extraction.counts(),
                 mapping.requirements(),
-                transactionResult.previews());
+                transactionResult.previews(),
+                dispositionSelections.stream()
+                        .filter(value -> value.disposition() != SclxImportDisposition.NO_CHANGE)
+                        .toList());
+    }
+
+    private static void applyIgnoredDispositions(
+            List<InterchangeValidationMessage> messages,
+            List<SclxImportDispositionSelection> selections)
+    {
+        Set<String> handled = new HashSet<>();
+        for (SclxImportDispositionSelection selection : selections)
+        {
+            if (selection.disposition() != SclxImportDisposition.IGNORE
+                    || !handled.add(selection.key()))
+            {
+                continue;
+            }
+            List<InterchangeValidationMessage> matches = messages.stream()
+                    .filter(message -> message.code().equals(selection.code())
+                            && message.path().equals(selection.path()))
+                    .toList();
+            if (matches.isEmpty())
+            {
+                messages.add(message(
+                        InterchangeMessageSeverity.ERROR,
+                        "SCLX_DISPOSITION_MESSAGE_CHANGED",
+                        selection.path(),
+                        "The ignored preview message is no longer present. Review the fresh messages and choose again.",
+                        true));
+                continue;
+            }
+            if (matches.stream().anyMatch(InterchangeValidationMessage::blocking))
+            {
+                messages.add(message(
+                        InterchangeMessageSeverity.ERROR,
+                        "SCLX_DISPOSITION_UNSUPPORTED",
+                        selection.path(),
+                        "Ignore cannot bypass blocking message " + selection.code()
+                                + ". Apply a supported correction or drop the affected record.",
+                        true));
+                continue;
+            }
+            messages.removeIf(message -> message.code().equals(selection.code())
+                    && message.path().equals(selection.path()));
+            messages.add(message(
+                    InterchangeMessageSeverity.INFO,
+                    "SCLX_DISPOSITION_APPLIED",
+                    selection.path(),
+                    "Ignored nonblocking message " + selection.code()
+                            + " for this preview and exact-source commit.",
+                    false));
+        }
     }
 
     private static void addOwnershipDiagnostics(
@@ -612,7 +676,10 @@ public final class SclxImportPreviewService
             return new SclxImportMappingRequirement(
                     SclxImportMappingRequirement.Kind.ACCOUNT, sourceId, sourceCode,
                     targetId, sourceCode, used, SclxImportMappingRequirement.Resolution.CREATE,
-                    "No target account uses this code; the import will create it in the existing chart.", false);
+                    "No target account uses this code; the import will create it in the existing chart. "
+                            + (candidates.isEmpty() ? ""
+                            : "Select a compatible existing target to map it instead."),
+                    false, candidates);
         }
         boolean compatible = compatibleAccount(source, used, local);
         if (!compatible)
@@ -684,7 +751,10 @@ public final class SclxImportPreviewService
             return new SclxImportMappingRequirement(
                     SclxImportMappingRequirement.Kind.FUND, sourceId, sourceCode,
                     targetId, sourceCode, used, SclxImportMappingRequirement.Resolution.CREATE,
-                    "No target fund uses this code; the import will create it in the existing company.", false);
+                    "No target fund uses this code; the import will create it in the existing company. "
+                            + (candidates.isEmpty() ? ""
+                            : "Select a compatible existing target to map it instead."),
+                    false, candidates);
         }
         boolean compatible = compatibleFund(source, used, local);
         if (!compatible)

@@ -197,7 +197,8 @@ public final class SclxImportCommitService
                         value.entityType(), value.externalId(), value.conflictChoice()))
                 .toList();
         SclxImportPreview current = previewService.preview(
-                source, approvedSelections, approvedConflictSelections);
+                source, approvedSelections, approvedConflictSelections,
+                approvedPreview.dispositions());
         if (!approvedPreview.operation().sourceSha256().equals(current.operation().sourceSha256()))
         {
             throw new IllegalStateException("SCLX source changed after preview; preview it again before importing.");
@@ -232,7 +233,7 @@ public final class SclxImportCommitService
             throw new IllegalStateException(
                     "Approve the nondestructive SCLX import into the existing company before importing.");
         }
-        SclxParsedDocument parsed = parser.parse(source);
+        SclxParsedDocument parsed = parser.parse(source, approvedPreview.dispositions());
         if (!parsed.sha256().equals(current.operation().sourceSha256()))
         {
             throw new IllegalStateException("SCLX source changed while commit validation was running.");

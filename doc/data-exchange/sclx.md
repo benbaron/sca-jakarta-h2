@@ -55,7 +55,10 @@ SCLX MUST NOT contain:
 - generic Import/Export Jobs or a generic durable job log; or
 - records belonging to another company.
 
-Unsupported donor sections MUST be reported by section and count. They MUST NOT be silently converted into unrelated application concepts.
+Unsupported donor sections MUST be reported by section and count. When a section is an array, preview
+MUST also identify each unsupported record by its stable source path so an explicit record-level
+disposition can remove only the selected record. Unsupported facts MUST NOT be silently converted into
+unrelated application concepts.
 
 ## 5. Portable identity and references
 
@@ -106,6 +109,10 @@ transactions, budgets, parties/merchants, banking, assets, inventory, reconcilia
 and audit history do not block import merely because they exist.
 Preview distinguishes `CREATE` from `MAPPED`, offers only type/balance/active/posting-compatible target
 choices, and requires a fresh preview plus explicit approval of the complete effective mapping. The
+**Target / Select** cell is a combo box whenever one or more safe alternate targets exist; its initial
+value is the preview's default, and selecting another target has no effect until **Re-preview with SCLX
+Choices** recomputes the complete preview. The mapping Detail cell wraps and retains a full-text tooltip
+while the table keeps normal horizontal scrolling. The
 import preserves target organization settings and chart metadata, records durable SCLX identities for
 reused accounts/funds, and adds the remaining governed graph atomically. A direct ownerless Activity
 assigned to the selected active import company is treated as target master data, not evidence of a
@@ -133,7 +140,8 @@ The compatibility boundary:
 - accepts a numeric `exportedAt` only as exact epoch seconds with at most nanosecond precision and
   normalizes it to RFC 3339 UTC;
 - maps donor account aliases (`Number`, `Name`, `Type`, `Parent`, `IncreaseSide`, and
-  `OpeningBalance`) and donor fund defaults to canonical import fields;
+  `OpeningBalance`) and donor fund defaults to canonical import fields, including the donor account-type
+  alias `REVENUE` as canonical `INCOME`;
 - maps donor `people` to canonical counterparties and preserves transaction person links;
 - converts donor `[year, month, day]` arrays to ISO dates and donor `POSTED` status to canonical
   `ENTERED`;
@@ -144,8 +152,22 @@ The compatibility boundary:
 - skips noncanonical donor budget shells only when every contained amount is zero, while removing their
   workbook-only transaction annotations. A non-zero donor budget remains blocking.
 
-Populated unsupported donor root sections remain blocking. They are reported by section and are never
-silently reinterpreted as unrelated canonical data.
+Donor transaction rows with no nonzero posting lines are workbook annotations, not ledger facts. They
+are removed before transaction-date validation and reported as
+`SCLX_DONOR_NONPOSTING_TRANSACTIONS_SKIPPED`. A missing or invalid date on a transaction that does have a
+posting line remains a blocking canonical error.
+
+Populated unsupported donor root sections remain blocking. Array entries are reported at paths such as
+`$.assets[0]`, so **Drop record** can be applied to exactly one entry; they are never silently
+reinterpreted as unrelated canonical data.
+
+The owner-supplied standalone workbook bridge follows the same boundary. Its assumed Cash/Asset
+counter-entry is a generated line inside the owning unbalanced transaction, never another top-level
+transaction. It exports only dated posting transactions within the workbook reporting period, emits
+canonical `INCOME` rather than `REVENUE`, omits empty donor budget shells, and emits supplemental detail
+only when a workbook ledger reference resolves to an exported transaction. Workbook schedules that lack
+the account, fund, date, depreciation, or transaction linkage required for a lossless canonical record
+are excluded and disclosed instead of guessed.
 
 ## 8. Application extensions
 
@@ -294,9 +316,21 @@ shows:
 - exact entity counts by governed section plus total entities, references, relationships, and unsupported sections;
 - every external identity disposition as `NEW`, `IDENTICAL`, or `CONFLICT`, with a record-by-record
   winner selector for each conflict and explicit availability of the source winner;
-- every account and fund mapping with `CREATE`, `AS_IS`, `MAPPED`, `CONFLICT`, or `UNRESOLVED` resolution;
+- every account and fund mapping with `CREATE`, `AS_IS`, `MAPPED`, `CONFLICT`, or `UNRESOLVED` resolution
+  and a **Target / Select** combo for every safe alternate target;
 - transaction posting-line, zero-value-line, balance, closed-period, and finalized-reconciliation diagnostics; and
-- every warning and blocking error with its stable code and source path.
+- every warning and blocking error in a two-column table with its stable code/source path and a
+  disposition combo.
+
+The message disposition defaults to **No change**. **Ignore** is available only for nonblocking
+messages; it cannot bypass a canonical invariant. **Make suggested correction** is available only for a
+bounded correction implemented by policy. **Drop record** removes the nearest explicitly identified
+array record (or the identified root section) from the in-memory import view. The source file remains
+unchanged. **Re-preview with SCLX Choices** applies message dispositions, mapping targets, and conflict
+winners together, then reparses and revalidates from the exact source bytes. An unsupported selection or
+a message that changed identity becomes a new blocking diagnostic rather than being silently accepted.
+The retained preview records every effective non-default disposition, and commit reuses those decisions
+while re-reading the same SHA-256 source.
 
 The status text names the source, SCLX version, explicit target company, recommended account mode,
 new/mapped/identical/error totals, and whether the preview is blocked. It always states that no data was

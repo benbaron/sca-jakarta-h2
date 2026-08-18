@@ -22,6 +22,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Objects;
 
 /** Strict, bounded, non-mutating reader for governed SCLX JSON documents. */
@@ -55,7 +56,15 @@ public final class SclxDocumentParser
 
     public SclxParsedDocument parse(Path source)
     {
+        return parse(source, List.of());
+    }
+
+    public SclxParsedDocument parse(
+            Path source,
+            List<SclxImportDispositionSelection> dispositionSelections)
+    {
         Objects.requireNonNull(source, "source");
+        Objects.requireNonNull(dispositionSelections, "dispositionSelections");
         Path normalized = source.toAbsolutePath().normalize();
         try
         {
@@ -69,7 +78,7 @@ public final class SclxDocumentParser
                 throw new IllegalArgumentException(
                         "SCLX source exceeds the supported maximum of " + MAX_FILE_BYTES + " bytes");
             }
-            return parse(Files.readAllBytes(normalized));
+            return parse(Files.readAllBytes(normalized), dispositionSelections);
         }
         catch (IOException ex)
         {
@@ -79,7 +88,15 @@ public final class SclxDocumentParser
 
     SclxParsedDocument parse(byte[] originalBytes)
     {
+        return parse(originalBytes, List.of());
+    }
+
+    SclxParsedDocument parse(
+            byte[] originalBytes,
+            List<SclxImportDispositionSelection> dispositionSelections)
+    {
         Objects.requireNonNull(originalBytes, "originalBytes");
+        Objects.requireNonNull(dispositionSelections, "dispositionSelections");
         if (originalBytes.length > MAX_FILE_BYTES)
         {
             throw new IllegalArgumentException(
@@ -118,15 +135,18 @@ public final class SclxDocumentParser
         SclxDonorCompatibilityNormalizer.Normalization normalization =
                 SclxDonorCompatibilityNormalizer.normalize(
                         (ObjectNode) root, exportedAt.value(), exportedAt.numeric());
+        SclxImportDispositionApplier.Result dispositions =
+                SclxImportDispositionApplier.apply(
+                        normalization.root(), normalization.notices(), dispositionSelections);
 
         return new SclxParsedDocument(
                 version,
                 exportedAt.value(),
-                normalization.root(),
+                dispositions.root(),
                 originalBytes.length,
                 sha256(originalBytes),
                 bomStripped,
-                normalization.notices());
+                dispositions.notices());
     }
 
     private static ExportedAt parseExportedAt(JsonNode node)

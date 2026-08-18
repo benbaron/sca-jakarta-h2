@@ -119,10 +119,12 @@ class ImportPreviewPanelSclxTest
             panel.applySclxPreview(blocked);
 
             Label status = (Label) panel.root().lookup("#importPreviewStatus");
-            ListView<?> messages = (ListView<?>) panel.root().lookup("#importPreviewMessages");
+            TableView<?> messages = (TableView<?>) panel.root().lookup("#importPreviewMessages");
             TextArea resolution = (TextArea) panel.root().lookup("#importPreviewMessageResolution");
             assertTrue(status.getText().contains("BLOCKED"));
             assertEquals(0, messages.getSelectionModel().getSelectedIndex());
+            assertEquals(List.of("Preview message", "Disposition"), messages.getColumns().stream()
+                    .map(column -> column.getText()).toList());
             assertTrue(resolution.getText().contains("Administration -> Company Ownership Diagnostics"));
             assertTrue(resolution.getText().contains("Resolution:"));
             return null;
