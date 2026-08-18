@@ -90,6 +90,16 @@ An import preview classifies incoming records as:
 
 `IDENTICAL` records are idempotent skips. `CONFLICT`, unresolved required references, and exact duplicates are blocking until an explicit supported resolution is selected. Probable duplicates are warnings requiring review.
 
+Source-specific identity lookup is not allowed to hide an already-persisted intrinsic portable UUID.
+When no matching `interchange_identity` row exists, preview also checks the incoming intrinsic UUID (or
+the governed deterministic fallback used by older donor identities) against the native company-owned
+record. An identical counterparty or merchant is reused and receives the missing source identity in the
+same import transaction. Differing native records enter the same record-level **Keep target** / **Take
+SCLX** conflict workflow; protected accounting-history types do not offer an unsafe source replacement.
+A native UUID owned by another company remains a blocking ownership conflict. Commit rechecks the native
+UUID, local record, and company owner inside the caller-owned transaction before any imported business
+write, so a stale preview cannot fall through to a database uniqueness violation.
+
 ## 6. Account-reference modes
 
 Import supports exactly two account-reference modes:

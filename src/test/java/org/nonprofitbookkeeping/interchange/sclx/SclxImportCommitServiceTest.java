@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.nonprofitbookkeeping.interchange.InterchangeIdentityMatch;
 import org.nonprofitbookkeeping.interchange.InterchangeValidationMessage;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
@@ -27,6 +28,8 @@ import org.nonprofitbookkeeping.model.Bank;
 import org.nonprofitbookkeeping.model.BankImportBatch;
 import org.nonprofitbookkeeping.model.BankStatementLine;
 import org.nonprofitbookkeeping.model.CompanyBankAccount;
+import org.nonprofitbookkeeping.model.Counterparty;
+import org.nonprofitbookkeeping.model.CounterpartyKind;
 import org.nonprofitbookkeeping.model.ImportIssue;
 import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.model.FundType;
@@ -126,6 +129,119 @@ class SclxImportCommitServiceTest
                         .getResultList();
                 assertEquals(2, splits.size());
                 assertTrue(splits.stream().allMatch(split -> "General Fund".equals(split.getFund().getName())));
+            }
+        }
+    }
+
+    @Test
+    void reusesNativeCounterpartyAndRecordsMissingSourceIdentity(@TempDir Path tempDir)
+    {
+        Path source = Path.of("src/test/resources/compatibility/sclx/donor-sclx-1.3.json");
+        UUID portableId = SclxNativePortableIdentity.portableUuid("person-donor");
+        try (Jpa jpa = new Jpa(tempDir.resolve("native-counterparty-reuse")))
+        {
+            seedEmptyTarget(jpa);
+            Long existingId;
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                Counterparty counterparty = new Counterparty();
+                counterparty.setCompany(company(em));
+                counterparty.setPortableId(portableId);
+                counterparty.setDisplayName("Donor Counterparty");
+                counterparty.setKind(CounterpartyKind.OTHER);
+                counterparty.setActive(true);
+                em.persist(counterparty);
+                em.getTransaction().commit();
+                existingId = counterparty.getId();
+            }
+
+            SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
+            SclxImportEntityPreview counterpartyPreview = preview.operation().items().stream()
+                    .filter(item -> item.entityType().equals("COUNTERPARTY"))
+                    .findFirst().orElseThrow();
+            assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+            assertEquals(InterchangeIdentityMatch.NEW, counterpartyPreview.identityMatch());
+            assertEquals(String.valueOf(existingId), counterpartyPreview.localEntityId());
+
+            SclxImportResult result = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, preview, "tester", false, true);
+
+            assertTrue(result.committed(), () -> result.messages().toString());
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals(1L, count(em, "select count(c) from Counterparty c"));
+                assertEquals(existingId, em.createQuery(
+                                "select c.id from Counterparty c where c.portableId = :portableId", Long.class)
+                        .setParameter("portableId", portableId)
+                        .getSingleResult());
+                assertEquals(1L, em.createQuery("""
+                                select count(i) from InterchangeIdentity i
+                                where i.company.code = :companyCode
+                                  and i.formatCode = 'SCLX'
+                                  and i.sourceSystem = 'org-donor-fixture'
+                                  and i.entityType = 'COUNTERPARTY'
+                                  and i.externalId = 'person-donor'
+                                """, Long.class)
+                        .setParameter("companyCode", TARGET)
+                        .getSingleResult());
+            }
+        }
+    }
+
+    @Test
+    void appliesSourceWinnerToNativeCounterpartyWithoutPriorSourceIdentity(@TempDir Path tempDir)
+    {
+        Path source = Path.of("src/test/resources/compatibility/sclx/donor-sclx-1.3.json");
+        UUID portableId = SclxNativePortableIdentity.portableUuid("person-donor");
+        try (Jpa jpa = new Jpa(tempDir.resolve("native-counterparty-source-winner")))
+        {
+            seedEmptyTarget(jpa);
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                Counterparty counterparty = new Counterparty();
+                counterparty.setCompany(company(em));
+                counterparty.setPortableId(portableId);
+                counterparty.setDisplayName("Old Donor Name");
+                counterparty.setKind(CounterpartyKind.OTHER);
+                counterparty.setActive(true);
+                em.persist(counterparty);
+                em.getTransaction().commit();
+            }
+
+            SclxImportPreviewService previewService = new SclxImportPreviewService(jpa, () -> TARGET);
+            SclxImportPreview blocked = previewService.preview(source);
+            assertTrue(blocked.hasBlockingErrors());
+            SclxImportPreview resolved = previewService.preview(
+                    source,
+                    List.of(),
+                    List.of(new SclxImportConflictSelection(
+                            "COUNTERPARTY", "person-donor", SclxImportConflictChoice.TAKE_SOURCE)));
+            assertFalse(resolved.hasBlockingErrors(), () -> resolved.operation().messages().toString());
+
+            SclxImportResult result = new SclxImportCommitService(jpa, () -> TARGET)
+                    .commit(source, resolved, "tester", false, true);
+
+            assertTrue(result.committed(), () -> result.messages().toString());
+            try (EntityManager em = jpa.em())
+            {
+                Counterparty counterparty = em.createQuery(
+                                "from Counterparty c where c.portableId = :portableId", Counterparty.class)
+                        .setParameter("portableId", portableId)
+                        .getSingleResult();
+                assertEquals("Donor Counterparty", counterparty.getDisplayName());
+                assertEquals(1L, count(em, "select count(c) from Counterparty c"));
+                assertEquals(1L, em.createQuery("""
+                                select count(i) from InterchangeIdentity i
+                                where i.company.code = :companyCode
+                                  and i.formatCode = 'SCLX'
+                                  and i.sourceSystem = 'org-donor-fixture'
+                                  and i.entityType = 'COUNTERPARTY'
+                                  and i.externalId = 'person-donor'
+                                """, Long.class)
+                        .setParameter("companyCode", TARGET)
+                        .getSingleResult());
             }
         }
     }

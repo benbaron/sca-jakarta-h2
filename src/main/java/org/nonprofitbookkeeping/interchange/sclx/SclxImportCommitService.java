@@ -61,8 +61,6 @@ import org.nonprofitbookkeeping.service.TransactionLineCommand;
 import org.nonprofitbookkeeping.service.TransactionSupplementalLineCommand;
 
 import java.math.BigDecimal;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -267,6 +265,10 @@ public final class SclxImportCommitService
                 }
 
                 Map<EntityKey, SclxImportEntityPreview> previews = previewItems(current);
+                previews.values().stream()
+                        .filter(item -> item.nativePortableId() != null)
+                        .forEach(item -> SclxNativePortableIdentity.requireUnchanged(
+                                em, company.getCode(), item));
                 boolean allIdentical = current.operation().items().stream()
                         .allMatch(item -> item.identityMatch() == InterchangeIdentityMatch.IDENTICAL);
                 if (allIdentical)
@@ -998,8 +1000,9 @@ public final class SclxImportCommitService
                             previews, new EntityKey("TRANSACTION_LINE", lineId), "preview identity");
                     if (!reuseExisting(linePreview))
                     {
-                        throw new IllegalStateException("A retained SCLX transaction cannot import a replacement line: "
-                                + lineId + ".");
+                        // The selected target transaction wins as a complete protected record.
+                        // A source-only child is not appended to or used to rewrite that transaction.
+                        continue;
                     }
                     if (linePreview.localEntityId() == null)
                     {
@@ -1022,9 +1025,8 @@ public final class SclxImportCommitService
                             "preview identity");
                     if (!reuseExisting(detailPreview))
                     {
-                        throw new IllegalStateException(
-                                "A retained SCLX transaction cannot import a replacement supplemental detail: "
-                                        + detail.externalId() + ".");
+                        // Supplemental children follow the selected complete target transaction.
+                        continue;
                     }
                     TxnSupplementalLine existingDetail = localEntity(
                             em, detailPreview, TxnSupplementalLine.class);
@@ -1638,20 +1640,7 @@ public final class SclxImportCommitService
 
     private static UUID portableUuid(String externalId)
     {
-        int colon = externalId.lastIndexOf(':');
-        if (colon >= 0 && colon + 1 < externalId.length())
-        {
-            String decoded = URLDecoder.decode(externalId.substring(colon + 1), StandardCharsets.UTF_8);
-            try
-            {
-                return UUID.fromString(decoded);
-            }
-            catch (IllegalArgumentException ignored)
-            {
-                // Older/donor identities receive a deterministic local durable UUID below.
-            }
-        }
-        return UUID.nameUUIDFromBytes(("SCLX:" + externalId).getBytes(StandardCharsets.UTF_8));
+        return SclxNativePortableIdentity.portableUuid(externalId);
     }
 
     private void recordMasterIdentities(
@@ -1868,15 +1857,30 @@ public final class SclxImportCommitService
             }
             if (item.conflictChoice() == SclxImportConflictChoice.TAKE_SOURCE)
             {
-                identityService.acceptSourceConflict(
-                        em,
-                        company,
-                        InterchangeFormat.SCLX,
-                        preview.sourceSystem(),
-                        type,
-                        externalId,
-                        item.normalizedContentHash(),
-                        localId);
+                if (item.nativePortableId() == null)
+                {
+                    identityService.acceptSourceConflict(
+                            em,
+                            company,
+                            InterchangeFormat.SCLX,
+                            preview.sourceSystem(),
+                            type,
+                            externalId,
+                            item.normalizedContentHash(),
+                            localId);
+                }
+                else
+                {
+                    identityService.record(
+                            em,
+                            company,
+                            InterchangeFormat.SCLX,
+                            preview.sourceSystem(),
+                            type,
+                            externalId,
+                            item.normalizedContentHash(),
+                            localId);
+                }
                 return;
             }
             throw new IllegalStateException("SCLX conflict has no selected winner: "
@@ -2005,7 +2009,9 @@ public final class SclxImportCommitService
 
     private static boolean reuseExisting(SclxImportEntityPreview item)
     {
-        return item.identityMatch() == InterchangeIdentityMatch.IDENTICAL
+        return (item.identityMatch() == InterchangeIdentityMatch.NEW
+                    && item.localEntityId() != null)
+                || item.identityMatch() == InterchangeIdentityMatch.IDENTICAL
                 || (item.identityMatch() == InterchangeIdentityMatch.CONFLICT
                         && item.conflictChoice() != null);
     }

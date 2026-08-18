@@ -137,10 +137,15 @@ public final class SclxImportPreviewService
                 InterchangeMessageSeverity.WARNING, "SCLX_STRUCTURE_WARNING", pathOf(warning), warning, false)));
 
         OrganizationData organization = organization(document.root(), messages);
-        String targetCode = requireText(companyCodeSupplier.get(), "target company code");
-        SclxImportTargetSnapshot target = targetReader.read(targetCode, organization.sourceSystem());
-        addOwnershipDiagnostics(messages, ownershipIssuesSupplier.get());
         Extraction extraction = extract(document.root(), messages);
+        String targetCode = requireText(companyCodeSupplier.get(), "target company code");
+        Set<SclxImportTargetSnapshot.NativePortableKey> nativePortableKeys = extraction.entities().stream()
+                .map(entity -> SclxNativePortableIdentity.key(entity.entityType(), entity.externalId()))
+                .filter(Objects::nonNull)
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        SclxImportTargetSnapshot target = targetReader.read(
+                targetCode, organization.sourceSystem(), nativePortableKeys);
+        addOwnershipDiagnostics(messages, ownershipIssuesSupplier.get());
         List<SclxImportEntityPreview> entities = classify(
                 extraction.entities(), target, messages, conflictSelections);
         MappingResult mapping = mappings(document.root(), target, messages, mappingSelections);
@@ -432,10 +437,55 @@ public final class SclxImportPreviewService
             InterchangeIdentityMatch match;
             String localId = null;
             String conflictDetail = null;
+            String nativePortableId = null;
             if (local == null)
             {
                 match = InterchangeIdentityMatch.NEW;
-                if ("ACTIVITY".equals(entity.entityType()))
+                SclxImportTargetSnapshot.NativePortableKey nativeKey =
+                        SclxNativePortableIdentity.key(entity.entityType(), entity.externalId());
+                SclxImportTargetSnapshot.NativePortableFact nativeFact = nativeKey == null
+                        ? null : target.nativePortableIdentities().get(nativeKey);
+                if (nativeFact != null && !nativeFact.ownedBy(target.companyCode()))
+                {
+                    messages.add(message(
+                            InterchangeMessageSeverity.ERROR,
+                            "SCLX_NATIVE_PORTABLE_ID_OTHER_COMPANY",
+                            entity.path(),
+                            entity.entityType() + " " + entity.externalId()
+                                    + " resolves to native portable identity " + nativeKey.portableId()
+                                    + " already owned by company "
+                                    + Objects.toString(nativeFact.companyCode(), "<unresolved>")
+                                    + "; it cannot be inserted or reused in target company "
+                                    + target.companyCode() + ".",
+                            true));
+                }
+                else if (nativeFact != null)
+                {
+                    localId = nativeFact.localEntityId();
+                    nativePortableId = nativeKey.portableId().toString();
+                    String incomingFingerprint = SclxNativePortableIdentity.incomingFingerprint(
+                            entity.entityType(), entity.value());
+                    if (incomingFingerprint != null
+                            && incomingFingerprint.equals(nativeFact.contentFingerprint()))
+                    {
+                        messages.add(message(
+                                InterchangeMessageSeverity.WARNING,
+                                "SCLX_NATIVE_PORTABLE_ID_REUSED",
+                                entity.path(),
+                                "The import target already contains identical " + entity.entityType()
+                                        + " native portable identity " + nativeKey.portableId()
+                                        + "; the existing record will be reused and linked to this SCLX source identity.",
+                                false));
+                    }
+                    else
+                    {
+                        match = InterchangeIdentityMatch.CONFLICT;
+                        conflictDetail = "Target " + entity.entityType()
+                                + " already owns native portable identity " + nativeKey.portableId()
+                                + " but has no matching source-specific SCLX identity; its content must be reconciled explicitly.";
+                    }
+                }
+                else if ("ACTIVITY".equals(entity.entityType()))
                 {
                     SclxImportTargetSnapshot.TargetActivity activity = target.activitiesByCode().get(
                             text(entity.value(), "code"));
@@ -509,7 +559,7 @@ public final class SclxImportPreviewService
             }
             result.add(new SclxImportEntityPreview(
                     entity.entityType(), entity.externalId(), entity.path(), entity.normalizedHash(), match, localId,
-                    choice, sourceAllowed, conflictDetail));
+                    choice, sourceAllowed, conflictDetail, nativePortableId));
         }
         selected.keySet().stream()
                 .filter(key -> !projected.contains(key))

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
 /** Bounded read-only target-company facts used by SCLX preview. */
 record SclxImportTargetSnapshot(
@@ -16,6 +17,7 @@ record SclxImportTargetSnapshot(
         Map<String, TargetFund> fundsByCode,
         Map<String, TargetActivity> activitiesByCode,
         Map<ExternalIdentityKey, IdentityFact> identities,
+        Map<NativePortableKey, NativePortableFact> nativePortableIdentities,
         List<ClosedRange> closedRanges,
         Set<String> finalizedTransactionLocalIds)
 {
@@ -27,6 +29,8 @@ record SclxImportTargetSnapshot(
         fundsByCode = Map.copyOf(Objects.requireNonNull(fundsByCode, "fundsByCode"));
         activitiesByCode = Map.copyOf(Objects.requireNonNull(activitiesByCode, "activitiesByCode"));
         identities = Map.copyOf(Objects.requireNonNull(identities, "identities"));
+        nativePortableIdentities = Map.copyOf(Objects.requireNonNull(
+                nativePortableIdentities, "nativePortableIdentities"));
         closedRanges = List.copyOf(Objects.requireNonNull(closedRanges, "closedRanges"));
         finalizedTransactionLocalIds = Set.copyOf(Objects.requireNonNull(
                 finalizedTransactionLocalIds, "finalizedTransactionLocalIds"));
@@ -40,12 +44,30 @@ record SclxImportTargetSnapshot(
             boolean operationalDataPopulated,
             Map<String, TargetAccount> accountsByCode,
             Map<String, TargetFund> fundsByCode,
+            Map<String, TargetActivity> activitiesByCode,
             Map<ExternalIdentityKey, IdentityFact> identities,
             List<ClosedRange> closedRanges,
             Set<String> finalizedTransactionLocalIds)
     {
         this(companyCode, companyName, populated, operationalDataPopulated,
-                accountsByCode, fundsByCode, Map.of(), identities, closedRanges,
+                accountsByCode, fundsByCode, activitiesByCode, identities, Map.of(), closedRanges,
+                finalizedTransactionLocalIds);
+    }
+
+    /** Compatibility constructor for snapshots that do not model native portable identities. */
+    SclxImportTargetSnapshot(
+            String companyCode,
+            String companyName,
+            boolean populated,
+            boolean operationalDataPopulated,
+            Map<String, TargetAccount> accountsByCode,
+            Map<String, TargetFund> fundsByCode,
+            Map<ExternalIdentityKey, IdentityFact> identities,
+            List<ClosedRange> closedRanges,
+            Set<String> finalizedTransactionLocalIds)
+    {
+        this(companyCode, companyName, populated, operationalDataPopulated,
+                accountsByCode, fundsByCode, Map.of(), identities, Map.of(), closedRanges,
                 finalizedTransactionLocalIds);
     }
 
@@ -118,6 +140,34 @@ record SclxImportTargetSnapshot(
         {
             normalizedContentHash = requireText(normalizedContentHash, "normalizedContentHash");
             localEntityId = localEntityId == null || localEntityId.isBlank() ? null : localEntityId.trim();
+        }
+    }
+
+    record NativePortableKey(String entityType, UUID portableId)
+    {
+        NativePortableKey
+        {
+            entityType = requireText(entityType, "entityType").toUpperCase(java.util.Locale.ROOT);
+            Objects.requireNonNull(portableId, "portableId");
+        }
+    }
+
+    record NativePortableFact(
+            String localEntityId,
+            String companyCode,
+            String contentFingerprint)
+    {
+        NativePortableFact
+        {
+            localEntityId = requireText(localEntityId, "localEntityId");
+            companyCode = companyCode == null || companyCode.isBlank() ? null : companyCode.trim();
+            contentFingerprint = contentFingerprint == null || contentFingerprint.isBlank()
+                    ? null : contentFingerprint.trim();
+        }
+
+        boolean ownedBy(String targetCompanyCode)
+        {
+            return companyCode != null && companyCode.equalsIgnoreCase(targetCompanyCode);
         }
     }
 
