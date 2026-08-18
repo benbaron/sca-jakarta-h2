@@ -2,11 +2,11 @@
 plan_version: 207
 active_phase: P11
 active_slice: P11-C1
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P11-C1-formatted-report-preview
 active_pull_request: null
-active_head: 3e95d42
-next_action: "Replace every core plain-text Report Library preview with a company-formatted JavaFX table, add focused coverage, and run the available validation."
+active_head: b0462aa
+next_action: "After owner authorization, publish P11-C1, open a draft PR to main, and run Maven PR Tests; then perform the Report Library desktop visual checklist."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -43,7 +43,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 DONE through PR #144 |
 | P09 | Inventory and supplies | P02 | DONE through PR #142; corrective P09-C1 DONE through PR #143 |
 | P10 | Period close, reopening, and factual audit history | P02, P06 | DONE through P10-S1 / PR #156 and P10-C1 / PR #157 |
-| P11 | Report Library | P02, P04, P06, P08, P09, P10 | Corrective P11-C1 IN_PROGRESS after P11-S1 / PR #158 |
+| P11 | Report Library | P02, P04, P06, P08, P09, P10 | Corrective P11-C1 VERIFYING after P11-S1 / PR #158 |
 | P12 | Administration, company lifecycle, preferences, and Funds edit | P01, P02 | DONE through P12-S1, P12-S2, P12-S3, P12-C1, P12-C2, and P12-C3 |
 | P13 | Data exchange and diagnostics without Import/Export Jobs | P02, P05, P12 | DONE through P13-S1 / PR #177 and P13-S2 / PR #179 |
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
@@ -190,7 +190,7 @@ Known P10 follow-up:
 
 ### P11 — Report Library
 
-Status: Corrective P11-C1 IN_PROGRESS after P11-S1 / merged PR #158 and owner verification.
+Status: Corrective P11-C1 VERIFYING after P11-S1 / merged PR #158 and owner verification.
 
 #### P11-S1 — Typed report catalog and parameters
 
@@ -211,7 +211,7 @@ Completed deliverables:
 
 #### P11-C1 — Formatted core-report previews
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P11-C1-formatted-report-preview`
 Base head: `3e95d42f56800b729cc01c6b7d3741c3b0345fb6`
@@ -236,6 +236,44 @@ Planned deliverables:
 - Add focused model, execution, renderer/source, documentation, and layout coverage.
 - Run focused source validation and `mvn clean verify` where tooling is available; retain a desktop
   visual check for laptop-width color, wrapping, scrolling, and divider behavior.
+
+Implementation and validation status:
+
+- Implementation commit `b0462aa` adds an immutable `ReportTableModel` and maps Trial Balance, General
+  Ledger Detail, Balance Sheet, and Income Statement directly from their authoritative core projections.
+  TEXT/CSV/PDF/XLSX generation and the immutable request/export reuse boundary are unchanged.
+- `FormattedReportFxRenderer` supplies a real JavaFX `TableView`, complete named columns, company money
+  and date formatting, wrapping cells, full-value tooltips, independently scrollable content, blue
+  headers/sections, emphasized totals, and textual green/amber status rows.
+- General Ledger Detail exposes all ten projected fields. Statement reports retain ordered section and
+  total rows, while Trial Balance displays total debits/credits plus `Balanced — PASS` or an actionable
+  review status.
+- Dynamic preview tables are explicitly registered with `CompanyTableStateBinder`; a new vertical
+  `SplitPane` orientation produces the horizontal draggable divider between parameters and preview.
+  Both Report Library dividers and every core report's column order/width/sort state are company-owned.
+- Focused builder, execution-integration, JavaFX renderer, source-contract, documentation, and layout
+  regressions are present. All 721 production/test Java sources parse under the Java 17 compiler module,
+  the UI-neutral model/builder and JavaFX renderer type-compile in focused local checks, the four-builder
+  smoke path passes, and `git diff --check` passes.
+- Maven, the `javac` launcher, and a Linux JavaFX runtime are unavailable in this container. The focused
+  JUnit/JavaFX suite and full `mvn clean verify` therefore require Maven PR Tests after publication.
+
+Owner desktop checklist:
+
+1. Open Trial Balance, General Ledger Detail, Balance Sheet, and Income Statement and confirm none uses
+   a monospaced plain-text preview.
+2. Confirm blue headers/section rows, emphasized totals, textual balance status, preferred company date
+   and money formats, and readable wrapped long names/memos.
+3. Resize/reorder/sort columns, move both Report Library dividers, reopen the company, and confirm the
+   layout is restored for that company.
+4. At laptop width, confirm both table scroll bars are available as needed and the horizontal divider can
+   enlarge the preview without hiding access to report parameters.
+5. Export representative TEXT, CSV, PDF, and XLSX files and confirm the established export behavior is
+   unchanged.
+
+Next exact action:
+
+- After owner authorization, publish the branch, open a draft PR to `main`, and run Maven PR Tests.
 
 ## 7. P12 — Administration, company lifecycle, preferences, and Funds edit
 
