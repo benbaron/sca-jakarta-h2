@@ -223,8 +223,9 @@ class SclxImportPreviewServiceTest
     @Test
     void suggestedCorrectionDropsUndatedNonpostingAnnotationRecord() throws Exception
     {
-        ObjectNode root = (ObjectNode) new ObjectMapper().valueToTree(
-                SclxJsonSerializerTest.document());
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode root = (ObjectNode) mapper.readTree(
+                new SclxJsonSerializer().serialize(SclxJsonSerializerTest.document()));
         ObjectNode annotation = root.withArray("transactions").addObject();
         annotation.put("transactionId", "workbook-annotation");
         annotation.put("description", "Workbook note only");
@@ -232,7 +233,7 @@ class SclxImportPreviewServiceTest
         annotation.putArray("lines");
         Path source = tempDir.resolve("suggested-date-correction.sclx");
         Files.writeString(source,
-                new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(root));
+                mapper.writerWithDefaultPrettyPrinter().writeValueAsString(root));
         SclxImportPreviewService service = service(emptyTarget("TEST"));
         SclxImportPreview initial = service.preview(source);
         var missingDate = initial.operation().messages().stream()
