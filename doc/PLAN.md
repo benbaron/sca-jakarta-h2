@@ -5,8 +5,8 @@ active_slice: P16-C11
 active_status: VERIFYING
 active_branch: codex/P16-C11-native-portable-identity-reconciliation
 active_pull_request: 281
-active_head: 8ae4d07
-next_action: "Inspect Maven PR Tests on draft PR #281 and correct any semantic, H2, or full-suite failure before owner desktop re-import."
+active_head: 7039f06
+next_action: "Confirm the final plan-inclusive PR #281 head passes Maven PR Tests, then retry the supplied SCLX import in the owner desktop build."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -3077,8 +3077,11 @@ Implementation and validation status:
 - Corrective local commit `9aa4a33` decodes both native `UUID` objects and H2 16-byte UUID values without
   changing portable-identity derivation. Connected-GitHub commit
   `8ae4d07a004189e159613fa8e6395b3cb9cb6d91` exactly matches local corrected tree `b1f0c3ac`.
+- Exact corrected plan-inclusive head `7039f06f14b44fdd73db1d7781803612c0da58de` passed all three
+  Maven PR Tests gates in run `32089850888`: clean `mvn clean verify`, the deliberately repeated test
+  suite, and production JavaFX route compliance.
 
 Next exact action:
 
-- Inspect Maven PR Tests on draft PR #281 and correct any semantic, H2, or full-suite failure before the
-  owner retries the supplied SCLX import.
+- Confirm the final plan-inclusive PR #281 head passes Maven PR Tests, then retry the supplied SCLX import
+  in the owner desktop build.
