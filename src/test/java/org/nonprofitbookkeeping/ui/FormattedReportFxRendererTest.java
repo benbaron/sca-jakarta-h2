@@ -3,6 +3,8 @@ package org.nonprofitbookkeeping.ui;
 import javafx.scene.Node;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.nonprofitbookkeeping.report.ReportTableModel;
@@ -32,6 +34,15 @@ class FormattedReportFxRendererTest
                 "Test Report",
                 "As of 2026-03-31",
                 List.of(
+                        new ReportTableModel.HeaderLine(
+                                "Configured Parent",
+                                "Configured Legal Entity EXCHEQUER REPORT",
+                                ReportTableModel.HeaderStyle.PRIMARY),
+                        new ReportTableModel.HeaderLine(
+                                "Configured Group",
+                                "Q1 Report",
+                                ReportTableModel.HeaderStyle.SECONDARY)),
+                List.of(
                         new ReportTableModel.Column(
                                 "name", "Name", ReportTableModel.ValueFormat.TEXT, 220),
                         new ReportTableModel.Column(
@@ -50,6 +61,10 @@ class FormattedReportFxRendererTest
         FxTestSupport.onFx(() -> {
             Node rendered = new FormattedReportFxRenderer(
                     FinancialReportDisplayFormat.plain()).render(model);
+            VBox root = (VBox) rendered;
+            assertTrue(root.getChildren().get(0) instanceof GridPane);
+            GridPane metadata = (GridPane) root.getChildren().get(0);
+            assertEquals(4, metadata.getChildren().size());
             List<TableView<?>> tables = CompanyTableStateBinder.findTables(rendered);
             assertEquals(1, tables.size());
 

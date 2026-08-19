@@ -291,7 +291,7 @@ public final class UiServiceRegistry
                 transactionCorrection,
                 new TransactionReferenceDataService(jpa, UiServiceRegistry::activeCompanyCode),
                 new SampleCompanyService(jpa),
-                new FinancialReportService(jpa),
+                new FinancialReportService(jpa, UiServiceRegistry::activeCompanyCode),
                 new JpaDashboardQueryService(jpa),
                 new BankReconciliationWorkspaceService(jpa),
                 periodCloseRange,

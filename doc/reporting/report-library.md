@@ -33,7 +33,9 @@ P16-S6 aligns the default Report Library date request with fiscal authority. Whe
 
 ## Parameters
 
-- Trial Balance, Balance Sheet, Fixed Asset Register, and Inventory On Hand & Valuation use an as-of date.
+- Trial Balance, Fixed Asset Register, and Inventory On Hand & Valuation use an as-of date.
+- Balance Sheet uses a comparative range: the beginning column is the day before the selected start and
+  the ending column is the selected end date. Income Statement uses the same selected range.
 - General Ledger Detail, Income Statement, Workbook Summary, Transactions List, Bank Account Activity, Fund Transfers, Fixed Asset Depreciation History & Schedule, and Inventory Movement History use a date range.
 - Fund filtering is available where the underlying report has a meaningful single-fund projection.
 - General Ledger and semantic ledger-list reports expose a maximum row count from 1 through 5000.
@@ -103,6 +105,21 @@ Detail exposes every projected field: date, transaction ID, account code/name, f
 memo, debit, and credit. The model retains typed dates and money until the JavaFX formatting boundary;
 the preview never reparses TEXT or CSV.
 
+Balance Sheet and Income Statement add a company-metadata report header above the table. Parent
+organization, legal entity, local company/group, currency, and fiscal-quarter context come from the
+active `Company`; no organization or branch name is embedded in report code. The Balance Sheet is a
+comparative beginning/ending/difference statement with dynamic cash-account breakout, Assets,
+Liabilities, calculated Net Worth, period change, Net Income, and a visible reconciliation difference.
+
+Statement categories come from active posting accounts in the active company's active chart, including
+zero-activity accounts. Balance Sheet rows use the chart's asset, bank/cash, and liability accounts.
+Income Statement income and flat expense rows use their account names. When expense posting accounts
+are grandchildren in the chart hierarchy, their parent accounts become category rows and the repeated
+posting-account names become dynamic allocation columns. Thus a chart may define three allocation
+columns, more, fewer, or none; labels such as Administration, Activity, and Fundraising are data, not
+report constants. The Income Statement retains Gross, Cost/Refunds, and Net/Total presentation plus
+total-expense, Net Income, change-in-Net-Worth, and difference rows.
+
 Each core preview table remains independently scrollable. Its columns are sortable, resizable, and
 reorderable, and their order, width, and sort state are stored for the active company. The report
 parameter region and preview region are separated by a horizontal draggable divider so a large table
@@ -139,6 +156,14 @@ Required automated coverage includes:
 - source guardrails for typed catalog/request use and company-owned divider state.
 - structured core-table coverage for every core report, complete General Ledger columns, workbook row
   styles, dynamic company table-state binding, and the horizontal parameter/preview divider.
+- metadata-only statement headings, comparative Balance Sheet values, zero-activity chart categories,
+  chart-hierarchy-derived expense allocation columns, and Net Income/change-in-Net-Worth reconciliation.
 - fixed-asset lifecycle/as-of reconstruction, inventory historical quantity, company isolation, stable-ID filters, linked/unlinked identities, exact control-account differences, and semantic preview/CSV parity.
 
 Desktop validation must confirm report selection, parameter visibility, fund loading, preview, all export formats, Journal drill-through context, split-pane resizing, and laptop-width behavior.
+
+For Balance Sheet and Income Statement, desktop validation must also use a company whose metadata and
+chart labels do not contain SCA sample names. Confirm the displayed parent organization, legal entity,
+group, currency, fiscal quarter, statement rows, and expense allocation columns exactly follow that
+company and chart. Change the selected period and confirm the Balance Sheet beginning/end/difference
+columns and both statements' reconciliation rows update together.

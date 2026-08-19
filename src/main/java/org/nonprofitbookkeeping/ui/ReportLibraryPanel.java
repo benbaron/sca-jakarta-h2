@@ -27,6 +27,7 @@ import org.nonprofitbookkeeping.report.AssetInventoryReportQueryService;
 import org.nonprofitbookkeeping.report.ReportDomainFilter;
 import org.nonprofitbookkeeping.report.ReportExecutionService;
 import org.nonprofitbookkeeping.report.ReportFundOption;
+import org.nonprofitbookkeeping.report.ReportPresentationMetadata;
 import org.nonprofitbookkeeping.report.ReportRequest;
 import org.nonprofitbookkeeping.report.ReportResult;
 import org.nonprofitbookkeeping.model.FixedAsset;
@@ -85,6 +86,9 @@ public class ReportLibraryPanel implements AppPanel
     private final CompanyUiPreferencesService preferencesService = UiServiceRegistry.companyUiPreferences();
     private final String companyCode = activeCompanyCode();
     private final CompanyUiFormat companyFormat = new CompanyUiFormat(preferencesService.load(companyCode));
+    private final ReportPresentationMetadata reportPresentationMetadata =
+            ReportPresentationMetadata.from(
+                    UiServiceRegistry.companyAdmin().findCompany(companyCode).orElse(null));
     private final AssetInventoryReportQueryService assetInventoryReportService =
             UiServiceRegistry.assetInventoryReports();
     private final ReportExecutionService executionService =
@@ -92,7 +96,8 @@ public class ReportLibraryPanel implements AppPanel
                     UiServiceRegistry.financialReports(),
                     companyFormat,
                     UiServiceRegistry.semanticAccountingReports(),
-                    assetInventoryReportService);
+                    assetInventoryReportService,
+                    reportPresentationMetadata);
     private final PauseTransition dividerSaveDelay = new PauseTransition(Duration.millis(350));
     private final PauseTransition previewDividerSaveDelay = new PauseTransition(Duration.millis(350));
 

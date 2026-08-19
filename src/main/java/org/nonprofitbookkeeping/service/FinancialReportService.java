@@ -2,6 +2,7 @@ package org.nonprofitbookkeeping.service;
 
 import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.persistence.Jpa;
@@ -13,6 +14,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * M1/M2 reporting projections:
@@ -24,10 +26,17 @@ import java.util.Map;
 public class FinancialReportService
 {
     private final Jpa jpa;
+    private final Supplier<String> activeCompanyCode;
 
     public FinancialReportService(Jpa jpa)
     {
+        this(jpa, () -> null);
+    }
+
+    public FinancialReportService(Jpa jpa, Supplier<String> activeCompanyCode)
+    {
         this.jpa = jpa;
+        this.activeCompanyCode = activeCompanyCode == null ? () -> null : activeCompanyCode;
     }
 
     public TrialBalanceReport trialBalance(LocalDate asOf, String fundCode)
@@ -85,11 +94,13 @@ public class FinancialReportService
                                     "join s.account a " +
                                     "join s.fund f " +
                                     "left join t.payee p " +
-                                    "where t.txnDate >= :start and t.txnDate <= :end " +
+                            "where t.txnDate >= :start and t.txnDate <= :end " +
+                                    "and (:companyCode is null or a.chart.company.code = :companyCode) " +
                                     "and (:fundCode is null or f.code = :fundCode) " +
                                     "order by t.txnDate, t.id, a.code", Object[].class)
                     .setParameter("start", start)
                     .setParameter("end", end)
+                    .setParameter("companyCode", companyCode())
                     .setParameter("fundCode", blankToNull(fundCode))
                     .setMaxResults(maxRows <= 0 ? 500 : maxRows)
                     .getResultList();
@@ -145,11 +156,7 @@ public class FinancialReportService
         for (Account account : accounts)
         {
             BigDecimal naturalBalance = signedBalance(account, activityByAccount.get(account.getId()));
-            if (naturalBalance.signum() == 0)
-            {
-                continue;
-            }
-            StatementRow row = new StatementRow(account.getCode(), account.getName(), naturalBalance);
+            StatementRow row = statementRow(account, naturalBalance);
 
             if (account.getAccountType() == AccountType.ASSET || account.getAccountType() == AccountType.BANK)
             {
@@ -171,7 +178,16 @@ public class FinancialReportService
         BigDecimal currentEarnings = loadNetIncomeUpTo(cutoff, fundCode);
         if (currentEarnings.signum() != 0)
         {
-            StatementRow retainedEarnings = new StatementRow("9999", "Current Period Earnings", currentEarnings);
+            StatementRow retainedEarnings = new StatementRow(
+                    "9999",
+                    "Current Period Earnings",
+                    AccountType.EQUITY,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    currentEarnings);
             equity.add(retainedEarnings);
             totalEquity = totalEquity.add(currentEarnings);
         }
@@ -187,51 +203,29 @@ public class FinancialReportService
     {
         LocalDate start = from == null ? LocalDate.now().withDayOfYear(1) : from;
         LocalDate end = to == null ? LocalDate.now() : to;
+        List<Account> accounts = listPostingAccounts();
+        Map<Long, BigDecimal> activityByAccount = loadActivityBetween(start, end, fundCode);
+        List<StatementRow> incomeRows = new ArrayList<>();
+        List<StatementRow> expenseRows = new ArrayList<>();
+        BigDecimal totalIncome = BigDecimal.ZERO;
+        BigDecimal totalExpense = BigDecimal.ZERO;
 
-        try (EntityManager em = jpa.em())
+        for (Account account : accounts)
         {
-            List<Object[]> rows = em.createQuery(
-                            "select a.code, a.name, a.accountType, coalesce(sum(s.amountSigned), 0) " +
-                                    "from TxnSplit s " +
-                                    "join s.txn t " +
-                                    "join s.account a " +
-                                    "join s.fund f " +
-                                    "where t.txnDate >= :start and t.txnDate <= :end " +
-                                    "and a.accountType in (:incomeType, :expenseType) " +
-                                    "and (:fundCode is null or f.code = :fundCode) " +
-                                    "group by a.code, a.name, a.accountType " +
-                                    "order by a.code", Object[].class)
-                    .setParameter("start", start)
-                    .setParameter("end", end)
-                    .setParameter("incomeType", AccountType.INCOME)
-                    .setParameter("expenseType", AccountType.EXPENSE)
-                    .setParameter("fundCode", blankToNull(fundCode))
-                    .getResultList();
-
-            List<StatementRow> incomeRows = new ArrayList<>();
-            List<StatementRow> expenseRows = new ArrayList<>();
-            BigDecimal totalIncome = BigDecimal.ZERO;
-            BigDecimal totalExpense = BigDecimal.ZERO;
-
-            for (Object[] row : rows)
+            BigDecimal amount = activityByAccount.getOrDefault(account.getId(), BigDecimal.ZERO);
+            if (account.getAccountType() == AccountType.INCOME)
             {
-                AccountType accountType = (AccountType) row[2];
-                BigDecimal amount = (BigDecimal) row[3];
-                StatementRow statementRow = new StatementRow((String) row[0], (String) row[1], amount);
-                if (accountType == AccountType.INCOME)
-                {
-                    incomeRows.add(statementRow);
-                    totalIncome = totalIncome.add(amount);
-                }
-                else
-                {
-                    expenseRows.add(statementRow);
-                    totalExpense = totalExpense.add(amount);
-                }
+                incomeRows.add(statementRow(account, amount));
+                totalIncome = totalIncome.add(amount);
             }
-
-            return new IncomeStatementReport(start, end, incomeRows, expenseRows, totalIncome, totalExpense);
+            else if (account.getAccountType() == AccountType.EXPENSE)
+            {
+                expenseRows.add(statementRow(account, amount));
+                totalExpense = totalExpense.add(amount);
+            }
         }
+
+        return new IncomeStatementReport(start, end, incomeRows, expenseRows, totalIncome, totalExpense);
     }
 
     private List<Account> listPostingAccounts()
@@ -239,7 +233,14 @@ public class FinancialReportService
         try (EntityManager em = jpa.em())
         {
             return em.createQuery(
-                            "select a from Account a where a.active = true and a.posting = true order by a.code", Account.class)
+                            "select distinct a from Account a " +
+                                    "left join fetch a.parent p " +
+                                    "left join fetch p.parent " +
+                                    "where a.active = true and a.posting = true " +
+                                    "and (:companyCode is null or (a.chart.company.code = :companyCode " +
+                                    "and a.chart.company.activeChartOfAccounts = a.chart)) " +
+                                    "order by a.code", Account.class)
+                    .setParameter("companyCode", companyCode())
                     .getResultList();
         }
     }
@@ -255,11 +256,13 @@ public class FinancialReportService
                                     "join s.account a " +
                                     "join s.txn t " +
                                     "join s.fund f " +
-                                    "where t.txnDate <= :asOf " +
+                            "where t.txnDate <= :asOf " +
+                                    "and (:companyCode is null or a.chart.company.code = :companyCode) " +
                                     "and a.accountType in (:incomeType, :expenseType) " +
                                     "and (:fundCode is null or f.code = :fundCode) " +
                                     "group by a.accountType", Object[].class)
                     .setParameter("asOf", asOf)
+                    .setParameter("companyCode", companyCode())
                     .setParameter("incomeType", AccountType.INCOME)
                     .setParameter("expenseType", AccountType.EXPENSE)
                     .setParameter("fundCode", blankToNull(fundCode))
@@ -294,9 +297,11 @@ public class FinancialReportService
                                     "join s.account a " +
                                     "join s.txn t " +
                                     "join s.fund f " +
-                                    "where t.txnDate <= :asOf and (:fundCode is null or f.code = :fundCode) " +
+                            "where t.txnDate <= :asOf and (:fundCode is null or f.code = :fundCode) " +
+                                    "and (:companyCode is null or a.chart.company.code = :companyCode) " +
                                     "group by a.id", Object[].class)
                     .setParameter("asOf", asOf)
+                    .setParameter("companyCode", companyCode())
                     .setParameter("fundCode", blankToNull(fundCode))
                     .getResultList();
 
@@ -307,6 +312,59 @@ public class FinancialReportService
             }
             return out;
         }
+    }
+
+    private Map<Long, BigDecimal> loadActivityBetween(
+            LocalDate start,
+            LocalDate end,
+            String fundCode)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            List<Object[]> rows = em.createQuery(
+                            "select a.id, coalesce(sum(s.amountSigned), 0) " +
+                                    "from TxnSplit s " +
+                                    "join s.account a " +
+                                    "join s.txn t " +
+                                    "join s.fund f " +
+                                    "where t.txnDate >= :start and t.txnDate <= :end " +
+                                    "and (:companyCode is null or a.chart.company.code = :companyCode) " +
+                                    "and (:fundCode is null or f.code = :fundCode) " +
+                                    "group by a.id", Object[].class)
+                    .setParameter("start", start)
+                    .setParameter("end", end)
+                    .setParameter("companyCode", companyCode())
+                    .setParameter("fundCode", blankToNull(fundCode))
+                    .getResultList();
+
+            Map<Long, BigDecimal> out = new HashMap<>();
+            for (Object[] row : rows)
+            {
+                out.put((Long) row[0], (BigDecimal) row[1]);
+            }
+            return out;
+        }
+    }
+
+    private static StatementRow statementRow(Account account, BigDecimal amount)
+    {
+        Account parent = account.getParent();
+        Account grandparent = parent == null ? null : parent.getParent();
+        return new StatementRow(
+                account.getCode(),
+                account.getName(),
+                account.getAccountType(),
+                account.getSubtype(),
+                parent == null ? null : parent.getCode(),
+                parent == null ? null : parent.getName(),
+                grandparent == null ? null : grandparent.getCode(),
+                grandparent == null ? null : grandparent.getName(),
+                amount == null ? BigDecimal.ZERO : amount);
+    }
+
+    private String companyCode()
+    {
+        return blankToNull(activeCompanyCode.get());
     }
 
     private static BigDecimal signedBalance(Account account, BigDecimal activity)
@@ -352,8 +410,21 @@ public class FinancialReportService
     {
     }
 
-    public record StatementRow(String accountCode, String accountName, BigDecimal amount)
+    public record StatementRow(
+            String accountCode,
+            String accountName,
+            AccountType accountType,
+            AccountSubtype subtype,
+            String parentCode,
+            String parentName,
+            String grandparentCode,
+            String grandparentName,
+            BigDecimal amount)
     {
+        public StatementRow(String accountCode, String accountName, BigDecimal amount)
+        {
+            this(accountCode, accountName, null, null, null, null, null, null, amount);
+        }
     }
 
     public record BalanceSheetReport(LocalDate asOf,

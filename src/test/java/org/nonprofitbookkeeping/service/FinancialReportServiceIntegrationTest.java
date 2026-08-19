@@ -78,6 +78,13 @@ class FinancialReportServiceIntegrationTest
             assertEquals(new BigDecimal("1000.00"), income.totalIncome().setScale(2));
             assertEquals(new BigDecimal("500.00"), income.totalExpense().setScale(2));
             assertEquals(new BigDecimal("500.00"), income.netIncome().setScale(2));
+            FinancialReportService.StatementRow zeroActivity = income.expenses().stream()
+                    .filter(row -> row.accountCode().equals("6110"))
+                    .findFirst()
+                    .orElseThrow();
+            assertEquals(BigDecimal.ZERO, zeroActivity.amount());
+            assertEquals("Configured Category", zeroActivity.parentName());
+            assertEquals("Expense Root", zeroActivity.grandparentName());
         }
         finally
         {
@@ -121,11 +128,24 @@ class FinancialReportServiceIntegrationTest
             Account netAssets = account(chart, "3000", "Net Assets", AccountType.EQUITY, NormalBalance.CREDIT, new BigDecimal("500.00"));
             Account donations = account(chart, "4000", "Contributions", AccountType.INCOME, NormalBalance.CREDIT, BigDecimal.ZERO);
             Account expense = account(chart, "5000", "Program Expense", AccountType.EXPENSE, NormalBalance.DEBIT, BigDecimal.ZERO);
+            Account expenseRoot = account(chart, "6000", "Expense Root", AccountType.EXPENSE,
+                    NormalBalance.DEBIT, BigDecimal.ZERO);
+            expenseRoot.setPosting(false);
+            Account expenseCategory = account(chart, "6100", "Configured Category", AccountType.EXPENSE,
+                    NormalBalance.DEBIT, BigDecimal.ZERO);
+            expenseCategory.setPosting(false);
+            expenseCategory.setParent(expenseRoot);
+            Account zeroAllocation = account(chart, "6110", "Configured Allocation", AccountType.EXPENSE,
+                    NormalBalance.DEBIT, BigDecimal.ZERO);
+            zeroAllocation.setParent(expenseCategory);
             em.persist(bank);
             em.persist(payable);
             em.persist(netAssets);
             em.persist(donations);
             em.persist(expense);
+            em.persist(expenseRoot);
+            em.persist(expenseCategory);
+            em.persist(zeroAllocation);
 
             Txn t1 = txn(LocalDate.of(2026, 3, 5), donor, "Donation", bank);
             Txn t2 = txn(LocalDate.of(2026, 3, 10), vendor, "Program supplies paid", bank);

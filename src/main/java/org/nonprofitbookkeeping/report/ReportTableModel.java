@@ -16,9 +16,20 @@ public record ReportTableModel(
         String id,
         String title,
         String subtitle,
+        List<HeaderLine> headerLines,
         List<Column> columns,
         List<Row> rows)
 {
+    public ReportTableModel(
+            String id,
+            String title,
+            String subtitle,
+            List<Column> columns,
+            List<Row> rows)
+    {
+        this(id, title, subtitle, List.of(), columns, rows);
+    }
+
     public ReportTableModel
     {
         if (id == null || id.isBlank())
@@ -30,11 +41,22 @@ public record ReportTableModel(
             throw new IllegalArgumentException("Report table title is required.");
         }
         subtitle = subtitle == null ? "" : subtitle;
+        headerLines = headerLines == null ? List.of() : List.copyOf(headerLines);
         columns = columns == null ? List.of() : List.copyOf(columns);
         rows = rows == null ? List.of() : List.copyOf(rows);
         if (columns.isEmpty())
         {
             throw new IllegalArgumentException("At least one report table column is required.");
+        }
+    }
+
+    public record HeaderLine(String left, String right, HeaderStyle style)
+    {
+        public HeaderLine
+        {
+            left = left == null ? "" : left;
+            right = right == null ? "" : right;
+            style = style == null ? HeaderStyle.SECONDARY : style;
         }
     }
 
@@ -81,6 +103,12 @@ public record ReportTableModel(
         DATE,
         MONEY,
         NUMBER
+    }
+
+    public enum HeaderStyle
+    {
+        PRIMARY,
+        SECONDARY
     }
 
     public enum RowStyle
