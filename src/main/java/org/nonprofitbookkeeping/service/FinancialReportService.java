@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.service;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
@@ -83,10 +84,11 @@ public class FinancialReportService
     {
         LocalDate start = from == null ? LocalDate.MIN : from;
         LocalDate end = to == null ? LocalDate.now() : to;
+        String companyCode = companyCode();
 
         try (EntityManager em = jpa.em())
         {
-            List<Object[]> rows = em.createQuery(
+            var query = em.createQuery(
                             "select t.txnDate, t.id, coalesce(t.memo, ''), coalesce(p.displayName, ''), " +
                                     "a.code, a.name, f.code, f.name, a.normalBalance, s.amountSigned " +
                                     "from TxnSplit s " +
@@ -94,16 +96,16 @@ public class FinancialReportService
                                     "join s.account a " +
                                     "join s.fund f " +
                                     "left join t.payee p " +
-                            "where t.txnDate >= :start and t.txnDate <= :end " +
-                                    "and (:companyCode is null or a.chart.company.code = :companyCode) " +
+                                    "where t.txnDate >= :start and t.txnDate <= :end " +
+                                    companyFilter(companyCode) +
                                     "and (:fundCode is null or f.code = :fundCode) " +
                                     "order by t.txnDate, t.id, a.code", Object[].class)
                     .setParameter("start", start)
                     .setParameter("end", end)
-                    .setParameter("companyCode", companyCode())
                     .setParameter("fundCode", blankToNull(fundCode))
-                    .setMaxResults(maxRows <= 0 ? 500 : maxRows)
-                    .getResultList();
+                    .setMaxResults(maxRows <= 0 ? 500 : maxRows);
+            setCompanyParameter(query, companyCode);
+            List<Object[]> rows = query.getResultList();
 
             List<GeneralLedgerRow> out = new ArrayList<>();
             for (Object[] r : rows)
@@ -230,43 +232,44 @@ public class FinancialReportService
 
     private List<Account> listPostingAccounts()
     {
+        String companyCode = companyCode();
         try (EntityManager em = jpa.em())
         {
-            return em.createQuery(
+            var query = em.createQuery(
                             "select distinct a from Account a " +
                                     "left join fetch a.parent p " +
                                     "left join fetch p.parent " +
                                     "where a.active = true and a.posting = true " +
-                                    "and (:companyCode is null or (a.chart.company.code = :companyCode " +
-                                    "and a.chart.company.activeChartOfAccounts = a.chart)) " +
-                                    "order by a.code", Account.class)
-                    .setParameter("companyCode", companyCode())
-                    .getResultList();
+                                    activeChartFilter(companyCode) +
+                                    "order by a.code", Account.class);
+            setCompanyParameter(query, companyCode);
+            return query.getResultList();
         }
     }
 
 
     private BigDecimal loadNetIncomeUpTo(LocalDate asOf, String fundCode)
     {
+        String companyCode = companyCode();
         try (EntityManager em = jpa.em())
         {
-            List<Object[]> rows = em.createQuery(
+            var query = em.createQuery(
                             "select a.accountType, coalesce(sum(s.amountSigned), 0) " +
                                     "from TxnSplit s " +
                                     "join s.account a " +
                                     "join s.txn t " +
                                     "join s.fund f " +
-                            "where t.txnDate <= :asOf " +
-                                    "and (:companyCode is null or a.chart.company.code = :companyCode) " +
+                                    "where t.txnDate <= :asOf " +
+                                    companyFilter(companyCode) +
                                     "and a.accountType in (:incomeType, :expenseType) " +
                                     "and (:fundCode is null or f.code = :fundCode) " +
                                     "group by a.accountType", Object[].class)
                     .setParameter("asOf", asOf)
-                    .setParameter("companyCode", companyCode())
                     .setParameter("incomeType", AccountType.INCOME)
                     .setParameter("expenseType", AccountType.EXPENSE)
-                    .setParameter("fundCode", blankToNull(fundCode))
-                    .getResultList();
+                    .setParameter("fundCode", blankToNull(fundCode));
+            setCompanyParameter(query, companyCode);
+            List<Object[]> rows = query.getResultList();
 
             BigDecimal income = BigDecimal.ZERO;
             BigDecimal expense = BigDecimal.ZERO;
@@ -289,21 +292,23 @@ public class FinancialReportService
 
     private Map<Long, BigDecimal> loadActivityUpTo(LocalDate asOf, String fundCode)
     {
+        String companyCode = companyCode();
         try (EntityManager em = jpa.em())
         {
-            List<Object[]> rows = em.createQuery(
+            var query = em.createQuery(
                             "select a.id, coalesce(sum(s.amountSigned), 0) " +
                                     "from TxnSplit s " +
                                     "join s.account a " +
                                     "join s.txn t " +
                                     "join s.fund f " +
-                            "where t.txnDate <= :asOf and (:fundCode is null or f.code = :fundCode) " +
-                                    "and (:companyCode is null or a.chart.company.code = :companyCode) " +
+                                    "where t.txnDate <= :asOf " +
+                                    "and (:fundCode is null or f.code = :fundCode) " +
+                                    companyFilter(companyCode) +
                                     "group by a.id", Object[].class)
                     .setParameter("asOf", asOf)
-                    .setParameter("companyCode", companyCode())
-                    .setParameter("fundCode", blankToNull(fundCode))
-                    .getResultList();
+                    .setParameter("fundCode", blankToNull(fundCode));
+            setCompanyParameter(query, companyCode);
+            List<Object[]> rows = query.getResultList();
 
             Map<Long, BigDecimal> out = new HashMap<>();
             for (Object[] row : rows)
@@ -319,23 +324,24 @@ public class FinancialReportService
             LocalDate end,
             String fundCode)
     {
+        String companyCode = companyCode();
         try (EntityManager em = jpa.em())
         {
-            List<Object[]> rows = em.createQuery(
+            var query = em.createQuery(
                             "select a.id, coalesce(sum(s.amountSigned), 0) " +
                                     "from TxnSplit s " +
                                     "join s.account a " +
                                     "join s.txn t " +
                                     "join s.fund f " +
                                     "where t.txnDate >= :start and t.txnDate <= :end " +
-                                    "and (:companyCode is null or a.chart.company.code = :companyCode) " +
+                                    companyFilter(companyCode) +
                                     "and (:fundCode is null or f.code = :fundCode) " +
                                     "group by a.id", Object[].class)
                     .setParameter("start", start)
                     .setParameter("end", end)
-                    .setParameter("companyCode", companyCode())
-                    .setParameter("fundCode", blankToNull(fundCode))
-                    .getResultList();
+                    .setParameter("fundCode", blankToNull(fundCode));
+            setCompanyParameter(query, companyCode);
+            List<Object[]> rows = query.getResultList();
 
             Map<Long, BigDecimal> out = new HashMap<>();
             for (Object[] row : rows)
@@ -365,6 +371,28 @@ public class FinancialReportService
     private String companyCode()
     {
         return blankToNull(activeCompanyCode.get());
+    }
+
+    private static String companyFilter(String companyCode)
+    {
+        return companyCode == null ? "" : "and a.chart.company.code = :companyCode ";
+    }
+
+    private static String activeChartFilter(String companyCode)
+    {
+        return companyCode == null ? "" :
+                "and a.chart.company.code = :companyCode " +
+                "and a.chart.company.activeChartOfAccounts = a.chart ";
+    }
+
+    private static void setCompanyParameter(
+            TypedQuery<?> query,
+            String companyCode)
+    {
+        if (companyCode != null)
+        {
+            query.setParameter("companyCode", companyCode);
+        }
     }
 
     private static BigDecimal signedBalance(Account account, BigDecimal activity)
