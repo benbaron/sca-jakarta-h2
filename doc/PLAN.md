@@ -1,12 +1,12 @@
 ---
-plan_version: 209
+plan_version: 210
 active_phase: P11
 active_slice: P11-C2
 active_status: VERIFYING
 active_branch: codex/P11-C2-dynamic-financial-statements
 active_pull_request: 283
-active_head: 0717aae
-next_action: "Confirm PR #283 passes Maven PR Tests, then complete the metadata/chart-driven Report Library desktop visual checklist."
+active_head: 6b04245
+next_action: "Confirm the plan-inclusive PR #283 head passes Maven PR Tests, then complete the metadata/chart-driven Report Library desktop visual checklist."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -304,6 +304,8 @@ Implemented deliverables:
 Implementation and validation status:
 
 - Implementation commit `0717aae67435956e1116f623dc7bfaa3aa565001` is published in draft PR #283.
+- Corrective commit `6b04245a1eddf5337b063414d50e824ba5c60534` preserves the legacy null-company
+  report-service constructor without weakening the production active-company/active-chart predicate.
 - The structured table model and JavaFX renderer now accept two-column metadata header lines. The active
   company's parent organization, legal entity, display name, currency, fiscal-year start, and resulting
   quarter label are supplied through `ReportPresentationMetadata`; no sample organization or branch name
@@ -321,12 +323,15 @@ Implementation and validation status:
   model/builder type compilation and focused metadata, dynamic-category, and reconciliation behavior
   checks pass, as do `git diff --check` and the hard-coded sample-name source guardrails.
 - Maven, the `javac` launcher, and a Linux JavaFX runtime are unavailable in this container. The focused
-  JUnit/JavaFX suite and full `mvn clean verify` therefore require Maven PR Tests after publication.
+  JUnit/JavaFX suite and full `mvn clean verify` therefore required Maven PR Tests after publication.
+- Exact corrected head `6b04245a1eddf5337b063414d50e824ba5c60534` passed all three Maven PR Tests
+  gates in run `32214212704`: clean Maven verification, the deliberately repeated test suite, and
+  production JavaFX route compliance.
 
 Next exact action:
 
-- Confirm PR #283 passes Maven PR Tests, then perform the owner desktop visual checklist with non-SCA
-  metadata and chart labels.
+- Confirm the plan-inclusive PR #283 head passes Maven PR Tests, then perform the owner desktop visual
+  checklist with non-SCA metadata and chart labels.
 
 ## 7. P12 — Administration, company lifecycle, preferences, and Funds edit
 
