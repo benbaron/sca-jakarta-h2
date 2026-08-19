@@ -27,7 +27,7 @@ public enum ReportDefinition
             "Balance Sheet",
             ReportSource.CORE,
             null,
-            DateMode.AS_OF,
+            DateMode.RANGE,
             true,
             false),
     INCOME_STATEMENT(

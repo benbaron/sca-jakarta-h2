@@ -51,6 +51,21 @@ class ReportRequestTest
     }
 
     @Test
+    void balanceSheetRetainsComparativePeriod()
+    {
+        ReportRequest request = new ReportRequest(
+                ReportDefinition.BALANCE_SHEET,
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 6, 30),
+                ReportFundOption.ALL_FUNDS,
+                ReportRequest.DEFAULT_ROW_LIMIT);
+
+        assertEquals(LocalDate.of(2026, 1, 1), request.startDate());
+        assertEquals(LocalDate.of(2026, 6, 30), request.endDate());
+        assertTrue(request.contextSummary().contains("2026-01-01 through 2026-06-30"));
+    }
+
+    @Test
     void fundSelectionRetainsStableIdentityAndCode()
     {
         ReportFundOption fund = new ReportFundOption(42L, "RESTRICTED", "Restricted Fund");

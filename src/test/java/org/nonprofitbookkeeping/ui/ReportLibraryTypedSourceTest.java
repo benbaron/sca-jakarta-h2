@@ -23,6 +23,7 @@ class ReportLibraryTypedSourceTest
         assertTrue(source.contains("new CompanyUiFormat("));
         assertTrue(source.contains("new SemanticReportFxRenderer(companyFormat)"));
         assertTrue(source.contains("new FormattedReportFxRenderer(companyFormat)"));
+        assertTrue(source.contains("ReportPresentationMetadata.from("));
         assertTrue(source.contains("result.tabular()"));
         assertTrue(source.contains("CompanyTableStateBinder.apply("));
         assertTrue(source.contains("Orientation.VERTICAL"));
@@ -42,6 +43,8 @@ class ReportLibraryTypedSourceTest
                 "src/main/java/org/nonprofitbookkeeping/report/ReportExecutionService.java"));
         String renderer = Files.readString(Path.of(
                 "src/main/java/org/nonprofitbookkeeping/ui/FormattedReportFxRenderer.java"));
+        String statements = Files.readString(Path.of(
+                "src/main/java/org/nonprofitbookkeeping/report/CoreFinancialReportTableBuilder.java"));
         String styles = Files.readString(Path.of("src/main/resources/ui/styles.css"));
 
         assertTrue(execution.contains("CoreFinancialReportTableBuilder.trialBalance"));
@@ -52,10 +55,16 @@ class ReportLibraryTypedSourceTest
         assertTrue(renderer.contains("content.setWrapText"));
         assertTrue(renderer.contains("new Tooltip(display)"));
         assertTrue(renderer.contains("UNCONSTRAINED_RESIZE_POLICY"));
+        assertTrue(renderer.contains("metadataHeader(model.headerLines())"));
         assertTrue(styles.contains(".formatted-report-section-row"));
+        assertTrue(styles.contains(".formatted-report-metadata-primary"));
         assertTrue(styles.contains(".formatted-report-total-row"));
         assertTrue(styles.contains(".formatted-report-success-row"));
         assertTrue(styles.contains("#d9eaf7"));
         assertTrue(styles.contains("#cfe2f3"));
+        assertFalse(statements.contains("Society for Creative Anachronism"));
+        assertFalse(statements.contains("The Barony of"));
+        assertFalse(statements.contains("Office & Admin"));
+        assertFalse(statements.contains("Fund Raising"));
     }
 }

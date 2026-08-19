@@ -10,6 +10,8 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.Tooltip;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.report.ReportTableModel;
@@ -47,8 +49,12 @@ final class FormattedReportFxRenderer
 
         Label title = new Label(model.title());
         title.getStyleClass().addAll("panel-title", "workbook-report-title");
+        title.setWrapText(true);
+        title.setTooltip(new Tooltip(model.title()));
         Label subtitle = new Label(model.subtitle());
         subtitle.getStyleClass().addAll("muted", "formatted-report-subtitle");
+        subtitle.setWrapText(true);
+        subtitle.setTooltip(model.subtitle().isBlank() ? null : new Tooltip(model.subtitle()));
 
         TableView<ReportTableModel.Row> table = new TableView<>();
         table.setId("report-table-" + model.id());
@@ -65,8 +71,54 @@ final class FormattedReportFxRenderer
         table.getItems().setAll(model.rows());
 
         VBox.setVgrow(table, Priority.ALWAYS);
+        if (!model.headerLines().isEmpty())
+        {
+            root.getChildren().add(metadataHeader(model.headerLines()));
+        }
         root.getChildren().addAll(title, subtitle, table);
         return root;
+    }
+
+    private static GridPane metadataHeader(List<ReportTableModel.HeaderLine> lines)
+    {
+        GridPane header = new GridPane();
+        header.getStyleClass().add("formatted-report-metadata");
+        header.setHgap(16.0);
+        header.setVgap(3.0);
+
+        ColumnConstraints left = new ColumnConstraints();
+        left.setPercentWidth(68.0);
+        left.setHgrow(Priority.ALWAYS);
+        ColumnConstraints right = new ColumnConstraints();
+        right.setPercentWidth(32.0);
+        right.setHgrow(Priority.ALWAYS);
+        header.getColumnConstraints().addAll(left, right);
+
+        for (int row = 0; row < lines.size(); row++)
+        {
+            ReportTableModel.HeaderLine line = lines.get(row);
+            Label leftLabel = metadataLabel(line.left(), line.style(), Pos.CENTER_LEFT);
+            Label rightLabel = metadataLabel(line.right(), line.style(), Pos.CENTER_RIGHT);
+            header.add(leftLabel, 0, row);
+            header.add(rightLabel, 1, row);
+        }
+        return header;
+    }
+
+    private static Label metadataLabel(
+            String value,
+            ReportTableModel.HeaderStyle style,
+            Pos alignment)
+    {
+        Label label = new Label(value);
+        label.setWrapText(true);
+        label.setMaxWidth(Double.MAX_VALUE);
+        label.setAlignment(alignment);
+        label.getStyleClass().add(style == ReportTableModel.HeaderStyle.PRIMARY
+                ? "formatted-report-metadata-primary"
+                : "formatted-report-metadata-secondary");
+        label.setTooltip(value == null || value.isBlank() ? null : new Tooltip(value));
+        return label;
     }
 
     private TableColumn<ReportTableModel.Row, Object> tableColumn(

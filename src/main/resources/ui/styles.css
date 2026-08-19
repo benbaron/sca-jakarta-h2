@@ -21,6 +21,27 @@
     -fx-text-fill: #5f6b7a;
 }
 
+.formatted-report-metadata
+{
+    -fx-padding: 2 0 7 0;
+    -fx-border-color: transparent transparent #8c98a6 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.formatted-report-metadata-primary
+{
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #172033;
+}
+
+.formatted-report-metadata-secondary
+{
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #3f4d5d;
+}
+
 .table-view.formatted-report-table
 {
     -fx-background-color: white;

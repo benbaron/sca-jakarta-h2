@@ -1,12 +1,12 @@
 ---
-plan_version: 207
+plan_version: 210
 active_phase: P11
-active_slice: P11-C1
+active_slice: P11-C2
 active_status: VERIFYING
-active_branch: codex/P11-C1-formatted-report-preview
-active_pull_request: null
-active_head: b0462aa
-next_action: "After owner authorization, publish P11-C1, open a draft PR to main, and run Maven PR Tests; then perform the Report Library desktop visual checklist."
+active_branch: codex/P11-C2-dynamic-financial-statements
+active_pull_request: 283
+active_head: 6b04245
+next_action: "Confirm the plan-inclusive PR #283 head passes Maven PR Tests, then complete the metadata/chart-driven Report Library desktop visual checklist."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "After owner authorization, publish P11-C1, open a draft PR to main
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, records P16-C3 and P16-C4 through merged PRs #272 and #273, records the owner-requested P16-C6 nondestructive existing-company SCLX import through merged PR #274, records P16-C7 ownership diagnostics through merged PR #275, records P16-C8 target-company authority through merged PR #276, records the identity-aware P16-C9 corrections through merged PRs #277-#279, records P16-C10 through merged PR #280, and closes P16-C11 through merged PR #281. It activates the owner-requested P11-C1 correction for formatted core-report previews. P16-C5 message guidance remains a separate unpublished local slice and is not mixed into this branch. It does not authorize P17 or any later feature phase.
+This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, records P16-C3 and P16-C4 through merged PRs #272 and #273, records the owner-requested P16-C6 nondestructive existing-company SCLX import through merged PR #274, records P16-C7 ownership diagnostics through merged PR #275, records P16-C8 target-company authority through merged PR #276, records the identity-aware P16-C9 corrections through merged PRs #277-#279, records P16-C10 through merged PR #280, closes P16-C11 through merged PR #281, and closes P11-C1 through merged PR #282. It activates the owner-requested P11-C2 correction for metadata-driven comparative financial statements. P16-C5 message guidance remains a separate unpublished local slice and is not mixed into this branch. It does not authorize P17 or any later feature phase.
 
 ## 2. Status values
 
@@ -190,7 +190,7 @@ Known P10 follow-up:
 
 ### P11 — Report Library
 
-Status: Corrective P11-C1 VERIFYING after P11-S1 / merged PR #158 and owner verification.
+Status: Corrective P11-C2 VERIFYING after P11-C1 / merged PR #282.
 
 #### P11-S1 — Typed report catalog and parameters
 
@@ -211,7 +211,7 @@ Completed deliverables:
 
 #### P11-C1 — Formatted core-report previews
 
-Status: VERIFYING.
+Status: DONE through merged PR #282.
 
 Branch: `codex/P11-C1-formatted-report-preview`
 Base head: `3e95d42f56800b729cc01c6b7d3741c3b0345fb6`
@@ -271,9 +271,67 @@ Owner desktop checklist:
 5. Export representative TEXT, CSV, PDF, and XLSX files and confirm the established export behavior is
    unchanged.
 
+Merge evidence:
+
+- PR #282 merged to `main` at `9c359d88ef2371d1e8acc13229cb336b74d3d6f5`.
+
+#### P11-C2 — Metadata-driven comparative financial statements
+
+Status: VERIFYING.
+
+Branch: `codex/P11-C2-dynamic-financial-statements`
+Base head: `9c359d88ef2371d1e8acc13229cb336b74d3d6f5`
+Pull request: #283
+
+Purpose:
+
+- Format Balance Sheet and Income Statement previews with the comparative SCA exchequer-report visual
+  hierarchy while deriving all organization/company headings from active-company metadata.
+- Derive statement categories and expense allocation columns from the active chart hierarchy; do not
+  hard-code one organization's chart labels or the Society for Creative Anachronism name.
+- Preserve the authoritative report projections, immutable request, and existing export adapters.
+
+Implemented deliverables:
+
+- Add metadata header rows to the structured report model and JavaFX renderer.
+- Make Balance Sheet a comparative period report with beginning, ending, and difference columns plus
+  calculated net-worth change/net-income reconciliation.
+- Pivot Income Statement expense rows from chart parent/child relationships into dynamic allocation
+  columns and retain dynamic income/expense categories, totals, and reconciliation.
+- Add company scoping, zero-activity chart rows, focused tests, governing documentation, and owner visual
+  acceptance steps.
+
+Implementation and validation status:
+
+- Implementation commit `0717aae67435956e1116f623dc7bfaa3aa565001` is published in draft PR #283.
+- Corrective commit `6b04245a1eddf5337b063414d50e824ba5c60534` preserves the legacy null-company
+  report-service constructor without weakening the production active-company/active-chart predicate.
+- The structured table model and JavaFX renderer now accept two-column metadata header lines. The active
+  company's parent organization, legal entity, display name, currency, fiscal-year start, and resulting
+  quarter label are supplied through `ReportPresentationMetadata`; no sample organization or branch name
+  is embedded in production report code.
+- Balance Sheet now uses a selected comparative range, includes active-chart cash/bank, asset, and
+  liability accounts even at zero balance, and calculates beginning, ending, difference, Net Worth,
+  period change, Net Income, and reconciliation difference rows.
+- Income Statement includes all active-chart income and expense posting accounts, derives category rows
+  and allocation columns from parent/grandparent relationships, and retains dynamic gross/cost/net,
+  expense, Net Income, Net Worth change, and difference totals.
+- Production report queries are active-company scoped and obtain statement categories only from that
+  company's active chart; no second ledger or reporting store is introduced. Existing export adapters
+  continue to receive the same core projections.
+- All 724 production/test Java sources parse with the Java 17 compiler module. The UI-neutral report
+  model/builder type compilation and focused metadata, dynamic-category, and reconciliation behavior
+  checks pass, as do `git diff --check` and the hard-coded sample-name source guardrails.
+- Maven, the `javac` launcher, and a Linux JavaFX runtime are unavailable in this container. The focused
+  JUnit/JavaFX suite and full `mvn clean verify` therefore required Maven PR Tests after publication.
+- Exact corrected head `6b04245a1eddf5337b063414d50e824ba5c60534` passed all three Maven PR Tests
+  gates in run `32214212704`: clean Maven verification, the deliberately repeated test suite, and
+  production JavaFX route compliance.
+
 Next exact action:
 
-- After owner authorization, publish the branch, open a draft PR to `main`, and run Maven PR Tests.
+- Confirm the plan-inclusive PR #283 head passes Maven PR Tests, then perform the owner desktop visual
+  checklist with non-SCA metadata and chart labels.
 
 ## 7. P12 — Administration, company lifecycle, preferences, and Funds edit
 
