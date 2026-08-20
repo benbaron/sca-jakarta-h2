@@ -49,6 +49,17 @@ class FinancialReportServiceIntegrationTest
             assertEquals(6, lines.size());
             assertTrue(lines.stream().anyMatch(row -> row.accountCode().equals("4000") && row.credit().compareTo(new BigDecimal("1000.00")) == 0));
             assertTrue(lines.stream().anyMatch(row -> row.accountCode().equals("5000") && row.debit().compareTo(new BigDecimal("300.00")) == 0));
+
+            List<FinancialReportService.GeneralLedgerRow> expenseLines =
+                    service.generalLedgerDetail(
+                            LocalDate.of(2026, 3, 1),
+                            LocalDate.of(2026, 3, 31),
+                            null,
+                            100,
+                            accountId(jpa, "5000"));
+            assertEquals(2, expenseLines.size());
+            assertTrue(expenseLines.stream()
+                    .allMatch(row -> "5000".equals(row.accountCode())));
         }
         finally
         {
@@ -184,6 +195,18 @@ class FinancialReportServiceIntegrationTest
         account.setPosting(true);
         account.setActive(true);
         return account;
+    }
+
+    private static Long accountId(Jpa jpa, String code)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            return em.createQuery(
+                            "select a.id from Account a where a.code = :code",
+                            Long.class)
+                    .setParameter("code", code)
+                    .getSingleResult();
+        }
     }
 
     private static Txn txn(LocalDate date, Counterparty payee, String memo, Account bank)

@@ -32,6 +32,11 @@ class ReportLibraryTypedSourceTest
         assertTrue(source.contains("preferencesService.saveState"));
         assertTrue(source.contains("ComboBox<AssetInventoryReportQueryService.FilterOption>"));
         assertTrue(source.contains("domainFilterMode()"));
+        assertTrue(source.contains("listPostingAccountsIncludingInactive()"));
+        assertTrue(source.contains("new ReportDomainFilter.AccountSelection("));
+        assertTrue(source.contains("\"All accounts\""));
+        assertTrue(source.contains("new JasperPdfFinancialReportAdapter(companyFormat)"));
+        assertTrue(source.contains("result.tableModel()"));
         assertFalse(source.contains("Report not implemented"));
         assertFalse(source.contains("ListView<String>"));
     }

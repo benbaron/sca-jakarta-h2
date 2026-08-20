@@ -11,18 +11,40 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TruthfulSemanticReportSourceTest
 {
     @Test
+    void obsoleteWorkbookStatementsAreAbsentFromCatalogAndTemplates() throws Exception
+    {
+        String definition = source(
+                "src/main/java/org/nonprofitbookkeeping/report/ReportDefinition.java");
+
+        assertFalse(definition.contains("BALANCE_STMT"));
+        assertFalse(definition.contains("INCOME_STMT"));
+        assertFalse(Files.exists(Path.of(
+                "src/main/resources/org/nonprofitbookkeeping/report/templates/BalanceStmt.report.json")));
+        assertFalse(Files.exists(Path.of(
+                "src/main/resources/org/nonprofitbookkeeping/report/templates/IncomeStmt.report.json")));
+        assertFalse(Files.exists(Path.of(
+                "src/main/java/org/nonprofitbookkeeping/service/WorkbookModeledReportRenderer.java")));
+    }
+
+    @Test
     void productionUsesCompanyScopedSemanticQueries() throws Exception
     {
         String registry = source("src/main/java/org/nonprofitbookkeeping/ui/UiServiceRegistry.java");
         String panel = source("src/main/java/org/nonprofitbookkeeping/ui/ReportLibraryPanel.java");
         String workbook = source(
                 "src/main/java/org/nonprofitbookkeeping/report/template/WorkbookSemanticReportService.java");
+        String execution = source(
+                "src/main/java/org/nonprofitbookkeeping/report/ReportExecutionService.java");
 
         assertTrue(registry.contains("new SemanticAccountingReportQueryService("));
         assertTrue(registry.contains("UiServiceRegistry::activeCompanyCode"));
         assertTrue(panel.contains("UiServiceRegistry.semanticAccountingReports()"));
         assertTrue(workbook.contains("requireSemanticQueries().bankAccountActivity("));
         assertTrue(workbook.contains("requireSemanticQueries().postedFundTransfers("));
+        assertTrue(workbook.contains("ReportDomainFilter.AccountSelection"));
+        assertTrue(workbook.contains(
+                "financialReports.generalLedgerDetail(start, end, fundCode, rowLimit, accountId)"));
+        assertTrue(execution.contains("SemanticReportTableModelBuilder.build("));
         assertFalse(workbook.contains(
                 "\"AllChecksTfrs\" -> ledgerTableValues("));
         assertFalse(workbook.contains(

@@ -1,12 +1,12 @@
 ---
-plan_version: 210
+plan_version: 211
 active_phase: P11
 active_slice: P11-C2
-active_status: VERIFYING
+active_status: IN_PROGRESS
 active_branch: codex/P11-C2-dynamic-financial-statements
 active_pull_request: 283
-active_head: 6b04245
-next_action: "Confirm the plan-inclusive PR #283 head passes Maven PR Tests, then complete the metadata/chart-driven Report Library desktop visual checklist."
+active_head: 4683901
+next_action: "Obtain explicit authorization to stage, commit, and push the locally validated structured-PDF, obsolete-report-removal, and ledger-account-filter update to PR #283."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -190,7 +190,7 @@ Known P10 follow-up:
 
 ### P11 — Report Library
 
-Status: Corrective P11-C2 VERIFYING after P11-C1 / merged PR #282.
+Status: Corrective P11-C2 IN_PROGRESS after P11-C1 / merged PR #282.
 
 #### P11-S1 — Typed report catalog and parameters
 
@@ -268,8 +268,8 @@ Owner desktop checklist:
    layout is restored for that company.
 4. At laptop width, confirm both table scroll bars are available as needed and the horizontal divider can
    enlarge the preview without hiding access to report parameters.
-5. Export representative TEXT, CSV, PDF, and XLSX files and confirm the established export behavior is
-   unchanged.
+5. Export representative TEXT, CSV, PDF, and XLSX files. Confirm PDF visually matches the JavaFX table
+   hierarchy and company formatting, while CSV/XLSX retain stable machine-readable values.
 
 Merge evidence:
 
@@ -277,7 +277,7 @@ Merge evidence:
 
 #### P11-C2 — Metadata-driven comparative financial statements
 
-Status: VERIFYING.
+Status: IN_PROGRESS.
 
 Branch: `codex/P11-C2-dynamic-financial-statements`
 Base head: `9c359d88ef2371d1e8acc13229cb336b74d3d6f5`
@@ -290,6 +290,9 @@ Purpose:
 - Derive statement categories and expense allocation columns from the active chart hierarchy; do not
   hard-code one organization's chart labels or the Society for Creative Anachronism name.
 - Preserve the authoritative report projections, immutable request, and existing export adapters.
+- Render structured core-report PDFs from the same typed model as the JavaFX table, remove obsolete
+  `BalanceStmt`/`IncomeStmt` entries, and add All Accounts/specific-account parameters to General Ledger
+  Detail and Transactions List.
 
 Implemented deliverables:
 
@@ -300,6 +303,8 @@ Implemented deliverables:
   columns and retain dynamic income/expense categories, totals, and reconciliation.
 - Add company scoping, zero-activity chart rows, focused tests, governing documentation, and owner visual
   acceptance steps.
+- Preserve typed table headings, wrapping, borders, colors, row emphasis, and company date/money formats
+  in PDF exports; retain stable-ID account selection across preview/export.
 
 Implementation and validation status:
 
@@ -327,11 +332,24 @@ Implementation and validation status:
 - Exact corrected head `6b04245a1eddf5337b063414d50e824ba5c60534` passed all three Maven PR Tests
   gates in run `32214212704`: clean Maven verification, the deliberately repeated test suite, and
   production JavaFX route compliance.
+- Plan-inclusive head `4683901fcc6da242259010654195971ebe18bd73` passed all three Maven PR Tests
+  gates in run `32214599933` before the additional owner-requested PDF/catalog/account-filter work.
+- The current unpublished continuation renders core and semantic reports through typed formatted Jasper
+  PDF, removes the obsolete `BalanceStmt`/`IncomeStmt` catalog entries, templates, and dead renderer,
+  and applies optional persisted-account-ID predicates to General Ledger Detail and Transactions List.
+- All 725 production/test Java sources parse under the Java 17 compiler module. Focused type checks pass
+  for the 17-source Jasper adapter seam, the 8-source request/catalog filter seam, and the 5-source
+  semantic-table conversion seam. Generated structured JRXML is well formed and escapes dynamic text;
+  every remaining semantic JSON template parses, obsolete production-name guardrails pass, and
+  `git diff --check` is clean.
+- Maven, its wrapper, the `javac` launcher, and a Linux JavaFX runtime are unavailable locally. Full
+  Jasper compilation/PDF export, H2 predicates, JUnit, and JavaFX route checks require Maven PR Tests
+  after publication.
 
 Next exact action:
 
-- Confirm the plan-inclusive PR #283 head passes Maven PR Tests, then perform the owner desktop visual
-  checklist with non-SCA metadata and chart labels.
+- Obtain explicit authorization to stage, commit, and push the validated continuation to draft PR #283.
+  Maven PR Tests and the owner desktop statement/PDF/account-filter checklist follow publication.
 
 ## 7. P12 — Administration, company lifecycle, preferences, and Funds edit
 

@@ -21,7 +21,8 @@ public enum ReportDefinition
             null,
             DateMode.RANGE,
             true,
-            true),
+            true,
+            DomainFilterMode.ACCOUNT),
     BALANCE_SHEET(
             "balance-sheet",
             "Balance Sheet",
@@ -35,22 +36,6 @@ public enum ReportDefinition
             "Income Statement",
             ReportSource.CORE,
             null,
-            DateMode.RANGE,
-            true,
-            false),
-    BALANCE_STMT(
-            "balance-stmt",
-            "BalanceStmt (SCA workbook)",
-            ReportSource.SEMANTIC,
-            "BalanceStmt",
-            DateMode.AS_OF,
-            true,
-            false),
-    INCOME_STMT(
-            "income-stmt",
-            "IncomeStmt (SCA workbook)",
-            ReportSource.SEMANTIC,
-            "IncomeStmt",
             DateMode.RANGE,
             true,
             false),
@@ -69,7 +54,8 @@ public enum ReportDefinition
             "TransactionsList",
             DateMode.RANGE,
             true,
-            true),
+            true,
+            DomainFilterMode.ACCOUNT),
     ALL_CHECKS_TFRS(
             "all-checks-transfers",
             "Bank Account Activity (SCA workbook)",
@@ -225,6 +211,7 @@ public enum ReportDefinition
     public enum DomainFilterMode
     {
         NONE,
+        ACCOUNT,
         FIXED_ASSET,
         INVENTORY
     }

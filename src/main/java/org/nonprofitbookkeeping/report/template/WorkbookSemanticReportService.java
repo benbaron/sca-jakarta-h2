@@ -85,11 +85,9 @@ public class WorkbookSemanticReportService
         int effectiveLimit = rowLimit <= 0 ? DEFAULT_ROW_LIMIT : rowLimit;
         return switch (templateId)
         {
-            case "BalanceStmt" -> balanceValues(effectiveEnd, fundCode);
-            case "IncomeStmt" -> incomeValues(effectiveStart, effectiveEnd, fundCode);
             case "WorkbookSummary" -> summaryValues(effectiveStart, effectiveEnd, fundCode);
             case "TransactionsList" -> ledgerTableValues(
-                    "transactionsList.rows", effectiveStart, effectiveEnd, fundCode, effectiveLimit);
+                    "transactionsList.rows", effectiveStart, effectiveEnd, fundCode, effectiveLimit, null);
             case "AllChecksTfrs" -> bankActivityValues(
                     effectiveStart, effectiveEnd, fundCode, effectiveLimit);
             case "FundTransfers" -> fundTransferValues(
@@ -108,37 +106,10 @@ public class WorkbookSemanticReportService
                     request.endDate(),
                     request.fundCode(),
                     request.rowLimit());
+            case ACCOUNT -> accountValues(request);
             case FIXED_ASSET -> fixedAssetValues(request);
             case INVENTORY -> inventoryValues(request);
         };
-    }
-
-    private SemanticReportValueSet balanceValues(LocalDate end, String fundCode)
-    {
-        FinancialReportService.BalanceSheetReport report = financialReports.balanceSheet(end, fundCode);
-        SemanticReportValueSet values = new SemanticReportValueSet();
-        values.put("balanceStmt.totalAssets", report.totalAssets());
-        values.put("balanceStmt.totalLiabilities", report.totalLiabilities());
-        values.put("balanceStmt.totalNetAssets", report.totalEquity());
-        values.put("balanceStmt.totalLiabilitiesAndNetAssets", report.liabilitiesAndEquity());
-        values.put("balanceStmt.balanceCheck", report.totalAssets().subtract(report.liabilitiesAndEquity()));
-        putRowsByAccount(values, "balanceStmt.assets.rows", report.assets());
-        putRowsByAccount(values, "balanceStmt.liabilities.rows", report.liabilities());
-        putRowsByAccount(values, "balanceStmt.netAssets.rows", report.equity());
-        return values;
-    }
-
-    private SemanticReportValueSet incomeValues(LocalDate start, LocalDate end, String fundCode)
-    {
-        FinancialReportService.IncomeStatementReport report =
-                financialReports.incomeStatement(start, end, fundCode);
-        SemanticReportValueSet values = new SemanticReportValueSet();
-        values.put("incomeStmt.totalIncome", report.totalIncome());
-        values.put("incomeStmt.totalExpenses", report.totalExpense());
-        values.put("incomeStmt.netIncomeLoss", report.netIncome());
-        putRowsByAccount(values, "incomeStmt.income.rows", report.income());
-        putRowsByAccount(values, "incomeStmt.expense.rows", report.expenses());
-        return values;
     }
 
     private SemanticReportValueSet summaryValues(LocalDate start, LocalDate end, String fundCode)
@@ -163,13 +134,32 @@ public class WorkbookSemanticReportService
             LocalDate start,
             LocalDate end,
             String fundCode,
-            int rowLimit)
+            int rowLimit,
+            Long accountId)
     {
         List<FinancialReportService.GeneralLedgerRow> rows =
-                financialReports.generalLedgerDetail(start, end, fundCode, rowLimit);
+                financialReports.generalLedgerDetail(start, end, fundCode, rowLimit, accountId);
         SemanticReportValueSet values = new SemanticReportValueSet();
         values.putTable(tableKey, ledgerRows(rows));
         return values;
+    }
+
+    private SemanticReportValueSet accountValues(ReportRequest request)
+    {
+        ReportDomainFilter.AccountSelection filter =
+                (ReportDomainFilter.AccountSelection) request.domainFilter();
+        if (!"TransactionsList".equals(request.definition().templateId()))
+        {
+            throw new IllegalArgumentException(
+                    "Unknown account-filtered report template: " + request.definition().templateId());
+        }
+        return ledgerTableValues(
+                "transactionsList.rows",
+                request.startDate(),
+                request.endDate(),
+                request.fundCode(),
+                request.rowLimit(),
+                filter.accountId());
     }
 
     private SemanticReportValueSet bankActivityValues(
@@ -537,23 +527,6 @@ public class WorkbookSemanticReportService
                     "Fixed-asset and inventory reports require a company-scoped query service.");
         }
         return assetInventoryQueries;
-    }
-
-    private void putRowsByAccount(
-            SemanticReportValueSet values,
-            String tableKey,
-            List<FinancialReportService.StatementRow> statementRows)
-    {
-        List<Map<String, Object>> out = new ArrayList<>();
-        for (FinancialReportService.StatementRow source : statementRows)
-        {
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("accountCode", source.accountCode());
-            row.put("accountName", source.accountName());
-            row.put("amount", source.amount());
-            out.add(row);
-        }
-        values.putTable(tableKey, out);
     }
 
     private List<Map<String, Object>> ledgerRows(List<FinancialReportService.GeneralLedgerRow> rows)

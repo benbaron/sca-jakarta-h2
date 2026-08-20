@@ -96,9 +96,21 @@ public record ReportRequest(
                 if (!(value instanceof ReportDomainFilter.None))
                 {
                     throw new IllegalArgumentException(
-                            definition.displayName() + " does not support asset or inventory filters.");
+                            definition.displayName() + " does not support domain filters.");
                 }
                 yield ReportDomainFilter.NONE;
+            }
+            case ACCOUNT -> {
+                if (value instanceof ReportDomainFilter.None)
+                {
+                    yield new ReportDomainFilter.AccountSelection(null);
+                }
+                if (!(value instanceof ReportDomainFilter.AccountSelection))
+                {
+                    throw new IllegalArgumentException(
+                            definition.displayName() + " requires an account filter.");
+                }
+                yield value;
             }
             case FIXED_ASSET -> {
                 if (value instanceof ReportDomainFilter.None)

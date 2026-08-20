@@ -7,6 +7,7 @@ import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -15,12 +16,15 @@ class ReportRequestTest
     @Test
     void catalogHasOnlyRealCoreOrSemanticDefinitions()
     {
-        assertEquals(14, ReportDefinition.catalog().size());
+        assertEquals(12, ReportDefinition.catalog().size());
         assertTrue(ReportDefinition.catalog().stream()
                 .allMatch(definition -> definition.source() == ReportDefinition.ReportSource.CORE
                         || definition.templateId() != null));
         assertFalse(ReportDefinition.catalog().stream()
                 .anyMatch(definition -> definition.displayName().contains("not implemented")));
+        assertFalse(ReportDefinition.catalog().stream()
+                .anyMatch(definition -> "BalanceStmt".equals(definition.templateId())
+                        || "IncomeStmt".equals(definition.templateId())));
     }
 
     @Test
@@ -82,6 +86,30 @@ class ReportRequestTest
     }
 
     @Test
+    void ledgerRequestRetainsStableAccountIdentityOrAllAccounts()
+    {
+        ReportRequest selected = new ReportRequest(
+                ReportDefinition.GENERAL_LEDGER_DETAIL,
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 1, 31),
+                ReportFundOption.ALL_FUNDS,
+                700,
+                new ReportDomainFilter.AccountSelection(42L));
+        ReportRequest all = new ReportRequest(
+                ReportDefinition.TRANSACTIONS_LIST,
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 1, 31),
+                ReportFundOption.ALL_FUNDS,
+                700);
+
+        assertEquals(42L,
+                ((ReportDomainFilter.AccountSelection) selected.domainFilter()).accountId());
+        assertTrue(selected.contextSummary().contains("account=42"));
+        assertNull(((ReportDomainFilter.AccountSelection) all.domainFilter()).accountId());
+        assertTrue(all.contextSummary().contains("account=ALL"));
+    }
+
+    @Test
     void reportWithoutFundFilterRejectsSpecificFund()
     {
         ReportFundOption fund = new ReportFundOption(7L, "OPERATING", "Operating");
@@ -124,5 +152,12 @@ class ReportRequestTest
                 ReportFundOption.ALL_FUNDS,
                 250,
                 new ReportDomainFilter.FixedAssetSelection(null, null, null)));
+        assertThrows(IllegalArgumentException.class, () -> new ReportRequest(
+                ReportDefinition.BALANCE_SHEET,
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 6, 30),
+                ReportFundOption.ALL_FUNDS,
+                250,
+                new ReportDomainFilter.AccountSelection(1L)));
     }
 }
