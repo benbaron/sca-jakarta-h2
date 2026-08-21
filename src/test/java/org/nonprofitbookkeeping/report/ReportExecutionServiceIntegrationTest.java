@@ -30,7 +30,7 @@ class ReportExecutionServiceIntegrationTest
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("report-execution")))
         {
-            Fund general = seedTwoFundLedger(jpa);
+            LedgerSeed seed = seedTwoFundLedger(jpa);
             FinancialReportDisplayFormat format = new FinancialReportDisplayFormat()
             {
                 @Override
@@ -52,8 +52,9 @@ class ReportExecutionServiceIntegrationTest
                     ReportDefinition.GENERAL_LEDGER_DETAIL,
                     LocalDate.of(2026, 3, 1),
                     LocalDate.of(2026, 3, 31),
-                    ReportFundOption.from(general),
-                    100);
+                    ReportFundOption.from(seed.generalFund()),
+                    100,
+                    new ReportDomainFilter.AccountSelection(seed.incomeAccountId()));
 
             ReportResult result = service.execute(request);
 
@@ -70,10 +71,13 @@ class ReportExecutionServiceIntegrationTest
                     .anyMatch(column -> "Memo".equals(column.label())));
             assertTrue(result.tableModel().rows().stream()
                     .anyMatch(row -> "General donation".equals(row.value("memo"))));
+            assertTrue(result.tableModel().rows().stream()
+                    .allMatch(row -> "4000".equals(row.value("account"))));
+            assertFalse(result.text().contains("Cash"));
         }
     }
 
-    private static Fund seedTwoFundLedger(Jpa jpa)
+    private static LedgerSeed seedTwoFundLedger(Jpa jpa)
     {
         try (EntityManager em = jpa.em())
         {
@@ -106,7 +110,7 @@ class ReportExecutionServiceIntegrationTest
             em.persist(split(restrictedTxn, income, restricted, new BigDecimal("-250.00")));
 
             em.getTransaction().commit();
-            return general;
+            return new LedgerSeed(general, income.getId());
         }
     }
 
@@ -159,5 +163,9 @@ class ReportExecutionServiceIntegrationTest
         split.setFund(fund);
         split.setAmountSigned(amount);
         return split;
+    }
+
+    private record LedgerSeed(Fund generalFund, Long incomeAccountId)
+    {
     }
 }

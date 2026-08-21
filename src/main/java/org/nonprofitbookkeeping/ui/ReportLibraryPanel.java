@@ -46,6 +46,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -70,8 +71,7 @@ public class ReportLibraryPanel implements AppPanel
     private final DatePicker startDate = new DatePicker();
     private final DatePicker endDate = new DatePicker();
     private final ComboBox<ReportFundOption> fund = new ComboBox<>();
-    private final ComboBox<AssetInventoryReportQueryService.FilterOption> domainAccount =
-            new ComboBox<>();
+    private final ComboBox<ReportAccountOption> domainAccount = new ComboBox<>();
     private final ComboBox<AssetInventoryReportQueryService.FilterOption> domainSubject =
             new ComboBox<>();
     private final ComboBox<Object> domainStatus = new ComboBox<>();
@@ -105,6 +105,7 @@ public class ReportLibraryPanel implements AppPanel
     private SplitPane parameterPreviewSplit;
     private ReportResult currentResult;
     private AssetInventoryReportQueryService.FilterCatalog domainFilterCatalog;
+    private List<ReportAccountOption> reportAccounts = List.of();
 
     public ReportLibraryPanel()
     {
@@ -115,7 +116,8 @@ public class ReportLibraryPanel implements AppPanel
         Label title = new Label("Report Library");
         title.getStyleClass().add("panel-title");
 
-        adapters.put(FinancialReportExportFormat.PDF, new JasperPdfFinancialReportAdapter());
+        adapters.put(FinancialReportExportFormat.PDF,
+                new JasperPdfFinancialReportAdapter(companyFormat));
         adapters.put(FinancialReportExportFormat.XLSX, new PoiXlsxFinancialReportAdapter());
 
         Button run = new Button("Run");
@@ -199,7 +201,7 @@ public class ReportLibraryPanel implements AppPanel
         fund.getSelectionModel().selectFirst();
         rowLimit.setEditable(true);
 
-        configureDomainFilterCombo(domainAccount, "All control accounts");
+        configureAccountFilterCombo();
         configureDomainFilterCombo(domainSubject, "All records");
         domainStatus.setPromptText("All statuses");
         domainStatus.setPrefWidth(260.0);
@@ -229,6 +231,25 @@ public class ReportLibraryPanel implements AppPanel
 
             @Override
             public AssetInventoryReportQueryService.FilterOption fromString(String value)
+            {
+                return null;
+            }
+        });
+    }
+
+    private void configureAccountFilterCombo()
+    {
+        domainAccount.setPrefWidth(260.0);
+        domainAccount.setConverter(new StringConverter<>()
+        {
+            @Override
+            public String toString(ReportAccountOption option)
+            {
+                return option == null ? "" : option.label();
+            }
+
+            @Override
+            public ReportAccountOption fromString(String value)
             {
                 return null;
             }
@@ -348,16 +369,26 @@ public class ReportLibraryPanel implements AppPanel
     private void loadDomainFilters()
     {
         UiAsync.run("report-library-domain-filters",
-                assetInventoryReportService::filterCatalog,
+                () -> new ReportParameterCatalog(
+                        assetInventoryReportService.filterCatalog(),
+                        UiServiceRegistry.accountLookup()
+                                .listPostingAccountsIncludingInactive()
+                                .stream()
+                                .map(account -> new ReportAccountOption(
+                                        account.getId(),
+                                        account.getCode() + " — " + account.getName()
+                                                + (account.isActive() ? "" : " (inactive)")))
+                                .toList()),
                 catalog -> {
-                    domainFilterCatalog = catalog;
+                    domainFilterCatalog = catalog.domainFilters();
+                    reportAccounts = catalog.accounts();
                     ReportDefinition definition = reportList.getSelectionModel().getSelectedItem();
                     if (definition != null)
                     {
                         applyDomainFilterCatalog(definition.domainFilterMode());
                     }
                 },
-                ex -> status.setText("Could not load asset and inventory filters: "
+                ex -> status.setText("Could not load report filters: "
                         + UiErrors.safeMessage(ex)));
     }
 
@@ -378,13 +409,16 @@ public class ReportLibraryPanel implements AppPanel
         setVisibleManaged(rowLimitLabel, definition.supportsRowLimit());
         setVisibleManaged(rowLimit, definition.supportsRowLimit());
 
-        boolean domain = definition.domainFilterMode() != ReportDefinition.DomainFilterMode.NONE;
-        setVisibleManaged(domainAccountLabel, domain);
-        setVisibleManaged(domainAccount, domain);
-        setVisibleManaged(domainSubjectLabel, domain);
-        setVisibleManaged(domainSubject, domain);
-        setVisibleManaged(domainStatusLabel, domain);
-        setVisibleManaged(domainStatus, domain);
+        ReportDefinition.DomainFilterMode mode = definition.domainFilterMode();
+        boolean account = mode != ReportDefinition.DomainFilterMode.NONE;
+        boolean subject = mode == ReportDefinition.DomainFilterMode.FIXED_ASSET
+                || mode == ReportDefinition.DomainFilterMode.INVENTORY;
+        setVisibleManaged(domainAccountLabel, account);
+        setVisibleManaged(domainAccount, account);
+        setVisibleManaged(domainSubjectLabel, subject);
+        setVisibleManaged(domainSubject, subject);
+        setVisibleManaged(domainStatusLabel, subject);
+        setVisibleManaged(domainStatus, subject);
         applyDomainFilterCatalog(definition.domainFilterMode());
     }
 
@@ -396,27 +430,47 @@ public class ReportLibraryPanel implements AppPanel
         domainAccount.getItems().clear();
         domainSubject.getItems().clear();
         domainStatus.getItems().clear();
-        if (mode == ReportDefinition.DomainFilterMode.FIXED_ASSET)
+        if (mode == ReportDefinition.DomainFilterMode.ACCOUNT)
         {
+            domainAccountLabel.setText("Account:");
+            domainAccount.setPromptText("All accounts");
+            domainAccount.getItems().add(new ReportAccountOption(null, "All accounts"));
+            domainAccount.getItems().addAll(reportAccounts);
+            domainAccount.getSelectionModel().selectFirst();
+        }
+        else if (mode == ReportDefinition.DomainFilterMode.FIXED_ASSET)
+        {
+            domainAccountLabel.setText("Control account:");
+            domainAccount.setPromptText("All control accounts");
             domainSubjectLabel.setText("Asset:");
             domainSubject.setPromptText("All assets");
             domainStatus.getItems().addAll(FixedAsset.Status.values());
+            domainAccount.getItems().add(new ReportAccountOption(null, "All control accounts"));
             if (domainFilterCatalog != null)
             {
-                domainAccount.getItems().addAll(domainFilterCatalog.assetAccounts());
+                domainAccount.getItems().addAll(domainFilterCatalog.assetAccounts().stream()
+                        .map(ReportAccountOption::from)
+                        .toList());
                 domainSubject.getItems().addAll(domainFilterCatalog.assets());
             }
+            domainAccount.getSelectionModel().selectFirst();
         }
         else if (mode == ReportDefinition.DomainFilterMode.INVENTORY)
         {
+            domainAccountLabel.setText("Control account:");
+            domainAccount.setPromptText("All control accounts");
             domainSubjectLabel.setText("Item:");
             domainSubject.setPromptText("All items");
             domainStatus.getItems().addAll(InventoryItem.Status.values());
+            domainAccount.getItems().add(new ReportAccountOption(null, "All control accounts"));
             if (domainFilterCatalog != null)
             {
-                domainAccount.getItems().addAll(domainFilterCatalog.inventoryAccounts());
+                domainAccount.getItems().addAll(domainFilterCatalog.inventoryAccounts().stream()
+                        .map(ReportAccountOption::from)
+                        .toList());
                 domainSubject.getItems().addAll(domainFilterCatalog.inventoryItems());
             }
+            domainAccount.getSelectionModel().selectFirst();
         }
     }
 
@@ -444,13 +498,15 @@ public class ReportLibraryPanel implements AppPanel
         ReportDomainFilter selectedDomain = switch (definition.domainFilterMode())
         {
             case NONE -> ReportDomainFilter.NONE;
+            case ACCOUNT -> new ReportDomainFilter.AccountSelection(
+                    selectedAccountId(domainAccount));
             case FIXED_ASSET -> new ReportDomainFilter.FixedAssetSelection(
                     selectedId(domainSubject),
-                    selectedId(domainAccount),
+                    selectedAccountId(domainAccount),
                     (FixedAsset.Status) domainStatus.getValue());
             case INVENTORY -> new ReportDomainFilter.InventorySelection(
                     selectedId(domainSubject),
-                    selectedId(domainAccount),
+                    selectedAccountId(domainAccount),
                     (InventoryItem.Status) domainStatus.getValue());
         };
         return new ReportRequest(
@@ -466,6 +522,12 @@ public class ReportLibraryPanel implements AppPanel
             ComboBox<AssetInventoryReportQueryService.FilterOption> combo)
     {
         AssetInventoryReportQueryService.FilterOption selected = combo.getValue();
+        return selected == null ? null : selected.id();
+    }
+
+    private static Long selectedAccountId(ComboBox<ReportAccountOption> combo)
+    {
+        ReportAccountOption selected = combo.getValue();
         return selected == null ? null : selected.id();
     }
 
@@ -622,7 +684,8 @@ public class ReportLibraryPanel implements AppPanel
                 Files.write(path, adapter.render(
                         result.request().definition().displayName(),
                         result.text(),
-                        result.csv()));
+                        result.csv(),
+                        result.tableModel()));
             }
         }
     }
@@ -677,6 +740,38 @@ public class ReportLibraryPanel implements AppPanel
                 : format;
         LocalDate effectiveDate = date == null ? LocalDate.now() : date;
         return normalized + "-" + effectiveDate + "." + effective.extension();
+    }
+
+    private record ReportParameterCatalog(
+            AssetInventoryReportQueryService.FilterCatalog domainFilters,
+            List<ReportAccountOption> accounts)
+    {
+        private ReportParameterCatalog
+        {
+            accounts = List.copyOf(accounts);
+        }
+    }
+
+    private record ReportAccountOption(Long id, String label)
+    {
+        private ReportAccountOption
+        {
+            if (id != null && id <= 0)
+            {
+                throw new IllegalArgumentException("A selected account ID must be positive.");
+            }
+            if (label == null || label.isBlank())
+            {
+                throw new IllegalArgumentException("An account option label is required.");
+            }
+            label = label.strip();
+        }
+
+        private static ReportAccountOption from(
+                AssetInventoryReportQueryService.FilterOption option)
+        {
+            return new ReportAccountOption(option.id(), option.label());
+        }
     }
 
     @Override

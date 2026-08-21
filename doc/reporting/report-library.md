@@ -13,7 +13,7 @@ The Report Library is the single production surface for financial and operationa
 - as-of-date or date-range behavior;
 - whether a fund filter applies;
 - whether a maximum-row parameter applies.
-- whether the report accepts stable-ID fixed-asset or inventory filters.
+- whether the report accepts a stable-ID account, fixed-asset, or inventory filter.
 
 A report must not appear in the catalog unless a real core service projection or semantic template exists. The UI must not expose selectable “Report not implemented” entries.
 
@@ -27,7 +27,7 @@ P16-S6 aligns the default Report Library date request with fiscal authority. Whe
 - normalized start/end or as-of dates;
 - an All Funds selection or a persisted fund ID/code/name;
 - a bounded row limit where applicable.
-- a typed `None`, `FixedAssetSelection`, or `InventorySelection` domain filter. Asset/item and control-account choices retain persisted IDs; status remains the domain enum.
+- a typed `None`, `AccountSelection`, `FixedAssetSelection`, or `InventorySelection` domain filter. Account, asset/item, and control-account choices retain persisted IDs; status remains the domain enum.
 
 `ReportExecutionService` executes that request through `FinancialReportService` or `WorkbookSemanticReportService` and returns one `ReportResult`. Export reuses the current result when its request still matches the controls; otherwise it executes the newly validated request once.
 
@@ -39,6 +39,9 @@ P16-S6 aligns the default Report Library date request with fiscal authority. Whe
 - General Ledger Detail, Income Statement, Workbook Summary, Transactions List, Bank Account Activity, Fund Transfers, Fixed Asset Depreciation History & Schedule, and Inventory Movement History use a date range.
 - Fund filtering is available where the underlying report has a meaningful single-fund projection.
 - General Ledger and semantic ledger-list reports expose a maximum row count from 1 through 5000.
+- General Ledger Detail and Transactions List expose one active-company posting-account selector. The
+  default is **All accounts**; choosing a specific active or inactive historical account retains its
+  persisted ID and applies the same predicate to preview and export.
 - Fund Transfers intentionally uses all funds because comparison between funds is the subject of the report.
 - The four asset/inventory reports expose optional control-account, asset/item, and current/as-of status filters. The UI choices are loaded from the active company only.
 
@@ -136,7 +139,15 @@ CSV remains machine-readable and stable:
 - numeric values remain unadorned decimal strings;
 - company currency symbols and grouping are not written into CSV numeric fields.
 
-TEXT, CSV, PDF, and XLSX exports remain available. PDF/XLSX adapters consume the same text and CSV generated from the validated request.
+TEXT, CSV, PDF, and XLSX exports remain available. PDF consumes the same typed table presentation as the
+JavaFX preview: core table models pass through directly, while semantic table/section templates are
+converted without parsing their text export. Metadata headings, named columns, company-formatted dates
+and money, wrapping text, borders, workbook colors, and section/total/status/note emphasis are
+preserved. PDF selects a wider landscape page for broad tables. The XLSX adapter continues to consume
+stable CSV.
+
+The obsolete `BalanceStmt` and `IncomeStmt` semantic workbook entries and templates are not selectable;
+the metadata-driven core Balance Sheet and Income Statement are the maintained financial statements.
 
 ## UI state
 
@@ -152,6 +163,7 @@ Required automated coverage includes:
 - catalog completeness and no placeholder entries;
 - date/fund/row-limit request validation;
 - selected-fund filtering against authoritative ledger data;
+- All Accounts and stable-ID single-account filtering for General Ledger Detail and Transactions List;
 - company-formatted visible text with stable raw CSV;
 - source guardrails for typed catalog/request use and company-owned divider state.
 - structured core-table coverage for every core report, complete General Ledger columns, workbook row

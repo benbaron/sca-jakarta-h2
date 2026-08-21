@@ -82,6 +82,16 @@ public class FinancialReportService
 
     public List<GeneralLedgerRow> generalLedgerDetail(LocalDate from, LocalDate to, String fundCode, int maxRows)
     {
+        return generalLedgerDetail(from, to, fundCode, maxRows, null);
+    }
+
+    public List<GeneralLedgerRow> generalLedgerDetail(
+            LocalDate from,
+            LocalDate to,
+            String fundCode,
+            int maxRows,
+            Long accountId)
+    {
         LocalDate start = from == null ? LocalDate.MIN : from;
         LocalDate end = to == null ? LocalDate.now() : to;
         String companyCode = companyCode();
@@ -99,10 +109,12 @@ public class FinancialReportService
                                     "where t.txnDate >= :start and t.txnDate <= :end " +
                                     companyFilter(companyCode) +
                                     "and (:fundCode is null or f.code = :fundCode) " +
+                                    "and (:accountId is null or a.id = :accountId) " +
                                     "order by t.txnDate, t.id, a.code", Object[].class)
                     .setParameter("start", start)
                     .setParameter("end", end)
                     .setParameter("fundCode", blankToNull(fundCode))
+                    .setParameter("accountId", accountId)
                     .setMaxResults(maxRows <= 0 ? 500 : maxRows);
             setCompanyParameter(query, companyCode);
             List<Object[]> rows = query.getResultList();

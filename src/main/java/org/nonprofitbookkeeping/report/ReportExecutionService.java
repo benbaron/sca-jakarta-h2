@@ -89,12 +89,15 @@ public final class ReportExecutionService
                         CoreFinancialReportTableBuilder.trialBalance(report, displayFormat));
             }
             case GENERAL_LEDGER_DETAIL -> {
+                ReportDomainFilter.AccountSelection filter =
+                        (ReportDomainFilter.AccountSelection) request.domainFilter();
                 java.util.List<FinancialReportService.GeneralLedgerRow> rows =
                         reports.generalLedgerDetail(
                                 request.startDate(),
                                 request.endDate(),
                                 request.fundCode(),
-                                request.rowLimit());
+                                request.rowLimit(),
+                                filter.accountId());
                 yield new ReportResult(
                         request,
                         FinancialReportRenderer.renderGeneralLedgerText(rows, displayFormat),
@@ -175,6 +178,10 @@ public final class ReportExecutionService
                 rendered.text(),
                 rendered.csv(),
                 template,
-                values);
+                values,
+                SemanticReportTableModelBuilder.build(
+                        template,
+                        values,
+                        displayFormat));
     }
 }

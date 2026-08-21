@@ -3,7 +3,12 @@ package org.nonprofitbookkeeping.report;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.nonprofitbookkeeping.report.template.SemanticReportValueSet;
 
-/** Result generated from one immutable ReportRequest. */
+/**
+ * Result generated from one immutable ReportRequest.
+ *
+ * <p>A semantic result may also carry a structured table model for binary
+ * export while its JavaFX preview continues to use the semantic template.</p>
+ */
 public record ReportResult(
         ReportRequest request,
         String text,
@@ -33,11 +38,6 @@ public record ReportResult(
         if ((semanticTemplate == null) != (semanticValues == null))
         {
             throw new IllegalArgumentException("Semantic template and values must be supplied together.");
-        }
-        if (semanticTemplate != null && tableModel != null)
-        {
-            throw new IllegalArgumentException(
-                    "A report preview cannot use semantic and core table models together.");
         }
     }
 

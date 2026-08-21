@@ -133,10 +133,38 @@ class TruthfulSemanticReportIntegrationTest
         }
     }
 
+    @Test
+    void transactionsListCanSelectOnePostingAccount(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("transactions-list-account")))
+        {
+            Fixture fixture = seed(jpa);
+            ReportExecutionService service = service(jpa, "ALPHA");
+            ReportRequest request = new ReportRequest(
+                    ReportDefinition.TRANSACTIONS_LIST,
+                    LocalDate.of(2026, 3, 1),
+                    LocalDate.of(2026, 3, 31),
+                    ReportFundOption.from(fixture.sourceFund()),
+                    100,
+                    new ReportDomainFilter.AccountSelection(fixture.expenseAccountId()));
+
+            ReportResult result = service.execute(request);
+            List<Map<String, Object>> rows =
+                    result.semanticValues().table("transactionsList.rows");
+
+            assertEquals(3, rows.size());
+            assertTrue(rows.stream().allMatch(row -> "5000".equals(row.get("accountCode"))));
+            assertFalse(result.csv().contains("Checking"));
+            assertTrue(result.tabular());
+            assertEquals(3, result.tableModel().rows().size());
+            assertEquals("Account", result.tableModel().columns().get(3).label());
+        }
+    }
+
     private static ReportExecutionService service(Jpa jpa, String companyCode)
     {
         return new ReportExecutionService(
-                new FinancialReportService(jpa),
+                new FinancialReportService(jpa, () -> companyCode),
                 FinancialReportDisplayFormat.plain(),
                 new SemanticAccountingReportQueryService(jpa, () -> companyCode));
     }
@@ -222,7 +250,8 @@ class TruthfulSemanticReportIntegrationTest
                     bank.getId(),
                     reversal.getId(),
                     betaTxn.getId(),
-                    postedTxn.getId());
+                    postedTxn.getId(),
+                    alphaExpense.getId());
         }
     }
 
@@ -318,7 +347,8 @@ class TruthfulSemanticReportIntegrationTest
             long bankTransactionId,
             long bankReversalId,
             long otherCompanyTransactionId,
-            long postedTransferTransactionId)
+            long postedTransferTransactionId,
+            long expenseAccountId)
     {
     }
 }
