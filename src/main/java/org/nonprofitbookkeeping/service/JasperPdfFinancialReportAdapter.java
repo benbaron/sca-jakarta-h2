@@ -74,7 +74,10 @@ public class JasperPdfFinancialReportAdapter implements FinancialReportExportAda
             JasperDesign design = load(structuredTemplate(tableModel));
             var report = JasperCompileManager.compileReport(design);
             JRDataSource dataSource = new JRMapCollectionDataSource(structuredRows(tableModel));
-            JasperPrint print = JasperFillManager.fillReport(report, Map.of(), dataSource);
+            JasperPrint print = JasperFillManager.fillReport(
+                    report,
+                    new LinkedHashMap<>(),
+                    dataSource);
             return JasperExportManager.exportReportToPdf(print);
         }
         catch (JRException ex)

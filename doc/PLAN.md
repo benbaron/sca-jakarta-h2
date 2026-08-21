@@ -1,12 +1,12 @@
 ---
-plan_version: 211
+plan_version: 212
 active_phase: P11
 active_slice: P11-C2
 active_status: IN_PROGRESS
 active_branch: codex/P11-C2-dynamic-financial-statements
-active_pull_request: 283
-active_head: 4683901
-next_action: "Obtain explicit authorization to stage, commit, and push the locally validated structured-PDF, obsolete-report-removal, and ledger-account-filter update to PR #283."
+active_pull_request: 284
+active_head: 2bd36f7
+next_action: "Obtain explicit authorization to publish the two reviewed Maven regression corrections to draft PR #284, then inspect the rerun of Maven PR Tests."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -345,11 +345,19 @@ Implementation and validation status:
 - Maven, its wrapper, the `javac` launcher, and a Linux JavaFX runtime are unavailable locally. Full
   Jasper compilation/PDF export, H2 predicates, JUnit, and JavaFX route checks require Maven PR Tests
   after publication.
+- The continuation was published at head `2bd36f71dbc6f6db1c193fb6a7f9805ad5a09c04` in draft PR #284.
+  Maven PR Tests job `96312987338` compiled successfully and ran 696 tests, with one failure and one
+  error: structured PDF fill passed an immutable parameter map that JasperReports mutates internally,
+  and the account-filter integration test asserted the nonexistent table key `accountCode` instead of
+  the established General Ledger table key `account`. The reviewed local correction supplies a mutable
+  `LinkedHashMap` to Jasper and fixes only that test key; `git diff --check` passes. Maven is unavailable
+  locally, so the corrected focused tests and full suite require the PR workflow after publication.
 
 Next exact action:
 
-- Obtain explicit authorization to stage, commit, and push the validated continuation to draft PR #283.
-  Maven PR Tests and the owner desktop statement/PDF/account-filter checklist follow publication.
+- Obtain explicit authorization to publish the two reviewed Maven regression corrections to draft PR
+  #284, then inspect Maven PR Tests. The owner desktop statement/PDF/account-filter checklist follows a
+  passing workflow.
 
 ## 7. P12 — Administration, company lifecycle, preferences, and Funds edit
 

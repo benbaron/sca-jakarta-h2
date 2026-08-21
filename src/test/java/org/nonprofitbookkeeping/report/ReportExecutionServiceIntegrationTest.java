@@ -72,7 +72,7 @@ class ReportExecutionServiceIntegrationTest
             assertTrue(result.tableModel().rows().stream()
                     .anyMatch(row -> "General donation".equals(row.value("memo"))));
             assertTrue(result.tableModel().rows().stream()
-                    .allMatch(row -> "4000".equals(row.value("accountCode"))));
+                    .allMatch(row -> "4000".equals(row.value("account"))));
             assertFalse(result.text().contains("Cash"));
         }
     }
