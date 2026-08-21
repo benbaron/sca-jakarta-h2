@@ -140,7 +140,7 @@ public class FixedAssetServiceTest
                     .setParameter(1, ACCUMULATED_DEPRECIATION_ACCOUNT_ID)
                     .setParameter(2, CHART_ID)
                     .executeUpdate();
-            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, subtype, normal_balance) VALUES (?, ?, '1000', 'Checking', 'BANK', 'CASH', 'DEBIT')")
+            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, account_function, subtype, normal_balance) VALUES (?, ?, '1000', 'Checking', 'ASSET', 'BANK', 'CASH', 'DEBIT')")
                     .setParameter(1, CHECKING_ACCOUNT_ID)
                     .setParameter(2, CHART_ID)
                     .executeUpdate();

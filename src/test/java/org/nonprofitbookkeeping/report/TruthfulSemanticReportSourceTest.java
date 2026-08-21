@@ -64,7 +64,7 @@ class TruthfulSemanticReportSourceTest
         assertTrue(definition.contains("Bank Account Activity (SCA workbook)"));
         assertFalse(definition.contains("AllChecksTfrs (SCA workbook)"));
         assertTrue(bank.contains("\"title\": \"Bank Account Activity\""));
-        assertTrue(bank.contains("BANK-account splits only"));
+        assertTrue(bank.contains("bank-function account splits only"));
         assertFalse(bank.contains("First-pass"));
         assertTrue(transfers.contains("Explicit POSTED fund-transfer records"));
         assertFalse(transfers.contains("Fund summary derived from live ledger detail"));

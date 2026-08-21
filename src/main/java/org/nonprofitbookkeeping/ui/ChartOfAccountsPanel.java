@@ -22,6 +22,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountFunction;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.NormalBalance;
@@ -39,6 +40,7 @@ public class ChartOfAccountsPanel implements AppPanel
     private final TextField codeField = new TextField();
     private final TextField nameField = new TextField();
     private final ComboBox<AccountType> typeField = new ComboBox<>();
+    private final ComboBox<AccountFunction> functionField = new ComboBox<>();
     private final ComboBox<NormalBalance> balanceField = new ComboBox<>();
     private final ComboBox<AccountSubtype> subtypeField = new ComboBox<>();
     private final TextField parentCodeField = new TextField();
@@ -80,6 +82,10 @@ public class ChartOfAccountsPanel implements AppPanel
         TableColumn<Account, String> type = new TableColumn<>("Type");
         type.setCellValueFactory(v -> new SimpleStringProperty(String.valueOf(v.getValue().getAccountType())));
 
+        TableColumn<Account, String> function = new TableColumn<>("Function");
+        function.setCellValueFactory(v -> new SimpleStringProperty(
+                v.getValue().getAccountFunction() == null ? "" : v.getValue().getAccountFunction().name()));
+
         TableColumn<Account, String> normalBalance = new TableColumn<>("Normal");
         normalBalance.setCellValueFactory(v -> new SimpleStringProperty(String.valueOf(v.getValue().getNormalBalance())));
 
@@ -92,7 +98,7 @@ public class ChartOfAccountsPanel implements AppPanel
         TableColumn<Account, String> active = new TableColumn<>("Active");
         active.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().isActive() ? "Y" : "N"));
 
-        table.getColumns().addAll(code, name, type, normalBalance, subtype, parentCode, active);
+        table.getColumns().addAll(code, name, type, function, normalBalance, subtype, parentCode, active);
         table.setPlaceholder(new Label("No accounts found. Use the form above to create a posting account."));
         table.getSelectionModel().selectedItemProperty().addListener((obs, oldRow, newRow) -> {
             if (suppressSelection || newRow == null)
@@ -161,6 +167,7 @@ public class ChartOfAccountsPanel implements AppPanel
     private Node buildEditorForm()
     {
         typeField.getItems().setAll(AccountType.values());
+        functionField.getItems().setAll(AccountFunction.values());
         balanceField.getItems().setAll(NormalBalance.values());
         subtypeField.getItems().setAll(AccountSubtype.values());
         activeField.setSelected(true);
@@ -177,17 +184,20 @@ public class ChartOfAccountsPanel implements AppPanel
         row++;
         form.add(new Label("Type"), 0, row);
         form.add(typeField, 1, row);
-        form.add(new Label("Normal"), 2, row);
-        form.add(balanceField, 3, row);
+        form.add(new Label("Function"), 2, row);
+        form.add(functionField, 3, row);
         row++;
-        form.add(new Label("Subtype"), 0, row);
-        form.add(subtypeField, 1, row);
-        form.add(new Label("Parent code"), 2, row);
-        form.add(parentCodeField, 3, row);
+        form.add(new Label("Normal"), 0, row);
+        form.add(balanceField, 1, row);
+        form.add(new Label("Subtype"), 2, row);
+        form.add(subtypeField, 3, row);
+        row++;
+        form.add(new Label("Parent code"), 0, row);
+        form.add(parentCodeField, 1, row);
         row++;
         form.add(activeField, 0, row, 2, 1);
         for (Node field : java.util.List.of(
-                codeField, nameField, typeField, balanceField, subtypeField, parentCodeField))
+                codeField, nameField, typeField, functionField, balanceField, subtypeField, parentCodeField))
         {
             GridPane.setHgrow(field, Priority.ALWAYS);
         }
@@ -204,6 +214,7 @@ public class ChartOfAccountsPanel implements AppPanel
         codeField.setText(row.getCode());
         nameField.setText(row.getName());
         typeField.setValue(row.getAccountType());
+        functionField.setValue(row.getAccountFunction());
         balanceField.setValue(row.getNormalBalance());
         activeField.setSelected(row.isActive());
         subtypeField.setValue(row.getSubtype());
@@ -218,6 +229,7 @@ public class ChartOfAccountsPanel implements AppPanel
         codeField.clear();
         nameField.clear();
         typeField.getSelectionModel().clearSelection();
+        functionField.getSelectionModel().clearSelection();
         balanceField.getSelectionModel().clearSelection();
         subtypeField.getSelectionModel().clearSelection();
         parentCodeField.clear();
@@ -233,6 +245,7 @@ public class ChartOfAccountsPanel implements AppPanel
                     codeField.getText(),
                     nameField.getText(),
                     typeField.getValue(),
+                    functionField.getValue(),
                     balanceField.getValue(),
                     subtypeField.getValue(),
                     parentCodeField.getText(),
@@ -254,6 +267,7 @@ public class ChartOfAccountsPanel implements AppPanel
                 codeField.getText(),
                 nameField.getText(),
                 typeField.getValue(),
+                functionField.getValue(),
                 balanceField.getValue(),
                 subtypeField.getValue(),
                 parentCodeField.getText(),
@@ -265,6 +279,7 @@ public class ChartOfAccountsPanel implements AppPanel
         codeField.setText(formState.code());
         nameField.setText(formState.name());
         typeField.setValue(formState.accountType());
+        functionField.setValue(formState.accountFunction());
         balanceField.setValue(formState.normalBalance());
         subtypeField.setValue(formState.subtype());
         parentCodeField.setText(formState.parentCode());
@@ -274,6 +289,7 @@ public class ChartOfAccountsPanel implements AppPanel
     record FormState(String code,
                      String name,
                      AccountType accountType,
+                     AccountFunction accountFunction,
                      NormalBalance normalBalance,
                      AccountSubtype subtype,
                      String parentCode,

@@ -21,6 +21,8 @@ A root that matches neither family is rejected. Future `SCA-COA` versions are re
 
 Writers emit only deterministic `SCA-COA` version `1.0`.
 
+`BANK` remains a **portable compatibility type token** in SCA-COA 1.0 even though it is no longer an internal `AccountType`. A reader maps portable `BANK` to `AccountType.ASSET + AccountFunction.BANK`; the optional `subtype` independently carries `CASH` or another financial/schedule classification. A writer emits portable type `BANK` for an internal account with the `BANK` function. This preserves existing files without conflating balance-sheet class with operational banking behavior.
+
 ## 3. Actual donor compatibility shape
 
 The governed donor fixture freezes the actual emitted root and field names. The root properties, in emitted order, are:
@@ -52,8 +54,8 @@ Field conversion rules are:
 
 - `accountNumber` becomes the portable account `code` unless an explicit `MAP_CODES` mapping overrides it;
 - `increaseSide` maps to `normalBalance`;
-- a compatible donor `accountType` maps to the current `AccountType`;
-- donor checking, savings, bank, and cash types map to current `AccountType.BANK` with `AccountSubtype.CASH`;
+- a compatible donor `accountType` maps to the current accounting type/function/subtype classification;
+- donor checking, savings, bank, and cash types map internally to `AccountType.ASSET`, `AccountFunction.BANK`, and `AccountSubtype.CASH`;
 - `parentAccountId` maps to `parentCode`;
 - `currency` must equal the target company's currency or produce a blocking mismatch;
 - `associatedFundIds` and `supplementalLineKinds` are unsupported by the current `Account` entity and produce named warnings;
@@ -198,7 +200,7 @@ Owner desktop verification for this slice:
 
 1. Open **Chart of Accounts** and confirm the existing account table/editor, New, Save, Refresh, dirty-state behavior, and table/divider state still work.
 2. Export the active chart twice to different new files and confirm the files are byte-identical and the displayed SHA-256 values match.
-3. Preview the frozen donor fixture and confirm its three source accounts appear once, checking maps to `BANK`/`CASH`, redundant donor fields produce warnings, and no duplicate rows are proposed.
+3. Preview the frozen donor fixture and confirm its three source accounts appear once, checking maps to internal `ASSET`/`BANK`/`CASH` while retaining portable type `BANK`, redundant donor fields produce warnings, and no duplicate rows are proposed.
 4. Import the donor fixture as a new chart and confirm the chart is created as `DRAFT`, is not automatically activated, and parent/child relationships reload correctly.
 5. Merge an identical SCA-COA file twice and confirm the second preview reports identical accounts and creates no duplicates.
 6. Confirm a local account omitted from a merge remains active and unchanged.

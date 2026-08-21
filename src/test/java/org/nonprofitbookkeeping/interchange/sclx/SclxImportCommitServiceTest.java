@@ -14,6 +14,7 @@ import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.Activity;
+import org.nonprofitbookkeeping.model.AccountFunction;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.AuditEvent;
@@ -1421,15 +1422,15 @@ class SclxImportCommitServiceTest
             em.getTransaction().begin();
             Company company = company(em);
             ChartOfAccounts chart = company.getActiveChartOfAccounts();
-            addAccount(em, chart, "1000", "Cash", AccountType.BANK,
+            addAccount(em, chart, "1000", "Cash", AccountType.ASSET, AccountFunction.BANK,
                     AccountSubtype.CASH, NormalBalance.DEBIT);
-            addAccount(em, chart, "1500", "Equipment", AccountType.ASSET,
+            addAccount(em, chart, "1500", "Equipment", AccountType.ASSET, null,
                     AccountSubtype.FIXED_ASSET, NormalBalance.DEBIT);
-            addAccount(em, chart, "1590", "Accumulated Depreciation", AccountType.ASSET,
+            addAccount(em, chart, "1590", "Accumulated Depreciation", AccountType.ASSET, null,
                     AccountSubtype.FIXED_ASSET, NormalBalance.CREDIT);
-            addAccount(em, chart, "1600", "Inventory", AccountType.ASSET,
+            addAccount(em, chart, "1600", "Inventory", AccountType.ASSET, null,
                     AccountSubtype.INVENTORY, NormalBalance.DEBIT);
-            addAccount(em, chart, "6100", "Supplies", AccountType.EXPENSE,
+            addAccount(em, chart, "6100", "Supplies", AccountType.EXPENSE, null,
                     null, NormalBalance.DEBIT);
             Fund fund = new Fund();
             fund.setCompany(company);
@@ -1448,6 +1449,7 @@ class SclxImportCommitServiceTest
             String code,
             String name,
             AccountType type,
+            AccountFunction function,
             AccountSubtype subtype,
             NormalBalance balance)
     {
@@ -1456,6 +1458,7 @@ class SclxImportCommitServiceTest
         account.setCode(code);
         account.setName(name);
         account.setAccountType(type);
+        account.setAccountFunction(function);
         account.setSubtype(subtype);
         account.setNormalBalance(balance);
         account.setOpeningBalance(BigDecimal.ZERO);

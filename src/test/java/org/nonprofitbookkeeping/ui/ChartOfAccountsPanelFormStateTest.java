@@ -28,6 +28,7 @@ public class ChartOfAccountsPanelFormStateTest
                     "1100",
                     "Accounts Receivable",
                     AccountType.ASSET,
+                    null,
                     NormalBalance.DEBIT,
                     AccountSubtype.RECEIVABLE,
                     "1000",

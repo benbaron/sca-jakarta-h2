@@ -61,13 +61,15 @@ The headless geometry assessments model the center viewport after sidebar and di
 
 ### Balance
 
-For the displayed transaction window, the service derives an aggregate running balance across posted bank-type accounts. Ordering is stable by transaction date and transaction database ID. The service first calculates the posted bank balance immediately before the oldest displayed transaction, then applies each displayed transaction's posted bank delta in chronological order.
+For the displayed transaction window, the service derives an aggregate running balance across posted bank-function accounts. Ordering is stable by transaction date and transaction database ID. The service first calculates the posted bank balance immediately before the oldest displayed transaction, then applies each displayed transaction's posted bank delta in chronological order.
 
 When no bank account exists, the balance cannot be established reliably, or the displayed transaction is not posted, the cell is blank.
 
+**Book Cash** is a financial-statement measure, not a banking-operation measure: it sums posted `ASSET` accounts classified with subtype `CASH`. A bank-function account with a non-CASH subtype is excluded from Book Cash but still participates in banking/reconciliation.
+
 ### Affects Bank
 
-The indicator is shown only when the transaction is posted and at least one line references an account whose type is `BANK`. Otherwise the cell is blank.
+The indicator is shown only when the transaction is posted and at least one line references an account whose operational function is `BANK`. Otherwise the cell is blank.
 
 ### Affects Budget
 

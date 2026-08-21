@@ -102,6 +102,8 @@ write, so a stale preview cannot fall through to a database uniqueness violation
 
 ## 6. Account-reference modes
 
+SCLX 1.3 retains `BANK` as the portable account `type` token for compatibility. Internally the token maps to `AccountType.ASSET` plus `AccountFunction.BANK`; the independent account `subtype` continues to carry `CASH` or another financial/schedule classification. Export maps any internal `BANK`-function account back to portable type `BANK`. This permits `ASSET :: BANK :: !CASH` without changing the SCLX 1.3 wire contract.
+
 Import supports exactly two account-reference modes:
 
 ### 6.1 `AS_IS`

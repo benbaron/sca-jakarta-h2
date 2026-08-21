@@ -273,9 +273,9 @@ public class BankReconciliationMutationIntegrityTest
             em.createNativeQuery("INSERT INTO chart_of_accounts (id, name, version, status) VALUES (100, 'SCA Chart', '1', 'ACTIVE')").executeUpdate();
             em.createNativeQuery("INSERT INTO company (id, code, display_name, active_chart_of_accounts_id) VALUES (200, 'SCA', 'SCA Branch', 100)").executeUpdate();
             em.createNativeQuery("UPDATE chart_of_accounts SET company_id = 200 WHERE id = 100").executeUpdate();
-            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, subtype, normal_balance) VALUES (1001, 100, '1000', 'Checking', 'BANK', 'CASH', 'DEBIT')").executeUpdate();
+            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, account_function, subtype, normal_balance) VALUES (1001, 100, '1000', 'Checking', 'ASSET', 'BANK', 'CASH', 'DEBIT')").executeUpdate();
             em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, subtype, normal_balance) VALUES (1002, 100, '5000', 'Expense', 'EXPENSE', NULL, 'DEBIT')").executeUpdate();
-            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, subtype, normal_balance) VALUES (1003, 100, '1010', 'Savings', 'BANK', 'CASH', 'DEBIT')").executeUpdate();
+            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, account_function, subtype, normal_balance) VALUES (1003, 100, '1010', 'Savings', 'ASSET', 'BANK', 'CASH', 'DEBIT')").executeUpdate();
             em.createNativeQuery("INSERT INTO fund (id, company_id, code, name, fund_type) VALUES (2001, 200, 'UNR', 'Unrestricted', 'UNRESTRICTED')").executeUpdate();
             em.createNativeQuery("INSERT INTO bank (id, company_id, name) VALUES (2001, 200, 'Example Bank')").executeUpdate();
             em.createNativeQuery("INSERT INTO company_bank_account (id, company_id, name, bank_id, account_id, opening_date, opening_balance, statement_import_format) VALUES (3001, 200, 'Operating Checking', 2001, 1001, DATE '2026-03-01', 0.0000, 'CSV')").executeUpdate();
@@ -296,7 +296,7 @@ public class BankReconciliationMutationIntegrityTest
             em.createNativeQuery("INSERT INTO chart_of_accounts (id, name, version, status) VALUES (110, 'Other Chart', '1', 'ACTIVE')").executeUpdate();
             em.createNativeQuery("INSERT INTO company (id, code, display_name, active_chart_of_accounts_id) VALUES (210, 'OTHER', 'Other Branch', 110)").executeUpdate();
             em.createNativeQuery("UPDATE chart_of_accounts SET company_id = 210 WHERE id = 110").executeUpdate();
-            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, subtype, normal_balance) VALUES (1101, 110, '1000', 'Other Checking', 'BANK', 'CASH', 'DEBIT')").executeUpdate();
+            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, account_function, subtype, normal_balance) VALUES (1101, 110, '1000', 'Other Checking', 'ASSET', 'BANK', 'CASH', 'DEBIT')").executeUpdate();
             em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, subtype, normal_balance) VALUES (1102, 110, '5000', 'Other Expense', 'EXPENSE', NULL, 'DEBIT')").executeUpdate();
             em.createNativeQuery("INSERT INTO fund (id, company_id, code, name, fund_type) VALUES (2101, 210, 'UNR', 'Other Unrestricted', 'UNRESTRICTED')").executeUpdate();
             em.createNativeQuery("INSERT INTO bank (id, company_id, name) VALUES (2101, 210, 'Other Bank')").executeUpdate();

@@ -172,7 +172,7 @@ public class FinancialReportService
             BigDecimal naturalBalance = signedBalance(account, activityByAccount.get(account.getId()));
             StatementRow row = statementRow(account, naturalBalance);
 
-            if (account.getAccountType() == AccountType.ASSET || account.getAccountType() == AccountType.BANK)
+            if (account.getAccountType() == AccountType.ASSET)
             {
                 assets.add(row);
                 totalAssets = totalAssets.add(naturalBalance);

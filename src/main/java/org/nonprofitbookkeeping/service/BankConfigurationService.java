@@ -2,12 +2,10 @@ package org.nonprofitbookkeeping.service;
 
 import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.Account;
-import org.nonprofitbookkeeping.model.AccountSubtype;
-import org.nonprofitbookkeeping.model.AccountType;
+import org.nonprofitbookkeeping.model.AccountClassification;
 import org.nonprofitbookkeeping.model.Bank;
 import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.CompanyBankAccount;
-import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.math.BigDecimal;
@@ -143,7 +141,7 @@ public class BankConfigurationService
                 bankAccount.setName(displayName);
                 bankAccount.setNickname(blankToNull(command.nickname()));
                 bankAccount.setInstitutionName(bank.getName());
-                bankAccount.setAccountType(account.getAccountType().name());
+                bankAccount.setAccountType(AccountClassification.portableType(account));
                 bankAccount.setMaskedAccountNumber(blankToNull(command.maskedAccountNumber()));
                 bankAccount.setLastFour(lastFour(command.maskedAccountNumber()));
                 bankAccount.setOpeningDate(command.openingDate());
@@ -257,11 +255,10 @@ public class BankConfigurationService
         {
             throw new IllegalArgumentException("Chart-of-accounts bank account is required.");
         }
-        if (account.getAccountType() != AccountType.BANK
-                || account.getNormalBalance() != NormalBalance.DEBIT
-                || account.getSubtype() != AccountSubtype.CASH)
+        if (!AccountClassification.isBankLedgerAccount(account))
         {
-            throw new IllegalArgumentException("Linked chart account must be BANK / DEBIT / CASH.");
+            throw new IllegalArgumentException(
+                    "Linked chart account must be an ASSET with BANK function and DEBIT normal balance.");
         }
     }
 

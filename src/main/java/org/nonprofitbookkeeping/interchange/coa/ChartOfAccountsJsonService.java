@@ -15,6 +15,8 @@ import org.nonprofitbookkeeping.interchange.InterchangeMessageSeverity;
 import org.nonprofitbookkeeping.interchange.InterchangeOperationCounts;
 import org.nonprofitbookkeeping.interchange.InterchangeValidationMessage;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountClassification;
+import org.nonprofitbookkeeping.model.AccountFunction;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
@@ -312,11 +314,13 @@ public final class ChartOfAccountsJsonService
         String path = "$.accounts[" + index + "]";
         Map<String, String> unknown = warnUnknownFields(node, SCA_ACCOUNT_FIELDS, path, messages);
         String code = requiredText(node, "code", path + ".code");
+        TypeMapping mapping = portableType(requiredText(node, "type", path + ".type"), path + ".type");
         return new CoaAccountData(
                 code,
                 code,
                 requiredText(node, "name", path + ".name"),
-                parseEnum(AccountType.class, requiredText(node, "type", path + ".type"), path + ".type"),
+                mapping.type(),
+                mapping.function(),
                 optionalEnum(AccountSubtype.class, node.get("subtype"), path + ".subtype"),
                 parseEnum(
                         NormalBalance.class,
@@ -441,6 +445,7 @@ public final class ChartOfAccountsJsonService
                 sourceCode,
                 requiredText(node, "name", path + ".name"),
                 mapping.type(),
+                mapping.function(),
                 mapping.subtype(),
                 increase,
                 optionalText(node.get("parentAccountId")),
@@ -660,6 +665,7 @@ public final class ChartOfAccountsJsonService
                     account.getCode(),
                     account.getName(),
                     account.getAccountType(),
+                    account.getAccountFunction(),
                     account.getSubtype(),
                     account.getNormalBalance(),
                     account.getParent() == null ? null : account.getParent().getCode(),
@@ -713,7 +719,7 @@ public final class ChartOfAccountsJsonService
             ObjectNode node = accounts.addObject();
             node.put("code", account.getCode());
             node.put("name", account.getName());
-            node.put("type", account.getAccountType().name());
+            node.put("type", AccountClassification.portableType(account));
             if (account.getSubtype() != null)
             {
                 node.put("subtype", account.getSubtype().name());
@@ -1045,6 +1051,7 @@ public final class ChartOfAccountsJsonService
     {
         return Objects.equals(current.name(), source.name())
                 && current.type() == source.type()
+                && current.function() == source.function()
                 && current.subtype() == source.subtype()
                 && current.normalBalance() == source.normalBalance()
                 && Objects.equals(current.parentCode(), parentTarget)
@@ -1062,6 +1069,8 @@ public final class ChartOfAccountsJsonService
             String parentTarget)
     {
         return current.type() != source.type()
+                || current.function() != source.function()
+                || current.subtype() != source.subtype()
                 || current.normalBalance() != source.normalBalance()
                 || !Objects.equals(current.parentCode(), parentTarget)
                 || current.posting() != source.posting();
@@ -1075,7 +1084,7 @@ public final class ChartOfAccountsJsonService
         }
         return switch (type)
         {
-            case ASSET, BANK, EXPENSE -> balance == NormalBalance.DEBIT;
+            case ASSET, EXPENSE -> balance == NormalBalance.DEBIT;
             case LIABILITY, EQUITY, INCOME -> balance == NormalBalance.CREDIT;
         };
     }
@@ -1090,8 +1099,21 @@ public final class ChartOfAccountsJsonService
         {
             case RECEIVABLE, PREPAID, INVENTORY, FIXED_ASSET, OTHER_ASSET -> type == AccountType.ASSET;
             case PAYABLE, DEFERRED_REVENUE, OTHER_LIABILITY -> type == AccountType.LIABILITY;
-            case CASH -> type == AccountType.ASSET || type == AccountType.BANK;
+            case CASH -> type == AccountType.ASSET;
         };
+    }
+
+    private static TypeMapping portableType(String value, String path)
+    {
+        try
+        {
+            AccountClassification.PortableType parsed = AccountClassification.parsePortableType(value);
+            return new TypeMapping(parsed.type(), parsed.function(), null);
+        }
+        catch (RuntimeException ex)
+        {
+            throw new IllegalArgumentException(path + " has unsupported account type " + value + ".", ex);
+        }
     }
 
     private static TypeMapping donorType(String value, String path)
@@ -1099,20 +1121,20 @@ public final class ChartOfAccountsJsonService
         String normalized = value.trim().toUpperCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
         return switch (normalized)
         {
-            case "ASSET" -> new TypeMapping(AccountType.ASSET, null);
-            case "LIABILITY" -> new TypeMapping(AccountType.LIABILITY, null);
-            case "EQUITY", "NET_ASSET", "NET_ASSETS" -> new TypeMapping(AccountType.EQUITY, null);
-            case "INCOME", "REVENUE" -> new TypeMapping(AccountType.INCOME, null);
-            case "EXPENSE" -> new TypeMapping(AccountType.EXPENSE, null);
-            case "BANK", "CHECKING", "SAVINGS", "CASH" -> new TypeMapping(AccountType.BANK, AccountSubtype.CASH);
-            case "RECEIVABLE" -> new TypeMapping(AccountType.ASSET, AccountSubtype.RECEIVABLE);
-            case "PAYABLE" -> new TypeMapping(AccountType.LIABILITY, AccountSubtype.PAYABLE);
-            case "PREPAID" -> new TypeMapping(AccountType.ASSET, AccountSubtype.PREPAID);
-            case "DEFERRED_REVENUE" -> new TypeMapping(AccountType.LIABILITY, AccountSubtype.DEFERRED_REVENUE);
-            case "INVENTORY" -> new TypeMapping(AccountType.ASSET, AccountSubtype.INVENTORY);
-            case "FIXED_ASSET" -> new TypeMapping(AccountType.ASSET, AccountSubtype.FIXED_ASSET);
-            case "OTHER_ASSET" -> new TypeMapping(AccountType.ASSET, AccountSubtype.OTHER_ASSET);
-            case "OTHER_LIABILITY" -> new TypeMapping(AccountType.LIABILITY, AccountSubtype.OTHER_LIABILITY);
+            case "ASSET" -> new TypeMapping(AccountType.ASSET, null, null);
+            case "LIABILITY" -> new TypeMapping(AccountType.LIABILITY, null, null);
+            case "EQUITY", "NET_ASSET", "NET_ASSETS" -> new TypeMapping(AccountType.EQUITY, null, null);
+            case "INCOME", "REVENUE" -> new TypeMapping(AccountType.INCOME, null, null);
+            case "EXPENSE" -> new TypeMapping(AccountType.EXPENSE, null, null);
+            case "BANK", "CHECKING", "SAVINGS", "CASH" -> new TypeMapping(AccountType.ASSET, AccountFunction.BANK, AccountSubtype.CASH);
+            case "RECEIVABLE" -> new TypeMapping(AccountType.ASSET, null, AccountSubtype.RECEIVABLE);
+            case "PAYABLE" -> new TypeMapping(AccountType.LIABILITY, null, AccountSubtype.PAYABLE);
+            case "PREPAID" -> new TypeMapping(AccountType.ASSET, null, AccountSubtype.PREPAID);
+            case "DEFERRED_REVENUE" -> new TypeMapping(AccountType.LIABILITY, null, AccountSubtype.DEFERRED_REVENUE);
+            case "INVENTORY" -> new TypeMapping(AccountType.ASSET, null, AccountSubtype.INVENTORY);
+            case "FIXED_ASSET" -> new TypeMapping(AccountType.ASSET, null, AccountSubtype.FIXED_ASSET);
+            case "OTHER_ASSET" -> new TypeMapping(AccountType.ASSET, null, AccountSubtype.OTHER_ASSET);
+            case "OTHER_LIABILITY" -> new TypeMapping(AccountType.LIABILITY, null, AccountSubtype.OTHER_LIABILITY);
             default -> throw new IllegalArgumentException(path + " has unsupported donor account type " + value + ".");
         };
     }
@@ -1124,6 +1146,7 @@ public final class ChartOfAccountsJsonService
                 account.code(),
                 account.name(),
                 account.type(),
+                account.function(),
                 account.subtype(),
                 account.normalBalance(),
                 account.parentCode(),
@@ -1456,7 +1479,7 @@ public final class ChartOfAccountsJsonService
         }
     }
 
-    private record TypeMapping(AccountType type, AccountSubtype subtype)
+    private record TypeMapping(AccountType type, AccountFunction function, AccountSubtype subtype)
     {
     }
 
@@ -1472,6 +1495,7 @@ public final class ChartOfAccountsJsonService
             String code,
             String name,
             AccountType type,
+            AccountFunction function,
             AccountSubtype subtype,
             NormalBalance normalBalance,
             String parentCode,

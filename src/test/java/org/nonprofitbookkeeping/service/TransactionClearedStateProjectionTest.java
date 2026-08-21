@@ -168,9 +168,9 @@ class TransactionClearedStateProjectionTest
             em.createNativeQuery("update chart_of_accounts set company_id = 401 where id = 401").executeUpdate();
             em.createNativeQuery("insert into fund (id, company_id, code, name, fund_type) values (501, 401, 'GENERAL', 'General', 'UNRESTRICTED')")
                     .executeUpdate();
-            em.createNativeQuery("insert into account (id, chart_id, code, name, account_type, subtype, normal_balance) values (101, 401, '1000', 'Checking', 'BANK', 'CASH', 'DEBIT')")
+            em.createNativeQuery("insert into account (id, chart_id, code, name, account_type, account_function, subtype, normal_balance) values (101, 401, '1000', 'Checking', 'ASSET', 'BANK', 'CASH', 'DEBIT')")
                     .executeUpdate();
-            em.createNativeQuery("insert into account (id, chart_id, code, name, account_type, subtype, normal_balance) values (102, 401, '1010', 'Savings', 'BANK', 'CASH', 'DEBIT')")
+            em.createNativeQuery("insert into account (id, chart_id, code, name, account_type, account_function, subtype, normal_balance) values (102, 401, '1010', 'Savings', 'ASSET', 'BANK', 'CASH', 'DEBIT')")
                     .executeUpdate();
             em.createNativeQuery("insert into account (id, chart_id, code, name, account_type, normal_balance) values (201, 401, '5000', 'Expense', 'EXPENSE', 'DEBIT')")
                     .executeUpdate();

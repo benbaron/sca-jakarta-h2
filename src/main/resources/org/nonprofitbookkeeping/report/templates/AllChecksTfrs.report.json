@@ -3,7 +3,7 @@
   "templateId": "AllChecksTfrs",
   "sourceSheet": "AllChecksTfrs",
   "title": "Bank Account Activity",
-  "subtitle": "Persisted BANK-account splits only. The legacy template ID is retained for interchange traceability.",
+  "subtitle": "Persisted bank-function account splits only. The legacy template ID is retained for interchange traceability.",
   "type": "tableReport",
   "tableKey": "allChecksTfrs.rows",
   "columns": [

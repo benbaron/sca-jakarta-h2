@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountClassification;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.BudgetCategory;
@@ -487,7 +488,7 @@ public class TransactionEntryService
                     split.getActivity() == null ? null : split.getActivity().getId(),
                     split.getMerchant() == null ? null : split.getMerchant().getId(),
                     debit, credit, split.isNmr(), split.getNotes(),
-                    split.getAccount().getAccountType() == AccountType.BANK,
+                    AccountClassification.isBank(split.getAccount()),
                     split.isBankCleared(), split.getBankClearedOn(), reconciliationSessions.get(split.getId())));
         }
         List<TxnSupplementalLine> supplementalEntities = em.createQuery(

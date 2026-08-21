@@ -80,6 +80,7 @@ record SclxImportTargetSnapshot(
             String portableId,
             String code,
             String type,
+            String subtype,
             String increaseSide,
             boolean posting,
             boolean active,

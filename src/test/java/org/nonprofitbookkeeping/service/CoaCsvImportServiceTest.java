@@ -3,6 +3,8 @@ package org.nonprofitbookkeeping.service;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountFunction;
+import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
@@ -74,6 +76,41 @@ public class CoaCsvImportServiceTest
                 assertEquals(1L, em.createQuery(
                         "select count(a) from AuditEvent a where a.actionType = 'COA_CSV_IMPORT'", Long.class)
                         .getSingleResult());
+            }
+        }
+        finally
+        {
+            jpa.close();
+        }
+    }
+
+    @Test
+    public void portableBankTypeCommitsAsAssetBankCash() throws Exception
+    {
+        Path db = database("coa-csv-bank-classification");
+        runMigrations(db);
+        Jpa jpa = new Jpa(db);
+        try
+        {
+            seedCompany(jpa, "ALPHA");
+            Path csv = csv("""
+                    code,name,account_type,normal_balance,parent_code
+                    1000,Operating Checking,BANK,DEBIT,
+                    """);
+            CoaCsvImportService service = new CoaCsvImportService(jpa, () -> "ALPHA");
+
+            CoaCsvImportService.CoaCsvBatchCommitResult result = service.commit(
+                    service.preview(csv).confirmedCopy(), "tester");
+
+            assertTrue(result.committed());
+            try (var em = jpa.em())
+            {
+                Account account = em.createQuery(
+                        "from Account a where a.code = '1000'", Account.class).getSingleResult();
+                assertEquals(AccountType.ASSET, account.getAccountType());
+                assertEquals(AccountFunction.BANK, account.getAccountFunction());
+                assertEquals(AccountSubtype.CASH, account.getSubtype());
+                assertEquals(NormalBalance.DEBIT, account.getNormalBalance());
             }
         }
         finally

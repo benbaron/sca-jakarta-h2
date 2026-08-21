@@ -3,6 +3,8 @@ package org.nonprofitbookkeeping.service.dashboard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import org.nonprofitbookkeeping.model.AccountFunction;
+import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.BudgetPlan;
 import org.nonprofitbookkeeping.model.NormalBalance;
@@ -114,10 +116,12 @@ public class JpaDashboardQueryService implements DashboardQueryService
                 from TxnSplit s
                 where s.txn.txnDate <= :asOf
                   and s.txn.status = 'ENTERED'
-                  and s.account.accountType = :bankType
+                  and s.account.accountType = :assetType
+                  and s.account.subtype = :cashSubtype
                 """, BigDecimal.class)
                 .setParameter("asOf", asOfDate)
-                .setParameter("bankType", AccountType.BANK)
+                .setParameter("assetType", AccountType.ASSET)
+                .setParameter("cashSubtype", AccountSubtype.CASH)
                 .getSingleResult());
     }
 
@@ -178,12 +182,12 @@ public class JpaDashboardQueryService implements DashboardQueryService
                 from TxnSplit s join s.account a
                 where s.txn.txnDate <= :asOf
                   and s.txn.status = 'ENTERED'
-                  and a.accountType = :bankType
+                  and a.accountFunction = :bankFunction
                 group by a.id, a.code, a.name
                 order by abs(sum(s.amountSigned)) desc, a.code
                 """, DashboardSnapshot.BankAccountBalance.class)
                 .setParameter("asOf", asOfDate)
-                .setParameter("bankType", AccountType.BANK)
+                .setParameter("bankFunction", AccountFunction.BANK)
                 .getResultList();
     }
 
@@ -222,7 +226,7 @@ public class JpaDashboardQueryService implements DashboardQueryService
         }
 
         List<Object[]> splitRows = em.createQuery("""
-                select s.txn.id, a.code, a.name, a.normalBalance, a.accountType,
+                select s.txn.id, a.code, a.name, a.normalBalance, a.accountType, a.accountFunction,
                        f.code, f.name, s.amountSigned, bc.id
                 from TxnSplit s
                 join s.account a
@@ -245,10 +249,11 @@ public class JpaDashboardQueryService implements DashboardQueryService
                         string(row[2]),
                         (NormalBalance) row[3],
                         (AccountType) row[4],
-                        string(row[5]),
+                        (AccountFunction) row[5],
                         string(row[6]),
-                        decimal(row[7]),
-                        row[8] != null);
+                        string(row[7]),
+                        decimal(row[8]),
+                        row[9] != null);
             }
         }
 
@@ -265,9 +270,9 @@ public class JpaDashboardQueryService implements DashboardQueryService
         long bankAccountCount = em.createQuery("""
                 select count(a)
                 from Account a
-                where a.accountType = :bankType
+                where a.accountFunction = :bankFunction
                 """, Long.class)
-                .setParameter("bankType", AccountType.BANK)
+                .setParameter("bankFunction", AccountFunction.BANK)
                 .getSingleResult();
         if (bankAccountCount == 0)
         {
@@ -285,11 +290,11 @@ public class JpaDashboardQueryService implements DashboardQueryService
                 select coalesce(sum(s.amountSigned), 0)
                 from TxnSplit s
                 where s.txn.status = 'ENTERED'
-                  and s.account.accountType = :bankType
+                  and s.account.accountFunction = :bankFunction
                   and (s.txn.txnDate < :firstDate
                        or (s.txn.txnDate = :firstDate and s.txn.id < :firstId))
                 """, BigDecimal.class)
-                .setParameter("bankType", AccountType.BANK)
+                .setParameter("bankFunction", AccountFunction.BANK)
                 .setParameter("firstDate", first.transactionDate())
                 .setParameter("firstId", first.transactionId())
                 .getSingleResult());
@@ -669,6 +674,7 @@ public class JpaDashboardQueryService implements DashboardQueryService
                 String accountName,
                 NormalBalance normalBalance,
                 AccountType accountType,
+                AccountFunction accountFunction,
                 String fundCode,
                 String fundName,
                 BigDecimal amountSigned,
@@ -689,7 +695,7 @@ public class JpaDashboardQueryService implements DashboardQueryService
                 creditTotal = creditTotal.add(amountSigned.abs());
             }
 
-            if (posted() && accountType == AccountType.BANK)
+            if (posted() && accountFunction == AccountFunction.BANK)
             {
                 affectsBank = true;
                 bankDelta = bankDelta.add(amountSigned);

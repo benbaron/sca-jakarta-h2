@@ -2,6 +2,7 @@ package org.nonprofitbookkeeping.service;
 
 import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountFunction;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.Activity;
@@ -96,7 +97,7 @@ public class SampleCompanyService
 
     private static void seedAccounts(EntityManager em, ChartOfAccounts chart)
     {
-        upsertAccount(em, chart, "1000", "Operating Checking", AccountType.BANK, NormalBalance.DEBIT, AccountSubtype.CASH);
+        upsertAccount(em, chart, "1000", "Operating Checking", AccountType.ASSET, AccountFunction.BANK, NormalBalance.DEBIT, AccountSubtype.CASH);
         upsertAccount(em, chart, "1100", "Accounts Receivable", AccountType.ASSET, NormalBalance.DEBIT, AccountSubtype.RECEIVABLE);
         upsertAccount(em, chart, "1200", "Prepaid Expenses", AccountType.ASSET, NormalBalance.DEBIT, AccountSubtype.PREPAID);
         upsertAccount(em, chart, "1500", "Furniture and Equipment", AccountType.ASSET, NormalBalance.DEBIT, AccountSubtype.FIXED_ASSET);
@@ -118,6 +119,18 @@ public class SampleCompanyService
                                       NormalBalance normalBalance,
                                       AccountSubtype subtype)
     {
+        upsertAccount(em, chart, code, name, type, null, normalBalance, subtype);
+    }
+
+    private static void upsertAccount(EntityManager em,
+                                      ChartOfAccounts chart,
+                                      String code,
+                                      String name,
+                                      AccountType type,
+                                      AccountFunction function,
+                                      NormalBalance normalBalance,
+                                      AccountSubtype subtype)
+    {
         Account account = em.createQuery(
                         "from Account a where a.chart = :chart and a.code = :code",
                         Account.class)
@@ -131,6 +144,7 @@ public class SampleCompanyService
         account.setCode(code);
         account.setName(name);
         account.setAccountType(type);
+        account.setAccountFunction(function);
         account.setNormalBalance(normalBalance);
         account.setSubtype(subtype);
         account.setPosting(true);

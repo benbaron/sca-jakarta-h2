@@ -195,8 +195,8 @@ public class NormalizedBankCsvReviewServiceTest
             em.createNativeQuery("UPDATE chart_of_accounts SET company_id = "
                     + "(SELECT id FROM company WHERE code = 'SCA') WHERE id = 101").executeUpdate();
             em.createNativeQuery("INSERT INTO account "
-                    + "(id, chart_id, code, name, account_type, subtype, normal_balance) "
-                    + "VALUES (101, 101, '1000', 'SCA Checking', 'BANK', 'CASH', 'DEBIT')")
+                    + "(id, chart_id, code, name, account_type, account_function, subtype, normal_balance) "
+                    + "VALUES (101, 101, '1000', 'SCA Checking', 'ASSET', 'BANK', 'CASH', 'DEBIT')")
                     .executeUpdate();
             em.getTransaction().commit();
         }

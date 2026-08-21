@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountFunction;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
@@ -194,9 +195,11 @@ class TruthfulSemanticReportIntegrationTest
             em.persist(destination);
             em.persist(betaFund);
 
-            Account alphaBank = account(alphaChart, "1000", "Checking", AccountType.BANK, NormalBalance.DEBIT);
+            Account alphaBank = account(alphaChart, "1000", "Checking", AccountType.ASSET, NormalBalance.DEBIT);
+            alphaBank.setAccountFunction(AccountFunction.BANK);
             Account alphaExpense = account(alphaChart, "5000", "Expense", AccountType.EXPENSE, NormalBalance.DEBIT);
-            Account betaBank = account(betaChart, "1100", "Other Checking", AccountType.BANK, NormalBalance.DEBIT);
+            Account betaBank = account(betaChart, "1100", "Other Checking", AccountType.ASSET, NormalBalance.DEBIT);
+            betaBank.setAccountFunction(AccountFunction.BANK);
             em.persist(alphaBank);
             em.persist(alphaExpense);
             em.persist(betaBank);

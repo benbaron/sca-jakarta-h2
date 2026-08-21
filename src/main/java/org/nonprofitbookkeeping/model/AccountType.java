@@ -9,6 +9,5 @@ public enum AccountType
     LIABILITY,
     EQUITY,
     INCOME,
-    EXPENSE,
-    BANK
+    EXPENSE
 }

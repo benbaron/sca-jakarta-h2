@@ -227,7 +227,7 @@ public class ReviewedStatementAcceptanceServiceTest
             em.createNativeQuery("INSERT INTO chart_of_accounts (id, name, version, status) VALUES (101, 'SCA Chart', '1', 'ACTIVE')").executeUpdate();
             em.createNativeQuery("INSERT INTO company (code, display_name, default_currency, active_chart_of_accounts_id) VALUES ('SCA', 'SCA Branch', 'USD', 101)").executeUpdate();
             em.createNativeQuery("UPDATE chart_of_accounts SET company_id = (SELECT id FROM company WHERE code = 'SCA') WHERE id = 101").executeUpdate();
-            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, subtype, normal_balance) VALUES (101, 101, '1000', 'Checking', 'BANK', 'CASH', 'DEBIT')").executeUpdate();
+            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, account_function, subtype, normal_balance) VALUES (101, 101, '1000', 'Checking', 'ASSET', 'BANK', 'CASH', 'DEBIT')").executeUpdate();
             em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (102, 101, '4000', 'Event Income', 'INCOME', 'CREDIT')").executeUpdate();
             em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (103, 101, '5000', 'Event Expense', 'EXPENSE', 'DEBIT')").executeUpdate();
             em.createNativeQuery("INSERT INTO fund (id, company_id, code, name, fund_type) VALUES (101, (SELECT id FROM company WHERE code = 'SCA'), 'OPERATING', 'Operating', 'UNRESTRICTED')").executeUpdate();

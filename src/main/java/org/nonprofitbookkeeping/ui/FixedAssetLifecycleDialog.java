@@ -41,8 +41,7 @@ final class FixedAssetLifecycleDialog
         TextField proceeds = new TextField("0.00");
         TextField impairment = new TextField("0.00");
         ComboBox<Account> proceedsAccount = accountBox(postingAccounts.stream()
-                .filter(a -> a.getAccountType() == AccountType.BANK
-                        || a.getAccountType() == AccountType.ASSET)
+                .filter(a -> a.getAccountType() == AccountType.ASSET)
                 .toList());
         ComboBox<Account> gainAccount = accountBox(postingAccounts.stream()
                 .filter(a -> a.getAccountType() == AccountType.INCOME)

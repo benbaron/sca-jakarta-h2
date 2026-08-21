@@ -267,6 +267,7 @@ public final class ChartOfAccountsJsonImportService
 
         account.setName(source.name());
         account.setAccountType(source.type());
+        account.setAccountFunction(source.function());
         account.setSubtype(source.subtype());
         account.setNormalBalance(source.normalBalance());
         account.setParent(parent);
@@ -394,6 +395,7 @@ public final class ChartOfAccountsJsonImportService
                 item.targetCode(),
                 account.name(),
                 String.valueOf(account.type()),
+                String.valueOf(account.function()),
                 String.valueOf(account.subtype()),
                 String.valueOf(account.normalBalance()),
                 parent,

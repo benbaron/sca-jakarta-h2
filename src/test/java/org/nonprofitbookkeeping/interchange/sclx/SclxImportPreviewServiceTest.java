@@ -620,6 +620,7 @@ class SclxImportPreviewServiceTest
             String companyCode, String code, String type, String side)
     {
         return new SclxImportTargetSnapshot.TargetAccount(
-                SclxPortableIdentity.account(companyCode, code), code, type, side, true, true, code);
+                SclxPortableIdentity.account(companyCode, code), code, type,
+                "BANK".equalsIgnoreCase(type) ? "CASH" : null, side, true, true, code);
     }
 }

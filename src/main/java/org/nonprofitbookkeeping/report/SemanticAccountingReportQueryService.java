@@ -1,7 +1,7 @@
 package org.nonprofitbookkeeping.report;
 
 import jakarta.persistence.EntityManager;
-import org.nonprofitbookkeeping.model.AccountType;
+import org.nonprofitbookkeeping.model.AccountFunction;
 import org.nonprofitbookkeeping.model.FundTransferStatus;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.persistence.Jpa;
@@ -29,7 +29,7 @@ public final class SemanticAccountingReportQueryService
     }
 
     /**
-     * Returns only persisted BANK-account splits for the selected company,
+     * Returns only persisted bank-function account splits for the selected company,
      * dates, and optional fund. Totals describe exactly the returned rows.
      */
     public BankActivityResult bankAccountActivity(
@@ -54,12 +54,12 @@ public final class SemanticAccountingReportQueryService
                                     "join s.fund f " +
                                     "left join t.payee p " +
                                     "where t.company.code = :companyCode " +
-                                    "and a.accountType = :bankType " +
+                                    "and a.accountFunction = :bankFunction " +
                                     "and t.txnDate >= :start and t.txnDate <= :end " +
                                     "and (:fundCode is null or f.code = :fundCode) " +
                                     "order by t.txnDate, t.id, s.id", Object[].class)
                     .setParameter("companyCode", companyCode)
-                    .setParameter("bankType", AccountType.BANK)
+                    .setParameter("bankFunction", AccountFunction.BANK)
                     .setParameter("start", effectiveStart)
                     .setParameter("end", effectiveEnd)
                     .setParameter("fundCode", selectedFund)

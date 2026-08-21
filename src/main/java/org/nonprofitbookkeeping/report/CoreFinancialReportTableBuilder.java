@@ -518,7 +518,7 @@ final class CoreFinancialReportTableBuilder
 
     private static boolean isCash(FinancialReportService.StatementRow row)
     {
-        return row.accountType() == AccountType.BANK || row.subtype() == AccountSubtype.CASH;
+        return row.accountType() == AccountType.ASSET && row.subtype() == AccountSubtype.CASH;
     }
 
     private static String alphabetic(int ordinal)

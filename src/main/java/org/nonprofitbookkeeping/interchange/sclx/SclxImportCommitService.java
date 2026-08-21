@@ -8,6 +8,7 @@ import org.nonprofitbookkeeping.interchange.InterchangeMessageSeverity;
 import org.nonprofitbookkeeping.interchange.InterchangeOperationCounts;
 import org.nonprofitbookkeeping.interchange.InterchangeValidationMessage;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountClassification;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.Activity;
@@ -612,7 +613,10 @@ public final class SclxImportCommitService
             account.setChart(chart);
             account.setCode(text(value, "code"));
             account.setName(text(value, "name"));
-            account.setAccountType(enumValue(AccountType.class, text(value, "type"), "account type"));
+            AccountClassification.PortableType classification =
+                    AccountClassification.parsePortableType(text(value, "type"));
+            account.setAccountType(classification.type());
+            account.setAccountFunction(classification.function());
             String subtype = optionalText(value, "subtype");
             account.setSubtype(subtype == null ? null : enumValue(AccountSubtype.class, subtype, "account subtype"));
             account.setNormalBalance(enumValue(NormalBalance.class, text(value, "increaseSide"), "increase side"));
@@ -1947,10 +1951,16 @@ public final class SclxImportCommitService
             SclxImportMappingRequirement mapping,
             Account target)
     {
-        AccountType sourceType = enumValue(AccountType.class, text(source, "type"), "account type");
+        AccountClassification.PortableType sourceType =
+                AccountClassification.parsePortableType(text(source, "type"));
+        String sourceSubtypeText = optionalText(source, "subtype");
+        AccountSubtype sourceSubtype = sourceSubtypeText == null
+                ? null : enumValue(AccountSubtype.class, sourceSubtypeText, "account subtype");
         NormalBalance sourceSide = enumValue(
                 NormalBalance.class, text(source, "increaseSide"), "increase side");
-        if (sourceType != target.getAccountType()
+        if (sourceType.type() != target.getAccountType()
+                || sourceType.function() != target.getAccountFunction()
+                || sourceSubtype != target.getSubtype()
                 || sourceSide != target.getNormalBalance()
                 || (mapping.used() && (!target.isActive() || !target.isPosting())))
         {

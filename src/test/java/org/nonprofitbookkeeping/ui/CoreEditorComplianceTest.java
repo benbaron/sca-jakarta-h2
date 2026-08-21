@@ -46,7 +46,7 @@ class CoreEditorComplianceTest
 
                 ChartOfAccountsPanel accounts = new ChartOfAccountsPanel();
                 accounts.setFormStateForTests(new ChartOfAccountsPanel.FormState(
-                        "1999", "Changed account", AccountType.ASSET, NormalBalance.DEBIT,
+                        "1999", "Changed account", AccountType.ASSET, null, NormalBalance.DEBIT,
                         AccountSubtype.OTHER_ASSET, "", true));
                 assertTrue(accounts.hasUnsavedChanges());
 
