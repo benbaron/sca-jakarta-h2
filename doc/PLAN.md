@@ -1,12 +1,12 @@
 ---
-plan_version: 212
+plan_version: 213
 active_phase: P11
 active_slice: P11-C2
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P11-C2-dynamic-financial-statements
 active_pull_request: 284
-active_head: 2bd36f7
-next_action: "Obtain explicit authorization to publish the two reviewed Maven regression corrections to draft PR #284, then inspect the rerun of Maven PR Tests."
+active_head: d6cc636
+next_action: "Complete the owner desktop statement/PDF/account-filter checklist for draft PR #284, then merge after acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -352,12 +352,14 @@ Implementation and validation status:
   the established General Ledger table key `account`. The reviewed local correction supplies a mutable
   `LinkedHashMap` to Jasper and fixes only that test key; `git diff --check` passes. Maven is unavailable
   locally, so the corrected focused tests and full suite require the PR workflow after publication.
+- Corrective commit `d6cc636d9d5ce9f93e100da8e70d36f015d15462` was published to draft PR #284.
+  Maven PR Tests run `32431913827` passed all three gates on that exact head: clean headless Maven
+  verification, the deliberately repeated test suite, and production JavaFX route compliance.
 
 Next exact action:
 
-- Obtain explicit authorization to publish the two reviewed Maven regression corrections to draft PR
-  #284, then inspect Maven PR Tests. The owner desktop statement/PDF/account-filter checklist follows a
-  passing workflow.
+- Complete the owner desktop statement/PDF/account-filter checklist for draft PR #284, then merge after
+  acceptance.
 
 ## 7. P12 — Administration, company lifecycle, preferences, and Funds edit
 
