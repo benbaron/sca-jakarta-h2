@@ -346,9 +346,9 @@ public class BankStatementImportContractMatrixTest
                     + "(SELECT id FROM company WHERE code = 'OTHER') WHERE id = 102")
                     .executeUpdate();
             em.createNativeQuery("INSERT INTO account "
-                    + "(id, chart_id, code, name, account_type, subtype, normal_balance) VALUES "
-                    + "(101, 101, '1000', 'SCA Checking', 'BANK', 'CASH', 'DEBIT'), "
-                    + "(102, 102, '1000', 'Other Checking', 'BANK', 'CASH', 'DEBIT')")
+                    + "(id, chart_id, code, name, account_type, account_function, subtype, normal_balance) VALUES "
+                    + "(101, 101, '1000', 'SCA Checking', 'ASSET', 'BANK', 'CASH', 'DEBIT'), "
+                    + "(102, 102, '1000', 'Other Checking', 'ASSET', 'BANK', 'CASH', 'DEBIT')")
                     .executeUpdate();
             em.getTransaction().commit();
         }

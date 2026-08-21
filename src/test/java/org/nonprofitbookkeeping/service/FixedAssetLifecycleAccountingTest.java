@@ -501,12 +501,12 @@ class FixedAssetLifecycleAccountingTest
                     .setParameter(1, COMPANY_ID).setParameter(2, CHART_ID).executeUpdate();
             em.createNativeQuery("insert into fund (id, company_id, code, name, fund_type) values (?, ?, 'OPERATING', 'Operating', 'UNRESTRICTED')")
                     .setParameter(1, FUND_ID).setParameter(2, COMPANY_ID).executeUpdate();
-            account(em, ASSET_ACCOUNT_ID, "1500", "Equipment", "ASSET", "FIXED_ASSET", "DEBIT");
-            account(em, ACCUMULATED_ACCOUNT_ID, "1590", "Accumulated Depreciation", "ASSET", "FIXED_ASSET", "CREDIT");
-            account(em, BANK_ACCOUNT_ID, "1000", "Checking", "BANK", "CASH", "DEBIT");
-            account(em, DEPRECIATION_EXPENSE_ID, "6100", "Depreciation Expense", "EXPENSE", null, "DEBIT");
-            account(em, GAIN_ACCOUNT_ID, "4900", "Gain on Asset Disposal", "INCOME", null, "CREDIT");
-            account(em, LOSS_ACCOUNT_ID, "6200", "Loss on Asset Disposal", "EXPENSE", null, "DEBIT");
+            account(em, ASSET_ACCOUNT_ID, "1500", "Equipment", "ASSET", null, "FIXED_ASSET", "DEBIT");
+            account(em, ACCUMULATED_ACCOUNT_ID, "1590", "Accumulated Depreciation", "ASSET", null, "FIXED_ASSET", "CREDIT");
+            account(em, BANK_ACCOUNT_ID, "1000", "Checking", "ASSET", "BANK", "CASH", "DEBIT");
+            account(em, DEPRECIATION_EXPENSE_ID, "6100", "Depreciation Expense", "EXPENSE", null, null, "DEBIT");
+            account(em, GAIN_ACCOUNT_ID, "4900", "Gain on Asset Disposal", "INCOME", null, null, "CREDIT");
+            account(em, LOSS_ACCOUNT_ID, "6200", "Loss on Asset Disposal", "EXPENSE", null, null, "DEBIT");
             em.getTransaction().commit();
         }
     }
@@ -517,21 +517,23 @@ class FixedAssetLifecycleAccountingTest
             String code,
             String name,
             String type,
+            String function,
             String subtype,
             String normalBalance)
     {
         em.createNativeQuery("""
                 insert into account
-                    (id, chart_id, code, name, account_type, subtype, normal_balance)
-                values (?, ?, ?, ?, ?, ?, ?)
+                    (id, chart_id, code, name, account_type, account_function, subtype, normal_balance)
+                values (?, ?, ?, ?, ?, ?, ?, ?)
                 """)
                 .setParameter(1, id)
                 .setParameter(2, CHART_ID)
                 .setParameter(3, code)
                 .setParameter(4, name)
                 .setParameter(5, type)
-                .setParameter(6, subtype)
-                .setParameter(7, normalBalance)
+                .setParameter(6, function)
+                .setParameter(7, subtype)
+                .setParameter(8, normalBalance)
                 .executeUpdate();
     }
 
