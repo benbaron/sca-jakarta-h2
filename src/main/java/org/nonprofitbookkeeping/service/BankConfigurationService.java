@@ -124,34 +124,51 @@ public class BankConfigurationService
             try
             {
                 Company company = companyByCode(em, command.companyCode());
-                Bank bank = em.find(Bank.class, command.bankId());
-                if (bank == null || !bank.getCompany().getId().equals(company.getId()))
-                {
-                    throw new IllegalArgumentException("Bank does not exist for company: " + command.bankId() + ".");
-                }
-                Account account = em.find(Account.class, command.accountId());
-                validateBankLedgerAccount(account);
-                new CompanyOwnershipService(jpa).ensureOwnedBy(em, company, account, "Bank ledger account");
+                Bank bank = bankForCompany(em, command.bankId(), company);
+                Account account = bankLedgerAccountForCompany(em, command.accountId(), company);
+                ensureAccountAvailable(em, company, account, null);
 
                 CompanyBankAccount bankAccount = new CompanyBankAccount();
                 bankAccount.setCompany(company);
-                bankAccount.setBank(bank);
-                bankAccount.setAccount(account);
-                String displayName = isBlank(command.nickname()) ? account.getName() : command.nickname().trim();
-                bankAccount.setName(displayName);
-                bankAccount.setNickname(blankToNull(command.nickname()));
-                bankAccount.setInstitutionName(bank.getName());
-                bankAccount.setAccountType(AccountClassification.portableType(account));
-                bankAccount.setMaskedAccountNumber(blankToNull(command.maskedAccountNumber()));
-                bankAccount.setLastFour(lastFour(command.maskedAccountNumber()));
-                bankAccount.setOpeningDate(command.openingDate());
-                bankAccount.setOpeningBalance(command.openingBalance() == null ? BigDecimal.ZERO : command.openingBalance());
-                bankAccount.setStatementImportFormat(command.statementImportFormat());
-                bankAccount.setOfxBankId(blankToNull(command.ofxBankId()));
-                bankAccount.setOfxAccountId(blankToNull(command.ofxAccountId()));
-                bankAccount.setNotes(blankToNull(command.notes()));
-                bankAccount.setActive(command.active());
+                applyBankAccountCommand(bankAccount, command, bank, account);
                 em.persist(bankAccount);
+                tx.commit();
+                return bankAccount;
+            }
+            catch (RuntimeException ex)
+            {
+                rollback(tx);
+                throw ex;
+            }
+        }
+    }
+
+    /**
+     * Updates one existing configured bank account by stable database ID.
+     * The row identity, portable identity, and creation timestamp are preserved.
+     */
+    public CompanyBankAccount updateBankAccount(long bankAccountId, BankAccountCommand command)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            var tx = em.getTransaction();
+            tx.begin();
+            try
+            {
+                Company company = companyByCode(em, command.companyCode());
+                CompanyBankAccount bankAccount = em.find(CompanyBankAccount.class, bankAccountId);
+                if (bankAccount == null || bankAccount.getCompany() == null
+                        || !company.getId().equals(bankAccount.getCompany().getId()))
+                {
+                    throw new IllegalArgumentException(
+                            "Configured bank account does not exist for company: " + bankAccountId + ".");
+                }
+                Bank bank = bankForCompany(em, command.bankId(), company);
+                Account account = bankLedgerAccountForCompany(em, command.accountId(), company);
+                ensureAccountAvailable(em, company, account, bankAccountId);
+
+                applyBankAccountCommand(bankAccount, command, bank, account);
+                bankAccount.touchUpdatedAt();
                 tx.commit();
                 return bankAccount;
             }
@@ -260,6 +277,83 @@ public class BankConfigurationService
             throw new IllegalArgumentException(
                     "Linked chart account must be an ASSET with BANK function and DEBIT normal balance.");
         }
+    }
+
+    private Bank bankForCompany(EntityManager em, Long bankId, Company company)
+    {
+        if (bankId == null)
+        {
+            throw new IllegalArgumentException("Bank is required.");
+        }
+        Bank bank = em.find(Bank.class, bankId);
+        if (bank == null || bank.getCompany() == null || !company.getId().equals(bank.getCompany().getId()))
+        {
+            throw new IllegalArgumentException("Bank does not exist for company: " + bankId + ".");
+        }
+        return bank;
+    }
+
+    private Account bankLedgerAccountForCompany(EntityManager em, Long accountId, Company company)
+    {
+        if (accountId == null)
+        {
+            throw new IllegalArgumentException("Chart-of-accounts bank account is required.");
+        }
+        Account account = em.find(Account.class, accountId);
+        validateBankLedgerAccount(account);
+        new CompanyOwnershipService(jpa).ensureOwnedBy(em, company, account, "Bank ledger account");
+        return account;
+    }
+
+    private static void ensureAccountAvailable(
+            EntityManager em,
+            Company company,
+            Account account,
+            Long permittedBankAccountId)
+    {
+        Long conflictingId = em.createQuery("""
+                        select cba.id
+                        from CompanyBankAccount cba
+                        where cba.company = :company
+                          and cba.account = :account
+                        order by cba.id
+                        """, Long.class)
+                .setParameter("company", company)
+                .setParameter("account", account)
+                .getResultStream()
+                .filter(id -> !Objects.equals(id, permittedBankAccountId))
+                .findFirst()
+                .orElse(null);
+        if (conflictingId != null)
+        {
+            throw new IllegalArgumentException(
+                    "Chart account " + account.getCode() + " — " + account.getName()
+                            + " is already linked to another configured bank account for this company.");
+        }
+    }
+
+    private static void applyBankAccountCommand(
+            CompanyBankAccount bankAccount,
+            BankAccountCommand command,
+            Bank bank,
+            Account account)
+    {
+        bankAccount.setBank(bank);
+        bankAccount.setAccount(account);
+        String displayName = isBlank(command.nickname()) ? account.getName() : command.nickname().trim();
+        bankAccount.setName(displayName);
+        bankAccount.setNickname(blankToNull(command.nickname()));
+        bankAccount.setInstitutionName(bank.getName());
+        bankAccount.setAccountType(AccountClassification.portableType(account));
+        bankAccount.setMaskedAccountNumber(blankToNull(command.maskedAccountNumber()));
+        bankAccount.setLastFour(lastFour(command.maskedAccountNumber()));
+        bankAccount.setOpeningDate(command.openingDate());
+        bankAccount.setOpeningBalance(command.openingBalance() == null ? BigDecimal.ZERO : command.openingBalance());
+        bankAccount.setStatementImportFormat(command.statementImportFormat());
+        bankAccount.setOfxBankId(blankToNull(command.ofxBankId()));
+        bankAccount.setOfxAccountId(blankToNull(command.ofxAccountId()));
+        bankAccount.setNotes(blankToNull(command.notes()));
+        bankAccount.setActive(command.active());
     }
 
     private static void applyBankCommand(Bank bank, BankCommand command, Company company)

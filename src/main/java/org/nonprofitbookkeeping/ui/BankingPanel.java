@@ -24,6 +24,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import org.nonprofitbookkeeping.interchange.bank.BankReviewQueryService;
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.AccountFunction;
 import org.nonprofitbookkeeping.model.AccountSubtype;
@@ -32,14 +33,11 @@ import org.nonprofitbookkeeping.model.Bank;
 import org.nonprofitbookkeeping.model.BankingDataFormat;
 import org.nonprofitbookkeeping.model.CompanyBankAccount;
 import org.nonprofitbookkeeping.model.NormalBalance;
-import org.nonprofitbookkeeping.interchange.bank.BankReviewQueryService;
 import org.nonprofitbookkeeping.service.BankAccountCommand;
 import org.nonprofitbookkeeping.service.BankCommand;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -77,13 +75,16 @@ public class BankingPanel implements AppPanel
     private final CheckBox accountActive = new CheckBox("Account active");
     private final Button saveBank = new Button("Save Bank");
     private final Button newBank = new Button("New Bank");
+    private final Button newAccount = new Button("New Bank Account");
     private final Button saveAccount = new Button("Save Bank Account");
     private final Button refresh = new Button("Refresh");
     private final Label status = new Label();
     private final FormDirtyTracker bankDirty;
     private final FormDirtyTracker accountDirty;
     private Long editingBankId;
+    private Long editingBankAccountId;
     private boolean suppressBankSelection;
+    private boolean suppressBankAccountSelection;
     private final BankReviewQueryService reviewQuery;
     private final Supplier<String> companyCode;
 
@@ -102,6 +103,7 @@ public class BankingPanel implements AppPanel
         title.getStyleClass().add("panel-title");
         newBank.setOnAction(event -> onNew());
         saveBank.setOnAction(event -> saveBank());
+        newAccount.setOnAction(event -> startNewBankAccount());
         saveAccount.setOnAction(event -> saveBankAccount());
         refresh.setOnAction(event -> reloadWithDiscardProtection());
 
@@ -227,14 +229,14 @@ public class BankingPanel implements AppPanel
         form.add(new Label("New account name"), 0, row); form.add(accountName, 1, row++);
         form.add(new Label("Masked account #"), 0, row); form.add(maskedAccount, 1, row++);
         form.add(new Label("Nickname"), 0, row); form.add(nickname, 1, row++);
-        form.add(new Label("Opening date (yyyy-mm-dd)"), 0, row); form.add(openingDate, 1, row++);
+        form.add(new Label("Opening date"), 0, row); form.add(openingDate, 1, row++);
         form.add(new Label("Opening balance"), 0, row); form.add(openingBalance, 1, row++);
         form.add(new Label("Import format"), 0, row); form.add(importFormat, 1, row++);
         form.add(new Label("OFX bank ID"), 0, row); form.add(ofxBankId, 1, row++);
         form.add(new Label("OFX account ID"), 0, row); form.add(ofxAccountId, 1, row++);
         form.add(new Label("Notes"), 0, row); form.add(accountNotes, 1, row++);
         form.add(accountActive, 1, row++);
-        form.add(saveAccount, 1, row);
+        form.add(new HBox(8, newAccount, saveAccount), 1, row);
         for (Node field : List.of(
                 bankSelector, existingAccountSelector, accountCode, accountName, maskedAccount, nickname,
                 openingDate, openingBalance, importFormat, ofxBankId, ofxAccountId, accountNotes))
@@ -291,6 +293,20 @@ public class BankingPanel implements AppPanel
         configureColumn(account, "account", 240);
         configureColumn(nick, "nickname", 180);
         configureColumn(format, "format", 100);
+        bankAccounts.getSelectionModel().selectedItemProperty().addListener((obs, oldRow, newRow) -> {
+            if (suppressBankAccountSelection || newRow == null)
+            {
+                return;
+            }
+            if (accountDirty.isDirty() && !confirmDiscard())
+            {
+                suppressBankAccountSelection = true;
+                bankAccounts.getSelectionModel().select(oldRow);
+                suppressBankAccountSelection = false;
+                return;
+            }
+            loadBankAccount(newRow);
+        });
     }
 
     private void configureForms()
@@ -328,11 +344,12 @@ public class BankingPanel implements AppPanel
             {
                 try
                 {
-                    openingDate.setText(parseDate(openingDate.getText()).format(DateTimeFormatter.ISO_LOCAL_DATE));
+                    LocalDate parsed = parseDate(openingDate.getText());
+                    openingDate.setText(companyFormat().formatDate(parsed));
                 }
                 catch (RuntimeException ex)
                 {
-                    status.setText("Opening date needs a valid date such as yyyy-mm-dd or m/d/yyyy.");
+                    status.setText("Opening date needs a valid date using the active company's date ordering.");
                 }
             }
         });
@@ -341,7 +358,7 @@ public class BankingPanel implements AppPanel
             {
                 try
                 {
-                    openingBalance.setText(parseMoney(openingBalance.getText()).setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
+                    openingBalance.setText(companyFormat().formatMoney(parseMoney(openingBalance.getText())));
                 }
                 catch (RuntimeException ex)
                 {
@@ -413,11 +430,19 @@ public class BankingPanel implements AppPanel
             {
                 throw new IllegalArgumentException("Chart-of-accounts bank account is required.");
             }
-            CompanyBankAccount saved = UiServiceRegistry.bankConfiguration().createBankAccount(new BankAccountCommand(
-                    activeCompanyCode(), selectedBank.getId(), account.getId(), maskedAccount.getText(), nickname.getText(), parseDate(openingDate.getText()), parseMoney(openingBalance.getText()), importFormat.getValue(), ofxBankId.getText(), ofxAccountId.getText(), accountNotes.getText(), accountActive.isSelected()));
+            BankAccountCommand command = new BankAccountCommand(
+                    activeCompanyCode(), selectedBank.getId(), account.getId(), maskedAccount.getText(), nickname.getText(),
+                    parseDate(openingDate.getText()), parseMoney(openingBalance.getText()), importFormat.getValue(),
+                    ofxBankId.getText(), ofxAccountId.getText(), accountNotes.getText(), accountActive.isSelected());
+            boolean updating = editingBankAccountId != null;
+            CompanyBankAccount saved = updating
+                    ? UiServiceRegistry.bankConfiguration().updateBankAccount(editingBankAccountId, command)
+                    : UiServiceRegistry.bankConfiguration().createBankAccount(command);
+            editingBankAccountId = saved.getId();
             accountDirty.markClean();
-            status.setText("Saved configured bank account " + saved.getName() + ".");
             reload();
+            selectBankAccount(saved.getId());
+            status.setText((updating ? "Updated" : "Saved") + " configured bank account " + saved.getName() + ".");
         }
         catch (RuntimeException ex)
         {
@@ -441,10 +466,54 @@ public class BankingPanel implements AppPanel
         contactEmail.setText(nullToBlank(bank.getContactEmail()));
         bankNotes.setText(nullToBlank(bank.getNotes()));
         bankActive.setSelected(bank.isActive());
-        bankSelector.setValue(bank);
+        bankSelector.setValue(bankById(bank.getId()));
         status.setText("Edit mode for bank " + bank.getName() + ".");
         bankDirty.markClean();
         accountDirty.markClean();
+    }
+
+    private void loadBankAccount(CompanyBankAccount bankAccount)
+    {
+        if (bankAccount == null)
+        {
+            return;
+        }
+        editingBankAccountId = bankAccount.getId();
+        useExistingAccount.setSelected(true);
+        bankSelector.setValue(bankAccount.getBank() == null ? null : bankById(bankAccount.getBank().getId()));
+        existingAccountSelector.setValue(bankAccount.getAccount() == null ? null : accountById(bankAccount.getAccount().getId()));
+        accountCode.clear();
+        accountName.clear();
+        maskedAccount.setText(nullToBlank(bankAccount.getMaskedAccountNumber()));
+        nickname.setText(nullToBlank(bankAccount.getNickname()));
+        CompanyUiFormat format = companyFormat();
+        openingDate.setText(format.formatDate(bankAccount.getOpeningDate()));
+        openingBalance.setText(format.formatMoney(bankAccount.getOpeningBalance()));
+        importFormat.setValue(bankAccount.getStatementImportFormat() == null ? BankingDataFormat.OFX : bankAccount.getStatementImportFormat());
+        ofxBankId.setText(nullToBlank(bankAccount.getOfxBankId()));
+        ofxAccountId.setText(nullToBlank(bankAccount.getOfxAccountId()));
+        accountNotes.setText(nullToBlank(bankAccount.getNotes()));
+        accountActive.setSelected(bankAccount.isActive());
+        saveAccount.setText("Update Bank Account");
+        status.setText("Edit mode for configured bank account " + bankAccount.getName() + ".");
+        accountDirty.markClean();
+    }
+
+    private void startNewBankAccount()
+    {
+        if (accountDirty.isDirty() && !confirmDiscard())
+        {
+            status.setText("New bank account cancelled; unsaved account changes remain.");
+            return;
+        }
+        Bank preferredBank = bankSelector.getValue();
+        clearAccountForm();
+        if (preferredBank != null)
+        {
+            bankSelector.setValue(bankById(preferredBank.getId()));
+            accountDirty.markClean();
+        }
+        status.setText("Create mode for a new configured bank account.");
     }
 
     private void clearBankForm()
@@ -465,6 +534,10 @@ public class BankingPanel implements AppPanel
 
     private void clearAccountForm()
     {
+        editingBankAccountId = null;
+        suppressBankAccountSelection = true;
+        bankAccounts.getSelectionModel().clearSelection();
+        suppressBankAccountSelection = false;
         bankSelector.setValue(null);
         useExistingAccount.setSelected(true);
         existingAccountSelector.setValue(null);
@@ -473,13 +546,50 @@ public class BankingPanel implements AppPanel
         maskedAccount.clear();
         nickname.clear();
         openingDate.clear();
-        openingBalance.setText("0.00");
+        openingBalance.setText(companyFormat().formatMoney(BigDecimal.ZERO));
         importFormat.setValue(BankingDataFormat.OFX);
         ofxBankId.clear();
         ofxAccountId.clear();
         accountNotes.clear();
         accountActive.setSelected(true);
+        saveAccount.setText("Save Bank Account");
         accountDirty.markClean();
+    }
+
+    private void selectBankAccount(Long id)
+    {
+        if (id == null)
+        {
+            return;
+        }
+        bankAccounts.getItems().stream()
+                .filter(row -> Objects.equals(row.getId(), id))
+                .findFirst()
+                .ifPresent(row -> bankAccounts.getSelectionModel().select(row));
+    }
+
+    private Bank bankById(Long id)
+    {
+        if (id == null)
+        {
+            return null;
+        }
+        return bankSelector.getItems().stream()
+                .filter(bank -> Objects.equals(bank.getId(), id))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private Account accountById(Long id)
+    {
+        if (id == null)
+        {
+            return null;
+        }
+        return existingAccountSelector.getItems().stream()
+                .filter(account -> Objects.equals(account.getId(), id))
+                .findFirst()
+                .orElse(null);
     }
 
     private Node tableEditorPane(String id,
@@ -560,35 +670,33 @@ public class BankingPanel implements AppPanel
         return companyCode.get();
     }
 
-    private static LocalDate parseDate(String value)
+    private CompanyUiFormat companyFormat()
+    {
+        return CompanyUiFormat.activeCompany();
+    }
+
+    private LocalDate parseDate(String value)
     {
         if (value == null || value.isBlank())
         {
             return null;
         }
-        String trimmed = value.trim();
-        for (DateTimeFormatter formatter : List.of(
-                DateTimeFormatter.ISO_LOCAL_DATE,
-                DateTimeFormatter.ofPattern("M/d/uuuu"),
-                DateTimeFormatter.ofPattern("M-d-uuuu"),
-                DateTimeFormatter.ofPattern("MM/dd/uuuu"),
-                DateTimeFormatter.ofPattern("MM-dd-uuuu")))
+        LocalDate parsed = companyFormat().parseDate(value);
+        if (parsed == null)
         {
-            try
-            {
-                return LocalDate.parse(trimmed, formatter);
-            }
-            catch (DateTimeParseException ignored)
-            {
-                // Try the next accepted UI date format.
-            }
+            throw new IllegalArgumentException("Opening date must be a valid date.");
         }
-        throw new IllegalArgumentException("Opening date must be a valid date.");
+        return parsed;
     }
 
-    private static BigDecimal parseMoney(String value)
+    private BigDecimal parseMoney(String value)
     {
-        return value == null || value.isBlank() ? BigDecimal.ZERO : new BigDecimal(value.trim().replace("$", "").replace(",", ""));
+        BigDecimal parsed = companyFormat().parseMoney(value);
+        if (parsed == null)
+        {
+            throw new IllegalArgumentException("Opening balance must be a valid money amount.");
+        }
+        return parsed;
     }
 
     private static String nullToBlank(String value)

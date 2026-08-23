@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BankConfigurationServiceTest
 {
@@ -106,6 +107,73 @@ public class BankConfigurationServiceTest
 
             assertEquals("Updated Bank", service.listBanks("SCA").get(0).getName());
             assertEquals(false, service.listBanks("SCA").get(0).isActive());
+            assertEquals(1, service.listBankAccounts("SCA").size());
+        }
+    }
+
+    @Test
+    public void updateBankAccountPreservesStableIdentityInsteadOfInsertingDuplicate(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("bank-config-update-account")))
+        {
+            seedCompanyAndAccounts(jpa);
+            BankConfigurationService service = new BankConfigurationService(jpa);
+            Bank firstBank = service.createBank(new BankCommand(
+                    "SCA", "First Bank", null, null, null, null, null, null, null, true));
+            Bank secondBank = service.createBank(new BankCommand(
+                    "SCA", "Second Bank", null, null, null, null, null, null, null, true));
+            CompanyBankAccount created = service.createBankAccount(new BankAccountCommand(
+                    "SCA", firstBank.getId(), 101L, "****1111", "Checking", LocalDate.of(2026, 1, 1),
+                    new BigDecimal("10.0000"), BankingDataFormat.OFX, "BANK-1", "ACCT-1", "Original", true));
+
+            Long stableId = created.getId();
+            var portableId = created.getPortableId();
+            var createdAt = created.getCreatedAt();
+
+            CompanyBankAccount updated = service.updateBankAccount(stableId, new BankAccountCommand(
+                    "SCA", secondBank.getId(), 101L, "****2222", "Operating Cash", LocalDate.of(2026, 2, 2),
+                    new BigDecimal("125.5000"), BankingDataFormat.CSV, "BANK-2", "ACCT-2", "Updated", false));
+
+            assertEquals(stableId, updated.getId());
+            assertEquals(portableId, updated.getPortableId());
+            assertEquals(createdAt, updated.getCreatedAt());
+            assertEquals(secondBank.getId(), updated.getBank().getId());
+            assertEquals(101L, updated.getAccount().getId());
+            assertEquals("Operating Cash", updated.getName());
+            assertEquals("Operating Cash", updated.getNickname());
+            assertEquals("2222", updated.getLastFour());
+            assertEquals(new BigDecimal("125.5000"), updated.getOpeningBalance());
+            assertEquals(BankingDataFormat.CSV, updated.getStatementImportFormat());
+            assertEquals(false, updated.isActive());
+
+            var rows = service.listBankAccounts("SCA");
+            assertEquals(1, rows.size());
+            assertEquals(stableId, rows.get(0).getId());
+            assertEquals(portableId, rows.get(0).getPortableId());
+        }
+    }
+
+    @Test
+    public void createBankAccountRejectsDuplicateLedgerLinkWithControlledValidation(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("bank-config-duplicate-account")))
+        {
+            seedCompanyAndAccounts(jpa);
+            BankConfigurationService service = new BankConfigurationService(jpa);
+            Bank firstBank = service.createBank(new BankCommand(
+                    "SCA", "First Bank", null, null, null, null, null, null, null, true));
+            Bank secondBank = service.createBank(new BankCommand(
+                    "SCA", "Second Bank", null, null, null, null, null, null, null, true));
+            service.createBankAccount(new BankAccountCommand(
+                    "SCA", firstBank.getId(), 101L, null, "Checking", null,
+                    BigDecimal.ZERO, BankingDataFormat.OFX, null, null, null, true));
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> service.createBankAccount(new BankAccountCommand(
+                            "SCA", secondBank.getId(), 101L, null, "Duplicate", null,
+                            BigDecimal.ZERO, BankingDataFormat.OFX, null, null, null, true)));
+
+            assertTrue(ex.getMessage().contains("already linked to another configured bank account"));
             assertEquals(1, service.listBankAccounts("SCA").size());
         }
     }
