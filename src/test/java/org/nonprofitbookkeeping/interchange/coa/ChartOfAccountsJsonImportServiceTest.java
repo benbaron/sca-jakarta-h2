@@ -1,9 +1,13 @@
 package org.nonprofitbookkeeping.interchange.coa;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountFunction;
+import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
@@ -17,6 +21,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ChartOfAccountsJsonImportServiceTest
@@ -71,6 +76,60 @@ class ChartOfAccountsJsonImportServiceTest
                         .setParameter("chart", imported)
                         .getSingleResult());
             }
+        }
+    }
+
+    @Test
+    void validScaCoaFixtureMapsPortableBankToInternalClassificationAndRoundTrips(@TempDir Path tempDir) throws Exception
+    {
+        Path database = tempDir.resolve("portable-bank-roundtrip");
+        try (Jpa jpa = new Jpa(database))
+        {
+            seedCompanyAndActiveChart(jpa);
+            Path source = Path.of("src/test/resources/data-exchange/coa-json/valid/sca-coa-1.0.json")
+                    .toAbsolutePath()
+                    .normalize();
+            ChartOfAccountsJsonService jsonService = new ChartOfAccountsJsonService(jpa, () -> TEST_COMPANY_CODE);
+            CoaImportRequest request = new CoaImportRequest(
+                    source,
+                    CoaImportMode.MERGE_BY_CODE,
+                    "",
+                    "",
+                    Map.of(),
+                    true);
+
+            CoaImportPreview preview = jsonService.preview(request);
+            assertTrue(preview.messages().stream().noneMatch(message -> message.blocking()));
+            CoaImportResult result = new ChartOfAccountsJsonImportService(jpa, () -> TEST_COMPANY_CODE).commit(preview);
+            assertTrue(result.committed());
+
+            try (EntityManager em = jpa.em())
+            {
+                Account bank = em.createQuery(
+                                "from Account a where a.code = '1010'",
+                                Account.class)
+                        .getSingleResult();
+                assertEquals(AccountType.ASSET, bank.getAccountType());
+                assertEquals(AccountFunction.BANK, bank.getAccountFunction());
+                assertEquals(AccountSubtype.CASH, bank.getSubtype());
+                assertEquals(NormalBalance.DEBIT, bank.getNormalBalance());
+            }
+
+            Path exported = tempDir.resolve("portable-bank-roundtrip.json");
+            jsonService.exportActiveChart(exported);
+            JsonNode accounts = new ObjectMapper().readTree(Files.readAllBytes(exported)).path("accounts");
+            JsonNode bankNode = null;
+            for (JsonNode account : accounts)
+            {
+                if ("1010".equals(account.path("code").asText()))
+                {
+                    bankNode = account;
+                    break;
+                }
+            }
+            assertNotNull(bankNode);
+            assertEquals("BANK", bankNode.path("type").asText());
+            assertEquals("CASH", bankNode.path("subtype").asText());
         }
     }
 

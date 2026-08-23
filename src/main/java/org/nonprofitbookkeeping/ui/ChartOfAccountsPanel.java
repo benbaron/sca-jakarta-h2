@@ -27,6 +27,8 @@ import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.NormalBalance;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -34,13 +36,15 @@ import java.util.Objects;
  */
 public class ChartOfAccountsPanel implements AppPanel
 {
+    private static final FunctionChoice NO_FUNCTION = new FunctionChoice("None", null);
+
     private final BorderPane root = new BorderPane();
     private final TableView<Account> table = new TableView<>();
     private final Label status = new Label();
     private final TextField codeField = new TextField();
     private final TextField nameField = new TextField();
     private final ComboBox<AccountType> typeField = new ComboBox<>();
-    private final ComboBox<AccountFunction> functionField = new ComboBox<>();
+    private final ComboBox<FunctionChoice> functionField = new ComboBox<>();
     private final ComboBox<NormalBalance> balanceField = new ComboBox<>();
     private final ComboBox<AccountSubtype> subtypeField = new ComboBox<>();
     private final TextField parentCodeField = new TextField();
@@ -167,7 +171,7 @@ public class ChartOfAccountsPanel implements AppPanel
     private Node buildEditorForm()
     {
         typeField.getItems().setAll(AccountType.values());
-        functionField.getItems().setAll(AccountFunction.values());
+        functionField.getItems().setAll(functionChoices());
         balanceField.getItems().setAll(NormalBalance.values());
         subtypeField.getItems().setAll(AccountSubtype.values());
         activeField.setSelected(true);
@@ -214,7 +218,7 @@ public class ChartOfAccountsPanel implements AppPanel
         codeField.setText(row.getCode());
         nameField.setText(row.getName());
         typeField.setValue(row.getAccountType());
-        functionField.setValue(row.getAccountFunction());
+        functionField.setValue(functionChoice(row.getAccountFunction()));
         balanceField.setValue(row.getNormalBalance());
         activeField.setSelected(row.isActive());
         subtypeField.setValue(row.getSubtype());
@@ -229,7 +233,7 @@ public class ChartOfAccountsPanel implements AppPanel
         codeField.clear();
         nameField.clear();
         typeField.getSelectionModel().clearSelection();
-        functionField.getSelectionModel().clearSelection();
+        functionField.setValue(NO_FUNCTION);
         balanceField.getSelectionModel().clearSelection();
         subtypeField.getSelectionModel().clearSelection();
         parentCodeField.clear();
@@ -245,7 +249,7 @@ public class ChartOfAccountsPanel implements AppPanel
                     codeField.getText(),
                     nameField.getText(),
                     typeField.getValue(),
-                    functionField.getValue(),
+                    selectedFunction(),
                     balanceField.getValue(),
                     subtypeField.getValue(),
                     parentCodeField.getText(),
@@ -260,14 +264,13 @@ public class ChartOfAccountsPanel implements AppPanel
         }
     }
 
-
     FormState readFormStateForTests()
     {
         return new FormState(
                 codeField.getText(),
                 nameField.getText(),
                 typeField.getValue(),
-                functionField.getValue(),
+                selectedFunction(),
                 balanceField.getValue(),
                 subtypeField.getValue(),
                 parentCodeField.getText(),
@@ -279,11 +282,22 @@ public class ChartOfAccountsPanel implements AppPanel
         codeField.setText(formState.code());
         nameField.setText(formState.name());
         typeField.setValue(formState.accountType());
-        functionField.setValue(formState.accountFunction());
+        functionField.setValue(functionChoice(formState.accountFunction()));
         balanceField.setValue(formState.normalBalance());
         subtypeField.setValue(formState.subtype());
         parentCodeField.setText(formState.parentCode());
         activeField.setSelected(formState.active());
+    }
+
+    String functionDisplayForTests()
+    {
+        FunctionChoice selected = functionField.getValue();
+        return selected == null ? "" : selected.toString();
+    }
+
+    void clearFunctionForTests()
+    {
+        functionField.setValue(NO_FUNCTION);
     }
 
     record FormState(String code,
@@ -297,6 +311,45 @@ public class ChartOfAccountsPanel implements AppPanel
     {
     }
 
+    private static List<FunctionChoice> functionChoices()
+    {
+        List<FunctionChoice> choices = new ArrayList<>();
+        choices.add(NO_FUNCTION);
+        for (AccountFunction function : AccountFunction.values())
+        {
+            choices.add(new FunctionChoice(function.name(), function));
+        }
+        return List.copyOf(choices);
+    }
+
+    private static FunctionChoice functionChoice(AccountFunction function)
+    {
+        if (function == null)
+        {
+            return NO_FUNCTION;
+        }
+        return new FunctionChoice(function.name(), function);
+    }
+
+    private AccountFunction selectedFunction()
+    {
+        FunctionChoice selected = functionField.getValue();
+        return selected == null ? null : selected.function();
+    }
+
+    private record FunctionChoice(String label, AccountFunction function)
+    {
+        private FunctionChoice
+        {
+            Objects.requireNonNull(label, "label");
+        }
+
+        @Override
+        public String toString()
+        {
+            return label;
+        }
+    }
 
     private String formatStatus(String message)
     {
