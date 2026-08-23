@@ -3,6 +3,7 @@ package org.nonprofitbookkeeping.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountClassification;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Fund;
@@ -162,7 +163,7 @@ public class CoaFundIo
             {
                 String parentCode = (a.getParent() == null) ? "" : a.getParent().getCode();
                 w.write(a.getChart().getId() + "," + csv(a.getCode()) + "," + csv(a.getName()) + "," +
-                        csv(a.getAccountType().name()) + "," + csv(nz(a.getSubtype()==null?"":a.getSubtype().name())) + "," + csv(nz(a.getOpeningBalance())) + "," + csv(a.getNormalBalance().name()) + "," +
+                        csv(AccountClassification.portableType(a)) + "," + csv(nz(a.getSubtype()==null?"":a.getSubtype().name())) + "," + csv(nz(a.getOpeningBalance())) + "," + csv(a.getNormalBalance().name()) + "," +
                         csv(parentCode) + "," + csv(Boolean.toString(a.isPosting())) + "," +
                         csv(Boolean.toString(a.isActive())) + "," + csv(nz(a.getEffectiveFrom())) + "," +
                         csv(nz(a.getEffectiveTo())) + "," + csv(nz(a.getDescription())) + "\n");
@@ -193,7 +194,10 @@ public class CoaFundIo
                 a.setChart(chart);
                 a.setCode(req(r, "code"));
                 a.setName(req(r, "name"));
-                a.setAccountType(AccountType.valueOf(req(r, "account_type")));
+                AccountClassification.PortableType classification =
+                        AccountClassification.parsePortableType(req(r, "account_type"));
+                a.setAccountType(classification.type());
+                a.setAccountFunction(classification.function());
                 a.setSubtype(parseSubtype(opt(r, "subtype", "")));
                 a.setOpeningBalance(parseMoney(opt(r, "opening_balance", "0")));
                 a.setNormalBalance(NormalBalance.valueOf(req(r, "normal_balance")));

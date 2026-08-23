@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountFunction;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
@@ -48,6 +49,18 @@ public class AccountAdminService
                           String parentCode,
                           boolean active)
     {
+        return upsert(code, name, accountType, null, normalBalance, subtype, parentCode, active);
+    }
+
+    public Account upsert(String code,
+                          String name,
+                          AccountType accountType,
+                          AccountFunction accountFunction,
+                          NormalBalance normalBalance,
+                          AccountSubtype subtype,
+                          String parentCode,
+                          boolean active)
+    {
         // Validate the public command contract before opening persistence. In particular,
         // do not allow an uninitialized/default-constructed service to mask invalid
         // arguments with a NullPointerException from the JPA dependency.
@@ -61,6 +74,7 @@ public class AccountAdminService
         {
             throw new IllegalArgumentException("Normal balance is required.");
         }
+        validateClassification(accountType, accountFunction, normalBalance);
 
         try (EntityManager em = jpa.em())
         {
@@ -77,6 +91,7 @@ public class AccountAdminService
                         cleanCode,
                         cleanName,
                         accountType,
+                        accountFunction,
                         normalBalance,
                         subtype,
                         parentCode,
@@ -109,6 +124,22 @@ public class AccountAdminService
                           String parentCode,
                           boolean active)
     {
+        return upsert(em, company, chart, code, name, accountType, null, normalBalance,
+                subtype, parentCode, active);
+    }
+
+    public Account upsert(EntityManager em,
+                          Company company,
+                          ChartOfAccounts chart,
+                          String code,
+                          String name,
+                          AccountType accountType,
+                          AccountFunction accountFunction,
+                          NormalBalance normalBalance,
+                          AccountSubtype subtype,
+                          String parentCode,
+                          boolean active)
+    {
         Objects.requireNonNull(em, "em");
         Objects.requireNonNull(company, "company");
         Objects.requireNonNull(chart, "chart");
@@ -127,6 +158,7 @@ public class AccountAdminService
         {
             throw new IllegalArgumentException("Normal balance is required.");
         }
+        validateClassification(accountType, accountFunction, normalBalance);
 
         Company managedCompany = em.find(Company.class, company.getId());
         ChartOfAccounts managedChart = em.find(ChartOfAccounts.class, chart.getId());
@@ -174,6 +206,7 @@ public class AccountAdminService
         account.setCode(cleanCode);
         account.setName(cleanName);
         account.setAccountType(accountType);
+        account.setAccountFunction(accountFunction);
         account.setNormalBalance(normalBalance);
         account.setSubtype(subtype);
         account.setParent(parent);
@@ -188,6 +221,19 @@ public class AccountAdminService
             account = em.merge(account);
         }
         return account;
+    }
+
+    private static void validateClassification(
+            AccountType accountType,
+            AccountFunction accountFunction,
+            NormalBalance normalBalance)
+    {
+        if (accountFunction == AccountFunction.BANK
+                && (accountType != AccountType.ASSET || normalBalance != NormalBalance.DEBIT))
+        {
+            throw new IllegalArgumentException(
+                    "BANK function requires an ASSET account with a DEBIT normal balance.");
+        }
     }
 
     private static RuntimeException mapPersistenceError(RuntimeException ex, String code)

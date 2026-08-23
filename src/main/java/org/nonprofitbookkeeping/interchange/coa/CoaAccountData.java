@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.interchange.coa;
 
+import org.nonprofitbookkeeping.model.AccountFunction;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.NormalBalance;
@@ -15,6 +16,7 @@ public record CoaAccountData(
         String code,
         String name,
         AccountType type,
+        AccountFunction function,
         AccountSubtype subtype,
         NormalBalance normalBalance,
         String parentCode,

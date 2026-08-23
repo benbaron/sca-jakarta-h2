@@ -72,16 +72,16 @@ public class SeedCommand implements Runnable
 			// Foundational accounts. Codes are intentionally stable and
 			// human-friendly.
 			// Adjust names later to match your report vocabulary.
-			upsertAccount(em, chart, "1000", "Cash / Bank", AccountType.BANK,
-				AccountSubtype.CASH, NormalBalance.DEBIT, null, true, "0.00");
+			upsertAccount(em, chart, "1000", "Cash / Bank", AccountType.ASSET,
+				AccountFunction.BANK, AccountSubtype.CASH, NormalBalance.DEBIT, null, true, "0.00");
 			upsertAccount(em, chart, "4000", "Income (General)",
-				AccountType.INCOME, null, NormalBalance.CREDIT, null, true,
+				AccountType.INCOME, null, null, NormalBalance.CREDIT, null, true,
 				"0.00");
 			upsertAccount(em, chart, "5000", "Expense (General)",
-				AccountType.EXPENSE, null, NormalBalance.DEBIT, null, true,
+				AccountType.EXPENSE, null, null, NormalBalance.DEBIT, null, true,
 				"0.00");
 			upsertAccount(em, chart, "3000", "Fund Transfer Clearing",
-				AccountType.EQUITY, null, NormalBalance.CREDIT, null, true,
+				AccountType.EQUITY, null, null, NormalBalance.CREDIT, null, true,
 				"0.00");
 			
 			// Default fund
@@ -187,6 +187,7 @@ public class SeedCommand implements Runnable
 		String code,
 		String name,
 		AccountType type,
+		AccountFunction function,
 		AccountSubtype subtype,
 		NormalBalance normal,
 		String parentCode,
@@ -212,6 +213,7 @@ public class SeedCommand implements Runnable
 		
 		a.setName(name);
 		a.setAccountType(type);
+		a.setAccountFunction(function);
 		a.setSubtype(subtype);
 		a.setOpeningBalance(new java.math.BigDecimal(openingBalance));
 		a.setNormalBalance(normal);

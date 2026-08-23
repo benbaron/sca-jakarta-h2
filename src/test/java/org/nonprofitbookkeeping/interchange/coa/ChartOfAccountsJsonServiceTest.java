@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountFunction;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
@@ -55,7 +56,8 @@ class ChartOfAccountsJsonServiceTest
                     .filter(account -> account.sourceCode().equals("1010"))
                     .findFirst()
                     .orElseThrow();
-            assertEquals(AccountType.BANK, checking.type());
+            assertEquals(AccountType.ASSET, checking.type());
+            assertEquals(AccountFunction.BANK, checking.function());
             assertEquals(AccountSubtype.CASH, checking.subtype());
             assertEquals("1000", checking.parentCode());
             CoaAccountData root = preview.items().stream()
@@ -90,6 +92,8 @@ class ChartOfAccountsJsonServiceTest
             String json = Files.readString(first);
             assertTrue(json.indexOf("\"code\" : \"1000\"") < json.indexOf("\"code\" : \"1010\""));
             assertTrue(json.contains("\"format\" : \"SCA-COA\""));
+            assertTrue(json.contains("\"type\" : \"BANK\""),
+                    "SCA-COA 1.0 retains BANK as the portable compatibility token.");
             assertTrue(json.endsWith("\n"));
         }
     }
@@ -206,7 +210,8 @@ class ChartOfAccountsJsonServiceTest
             child.setChart(chart);
             child.setCode("1010");
             child.setName("Checking");
-            child.setAccountType(AccountType.BANK);
+            child.setAccountType(AccountType.ASSET);
+            child.setAccountFunction(AccountFunction.BANK);
             child.setSubtype(AccountSubtype.CASH);
             child.setNormalBalance(NormalBalance.DEBIT);
             child.setParent(root);

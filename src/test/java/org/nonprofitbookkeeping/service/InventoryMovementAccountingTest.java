@@ -262,7 +262,7 @@ class InventoryMovementAccountingTest
                     .setParameter(1, INVENTORY_ACCOUNT_ID).setParameter(2, CHART_ID).executeUpdate();
             em.createNativeQuery("insert into account (id, chart_id, code, name, account_type, normal_balance) values (?, ?, '5000', 'Inventory expense', 'EXPENSE', 'DEBIT')")
                     .setParameter(1, OFFSET_ACCOUNT_ID).setParameter(2, CHART_ID).executeUpdate();
-            em.createNativeQuery("insert into account (id, chart_id, code, name, account_type, subtype, normal_balance) values (?, ?, '1000', 'Checking', 'BANK', 'CASH', 'DEBIT')")
+            em.createNativeQuery("insert into account (id, chart_id, code, name, account_type, account_function, subtype, normal_balance) values (?, ?, '1000', 'Checking', 'ASSET', 'BANK', 'CASH', 'DEBIT')")
                     .setParameter(1, BANK_OFFSET_ACCOUNT_ID).setParameter(2, CHART_ID).executeUpdate();
             em.getTransaction().commit();
         }

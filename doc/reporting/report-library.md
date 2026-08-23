@@ -79,14 +79,16 @@ P16-S13 preserves the legacy stable IDs and workbook template IDs so saved selec
 
 ### Bank Account Activity (legacy ID `all-checks-transfers`)
 
-The schema does not contain a durable check-number/type classification that can distinguish checks from every other BANK-account movement. The former **All Checks/Transfers** title is therefore retired. **Bank Account Activity** selects exactly:
+The schema does not contain a durable check-number/type classification that can distinguish checks from every other bank-function account movement. The former **All Checks/Transfers** title is therefore retired. **Bank Account Activity** selects exactly:
 
-- a persisted `TxnSplit` whose account has `AccountType.BANK`;
+- a persisted `TxnSplit` whose account has `AccountFunction.BANK`;
 - a canonical `Txn` owned by the active company;
 - a transaction date within the immutable request range, inclusive;
 - the selected fund when a fund filter is present.
 
-It returns the BANK split itself, not every split in the transaction. Corrections and reversals appear only when their own canonical BANK splits satisfy the same predicate. The displayed debit and credit totals are calculated only from the returned BANK rows; a row limit therefore limits both the detail and its explicitly labeled displayed total. No memo, payee, reference string, or amount pattern is treated as proof that a movement was a check or transfer.
+It returns the bank-function split itself, not every split in the transaction. Corrections and reversals appear only when their own canonical bank-function splits satisfy the same predicate. The displayed debit and credit totals are calculated only from the returned bank-function rows; a row limit therefore limits both the detail and its explicitly labeled displayed total. No memo, payee, reference string, or amount pattern is treated as proof that a movement was a check or transfer.
+
+Cash presentation is independent of the banking function: Balance Sheet cash breakout uses `AccountType.ASSET` plus `AccountSubtype.CASH`. Therefore an `ASSET :: BANK :: !CASH` account remains bank-operational but is not included in the cash subtotal, while an `ASSET :: CASH` account such as petty cash is included without becoming statement/reconciliation eligible.
 
 ### Fund Transfers (legacy ID `fund-transfers`)
 

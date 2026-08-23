@@ -84,7 +84,7 @@ P02-S3 adds `TransactionEntryService` as the canonical application service for e
 
 The update operation is deliberately narrow for P02-S3: it replaces the header and line set only while the transaction status remains `ENTERED`. Reversal, replacement, closed-period warnings/reopen flow, reconciliation protection, and audit snapshots remain owned by P02-S4. Query methods return immutable `TransactionView` and `AccountingJournalProjection` records derived from the canonical tables; they do not write compatibility journal tables or create a second ledger.
 
-P16-S10 extends `TransactionView.Line` with the authoritative `TxnSplit` bank-line classification, cleared flag/date, and optional exact reconciliation-session drill-through identity. `TransactionView.clearedState()` summarizes only BANK account lines as `Not bank`, `Uncleared`, `Cleared`, or `Mixed`; the JavaFX Journal does not infer state from the transaction header and does not mutate reconciliation facts.
+P16-S10 extends `TransactionView.Line` with the authoritative `TxnSplit` bank-line classification, cleared flag/date, and optional exact reconciliation-session drill-through identity. `TransactionView.clearedState()` summarizes only `AccountFunction.BANK` lines as `Not bank`, `Uncleared`, `Cleared`, or `Mixed`; the JavaFX Journal does not infer state from the transaction header and does not mutate reconciliation facts.
 
 ## Correction, period, reconciliation, and audit behavior
 

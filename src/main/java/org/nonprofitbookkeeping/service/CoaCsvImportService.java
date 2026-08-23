@@ -3,6 +3,9 @@ package org.nonprofitbookkeeping.service;
 import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.interchange.InterchangeFormat;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountClassification;
+import org.nonprofitbookkeeping.model.AccountFunction;
+import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.AuditEvent;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
@@ -214,8 +217,9 @@ public final class CoaCsvImportService
                             row.code(),
                             row.name(),
                             row.accountType(),
+                            row.accountFunction(),
                             row.normalBalance(),
-                            null,
+                            row.subtype(),
                             row.parentCode(),
                             true);
                     accounts.put(row.code(), written);
@@ -306,12 +310,17 @@ public final class CoaCsvImportService
 
     public static AccountType parseAccountTypeToken(String token)
     {
+        return parseAccountClassificationToken(token).type();
+    }
+
+    private static AccountClassification.PortableType parseAccountClassificationToken(String token)
+    {
         String normalized = normalizeEnumToken(token);
         if ("REVENUE".equals(normalized))
         {
-            return AccountType.INCOME;
+            normalized = "INCOME";
         }
-        return AccountType.valueOf(normalized);
+        return AccountClassification.parsePortableType(normalized);
     }
 
     public static NormalBalance parseNormalBalanceToken(String token)
@@ -352,10 +361,14 @@ public final class CoaCsvImportService
             {
                 code = requireText(source.code(), "Account code", 64);
                 name = requireText(source.name(), "Account name", 200);
-                AccountType type = parseAccountTypeToken(source.accountType());
+                AccountClassification.PortableType classification =
+                        parseAccountClassificationToken(source.accountType());
+                AccountType type = classification.type();
+                AccountFunction function = classification.function();
+                AccountSubtype subtype = function == AccountFunction.BANK ? AccountSubtype.CASH : null;
                 NormalBalance normal = parseNormalBalanceToken(source.normalBalance());
                 String parent = optionalText(source.parentCode(), 64, "Parent account code");
-                PreparedRow row = new PreparedRow(code, name, type, normal, parent);
+                PreparedRow row = new PreparedRow(code, name, type, function, subtype, normal, parent);
                 prepared.add(row);
                 codeCounts.merge(code, 1, Integer::sum);
             }
@@ -405,10 +418,13 @@ public final class CoaCsvImportService
             {
                 String currentParent = existing.getParent() == null ? null : existing.getParent().getCode();
                 if (existing.getAccountType() != row.accountType()
+                        || existing.getAccountFunction() != row.accountFunction()
+                        || existing.getSubtype() != row.subtype()
                         || existing.getNormalBalance() != row.normalBalance()
                         || !Objects.equals(currentParent, row.parentCode()))
                 {
-                    errors.add(row.code() + ": type, normal balance, or hierarchy cannot change because the account has transaction history.");
+                    errors.add(row.code()
+                            + ": type, function, subtype, normal balance, or hierarchy cannot change because the account has transaction history.");
                 }
             }
         }
@@ -577,6 +593,8 @@ public final class CoaCsvImportService
         String parent = account.getParent() == null ? null : account.getParent().getCode();
         return account.getName().equals(row.name())
                 && account.getAccountType() == row.accountType()
+                && account.getAccountFunction() == row.accountFunction()
+                && account.getSubtype() == row.subtype()
                 && account.getNormalBalance() == row.normalBalance()
                 && Objects.equals(parent, row.parentCode())
                 && account.isActive();
@@ -595,6 +613,7 @@ public final class CoaCsvImportService
                 .forEach(account -> normalized.append(account.getCode()).append('\u001f')
                         .append(account.getName()).append('\u001f')
                         .append(account.getAccountType()).append('\u001f')
+                        .append(account.getAccountFunction()).append('\u001f')
                         .append(account.getNormalBalance()).append('\u001f')
                         .append(account.getSubtype()).append('\u001f')
                         .append(account.getParent() == null ? "" : account.getParent().getCode()).append('\u001f')
@@ -613,6 +632,8 @@ public final class CoaCsvImportService
                 row.code(),
                 row.name(),
                 row.accountType().name(),
+                Objects.toString(row.accountFunction(), ""),
+                Objects.toString(row.subtype(), ""),
                 row.normalBalance().name(),
                 Objects.toString(row.parentCode(), ""),
                 "active=true"));
@@ -758,6 +779,8 @@ public final class CoaCsvImportService
             String code,
             String name,
             AccountType accountType,
+            AccountFunction accountFunction,
+            AccountSubtype subtype,
             NormalBalance normalBalance,
             String parentCode)
     {

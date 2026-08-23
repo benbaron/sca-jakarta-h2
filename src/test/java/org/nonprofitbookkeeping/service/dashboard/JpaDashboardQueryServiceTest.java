@@ -106,6 +106,46 @@ public class JpaDashboardQueryServiceTest
     }
 
     @Test
+    public void bankFunctionNonCashIsOperationalButExcludedFromBookCash(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("dashboard-bank-noncash")))
+        {
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                em.createNativeQuery("INSERT INTO chart_of_accounts (id, name, version, status) "
+                        + "VALUES (10, 'Bank Classification', '1', 'ACTIVE')").executeUpdate();
+                em.createNativeQuery("INSERT INTO account "
+                        + "(id, chart_id, code, name, account_type, account_function, subtype, normal_balance) "
+                        + "VALUES (10, 10, '1050', 'Restricted Deposit', 'ASSET', 'BANK', 'OTHER_ASSET', 'DEBIT')")
+                        .executeUpdate();
+                em.createNativeQuery("INSERT INTO account "
+                        + "(id, chart_id, code, name, account_type, normal_balance) "
+                        + "VALUES (11, 10, '3000', 'Net Assets', 'EQUITY', 'CREDIT')")
+                        .executeUpdate();
+                em.createNativeQuery("INSERT INTO fund (id, code, name, fund_type) "
+                        + "VALUES (10, 'OPERATING', 'Operating', 'UNRESTRICTED')").executeUpdate();
+                em.createNativeQuery("INSERT INTO txn (id, txn_date, memo, status) "
+                        + "VALUES (10, DATE '2026-03-01', 'Restricted deposit', 'ENTERED')").executeUpdate();
+                em.createNativeQuery("INSERT INTO txn_split (id, txn_id, account_id, fund_id, amount_signed) "
+                        + "VALUES (10, 10, 10, 10, 40.0000)").executeUpdate();
+                em.createNativeQuery("INSERT INTO txn_split (id, txn_id, account_id, fund_id, amount_signed) "
+                        + "VALUES (11, 10, 11, 10, -40.0000)").executeUpdate();
+                em.getTransaction().commit();
+            }
+
+            DashboardSnapshot snapshot = new JpaDashboardQueryService(jpa)
+                    .load("", LocalDate.of(2026, 3, 31), 5);
+
+            assertEquals(BigDecimal.ZERO, snapshot.bookCash());
+            assertEquals(1, snapshot.bankAccounts().size());
+            assertEquals("Restricted Deposit", snapshot.bankAccounts().get(0).name());
+            assertEquals(new BigDecimal("40.0000"), snapshot.bankAccounts().get(0).balance());
+            assertTrue(snapshot.recentTransactions().get(0).affectsBank());
+        }
+    }
+
+    @Test
     public void reversedTransactionsAreExcludedFromDerivedIndicators(@TempDir Path tempDir)
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("dashboard-reversed")))
@@ -164,7 +204,7 @@ public class JpaDashboardQueryServiceTest
         {
             em.getTransaction().begin();
             em.createNativeQuery("INSERT INTO chart_of_accounts (id, name, version, status) VALUES (1, 'Test', '1', 'ACTIVE')").executeUpdate();
-            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (1, 1, '1000', 'Checking', 'BANK', 'DEBIT')").executeUpdate();
+            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, account_function, subtype, normal_balance) VALUES (1, 1, '1000', 'Checking', 'ASSET', 'BANK', 'CASH', 'DEBIT')").executeUpdate();
             em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (2, 1, '4000', 'Income', 'INCOME', 'CREDIT')").executeUpdate();
             em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (3, 1, '5000', 'Expense', 'EXPENSE', 'DEBIT')").executeUpdate();
             em.createNativeQuery("INSERT INTO fund (id, code, name, fund_type) VALUES (1, 'OPERATING', 'Operating', 'UNRESTRICTED')").executeUpdate();

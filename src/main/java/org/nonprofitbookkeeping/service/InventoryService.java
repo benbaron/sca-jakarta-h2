@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountClassification;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.AuditEvent;
@@ -860,7 +861,7 @@ public class InventoryService
                 command.movementDate(),
                 null,
                 lineNote,
-                offsetAccount.getAccountType() == AccountType.BANK ? offsetAccount.getId() : null,
+                AccountClassification.isBank(offsetAccount) ? offsetAccount.getId() : null,
                 List.of(inventoryLine, offsetLine));
     }
 
@@ -907,7 +908,7 @@ public class InventoryService
             LocalDate movementDate,
             String operation)
     {
-        if (account.getAccountType() != AccountType.BANK)
+        if (!AccountClassification.isBank(account))
         {
             return;
         }

@@ -65,7 +65,7 @@ public class BankClearedStateServiceTest
             em.getTransaction().begin();
             em.createNativeQuery("INSERT INTO chart_of_accounts (id, name, version, status) VALUES (101, 'SCA Chart', '1', 'ACTIVE')").executeUpdate();
             em.createNativeQuery("INSERT INTO company (id, code, display_name, active_chart_of_accounts_id) VALUES (201, 'SCA', 'SCA Branch', 101)").executeUpdate();
-            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, subtype, normal_balance) VALUES (101, 101, '1000', 'Checking', 'BANK', 'CASH', 'DEBIT')").executeUpdate();
+            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, account_function, subtype, normal_balance) VALUES (101, 101, '1000', 'Checking', 'ASSET', 'BANK', 'CASH', 'DEBIT')").executeUpdate();
             em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, subtype, normal_balance) VALUES (102, 101, '5000', 'Expense', 'EXPENSE', NULL, 'DEBIT')").executeUpdate();
             em.createNativeQuery("INSERT INTO fund (id, code, name, fund_type) VALUES (201, 'UNR', 'Unrestricted', 'UNRESTRICTED')").executeUpdate();
             em.createNativeQuery("INSERT INTO bank (id, company_id, name) VALUES (201, 201, 'Example Bank')").executeUpdate();

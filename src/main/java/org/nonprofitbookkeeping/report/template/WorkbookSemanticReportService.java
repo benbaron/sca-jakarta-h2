@@ -191,7 +191,7 @@ public class WorkbookSemanticReportService
         total.put("rowType", "Displayed total");
         total.put("debit", report.totalDebits());
         total.put("credit", report.totalCredits());
-        total.put("memo", "Totals include only the returned BANK-account splits.");
+        total.put("memo", "Totals include only the returned bank-function account splits.");
         rows.add(total);
 
         SemanticReportValueSet values = new SemanticReportValueSet();

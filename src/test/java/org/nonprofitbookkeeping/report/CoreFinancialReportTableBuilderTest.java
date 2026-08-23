@@ -71,7 +71,7 @@ class CoreFinancialReportTableBuilderTest
                 new FinancialReportService.BalanceSheetReport(
                         LocalDate.of(2025, 12, 31),
                         List.of(
-                                statement("1010", "Treasury Account", AccountType.BANK,
+                                statement("1010", "Treasury Account", AccountType.ASSET,
                                         AccountSubtype.CASH, "100.00"),
                                 statement("1200", "Custom Asset", AccountType.ASSET,
                                         null, "40.00")),
@@ -85,7 +85,7 @@ class CoreFinancialReportTableBuilderTest
                 new FinancialReportService.BalanceSheetReport(
                         LocalDate.of(2026, 6, 30),
                         List.of(
-                                statement("1010", "Treasury Account", AccountType.BANK,
+                                statement("1010", "Treasury Account", AccountType.ASSET,
                                         AccountSubtype.CASH, "125.00"),
                                 statement("1200", "Custom Asset", AccountType.ASSET,
                                         null, "40.00")),

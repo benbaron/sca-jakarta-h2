@@ -4,6 +4,8 @@ import jakarta.persistence.EntityManager;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountFunction;
+import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
@@ -134,7 +136,9 @@ class FinancialReportServiceIntegrationTest
             vendor.setActive(true);
             em.persist(vendor);
 
-            Account bank = account(chart, "1000", "Operating Cash", AccountType.BANK, NormalBalance.DEBIT, new BigDecimal("500.00"));
+            Account bank = account(chart, "1000", "Operating Cash", AccountType.ASSET, NormalBalance.DEBIT, new BigDecimal("500.00"));
+            bank.setAccountFunction(AccountFunction.BANK);
+            bank.setSubtype(AccountSubtype.CASH);
             Account payable = account(chart, "2000", "Accounts Payable", AccountType.LIABILITY, NormalBalance.CREDIT, BigDecimal.ZERO);
             Account netAssets = account(chart, "3000", "Net Assets", AccountType.EQUITY, NormalBalance.CREDIT, new BigDecimal("500.00"));
             Account donations = account(chart, "4000", "Contributions", AccountType.INCOME, NormalBalance.CREDIT, BigDecimal.ZERO);

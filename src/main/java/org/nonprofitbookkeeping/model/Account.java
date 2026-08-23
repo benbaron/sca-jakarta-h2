@@ -10,7 +10,8 @@ import java.time.*;
        uniqueConstraints = @UniqueConstraint(name = "uq_account_code", columnNames = {"chart_id", "code"}),
        indexes = {
            @Index(name = "ix_account_parent", columnList = "parent_id"),
-           @Index(name = "ix_account_active", columnList = "is_active")
+           @Index(name = "ix_account_active", columnList = "is_active"),
+           @Index(name = "ix_account_function", columnList = "account_function")
        })
 /**
  * Represents the Account component in the nonprofit bookkeeping application.
@@ -34,6 +35,10 @@ public class Account
     @Enumerated(EnumType.STRING)
     @Column(name = "account_type", nullable = false, length = 20)
     private AccountType accountType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_function", length = 40)
+    private AccountFunction accountFunction;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "subtype", length = 40)
@@ -77,6 +82,9 @@ public class Account
 
     public AccountType getAccountType() { return accountType; }
     public void setAccountType(AccountType accountType) { this.accountType = accountType; }
+
+    public AccountFunction getAccountFunction() { return accountFunction; }
+    public void setAccountFunction(AccountFunction accountFunction) { this.accountFunction = accountFunction; }
 
     public NormalBalance getNormalBalance() { return normalBalance; }
     public void setNormalBalance(NormalBalance normalBalance) { this.normalBalance = normalBalance; }

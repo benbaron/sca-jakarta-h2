@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.interchange.sclx;
 
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountClassification;
 import org.nonprofitbookkeeping.model.AuditEvent;
 import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.BudgetLine;
@@ -595,7 +596,7 @@ public final class SclxCoreSnapshotAssembler
                 accountId,
                 account.getCode(),
                 account.getName(),
-                account.getAccountType().name(),
+                AccountClassification.portableType(account),
                 account.getSubtype() == null ? null : account.getSubtype().name(),
                 account.getNormalBalance().name(),
                 parentId,

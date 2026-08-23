@@ -26,6 +26,7 @@ import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.ViewPresetState;
+import org.nonprofitbookkeeping.model.AccountClassification;
 import org.nonprofitbookkeeping.service.CoaCsvMapper;
 import org.nonprofitbookkeeping.service.ImportExportOrchestrationService;
 import org.nonprofitbookkeeping.service.JournalLine;
@@ -820,7 +821,7 @@ public class MainWindow extends BorderPane
                 .map(account -> new CoaCsvMapper.CoaCsvRow(
                         account.getCode(),
                         account.getName(),
-                        account.getAccountType().name(),
+                        AccountClassification.portableType(account),
                         account.getNormalBalance().name(),
                         ""))
                 .toList();

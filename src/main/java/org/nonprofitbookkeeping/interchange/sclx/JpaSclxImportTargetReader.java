@@ -3,6 +3,7 @@ package org.nonprofitbookkeeping.interchange.sclx;
 import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.interchange.InterchangeFormat;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountClassification;
 import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.Company;
@@ -142,7 +143,8 @@ final class JpaSclxImportTargetReader implements SclxImportTargetReader
             result.put(code, new SclxImportTargetSnapshot.TargetAccount(
                     SclxPortableIdentity.account(company.getCode(), code),
                     code,
-                    account.getAccountType().name(),
+                    AccountClassification.portableType(account),
+                    account.getSubtype() == null ? null : account.getSubtype().name(),
                     account.getNormalBalance().name(),
                     account.isPosting(),
                     account.isActive(),

@@ -51,20 +51,28 @@ Fields:
 
 Bank-account entries are distinguished by their separate Chart of Accounts code.
 
-The linked chart-of-accounts account must have:
+The account classification has three independent meanings:
 
-- account type = `BANK`;
-- normal balance = `DEBIT`;
-- financial statement class = `CASH`.
+- accounting type = `ASSET`;
+- operational function = `BANK`;
+- financial/schedule subtype = `CASH` when the balance is a cash or cash-equivalent balance; and
+- normal balance = `DEBIT`.
+
+The usual checking, savings, and similar deposit account is therefore `ASSET :: BANK :: CASH`.
+`ASSET :: BANK :: !CASH` is also valid: it remains eligible for bank-statement, cleared-state, and
+reconciliation operations, but it is excluded from cash-only presentation such as Book Cash and the
+Balance Sheet cash subtotal. An `ASSET :: CASH` account without the `BANK` function is cash for financial
+reporting (for example petty cash) but is not a bank-statement/reconciliation account.
 
 The Banking panel must give both options:
 
-1. create the corresponding Chart of Accounts account automatically; or
-2. select an existing Chart of Accounts account that satisfies the Bank/Debit/Cash rules.
+1. create the corresponding Chart of Accounts account automatically as `ASSET :: BANK :: CASH`; or
+2. select an existing `ASSET` / `BANK`-function / `DEBIT` account. `CASH` is not required for this second
+   option because cash classification and banking behavior are deliberately independent.
 
 ## Configured bank accounts
 
-For reconciliation and statement import, "configured bank accounts" means only Chart of Accounts bank accounts linked to a Bank record through the Banking panel. A standalone account with type `BANK` is not sufficient.
+For reconciliation and statement import, "configured bank accounts" means only Chart of Accounts accounts with the `BANK` function that are linked to a Bank record through the Banking panel. A standalone account with the `BANK` function is not sufficient.
 
 ## Bank Reconciliation panel
 
@@ -146,13 +154,13 @@ P05-S1 implements the model-level portion of this design. A configured bank is a
 
 A new configured bank account write links one `CompanyBankAccount` to exactly one `Bank` and exactly one chart-of-accounts `Account`. Existing legacy `CompanyBankAccount` rows may remain without those links until migrated or edited, but new P05 service writes require stable bank and account IDs.
 
-The linked chart account must be a posting cash-bank ledger account with `AccountType.BANK`, `NormalBalance.DEBIT`, and `AccountSubtype.CASH`. Configured bank accounts store masked account number, nickname, opening date, opening balance, preferred statement import format, OFX bank/account identifiers, notes, and active flag.
+The linked chart account must be a posting asset bank ledger account with `AccountType.ASSET`, `AccountFunction.BANK`, and `NormalBalance.DEBIT`. `AccountSubtype.CASH` remains the normal classification for ordinary deposit accounts, but is not a prerequisite for banking operations. Configured bank accounts store masked account number, nickname, opening date, opening balance, preferred statement import format, OFX bank/account identifiers, notes, and active flag.
 
 This model is configuration metadata only; it does not create accepted accounting transactions and does not act as a second ledger. P05-S2 owns the JavaFX Banking panel under Accounting, P05-S3 owns import normalization and review wiring, and P05-S4 owns cleared-state mapping from reviewed bank statement facts to canonical ledger bank lines.
 
 ## P05-S2 implementation note — Banking panel
 
-P05-S2 adds a first-class Banking panel under Accounting. The panel loads bank and configured bank-account rows from H2 through `BankConfigurationService`, saves Bank create/edit operations through that service, and creates configured bank accounts either from a selected qualifying Chart of Accounts account or by first creating a BANK/DEBIT/CASH account through `AccountAdminService`.
+P05-S2 adds a first-class Banking panel under Accounting. The panel loads bank and configured bank-account rows from H2 through `BankConfigurationService`, saves Bank create/edit operations through that service, and creates configured bank accounts either from a selected qualifying Chart of Accounts account or by first creating an `ASSET :: BANK :: CASH` / `DEBIT` account through `AccountAdminService`.
 
 The panel exposes a disabled Delete explanation instead of a destructive delete operation in this slice: bank configuration records can be deactivated to preserve statement import and reconciliation history until a later audited delete/deactivate policy is specified. Its tables use sortable, resizable, reorderable columns with active-company-keyed column width, order, and sort persistence, and its date and money entry fields accept common input forms and normalize display on focus loss.
 
@@ -160,7 +168,7 @@ The panel exposes a disabled Delete explanation instead of a destructive delete 
 
 P05-S4 adds cleared-state columns to canonical `txn_split` rows. A matched imported statement line may mark only the split whose account equals the configured bank account's linked Chart of Accounts account. The imported statement row records the matched transaction for traceability, but the cleared flag and cleared date live on the ledger split.
 
-P16-S10 makes those existing split facts visible in the canonical Journal projection. Transactions with no BANK lines display `Not bank`; bank transactions display `Uncleared`, `Cleared`, or `Mixed` according to all BANK lines. The entry-line detail shows each bank line's cleared date, and an exact company/account-consistent reconciliation match may drill to its durable session. Refresh or reopening Journal re-queries H2 after reconciliation changes; Journal receives no cleared-state mutation authority.
+P16-S10 makes those existing split facts visible in the canonical Journal projection. Transactions with no `BANK`-function lines display `Not bank`; bank transactions display `Uncleared`, `Cleared`, or `Mixed` according to all `BANK`-function lines. The entry-line detail shows each bank line's cleared date, and an exact company/account-consistent reconciliation match may drill to its durable session. Refresh or reopening Journal re-queries H2 after reconciliation changes; Journal receives no cleared-state mutation authority.
 
 ## P06-S1 reconciliation workflow note
 
@@ -168,9 +176,24 @@ P06 starts by removing approval/rejection semantics from the Reconciliation Runs
 
 ## P06-S2 configured-account comparison note
 
-P06-S2 adds `ReconciliationComparisonService`, which validates that reconciliation uses an active configured bank account linked to both a Bank record and a BANK/DEBIT/CASH chart account. The service reads canonical `TxnSplit` bank lines and reviewed `BankStatementLine` facts, calculates beginning balance, activity, ending book balance, and cleared-only balance, and produces comparison lines for exact matches, unmatched ledger lines, unmatched statement lines, amount mismatches, date mismatches, and cleared-state mismatches.
+P06-S2 adds `ReconciliationComparisonService`, which validates that reconciliation uses an active configured bank account linked to both a Bank record and an `ASSET` / `BANK`-function / `DEBIT` chart account. The service reads canonical `TxnSplit` bank lines and reviewed `BankStatementLine` facts, calculates beginning balance, activity, ending book balance, and cleared-only balance, and produces comparison lines for exact matches, unmatched ledger lines, unmatched statement lines, amount mismatches, date mismatches, and cleared-state mismatches.
 
 The Bank Reconciliation panel now exposes a configured-account selector, from date, statement ending date, and a comparison table. When requested, unresolved comparison summaries are saved as factual reconciliation run records. Saving an unresolved report is not an approval or rejection workflow; it records the comparison result so a later workflow can reopen or resolve it.
+
+## P05-C6 account-classification correction
+
+P05-C6 removes `BANK` as a top-level accounting type. `AccountType` now describes only the accounting
+class (`ASSET`, `LIABILITY`, `EQUITY`, `INCOME`, `EXPENSE`), while nullable `AccountFunction.BANK`
+describes operational banking behavior. `AccountSubtype.CASH` remains the financial/schedule
+classification used for cash presentation. Flyway V73 nondestructively converts every legacy
+`account_type = 'BANK'` row to `account_type = 'ASSET'` plus `account_function = 'BANK'` and preserves
+the existing subtype unchanged.
+
+Bank configuration, statement activity, Journal bank-line state, cleared-state protection, and
+reconciliation use the `BANK` function. Balance Sheet asset membership uses `ASSET`; Balance Sheet
+cash breakout and Dashboard Book Cash use `ASSET + CASH`. Existing SCA-COA/SCLX interchange versions
+retain the literal `BANK` portable type token for compatibility; readers map it to `ASSET + BANK` and
+writers map an internal bank-function account back to that portable token.
 
 ## P16-S3 finalized-session mutation integrity
 

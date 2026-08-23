@@ -409,7 +409,7 @@ class FixedAssetAtomicDepreciationTest
                     .setParameter(1, scope.accumulatedAccountId())
                     .setParameter(2, scope.chartId())
                     .executeUpdate();
-            em.createNativeQuery("insert into account (id, chart_id, code, name, account_type, subtype, normal_balance) values (?, ?, '1000', 'Checking', 'BANK', 'CASH', 'DEBIT')")
+            em.createNativeQuery("insert into account (id, chart_id, code, name, account_type, account_function, subtype, normal_balance) values (?, ?, '1000', 'Checking', 'ASSET', 'BANK', 'CASH', 'DEBIT')")
                     .setParameter(1, scope.checkingAccountId())
                     .setParameter(2, scope.chartId())
                     .executeUpdate();

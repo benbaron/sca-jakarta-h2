@@ -3,6 +3,7 @@ package org.nonprofitbookkeeping.service;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountFunction;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
@@ -48,6 +49,44 @@ public class AccountAdminServiceIntegrationTest
             assertEquals("Accounts Receivable - Current", updated.getName());
             assertEquals(false, updated.isActive());
             assertNull(updated.getParent());
+        }
+        finally
+        {
+            jpa.close();
+        }
+    }
+
+    @Test
+    public void upsertSeparatesAssetBankFunctionFromCashClassification() throws Exception
+    {
+        Path db = Files.createTempFile("coa-admin-bank-classification-it", ".mv.db");
+        runMigrations(db);
+
+        Jpa jpa = new Jpa(db);
+        try
+        {
+            seedActiveChart(jpa);
+            AccountAdminService service = new AccountAdminService(jpa);
+
+            Account cashBank = service.upsert(
+                    "1000", "Operating Checking", AccountType.ASSET, AccountFunction.BANK,
+                    NormalBalance.DEBIT, AccountSubtype.CASH, null, true);
+            Account nonCashBank = service.upsert(
+                    "1050", "Restricted Deposit", AccountType.ASSET, AccountFunction.BANK,
+                    NormalBalance.DEBIT, AccountSubtype.OTHER_ASSET, null, true);
+
+            assertEquals(AccountType.ASSET, cashBank.getAccountType());
+            assertEquals(AccountFunction.BANK, cashBank.getAccountFunction());
+            assertEquals(AccountSubtype.CASH, cashBank.getSubtype());
+            assertEquals(AccountFunction.BANK, nonCashBank.getAccountFunction());
+            assertEquals(AccountSubtype.OTHER_ASSET, nonCashBank.getSubtype());
+
+            IllegalArgumentException liabilityBank = assertThrows(IllegalArgumentException.class,
+                    () -> service.upsert(
+                            "2000", "Invalid Bank", AccountType.LIABILITY, AccountFunction.BANK,
+                            NormalBalance.CREDIT, null, null, true));
+            assertEquals("BANK function requires an ASSET account with a DEBIT normal balance.",
+                    liabilityBank.getMessage());
         }
         finally
         {

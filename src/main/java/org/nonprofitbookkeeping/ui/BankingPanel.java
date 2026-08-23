@@ -25,6 +25,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountFunction;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.Bank;
@@ -407,7 +408,7 @@ public class BankingPanel implements AppPanel
             }
             Account account = useExistingAccount.isSelected()
                     ? existingAccountSelector.getValue()
-                    : UiServiceRegistry.accountAdmin().upsert(accountCode.getText(), accountName.getText(), AccountType.BANK, NormalBalance.DEBIT, AccountSubtype.CASH, null, true);
+                    : UiServiceRegistry.accountAdmin().upsert(accountCode.getText(), accountName.getText(), AccountType.ASSET, AccountFunction.BANK, NormalBalance.DEBIT, AccountSubtype.CASH, null, true);
             if (account == null)
             {
                 throw new IllegalArgumentException("Chart-of-accounts bank account is required.");
@@ -549,9 +550,9 @@ public class BankingPanel implements AppPanel
 
     private static boolean isQualifyingBankAccount(Account account)
     {
-        return account.getAccountType() == AccountType.BANK
-                && account.getNormalBalance() == NormalBalance.DEBIT
-                && account.getSubtype() == AccountSubtype.CASH;
+        return account.getAccountType() == AccountType.ASSET
+                && account.getAccountFunction() == AccountFunction.BANK
+                && account.getNormalBalance() == NormalBalance.DEBIT;
     }
 
     private String activeCompanyCode()

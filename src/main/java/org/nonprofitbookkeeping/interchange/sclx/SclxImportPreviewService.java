@@ -845,8 +845,10 @@ public final class SclxImportPreviewService
             SclxImportTargetSnapshot.TargetAccount local)
     {
         String sourceType = normalizeAccountType(text(source, "type"));
+        String sourceSubtype = normalizeToken(text(source, "subtype"));
         String sourceSide = normalizeToken(text(source, "increaseSide"));
         return sourceType.equals(normalizeAccountType(local.type()))
+                && sourceSubtype.equals(normalizeToken(local.subtype()))
                 && sourceSide.equals(normalizeToken(local.increaseSide()))
                 && (!used || (local.active() && local.posting()));
     }

@@ -16,7 +16,7 @@ public class ImportPreviewPanelTokenNormalizationTest
     {
         assertEquals(AccountType.INCOME, ImportPreviewPanel.parseAccountTypeToken("revenue"));
         assertEquals(AccountType.ASSET, ImportPreviewPanel.parseAccountTypeToken("asset"));
-        assertEquals(AccountType.BANK, ImportPreviewPanel.parseAccountTypeToken("bank"));
+        assertEquals(AccountType.ASSET, ImportPreviewPanel.parseAccountTypeToken("bank"));
     }
 
     @Test

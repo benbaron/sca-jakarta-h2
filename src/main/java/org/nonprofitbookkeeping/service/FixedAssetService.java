@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AccountClassification;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.AuditEvent;
@@ -791,10 +792,9 @@ public class FixedAssetService
         {
             ownership.ensureOwnedBy(em, company, proceedsAccount, "Proceeds account");
             requireUsableAccount(proceedsAccount, "Proceeds account", command.eventDate());
-            if (proceedsAccount.getAccountType() != AccountType.BANK
-                    && proceedsAccount.getAccountType() != AccountType.ASSET)
+            if (proceedsAccount.getAccountType() != AccountType.ASSET)
             {
-                throw new IllegalArgumentException("Proceeds account must be a BANK or ASSET account");
+                throw new IllegalArgumentException("Proceeds account must be an ASSET account");
             }
             if (proceedsAccount.getId().equals(assetAccount.getId())
                     || proceedsAccount.getId().equals(accumulatedAccount.getId()))
@@ -856,7 +856,7 @@ public class FixedAssetService
                 command.eventDate(),
                 null,
                 lineNote,
-                proceedsAccount != null && proceedsAccount.getAccountType() == AccountType.BANK
+                proceedsAccount != null && AccountClassification.isBank(proceedsAccount)
                         ? proceedsAccount.getId() : null,
                 lines);
         return new LifecyclePreview(
@@ -1160,7 +1160,7 @@ public class FixedAssetService
             LocalDate eventDate,
             String operation)
     {
-        if (account.getAccountType() != AccountType.BANK)
+        if (!AccountClassification.isBank(account))
         {
             return;
         }
