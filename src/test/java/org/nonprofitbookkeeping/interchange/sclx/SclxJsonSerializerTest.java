@@ -152,7 +152,7 @@ class SclxJsonSerializerTest
                                 expenseId, "6100", "Supplies", "EXPENSE", null, "DEBIT", null,
                                 "USD", new BigDecimal("0.0000"), true, true),
                         new SclxExportDocument.Account(
-                                cashId, "1010", "Cash", "ASSET", "BANK", "DEBIT", null,
+                                cashId, "1010", "Cash", "BANK", "CASH", "DEBIT", null,
                                 "USD", new BigDecimal("1000.0000"), true, true)),
                 List.of(new SclxExportDocument.Fund(
                         fundId, "GENERAL", "General Fund", "UNRESTRICTED", null,

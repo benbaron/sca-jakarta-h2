@@ -18,6 +18,9 @@ Use a disposable copy of a company database that contains at least one existing 
 4. Confirm that same `ASSET / BANK / OTHER_ASSET` balance is **not** included in Dashboard **Book cash** and is not placed in the Balance Sheet cash breakout; it remains an asset.
 5. Create a petty-cash-style account as `ASSET / no Function / CASH / DEBIT`. Post representative activity and confirm it contributes to Dashboard **Book cash** and the Balance Sheet cash breakout, but does **not** appear as an eligible Banking account and is not treated as a reconciliable bank line.
 6. Attempt an invalid combination such as `LIABILITY / BANK` or `ASSET / BANK / CREDIT`; confirm the save is rejected with an actionable classification message.
+7. Create an unconfigured `ASSET / BANK / CASH / DEBIT` account in **Chart of Accounts**, edit it, choose **Function = None**, save, reopen it, and confirm the Function remains blank/None rather than reverting to BANK.
+8. For an account already linked through **Banking**, attempt to choose **Function = None** or otherwise change it away from `ASSET / BANK / DEBIT`. Confirm the save is rejected with a message directing you to change/remove the Banking configuration first, and confirm the account's persisted classification remains unchanged.
+9. On that same configured bank account, change only the subtype between `CASH` and another asset subtype where appropriate. Confirm the edit is allowed and banking participation remains intact; only cash-only presentation changes.
 
 ## Interchange compatibility
 
@@ -25,4 +28,4 @@ Use a disposable copy of a company database that contains at least one existing 
 2. Re-preview/re-import that file into a disposable target and confirm portable `BANK` maps back to internal **Type = ASSET, Function = BANK** without losing `CASH` or another subtype.
 3. Export representative SCLX data and confirm bank-function accounts retain the portable SCLX `BANK` type; re-preview it and confirm no account-type compatibility regression.
 
-Do not approve the correction for merge if the migration duplicates accounts, breaks an existing configured bank/reconciliation link, includes a non-CASH bank-function balance in cash presentation, or excludes a BANK-function account from banking operations.
+Do not approve the correction for merge if the migration duplicates accounts, breaks an existing configured bank/reconciliation link, includes a non-CASH bank-function balance in cash presentation, excludes a BANK-function account from banking operations, silently restores BANK after Function is cleared on an unconfigured account, or allows a configured bank account to be declassified without first changing its Banking configuration.

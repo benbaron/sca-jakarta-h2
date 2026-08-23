@@ -20,8 +20,8 @@
     {
       "code": "1010",
       "name": "Fictional Community Bank Checking",
-      "type": "ASSET",
-      "subtype": "BANK",
+      "type": "BANK",
+      "subtype": "CASH",
       "normalBalance": "DEBIT",
       "parentCode": "1000",
       "posting": true,

@@ -195,6 +195,13 @@ public class AccountAdminService
         else
         {
             account = existingMatches.get(0);
+            validateConfiguredBankClassification(
+                    em,
+                    managedCompany,
+                    account,
+                    accountType,
+                    accountFunction,
+                    normalBalance);
         }
 
         Account parent = resolveParent(em, managedChart, cleanCode, parentCode);
@@ -233,6 +240,37 @@ public class AccountAdminService
         {
             throw new IllegalArgumentException(
                     "BANK function requires an ASSET account with a DEBIT normal balance.");
+        }
+    }
+
+    private static void validateConfiguredBankClassification(
+            EntityManager em,
+            Company company,
+            Account account,
+            AccountType requestedType,
+            AccountFunction requestedFunction,
+            NormalBalance requestedBalance)
+    {
+        if (requestedType == AccountType.ASSET
+                && requestedFunction == AccountFunction.BANK
+                && requestedBalance == NormalBalance.DEBIT)
+        {
+            return;
+        }
+
+        long configuredCount = em.createQuery("""
+                select count(cba)
+                from CompanyBankAccount cba
+                where cba.company = :company
+                  and cba.account = :account
+                """, Long.class)
+                .setParameter("company", company)
+                .setParameter("account", account)
+                .getSingleResult();
+        if (configuredCount > 0)
+        {
+            throw new IllegalArgumentException(
+                    "This account is configured for banking. Remove or change its Banking configuration before changing its ASSET / BANK / DEBIT classification.");
         }
     }
 

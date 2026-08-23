@@ -8,6 +8,8 @@ import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
+import org.nonprofitbookkeeping.model.Company;
+import org.nonprofitbookkeeping.model.CompanyBankAccount;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
@@ -95,6 +97,129 @@ public class AccountAdminServiceIntegrationTest
     }
 
     @Test
+    public void unconfiguredBankFunctionCanBeCleared() throws Exception
+    {
+        Path db = Files.createTempFile("coa-admin-clear-bank-function-it", ".mv.db");
+        runMigrations(db);
+
+        Jpa jpa = new Jpa(db);
+        try
+        {
+            seedActiveChart(jpa);
+            AccountAdminService service = new AccountAdminService(jpa);
+            service.upsert(
+                    "1010", "Operating Checking", AccountType.ASSET, AccountFunction.BANK,
+                    NormalBalance.DEBIT, AccountSubtype.CASH, null, true);
+
+            Account cleared = service.upsert(
+                    "1010", "Operating Checking", AccountType.ASSET, null,
+                    NormalBalance.DEBIT, AccountSubtype.CASH, null, true);
+
+            assertNull(cleared.getAccountFunction());
+            assertEquals(AccountType.ASSET, cleared.getAccountType());
+            assertEquals(AccountSubtype.CASH, cleared.getSubtype());
+        }
+        finally
+        {
+            jpa.close();
+        }
+    }
+
+    @Test
+    public void configuredBankCannotBeDeclassifiedAndFailedUpdateLeavesPersistedStateUnchanged() throws Exception
+    {
+        Path db = Files.createTempFile("coa-admin-configured-bank-guard-it", ".mv.db");
+        runMigrations(db);
+
+        Jpa jpa = new Jpa(db);
+        try
+        {
+            seedActiveChart(jpa);
+            AccountAdminService service = new AccountAdminService(jpa);
+            Account bank = service.upsert(
+                    "1010", "Operating Checking", AccountType.ASSET, AccountFunction.BANK,
+                    NormalBalance.DEBIT, AccountSubtype.CASH, null, true);
+            configureBankAccount(jpa, bank.getId(), "DEFAULT");
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> service.upsert(
+                            "1010", "Operating Checking", AccountType.ASSET, null,
+                            NormalBalance.DEBIT, AccountSubtype.CASH, null, true));
+            assertEquals(
+                    "This account is configured for banking. Remove or change its Banking configuration before changing its ASSET / BANK / DEBIT classification.",
+                    ex.getMessage());
+
+            try (var em = jpa.em())
+            {
+                Account persisted = em.createQuery(
+                                "from Account a where a.code = '1010'",
+                                Account.class)
+                        .getSingleResult();
+                assertEquals(AccountType.ASSET, persisted.getAccountType());
+                assertEquals(AccountFunction.BANK, persisted.getAccountFunction());
+                assertEquals(NormalBalance.DEBIT, persisted.getNormalBalance());
+                assertEquals(AccountSubtype.CASH, persisted.getSubtype());
+            }
+
+            Account nonCash = service.upsert(
+                    "1010", "Operating Checking - Restricted", AccountType.ASSET, AccountFunction.BANK,
+                    NormalBalance.DEBIT, AccountSubtype.OTHER_ASSET, null, true);
+            assertEquals(AccountFunction.BANK, nonCash.getAccountFunction());
+            assertEquals(AccountSubtype.OTHER_ASSET, nonCash.getSubtype());
+            assertEquals("Operating Checking - Restricted", nonCash.getName());
+        }
+        finally
+        {
+            jpa.close();
+        }
+    }
+
+    @Test
+    public void foreignCompanyBankReferenceDoesNotBlockCurrentCompanyEdit() throws Exception
+    {
+        Path db = Files.createTempFile("coa-admin-company-isolation-it", ".mv.db");
+        runMigrations(db);
+
+        Jpa jpa = new Jpa(db);
+        try
+        {
+            seedActiveChart(jpa);
+            AccountAdminService service = new AccountAdminService(jpa);
+            Account bank = service.upsert(
+                    "1010", "Operating Checking", AccountType.ASSET, AccountFunction.BANK,
+                    NormalBalance.DEBIT, AccountSubtype.CASH, null, true);
+
+            try (var em = jpa.em())
+            {
+                em.getTransaction().begin();
+                Company other = new Company();
+                other.setCode("OTHER_COMPANY");
+                other.setDisplayName("Other Company");
+                other.setDefaultCurrency("USD");
+                em.persist(other);
+                em.flush();
+
+                Account managedBank = em.find(Account.class, bank.getId());
+                CompanyBankAccount foreignReference = new CompanyBankAccount();
+                foreignReference.setCompany(other);
+                foreignReference.setAccount(managedBank);
+                foreignReference.setName("Foreign bank reference");
+                em.persist(foreignReference);
+                em.getTransaction().commit();
+            }
+
+            Account cleared = service.upsert(
+                    "1010", "Operating Checking", AccountType.ASSET, null,
+                    NormalBalance.DEBIT, AccountSubtype.CASH, null, true);
+            assertNull(cleared.getAccountFunction());
+        }
+        finally
+        {
+            jpa.close();
+        }
+    }
+
+    @Test
     public void upsert_rejectsMissingParentCodeInChart() throws Exception
     {
         Path db = Files.createTempFile("coa-admin-it", ".mv.db");
@@ -112,6 +237,26 @@ public class AccountAdminServiceIntegrationTest
         finally
         {
             jpa.close();
+        }
+    }
+
+    private static void configureBankAccount(Jpa jpa, long accountId, String companyCode)
+    {
+        try (var em = jpa.em())
+        {
+            em.getTransaction().begin();
+            Company company = em.createQuery(
+                            "from Company c where c.code = :code",
+                            Company.class)
+                    .setParameter("code", companyCode)
+                    .getSingleResult();
+            Account account = em.find(Account.class, accountId);
+            CompanyBankAccount configured = new CompanyBankAccount();
+            configured.setCompany(company);
+            configured.setAccount(account);
+            configured.setName("Configured " + account.getName());
+            em.persist(configured);
+            em.getTransaction().commit();
         }
     }
 
