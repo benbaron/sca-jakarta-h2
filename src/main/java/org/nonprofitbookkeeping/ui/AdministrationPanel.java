@@ -20,6 +20,7 @@ public final class AdministrationPanel implements AppPanel
     private final SettingsPanel settings;
     private final DatabaseTransferPanel transfers;
     private final CompanyAdminPanel companies;
+    private final CompanyBankAccountsSummaryPanel bankAccounts;
     private final CompanyOwnershipDiagnosticsPanel ownershipDiagnostics;
     private final UserAdminPanel users;
     private Runnable commandCapabilitiesChangedListener = () -> { };
@@ -60,6 +61,7 @@ public final class AdministrationPanel implements AppPanel
         settings = new SettingsPanel(MainWindow.sharedSessionState(), companyController, stateStore);
         transfers = new DatabaseTransferPanel(databaseTransferActions);
         companies = new CompanyAdminPanel(companyController);
+        bankAccounts = new CompanyBankAccountsSummaryPanel();
         ownershipDiagnostics = new CompanyOwnershipDiagnosticsPanel();
         users = new UserAdminPanel();
         tabs.setId("administrationTabs");
@@ -67,6 +69,7 @@ public final class AdministrationPanel implements AppPanel
                 tab("Preferences", settings),
                 tab("Database Transfer", transfers),
                 tab("Company Admin", companies),
+                tab("Bank Accounts", bankAccounts),
                 tab("User Admin", users),
                 tab("Company Ownership Diagnostics", ownershipDiagnostics));
         tabs.getTabs().stream()
@@ -192,6 +195,11 @@ public final class AdministrationPanel implements AppPanel
     UserAdminPanel usersForTests()
     {
         return users;
+    }
+
+    CompanyBankAccountsSummaryPanel bankAccountsForTests()
+    {
+        return bankAccounts;
     }
 
     CompanyOwnershipDiagnosticsPanel ownershipDiagnosticsForTests()
