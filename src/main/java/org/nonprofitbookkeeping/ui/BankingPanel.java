@@ -466,6 +466,7 @@ public class BankingPanel implements AppPanel
         contactEmail.setText(nullToBlank(bank.getContactEmail()));
         bankNotes.setText(nullToBlank(bank.getNotes()));
         bankActive.setSelected(bank.isActive());
+        clearAccountForm();
         bankSelector.setValue(bankById(bank.getId()));
         status.setText("Edit mode for bank " + bank.getName() + ".");
         bankDirty.markClean();
