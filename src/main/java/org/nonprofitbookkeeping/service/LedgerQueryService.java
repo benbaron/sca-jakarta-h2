@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Query service for ledger register and transaction drill-down screens.
@@ -52,33 +53,7 @@ public class LedgerQueryService
         List<JournalLine> out = new ArrayList<>();
         for (LedgerQueryRepository.LedgerJournalRow row : rows)
         {
-            BigDecimal amount = row.amountSigned();
-            NormalBalance normal = row.normalBalance();
-
-            BigDecimal debit = BigDecimal.ZERO;
-            BigDecimal credit = BigDecimal.ZERO;
-            if (normal == NormalBalance.DEBIT)
-            {
-                if (amount.compareTo(BigDecimal.ZERO) > 0)
-                {
-                    debit = amount;
-                }
-                else
-                {
-                    credit = amount.abs();
-                }
-            }
-            else
-            {
-                if (amount.compareTo(BigDecimal.ZERO) > 0)
-                {
-                    credit = amount;
-                }
-                else
-                {
-                    debit = amount.abs();
-                }
-            }
+            MoneyColumns money = moneyColumns(row.normalBalance(), row.amountSigned());
 
             out.add(new JournalLine(
                     row.txnDate(),
@@ -89,13 +64,107 @@ public class LedgerQueryService
                     row.accountName(),
                     row.fundCode(),
                     row.fundName(),
-                    debit,
-                    credit));
+                    money.debit(),
+                    money.credit()));
         }
         return out;
     }
 
+    /**
+     * Lists canonical journal lines that affect configured bank accounts owned
+     * by the selected company. Statement-review rows are deliberately not part
+     * of this projection.
+     */
+    public List<BankLedgerRow> listBankLedgerActivity(
+            String companyCode,
+            Long configuredBankAccountId,
+            int maxRows)
+    {
+        String effectiveCompany = Objects.requireNonNull(companyCode, "companyCode").strip();
+        if (effectiveCompany.isBlank())
+        {
+            throw new IllegalArgumentException("companyCode must not be blank");
+        }
+
+        List<LedgerQueryRepository.BankLedgerActivityRow> rows =
+                repository.listBankLedgerActivity(effectiveCompany, configuredBankAccountId, maxRows);
+        List<BankLedgerRow> out = new ArrayList<>();
+        for (LedgerQueryRepository.BankLedgerActivityRow row : rows)
+        {
+            MoneyColumns money = moneyColumns(row.normalBalance(), row.amountSigned());
+            out.add(new BankLedgerRow(
+                    row.splitId(),
+                    row.txnId(),
+                    row.txnDate(),
+                    row.configuredBankAccountId(),
+                    row.configuredBankAccountName(),
+                    row.accountCode(),
+                    row.accountName(),
+                    row.fundCode(),
+                    row.fundName(),
+                    row.payee(),
+                    row.memo(),
+                    money.debit(),
+                    money.credit(),
+                    row.bankCleared(),
+                    row.bankClearedOn()));
+        }
+        return List.copyOf(out);
+    }
+
+    private static MoneyColumns moneyColumns(NormalBalance normal, BigDecimal signedAmount)
+    {
+        BigDecimal amount = signedAmount == null ? BigDecimal.ZERO : signedAmount;
+        BigDecimal debit = BigDecimal.ZERO;
+        BigDecimal credit = BigDecimal.ZERO;
+        if (normal == NormalBalance.DEBIT)
+        {
+            if (amount.compareTo(BigDecimal.ZERO) > 0)
+            {
+                debit = amount;
+            }
+            else
+            {
+                credit = amount.abs();
+            }
+        }
+        else
+        {
+            if (amount.compareTo(BigDecimal.ZERO) > 0)
+            {
+                credit = amount;
+            }
+            else
+            {
+                debit = amount.abs();
+            }
+        }
+        return new MoneyColumns(debit, credit);
+    }
+
+    private record MoneyColumns(BigDecimal debit, BigDecimal credit)
+    {
+    }
+
     public record LedgerRow(Long id, LocalDate date, String payee, String memo, String bank, int splitCount)
+    {
+    }
+
+    public record BankLedgerRow(Long splitId,
+                                Long transactionId,
+                                LocalDate transactionDate,
+                                Long configuredBankAccountId,
+                                String configuredBankAccountName,
+                                String accountCode,
+                                String accountName,
+                                String fundCode,
+                                String fundName,
+                                String payee,
+                                String memo,
+                                BigDecimal debit,
+                                BigDecimal credit,
+                                boolean cleared,
+                                LocalDate clearedOn)
     {
     }
 }

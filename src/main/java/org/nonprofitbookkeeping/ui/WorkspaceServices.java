@@ -8,6 +8,7 @@ import org.nonprofitbookkeeping.interchange.bank.BankReviewQueryService;
 import org.nonprofitbookkeeping.interchange.bank.BankStatementReviewService;
 import org.nonprofitbookkeeping.interchange.bank.NormalizedBankCsvReviewService;
 import org.nonprofitbookkeeping.service.BankConfigurationService;
+import org.nonprofitbookkeeping.service.LedgerQueryService;
 import org.nonprofitbookkeeping.service.ReviewedStatementAcceptanceService;
 import org.nonprofitbookkeeping.service.TransactionReferenceDataService;
 import org.nonprofitbookkeeping.service.dashboard.DashboardQueryService;
@@ -38,6 +39,7 @@ public final class WorkspaceServices
     private final Supplier<BankCsvMappingProfileService> bankCsvMappingProfileService;
     private final Supplier<NormalizedBankCsvReviewService> normalizedBankCsvReviewService;
     private final Supplier<BankReviewQueryService> bankReviewQueryService;
+    private final Supplier<LedgerQueryService> ledgerQueryService;
     private final Supplier<ReviewedStatementAcceptanceService> reviewedStatementAcceptanceService;
     private final Supplier<TransactionReferenceDataService> transactionReferenceDataService;
 
@@ -59,6 +61,7 @@ public final class WorkspaceServices
             Supplier<BankCsvMappingProfileService> bankCsvMappingProfileService,
             Supplier<NormalizedBankCsvReviewService> normalizedBankCsvReviewService,
             Supplier<BankReviewQueryService> bankReviewQueryService,
+            Supplier<LedgerQueryService> ledgerQueryService,
             Supplier<ReviewedStatementAcceptanceService> reviewedStatementAcceptanceService,
             Supplier<TransactionReferenceDataService> transactionReferenceDataService)
     {
@@ -83,6 +86,7 @@ public final class WorkspaceServices
         this.normalizedBankCsvReviewService = Objects.requireNonNull(
                 normalizedBankCsvReviewService, "normalizedBankCsvReviewService");
         this.bankReviewQueryService = Objects.requireNonNull(bankReviewQueryService, "bankReviewQueryService");
+        this.ledgerQueryService = Objects.requireNonNull(ledgerQueryService, "ledgerQueryService");
         this.reviewedStatementAcceptanceService = Objects.requireNonNull(
                 reviewedStatementAcceptanceService, "reviewedStatementAcceptanceService");
         this.transactionReferenceDataService = Objects.requireNonNull(
@@ -159,6 +163,7 @@ public final class WorkspaceServices
         return normalizedBankCsvReviewService.get();
     }
     BankReviewQueryService bankReviewQueryService() { return bankReviewQueryService.get(); }
+    LedgerQueryService ledgerQueryService() { return ledgerQueryService.get(); }
     ReviewedStatementAcceptanceService reviewedStatementAcceptanceService()
     {
         return reviewedStatementAcceptanceService.get();

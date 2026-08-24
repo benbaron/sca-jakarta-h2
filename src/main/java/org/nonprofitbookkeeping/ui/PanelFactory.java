@@ -39,6 +39,7 @@ public final class PanelFactory
                 () -> new BankingPanel(services.bankReviewQueryService(), services.context()::activeCompanyCode));
         factories.put(AppPanelId.BANK_TRANSACTIONS,
                 () -> new BankTransactionsPanel(
+                        services.ledgerQueryService(),
                         services.bankReviewQueryService(),
                         services.context()::activeCompanyCode,
                         services::bankConfigurationService,
