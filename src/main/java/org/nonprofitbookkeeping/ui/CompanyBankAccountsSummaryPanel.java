@@ -3,6 +3,7 @@ package org.nonprofitbookkeeping.ui;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
@@ -13,6 +14,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.CompanyBankAccount;
 
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -22,8 +24,9 @@ import java.util.function.Function;
  * BankConfigurationServiceTest rather than introducing a parallel company-bank
  * property model.
  */
-final class CompanyBankAccountsSummaryPanel extends BorderPane
+final class CompanyBankAccountsSummaryPanel implements AppPanel
 {
+    private final BorderPane root = new BorderPane();
     private final TableView<CompanyBankAccount> accounts = new TableView<>();
     private final Label status = new Label("Ready.");
 
@@ -35,14 +38,14 @@ final class CompanyBankAccountsSummaryPanel extends BorderPane
 
     private void build()
     {
-        setPadding(new Insets(8));
+        root.setPadding(new Insets(8));
         Label title = new Label("Configured Bank Accounts");
         title.getStyleClass().add("panel-title");
         Label help = new Label("Bank accounts shown here are the existing configured bank accounts managed by BankConfigurationService. Use the Banking workspace to create or edit banks and configured accounts.");
         help.setWrapText(true);
         Button refresh = new Button("Refresh");
         refresh.setOnAction(event -> refresh());
-        setTop(new VBox(6, title, help, new HBox(8, refresh, status)));
+        root.setTop(new VBox(6, title, help, new HBox(8, refresh, status)));
 
         accounts.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         accounts.setPlaceholder(new Label("No configured bank accounts for the active company."));
@@ -56,7 +59,7 @@ final class CompanyBankAccountsSummaryPanel extends BorderPane
                 column("Import Format", account -> account.getStatementImportFormat() == null ? "" : account.getStatementImportFormat().name(), 130),
                 column("Active", account -> account.isActive() ? "Yes" : "No", 90));
         VBox.setVgrow(accounts, Priority.ALWAYS);
-        setCenter(accounts);
+        root.setCenter(accounts);
     }
 
     private TableColumn<CompanyBankAccount, String> column(
@@ -87,6 +90,35 @@ final class CompanyBankAccountsSummaryPanel extends BorderPane
             accounts.getItems().clear();
             status.setText("Could not load configured bank accounts: " + UiErrors.safeMessage(ex));
         }
+    }
+
+    @Override
+    public Set<AppCommand> commandCapabilities()
+    {
+        return AppPanel.capabilities(AppCommand.POST_VALIDATE);
+    }
+
+    @Override
+    public RunCommandResult onRunCommand(AppCommand command)
+    {
+        if (command == AppCommand.POST_VALIDATE)
+        {
+            refresh();
+            return new RunCommandResult(true, status.getText());
+        }
+        return AppPanel.super.onRunCommand(command);
+    }
+
+    @Override
+    public String title()
+    {
+        return "Configured Bank Accounts";
+    }
+
+    @Override
+    public Node root()
+    {
+        return root;
     }
 
     private static String nullToBlank(String value)
