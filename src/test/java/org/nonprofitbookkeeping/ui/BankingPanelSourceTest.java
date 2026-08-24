@@ -40,6 +40,20 @@ class BankingPanelSourceTest
     }
 
     @Test
+    void selectingFinancialInstitutionClearsConfiguredAccountEditState() throws Exception
+    {
+        String source = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/BankingPanel.java"));
+        int loadBankStart = source.indexOf("private void loadBank(Bank bank)");
+        int loadBankAccountStart = source.indexOf("private void loadBankAccount(", loadBankStart);
+        String loadBankSource = source.substring(loadBankStart, loadBankAccountStart);
+
+        assertTrue(loadBankSource.contains("clearAccountForm();"));
+        assertTrue(loadBankSource.indexOf("clearAccountForm();")
+                < loadBankSource.indexOf("bankSelector.setValue(bankById(bank.getId()));"));
+        assertTrue(loadBankSource.contains("accountDirty.markClean();"));
+    }
+
+    @Test
     void bankAccountMoneyAndDatesUseCompanyFormatting() throws Exception
     {
         String source = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/BankingPanel.java"));
