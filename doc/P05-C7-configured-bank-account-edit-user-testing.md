@@ -24,8 +24,9 @@ This checklist does not validate P05-C8 canonical bank-ledger activity. Until P0
 7. Confirm the configured-bank-account table still contains exactly one row for that linked chart account, rather than a newly inserted duplicate.
 8. Reselect the row and confirm the edited values reload.
 9. Restart the application, reopen Banking, and confirm the same edited row and values remain.
+10. Select an existing configured bank-account row so its editor enters edit mode, then select a different row in **Financial institutions**. Confirm the configured-account editor leaves the previous edit context, selects the newly chosen institution, and presents a clean new-account form. Saving from that state must not mutate the previously selected configured bank account.
 
-Expected: the existing `CompanyBankAccount` database ID and portable identity are preserved while mutable configuration fields are updated.
+Expected: the existing `CompanyBankAccount` database ID and portable identity are preserved while mutable configuration fields are updated, and switching financial-institution context cannot accidentally reuse a stale configured-account ID.
 
 ## Controlled duplicate protection
 
