@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.ui;
 
 import javafx.scene.control.DatePicker;
+import javafx.scene.control.TextField;
 import javafx.util.StringConverter;
 import org.nonprofitbookkeeping.model.CompanyUiPreferences;
 import org.nonprofitbookkeeping.model.DateDisplayFormat;
@@ -115,6 +116,35 @@ public final class CompanyUiFormat implements FinancialReportDisplayFormat
         {
             return null;
         }
+    }
+
+    /**
+     * Installs company-aware focus-loss normalization on an editable money field.
+     * Blank one-sided debit/credit fields stay blank; valid decorated or plain values
+     * are normalized to the company's configured display format.
+     */
+    public void installMoney(TextField field)
+    {
+        if (field == null)
+        {
+            return;
+        }
+        field.focusedProperty().addListener((obs, wasFocused, focused) -> {
+            if (focused)
+            {
+                return;
+            }
+            String text = field.getText();
+            if (text == null || text.isBlank())
+            {
+                return;
+            }
+            BigDecimal parsed = parseMoney(text);
+            if (parsed != null)
+            {
+                field.setText(formatMoney(parsed));
+            }
+        });
     }
 
     @Override

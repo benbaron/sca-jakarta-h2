@@ -25,6 +25,7 @@ import org.nonprofitbookkeeping.service.PeriodCloseRangeService;
 import org.nonprofitbookkeeping.service.PeriodCloseRangeView;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Locale;
 
 /** Authoritative period-close, reopen, and factual-history workspace. */
@@ -60,7 +61,7 @@ public class PeriodCloseRunsPanel implements AppPanel
         companyFormat.install(startDate);
         companyFormat.install(endDate);
 
-        Button useActiveMonth = new Button("Use Active Month");
+        Button useActiveMonth = new Button("Use Active Period");
         useActiveMonth.setOnAction(event -> setCalculatedMonth());
         Button close = new Button("Close Range");
         close.setOnAction(event -> closeRange());
@@ -189,9 +190,17 @@ public class PeriodCloseRunsPanel implements AppPanel
         {
             active = LocalDate.now();
         }
-        startDate.setValue(active.withDayOfMonth(1));
-        endDate.setValue(active.withDayOfMonth(active.lengthOfMonth()));
+        int configuredStartDay = MainWindow.sharedSessionState().preferences().periodStartDayOfMonth();
+        CalculatedRange range = calculatedPeriod(active, configuredStartDay);
+        startDate.setValue(range.start());
+        endDate.setValue(range.end());
         rangeKind.setValue("CALCULATED");
+    }
+
+    static CalculatedRange calculatedPeriod(LocalDate active, int configuredStartDay)
+    {
+        LocalDate start = ActivePeriodContext.periodStartFor(YearMonth.from(active), configuredStartDay);
+        return new CalculatedRange(start, start.plusMonths(1).minusDays(1));
     }
 
     private void closeRange()
@@ -317,6 +326,10 @@ public class PeriodCloseRunsPanel implements AppPanel
     private static String blank(String value)
     {
         return value == null ? "" : value;
+    }
+
+    record CalculatedRange(LocalDate start, LocalDate end)
+    {
     }
 
     private record PeriodCloseData(

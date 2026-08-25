@@ -38,8 +38,8 @@ final class FixedAssetLifecycleDialog
                 FXCollections.observableArrayList(FixedAssetLifecycleEvent.EventType.values()));
         type.setValue(FixedAssetLifecycleEvent.EventType.SALE);
         DatePicker date = new DatePicker(LocalDate.now());
-        TextField proceeds = new TextField("0.00");
-        TextField impairment = new TextField("0.00");
+        TextField proceeds = new TextField(companyFormat.formatMoney(BigDecimal.ZERO));
+        TextField impairment = new TextField(companyFormat.formatMoney(BigDecimal.ZERO));
         ComboBox<Account> proceedsAccount = accountBox(postingAccounts.stream()
                 .filter(a -> a.getAccountType() == AccountType.ASSET)
                 .toList());
@@ -63,13 +63,13 @@ final class FixedAssetLifecycleDialog
             impairment.setDisable(!impairmentEvent);
             if (!sale)
             {
-                proceeds.setText("0.00");
+                proceeds.setText(companyFormat.formatMoney(BigDecimal.ZERO));
                 proceedsAccount.getSelectionModel().clearSelection();
                 gainAccount.getSelectionModel().clearSelection();
             }
             if (!impairmentEvent)
             {
-                impairment.setText("0.00");
+                impairment.setText(companyFormat.formatMoney(BigDecimal.ZERO));
             }
         };
         type.valueProperty().addListener((obs, old, value) -> applyMode.run());
@@ -89,8 +89,11 @@ final class FixedAssetLifecycleDialog
         row = addRow(grid, row, "Actor", actor);
         addRow(grid, row, "Notes / reason", notes);
         companyFormat.install(date);
+        companyFormat.installMoney(proceeds);
+        companyFormat.installMoney(impairment);
         dialog.getDialogPane().setContent(grid);
         dialog.getDialogPane().setPrefWidth(620);
+        CompanyDialogUiCompliance.install(dialog.getDialogPane(), AppPanelId.ASSETS_REGISTER);
 
         dialog.setResultConverter(button -> {
             if (button != ButtonType.OK)
@@ -100,8 +103,8 @@ final class FixedAssetLifecycleDialog
             FixedAssetLifecycleCommand command = new FixedAssetLifecycleCommand(
                     type.getValue(),
                     date.getValue(),
-                    money(proceeds.getText()),
-                    money(impairment.getText()),
+                    money(companyFormat, proceeds.getText()),
+                    money(companyFormat, impairment.getText()),
                     selectedId(proceedsAccount),
                     selectedId(gainAccount),
                     selectedId(lossAccount),
@@ -130,6 +133,7 @@ final class FixedAssetLifecycleDialog
         companyFormat.install(date);
         dialog.getDialogPane().setContent(grid);
         dialog.getDialogPane().setPrefWidth(540);
+        CompanyDialogUiCompliance.install(dialog.getDialogPane(), AppPanelId.ASSETS_REGISTER);
         dialog.setResultConverter(button -> button == ButtonType.OK
                 ? new ReversalRequest(
                 date.getValue(),
@@ -173,16 +177,14 @@ final class FixedAssetLifecycleDialog
         return box.getValue() == null ? null : box.getValue().getId();
     }
 
-    private static BigDecimal money(String value)
+    private static BigDecimal money(CompanyUiFormat companyFormat, String value)
     {
-        try
+        BigDecimal parsed = companyFormat.parseMoney(value);
+        if (parsed == null)
         {
-            return new BigDecimal(value == null || value.isBlank() ? "0" : value.trim());
+            throw new IllegalArgumentException("Enter a valid monetary amount");
         }
-        catch (NumberFormatException ex)
-        {
-            throw new IllegalArgumentException("Enter a valid monetary amount", ex);
-        }
+        return parsed;
     }
 
     private static String required(String value, String label)
