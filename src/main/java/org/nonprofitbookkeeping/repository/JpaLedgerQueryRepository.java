@@ -1,6 +1,8 @@
 package org.nonprofitbookkeeping.repository;
 
 import jakarta.persistence.EntityManager;
+import org.nonprofitbookkeeping.model.AccountFunction;
+import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
@@ -86,5 +88,67 @@ public class JpaLedgerQueryRepository implements LedgerQueryRepository
             }
             return out;
         }
+    }
+
+    @Override
+    public List<BankLedgerActivityRow> listBankLedgerActivity(
+            String companyCode,
+            Long configuredBankAccountId,
+            int maxRows)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            List<Object[]> rows = em.createQuery(
+                            "select s.id, t.id, t.txnDate, cba.id, cba.name, " +
+                                    "a.code, a.name, f.code, f.name, coalesce(p.displayName, ''), " +
+                                    "coalesce(t.memo, ''), a.normalBalance, s.amountSigned, " +
+                                    "s.bankCleared, s.bankClearedOn " +
+                                    "from TxnSplit s " +
+                                    "join s.txn t " +
+                                    "join s.account a " +
+                                    "join s.fund f " +
+                                    "left join t.payee p " +
+                                    "join CompanyBankAccount cba on cba.company = t.company and cba.account = a " +
+                                    "where t.company.code = :companyCode " +
+                                    "and a.accountType = :assetType " +
+                                    "and a.accountFunction = :bankFunction " +
+                                    "and a.normalBalance = :debitNormal " +
+                                    "and (:bankAccountId is null or cba.id = :bankAccountId) " +
+                                    "order by t.txnDate desc, t.id desc, s.id desc", Object[].class)
+                    .setParameter("companyCode", companyCode)
+                    .setParameter("assetType", AccountType.ASSET)
+                    .setParameter("bankFunction", AccountFunction.BANK)
+                    .setParameter("debitNormal", NormalBalance.DEBIT)
+                    .setParameter("bankAccountId", configuredBankAccountId)
+                    .setMaxResults(normalizeLimit(maxRows))
+                    .getResultList();
+
+            List<BankLedgerActivityRow> out = new ArrayList<>();
+            for (Object[] r : rows)
+            {
+                out.add(new BankLedgerActivityRow(
+                        (Long) r[0],
+                        (Long) r[1],
+                        (LocalDate) r[2],
+                        (Long) r[3],
+                        (String) r[4],
+                        (String) r[5],
+                        (String) r[6],
+                        (String) r[7],
+                        (String) r[8],
+                        (String) r[9],
+                        (String) r[10],
+                        (NormalBalance) r[11],
+                        (BigDecimal) r[12],
+                        (Boolean) r[13],
+                        (LocalDate) r[14]));
+            }
+            return out;
+        }
+    }
+
+    private static int normalizeLimit(int maxRows)
+    {
+        return maxRows <= 0 ? 1000 : maxRows;
     }
 }

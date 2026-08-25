@@ -15,6 +15,16 @@ public interface LedgerQueryRepository
 
     List<LedgerJournalRow> journalForTxn(Long txnId);
 
+    /**
+     * Returns canonical bank-account ledger lines for configured bank accounts.
+     * A null configuredBankAccountId means all configured bank accounts owned by
+     * the selected company.
+     */
+    List<BankLedgerActivityRow> listBankLedgerActivity(
+            String companyCode,
+            Long configuredBankAccountId,
+            int maxRows);
+
     record LedgerRecentRow(Long id,
                            LocalDate txnDate,
                            String payee,
@@ -34,6 +44,24 @@ public interface LedgerQueryRepository
                             String fundName,
                             NormalBalance normalBalance,
                             BigDecimal amountSigned)
+    {
+    }
+
+    record BankLedgerActivityRow(Long splitId,
+                                 Long txnId,
+                                 LocalDate txnDate,
+                                 Long configuredBankAccountId,
+                                 String configuredBankAccountName,
+                                 String accountCode,
+                                 String accountName,
+                                 String fundCode,
+                                 String fundName,
+                                 String payee,
+                                 String memo,
+                                 NormalBalance normalBalance,
+                                 BigDecimal amountSigned,
+                                 boolean bankCleared,
+                                 LocalDate bankClearedOn)
     {
     }
 }

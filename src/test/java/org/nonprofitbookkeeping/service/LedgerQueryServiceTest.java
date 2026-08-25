@@ -9,6 +9,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * LedgerQueryServiceTest component.
@@ -22,6 +24,7 @@ public class LedgerQueryServiceTest
                 List.of(
                         new LedgerQueryRepository.LedgerRecentRow(44L, LocalDate.of(2026, 3, 2), "", "", "", 1),
                         new LedgerQueryRepository.LedgerRecentRow(43L, LocalDate.of(2026, 3, 1), "Acme Org", "Office supplies", "1000-BANK", 2)),
+                List.of(),
                 List.of());
         LedgerQueryService service = new LedgerQueryService(repository);
 
@@ -52,7 +55,8 @@ public class LedgerQueryServiceTest
                         new LedgerQueryRepository.LedgerJournalRow(LocalDate.of(2026, 4, 1), 77L, "Memo", "Payee", "1100", "AR", "GEN", "General", NormalBalance.DEBIT, new BigDecimal("50.00")),
                         new LedgerQueryRepository.LedgerJournalRow(LocalDate.of(2026, 4, 1), 77L, "Memo", "Payee", "2000", "AP", "GEN", "General", NormalBalance.DEBIT, new BigDecimal("-10.00")),
                         new LedgerQueryRepository.LedgerJournalRow(LocalDate.of(2026, 4, 1), 77L, "Memo", "Payee", "4100", "Income", "GEN", "General", NormalBalance.CREDIT, new BigDecimal("25.00")),
-                        new LedgerQueryRepository.LedgerJournalRow(LocalDate.of(2026, 4, 1), 77L, "Memo", "Payee", "4200", "Contra Income", "GEN", "General", NormalBalance.CREDIT, new BigDecimal("-5.00"))));
+                        new LedgerQueryRepository.LedgerJournalRow(LocalDate.of(2026, 4, 1), 77L, "Memo", "Payee", "4200", "Contra Income", "GEN", "General", NormalBalance.CREDIT, new BigDecimal("-5.00"))),
+                List.of());
         LedgerQueryService service = new LedgerQueryService(repository);
 
         List<JournalLine> lines = service.journalForTxn(77L);
@@ -70,6 +74,39 @@ public class LedgerQueryServiceTest
         assertEquals("General", lines.get(0).getFundName());
     }
 
+    @Test
+    public void listBankLedgerActivity_mapsCanonicalBankSplitMoneyAndClearedFacts()
+    {
+        LedgerQueryRepository repository = new StubLedgerQueryRepository(
+                List.of(),
+                List.of(),
+                List.of(
+                        new LedgerQueryRepository.BankLedgerActivityRow(
+                                501L, 88L, LocalDate.of(2026, 5, 9), 17L, "Checking ••••1234",
+                                "1010", "Operating Checking", "GEN", "General", "Vendor", "Supplies",
+                                NormalBalance.DEBIT, new BigDecimal("-42.75"), true, LocalDate.of(2026, 5, 12)),
+                        new LedgerQueryRepository.BankLedgerActivityRow(
+                                502L, 89L, LocalDate.of(2026, 5, 10), 17L, "Checking ••••1234",
+                                "1010", "Operating Checking", "GEN", "General", "Donor", "Deposit",
+                                NormalBalance.DEBIT, new BigDecimal("100.00"), false, null)));
+        LedgerQueryService service = new LedgerQueryService(repository);
+
+        List<LedgerQueryService.BankLedgerRow> rows =
+                service.listBankLedgerActivity("ACME", 17L, 1000);
+
+        assertEquals(2, rows.size());
+        assertEquals(new BigDecimal("0"), rows.get(0).debit());
+        assertEquals(new BigDecimal("42.75"), rows.get(0).credit());
+        assertTrue(rows.get(0).cleared());
+        assertEquals(LocalDate.of(2026, 5, 12), rows.get(0).clearedOn());
+        assertEquals(new BigDecimal("100.00"), rows.get(1).debit());
+        assertEquals(new BigDecimal("0"), rows.get(1).credit());
+        assertFalse(rows.get(1).cleared());
+        assertEquals(88L, rows.get(0).transactionId());
+        assertEquals(501L, rows.get(0).splitId());
+        assertEquals("Operating Checking", rows.get(0).accountName());
+    }
+
     private void assertAmountShape(JournalLine line, String debit, String credit)
     {
         assertEquals(new BigDecimal(debit), line.getDebit());
@@ -77,7 +114,8 @@ public class LedgerQueryServiceTest
     }
 
     private record StubLedgerQueryRepository(List<LedgerQueryRepository.LedgerRecentRow> recentRows,
-                                             List<LedgerQueryRepository.LedgerJournalRow> journalRows)
+                                             List<LedgerQueryRepository.LedgerJournalRow> journalRows,
+                                             List<LedgerQueryRepository.BankLedgerActivityRow> bankRows)
             implements LedgerQueryRepository
     {
         @Override
@@ -90,6 +128,15 @@ public class LedgerQueryServiceTest
         public List<LedgerJournalRow> journalForTxn(Long txnId)
         {
             return journalRows;
+        }
+
+        @Override
+        public List<BankLedgerActivityRow> listBankLedgerActivity(
+                String companyCode,
+                Long configuredBankAccountId,
+                int maxRows)
+        {
+            return bankRows;
         }
     }
 }
