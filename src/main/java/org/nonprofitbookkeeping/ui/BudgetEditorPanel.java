@@ -30,6 +30,7 @@ import org.nonprofitbookkeeping.service.FiscalPeriodRange;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -123,7 +124,7 @@ public class BudgetEditorPanel implements AppPanel
 
         table.getColumns().addAll(code, name, budgetTarget);
         table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        table.setPlaceholder(new Label("No active budget categories are available."));
+        table.setPlaceholder(new Label("No budget category rows are available for this version."));
         table.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
             if (suppressCategorySelection || newV == null)
             {
@@ -242,18 +243,33 @@ public class BudgetEditorPanel implements AppPanel
 
     private void renderRows()
     {
-        Map<Long, BigDecimal> amounts = currentPlan == null
-                ? Map.of()
-                : currentPlan.lines().stream()
-                        .filter(line -> line.fundId() == null && line.periodMonth() == null)
-                        .collect(Collectors.toMap(line -> line.budgetCategoryId(), line -> line.amount(), (left, right) -> right));
-        table.getItems().setAll(currentCategories.stream()
-                .map(category -> new CategoryBudgetRow(
+        Map<Long, CategoryBudgetRow> rows = new LinkedHashMap<>();
+        boolean archived = currentPlan != null && currentPlan.status() == BudgetPlan.Status.ARCHIVED;
+
+        if (!archived)
+        {
+            for (BudgetCategory category : currentCategories)
+            {
+                rows.put(category.getId(), new CategoryBudgetRow(
                         category.getId(),
                         category.getCode(),
                         category.getName(),
-                        amounts.getOrDefault(category.getId(), BigDecimal.ZERO)))
-                .toList());
+                        BigDecimal.ZERO));
+            }
+        }
+
+        if (currentPlan != null)
+        {
+            currentPlan.lines().stream()
+                    .filter(line -> line.fundId() == null && line.periodMonth() == null)
+                    .forEach(line -> rows.put(line.budgetCategoryId(), new CategoryBudgetRow(
+                            line.budgetCategoryId(),
+                            line.budgetCategoryCode(),
+                            line.budgetCategoryName(),
+                            line.amount())));
+        }
+
+        table.getItems().setAll(rows.values());
     }
 
     private void updateCommandState()

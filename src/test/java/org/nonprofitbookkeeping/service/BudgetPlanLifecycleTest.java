@@ -10,6 +10,11 @@ import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -52,8 +57,61 @@ class BudgetPlanLifecycleTest
             BudgetPlanService service = new BudgetPlanService(jpa);
             BudgetPlanView active = service.activate(service.createDraft(command("active-archive-guard")).id());
 
-            assertThrows(IllegalStateException.class, () -> service.archive(active.id()));
+            IllegalStateException error = assertThrows(IllegalStateException.class, () -> service.archive(active.id()));
+            assertEquals("Only draft budget versions can be archived explicitly", error.getMessage());
             assertEquals(BudgetPlan.Status.ACTIVE, service.load(active.id()).orElseThrow().status());
+        }
+    }
+
+    @Test
+    void archiveAndActivationSerializeSoOnlyOneCanConsumeDraft(@TempDir Path tempDir) throws Exception
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("budget-archive-activate-race")))
+        {
+            seedReferences(jpa);
+            BudgetPlanService service = new BudgetPlanService(jpa);
+            BudgetPlanView draft = service.createDraft(command("archive-activate-race"));
+            CountDownLatch start = new CountDownLatch(1);
+            ExecutorService pool = Executors.newFixedThreadPool(2);
+            try
+            {
+                Future<BudgetPlanView> archive = pool.submit(() ->
+                {
+                    start.await();
+                    return service.archive(draft.id());
+                });
+                Future<BudgetPlanView> activate = pool.submit(() ->
+                {
+                    start.await();
+                    return service.activate(draft.id());
+                });
+                start.countDown();
+
+                int successes = 0;
+                int lifecycleRejections = 0;
+                for (Future<BudgetPlanView> operation : List.of(archive, activate))
+                {
+                    try
+                    {
+                        operation.get();
+                        successes++;
+                    }
+                    catch (ExecutionException ex)
+                    {
+                        assertTrue(ex.getCause() instanceof IllegalStateException);
+                        lifecycleRejections++;
+                    }
+                }
+
+                assertEquals(1, successes);
+                assertEquals(1, lifecycleRejections);
+                BudgetPlan.Status finalStatus = service.load(draft.id()).orElseThrow().status();
+                assertTrue(finalStatus == BudgetPlan.Status.ACTIVE || finalStatus == BudgetPlan.Status.ARCHIVED);
+            }
+            finally
+            {
+                pool.shutdownNow();
+            }
         }
     }
 

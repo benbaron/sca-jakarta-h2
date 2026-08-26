@@ -24,6 +24,9 @@ class BudgetEditorLifecycleSourceTest
         assertTrue(source.contains("CompanyDialogUiCompliance.install(confirmation.getDialogPane(), AppPanelId.BUDGET_EDITOR)"));
         assertTrue(source.contains("Nothing is physically deleted."));
         assertTrue(source.contains("Archived versions are read-only history."));
+        assertTrue(source.contains("boolean archived = currentPlan != null && currentPlan.status() == BudgetPlan.Status.ARCHIVED"));
+        assertTrue(source.contains("rows.put(line.budgetCategoryId()"));
+        assertTrue(source.contains("line.budgetCategoryCode()"));
         assertFalse(source.contains("new Button(\"Delete"));
         assertFalse(source.contains("Delete Selected"));
     }

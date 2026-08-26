@@ -250,9 +250,13 @@ public class BudgetPlanService
             try
             {
                 Company company = ownership().requireCompany(em, companyCodeSupplier.get());
+                em.lock(company, LockModeType.PESSIMISTIC_WRITE);
                 BudgetPlan plan = requirePlan(em, planId);
                 ownership().ensureOwnedBy(em, company, plan, "Budget plan");
-                requireDraft(plan);
+                if (plan.getStatus() != BudgetPlan.Status.DRAFT)
+                {
+                    throw new IllegalStateException("Only draft budget versions can be archived explicitly");
+                }
                 plan.setStatus(BudgetPlan.Status.ARCHIVED);
                 plan.setArchivedAt(Instant.now());
                 plan.touchUpdatedAt();

@@ -16,7 +16,7 @@ Use a disposable/test database or a copy of production data.
 - [ ] Enter at least one nonzero category amount and choose **Save Draft Amount**. Note the draft version code and amount.
 - [ ] Select the draft and choose **Archive Draft**. Cancel once and confirm the draft remains unchanged.
 - [ ] Choose **Archive Draft** again and confirm the action. Verify the same version remains in the selector as `ARCHIVED`, its saved category amount is still visible, and the amount editor/save/activate/archive controls are disabled for that archived version.
-- [ ] Refresh Budget, switch away and back, and confirm the archived version and its lines still exist.
+- [ ] Refresh Budget, switch away and back, and confirm the archived version and its lines still exist. If the test database permits deactivating the budget category afterward, confirm the archived version still shows its stored category/code/name and amount.
 - [ ] Select the current `ACTIVE` version and confirm **Archive Draft** is disabled.
 - [ ] Choose **Create Revision** from the active version, modify and save the new draft, then **Activate Version**. Confirm the former active version becomes `ARCHIVED` and the replacement becomes `ACTIVE`.
 - [ ] Open **Budget vs Actual** and confirm it uses the newly active version; archived history must not become the variance authority.
