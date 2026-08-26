@@ -1,0 +1,57 @@
+name: Temporary P17-C5 inventory lifecycle publisher
+
+on:
+  push:
+    branches:
+      - codex/P17-C5-inventory-item-lifecycle
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Repair staged source-test insertion and apply reviewed changes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('.tmp/p17_c5_apply.py')
+          text = p.read_text()
+          old = '''replace_once(
+              ui_test,
+              "}\\n",
+              ui_lifecycle_test + "}\\n")'''
+          new = '''p = Path(ui_test)
+          text = p.read_text()
+          if not text.endswith("}\\n"):
+              raise SystemExit("InventoryPanelSourceTest class terminator not found")
+          p.write_text(text[:-2] + ui_lifecycle_test + "}\\n")'''
+          if old not in text:
+              raise SystemExit('staged UI-test insertion block not found')
+          p.write_text(text.replace(old, new, 1))
+          PY
+          python .tmp/p17_c5_apply.py
+      - name: Verify intended source contract
+        run: |
+          grep -q 'public InventoryItemView changeStatus' src/main/java/org/nonprofitbookkeeping/service/InventoryService.java
+          grep -q 'private final Label itemStatus' src/main/java/org/nonprofitbookkeeping/ui/InventoryPanel.java
+          grep -q 'Dispose Item' src/main/java/org/nonprofitbookkeeping/ui/InventoryPanel.java
+          grep -q 'P17-C5 inventory item lifecycle' doc/inventory/inventory-and-assets.md
+          grep -q 'INVENTORY_ITEM_STATUS_CHANGED' src/test/java/org/nonprofitbookkeeping/service/InventoryServiceTest.java
+          test -f doc/P17-C5-inventory-item-lifecycle-user-testing.md
+          git diff --check
+      - name: Publish product commit and remove temporary artifacts
+        run: |
+          rm -f .tmp/p17_c5_apply.py .github/workflows/temp-p17-c5-inventory-lifecycle.yml
+          rmdir .tmp 2>/dev/null || true
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'P17-C5: govern inventory item lifecycle'
+          git push origin HEAD:codex/P17-C5-inventory-item-lifecycle
