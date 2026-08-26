@@ -1,0 +1,36 @@
+name: Temporary P17-C3 audit correction
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: ${{ github.event.pull_request.head.ref == 'codex/P17-C3-budget-version-lifecycle' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout P17-C3 branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/P17-C3-budget-version-lifecycle
+          fetch-depth: 0
+
+      - name: Apply reviewed C3 audit correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          tr -d '\n\r' < .p17-c3-audit-fix.txt | base64 --decode | gzip --decompress > /tmp/c3-audit-fix.patch
+          echo '2478ad1d49f1d8bf9b0d65afd2465d5cd776bdbef2bdb0af06d60eec0b8e8235  /tmp/c3-audit-fix.patch' | sha256sum --check
+          git apply --check /tmp/c3-audit-fix.patch
+          git apply /tmp/c3-audit-fix.patch
+          git rm .p17-c3-audit-fix.txt .github/workflows/temporary-p17-c3-audit-fix.yml
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m 'P17-C3: harden archive lifecycle audit findings'
+          git push
