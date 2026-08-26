@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -103,7 +104,7 @@ public class BankConfigurationServiceTest
             Bank bank = service.createBank(new BankCommand("SCA", "Old Bank", null, null, null, null, null, null, null, true));
 
             service.updateBank(bank.getId(), new BankCommand("SCA", "Updated Bank", "987654321", null, null, null, null, null, null, false));
-            service.createBankAccount(new BankAccountCommand("SCA", bank.getId(), 101L, "9999", "Reserve", null, BigDecimal.ZERO, BankingDataFormat.QIF, null, null, null, true));
+            service.createBankAccount(new BankAccountCommand("SCA", bank.getId(), 101L, "9999", "Reserve", null, BigDecimal.ZERO, BankingDataFormat.QIF, null, null, null, false));
 
             assertEquals("Updated Bank", service.listBanks("SCA").get(0).getName());
             assertEquals(false, service.listBanks("SCA").get(0).isActive());
@@ -175,6 +176,63 @@ public class BankConfigurationServiceTest
 
             assertTrue(ex.getMessage().contains("already linked to another configured bank account"));
             assertEquals(1, service.listBankAccounts("SCA").size());
+        }
+    }
+
+    @Test
+    public void bankCannotBeDeactivatedWhileActiveConfiguredAccountReferencesIt(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("bank-config-lifecycle-active-link")))
+        {
+            seedCompanyAndAccounts(jpa);
+            BankConfigurationService service = new BankConfigurationService(jpa);
+            Bank bank = service.createBank(new BankCommand(
+                    "SCA", "Lifecycle Bank", null, null, null, null, null, null, null, true));
+            service.createBankAccount(new BankAccountCommand(
+                    "SCA", bank.getId(), 101L, "****1234", "Checking", null,
+                    BigDecimal.ZERO, BankingDataFormat.OFX, null, null, null, true));
+
+            IllegalStateException ex = assertThrows(IllegalStateException.class,
+                    () -> service.updateBank(bank.getId(), new BankCommand(
+                            "SCA", "Lifecycle Bank", null, null, null, null, null, null, null, false)));
+
+            assertEquals("Deactivate this Bank's configured bank accounts before deactivating the Bank.", ex.getMessage());
+            assertTrue(service.listBanks("SCA").get(0).isActive());
+            assertTrue(service.listBankAccounts("SCA").get(0).isActive());
+        }
+    }
+
+    @Test
+    public void deactivationRetainsBankAndConfiguredAccountHistoryAndPreventsInvalidReactivation(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("bank-config-lifecycle-retained-history")))
+        {
+            seedCompanyAndAccounts(jpa);
+            BankConfigurationService service = new BankConfigurationService(jpa);
+            Bank bank = service.createBank(new BankCommand(
+                    "SCA", "Lifecycle Bank", null, null, null, null, null, null, null, true));
+            CompanyBankAccount configured = service.createBankAccount(new BankAccountCommand(
+                    "SCA", bank.getId(), 101L, "****1234", "Checking", null,
+                    BigDecimal.ZERO, BankingDataFormat.OFX, null, null, null, true));
+
+            service.updateBankAccount(configured.getId(), new BankAccountCommand(
+                    "SCA", bank.getId(), 101L, "****1234", "Checking", null,
+                    BigDecimal.ZERO, BankingDataFormat.OFX, null, null, null, false));
+            service.updateBank(bank.getId(), new BankCommand(
+                    "SCA", "Lifecycle Bank", null, null, null, null, null, null, null, false));
+
+            assertEquals(1, service.listBanks("SCA").size());
+            assertEquals(1, service.listBankAccounts("SCA").size());
+            assertFalse(service.listBanks("SCA").get(0).isActive());
+            assertFalse(service.listBankAccounts("SCA").get(0).isActive());
+
+            IllegalStateException ex = assertThrows(IllegalStateException.class,
+                    () -> service.updateBankAccount(configured.getId(), new BankAccountCommand(
+                            "SCA", bank.getId(), 101L, "****1234", "Checking", null,
+                            BigDecimal.ZERO, BankingDataFormat.OFX, null, null, null, true)));
+
+            assertEquals("An active configured bank account must belong to an active Bank. Reactivate the Bank first.", ex.getMessage());
+            assertFalse(service.listBankAccounts("SCA").get(0).isActive());
         }
     }
 
