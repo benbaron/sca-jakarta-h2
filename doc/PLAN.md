@@ -2,11 +2,11 @@
 plan_version: 215
 active_phase: P17
 active_slice: P17-C1-C1
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P17-C1-C1-plan-reconciliation
-active_pull_request: pending
-active_head: pending_publication
-next_action: "Publish the documentation-only P17-C1-C1 reconciliation from current main, run Maven PR Tests on its exact head, and stop before merge. P17-C1 remains VERIFYING until the owner explicitly accepts the desktop checklist."
+active_pull_request: 293
+active_head: published_pr_293
+next_action: "Run Maven PR Tests on the exact final PR #293 head and stop before merge. P17-C1 remains VERIFYING until the owner explicitly accepts the desktop checklist."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -3324,11 +3324,11 @@ Next exact action:
 
 ## P17-C1-C1 — Plan-ledger reconciliation after merged P17-C1 corrections
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P17-C1-C1-plan-reconciliation`
 Base head: `a96eb39db1a3ed5b9ece309dcca1d1d046e327e1`
-Pull request: pending
+Pull request: #293 (draft)
 
 Purpose:
 
@@ -3339,8 +3339,9 @@ Purpose:
 Validation status:
 
 - This reconciliation changes only `doc/PLAN.md` from exact current `main`.
-- Maven PR Tests are required on the published documentation-only head; no local Maven result is claimed because the execution container cannot resolve GitHub and has no usable local repository checkout.
+- Draft PR #293 is open from exact current `main`, and its current comparison changes only `doc/PLAN.md`.
+- Maven PR Tests are required on the exact final PR head; no local Maven result is claimed because the execution container cannot resolve GitHub and has no usable local repository checkout.
 
 Next exact action:
 
-- Publish this documentation-only reconciliation, run Maven PR Tests on its exact PR head, and stop before merge.
+- Run Maven PR Tests on the exact final PR #293 head and stop before merge.
