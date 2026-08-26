@@ -236,6 +236,7 @@ public class BankConfigurationService
         {
             throw new IllegalStateException("Bank-account import requires an active caller-owned transaction");
         }
+        em.lock(company, LockModeType.PESSIMISTIC_WRITE);
         CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
         if (bank != null)
         {
@@ -243,6 +244,7 @@ public class BankConfigurationService
             {
                 throw new IllegalArgumentException("Bank does not belong to the import company");
             }
+            requireActiveBankForActiveAccount(bank, command.active());
         }
         if (account != null)
         {
