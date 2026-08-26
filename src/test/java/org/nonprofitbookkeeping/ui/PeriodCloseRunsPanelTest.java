@@ -17,7 +17,9 @@ class PeriodCloseRunsPanelTest
         String source = Files.readString(
                 Path.of("src/main/java/org/nonprofitbookkeeping/ui/PeriodCloseRunsPanel.java"));
 
-        assertTrue(source.contains("new Button(\"Use Active Month\")"));
+        assertTrue(source.contains("new Button(\"Use Active Period\")"));
+        assertTrue(source.contains("periodStartDayOfMonth()"));
+        assertTrue(source.contains("ActivePeriodContext.periodStartFor("));
         assertTrue(source.contains("new Button(\"Close Range\")"));
         assertTrue(source.contains("new Button(\"Reopen Selected\")"));
         assertTrue(source.contains("service().closeRange("));
