@@ -59,6 +59,144 @@ public class AccountAdminServiceIntegrationTest
     }
 
     @Test
+    public void saveCodeChangePreservesStableIdentitySingleRowAndBankReference() throws Exception
+    {
+        Path db = Files.createTempFile("coa-admin-stable-id-it", ".mv.db");
+        runMigrations(db);
+
+        Jpa jpa = new Jpa(db);
+        try
+        {
+            seedActiveChart(jpa);
+            AccountAdminService service = new AccountAdminService(jpa);
+            Account original = service.upsert(
+                    "1010", "Operating Checking", AccountType.ASSET, AccountFunction.BANK,
+                    NormalBalance.DEBIT, AccountSubtype.CASH, null, true);
+            long stableId = original.getId();
+            configureBankAccount(jpa, stableId, "DEFAULT");
+
+            Account updated = service.save(new AccountCommand(
+                    stableId,
+                    "1020",
+                    "Operating Checking Renumbered",
+                    AccountType.ASSET,
+                    AccountFunction.BANK,
+                    NormalBalance.DEBIT,
+                    AccountSubtype.CASH,
+                    null,
+                    true));
+
+            assertEquals(stableId, updated.getId());
+            assertEquals("1020", updated.getCode());
+            assertEquals("Operating Checking Renumbered", updated.getName());
+
+            try (var em = jpa.em())
+            {
+                assertEquals(1L, em.createQuery(
+                                "select count(a) from Account a where a.id = :id",
+                                Long.class)
+                        .setParameter("id", stableId)
+                        .getSingleResult());
+                assertEquals(0L, em.createQuery(
+                                "select count(a) from Account a where a.code = :code",
+                                Long.class)
+                        .setParameter("code", "1010")
+                        .getSingleResult());
+                assertEquals(1L, em.createQuery(
+                                "select count(a) from Account a where a.code = :code",
+                                Long.class)
+                        .setParameter("code", "1020")
+                        .getSingleResult());
+                assertEquals(stableId, em.createQuery(
+                                "select cba.account.id from CompanyBankAccount cba where cba.company.code = :companyCode",
+                                Long.class)
+                        .setParameter("companyCode", "DEFAULT")
+                        .getSingleResult());
+            }
+        }
+        finally
+        {
+            jpa.close();
+        }
+    }
+
+    @Test
+    public void stableSaveRejectsDuplicateCodeAndRollsBackExactRow() throws Exception
+    {
+        Path db = Files.createTempFile("coa-admin-stable-duplicate-it", ".mv.db");
+        runMigrations(db);
+
+        Jpa jpa = new Jpa(db);
+        try
+        {
+            seedActiveChart(jpa);
+            AccountAdminService service = new AccountAdminService(jpa);
+            service.upsert("1000", "Cash", AccountType.ASSET, NormalBalance.DEBIT, AccountSubtype.CASH, null, true);
+            Account receivable = service.upsert(
+                    "1100", "Accounts Receivable", AccountType.ASSET, NormalBalance.DEBIT,
+                    AccountSubtype.RECEIVABLE, null, true);
+
+            IllegalArgumentException duplicate = assertThrows(IllegalArgumentException.class,
+                    () -> service.save(new AccountCommand(
+                            receivable.getId(),
+                            "1000",
+                            "Renumbered Receivable",
+                            AccountType.ASSET,
+                            null,
+                            NormalBalance.DEBIT,
+                            AccountSubtype.RECEIVABLE,
+                            null,
+                            true)));
+            assertEquals("Account code already exists: 1000.", duplicate.getMessage());
+
+            try (var em = jpa.em())
+            {
+                Account persisted = em.find(Account.class, receivable.getId());
+                assertEquals("1100", persisted.getCode());
+                assertEquals("Accounts Receivable", persisted.getName());
+            }
+        }
+        finally
+        {
+            jpa.close();
+        }
+    }
+
+    @Test
+    public void stableSaveRejectsSelfParentWhenCodeChanges() throws Exception
+    {
+        Path db = Files.createTempFile("coa-admin-stable-self-parent-it", ".mv.db");
+        runMigrations(db);
+
+        Jpa jpa = new Jpa(db);
+        try
+        {
+            seedActiveChart(jpa);
+            AccountAdminService service = new AccountAdminService(jpa);
+            Account account = service.upsert(
+                    "1100", "Accounts Receivable", AccountType.ASSET, NormalBalance.DEBIT,
+                    AccountSubtype.RECEIVABLE, null, true);
+
+            IllegalArgumentException selfParent = assertThrows(IllegalArgumentException.class,
+                    () -> service.save(new AccountCommand(
+                            account.getId(),
+                            "1150",
+                            "Accounts Receivable",
+                            AccountType.ASSET,
+                            null,
+                            NormalBalance.DEBIT,
+                            AccountSubtype.RECEIVABLE,
+                            "1100",
+                            true)));
+            assertEquals("Parent account cannot be the account being edited.", selfParent.getMessage());
+        }
+        finally
+        {
+            jpa.close();
+        }
+    }
+
+    @Test
     public void upsertSeparatesAssetBankFunctionFromCashClassification() throws Exception
     {
         Path db = Files.createTempFile("coa-admin-bank-classification-it", ".mv.db");

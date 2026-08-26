@@ -22,11 +22,12 @@ public class ChartOfAccountsPanelFormStateTest
     }
 
     @Test
-    public void formState_roundTripsSubtypeParentCodeAndNoFunction()
+    public void formState_roundTripsStableIdSubtypeParentCodeAndNoFunction()
     {
         ChartOfAccountsPanel.FormState state = FxTestSupport.onFx(() -> {
             ChartOfAccountsPanel panel = new ChartOfAccountsPanel();
             ChartOfAccountsPanel.FormState expected = new ChartOfAccountsPanel.FormState(
+                    77L,
                     "1100",
                     "Accounts Receivable",
                     AccountType.ASSET,
@@ -40,6 +41,7 @@ public class ChartOfAccountsPanelFormStateTest
             return panel.readFormStateForTests();
         });
 
+        assertEquals(77L, state.accountId());
         assertEquals("1100", state.code());
         assertEquals("Accounts Receivable", state.name());
         assertEquals(AccountType.ASSET, state.accountType());
@@ -55,6 +57,7 @@ public class ChartOfAccountsPanelFormStateTest
         ChartOfAccountsPanel.FormState cleared = FxTestSupport.onFx(() -> {
             ChartOfAccountsPanel panel = new ChartOfAccountsPanel();
             panel.setFormStateForTests(new ChartOfAccountsPanel.FormState(
+                    88L,
                     "1010",
                     "Operating Checking",
                     AccountType.ASSET,
@@ -72,6 +75,7 @@ public class ChartOfAccountsPanelFormStateTest
             return panel.readFormStateForTests();
         });
 
+        assertEquals(88L, cleared.accountId());
         assertNull(cleared.accountFunction());
     }
 }

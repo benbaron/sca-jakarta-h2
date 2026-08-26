@@ -41,6 +41,107 @@ public class AccountAdminService
         this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
     }
 
+    /**
+     * Creates a new account when {@link AccountCommand#id()} is null and updates
+     * that exact durable row otherwise. Account code is editable business data;
+     * changing it never selects or creates a different account.
+     */
+    public Account save(AccountCommand command)
+    {
+        if (command == null)
+        {
+            throw new IllegalArgumentException("Account details are required.");
+        }
+
+        String cleanCode = requireText(command.code(), "Account code");
+        String cleanName = requireText(command.name(), "Account name");
+        if (command.accountType() == null)
+        {
+            throw new IllegalArgumentException("Account type is required.");
+        }
+        if (command.normalBalance() == null)
+        {
+            throw new IllegalArgumentException("Normal balance is required.");
+        }
+        validateClassification(command.accountType(), command.accountFunction(), command.normalBalance());
+
+        try (EntityManager em = jpa.em())
+        {
+            em.getTransaction().begin();
+            try
+            {
+                CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
+                Company company = ownership.requireCompany(em, companyCodeSupplier.get());
+                ChartOfAccounts chart = resolveChart(em, company, ownership);
+
+                Account account;
+                if (command.id() == null)
+                {
+                    account = new Account();
+                    account.setChart(chart);
+                    account.setPosting(true);
+                }
+                else
+                {
+                    account = requireAccount(em, command.id());
+                    ownership.ensureOwnedBy(em, company, account, "Account");
+                    if (account.getChart() == null
+                            || account.getChart().getId() == null
+                            || !account.getChart().getId().equals(chart.getId()))
+                    {
+                        throw new CompanyOwnershipException(
+                                "Account ID " + command.id() + " does not belong to the active Chart of Accounts.");
+                    }
+                    validateConfiguredBankClassification(
+                            em,
+                            company,
+                            account,
+                            command.accountType(),
+                            command.accountFunction(),
+                            command.normalBalance());
+                }
+
+                requireUniqueCode(em, chart, command.id(), cleanCode);
+                Account parent = resolveParent(em, chart, cleanCode, command.parentCode());
+                if (parent != null && command.id() != null && command.id().equals(parent.getId()))
+                {
+                    throw new IllegalArgumentException("Parent account cannot be the account being edited.");
+                }
+                if (parent != null)
+                {
+                    ownership.requireOwnedBy(company, parent, "Parent account");
+                }
+
+                applyAccount(
+                        account,
+                        cleanCode,
+                        cleanName,
+                        command.accountType(),
+                        command.accountFunction(),
+                        command.normalBalance(),
+                        command.subtype(),
+                        parent,
+                        command.active());
+
+                if (account.getId() == null)
+                {
+                    em.persist(account);
+                }
+                em.getTransaction().commit();
+                return account;
+            }
+            catch (RuntimeException ex)
+            {
+                if (em.getTransaction().isActive())
+                {
+                    em.getTransaction().rollback();
+                }
+                throw mapPersistenceError(ex, cleanCode);
+            }
+        }
+    }
+
+    /** Compatibility boundary for callers that intentionally address an account by code. */
     public Account upsert(String code,
                           String name,
                           AccountType accountType,
@@ -52,6 +153,7 @@ public class AccountAdminService
         return upsert(code, name, accountType, null, normalBalance, subtype, parentCode, active);
     }
 
+    /** Compatibility boundary for callers that intentionally address an account by code. */
     public Account upsert(String code,
                           String name,
                           AccountType accountType,
@@ -210,14 +312,16 @@ public class AccountAdminService
             ownership.requireOwnedBy(managedCompany, parent, "Parent account");
         }
 
-        account.setCode(cleanCode);
-        account.setName(cleanName);
-        account.setAccountType(accountType);
-        account.setAccountFunction(accountFunction);
-        account.setNormalBalance(normalBalance);
-        account.setSubtype(subtype);
-        account.setParent(parent);
-        account.setActive(active);
+        applyAccount(
+                account,
+                cleanCode,
+                cleanName,
+                accountType,
+                accountFunction,
+                normalBalance,
+                subtype,
+                parent,
+                active);
 
         if (account.getId() == null)
         {
@@ -226,6 +330,56 @@ public class AccountAdminService
         else
         {
             account = em.merge(account);
+        }
+        return account;
+    }
+
+    private static void applyAccount(
+            Account account,
+            String code,
+            String name,
+            AccountType accountType,
+            AccountFunction accountFunction,
+            NormalBalance normalBalance,
+            AccountSubtype subtype,
+            Account parent,
+            boolean active)
+    {
+        account.setCode(code);
+        account.setName(name);
+        account.setAccountType(accountType);
+        account.setAccountFunction(accountFunction);
+        account.setNormalBalance(normalBalance);
+        account.setSubtype(subtype);
+        account.setParent(parent);
+        account.setActive(active);
+    }
+
+    private static void requireUniqueCode(EntityManager em, ChartOfAccounts chart, Long accountId, String code)
+    {
+        String jpql = accountId == null
+                ? "select a.id from Account a where a.chart = :chart and a.code = :code"
+                : "select a.id from Account a where a.chart = :chart and a.code = :code and a.id <> :id";
+        var query = em.createQuery(jpql, Long.class)
+                .setParameter("chart", chart)
+                .setParameter("code", code)
+                .setMaxResults(1);
+        if (accountId != null)
+        {
+            query.setParameter("id", accountId);
+        }
+        if (query.getResultStream().findAny().isPresent())
+        {
+            throw new IllegalArgumentException("Account code already exists: " + code + ".");
+        }
+    }
+
+    private static Account requireAccount(EntityManager em, long accountId)
+    {
+        Account account = em.find(Account.class, accountId);
+        if (account == null)
+        {
+            throw new IllegalArgumentException("Unknown account ID: " + accountId + ".");
         }
         return account;
     }
