@@ -40,4 +40,37 @@ public class AccountAdminServiceTest
         assertThrows(IllegalArgumentException.class,
                 () -> service.upsert("1000", "Cash", AccountType.ASSET, null, null, null, true));
     }
+
+    @Test
+    public void save_rejectsNullCommandBeforePersistence()
+    {
+        assertThrows(IllegalArgumentException.class, () -> service.save(null));
+    }
+
+    @Test
+    public void save_rejectsInvalidCommandBeforePersistence()
+    {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.save(new AccountCommand(
+                        42L,
+                        " ",
+                        "Cash",
+                        AccountType.ASSET,
+                        null,
+                        NormalBalance.DEBIT,
+                        null,
+                        null,
+                        true)));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.save(new AccountCommand(
+                        42L,
+                        "1000",
+                        " ",
+                        AccountType.ASSET,
+                        null,
+                        NormalBalance.DEBIT,
+                        null,
+                        null,
+                        true)));
+    }
 }

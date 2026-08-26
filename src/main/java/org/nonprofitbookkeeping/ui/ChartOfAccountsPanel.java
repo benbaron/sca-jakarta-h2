@@ -26,6 +26,7 @@ import org.nonprofitbookkeeping.model.AccountFunction;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.NormalBalance;
+import org.nonprofitbookkeeping.service.AccountCommand;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +52,7 @@ public class ChartOfAccountsPanel implements AppPanel
     private final CheckBox activeField = new CheckBox("Active");
     private Button refresh;
     private final FormDirtyTracker dirtyState;
+    private Long editingAccountId;
     private boolean suppressSelection;
     private String pendingDrillContext = "";
 
@@ -60,6 +62,9 @@ public class ChartOfAccountsPanel implements AppPanel
 
         Label title = new Label("Chart of Accounts");
         title.getStyleClass().add("panel-title");
+        Label lifecycle = new Label(
+                "Accounts are edited by stable database identity. Clear Active and Save to retire an account while preserving historical references; this editor does not physically delete accounts.");
+        lifecycle.setWrapText(true);
 
         Button add = new Button("+ Add");
         add.setOnAction(e -> onNew());
@@ -72,7 +77,7 @@ public class ChartOfAccountsPanel implements AppPanel
 
         HBox actions = new HBox(8, add, save, refresh);
         Node editorForm = buildEditorForm();
-        VBox header = new VBox(6, title, actions, status, new Separator());
+        VBox header = new VBox(6, title, lifecycle, actions, status, new Separator());
 
         root.setTop(header);
         dirtyState = new FormDirtyTracker(this::formSnapshot);
@@ -136,7 +141,7 @@ public class ChartOfAccountsPanel implements AppPanel
         root.setCenter(split);
 
         clearFormForNew();
-        reload();
+        reload(null);
     }
 
     @Override public String title() { return "Chart of Accounts"; }
@@ -215,6 +220,7 @@ public class ChartOfAccountsPanel implements AppPanel
         {
             return;
         }
+        editingAccountId = row.getId();
         codeField.setText(row.getCode());
         nameField.setText(row.getName());
         typeField.setValue(row.getAccountType());
@@ -223,12 +229,13 @@ public class ChartOfAccountsPanel implements AppPanel
         activeField.setSelected(row.isActive());
         subtypeField.setValue(row.getSubtype());
         parentCodeField.setText(row.getParent() == null ? "" : row.getParent().getCode());
-        status.setText("Edit mode for account " + row.getCode() + ".");
+        status.setText("Edit mode for account ID " + row.getId() + " (" + row.getCode() + ").");
         dirtyState.markClean();
     }
 
     private void clearFormForNew()
     {
+        editingAccountId = null;
         table.getSelectionModel().clearSelection();
         codeField.clear();
         nameField.clear();
@@ -245,7 +252,8 @@ public class ChartOfAccountsPanel implements AppPanel
     {
         try
         {
-            UiServiceRegistry.accountAdmin().upsert(
+            AccountCommand command = new AccountCommand(
+                    editingAccountId,
                     codeField.getText(),
                     nameField.getText(),
                     typeField.getValue(),
@@ -254,9 +262,11 @@ public class ChartOfAccountsPanel implements AppPanel
                     subtypeField.getValue(),
                     parentCodeField.getText(),
                     activeField.isSelected());
-            status.setText("Saved account " + codeField.getText().trim() + ".");
+            Account saved = UiServiceRegistry.accountAdmin().save(command);
+            editingAccountId = saved.getId();
+            status.setText("Saved account " + saved.getCode() + " (ID " + saved.getId() + ").");
             dirtyState.markClean();
-            reload();
+            reload(saved.getId());
         }
         catch (RuntimeException ex)
         {
@@ -267,6 +277,7 @@ public class ChartOfAccountsPanel implements AppPanel
     FormState readFormStateForTests()
     {
         return new FormState(
+                editingAccountId,
                 codeField.getText(),
                 nameField.getText(),
                 typeField.getValue(),
@@ -279,6 +290,7 @@ public class ChartOfAccountsPanel implements AppPanel
 
     void setFormStateForTests(FormState formState)
     {
+        editingAccountId = formState.accountId();
         codeField.setText(formState.code());
         nameField.setText(formState.name());
         typeField.setValue(formState.accountType());
@@ -300,7 +312,8 @@ public class ChartOfAccountsPanel implements AppPanel
         functionField.setValue(NO_FUNCTION);
     }
 
-    record FormState(String code,
+    record FormState(Long accountId,
+                     String code,
                      String name,
                      AccountType accountType,
                      AccountFunction accountFunction,
@@ -362,7 +375,7 @@ public class ChartOfAccountsPanel implements AppPanel
         return combined;
     }
 
-    private void reload()
+    private void reload(Long reselectId)
     {
         refresh.setDisable(true);
         String incomingContext = DrillThroughCoordinator.consumeContext(AppPanelId.CHART_OF_ACCOUNTS);
@@ -376,18 +389,14 @@ public class ChartOfAccountsPanel implements AppPanel
             () -> UiServiceRegistry.accountLookup().listPostingAccountsIncludingInactive(),
             rows -> {
                 table.getItems().setAll(rows);
-                status.setText(formatStatus("Loaded " + rows.size() + " posting account(s) (active + inactive)."));
-                if (!rows.isEmpty())
+                if (reselectId != null)
                 {
-                    Account selected = table.getSelectionModel().getSelectedItem();
-                    if (selected != null)
-                    {
-                        rows.stream()
-                                .filter(row -> Objects.equals(row.getCode(), selected.getCode()))
-                                .findFirst()
-                                .ifPresent(table.getSelectionModel()::select);
-                    }
+                    rows.stream()
+                            .filter(row -> Objects.equals(row.getId(), reselectId))
+                            .findFirst()
+                            .ifPresent(table.getSelectionModel()::select);
                 }
+                status.setText(formatStatus("Loaded " + rows.size() + " posting account(s) (active + inactive)."));
                 refresh.setDisable(false);
             },
             ex -> {
@@ -406,7 +415,7 @@ public class ChartOfAccountsPanel implements AppPanel
         if (!dirtyState.isDirty() || confirmDiscard())
         {
             clearFormForNew();
-            reload();
+            reload(null);
         }
     }
 
