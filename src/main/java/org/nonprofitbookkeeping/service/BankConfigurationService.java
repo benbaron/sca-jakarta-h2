@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.service;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.AccountClassification;
 import org.nonprofitbookkeeping.model.Bank;
@@ -97,10 +98,15 @@ public class BankConfigurationService
             try
             {
                 Company company = companyByCode(em, command.companyCode());
+                em.lock(company, LockModeType.PESSIMISTIC_WRITE);
                 Bank bank = em.find(Bank.class, bankId);
                 if (bank == null || !bank.getCompany().getId().equals(company.getId()))
                 {
                     throw new IllegalArgumentException("Bank does not exist for company: " + bankId + ".");
+                }
+                if (!command.active())
+                {
+                    requireNoActiveConfiguredAccounts(em, company, bank);
                 }
                 applyBankCommand(bank, command, company);
                 bank.touchUpdatedAt();
@@ -124,7 +130,9 @@ public class BankConfigurationService
             try
             {
                 Company company = companyByCode(em, command.companyCode());
+                em.lock(company, LockModeType.PESSIMISTIC_WRITE);
                 Bank bank = bankForCompany(em, command.bankId(), company);
+                requireActiveBankForActiveAccount(bank, command.active());
                 Account account = bankLedgerAccountForCompany(em, command.accountId(), company);
                 ensureAccountAvailable(em, company, account, null);
 
@@ -156,6 +164,7 @@ public class BankConfigurationService
             try
             {
                 Company company = companyByCode(em, command.companyCode());
+                em.lock(company, LockModeType.PESSIMISTIC_WRITE);
                 CompanyBankAccount bankAccount = em.find(CompanyBankAccount.class, bankAccountId);
                 if (bankAccount == null || bankAccount.getCompany() == null
                         || !company.getId().equals(bankAccount.getCompany().getId()))
@@ -164,6 +173,7 @@ public class BankConfigurationService
                             "Configured bank account does not exist for company: " + bankAccountId + ".");
                 }
                 Bank bank = bankForCompany(em, command.bankId(), company);
+                requireActiveBankForActiveAccount(bank, command.active());
                 Account account = bankLedgerAccountForCompany(em, command.accountId(), company);
                 ensureAccountAvailable(em, company, account, bankAccountId);
 
@@ -303,6 +313,34 @@ public class BankConfigurationService
         validateBankLedgerAccount(account);
         new CompanyOwnershipService(jpa).ensureOwnedBy(em, company, account, "Bank ledger account");
         return account;
+    }
+
+    private static void requireActiveBankForActiveAccount(Bank bank, boolean accountActive)
+    {
+        if (accountActive && !bank.isActive())
+        {
+            throw new IllegalStateException(
+                    "An active configured bank account must belong to an active Bank. Reactivate the Bank first.");
+        }
+    }
+
+    private static void requireNoActiveConfiguredAccounts(EntityManager em, Company company, Bank bank)
+    {
+        Long activeCount = em.createQuery("""
+                        select count(cba)
+                        from CompanyBankAccount cba
+                        where cba.company = :company
+                          and cba.bank = :bank
+                          and cba.active = true
+                        """, Long.class)
+                .setParameter("company", company)
+                .setParameter("bank", bank)
+                .getSingleResult();
+        if (activeCount != null && activeCount > 0)
+        {
+            throw new IllegalStateException(
+                    "Deactivate this Bank's configured bank accounts before deactivating the Bank.");
+        }
     }
 
     private static void ensureAccountAvailable(
