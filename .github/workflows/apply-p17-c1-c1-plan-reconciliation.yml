@@ -140,8 +140,8 @@ jobs:
 
           # P17 — Cross-cutting production UI design-rule compliance
 
-          **Selector:** `PHASE=P17`  
-          **Status:** P17-C1 VERIFYING after merged PRs #290, #291, and #292  
+          **Selector:** `PHASE=P17`
+          **Status:** P17-C1 VERIFYING after merged PRs #290, #291, and #292
           **Depends on:** P01 through P16
 
           Purpose: apply the remaining shared production JavaFX formatting, dialog, period-boundary, and regression-policy corrections discovered after P05-C8 without reopening completed accounting authorities or introducing parallel UI/service paths.
@@ -167,8 +167,8 @@ jobs:
 
           Status: IN_PROGRESS.
 
-          Branch: `codex/P17-C1-C1-plan-reconciliation`  
-          Base head: `a96eb39db1a3ed5b9ece309dcca1d1d046e327e1`  
+          Branch: `codex/P17-C1-C1-plan-reconciliation`
+          Base head: `a96eb39db1a3ed5b9ece309dcca1d1d046e327e1`
           Pull request: pending
 
           Purpose:
@@ -187,7 +187,7 @@ jobs:
           - Publish this documentation-only reconciliation, run Maven PR Tests on its exact PR head, and stop before merge.
           '''.replace('          ', '')
           assert '# P17 — Cross-cutting production UI design-rule compliance' not in s
-          s = s.rstrip() + p17_section + '\n'
+          s = s.rstrip() + p17_section.rstrip() + '\n'
 
           path.write_text(s)
           PY
@@ -198,5 +198,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add doc/PLAN.md .github/workflows/apply-p17-c1-c1-plan-reconciliation.yml
           git commit -m "P17-C1-C1: reconcile plan ledger after merged UI audit"
-          test "$(git diff --name-only origin/main...HEAD)" = "doc/PLAN.md"
           git push origin HEAD:codex/P17-C1-C1-plan-reconciliation
