@@ -145,6 +145,103 @@ public class InventoryServiceTest
         }
     }
 
+    @Test
+    public void ordinaryUpdateCannotChangeLifecycleStatus(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("inventory-status-edit-guard")))
+        {
+            seedCompanyAccountsAndFund(jpa);
+            InventoryService service = service(jpa);
+            InventoryItemView item = service.create(itemCommand("Lifecycle Guard", BigDecimal.ZERO));
+
+            IllegalStateException ex = assertThrows(IllegalStateException.class,
+                    () -> service.update(item.id(), itemCommandWithStatus(
+                            "Lifecycle Guard", BigDecimal.ZERO, InventoryItem.Status.INACTIVE)));
+
+            assertEquals("Inventory status changes use the explicit lifecycle action", ex.getMessage());
+            assertEquals(InventoryItem.Status.ACTIVE, service.load(item.id()).status());
+        }
+    }
+
+    @Test
+    public void lifecycleRequiresZeroQuantityAuditsTransitionsAndKeepsDisposedTerminal(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("inventory-status-lifecycle")))
+        {
+            seedCompanyAccountsAndFund(jpa);
+            InventoryService service = service(jpa);
+            InventoryItemView item = service.create(itemCommand("Lifecycle Item", BigDecimal.ZERO));
+
+            assertEquals(InventoryItem.Status.INACTIVE,
+                    service.changeStatus(item.id(), InventoryItem.Status.INACTIVE,
+                            "tester", "temporarily out of service").status());
+            assertEquals(InventoryItem.Status.ACTIVE,
+                    service.changeStatus(item.id(), InventoryItem.Status.ACTIVE,
+                            "tester", "returned to service").status());
+
+            service.recordMovement(item.id(), new InventoryMovementCommand(
+                    InventoryMovement.MovementType.RECEIPT,
+                    new BigDecimal("2.0000"),
+                    LocalDate.of(2026, 2, 1),
+                    CASH_ACCOUNT_ID,
+                    false,
+                    "Receive two"));
+
+            IllegalStateException quantityGuard = assertThrows(IllegalStateException.class,
+                    () -> service.changeStatus(item.id(), InventoryItem.Status.INACTIVE,
+                            "tester", "should fail"));
+            assertEquals(
+                    "Inventory item must have zero quantity before deactivation or disposal; use governed inventory movements first",
+                    quantityGuard.getMessage());
+
+            service.recordMovement(item.id(), new InventoryMovementCommand(
+                    InventoryMovement.MovementType.ISSUE,
+                    new BigDecimal("2.0000"),
+                    LocalDate.of(2026, 2, 2),
+                    CASH_ACCOUNT_ID,
+                    false,
+                    "Issue two"));
+            InventoryItemView disposed = service.changeStatus(
+                    item.id(), InventoryItem.Status.DISPOSED, "tester", "retired from inventory");
+            assertEquals(InventoryItem.Status.DISPOSED, disposed.status());
+            assertEquals(new BigDecimal("0.0000"), disposed.quantity());
+
+            IllegalStateException terminal = assertThrows(IllegalStateException.class,
+                    () -> service.changeStatus(item.id(), InventoryItem.Status.ACTIVE,
+                            "tester", "attempt to restore"));
+            assertEquals(
+                    "Disposed inventory items are retained terminal history and cannot be reactivated or deactivated",
+                    terminal.getMessage());
+
+            try (EntityManager em = jpa.em())
+            {
+                Long auditCount = em.createQuery("""
+                                select count(a) from AuditEvent a
+                                where a.actionType = :action
+                                  and a.entityType = :entityType
+                                  and a.entityId = :entityId
+                                """, Long.class)
+                        .setParameter("action", "INVENTORY_ITEM_STATUS_CHANGED")
+                        .setParameter("entityType", "InventoryItem")
+                        .setParameter("entityId", Long.toString(item.id()))
+                        .getSingleResult();
+                assertEquals(3L, auditCount);
+            }
+        }
+    }
+
+    private static InventoryItemCommand itemCommandWithStatus(
+            String name,
+            BigDecimal quantity,
+            InventoryItem.Status status)
+    {
+        InventoryItemCommand base = itemCommand(name, quantity);
+        return new InventoryItemCommand(
+                base.companyCode(), base.inventoryAccountId(), base.fundId(), base.name(), base.itemType(),
+                base.quantity(), base.unit(), base.unitValue(), base.acquisitionDate(), base.custodian(),
+                base.storageLocation(), base.condition(), status, base.notes());
+    }
+
     private static InventoryItemCommand itemCommand(String name, BigDecimal quantity)
     {
         return new InventoryItemCommand(

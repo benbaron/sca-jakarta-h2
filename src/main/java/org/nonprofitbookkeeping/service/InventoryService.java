@@ -105,6 +105,7 @@ public class InventoryService
             {
                 validateCommand(command);
                 requireActiveCompanyCommand(command);
+                requireInteractiveCreateStatus(command);
                 if (scale(command.quantity()).signum() > 0 && scale(command.unitValue()).signum() > 0)
                 {
                     throw new IllegalArgumentException(
@@ -149,6 +150,8 @@ public class InventoryService
                 {
                     throw new IllegalStateException("Inventory item belongs to another company");
                 }
+                InventoryItem.Status existingStatus = item.getStatus();
+                requireInteractiveStatusUnchanged(item, command);
                 BigDecimal existingQuantity = scale(item.getQuantity());
                 if (existingQuantity.signum() > 0
                         && (!Objects.equals(item.getInventoryAccount().getId(), command.inventoryAccountId())
@@ -160,7 +163,84 @@ public class InventoryService
                 }
                 apply(em, item, command);
                 item.setQuantity(existingQuantity);
+                item.setStatus(existingStatus);
                 item.touchUpdatedAt();
+                em.getTransaction().commit();
+                return load(itemId);
+            }
+            catch (RuntimeException ex)
+            {
+                rollback(em);
+                throw ex;
+            }
+        }
+    }
+
+    /**
+     * Changes one inventory item's lifecycle status without deleting its durable history.
+     * Status changes serialize on the same item lock used by governed quantity movements.
+     */
+    public InventoryItemView changeStatus(
+            long itemId,
+            InventoryItem.Status targetStatus,
+            String actor,
+            String reason)
+    {
+        Objects.requireNonNull(targetStatus, "targetStatus");
+        String normalizedActor = requireText(actor, "actor");
+        String normalizedReason = requireText(reason, "reason");
+        String activeCompany = normalizeCompanyCode(companyCodeSupplier.get());
+        try (EntityManager em = jpa.em())
+        {
+            em.getTransaction().begin();
+            try
+            {
+                CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
+                Company company = ownership.requireCompany(em, activeCompany);
+                if (!company.isActive())
+                {
+                    throw new IllegalStateException("Company " + company.getCode() + " is inactive");
+                }
+                InventoryItem item = em.find(InventoryItem.class, itemId, LockModeType.PESSIMISTIC_WRITE);
+                if (item == null)
+                {
+                    throw new IllegalArgumentException("Inventory item not found: " + itemId);
+                }
+                ownership.ensureOwnedBy(em, company, item, "Inventory item");
+                InventoryItem.Status currentStatus = item.getStatus();
+                if (currentStatus == targetStatus)
+                {
+                    em.getTransaction().commit();
+                    return load(itemId);
+                }
+                if (currentStatus == InventoryItem.Status.DISPOSED)
+                {
+                    throw new IllegalStateException(
+                            "Disposed inventory items are retained terminal history and cannot be reactivated or deactivated");
+                }
+                if ((targetStatus == InventoryItem.Status.INACTIVE
+                        || targetStatus == InventoryItem.Status.DISPOSED)
+                        && scale(item.getQuantity()).signum() != 0)
+                {
+                    throw new IllegalStateException(
+                            "Inventory item must have zero quantity before deactivation or disposal; use governed inventory movements first");
+                }
+                if (targetStatus == InventoryItem.Status.ACTIVE
+                        && currentStatus != InventoryItem.Status.INACTIVE)
+                {
+                    throw new IllegalStateException("Only an inactive inventory item can be reactivated");
+                }
+                if (targetStatus == InventoryItem.Status.INACTIVE
+                        && currentStatus != InventoryItem.Status.ACTIVE)
+                {
+                    throw new IllegalStateException("Only an active inventory item can be deactivated");
+                }
+
+                item.setStatus(targetStatus);
+                item.touchUpdatedAt();
+                em.persist(inventoryStatusAudit(
+                        company, normalizedActor, item, currentStatus, targetStatus, normalizedReason));
+                em.flush();
                 em.getTransaction().commit();
                 return load(itemId);
             }
@@ -999,6 +1079,27 @@ public class InventoryService
         return event;
     }
 
+    private static AuditEvent inventoryStatusAudit(
+            Company company,
+            String actor,
+            InventoryItem item,
+            InventoryItem.Status before,
+            InventoryItem.Status after,
+            String reason)
+    {
+        AuditEvent event = new AuditEvent();
+        event.setCompany(company);
+        event.setActor(actor);
+        event.setActionType("INVENTORY_ITEM_STATUS_CHANGED");
+        event.setEntityType("InventoryItem");
+        event.setEntityId(Long.toString(item.getId()));
+        event.setSummary("Changed inventory item " + item.getName() + " from " + before + " to " + after);
+        event.setBeforeValue("status=" + before + ",quantity=" + scale(item.getQuantity()));
+        event.setAfterValue("status=" + after + ",quantity=" + scale(item.getQuantity()));
+        event.setReason(reason);
+        return event;
+    }
+
     private void apply(EntityManager em, InventoryItem item, InventoryItemCommand command)
     {
         validateCommand(command);
@@ -1046,6 +1147,26 @@ public class InventoryService
         movement.setUnitValue(scale(item.getUnitValue()));
         movement.setNotes(notes);
         return movement;
+    }
+
+    private static void requireInteractiveCreateStatus(InventoryItemCommand command)
+    {
+        if (command.status() != null && command.status() != InventoryItem.Status.ACTIVE)
+        {
+            throw new IllegalStateException(
+                    "New interactive inventory items must start ACTIVE; use the explicit lifecycle action after creation");
+        }
+    }
+
+    private static void requireInteractiveStatusUnchanged(
+            InventoryItem item,
+            InventoryItemCommand command)
+    {
+        if (command.status() != null && command.status() != item.getStatus())
+        {
+            throw new IllegalStateException(
+                    "Inventory status changes use the explicit lifecycle action");
+        }
     }
 
     private static void validateCommand(InventoryItemCommand command)
