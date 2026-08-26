@@ -6,7 +6,7 @@ active_status: VERIFYING
 active_branch: codex/P17-C1-C1-plan-reconciliation
 active_pull_request: 293
 active_head: published_pr_293
-next_action: "Run Maven PR Tests on the exact final PR #293 head and stop before merge. P17-C1 remains VERIFYING until the owner explicitly accepts the desktop checklist."
+next_action: "Keep draft PR #293 unchanged after final green CI and stop before merge. P17-C1 remains VERIFYING until the owner explicitly accepts the desktop checklist."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -3340,8 +3340,9 @@ Validation status:
 
 - This reconciliation changes only `doc/PLAN.md` from exact current `main`.
 - Draft PR #293 is open from exact current `main`, and its current comparison changes only `doc/PLAN.md`.
-- Maven PR Tests are required on the exact final PR head; no local Maven result is claimed because the execution container cannot resolve GitHub and has no usable local repository checkout.
+- Maven PR Tests are green for draft PR #293, including clean headless verification, the repeated full test suite, and production JavaFX route compliance; the final PR head must remain unchanged after confirmation.
+- No local Maven result is claimed because the execution container cannot resolve GitHub and has no usable local repository checkout.
 
 Next exact action:
 
-- Run Maven PR Tests on the exact final PR #293 head and stop before merge.
+- Keep draft PR #293 unchanged after final green CI and stop before merge; owner desktop acceptance for P17-C1 remains separate.
