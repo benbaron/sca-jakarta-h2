@@ -1,12 +1,12 @@
 ---
-plan_version: 218
+plan_version: 219
 active_phase: P17
 active_slice: P17-C4
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P17-C4-banking-lifecycle
-active_pull_request: pending
-active_head: 93fc1f06bdc458fcbd98abfe2da95731a47a5e5b
-next_action: "Open the P17-C4 draft PR, run Maven PR Tests, correct any findings, complete the owner Banking lifecycle checklist, and stop before merge until owner acceptance."
+active_pull_request: 296
+active_head: 8ffa9fc78b560e35debfeefa9bf22e62d3808eed
+next_action: "Run Maven PR Tests on PR #296, correct any findings, then complete the owner Banking lifecycle checklist and stop before merge until owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -42,7 +42,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P11 | Report Library | DONE through P11-C2 / PR #284 |
 | P12-P15 | Administration, diagnostics/exchange, hardening, versioned interchange | DONE |
 | P16 | Interface-to-authority completion and integrity corrections | DONE through P16-C11 / PR #281 |
-| P17 | Cross-cutting UI and durable-record lifecycle corrections | C1 DONE; C2 DONE; C3 DONE; C4 IN_PROGRESS |
+| P17 | Cross-cutting UI and durable-record lifecycle corrections | C1 DONE; C2 DONE; C3 DONE; C4 VERIFYING |
 
 ## 4. Established product decisions
 
@@ -89,11 +89,11 @@ Completion evidence:
 
 ### P17-C4 — Banking durable-record lifecycle
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P17-C4-banking-lifecycle`  
 Starting base: `beeb8121be7bfe53fa7444bbc6187d1d7ee534fc`  
-Pull request: pending
+Pull request: #296 (draft)
 
 Required reading:
 
@@ -119,25 +119,25 @@ Purpose:
 - Prevent an invalid active configured bank account from existing beneath an inactive Bank.
 - Keep bank-statement import, canonical ledger, reconciliation, and Chart-account authority unchanged.
 
-Deliverables:
+Delivered:
 
-- Serialize Bank and configured-account lifecycle writes on the owning Company.
-- Reject Bank deactivation while any active configured account references it.
-- Reject creation/reactivation of an active configured account under an inactive Bank.
-- Retain both record families and their stable IDs after deactivation; do not add generic Delete.
-- Add focused H2 lifecycle regressions.
-- Document the authority in `doc/banking/banking-lifecycle.md` and add `doc/P17-C4-banking-lifecycle-user-testing.md`.
-- Reconcile the stale post-C3 PLAN controller against merged PR #295.
+- Bank and configured-account lifecycle writes serialize on the owning Company.
+- Bank deactivation is rejected while any active configured account references it.
+- Creation/reactivation of an active configured account beneath an inactive Bank is rejected.
+- Both record families and their stable IDs are retained after deactivation; no generic Delete was added.
+- Focused H2 lifecycle regressions cover parent/child protection, retained history, and reactivation ordering.
+- `doc/banking/banking-lifecycle.md` governs the lifecycle and `doc/P17-C4-banking-lifecycle-user-testing.md` records owner acceptance steps.
+- The stale post-C3 PLAN controller is reconciled against merged PR #295.
 
 Validation status:
 
 - Exact starting `main` is merge commit `beeb8121be7bfe53fa7444bbc6187d1d7ee534fc`.
-- Service implementation and focused H2 regression sources are published on the fresh C4 branch.
-- No local Maven result is claimed; GitHub Maven PR Tests are required after the draft PR opens.
+- Draft PR #296 is open from the fresh C4 branch.
+- No local Maven result is claimed; GitHub Maven PR Tests are authoritative for compile, JUnit/H2, and JavaFX production-route validation.
 
 Known failures:
 
-- None currently known.
+- None currently known; final-head GitHub validation is pending.
 
 Owner acceptance:
 
@@ -146,4 +146,4 @@ Owner acceptance:
 
 Next exact action:
 
-- Open the draft PR, run Maven PR Tests, inspect all required gates, correct any failure, update this record to `VERIFYING`, and stop before merge for owner desktop acceptance.
+- Run Maven PR Tests on PR #296, inspect all required gates, correct any failure, then stop before merge for owner desktop acceptance.
