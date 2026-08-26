@@ -238,6 +238,10 @@ public class BudgetPlanService
         }
     }
 
+    /**
+     * Retires an abandoned draft while preserving the plan and its lines as archived history.
+     * Active plans are superseded only by activating another draft; they are not manually archived.
+     */
     public BudgetPlanView archive(long planId)
     {
         try (EntityManager em = jpa.em())
@@ -246,8 +250,13 @@ public class BudgetPlanService
             try
             {
                 Company company = ownership().requireCompany(em, companyCodeSupplier.get());
+                em.lock(company, LockModeType.PESSIMISTIC_WRITE);
                 BudgetPlan plan = requirePlan(em, planId);
                 ownership().ensureOwnedBy(em, company, plan, "Budget plan");
+                if (plan.getStatus() != BudgetPlan.Status.DRAFT)
+                {
+                    throw new IllegalStateException("Only draft budget versions can be archived explicitly");
+                }
                 plan.setStatus(BudgetPlan.Status.ARCHIVED);
                 plan.setArchivedAt(Instant.now());
                 plan.touchUpdatedAt();
@@ -259,6 +268,30 @@ public class BudgetPlanService
                 rollback(em);
                 throw ex;
             }
+        }
+    }
+
+    /** Returns every retained version for one company fiscal year, including read-only archived history. */
+    public List<BudgetPlanView> versionsForFiscalYear(int fiscalYear)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            Company company = ownership().requireCompany(em, companyCodeSupplier.get());
+            return em.createQuery("""
+                    select p from BudgetPlan p
+                    where p.company = :company
+                      and p.fiscalYear = :year
+                    """, BudgetPlan.class)
+                    .setParameter("company", company)
+                    .setParameter("year", fiscalYear)
+                    .getResultList()
+                    .stream()
+                    .sorted(Comparator
+                            .comparingInt(BudgetPlanService::statusOrder)
+                            .thenComparing(BudgetPlan::getUpdatedAt, Comparator.nullsLast(Comparator.reverseOrder()))
+                            .thenComparing(BudgetPlan::getId, Comparator.reverseOrder()))
+                    .map(plan -> toView(plan, lines(em, plan.getId())))
+                    .toList();
         }
     }
 
@@ -547,6 +580,19 @@ public class BudgetPlanService
                 throw new IllegalArgumentException("Duplicate budget line scope");
             }
         }
+    }
+
+    private static int statusOrder(BudgetPlan plan)
+    {
+        if (plan.getStatus() == BudgetPlan.Status.DRAFT)
+        {
+            return 0;
+        }
+        if (plan.getStatus() == BudgetPlan.Status.ACTIVE)
+        {
+            return 1;
+        }
+        return 2;
     }
 
     private static String nextVersionCode(EntityManager em, Company company, int fiscalYear, String kind)

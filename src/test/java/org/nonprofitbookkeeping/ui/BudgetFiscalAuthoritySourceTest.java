@@ -18,7 +18,7 @@ class BudgetFiscalAuthoritySourceTest
         assertTrue(source.contains("budgetEditorPlanSelector"));
         assertTrue(source.contains("New Draft"));
         assertTrue(source.contains("Create Revision"));
-        assertTrue(source.contains("editableAndActiveForFiscalYear"));
+        assertTrue(source.contains("versionsForFiscalYear"));
         assertTrue(source.contains("reloadPreferred(plan.id())"));
         assertTrue(source.contains("ActivePeriodContext.get()"));
         assertFalse(source.contains("LocalDate.now()"));

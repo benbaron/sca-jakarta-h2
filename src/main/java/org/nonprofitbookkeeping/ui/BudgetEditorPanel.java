@@ -30,6 +30,7 @@ import org.nonprofitbookkeeping.service.FiscalPeriodRange;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -46,6 +47,7 @@ public class BudgetEditorPanel implements AppPanel
     private final Button saveTargetButton = new Button("Save Draft Amount");
     private final Button createRevisionButton = new Button("Create Revision");
     private final Button activateButton = new Button("Activate Version");
+    private final Button archiveButton = new Button("Archive Draft");
     private final CompanyUiFormat companyFormat = CompanyUiFormat.activeCompany();
     private final FormDirtyTracker dirtyState;
     private boolean suppressCategorySelection;
@@ -78,6 +80,8 @@ public class BudgetEditorPanel implements AppPanel
         saveTargetButton.setOnAction(e -> saveTarget());
         activateButton.setId("budgetEditorActivateVersionButton");
         activateButton.setOnAction(e -> activatePlan());
+        archiveButton.setId("budgetEditorArchiveDraftButton");
+        archiveButton.setOnAction(e -> archiveDraft());
 
         planSelector.setPrefWidth(390.0);
         planSelector.setConverter(new StringConverter<>()
@@ -102,8 +106,13 @@ public class BudgetEditorPanel implements AppPanel
 
         status.setId("budgetEditorStatusLabel");
         HBox versionRow = new HBox(8, new Label("Version"), planSelector);
-        HBox actions = new HBox(8, refresh, newDraft, createRevisionButton, activateButton);
-        root.setTop(new VBox(6, title, versionRow, actions, status, new Separator()));
+        HBox actions = new HBox(8, refresh, newDraft, createRevisionButton, activateButton, archiveButton);
+        Label lifecycle = new Label(
+                "Budget versions are retained as history. Archive Draft retires an abandoned draft without deleting it. "
+                + "Active versions are archived automatically when a replacement is activated; archived versions are read-only.");
+        lifecycle.setId("budgetEditorLifecycleHint");
+        lifecycle.setWrapText(true);
+        root.setTop(new VBox(6, title, versionRow, actions, lifecycle, status, new Separator()));
         dirtyState = new FormDirtyTracker(this::formSnapshot);
 
         TableColumn<CategoryBudgetRow, String> code = new TableColumn<>("Category");
@@ -115,7 +124,7 @@ public class BudgetEditorPanel implements AppPanel
 
         table.getColumns().addAll(code, name, budgetTarget);
         table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        table.setPlaceholder(new Label("No active budget categories are available."));
+        table.setPlaceholder(new Label("No budget category rows are available for this version."));
         table.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
             if (suppressCategorySelection || newV == null)
             {
@@ -185,7 +194,7 @@ public class BudgetEditorPanel implements AppPanel
                         .orElseGet(() -> snapshot.plans().stream()
                                 .filter(plan -> plan.status() == BudgetPlan.Status.ACTIVE)
                                 .findFirst()
-                                .orElse(null));
+                                .orElseGet(() -> snapshot.plans().stream().findFirst().orElse(null)));
             }
             suppressPlanSelection = true;
             planSelector.setValue(selected);
@@ -195,7 +204,7 @@ public class BudgetEditorPanel implements AppPanel
             updateCommandState();
             status.setText(snapshot.plans().isEmpty()
                     ? "No budget version exists for " + currentRange.displayLabel() + ". Choose New Draft to create one explicitly."
-                    : "Loaded " + snapshot.plans().size() + " editable/active version(s) for " + currentRange.displayLabel() + ".");
+                    : "Loaded " + snapshot.plans().size() + " retained version(s) for " + currentRange.displayLabel() + ".");
         }, ex -> status.setText("Could not load budget rows: " + UiErrors.safeMessage(ex)));
     }
 
@@ -205,7 +214,7 @@ public class BudgetEditorPanel implements AppPanel
         FiscalPeriodRange range = service.fiscalRange(selectedPeriodStart);
         return new BudgetEditorSnapshot(
                 range,
-                service.editableAndActiveForFiscalYear(range.fiscalYear()),
+                service.versionsForFiscalYear(range.fiscalYear()),
                 UiServiceRegistry.budgetCategoryLookup().listActiveBudgetCategories());
     }
 
@@ -228,23 +237,39 @@ public class BudgetEditorPanel implements AppPanel
         dirtyState.markClean();
         renderRows();
         updateCommandState();
-        status.setText("Selected " + newPlan.versionCode() + " (" + newPlan.status() + ") for " + currentRange.displayLabel() + ".");
+        status.setText("Selected " + newPlan.versionCode() + " (" + newPlan.status() + ") for " + currentRange.displayLabel()
+                + (newPlan.status() == BudgetPlan.Status.ARCHIVED ? ". Archived versions are read-only history." : "."));
     }
 
     private void renderRows()
     {
-        Map<Long, BigDecimal> amounts = currentPlan == null
-                ? Map.of()
-                : currentPlan.lines().stream()
-                        .filter(line -> line.fundId() == null && line.periodMonth() == null)
-                        .collect(Collectors.toMap(line -> line.budgetCategoryId(), line -> line.amount(), (left, right) -> right));
-        table.getItems().setAll(currentCategories.stream()
-                .map(category -> new CategoryBudgetRow(
+        Map<Long, CategoryBudgetRow> rows = new LinkedHashMap<>();
+        boolean archived = currentPlan != null && currentPlan.status() == BudgetPlan.Status.ARCHIVED;
+
+        if (!archived)
+        {
+            for (BudgetCategory category : currentCategories)
+            {
+                rows.put(category.getId(), new CategoryBudgetRow(
                         category.getId(),
                         category.getCode(),
                         category.getName(),
-                        amounts.getOrDefault(category.getId(), BigDecimal.ZERO)))
-                .toList());
+                        BigDecimal.ZERO));
+            }
+        }
+
+        if (currentPlan != null)
+        {
+            currentPlan.lines().stream()
+                    .filter(line -> line.fundId() == null && line.periodMonth() == null)
+                    .forEach(line -> rows.put(line.budgetCategoryId(), new CategoryBudgetRow(
+                            line.budgetCategoryId(),
+                            line.budgetCategoryCode(),
+                            line.budgetCategoryName(),
+                            line.amount())));
+        }
+
+        table.getItems().setAll(rows.values());
     }
 
     private void updateCommandState()
@@ -253,6 +278,7 @@ public class BudgetEditorPanel implements AppPanel
         boolean active = currentPlan != null && currentPlan.status() == BudgetPlan.Status.ACTIVE;
         saveTargetButton.setDisable(!draft);
         activateButton.setDisable(!draft);
+        archiveButton.setDisable(!draft);
         createRevisionButton.setDisable(!active);
         amountField.setDisable(!draft);
     }
@@ -291,6 +317,37 @@ public class BudgetEditorPanel implements AppPanel
         UiAsync.run("budget-editor-create-revision", () -> UiServiceRegistry.budgetPlan().createRevision(sourcePlanId),
                 plan -> reloadPreferred(plan.id()),
                 ex -> status.setText("Could not create budget revision: " + UiErrors.safeMessage(ex)));
+    }
+
+    private void archiveDraft()
+    {
+        if (dirtyState.isDirty())
+        {
+            status.setText("Save or discard the current edit before archiving the draft.");
+            return;
+        }
+        if (currentPlan == null || currentPlan.status() != BudgetPlan.Status.DRAFT)
+        {
+            status.setText("Select a draft budget version to archive. Active versions are archived only when superseded.");
+            return;
+        }
+
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle("Archive budget draft");
+        confirmation.setHeaderText("Archive " + currentPlan.versionCode() + "?");
+        confirmation.setContentText(
+                "The draft and its budget lines will be retained as read-only history. Nothing is physically deleted.");
+        CompanyDialogUiCompliance.install(confirmation.getDialogPane(), AppPanelId.BUDGET_EDITOR);
+        if (confirmation.showAndWait().filter(ButtonType.OK::equals).isEmpty())
+        {
+            status.setText("Budget draft archive cancelled.");
+            return;
+        }
+
+        long planId = currentPlan.id();
+        UiAsync.run("budget-editor-archive", () -> UiServiceRegistry.budgetPlan().archive(planId),
+                plan -> reloadPreferred(plan.id()),
+                ex -> status.setText("Could not archive budget draft: " + UiErrors.safeMessage(ex)));
     }
 
     private void saveTarget()
@@ -442,6 +499,7 @@ public class BudgetEditorPanel implements AppPanel
         confirmation.setTitle("Discard budget edit");
         confirmation.setHeaderText("Discard the unsaved budget amount?");
         confirmation.setContentText("Choose Cancel to remain on the selected budget category and budget version.");
+        CompanyDialogUiCompliance.install(confirmation.getDialogPane(), AppPanelId.BUDGET_EDITOR);
         return confirmation.showAndWait().filter(ButtonType.OK::equals).isPresent();
     }
 
