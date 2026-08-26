@@ -144,7 +144,12 @@ public class InventoryService
             {
                 validateCommand(command);
                 requireActiveCompanyCommand(command);
-                InventoryItem item = require(em, InventoryItem.class, itemId, "Inventory item");
+                InventoryItem item = em.find(
+                        InventoryItem.class, itemId, LockModeType.PESSIMISTIC_WRITE);
+                if (item == null)
+                {
+                    throw new IllegalArgumentException("Inventory item not found: " + itemId);
+                }
                 if (!normalizeCompanyCode(item.getCompany().getCode())
                         .equals(normalizeCompanyCode(command.companyCode())))
                 {
