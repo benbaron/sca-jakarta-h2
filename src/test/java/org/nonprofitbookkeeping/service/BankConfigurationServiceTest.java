@@ -13,7 +13,6 @@ import org.nonprofitbookkeeping.persistence.Jpa;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -137,8 +136,7 @@ public class BankConfigurationServiceTest
 
             assertEquals(stableId, updated.getId());
             assertEquals(portableId, updated.getPortableId());
-            assertEquals(createdAt.truncatedTo(ChronoUnit.MICROS),
-                    updated.getCreatedAt().truncatedTo(ChronoUnit.MICROS));
+            assertEquals(createdAt, updated.getCreatedAt());
             assertEquals(secondBank.getId(), updated.getBank().getId());
             assertEquals(101L, updated.getAccount().getId());
             assertEquals("Operating Cash", updated.getName());
