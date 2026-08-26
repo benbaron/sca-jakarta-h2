@@ -1,12 +1,12 @@
 ---
-plan_version: 220
+plan_version: 221
 active_phase: P17
 active_slice: P17-C5
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P17-C5-inventory-item-lifecycle
-active_pull_request: pending
-active_head: e7bf80a10fcbafe2edc46261f8cfa886e70ce5d4
-next_action: "Complete Inventory item lifecycle separation, add focused service/UI regressions and governing documentation, publish draft PR, run Maven PR Tests, then stop before merge for owner acceptance."
+active_pull_request: 297
+active_head: 50986693a28964e25e581d9d61be39efd387a3a6
+next_action: "Run Maven PR Tests on PR #297 final documentation-record head, correct any findings, then complete the owner Inventory lifecycle checklist and stop before merge until owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -42,7 +42,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P11 | Report Library | DONE through P11-C2 / PR #284 |
 | P12-P15 | Administration, diagnostics/exchange, hardening, versioned interchange | DONE |
 | P16 | Interface-to-authority completion and integrity corrections | DONE through P16-C11 / PR #281 |
-| P17 | Cross-cutting UI and durable-record lifecycle corrections | C1 DONE; C2 DONE; C3 DONE; C4 DONE; C5 IN_PROGRESS |
+| P17 | Cross-cutting UI and durable-record lifecycle corrections | C1 DONE; C2 DONE; C3 DONE; C4 DONE; C5 VERIFYING |
 
 ## 4. Established product decisions
 
@@ -100,11 +100,11 @@ Completion evidence:
 
 ### P17-C5 — Inventory item lifecycle completion
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P17-C5-inventory-item-lifecycle`  
 Starting base: `e7bf80a10fcbafe2edc46261f8cfa886e70ce5d4`  
-Pull request: pending
+Pull request: #297 (draft)
 
 Required reading:
 
@@ -122,45 +122,46 @@ Required implementation/test inspection:
 - `src/main/java/org/nonprofitbookkeeping/service/InventoryService.java`
 - `src/main/java/org/nonprofitbookkeeping/ui/InventoryPanel.java`
 - `src/test/java/org/nonprofitbookkeeping/service/InventoryServiceTest.java`
+- `src/test/java/org/nonprofitbookkeeping/service/InventoryLifecycleSourceTest.java`
 - `src/test/java/org/nonprofitbookkeeping/ui/InventoryPanelSourceTest.java`
 - current production-route/core-editor compliance tests touching Inventory
 
 Purpose:
 
-- Close the remaining Inventory durable-record lifecycle gap without changing movement accounting or adding a second inventory authority.
-- Ordinary item editing must not directly consume the `DISPOSED` state or silently change lifecycle status while quantity/value history remains authoritative.
-- Separate lifecycle transitions from metadata edits, retain every item by stable ID, and keep movement history/canonical transaction links intact.
+- Close the Inventory durable-record lifecycle gap without changing movement accounting or adding a second inventory authority.
+- Ordinary item editing must not directly consume `INACTIVE`/`DISPOSED` lifecycle state or silently strand quantity/value outside movement history.
+- Retain every item by stable ID and preserve all movement/canonical transaction history.
 
-Audit finding and selected direction:
+Delivered:
 
-- Current `InventoryPanel` exposes all `InventoryItem.Status` values in an editable combo and `InventoryService.update(...)` copies that status directly. Therefore an item with quantity on hand can be marked `DISPOSED` without an inventory movement, lifecycle command, or audit fact.
-- The fixed-asset implementation already demonstrates the repository-approved boundary: terminal disposition is service-owned rather than an ordinary editable field. The donor repository contains no stronger Inventory lifecycle authority worth porting, so production H2 services remain authoritative.
-
-Planned deliverables:
-
-- Prevent ordinary `InventoryService.update(...)` from changing lifecycle status; metadata updates preserve the existing status.
-- Add an explicit service-owned inventory status command with stable-ID/company validation, item locking, nonblank actor/reason, and factual `AuditEvent` history.
-- Require zero on-hand quantity before deactivation or disposal so inventory cannot be stranded outside the governed movement workflow.
-- Allow `INACTIVE -> ACTIVE` reactivation; make `DISPOSED` terminal for interactive lifecycle operations.
-- Replace direct status editing in `InventoryPanel` with read-only status plus explicit Deactivate / Reactivate / Dispose actions and visible retained-history/no-delete guidance.
-- Preserve `createForImport(...)` as the caller-owned historical restore seam so a source `DISPOSED` record can be restored without synthesizing new lifecycle facts.
-- Add focused H2 and UI/source regressions plus update the Inventory governing contract, interface-operation matrix, and owner desktop checklist.
+- Interactive item creation is restricted to `ACTIVE`; the SCLX/import historical restore seam remains separately caller-owned and can restore source status without synthesizing local lifecycle history.
+- Ordinary `InventoryService.update(...)` preserves existing status and rejects attempted status changes.
+- Metadata edits, lifecycle changes, and confirmed quantity movements now serialize on the same pessimistic `InventoryItem` lock, preventing stale metadata writes from undoing a concurrent retirement.
+- `InventoryService.changeStatus(...)` validates active-company/stable-ID ownership, requires actor and reason, requires zero on-hand quantity before deactivation/disposal, allows `INACTIVE -> ACTIVE`, and makes `DISPOSED` terminal for interactive lifecycle operations.
+- Each successful lifecycle transition writes a factual `INVENTORY_ITEM_STATUS_CHANGED` `AuditEvent` atomically with the status change.
+- Inventory UI now displays status read-only and exposes explicit **Deactivate Item**, **Reactivate Item**, and **Dispose Item** actions with retained-history/no-delete guidance.
+- H2 lifecycle regressions cover direct-edit rejection, zero-quantity protection, audit history, reactivation, and terminal disposal; source guardrails cover UI lifecycle controls and shared item-lock serialization.
+- `doc/inventory/inventory-and-assets.md`, `doc/interface-operation-matrix.md`, and `doc/P17-C5-inventory-item-lifecycle-user-testing.md` record the governing contract and owner acceptance steps.
 
 Validation status:
 
 - Exact starting `main` is `e7bf80a10fcbafe2edc46261f8cfa886e70ce5d4`.
 - C4 merged-main Maven PR Tests run `33020990140` succeeded and is the C5 baseline.
-- Container GitHub DNS resolution is unavailable, so no local Maven/git baseline is claimed; GitHub Maven PR Tests will be authoritative after publication.
+- Temporary publication guard run `33021727554` intentionally failed only on a trailing-blank-line `git diff --check` finding before any product commit was pushed; the whitespace was corrected.
+- Corrected publication run `33021774497` passed all publication/source/diff guards and self-removed its temporary artifacts.
+- A subsequent source audit found and corrected the metadata-update/lifecycle race; temporary correction run `33021884987` applied the shared item lock and self-removed its temporary artifacts.
+- Product code/audit head before this documentation record is `50986693a28964e25e581d9d61be39efd387a3a6`.
+- No local Maven result is claimed. Maven PR Tests on the final documentation-record head are required for semantic compile, JUnit/H2, and JavaFX production-route validation.
 
 Known failures:
 
-- None at task start.
+- None in product behavior currently known; final-head GitHub Maven validation is pending.
 
 Owner acceptance:
 
-- A P17-C5 owner checklist will be added before handoff.
-- Do not merge until final-head GitHub validation passes and the owner accepts the checklist.
+- Follow `doc/P17-C5-inventory-item-lifecycle-user-testing.md` only after final-head CI is green.
+- Do not merge until the owner accepts the checklist.
 
 Next exact action:
 
-- Implement the service/UI lifecycle boundary and focused regressions, update governing documentation, publish a draft PR, run Maven PR Tests, fix any findings, then stop before merge for owner desktop acceptance.
+- Run Maven PR Tests on PR #297 final documentation-record head, inspect all required gates, correct every failure, then stop before merge for owner desktop acceptance.
