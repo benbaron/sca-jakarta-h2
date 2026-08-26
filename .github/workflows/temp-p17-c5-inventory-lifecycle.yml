@@ -36,6 +36,11 @@ jobs:
           p.write_text(text.replace(old, new, 1))
           PY
           python .tmp/p17_c5_apply.py
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('doc/inventory/inventory-and-assets.md')
+          p.write_text(p.read_text().rstrip() + '\n')
+          PY
       - name: Verify intended source contract
         run: |
           grep -q 'public InventoryItemView changeStatus' src/main/java/org/nonprofitbookkeeping/service/InventoryService.java
