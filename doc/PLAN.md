@@ -1,12 +1,12 @@
 ---
-plan_version: 214
-active_phase: P05
-active_slice: P05-C6
+plan_version: 215
+active_phase: P17
+active_slice: P17-C1-C1
 active_status: IN_PROGRESS
-active_branch: codex/P05-C6-asset-bank-cash-classification
+active_branch: codex/P17-C1-C1-plan-reconciliation
 active_pull_request: pending
-active_head: local
-next_action: "Publish P05-C6, run Maven PR Tests, complete the owner ASSET/BANK/CASH desktop checklist, then merge after acceptance."
+active_head: pending_publication
+next_action: "Publish the documentation-only P17-C1-C1 reconciliation from current main, run Maven PR Tests on its exact head, and stop before merge. P17-C1 remains VERIFYING until the owner explicitly accepts the desktop checklist."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -15,7 +15,7 @@ next_action: "Publish P05-C6, run Maven PR Tests, complete the owner ASSET/BANK/
 
 This document is the phase controller for Codex work in `benbaron/sca-jakarta-h2`. Codex must select one phase and one slice using `AGENTS.md`, execute only that scope, and update this file with actual state.
 
-This revision records P16-S17 as DONE through merged PR #269 and owner acceptance, closes P16 through documentation-only P16-C1 / PR #270, records corrective P16-C2 through merged PR #271, records P16-C3 and P16-C4 through merged PRs #272 and #273, records the owner-requested P16-C6 nondestructive existing-company SCLX import through merged PR #274, records P16-C7 ownership diagnostics through merged PR #275, records P16-C8 target-company authority through merged PR #276, records the identity-aware P16-C9 corrections through merged PRs #277-#279, records P16-C10 through merged PR #280, closes P16-C11 through merged PR #281, closes P11-C1 through merged PR #282, and closes P11-C2 through merged PRs #283 and #284 plus owner desktop acceptance. It activates owner-requested corrective P05-C6 to separate accounting asset classification, operational bank function, and cash presentation as `ASSET :: BANK :: CASH`. P16-C5 message guidance remains a separate unpublished local slice and is not mixed into this branch. It does not authorize P17 or any later feature phase.
+This revision reconciles repository history that was merged after plan version 214 but never written back into this ledger. P05-C6 is implemented through merged PRs #285 and #286, P05-C7 through merged PR #287, the read-only Administration bank-account summary through merged PR #288, and P05-C8 through merged PR #289; PR #290 explicitly records the owner's direction that P05-C8 is DONE. P17-C1 was then authorized and delivered through merged PRs #290, #291, and #292. The exact final P17-C1 code head `aca71b43ba7e78670986e9f79698cc60239079f3` passed all three Maven PR Tests gates in run `32917267993` before PR #292 merged to current `main` at `a96eb39db1a3ed5b9ece309dcca1d1d046e327e1`. This reconciliation does not infer an unrecorded owner desktop acceptance: P17-C1 remains VERIFYING until the owner explicitly accepts `doc/P17-C1-ui-design-rules-compliance-user-testing.md`. P17-C1-C1 changes only this execution ledger and authorizes no additional product behavior.
 
 ## 2. Status values
 
@@ -37,7 +37,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P02 | Canonical ledger and transaction operations | P00 | DONE; retain |
 | P03 | Journal workspace and canonical transaction operations | P01, P02 | DONE through corrective P03-C9 / PR #154 |
 | P04 | Persistent budgeting | P02 | DONE; retrofit as touched |
-| P05 | Banking configuration and statement import | P02, P03-C1 | Corrective P05-C6 IN_PROGRESS after P05-C5 / PR #148 |
+| P05 | Banking configuration and statement import | P02, P03-C1 | DONE through corrective P05-C8 / merged PR #289, with P05-C6 follow-up #286, P05-C7 / #287, and Administration summary #288 |
 | P06 | Bank reconciliation and cleared-state comparison | P05 | DONE through PR #138; corrective P06-C1 DONE through PR #146; corrective P06-C2 DONE through PR #147 |
 | P07 | Eliminated former Schedules phase | n/a | DONE through PR #139 |
 | P08 | Asset Register and depreciation | P02 | DONE through PR #140; corrective P08-C1 DONE through PR #144 |
@@ -49,6 +49,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P14 | End-to-end hardening | P03-P13 except eliminated P07 | DONE through P14-S1, P14-S2, P14-S3, P14-S4, and P14-C1 |
 | P15 | Versioned data interchange and database transfer | P02, P05, P06, P12, P13, P14 | DONE through P15-C1 / PR #250 |
 | P16 | Interface-to-authority completion and integrity corrections | P03-P15 except eliminated P07 | DONE through corrective P16-C11 / merged PR #281 |
+| P17 | Cross-cutting production UI design-rule compliance | P01-P16 | P17-C1 VERIFYING after merged PRs #290-#292; exact final code head passed Maven PR Tests, owner desktop checklist not yet recorded as accepted |
 
 ## 4. Governing documents
 
@@ -152,44 +153,53 @@ Known remaining P03 limitation:
 
 ### P05 — Banking configuration and statement import
 
-Status: Corrective P05-C6 IN_PROGRESS after P05-C5 / PR #148.
+Status: DONE through corrective P05-C8 / merged PR #289. PR #290 records the owner's explicit direction that P05-C8 is DONE.
 
 #### P05-C6 — ASSET / BANK / CASH account classification
 
-Status: IN_PROGRESS.
+Status: DONE through merged PR #285 and corrective PR #286.
 
-Branch: `codex/P05-C6-asset-bank-cash-classification`
-Starting base: `8cc3a8882df5dee346deb26ec77960f7d3122beb`
-Pull request: pending
+Completion evidence:
 
-Purpose:
-
-- Correct the accounting model so `BANK` is not a top-level peer of `ASSET`.
-- Represent ordinary deposit accounts as `AccountType.ASSET`, operational `AccountFunction.BANK`, and normally `AccountSubtype.CASH`, with `NormalBalance.DEBIT`.
-- Keep operational banking behavior independent of cash-only financial-statement presentation: `ASSET / BANK / !CASH` remains bank/reconciliation eligible but is not cash, while `ASSET / !BANK / CASH` is cash but not a statement/reconciliation account.
-- Preserve existing bank configuration, transaction, statement, cleared-state, reconciliation, COA, and SCLX identities without creating a second account model.
-
-Implemented deliverables:
-
-- Added nullable `AccountFunction` to `Account`; `BANK` is currently the governed operational function. Removed `BANK` from `AccountType`, whose values now describe accounting statement classes only.
-- Added nondestructive Flyway migration `V73__asset_bank_cash_classification.sql`. Existing `account_type = 'BANK'` rows become `account_type = 'ASSET'` plus `account_function = 'BANK'`; every existing subtype, including non-CASH values, is preserved.
-- Banking configuration and its JavaFX existing-account selector now accept `ASSET / BANK-function / DEBIT` accounts without requiring `CASH`. New bank-account creation defaults to `ASSET / BANK / CASH / DEBIT`.
-- Chart of Accounts exposes the independent Function field and rejects BANK-function combinations that are not ASSET/DEBIT.
-- Journal bank-line projection, cleared-state consumers, dashboard operational bank balances, Bank Account Activity, inventory/fixed-asset bank behavior, and related queries now use the BANK function rather than accounting type.
-- Dashboard Book Cash and the Balance Sheet cash breakout use `ASSET + CASH` classification, so a non-CASH bank-function account remains an asset but is excluded from cash presentation; petty cash can be CASH without becoming a reconciliable bank account.
-- Existing SCA-COA and SCLX wire contracts retain portable type `BANK`. Import maps that compatibility token to `ASSET + BANK function`; export maps BANK-function accounts back to portable `BANK`, with subtype remaining independent. The simpler legacy COA CSV token `BANK` maps to `ASSET / BANK / CASH` because that format has no subtype column.
-- Added migration, account-admin, banking, dashboard, COA CSV/JSON, SCLX, report, and service regression coverage. Raw H2 bank fixtures now represent `ASSET / BANK / CASH`.
-- Added owner desktop checklist `doc/P05-C6-asset-bank-cash-classification-user-testing.md`.
-
-Validation status:
-
-- Source-wide guardrail finds no production or test reference to removed `AccountType.BANK`.
-- Java Compiler API parse-only validation succeeds for all 728 production/test Java files with zero syntax errors.
-- Maven and a Maven wrapper are unavailable in the local execution environment; focused/full JUnit, Flyway, Hibernate query, and JavaFX checks require Maven PR Tests after publication.
+- PR #285 introduced the accounting correction that models deposit accounts as `ASSET / BANK / CASH / DEBIT`, including the nondestructive V73 migration and portable BANK compatibility.
+- PR #286 corrected post-merge SCLX/SCA-COA fixtures, the explicit Function=None editor behavior, and configured-bank declassification guards.
+- PR #285 merged at `84d2969ce687e13d7460ed320188c36c582dd4f8`; corrective PR #286 merged at `18299ead1014a568b7fc6dd27bcc514a38a3d5b1`.
+- Owner verification remains documented in `doc/P05-C6-asset-bank-cash-classification-user-testing.md`.
 
 Next exact action:
 
-- Publish the focused branch, run Maven PR Tests, complete the owner desktop checklist, and merge only after owner acceptance.
+- None; P05-C6 is DONE.
+
+#### P05-C7 — Configured bank-account edit/update
+
+Status: DONE through merged PR #287.
+
+- Existing `CompanyBankAccount` rows are updated by stable identity rather than duplicate insert, with controlled duplicate-link validation, explicit new/edit modes, active-company opening-date/money formatting, and safe deactivation behavior.
+- PR #287 merged at `5f17a29e7bcaffbbd09919bc009b5f83569c2cd0`.
+- Owner verification remains documented in `doc/P05-C7-configured-bank-account-edit-user-testing.md`.
+
+Next exact action:
+
+- None; P05-C7 is DONE.
+
+#### P05 follow-up — Administration bank-account summary
+
+Status: DONE through merged PR #288.
+
+- Administration exposes a read-only **Bank Accounts** tab backed by the existing `BankConfigurationService`; creation/editing remains owned by Banking and no parallel bank-account model was introduced.
+- PR #288 merged at `d2449d884023d8301eb2bd3c5a2741b00c807cd7`.
+
+#### P05-C8 — Canonical bank ledger activity versus statement review
+
+Status: DONE through merged PR #289 by explicit owner direction recorded in PR #290.
+
+- **Ledger Activity** is the primary Bank Transactions accounting view over configured-bank `TxnSplit` facts, while imported durable rows remain separately under **Statement Review**.
+- PR #289 merged at `b099b763c34ebdbe3b5d0bbea15459c688d28836`. Its published Maven run was not green; this ledger preserves that historical fact. PR #290 records the owner's subsequent direction to mark C8 DONE, and later exact-current-code Maven PR Tests passed after P17-C1 corrections.
+- Owner verification remains documented in `doc/P05-C8-canonical-bank-ledger-activity-user-testing.md`.
+
+Next exact action:
+
+- None; P05-C8 and P05 are DONE.
 
 ### P10 — Period close, reopening, and factual audit history
 
@@ -3286,3 +3296,51 @@ Next exact action:
 
 - None; P16-C11 and P16 are DONE. The explicit owner-requested Report Library correction proceeds under
   P11-C1.
+
+# P17 — Cross-cutting production UI design-rule compliance
+
+**Selector:** `PHASE=P17`
+**Status:** P17-C1 VERIFYING after merged PRs #290, #291, and #292
+**Depends on:** P01 through P16
+
+Purpose: apply the remaining shared production JavaFX formatting, dialog, period-boundary, and regression-policy corrections discovered after P05-C8 without reopening completed accounting authorities or introducing parallel UI/service paths.
+
+## P17-C1 — UI design-rules compliance
+
+Status: VERIFYING. The implementation is merged and the exact final code head passed CI; owner desktop acceptance is not yet recorded in this ledger.
+
+Delivery and validation:
+
+- PR #290 opened the authorized cross-cutting UI compliance slice and merged at `272a9b4ee530712189ac8a127a9e61273065a670`.
+- PR #291 merged the shared company-aware money normalization, dialog compliance helper, Fixed Asset lifecycle formatting corrections, and configured active-period calculation at `0e61ba578ec9a478424ab4206b140334c63ada9a`.
+- PR #292 resolved the duplicate Flyway version, normalized `CompanyBankAccount` audit timestamps to database microsecond precision, strengthened stable-identity coverage, and aligned the Period Close source guard. It merged at `a96eb39db1a3ed5b9ece309dcca1d1d046e327e1`.
+- Exact final code head `aca71b43ba7e78670986e9f79698cc60239079f3` passed Maven PR Tests run `32917267993`: clean headless verification, the deliberately repeated full test suite, and production JavaFX route compliance all succeeded.
+- The merge commit has no file differences from that tested PR head.
+- Owner verification remains defined by `doc/P17-C1-ui-design-rules-compliance-user-testing.md`; merge plus automated CI is not treated as owner desktop acceptance.
+
+Next exact action:
+
+- Complete and explicitly accept the P17-C1 owner desktop checklist. Do not begin the later durable-record lifecycle work merely because P17-C1 implementation is merged.
+
+## P17-C1-C1 — Plan-ledger reconciliation after merged P17-C1 corrections
+
+Status: IN_PROGRESS.
+
+Branch: `codex/P17-C1-C1-plan-reconciliation`
+Base head: `a96eb39db1a3ed5b9ece309dcca1d1d046e327e1`
+Pull request: pending
+
+Purpose:
+
+- Repair plan version 214, whose front matter still described P05-C6 as unpublished and stated that P17 was unauthorized after PRs #285-#292 had already merged.
+- Reconcile the phase index and P05/P17 records to current repository history without changing product code.
+- Preserve the distinction between automated CI completion and the still-unrecorded P17-C1 owner desktop acceptance.
+
+Validation status:
+
+- This reconciliation changes only `doc/PLAN.md` from exact current `main`.
+- Maven PR Tests are required on the published documentation-only head; no local Maven result is claimed because the execution container cannot resolve GitHub and has no usable local repository checkout.
+
+Next exact action:
+
+- Publish this documentation-only reconciliation, run Maven PR Tests on its exact PR head, and stop before merge.
