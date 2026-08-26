@@ -16,6 +16,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 /** Bank account owned by a company/branch. */
@@ -89,10 +90,10 @@ public class CompanyBankAccount
     private String notes;
 
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt = Instant.now();
+    private Instant createdAt = nowAtDatabasePrecision();
 
     @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt = Instant.now();
+    private Instant updatedAt = nowAtDatabasePrecision();
 
     public Long getId() { return id; }
     public UUID getPortableId() { return portableId; }
@@ -130,7 +131,7 @@ public class CompanyBankAccount
     public void setNotes(String notes) { this.notes = notes; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
-    public void touchUpdatedAt() { this.updatedAt = Instant.now(); }
+    public void touchUpdatedAt() { this.updatedAt = nowAtDatabasePrecision(); }
 
     /** Initializes immutable source identity before a governed interchange import persists this account. */
     public void initializeImportMetadata(UUID portableId)
@@ -140,5 +141,10 @@ public class CompanyBankAccount
             throw new IllegalStateException("Bank-account import metadata must be initialized before persistence");
         }
         this.portableId = java.util.Objects.requireNonNull(portableId, "portableId");
+    }
+
+    private static Instant nowAtDatabasePrecision()
+    {
+        return Instant.now().truncatedTo(ChronoUnit.MICROS);
     }
 }
