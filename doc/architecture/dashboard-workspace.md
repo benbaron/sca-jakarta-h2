@@ -31,6 +31,18 @@ The left navigation uses vector icons and a blue selected state. The right inspe
 
 All production icons are dependency-free JavaFX `SVGPath` graphics created by `UiIcons`. No external font or image resource is required.
 
+## Dashboard navigation contract
+
+Dashboard links are genuine navigation actions rather than decorative or self-targeting controls:
+
+- the Recent Transactions footer is labeled **View Journal** and opens the canonical `JOURNAL_PANE` destination;
+- **New Transaction** and **Enter Journal Entry** enter the existing unified Journal workflow. Retired `LEDGER_REGISTER` / `TXN_EDITOR` identifiers may still carry compatibility intent internally, but Dashboard-visible text must not advertise separate Ledger Register or Transaction Editor workspaces;
+- **Import SCLX File** opens the governed Import Preview workflow. SCLX is a portable JSON business-data document whose filename/extension is only a hint, so Dashboard copy must not describe SCLX as a workbook-only operation;
+- **Reconcile Bank Account** opens Bank Reconciliation, and the Budget vs Actual footer opens the corresponding production view;
+- the Quick Links card has no **All Quick Links** footer because Dashboard is already the complete quick-link surface and an enabled link back to the current Dashboard would not perform a genuine operation.
+
+These navigation controls do not write accounting data. Their destination panels remain responsible for any governed mutation or import acceptance.
+
 ## Workspace chrome
 
 The application chrome follows the compact white-and-blue reference design:
@@ -98,6 +110,7 @@ P04 supplies authoritative budget-target amounts through active `budget_plan` an
 Material changes require:
 
 - repository tests for dashboard projections and accounting derivations;
+- navigation-compliance tests that reject retired Dashboard-visible workspace terminology and self-targeting enabled links;
 - responsive layout, shell allocation, and startup-window geometry tests;
 - `mvn clean verify` through GitHub Actions;
 - a desktop JavaFX visual check at wide, medium, and narrow sizes, including 100%, 125%, and 150% display scaling.
