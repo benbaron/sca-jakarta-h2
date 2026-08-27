@@ -1,12 +1,12 @@
 ---
-plan_version: 227
+plan_version: 228
 active_phase: P17
 active_slice: P17-C8
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P17-C8-dashboard-compliance
-active_pull_request: null
-active_head: e053a7430f47824529b1c55d080d596f4b5e84a5
-next_action: "Implement only P17-C8 Dashboard production-compliance corrections from current main, add focused tests and governing-document updates, then publish a draft PR and validate it before advancing to P17-C9."
+active_pull_request: 300
+active_head: c60d9ff3581e0885e4cab5f85e2358d89106837a
+next_action: "Validate the final documentation-successor head of draft PR #300 with standard Maven PR Tests, execute doc/P17-C8-dashboard-compliance-user-testing.md, and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -42,7 +42,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P11 | Report Library | DONE through P11-C2 / PR #284; period-context correction is P17-C9 |
 | P12-P15 | Administration, diagnostics/exchange, hardening, versioned interchange | DONE for their original phase contracts; deferred Company Admin extensions are P19 |
 | P16 | Interface-to-authority completion and integrity corrections | DONE through P16-C11 / PR #281 |
-| P17 | Cross-cutting UI, authority, cleanup, and durable-record corrections | C1-C7 DONE; C8 IN_PROGRESS; C9-C12 queued |
+| P17 | Cross-cutting UI, authority, cleanup, and durable-record corrections | C1-C7 DONE; C8 VERIFYING; C9-C12 queued |
 | P18 | Depreciation-run workflow completion | BLOCKED pending P17 completion and batch-semantics review |
 | P19 | Deferred Company Administration extensions | BLOCKED pending explicit product requirements for each slice |
 | P20 | Authentication and runtime authorization | BLOCKED pending explicit security requirements and authorization |
@@ -129,19 +129,20 @@ Completion evidence:
 
 ### P17-C8 — Dashboard production-compliance correction
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P17-C8-dashboard-compliance`
 Starting base: `e053a7430f47824529b1c55d080d596f4b5e84a5`
-Pull request: not opened yet.
+Draft pull request: #300
+Implementation/publication head before this PLAN successor: `c60d9ff3581e0885e4cab5f85e2358d89106837a`
 
 Audit findings that define this slice:
 
-- `DashboardHomePanel` still displays **View Ledger Register** although `LEDGER_REGISTER` is a retired compatibility alias and the canonical production destination is **Journal**.
-- The Dashboard **All Quick Links** footer targets `AppPanelId.DASHBOARD`, so an enabled control merely reselects the panel already open rather than performing a genuine navigation or operation.
-- The Dashboard label **Import SCLX Workbook** carries obsolete workbook-centric terminology although the governed production workflow is SCLX file preview/import through Import Preview.
+- `DashboardHomePanel` displayed **View Ledger Register** although `LEDGER_REGISTER` is a retired compatibility alias and the canonical production destination is **Journal**.
+- The Dashboard **All Quick Links** footer targeted `AppPanelId.DASHBOARD`, so an enabled control merely reselected the panel already open rather than performing a genuine navigation or operation.
+- The Dashboard label **Import SCLX Workbook** carried obsolete workbook-centric terminology although the governed production workflow is SCLX file preview/import through Import Preview.
 
-Required reading:
+Required reading completed:
 
 - `doc/ui_design_rules.md`
 - `doc/interface-operation-matrix.md`
@@ -149,31 +150,36 @@ Required reading:
 - `doc/architecture/dashboard-workspace.md`
 - `doc/data-exchange/sclx.md`
 
-Required inspection:
+Implemented deliverables:
 
-- `src/main/java/org/nonprofitbookkeeping/ui/DashboardHomePanel.java`
-- `src/main/java/org/nonprofitbookkeeping/ui/AppPanelId.java`
-- `src/main/java/org/nonprofitbookkeeping/ui/PanelHost.java`
-- `src/main/java/org/nonprofitbookkeeping/ui/NavigationPane.java`
-- Dashboard route/navigation tests and production JavaFX route-compliance tests
+- Recent Transactions now shows **View Journal →** and routes directly to canonical `AppPanelId.JOURNAL_PANE`.
+- The New action's diagnostic text now describes the Journal entry workflow; the existing `TXN_EDITOR` compatibility identifier remains where it carries new-entry intent and still normalizes to the one Journal workspace.
+- **All Quick Links →** and its Dashboard self-target are removed rather than replaced with a new artificial destination.
+- The import quick action now shows **Import SCLX File** / **Preview and import an SCLX file** and continues to navigate only to governed Import Preview; no parsing or commit authority changed.
+- `DashboardNavigationComplianceSourceTest` rejects the retired Dashboard wording, self-targeting Dashboard link, and workbook-only SCLX copy while requiring the canonical Journal and governed import/reconciliation destinations.
+- `doc/architecture/dashboard-workspace.md` now states the Dashboard navigation contract.
+- `doc/P17-C8-dashboard-compliance-user-testing.md` records the owner desktop acceptance steps.
 
-Deliverables:
+Scope confirmation:
 
-- Replace retired Ledger Register wording with canonical Journal wording while retaining compatibility routing only where code identifiers still require it.
-- Remove the self-targeting **All Quick Links** control unless an already-existing genuine destination is identified; do not invent a new panel solely to preserve the link.
-- Rename the SCLX quick action to current governed file/preview terminology without changing the Import Preview authority boundary.
-- Add focused regression/source/UI tests proving all enabled Dashboard links perform genuine navigation and no retired production wording is advertised.
-- Update directly affected dashboard/interface documentation in the same slice.
+- no accounting, dashboard-query, Journal-service, import-commit, reconciliation, persistence, or schema behavior changed;
+- the current `doc/interface-operation-matrix.md` already states canonical Journal/compatibility-alias authority and did not contain the three stale Dashboard labels, so no C8 matrix rewrite is required; the broader matrix/header reconciliation remains assigned to P17-C12;
+- two transient connector helper files were accidentally created during publication and immediately deleted. The PR's final changed-file set contains neither helper and is checked from `main` rather than inferred from commit history.
 
-Non-goals:
+Validation status:
 
-- no accounting, dashboard-query, import, Journal, or persistence behavior change;
-- no broad Dashboard redesign;
-- no implementation of P17-C9 or later findings in the same PR.
+- GitHub transport compare from starting `main` shows only the intended C8 production panel, focused test, Dashboard governing doc, C8 user-test doc, and PLAN controller as final changed files.
+- Local Maven results are not claimed because this environment cannot reach GitHub/Maven through a local clone.
+- Standard Maven PR Tests on the final PR head are pending and must be inspected before owner handoff.
+
+Owner acceptance:
+
+- Execute `doc/P17-C8-dashboard-compliance-user-testing.md` only after final-head Maven PR Tests are green.
+- Do not merge until final-head GitHub validation passes and the owner accepts the checklist.
 
 Next exact action:
 
-- Implement the three Dashboard corrections and focused tests on this branch, update affected governing documentation, publish a draft PR, and run the standard Maven PR Tests before owner visual acceptance.
+- Validate the final documentation-successor head of draft PR #300 with standard Maven PR Tests, inspect any failing logs, then perform the owner checklist and stop before merge.
 
 ### P17-C9 — Report Library active-period synchronization
 
@@ -312,7 +318,7 @@ Map approved permissions onto production commands/services and enforce them at t
 
 ## 9. Audit-to-plan mapping
 
-The August 27, 2026 repository-wide panel/documentation audit is now assigned as follows:
+The August 27, 2026 repository-wide panel/documentation audit is assigned as follows:
 
 | Audit finding | Planned owner |
 |---|---|
@@ -335,4 +341,4 @@ The August 27, 2026 repository-wide panel/documentation audit is now assigned as
 
 Execute only the active slice. Do not start P17-C9 while P17-C8 is unmerged. When a corrective slice merges and its required validation/owner acceptance is complete, mark it `DONE`, activate the next unblocked slice, and update this controller from current `main`.
 
-The first planning commit on `codex/P17-C8-dashboard-compliance` is documentation-only; `active_head` records the verified starting `main` base rather than attempting to self-reference the commit that contains this line. Record the first tested product head when C8 implementation is published.
+The PLAN update that records PR #300 is documentation-only. `active_head` records the implementation/publication head immediately before this PLAN successor rather than attempting to self-reference the commit that contains this line. The final documentation-successor head must itself pass the standard GitHub validation before owner handoff.
