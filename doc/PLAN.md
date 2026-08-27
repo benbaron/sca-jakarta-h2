@@ -1,12 +1,12 @@
 ---
-plan_version: 229
+plan_version: 230
 active_phase: P17
 active_slice: P17-C9
 active_status: VERIFYING
 active_branch: codex/P17-C9-report-library-period-sync
 active_pull_request: 301
-active_head: e81d54359b4aa6858336c6132fc626b10cce8a31
-next_action: "Validate the final PLAN-successor head of draft PR #301 with standard Maven PR Tests, execute doc/P17-C9-report-library-period-sync-user-testing.md, and stop before merge for owner acceptance."
+active_head: dd6b11c043c6d2b4c027451a37e43f985d1d7d08
+next_action: "Validate the final documentation-only successor head of draft PR #301 with standard Maven PR Tests, then execute doc/P17-C9-report-library-period-sync-user-testing.md and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -147,7 +147,7 @@ Status: VERIFYING.
 Branch: `codex/P17-C9-report-library-period-sync`
 Starting base: `8f66bcfce86a411b6c1d5af6209bb062803af742`
 Draft pull request: #301
-Implementation/documentation head before this PLAN successor: `e81d54359b4aa6858336c6132fc626b10cce8a31`
+Validated implementation/code-test head before this PLAN successor: `dd6b11c043c6d2b4c027451a37e43f985d1d7d08`
 
 Finding:
 
@@ -171,6 +171,7 @@ Implemented deliverables:
 - Editing either Report Library date explicitly detaches the open panel; later shell-period changes do not overwrite the operator's report-specific range.
 - A panel initialized from an explicit `DateRangeContext` starts detached and retains that range across later active-period changes.
 - `ReportLibraryPeriodSynchronizationIntegrationTest` covers both default-following and detached behavior through JavaFX controls and the real fiscal-range service.
+- The existing `BudgetFiscalAuthoritySourceTest` now guards the listener/fiscal-range contract instead of the obsolete one-time initialization expression.
 - `doc/reporting/report-library.md` records the date-following/request boundary.
 - `doc/P17-C9-report-library-period-sync-user-testing.md` records owner desktop verification, including Balance Sheet/Income Statement period behavior and preview/export request consistency.
 
@@ -178,13 +179,16 @@ Scope confirmation:
 
 - no report definition, report calculation, export adapter, Journal drill-through, accounting transaction, persistence, migration, company preference, or active-period authority changed;
 - the existing immutable `ReportRequest` remains the preview/export/drill-through request authority;
-- current branch compare from merged C8 `main` contains only the Report Library panel, focused integration test, governing report documentation, C9 user-test note, and this PLAN controller.
+- implementation-head compare from merged C8 `main` contains only the Report Library panel, focused integration test, updated fiscal-authority source guardrail, governing report documentation, C9 user-test note, and PLAN controller.
 
 Validation status:
 
 - local Maven results are not claimed because this environment cannot resolve GitHub/Maven from a local clone;
-- draft PR #301 is open against `main`;
-- standard Maven PR Tests must pass on the final PLAN-successor head before owner handoff.
+- Maven PR Tests run `33117645158` passed on exact implementation/code-test head `dd6b11c043c6d2b4c027451a37e43f985d1d7d08`;
+- clean headless verification: SUCCESS;
+- repeat tests: SUCCESS;
+- production JavaFX route compliance: SUCCESS;
+- this documentation-only PLAN successor must itself pass standard Maven PR Tests before owner handoff.
 
 Owner acceptance:
 
@@ -193,7 +197,7 @@ Owner acceptance:
 
 Next exact action:
 
-- validate the final PLAN-successor head of draft PR #301 with standard Maven PR Tests, inspect/correct any failure, then perform the owner checklist and stop before merge.
+- validate the final documentation-only successor head of draft PR #301 with standard Maven PR Tests, inspect/correct any failure, then perform the owner checklist and stop before merge.
 
 ### P17-C10 — Retire duplicate legacy UI panels and stale customer-panel catalog
 
@@ -333,4 +337,4 @@ The August 27, 2026 repository-wide panel/documentation audit is assigned as fol
 
 Execute only the active slice. Do not start P17-C10 while P17-C9 is unmerged. When a corrective slice merges and its required validation/owner acceptance is complete, mark it `DONE`, activate the next unblocked slice, and update this controller from current `main`.
 
-The PLAN update that records PR #301 is documentation-only. `active_head` records the implementation/documentation head immediately before this PLAN successor rather than attempting to self-reference the commit that contains this line. The final PLAN-successor head must itself pass the standard GitHub validation before owner handoff.
+The PLAN update that records PR #301 and implementation validation is documentation-only. `active_head` records the validated implementation/code-test head immediately before this PLAN successor rather than attempting to self-reference the commit that contains this line. The final documentation-only successor head must itself pass the standard GitHub validation before owner handoff.
