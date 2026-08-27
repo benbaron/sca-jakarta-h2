@@ -3,6 +3,7 @@ package org.nonprofitbookkeeping.service;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.model.FundType;
@@ -58,6 +59,7 @@ public class FundAdminService
             {
                 CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
                 Company company = ownership.requireCompany(em, companyCodeSupplier.get());
+                em.lock(company, LockModeType.PESSIMISTIC_WRITE);
                 Fund fund = command.id() == null
                         ? new Fund()
                         : requireFund(em, command.id());
@@ -99,6 +101,7 @@ public class FundAdminService
             {
                 CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
                 Company company = ownership.requireCompany(em, companyCodeSupplier.get());
+                em.lock(company, LockModeType.PESSIMISTIC_WRITE);
                 Fund existing = em.createQuery(
                                 "from Fund f left join fetch f.parent where (f.company = :company or f.company is null) and upper(f.code) = :code",
                                 Fund.class)
@@ -164,6 +167,7 @@ public class FundAdminService
             {
                 CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
                 Company company = ownership.requireCompany(em, companyCodeSupplier.get());
+                em.lock(company, LockModeType.PESSIMISTIC_WRITE);
                 Fund fund = requireFund(em, fundId);
                 ownership.ensureOwnedBy(em, company, fund, "Fund");
                 FundUsage usage = usage(em, fundId);
@@ -197,15 +201,63 @@ public class FundAdminService
         requireUniqueCode(em, company, command.id(), code);
 
         Fund parent = loadValidatedParent(em, ownership, company, command.id(), command.parentFundId());
+        validateHierarchyLifecycle(em, company, fund, parent, command.active());
         fund.setCode(code);
         fund.setName(name);
         fund.setFundType(command.fundType());
-        fund.setActive(command.active());
         fund.setParent(parent);
+        fund.setActive(command.active());
         fund.setEffectiveFrom(command.effectiveFrom());
         fund.setEffectiveTo(command.effectiveTo());
         fund.setRestrictionText(blankToNull(command.restrictionText()));
         fund.touchUpdatedAt();
+    }
+
+    private static void validateHierarchyLifecycle(
+            EntityManager em,
+            Company company,
+            Fund fund,
+            Fund parent,
+            boolean active)
+    {
+        if (active)
+        {
+            Fund cursor = parent;
+            Set<Long> visited = new HashSet<>();
+            while (cursor != null)
+            {
+                Long cursorId = cursor.getId();
+                if (cursorId != null && !visited.add(cursorId))
+                {
+                    throw new IllegalArgumentException("The selected parent belongs to an existing circular fund hierarchy.");
+                }
+                if (!cursor.isActive())
+                {
+                    throw new IllegalStateException(
+                            "Active fund requires an active parent hierarchy. Reactivate parent fund "
+                                    + cursor.getCode() + " first.");
+                }
+                cursor = cursor.getParent();
+            }
+            return;
+        }
+
+        if (fund.getId() == null)
+        {
+            return;
+        }
+        Long activeChildren = em.createQuery(
+                        "select count(f) from Fund f where f.company = :company and f.parent = :parent and f.active = true",
+                        Long.class)
+                .setParameter("company", company)
+                .setParameter("parent", fund)
+                .getSingleResult();
+        if (activeChildren > 0L)
+        {
+            throw new IllegalStateException(
+                    "Deactivate or reparent active child funds before deactivating fund "
+                            + fund.getCode() + ".");
+        }
     }
 
     private static Fund loadValidatedParent(EntityManager em, CompanyOwnershipService ownership, Company company, Long fundId, Long parentFundId)
