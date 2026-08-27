@@ -1,12 +1,12 @@
 ---
-plan_version: 225
+plan_version: 226
 active_phase: P17
 active_slice: P17-C7
 active_status: VERIFYING
 active_branch: codex/P17-C7-fixed-asset-lifecycle
 active_pull_request: 299
-active_head: 3de0fbcc7a14da3bfa9c695996bdaff8230392e9
-next_action: "Run the standard Maven PR Tests on the final C7 branch head, correct any remaining failure, then execute doc/P17-C7-fixed-asset-lifecycle-user-testing.md and stop before merge for owner acceptance."
+active_head: 716748540ac4d77dbb32ec6afc99391614fbd258
+next_action: "Validate the documentation-only successor head with standard Maven PR Tests, then execute doc/P17-C7-fixed-asset-lifecycle-user-testing.md and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -127,7 +127,7 @@ Status: VERIFYING.
 Branch: `codex/P17-C7-fixed-asset-lifecycle`
 Starting base: `d067877d699f4aa05c635b52abcc0aa65d55fbc3`
 Pull request: #299
-Product head before verification handoff: `3de0fbcc7a14da3bfa9c695996bdaff8230392e9`
+Verified product/test head: `716748540ac4d77dbb32ec6afc99391614fbd258`
 
 Required reading:
 
@@ -166,12 +166,18 @@ Validation status:
 - Merged-main Maven PR Tests push run `33033595424` passed all three repository gates and is the C7 baseline.
 - Publication source assertions and `git diff --check` passed; no local Maven result is claimed.
 - Initial PR run `33034308490` failed during compile because the new confirmation dialog passed `Alert` where `CompanyDialogUiCompliance.install(...)` requires a `DialogPane`.
-- The repository-approved `confirmation.getDialogPane()` call was published in product head `3de0fbcc7a14da3bfa9c695996bdaff8230392e9`; temporary publisher artifacts were removed.
-- GitHub marked the bot-authored exact-product-head run `33034380172` as `action_required` without creating any job. The current verification-handoff commit intentionally supplies a normal PR synchronize event so standard Maven PR Tests can execute on the final product/documentation tree.
+- The repository-approved `confirmation.getDialogPane()` correction was published and temporary publisher artifacts were removed.
+- A later full Maven PR Tests execution exposed the established DISPOSED exception-contract ordering: an ordinary update that explicitly requests `DISPOSED` must fail with `IllegalArgumentException`, while an already-DISPOSED durable row remains immutable through ordinary editing/reactivation and fails with `IllegalStateException`. The service guard was corrected in commit `11fd8109eba045868a209101601a1688a0bfde94`.
+- Maven PR Tests run `33039681065` on head `6a7820dfd8a609ecc0690c7451dd7461561b4702` still failed in the test gate. Audit of that exact tree found `FixedAssetStatusLifecycleTest.interactiveCreationStartsActiveAndDisposedHistoryCannotBeReactivated` still carried the obsolete `IllegalStateException` expectation for an explicit `Status.DISPOSED` update.
+- Commit `716748540ac4d77dbb32ec6afc99391614fbd258` aligned that regression test with the preserved service contract without changing product semantics.
+- Exact product/test head `716748540ac4d77dbb32ec6afc99391614fbd258` passed standard Maven PR Tests run `33093565617`: clean headless verification, repeat tests, and production JavaFX route compliance all succeeded.
+- This PLAN reconciliation is documentation-only. The tested product/test head remains `716748540ac4d77dbb32ec6afc99391614fbd258`; the resulting documentation successor head is intentionally not self-recorded here to avoid an endless SHA-only documentation loop and must itself receive the standard PR validation before owner handoff.
 
 Known failures:
 
-- Corrected: `AssetsRegisterPanel.java` compile error from run `33034308490` (`Alert` cannot be converted to `DialogPane`). No semantic service failure was reported by that run because compilation stopped before tests.
+- Corrected: `AssetsRegisterPanel.java` compile error from run `33034308490` (`Alert` cannot be converted to `DialogPane`).
+- Corrected: DISPOSED validation ordering changed the established exception contract; service guard ordering now preserves explicit-DISPOSED `IllegalArgumentException` versus persisted-DISPOSED immutability `IllegalStateException`.
+- Corrected: `FixedAssetStatusLifecycleTest` retained the obsolete exception expectation after the service correction; commit `716748540ac4d77dbb32ec6afc99391614fbd258` aligns the focused regression with the established contract.
 
 Owner acceptance:
 
@@ -180,4 +186,4 @@ Owner acceptance:
 
 Next exact action:
 
-- Run the standard Maven PR Tests on the current final branch head, correct any remaining failure, then perform the owner checklist and stop before merge.
+- Validate this documentation-only successor head with the standard Maven PR Tests, then perform the owner checklist and stop before merge.
