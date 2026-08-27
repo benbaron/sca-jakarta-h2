@@ -1,12 +1,12 @@
 ---
-plan_version: 231
+plan_version: 232
 active_phase: P17
 active_slice: P17-C10
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P17-C10-legacy-ui-retirement
-active_pull_request: null
-active_head: 2cac5dc3275f08a5f175332b030c3f336e94c5d0
-next_action: "Retire only source/test UI architecture proven unreachable from production, preserve AppPanelId compatibility aliases, add retirement regressions and user testing, then validate the exact published head with standard Maven PR Tests."
+active_pull_request: 302
+active_head: ea3e10ab9041dd1368f59de699591b3f6e5c423e
+next_action: "Validate the final documentation-only successor head of draft PR #302 with standard Maven PR Tests, then execute doc/P17-C10-legacy-ui-retirement-user-testing.md and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -42,7 +42,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P11 | Report Library | DONE through P11-C2 / PR #284; period-context correction completed in P17-C9 |
 | P12-P15 | Administration, diagnostics/exchange, hardening, versioned interchange | DONE for their original phase contracts; deferred Company Admin extensions are P19 |
 | P16 | Interface-to-authority completion and integrity corrections | DONE through P16-C11 / PR #281 |
-| P17 | Cross-cutting UI, authority, cleanup, and durable-record corrections | C1-C9 DONE; C10 IN_PROGRESS; C11-C12 queued |
+| P17 | Cross-cutting UI, authority, cleanup, and durable-record corrections | C1-C9 DONE; C10 VERIFYING; C11-C12 queued |
 | P18 | Depreciation-run workflow completion | BLOCKED pending P17 completion and batch-semantics review |
 | P19 | Deferred Company Administration extensions | BLOCKED pending explicit product requirements for each slice |
 | P20 | Authentication and runtime authorization | BLOCKED pending explicit security requirements and authorization |
@@ -154,47 +154,53 @@ Completion evidence:
 
 ### P17-C10 — Retire duplicate legacy UI panels and stale customer-panel architecture
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P17-C10-legacy-ui-retirement`
 Starting base: merged C9 `main` `2cac5dc3275f08a5f175332b030c3f336e94c5d0`
-Pull request: not opened yet.
+Draft pull request: #302
+Validated implementation/code-test head before this PLAN successor: `ea3e10ab9041dd1368f59de699591b3f6e5c423e`
 
-Audit scope:
+Audit findings and implemented deliverables:
 
-- classify and, where safe, remove obsolete alternate/reference Dashboard surfaces such as `DashboardWorkspacePanel`, `DashboardExperiment`, `DashboardPanelFX`, and `ReferenceWorkspaceWindow`;
-- classify and, where safe, remove old separate Journal/Ledger/Transaction panels such as `JournalPane`, `LedgerRegisterPanel`, and `TransactionEditorPanel` now that production aliases normalize to one `JournalWorkspacePanel`;
-- retire the stale `CustomerUiPanelCatalog` / `CustomerPanelId` architecture model and its disconnected `ui.customer` prototype registry where source search proves it is referenced only by that parallel subtree and its own tests;
-- remove or redirect tests that preserve dead architecture only after proving no production, compatibility, migration, or donor-reference contract still requires the class.
+- Production `PanelFactory` already routes Dashboard only to `DashboardHomePanel` and canonical Journal only to `JournalWorkspaceCompliancePanel`; obsolete alternate implementations were unreachable.
+- Removed `DashboardWorkspacePanel`, `DashboardExperiment`, `DashboardPanelFX`, and `ReferenceWorkspaceWindow` rather than retaining competing reference shells/surfaces.
+- Removed the old standalone `JournalPane`, `LedgerRegisterPanel`, and `TransactionEditorPanel` source panels and their implementation-specific tests.
+- Preserved `AppPanelId.LEDGER_REGISTER` and `TXN_EDITOR` as compatibility aliases that still canonicalize to `JOURNAL_PANE`; production routing tests continue to exercise those aliases.
+- Removed `CustomerUiPanelCatalog`, `CustomerPanelId`, `CustomerPanelBlueprint`, and the disconnected `ui.customer` prototype registry/tests after source inspection proved no production consumer existed outside that isolated subtree.
+- The removed customer prototype had encoded obsolete supervisor/approval and alternate-workspace semantics; it was not rewritten into a second current registry.
+- Redirected retained privilege, global-command, Schedules, and production routing tests from `ReferenceWorkspaceWindow`/legacy helper classes to the current production shell/coordinator.
+- Added `LegacyUiRetirementSourceTest` and strengthened `JournalWorkspacePortSourceTest` so retired files must remain absent while canonical Dashboard/Journal routing and compatibility aliases remain intact.
+- Updated `doc/architecture/application-composition.md` to identify `ProductionWorkspaceWindow` as the sole current workspace shell class.
+- Added `doc/P17-C10-legacy-ui-retirement-user-testing.md` for owner desktop verification.
 
-Inspection findings at slice start:
+Scope confirmation:
 
-- `PanelFactory` creates `DashboardHomePanel` for `DASHBOARD` and `JournalWorkspaceCompliancePanel` for canonical `JOURNAL_PANE`; it does not construct any of the old Dashboard/Journal panels.
-- `AppPanelId.LEDGER_REGISTER` and `TXN_EDITOR` remain required compatibility aliases normalized to `JOURNAL_PANE` and are out of deletion scope.
-- `DashboardWorkspacePanel`, `DashboardExperiment`, and `DashboardPanelFX` have no production constructor route; source search finds only self/reference-document coupling.
-- `JournalPane`, `LedgerRegisterPanel`, and `TransactionEditorPanel` are not production factory routes; direct construction is confined to the legacy panel chain and legacy tests.
-- `CustomerUiPanelCatalog` and the `ui.customer` prototype registry encode obsolete workspaces and supervisor/approval semantics; repository search finds no production consumer outside that isolated subtree and its tests.
-- `ReferenceWorkspaceWindow` is a package-local compatibility subclass referenced by legacy/reference tests and obsolete reference documentation, while production startup/composition uses `ProductionWorkspaceWindow`. C10 may remove it only with those tests redirected to production authority.
+- no canonical Dashboard or Journal production implementation changed;
+- no accounting, persistence, migration, import, reporting calculation, banking, reconciliation, period-close, or database service behavior changed;
+- no compatibility alias was removed;
+- `MainWindow`, legacy date-range helpers, and residual compatibility-service classification remain P17-C11;
+- the stale `doc/interface-operation-matrix.md` inventory sentence that still names the retired reference components remains part of the already-planned repository-wide documentation authority reconciliation in P17-C12 rather than expanding this code-retirement slice.
 
-Guardrails:
+Validation status:
 
-- do not remove `AppPanelId.LEDGER_REGISTER` or `TXN_EDITOR`; those identifiers remain compatibility aliases until a deliberate compatibility-breaking decision;
-- do not change canonical Journal/Dashboard behavior, service wiring, persistence, accounting, migrations, or production shell commands;
-- do not pull `MainWindow`/date-range/service cleanup forward from P17-C11.
+- compare from merged C9 `main` to implementation head contains 39 changed files, with 5,064 deletions and 157 additions; the large diff is dominated by removal of unreachable/prototype sources and their implementation-specific tests;
+- the exact published workflow source snapshot was searched for all retired class/package names; no surviving compile-time production/test references remain other than intentional negative source assertions and ordinary method/comment wording;
+- a local Maven result is not claimed; the available local execution environment does not provide a Maven executable, so GitHub Actions is the build/test authority for this slice;
+- Maven PR Tests run `33125172704` passed on exact implementation/code-test head `ea3e10ab9041dd1368f59de699591b3f6e5c423e`;
+- clean headless verification: SUCCESS;
+- repeat tests: SUCCESS;
+- production JavaFX route compliance: SUCCESS;
+- this documentation-only PLAN successor must itself pass standard Maven PR Tests before owner handoff.
 
-Required reading completed:
+Owner acceptance:
 
-- `AGENTS.md`
-- `doc/PLAN.md`
-- `doc/interface-operation-matrix.md`
-- `doc/ui_design_rules.md`
-- `doc/ui/editor-guidelines.md`
-- `doc/architecture/application-composition.md`
-- current `AppPanelId`, `PanelFactory`, canonical Journal routing guardrails, and the target legacy/prototype source/tests.
+- execute `doc/P17-C10-legacy-ui-retirement-user-testing.md` only after final-head Maven PR Tests are green;
+- do not merge until final-head GitHub validation passes and the owner accepts the checklist.
 
 Next exact action:
 
-- delete only the proven unreachable legacy/prototype sources, redirect retained source guardrails to production `ProductionWorkspaceWindow` where needed, add a C10 retirement regression and owner test note, inspect the final diff, then publish a draft PR for Maven validation.
+- validate the final documentation-only successor head of draft PR #302 with standard Maven PR Tests, inspect/correct any failure, then perform the owner checklist and stop before merge.
 
 ### P17-C11 — Retire legacy shell/date-range and classify residual compatibility services
 
@@ -318,4 +324,4 @@ The August 27, 2026 repository-wide panel/documentation audit is assigned as fol
 
 Execute only the active slice. Do not start P17-C11 while P17-C10 is unmerged. When a corrective slice merges and its required validation/owner acceptance is complete, mark it `DONE`, activate the next unblocked slice, and update this controller from current `main`.
 
-The C10 starting `active_head` records the exact merged C9 base because a PLAN commit cannot self-reference its own SHA. Before handoff, replace this start-state note with the actual published C10 implementation/validation evidence.
+The PLAN update that records PR #302 and implementation validation is documentation-only. `active_head` records the validated implementation/code-test head immediately before this PLAN successor rather than attempting to self-reference the commit that contains this line. The final documentation-only successor head must itself pass the standard GitHub validation before owner handoff.
