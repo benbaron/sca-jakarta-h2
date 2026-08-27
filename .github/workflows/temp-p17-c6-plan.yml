@@ -17,6 +17,11 @@ jobs:
       - name: Activate C6 controller
         run: |
           python .tmp/p17_c6_plan.py
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('doc/PLAN.md')
+          p.write_text('\n'.join(line.rstrip() for line in p.read_text().splitlines()) + '\n')
+          PY
           git diff --check
       - name: Publish plan and remove temporary artifacts
         run: |
