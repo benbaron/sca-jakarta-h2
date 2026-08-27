@@ -19,9 +19,9 @@ A report must not appear in the catalog unless a real core service projection or
 
 ## Request and execution boundary
 
-P16-S6 aligns the default Report Library date request with fiscal authority. When no explicit `DateRangeContext` range is supplied, the default start is the active company fiscal-year start and the default end/as-of is the end of the shell-selected accounting period, both from the same immutable `FiscalPeriodRange` used by budget comparison. An explicit report range remains user-controlled. Preview and every export format continue to consume the exact same immutable `ReportRequest`; export does not recalculate dates from the wall clock.
+P16-S6 aligns the default Report Library date request with fiscal authority. When no explicit `DateRangeContext` range is supplied, the default start is the active company fiscal-year start and the default end/as-of is the end of the shell-selected accounting period, both from the same immutable `FiscalPeriodRange` used by budget comparison. P17-C9 extends that default authority through the life of an open Report Library panel: while those dates remain untouched defaults, a change to `ActivePeriodContext` recalculates the fiscal start/period end and regenerates the selected report. Editing either Report Library date explicitly detaches that open panel from later shell-period changes. A panel initialized from an explicit `DateRangeContext` range starts detached. This prevents a later shell-period change from overwriting a deliberate report-specific request.
 
-`ReportRequest` is the immutable validated parameter set shared by preview, export, and Journal drill-through. It contains:
+`ReportRequest` remains the immutable validated parameter set shared by preview, export, and Journal drill-through. Preview and every export format consume the exact same request; export does not recalculate dates from the wall clock or silently substitute a newer shell period after the operator has edited report dates. It contains:
 
 - the typed report definition;
 - normalized start/end or as-of dates;
@@ -155,8 +155,7 @@ the metadata-driven core Balance Sheet and Income Statement are the maintained f
 
 The Report Library catalog divider and parameter/preview divider are stored in company-owned UI state
 under the `reportLibrary.` prefix. Per-report core table layout is stored through the shared company
-table-state authority. The panel uses the global date range as an initial default, but report-specific
-date controls form the actual request.
+table-state authority. The panel uses the global date range as its initial date source. When that source is the default `DateRange.ALL`, the open panel follows `ActivePeriodContext` until the operator edits either report date. Report-specific date controls form the actual request, and an explicit edit or explicit initial global range remains detached from later shell-period changes.
 
 ## Validation
 
@@ -164,6 +163,8 @@ Required automated coverage includes:
 
 - catalog completeness and no placeholder entries;
 - date/fund/row-limit request validation;
+- default-following Report Library dates update from `ActivePeriodContext` through the company fiscal-range authority;
+- operator-edited or explicitly supplied date ranges remain unchanged across later shell-period changes;
 - selected-fund filtering against authoritative ledger data;
 - All Accounts and stable-ID single-account filtering for General Ledger Detail and Transactions List;
 - company-formatted visible text with stable raw CSV;
