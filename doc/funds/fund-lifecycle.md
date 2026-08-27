@@ -25,6 +25,8 @@ An active Fund must have an active parent hierarchy.
 
 Interactive hierarchy writes and protected deletion serialize through a pessimistic lock on the owning Company so the check and mutation cannot race another Fund hierarchy change.
 
+For a legacy database that already contains an invalid active child beneath an inactive or circular parent hierarchy, `FundLookupService.listActiveFunds()` fails closed and omits that child from production active-Fund selectors. `listAllFunds()` still returns the retained row so the **Funds** maintenance panel can repair or retire it without losing history.
+
 ## SCLX boundary
 
 SCLX does not bypass this lifecycle contract.
