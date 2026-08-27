@@ -158,7 +158,7 @@ public class ProductionWorkspaceCommandRoutingTest
         FxTestSupport.onFx(() -> {
             window.openPanel(AppPanelId.LEDGER_REGISTER);
 
-            DrillThroughCoordinator.openTransactionEditorWithContext(LedgerRegisterPanel.editorContext(909L));
+            DrillThroughCoordinator.openTransactionEditorWithContext("Edit transaction Txn #909");
 
             assertTrue(window.panelHost().isOpen(AppPanelId.JOURNAL_PANE));
             assertEquals(AppPanelId.JOURNAL_PANE, window.panelHost().activePanelId());
@@ -167,12 +167,14 @@ public class ProductionWorkspaceCommandRoutingTest
     }
 
     @Test
-    public void ledgerRegisterCanOpenJournalPaneThroughDrillThroughCoordinator()
+    public void compatibilityContextCanOpenCanonicalJournalPane()
     {
         ProductionWorkspaceWindow window = FxTestSupport.onFx(ProductionWorkspaceCommandRoutingTest::newWindow);
 
         FxTestSupport.onFx(() -> {
-            DrillThroughCoordinator.openPanelWithContext(AppPanelId.JOURNAL_PANE, JournalPane.centeredContext(909L, "test"));
+            DrillThroughCoordinator.openPanelWithContext(
+                    AppPanelId.JOURNAL_PANE,
+                    "Centered on Txn #909 from routing test");
 
             assertTrue(window.panelHost().isOpen(AppPanelId.JOURNAL_PANE));
             assertEquals(AppPanelId.JOURNAL_PANE, window.panelHost().activePanelId());

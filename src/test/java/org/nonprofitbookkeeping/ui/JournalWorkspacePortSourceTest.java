@@ -44,6 +44,14 @@ class JournalWorkspacePortSourceTest
     }
 
     @Test
+    void retiredJournalPanelSourcesAreRemoved()
+    {
+        assertFalse(Files.exists(Path.of("src/main/java/org/nonprofitbookkeeping/ui/JournalPane.java")));
+        assertFalse(Files.exists(Path.of("src/main/java/org/nonprofitbookkeeping/ui/LedgerRegisterPanel.java")));
+        assertFalse(Files.exists(Path.of("src/main/java/org/nonprofitbookkeeping/ui/TransactionEditorPanel.java")));
+    }
+
+    @Test
     void complianceLayerProvidesOverallEditorScrollAndTableContractWithoutVisibleCommentary() throws Exception
     {
         String source = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/JournalWorkspaceCompliancePanel.java"));
