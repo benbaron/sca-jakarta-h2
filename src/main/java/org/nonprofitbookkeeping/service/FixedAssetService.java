@@ -1836,13 +1836,18 @@ public class FixedAssetService
         {
             throw new IllegalArgumentException("command is required");
         }
+        FixedAsset.Status requested = command.status() == null
+                ? existing.getStatus() : command.status();
+        if (requested == FixedAsset.Status.DISPOSED)
+        {
+            throw new IllegalArgumentException(
+                    "DISPOSED is created only by the governed Sale or Retirement workflow");
+        }
         if (existing.getStatus() == FixedAsset.Status.DISPOSED)
         {
             throw new IllegalStateException(
                     "A disposed asset is immutable; reverse its lifecycle event before editing it");
         }
-        FixedAsset.Status requested = command.status() == null
-                ? existing.getStatus() : command.status();
         if (requested != existing.getStatus())
         {
             throw new IllegalArgumentException(
