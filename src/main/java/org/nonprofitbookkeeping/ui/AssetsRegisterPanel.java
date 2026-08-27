@@ -401,7 +401,7 @@ public class AssetsRegisterPanel implements AppPanel
         confirmation.setContentText(targetStatus == FixedAsset.Status.INACTIVE
                 ? "Deactivation retains the asset and all accounting history but stops depreciation and Sale/Retirement/Impairment actions until the asset is reactivated.\n\nReason: " + reason
                 : "Reactivation resumes depreciation and governed financial lifecycle eligibility for this retained asset.\n\nReason: " + reason);
-        CompanyDialogUiCompliance.install(confirmation, AppPanelId.ASSETS_REGISTER);
+        CompanyDialogUiCompliance.install(confirmation.getDialogPane(), AppPanelId.ASSETS_REGISTER);
         if (confirmation.showAndWait().filter(ButtonType.OK::equals).isEmpty())
         {
             status.setText(verb + " cancelled; no asset status changed.");
