@@ -1,12 +1,12 @@
 ---
-plan_version: 228
+plan_version: 229
 active_phase: P17
-active_slice: P17-C8
+active_slice: P17-C9
 active_status: VERIFYING
-active_branch: codex/P17-C8-dashboard-compliance
-active_pull_request: 300
-active_head: c60d9ff3581e0885e4cab5f85e2358d89106837a
-next_action: "Validate the final documentation-successor head of draft PR #300 with standard Maven PR Tests, execute doc/P17-C8-dashboard-compliance-user-testing.md, and stop before merge for owner acceptance."
+active_branch: codex/P17-C9-report-library-period-sync
+active_pull_request: 301
+active_head: e81d54359b4aa6858336c6132fc626b10cce8a31
+next_action: "Validate the final PLAN-successor head of draft PR #301 with standard Maven PR Tests, execute doc/P17-C9-report-library-period-sync-user-testing.md, and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -17,7 +17,7 @@ This document is the current phase controller and execution ledger for `benbaron
 
 The former monolithic execution ledger is preserved at `doc/archive/PLAN-pre-P17-C2.md`. Current repository code, migrations, tests, merged pull requests, governing documents, and this controller are authoritative over stale historical statements.
 
-P17-C2 merged through PR #294 at `30920323fb7f2d8fd786bad7e0225ca4aa484198`. P17-C3 merged through PR #295 at `beeb8121be7bfe53fa7444bbc6187d1d7ee534fc`. P17-C4 merged through PR #296 at `e7bf80a10fcbafe2edc46261f8cfa886e70ce5d4`. P17-C5 merged through PR #297 at `2e9114a769b15c0f5e7b0a1147d84c0fe308cc53`. P17-C6 merged through PR #298 at `d067877d699f4aa05c635b52abcc0aa65d55fbc3`. P17-C7 merged through PR #299 at `e053a7430f47824529b1c55d080d596f4b5e84a5` after owner acceptance and green final-head Maven PR Tests.
+P17-C2 merged through PR #294 at `30920323fb7f2d8fd786bad7e0225ca4aa484198`. P17-C3 merged through PR #295 at `beeb8121be7bfe53fa7444bbc6187d1d7ee534fc`. P17-C4 merged through PR #296 at `e7bf80a10fcbafe2edc46261f8cfa886e70ce5d4`. P17-C5 merged through PR #297 at `2e9114a769b15c0f5e7b0a1147d84c0fe308cc53`. P17-C6 merged through PR #298 at `d067877d699f4aa05c635b52abcc0aa65d55fbc3`. P17-C7 merged through PR #299 at `e053a7430f47824529b1c55d080d596f4b5e84a5`. P17-C8 merged through PR #300 at `8f66bcfce86a411b6c1d5af6209bb062803af742` after owner acceptance and green final-head Maven PR Tests.
 
 ## 2. Status values
 
@@ -42,7 +42,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P11 | Report Library | DONE through P11-C2 / PR #284; period-context correction is P17-C9 |
 | P12-P15 | Administration, diagnostics/exchange, hardening, versioned interchange | DONE for their original phase contracts; deferred Company Admin extensions are P19 |
 | P16 | Interface-to-authority completion and integrity corrections | DONE through P16-C11 / PR #281 |
-| P17 | Cross-cutting UI, authority, cleanup, and durable-record corrections | C1-C7 DONE; C8 VERIFYING; C9-C12 queued |
+| P17 | Cross-cutting UI, authority, cleanup, and durable-record corrections | C1-C8 DONE; C9 VERIFYING; C10-C12 queued |
 | P18 | Depreciation-run workflow completion | BLOCKED pending P17 completion and batch-semantics review |
 | P19 | Deferred Company Administration extensions | BLOCKED pending explicit product requirements for each slice |
 | P20 | Authentication and runtime authorization | BLOCKED pending explicit security requirements and authorization |
@@ -129,79 +129,71 @@ Completion evidence:
 
 ### P17-C8 — Dashboard production-compliance correction
 
-Status: VERIFYING.
+Status: DONE.
 
-Branch: `codex/P17-C8-dashboard-compliance`
-Starting base: `e053a7430f47824529b1c55d080d596f4b5e84a5`
-Draft pull request: #300
-Implementation/publication head before this PLAN successor: `c60d9ff3581e0885e4cab5f85e2358d89106837a`
+Completion evidence:
 
-Audit findings that define this slice:
-
-- `DashboardHomePanel` displayed **View Ledger Register** although `LEDGER_REGISTER` is a retired compatibility alias and the canonical production destination is **Journal**.
-- The Dashboard **All Quick Links** footer targeted `AppPanelId.DASHBOARD`, so an enabled control merely reselected the panel already open rather than performing a genuine navigation or operation.
-- The Dashboard label **Import SCLX Workbook** carried obsolete workbook-centric terminology although the governed production workflow is SCLX file preview/import through Import Preview.
-
-Required reading completed:
-
-- `doc/ui_design_rules.md`
-- `doc/interface-operation-matrix.md`
-- `doc/ui/editor-guidelines.md`
-- `doc/architecture/dashboard-workspace.md`
-- `doc/data-exchange/sclx.md`
-
-Implemented deliverables:
-
-- Recent Transactions now shows **View Journal →** and routes directly to canonical `AppPanelId.JOURNAL_PANE`.
-- The New action's diagnostic text now describes the Journal entry workflow; the existing `TXN_EDITOR` compatibility identifier remains where it carries new-entry intent and still normalizes to the one Journal workspace.
-- **All Quick Links →** and its Dashboard self-target are removed rather than replaced with a new artificial destination.
-- The import quick action now shows **Import SCLX File** / **Preview and import an SCLX file** and continues to navigate only to governed Import Preview; no parsing or commit authority changed.
-- `DashboardNavigationComplianceSourceTest` rejects the retired Dashboard wording, self-targeting Dashboard link, and workbook-only SCLX copy while requiring the canonical Journal and governed import/reconciliation destinations.
-- `doc/architecture/dashboard-workspace.md` now states the Dashboard navigation contract.
-- `doc/P17-C8-dashboard-compliance-user-testing.md` records the owner desktop acceptance steps.
-
-Scope confirmation:
-
-- no accounting, dashboard-query, Journal-service, import-commit, reconciliation, persistence, or schema behavior changed;
-- the current `doc/interface-operation-matrix.md` already states canonical Journal/compatibility-alias authority and did not contain the three stale Dashboard labels, so no C8 matrix rewrite is required; the broader matrix/header reconciliation remains assigned to P17-C12;
-- two transient connector helper files were accidentally created during publication and immediately deleted. The PR's final changed-file set contains neither helper and is checked from `main` rather than inferred from commit history.
-
-Validation status:
-
-- GitHub transport compare from starting `main` shows only the intended C8 production panel, focused test, Dashboard governing doc, C8 user-test doc, and PLAN controller as final changed files.
-- Local Maven results are not claimed because this environment cannot reach GitHub/Maven through a local clone.
-- Standard Maven PR Tests on the final PR head are pending and must be inspected before owner handoff.
-
-Owner acceptance:
-
-- Execute `doc/P17-C8-dashboard-compliance-user-testing.md` only after final-head Maven PR Tests are green.
-- Do not merge until final-head GitHub validation passes and the owner accepts the checklist.
-
-Next exact action:
-
-- Validate the final documentation-successor head of draft PR #300 with standard Maven PR Tests, inspect any failing logs, then perform the owner checklist and stop before merge.
+- PR #300 merged to `main` at `8f66bcfce86a411b6c1d5af6209bb062803af742` after owner acceptance.
+- Exact final PR head `a4e46d59012bd84b41ca82dcfb4609bafaf3c8e6` passed Maven PR Tests run `33113991215`.
+- Dashboard Recent Transactions uses canonical **View Journal →** wording and direct Journal navigation.
+- The enabled self-targeting **All Quick Links →** control is removed.
+- SCLX navigation uses **Import SCLX File** / Import Preview terminology rather than obsolete workbook-only wording.
+- No accounting, persistence, Journal-service, SCLX commit, reconciliation, or schema behavior changed.
 
 ### P17-C9 — Report Library active-period synchronization
 
-Status: BLOCKED by P17-C8 completion/merge.
+Status: VERIFYING.
+
+Branch: `codex/P17-C9-report-library-period-sync`
+Starting base: `8f66bcfce86a411b6c1d5af6209bb062803af742`
+Draft pull request: #301
+Implementation/documentation head before this PLAN successor: `e81d54359b4aa6858336c6132fc626b10cce8a31`
 
 Finding:
 
-- `ReportLibraryPanel` derives its initial default dates from `ActivePeriodContext`, but unlike Dashboard/Budget views it does not currently react to a later shell active-period change. Existing tests prove initial fiscal defaults but not ongoing synchronization.
+- `ReportLibraryPanel` derived initial fiscal defaults from `ActivePeriodContext` but did not react to a later shell accounting-period change, so an open Report Library could silently retain a stale default request after the rest of the period-aware workspace moved.
 
-Purpose:
+Required reading completed:
 
-- Make the Report Library's default fiscal/as-of range follow a changed shell accounting period without overriding a report range the operator has explicitly edited.
+- `AGENTS.md`
+- `doc/PLAN.md`
+- `doc/interface-operation-matrix.md`
+- `doc/ui_design_rules.md`
+- `doc/ui/editor-guidelines.md`
+- `doc/reporting/report-library.md`
+- current `ReportLibraryPanel`, `ActivePeriodContext`, `DateRangeContext`, `BudgetVsActualPanel`, and relevant Report Library/fiscal-authority tests.
 
-Required behavior to prove before implementation is complete:
+Implemented deliverables:
 
-- default-following report controls update when the active accounting period changes;
-- once the operator explicitly changes report-specific dates, those dates remain the actual immutable `ReportRequest` until the operator resets or changes them;
-- preview and every export continue to consume the same request;
-- no wall-clock/calendar-year substitution is introduced;
-- Balance Sheet and Income Statement period-dependent headings/values update consistently when following the shell period.
+- When `DateRangeContext` is `ALL`, Report Library records that its fiscal start/end controls are still following shell defaults.
+- `ActivePeriodContext.activeDateProperty()` now updates those untouched defaults through the existing `BudgetPlanService.fiscalRange(...)` authority and regenerates the selected report once for the new period.
+- Programmatic default updates are distinguished from operator edits so they do not accidentally detach following state.
+- Editing either Report Library date explicitly detaches the open panel; later shell-period changes do not overwrite the operator's report-specific range.
+- A panel initialized from an explicit `DateRangeContext` starts detached and retains that range across later active-period changes.
+- `ReportLibraryPeriodSynchronizationIntegrationTest` covers both default-following and detached behavior through JavaFX controls and the real fiscal-range service.
+- `doc/reporting/report-library.md` records the date-following/request boundary.
+- `doc/P17-C9-report-library-period-sync-user-testing.md` records owner desktop verification, including Balance Sheet/Income Statement period behavior and preview/export request consistency.
 
-Expected files include `ReportLibraryPanel`, active-period/fiscal authority tests, report request tests, and `doc/reporting/report-library.md`.
+Scope confirmation:
+
+- no report definition, report calculation, export adapter, Journal drill-through, accounting transaction, persistence, migration, company preference, or active-period authority changed;
+- the existing immutable `ReportRequest` remains the preview/export/drill-through request authority;
+- current branch compare from merged C8 `main` contains only the Report Library panel, focused integration test, governing report documentation, C9 user-test note, and this PLAN controller.
+
+Validation status:
+
+- local Maven results are not claimed because this environment cannot resolve GitHub/Maven from a local clone;
+- draft PR #301 is open against `main`;
+- standard Maven PR Tests must pass on the final PLAN-successor head before owner handoff.
+
+Owner acceptance:
+
+- execute `doc/P17-C9-report-library-period-sync-user-testing.md` only after final-head Maven PR Tests are green;
+- do not merge until final-head GitHub validation passes and the owner accepts the checklist.
+
+Next exact action:
+
+- validate the final PLAN-successor head of draft PR #301 with standard Maven PR Tests, inspect/correct any failure, then perform the owner checklist and stop before merge.
 
 ### P17-C10 — Retire duplicate legacy UI panels and stale customer-panel catalog
 
@@ -339,6 +331,6 @@ The August 27, 2026 repository-wide panel/documentation audit is assigned as fol
 
 ## 10. Advancement rule
 
-Execute only the active slice. Do not start P17-C9 while P17-C8 is unmerged. When a corrective slice merges and its required validation/owner acceptance is complete, mark it `DONE`, activate the next unblocked slice, and update this controller from current `main`.
+Execute only the active slice. Do not start P17-C10 while P17-C9 is unmerged. When a corrective slice merges and its required validation/owner acceptance is complete, mark it `DONE`, activate the next unblocked slice, and update this controller from current `main`.
 
-The PLAN update that records PR #300 is documentation-only. `active_head` records the implementation/publication head immediately before this PLAN successor rather than attempting to self-reference the commit that contains this line. The final documentation-successor head must itself pass the standard GitHub validation before owner handoff.
+The PLAN update that records PR #301 is documentation-only. `active_head` records the implementation/documentation head immediately before this PLAN successor rather than attempting to self-reference the commit that contains this line. The final PLAN-successor head must itself pass the standard GitHub validation before owner handoff.
