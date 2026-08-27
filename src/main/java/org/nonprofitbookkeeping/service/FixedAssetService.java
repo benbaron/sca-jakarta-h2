@@ -160,7 +160,7 @@ public class FixedAssetService
 
     public FixedAssetView create(FixedAssetCommand command)
     {
-        requireInteractiveStatus(command, null);
+        requireInteractiveCreateStatus(command);
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
@@ -187,10 +187,21 @@ public class FixedAssetService
             em.getTransaction().begin();
             try
             {
-                FixedAsset asset = require(em, FixedAsset.class, assetId, "Fixed asset");
-                requireInteractiveStatus(command, asset);
+                FixedAsset asset = em.find(
+                        FixedAsset.class, assetId, LockModeType.PESSIMISTIC_WRITE);
+                if (asset == null)
+                {
+                    throw new IllegalArgumentException("Fixed asset not found: " + assetId);
+                }
+                requireInteractiveStatusUnchanged(command, asset);
+                CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
+                Company company = ownership.requireCompany(
+                        em, normalizeCompanyCode(command.companyCode()));
+                ownership.requireOwnedBy(company, asset.getCompany(), "Fixed asset");
+                FixedAsset.Status existingStatus = asset.getStatus();
                 requireLifecycleSafeUpdate(em, asset, command);
                 apply(em, asset, command);
+                asset.setStatus(existingStatus);
                 asset.touchUpdatedAt();
                 em.getTransaction().commit();
                 return load(assetId);
@@ -201,6 +212,88 @@ public class FixedAssetService
                 throw ex;
             }
         }
+    }
+
+    /** Explicit retained-history lifecycle transition for ACTIVE and INACTIVE assets. */
+    public FixedAssetView changeStatus(
+            long assetId,
+            FixedAsset.Status targetStatus,
+            String actor,
+            String reason)
+    {
+        if (targetStatus == null)
+        {
+            throw new IllegalArgumentException("targetStatus is required");
+        }
+        if (targetStatus == FixedAsset.Status.DISPOSED)
+        {
+            throw new IllegalArgumentException(
+                    "DISPOSED is created only by the governed Sale or Retirement workflow");
+        }
+        String normalizedActor = requireText(actor, "actor");
+        String normalizedReason = requireText(reason, "reason");
+        String companyCode = normalizeCompanyCode(companyCodeSupplier.get());
+
+        try (EntityManager em = jpa.em())
+        {
+            em.getTransaction().begin();
+            try
+            {
+                CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
+                Company company = ownership.requireCompany(em, companyCode);
+                if (!company.isActive())
+                {
+                    throw new IllegalStateException("Company " + company.getCode() + " is inactive");
+                }
+                FixedAsset asset = em.find(
+                        FixedAsset.class, assetId, LockModeType.PESSIMISTIC_WRITE);
+                if (asset == null)
+                {
+                    throw new IllegalArgumentException("Fixed asset not found: " + assetId);
+                }
+                ownership.requireOwnedBy(company, asset.getCompany(), "Fixed asset");
+                FixedAsset.Status before = asset.getStatus();
+                if (before == FixedAsset.Status.DISPOSED)
+                {
+                    throw new IllegalStateException(
+                            "A disposed asset is retained terminal history; reverse its Sale or Retirement before changing status");
+                }
+                if (before != targetStatus)
+                {
+                    boolean supported = (before == FixedAsset.Status.ACTIVE
+                            && targetStatus == FixedAsset.Status.INACTIVE)
+                            || (before == FixedAsset.Status.INACTIVE
+                            && targetStatus == FixedAsset.Status.ACTIVE);
+                    if (!supported)
+                    {
+                        throw new IllegalStateException(
+                                "Unsupported fixed-asset status transition: " + before + " -> " + targetStatus);
+                    }
+                    asset.setStatus(targetStatus);
+                    asset.touchUpdatedAt();
+
+                    AuditEvent audit = new AuditEvent();
+                    audit.setCompany(company);
+                    audit.setActor(normalizedActor);
+                    audit.setActionType("FIXED_ASSET_STATUS_CHANGED");
+                    audit.setEntityType("FixedAsset");
+                    audit.setEntityId(Long.toString(asset.getId()));
+                    audit.setSummary("Fixed asset " + asset.getName() + " status "
+                            + before + " -> " + targetStatus);
+                    audit.setBeforeValue("status=" + before);
+                    audit.setAfterValue("status=" + targetStatus);
+                    audit.setReason(normalizedReason);
+                    em.persist(audit);
+                }
+                em.getTransaction().commit();
+            }
+            catch (RuntimeException ex)
+            {
+                rollback(em);
+                throw ex;
+            }
+        }
+        return load(assetId);
     }
 
     public FixedAssetView load(long assetId)
@@ -292,7 +385,12 @@ public class FixedAssetService
                     throw new IllegalStateException("Company " + company.getCode() + " is inactive");
                 }
 
-                FixedAsset asset = require(em, FixedAsset.class, assetId, "Fixed asset");
+                FixedAsset asset = em.find(
+                        FixedAsset.class, assetId, LockModeType.PESSIMISTIC_WRITE);
+                if (asset == null)
+                {
+                    throw new IllegalArgumentException("Fixed asset not found: " + assetId);
+                }
                 ownership.requireOwnedBy(company, asset.getCompany(), "Fixed asset");
                 validateDepreciationEligibility(ownership, company, asset, runDate);
                 requireNoPriorRun(em, asset, runDate);
@@ -1715,7 +1813,7 @@ public class FixedAssetService
         }
     }
 
-    private static void requireInteractiveStatus(FixedAssetCommand command, FixedAsset existing)
+    private static void requireInteractiveCreateStatus(FixedAssetCommand command)
     {
         if (command == null)
         {
@@ -1723,15 +1821,32 @@ public class FixedAssetService
         }
         FixedAsset.Status requested = command.status() == null
                 ? FixedAsset.Status.ACTIVE : command.status();
-        if (requested == FixedAsset.Status.DISPOSED)
+        if (requested != FixedAsset.Status.ACTIVE)
         {
             throw new IllegalArgumentException(
-                    "DISPOSED is created only by the governed Sale or Retirement workflow");
+                    "New interactive fixed assets must start ACTIVE; use the explicit lifecycle action after creation");
         }
-        if (existing != null && existing.getStatus() == FixedAsset.Status.DISPOSED)
+    }
+
+    private static void requireInteractiveStatusUnchanged(
+            FixedAssetCommand command,
+            FixedAsset existing)
+    {
+        if (command == null)
+        {
+            throw new IllegalArgumentException("command is required");
+        }
+        if (existing.getStatus() == FixedAsset.Status.DISPOSED)
         {
             throw new IllegalStateException(
                     "A disposed asset is immutable; reverse its lifecycle event before editing it");
+        }
+        FixedAsset.Status requested = command.status() == null
+                ? existing.getStatus() : command.status();
+        if (requested != existing.getStatus())
+        {
+            throw new IllegalArgumentException(
+                    "Fixed asset status changes use the explicit lifecycle action");
         }
     }
 

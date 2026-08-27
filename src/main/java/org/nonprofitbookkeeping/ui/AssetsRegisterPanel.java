@@ -54,7 +54,11 @@ public class AssetsRegisterPanel implements AppPanel
     private final ComboBox<Account> depreciationExpenseAccount = new ComboBox<>();
     private final ComboBox<Fund> fund = new ComboBox<>();
     private final ComboBox<Integer> usefulLifeMonths = new ComboBox<>();
-    private final ComboBox<FixedAsset.Status> statusChoice = new ComboBox<>();
+    private final Label lifecycleStatus = new Label("ACTIVE");
+    private final TextField lifecycleActor = new TextField(System.getProperty("user.name", "operator"));
+    private final TextField lifecycleReason = new TextField();
+    private final Button deactivateAsset = new Button("Deactivate Asset");
+    private final Button reactivateAsset = new Button("Reactivate Asset");
     private final TextField name = new TextField();
     private final DatePicker acquisitionDate = new DatePicker(LocalDate.now());
     private final TextField acquisitionCost = new TextField("0.00");
@@ -67,6 +71,7 @@ public class AssetsRegisterPanel implements AppPanel
     private final FormDirtyTracker dirtyState;
     private List<Account> postingAccounts = List.of();
     private Long selectedAssetId;
+    private FixedAsset.Status editingStatus = FixedAsset.Status.ACTIVE;
     private boolean suppressSelection;
 
     public AssetsRegisterPanel()
@@ -84,6 +89,14 @@ public class AssetsRegisterPanel implements AppPanel
         Button save = new Button("Save Asset");
         save.disableProperty().bind(busy);
         save.setOnAction(e -> saveAsset());
+        deactivateAsset.setId("deactivateFixedAssetButton");
+        deactivateAsset.setDisable(true);
+        deactivateAsset.setOnAction(e -> changeSelectedStatus(FixedAsset.Status.INACTIVE));
+        reactivateAsset.setId("reactivateFixedAssetButton");
+        reactivateAsset.setDisable(true);
+        reactivateAsset.setOnAction(e -> changeSelectedStatus(FixedAsset.Status.ACTIVE));
+        busy.addListener((obs, oldValue, newValue) ->
+                updateLifecycleActions(table.getSelectionModel().getSelectedItem()));
         Button lifecycle = new Button("Record Lifecycle Event...");
         lifecycle.setId("recordFixedAssetLifecycleButton");
         lifecycle.disableProperty().bind(
@@ -98,7 +111,9 @@ public class AssetsRegisterPanel implements AppPanel
         drill.disableProperty().bind(
                 busy.or(lifecycleTable.getSelectionModel().selectedItemProperty().isNull()));
         drill.setOnAction(e -> drillSelectedLifecycleEvent());
-        FlowPane actions = new FlowPane(8, 6, refresh, newAsset, save, lifecycle, reverse, drill);
+        FlowPane actions = new FlowPane(
+                8, 6, refresh, newAsset, save, deactivateAsset, reactivateAsset,
+                lifecycle, reverse, drill);
 
         root.setTop(new VBox(6, title, actions, status, new Separator()));
         configureTable();
@@ -160,14 +175,24 @@ public class AssetsRegisterPanel implements AppPanel
         form.add(new Label("Opening accumulated depreciation"), 0, row);
         form.add(openingAccumulatedDepreciation, 1, row++);
         form.add(new Label("Status"), 0, row);
-        form.add(statusChoice, 1, row++);
+        form.add(lifecycleStatus, 1, row++);
         notes.setPrefRowCount(2);
         form.add(new Label("Notes"), 0, row);
-        form.add(notes, 1, row);
+        form.add(notes, 1, row++);
+        lifecycleActor.setPromptText("Factual operator");
+        lifecycleReason.setPromptText("Required for Activate / Deactivate");
+        form.add(new Label("Lifecycle actor"), 0, row);
+        form.add(lifecycleActor, 1, row++);
+        form.add(new Label("Lifecycle reason"), 0, row);
+        form.add(lifecycleReason, 1, row++);
+        Label lifecycleGuidance = new Label(
+                "Fixed assets are retained and never physically deleted. Deactivate temporarily stops depreciation and financial lifecycle actions; Reactivate resumes them. Use Sale or Retirement for financial disposal; DISPOSED remains retained history until that lifecycle event is reversed.");
+        lifecycleGuidance.setWrapText(true);
+        form.add(lifecycleGuidance, 0, row, 2, 1);
         for (Node field : java.util.List.of(
                 name, assetAccount, accumulatedDepreciationAccount, depreciationExpenseAccount,
                 fund, acquisitionDate, acquisitionCost, salvageValue, usefulLifeMonths,
-                openingAccumulatedDepreciation, statusChoice, notes))
+                openingAccumulatedDepreciation, notes, lifecycleActor, lifecycleReason))
         {
             GridPane.setHgrow(field, Priority.ALWAYS);
         }
@@ -201,6 +226,7 @@ public class AssetsRegisterPanel implements AppPanel
                 return;
             }
             fillForm(selected);
+            updateLifecycleActions(selected);
         });
     }
 
@@ -284,9 +310,6 @@ public class AssetsRegisterPanel implements AppPanel
         });
         usefulLifeMonths.setItems(FXCollections.observableArrayList(36, 60, 84));
         usefulLifeMonths.getSelectionModel().select(Integer.valueOf(60));
-        statusChoice.setItems(FXCollections.observableArrayList(
-                FixedAsset.Status.ACTIVE, FixedAsset.Status.INACTIVE));
-        statusChoice.getSelectionModel().select(FixedAsset.Status.ACTIVE);
     }
 
     private void reload()
@@ -349,6 +372,71 @@ public class AssetsRegisterPanel implements AppPanel
         {
             status.setText("Could not save fixed asset: " + UiErrors.safeMessage(ex));
         }
+    }
+
+    private void changeSelectedStatus(FixedAsset.Status targetStatus)
+    {
+        FixedAssetView selected = table.getSelectionModel().getSelectedItem();
+        if (selected == null)
+        {
+            status.setText("Select a fixed asset before changing its lifecycle status.");
+            return;
+        }
+        if (dirtyState.isDirty())
+        {
+            status.setText("Save or discard the current asset edits before changing lifecycle status.");
+            return;
+        }
+        String actor = lifecycleActor.getText() == null ? "" : lifecycleActor.getText().trim();
+        String reason = lifecycleReason.getText() == null ? "" : lifecycleReason.getText().trim();
+        if (actor.isBlank() || reason.isBlank())
+        {
+            status.setText("Lifecycle actor and reason are required.");
+            return;
+        }
+        String verb = targetStatus == FixedAsset.Status.INACTIVE ? "Deactivate" : "Reactivate";
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle(verb + " Fixed Asset");
+        confirmation.setHeaderText(verb + " " + selected.name() + "?");
+        confirmation.setContentText(targetStatus == FixedAsset.Status.INACTIVE
+                ? "Deactivation retains the asset and all accounting history but stops depreciation and Sale/Retirement/Impairment actions until the asset is reactivated.
+
+Reason: " + reason
+                : "Reactivation resumes depreciation and governed financial lifecycle eligibility for this retained asset.
+
+Reason: " + reason);
+        CompanyDialogUiCompliance.install(confirmation, AppPanelId.ASSETS_REGISTER);
+        if (confirmation.showAndWait().filter(ButtonType.OK::equals).isEmpty())
+        {
+            status.setText(verb + " cancelled; no asset status changed.");
+            return;
+        }
+        busy.set(true);
+        updateLifecycleActions(selected);
+        status.setText(verb + "ing fixed asset...");
+        UiAsync.run("fixed-asset-status-change",
+                () -> UiServiceRegistry.fixedAssets().changeStatus(
+                        selected.id(), targetStatus, actor, reason),
+                changed -> {
+                    editingStatus = changed.status();
+                    lifecycleStatus.setText(changed.status().name());
+                    lifecycleReason.clear();
+                    dirtyState.markClean();
+                    reload(verb + "d fixed asset " + changed.name() + ".");
+                },
+                ex -> {
+                    busy.set(false);
+                    updateLifecycleActions(selected);
+                    status.setText("Could not " + verb.toLowerCase() + " fixed asset: "
+                            + UiErrors.safeMessage(ex));
+                });
+    }
+
+    private void updateLifecycleActions(FixedAssetView selected)
+    {
+        boolean unavailable = busy.get() || selected == null;
+        deactivateAsset.setDisable(unavailable || selected.status() != FixedAsset.Status.ACTIVE);
+        reactivateAsset.setDisable(unavailable || selected.status() != FixedAsset.Status.INACTIVE);
     }
 
     private void recordLifecycleEvent()
@@ -612,7 +700,7 @@ public class AssetsRegisterPanel implements AppPanel
                 requireSelected(usefulLifeMonths, "useful life"),
                 FixedAsset.DepreciationMethod.STRAIGHT_LINE,
                 money(openingAccumulatedDepreciation.getText()),
-                requireSelected(statusChoice, "status"),
+                editingStatus,
                 notes.getText());
     }
 
@@ -629,25 +717,16 @@ public class AssetsRegisterPanel implements AppPanel
         salvageValue.setText(asset.salvageValue().toPlainString());
         openingAccumulatedDepreciation.setText(asset.openingAccumulatedDepreciation().toPlainString());
         usefulLifeMonths.getSelectionModel().select(Integer.valueOf(asset.usefulLifeMonths()));
-        if (asset.status() == FixedAsset.Status.DISPOSED)
-        {
-            statusChoice.getItems().setAll(
-                    FixedAsset.Status.ACTIVE,
-                    FixedAsset.Status.INACTIVE,
-                    FixedAsset.Status.DISPOSED);
-        }
-        else
-        {
-            statusChoice.getItems().setAll(FixedAsset.Status.ACTIVE, FixedAsset.Status.INACTIVE);
-        }
-        statusChoice.getSelectionModel().select(asset.status());
-        statusChoice.setDisable(asset.status() == FixedAsset.Status.DISPOSED);
+        editingStatus = asset.status();
+        lifecycleStatus.setText(asset.status().name());
+        lifecycleReason.clear();
         notes.setText(asset.notes());
         selectAccountById(assetAccount, asset.assetAccountId());
         selectAccountById(accumulatedDepreciationAccount, asset.accumulatedDepreciationAccountId());
         selectAccountById(depreciationExpenseAccount, asset.depreciationExpenseAccountId());
         selectFundById(fund, asset.fundId());
         setAssetFormDisabled(asset.status() == FixedAsset.Status.DISPOSED);
+        updateLifecycleActions(asset);
         dirtyState.markClean();
     }
 
@@ -660,9 +739,11 @@ public class AssetsRegisterPanel implements AppPanel
         salvageValue.setText("0.00");
         openingAccumulatedDepreciation.setText("0.00");
         notes.clear();
-        statusChoice.getItems().setAll(FixedAsset.Status.ACTIVE, FixedAsset.Status.INACTIVE);
+        editingStatus = FixedAsset.Status.ACTIVE;
+        lifecycleStatus.setText(FixedAsset.Status.ACTIVE.name());
+        lifecycleReason.clear();
         setAssetFormDisabled(false);
-        statusChoice.getSelectionModel().select(FixedAsset.Status.ACTIVE);
+        updateLifecycleActions(null);
         usefulLifeMonths.getSelectionModel().select(Integer.valueOf(60));
         table.getSelectionModel().clearSelection();
         status.setText("Ready to enter a new fixed asset.");
@@ -674,7 +755,7 @@ public class AssetsRegisterPanel implements AppPanel
         for (Node field : List.of(
                 name, assetAccount, accumulatedDepreciationAccount, depreciationExpenseAccount,
                 fund, acquisitionDate, acquisitionCost, salvageValue, usefulLifeMonths,
-                openingAccumulatedDepreciation, statusChoice, notes))
+                openingAccumulatedDepreciation, notes))
         {
             field.setDisable(disabled);
         }
@@ -686,7 +767,7 @@ public class AssetsRegisterPanel implements AppPanel
                 name.getText(), selectedId(assetAccount), selectedId(accumulatedDepreciationAccount),
                 selectedId(depreciationExpenseAccount), selectedId(fund), acquisitionDate.getValue(),
                 acquisitionCost.getText(), salvageValue.getText(), usefulLifeMonths.getValue(),
-                openingAccumulatedDepreciation.getText(), statusChoice.getValue(), notes.getText());
+                openingAccumulatedDepreciation.getText(), notes.getText());
     }
 
     private static Long selectedId(ComboBox<?> box)
@@ -812,7 +893,6 @@ public class AssetsRegisterPanel implements AppPanel
             String salvageValue,
             Integer usefulLifeMonths,
             String openingAccumulatedDepreciation,
-            FixedAsset.Status status,
             String notes)
     {
     }
