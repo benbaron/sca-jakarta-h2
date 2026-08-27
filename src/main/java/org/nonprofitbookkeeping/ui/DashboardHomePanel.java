@@ -141,7 +141,7 @@ public final class DashboardHomePanel implements AppPanel
     @Override
     public void onNew()
     {
-        UiDebug.log("dashboard", "New action requested; opening Transaction Editor.");
+        UiDebug.log("dashboard", "New action requested; opening Journal entry workflow.");
         open(AppPanelId.TXN_EDITOR, "Dashboard: new transaction");
     }
 
@@ -322,9 +322,9 @@ public final class DashboardHomePanel implements AppPanel
     {
         configureRecentTransactions();
         Label showing = muted("Showing up to " + RECENT_TRANSACTION_LIMIT + " transactions");
-        Hyperlink viewLedger = link("View Ledger Register  →", AppPanelId.LEDGER_REGISTER);
+        Hyperlink viewJournal = link("View Journal  →", AppPanelId.JOURNAL_PANE);
         return card("Recent Transactions",
-                tableAndFooter(recentTransactions, footer(showing, viewLedger), "dashboard-recent-transactions"),
+                tableAndFooter(recentTransactions, footer(showing, viewJournal), "dashboard-recent-transactions"),
                 null);
     }
 
@@ -362,16 +362,15 @@ public final class DashboardHomePanel implements AppPanel
                         () -> open(AppPanelId.TXN_EDITOR, "Dashboard: journal entry")),
                 quickLink(
                         "⇩",
-                        "Import SCLX Workbook",
-                        "Import from the bookkeeping workbook",
-                        () -> open(AppPanelId.IMPORT_PREVIEW, "Dashboard: import")),
+                        "Import SCLX File",
+                        "Preview and import an SCLX file",
+                        () -> open(AppPanelId.IMPORT_PREVIEW, "Dashboard: SCLX import")),
                 quickLink(
                         "✓",
                         "Reconcile Bank Account",
                         "Open reconciliation window",
                         () -> open(AppPanelId.RECONCILIATION_RUNS, "Dashboard: reconciliation")));
-        Hyperlink all = link("All Quick Links  →", AppPanelId.DASHBOARD);
-        return card("Quick Links", links, footer(new Label(), all));
+        return card("Quick Links", links, null);
     }
 
     private void configureRecentTransactions()
