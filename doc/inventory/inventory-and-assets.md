@@ -120,7 +120,9 @@ P16-S14 distinguishes three financially authoritative lifecycle operations:
 - **Retirement** removes the asset from service with no proceeds and recognizes the remaining carrying amount as a loss.
 - **Impairment** keeps the asset active while reducing its carrying amount by an explicitly entered impairment loss.
 
-The editable Asset Register status is limited to `ACTIVE` and `INACTIVE`. `DISPOSED` is a service-owned result of a confirmed Sale or Retirement; it cannot be selected or cleared through ordinary asset editing. A disposed asset returns to its former lifecycle state only when its linked canonical transaction is reversed through the asset lifecycle workflow.
+Fixed-asset status is service-owned lifecycle state rather than ordinary editable metadata. Interactive creation starts `ACTIVE`; ordinary asset editing preserves the current status. Explicit **Deactivate Asset** and **Reactivate Asset** actions govern `ACTIVE <-> INACTIVE` transitions with a factual actor, nonblank reason, and `AuditEvent`. `DISPOSED` remains a service-owned result of a confirmed Sale or Retirement; it cannot be selected, produced by the ACTIVE/INACTIVE lifecycle action, or cleared through ordinary asset editing. A disposed asset returns to its former lifecycle state only when its linked canonical transaction is reversed through the asset lifecycle workflow.
+
+Deactivation is nonfinancial retained history: it stops depreciation and Sale/Retirement/Impairment eligibility without derecognizing the asset or changing carrying value. Reactivation resumes those governed operations. A financial disposal still requires Sale or Retirement. Fixed assets are never physically deleted from this maintenance surface.
 
 ### Preview and accounting policy
 
@@ -175,3 +177,14 @@ Interactive item creation starts `ACTIVE`. Ordinary item editing preserves the e
 Status transitions acquire the same pessimistic item lock used by confirmed quantity movements, so a movement cannot race a retirement into an invalid stranded balance. The status change and its factual `AuditEvent` commit atomically. Movement history, canonical transaction links, portable identity, and item metadata remain attached to the same durable item.
 
 `createForImport(...)` remains a caller-owned historical restore seam. It may restore an already inactive or disposed source item with its source status and timestamps without fabricating a new local lifecycle event; normal interactive writes cannot use that seam to bypass lifecycle rules.
+
+
+## P17-C7 fixed-asset status lifecycle authority
+
+`FixedAsset.id` remains the durable identity for metadata, depreciation runs, lifecycle events, canonical transactions, and reports. Interactive ACTIVE/INACTIVE transitions use `FixedAssetService.changeStatus(...)`; ordinary metadata updates cannot change status, and interactive creation cannot begin INACTIVE or DISPOSED.
+
+Metadata updates, explicit ACTIVE/INACTIVE changes, monthly depreciation, financial lifecycle commit, and lifecycle reversal all serialize through a pessimistic lock on the same `FixedAsset` row before revalidation and mutation. This prevents stale metadata or status writes from racing a depreciation run or Sale/Retirement/Impairment operation into inconsistent asset state.
+
+`DISPOSED` remains financially authoritative terminal state while its Sale/Retirement is unreversed. It can be undone only by the governed lifecycle reversal, which restores the event's prior status and reverses canonical accounting. The ACTIVE/INACTIVE action never creates or clears DISPOSED.
+
+SCLX `createForImport(...)` remains a caller-owned historical restore seam. It may restore the source status and timestamps without fabricating a local ACTIVE/INACTIVE audit transition; interactive callers cannot use that seam.

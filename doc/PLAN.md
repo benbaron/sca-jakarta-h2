@@ -1,12 +1,12 @@
 ---
-plan_version: 223
+plan_version: 226
 active_phase: P17
-active_slice: P17-C6
+active_slice: P17-C7
 active_status: VERIFYING
-active_branch: codex/P17-C6-fund-hierarchy-lifecycle
-active_pull_request: 298
-active_head: d114005f4e63374bda56a6c547080b2fe2e95d93
-next_action: "Complete the owner Fund hierarchy lifecycle checklist for PR #298 and stop before merge until owner acceptance."
+active_branch: codex/P17-C7-fixed-asset-lifecycle
+active_pull_request: 299
+active_head: 716748540ac4d77dbb32ec6afc99391614fbd258
+next_action: "Validate the documentation-only successor head with standard Maven PR Tests, then execute doc/P17-C7-fixed-asset-lifecycle-user-testing.md and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -42,7 +42,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P11 | Report Library | DONE through P11-C2 / PR #284 |
 | P12-P15 | Administration, diagnostics/exchange, hardening, versioned interchange | DONE |
 | P16 | Interface-to-authority completion and integrity corrections | DONE through P16-C11 / PR #281 |
-| P17 | Cross-cutting UI and durable-record lifecycle corrections | C1 DONE; C2 DONE; C3 DONE; C4 DONE; C5 DONE; C6 VERIFYING |
+| P17 | Cross-cutting UI and durable-record lifecycle corrections | C1 DONE; C2 DONE; C3 DONE; C4 DONE; C5 DONE; C6 DONE; C7 VERIFYING |
 
 ## 4. Established product decisions
 
@@ -111,80 +111,79 @@ Completion evidence:
 
 ### P17-C6 — Fund hierarchy lifecycle integrity
 
+Status: DONE.
+
+Completion evidence:
+
+- PR #298 merged to `main` at `d067877d699f4aa05c635b52abcc0aa65d55fbc3` after owner acceptance.
+- Exact final C6 PR head `2c9ebaf804d07b744554b35f03f5a70bc82e764d` passed Maven PR Tests run `33029795711`.
+- Exact merged-main push run `33033595424` passed clean verify, repeat tests, and production JavaFX route compliance.
+- Active Fund ancestry is enforced across interactive administration, active lookup, and SCLX import/export; lifecycle writes serialize on company authority while inactive hierarchy history remains retained.
+
+### P17-C7 — Fixed-asset status lifecycle completion
+
 Status: VERIFYING.
 
-Branch: `codex/P17-C6-fund-hierarchy-lifecycle`
-Starting base: `2e9114a769b15c0f5e7b0a1147d84c0fe308cc53`
-Pull request: #298 (draft)
-Verified product head: `d114005f4e63374bda56a6c547080b2fe2e95d93`
+Branch: `codex/P17-C7-fixed-asset-lifecycle`
+Starting base: `d067877d699f4aa05c635b52abcc0aa65d55fbc3`
+Pull request: #299
+Verified product/test head: `716748540ac4d77dbb32ec6afc99391614fbd258`
 
 Required reading:
 
 - `doc/ui_design_rules.md`
 - `doc/interface-operation-matrix.md`
 - `doc/ui/editor-guidelines.md`
-- `doc/data-exchange/sclx.md`
-- donor Fund model only as design reference; donor persistence is not authoritative
+- `doc/inventory/inventory-and-assets.md`
+- `doc/data-exchange/sclx.md` for the historical restore boundary
 
 Required implementation/test inspection:
 
-- `src/main/java/org/nonprofitbookkeeping/model/Fund.java`
-- `src/main/java/org/nonprofitbookkeeping/service/FundCommand.java`
-- `src/main/java/org/nonprofitbookkeeping/service/FundAdminService.java`
-- `src/main/java/org/nonprofitbookkeeping/service/FundLookupService.java`
-- `src/main/java/org/nonprofitbookkeeping/ui/FundsPanel.java`
-- `src/main/java/org/nonprofitbookkeeping/interchange/sclx/SclxStructureValidator.java`
-- `src/main/java/org/nonprofitbookkeeping/interchange/sclx/SclxExportDocumentValidator.java`
-- `src/main/java/org/nonprofitbookkeeping/interchange/sclx/SclxImportCommitService.java`
-- focused Fund and SCLX tests plus current production-route/core-editor compliance tests
+- `src/main/java/org/nonprofitbookkeeping/model/FixedAsset.java`
+- `src/main/java/org/nonprofitbookkeeping/service/FixedAssetCommand.java`
+- `src/main/java/org/nonprofitbookkeeping/service/FixedAssetService.java`
+- `src/main/java/org/nonprofitbookkeeping/ui/AssetsRegisterPanel.java`
+- fixed-asset service/lifecycle/SCLX tests and current production-route/core-editor compliance tests
 
 Purpose:
 
-- Close the Fund hierarchy lifecycle integrity gap without changing fund accounting authority, transaction posting, or introducing a second fund model.
-- Preserve stable Fund identity/history while ensuring an active child cannot be maintained beneath an inactive parent hierarchy.
-- Apply the same invariant to SCLX validation/import/export so interchange cannot bypass interactive lifecycle rules.
+- Complete one fixed-asset lifecycle authority without changing Sale, Retirement, Impairment, depreciation calculations, or canonical ledger behavior.
+- Preserve stable `FixedAsset.id` history while removing ACTIVE/INACTIVE status mutation from ordinary metadata editing.
+- Keep `DISPOSED` exclusively owned by confirmed Sale/Retirement and restored only by domain lifecycle reversal.
 
-Audit finding and selected direction:
+Implemented authority boundary:
 
-- `FundsPanel` already used stable IDs, real protected `Delete Unused`, Active/inactive state, retained-history guidance, H2-backed layout state, and company date formatting.
-- `FundAdminService.apply(...)` previously copied `command.active()` and a validated parent independently. It allowed an active child beneath an inactive parent and allowed a parent to be deactivated while active children remained.
-- `FundLookupService.listActiveFunds()` previously filtered only the child row's Active flag, so a legacy invalid active child beneath an inactive ancestor could remain selectable by production posting/reference-data consumers.
-- SCLX previously wrote Fund parent/status directly and validated only that exported parent IDs resolved, so interchange could manufacture or serialize the same invalid hierarchy.
-- The donor Fund model contains the same basic parent/Active fields but no stronger lifecycle authority worth porting.
-
-Delivered:
-
-- `FundAdminService.save(...)`, compatibility `upsert(...)`, and protected `deleteUnused(...)` serialize on the owning Company with a pessimistic write lock.
-- Every active Fund now requires active parent ancestry. Active creation, reactivation, and reparenting beneath an inactive parent are rejected.
-- Parent deactivation is rejected while direct active child Funds remain, establishing child-first retirement/reparenting and parent-first reactivation while preserving inactive hierarchy as retained history.
-- Existing self-parent and circular-parent protections remain in force, and the real `Delete Unused` operation remains limited to completely unreferenced Funds.
-- `FundLookupService.listActiveFunds()` fails closed for a legacy invalid active row beneath an inactive or circular ancestry, while `listAllFunds()` keeps that row visible for maintenance/repair.
-- `FundsPanel` visibly explains hierarchy retirement/reactivation order without adding a placeholder Delete operation.
-- SCLX structure validation resolves Fund parent references, rejects circular Fund hierarchies, and rejects active-child/inactive-parent source graphs before commit.
-- SCLX export validation refuses to serialize the same invalid Fund hierarchy.
-- SCLX Fund creation serializes on the same Company authority and defensively rechecks active parent ancestry during commit.
-- Added H2 lifecycle regressions, legacy active-lookup regression, SCLX structure/export regressions, source/UI guardrails, `doc/funds/fund-lifecycle.md`, matrix updates, and the owner checklist `doc/P17-C6-fund-hierarchy-lifecycle-user-testing.md`.
-- No schema migration, parallel Fund model, alternate Fund store, or change to posting/budget/report/transfer accounting semantics was introduced.
+- Interactive fixed-asset creation starts ACTIVE. Ordinary metadata updates preserve the persisted lifecycle status and reject direct status changes.
+- `FixedAssetService.changeStatus(...)` owns explicit ACTIVE <-> INACTIVE transitions, requires factual actor/reason, writes `FIXED_ASSET_STATUS_CHANGED` audit facts, and cannot create or clear DISPOSED.
+- DISPOSED remains the governed result of Sale/Retirement and can return only through the existing domain lifecycle reversal that reverses canonical accounting and restores prior status.
+- Ordinary metadata update, explicit ACTIVE/INACTIVE status change, monthly depreciation, financial lifecycle commit, and lifecycle reversal serialize through a pessimistic lock on the same `FixedAsset` row.
+- SCLX `createForImport(...)` remains the caller-owned historical source-status/timestamp restore seam and does not synthesize interactive lifecycle audit facts.
+- Asset Register now shows read-only lifecycle status, explicit Deactivate Asset / Reactivate Asset, factual actor/reason, retained-history/no-delete guidance, and the existing Sale/Retirement/Impairment/reversal controls.
 
 Validation status:
 
-- Exact starting `main` is `2e9114a769b15c0f5e7b0a1147d84c0fe308cc53`.
-- C5 merged-main Maven PR Tests run `33028403587` succeeded and is the C6 baseline.
-- Exact C6 product head `d114005f4e63374bda56a6c547080b2fe2e95d93` passed normal pull-request Maven PR Tests run `33029386185`.
-- Run `33029386185` passed all three required gates: clean headless `mvn clean verify`, repeat full `mvn test`, and production JavaFX route compliance under Xvfb.
-- The earlier run `33029258888` was cancelled because the PR head moved during the final code audit and is not counted as validation evidence.
-- No local Maven result is claimed.
-- This controller update and the preceding lifecycle-contract clarification are documentation-only changes after the green product head; final-head GitHub validation is required before owner handoff is complete.
+- Exact starting `main` is `d067877d699f4aa05c635b52abcc0aa65d55fbc3`.
+- Merged-main Maven PR Tests push run `33033595424` passed all three repository gates and is the C7 baseline.
+- Publication source assertions and `git diff --check` passed; no local Maven result is claimed.
+- Initial PR run `33034308490` failed during compile because the new confirmation dialog passed `Alert` where `CompanyDialogUiCompliance.install(...)` requires a `DialogPane`.
+- The repository-approved `confirmation.getDialogPane()` correction was published and temporary publisher artifacts were removed.
+- A later full Maven PR Tests execution exposed the established DISPOSED exception-contract ordering: an ordinary update that explicitly requests `DISPOSED` must fail with `IllegalArgumentException`, while an already-DISPOSED durable row remains immutable through ordinary editing/reactivation and fails with `IllegalStateException`. The service guard was corrected in commit `11fd8109eba045868a209101601a1688a0bfde94`.
+- Maven PR Tests run `33039681065` on head `6a7820dfd8a609ecc0690c7451dd7461561b4702` still failed in the test gate. Audit of that exact tree found `FixedAssetStatusLifecycleTest.interactiveCreationStartsActiveAndDisposedHistoryCannotBeReactivated` still carried the obsolete `IllegalStateException` expectation for an explicit `Status.DISPOSED` update.
+- Commit `716748540ac4d77dbb32ec6afc99391614fbd258` aligned that regression test with the preserved service contract without changing product semantics.
+- Exact product/test head `716748540ac4d77dbb32ec6afc99391614fbd258` passed standard Maven PR Tests run `33093565617`: clean headless verification, repeat tests, and production JavaFX route compliance all succeeded.
+- This PLAN reconciliation is documentation-only. The tested product/test head remains `716748540ac4d77dbb32ec6afc99391614fbd258`; the resulting documentation successor head is intentionally not self-recorded here to avoid an endless SHA-only documentation loop and must itself receive the standard PR validation before owner handoff.
 
 Known failures:
 
-- None currently known.
+- Corrected: `AssetsRegisterPanel.java` compile error from run `33034308490` (`Alert` cannot be converted to `DialogPane`).
+- Corrected: DISPOSED validation ordering changed the established exception contract; service guard ordering now preserves explicit-DISPOSED `IllegalArgumentException` versus persisted-DISPOSED immutability `IllegalStateException`.
+- Corrected: `FixedAssetStatusLifecycleTest` retained the obsolete exception expectation after the service correction; commit `716748540ac4d77dbb32ec6afc99391614fbd258` aligns the focused regression with the established contract.
 
 Owner acceptance:
 
-- Follow `doc/P17-C6-fund-hierarchy-lifecycle-user-testing.md` after final-head GitHub validation is green.
-- Do not merge until the owner accepts the checklist.
+- Use `doc/P17-C7-fixed-asset-lifecycle-user-testing.md` after final-head Maven PR Tests are green.
+- Do not merge until final-head GitHub validation passes and the owner accepts the checklist.
 
 Next exact action:
 
-- Validate the final documentation/controller head in Maven PR Tests, then stop before merge for owner desktop acceptance.
+- Validate this documentation-only successor head with the standard Maven PR Tests, then perform the owner checklist and stop before merge.
