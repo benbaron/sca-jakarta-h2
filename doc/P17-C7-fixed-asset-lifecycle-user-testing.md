@@ -11,3 +11,5 @@ Use a disposable company/database with at least one active fixed asset and valid
 7. Reverse that Sale/Retirement through **Reverse Selected Lifecycle Event**. Confirm canonical reversal accounting is created and the asset returns to its prior lifecycle status.
 8. Open **Audit History** and confirm ACTIVE/INACTIVE transitions appear as `FIXED_ASSET_STATUS_CHANGED` with the factual actor, before/after status, and entered reason.
 9. Restart/reopen the company and confirm retained statuses, asset history, lifecycle history, and table/divider state remain authoritative from H2.
+
+Verification note: C7 preserves the established update contract that a caller may not request `DISPOSED` directly; that request is rejected before disposed-record immutability is evaluated. Sale/Retirement remain the only interactive owners of the DISPOSED transition.
