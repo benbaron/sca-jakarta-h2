@@ -9,63 +9,22 @@ permissions:
   contents: write
 
 jobs:
-  patch:
+  publish:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: codex/P17-C7-fixed-asset-lifecycle
-          fetch-depth: 0
-      - name: Restore established disposed-status validation precedence
-        shell: bash
+      - name: Apply status contract correction
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('src/main/java/org/nonprofitbookkeeping/service/FixedAssetService.java')
-          text = path.read_text()
-          old = '''        if (existing.getStatus() == FixedAsset.Status.DISPOSED)
-        {
-            throw new IllegalStateException(
-                    "A disposed asset is immutable; reverse its lifecycle event before editing it");
-        }
-        FixedAsset.Status requested = command.status() == null
-                ? existing.getStatus() : command.status();
-        if (requested != existing.getStatus())
-        {
-            throw new IllegalArgumentException(
-                    "Fixed asset status changes use the explicit lifecycle action");
-        }
-'''
-          new = '''        FixedAsset.Status requested = command.status() == null
-                ? existing.getStatus() : command.status();
-        if (requested == FixedAsset.Status.DISPOSED)
-        {
-            throw new IllegalArgumentException(
-                    "DISPOSED is created only by the governed Sale or Retirement workflow");
-        }
-        if (existing.getStatus() == FixedAsset.Status.DISPOSED)
-        {
-            throw new IllegalStateException(
-                    "A disposed asset is immutable; reverse its lifecycle event before editing it");
-        }
-        if (requested != existing.getStatus())
-        {
-            throw new IllegalArgumentException(
-                    "Fixed asset status changes use the explicit lifecycle action");
-        }
-'''
-          if text.count(old) != 1:
-              raise SystemExit(f'expected exactly one status guard block, found {text.count(old)}')
-          path.write_text(text.replace(old, new))
-          PY
+          python .tmp/p17_c7_fix_status_contract.py
           git diff --check
-      - name: Commit correction and remove temporary workflow
-        shell: bash
+      - name: Publish correction and remove temporary artifacts
         run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git rm .github/workflows/tmp-p17-c7-status-contract.yml
-          git add src/main/java/org/nonprofitbookkeeping/service/FixedAssetService.java
-          git commit -m "P17-C7: preserve disposed status validation contract"
+          rm -f .tmp/p17_c7_fix_status_contract.py .github/workflows/tmp-p17-c7-status-contract.yml
+          rmdir .tmp 2>/dev/null || true
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'P17-C7: preserve disposed status validation contract'
           git push origin HEAD:codex/P17-C7-fixed-asset-lifecycle
