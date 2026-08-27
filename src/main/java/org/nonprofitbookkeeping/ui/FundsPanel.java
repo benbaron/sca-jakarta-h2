@@ -234,7 +234,7 @@ public class FundsPanel implements AppPanel
         GridPane.setHgrow(parentField, Priority.ALWAYS);
         GridPane.setHgrow(restrictionField, Priority.ALWAYS);
 
-        Label lifecycle = new Label("Clearing Active and saving deactivates a referenced fund without removing historical transactions, budgets, assets, inventory, aliases, transfers, or child-fund relationships.");
+        Label lifecycle = new Label("Clearing Active and saving deactivates a referenced fund without removing historical transactions, budgets, assets, inventory, aliases, transfers, or child-fund relationships. Active child funds require an active parent hierarchy: deactivate or reparent active children before a parent, and reactivate parents before children.");
         lifecycle.setWrapText(true);
         VBox editor = new VBox(8, new Label("Fund editor"), form, lifecycle);
         editor.setPadding(new Insets(8));

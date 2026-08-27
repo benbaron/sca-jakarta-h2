@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -35,6 +37,7 @@ public final class SclxStructureValidator
         Set<String> budgetIds = identities(budgets, "budgetId", "$.budgets", errors);
         identities(transactions, "transactionId", "$.transactions", errors);
 
+        validateFunds(funds, fundIds, errors);
         long lineCount = validateTransactions(transactions, accountIds, fundIds, budgetIds, errors);
         validateBudgets(budgets, accountIds, fundIds, errors);
         long total = accounts.size() + funds.size() + budgets.size() + transactions.size() + lineCount;
@@ -77,6 +80,61 @@ public final class SclxStructureValidator
             }
         }
         return result;
+    }
+
+    private static void validateFunds(JsonNode funds, Set<String> fundIds, List<String> errors)
+    {
+        Map<String, JsonNode> byId = new LinkedHashMap<>();
+        for (JsonNode fund : funds)
+        {
+            JsonNode id = fund == null ? null : fund.get("fundId");
+            if (fund != null && fund.isObject() && id != null && id.isTextual() && !id.textValue().isBlank())
+            {
+                byId.putIfAbsent(id.textValue(), fund);
+            }
+        }
+
+        for (int index = 0; index < funds.size(); index++)
+        {
+            JsonNode fund = funds.get(index);
+            if (!fund.isObject())
+            {
+                continue;
+            }
+            String path = "$.funds[" + index + "]";
+            reference(fund, "parentFundId", path, fundIds, false, errors);
+            JsonNode parentNode = fund.get("parentFundId");
+            if (parentNode == null || parentNode.isNull() || !parentNode.isTextual() || parentNode.textValue().isBlank())
+            {
+                continue;
+            }
+
+            boolean active = fund.has("active") && fund.get("active").isBoolean() && fund.get("active").asBoolean();
+            Set<String> visited = new HashSet<>();
+            String parentId = parentNode.textValue();
+            while (parentId != null)
+            {
+                if (!visited.add(parentId))
+                {
+                    errors.add(path + ".parentFundId creates a circular fund hierarchy");
+                    break;
+                }
+                JsonNode parent = byId.get(parentId);
+                if (parent == null)
+                {
+                    break;
+                }
+                if (active && parent.has("active") && parent.get("active").isBoolean()
+                        && !parent.get("active").asBoolean())
+                {
+                    errors.add(path + ".parentFundId places an active fund beneath inactive parent fund " + parentId);
+                    break;
+                }
+                JsonNode next = parent.get("parentFundId");
+                parentId = next != null && next.isTextual() && !next.textValue().isBlank()
+                        ? next.textValue() : null;
+            }
+        }
     }
 
     private static long validateTransactions(JsonNode transactions, Set<String> accounts,

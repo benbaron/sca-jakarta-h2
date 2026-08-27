@@ -7,8 +7,10 @@ import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /** Company-scoped fund lookup service. */
@@ -51,7 +53,7 @@ public class FundLookupService
         {
             Company company = new CompanyOwnershipService(jpa).requireCompany(em, companyCodeSupplier.get());
             String activeClause = activeOnly ? "and f.active = true " : "";
-            return em.createQuery(
+            List<Fund> funds = em.createQuery(
                             "select f from Fund f left join fetch f.parent "
                                     + "where f.company = :company "
                                     + activeClause
@@ -59,6 +61,33 @@ public class FundLookupService
                             Fund.class)
                     .setParameter("company", company)
                     .getResultList();
+            if (!activeOnly)
+            {
+                return funds;
+            }
+            return funds.stream()
+                    .filter(FundLookupService::hasActiveParentHierarchy)
+                    .toList();
         }
+    }
+
+    private static boolean hasActiveParentHierarchy(Fund fund)
+    {
+        Set<Long> visited = new HashSet<>();
+        Fund cursor = fund.getParent();
+        while (cursor != null)
+        {
+            Long cursorId = cursor.getId();
+            if (cursorId != null && !visited.add(cursorId))
+            {
+                return false;
+            }
+            if (!cursor.isActive())
+            {
+                return false;
+            }
+            cursor = cursor.getParent();
+        }
+        return true;
     }
 }

@@ -2,7 +2,9 @@ package org.nonprofitbookkeeping.interchange.sclx;
 
 import java.math.BigDecimal;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -91,10 +93,36 @@ public final class SclxExportDocumentValidator
 
     private static void validateFundParents(List<SclxExportDocument.Fund> funds, Set<String> fundIds)
     {
+        Map<String, SclxExportDocument.Fund> byId = new LinkedHashMap<>();
         for (SclxExportDocument.Fund fund : funds)
         {
+            byId.put(fund.fundId(), fund);
             requireOptionalReference(fund.parentFundId(), fundIds,
                     "fund " + fund.fundId() + " parentFundId");
+        }
+        for (SclxExportDocument.Fund fund : funds)
+        {
+            Set<String> visited = new HashSet<>();
+            String parentId = fund.parentFundId();
+            while (parentId != null)
+            {
+                if (!visited.add(parentId))
+                {
+                    throw new IllegalArgumentException(
+                            "fund " + fund.fundId() + " has a circular parent hierarchy");
+                }
+                SclxExportDocument.Fund parent = byId.get(parentId);
+                if (parent == null)
+                {
+                    break;
+                }
+                if (fund.active() && !parent.active())
+                {
+                    throw new IllegalArgumentException(
+                            "active fund " + fund.fundId() + " has inactive parent fund " + parentId);
+                }
+                parentId = parent.parentFundId();
+            }
         }
     }
 

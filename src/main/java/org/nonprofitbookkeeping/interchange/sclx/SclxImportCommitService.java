@@ -2,6 +2,7 @@ package org.nonprofitbookkeeping.interchange.sclx;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.nonprofitbookkeeping.interchange.InterchangeFormat;
 import org.nonprofitbookkeeping.interchange.InterchangeIdentityMatch;
 import org.nonprofitbookkeeping.interchange.InterchangeMessageSeverity;
@@ -640,6 +641,7 @@ public final class SclxImportCommitService
             Map<EntityKey, SclxImportEntityPreview> previews,
             int writesBefore)
     {
+        em.lock(company, LockModeType.PESSIMISTIC_WRITE);
         List<JsonNode> ordered = parentFirst(values, "fundId", "parentFundId", "fund");
         Map<String, Fund> result = new LinkedHashMap<>();
         int writes = writesBefore;
@@ -674,8 +676,11 @@ public final class SclxImportCommitService
             fund.setName(text(value, "name"));
             fund.setFundType(enumValue(FundType.class, text(value, "type"), "fund type"));
             String parentId = optionalText(value, "parentFundId");
-            fund.setParent(parentId == null ? null : required(result, parentId, "parent fund"));
-            fund.setActive(requiredBoolean(value, "active"));
+            Fund parent = parentId == null ? null : required(result, parentId, "parent fund");
+            boolean active = requiredBoolean(value, "active");
+            requireActiveFundHierarchy(parent, active, externalId);
+            fund.setParent(parent);
+            fund.setActive(active);
             fund.setEffectiveFrom(optionalDate(value, "effectiveFrom"));
             fund.setEffectiveTo(optionalDate(value, "effectiveTo"));
             fund.setRestrictionText(optionalText(value, "restrictionText"));
@@ -684,6 +689,30 @@ public final class SclxImportCommitService
             afterBusinessWrite.accept(++writes);
         }
         return result;
+    }
+
+    private static void requireActiveFundHierarchy(Fund parent, boolean active, String externalId)
+    {
+        if (!active)
+        {
+            return;
+        }
+        Set<Fund> visited = new HashSet<>();
+        Fund cursor = parent;
+        while (cursor != null)
+        {
+            if (!visited.add(cursor))
+            {
+                throw new IllegalStateException("SCLX fund hierarchy is circular for " + externalId + ".");
+            }
+            if (!cursor.isActive())
+            {
+                throw new IllegalStateException(
+                        "SCLX active fund " + externalId + " requires active parent fund "
+                                + cursor.getCode() + ".");
+            }
+            cursor = cursor.getParent();
+        }
     }
 
     private Map<String, Activity> writeActivities(
