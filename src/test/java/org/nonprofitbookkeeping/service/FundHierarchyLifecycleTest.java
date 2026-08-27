@@ -10,6 +10,7 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -73,7 +74,29 @@ class FundHierarchyLifecycleTest
             IllegalStateException reparent = assertThrows(IllegalStateException.class,
                     () -> service.save(command(active.getId(), "ACTIVE", true, inactiveParent.getId())));
             assertTrue(reparent.getMessage().contains("Reactivate parent fund OLD first"));
-            assertEquals(null, find(jpa, active.getId()).getParent());
+            assertNull(find(jpa, active.getId()).getParent());
+        }
+    }
+
+    @Test
+    void activeLookupFailsClosedForLegacyInvalidHierarchyWhileMaintenanceStillShowsIt(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("fund-hierarchy-legacy")))
+        {
+            FundAdminService service = new FundAdminService(jpa);
+            Fund parent = service.save(command(null, "LEGACYPARENT", true, null));
+            Fund child = service.save(command(null, "LEGACYCHILD", true, parent.getId()));
+
+            try (var em = jpa.em())
+            {
+                em.getTransaction().begin();
+                em.find(Fund.class, parent.getId()).setActive(false);
+                em.getTransaction().commit();
+            }
+
+            FundLookupService lookup = new FundLookupService(jpa);
+            assertFalse(lookup.listActiveFunds().stream().anyMatch(fund -> fund.getId().equals(child.getId())));
+            assertTrue(lookup.listAllFunds().stream().anyMatch(fund -> fund.getId().equals(child.getId())));
         }
     }
 
@@ -87,11 +110,10 @@ class FundHierarchyLifecycleTest
     {
         try (var em = jpa.em())
         {
-            Fund fund = em.createQuery(
+            return em.createQuery(
                             "select f from Fund f left join fetch f.parent where f.id = :id", Fund.class)
                     .setParameter("id", id)
                     .getSingleResult();
-            return fund;
         }
     }
 }
