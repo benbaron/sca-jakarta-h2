@@ -1,0 +1,30 @@
+name: Temporary P17-C6 plan activation
+
+on:
+  push:
+    branches:
+      - codex/P17-C6-fund-hierarchy-lifecycle
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Activate C6 controller
+        run: |
+          python .tmp/p17_c6_plan.py
+          git diff --check
+      - name: Publish plan and remove temporary artifacts
+        run: |
+          rm -f .tmp/p17_c6_plan.py .github/workflows/temp-p17-c6-plan.yml
+          rmdir .tmp 2>/dev/null || true
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'P17-C6: activate fund hierarchy lifecycle plan'
+          git push origin HEAD:codex/P17-C6-fund-hierarchy-lifecycle
