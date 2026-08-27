@@ -66,13 +66,18 @@ public class InventoryPanel implements AppPanel
     private final TextField custodian = new TextField();
     private final TextField storageLocation = new TextField();
     private final ComboBox<InventoryItem.Condition> condition = new ComboBox<>();
-    private final ComboBox<InventoryItem.Status> itemStatus = new ComboBox<>();
+    private final Label itemStatus = new Label(InventoryItem.Status.ACTIVE.name());
     private final TextArea notes = new TextArea();
     private final TextField movementQuantity = new TextField("1.0000");
     private final DatePicker movementDate = new DatePicker(LocalDate.now());
     private final TextField movementNotes = new TextField();
     private final ComboBox<Account> movementOffsetAccount = new ComboBox<>();
     private final TextField movementActor = new TextField("ui");
+    private final TextField lifecycleActor = new TextField("ui");
+    private final TextField lifecycleReason = new TextField();
+    private final Button deactivateItem = new Button("Deactivate Item");
+    private final Button reactivateItem = new Button("Reactivate Item");
+    private final Button disposeItem = new Button("Dispose Item");
     private final CheckBox confirmNonfinancial = new CheckBox(
             "Zero-value nonfinancial movement (no ledger transaction)");
 
@@ -80,6 +85,7 @@ public class InventoryPanel implements AppPanel
     private boolean dirty;
     private boolean editorOpen;
     private Long editingItemId;
+    private InventoryItem.Status editingStatus = InventoryItem.Status.ACTIVE;
 
     public InventoryPanel()
     {
@@ -147,6 +153,10 @@ public class InventoryPanel implements AppPanel
         newItem.setOnAction(e -> openNewItemEditor());
         Button editItem = new Button("Edit Selected");
         editItem.setOnAction(e -> openEditItemEditor());
+        deactivateItem.setOnAction(e -> changeSelectedStatus(InventoryItem.Status.INACTIVE));
+        reactivateItem.setOnAction(e -> changeSelectedStatus(InventoryItem.Status.ACTIVE));
+        disposeItem.setOnAction(e -> changeSelectedStatus(InventoryItem.Status.DISPOSED));
+        updateLifecycleActions(null);
         Button receive = new Button("Receive Quantity");
         receive.setOnAction(e -> recordMovement(InventoryMovement.MovementType.RECEIPT));
         Button issue = new Button("Issue Quantity");
@@ -159,6 +169,15 @@ public class InventoryPanel implements AppPanel
         drill.setOnAction(e -> drillSelectedMovement());
 
         HBox itemActions = new HBox(8, refresh, newItem, editItem);
+        Label lifecycleHelp = new Label(
+                "Inventory items are never physically deleted. Use governed movements to reach zero quantity before deactivation or disposal; disposed items remain terminal retained history.");
+        lifecycleHelp.setWrapText(true);
+        lifecycleActor.setPrefWidth(120);
+        lifecycleReason.setPrefWidth(300);
+        HBox lifecycleInputs = new HBox(8,
+                new Label("Lifecycle actor"), lifecycleActor,
+                new Label("Reason"), lifecycleReason);
+        HBox lifecycleActions = new HBox(8, deactivateItem, reactivateItem, disposeItem);
         HBox movementInputs = new HBox(8,
                 new Label("Movement qty"), movementQuantity,
                 new Label("Movement date"), movementDate,
@@ -181,7 +200,7 @@ public class InventoryPanel implements AppPanel
         VBox.setVgrow(itemTable, Priority.ALWAYS);
         VBox.setVgrow(movementTable, Priority.ALWAYS);
         VBox.setVgrow(split, Priority.ALWAYS);
-        listPanel.getChildren().setAll(itemActions, movementInputs, movementActions, split);
+        listPanel.getChildren().setAll(itemActions, lifecycleHelp, lifecycleInputs, lifecycleActions, movementInputs, movementActions, split);
     }
 
     private void configureItemEditorPanel()
@@ -218,6 +237,8 @@ public class InventoryPanel implements AppPanel
                 openEditItemEditor();
             }
         });
+        itemTable.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, newItem) ->
+                updateLifecycleActions(newItem));
     }
 
     private void configureMovementTable()
@@ -298,7 +319,6 @@ public class InventoryPanel implements AppPanel
         });
         movementOffsetAccount.setConverter(inventoryAccount.getConverter());
         condition.getItems().setAll(InventoryItem.Condition.values());
-        itemStatus.getItems().setAll(InventoryItem.Status.values());
     }
 
     private void reload()
@@ -401,6 +421,61 @@ public class InventoryPanel implements AppPanel
         catch (RuntimeException ex)
         {
             status.setText("Could not save inventory item: " + UiErrors.safeMessage(ex));
+        }
+    }
+
+    private void updateLifecycleActions(InventoryItemView selected)
+    {
+        boolean zeroQuantity = selected != null && selected.quantity().compareTo(BigDecimal.ZERO) == 0;
+        deactivateItem.setDisable(selected == null
+                || selected.status() != InventoryItem.Status.ACTIVE
+                || !zeroQuantity);
+        reactivateItem.setDisable(selected == null
+                || selected.status() != InventoryItem.Status.INACTIVE);
+        disposeItem.setDisable(selected == null
+                || selected.status() == InventoryItem.Status.DISPOSED
+                || !zeroQuantity);
+    }
+
+    private void changeSelectedStatus(InventoryItem.Status targetStatus)
+    {
+        InventoryItemView selected = itemTable.getSelectionModel().getSelectedItem();
+        if (selected == null)
+        {
+            status.setText("Select an inventory item before changing its lifecycle status.");
+            return;
+        }
+        try
+        {
+            String actor = requiredText(lifecycleActor, "Lifecycle actor");
+            String reason = requiredText(lifecycleReason, "Lifecycle reason");
+            if (targetStatus != InventoryItem.Status.ACTIVE)
+            {
+                Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+                confirmation.setTitle(targetStatus == InventoryItem.Status.DISPOSED
+                        ? "Dispose inventory item" : "Deactivate inventory item");
+                confirmation.setHeaderText("Change " + selected.name() + " from "
+                        + selected.status() + " to " + targetStatus + "?");
+                confirmation.setContentText(targetStatus == InventoryItem.Status.DISPOSED
+                        ? "The item must already have zero quantity. Disposal is terminal retained history; no item or movement is deleted."
+                        : "The item must already have zero quantity. The item and all movement/ledger history remain retained and it can later be reactivated.");
+                CompanyDialogUiCompliance.install(confirmation.getDialogPane(), AppPanelId.INVENTORY);
+                if (confirmation.showAndWait().filter(ButtonType.OK::equals).isEmpty())
+                {
+                    status.setText("Inventory lifecycle change cancelled.");
+                    return;
+                }
+            }
+            InventoryItemView changed = UiServiceRegistry.inventory().changeStatus(
+                    selected.id(), targetStatus, actor, reason);
+            lifecycleReason.clear();
+            reload();
+            selectItem(changed.id());
+            status.setText("Changed inventory item " + changed.name() + " to " + changed.status() + ".");
+        }
+        catch (RuntimeException ex)
+        {
+            status.setText("Could not change inventory item status: " + UiErrors.safeMessage(ex));
         }
     }
 
@@ -534,7 +609,7 @@ public class InventoryPanel implements AppPanel
                 custodian.getText(),
                 storageLocation.getText(),
                 condition.getValue(),
-                itemStatus.getValue(),
+                editingStatus,
                 notes.getText());
     }
 
@@ -555,7 +630,8 @@ public class InventoryPanel implements AppPanel
             custodian.clear();
             storageLocation.clear();
             condition.setValue(InventoryItem.Condition.UNKNOWN);
-            itemStatus.setValue(InventoryItem.Status.ACTIVE);
+            editingStatus = InventoryItem.Status.ACTIVE;
+            itemStatus.setText(editingStatus.name());
             notes.clear();
             clearValidation();
             dirty = false;
@@ -583,7 +659,8 @@ public class InventoryPanel implements AppPanel
             custodian.setText(item.custodian());
             storageLocation.setText(item.storageLocation());
             condition.setValue(item.condition());
-            itemStatus.setValue(item.status());
+            editingStatus = item.status();
+            itemStatus.setText(editingStatus.name());
             notes.setText(item.notes());
             clearValidation();
             dirty = false;
@@ -601,7 +678,7 @@ public class InventoryPanel implements AppPanel
             field.textProperty().addListener((observable, oldValue, newValue) -> markDirty());
         }
         notes.textProperty().addListener((observable, oldValue, newValue) -> markDirty());
-        for (ComboBox<?> comboBox : List.of(inventoryAccount, fund, condition, itemStatus))
+        for (ComboBox<?> comboBox : List.of(inventoryAccount, fund, condition))
         {
             comboBox.valueProperty().addListener((observable, oldValue, newValue) -> markDirty());
         }

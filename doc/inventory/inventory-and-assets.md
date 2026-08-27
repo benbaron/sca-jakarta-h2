@@ -159,3 +159,19 @@ Asset as-of values combine acquisition cost, opening accumulated depreciation, c
 Inventory as-of quantity comes from the latest persisted movement through the date. When the first movement is later than the selected date, the prior quantity is reconstructed from that movement's resulting quantity and change rather than using today's item quantity. Movement value is the persisted signed quantity change times persisted unit value. A null movement transaction remains visibly nonfinancial/unlinked.
 
 Each domain report shows canonical control-account totals beside its domain totals. Shared control accounts, fund-unallocated opening balances, nonfinancial movements, unrelated account activity, filters, and row limits can produce a difference; the exact difference and reason are shown and never normalized away. The complete predicate and calculation contract is in `doc/reporting/report-library.md`.
+
+## P17-C5 inventory item lifecycle
+
+Inventory item status is a durable lifecycle fact, not ordinary editable metadata. `InventoryItem.id` remains the stable identity for the complete item history; the application does not physically delete inventory items or their movement/ledger history.
+
+Interactive item creation starts `ACTIVE`. Ordinary item editing preserves the existing status and cannot select `INACTIVE` or `DISPOSED`. Lifecycle changes use the explicit `InventoryService.changeStatus(...)` service boundary with the active company, stable item ID, factual actor, and nonblank reason.
+
+- `ACTIVE -> INACTIVE` is allowed only when on-hand quantity is exactly zero.
+- `INACTIVE -> ACTIVE` reactivates the retained item.
+- `ACTIVE` or `INACTIVE -> DISPOSED` is allowed only at zero quantity and is terminal for interactive lifecycle operations.
+- A `DISPOSED` item is retained as history and cannot be reactivated or deactivated.
+- Nonzero inventory must be reduced through the governed movement workflow before retirement; lifecycle status never substitutes for an ISSUE or ADJUSTMENT and never changes ledger value.
+
+Status transitions acquire the same pessimistic item lock used by confirmed quantity movements, so a movement cannot race a retirement into an invalid stranded balance. The status change and its factual `AuditEvent` commit atomically. Movement history, canonical transaction links, portable identity, and item metadata remain attached to the same durable item.
+
+`createForImport(...)` remains a caller-owned historical restore seam. It may restore an already inactive or disposed source item with its source status and timestamps without fabricating a new local lifecycle event; normal interactive writes cannot use that seam to bypass lifecycle rules.

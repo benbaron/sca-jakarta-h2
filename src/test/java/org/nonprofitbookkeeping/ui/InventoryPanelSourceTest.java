@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Source-level guardrails for Inventory panel navigation. */
@@ -37,4 +38,18 @@ class InventoryPanelSourceTest
         assertTrue(source.contains("reverseMovement(preview,"));
         assertTrue(source.contains("Drill Selected Txn to Ledger"));
     }
+    @Test
+    void inventoryStatusIsServiceOwnedRatherThanDirectlyEdited() throws Exception
+    {
+        String source = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/InventoryPanel.java"));
+
+        assertTrue(source.contains("Deactivate Item"));
+        assertTrue(source.contains("Reactivate Item"));
+        assertTrue(source.contains("Dispose Item"));
+        assertTrue(source.contains("changeStatus("));
+        assertTrue(source.contains("disposed items remain terminal retained history"));
+        assertTrue(source.contains("private final Label itemStatus"));
+        assertFalse(source.contains("itemStatus.getItems().setAll(InventoryItem.Status.values())"));
+    }
+
 }
