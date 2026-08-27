@@ -106,6 +106,8 @@ public class ReportLibraryPanel implements AppPanel
     private ReportResult currentResult;
     private AssetInventoryReportQueryService.FilterCatalog domainFilterCatalog;
     private List<ReportAccountOption> reportAccounts = List.of();
+    private boolean followActivePeriodDefaults;
+    private boolean applyingActivePeriodDefaults;
 
     public ReportLibraryPanel()
     {
@@ -161,11 +163,10 @@ public class ReportLibraryPanel implements AppPanel
     private void configureParameters()
     {
         DateRange defaults = DateRangeContext.get();
-        if (defaults.startInclusive() == null && defaults.endInclusive() == null)
+        followActivePeriodDefaults = defaults.isAll();
+        if (followActivePeriodDefaults)
         {
-            FiscalPeriodRange fiscal = UiServiceRegistry.budgetPlan().fiscalRange(ActivePeriodContext.get());
-            startDate.setValue(fiscal.fiscalYearStart());
-            endDate.setValue(fiscal.periodEnd());
+            applyActivePeriodDefaults(ActivePeriodContext.get());
         }
         else
         {
@@ -206,13 +207,52 @@ public class ReportLibraryPanel implements AppPanel
         domainStatus.setPromptText("All statuses");
         domainStatus.setPrefWidth(260.0);
 
-        startDate.valueProperty().addListener((obs, oldValue, newValue) -> parametersChanged());
-        endDate.valueProperty().addListener((obs, oldValue, newValue) -> parametersChanged());
+        startDate.valueProperty().addListener((obs, oldValue, newValue) -> reportDateChanged());
+        endDate.valueProperty().addListener((obs, oldValue, newValue) -> reportDateChanged());
+        ActivePeriodContext.activeDateProperty().addListener(
+                (obs, oldValue, newValue) -> activePeriodChanged(newValue));
         fund.valueProperty().addListener((obs, oldValue, newValue) -> parametersChanged());
         rowLimit.valueProperty().addListener((obs, oldValue, newValue) -> parametersChanged());
         domainAccount.valueProperty().addListener((obs, oldValue, newValue) -> parametersChanged());
         domainSubject.valueProperty().addListener((obs, oldValue, newValue) -> parametersChanged());
         domainStatus.valueProperty().addListener((obs, oldValue, newValue) -> parametersChanged());
+    }
+
+    private void applyActivePeriodDefaults(LocalDate selectedPeriodStart)
+    {
+        FiscalPeriodRange fiscal = UiServiceRegistry.budgetPlan().fiscalRange(selectedPeriodStart);
+        applyingActivePeriodDefaults = true;
+        try
+        {
+            startDate.setValue(fiscal.fiscalYearStart());
+            endDate.setValue(fiscal.periodEnd());
+        }
+        finally
+        {
+            applyingActivePeriodDefaults = false;
+        }
+    }
+
+    private void reportDateChanged()
+    {
+        if (!applyingActivePeriodDefaults)
+        {
+            followActivePeriodDefaults = false;
+        }
+        parametersChanged();
+    }
+
+    private void activePeriodChanged(LocalDate selectedPeriodStart)
+    {
+        if (!followActivePeriodDefaults || selectedPeriodStart == null)
+        {
+            return;
+        }
+        applyActivePeriodDefaults(selectedPeriodStart);
+        if (reportList.getSelectionModel().getSelectedItem() != null)
+        {
+            runReport();
+        }
     }
 
     private void configureDomainFilterCombo(
@@ -655,6 +695,27 @@ public class ReportLibraryPanel implements AppPanel
     {
         exportFormat.getSelectionModel().select(
                 format == null ? FinancialReportExportFormat.TEXT : format);
+    }
+
+    LocalDate startDateForTests()
+    {
+        return startDate.getValue();
+    }
+
+    LocalDate endDateForTests()
+    {
+        return endDate.getValue();
+    }
+
+    boolean followsActivePeriodForTests()
+    {
+        return followActivePeriodDefaults;
+    }
+
+    void setReportDatesForTests(LocalDate start, LocalDate end)
+    {
+        startDate.setValue(start);
+        endDate.setValue(end);
     }
 
     void exportReportToPathForTests(Path path) throws IOException

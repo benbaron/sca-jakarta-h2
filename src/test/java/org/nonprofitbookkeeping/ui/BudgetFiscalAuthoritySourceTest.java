@@ -39,12 +39,16 @@ class BudgetFiscalAuthoritySourceTest
     }
 
     @Test
-    void reportDefaultsUseSameFiscalRangeWhenNoExplicitDateRangeExists() throws Exception
+    void reportDefaultsUseSameFiscalRangeAndFollowActivePeriodUntilEdited() throws Exception
     {
         String source = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/ReportLibraryPanel.java"));
 
-        assertTrue(source.contains("FiscalPeriodRange fiscal = UiServiceRegistry.budgetPlan().fiscalRange(ActivePeriodContext.get())"));
+        assertTrue(source.contains("followActivePeriodDefaults = defaults.isAll()"));
+        assertTrue(source.contains("applyActivePeriodDefaults(ActivePeriodContext.get())"));
+        assertTrue(source.contains("ActivePeriodContext.activeDateProperty().addListener"));
+        assertTrue(source.contains("fiscalRange(selectedPeriodStart)"));
         assertTrue(source.contains("startDate.setValue(fiscal.fiscalYearStart())"));
         assertTrue(source.contains("endDate.setValue(fiscal.periodEnd())"));
+        assertTrue(source.contains("followActivePeriodDefaults = false"));
     }
 }
