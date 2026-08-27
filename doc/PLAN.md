@@ -1,12 +1,12 @@
 ---
-plan_version: 224
+plan_version: 225
 active_phase: P17
 active_slice: P17-C7
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P17-C7-fixed-asset-lifecycle
-active_pull_request: pending
-active_head: d067877d699f4aa05c635b52abcc0aa65d55fbc3
-next_action: "Complete fixed-asset status lifecycle authority: make ACTIVE/INACTIVE explicit audited actions, preserve DISPOSED as Sale/Retirement-owned, serialize metadata/depreciation/lifecycle writes on the asset lock, update UI/docs/tests, publish a draft PR, run Maven PR Tests, and stop before merge for owner acceptance."
+active_pull_request: 299
+active_head: 3de0fbcc7a14da3bfa9c695996bdaff8230392e9
+next_action: "Run the standard Maven PR Tests on the final C7 branch head, correct any remaining failure, then execute doc/P17-C7-fixed-asset-lifecycle-user-testing.md and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -42,7 +42,7 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 | P11 | Report Library | DONE through P11-C2 / PR #284 |
 | P12-P15 | Administration, diagnostics/exchange, hardening, versioned interchange | DONE |
 | P16 | Interface-to-authority completion and integrity corrections | DONE through P16-C11 / PR #281 |
-| P17 | Cross-cutting UI and durable-record lifecycle corrections | C1 DONE; C2 DONE; C3 DONE; C4 DONE; C5 DONE; C6 DONE; C7 IN_PROGRESS |
+| P17 | Cross-cutting UI and durable-record lifecycle corrections | C1 DONE; C2 DONE; C3 DONE; C4 DONE; C5 DONE; C6 DONE; C7 VERIFYING |
 
 ## 4. Established product decisions
 
@@ -122,11 +122,12 @@ Completion evidence:
 
 ### P17-C7 — Fixed-asset status lifecycle completion
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P17-C7-fixed-asset-lifecycle`
 Starting base: `d067877d699f4aa05c635b52abcc0aa65d55fbc3`
-Pull request: pending
+Pull request: #299
+Product head before verification handoff: `3de0fbcc7a14da3bfa9c695996bdaff8230392e9`
 
 Required reading:
 
@@ -150,37 +151,33 @@ Purpose:
 - Preserve stable `FixedAsset.id` history while removing ACTIVE/INACTIVE status mutation from ordinary metadata editing.
 - Keep `DISPOSED` exclusively owned by confirmed Sale/Retirement and restored only by domain lifecycle reversal.
 
-Audit finding and selected direction:
+Implemented authority boundary:
 
-- The financial lifecycle is already strong: Sale/Retirement/Impairment use frozen previews, canonical transactions, lifecycle events, audit facts, and pessimistic revalidation; `DISPOSED` is not directly editable.
-- `AssetsRegisterPanel`, however, still exposes ACTIVE/INACTIVE in the ordinary asset form, and `FixedAssetService.update(...)` copies that requested status while loading the asset without a pessimistic lock.
-- `runMonthlyDepreciation(...)` likewise reads the asset without the lock used by lifecycle commit, so metadata/status/depreciation operations can race the financial lifecycle boundary.
-- Company Admin and User Admin already expose governed retained-history lifecycle behavior, while fixed assets remain the next concrete P17 durable-record gap.
-
-Planned deliverables:
-
-- Interactive asset creation starts ACTIVE; ordinary metadata updates preserve the persisted status and cannot change lifecycle state.
-- Add explicit audited ACTIVE <-> INACTIVE service actions with factual actor/reason. `DISPOSED` remains unavailable to that action and requires Sale/Retirement; disposed assets require lifecycle reversal before any reactivation/edit.
-- Serialize ordinary asset updates, explicit status changes, monthly depreciation, lifecycle commit, and lifecycle reversal through the same pessimistic `FixedAsset` lock before validating/mutating the asset.
-- Keep SCLX `createForImport(...)` as the caller-owned historical source-status restore seam without fabricating local lifecycle audit facts.
-- Replace the editable status combo with read-only status plus explicit Deactivate/Reactivate controls, retained-history/no-delete guidance, and the existing financial lifecycle controls.
-- Add focused H2 lifecycle/audit regressions, concurrency/source/UI guardrails, governing documentation/matrix updates, and an owner desktop checklist.
+- Interactive fixed-asset creation starts ACTIVE. Ordinary metadata updates preserve the persisted lifecycle status and reject direct status changes.
+- `FixedAssetService.changeStatus(...)` owns explicit ACTIVE <-> INACTIVE transitions, requires factual actor/reason, writes `FIXED_ASSET_STATUS_CHANGED` audit facts, and cannot create or clear DISPOSED.
+- DISPOSED remains the governed result of Sale/Retirement and can return only through the existing domain lifecycle reversal that reverses canonical accounting and restores prior status.
+- Ordinary metadata update, explicit ACTIVE/INACTIVE status change, monthly depreciation, financial lifecycle commit, and lifecycle reversal serialize through a pessimistic lock on the same `FixedAsset` row.
+- SCLX `createForImport(...)` remains the caller-owned historical source-status/timestamp restore seam and does not synthesize interactive lifecycle audit facts.
+- Asset Register now shows read-only lifecycle status, explicit Deactivate Asset / Reactivate Asset, factual actor/reason, retained-history/no-delete guidance, and the existing Sale/Retirement/Impairment/reversal controls.
 
 Validation status:
 
 - Exact starting `main` is `d067877d699f4aa05c635b52abcc0aa65d55fbc3`.
 - Merged-main Maven PR Tests push run `33033595424` passed all three repository gates and is the C7 baseline.
-- No local Maven result is claimed; GitHub Maven PR Tests will be authoritative after publication.
+- Publication source assertions and `git diff --check` passed; no local Maven result is claimed.
+- Initial PR run `33034308490` failed during compile because the new confirmation dialog passed `Alert` where `CompanyDialogUiCompliance.install(...)` requires a `DialogPane`.
+- The repository-approved `confirmation.getDialogPane()` call was published in product head `3de0fbcc7a14da3bfa9c695996bdaff8230392e9`; temporary publisher artifacts were removed.
+- GitHub marked the bot-authored exact-product-head run `33034380172` as `action_required` without creating any job. The current verification-handoff commit intentionally supplies a normal PR synchronize event so standard Maven PR Tests can execute on the final product/documentation tree.
 
 Known failures:
 
-- None at task start.
+- Corrected: `AssetsRegisterPanel.java` compile error from run `33034308490` (`Alert` cannot be converted to `DialogPane`). No semantic service failure was reported by that run because compilation stopped before tests.
 
 Owner acceptance:
 
-- A P17-C7 owner checklist will be added before handoff.
+- Use `doc/P17-C7-fixed-asset-lifecycle-user-testing.md` after final-head Maven PR Tests are green.
 - Do not merge until final-head GitHub validation passes and the owner accepts the checklist.
 
 Next exact action:
 
-- Implement the fixed-asset status/lifecycle lock corrections and UI lifecycle actions, add focused regressions and governing documentation, publish a draft PR, run Maven PR Tests, correct any failure, then stop before merge for owner desktop acceptance.
+- Run the standard Maven PR Tests on the current final branch head, correct any remaining failure, then perform the owner checklist and stop before merge.
