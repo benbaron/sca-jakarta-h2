@@ -1,0 +1,71 @@
+name: Temporary P17-C7 status contract correction
+
+on:
+  push:
+    branches:
+      - codex/P17-C7-fixed-asset-lifecycle
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/P17-C7-fixed-asset-lifecycle
+          fetch-depth: 0
+      - name: Restore established disposed-status validation precedence
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('src/main/java/org/nonprofitbookkeeping/service/FixedAssetService.java')
+          text = path.read_text()
+          old = '''        if (existing.getStatus() == FixedAsset.Status.DISPOSED)
+        {
+            throw new IllegalStateException(
+                    "A disposed asset is immutable; reverse its lifecycle event before editing it");
+        }
+        FixedAsset.Status requested = command.status() == null
+                ? existing.getStatus() : command.status();
+        if (requested != existing.getStatus())
+        {
+            throw new IllegalArgumentException(
+                    "Fixed asset status changes use the explicit lifecycle action");
+        }
+'''
+          new = '''        FixedAsset.Status requested = command.status() == null
+                ? existing.getStatus() : command.status();
+        if (requested == FixedAsset.Status.DISPOSED)
+        {
+            throw new IllegalArgumentException(
+                    "DISPOSED is created only by the governed Sale or Retirement workflow");
+        }
+        if (existing.getStatus() == FixedAsset.Status.DISPOSED)
+        {
+            throw new IllegalStateException(
+                    "A disposed asset is immutable; reverse its lifecycle event before editing it");
+        }
+        if (requested != existing.getStatus())
+        {
+            throw new IllegalArgumentException(
+                    "Fixed asset status changes use the explicit lifecycle action");
+        }
+'''
+          if text.count(old) != 1:
+              raise SystemExit(f'expected exactly one status guard block, found {text.count(old)}')
+          path.write_text(text.replace(old, new))
+          PY
+          git diff --check
+      - name: Commit correction and remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm .github/workflows/tmp-p17-c7-status-contract.yml
+          git add src/main/java/org/nonprofitbookkeeping/service/FixedAssetService.java
+          git commit -m "P17-C7: preserve disposed status validation contract"
+          git push origin HEAD:codex/P17-C7-fixed-asset-lifecycle
