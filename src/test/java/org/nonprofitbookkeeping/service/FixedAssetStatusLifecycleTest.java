@@ -92,8 +92,12 @@ class FixedAssetStatusLifecycleTest
                     () -> service.changeStatus(
                             asset.id(), FixedAsset.Status.ACTIVE, "tester", "unsafe restore"));
             assertTrue(reactivate.getMessage().contains("reverse its Sale or Retirement"));
-            assertThrows(IllegalStateException.class,
+
+            IllegalArgumentException directDisposed = assertThrows(IllegalArgumentException.class,
                     () -> service.update(asset.id(), command("Changed", FixedAsset.Status.DISPOSED)));
+            assertEquals(
+                    "DISPOSED is created only by the governed Sale or Retirement workflow",
+                    directDisposed.getMessage());
         }
     }
 
