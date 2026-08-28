@@ -1,5 +1,7 @@
 # Phase remap after requirements clarification
 
+> Historical requirements-remap snapshot. The decisions below were incorporated into the current phase plan and focused governing documents. Retain this file as rationale for the remap; do not use its suggested status table, slice names, or consistency checklist as the current execution backlog. Current `doc/PLAN.md` and current focused authority documents control execution status and production terminology.
+
 ## Purpose
 
 This document maps the owner's clarification answers onto the Codex phase plan.
