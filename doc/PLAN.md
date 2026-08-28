@@ -1,5 +1,5 @@
 ---
-plan_version: 232
+plan_version: 233
 active_phase: P17
 active_slice: P17-C10
 active_status: VERIFYING
@@ -63,12 +63,34 @@ Only merged and verified behavior is `DONE`. `ELIMINATED` means the former phase
 
 ### P17-C1 — Cross-cutting UI design-rule compliance
 
-Status: DONE.
+Status: DONE for merged production behavior; corrective evidence/coverage PR #304 is VERIFYING and must not be merged without green final-head Actions.
 
 Completion evidence:
 
 - PRs #290, #291, and #292 merged the authorized shared UI policy corrections.
-- Exact final code head `aca71b43ba7e78670986e9f79698cc60239079f3` passed Maven PR Tests run `32917267993`.
+- Original PR #290 Maven PR Tests run `32795110712`, job `97644664596`, failed specifically in **Run clean headless verification** because Flyway reported `Found more than one migration with version 53`, naming `V53__bank_import_review_all_rows.sql` and `V53__bank_configuration_schema_alignment.sql`; the later test and production JavaFX compliance steps were skipped.
+- PR #291 Maven PR Tests run `32809377142` also failed during the corrective sequence.
+- Exact final P17-C1 production code head `aca71b43ba7e78670986e9f79698cc60239079f3` passed Maven PR Tests run `32917267993` after the CI-driven corrections in PR #292.
+- Current `main` `c7df4252681454f9f37584b14092b41155f8be51` passed Maven PR Tests push run `33136730576`, confirming the merged behavior still builds and passes the repository gates after later P17 work.
+
+Corrective audit findings:
+
+- `CompanyUiFormat` implements company-aware money/date formatting and lenient parsing; corrective PR #304 adds direct normalization coverage rather than relying only on formatting/parsing assertions.
+- `CompanyDialogUiCompliance` is a real shared production helper that installs full-text tooltip policy plus company-owned table policy; it is not merely one-off dialog formatting. Corrective PR #304 adds focused runtime coverage for that shared helper.
+- `FixedAssetLifecycleDialog` uses company-formatted zero values, the shared money/date formatting hooks, and the shared dialog compliance helper; no production-source change is required by this audit.
+- `PeriodCloseRunsPanel` derives the calculated period from the configured period-start day through `ActivePeriodContext.periodStartFor(...)`; corrective PR #304 adds a direct boundary assertion because the retained earlier test was primarily a source guardrail.
+- No shared status-chip primitive exists, and current `doc/ui_design_rules.md` neither requires nor claims one. No utility is introduced merely to satisfy the earlier audit suspicion.
+- Automated route/table/tooltip checks do not prove desktop clipping, divider ergonomics, focus-loss interaction on every surface, or company-switch behavior. `doc/P17-C1-ui-design-rules-compliance-user-testing.md` now labels those items explicitly as manual owner validation.
+
+Corrective publication:
+
+- branch: `codex/P17-C1-ui-compliance-corrections`;
+- draft pull request: #304;
+- first corrective code/test/documentation head: `d13bef4546a183cc0f108c591afb87d7c14d1931`;
+- no production Java, accounting, persistence, migration, or authoritative service behavior is changed;
+- local Maven is not claimed; standard GitHub `Maven PR Tests` is the validation authority for the final PR head;
+- remaining acceptance after green Actions is the manual owner checklist in `doc/P17-C1-ui-design-rules-compliance-user-testing.md`;
+- stop before merge.
 
 ### P17-C2 — Durable account record lifecycle
 
