@@ -18,20 +18,17 @@ class SchedulesEliminationSourceTest
     }
 
     @Test
-    void schedulesHasNoFactoryNavigationOrReferenceMenuRoute() throws Exception
+    void schedulesHasNoFactoryOrNavigationRoute() throws Exception
     {
         String appPanelId = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/AppPanelId.java"));
         String panelFactory = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/PanelFactory.java"));
         String navigationPane = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/NavigationPane.java"));
-        String referenceWorkspace = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/ReferenceWorkspaceWindow.java"));
 
         assertTrue(appPanelId.contains("Retired compatibility identifier"));
         assertFalse(panelFactory.contains("SchedulesPanel"));
         assertFalse(panelFactory.contains("AppPanelId.SCHEDULES"));
         assertFalse(navigationPane.contains("AppPanelId.SCHEDULES"));
         assertFalse(navigationPane.contains("\"Schedules\""));
-        assertFalse(referenceWorkspace.contains("AppPanelId.SCHEDULES"));
-        assertFalse(referenceWorkspace.contains("Scheduled Transactions"));
     }
 
     @Test

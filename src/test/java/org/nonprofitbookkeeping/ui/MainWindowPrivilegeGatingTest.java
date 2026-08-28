@@ -11,17 +11,17 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 class MainWindowPrivilegeGatingTest
 {
     @Test
-    void retiredShellDoesNotUseDefaultPrivilegeAsEffectiveAuthorization() throws Exception
+    void shellsDoNotUseDefaultPrivilegeAsEffectiveAuthorization() throws Exception
     {
         String mainWindow = Files.readString(Path.of(
                 "src/main/java/org/nonprofitbookkeeping/ui/MainWindow.java"));
-        String referenceWorkspace = Files.readString(Path.of(
-                "src/main/java/org/nonprofitbookkeeping/ui/ReferenceWorkspaceWindow.java"));
+        String productionWorkspace = Files.readString(Path.of(
+                "src/main/java/org/nonprofitbookkeeping/ui/ProductionWorkspaceWindow.java"));
 
         assertFalse(mainWindow.contains("requiredPrivilegeForPanel"));
         assertFalse(mainWindow.contains("canAccessPanelForPrivilege"));
         assertFalse(mainWindow.contains("refreshPrivilegeGating"));
         assertFalse(mainWindow.contains("gatedItem("));
-        assertFalse(referenceWorkspace.contains("defaultPrivilege()"));
+        assertFalse(productionWorkspace.contains("defaultPrivilege()"));
     }
 }
