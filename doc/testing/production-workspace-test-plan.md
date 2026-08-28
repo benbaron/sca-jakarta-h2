@@ -43,32 +43,34 @@ Verify database-backed values for:
 - recent entered transactions;
 - empty-state behavior without fictional values.
 
-## Import tests
+## Import and interchange tests
 
-Cover:
+Cover each governed format through its own preview/review/commit authority rather than a generic staged-import session:
 
-- valid and invalid rows in one staged session;
-- exact duplicate rejection by source ID and fingerprint;
-- probable duplicate warnings;
-- edit and accept;
-- reject;
-- match to an existing transaction;
-- discard, save as copy, and cancel dispositions;
-- warning before losing unresolved in-memory staging.
+- COA CSV freezes source SHA-256, company, target chart/fingerprint, accepted/rejected rows, and validation state; **Commit Accepted COA Rows** revalidates that scope and commits all accepted accounts, identities, and one factual operation audit atomically;
+- Chart of Accounts JSON uses strict bounded recognition, non-mutating preview, stable target ownership, and one caller-owned import transaction; export remains deterministic and chart-only;
+- SCLX preview freezes source hash, target company, mappings, protections, dispositions, and conflict choices; any source/company/target drift requires re-preview, and commit imports the retained exact nonblocking preview in one caller-owned transaction or rolls back completely;
+- OFX 2.x, QFX, mapped CSV, and normalized CSV bank imports are locked to one configured company-owned bank account, use their governed preview services, and commit only durable review facts (`bank_import_batch`, `bank_statement_line`, `import_issue`, and profile/identity facts where applicable);
+- bank-file import remains non-posting: it does not create canonical `Txn`/`TxnSplit` records or clear/reconcile a ledger line merely because a statement row was imported;
+- **Create Transaction from Reviewed Row…** is a separate explicit acceptance operation that revalidates the reviewed row and atomically creates the canonical transaction plus accepted linkage/audit facts; matching and cleared state remain reconciliation-owned;
+- reconciliation-origin bank import preserves and locks the exact reconciliation/configured-account scope, returns to that session only after successful durable review commit, and reloads H2 facts;
+- exact/probable duplicate handling, idempotent retry rules, blocking ownership/close/reconciliation protections, and source identity are format-authority tests rather than generic import dispositions;
+- cancelling or failing a preview/commit must not publish false success or partial durable state.
 
 ## JavaFX behavior tests
 
 Verify:
 
 - dashboard opens first and remains available;
-- one reusable tab per panel type;
+- one reusable tab per canonical panel type;
 - selecting an open destination activates its tab;
 - dirty-tab save, discard, and cancel behavior;
 - organization switching checks all dirty tabs;
 - inspector follows the active tab and selected record;
 - quick actions open the correct workflow state;
-- ledger register appears above its editor;
-- Journal Entry reuses the common line editor.
+- Accounting exposes one **Journal** destination whose grouped journal and integrated New/Edit editor share the same workspace;
+- requests using retired `LEDGER_REGISTER` or `TXN_EDITOR` compatibility identifiers normalize to the existing `JOURNAL_PANE` tab and never create separate Ledger Register or Transaction Editor workspaces;
+- Journal New/Edit operations reuse the common line editor and canonical transaction services.
 
 
 ## JavaFX test strategy
