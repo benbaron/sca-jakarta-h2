@@ -4,13 +4,25 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Source guardrails for the authoritative Period Close workspace. */
 class PeriodCloseRunsPanelTest
 {
+    @Test
+    void calculatedPeriodHonorsConfiguredStartDay()
+    {
+        PeriodCloseRunsPanel.CalculatedRange range = PeriodCloseRunsPanel.calculatedPeriod(
+                LocalDate.of(2026, 8, 15), 10);
+
+        assertEquals(LocalDate.of(2026, 8, 10), range.start());
+        assertEquals(LocalDate.of(2026, 9, 9), range.end());
+    }
+
     @Test
     void periodCloseWorkspaceUsesRealCloseReopenAndHistoryOperations() throws Exception
     {

@@ -28,6 +28,19 @@ class CompanyUiFormatTest
     }
 
     @Test
+    void moneyNormalizationUsesCompanyFormattingAfterLenientInput()
+    {
+        CompanyUiFormat prefix = new CompanyUiFormat(new CompanyUiPreferences(
+                "€", MoneyPrintFormat.SYMBOL_PREFIX, DateDisplayFormat.DAY_MONTH_YEAR));
+        CompanyUiFormat suffix = new CompanyUiFormat(new CompanyUiPreferences(
+                "kr", MoneyPrintFormat.SYMBOL_SUFFIX, DateDisplayFormat.YEAR_MONTH_DAY));
+
+        assertEquals("€1,234.50", prefix.normalizeMoney("€ 1,234.5"));
+        assertEquals("1,234.50 kr", suffix.normalizeMoney("kr 1234.5"));
+        assertEquals("not money", prefix.normalizeMoney("  not money  "));
+    }
+
+    @Test
     void dateParsingUsesPreferredOrderingButAcceptsCommonForms()
     {
         CompanyUiFormat dmy = new CompanyUiFormat(new CompanyUiPreferences("£", MoneyPrintFormat.SYMBOL_PREFIX, DateDisplayFormat.DAY_MONTH_YEAR));
