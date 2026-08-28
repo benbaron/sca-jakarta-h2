@@ -56,7 +56,7 @@ A slice is `DONE` only when its behavior is merged, required validation is green
 
 ### P17-C1 — Cross-cutting UI design-rule compliance
 
-Status: DONE.
+Status: DONE for merged production behavior; corrective evidence/coverage PR #304 is VERIFYING and must not be merged without green final-head Actions.
 
 PRs #290, #291, and #292 merged the shared UI policy corrections. Exact final code head `aca71b43ba7e78670986e9f79698cc60239079f3` passed Maven PR Tests run `32917267993`.
 

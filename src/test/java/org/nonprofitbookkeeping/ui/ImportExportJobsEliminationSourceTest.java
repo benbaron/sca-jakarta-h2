@@ -18,6 +18,8 @@ class ImportExportJobsEliminationSourceTest
         String mainWindow = source("MainWindow.java");
         String panelFactory = source("PanelFactory.java");
         String bankTransactions = source("BankTransactionsPanel.java");
+        String orchestration = Files.readString(Path.of(
+                "src/main/java/org/nonprofitbookkeeping/service/ImportExportOrchestrationService.java"));
 
         for (String source : new String[] {appPanelId, navigation, mainWindow, panelFactory})
         {
@@ -31,10 +33,15 @@ class ImportExportJobsEliminationSourceTest
         assertFalse(mainWindow.contains("appendJob"));
         assertFalse(bankTransactions.contains("appendJob"));
 
-        assertTrue(mainWindow.contains("importChartOfAccountsCsvFile"));
-        assertFalse(mainWindow.contains("importBankDataFile"));
-        assertTrue(mainWindow.contains("exportChartOfAccountsCsvFile"));
+        assertFalse(mainWindow.contains("importChartOfAccountsCsvFile("));
+        assertFalse(mainWindow.contains("importBankDataFile("));
+        assertFalse(mainWindow.contains("exportChartOfAccountsCsvFile("));
         assertFalse(mainWindow.contains("UiWorkspaceDataStore"));
+
+        assertTrue(orchestration.contains("importChartOfAccountsCsvFile("));
+        assertTrue(orchestration.contains("importBankDataFile("));
+        assertTrue(orchestration.contains("exportChartOfAccountsCsvFile("));
+
         assertTrue(bankTransactions.contains("BankReviewQueryService"));
         assertTrue(bankTransactions.contains("reviewQuery.listRows"));
     }
