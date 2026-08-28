@@ -41,6 +41,7 @@ class LegacyShellAuthoritySourceTest
         assertFalse(Files.exists(TEST.resolve("MainWindowStateWiringTest.java")));
         assertFalse(Files.exists(TEST.resolve("MainWindowPhase1FollowupTest.java")));
         assertFalse(Files.exists(TEST.resolve("MainWindowWizardAndLayoutTest.java")));
+        assertFalse(Files.exists(TEST.resolve("MainWindowCommandPaletteTest.java")));
         assertFalse(Files.exists(TEST.resolve("ProductionDesignRulesTestFxTest.java")));
 
         assertTrue(Files.exists(TEST.resolve("ProductionWorkspaceCommandRoutingTest.java")));
