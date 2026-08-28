@@ -1,5 +1,7 @@
 # Requirements clarification overlay — 2026-07
 
+> Historical clarification record. The decisions in this overlay have been incorporated into the current plan and focused governing documents. Retain the file as requirements evidence, but do not treat its one-time update checklist or older terminology as the current execution backlog. Current `doc/PLAN.md` and current focused authority documents supersede it for phase status and production routing.
+
 ## Purpose
 
 This document records the owner's clarification answers for the next design-document update pass. It is an overlay on the current `AGENTS.md`, `doc/PLAN.md`, and focused `doc/*.md` files in `benbaron/sca-jakarta-h2`.
