@@ -57,17 +57,14 @@ class ConnectedDatabaseSessionAuthoritySourceTest
     }
 
     @Test
-    void retiredMainWindowNoLongerWritesDatabaseAuthorityDirectly() throws Exception
+    void retiredMainWindowCannotWriteDatabaseAuthority() throws Exception
     {
         String source = read("MainWindow.java");
-        String method = source.substring(
-                source.indexOf("void applySelectedDatabasePath(Path path)"),
-                source.indexOf("private List<CoaCsvMapper.CoaCsvRow> buildCoaExportRows()"));
 
-        assertTrue(method.contains("new DatabaseSessionController("));
-        assertTrue(method.contains("controller.connect(path)"));
-        assertFalse(method.contains("SESSION_STATE.setDatabaseSelection("));
-        assertFalse(method.contains("UiServiceRegistry.reconnectToDatabase(path)"));
+        assertTrue(source.contains("ApplicationSessionContext.sharedSessionState()"));
+        assertFalse(source.contains("DatabaseSessionController"));
+        assertFalse(source.contains("setDatabaseSelection("));
+        assertFalse(source.contains("reconnectToDatabase("));
     }
 
     private static String read(String fileName) throws Exception

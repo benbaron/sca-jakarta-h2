@@ -4,6 +4,10 @@ P01-S1 establishes `ProductionWorkspaceWindow` as the production shell owner. Th
 
 P17-C10 retires the obsolete `ReferenceWorkspaceWindow` compatibility subclass after source and test inspection confirmed that production startup and composition already use `ProductionWorkspaceWindow`. Current shell behavior and shell-focused tests target `ProductionWorkspaceWindow` directly; no alternate reference-chrome window remains as a competing implementation.
 
+P17-C11 removes the remaining legacy `MainWindow` shell implementation. `ApplicationSessionContext` now owns the application-wide `UiSessionState`; `MainWindow` is reduced to a deprecated, non-JavaFX compatibility facade that exposes only that session state for older panel helpers. It no longer owns window chrome, panel routing, Find/command-palette behavior, date-range controls, authentication UI, or view presets. New production code must use `ApplicationSessionContext` or the workspace-owned context/services rather than adding behavior back to the facade.
+
+The obsolete `DateRangeSelector` and `DateRangeUtil` belonged only to the removed shell and are deleted. `DateRange` and `DateRangeContext` remain because Report Library deliberately accepts an explicit initial report range; they are not a replacement for the shell-selected accounting-period authority.
+
 Global shell actions use typed `AppCommand` values. `GlobalCommandRegistry` is the production source for installed labels, accelerators, and Help shortcut text. The shell and `PanelHost` route commands by enum identity instead of discovering behavior from button text.
 
 P16-S12 makes support explicit: each `AppPanel` publishes its current `commandCapabilities()` and returns a handled/not-handled result from `executeCommand`. The production File menu and toolbar enable New and Save only when the active panel declares them. Composite Administration delegates both the query and execution to its selected inner tab and notifies the shell when that selection changes. Undeclared commands cannot fall through to empty New/Save/Copy/Paste hooks. Copy and Paste remain native focused-text-control behavior; production does not capture `Ctrl+C` or `Ctrl+V`. Unimplemented production Find and command-palette shortcuts are neither installed nor listed in Help.
@@ -21,7 +25,17 @@ P01-S2 introduces explicit shell-owned composition objects:
 - `WorkspaceServicesFactory` constructs those objects from the current `UiSessionState`, state store, and database connector, and keeps context state synchronized with session/database/period changes.
 - `PanelFactory` is the one panel construction boundary used by `PanelHost`; production `PanelHost` instances no longer own a static panel factory map.
 
-Existing panels may still call legacy static lookup helpers internally until their owning feature phases replace those service lookups with constructor-injected command/query services. New production shell code should receive panels through `PanelFactory` rather than constructing panels directly.
+Existing panels may still call the deprecated `MainWindow.sharedSessionState()` compatibility facade internally until their owning feature phases replace those static lookups with constructor-injected command/query services. The facade delegates to `ApplicationSessionContext` and contains no UI behavior. New production shell code should receive panels through `PanelFactory` rather than constructing panels directly.
+
+## Residual compatibility services
+
+P17-C11 classifies, but does not destructively migrate, the remaining pre-workspace run APIs:
+
+- `ReconciliationService` plus `ReconciliationRunRepository` / `JdbcReconciliationRunRepository` remain required compatibility authorities. Current reconciliation comparison and SCLX import paths still consume them, while the routed reconciliation workspace uses `BankReconciliationWorkspaceService`.
+- `PeriodCloseService` plus `PeriodCloseRunRepository` / `JdbcPeriodCloseRunRepository` remain required compatibility authorities. SCLX snapshot/history compatibility still consumes that service, while the routed Period Close workspace uses `PeriodCloseRangeService` for current range policy.
+- `ScheduleEligibilityService` has no routed Schedules workspace consumer after P07 elimination. It remains a registry-exposed compatibility query over retained schedule metadata; it is not a production navigation or accounting authority. Removing that public/schema-facing compatibility surface is not required for shell retirement and would require a separate deliberate compatibility/persistence decision.
+
+Accordingly, no historical H2 run tables are removed and no applied migration is edited or dropped in P17-C11.
 
 ## Atomic database switching
 
