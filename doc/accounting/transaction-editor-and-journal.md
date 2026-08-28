@@ -19,6 +19,7 @@ The upper Journal region is read-only and displays one grouped row per canonical
 - transaction date;
 - account titles and descriptions in journal-line order;
 - funds;
+- authoritative aggregate bank state (`Not bank`, `Uncleared`, `Cleared`, or `Mixed`);
 - debit and credit lines;
 - transaction ID;
 - supplemental-detail count;
@@ -26,7 +27,7 @@ The upper Journal region is read-only and displays one grouped row per canonical
 
 Date and text filters query `TransactionEntryService.search(...)`. A row may be selected and opened for editing by **Edit Selected** or double-click. The selection is a transaction-level selection, never an independently editable ledger line.
 
-The current aggregate transaction projection does not yet expose every `TxnSplit.bankCleared` value. Until a line-level cleared-state projection is added, the Journal must not pretend to distinguish mixed cleared and uncleared lines authoritatively.
+P16-S10 projects each canonical `TxnSplit` bank-cleared flag/date and an exact company/account-consistent native reconciliation session into the Journal view. The aggregate state is derived from those authoritative line facts, while entry-line bank state and cleared date remain read-only. When an exact reconciliation session exists, Journal may drill to it; Journal never mutates reconciliation-owned cleared state.
 
 ## Integrated New and Edit modes
 
