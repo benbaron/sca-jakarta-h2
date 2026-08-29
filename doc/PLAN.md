@@ -1,12 +1,12 @@
 ---
-plan_version: 234
+plan_version: 235
 active_phase: P17
 active_slice: P17-C12
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P17-C12-documentation-authority-reconciliation
-active_pull_request: null
-active_head: 76d638cc739562452b03771a0e2397dcdc7600f3
-next_action: "Review the C12 documentation-only diff, correct any remaining live-governing stale authority claims, publish a draft PR, validate the exact final head in Maven PR Tests, record the result, and stop before merge for owner acceptance."
+active_pull_request: 305
+active_head: d9c20734f03cd9280e9036bb8d826e4c38a9309d
+next_action: "Validate the successor head after this ledger update in Maven PR Tests; require clean verify, repeat tests, and production JavaFX route compliance green, then update PR evidence and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -31,7 +31,7 @@ A slice is `DONE` only when its behavior/documentation is merged, required valid
 | P11 | Report Library | DONE through P11-C2 / PR #284; period-context correction completed in P17-C9 |
 | P12-P15 | Administration, diagnostics/exchange, hardening, versioned interchange | DONE for original contracts; deferred Company Admin extensions are P19 |
 | P16 | Interface-to-authority completion and integrity corrections | DONE through P16-C11 / PR #281 |
-| P17 | Cross-cutting UI, authority, cleanup, durable-record, and documentation corrections | C1-C11 DONE; C12 IN_PROGRESS |
+| P17 | Cross-cutting UI, authority, cleanup, durable-record, and documentation corrections | C1-C11 DONE; C12 VERIFYING |
 | P18 | Depreciation-run workflow completion | BLOCKED pending P17 completion and batch-semantics review |
 | P19 | Deferred Company Administration extensions | BLOCKED pending explicit product requirements for each slice |
 | P20 | Authentication and runtime authorization | BLOCKED pending explicit security requirements and authorization |
@@ -120,12 +120,12 @@ Completed outcomes:
 
 ### P17-C12 — Documentation authority reconciliation
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P17-C12-documentation-authority-reconciliation`
-Starting base: current merged `main` `c2e9d27087d40cc61114b98dbcc2b3ed55a395fd`
-Current branch head before this PLAN update: `76d638cc739562452b03771a0e2397dcdc7600f3`
-Pull request: none yet.
+Starting base: merged `main` `c2e9d27087d40cc61114b98dbcc2b3ed55a395fd`
+Pull request: #305
+Corrective head before this ledger update: `d9c20734f03cd9280e9036bb8d826e4c38a9309d`
 
 Purpose:
 
@@ -140,6 +140,13 @@ Audit findings corrected in this branch:
 5. Added `doc/P17-C12-documentation-authority-reconciliation-user-testing.md` so owner acceptance checks documentation against current reachable production without inventing new product behavior.
 6. Historical/archive documents are intentionally left unchanged as historical evidence.
 
+Verification correction:
+
+- Initial PR head `211a75d666ef8c592bfb2cc1ad301cf20e163247` failed Maven PR Tests run `33225474337`, job `99028235949`, in `SchedulesEliminationSourceTest.interfaceOperationMatrixDoesNotListSchedulesPanel` because the reconciled interface matrix said “former top-level Schedules destination” but the source guard deliberately requires the documentation to retain the explicit phrase “former top-level Schedules panel”.
+- The failure did not indicate a missing production route or class. `SchedulesPanel.java` remains absent and no Schedules factory/navigation route is restored.
+- Corrective commit `d9c20734f03cd9280e9036bb8d826e4c38a9309d` changes the governing sentence to “former top-level Schedules panel/destination”, preserving the architectural fact and the elimination guard without reintroducing product behavior.
+- A successor exact-head Maven PR Tests run is required after this ledger update.
+
 Guardrails:
 
 - no production Java changes unless the audit uncovers a separate live defect that is first planned as its own corrective slice;
@@ -150,14 +157,14 @@ Guardrails:
 
 Validation:
 
-- local Maven results must not be claimed unless actually run;
+- no local Maven result is claimed;
 - final exact branch head must pass repository Maven PR Tests, including clean verify, repeat tests, and production JavaFX route compliance;
 - owner consistency checks are recorded in `doc/P17-C12-documentation-authority-reconciliation-user-testing.md`;
 - stop before merge for owner acceptance.
 
 Next exact action:
 
-- review the final documentation diff for accidental loss or new authority contradictions, publish a draft PR, inspect exact-final-head GitHub Actions, update this ledger with PR/run evidence, and stop before merge.
+- validate the successor exact branch head after this ledger update, record the final workflow/run result in PR #305, and stop before merge for owner acceptance.
 
 ## 5. P18 — Depreciation-run workflow completion
 
@@ -219,7 +226,7 @@ BLOCKED until P20-S2 is DONE. Enforce approved permissions at authoritative serv
 | Report Library active-period synchronization | P17-C9 — DONE |
 | Duplicate old Dashboard/Journal/reference panels and stale customer-panel architecture | P17-C10 — DONE |
 | Obsolete MainWindow shell/date-range behavior and residual compatibility classification | P17-C11 — DONE |
-| Stale interface matrix / persistence inventory / workspace test-plan / Journal authority claims | P17-C12 — IN_PROGRESS |
+| Stale interface matrix / persistence inventory / workspace test-plan / Journal authority claims | P17-C12 — VERIFYING |
 | Depreciation Runs richer batching/report integration | P18-S1 |
 | Company chart assignment editor deferral | P19-S1 |
 | Company reporting-default editor deferral | P19-S2 |
