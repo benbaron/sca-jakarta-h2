@@ -41,7 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/** H2-authoritative company profile, chart assignment, reporting defaults, and lifecycle editor. */
+/** H2-authoritative company profile, informational EIN, chart assignment, reporting defaults, and lifecycle editor. */
 public class CompanyAdminPanel implements AppPanel
 {
     private static final String STATE_PREFIX = "companyAdmin.";
@@ -56,6 +56,7 @@ public class CompanyAdminPanel implements AppPanel
     private final TextField legalName = new TextField();
     private final TextField branchType = new TextField();
     private final TextField parentOrganization = new TextField();
+    private final TextField ein = new TextField();
     private final ComboBox<Integer> fiscalMonth = new ComboBox<>();
     private final Spinner<Integer> fiscalDay = new Spinner<>();
     private final TextField defaultCurrency = new TextField();
@@ -109,7 +110,7 @@ public class CompanyAdminPanel implements AppPanel
 
         Label title = new Label("Company Admin");
         title.getStyleClass().add("panel-title");
-        Label help = new Label("Company rows in the active H2 database define which companies exist. Create or edit a profile here, deactivate unused companies without deleting their history, explicitly select an active company for the workspace, select its current Chart of Accounts, and choose safe Report Library opening defaults.");
+        Label help = new Label("Company rows in the active H2 database define which companies exist. Create or edit a profile and informational EIN here, deactivate unused companies without deleting their history, explicitly select an active company for the workspace, select its current Chart of Accounts, and choose safe Report Library opening defaults.");
         help.setWrapText(true);
 
         Button add = new Button("New");
@@ -154,6 +155,7 @@ public class CompanyAdminPanel implements AppPanel
         fiscalDay.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 31, 1));
         fiscalDay.setEditable(true);
         defaultCurrency.setPromptText("USD");
+        ein.setPromptText("Optional informational identifier");
         configureReportingDefaults();
 
         GridPane form = new GridPane();
@@ -167,11 +169,12 @@ public class CompanyAdminPanel implements AppPanel
         form.addRow(row++, new Label("Legal name"), legalName);
         form.addRow(row++, new Label("Branch type"), branchType);
         form.addRow(row++, new Label("Parent organization / kingdom"), parentOrganization);
+        form.addRow(row++, new Label("EIN"), ein);
         form.addRow(row++, new Label("Fiscal-year start month"), fiscalMonth);
         form.addRow(row++, new Label("Fiscal-year start day"), fiscalDay);
         form.addRow(row++, new Label("Default currency"), defaultCurrency);
         form.add(active, 1, row);
-        for (Node field : List.of(code, displayName, legalName, branchType, parentOrganization, fiscalMonth, fiscalDay, defaultCurrency))
+        for (Node field : List.of(code, displayName, legalName, branchType, parentOrganization, ein, fiscalMonth, fiscalDay, defaultCurrency))
         {
             GridPane.setHgrow(field, Priority.ALWAYS);
         }
@@ -217,7 +220,7 @@ public class CompanyAdminPanel implements AppPanel
                 reportingHelp);
         reportingEditor.setPadding(new Insets(8));
 
-        Label deferrals = new Label("Tax filing administration remains deferred until its filing identities, periods, fields, and reporting/export consumers are specified. Bank accounts are maintained in the Banking workspace.");
+        Label deferrals = new Label("EIN is stored as informational company metadata only; this application does not provide a tax-filing workflow. Bank accounts are maintained in the Banking workspace.");
         deferrals.setWrapText(true);
         VBox editor = new VBox(
                 8,
@@ -314,6 +317,7 @@ public class CompanyAdminPanel implements AppPanel
         legalName.textProperty().addListener((obs, oldValue, newValue) -> markDirty());
         branchType.textProperty().addListener((obs, oldValue, newValue) -> markDirty());
         parentOrganization.textProperty().addListener((obs, oldValue, newValue) -> markDirty());
+        ein.textProperty().addListener((obs, oldValue, newValue) -> markDirty());
         fiscalMonth.valueProperty().addListener((obs, oldValue, newValue) -> markDirty());
         fiscalDay.valueProperty().addListener((obs, oldValue, newValue) -> markDirty());
         defaultCurrency.textProperty().addListener((obs, oldValue, newValue) -> markDirty());
@@ -345,6 +349,7 @@ public class CompanyAdminPanel implements AppPanel
             legalName.setText(nullToBlank(company.legalName()));
             branchType.setText(nullToBlank(company.branchType()));
             parentOrganization.setText(nullToBlank(company.parentOrganization()));
+            ein.setText(nullToBlank(company.ein()));
             fiscalMonth.setValue(company.fiscalYearStartMonth());
             fiscalDay.getValueFactory().setValue(company.fiscalYearStartDay());
             defaultCurrency.setText(company.defaultCurrency());
@@ -378,6 +383,7 @@ public class CompanyAdminPanel implements AppPanel
             legalName.clear();
             branchType.clear();
             parentOrganization.clear();
+            ein.clear();
             fiscalMonth.setValue(1);
             fiscalDay.getValueFactory().setValue(1);
             defaultCurrency.setText("USD");
@@ -417,6 +423,7 @@ public class CompanyAdminPanel implements AppPanel
                     legalName.getText(),
                     branchType.getText(),
                     parentOrganization.getText(),
+                    ein.getText(),
                     active.isSelected(),
                     fiscalMonth.getValue() == null ? 1 : fiscalMonth.getValue(),
                     fiscalDay.getValue(),

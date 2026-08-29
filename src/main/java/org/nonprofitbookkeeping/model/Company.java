@@ -43,6 +43,9 @@ public class Company
     @Column(name = "parent_organization", length = 200)
     private String parentOrganization;
 
+    @Column(length = 40)
+    private String ein;
+
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 
@@ -76,6 +79,8 @@ public class Company
     public void setBranchType(String branchType) { this.branchType = branchType; }
     public String getParentOrganization() { return parentOrganization; }
     public void setParentOrganization(String parentOrganization) { this.parentOrganization = parentOrganization; }
+    public String getEin() { return ein; }
+    public void setEin(String ein) { this.ein = ein; }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
     public int getFiscalYearStartMonth() { return fiscalYearStartMonth; }
