@@ -1,12 +1,12 @@
 ---
-plan_version: 236
+plan_version: 237
 active_phase: P18
 active_slice: P18-S1
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P18-S1-period-depreciation-batching
-active_pull_request: null
-active_head: d2a945e8b2ed5f761009aa5e1ea24ad1ea6d4617
-next_action: "Review the P18-S1 batch service/UI/tests/docs from current merged main, correct compile/test issues, publish a draft PR, require exact-final-head Maven PR Tests green, record owner testing notes, and stop before merge."
+active_pull_request: 306
+active_head: 2fd0cbe25e6deda58383f01c96bc8fa2feac30ae
+next_action: "Validate this documentation-successor head in Maven PR Tests; require clean verification, repeat tests, and production JavaFX route compliance green, then update PR #306 metadata only and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -30,7 +30,7 @@ A slice is `DONE` only when its behavior/documentation is merged, required valid
 | P12-P15 | Administration, diagnostics/exchange, hardening, versioned interchange | DONE for original contracts |
 | P16 | Interface-to-authority completion and integrity corrections | DONE through P16-C11 / PR #281 |
 | P17 | Cross-cutting UI, authority, cleanup, durable-record, documentation corrections | DONE through P17-C12 / PR #305 |
-| P18 | Depreciation-run workflow completion | P18-S1 IN_PROGRESS |
+| P18 | Depreciation-run workflow completion | P18-S1 VERIFYING |
 | P19 | Deferred Company Administration extensions | BLOCKED pending explicit product requirements |
 | P20 | Authentication and runtime authorization | BLOCKED pending explicit security requirements and authorization |
 
@@ -67,11 +67,12 @@ P17 is DONE.
 
 ### P18-S1 — Accounting-period batching and Report Library integration
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P18-S1-period-depreciation-batching`
 Starting base: merged `main` `3e87b56b26b189ca27008284734321c54a2ea0ec`
-Pull request: none yet.
+Pull request: #306
+Green implementation head: `2fd0cbe25e6deda58383f01c96bc8fa2feac30ae`
 
 Governing design: `doc/P18-S1-period-depreciation-batching.md`
 Owner verification: `doc/P18-S1-period-depreciation-batching-user-testing.md`
@@ -95,35 +96,42 @@ Batch-semantics decision:
 - preserve the existing database `(fixed_asset_id, run_date)` uniqueness as the final exact-date concurrency guard;
 - hand the selected period to the existing Report Library via `DateRangeContext` / canonical `REPORT_LIBRARY`; the Fixed Asset Depreciation History & Schedule report remains read-only and creates no future transactions.
 
-Implementation in progress:
+Implemented deliverables:
 
-- new `DepreciationPeriodBatchService` orchestration layer with no JPA/SQL/transaction construction;
-- Depreciation Runs UI converted from arbitrary-date/single-asset action to active-period preview, explicit batch confirmation, independent execution summary, and completed-run history;
-- explicit Report Library period handoff;
-- focused batch service tests for classification, frozen-preview revalidation, partial failure, and retry;
-- source guard updated to require the current period workflow and reject the former arbitrary `LocalDate.now()` run-date control;
-- governing design and owner-testing notes added.
+- `DepreciationPeriodBatchService` is a persistence-free orchestration layer over current asset/run projections and `FixedAssetService.runMonthlyDepreciation(...)`; it contains no JPA/SQL or transaction construction.
+- Depreciation Runs is converted from an arbitrary-date/single-asset action to active-period preview, explicit batch confirmation, independent execution summary, and completed-run history.
+- Report Library receives the exact selected accounting-period range through the existing date-range/canonical-panel seam; no second report surface or report-side writer was introduced.
+- `DepreciationPeriodBatchServiceTest` covers period classification, later-run chronology fencing, preview-without-write, frozen-preview revalidation, isolated failure, and retry/idempotency behavior.
+- `DepreciationRunsPanelSourceTest` requires active-period calculation, confirmation, async preview/run, Report Library handoff, and rejection of the former arbitrary `LocalDate.now()` run-date control.
+- Governing design and owner-testing documents are present.
+- No schema/migration change and no modification to the canonical `FixedAssetService` writer were required.
+
+Automated validation:
+
+- Maven PR Tests run `33229022450`, job `99038281118`, on exact implementation head `2fd0cbe25e6deda58383f01c96bc8fa2feac30ae`: SUCCESS.
+- `Run clean headless verification`: SUCCESS.
+- `Run tests`: SUCCESS.
+- `Run production JavaFX route compliance`: SUCCESS.
+- No local Maven result is claimed.
+- This PLAN evidence update creates a documentation-only successor head; that successor must also pass all three repository gates before owner handoff.
 
 Guardrails:
 
-- no schema/migration change in this slice unless testing proves a new persistence invariant is required;
+- no schema/migration change in this slice;
 - no change to the canonical per-asset transaction/audit/portable-identity writer;
 - no synthetic multi-asset transaction or batch table;
 - no automatic future schedule posting;
 - no report-side accounting writes;
 - no hidden retry or silent partial-success claim;
-- UI changes must retain company money/date formatting, company-owned table/divider state, scrolling, tooltips, and reachable controls.
+- UI changes retain company money/date formatting, company-owned table/divider state, scrolling, tooltips, and reachable controls.
 
-Validation:
+Owner acceptance:
 
-- no local Maven result is claimed unless it is actually run;
-- final exact branch head must pass repository Maven PR Tests including clean verification, repeat tests, and production JavaFX route compliance;
-- owner desktop acceptance follows `doc/P18-S1-period-depreciation-batching-user-testing.md`;
-- stop before merge.
+Pending. Follow `doc/P18-S1-period-depreciation-batching-user-testing.md`. Stop before merge.
 
 Next exact action:
 
-Review the implementation for compile/source-guard/UI-policy issues, inspect the final diff, open a draft PR, validate the exact final head in GitHub Actions, correct every failure, and stop before merge for owner acceptance.
+Validate this documentation successor in Maven PR Tests, update PR #306 description with exact-final-head run/job evidence without another repository commit, and stop before merge for owner acceptance.
 
 ## 6. P19 — Deferred Company Administration extensions
 
