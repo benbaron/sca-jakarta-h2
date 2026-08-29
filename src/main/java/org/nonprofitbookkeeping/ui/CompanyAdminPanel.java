@@ -26,10 +26,14 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
+import javafx.util.StringConverter;
 import org.nonprofitbookkeeping.model.ChartStatus;
+import org.nonprofitbookkeeping.report.ReportDefinition;
 import org.nonprofitbookkeeping.service.CompanyChartView;
 import org.nonprofitbookkeeping.service.CompanyCommand;
+import org.nonprofitbookkeeping.service.CompanyReportingDefaults;
 import org.nonprofitbookkeeping.service.CompanyView;
+import org.nonprofitbookkeeping.service.FinancialReportExportFormat;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -37,7 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/** H2-authoritative stable-ID company profile, chart assignment, and lifecycle editor. */
+/** H2-authoritative company profile, chart assignment, reporting defaults, and lifecycle editor. */
 public class CompanyAdminPanel implements AppPanel
 {
     private static final String STATE_PREFIX = "companyAdmin.";
@@ -60,6 +64,10 @@ public class CompanyAdminPanel implements AppPanel
     private final ComboBox<CompanyChartView> chartAssignment = new ComboBox<>();
     private final Button makeActiveChart = new Button("Make Active Chart");
     private final Label chartStatus = new Label("Select a persisted company to review its charts.");
+    private final ComboBox<ReportDefinition> defaultReport = new ComboBox<>();
+    private final ComboBox<FinancialReportExportFormat> defaultReportExportFormat = new ComboBox<>();
+    private final Label reportingDefaultsStatus = new Label(
+            "Save the company before choosing Report Library defaults.");
     private final SplitPane split = new SplitPane();
     private final PauseTransition stateSaveDelay = new PauseTransition(Duration.millis(350));
     private final Map<String, TableColumn<CompanyView, String>> columnsByKey = new LinkedHashMap<>();
@@ -101,7 +109,7 @@ public class CompanyAdminPanel implements AppPanel
 
         Label title = new Label("Company Admin");
         title.getStyleClass().add("panel-title");
-        Label help = new Label("Company rows in the active H2 database define which companies exist. Create or edit a profile here, deactivate unused companies without deleting their history, explicitly select an active company for the workspace, and select its current Chart of Accounts.");
+        Label help = new Label("Company rows in the active H2 database define which companies exist. Create or edit a profile here, deactivate unused companies without deleting their history, explicitly select an active company for the workspace, select its current Chart of Accounts, and choose safe Report Library opening defaults.");
         help.setWrapText(true);
 
         Button add = new Button("New");
@@ -146,6 +154,7 @@ public class CompanyAdminPanel implements AppPanel
         fiscalDay.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 31, 1));
         fiscalDay.setEditable(true);
         defaultCurrency.setPromptText("USD");
+        configureReportingDefaults();
 
         GridPane form = new GridPane();
         form.setHgap(10);
@@ -189,11 +198,64 @@ public class CompanyAdminPanel implements AppPanel
                 chartHelp);
         chartEditor.setPadding(new Insets(8));
 
-        Label deferrals = new Label("Tax filing and reporting-default editors are deferred until their persistence workflows are implemented. Bank accounts are maintained in the Banking workspace.");
+        GridPane reportingGrid = new GridPane();
+        reportingGrid.setHgap(10);
+        reportingGrid.setVgap(8);
+        reportingGrid.addRow(0, new Label("Default opening report"), defaultReport);
+        reportingGrid.addRow(1, new Label("Default export format"), defaultReportExportFormat);
+        GridPane.setHgrow(defaultReport, Priority.ALWAYS);
+        GridPane.setHgrow(defaultReportExportFormat, Priority.ALWAYS);
+        Label reportingHelp = new Label(
+                "These defaults apply only when a new Report Library is opened. Report dates, fund, row limit, account, asset, and inventory filters remain controlled by the active accounting period or the operator and are not stored as company reporting policy.");
+        reportingHelp.setWrapText(true);
+        reportingDefaultsStatus.setWrapText(true);
+        VBox reportingEditor = new VBox(
+                6,
+                new Label("Reporting defaults"),
+                reportingGrid,
+                reportingDefaultsStatus,
+                reportingHelp);
+        reportingEditor.setPadding(new Insets(8));
+
+        Label deferrals = new Label("Tax filing administration remains deferred until its filing identities, periods, fields, and reporting/export consumers are specified. Bank accounts are maintained in the Banking workspace.");
         deferrals.setWrapText(true);
-        VBox editor = new VBox(8, new Label("Company profile"), form, lifecycle, chartEditor, deferrals);
+        VBox editor = new VBox(
+                8,
+                new Label("Company profile"),
+                form,
+                lifecycle,
+                chartEditor,
+                reportingEditor,
+                deferrals);
         editor.setPadding(new Insets(8));
         return editor;
+    }
+
+    private void configureReportingDefaults()
+    {
+        defaultReport.setId("companyDefaultReport");
+        defaultReport.getItems().setAll(ReportDefinition.catalog());
+        defaultReport.setMaxWidth(Double.MAX_VALUE);
+        defaultReport.setConverter(new StringConverter<>()
+        {
+            @Override
+            public String toString(ReportDefinition definition)
+            {
+                return definition == null ? "" : definition.displayName();
+            }
+
+            @Override
+            public ReportDefinition fromString(String value)
+            {
+                return null;
+            }
+        });
+        defaultReportExportFormat.setId("companyDefaultReportExportFormat");
+        defaultReportExportFormat.getItems().setAll(FinancialReportExportFormat.values());
+        defaultReportExportFormat.setMaxWidth(Double.MAX_VALUE);
+        defaultReport.valueProperty().addListener((obs, oldValue, newValue) -> reportingDefaultsChanged());
+        defaultReportExportFormat.valueProperty().addListener(
+                (obs, oldValue, newValue) -> reportingDefaultsChanged());
     }
 
     private void configureCompaniesTable()
@@ -265,6 +327,10 @@ public class CompanyAdminPanel implements AppPanel
             dirty = true;
             selectActive.setDisable(true);
             makeActiveChart.setDisable(true);
+            defaultReport.setDisable(true);
+            defaultReportExportFormat.setDisable(true);
+            reportingDefaultsStatus.setText(
+                    "Save or discard company profile edits before changing reporting defaults.");
         }
     }
 
@@ -290,6 +356,7 @@ public class CompanyAdminPanel implements AppPanel
                     ? "Editing the current workspace company."
                     : "Editing company " + company.code() + ".");
             loadCompanyCharts(company);
+            loadCompanyReportingDefaults(company);
         }
         finally
         {
@@ -321,6 +388,12 @@ public class CompanyAdminPanel implements AppPanel
             chartAssignment.getSelectionModel().clearSelection();
             makeActiveChart.setDisable(true);
             chartStatus.setText("Save the company before assigning a Chart of Accounts.");
+            CompanyReportingDefaults defaults = CompanyReportingDefaults.defaults();
+            defaultReport.getSelectionModel().select(defaults.defaultReport());
+            defaultReportExportFormat.getSelectionModel().select(defaults.defaultExportFormat());
+            defaultReport.setDisable(true);
+            defaultReportExportFormat.setDisable(true);
+            reportingDefaultsStatus.setText("Save the company before choosing Report Library defaults.");
             dirty = false;
             if (announce)
             {
@@ -398,6 +471,68 @@ public class CompanyAdminPanel implements AppPanel
             chartAssignment.getSelectionModel().clearSelection();
             makeActiveChart.setDisable(true);
             chartStatus.setText("Could not load company charts: " + UiErrors.safeMessage(ex));
+        }
+    }
+
+    private void loadCompanyReportingDefaults(CompanyView company)
+    {
+        try
+        {
+            CompanyReportingDefaults defaults = preferencesService.loadReportingDefaults(company.code());
+            defaultReport.getSelectionModel().select(defaults.defaultReport());
+            defaultReportExportFormat.getSelectionModel().select(defaults.defaultExportFormat());
+            defaultReport.setDisable(false);
+            defaultReportExportFormat.setDisable(false);
+            reportingDefaultsStatus.setText(
+                    "New Report Library windows for " + company.code()
+                            + " open with " + defaults.defaultReport().displayName()
+                            + " and " + defaults.defaultExportFormat().label() + ".");
+        }
+        catch (RuntimeException ex)
+        {
+            CompanyReportingDefaults defaults = CompanyReportingDefaults.defaults();
+            defaultReport.getSelectionModel().select(defaults.defaultReport());
+            defaultReportExportFormat.getSelectionModel().select(defaults.defaultExportFormat());
+            defaultReport.setDisable(true);
+            defaultReportExportFormat.setDisable(true);
+            reportingDefaultsStatus.setText(
+                    "Could not load reporting defaults: " + UiErrors.safeMessage(ex));
+        }
+    }
+
+    private void reportingDefaultsChanged()
+    {
+        if (populating || editingCompanyId == null)
+        {
+            return;
+        }
+        if (dirty)
+        {
+            reportingDefaultsStatus.setText(
+                    "Save or discard company profile edits before changing reporting defaults.");
+            return;
+        }
+        CompanyView company = companies.getSelectionModel().getSelectedItem();
+        if (company == null || !Objects.equals(company.id(), editingCompanyId)
+                || defaultReport.getValue() == null
+                || defaultReportExportFormat.getValue() == null)
+        {
+            return;
+        }
+        try
+        {
+            CompanyReportingDefaults defaults = new CompanyReportingDefaults(
+                    defaultReport.getValue(),
+                    defaultReportExportFormat.getValue());
+            preferencesService.saveReportingDefaults(company.code(), defaults);
+            reportingDefaultsStatus.setText(
+                    "Saved reporting defaults for " + company.code()
+                            + ". They apply the next time Report Library is opened.");
+        }
+        catch (RuntimeException ex)
+        {
+            reportingDefaultsStatus.setText(
+                    "Could not save reporting defaults: " + UiErrors.safeMessage(ex));
         }
     }
 

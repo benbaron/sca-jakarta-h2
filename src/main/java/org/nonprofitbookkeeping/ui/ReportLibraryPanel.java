@@ -33,6 +33,7 @@ import org.nonprofitbookkeeping.report.ReportResult;
 import org.nonprofitbookkeeping.model.FixedAsset;
 import org.nonprofitbookkeeping.model.InventoryItem;
 import org.nonprofitbookkeeping.service.FiscalPeriodRange;
+import org.nonprofitbookkeeping.service.CompanyReportingDefaults;
 import org.nonprofitbookkeeping.service.CompanyUiPreferencesService;
 import org.nonprofitbookkeeping.service.FinancialReportExportAdapter;
 import org.nonprofitbookkeeping.service.FinancialReportExportFormat;
@@ -85,6 +86,8 @@ public class ReportLibraryPanel implements AppPanel
             new EnumMap<>(FinancialReportExportFormat.class);
     private final CompanyUiPreferencesService preferencesService = UiServiceRegistry.companyUiPreferences();
     private final String companyCode = activeCompanyCode();
+    private final CompanyReportingDefaults reportingDefaults =
+            preferencesService.loadReportingDefaults(companyCode);
     private final CompanyUiFormat companyFormat = new CompanyUiFormat(preferencesService.load(companyCode));
     private final ReportPresentationMetadata reportPresentationMetadata =
             ReportPresentationMetadata.from(
@@ -126,7 +129,7 @@ public class ReportLibraryPanel implements AppPanel
         Button export = new Button("Export");
         Button drillLedger = new Button("Drill to Journal");
         exportFormat.getItems().setAll(FinancialReportExportFormat.values());
-        exportFormat.getSelectionModel().select(FinancialReportExportFormat.TEXT);
+        exportFormat.getSelectionModel().select(reportingDefaults.defaultExportFormat());
         exportFormat.setPrefWidth(160);
         HBox actions = new HBox(8, run, export, drillLedger, new Label("Export format:"), exportFormat);
 
@@ -140,8 +143,9 @@ public class ReportLibraryPanel implements AppPanel
         loadFunds();
         loadDomainFilters();
 
-        reportList.getSelectionModel().select(ReportDefinition.TRIAL_BALANCE);
-        refreshParameterVisibility(ReportDefinition.TRIAL_BALANCE);
+        ReportDefinition openingReport = reportingDefaults.defaultReport();
+        reportList.getSelectionModel().select(openingReport);
+        refreshParameterVisibility(openingReport);
         runReport();
     }
 
