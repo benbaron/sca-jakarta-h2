@@ -47,13 +47,20 @@ public final class DepreciationPeriodBatchService
         requirePeriod(periodStart, periodEnd);
 
         Map<Long, DepreciationRunView> completedInPeriod = new LinkedHashMap<>();
+        Map<Long, DepreciationRunView> laterRun = new LinkedHashMap<>();
         for (DepreciationRunView run : runLoader.apply(company))
         {
-            if (run.runDate() != null
-                    && !run.runDate().isBefore(periodStart)
-                    && !run.runDate().isAfter(periodEnd))
+            if (run.runDate() == null)
+            {
+                continue;
+            }
+            if (!run.runDate().isBefore(periodStart) && !run.runDate().isAfter(periodEnd))
             {
                 completedInPeriod.putIfAbsent(run.fixedAssetId(), run);
+            }
+            else if (run.runDate().isAfter(periodEnd))
+            {
+                laterRun.putIfAbsent(run.fixedAssetId(), run);
             }
         }
 
@@ -61,8 +68,11 @@ public final class DepreciationPeriodBatchService
         BigDecimal total = BigDecimal.ZERO;
         for (FixedAssetView asset : assetLoader.apply(company))
         {
-            DepreciationRunView completed = completedInPeriod.get(asset.id());
-            Item item = classify(asset, completed, periodEnd);
+            Item item = classify(
+                    asset,
+                    completedInPeriod.get(asset.id()),
+                    laterRun.get(asset.id()),
+                    periodEnd);
             items.add(item);
             if (item.disposition() == Disposition.ELIGIBLE && item.proposedAmount() != null)
             {
@@ -163,6 +173,7 @@ public final class DepreciationPeriodBatchService
     private static Item classify(
             FixedAssetView asset,
             DepreciationRunView completed,
+            DepreciationRunView later,
             LocalDate postingDate)
     {
         if (completed != null)
@@ -173,6 +184,15 @@ public final class DepreciationPeriodBatchService
                     Disposition.ALREADY_RUN,
                     "Completed on " + completed.runDate() + " in transaction "
                             + completed.transactionId() + ".");
+        }
+        if (later != null)
+        {
+            return new Item(
+                    asset.id(), asset.name(), asset.status(), asset.acquisitionDate(),
+                    asset.currentBookValue(), asset.nextDepreciationAmount(),
+                    Disposition.LATER_RUN_EXISTS,
+                    "A later depreciation run exists on " + later.runDate()
+                            + "; correct or reverse later activity before backfilling this period.");
         }
         if (asset.status() != FixedAsset.Status.ACTIVE)
         {
@@ -188,7 +208,7 @@ public final class DepreciationPeriodBatchService
                     asset.id(), asset.name(), asset.status(), asset.acquisitionDate(),
                     asset.currentBookValue(), asset.nextDepreciationAmount(),
                     Disposition.NOT_ACQUIRED,
-                    "Acquisition date is after the accounting period end." );
+                    "Acquisition date is after the accounting period end.");
         }
         if (asset.nextDepreciationAmount() == null
                 || asset.nextDepreciationAmount().compareTo(BigDecimal.ZERO) <= 0)
@@ -197,13 +217,13 @@ public final class DepreciationPeriodBatchService
                     asset.id(), asset.name(), asset.status(), asset.acquisitionDate(),
                     asset.currentBookValue(), asset.nextDepreciationAmount(),
                     Disposition.NO_REMAINING_BASIS,
-                    "No remaining depreciable amount." );
+                    "No remaining depreciable amount.");
         }
         return new Item(
                 asset.id(), asset.name(), asset.status(), asset.acquisitionDate(),
                 asset.currentBookValue(), asset.nextDepreciationAmount(),
                 Disposition.ELIGIBLE,
-                "Will be revalidated by the authoritative per-asset service before commit." );
+                "Will be revalidated by the authoritative per-asset service before commit.");
     }
 
     private static String requireCompanyCode(String companyCode)
@@ -244,6 +264,7 @@ public final class DepreciationPeriodBatchService
     {
         ELIGIBLE,
         ALREADY_RUN,
+        LATER_RUN_EXISTS,
         INACTIVE,
         NOT_ACQUIRED,
         NO_REMAINING_BASIS
