@@ -1,12 +1,12 @@
 ---
-plan_version: 243
+plan_version: 244
 active_phase: P19
 active_slice: P19-S3
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P19-S3-company-ein-metadata
-active_pull_request: null
-active_head: 341852ce83173bd3e67f3cad948b60e72c37fc17
-next_action: "Publish the P19-S3 governing documentation successor, open a draft PR to main, run Maven PR Tests on the exact PR head, correct any concrete failure, then stop before merge for owner acceptance."
+active_pull_request: 309
+active_head: 2658665816e6eec095709e2e1c0f131fef18a4c7
+next_action: "Validate this PR-recording successor head in Maven PR Tests; require clean headless verification, repeat tests, and production JavaFX route compliance green, correct any concrete failure without widening into tax-filing/reporting behavior, then update PR #309 metadata only and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -31,7 +31,7 @@ A slice is `DONE` only when its behavior/documentation is merged, required valid
 | P16 | Interface-to-authority completion and integrity corrections | DONE through P16-C11 / PR #281 |
 | P17 | Cross-cutting UI, authority, cleanup, durable-record, documentation corrections | DONE through P17-C12 / PR #305 |
 | P18 | Depreciation-run workflow completion | DONE through P18-S1 / PR #306 |
-| P19 | Deferred Company Administration extensions | P19-S1 DONE; P19-S2 DONE; P19-S3 IN_PROGRESS |
+| P19 | Deferred Company Administration extensions | P19-S1 DONE; P19-S2 DONE; P19-S3 VERIFYING |
 | P20 | Authentication and runtime authorization | BLOCKED pending explicit security requirements and authorization |
 
 ## 3. Established product decisions
@@ -88,12 +88,13 @@ Governing design: `doc/P19-S2-company-reporting-defaults.md`.
 
 ### P19-S3 — Company EIN informational metadata
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P19-S3-company-ein-metadata`
 Starting base: merged `main` `b4ef30643978eb926e97773a13a6102b0389244a`
 Implementation commit: `341852ce83173bd3e67f3cad948b60e72c37fc17`
-Pull request: not opened yet.
+Documentation commit: `2658665816e6eec095709e2e1c0f131fef18a4c7`
+Pull request: #309
 
 Owner requirement resolving the former block:
 
@@ -127,7 +128,7 @@ No local Maven result is claimed because the execution container cannot resolve 
 
 Next exact action:
 
-Publish the P19-S3 documentation successor, open a draft PR to `main`, validate the exact PR head in GitHub Actions, correct any concrete failure without widening into tax-filing/reporting behavior, and stop before merge for owner acceptance.
+Validate the PR-recording successor to documentation commit `2658665816e6eec095709e2e1c0f131fef18a4c7` in GitHub Actions. Correct any concrete failure without widening into tax-filing/reporting behavior; when the exact final head is green, update PR #309 metadata only and stop before merge for owner acceptance.
 
 ## 6. P20 — Authentication and runtime authorization
 
