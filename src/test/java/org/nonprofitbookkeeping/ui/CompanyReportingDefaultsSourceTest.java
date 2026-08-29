@@ -33,8 +33,12 @@ class CompanyReportingDefaultsSourceTest
         assertFalse(reportLibrary.contains(
                 "reportList.getSelectionModel().select(ReportDefinition.TRIAL_BALANCE);"));
 
-        assertTrue(preferences.contains("reportingDefaults.defaultReportId"));
-        assertTrue(preferences.contains("reportingDefaults.defaultExportFormat"));
+        assertTrue(preferences.contains(
+                "REPORTING_DEFAULTS_PREFIX = \"reportingDefaults.\""));
+        assertTrue(preferences.contains(
+                "DEFAULT_REPORT_KEY = REPORTING_DEFAULTS_PREFIX + \"defaultReportId\""));
+        assertTrue(preferences.contains(
+                "DEFAULT_EXPORT_FORMAT_KEY = REPORTING_DEFAULTS_PREFIX + \"defaultExportFormat\""));
         assertTrue(preferences.contains("saveState(companyCode, Map.of("));
     }
 }
