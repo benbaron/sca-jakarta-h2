@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.nonprofitbookkeeping.model.CompanyUiPreferences;
 import org.nonprofitbookkeeping.model.DateDisplayFormat;
 import org.nonprofitbookkeeping.model.MoneyPrintFormat;
+import org.nonprofitbookkeeping.report.ReportDefinition;
 import org.nonprofitbookkeeping.repository.JdbcCompanyUiPreferenceRepository;
 
 import java.sql.Connection;
@@ -63,5 +64,24 @@ class CompanyUiPreferencesServiceTest
         assertEquals("0.41", state.get("journal.divider.outer.0"));
         assertTrue(service.loadState("beta", "journal.").isEmpty());
         assertEquals(CompanyUiPreferences.defaults(), service.load("beta"));
+    }
+
+    @Test
+    void reportingDefaultsRoundTripByCompanyAndIgnoreStaleSavedValues()
+    {
+        assertEquals(CompanyReportingDefaults.defaults(), service.loadReportingDefaults("alpha"));
+
+        CompanyReportingDefaults alpha = new CompanyReportingDefaults(
+                ReportDefinition.BALANCE_SHEET,
+                FinancialReportExportFormat.PDF);
+        service.saveReportingDefaults("alpha", alpha);
+
+        assertEquals(alpha, service.loadReportingDefaults("ALPHA"));
+        assertEquals(CompanyReportingDefaults.defaults(), service.loadReportingDefaults("beta"));
+
+        service.saveState("alpha", Map.of(
+                "reportingDefaults.defaultReportId", "removed-report",
+                "reportingDefaults.defaultExportFormat", "REMOVED_FORMAT"));
+        assertEquals(CompanyReportingDefaults.defaults(), service.loadReportingDefaults("alpha"));
     }
 }
