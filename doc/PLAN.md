@@ -1,12 +1,12 @@
 ---
-plan_version: 239
+plan_version: 240
 active_phase: P19
-active_slice: P19-S1
-active_status: VERIFYING
-active_branch: codex/P19-S1-company-chart-assignment
-active_pull_request: 307
-active_head: 27a54599d7751d6f856743fdd3ce5fe4f79f4b07
-next_action: "Validate this PR-recording successor head in Maven PR Tests; require clean verification, repeat tests, and production JavaFX route compliance green, correct any real implementation/test/documentation mismatch, then update PR #307 metadata only and stop before merge for owner acceptance."
+active_slice: P19-S2
+active_status: IN_PROGRESS
+active_branch: codex/P19-S2-company-reporting-defaults
+active_pull_request: null
+active_head: e9ced0ed3fcba67063f8d9b3e7ab545d28ba8230
+next_action: "Publish the P19-S2 governing documentation successor, open a draft PR to main, inspect the exact diff, and require clean verification, repeat tests, and production JavaFX route compliance on the exact final head before owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -31,7 +31,7 @@ A slice is `DONE` only when its behavior/documentation is merged, required valid
 | P16 | Interface-to-authority completion and integrity corrections | DONE through P16-C11 / PR #281 |
 | P17 | Cross-cutting UI, authority, cleanup, durable-record, documentation corrections | DONE through P17-C12 / PR #305 |
 | P18 | Depreciation-run workflow completion | DONE through P18-S1 / PR #306 |
-| P19 | Deferred Company Administration extensions | P19-S1 VERIFYING |
+| P19 | Deferred Company Administration extensions | P19-S1 DONE; P19-S2 IN_PROGRESS |
 | P20 | Authentication and runtime authorization | BLOCKED pending explicit security requirements and authorization |
 
 ## 3. Established product decisions
@@ -42,116 +42,79 @@ A slice is `DONE` only when its behavior/documentation is merged, required valid
 - No parallel ledger, budget, import, record, preference, shell, session, reconciliation, period-close, depreciation, report, company, or Chart of Accounts authority.
 - Every enabled production command performs a genuine operation or navigation.
 - Durable records preserve meaningful history through governed lifecycle/correction semantics.
-- Company-specific money/date/table/divider state remains H2-backed.
+- Company-specific money/date/table/divider and other UI/workflow defaults remain H2-backed through the established company preference/state authority.
 - Compatibility identifiers/APIs remain only where a current compatibility path requires them.
 - Historical/archive documents remain historical evidence; current governing documents describe current production authority.
 
-## 4. P17 completion ledger
+## 4. Completed recent phases
 
-P17 is DONE.
+P17 is DONE through P17-C12 / PR #305. P18-S1 is DONE: PR #306 final head `d802cfdbb739978f09fa516ad09fde32a8fe92ff` passed Maven PR Tests run `33229276083`, job `99039021126`, and merged to `main` at `3dec9516f1bb785dfefb2b277372be7fed656871` after owner acceptance.
 
-- P17-C1: shared UI compliance; PRs #290/#291/#292 plus corrective PR #304 merged.
-- P17-C2: durable account lifecycle; PR #294 merged.
-- P17-C3: budget-version lifecycle; PR #295 merged.
-- P17-C4: banking durable-record lifecycle; PR #296 merged.
-- P17-C5: inventory lifecycle; PR #297 merged.
-- P17-C6: fund hierarchy lifecycle; PR #298 merged.
-- P17-C7: fixed-asset lifecycle; PR #299 merged.
-- P17-C8: Dashboard compliance; PR #300 merged.
-- P17-C9: Report Library active-period synchronization; PR #301 merged.
-- P17-C10: legacy UI retirement; PR #302 merged at `c7df4252681454f9f37584b14092b41155f8be51`.
-- P17-C11: legacy shell/session/date-range cleanup; PR #303 merged at `7427da72e37f29d3016afb67c1aa35931c01a897`.
-- P17-C12: documentation authority reconciliation; PR #305 final head `0b059e10a2907ad25ee971475317c3196a245193` passed Maven PR Tests run `33226042279`, owner acceptance was confirmed, and PR #305 merged to `main` at `3e87b56b26b189ca27008284734321c54a2ea0ec`.
-
-## 5. P18 — Depreciation-run workflow completion
-
-### P18-S1 — Accounting-period batching and Report Library integration
-
-Status: DONE.
-
-PR #306 final head `d802cfdbb739978f09fa516ad09fde32a8fe92ff` passed Maven PR Tests run `33229276083`, job `99039021126`: clean headless verification, repeat tests, and production JavaFX route compliance all succeeded. The owner subsequently merged PR #306 to `main` at `3dec9516f1bb785dfefb2b277372be7fed656871`.
-
-Governing design: `doc/P18-S1-period-depreciation-batching.md`
-Owner verification: `doc/P18-S1-period-depreciation-batching-user-testing.md`
-
-Completed behavior:
-
-- accounting-period preview is derived from active period plus configured start day;
-- eligible/excluded assets and deterministic period-end posting date are previewed;
-- each asset remains an independently atomic governed `FixedAssetService.runMonthlyDepreciation(...)` operation;
-- prior successes remain durable if a later asset fails, and retry naturally skips completed runs;
-- chronological backfill is fenced when later depreciation exists;
-- Report Library receives the selected period for the existing Fixed Asset Depreciation History & Schedule report;
-- no second depreciation engine, batch table, synthetic multi-asset transaction, migration, or report-side writer was introduced.
-
-## 6. P19 — Deferred Company Administration extensions
+## 5. P19 — Deferred Company Administration extensions
 
 ### P19-S1 — Company Chart of Accounts assignment administration
 
-Status: VERIFYING.
+Status: DONE.
 
-Branch: `codex/P19-S1-company-chart-assignment`
-Starting base: merged `main` `3dec9516f1bb785dfefb2b277372be7fed656871`
-Implementation commit: `c05980fc2a55ce6bbec604abc95582e689cfddc8` — `P19-S1: add company chart assignment workflow`
-Plan/documentation successor: `27a54599d7751d6f856743fdd3ce5fe4f79f4b07` — `P19-S1: record chart assignment plan and verification`
-Pull request: #307 — `P19-S1: add company Chart of Accounts assignment`
+PR #307 exact final head `75e2ab1a47e2fad95be460426ea64b038109842c` passed Maven PR Tests run `33231705169`, job `99045589148`: clean headless verification, repeat tests, and production JavaFX route compliance all succeeded. The owner accepted the desktop checks and merged PR #307 to `main` at `9e9ea01f180f1e35ed49916b064705a0fdff87db`.
 
-Governing design: `doc/P19-S1-company-chart-assignment.md`
-Company lifecycle authority: `doc/administration/company-lifecycle.md`
-Owner verification: `doc/P19-S1-company-chart-assignment-user-testing.md`
+Completed behavior:
 
-Persistence/architecture decision:
-
-- no migration is required;
-- `chart_of_accounts.company_id` remains immutable chart ownership authority for this workflow;
-- `company.active_chart_of_accounts_id` remains the current-chart selection authority;
-- chart assignment never moves accounts, transactions, interchange identities, bank/reconciliation facts, report history, or any other durable record between charts/companies;
-- ownerless legacy charts remain Company Ownership Diagnostics work and are not silently adopted by Company Admin.
-
-Selection semantics:
-
-- selected company must exist and be active;
-- target chart must exist and already belong to the exact company;
-- RETIRED charts are rejected;
-- selecting DRAFT promotes that chart to ACTIVE;
-- selecting an already ACTIVE chart changes only the company pointer;
-- prior ACTIVE charts are retained and are not auto-retired;
-- multiple company-owned ACTIVE charts may therefore exist, but the explicit company pointer determines the current chart;
-- existing missing-pointer fallback may resolve one unambiguous ACTIVE chart; multiple ACTIVE charts with no pointer remain an error requiring deliberate Company Admin selection.
-
-Implemented deliverables:
-
-- `CompanyAdminService.listCompanyCharts(...)` returns ownership-filtered chart projections;
-- `CompanyAdminService.assignActiveChart(...)` performs locked transactional selection and lifecycle/ownership validation;
-- `CompanyChartView` provides a detached UI projection;
-- `CompanySessionController` exposes the same authoritative service operations without another persistence path;
-- Company Admin now includes a real Chart of Accounts selector, current-state display, guarded **Make Active Chart** operation, explicit confirmation, and removal of the prior deferred-chart placeholder copy;
-- scalar dirty-state blocks chart reassignment until profile edits are saved/discarded;
-- `CompanyChartAssignmentServiceTest` proves DRAFT promotion, prior ACTIVE retention, old-account chart retention, and cross-company/RETIRED rejection;
-- `CompanyChartAssignmentSourceTest` guards the reachable UI/service wiring;
-- governing design, company lifecycle, and owner-testing documentation are updated.
-
-Validation:
-
-- no local Maven result is claimed because the current execution container cannot resolve GitHub for a repository checkout;
-- exact final branch head must pass repository Maven PR Tests, including `Run clean headless verification`, `Run tests`, and `Run production JavaFX route compliance`;
-- any failure must be diagnosed as implementation, test, or documentation drift; do not weaken ownership/history rules merely to satisfy stale source text.
-
-Next exact action:
-
-Validate this PR-recording successor head in Maven PR Tests, update PR #307 description with exact-final-head run/job evidence without another repository commit, and stop before merge for owner acceptance.
+- `chart_of_accounts.company_id` remains chart ownership authority;
+- `company.active_chart_of_accounts_id` remains the current-chart pointer;
+- Company Admin lists only company-owned charts and deliberately selects the current chart;
+- DRAFT selection promotes to ACTIVE, while RETIRED/cross-company selection is rejected;
+- prior ACTIVE charts and all existing account/history relationships remain intact;
+- no migration or second chart/assignment authority was introduced.
 
 ### P19-S2 — Company reporting-default administration
 
-Status: BLOCKED pending completion of P19-S1 and explicit persisted-consumer inspection.
+Status: IN_PROGRESS.
 
-Define persisted policy versus transient UI convenience and expose only defaults with real production consumers. Reuse existing preference authority; do not create a second preference store.
+Branch: `codex/P19-S2-company-reporting-defaults`
+Starting base: merged `main` `9e9ea01f180f1e35ed49916b064705a0fdff87db`
+Implementation head before this documentation successor: `e9ced0ed3fcba67063f8d9b3e7ab545d28ba8230`
+Pull request: not yet opened
+
+Governing design: `doc/P19-S2-company-reporting-defaults.md`
+Owner verification: `doc/P19-S2-company-reporting-defaults-user-testing.md`
+Company lifecycle authority: `doc/administration/company-lifecycle.md`
+
+Persisted-consumer inspection decision:
+
+- current Report Library has exactly two safe company-level opening defaults with real consumers: initial report selection and initial export format;
+- current Report Library otherwise derives dates from active-period/fiscal authority and treats fund, row limit, account, fixed-asset, inventory, and status filters as deliberate `ReportRequest` parameters;
+- therefore P19-S2 persists only **Default opening report** and **Default export format**;
+- those two values reuse existing H2 `company_ui_state` via `CompanyUiPreferencesService` under `reportingDefaults.`;
+- no migration and no second preference repository/table are required;
+- missing or stale saved values fall back to Trial Balance/Text;
+- a new Report Library reads the defaults once; changing Company Admin defaults never replaces an already-open operator selection;
+- Report Library interaction does not automatically rewrite company defaults.
+
+Implemented on `e9ced0ed3fcba67063f8d9b3e7ab545d28ba8230`:
+
+- typed `CompanyReportingDefaults` projection;
+- `CompanyUiPreferencesService.loadReportingDefaults(...)` / `saveReportingDefaults(...)` with stable report-ID and export-enum persistence;
+- Company Admin **Reporting defaults** controls with immediate company-owned persistence and scalar-dirty guard;
+- Report Library startup uses company defaults instead of hard-coded Trial Balance/Text;
+- focused H2 round-trip/stale-value coverage and production source guard;
+- no report query/execution/export-adapter behavior changed.
+
+Validation:
+
+- no local Maven result is claimed because the execution container cannot resolve GitHub for a repository checkout;
+- exact final branch head must pass repository Maven PR Tests: `Run clean headless verification`, `Run tests`, and `Run production JavaFX route compliance`;
+- any failure must be corrected without introducing a migration, second preference authority, persisted report-request filters, or report-side accounting state.
+
+Next exact action:
+
+Publish this documentation successor, open a draft PR to `main`, inspect the exact changed-file set, and validate the exact final head in GitHub Actions. Stop before merge for owner acceptance.
 
 ### P19-S3 — Company tax-filing metadata administration
 
-Status: BLOCKED until the owner specifies required filing identities, periods, fields, and reporting/export consumers.
+Status: BLOCKED until the owner specifies required filing identities, periods, fields, and reporting/export consumers. Do not invent tax identifiers or filing workflows from the legacy architecture placeholder.
 
-## 7. P20 — Authentication and runtime authorization
+## 6. P20 — Authentication and runtime authorization
 
 Status: BLOCKED pending explicit security requirements and authorization.
 
@@ -167,6 +130,6 @@ BLOCKED until P20-S1 is DONE.
 
 BLOCKED until P20-S2 is DONE.
 
-## 8. Advancement rule
+## 7. Advancement rule
 
-Execute only the active slice. Do not advance beyond P19-S1 until its exact final head is green, owner acceptance is complete, and its PR is merged. After merge, rescan current `main` before selecting another slice.
+Execute only the active slice. Do not advance beyond P19-S2 until its exact final head is green, owner acceptance is complete, and its PR is merged. After merge, rescan current `main` before selecting another slice.

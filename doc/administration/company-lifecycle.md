@@ -12,6 +12,8 @@ Chart ownership and chart selection are separate durable facts:
 - `company.active_chart_of_accounts_id` selects the company's current Chart of Accounts;
 - selecting a chart never moves accounts, transactions, identities, or historical references between charts or companies.
 
+Company-owned display/workflow preferences use the established H2 `company_ui_preference` and `company_ui_state` authorities. They are not company master-data columns and do not create an alternate Company persistence model.
+
 ## Persisted profile
 
 P12-S3 persists the scalar company profile fields already supported by the H2 model:
@@ -25,13 +27,13 @@ P12-S3 persists the scalar company profile fields already supported by the H2 mo
 - fiscal-year start month and day; and
 - ISO-4217 default currency.
 
-P19-S1 adds deliberate active-chart assignment using the already-persisted company/chart relationship. Tax filing and expanded reporting-default editors remain deferred until their separate vertically complete persistence workflows exist. Bank accounts remain in the Banking workspace.
+P19-S1 adds deliberate active-chart assignment using the already-persisted company/chart relationship. P19-S2 adds the two Report Library opening defaults that have real production consumers today. Tax filing administration remains deferred until its separate vertically complete persistence/reporting workflow is specified. Bank accounts remain in the Banking workspace.
 
 ## Create and edit
 
 `CompanyAdminService.save(CompanyCommand, currentCompanyCode)` performs create or stable-ID update in one JPA transaction. It validates required values, lengths, case-insensitive code uniqueness, the fiscal date, and ISO currency before writing. A failure rolls the transaction back.
 
-The existing Administration destination continues to use `AppPanelId.SETTINGS`. Its Company Admin tab provides New, Save, Select Active, Refresh, and Chart of Accounts assignment operations. It does not add a second shell destination or administration framework.
+The existing Administration destination continues to use `AppPanelId.SETTINGS`. Its Company Admin tab provides New, Save, Select Active, Refresh, Chart of Accounts assignment, and company reporting-default administration. It does not add a second shell destination or administration framework.
 
 The adjacent **Company Ownership Diagnostics** tab is a corrective legacy-data workflow, not another company editor. It lists the unresolved rows that block governed interchange, preserves the entity type, stable record ID, human-readable record description, diagnostic code, candidate count, cause, and resolution guidance, and permits a single direct ownerless row to be assigned to the active company receiving the import after an actor and audit note are supplied. The operator's selected import target is authoritative; the workflow does not require reconstructing a separate historical company. The confirmation and result name the exact row and company. Cross-company reference conflicts remain non-assignable and explain that the underlying accounting links must be corrected in their owning workflow.
 
@@ -57,6 +59,21 @@ The UI requires confirmation before changing the pointer and explains the effect
 
 Chart of Accounts JSON `CREATE_NEW_CHART` continues to create a company-owned `DRAFT` chart without silently activating it. Company Admin is now the deliberate activation/selection workflow. `MERGE_BY_CODE` and account administration continue to use the company's active-chart pointer.
 
+## Reporting defaults
+
+P19-S2 deliberately separates reporting workflow convenience from accounting/report parameters.
+
+`CompanyUiPreferencesService` persists two typed values through existing H2 `company_ui_state` rows under `reportingDefaults.`:
+
+- the stable ID of the report selected when a new Report Library is opened;
+- the export format selected when a new Report Library is opened.
+
+The service exposes these as `CompanyReportingDefaults`. Missing or stale values fall back to Trial Balance/Text. No schema migration or second preference repository is introduced.
+
+Company Admin saves reporting-default changes immediately through `CompanyUiPreferencesService`; they are not folded into the company master-data JPA transaction. The controls are disabled while scalar company-profile edits are dirty so an edited company code cannot cause a preference write under stale identity text.
+
+A newly constructed Report Library reads these two defaults once. An already-open Report Library keeps the operator's current report/export choices. Report dates, fund selection, row limits, account filters, and fixed-asset/inventory filters remain governed by active-period/fiscal authority or the current `ReportRequest` and are intentionally not persisted as company reporting policy.
+
 ## Active lifecycle
 
 - A company may be selected only when an active H2 row exists.
@@ -68,7 +85,7 @@ Chart of Accounts JSON `CREATE_NEW_CHART` continues to create a company-owned `D
 
 ## Workspace switching
 
-`CompanySessionController` coordinates the H2 service with `UiSessionState` and `AppStateStore`. It filters recent codes against active H2 companies before saving selection convenience state. It also exposes the service-owned chart list/assignment operations to Company Admin without creating a second persistence path.
+`CompanySessionController` coordinates the H2 service with `UiSessionState` and `AppStateStore`. It filters recent codes against active H2 companies before saving selection convenience state. It also exposes the service-owned chart list/assignment operations to Company Admin without creating a second persistence path. Company reporting defaults remain in the existing company UI preference service rather than the session controller.
 
 The production toolbar lists only active H2 companies. A company change:
 
@@ -76,7 +93,7 @@ The production toolbar lists only active H2 companies. A company change:
 2. prompts before discarding dirty open workspaces;
 3. updates session and workspace context;
 4. persists the recent-selection convenience; and
-5. recreates open panels so cached services, company formatting, and company-owned layout state use the new active company.
+5. recreates open panels so cached services, company formatting, company-owned layout state, and new Report Library opening defaults use the new active company.
 
 Database changes are owned by `DatabaseSessionController`, not Preferences. The Preferences tab displays the connected database path as read-only factual state and directs database selection/creation to the File and recovery commands.
 
@@ -94,7 +111,7 @@ If target preparation, migration, validation, company resolution, or dirty-state
 
 The donor `CompanyManagementService`, `CompanyManagementPanelFX`, and `CompanySetupWizardFX` were reviewed for stable-ID editing, fiscal/currency validation, explicit selection, and archive/deactivate interaction ideas. Their serialized company repository, static `CurrentCompany`, delete workflow, and alternate persistence model were not imported.
 
-For P19-S1 the donor repository did not provide a compatible company-owned active-chart pointer workflow to import. The current H2 `chart_of_accounts.company_id` plus `company.active_chart_of_accounts_id` model therefore remains authoritative rather than introducing donor/static company state.
+For P19-S1 the donor repository did not provide a compatible company-owned active-chart pointer workflow to import. For P19-S2 it likewise did not provide a compatible persisted opening-report/export-default consumer. Current H2 company ownership and `CompanyUiPreferencesService` therefore remain authoritative rather than introducing donor/static preference state.
 
 ## Manual validation
 
@@ -112,4 +129,8 @@ For P19-S1 the donor repository did not provide a compatible company-owned activ
 12. Confirm the previously active chart and all of its accounts still exist unchanged. Open Chart of Accounts and confirm new account maintenance now uses the newly selected chart.
 13. Confirm a Chart of Accounts JSON `MERGE_BY_CODE` preview targets the newly selected chart, while creating another new chart still leaves that chart `DRAFT` until explicitly selected.
 14. Confirm a `RETIRED` chart cannot be selected and a chart owned by another company never appears in the selected company's choices.
-15. Open **Company Ownership Diagnostics**. For a direct ownerless test row, confirm the preselected active import company, enter an actor and audit note, confirm the assignment, and verify the row disappears and an audit event exists. Confirm a cross-company reference row cannot be assigned or silently dismissed.
+15. Set a non-default opening report/export format in Company Admin, close/reopen Report Library, and confirm the new window uses those choices.
+16. Change the report/export format inside the open Report Library and confirm Company Admin defaults do not change; modify the Company Admin default while the report stays open and confirm the open selection is not overwritten.
+17. Switch companies and confirm each company restores its own opening report/export defaults while report dates/funds/filters remain transient/current-context parameters.
+18. Begin a scalar company edit and confirm reporting-default controls remain disabled until that edit is saved or discarded.
+19. Open **Company Ownership Diagnostics**. For a direct ownerless test row, confirm the preselected active import company, enter an actor and audit note, confirm the assignment, and verify the row disappears and an audit event exists. Confirm a cross-company reference row cannot be assigned or silently dismissed.
