@@ -1,12 +1,12 @@
 ---
-plan_version: 237
-active_phase: P18
-active_slice: P18-S1
-active_status: VERIFYING
-active_branch: codex/P18-S1-period-depreciation-batching
-active_pull_request: 306
-active_head: 2fd0cbe25e6deda58383f01c96bc8fa2feac30ae
-next_action: "Validate this documentation-successor head in Maven PR Tests; require clean verification, repeat tests, and production JavaFX route compliance green, then update PR #306 metadata only and stop before merge for owner acceptance."
+plan_version: 238
+active_phase: P19
+active_slice: P19-S1
+active_status: IN_PROGRESS
+active_branch: codex/P19-S1-company-chart-assignment
+active_pull_request: null
+active_head: c05980fc2a55ce6bbec604abc95582e689cfddc8
+next_action: "Publish this PLAN successor on the P19-S1 branch, open a draft PR to main, and validate the exact final head with clean verification, repeat tests, and production JavaFX route compliance. Correct any real implementation/test/documentation mismatch, then stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -30,8 +30,8 @@ A slice is `DONE` only when its behavior/documentation is merged, required valid
 | P12-P15 | Administration, diagnostics/exchange, hardening, versioned interchange | DONE for original contracts |
 | P16 | Interface-to-authority completion and integrity corrections | DONE through P16-C11 / PR #281 |
 | P17 | Cross-cutting UI, authority, cleanup, durable-record, documentation corrections | DONE through P17-C12 / PR #305 |
-| P18 | Depreciation-run workflow completion | P18-S1 VERIFYING |
-| P19 | Deferred Company Administration extensions | BLOCKED pending explicit product requirements |
+| P18 | Depreciation-run workflow completion | DONE through P18-S1 / PR #306 |
+| P19 | Deferred Company Administration extensions | P19-S1 IN_PROGRESS |
 | P20 | Authentication and runtime authorization | BLOCKED pending explicit security requirements and authorization |
 
 ## 3. Established product decisions
@@ -39,7 +39,7 @@ A slice is `DONE` only when its behavior/documentation is merged, required valid
 - One production JavaFX application and one H2 accounting/operational authority.
 - Existing JPA/Hibernate model and nondestructive Flyway migrations remain the schema foundation.
 - Write services own validation and transactions; query/orchestration services do not create parallel persistence.
-- No parallel ledger, budget, import, record, preference, shell, session, reconciliation, period-close, depreciation, or report authority.
+- No parallel ledger, budget, import, record, preference, shell, session, reconciliation, period-close, depreciation, report, company, or Chart of Accounts authority.
 - Every enabled production command performs a genuine operation or navigation.
 - Durable records preserve meaningful history through governed lifecycle/correction semantics.
 - Company-specific money/date/table/divider state remains H2-backed.
@@ -67,87 +67,88 @@ P17 is DONE.
 
 ### P18-S1 — Accounting-period batching and Report Library integration
 
-Status: VERIFYING.
+Status: DONE.
 
-Branch: `codex/P18-S1-period-depreciation-batching`
-Starting base: merged `main` `3e87b56b26b189ca27008284734321c54a2ea0ec`
-Pull request: #306
-Green implementation head: `2fd0cbe25e6deda58383f01c96bc8fa2feac30ae`
+PR #306 final head `d802cfdbb739978f09fa516ad09fde32a8fe92ff` passed Maven PR Tests run `33229276083`, job `99039021126`: clean headless verification, repeat tests, and production JavaFX route compliance all succeeded. The owner subsequently merged PR #306 to `main` at `3dec9516f1bb785dfefb2b277372be7fed656871`.
 
 Governing design: `doc/P18-S1-period-depreciation-batching.md`
 Owner verification: `doc/P18-S1-period-depreciation-batching-user-testing.md`
 
-Purpose:
+Completed behavior:
 
-Complete a user-usable accounting-period depreciation workflow by orchestrating the existing `FixedAssetService.runMonthlyDepreciation(...)` authority. Do not create a second depreciation engine, ledger writer, or batch persistence model.
-
-Batch-semantics decision:
-
-- use **independently atomic governed asset runs**, not one multi-asset transaction;
-- calculate the period from `ActivePeriodContext` plus the configured period start day;
-- use period end as the deterministic run/posting date;
-- freeze a preview of company, period, asset set, proposed amounts, and exclusions before confirmation;
-- classify any durable run anywhere inside the selected accounting period as `ALREADY_RUN`;
-- reject chronological backfill as `LATER_RUN_EXISTS` when a later depreciation run exists, because the authoritative per-asset calculation uses completed run history and later accounting must be corrected first;
-- re-preview before each execution pass and skip a previously eligible asset whose state or proposed amount changed;
-- call `FixedAssetService.runMonthlyDepreciation(...)` separately for every still-eligible asset so its lock, service validations, closed-period protection, canonical transaction, durable run, portable identity, audit, and rollback remain authoritative;
-- continue after an isolated asset failure and report exact committed/skipped/failed outcomes;
-- retry by previewing again; previous successes become `ALREADY_RUN`, so only remaining eligible assets are attempted;
-- preserve the existing database `(fixed_asset_id, run_date)` uniqueness as the final exact-date concurrency guard;
-- hand the selected period to the existing Report Library via `DateRangeContext` / canonical `REPORT_LIBRARY`; the Fixed Asset Depreciation History & Schedule report remains read-only and creates no future transactions.
-
-Implemented deliverables:
-
-- `DepreciationPeriodBatchService` is a persistence-free orchestration layer over current asset/run projections and `FixedAssetService.runMonthlyDepreciation(...)`; it contains no JPA/SQL or transaction construction.
-- Depreciation Runs is converted from an arbitrary-date/single-asset action to active-period preview, explicit batch confirmation, independent execution summary, and completed-run history.
-- Report Library receives the exact selected accounting-period range through the existing date-range/canonical-panel seam; no second report surface or report-side writer was introduced.
-- `DepreciationPeriodBatchServiceTest` covers period classification, later-run chronology fencing, preview-without-write, frozen-preview revalidation, isolated failure, and retry/idempotency behavior.
-- `DepreciationRunsPanelSourceTest` requires active-period calculation, confirmation, async preview/run, Report Library handoff, and rejection of the former arbitrary `LocalDate.now()` run-date control.
-- Governing design and owner-testing documents are present.
-- No schema/migration change and no modification to the canonical `FixedAssetService` writer were required.
-
-Automated validation:
-
-- Maven PR Tests run `33229022450`, job `99038281118`, on exact implementation head `2fd0cbe25e6deda58383f01c96bc8fa2feac30ae`: SUCCESS.
-- `Run clean headless verification`: SUCCESS.
-- `Run tests`: SUCCESS.
-- `Run production JavaFX route compliance`: SUCCESS.
-- No local Maven result is claimed.
-- This PLAN evidence update creates a documentation-only successor head; that successor must also pass all three repository gates before owner handoff.
-
-Guardrails:
-
-- no schema/migration change in this slice;
-- no change to the canonical per-asset transaction/audit/portable-identity writer;
-- no synthetic multi-asset transaction or batch table;
-- no automatic future schedule posting;
-- no report-side accounting writes;
-- no hidden retry or silent partial-success claim;
-- UI changes retain company money/date formatting, company-owned table/divider state, scrolling, tooltips, and reachable controls.
-
-Owner acceptance:
-
-Pending. Follow `doc/P18-S1-period-depreciation-batching-user-testing.md`. Stop before merge.
-
-Next exact action:
-
-Validate this documentation successor in Maven PR Tests, update PR #306 description with exact-final-head run/job evidence without another repository commit, and stop before merge for owner acceptance.
+- accounting-period preview is derived from active period plus configured start day;
+- eligible/excluded assets and deterministic period-end posting date are previewed;
+- each asset remains an independently atomic governed `FixedAssetService.runMonthlyDepreciation(...)` operation;
+- prior successes remain durable if a later asset fails, and retry naturally skips completed runs;
+- chronological backfill is fenced when later depreciation exists;
+- Report Library receives the selected period for the existing Fixed Asset Depreciation History & Schedule report;
+- no second depreciation engine, batch table, synthetic multi-asset transaction, migration, or report-side writer was introduced.
 
 ## 6. P19 — Deferred Company Administration extensions
 
-Status: BLOCKED pending explicit product requirements and persistence inspection.
+### P19-S1 — Company Chart of Accounts assignment administration
 
-### P19-S1 — Company chart assignment administration
+Status: IN_PROGRESS.
 
-Define the durable company↔chart relationship, safe reassignment rules, and interactions with existing accounts, reports, imports, and company switching before implementation.
+Branch: `codex/P19-S1-company-chart-assignment`
+Starting base: merged `main` `3dec9516f1bb785dfefb2b277372be7fed656871`
+Implementation head before this PLAN successor: `c05980fc2a55ce6bbec604abc95582e689cfddc8`
+Pull request: not yet opened
+
+Governing design: `doc/P19-S1-company-chart-assignment.md`
+Company lifecycle authority: `doc/administration/company-lifecycle.md`
+Owner verification: `doc/P19-S1-company-chart-assignment-user-testing.md`
+
+Persistence/architecture decision:
+
+- no migration is required;
+- `chart_of_accounts.company_id` remains immutable chart ownership authority for this workflow;
+- `company.active_chart_of_accounts_id` remains the current-chart selection authority;
+- chart assignment never moves accounts, transactions, interchange identities, bank/reconciliation facts, report history, or any other durable record between charts/companies;
+- ownerless legacy charts remain Company Ownership Diagnostics work and are not silently adopted by Company Admin.
+
+Selection semantics:
+
+- selected company must exist and be active;
+- target chart must exist and already belong to the exact company;
+- RETIRED charts are rejected;
+- selecting DRAFT promotes that chart to ACTIVE;
+- selecting an already ACTIVE chart changes only the company pointer;
+- prior ACTIVE charts are retained and are not auto-retired;
+- multiple company-owned ACTIVE charts may therefore exist, but the explicit company pointer determines the current chart;
+- existing missing-pointer fallback may resolve one unambiguous ACTIVE chart; multiple ACTIVE charts with no pointer remain an error requiring deliberate Company Admin selection.
+
+Implemented deliverables on `c05980fc2a55ce6bbec604abc95582e689cfddc8`:
+
+- `CompanyAdminService.listCompanyCharts(...)` returns ownership-filtered chart projections;
+- `CompanyAdminService.assignActiveChart(...)` performs locked transactional selection and lifecycle/ownership validation;
+- `CompanyChartView` provides a detached UI projection;
+- `CompanySessionController` exposes the same authoritative service operations without another persistence path;
+- Company Admin now includes a real Chart of Accounts selector, current-state display, guarded **Make Active Chart** operation, explicit confirmation, and removal of the prior deferred-chart placeholder copy;
+- scalar dirty-state blocks chart reassignment until profile edits are saved/discarded;
+- `CompanyChartAssignmentServiceTest` proves DRAFT promotion, prior ACTIVE retention, old-account chart retention, and cross-company/RETIRED rejection;
+- `CompanyChartAssignmentSourceTest` guards the reachable UI/service wiring;
+- governing design, company lifecycle, and owner-testing documentation are updated.
+
+Validation:
+
+- no local Maven result is claimed because the current execution container cannot resolve GitHub for a repository checkout;
+- exact final branch head must pass repository Maven PR Tests, including `Run clean headless verification`, `Run tests`, and `Run production JavaFX route compliance`;
+- any failure must be diagnosed as implementation, test, or documentation drift; do not weaken ownership/history rules merely to satisfy stale source text.
+
+Next exact action:
+
+Publish this PLAN successor, open a draft PR to `main`, inspect the exact diff, and validate the exact final head in GitHub Actions. Stop before merge for owner acceptance after the final head is green.
 
 ### P19-S2 — Company reporting-default administration
 
-Define persisted policy versus transient UI convenience and expose only defaults with real production consumers. Reuse existing preference authority.
+Status: BLOCKED pending completion of P19-S1 and explicit persisted-consumer inspection.
+
+Define persisted policy versus transient UI convenience and expose only defaults with real production consumers. Reuse existing preference authority; do not create a second preference store.
 
 ### P19-S3 — Company tax-filing metadata administration
 
-BLOCKED until the owner specifies required filing identities, periods, fields, and reporting/export consumers.
+Status: BLOCKED until the owner specifies required filing identities, periods, fields, and reporting/export consumers.
 
 ## 7. P20 — Authentication and runtime authorization
 
@@ -167,4 +168,4 @@ BLOCKED until P20-S2 is DONE.
 
 ## 8. Advancement rule
 
-Execute only the active slice. Do not advance beyond P18-S1 until its exact final head is green, owner acceptance is complete, and its PR is merged. After merge, rescan current `main` before selecting another slice.
+Execute only the active slice. Do not advance beyond P19-S1 until its exact final head is green, owner acceptance is complete, and its PR is merged. After merge, rescan current `main` before selecting another slice.
