@@ -1,12 +1,12 @@
 ---
-plan_version: 241
+plan_version: 242
 active_phase: P19
 active_slice: P19-S2
 active_status: VERIFYING
 active_branch: codex/P19-S2-company-reporting-defaults
 active_pull_request: 308
-active_head: 49e2319c0bf44785f65eb7aaa06cbd75931f8948
-next_action: "Validate this PR-recording successor head in Maven PR Tests; require clean verification, repeat tests, and production JavaFX route compliance green, correct any real implementation/test/documentation mismatch, then update PR #308 metadata only and stop before merge for owner acceptance."
+active_head: 913089672ec094575e8698c26034dc29a4942353
+next_action: "Validate the documentation successor to corrective commit 913089672ec094575e8698c26034dc29a4942353 in Maven PR Tests; require clean verification, repeat tests, and production JavaFX route compliance green, then update PR #308 metadata only and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -75,6 +75,7 @@ Branch: `codex/P19-S2-company-reporting-defaults`
 Starting base: merged `main` `9e9ea01f180f1e35ed49916b064705a0fdff87db`
 Implementation commit: `e9ced0ed3fcba67063f8d9b3e7ab545d28ba8230`
 Documentation commit: `49e2319c0bf44785f65eb7aaa06cbd75931f8948`
+Corrective source-guard commit: `913089672ec094575e8698c26034dc29a4942353`
 Pull request: #308
 
 Governing design: `doc/P19-S2-company-reporting-defaults.md`
@@ -105,12 +106,15 @@ Implemented deliverables:
 Validation:
 
 - no local Maven result is claimed because the execution container cannot resolve GitHub for a repository checkout;
-- the exact PR-recording successor head must pass repository Maven PR Tests: `Run clean headless verification`, `Run tests`, and `Run production JavaFX route compliance`;
-- any failure must be corrected without introducing a migration, second preference authority, persisted report-request filters, or report-side accounting state.
+- exact verification head `a685dfb1ca83327479b1143312728175a99bae4c` failed Maven PR Tests run `33234747858` (#1647), job `99053661368`, in `Run clean headless verification`; production and test compilation succeeded, while the repeat-test and production-route steps were skipped after the clean gate failed;
+- the failure was `CompanyReportingDefaultsSourceTest.companyAdminAndReportLibraryShareCompanyOwnedOpeningDefaults`: its source-text guard required the compiler-concatenated strings `reportingDefaults.defaultReportId` and `reportingDefaults.defaultExportFormat` to occur literally, while production correctly declares `REPORTING_DEFAULTS_PREFIX = "reportingDefaults."` and composes `DEFAULT_REPORT_KEY` / `DEFAULT_EXPORT_FORMAT_KEY` from that prefix;
+- corrective commit `913089672ec094575e8698c26034dc29a4942353` changes only that source guard to verify the declared prefix and key-composition expressions; no production behavior, persistence, Flyway/H2 setup, schema, or migration changed;
+- the documentation successor to that corrective commit must pass repository Maven PR Tests: `Run clean headless verification`, `Run tests`, and `Run production JavaFX route compliance`;
+- any further failure must be corrected without introducing a migration, second preference authority, persisted report-request filters, or report-side accounting state.
 
 Next exact action:
 
-Validate this PR-recording successor in GitHub Actions, update PR #308 with exact final-head run/job evidence without another repository commit, and stop before merge for owner acceptance.
+Validate the documentation successor to corrective commit `913089672ec094575e8698c26034dc29a4942353` in GitHub Actions, update PR #308 with exact final-head run/job evidence without another repository commit, and stop before merge for owner acceptance.
 
 ### P19-S3 — Company tax-filing metadata administration
 
