@@ -2,9 +2,9 @@
 
 ## Authority
 
-The `company` table is authoritative for company existence and active/inactive lifecycle. `MultiCompanyState` is only a recent-selection convenience. A code found only in sidecar state is not a company and must never become the active workspace company.
+The `company` table is authoritative for company existence, profile metadata, and active/inactive lifecycle. `MultiCompanyState` is only a recent-selection convenience. A code found only in sidecar state is not a company and must never become the active workspace company.
 
-`Company.id` is stable record identity. The code is a unique business label and may be edited without creating a second company row. Code-keyed company UI preferences/state and period-close history move to the new code in the same transaction; company-owned tables that use `company_id` remain attached automatically.
+`Company.id` is stable record identity. The code is a unique business label and may be edited without creating a second company row. Code-keyed company UI preferences/state and period-close history move to the new code in the same transaction; company-owned tables that use `company_id` remain attached automatically. EIN is informational metadata on this same stable `company` row.
 
 Chart ownership and chart selection are separate durable facts:
 
@@ -16,24 +16,33 @@ Company-owned display/workflow preferences use the established H2 `company_ui_pr
 
 ## Persisted profile
 
-P12-S3 persists the scalar company profile fields already supported by the H2 model:
+The scalar company profile fields supported by the H2 model are:
 
 - code;
 - display name;
 - legal name;
 - branch type;
 - parent organization or kingdom;
+- optional informational EIN;
 - active state;
 - fiscal-year start month and day; and
 - ISO-4217 default currency.
 
-P19-S1 adds deliberate active-chart assignment using the already-persisted company/chart relationship. P19-S2 adds the two Report Library opening defaults that have real production consumers today. Tax filing administration remains deferred until its separate vertically complete persistence/reporting workflow is specified. Bank accounts remain in the Banking workspace.
+P19-S1 adds deliberate active-chart assignment using the already-persisted company/chart relationship. P19-S2 adds the two Report Library opening defaults that have real production consumers today. P19-S3 makes EIN ordinary company metadata and explicitly rejects a tax-filing workflow. Bank accounts remain in the Banking workspace.
+
+## EIN informational metadata
+
+`company.ein` is the sole live production authority for EIN. It is optional, trimmed on save, blank-to-null, and limited to 40 characters. The application deliberately does not impose an IRS-specific syntax validator or treat the field as evidence that a filing identity is valid.
+
+V46 originally created `company_tax_profile`, including `ein`, `tax_jurisdiction`, `filing_name`, `filing_address`, and `notes`. Those filing-oriented fields never acquired a production maintenance/reporting workflow. V75 adds `company.ein` and backfills any nonblank legacy EIN into the corresponding company row without dropping the legacy table or its data.
+
+After V75, `CompanyTaxProfile` is no longer a mapped production entity and `CompanyAdminService` no longer exposes a tax-profile query. The legacy table is retained only as nondestructive historical migration residue; it is not a second writable EIN authority. No tax jurisdiction, filing period, return, status, or submission workflow is provided.
 
 ## Create and edit
 
-`CompanyAdminService.save(CompanyCommand, currentCompanyCode)` performs create or stable-ID update in one JPA transaction. It validates required values, lengths, case-insensitive code uniqueness, the fiscal date, and ISO currency before writing. A failure rolls the transaction back.
+`CompanyAdminService.save(CompanyCommand, currentCompanyCode)` performs create or stable-ID update in one JPA transaction. It validates required values, lengths, case-insensitive code uniqueness, the fiscal date, and ISO currency before writing. EIN is optional informational text and receives only the shared trim/blank-to-null/length validation. A failure rolls the transaction back.
 
-The existing Administration destination continues to use `AppPanelId.SETTINGS`. Its Company Admin tab provides New, Save, Select Active, Refresh, Chart of Accounts assignment, and company reporting-default administration. It does not add a second shell destination or administration framework.
+The existing Administration destination continues to use `AppPanelId.SETTINGS`. Its Company Admin tab provides New, Save, Select Active, Refresh, Company profile including EIN, Chart of Accounts assignment, and company reporting-default administration. It does not add a second shell destination, tax-filing panel, or administration framework.
 
 The adjacent **Company Ownership Diagnostics** tab is a corrective legacy-data workflow, not another company editor. It lists the unresolved rows that block governed interchange, preserves the entity type, stable record ID, human-readable record description, diagnostic code, candidate count, cause, and resolution guidance, and permits a single direct ownerless row to be assigned to the active company receiving the import after an actor and audit note are supplied. The operator's selected import target is authoritative; the workflow does not require reconstructing a separate historical company. The confirmation and result name the exact row and company. Cross-company reference conflicts remain non-assignable and explain that the underlying accounting links must be corrected in their owning workflow.
 
@@ -74,6 +83,8 @@ Company Admin saves reporting-default changes immediately through `CompanyUiPref
 
 A newly constructed Report Library reads these two defaults once. An already-open Report Library keeps the operator's current report/export choices. Report dates, fund selection, row limits, account filters, and fixed-asset/inventory filters remain governed by active-period/fiscal authority or the current `ReportRequest` and are intentionally not persisted as company reporting policy.
 
+EIN is not automatically added to report headings or exports by P19-S3. Any future report/interchange consumer for EIN requires an explicit separate requirement rather than being inferred from storage.
+
 ## Active lifecycle
 
 - A company may be selected only when an active H2 row exists.
@@ -81,7 +92,7 @@ A newly constructed Report Library reads these two defaults once. An already-ope
 - The current company cannot be deactivated. Another active company must be selected first.
 - A save that would leave no active companies is rejected.
 - Companies are deactivated rather than hard-deleted. No Company Admin Delete command is exposed.
-- Editing the current company's code preserves its stable ID and updates the active session selection to the new code.
+- Editing the current company's code preserves its stable ID, EIN, and other company-owned relationships and updates the active session selection to the new code.
 
 ## Workspace switching
 
@@ -111,13 +122,13 @@ If target preparation, migration, validation, company resolution, or dirty-state
 
 The donor `CompanyManagementService`, `CompanyManagementPanelFX`, and `CompanySetupWizardFX` were reviewed for stable-ID editing, fiscal/currency validation, explicit selection, and archive/deactivate interaction ideas. Their serialized company repository, static `CurrentCompany`, delete workflow, and alternate persistence model were not imported.
 
-For P19-S1 the donor repository did not provide a compatible company-owned active-chart pointer workflow to import. For P19-S2 it likewise did not provide a compatible persisted opening-report/export-default consumer. Current H2 company ownership and `CompanyUiPreferencesService` therefore remain authoritative rather than introducing donor/static preference state.
+For P19-S1 the donor repository did not provide a compatible company-owned active-chart pointer workflow to import. For P19-S2 it likewise did not provide a compatible persisted opening-report/export-default consumer. Searches for EIN/tax-filing behavior did not identify a compatible donor implementation for P19-S3. Current H2 Company authority therefore owns informational EIN, and no donor tax-filing architecture is introduced.
 
 ## Manual validation
 
 1. Open Administration at laptop width and select Company Admin.
-2. Create a company with a non-January fiscal start and a valid non-USD currency.
-3. Edit its code and confirm the same company ID remains.
+2. Create a company with a non-January fiscal start, a valid non-USD currency, and an optional EIN.
+3. Edit its code and confirm the same company ID and EIN remain.
 4. Select it from Company Admin and from the production toolbar; confirm open workspaces refresh and display the selected company.
 5. Attempt to select a nonexistent or inactive company and confirm selection is rejected.
 6. Attempt to deactivate the current company and confirm it is rejected.
@@ -133,4 +144,6 @@ For P19-S1 the donor repository did not provide a compatible company-owned activ
 16. Change the report/export format inside the open Report Library and confirm Company Admin defaults do not change; modify the Company Admin default while the report stays open and confirm the open selection is not overwritten.
 17. Switch companies and confirm each company restores its own opening report/export defaults while report dates/funds/filters remain transient/current-context parameters.
 18. Begin a scalar company edit and confirm reporting-default controls remain disabled until that edit is saved or discarded.
-19. Open **Company Ownership Diagnostics**. For a direct ownerless test row, confirm the preselected active import company, enter an actor and audit note, confirm the assignment, and verify the row disappears and an audit event exists. Confirm a cross-company reference row cannot be assigned or silently dismissed.
+19. Enter/change/clear EIN and confirm it follows ordinary Company save/reload semantics, is isolated per company, and is not presented as tax-filing configuration.
+20. If a disposable pre-P19-S3 database has `company_tax_profile.ein`, migrate it and confirm the legacy EIN appears in Company Admin without losing the retained legacy table data.
+21. Open **Company Ownership Diagnostics**. For a direct ownerless test row, confirm the preselected active import company, enter an actor and audit note, confirm the assignment, and verify the row disappears and an audit event exists. Confirm a cross-company reference row cannot be assigned or silently dismissed.
