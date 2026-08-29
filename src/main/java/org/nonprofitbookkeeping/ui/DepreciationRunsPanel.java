@@ -57,15 +57,20 @@ public class DepreciationRunsPanel implements AppPanel
         run.setId("runPeriodDepreciationButton");
         openReport.setId("openDepreciationReportButton");
         refresh.disableProperty().bind(busy);
-        run.disableProperty().bind(busy);
-        openReport.disableProperty().bind(busy);
         notes.disableProperty().bind(busy);
+        run.setDisable(true);
+        openReport.setDisable(true);
         notes.setPromptText("Optional note copied to each committed depreciation run");
 
         refresh.setOnAction(e -> reload(null));
         run.setOnAction(e -> runPeriodDepreciation());
         openReport.setOnAction(e -> openDepreciationReport());
-        ActivePeriodContext.activeDateProperty().addListener((obs, oldValue, newValue) -> reload(null));
+        ActivePeriodContext.activeDateProperty().addListener((obs, oldValue, newValue) -> {
+            if (!busy.get())
+            {
+                reload(null);
+            }
+        });
 
         HBox actions = new HBox(
                 8,
@@ -95,7 +100,10 @@ public class DepreciationRunsPanel implements AppPanel
     @Override
     public void onPanelShown()
     {
-        reload(null);
+        if (!busy.get())
+        {
+            reload(null);
+        }
     }
 
     private void configurePreviewTable()
@@ -103,7 +111,7 @@ public class DepreciationRunsPanel implements AppPanel
         previewTable.setId("depreciationPeriodPreviewTable");
         previewTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         previewTable.setPlaceholder(new Label("No fixed assets are available for this accounting-period preview."));
-        previewColumn("Asset", item -> item.assetName(), 180);
+        previewColumn("Asset", DepreciationPeriodBatchService.Item::assetName, 180);
         previewColumn("Status", item -> item.status().name(), 100);
         previewColumn("Acquired", item -> companyFormat.formatDate(item.acquisitionDate()), 110);
         previewColumn("Book Value", item -> companyFormat.formatMoney(item.bookValue()), 120);
@@ -169,6 +177,8 @@ public class DepreciationRunsPanel implements AppPanel
         CalculatedPeriod active = activePeriod();
         busy.set(true);
         currentPreview = null;
+        run.setDisable(true);
+        openReport.setDisable(true);
         previewTable.getItems().clear();
         period.setText("Active accounting period: "
                 + companyFormat.formatDate(active.start()) + " through "
