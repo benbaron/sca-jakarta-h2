@@ -1,12 +1,12 @@
 ---
-plan_version: 240
+plan_version: 241
 active_phase: P19
 active_slice: P19-S2
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P19-S2-company-reporting-defaults
-active_pull_request: null
-active_head: e9ced0ed3fcba67063f8d9b3e7ab545d28ba8230
-next_action: "Publish the P19-S2 governing documentation successor, open a draft PR to main, inspect the exact diff, and require clean verification, repeat tests, and production JavaFX route compliance on the exact final head before owner acceptance."
+active_pull_request: 308
+active_head: 49e2319c0bf44785f65eb7aaa06cbd75931f8948
+next_action: "Validate this PR-recording successor head in Maven PR Tests; require clean verification, repeat tests, and production JavaFX route compliance green, correct any real implementation/test/documentation mismatch, then update PR #308 metadata only and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -31,7 +31,7 @@ A slice is `DONE` only when its behavior/documentation is merged, required valid
 | P16 | Interface-to-authority completion and integrity corrections | DONE through P16-C11 / PR #281 |
 | P17 | Cross-cutting UI, authority, cleanup, durable-record, documentation corrections | DONE through P17-C12 / PR #305 |
 | P18 | Depreciation-run workflow completion | DONE through P18-S1 / PR #306 |
-| P19 | Deferred Company Administration extensions | P19-S1 DONE; P19-S2 IN_PROGRESS |
+| P19 | Deferred Company Administration extensions | P19-S1 DONE; P19-S2 VERIFYING |
 | P20 | Authentication and runtime authorization | BLOCKED pending explicit security requirements and authorization |
 
 ## 3. Established product decisions
@@ -69,12 +69,13 @@ Completed behavior:
 
 ### P19-S2 — Company reporting-default administration
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P19-S2-company-reporting-defaults`
 Starting base: merged `main` `9e9ea01f180f1e35ed49916b064705a0fdff87db`
-Implementation head before this documentation successor: `e9ced0ed3fcba67063f8d9b3e7ab545d28ba8230`
-Pull request: not yet opened
+Implementation commit: `e9ced0ed3fcba67063f8d9b3e7ab545d28ba8230`
+Documentation commit: `49e2319c0bf44785f65eb7aaa06cbd75931f8948`
+Pull request: #308
 
 Governing design: `doc/P19-S2-company-reporting-defaults.md`
 Owner verification: `doc/P19-S2-company-reporting-defaults-user-testing.md`
@@ -91,24 +92,25 @@ Persisted-consumer inspection decision:
 - a new Report Library reads the defaults once; changing Company Admin defaults never replaces an already-open operator selection;
 - Report Library interaction does not automatically rewrite company defaults.
 
-Implemented on `e9ced0ed3fcba67063f8d9b3e7ab545d28ba8230`:
+Implemented deliverables:
 
 - typed `CompanyReportingDefaults` projection;
 - `CompanyUiPreferencesService.loadReportingDefaults(...)` / `saveReportingDefaults(...)` with stable report-ID and export-enum persistence;
 - Company Admin **Reporting defaults** controls with immediate company-owned persistence and scalar-dirty guard;
 - Report Library startup uses company defaults instead of hard-coded Trial Balance/Text;
 - focused H2 round-trip/stale-value coverage and production source guard;
-- no report query/execution/export-adapter behavior changed.
+- governing design, company lifecycle, owner-testing, and PLAN documentation;
+- no report query/execution/export-adapter behavior and no schema/migration changed.
 
 Validation:
 
 - no local Maven result is claimed because the execution container cannot resolve GitHub for a repository checkout;
-- exact final branch head must pass repository Maven PR Tests: `Run clean headless verification`, `Run tests`, and `Run production JavaFX route compliance`;
+- the exact PR-recording successor head must pass repository Maven PR Tests: `Run clean headless verification`, `Run tests`, and `Run production JavaFX route compliance`;
 - any failure must be corrected without introducing a migration, second preference authority, persisted report-request filters, or report-side accounting state.
 
 Next exact action:
 
-Publish this documentation successor, open a draft PR to `main`, inspect the exact changed-file set, and validate the exact final head in GitHub Actions. Stop before merge for owner acceptance.
+Validate this PR-recording successor in GitHub Actions, update PR #308 with exact final-head run/job evidence without another repository commit, and stop before merge for owner acceptance.
 
 ### P19-S3 — Company tax-filing metadata administration
 
