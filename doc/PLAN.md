@@ -1,12 +1,12 @@
 ---
-plan_version: 238
+plan_version: 239
 active_phase: P19
 active_slice: P19-S1
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P19-S1-company-chart-assignment
-active_pull_request: null
-active_head: c05980fc2a55ce6bbec604abc95582e689cfddc8
-next_action: "Publish this PLAN successor on the P19-S1 branch, open a draft PR to main, and validate the exact final head with clean verification, repeat tests, and production JavaFX route compliance. Correct any real implementation/test/documentation mismatch, then stop before merge for owner acceptance."
+active_pull_request: 307
+active_head: 27a54599d7751d6f856743fdd3ce5fe4f79f4b07
+next_action: "Validate this PR-recording successor head in Maven PR Tests; require clean verification, repeat tests, and production JavaFX route compliance green, correct any real implementation/test/documentation mismatch, then update PR #307 metadata only and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -31,7 +31,7 @@ A slice is `DONE` only when its behavior/documentation is merged, required valid
 | P16 | Interface-to-authority completion and integrity corrections | DONE through P16-C11 / PR #281 |
 | P17 | Cross-cutting UI, authority, cleanup, durable-record, documentation corrections | DONE through P17-C12 / PR #305 |
 | P18 | Depreciation-run workflow completion | DONE through P18-S1 / PR #306 |
-| P19 | Deferred Company Administration extensions | P19-S1 IN_PROGRESS |
+| P19 | Deferred Company Administration extensions | P19-S1 VERIFYING |
 | P20 | Authentication and runtime authorization | BLOCKED pending explicit security requirements and authorization |
 
 ## 3. Established product decisions
@@ -88,12 +88,13 @@ Completed behavior:
 
 ### P19-S1 — Company Chart of Accounts assignment administration
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P19-S1-company-chart-assignment`
 Starting base: merged `main` `3dec9516f1bb785dfefb2b277372be7fed656871`
-Implementation head before this PLAN successor: `c05980fc2a55ce6bbec604abc95582e689cfddc8`
-Pull request: not yet opened
+Implementation commit: `c05980fc2a55ce6bbec604abc95582e689cfddc8` — `P19-S1: add company chart assignment workflow`
+Plan/documentation successor: `27a54599d7751d6f856743fdd3ce5fe4f79f4b07` — `P19-S1: record chart assignment plan and verification`
+Pull request: #307 — `P19-S1: add company Chart of Accounts assignment`
 
 Governing design: `doc/P19-S1-company-chart-assignment.md`
 Company lifecycle authority: `doc/administration/company-lifecycle.md`
@@ -118,7 +119,7 @@ Selection semantics:
 - multiple company-owned ACTIVE charts may therefore exist, but the explicit company pointer determines the current chart;
 - existing missing-pointer fallback may resolve one unambiguous ACTIVE chart; multiple ACTIVE charts with no pointer remain an error requiring deliberate Company Admin selection.
 
-Implemented deliverables on `c05980fc2a55ce6bbec604abc95582e689cfddc8`:
+Implemented deliverables:
 
 - `CompanyAdminService.listCompanyCharts(...)` returns ownership-filtered chart projections;
 - `CompanyAdminService.assignActiveChart(...)` performs locked transactional selection and lifecycle/ownership validation;
@@ -138,7 +139,7 @@ Validation:
 
 Next exact action:
 
-Publish this PLAN successor, open a draft PR to `main`, inspect the exact diff, and validate the exact final head in GitHub Actions. Stop before merge for owner acceptance after the final head is green.
+Validate this PR-recording successor head in Maven PR Tests, update PR #307 description with exact-final-head run/job evidence without another repository commit, and stop before merge for owner acceptance.
 
 ### P19-S2 — Company reporting-default administration
 
