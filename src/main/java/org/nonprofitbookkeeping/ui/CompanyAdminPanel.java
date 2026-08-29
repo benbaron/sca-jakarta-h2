@@ -26,6 +26,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
+import org.nonprofitbookkeeping.model.ChartStatus;
+import org.nonprofitbookkeeping.service.CompanyChartView;
 import org.nonprofitbookkeeping.service.CompanyCommand;
 import org.nonprofitbookkeeping.service.CompanyView;
 
@@ -35,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/** H2-authoritative stable-ID company profile and lifecycle editor. */
+/** H2-authoritative stable-ID company profile, chart assignment, and lifecycle editor. */
 public class CompanyAdminPanel implements AppPanel
 {
     private static final String STATE_PREFIX = "companyAdmin.";
@@ -55,6 +57,9 @@ public class CompanyAdminPanel implements AppPanel
     private final TextField defaultCurrency = new TextField();
     private final CheckBox active = new CheckBox("Active");
     private final Button selectActive = new Button("Select Active");
+    private final ComboBox<CompanyChartView> chartAssignment = new ComboBox<>();
+    private final Button makeActiveChart = new Button("Make Active Chart");
+    private final Label chartStatus = new Label("Select a persisted company to review its charts.");
     private final SplitPane split = new SplitPane();
     private final PauseTransition stateSaveDelay = new PauseTransition(Duration.millis(350));
     private final Map<String, TableColumn<CompanyView, String>> columnsByKey = new LinkedHashMap<>();
@@ -96,7 +101,7 @@ public class CompanyAdminPanel implements AppPanel
 
         Label title = new Label("Company Admin");
         title.getStyleClass().add("panel-title");
-        Label help = new Label("Company rows in the active H2 database define which companies exist. Create or edit a profile here, deactivate unused companies without deleting their history, and explicitly select an active company for the workspace.");
+        Label help = new Label("Company rows in the active H2 database define which companies exist. Create or edit a profile here, deactivate unused companies without deleting their history, explicitly select an active company for the workspace, and select its current Chart of Accounts.");
         help.setWrapText(true);
 
         Button add = new Button("New");
@@ -164,9 +169,29 @@ public class CompanyAdminPanel implements AppPanel
 
         Label lifecycle = new Label("Companies are not hard-deleted. Clear Active and save to deactivate a non-current company. The current company and the last active company are protected by the application service.");
         lifecycle.setWrapText(true);
-        Label deferrals = new Label("Tax filing, chart assignment, and reporting-default editors are deferred until their persistence workflows are implemented. Bank accounts are maintained in the Banking workspace.");
+
+        chartAssignment.setId("companyChartAssignment");
+        chartAssignment.setPromptText("Select an owned Chart of Accounts");
+        chartAssignment.setMaxWidth(Double.MAX_VALUE);
+        chartAssignment.valueProperty().addListener((obs, oldValue, newValue) -> updateChartActionState());
+        makeActiveChart.setId("makeActiveCompanyChart");
+        makeActiveChart.setDisable(true);
+        makeActiveChart.setOnAction(event -> assignActiveChart());
+        chartStatus.setWrapText(true);
+        Label chartHelp = new Label("The active-chart pointer controls new account maintenance and chart-targeted imports. Selecting a DRAFT chart promotes it to ACTIVE. Existing ACTIVE charts, accounts, transactions, and historical references remain attached to their original chart; nothing is moved or auto-retired.");
+        chartHelp.setWrapText(true);
+        VBox chartEditor = new VBox(
+                6,
+                new Label("Chart of Accounts assignment"),
+                chartAssignment,
+                makeActiveChart,
+                chartStatus,
+                chartHelp);
+        chartEditor.setPadding(new Insets(8));
+
+        Label deferrals = new Label("Tax filing and reporting-default editors are deferred until their persistence workflows are implemented. Bank accounts are maintained in the Banking workspace.");
         deferrals.setWrapText(true);
-        VBox editor = new VBox(8, new Label("Company profile"), form, lifecycle, deferrals);
+        VBox editor = new VBox(8, new Label("Company profile"), form, lifecycle, chartEditor, deferrals);
         editor.setPadding(new Insets(8));
         return editor;
     }
@@ -239,6 +264,7 @@ public class CompanyAdminPanel implements AppPanel
         {
             dirty = true;
             selectActive.setDisable(true);
+            makeActiveChart.setDisable(true);
         }
     }
 
@@ -263,6 +289,7 @@ public class CompanyAdminPanel implements AppPanel
             status.setText(company.code().equalsIgnoreCase(currentCompanyCode())
                     ? "Editing the current workspace company."
                     : "Editing company " + company.code() + ".");
+            loadCompanyCharts(company);
         }
         finally
         {
@@ -290,6 +317,10 @@ public class CompanyAdminPanel implements AppPanel
             active.setSelected(true);
             editMode.setText("New company");
             selectActive.setDisable(true);
+            chartAssignment.getItems().clear();
+            chartAssignment.getSelectionModel().clearSelection();
+            makeActiveChart.setDisable(true);
+            chartStatus.setText("Save the company before assigning a Chart of Accounts.");
             dirty = false;
             if (announce)
             {
@@ -342,6 +373,88 @@ public class CompanyAdminPanel implements AppPanel
         {
             activeCompany.setText("Workspace company: " + result.company().code());
         }
+    }
+
+    private void loadCompanyCharts(CompanyView company)
+    {
+        try
+        {
+            List<CompanyChartView> charts = companyController.listCompanyCharts(company.id());
+            chartAssignment.setItems(FXCollections.observableArrayList(charts));
+            CompanyChartView current = charts.stream()
+                    .filter(CompanyChartView::activeForCompany)
+                    .findFirst()
+                    .orElse(null);
+            chartAssignment.getSelectionModel().select(current);
+            chartStatus.setText(current == null
+                    ? "No active Chart of Accounts is selected for " + company.code()
+                            + ". Create/import a company-owned DRAFT chart, then select it here."
+                    : "Current chart: " + current.name() + " — " + current.version() + ".");
+            updateChartActionState();
+        }
+        catch (RuntimeException ex)
+        {
+            chartAssignment.getItems().clear();
+            chartAssignment.getSelectionModel().clearSelection();
+            makeActiveChart.setDisable(true);
+            chartStatus.setText("Could not load company charts: " + UiErrors.safeMessage(ex));
+        }
+    }
+
+    private void updateChartActionState()
+    {
+        CompanyChartView selected = chartAssignment.getValue();
+        makeActiveChart.setDisable(
+                dirty
+                        || editingCompanyId == null
+                        || selected == null
+                        || selected.activeForCompany()
+                        || selected.status() == ChartStatus.RETIRED);
+    }
+
+    private void assignActiveChart()
+    {
+        CompanyView company = companies.getSelectionModel().getSelectedItem();
+        CompanyChartView selected = chartAssignment.getValue();
+        if (dirty)
+        {
+            status.setText("Save or discard company profile edits before changing its active chart.");
+            return;
+        }
+        if (company == null || editingCompanyId == null || selected == null)
+        {
+            status.setText("Select a persisted company and one of its eligible charts first.");
+            return;
+        }
+        if (!confirmChartAssignment(company, selected))
+        {
+            status.setText("Chart assignment cancelled; no data changed.");
+            return;
+        }
+        try
+        {
+            CompanyChartView assigned = companyController.assignActiveChart(company.id(), selected.id());
+            loadCompanyCharts(company);
+            status.setText("Selected active Chart of Accounts " + assigned.name() + " — "
+                    + assigned.version() + " for " + company.code()
+                    + ". Existing charts, accounts, transactions, and history were not moved or deleted.");
+        }
+        catch (RuntimeException ex)
+        {
+            status.setText("Could not change active Chart of Accounts: " + UiErrors.safeMessage(ex));
+        }
+    }
+
+    private boolean confirmChartAssignment(CompanyView company, CompanyChartView chart)
+    {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle("Change active Chart of Accounts");
+        confirmation.setHeaderText("Make " + chart.name() + " — " + chart.version()
+                + " the active chart for " + company.code() + "?");
+        confirmation.setContentText(
+                "This changes which chart new account maintenance and chart-targeted imports use. "
+                        + "Existing charts, accounts, transactions, and historical references are not moved, deleted, or auto-retired.");
+        return confirmation.showAndWait().filter(ButtonType.OK::equals).isPresent();
     }
 
     private void reload(Long reselectId)

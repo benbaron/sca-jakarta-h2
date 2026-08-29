@@ -3,6 +3,9 @@ package org.nonprofitbookkeeping.service;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import org.nonprofitbookkeeping.model.ChartOfAccounts;
+import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.CompanyBankAccount;
 import org.nonprofitbookkeeping.model.CompanyTaxProfile;
@@ -100,6 +103,99 @@ public class CompanyAdminService
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException(
                         "The active database has no active company. Reactivate a company before continuing."));
+    }
+
+    /** Returns every Chart of Accounts durably owned by the selected company. */
+    public List<CompanyChartView> listCompanyCharts(long companyId)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            Company company = em.find(Company.class, companyId);
+            if (company == null)
+            {
+                throw new IllegalArgumentException("Company not found: ID " + companyId);
+            }
+            Long activeChartId = company.getActiveChartOfAccounts() == null
+                    ? null
+                    : company.getActiveChartOfAccounts().getId();
+            return em.createQuery("""
+                    from ChartOfAccounts c
+                    where c.company = :company
+                    order by c.name, c.version, c.id
+                    """, ChartOfAccounts.class)
+                    .setParameter("company", company)
+                    .getResultList()
+                    .stream()
+                    .map(chart -> toChartView(chart, Objects.equals(chart.getId(), activeChartId)))
+                    .toList();
+        }
+    }
+
+    /**
+     * Deliberately selects one company-owned chart as the company's current Chart
+     * of Accounts. A DRAFT becomes ACTIVE when selected. Existing ACTIVE charts
+     * are not retired or rewritten; their accounts/history remain attached to
+     * their original chart. RETIRED and cross-company charts are never selected.
+     */
+    public CompanyChartView assignActiveChart(long companyId, long chartId)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            em.getTransaction().begin();
+            try
+            {
+                Company company = em.find(Company.class, companyId, LockModeType.PESSIMISTIC_WRITE);
+                if (company == null)
+                {
+                    throw new IllegalArgumentException("Company not found: ID " + companyId);
+                }
+                if (!company.isActive())
+                {
+                    throw new IllegalStateException(
+                            "Reactivate company " + company.getCode() + " before changing its active Chart of Accounts.");
+                }
+
+                ChartOfAccounts chart = em.find(ChartOfAccounts.class, chartId, LockModeType.PESSIMISTIC_WRITE);
+                if (chart == null)
+                {
+                    throw new IllegalArgumentException("Chart of Accounts not found: ID " + chartId);
+                }
+                if (chart.getCompany() == null
+                        || chart.getCompany().getId() == null
+                        || !Objects.equals(chart.getCompany().getId(), company.getId()))
+                {
+                    throw new CompanyOwnershipException(
+                            "Chart of Accounts ID " + chartId + " does not belong to company "
+                                    + company.getCode() + ".");
+                }
+                if (chart.getStatus() == ChartStatus.RETIRED)
+                {
+                    throw new IllegalStateException(
+                            "Retired Chart of Accounts " + chart.getName()
+                                    + " cannot be selected. Create or select an ACTIVE/DRAFT chart instead.");
+                }
+                if (chart.getStatus() == ChartStatus.DRAFT)
+                {
+                    chart.setStatus(ChartStatus.ACTIVE);
+                    chart.touchUpdatedAt();
+                }
+
+                company.setActiveChartOfAccounts(chart);
+                company.touchUpdatedAt();
+                em.flush();
+                CompanyChartView result = toChartView(chart, true);
+                em.getTransaction().commit();
+                return result;
+            }
+            catch (RuntimeException ex)
+            {
+                if (em.getTransaction().isActive())
+                {
+                    em.getTransaction().rollback();
+                }
+                throw ex;
+            }
+        }
     }
 
     public List<CompanyBankAccount> listBankAccounts(String companyCode)
@@ -375,6 +471,16 @@ public class CompanyAdminService
                 company.getFiscalYearStartMonth(),
                 company.getFiscalYearStartDay(),
                 company.getDefaultCurrency());
+    }
+
+    private static CompanyChartView toChartView(ChartOfAccounts chart, boolean activeForCompany)
+    {
+        return new CompanyChartView(
+                chart.getId(),
+                chart.getName(),
+                chart.getVersion(),
+                chart.getStatus(),
+                activeForCompany);
     }
 
     private static String normalizeCode(String value)
