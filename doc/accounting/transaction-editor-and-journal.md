@@ -2,19 +2,19 @@
 
 ## Purpose
 
-The Journal workspace is the single production surface for reviewing canonical transactions and entering or editing journal entries. P03-C6 replaces the separate Ledger Register, Transaction Editor, and Inspect Journal surfaces with one resizable Journal workspace.
+The Journal workspace is the single production surface for reviewing canonical transactions and entering or editing journal entries. P03-C6 replaced the separate Ledger Register, Transaction Editor, and Inspect Journal surfaces with one resizable Journal workspace.
 
-The user-visible interaction model is based on the donor repository's `JournalPanelFX`, `JournalEntryWorkspaceFX`, `GeneralJournalEntryPanelFX`, and `JournalShellNavigation`. The production implementation continues to use the current H2 schema and service boundaries; donor repositories, static persistence, and alternate ledger models are not imported.
+The user-visible interaction model was informed by the donor repository's `JournalPanelFX`, `JournalEntryWorkspaceFX`, `GeneralJournalEntryPanelFX`, and `JournalShellNavigation`. The production implementation uses the current H2 schema and service boundaries; donor repositories, static persistence, and alternate ledger models are not production authority.
 
 ## One Journal destination
 
 Left Navigation under Accounting exposes one **Journal** item. The canonical panel identifier is `JOURNAL_PANE`.
 
-`LEDGER_REGISTER` and `TXN_EDITOR` remain retired compatibility aliases. Existing callers, saved destination references, dashboard actions, and drill-through paths normalize to `JOURNAL_PANE` and select the same existing Journal tab. They do not create duplicate tabs or independent transaction caches.
+`LEDGER_REGISTER` and `TXN_EDITOR` remain retired compatibility aliases. Existing callers, saved destination references, dashboard actions, and drill-through paths normalize to `JOURNAL_PANE` and select the same existing Journal tab. They do not create duplicate tabs, separate panels, or independent transaction caches.
 
 ## Journal review region
 
-The upper Journal region is read-only and displays one grouped row per canonical transaction. Each row presents:
+The upper Journal region is read-only and displays one grouped row per canonical transaction. Each row presents the current transaction projection, including:
 
 - transaction date;
 - account titles and descriptions in journal-line order;
@@ -22,11 +22,12 @@ The upper Journal region is read-only and displays one grouped row per canonical
 - debit and credit lines;
 - transaction ID;
 - supplemental-detail count;
-- memo, payee, bank, and line-detail text where available.
+- memo, payee, bank, and line-detail text where available;
+- authoritative bank-state summary derived from line-level bank/reconciliation facts.
 
 Date and text filters query `TransactionEntryService.search(...)`. A row may be selected and opened for editing by **Edit Selected** or double-click. The selection is a transaction-level selection, never an independently editable ledger line.
 
-The current aggregate transaction projection does not yet expose every `TxnSplit.bankCleared` value. Until a line-level cleared-state projection is added, the Journal must not pretend to distinguish mixed cleared and uncleared lines authoritatively.
+P16-S10 projects each line's bank/cleared facts, including `bankCleared`, `bankClearedOn`, and the exact native reconciliation session when applicable. Journal renders the service-owned transaction summary as `Not bank`, `Uncleared`, `Cleared`, or `Mixed`. These values are read-only in Journal; matching and cleared-state mutation remain reconciliation-owned.
 
 ## Integrated New and Edit modes
 
@@ -88,9 +89,9 @@ These rows are transaction-attached details, not a reintroduction of the elimina
 
 The Journal exposes a real correction action only for a selected or loaded durable transaction.
 
-- Under `DIRECT_EDIT`, the action is labeled **Delete**, requires confirmation, and calls `TransactionCorrectionService.delete(...)`.
-- Under other correction policies, the action is labeled **Reverse**, requires confirmation, and calls `TransactionCorrectionService.reverse(...)` using the active period date.
-- Period and reconciliation protections remain enforced by the service.
+- Under `DIRECT_EDIT`, the action is labeled **Delete**, requires confirmation when configured, and calls `TransactionCorrectionService.delete(...)`.
+- Under other correction policies, the action is labeled **Reverse**, requires confirmation, and calls `TransactionCorrectionService.reverse(...)` using the active period as the default reversal context.
+- Closed-period and completed-reconciliation protections remain enforced by authoritative services.
 
 There is no disabled placeholder Delete control for an unsaved record; action availability follows whether a durable transaction is selected or loaded.
 
@@ -110,8 +111,8 @@ When Journal is active:
 
 - global **New** starts a new integrated journal entry;
 - global **Save** saves the current New/Edit entry;
-- global **Post / Validate** performs validation without introducing a separate posting workflow;
-- Journal toolbar actions and global actions call the same methods.
+- global **Validate** performs validation without introducing a separate posting/approval workflow;
+- Journal-local toolbar actions and global actions route to the same authoritative editor/service behavior.
 
 ## Persistence authority
 
@@ -124,4 +125,4 @@ JournalWorkspacePanel
             -> H2
 ```
 
-The Journal panel contains no SQL, no static authoritative transaction collection, and no alternate transaction model.
+The Journal panel contains no SQL, no static authoritative transaction collection, and no alternate transaction model. Cleared-state facts are projected from authoritative transaction/reconciliation data and are never recomputed or written by the Journal UI.
