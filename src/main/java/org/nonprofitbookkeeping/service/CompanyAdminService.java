@@ -8,7 +8,6 @@ import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.CompanyBankAccount;
-import org.nonprofitbookkeeping.model.CompanyTaxProfile;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.time.DateTimeException;
@@ -212,22 +211,6 @@ public class CompanyAdminService
         }
     }
 
-    public CompanyTaxProfile taxProfile(String companyCode)
-    {
-        try (EntityManager em = jpa.em())
-        {
-            return em.createQuery("""
-                    from CompanyTaxProfile t
-                    where t.company.code = :code
-                    """, CompanyTaxProfile.class)
-                    .setParameter("code", requireText(companyCode, "Company code"))
-                    .setMaxResults(1)
-                    .getResultStream()
-                    .findFirst()
-                    .orElse(null);
-        }
-    }
-
     public Company upsertCompany(String code, String displayName, String legalName, String branchType, String parentOrganization)
     {
         CompanyView existing = findCompany(code).orElse(null);
@@ -238,6 +221,7 @@ public class CompanyAdminService
                 legalName,
                 branchType,
                 parentOrganization,
+                existing == null ? null : existing.ein(),
                 existing == null || existing.active(),
                 existing == null ? 1 : existing.fiscalYearStartMonth(),
                 existing == null ? 1 : existing.fiscalYearStartDay(),
@@ -256,6 +240,7 @@ public class CompanyAdminService
                 code,
                 displayName,
                 displayName,
+                null,
                 null,
                 null,
                 true,
@@ -305,6 +290,7 @@ public class CompanyAdminService
                 company.setLegalName(blankToNull(clean.legalName()));
                 company.setBranchType(blankToNull(clean.branchType()));
                 company.setParentOrganization(blankToNull(clean.parentOrganization()));
+                company.setEin(blankToNull(clean.ein()));
                 company.setActive(clean.active());
                 company.setFiscalYearStartMonth(clean.fiscalYearStartMonth());
                 company.setFiscalYearStartDay(clean.fiscalYearStartDay());
@@ -428,6 +414,7 @@ public class CompanyAdminService
         requireLength(command.legalName(), 250, "Legal name");
         requireLength(command.branchType(), 80, "Branch type");
         requireLength(command.parentOrganization(), 200, "Parent organization");
+        requireLength(command.ein(), 40, "EIN");
         try
         {
             MonthDay.of(command.fiscalYearStartMonth(), command.fiscalYearStartDay());
@@ -452,6 +439,7 @@ public class CompanyAdminService
                 blankToNull(command.legalName()),
                 blankToNull(command.branchType()),
                 blankToNull(command.parentOrganization()),
+                blankToNull(command.ein()),
                 command.active(),
                 command.fiscalYearStartMonth(),
                 command.fiscalYearStartDay(),
@@ -467,6 +455,7 @@ public class CompanyAdminService
                 company.getLegalName(),
                 company.getBranchType(),
                 company.getParentOrganization(),
+                company.getEin(),
                 company.isActive(),
                 company.getFiscalYearStartMonth(),
                 company.getFiscalYearStartDay(),

@@ -28,12 +28,14 @@ class CompanyAdminServiceTest
                     "Barony of One, Incorporated",
                     "Barony",
                     "Kingdom of the Test",
+                    "12-3456789",
                     true,
                     7,
                     1,
                     "usd"),
                     "DEFAULT");
             companyId = created.id();
+            assertEquals("12-3456789", created.ein());
 
             try (var em = jpa.em())
             {
@@ -58,6 +60,7 @@ class CompanyAdminServiceTest
                     "Barony of One, Incorporated",
                     "Barony",
                     "Kingdom of the Test",
+                    "98-7654321",
                     true,
                     10,
                     15,
@@ -66,6 +69,7 @@ class CompanyAdminServiceTest
 
             assertEquals(companyId, updated.id());
             assertEquals("SCA-RENAMED", updated.code());
+            assertEquals("98-7654321", updated.ein());
             assertEquals(10, updated.fiscalYearStartMonth());
             assertEquals(15, updated.fiscalYearStartDay());
             assertEquals("CAD", updated.defaultCurrency());
@@ -92,6 +96,7 @@ class CompanyAdminServiceTest
             assertEquals("Barony of One, Incorporated", reloaded.legalName());
             assertEquals("Barony", reloaded.branchType());
             assertEquals("Kingdom of the Test", reloaded.parentOrganization());
+            assertEquals("98-7654321", reloaded.ein());
             assertEquals("CAD", reloaded.defaultCurrency());
         }
     }
@@ -123,7 +128,7 @@ class CompanyAdminServiceTest
     }
 
     @Test
-    void validationAndSelectionRejectFictionalInactiveAndDuplicateCompanies(@TempDir Path tempDir)
+    void validationAndSelectionRejectFictionalInactiveDuplicateAndOversizedCompanies(@TempDir Path tempDir)
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("company-validation")))
         {
@@ -136,6 +141,21 @@ class CompanyAdminServiceTest
                     null, "BAD-DATE", "Bad Date", null, null, null, true, 2, 30, "USD"), "DEFAULT"));
             assertThrows(IllegalArgumentException.class, () -> service.save(new CompanyCommand(
                     null, "BAD-CURRENCY", "Bad Currency", null, null, null, true, 1, 1, "ZZZ"), "DEFAULT"));
+            IllegalArgumentException einFailure = assertThrows(IllegalArgumentException.class, () -> service.save(
+                    new CompanyCommand(
+                            null,
+                            "BAD-EIN",
+                            "Bad EIN",
+                            null,
+                            null,
+                            null,
+                            "X".repeat(41),
+                            true,
+                            1,
+                            1,
+                            "USD"),
+                    "DEFAULT"));
+            assertTrue(einFailure.getMessage().contains("EIN must not exceed 40 characters"));
 
             assertEquals(created.id(), service.requireActiveCompany("unique").id());
             assertEquals("DEFAULT", service.resolveActiveCompany("FICTIONAL").code());
@@ -151,6 +171,7 @@ class CompanyAdminServiceTest
                 company.legalName(),
                 company.branchType(),
                 company.parentOrganization(),
+                company.ein(),
                 active,
                 company.fiscalYearStartMonth(),
                 company.fiscalYearStartDay(),

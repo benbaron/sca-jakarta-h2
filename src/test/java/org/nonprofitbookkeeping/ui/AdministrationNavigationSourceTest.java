@@ -40,16 +40,21 @@ class AdministrationNavigationSourceTest
                 "src/main/java/org/nonprofitbookkeeping/ui/ProductionWorkspaceWindow.java"));
 
         assertTrue(companyPanel.contains("new CompanyCommand("));
+        assertTrue(companyPanel.contains("new Label(\"EIN\")"));
+        assertTrue(companyPanel.contains("ein.textProperty()"));
+        assertTrue(companyPanel.contains("ein.getText()"));
         assertTrue(companyPanel.contains("fiscalMonth"));
         assertTrue(companyPanel.contains("fiscalDay"));
         assertTrue(companyPanel.contains("defaultCurrency"));
         assertTrue(companyPanel.contains("companyController.select"));
         assertTrue(companyPanel.contains("split.setOrientation(Orientation.VERTICAL)"));
         assertTrue(!companyPanel.contains("taxPlaceholder"));
+        assertTrue(!companyPanel.contains("Tax filing administration remains deferred"));
         assertTrue(!companyPanel.contains("tab(\"Chart of Accounts\""));
         assertTrue(!companyPanel.contains("tab(\"Reporting Defaults\""));
         assertTrue(service.contains("At least one company must remain active"));
         assertTrue(service.contains("Select another active company before deactivating"));
+        assertTrue(!service.contains("CompanyTaxProfile"));
         assertTrue(workspace.contains("activeCompanySelector"));
         assertTrue(workspace.contains("panelHost.refreshOpenPanels()"));
     }

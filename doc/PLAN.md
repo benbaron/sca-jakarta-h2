@@ -1,12 +1,12 @@
 ---
-plan_version: 242
+plan_version: 244
 active_phase: P19
-active_slice: P19-S2
+active_slice: P19-S3
 active_status: VERIFYING
-active_branch: codex/P19-S2-company-reporting-defaults
-active_pull_request: 308
-active_head: 913089672ec094575e8698c26034dc29a4942353
-next_action: "Validate the documentation successor to corrective commit 913089672ec094575e8698c26034dc29a4942353 in Maven PR Tests; require clean verification, repeat tests, and production JavaFX route compliance green, then update PR #308 metadata only and stop before merge for owner acceptance."
+active_branch: codex/P19-S3-company-ein-metadata
+active_pull_request: 309
+active_head: 2658665816e6eec095709e2e1c0f131fef18a4c7
+next_action: "Validate this PR-recording successor head in Maven PR Tests; require clean headless verification, repeat tests, and production JavaFX route compliance green, correct any concrete failure without widening into tax-filing/reporting behavior, then update PR #309 metadata only and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -31,7 +31,7 @@ A slice is `DONE` only when its behavior/documentation is merged, required valid
 | P16 | Interface-to-authority completion and integrity corrections | DONE through P16-C11 / PR #281 |
 | P17 | Cross-cutting UI, authority, cleanup, durable-record, documentation corrections | DONE through P17-C12 / PR #305 |
 | P18 | Depreciation-run workflow completion | DONE through P18-S1 / PR #306 |
-| P19 | Deferred Company Administration extensions | P19-S1 DONE; P19-S2 VERIFYING |
+| P19 | Deferred Company Administration extensions | P19-S1 DONE; P19-S2 DONE; P19-S3 VERIFYING |
 | P20 | Authentication and runtime authorization | BLOCKED pending explicit security requirements and authorization |
 
 ## 3. Established product decisions
@@ -43,6 +43,7 @@ A slice is `DONE` only when its behavior/documentation is merged, required valid
 - Every enabled production command performs a genuine operation or navigation.
 - Durable records preserve meaningful history through governed lifecycle/correction semantics.
 - Company-specific money/date/table/divider and other UI/workflow defaults remain H2-backed through the established company preference/state authority.
+- EIN is optional informational company metadata. It is not tax-filing configuration and does not imply tax-return, jurisdiction, period, reporting, or export workflow.
 - Compatibility identifiers/APIs remain only where a current compatibility path requires them.
 - Historical/archive documents remain historical evidence; current governing documents describe current production authority.
 
@@ -69,56 +70,65 @@ Completed behavior:
 
 ### P19-S2 — Company reporting-default administration
 
-Status: VERIFYING.
+Status: DONE.
 
-Branch: `codex/P19-S2-company-reporting-defaults`
-Starting base: merged `main` `9e9ea01f180f1e35ed49916b064705a0fdff87db`
-Implementation commit: `e9ced0ed3fcba67063f8d9b3e7ab545d28ba8230`
-Documentation commit: `49e2319c0bf44785f65eb7aaa06cbd75931f8948`
-Corrective source-guard commit: `913089672ec094575e8698c26034dc29a4942353`
-Pull request: #308
+PR #308 exact final head `e1f45ee0b0f96870425f9f96d10e960e3c86d3c0` passed Maven PR Tests run `33264570758`, job `99132280957`: `Run clean headless verification`, `Run tests`, and `Run production JavaFX route compliance` all succeeded. Owner acceptance was confirmed and PR #308 merged to `main` at `b4ef30643978eb926e97773a13a6102b0389244a`.
 
-Governing design: `doc/P19-S2-company-reporting-defaults.md`
-Owner verification: `doc/P19-S2-company-reporting-defaults-user-testing.md`
-Company lifecycle authority: `doc/administration/company-lifecycle.md`
-
-Persisted-consumer inspection decision:
+Completed behavior:
 
 - current Report Library has exactly two safe company-level opening defaults with real consumers: initial report selection and initial export format;
-- current Report Library otherwise derives dates from active-period/fiscal authority and treats fund, row limit, account, fixed-asset, inventory, and status filters as deliberate `ReportRequest` parameters;
-- therefore P19-S2 persists only **Default opening report** and **Default export format**;
-- those two values reuse existing H2 `company_ui_state` via `CompanyUiPreferencesService` under `reportingDefaults.`;
-- no migration and no second preference repository/table are required;
+- the values reuse existing H2 `company_ui_state` via `CompanyUiPreferencesService` under `reportingDefaults.`;
 - missing or stale saved values fall back to Trial Balance/Text;
 - a new Report Library reads the defaults once; changing Company Admin defaults never replaces an already-open operator selection;
-- Report Library interaction does not automatically rewrite company defaults.
+- Report Library interaction does not automatically rewrite company defaults;
+- report dates, fund, row limit, account, fixed-asset, inventory, and status filters remain transient/current-request parameters;
+- no migration, report query/execution, or export-adapter behavior was introduced.
 
-Implemented deliverables:
+Governing design: `doc/P19-S2-company-reporting-defaults.md`.
 
-- typed `CompanyReportingDefaults` projection;
-- `CompanyUiPreferencesService.loadReportingDefaults(...)` / `saveReportingDefaults(...)` with stable report-ID and export-enum persistence;
-- Company Admin **Reporting defaults** controls with immediate company-owned persistence and scalar-dirty guard;
-- Report Library startup uses company defaults instead of hard-coded Trial Balance/Text;
-- focused H2 round-trip/stale-value coverage and production source guard;
-- governing design, company lifecycle, owner-testing, and PLAN documentation;
-- no report query/execution/export-adapter behavior and no schema/migration changed.
+### P19-S3 — Company EIN informational metadata
 
-Validation:
+Status: VERIFYING.
 
-- no local Maven result is claimed because the execution container cannot resolve GitHub for a repository checkout;
-- exact verification head `a685dfb1ca83327479b1143312728175a99bae4c` failed Maven PR Tests run `33234747858` (#1647), job `99053661368`, in `Run clean headless verification`; production and test compilation succeeded, while the repeat-test and production-route steps were skipped after the clean gate failed;
-- the failure was `CompanyReportingDefaultsSourceTest.companyAdminAndReportLibraryShareCompanyOwnedOpeningDefaults`: its source-text guard required the compiler-concatenated strings `reportingDefaults.defaultReportId` and `reportingDefaults.defaultExportFormat` to occur literally, while production correctly declares `REPORTING_DEFAULTS_PREFIX = "reportingDefaults."` and composes `DEFAULT_REPORT_KEY` / `DEFAULT_EXPORT_FORMAT_KEY` from that prefix;
-- corrective commit `913089672ec094575e8698c26034dc29a4942353` changes only that source guard to verify the declared prefix and key-composition expressions; no production behavior, persistence, Flyway/H2 setup, schema, or migration changed;
-- the documentation successor to that corrective commit must pass repository Maven PR Tests: `Run clean headless verification`, `Run tests`, and `Run production JavaFX route compliance`;
-- any further failure must be corrected without introducing a migration, second preference authority, persisted report-request filters, or report-side accounting state.
+Branch: `codex/P19-S3-company-ein-metadata`
+Starting base: merged `main` `b4ef30643978eb926e97773a13a6102b0389244a`
+Implementation commit: `341852ce83173bd3e67f3cad948b60e72c37fc17`
+Documentation commit: `2658665816e6eec095709e2e1c0f131fef18a4c7`
+Pull request: #309
+
+Owner requirement resolving the former block:
+
+- there is no tax-filing requirement;
+- EIN is informational metadata that belongs to the company profile;
+- do not invent filing identities, filing periods, tax jurisdictions, returns, filing addresses, filing status, or report/export semantics.
+
+Governing design: `doc/P19-S3-company-ein-metadata.md`.
+Owner verification: `doc/P19-S3-company-ein-metadata-user-testing.md`.
+Company lifecycle authority: `doc/administration/company-lifecycle.md`.
+
+Implementation decision:
+
+- add nullable `company.ein VARCHAR(40)` as the sole live production EIN authority;
+- V75 nondestructively backfills a nonblank legacy `company_tax_profile.ein` to the stable company row;
+- retain the legacy `company_tax_profile` table/data physically, but retire `CompanyTaxProfile` from production JPA and remove the unused `CompanyAdminService.taxProfile(...)` query so there is no second writable/read authority;
+- expose EIN through `Company`, `CompanyCommand`, `CompanyView`, `CompanyAdminService`, and the existing Company Admin profile form;
+- trim values, store blank as null, limit to 40 characters, and deliberately avoid IRS-specific format validation;
+- preserve backward-compatible command/view constructors for unrelated callers;
+- do not change reports, report presentation metadata, exports, SCLX, Chart of Accounts interchange, banking, accounting, or P20 authorization.
+
+Validation required:
+
+- focused service round-trip/validation coverage;
+- V74-to-V75 in-memory Flyway upgrade proving legacy EIN backfill and preservation of the legacy table/data;
+- Company Admin source guard proving the real field/write path and absence of the old tax-filing deferral/live tax-profile dependency;
+- repository Maven PR Tests on the exact final head: clean headless verification, repeat tests, and production JavaFX route compliance;
+- owner desktop checks from the P19-S3 user-testing document.
+
+No local Maven result is claimed because the execution container cannot resolve GitHub for a repository checkout.
 
 Next exact action:
 
-Validate the documentation successor to corrective commit `913089672ec094575e8698c26034dc29a4942353` in GitHub Actions, update PR #308 with exact final-head run/job evidence without another repository commit, and stop before merge for owner acceptance.
-
-### P19-S3 — Company tax-filing metadata administration
-
-Status: BLOCKED until the owner specifies required filing identities, periods, fields, and reporting/export consumers. Do not invent tax identifiers or filing workflows from the legacy architecture placeholder.
+Validate the PR-recording successor to documentation commit `2658665816e6eec095709e2e1c0f131fef18a4c7` in GitHub Actions. Correct any concrete failure without widening into tax-filing/reporting behavior; when the exact final head is green, update PR #309 metadata only and stop before merge for owner acceptance.
 
 ## 6. P20 — Authentication and runtime authorization
 
@@ -138,4 +148,4 @@ BLOCKED until P20-S2 is DONE.
 
 ## 7. Advancement rule
 
-Execute only the active slice. Do not advance beyond P19-S2 until its exact final head is green, owner acceptance is complete, and its PR is merged. After merge, rescan current `main` before selecting another slice.
+Execute only the active slice. Do not advance beyond P19-S3 until its exact final head is green, owner acceptance is complete, and its PR is merged. After merge, rescan current `main` before selecting another slice.
