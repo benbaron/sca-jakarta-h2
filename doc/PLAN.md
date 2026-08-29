@@ -1,12 +1,12 @@
 ---
-plan_version: 245
+plan_version: 246
 active_phase: P20
 active_slice: P20-S1
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P20-S1-auth-boundary
-active_pull_request: null
-active_head: 00d498705544e1a76d99b159f4b8fc23f80012a1
-next_action: "Publish the P20-S1 requirements-boundary commit, open a draft PR to main, run Maven PR Tests on the exact PR head, then stop before merge for owner acceptance."
+active_pull_request: 310
+active_head: cccb34755bb847eaff0b6781e0af0dd27ee5f559
+next_action: "Validate this PR-recording successor head in Maven PR Tests; require clean headless verification, repeat tests, and production JavaFX route compliance green, then update PR #310 metadata only and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -32,7 +32,7 @@ A slice is `DONE` only when its behavior/documentation is merged, required valid
 | P17 | Cross-cutting UI, authority, cleanup, durable-record, documentation corrections | DONE through P17-C12 / PR #305 |
 | P18 | Depreciation-run workflow completion | DONE through P18-S1 / PR #306 |
 | P19 | Deferred Company Administration extensions | DONE through P19-S3 / PR #309 |
-| P20 | Authentication and runtime authorization | P20-S1 IN_PROGRESS |
+| P20 | Authentication and runtime authorization | P20-S1 VERIFYING |
 
 ## 3. Established product decisions
 
@@ -125,11 +125,12 @@ Governing design: `doc/P19-S3-company-ein-metadata.md`.
 
 ### P20-S1 — Authentication and authorization requirements boundary
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P20-S1-auth-boundary`
 Starting base: merged `main` `00d498705544e1a76d99b159f4b8fc23f80012a1`
-Pull request: not opened yet.
+Requirements commit: `cccb34755bb847eaff0b6781e0af0dd27ee5f559`
+Pull request: #310
 
 Required reading:
 
@@ -153,7 +154,7 @@ Completion gate:
 - governing security requirements are explicit and internally consistent;
 - `doc/administration/user-role-maintenance.md` no longer treats the security policy itself as unspecified, while accurately stating that runtime authentication/enforcement is not implemented yet;
 - Maven PR Tests are green on the exact documentation PR head;
-- owner accepts and merges the requirements PR.
+- owner accepts and merges PR #310.
 
 After P20-S1 merges, advance P20-S2 to READY.
 
