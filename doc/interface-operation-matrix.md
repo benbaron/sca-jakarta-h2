@@ -7,7 +7,7 @@ Status: reconciled to current production architecture through P17-C11. Historica
 - `ProductionWorkspaceWindow` is the production shell. The retired `MainWindow` is only a deprecated session-compatibility facade and owns no production chrome, routing, Find/command-palette, authentication UI, date-range selector, or import/export commands.
 - `ApplicationSessionContext` / `UiSessionState` own shared desktop session facts used by current production.
 - `AppPanelId.JOURNAL_PANE` is the one canonical Journal destination. `LEDGER_REGISTER` and `TXN_EDITOR` remain compatibility aliases only and normalize to the same Journal tab.
-- The former top-level Schedules destination and the generic Import/Export Jobs destination are eliminated. Their historical schema/compatibility data is not itself a production destination.
+- The former top-level Schedules panel/destination and the generic Import/Export Jobs destination are eliminated. Their historical schema/compatibility data is not itself a production destination.
 - `PanelHost` owns reusable canonical tabs and calls `onPanelShown()` when an existing destination is reselected so current H2 data is refreshed.
 - `PanelFactory` applies shared production UI compliance, including company-owned table state, while panels with richer existing binders retain their single authoritative state owner.
 - `UiServiceRegistry` supplies current service authorities. Compatibility repositories/services may remain only where a current production or interchange path still consumes them.
