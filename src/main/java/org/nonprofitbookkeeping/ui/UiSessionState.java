@@ -6,14 +6,15 @@ import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 import org.nonprofitbookkeeping.model.UserPrivilegeLevel;
 import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
+import org.nonprofitbookkeeping.service.AuthenticatedUserSession;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
-/**
- * In-memory session state with observable preferences/company context.
- */
+/** In-memory shell/session state; credential material is never stored here. */
 public class UiSessionState
 {
     private AppPreferencesState preferences = new AppPreferencesState(
@@ -23,12 +24,13 @@ public class UiSessionState
             UserPrivilegeLevel.ACCOUNTANT);
     private MultiCompanyState multiCompany = new MultiCompanyState("DEFAULT", List.of("DEFAULT"));
     private DatabaseSelectionState databaseSelection = defaultDatabaseSelection();
-    private String password = "";
-    private boolean loggedIn = true;
+    private AuthenticatedUserSession authenticatedUser;
 
     private final List<Consumer<AppPreferencesState>> preferenceListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<MultiCompanyState>> companyListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<DatabaseSelectionState>> databaseListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<Optional<AuthenticatedUserSession>>> authenticationListeners =
+            new CopyOnWriteArrayList<>();
 
     private static DatabaseSelectionState defaultDatabaseSelection()
     {
@@ -51,27 +53,60 @@ public class UiSessionState
         return databaseSelection;
     }
 
+    public Optional<AuthenticatedUserSession> authenticatedUser()
+    {
+        return Optional.ofNullable(authenticatedUser);
+    }
+
+    public boolean isAuthenticated()
+    {
+        return authenticatedUser != null;
+    }
+
     public void setPreferences(AppPreferencesState next)
     {
         this.preferences = next;
-        preferenceListeners.forEach(l -> l.accept(next));
+        preferenceListeners.forEach(listener -> listener.accept(next));
     }
 
     public void setMultiCompany(MultiCompanyState next)
     {
         this.multiCompany = next;
-        companyListeners.forEach(l -> l.accept(next));
-    }
-
-    public void onPreferencesChanged(Consumer<AppPreferencesState> listener)
-    {
-        preferenceListeners.add(listener);
+        companyListeners.forEach(listener -> listener.accept(next));
     }
 
     public void setDatabaseSelection(DatabaseSelectionState next)
     {
         this.databaseSelection = next;
-        databaseListeners.forEach(l -> l.accept(next));
+        databaseListeners.forEach(listener -> listener.accept(next));
+    }
+
+    public void setAuthenticatedUser(AuthenticatedUserSession next)
+    {
+        this.authenticatedUser = next;
+        notifyAuthenticationChanged();
+    }
+
+    public Optional<AuthenticatedUserSession> clearAuthenticatedUser()
+    {
+        AuthenticatedUserSession previous = authenticatedUser;
+        authenticatedUser = null;
+        notifyAuthenticationChanged();
+        return Optional.ofNullable(previous);
+    }
+
+    public void touchAuthenticatedActivity(Instant at)
+    {
+        if (authenticatedUser == null)
+        {
+            return;
+        }
+        authenticatedUser = authenticatedUser.withActivity(at);
+    }
+
+    public void onPreferencesChanged(Consumer<AppPreferencesState> listener)
+    {
+        preferenceListeners.add(listener);
     }
 
     public void onMultiCompanyChanged(Consumer<MultiCompanyState> listener)
@@ -84,35 +119,14 @@ public class UiSessionState
         databaseListeners.add(listener);
     }
 
-    public boolean hasPassword()
+    public void onAuthenticationChanged(Consumer<Optional<AuthenticatedUserSession>> listener)
     {
-        return password != null && !password.isBlank();
+        authenticationListeners.add(listener);
     }
 
-    public boolean isLoggedIn()
+    private void notifyAuthenticationChanged()
     {
-        return loggedIn;
-    }
-
-    public void setPassword(String next)
-    {
-        this.password = next == null ? "" : next;
-        this.loggedIn = !hasPassword();
-    }
-
-    public boolean login(String attempt)
-    {
-        if (!hasPassword())
-        {
-            loggedIn = true;
-            return true;
-        }
-        loggedIn = password.equals(attempt == null ? "" : attempt);
-        return loggedIn;
-    }
-
-    public void logout()
-    {
-        loggedIn = false;
+        Optional<AuthenticatedUserSession> current = authenticatedUser();
+        authenticationListeners.forEach(listener -> listener.accept(current));
     }
 }

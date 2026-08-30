@@ -48,7 +48,9 @@ public final class WorkspaceServicesFactory
         DatabaseSessionController databaseSessionController = new DatabaseSessionController(
                 sessionState,
                 stateStore,
-                connector);
+                connector,
+                authenticated -> UiServiceRegistry.authentication().logout(
+                        authenticated, "Database switched."));
         CompanySessionController companySessionController = new CompanySessionController(
                 sessionState,
                 stateStore,

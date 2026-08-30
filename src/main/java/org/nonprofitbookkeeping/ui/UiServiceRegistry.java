@@ -22,6 +22,7 @@ import org.nonprofitbookkeeping.report.SemanticAccountingReportQueryService;
 import org.nonprofitbookkeeping.report.AssetInventoryReportQueryService;
 import org.nonprofitbookkeeping.service.AccountAdminService;
 import org.nonprofitbookkeeping.service.AccountLookupService;
+import org.nonprofitbookkeeping.service.AuthenticationService;
 import org.nonprofitbookkeeping.service.AuditHistoryService;
 import org.nonprofitbookkeeping.service.BankConfigurationService;
 import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService;
@@ -48,6 +49,8 @@ import org.nonprofitbookkeeping.service.ReconciliationService;
 import org.nonprofitbookkeeping.service.ReviewedStatementAcceptanceService;
 import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
 import org.nonprofitbookkeeping.service.SampleCompanyService;
+import org.nonprofitbookkeeping.service.SecurityAdminService;
+import org.nonprofitbookkeeping.service.SecurityBootstrapService;
 import org.nonprofitbookkeeping.service.TransactionEntryService;
 import org.nonprofitbookkeeping.service.TransactionCorrectionService;
 import org.nonprofitbookkeeping.service.TransactionReferenceDataService;
@@ -59,9 +62,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Lightweight service wiring for JavaFX runtime without CDI bootstrap.
- */
+/** Lightweight service wiring for JavaFX runtime without CDI bootstrap. */
 public final class UiServiceRegistry
 {
     private static final Object LOCK = new Object();
@@ -132,6 +133,9 @@ public final class UiServiceRegistry
                 new JdbcCompanyUiPreferenceRepository(UiDataSources.forCurrentSessionDatabase()));
     }
     public static UserAdminService userAdmin() { return services().userAdmin(); }
+    public static AuthenticationService authentication() { return new AuthenticationService(services().jpa()); }
+    public static SecurityAdminService securityAdmin() { return new SecurityAdminService(services().jpa()); }
+    public static SecurityBootstrapService securityBootstrap() { return new SecurityBootstrapService(services().jpa()); }
     public static FundBalanceService fundBalance() { return services().fundBalance(); }
     public static ScheduleEligibilityService schedules() { return services().schedules(); }
     public static LedgerQueryService ledgerQuery() { return services().ledgerQuery(); }
@@ -331,12 +335,6 @@ public final class UiServiceRegistry
         return new PeriodCloseService(periodCloseRunRepository());
     }
 
-    /**
-     * Prepares a target database completely without changing the currently active
-     * service bundle. Migration, JPA construction, service composition, and
-     * authoritative active-company resolution must all succeed before the
-     * returned connection can be activated.
-     */
     static DatabaseSessionController.PreparedConnection prepareDatabaseConnection(
             Path databaseFile,
             String preferredCompanyCode)
@@ -376,10 +374,6 @@ public final class UiServiceRegistry
         }
     }
 
-    /**
-     * Compatibility entry point used outside the production session controller.
-     * New production switching goes through {@link DatabaseSessionController}.
-     */
     public static void reconnectToDatabase(Path databaseFile)
     {
         try (DatabaseSessionController.PreparedConnection prepared = prepareDatabaseConnection(
@@ -450,8 +444,6 @@ public final class UiServiceRegistry
                     }
                     catch (RuntimeException ex)
                     {
-                        // The replacement session is already authoritative. A close
-                        // failure on the superseded bundle must not undo the swap.
                         System.err.println("[NPBK] Could not close previous database services: "
                                 + ex.getMessage());
                     }

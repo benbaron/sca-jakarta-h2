@@ -83,11 +83,6 @@ public class CompanyAdminService
         return company;
     }
 
-    /**
-     * Resolves a persisted recent-company preference to an authoritative active
-     * company. A missing or inactive preference falls back to the first active
-     * H2 company and never creates a company row.
-     */
     public CompanyView resolveActiveCompany(String preferredCompanyCode)
     {
         if (preferredCompanyCode != null && !preferredCompanyCode.isBlank())
@@ -104,7 +99,6 @@ public class CompanyAdminService
                         "The active database has no active company. Reactivate a company before continuing."));
     }
 
-    /** Returns every Chart of Accounts durably owned by the selected company. */
     public List<CompanyChartView> listCompanyCharts(long companyId)
     {
         try (EntityManager em = jpa.em())
@@ -130,12 +124,6 @@ public class CompanyAdminService
         }
     }
 
-    /**
-     * Deliberately selects one company-owned chart as the company's current Chart
-     * of Accounts. A DRAFT becomes ACTIVE when selected. Existing ACTIVE charts
-     * are not retired or rewritten; their accounts/history remain attached to
-     * their original chart. RETIRED and cross-company charts are never selected.
-     */
     public CompanyChartView assignActiveChart(long companyId, long chartId)
     {
         try (EntityManager em = jpa.em())
@@ -250,11 +238,7 @@ public class CompanyAdminService
                 null);
     }
 
-    /**
-     * Creates or updates a company by stable database ID in one transaction.
-     * The current active company cannot be deactivated, and at least one active
-     * company must remain.
-     */
+    /** Creates or updates a company by stable ID in one transaction. */
     public CompanyView save(CompanyCommand command, String currentActiveCompanyCode)
     {
         CompanyCommand clean = validate(command);
@@ -263,8 +247,9 @@ public class CompanyAdminService
             em.getTransaction().begin();
             try
             {
+                boolean creating = clean.id() == null;
                 Company company;
-                if (clean.id() == null)
+                if (creating)
                 {
                     company = new Company();
                 }
@@ -296,11 +281,16 @@ public class CompanyAdminService
                 company.setFiscalYearStartDay(clean.fiscalYearStartDay());
                 company.setDefaultCurrency(clean.defaultCurrency());
                 company.touchUpdatedAt();
-                if (company.getId() == null)
+                if (creating)
                 {
                     em.persist(company);
                 }
                 em.flush();
+                if (creating)
+                {
+                    SecurityBootstrapService.ensureDefaultAssignmentsIfInitialized(em, company);
+                    em.flush();
+                }
                 CompanyView result = toView(company);
                 em.getTransaction().commit();
                 return result;
@@ -367,12 +357,6 @@ public class CompanyAdminService
         }
     }
 
-    /**
-     * Keeps the remaining code-keyed company records attached to the same
-     * stable Company row. Most company-owned tables use company_id foreign
-     * keys; these UI-state and period-close tables intentionally use the
-     * business code and therefore must move in the same transaction.
-     */
     private static void renameCompanyCodeReferences(EntityManager em, String previousCode, String nextCode)
     {
         em.createNativeQuery("delete from company_ui_preference where company_code = :nextCode")

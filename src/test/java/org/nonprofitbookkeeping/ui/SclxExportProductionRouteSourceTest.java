@@ -18,7 +18,7 @@ class SclxExportProductionRouteSourceTest
         String registry = source("UiServiceRegistry.java");
         String menu = source("SclxExportMenuInstaller.java");
 
-        assertTrue(mainApp.contains("SclxExportUiRegistry.install(root)"));
+        assertTrue(mainApp.contains("SclxExportUiRegistry.install(root.workspaceWindow())"));
         assertTrue(factory.contains("UiServiceRegistry::sclxFileExport"));
         assertTrue(factory.contains("new SclxExportCoordinator"));
         assertTrue(registry.contains("new SclxCoreSnapshotQueryService"));

@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-/** Durable user, role, and active-company assignment-history maintenance. */
+/** Durable user, role, assignment-history, and authentication maintenance. */
 public class UserAdminPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
@@ -72,6 +72,7 @@ public class UserAdminPanel implements AppPanel
     private final FormDirtyTracker userDirty;
     private final FormDirtyTracker roleDirty;
     private final FormDirtyTracker assignmentDirty;
+    private SecurityAdminPane securityAdmin;
     private Long editingUserId;
     private Long editingRoleId;
     private boolean suppressUserSelection;
@@ -91,12 +92,13 @@ public class UserAdminPanel implements AppPanel
     {
         Label title = new Label("User Admin");
         title.getStyleClass().add("panel-title");
-        Label help = new Label("Maintain durable users, global role definitions, and dated role-assignment history for the active company. These records do not authenticate a login or enforce permissions.");
+        Label help = new Label(
+                "Maintain durable users, global role definitions, dated company assignments, and account credentials. Effective role state is derived from H2 assignments; runtime operation enforcement completes in P20-S3.");
         help.setWrapText(true);
         actor.setPromptText("Factual operator");
         Button refresh = new Button("Refresh");
         refresh.setOnAction(event -> refreshWithDiscardProtection());
-        HBox actions = new HBox(8, refresh, new Label("Audit actor"), actor, status);
+        HBox actions = new HBox(8, refresh, new Label("Audit actor (legacy until P20-S3)"), actor, status);
         HBox.setHgrow(actor, Priority.ALWAYS);
         VBox header = new VBox(6, title, help, actions);
         header.setPadding(new Insets(8));
@@ -108,6 +110,7 @@ public class UserAdminPanel implements AppPanel
         companyFormat.install(assignmentStart);
         companyFormat.install(assignmentEnd);
         configureConverters();
+        securityAdmin = new SecurityAdminPane();
 
         tabs.setId("userAdminMaintenanceTabs");
         tabs.getTabs().setAll(
@@ -118,9 +121,15 @@ public class UserAdminPanel implements AppPanel
                 tab("Company Assignments", tableEditorSplit(
                         "userAdminAssignmentsSplit", "Assignment history for " + activeCompanyCode(),
                         assignments, assignmentEditor(), "user-admin-assignments")),
-                tab("Authentication", authenticationDeferral()));
+                tab("Authentication", securityAdmin.root()));
         tabs.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, newTab) ->
-                commandCapabilitiesChangedListener.run());
+        {
+            if (tabs.getSelectionModel().getSelectedIndex() == 3)
+            {
+                securityAdmin.refresh();
+            }
+            commandCapabilitiesChangedListener.run();
+        });
         root.setCenter(tabs);
 
         users.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) ->
@@ -143,7 +152,8 @@ public class UserAdminPanel implements AppPanel
         form.addRow(row++, new Label("Display Name"), displayName);
         form.addRow(row++, new Label("Email"), email);
         form.add(userActive, 1, row++);
-        Label lifecycle = explanatoryLabel("Users are never hard-deleted. End or revoke every active assignment before deactivating a user.");
+        Label lifecycle = explanatoryLabel(
+                "Users are never hard-deleted. Reserved security accounts keep their fixed username and active state. End or revoke every active non-reserved assignment before deactivating another user.");
         form.add(lifecycle, 0, row++, 2, 1);
         Button add = new Button("New User");
         add.setOnAction(event -> newUser());
@@ -162,7 +172,8 @@ public class UserAdminPanel implements AppPanel
         form.addRow(row++, new Label("Description"), roleDescription);
         form.add(roleActive, 1, row++);
         roleDescription.setPrefRowCount(4);
-        Label lifecycle = explanatoryLabel("Roles are global definitions and are never hard-deleted. A role with active assignments must be ended or revoked before the role can be deactivated; historical assignments remain.");
+        Label lifecycle = explanatoryLabel(
+                "Roles are global definitions and are never hard-deleted. ADMIN, MANAGER, ACCOUNTANT, and VIEWER are fixed runtime security roles and cannot be renamed or deactivated. Historical assignments remain.");
         form.add(lifecycle, 0, row++, 2, 1);
         Button add = new Button("New Role");
         add.setOnAction(event -> newRole());
@@ -180,7 +191,8 @@ public class UserAdminPanel implements AppPanel
         form.addRow(row++, new Label("User"), assignUser);
         form.addRow(row++, new Label("Role"), assignRole);
         form.addRow(row++, new Label("Start Date"), assignmentStart);
-        Label boundary = explanatoryLabel("Assignments are scoped to the active company. To change a user or role, end the existing assignment and create a new dated history row. Ending and revocation dates cannot be in the future.");
+        Label boundary = explanatoryLabel(
+                "Assignments are scoped to the active company and determine effective reserved-role state. The singleton ADMIN assignment is permanent; other changes create dated history rows. Ending and revocation dates cannot be in the future.");
         form.add(boundary, 0, row++, 2, 1);
         Button add = new Button("New Assignment");
         add.setOnAction(event -> newAssignment());
@@ -195,14 +207,6 @@ public class UserAdminPanel implements AppPanel
         revokeAssignment.setOnAction(event -> endAssignment(true));
         form.add(new HBox(8, endAssignment, revokeAssignment), 1, row);
         return form;
-    }
-
-    private Node authenticationDeferral()
-    {
-        Label deferred = explanatoryLabel("Authentication, passwords, login policy, identity providers, and runtime permission enforcement are intentionally deferred to a separately authorized security phase. The records maintained here are administrative history only.");
-        VBox content = new VBox(8, deferred);
-        content.setPadding(new Insets(12));
-        return content;
     }
 
     private GridPane formGrid()
@@ -347,6 +351,10 @@ public class UserAdminPanel implements AppPanel
             roleDirty.markClean();
             assignmentDirty.markClean();
             updateAssignmentActions(assignments.getSelectionModel().getSelectedItem());
+            if (securityAdmin != null)
+            {
+                securityAdmin.refresh();
+            }
         }
         catch (RuntimeException ex)
         {
@@ -362,6 +370,7 @@ public class UserAdminPanel implements AppPanel
                     editingUserId, username.getText(), displayName.getText(), email.getText(),
                     userActive.isSelected(), actor.getText()));
             editingUserId = saved.getId();
+            refreshAuthenticatedRoleState();
             status.setText("Saved user " + saved.getUsername() + " by stable ID " + saved.getId() + ".");
             refresh();
             selectById(users, saved.getId());
@@ -381,6 +390,7 @@ public class UserAdminPanel implements AppPanel
                     roleActive.isSelected(), actor.getText()));
             editingRoleId = saved.getId();
             AppRoleUsage usage = UiServiceRegistry.userAdmin().roleUsage(saved.getId());
+            refreshAuthenticatedRoleState();
             status.setText("Saved role " + saved.getCode() + " by stable ID " + saved.getId()
                     + "; " + usage.activeAssignments() + " active and "
                     + usage.historicalAssignments() + " historical assignment(s).");
@@ -405,6 +415,7 @@ public class UserAdminPanel implements AppPanel
                             role == null ? null : role.getId(),
                             assignmentStart.getValue(),
                             actor.getText()));
+            refreshAuthenticatedRoleState();
             status.setText("Assigned " + saved.getRole().getCode() + " to "
                     + saved.getUser().getUsername() + " for " + activeCompanyCode() + ".");
             refresh();
@@ -430,6 +441,7 @@ public class UserAdminPanel implements AppPanel
                     new UserRoleAssignmentEndCommand(
                             selected.getId(), assignmentEnd.getValue(), revoked,
                             assignmentReason.getText(), actor.getText()));
+            refreshAuthenticatedRoleState();
             status.setText((revoked ? "Revoked " : "Ended ") + saved.getRole().getCode()
                     + " for " + saved.getUser().getUsername() + "; history row "
                     + saved.getId() + " was retained.");
@@ -441,6 +453,22 @@ public class UserAdminPanel implements AppPanel
             status.setText("Could not " + (revoked ? "revoke" : "end")
                     + " assignment: " + UiErrors.safeMessage(ex));
         }
+    }
+
+    private void refreshAuthenticatedRoleState()
+    {
+        MainWindow.sharedSessionState().authenticatedUser().ifPresent(current ->
+        {
+            try
+            {
+                MainWindow.sharedSessionState().setAuthenticatedUser(
+                        UiServiceRegistry.authentication().refresh(current));
+            }
+            catch (RuntimeException ex)
+            {
+                MainWindow.sharedSessionState().clearAuthenticatedUser();
+            }
+        });
     }
 
     private void selectUser(AppUser oldValue, AppUser newValue)
