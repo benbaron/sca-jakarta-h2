@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class UserAdminLifecycleSourceTest
 {
     @Test
-    void panelExposesRealStableLifecycleOperationsWithoutAuthorizationClaims() throws Exception
+    void panelExposesRealStableLifecycleAndAuthenticationWithoutRuntimeAuthorizationClaims() throws Exception
     {
         String panel = source("src/main/java/org/nonprofitbookkeeping/ui/UserAdminPanel.java");
         String service = source("src/main/java/org/nonprofitbookkeeping/service/UserAdminService.java");
@@ -24,7 +24,9 @@ class UserAdminLifecycleSourceTest
         assertTrue(panel.contains("new UserRoleAssignmentEndCommand("));
         assertTrue(panel.contains("End Selected"));
         assertTrue(panel.contains("Revoke Selected"));
-        assertTrue(panel.contains("do not authenticate a login or enforce permissions"));
+        assertTrue(panel.contains("securityAdmin = new SecurityAdminPane()"));
+        assertTrue(panel.contains("tab(\"Authentication\", securityAdmin.root())"));
+        assertTrue(panel.contains("runtime operation enforcement completes in P20-S3"));
         assertTrue(panel.contains("userAdminRolesSplit"));
         assertTrue(panel.contains("CompanySplitPaneStateBinder.bind"));
         assertFalse(panel.contains("Delete Role"));
