@@ -1,12 +1,12 @@
 ---
-plan_version: 246
+plan_version: 247
 active_phase: P20
-active_slice: P20-S1
-active_status: VERIFYING
-active_branch: codex/P20-S1-auth-boundary
-active_pull_request: 310
-active_head: cccb34755bb847eaff0b6781e0af0dd27ee5f559
-next_action: "Validate this PR-recording successor head in Maven PR Tests; require clean headless verification, repeat tests, and production JavaFX route compliance green, then update PR #310 metadata only and stop before merge for owner acceptance."
+active_slice: P20-S3
+active_status: IN_PROGRESS
+active_branch: codex/P20-S3-runtime-authorization
+active_pull_request: null
+active_head: null
+next_action: "Implement the fixed P20-S3 permission policy through production mutation services and JavaFX command/action gating, replace free-form audit actor authority with authenticated identity, add direct service-bypass and role-switching tests, then validate in Maven PR Tests and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -32,7 +32,7 @@ A slice is `DONE` only when its behavior/documentation is merged, required valid
 | P17 | Cross-cutting UI, authority, cleanup, durable-record, documentation corrections | DONE through P17-C12 / PR #305 |
 | P18 | Depreciation-run workflow completion | DONE through P18-S1 / PR #306 |
 | P19 | Deferred Company Administration extensions | DONE through P19-S3 / PR #309 |
-| P20 | Authentication and runtime authorization | P20-S1 VERIFYING |
+| P20 | Authentication and runtime authorization | P20-S3 IN_PROGRESS |
 
 ## 3. Established product decisions
 
@@ -125,65 +125,72 @@ Governing design: `doc/P19-S3-company-ein-metadata.md`.
 
 ### P20-S1 — Authentication and authorization requirements boundary
 
-Status: VERIFYING.
+Status: DONE.
 
-Branch: `codex/P20-S1-auth-boundary`
-Starting base: merged `main` `00d498705544e1a76d99b159f4b8fc23f80012a1`
-Requirements commit: `cccb34755bb847eaff0b6781e0af0dd27ee5f559`
-Pull request: #310
+PR #310 exact final head `17077c2c2ba68a7c152554bccde04f3bb2aaa6ce` passed Maven PR Tests run `33279457435`, job `99172041566`, and merged to `main` at `3d4f0d775e454e506ca4e20d7101eff613f47d0a` after owner acceptance.
 
-Required reading:
-
-- `doc/P20-S1-authentication-authorization-boundary.md`
-- `doc/administration/user-role-maintenance.md`
-- `doc/interface-operation-matrix.md`
-- `doc/ui_design_rules.md`
-- `doc/ui/editor-guidelines.md`
-
-Required inspection:
-
-- `AppUser`, `AppRole`, `UserCompanyRole`;
-- `UserAdminService`, `UserAdminPanel`;
-- V46/V72 user-role migrations;
-- current session/shell and audit-actor paths before P20-S2 design.
-
-P20-S1 is documentation/requirements only. It introduces no runtime behavior and no schema/code changes. The donor repository was inspected for authentication/password/login behavior and supplied no compatible implementation; current application identity/role models remain authoritative.
-
-Completion gate:
-
-- governing security requirements are explicit and internally consistent;
-- `doc/administration/user-role-maintenance.md` no longer treats the security policy itself as unspecified, while accurately stating that runtime authentication/enforcement is not implemented yet;
-- Maven PR Tests are green on the exact documentation PR head;
-- owner accepts and merges PR #310.
-
-After P20-S1 merges, advance P20-S2 to READY.
+Governing requirements: `doc/P20-S1-authentication-authorization-boundary.md`.
 
 ### P20-S2 — Authentication implementation
 
-Status: BLOCKED until P20-S1 is DONE.
+Status: DONE.
 
-Implement the adopted credential/bootstrap/login/logout/session/recovery contract without runtime panel-by-panel authorization becoming a parallel partial security boundary.
+PR #311 exact final head `630d022584449298ad900ee00126f41eafe96917` passed Maven PR Tests run `33292407265`, job `99206247747`: clean headless verification, repeat tests, and production JavaFX route compliance all succeeded. Owner confirmed the tests and merged PR #311 to `main` at `40a4a37aaeed7fa94d847009d55a177f94b1d407`.
 
-Expected deliverables include:
+Completed behavior includes:
 
-- optional H2-owned credential material for `AppUser` only;
-- reserved default account/bootstrap behavior for existing and new companies;
-- singleton ADMIN invariants;
-- login/logout and authenticated session identity;
-- disabled-by-default inactivity timeout setting;
-- ADMIN password set/replace/clear, including self;
-- explicit offline ADMIN recovery;
-- security audit events;
-- replacement of the User Admin Authentication deferral with genuine behavior;
-- migration/service/UI/security tests and owner testing notes.
+- H2-owned optional `AppUser` credentials; roles never own passwords;
+- passwordless reserved ADMIN/MANAGER/ACCOUNTANT/VIEWER accounts and per-company assignments;
+- singleton effective ADMIN and required ADMIN assignment protection;
+- explicit login/logout and authenticated in-memory session identity;
+- effective reserved roles derived from current company-scoped H2 assignments;
+- company-switch role recomputation and no-access rejection;
+- default inactivity timeout disabled, with ADMIN-controlled nonzero configuration;
+- ADMIN password set/replace/clear including self;
+- explicit offline ADMIN credential recovery;
+- factual security events and real User Admin authentication controls.
 
 ### P20-S3 — Runtime authorization enforcement
 
-Status: BLOCKED until P20-S2 is DONE.
+Status: IN_PROGRESS.
 
-Apply the reserved-role permission model consistently to shell commands, panels, and service mutation boundaries. Replace free-form audit actor authority with authenticated identity and prove denied writes cannot bypass UI gating.
+Branch: `codex/P20-S3-runtime-authorization`
+Starting base: merged `main` `40a4a37aaeed7fa94d847009d55a177f94b1d407`
+Pull request: pending
 
-The concrete operation matrix must preserve current accounting/lifecycle rules and must not introduce approval queues, posting approval, or a second authorization store.
+Required reading:
+
+- `doc/P20-S1-authentication-authorization-boundary.md`;
+- `doc/P20-S3-runtime-authorization.md`;
+- `doc/administration/user-role-maintenance.md`;
+- `doc/interface-operation-matrix.md`;
+- `doc/ui_design_rules.md`;
+- `doc/ui/editor-guidelines.md`.
+
+Required inspection:
+
+- `AuthenticatedUserSession`, `ReservedSecurityRole`, `AuthenticationService`, `SecurityAdminService`, `SecurityRepository`;
+- `ApplicationSessionContext`, `UiSessionState`, `ProductionWorkspaceWindow`, `PanelHost`, `AppPanel`, `UiServiceRegistry`;
+- every production mutation service/factory listed by the interface operation matrix;
+- current free-form actor fields and audit-producing service paths;
+- current role/session/security tests and source-route guard tests.
+
+Implement the fixed reserved-role permission model consistently at shell/panel and authoritative service mutation boundaries. UI disabling is explanatory only; direct lower-privilege service calls must fail closed and write factual authorization-denial security events. Replace free-form audit actor authority with authenticated identity without creating a parallel audit identity.
+
+Governing enforcement design: `doc/P20-S3-runtime-authorization.md`.
+
+Completion gate:
+
+- fixed permission matrix is implemented from current effective reserved roles with multi-role union;
+- all production protected mutation routes use the central authorization guard;
+- VIEWER cannot mutate durable business/accounting state even through direct service calls;
+- MANAGER, ACCOUNTANT, and ADMIN boundaries match the adopted P20 contract;
+- company/role switching immediately changes permissions without a stale cache;
+- authenticated identity is the authoritative actor for protected audit writes;
+- denial events are durable H2 `security_event` facts;
+- JavaFX commands/actions reflect the same permissions and explain unavailable operations;
+- Maven PR Tests and production JavaFX route compliance are green on the exact final head;
+- owner desktop acceptance is complete.
 
 ## 7. Advancement rule
 
