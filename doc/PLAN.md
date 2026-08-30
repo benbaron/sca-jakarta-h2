@@ -1,12 +1,12 @@
 ---
-plan_version: 247
+plan_version: 248
 active_phase: P20
 active_slice: P20-S3
 active_status: IN_PROGRESS
-active_branch: codex/P20-S3-runtime-authorization
+active_branch: codex/P20-S3-service-enforcement
 active_pull_request: null
 active_head: null
-next_action: "Implement the fixed P20-S3 permission policy through production mutation services and JavaFX command/action gating, replace free-form audit actor authority with authenticated identity, add direct service-bypass and role-switching tests, then validate in Maven PR Tests and stop before merge for owner acceptance."
+next_action: "Validate the first P20-S3 service-enforcement tranche in draft PR CI; this tranche proves direct Fund service denial and immediate role/company switching. After it is green, wire the current-session guard into production Fund service creation and continue the same pattern through remaining mutation services before JavaFX action gating and final owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -154,9 +154,19 @@ Completed behavior includes:
 
 Status: IN_PROGRESS.
 
-Branch: `codex/P20-S3-runtime-authorization`
-Starting base: merged `main` `40a4a37aaeed7fa94d847009d55a177f94b1d407`
+Foundation PR #312 exact final head `db3a30289aa17b967948a79a048f9ebdf9c5042e` passed Maven PR Tests run `33293417227`, job `99208891671`, and merged to `main` at `1b11df7cdc98775c618e8489ca7608bde36ea547`.
+
+Continuation branch: `codex/P20-S3-service-enforcement`
+Starting base: merged `main` `1b11df7cdc98775c618e8489ca7608bde36ea547`
 Pull request: pending
+
+First continuation tranche:
+
+- adds a nullable service adapter around the central `AuthorizationGuard` so legacy/test constructors remain source-compatible while guarded constructors fail closed;
+- applies `BOOKKEEPING_WRITE` to Fund create/update/upsert/delete mutation boundaries;
+- leaves Fund queries (`usage`) readable;
+- adds H2-backed direct-service coverage proving VIEWER denial, immediate ACCOUNTANT enablement, immediate switch back to VIEWER denial, and wrong-company rejection without stale authorization state;
+- does not yet wire the guard into the production `UiServiceRegistry`; that wiring is the next action after this focused service contract is green.
 
 Required reading:
 
