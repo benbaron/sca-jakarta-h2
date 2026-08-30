@@ -1,12 +1,12 @@
 ---
-plan_version: 248
+plan_version: 249
 active_phase: P20
 active_slice: P20-S3
 active_status: IN_PROGRESS
 active_branch: codex/P20-S3-service-enforcement
-active_pull_request: null
-active_head: null
-next_action: "Validate the first P20-S3 service-enforcement tranche in draft PR CI; this tranche proves direct Fund service denial and immediate role/company switching. After it is green, wire the current-session guard into production Fund service creation and continue the same pattern through remaining mutation services before JavaFX action gating and final owner acceptance."
+active_pull_request: 313
+active_head: c4bc8f1308e71f1631d77f608c0622932ceca356
+next_action: "Validate PR #313 in Maven PR Tests; this tranche proves direct Fund service denial and immediate role/company switching. After it is green, wire the current-session guard into production Fund service creation and continue the same pattern through remaining mutation services before JavaFX action gating and final owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -158,7 +158,8 @@ Foundation PR #312 exact final head `db3a30289aa17b967948a79a048f9ebdf9c5042e` p
 
 Continuation branch: `codex/P20-S3-service-enforcement`
 Starting base: merged `main` `1b11df7cdc98775c618e8489ca7608bde36ea547`
-Pull request: pending
+Pull request: #313
+Current recorded head: `c4bc8f1308e71f1631d77f608c0622932ceca356`
 
 First continuation tranche:
 
