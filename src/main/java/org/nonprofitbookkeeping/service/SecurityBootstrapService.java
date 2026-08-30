@@ -44,7 +44,6 @@ public class SecurityBootstrapService
         }
     }
 
-    /** Initializes automatically only when no pre-P20 reserved username requires an owner decision. */
     public SecurityBootstrapStatus initializeIfUnambiguous()
     {
         try (EntityManager em = jpa.em())
@@ -76,7 +75,6 @@ public class SecurityBootstrapService
         }
     }
 
-    /** Explicitly adopts matching legacy AppUser rows while preserving their stable IDs and history. */
     public SecurityBootstrapStatus adoptExistingReservedAccounts()
     {
         try (EntityManager em = jpa.em())
@@ -232,18 +230,24 @@ public class SecurityBootstrapService
             {
                 throw new IllegalStateException("Reserved security bootstrap is incomplete for " + reserved.name() + ".");
             }
-            if (SecurityRepository.activeAssignment(em, user, company, role) != null)
+            UserCompanyRole assignment = SecurityRepository.activeAssignment(em, user, company, role);
+            if (assignment == null)
             {
-                continue;
+                assignment = new UserCompanyRole();
+                assignment.setUser(user);
+                assignment.setCompany(company);
+                assignment.setRole(role);
+                assignment.setStartDate(startDate);
+                assignment.setActive(true);
+                assignment.setRequiredSecurityAssignment(reserved == ReservedSecurityRole.ADMIN);
+                assignment.touchUpdatedAt();
+                em.persist(assignment);
             }
-            UserCompanyRole assignment = new UserCompanyRole();
-            assignment.setUser(user);
-            assignment.setCompany(company);
-            assignment.setRole(role);
-            assignment.setStartDate(startDate);
-            assignment.setActive(true);
-            assignment.touchUpdatedAt();
-            em.persist(assignment);
+            else if (reserved == ReservedSecurityRole.ADMIN && !assignment.isRequiredSecurityAssignment())
+            {
+                assignment.setRequiredSecurityAssignment(true);
+                assignment.touchUpdatedAt();
+            }
         }
         em.flush();
     }

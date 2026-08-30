@@ -2,22 +2,17 @@ package org.nonprofitbookkeeping.app;
 
 import picocli.CommandLine.Command;
 
-/**
- * Root command for the desktop/CLI hybrid app.
- * This is intended to be replaced later by a JavaFX launcher or richer CLI.
- */
+/** Root command for supported local bookkeeping utilities. */
 @Command(
     name = "sca-ledger",
     mixinStandardHelpOptions = true,
-    version = "0.1.0",
+    version = "0.2.0",
     description = "SCA Ledger (H2 + Jakarta) utilities",
     subcommands = {
-        SeedCommand.class
+        SeedCommand.class,
+        RecoverAdminCommand.class
     }
 )
-/**
- * AppCli component.
- */
 public class AppCli implements Runnable
 {
     @Override

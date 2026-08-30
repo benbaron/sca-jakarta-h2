@@ -1,6 +1,8 @@
 package org.nonprofitbookkeeping.ui;
 
 import org.nonprofitbookkeeping.model.MultiCompanyState;
+import org.nonprofitbookkeeping.service.AuthenticatedUserSession;
+import org.nonprofitbookkeeping.service.AuthenticationService;
 import org.nonprofitbookkeeping.service.CompanyAdminService;
 import org.nonprofitbookkeeping.service.CompanyChartView;
 import org.nonprofitbookkeeping.service.CompanyCommand;
@@ -11,10 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-/**
- * Coordinates authoritative H2 company lifecycle operations with the
- * non-authoritative recent-company selection convenience.
- */
+/** Coordinates authoritative H2 company selection with authenticated company-role state. */
 final class CompanySessionController
 {
     @FunctionalInterface
@@ -30,6 +29,7 @@ final class CompanySessionController
     private final UiSessionState sessionState;
     private final AppStateStore stateStore;
     private final Supplier<CompanyAdminService> serviceSupplier;
+    private final Supplier<AuthenticationService> authenticationSupplier;
     private CompanyChangeGuard changeGuard = (current, requested) -> true;
 
     CompanySessionController(
@@ -37,9 +37,19 @@ final class CompanySessionController
             AppStateStore stateStore,
             Supplier<CompanyAdminService> serviceSupplier)
     {
+        this(sessionState, stateStore, serviceSupplier, UiServiceRegistry::authentication);
+    }
+
+    CompanySessionController(
+            UiSessionState sessionState,
+            AppStateStore stateStore,
+            Supplier<CompanyAdminService> serviceSupplier,
+            Supplier<AuthenticationService> authenticationSupplier)
+    {
         this.sessionState = Objects.requireNonNull(sessionState, "sessionState");
         this.stateStore = Objects.requireNonNull(stateStore, "stateStore");
         this.serviceSupplier = Objects.requireNonNull(serviceSupplier, "serviceSupplier");
+        this.authenticationSupplier = Objects.requireNonNull(authenticationSupplier, "authenticationSupplier");
     }
 
     void setChangeGuard(CompanyChangeGuard changeGuard)
@@ -61,10 +71,12 @@ final class CompanySessionController
         try
         {
             CompanyView requested = service().requireActiveCompany(companyCode);
+            AuthenticatedUserSession rebound = rebindIfAuthenticated(requested.code());
             String current = sessionState.multiCompany().activeCompanyCode();
             if (requested.code().equalsIgnoreCase(current))
             {
                 applySelectionState(requested.code());
+                applyReboundSession(rebound);
                 return new SelectionResult(true, "Company " + requested.code() + " is already active.", requested);
             }
             if (!changeGuard.allow(current, requested.code()))
@@ -72,6 +84,7 @@ final class CompanySessionController
                 return new SelectionResult(false, "Company change cancelled; unsaved edits remain open.", requested);
             }
             applySelectionState(requested.code());
+            applyReboundSession(rebound);
             return new SelectionResult(true, "Selected active company " + requested.code() + ".", requested);
         }
         catch (RuntimeException ex)
@@ -88,7 +101,9 @@ final class CompanySessionController
         CompanyView saved = service().save(command, current.code());
         if (editingCurrent)
         {
+            AuthenticatedUserSession rebound = rebindIfAuthenticated(saved.code());
             applySelectionState(saved.code());
+            applyReboundSession(rebound);
         }
         return saved;
     }
@@ -109,10 +124,13 @@ final class CompanySessionController
             {
                 return new SelectionResult(
                         false,
-                        "Created company " + saved.code() + ", but selection was cancelled because unsaved edits remain open.",
+                        "Created company " + saved.code()
+                                + ", but selection was cancelled because unsaved edits remain open.",
                         saved);
             }
+            AuthenticatedUserSession rebound = rebindIfAuthenticated(saved.code());
             applySelectionState(saved.code());
+            applyReboundSession(rebound);
             return new SelectionResult(true, "Created and selected company " + saved.code() + ".", saved);
         }
         catch (RuntimeException ex)
@@ -144,6 +162,21 @@ final class CompanySessionController
     private CompanyAdminService service()
     {
         return serviceSupplier.get();
+    }
+
+    private AuthenticatedUserSession rebindIfAuthenticated(String companyCode)
+    {
+        return sessionState.authenticatedUser()
+                .map(current -> authenticationSupplier.get().rebind(current, companyCode))
+                .orElse(null);
+    }
+
+    private void applyReboundSession(AuthenticatedUserSession rebound)
+    {
+        if (rebound != null)
+        {
+            sessionState.setAuthenticatedUser(rebound);
+        }
     }
 
     private void applySelectionState(String selectedCode)

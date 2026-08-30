@@ -48,6 +48,9 @@ public class UserCompanyRole
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 
+    @Column(name = "required_security_assignment", nullable = false)
+    private boolean requiredSecurityAssignment;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
@@ -75,6 +78,8 @@ public class UserCompanyRole
     public void setRole(AppRole role) { this.role = role; }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+    public boolean isRequiredSecurityAssignment() { return requiredSecurityAssignment; }
+    public void setRequiredSecurityAssignment(boolean requiredSecurityAssignment) { this.requiredSecurityAssignment = requiredSecurityAssignment; }
     public Instant getCreatedAt() { return createdAt; }
     public LocalDate getStartDate() { return startDate; }
     public void setStartDate(LocalDate startDate) { this.startDate = startDate; }

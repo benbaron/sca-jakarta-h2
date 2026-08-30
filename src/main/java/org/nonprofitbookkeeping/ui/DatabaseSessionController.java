@@ -3,38 +3,24 @@ package org.nonprofitbookkeeping.ui;
 import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
+import org.nonprofitbookkeeping.service.AuthenticatedUserSession;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
-/**
- * Coordinates the connected database, authoritative company selection, runtime
- * service composition, and persisted shell state.
- *
- * <p>A target database is prepared and validated before any visible or persisted
- * session authority changes. The prepared connection becomes active only after
- * the target company state and shell persistence are known to be valid.</p>
- */
+/** Coordinates validated connected-database activation and session authority. */
 final class DatabaseSessionController
 {
-    /**
-     * A validated target database that owns all not-yet-active runtime resources.
-     * {@link #activate()} must not throw; preparation is the failure boundary.
-     */
     interface PreparedConnection extends AutoCloseable
     {
         Path databasePath();
-
         String activeCompanyCode();
-
         List<String> activeCompanyCodes();
-
         void activate();
-
-        @Override
-        void close();
+        @Override void close();
     }
 
     @FunctionalInterface
@@ -54,15 +40,27 @@ final class DatabaseSessionController
     private final UiSessionState sessionState;
     private final AppStateStore stateStore;
     private final Connector connector;
+    private final Consumer<AuthenticatedUserSession> successfulDatabaseSwitchLogoutRecorder;
 
     DatabaseSessionController(
             UiSessionState sessionState,
             AppStateStore stateStore,
             Connector connector)
     {
+        this(sessionState, stateStore, connector, ignored -> { });
+    }
+
+    DatabaseSessionController(
+            UiSessionState sessionState,
+            AppStateStore stateStore,
+            Connector connector,
+            Consumer<AuthenticatedUserSession> successfulDatabaseSwitchLogoutRecorder)
+    {
         this.sessionState = Objects.requireNonNull(sessionState, "sessionState");
         this.stateStore = Objects.requireNonNull(stateStore, "stateStore");
         this.connector = Objects.requireNonNull(connector, "connector");
+        this.successfulDatabaseSwitchLogoutRecorder = Objects.requireNonNull(
+                successfulDatabaseSwitchLogoutRecorder, "successfulDatabaseSwitchLogoutRecorder");
     }
 
     void restorePersistedSelection()
@@ -84,9 +82,7 @@ final class DatabaseSessionController
         DatabaseSelectionState previousDatabase = sessionState.databaseSelection();
         MultiCompanyState previousCompany = sessionState.multiCompany();
 
-        try (PreparedConnection prepared = connector.prepare(
-                resolved,
-                previousCompany.activeCompanyCode()))
+        try (PreparedConnection prepared = connector.prepare(resolved, previousCompany.activeCompanyCode()))
         {
             Path preparedPath = DatabaseLocationService.resolveDatabasePath(
                     Objects.requireNonNull(prepared.databasePath(), "prepared database path").toString());
@@ -104,21 +100,34 @@ final class DatabaseSessionController
             DatabaseSelectionState targetDatabase = databaseState(
                     resolved,
                     previousDatabase.recentDatabasePaths());
+            boolean databaseChanged = !previousPath.equals(resolved);
 
-            // FileAppStateStore persists these two selection facts in one write.
-            // If persistence fails, the prepared services are closed and the
-            // currently active session remains untouched.
             stateStore.saveDatabaseSession(targetDatabase, targetCompany);
+
+            if (databaseChanged)
+            {
+                sessionState.authenticatedUser().ifPresent(session ->
+                {
+                    try
+                    {
+                        successfulDatabaseSwitchLogoutRecorder.accept(session);
+                    }
+                    catch (RuntimeException ex)
+                    {
+                        System.err.println("[NPBK] Could not record pre-switch logout event: " + ex.getMessage());
+                    }
+                });
+            }
 
             prepared.activate();
             sessionState.setDatabaseSelection(targetDatabase);
             sessionState.setMultiCompany(targetCompany);
+            if (databaseChanged)
+            {
+                sessionState.clearAuthenticatedUser();
+            }
 
-            return new ConnectionResult(
-                    previousPath,
-                    resolved,
-                    targetCompany.activeCompanyCode(),
-                    !previousPath.equals(resolved));
+            return new ConnectionResult(previousPath, resolved, targetCompany.activeCompanyCode(), databaseChanged);
         }
     }
 

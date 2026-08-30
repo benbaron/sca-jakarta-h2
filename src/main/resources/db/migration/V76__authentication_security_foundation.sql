@@ -1,17 +1,27 @@
 ALTER TABLE app_user ADD COLUMN IF NOT EXISTS reserved_security_code VARCHAR(20);
 ALTER TABLE app_role ADD COLUMN IF NOT EXISTS reserved_security_code VARCHAR(20);
+ALTER TABLE user_company_role ADD COLUMN IF NOT EXISTS required_security_assignment BOOLEAN DEFAULT FALSE;
+UPDATE user_company_role SET required_security_assignment = FALSE WHERE required_security_assignment IS NULL;
+ALTER TABLE user_company_role ALTER COLUMN required_security_assignment SET NOT NULL;
 
 ALTER TABLE app_user ADD CONSTRAINT IF NOT EXISTS ck_app_user_reserved_security_code
     CHECK (reserved_security_code IS NULL OR reserved_security_code IN ('ADMIN', 'MANAGER', 'ACCOUNTANT', 'VIEWER'));
 ALTER TABLE app_role ADD CONSTRAINT IF NOT EXISTS ck_app_role_reserved_security_code
     CHECK (reserved_security_code IS NULL OR reserved_security_code IN ('ADMIN', 'MANAGER', 'ACCOUNTANT', 'VIEWER'));
+ALTER TABLE app_user ADD CONSTRAINT IF NOT EXISTS ck_app_user_reserved_identity
+    CHECK (reserved_security_code IS NULL OR (UPPER(username) = reserved_security_code AND is_active = TRUE));
+ALTER TABLE app_role ADD CONSTRAINT IF NOT EXISTS ck_app_role_reserved_identity
+    CHECK (reserved_security_code IS NULL OR (UPPER(code) = reserved_security_code AND is_active = TRUE));
+ALTER TABLE user_company_role ADD CONSTRAINT IF NOT EXISTS ck_user_company_role_required_security
+    CHECK (required_security_assignment = FALSE
+        OR (is_active = TRUE AND end_date IS NULL AND revoked_at IS NULL));
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_app_user_reserved_security_code
     ON app_user (reserved_security_code);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_app_role_reserved_security_code
     ON app_role (reserved_security_code);
 
--- V46 created these four role definitions as application-owned bootstrap data.
+-- V46 created these role definitions as application-owned bootstrap data.
 UPDATE app_role SET reserved_security_code = 'ADMIN'
 WHERE UPPER(code) = 'ADMIN' AND reserved_security_code IS NULL;
 UPDATE app_role SET reserved_security_code = 'MANAGER'

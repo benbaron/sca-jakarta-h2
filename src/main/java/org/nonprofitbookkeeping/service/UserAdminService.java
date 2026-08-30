@@ -19,11 +19,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-/**
- * Stable-ID user and role maintenance plus dated, company-scoped assignment
- * history. These records are administrative facts; this service does not
- * authenticate users or enforce runtime permissions.
- */
+/** Stable-ID user/role maintenance plus dated company-scoped assignment history. */
 @ApplicationScoped
 public class UserAdminService
 {
@@ -116,6 +112,21 @@ public class UserAdminService
                         : require(em, AppUser.class, command.id(), "user", LockModeType.PESSIMISTIC_WRITE);
                 String before = user.getId() == null ? null : userSnapshot(user);
                 String cleanUsername = normalizeUsername(command.username());
+                String reservedCode = SecurityRepository.reservedUserCode(em, user.getId());
+                if (reservedCode != null)
+                {
+                    if (!cleanUsername.equalsIgnoreCase(reservedCode))
+                    {
+                        throw new IllegalStateException(
+                                "Reserved security account " + reservedCode + " cannot be renamed.");
+                    }
+                    if (!command.active())
+                    {
+                        throw new IllegalStateException(
+                                "Reserved security account " + reservedCode + " must remain active.");
+                    }
+                    cleanUsername = reservedCode;
+                }
                 requireUniqueUsername(em, user.getId(), cleanUsername);
                 if (!command.active() && user.isActive())
                 {
@@ -169,6 +180,21 @@ public class UserAdminService
                         : require(em, AppRole.class, command.id(), "role", LockModeType.PESSIMISTIC_WRITE);
                 String before = role.getId() == null ? null : roleSnapshot(role);
                 String cleanCode = normalizeRoleCode(command.code());
+                String reservedCode = SecurityRepository.reservedRoleCode(em, role.getId());
+                if (reservedCode != null)
+                {
+                    if (!cleanCode.equalsIgnoreCase(reservedCode))
+                    {
+                        throw new IllegalStateException(
+                                "Reserved security role " + reservedCode + " cannot be renamed.");
+                    }
+                    if (!command.active())
+                    {
+                        throw new IllegalStateException(
+                                "Reserved security role " + reservedCode + " must remain active.");
+                    }
+                    cleanCode = reservedCode;
+                }
                 requireUniqueRoleCode(em, role.getId(), cleanCode);
                 if (role.getId() != null && !command.active() && role.isActive())
                 {
@@ -242,6 +268,14 @@ public class UserAdminService
                 {
                     throw new IllegalStateException("Inactive roles cannot receive new assignments.");
                 }
+                String reservedRole = SecurityRepository.reservedRoleCode(em, role.getId());
+                if (ReservedSecurityRole.ADMIN.name().equals(reservedRole)
+                        && !ReservedSecurityRole.ADMIN.name().equals(
+                                SecurityRepository.reservedUserCode(em, user.getId())))
+                {
+                    throw new IllegalStateException(
+                            "ADMIN may be assigned only to the singleton reserved ADMIN account.");
+                }
                 rejectOverlappingAssignment(em, user, company, role, startDate);
 
                 UserCompanyRole assignment = new UserCompanyRole();
@@ -250,6 +284,10 @@ public class UserAdminService
                 assignment.setRole(role);
                 assignment.setStartDate(startDate);
                 assignment.setActive(true);
+                assignment.setRequiredSecurityAssignment(
+                        ReservedSecurityRole.ADMIN.name().equals(reservedRole)
+                                && ReservedSecurityRole.ADMIN.name().equals(
+                                        SecurityRepository.reservedUserCode(em, user.getId())));
                 assignment.touchUpdatedAt();
                 em.persist(assignment);
                 em.flush();
@@ -299,6 +337,11 @@ public class UserAdminService
                 if (!assignment.isActive())
                 {
                     throw new IllegalStateException("The selected assignment already ended or was revoked.");
+                }
+                if (assignment.isRequiredSecurityAssignment())
+                {
+                    throw new IllegalStateException(
+                            "The singleton ADMIN assignment is required for every company and cannot be ended or revoked.");
                 }
                 if (endDate.isBefore(assignment.getStartDate()))
                 {
@@ -421,7 +464,7 @@ public class UserAdminService
                 ? "select u.id from AppUser u where lower(u.username) = :username"
                 : "select u.id from AppUser u where lower(u.username) = :username and u.id <> :id";
         var query = em.createQuery(jpql, Long.class)
-                .setParameter("username", username)
+                .setParameter("username", username.toLowerCase(Locale.ROOT))
                 .setMaxResults(1);
         if (userId != null)
         {
@@ -439,7 +482,7 @@ public class UserAdminService
                 ? "select r.id from AppRole r where upper(r.code) = :code"
                 : "select r.id from AppRole r where upper(r.code) = :code and r.id <> :id";
         var query = em.createQuery(jpql, Long.class)
-                .setParameter("code", code)
+                .setParameter("code", code.toUpperCase(Locale.ROOT))
                 .setMaxResults(1);
         if (roleId != null)
         {
@@ -507,7 +550,8 @@ public class UserAdminService
         return "id=" + assignment.getId() + ",userId=" + assignment.getUser().getId()
                 + ",companyId=" + assignment.getCompany().getId() + ",roleId=" + assignment.getRole().getId()
                 + ",startDate=" + assignment.getStartDate() + ",endDate=" + assignment.getEndDate()
-                + ",active=" + assignment.isActive() + ",revokedAt=" + assignment.getRevokedAt();
+                + ",active=" + assignment.isActive() + ",requiredSecurity="
+                + assignment.isRequiredSecurityAssignment() + ",revokedAt=" + assignment.getRevokedAt();
     }
 
     private static String actionSummary(String action, String subject)

@@ -1,10 +1,15 @@
 package org.nonprofitbookkeeping.ui;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import org.nonprofitbookkeeping.model.AppPreferencesState;
 import org.nonprofitbookkeeping.model.WorkspaceWindowState;
 
@@ -15,7 +20,7 @@ public class MainApp extends Application
     public void start(Stage stage)
     {
         AppStateStore stateStore = UserAppStateStore.create();
-        ProductionWorkspaceWindow root = new ProductionWorkspaceWindow(
+        AuthenticatedWorkspaceRoot root = new AuthenticatedWorkspaceRoot(
                 stateStore,
                 UiServiceRegistry::prepareDatabaseConnection);
         AppPreferencesState preferences = MainWindow.sharedSessionState().preferences();
@@ -38,6 +43,13 @@ public class MainApp extends Application
 
         FullTextTooltipInstaller.install(root);
         GlobalShortcuts.install(scene, root);
+        scene.addEventFilter(MouseEvent.ANY, event -> root.recordUserActivity());
+        scene.addEventFilter(KeyEvent.ANY, event -> root.recordUserActivity());
+
+        Timeline inactivityCheck = new Timeline(
+                new KeyFrame(Duration.seconds(30), event -> root.enforceInactivityTimeout()));
+        inactivityCheck.setCycleCount(Timeline.INDEFINITE);
+        inactivityCheck.play();
 
         stage.setTitle("Nonprofit Accounting (SCA-Jakarta)");
         stage.setMinWidth(geometry.minimumWidth());
@@ -46,9 +58,14 @@ public class MainApp extends Application
         stage.setY(geometry.y());
         stage.setScene(scene);
         stage.setMaximized(remembered != null && remembered.maximized());
-        stage.setOnHiding(event -> persistWindowState(stage, stateStore));
-        DatabaseTransferUiRegistry.install(root);
-        SclxExportUiRegistry.install(root);
+        stage.setOnHiding(event ->
+        {
+            inactivityCheck.stop();
+            root.shutdown();
+            persistWindowState(stage, stateStore);
+        });
+        DatabaseTransferUiRegistry.install(root.workspaceWindow());
+        SclxExportUiRegistry.install(root.workspaceWindow());
         stage.show();
     }
 
