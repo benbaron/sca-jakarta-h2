@@ -25,6 +25,7 @@ public class FundAdminService
     Jpa jpa;
 
     private Supplier<String> companyCodeSupplier = () -> "DEFAULT";
+    private AuthorizationGuard authorizationGuard;
 
     public FundAdminService()
     {
@@ -37,8 +38,17 @@ public class FundAdminService
 
     public FundAdminService(Jpa jpa, Supplier<String> companyCodeSupplier)
     {
+        this(jpa, companyCodeSupplier, null);
+    }
+
+    public FundAdminService(
+            Jpa jpa,
+            Supplier<String> companyCodeSupplier,
+            AuthorizationGuard authorizationGuard)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
+        this.authorizationGuard = authorizationGuard;
     }
 
     /**
@@ -47,6 +57,8 @@ public class FundAdminService
      */
     public Fund save(FundCommand command)
     {
+        ServiceAuthorization.require(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(), "save fund");
         if (command == null)
         {
             throw new IllegalArgumentException("Fund details are required.");
@@ -87,6 +99,8 @@ public class FundAdminService
     /** Compatibility boundary for older callers that intentionally address a fund by code. */
     public Fund upsert(String code, String name, FundType fundType, boolean active)
     {
+        ServiceAuthorization.require(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(), "save fund");
         String cleanCode = normalizeCode(code);
         String cleanName = requireText(name, "Fund name", 200);
         if (fundType == null)
@@ -160,6 +174,8 @@ public class FundAdminService
      */
     public void deleteUnused(long fundId)
     {
+        ServiceAuthorization.require(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(), "delete unused fund");
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
