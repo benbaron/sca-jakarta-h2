@@ -8,7 +8,7 @@ P20-S1 defines the approved authentication/authorization contract in `doc/P20-S1
 
 `UserAdminService` mutation entry points require `SECURITY_ADMIN` for the active company. Under the fixed P20 policy only effective singleton ADMIN authority grants that permission; MANAGER, ACCOUNTANT, VIEWER, and any union of non-ADMIN reserved roles do not. User/role/assignment queries remain non-mutating and do not require `SECURITY_ADMIN` merely to inspect current facts.
 
-Roles never own passwords. Credentials belong only to `AppUser` accounts. The reserved ADMIN, MANAGER, ACCOUNTANT, and VIEWER accounts begin passwordless unless an ADMIN has deliberately configured a credential. Password and inactivity-timeout administration remain owned by `SecurityAdminService`, not `UserAdminService`.
+Roles never own passwords. Credentials belong only to `AppUser` accounts. The reserved ADMIN, MANAGER, ACCOUNTANT, and VIEWER accounts begin passwordless unless an ADMIN has deliberately configured a credential. Password set/replace/clear and inactivity-timeout changes remain owned by `SecurityAdminService`, not `UserAdminService`. Those `SecurityAdminService` mutation entry points now require `SECURITY_ADMIN` in the requested company context before password validation or service-owned transaction work begins. The existing persistence-backed singleton-ADMIN/effective-ADMIN check remains in force after authorization succeeds, so injecting or fabricating a nominal ADMIN permission cannot replace the reserved ADMIN identity invariant. `passwordConfigured(...)` and `settings()` remain non-mutating reads.
 
 Authenticated session identity is now available, but the existing User Admin command DTO actor strings remain a temporary compatibility input until the P20-S3 authenticated-audit-actor tranche replaces them as authoritative audit identity. They must not survive as a parallel actor authority when P20-S3 is complete.
 
@@ -45,6 +45,8 @@ Different non-ADMIN roles may overlap for the same user and company. Effective p
 
 Every create, update, deactivate, assignment, end, and revoke operation first passes the runtime `SECURITY_ADMIN` guard and then runs in one service-owned JPA transaction. The service revalidates selected rows under a pessimistic lock, writes the domain fact and company-owned `AuditEvent`, flushes, and commits once. Any authorization denial, validation, audit, constraint, or injected late failure leaves the requested User Admin mutation unapplied.
 
+Credential and inactivity-timeout mutations follow the same fail-closed ordering: the runtime `SECURITY_ADMIN` guard runs before credential validation or the security-setting transaction, then the existing singleton ADMIN check revalidates the durable account/assignment facts before the change and its factual `security_event` are committed. A denied call cannot replace/clear credential state or alter the database-global inactivity timeout.
+
 Audit action types include:
 
 - `APP_USER_CREATED`, `APP_USER_UPDATED`, `APP_USER_DEACTIVATED`;
@@ -59,7 +61,7 @@ The Administration destination retains one User Admin tab. Its inner Users, Role
 
 Tables remain sortable, resizable, reorderable, independently scrollable, and separated from their editors by company-owned horizontal dividers. Assignment dates use active-company display preferences and selectors retain stable entity IDs.
 
-P20-S3 service authorization is authoritative even before JavaFX command gating is wired. The later consolidated UI pass must inject the current-session guard through `UiServiceRegistry` and disable/explain User Admin mutation commands for accounts without `SECURITY_ADMIN`; it must not create duplicate panels or a second user/role repository.
+P20-S3 service authorization is authoritative even before JavaFX command gating is wired. The later consolidated UI pass must inject the current-session guard through `UiServiceRegistry` and disable/explain User Admin and security-admin mutation commands for accounts without `SECURITY_ADMIN`; it must not create duplicate panels or a second user/role repository.
 
 ## Donor-reference decision
 

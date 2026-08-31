@@ -18,17 +18,33 @@ public class SecurityAdminService
     private final Jpa jpa;
     private final Clock clock;
     private final PasswordHasher passwordHasher;
+    private final AuthorizationGuard authorizationGuard;
 
     public SecurityAdminService(Jpa jpa)
     {
-        this(jpa, Clock.systemDefaultZone(), new PasswordHasher());
+        this(jpa, Clock.systemDefaultZone(), new PasswordHasher(), null);
+    }
+
+    public SecurityAdminService(Jpa jpa, AuthorizationGuard authorizationGuard)
+    {
+        this(jpa, Clock.systemDefaultZone(), new PasswordHasher(), authorizationGuard);
     }
 
     SecurityAdminService(Jpa jpa, Clock clock, PasswordHasher passwordHasher)
     {
+        this(jpa, clock, passwordHasher, null);
+    }
+
+    SecurityAdminService(
+            Jpa jpa,
+            Clock clock,
+            PasswordHasher passwordHasher,
+            AuthorizationGuard authorizationGuard)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.clock = Objects.requireNonNull(clock, "clock");
         this.passwordHasher = Objects.requireNonNull(passwordHasher, "passwordHasher");
+        this.authorizationGuard = authorizationGuard;
     }
 
     public boolean passwordConfigured(long userId)
@@ -53,6 +69,11 @@ public class SecurityAdminService
             long targetUserId,
             char[] password)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.SECURITY_ADMIN,
+                companyCode,
+                "set account password");
         PasswordHasher.requirePassword(password);
         char[] copy = Arrays.copyOf(password, password.length);
         try (EntityManager em = jpa.em())
@@ -95,6 +116,11 @@ public class SecurityAdminService
 
     public void clearPassword(long adminUserId, String companyCode, long targetUserId)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.SECURITY_ADMIN,
+                companyCode,
+                "clear account password");
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
@@ -129,6 +155,11 @@ public class SecurityAdminService
             String companyCode,
             int minutes)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.SECURITY_ADMIN,
+                companyCode,
+                "change inactivity timeout");
         if (minutes < 0 || minutes > 10_080)
         {
             throw new IllegalArgumentException("Inactivity timeout must be 0 through 10080 minutes; 0 disables it.");
