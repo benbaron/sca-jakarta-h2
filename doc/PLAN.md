@@ -1,12 +1,12 @@
 ---
-plan_version: 252
+plan_version: 253
 active_phase: P20
 active_slice: P20-S3
 active_status: IN_PROGRESS
 active_branch: codex/P20-S3-account-authorization
 active_pull_request: 315
 active_head: 62aecac2f7412fb09244999496d6580eb078639b
-next_action: "Validate PR #315 expanded Account authorization coverage in Maven PR Tests. After this Account service boundary is green and owner-accepted, merge separately, then continue P20-S3 on a fresh post-merge tranche for the next unguarded mutation service."
+next_action: "Owner desktop acceptance of PR #315 Account authorization. If accepted, merge PR #315 separately, rescan merged main, and continue P20-S3 on a fresh branch for the next unguarded mutation service."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -164,6 +164,7 @@ Active continuation branch: `codex/P20-S3-account-authorization`
 Starting base: merged `main` `79eb9e52f4bf4a834587f9e66d34a60c1749f71d`
 Pull request: #315
 Recorded behavior head before this PLAN successor: `62aecac2f7412fb09244999496d6580eb078639b`
+Verified Account tranche head `336801d7fdb3f3cc40324397c17ba8d3d55abc80` passed Maven PR Tests run `33347531688`, job `99354457694`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded.
 
 Completed P20-S3 behavior to date:
 
