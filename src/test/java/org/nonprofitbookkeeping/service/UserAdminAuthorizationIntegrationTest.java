@@ -136,9 +136,9 @@ class UserAdminAuthorizationIntegrationTest
     }
 
     @Test
-    void authorizationDoesNotBypassReservedSecurityOrAssignmentLifecycleProtections(@TempDir Path tempDir)
+    void authorizationDoesNotBypassReservedSecurityProtections(@TempDir Path tempDir)
     {
-        try (Jpa jpa = new Jpa(tempDir.resolve("user-admin-domain-protections")))
+        try (Jpa jpa = new Jpa(tempDir.resolve("user-admin-reserved-protections")))
         {
             UserAdminService setup = unguarded(jpa, "DEFAULT");
             long adminUserId = reservedUserId(setup, ReservedSecurityRole.ADMIN);
@@ -180,6 +180,20 @@ class UserAdminAuthorizationIntegrationTest
                     false,
                     "Must remain assigned",
                     "admin")));
+        }
+    }
+
+    @Test
+    void authorizationDoesNotBypassOrdinaryAssignmentLifecycleProtections(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("user-admin-assignment-protections")))
+        {
+            UserAdminService setup = unguarded(jpa, "DEFAULT");
+            long adminUserId = reservedUserId(setup, ReservedSecurityRole.ADMIN);
+            UserAdminService service = guarded(
+                    jpa,
+                    "DEFAULT",
+                    () -> Optional.of(session(adminUserId, ReservedSecurityRole.ADMIN)));
 
             AppUser user = service.saveUser(new AppUserCommand(
                     null, "lifecycle-user", "Lifecycle User", null, true, "admin"));
