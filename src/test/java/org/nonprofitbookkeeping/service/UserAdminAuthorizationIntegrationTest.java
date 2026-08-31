@@ -281,10 +281,10 @@ class UserAdminAuthorizationIntegrationTest
     {
         try (EntityManager em = jpa.em())
         {
-            return em.createQuery(
-                            "select count(e) from SecurityEvent e where e.eventType = 'AUTHORIZATION_DENIED'",
-                            Long.class)
+            Number count = (Number) em.createNativeQuery(
+                            "select count(*) from security_event where action_type = 'AUTHORIZATION_DENIED'")
                     .getSingleResult();
+            return count.longValue();
         }
     }
 }
