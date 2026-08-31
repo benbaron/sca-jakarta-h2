@@ -18,6 +18,7 @@ public class BudgetCategoryAdminService
     Jpa jpa;
 
     private Supplier<String> companyCodeSupplier = () -> "DEFAULT";
+    private AuthorizationGuard authorizationGuard;
 
     public BudgetCategoryAdminService() {}
 
@@ -28,12 +29,23 @@ public class BudgetCategoryAdminService
 
     public BudgetCategoryAdminService(Jpa jpa, Supplier<String> companyCodeSupplier)
     {
+        this(jpa, companyCodeSupplier, null);
+    }
+
+    public BudgetCategoryAdminService(
+            Jpa jpa,
+            Supplier<String> companyCodeSupplier,
+            AuthorizationGuard authorizationGuard)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
+        this.authorizationGuard = authorizationGuard;
     }
 
     public BudgetCategory upsert(String code, String name, boolean active)
     {
+        ServiceAuthorization.require(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(), "save budget category");
         String cleanCode = requireText(code, "Budget category code");
         String cleanName = requireText(name, "Budget category name");
 

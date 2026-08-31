@@ -1,12 +1,12 @@
 ---
-plan_version: 249
+plan_version: 250
 active_phase: P20
 active_slice: P20-S3
 active_status: IN_PROGRESS
-active_branch: codex/P20-S3-service-enforcement
-active_pull_request: 313
-active_head: c4bc8f1308e71f1631d77f608c0622932ceca356
-next_action: "Validate PR #313 in Maven PR Tests; this tranche proves direct Fund service denial and immediate role/company switching. After it is green, wire the current-session guard into production Fund service creation and continue the same pattern through remaining mutation services before JavaFX action gating and final owner acceptance."
+active_branch: codex/P20-S3-budget-category-authorization
+active_pull_request: 314
+active_head: aab663ff616121663771686ba2c9273e312fe4fd
+next_action: "Validate PR #314 in Maven PR Tests. After this Budget Category service boundary is green, continue P20-S3 on fresh post-merge tranches through remaining mutation services, then consolidate current-session guard wiring in UiServiceRegistry and finish JavaFX action gating, authenticated audit actors, and owner desktop acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -156,18 +156,37 @@ Status: IN_PROGRESS.
 
 Foundation PR #312 exact final head `db3a30289aa17b967948a79a048f9ebdf9c5042e` passed Maven PR Tests run `33293417227`, job `99208891671`, and merged to `main` at `1b11df7cdc98775c618e8489ca7608bde36ea547`.
 
-Continuation branch: `codex/P20-S3-service-enforcement`
-Starting base: merged `main` `1b11df7cdc98775c618e8489ca7608bde36ea547`
-Pull request: #313
-Current recorded head: `c4bc8f1308e71f1631d77f608c0622932ceca356`
+Fund-service PR #313 exact final head `9cb928554546be938841cd391e6e13995ad77918` passed Maven PR Tests run `33337392090`, job `99326671667`: clean headless verification, full tests, and production JavaFX route compliance all succeeded. The owner merged PR #313 to `main` at `19f85937b154cb8a6ad6517a4564425440ae0aa1`.
 
-First continuation tranche:
+Active continuation branch: `codex/P20-S3-budget-category-authorization`
+Starting base: merged `main` `19f85937b154cb8a6ad6517a4564425440ae0aa1`
+Pull request: #314
+Recorded behavior head before this PLAN successor: `aab663ff616121663771686ba2c9273e312fe4fd`
 
-- adds a nullable service adapter around the central `AuthorizationGuard` so legacy/test constructors remain source-compatible while guarded constructors fail closed;
-- applies `BOOKKEEPING_WRITE` to Fund create/update/upsert/delete mutation boundaries;
-- leaves Fund queries (`usage`) readable;
-- adds H2-backed direct-service coverage proving VIEWER denial, immediate ACCOUNTANT enablement, immediate switch back to VIEWER denial, and wrong-company rejection without stale authorization state;
-- does not yet wire the guard into the production `UiServiceRegistry`; that wiring is the next action after this focused service contract is green.
+Completed P20-S3 behavior to date:
+
+- fixed `ApplicationPermission` policy and multi-role union are established;
+- `AuthorizationGuard` reads the current authenticated session on every decision and writes durable `AUTHORIZATION_DENIED` facts;
+- `ServiceAuthorization` provides a nullable adapter so legacy/test constructors remain source-compatible while guarded constructors fail closed;
+- Fund service create/update/upsert/delete requires `BOOKKEEPING_WRITE`; Fund queries remain readable;
+- direct H2 Fund tests prove VIEWER denial, immediate ACCOUNTANT enablement, immediate switch back to VIEWER denial, and wrong-company rejection without stale authorization state.
+
+Current #314 tranche:
+
+- adds the guarded Budget Category service constructor;
+- applies `BOOKKEEPING_WRITE` to the service-owned `upsert(...)` mutation boundary;
+- leaves caller-owned `createForImport(...)` as an inner transaction seam whose authorization belongs to the outer governed import commit;
+- adds direct H2 role/company-switch coverage matching the Fund enforcement tests.
+
+Still required before P20-S3 completion:
+
+- guarded service boundaries for accounts, budget plans, bank configuration, company administration, User Admin, Journal entry/correction, fixed assets, inventory, reconciliation, period close, security administration, and import/SCLX commit services;
+- production `UiServiceRegistry`/current-session guard wiring for all guarded services;
+- authenticated identity as the authoritative actor for protected audit writes;
+- database administration authorization;
+- JavaFX global and panel-local mutation gating using the same fixed policy;
+- governing interface/user-role documentation updates;
+- final Maven PR Tests and owner desktop acceptance.
 
 Required reading:
 
