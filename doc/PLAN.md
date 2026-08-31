@@ -1,12 +1,12 @@
 ---
-plan_version: 259
+plan_version: 262
 active_phase: P20
 active_slice: P20-S3
 active_status: IN_PROGRESS
-active_branch: codex/P20-S3-company-administration-authorization
-active_pull_request: 318
-active_head: 6bfa6287b8dec3d027f6f67ad6fcce72ad6b1d62
-next_action: "Owner desktop acceptance of PR #318 Company Administration authorization. If accepted, merge PR #318 separately, rescan merged main, and continue P20-S3 on a fresh branch for the next unguarded mutation service."
+active_branch: codex/P20-S3-user-admin-authorization
+active_pull_request: 319
+active_head: dcec480d5702662567e29fc37a14f90cafec0531
+next_action: "Validate this documentation-only PLAN successor for PR #319 in Maven PR Tests. Corrective head dcec480d5702662567e29fc37a14f90cafec0531 passed run 33431783480 / job 99618708073 with clean headless verification, full Maven tests, and production JavaFX route compliance all green. If the successor remains green, hand the draft PR to the owner for desktop acceptance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -166,11 +166,12 @@ Budget Plan PR #316 exact final head `bcae13e291738abb5003ad6899ced7ac9496db08` 
 
 Bank Configuration PR #317 exact final head `62e882d807ea4ffeeb9c66ffefac075635f86703` passed Maven PR Tests run `33351860101`, job `99366659502`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded. The owner accepted and merged PR #317 to `main` at `fee2728eca53c8d0da7a9d0bcbddc75a7daa4965`.
 
-Active continuation branch: `codex/P20-S3-company-administration-authorization`
-Starting base: merged `main` `fee2728eca53c8d0da7a9d0bcbddc75a7daa4965`
-Pull request: #318
-Recorded behavior/documentation head before this PLAN successor: `1169415ffd2f6257cb485350154849701291f5d2`
-Verified Company Administration tranche head `6bfa6287b8dec3d027f6f67ad6fcce72ad6b1d62` passed Maven PR Tests run `33354038095`, job `99372721755`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded.
+Company Administration PR #318 exact final head `89e7948fbfda3b776cdc5f829c88aea1683cf5e8` passed Maven PR Tests run `33354408246`, job `99373686535`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded. The owner accepted and merged PR #318 to `main` at `4991916c114c8e1ecc96367201bc3f841d3c3dc9`.
+
+Active continuation branch: `codex/P20-S3-user-admin-authorization`
+Starting base: merged `main` `4991916c114c8e1ecc96367201bc3f841d3c3dc9`
+Pull request: #319
+Recorded behavior/documentation head before this PLAN successor: `dcec480d5702662567e29fc37a14f90cafec0531`
 
 Completed P20-S3 behavior to date:
 
@@ -186,18 +187,24 @@ Completed P20-S3 behavior to date:
 - Budget Plan service-owned draft/revision/save/activate/archive mutations require `BOOKKEEPING_WRITE`, while caller-owned budget import helpers remain governed by the outer import commit;
 - direct H2 Budget Plan tests prove VIEWER denial/no write, immediate role/company switching, ACCOUNTANT/MANAGER/ADMIN/non-ADMIN union success, and preserved duplicate-scope and draft/version lifecycle protections;
 - Bank Configuration service-owned Bank create/update and configured-bank-account create/update mutations require `COMPANY_ADMIN`, while list methods remain read-only and caller-owned import helpers remain governed by the outer import commit;
-- direct H2 Bank Configuration tests prove VIEWER/ACCOUNTANT denial/no durable change, immediate role/company switching, MANAGER/ADMIN/non-ADMIN union success, preserved bank-ledger-account classification and lifecycle protections, and continued caller-owned import-helper use inside an explicitly authorized outer transaction.
+- direct H2 Bank Configuration tests prove VIEWER/ACCOUNTANT denial/no durable change, immediate role/company switching, MANAGER/ADMIN/non-ADMIN union success, preserved bank-ledger-account classification and lifecycle protections, and continued caller-owned import-helper use inside an explicitly authorized outer transaction;
+- Company Administration stable-ID company create/update/deactivate and active Chart of Accounts assignment require `COMPANY_ADMIN`; `reportingDefaults.*` state writes also require `COMPANY_ADMIN`, while presentation-only company UI state retains `UI_PREFERENCE_WRITE`;
+- direct H2 Company Administration tests prove VIEWER/ACCOUNTANT denial, MANAGER/ADMIN/non-ADMIN union success, immediate role/company switching, wrong-company rejection, preserved company/chart lifecycle protections, reporting-default bypass prevention, and continued VIEWER presentation preference persistence.
 
-Current #318 Company Administration tranche:
+Current #319 User Admin tranche:
 
-- adds a guarded `CompanyAdminService` constructor while retaining existing source-compatible constructors and applies `COMPANY_ADMIN` to stable-ID company create/update/deactivate and active Chart of Accounts assignment;
-- authorizes an existing company update against the current company code resolved from its stable ID so a legitimate company-code rename is not treated as a cross-company mutation, while new-company creation uses the current company context when supplied;
-- adds a guarded `CompanyUiPreferencesService` constructor and requires `COMPANY_ADMIN` for every `reportingDefaults.*` state write, including the generic `saveState(...)` path, while preserving `UI_PREFERENCE_WRITE` for presentation-only preferences and layout/workspace state;
-- adds direct H2 coverage proving VIEWER/ACCOUNTANT denial/no company mutation, MANAGER/ADMIN/non-ADMIN union success, immediate role/company switching, wrong-company rejection, preserved company lifecycle/chart protections, prevention of the generic reporting-default state bypass, continued VIEWER presentation-preference persistence, and absent-session fail-closed behavior.
+- adds a guarded `UserAdminService` constructor while retaining all existing source-compatible constructors;
+- requires `SECURITY_ADMIN` for stable-ID user maintenance, role maintenance, company role assignment, and assignment end/revoke in the active-company context while leaving read/usage queries non-mutating;
+- preserves global username/role-code uniqueness, reserved ADMIN identity/role protections, required singleton-ADMIN assignment protection, overlap checks, deactivation restrictions, and retained assignment history;
+- keeps password and inactivity-timeout administration in `SecurityAdminService` for a later focused tranche;
+- adds direct H2 coverage proving VIEWER/ACCOUNTANT/MANAGER denial/no durable mutation, ADMIN success, non-ADMIN union denial, immediate role/company switching, wrong-company and absent-session fail-closed behavior, durable authorization-denial facts, and preserved reserved/lifecycle protections;
+- failed Maven PR Tests run `33417054906`, job `99570129359`, exposed that `UserAdminAuthorizationIntegrationTest` attempted reserved-user lookup before invoking the existing production security bootstrap; corrective commit `d4b7389a1508d70237eb1b5e0e6c71865cc9655d` now initializes the shared unguarded fixture through `AuthenticationService.initializeSecurityIfUnambiguous()` rather than synthesizing reserved identities or adding read-side effects;
+- corrective code/documentation head `dcec480d5702662567e29fc37a14f90cafec0531` passed Maven PR Tests run `33431783480`, job `99618708073`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded;
+- updates `doc/administration/user-role-maintenance.md` to reflect current P20-S2 authentication and P20-S3 service authorization while explicitly retaining authenticated audit-actor conversion and JavaFX gating as remaining work.
 
 Still required before P20-S3 completion:
 
-- guarded service boundaries for User Admin, Journal entry/correction, fixed assets, inventory, reconciliation, period close, security administration, and import/SCLX commit services;
+- guarded service boundaries for Journal entry/correction, fixed assets, inventory, reconciliation, period close, security administration, and import/SCLX commit services;
 - production `UiServiceRegistry`/current-session guard wiring for all guarded services;
 - authenticated identity as the authoritative actor for protected audit writes;
 - database administration authorization;
