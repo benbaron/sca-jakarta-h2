@@ -25,6 +25,7 @@ public class AccountAdminService
     Jpa jpa;
 
     private Supplier<String> companyCodeSupplier = () -> "DEFAULT";
+    private AuthorizationGuard authorizationGuard;
 
     public AccountAdminService()
     {
@@ -37,8 +38,17 @@ public class AccountAdminService
 
     public AccountAdminService(Jpa jpa, Supplier<String> companyCodeSupplier)
     {
+        this(jpa, companyCodeSupplier, null);
+    }
+
+    public AccountAdminService(
+            Jpa jpa,
+            Supplier<String> companyCodeSupplier,
+            AuthorizationGuard authorizationGuard)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
+        this.authorizationGuard = authorizationGuard;
     }
 
     /**
@@ -48,6 +58,8 @@ public class AccountAdminService
      */
     public Account save(AccountCommand command)
     {
+        ServiceAuthorization.require(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(), "save account");
         if (command == null)
         {
             throw new IllegalArgumentException("Account details are required.");
@@ -163,6 +175,8 @@ public class AccountAdminService
                           String parentCode,
                           boolean active)
     {
+        ServiceAuthorization.require(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(), "save account");
         // Validate the public command contract before opening persistence. In particular,
         // do not allow an uninitialized/default-constructed service to mask invalid
         // arguments with a NullPointerException from the JPA dependency.
