@@ -1,12 +1,12 @@
 ---
-plan_version: 251
+plan_version: 252
 active_phase: P20
 active_slice: P20-S3
 active_status: IN_PROGRESS
 active_branch: codex/P20-S3-account-authorization
 active_pull_request: 315
-active_head: f1e124d5ca5ab14e69311cbcf63586e8090ada25
-next_action: "Validate PR #315 in Maven PR Tests. After this Account service boundary is green and merged, continue P20-S3 on fresh post-merge tranches through the remaining mutation services, then consolidate current-session guard wiring in UiServiceRegistry and finish JavaFX action gating, authenticated audit actors, and owner desktop acceptance."
+active_head: 62aecac2f7412fb09244999496d6580eb078639b
+next_action: "Validate PR #315 expanded Account authorization coverage in Maven PR Tests. After this Account service boundary is green and owner-accepted, merge separately, then continue P20-S3 on a fresh post-merge tranche for the next unguarded mutation service."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -163,7 +163,7 @@ Budget Category PR #314 exact final head `17fe284c2c6986efdfd076d47e68caa3c44f31
 Active continuation branch: `codex/P20-S3-account-authorization`
 Starting base: merged `main` `79eb9e52f4bf4a834587f9e66d34a60c1749f71d`
 Pull request: #315
-Recorded behavior head before this PLAN successor: `f1e124d5ca5ab14e69311cbcf63586e8090ada25`
+Recorded behavior head before this PLAN successor: `62aecac2f7412fb09244999496d6580eb078639b`
 
 Completed P20-S3 behavior to date:
 
@@ -180,7 +180,7 @@ Current #315 tranche:
 - adds the guarded Account service constructor;
 - applies `BOOKKEEPING_WRITE` to stable-ID `save(...)` and service-owned code-addressed `upsert(...)`;
 - leaves caller-owned `upsert(EntityManager, ...)` seams as inner transaction paths whose authorization belongs to the outer governed import commit;
-- adds direct H2 coverage proving VIEWER denial, immediate ACCOUNTANT enablement, immediate switch back to VIEWER denial, stable-ID preservation, and wrong-company rejection.
+- adds direct H2 coverage proving VIEWER denial with no durable write, immediate `VIEWER -> ACCOUNTANT -> VIEWER` switching, wrong-company rejection, MANAGER/ADMIN success, non-ADMIN multi-role union, preserved BANK and company/chart ownership validation, and continued caller-owned account helper use inside an explicitly authorized outer transaction.
 
 Still required before P20-S3 completion:
 
