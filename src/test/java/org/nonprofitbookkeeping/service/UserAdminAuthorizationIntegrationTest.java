@@ -199,6 +199,10 @@ class UserAdminAuthorizationIntegrationTest
                     null, "lifecycle-user", "Lifecycle User", null, true, "admin"));
             AppRole role = service.saveRole(new AppRoleCommand(
                     null, "LIFECYCLE_ROLE", "Lifecycle Role", null, true, "admin"));
+            assertEquals(
+                    "LIFECYCLE_ROLE|null",
+                    roleDatabaseState(jpa, role.getId()),
+                    "saveRole returned an ID whose database row is not the custom unreserved role");
             service.assignRole(new UserRoleAssignmentCommand(
                     user.getId(), role.getId(), LocalDate.of(2026, 1, 1), "admin"));
 
@@ -299,6 +303,18 @@ class UserAdminAuthorizationIntegrationTest
                             "select count(*) from security_event where action_type = 'AUTHORIZATION_DENIED'")
                     .getSingleResult();
             return count.longValue();
+        }
+    }
+
+    private static String roleDatabaseState(Jpa jpa, long roleId)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            Object[] row = (Object[]) em.createNativeQuery(
+                            "select code, reserved_security_code from app_role where id = :id")
+                    .setParameter("id", roleId)
+                    .getSingleResult();
+            return row[0] + "|" + row[1];
         }
     }
 }
