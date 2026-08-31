@@ -1,12 +1,12 @@
 ---
-plan_version: 258
+plan_version: 259
 active_phase: P20
 active_slice: P20-S3
 active_status: IN_PROGRESS
 active_branch: codex/P20-S3-company-administration-authorization
 active_pull_request: 318
-active_head: 1169415ffd2f6257cb485350154849701291f5d2
-next_action: "Validate PR #318 Company Administration authorization in Maven PR Tests. If green, record exact final-head CI evidence and hand the draft PR to the owner for desktop acceptance before merge."
+active_head: 6bfa6287b8dec3d027f6f67ad6fcce72ad6b1d62
+next_action: "Owner desktop acceptance of PR #318 Company Administration authorization. If accepted, merge PR #318 separately, rescan merged main, and continue P20-S3 on a fresh branch for the next unguarded mutation service."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -170,6 +170,7 @@ Active continuation branch: `codex/P20-S3-company-administration-authorization`
 Starting base: merged `main` `fee2728eca53c8d0da7a9d0bcbddc75a7daa4965`
 Pull request: #318
 Recorded behavior/documentation head before this PLAN successor: `1169415ffd2f6257cb485350154849701291f5d2`
+Verified Company Administration tranche head `6bfa6287b8dec3d027f6f67ad6fcce72ad6b1d62` passed Maven PR Tests run `33354038095`, job `99372721755`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded.
 
 Completed P20-S3 behavior to date:
 
