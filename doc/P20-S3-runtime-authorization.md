@@ -60,6 +60,8 @@ The following require `COMPANY_ADMIN`:
 
 Operational statement import/review/reconciliation remains bookkeeping work and therefore uses `BOOKKEEPING_WRITE` rather than `COMPANY_ADMIN`.
 
+Company reporting defaults stored in `company_ui_state` under the `reportingDefaults.` prefix are company-level configuration and therefore require `COMPANY_ADMIN`, even though they share the existing UI-state store. Generic state writes must not provide a lower-privilege bypass for that prefix. Presentation-only company UI preferences and layout/workspace state outside `reportingDefaults.` remain `UI_PREFERENCE_WRITE`, so VIEWER retains the ability to persist table, divider, date/money-display, and similar presentation state.
+
 ### SECURITY_ADMIN
 
 The following require `SECURITY_ADMIN` and therefore effective singleton ADMIN authority:

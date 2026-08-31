@@ -24,11 +24,19 @@ public class CompanyAdminService
     @Inject
     Jpa jpa;
 
+    private AuthorizationGuard authorizationGuard;
+
     public CompanyAdminService() {}
 
     public CompanyAdminService(Jpa jpa)
     {
-        this.jpa = jpa;
+        this(jpa, null);
+    }
+
+    public CompanyAdminService(Jpa jpa, AuthorizationGuard authorizationGuard)
+    {
+        this.jpa = Objects.requireNonNull(jpa, "jpa");
+        this.authorizationGuard = authorizationGuard;
     }
 
     public List<Company> listCompanies()
@@ -126,6 +134,11 @@ public class CompanyAdminService
 
     public CompanyChartView assignActiveChart(long companyId, long chartId)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.COMPANY_ADMIN,
+                companyCodeForAuthorization(companyId),
+                "assign active Chart of Accounts");
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
@@ -241,6 +254,15 @@ public class CompanyAdminService
     /** Creates or updates a company by stable ID in one transaction. */
     public CompanyView save(CompanyCommand command, String currentActiveCompanyCode)
     {
+        Objects.requireNonNull(command, "command");
+        String authorizationCompanyCode = command.id() == null
+                ? blankToNull(currentActiveCompanyCode)
+                : companyCodeForAuthorization(command.id());
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.COMPANY_ADMIN,
+                authorizationCompanyCode,
+                command.id() == null ? "create company" : "update company");
         CompanyCommand clean = validate(command);
         try (EntityManager em = jpa.em())
         {
@@ -303,6 +325,15 @@ public class CompanyAdminService
                 }
                 throw ex;
             }
+        }
+    }
+
+    private String companyCodeForAuthorization(long companyId)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            Company company = em.find(Company.class, companyId);
+            return company == null ? null : company.getCode();
         }
     }
 

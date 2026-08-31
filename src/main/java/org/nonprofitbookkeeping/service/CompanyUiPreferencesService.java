@@ -7,6 +7,7 @@ import org.nonprofitbookkeeping.repository.CompanyUiPreferenceRepository;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 /** Validated company-owned UI preference and workspace-state boundary. */
 public final class CompanyUiPreferencesService
@@ -16,10 +17,19 @@ public final class CompanyUiPreferencesService
     private static final String DEFAULT_EXPORT_FORMAT_KEY = REPORTING_DEFAULTS_PREFIX + "defaultExportFormat";
 
     private final CompanyUiPreferenceRepository repository;
+    private final AuthorizationGuard authorizationGuard;
 
     public CompanyUiPreferencesService(CompanyUiPreferenceRepository repository)
     {
-        this.repository = repository;
+        this(repository, null);
+    }
+
+    public CompanyUiPreferencesService(
+            CompanyUiPreferenceRepository repository,
+            AuthorizationGuard authorizationGuard)
+    {
+        this.repository = Objects.requireNonNull(repository, "repository");
+        this.authorizationGuard = authorizationGuard;
     }
 
     public CompanyUiPreferences load(String companyCode)
@@ -34,7 +44,13 @@ public final class CompanyUiPreferencesService
         {
             throw new IllegalArgumentException("Company UI preferences are required.");
         }
-        repository.savePreferences(normalizeCompanyCode(companyCode), preferences);
+        String normalizedCompanyCode = normalizeCompanyCode(companyCode);
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.UI_PREFERENCE_WRITE,
+                normalizedCompanyCode,
+                "save company UI preferences");
+        repository.savePreferences(normalizedCompanyCode, preferences);
     }
 
     /**
@@ -78,7 +94,17 @@ public final class CompanyUiPreferencesService
         {
             safe.put(normalizeKey(entry.getKey(), "state key"), entry.getValue() == null ? "" : entry.getValue());
         }
-        repository.saveState(normalizeCompanyCode(companyCode), safe);
+        String normalizedCompanyCode = normalizeCompanyCode(companyCode);
+        boolean reportingDefaults = safe.keySet().stream()
+                .anyMatch(key -> key.startsWith(REPORTING_DEFAULTS_PREFIX));
+        ServiceAuthorization.require(
+                authorizationGuard,
+                reportingDefaults
+                        ? ApplicationPermission.COMPANY_ADMIN
+                        : ApplicationPermission.UI_PREFERENCE_WRITE,
+                normalizedCompanyCode,
+                reportingDefaults ? "save company reporting defaults" : "save company UI state");
+        repository.saveState(normalizedCompanyCode, safe);
     }
 
     static String normalizeCompanyCode(String companyCode)
