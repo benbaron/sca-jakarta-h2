@@ -1,12 +1,12 @@
 ---
-plan_version: 254
+plan_version: 255
 active_phase: P20
 active_slice: P20-S3
 active_status: IN_PROGRESS
 active_branch: codex/P20-S3-budget-plan-authorization
 active_pull_request: 316
-active_head: f91d5d45adabcc5ade5130f135ef222c8e14f40d
-next_action: "Validate PR #316 Budget Plan authorization in Maven PR Tests. If green, record exact final-head CI evidence and hand the draft PR to the owner for desktop acceptance before merge."
+active_head: af94bf1621133569482822d599ae9d6d4c7acd29
+next_action: "Owner desktop acceptance of PR #316 Budget Plan authorization. If accepted, merge PR #316 separately, rescan merged main, and continue P20-S3 on a fresh branch for the next unguarded mutation service."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -166,6 +166,7 @@ Active continuation branch: `codex/P20-S3-budget-plan-authorization`
 Starting base: merged `main` `e96b33fb6b7a8016ff4568737bab4cd1bc5ec6f2`
 Pull request: #316
 Recorded behavior head before this PLAN successor: `f91d5d45adabcc5ade5130f135ef222c8e14f40d`
+Verified Budget Plan tranche head `af94bf1621133569482822d599ae9d6d4c7acd29` passed Maven PR Tests run `33350240507`, job `99362077604`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded.
 
 Completed P20-S3 behavior to date:
 
