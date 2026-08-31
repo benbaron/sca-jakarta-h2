@@ -35,6 +35,7 @@ public class UserAdminService
     private Supplier<String> companyCodeSupplier = () -> "DEFAULT";
     private Clock clock = Clock.systemDefaultZone();
     private CommitHook commitHook = () -> { };
+    private AuthorizationGuard authorizationGuard;
 
     public UserAdminService()
     {
@@ -47,7 +48,15 @@ public class UserAdminService
 
     public UserAdminService(Jpa jpa, Supplier<String> companyCodeSupplier)
     {
-        this(jpa, companyCodeSupplier, Clock.systemDefaultZone(), () -> { });
+        this(jpa, companyCodeSupplier, null);
+    }
+
+    public UserAdminService(
+            Jpa jpa,
+            Supplier<String> companyCodeSupplier,
+            AuthorizationGuard authorizationGuard)
+    {
+        this(jpa, companyCodeSupplier, Clock.systemDefaultZone(), () -> { }, authorizationGuard);
     }
 
     UserAdminService(
@@ -56,10 +65,21 @@ public class UserAdminService
             Clock clock,
             CommitHook commitHook)
     {
+        this(jpa, companyCodeSupplier, clock, commitHook, null);
+    }
+
+    UserAdminService(
+            Jpa jpa,
+            Supplier<String> companyCodeSupplier,
+            Clock clock,
+            CommitHook commitHook,
+            AuthorizationGuard authorizationGuard)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
         this.clock = Objects.requireNonNull(clock, "clock");
         this.commitHook = Objects.requireNonNull(commitHook, "commitHook");
+        this.authorizationGuard = authorizationGuard;
     }
 
     public List<AppUser> listUsers()
@@ -100,6 +120,11 @@ public class UserAdminService
     /** Creates or updates one user by stable database ID. */
     public AppUser saveUser(AppUserCommand command)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.SECURITY_ADMIN,
+                companyCodeSupplier.get(),
+                "maintain application user");
         Objects.requireNonNull(command, "User details are required.");
         try (EntityManager em = jpa.em())
         {
@@ -168,6 +193,11 @@ public class UserAdminService
     /** Creates or updates one global role by stable database ID. */
     public AppRole saveRole(AppRoleCommand command)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.SECURITY_ADMIN,
+                companyCodeSupplier.get(),
+                "maintain application role");
         Objects.requireNonNull(command, "Role details are required.");
         try (EntityManager em = jpa.em())
         {
@@ -245,6 +275,11 @@ public class UserAdminService
     /** Creates a new history row; a previously ended row is never reactivated. */
     public UserCompanyRole assignRole(UserRoleAssignmentCommand command)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.SECURITY_ADMIN,
+                companyCodeSupplier.get(),
+                "assign application role");
         Objects.requireNonNull(command, "Assignment details are required.");
         if (command.userId() == null || command.roleId() == null)
         {
@@ -310,6 +345,11 @@ public class UserAdminService
     /** Ends or revokes an assignment while retaining its stable history row. */
     public UserCompanyRole endAssignment(UserRoleAssignmentEndCommand command)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.SECURITY_ADMIN,
+                companyCodeSupplier.get(),
+                "end or revoke application role assignment");
         Objects.requireNonNull(command, "Assignment end details are required.");
         if (command.assignmentId() == null)
         {
