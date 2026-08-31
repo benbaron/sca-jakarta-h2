@@ -1,12 +1,12 @@
 ---
-plan_version: 263
+plan_version: 264
 active_phase: P20
 active_slice: P20-S3
 active_status: IN_PROGRESS
 active_branch: codex/P20-S3-security-admin-authorization
 active_pull_request: 320
-active_head: 6853d51eef5a7f474c88966a4c79b80a7741112a
-next_action: "Validate the documentation successor to Security Admin behavior head 6853d51eef5a7f474c88966a4c79b80a7741112a in Maven PR Tests for draft PR #320. If green, record the exact run/job and hand the draft PR to the owner for desktop acceptance before merge; if failing, inspect the workflow logs and correct only within the authorized Security Admin tranche."
+active_head: 579f0250343424f3b5ae9805bc59956683fbbdfd
+next_action: "Security Admin PR #320 head 579f0250343424f3b5ae9805bc59956683fbbdfd passed Maven PR Tests run 33446943075 / job 99668116797 with clean headless verification, full Maven tests, and production JavaFX route compliance all green. Validate this PLAN-only successor; if it remains green, hand draft PR #320 to the owner for desktop acceptance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -173,7 +173,7 @@ User Administration PR #319 exact final behavior/documentation head `dcec480d570
 Active continuation branch: `codex/P20-S3-security-admin-authorization`
 Starting base: merged `main` `b7397b72395033d0cbb57df418b11e3b24807bc1`
 Pull request: #320
-Recorded behavior/documentation head before this PLAN successor: `6853d51eef5a7f474c88966a4c79b80a7741112a`
+Recorded validated head before this PLAN successor: `579f0250343424f3b5ae9805bc59956683fbbdfd`
 
 Completed P20-S3 behavior to date:
 
@@ -202,7 +202,8 @@ Current #320 Security Admin tranche:
 - retains the existing persistence-backed singleton reserved ADMIN/effective-role check after runtime authorization succeeds;
 - leaves `passwordConfigured(...)` and `settings()` as non-mutating reads;
 - adds direct H2 coverage proving VIEWER/ACCOUNTANT/MANAGER denial with no credential/timeout mutation, ADMIN success, non-ADMIN union denial, immediate session/company switching, absent-session and wrong-company fail-closed behavior, durable `AUTHORIZATION_DENIED` facts, and preserved singleton-ADMIN/inactive-target protections;
-- updates `doc/administration/user-role-maintenance.md` to record the Security Admin service boundary while retaining production registry/UI wiring and authenticated audit-actor conversion as later P20-S3 work.
+- updates `doc/administration/user-role-maintenance.md` to record the Security Admin service boundary while retaining production registry/UI wiring and authenticated audit-actor conversion as later P20-S3 work;
+- head `579f0250343424f3b5ae9805bc59956683fbbdfd` passed Maven PR Tests run `33446943075`, job `99668116797`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded.
 
 Still required before P20-S3 completion:
 
