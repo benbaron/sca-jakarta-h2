@@ -30,6 +30,7 @@ public class BudgetPlanService
 {
     private final Jpa jpa;
     private final Supplier<String> companyCodeSupplier;
+    private final AuthorizationGuard authorizationGuard;
 
     @Inject
     public BudgetPlanService(Jpa jpa)
@@ -39,12 +40,23 @@ public class BudgetPlanService
 
     public BudgetPlanService(Jpa jpa, Supplier<String> companyCodeSupplier)
     {
+        this(jpa, companyCodeSupplier, null);
+    }
+
+    public BudgetPlanService(
+            Jpa jpa,
+            Supplier<String> companyCodeSupplier,
+            AuthorizationGuard authorizationGuard)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
+        this.authorizationGuard = authorizationGuard;
     }
 
     public BudgetPlanView createDraft(BudgetPlanCommand command)
     {
+        ServiceAuthorization.require(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(), "create budget draft");
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
@@ -153,6 +165,8 @@ public class BudgetPlanService
 
     public BudgetPlanView replaceDraftLines(long planId, List<BudgetLineCommand> commands)
     {
+        ServiceAuthorization.require(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(), "replace budget draft lines");
         List<BudgetLineCommand> safeCommands = List.copyOf(commands == null ? List.of() : commands);
         try (EntityManager em = jpa.em())
         {
@@ -200,6 +214,8 @@ public class BudgetPlanService
 
     public BudgetPlanView activate(long planId)
     {
+        ServiceAuthorization.require(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(), "activate budget plan");
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
@@ -244,6 +260,8 @@ public class BudgetPlanService
      */
     public BudgetPlanView archive(long planId)
     {
+        ServiceAuthorization.require(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(), "archive budget plan");
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
@@ -324,6 +342,8 @@ public class BudgetPlanService
     /** Creates an explicit empty draft for the supplied fiscal range. Reload never calls this implicitly. */
     public BudgetPlanView createDraft(FiscalPeriodRange range)
     {
+        ServiceAuthorization.require(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(), "create budget draft");
         Objects.requireNonNull(range, "range");
         try (EntityManager em = jpa.em())
         {
@@ -358,6 +378,8 @@ public class BudgetPlanService
     /** Creates a line-for-line editable revision from the explicitly selected active plan. */
     public BudgetPlanView createRevision(long sourcePlanId)
     {
+        ServiceAuthorization.require(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(), "create budget revision");
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
