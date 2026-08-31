@@ -1,12 +1,12 @@
 ---
-plan_version: 256
+plan_version: 257
 active_phase: P20
 active_slice: P20-S3
 active_status: IN_PROGRESS
 active_branch: codex/P20-S3-bank-configuration-authorization
 active_pull_request: 317
-active_head: 0b70dd4ba3b80c76256d9ae6636cd36e4e8567c0
-next_action: "Validate PR #317 Bank Configuration authorization in Maven PR Tests. If green, record exact final-head CI evidence and hand the draft PR to the owner for desktop acceptance before merge."
+active_head: 91f19e78e02e9a64229e9cd1f767ae36079ff53d
+next_action: "Owner desktop acceptance of PR #317 Bank Configuration authorization. If accepted, merge PR #317 separately, rescan merged main, and continue P20-S3 on a fresh branch for the next unguarded mutation service."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -168,6 +168,7 @@ Active continuation branch: `codex/P20-S3-bank-configuration-authorization`
 Starting base: merged `main` `bf7a373208c7f207cb4764140768cb6d793209c0`
 Pull request: #317
 Recorded behavior head before this PLAN successor: `0b70dd4ba3b80c76256d9ae6636cd36e4e8567c0`
+Verified Bank Configuration tranche head `91f19e78e02e9a64229e9cd1f767ae36079ff53d` passed Maven PR Tests run `33351514441`, job `99365730918`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded.
 
 Completed P20-S3 behavior to date:
 
