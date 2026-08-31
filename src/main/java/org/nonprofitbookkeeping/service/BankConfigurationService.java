@@ -18,10 +18,17 @@ import java.util.UUID;
 public class BankConfigurationService
 {
     private final Jpa jpa;
+    private final AuthorizationGuard authorizationGuard;
 
     public BankConfigurationService(Jpa jpa)
     {
-        this.jpa = jpa;
+        this(jpa, null);
+    }
+
+    public BankConfigurationService(Jpa jpa, AuthorizationGuard authorizationGuard)
+    {
+        this.jpa = Objects.requireNonNull(jpa, "jpa");
+        this.authorizationGuard = authorizationGuard;
     }
 
     public List<Bank> listBanks(String companyCode)
@@ -60,6 +67,8 @@ public class BankConfigurationService
 
     public Bank createBank(BankCommand command)
     {
+        ServiceAuthorization.require(authorizationGuard, ApplicationPermission.COMPANY_ADMIN,
+                command.companyCode(), "create bank");
         if (isBlank(command.name()))
         {
             throw new IllegalArgumentException("Bank name is required.");
@@ -87,6 +96,8 @@ public class BankConfigurationService
 
     public Bank updateBank(long bankId, BankCommand command)
     {
+        ServiceAuthorization.require(authorizationGuard, ApplicationPermission.COMPANY_ADMIN,
+                command.companyCode(), "update bank");
         if (isBlank(command.name()))
         {
             throw new IllegalArgumentException("Bank name is required.");
@@ -123,6 +134,8 @@ public class BankConfigurationService
 
     public CompanyBankAccount createBankAccount(BankAccountCommand command)
     {
+        ServiceAuthorization.require(authorizationGuard, ApplicationPermission.COMPANY_ADMIN,
+                command.companyCode(), "create configured bank account");
         try (EntityManager em = jpa.em())
         {
             var tx = em.getTransaction();
@@ -157,6 +170,8 @@ public class BankConfigurationService
      */
     public CompanyBankAccount updateBankAccount(long bankAccountId, BankAccountCommand command)
     {
+        ServiceAuthorization.require(authorizationGuard, ApplicationPermission.COMPANY_ADMIN,
+                command.companyCode(), "update configured bank account");
         try (EntityManager em = jpa.em())
         {
             var tx = em.getTransaction();
