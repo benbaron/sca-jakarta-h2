@@ -1,12 +1,12 @@
 ---
-plan_version: 250
+plan_version: 253
 active_phase: P20
 active_slice: P20-S3
 active_status: IN_PROGRESS
-active_branch: codex/P20-S3-budget-category-authorization
-active_pull_request: 314
-active_head: aab663ff616121663771686ba2c9273e312fe4fd
-next_action: "Validate PR #314 in Maven PR Tests. After this Budget Category service boundary is green, continue P20-S3 on fresh post-merge tranches through remaining mutation services, then consolidate current-session guard wiring in UiServiceRegistry and finish JavaFX action gating, authenticated audit actors, and owner desktop acceptance."
+active_branch: codex/P20-S3-account-authorization
+active_pull_request: 315
+active_head: 62aecac2f7412fb09244999496d6580eb078639b
+next_action: "Owner desktop acceptance of PR #315 Account authorization. If accepted, merge PR #315 separately, rescan merged main, and continue P20-S3 on a fresh branch for the next unguarded mutation service."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -158,10 +158,13 @@ Foundation PR #312 exact final head `db3a30289aa17b967948a79a048f9ebdf9c5042e` p
 
 Fund-service PR #313 exact final head `9cb928554546be938841cd391e6e13995ad77918` passed Maven PR Tests run `33337392090`, job `99326671667`: clean headless verification, full tests, and production JavaFX route compliance all succeeded. The owner merged PR #313 to `main` at `19f85937b154cb8a6ad6517a4564425440ae0aa1`.
 
-Active continuation branch: `codex/P20-S3-budget-category-authorization`
-Starting base: merged `main` `19f85937b154cb8a6ad6517a4564425440ae0aa1`
-Pull request: #314
-Recorded behavior head before this PLAN successor: `aab663ff616121663771686ba2c9273e312fe4fd`
+Budget Category PR #314 exact final head `17fe284c2c6986efdfd076d47e68caa3c44f3167` passed Maven PR Tests run `33337813403`, job `99327841889`: clean headless verification, full tests, and production JavaFX route compliance all succeeded. The owner merged PR #314 to `main` at `79eb9e52f4bf4a834587f9e66d34a60c1749f71d`.
+
+Active continuation branch: `codex/P20-S3-account-authorization`
+Starting base: merged `main` `79eb9e52f4bf4a834587f9e66d34a60c1749f71d`
+Pull request: #315
+Recorded behavior head before this PLAN successor: `62aecac2f7412fb09244999496d6580eb078639b`
+Verified Account tranche head `336801d7fdb3f3cc40324397c17ba8d3d55abc80` passed Maven PR Tests run `33347531688`, job `99354457694`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded.
 
 Completed P20-S3 behavior to date:
 
@@ -169,18 +172,20 @@ Completed P20-S3 behavior to date:
 - `AuthorizationGuard` reads the current authenticated session on every decision and writes durable `AUTHORIZATION_DENIED` facts;
 - `ServiceAuthorization` provides a nullable adapter so legacy/test constructors remain source-compatible while guarded constructors fail closed;
 - Fund service create/update/upsert/delete requires `BOOKKEEPING_WRITE`; Fund queries remain readable;
-- direct H2 Fund tests prove VIEWER denial, immediate ACCOUNTANT enablement, immediate switch back to VIEWER denial, and wrong-company rejection without stale authorization state.
+- direct H2 Fund tests prove VIEWER denial, immediate ACCOUNTANT enablement, immediate switch back to VIEWER denial, and wrong-company rejection without stale authorization state;
+- Budget Category service-owned `upsert(...)` requires `BOOKKEEPING_WRITE`, while caller-owned import transaction seams remain governed by the outer import commit;
+- direct H2 Budget Category tests prove the same VIEWER/ACCOUNTANT/company-switch behavior.
 
-Current #314 tranche:
+Current #315 tranche:
 
-- adds the guarded Budget Category service constructor;
-- applies `BOOKKEEPING_WRITE` to the service-owned `upsert(...)` mutation boundary;
-- leaves caller-owned `createForImport(...)` as an inner transaction seam whose authorization belongs to the outer governed import commit;
-- adds direct H2 role/company-switch coverage matching the Fund enforcement tests.
+- adds the guarded Account service constructor;
+- applies `BOOKKEEPING_WRITE` to stable-ID `save(...)` and service-owned code-addressed `upsert(...)`;
+- leaves caller-owned `upsert(EntityManager, ...)` seams as inner transaction paths whose authorization belongs to the outer governed import commit;
+- adds direct H2 coverage proving VIEWER denial with no durable write, immediate `VIEWER -> ACCOUNTANT -> VIEWER` switching, wrong-company rejection, MANAGER/ADMIN success, non-ADMIN multi-role union, preserved BANK and company/chart ownership validation, and continued caller-owned account helper use inside an explicitly authorized outer transaction.
 
 Still required before P20-S3 completion:
 
-- guarded service boundaries for accounts, budget plans, bank configuration, company administration, User Admin, Journal entry/correction, fixed assets, inventory, reconciliation, period close, security administration, and import/SCLX commit services;
+- guarded service boundaries for budget plans, bank configuration, company administration, User Admin, Journal entry/correction, fixed assets, inventory, reconciliation, period close, security administration, and import/SCLX commit services;
 - production `UiServiceRegistry`/current-session guard wiring for all guarded services;
 - authenticated identity as the authoritative actor for protected audit writes;
 - database administration authorization;
