@@ -1,12 +1,12 @@
 ---
-plan_version: 260
+plan_version: 261
 active_phase: P20
 active_slice: P20-S3
 active_status: IN_PROGRESS
 active_branch: codex/P20-S3-user-admin-authorization
 active_pull_request: 319
-active_head: c341e347f2bfe0aaec267d367ed82bbaf9f7c5be
-next_action: "Validate PR #319 User Admin authorization in Maven PR Tests. If green, record exact final-head CI evidence and hand the draft PR to the owner for desktop acceptance before merge."
+active_head: d4b7389a1508d70237eb1b5e0e6c71865cc9655d
+next_action: "Validate PR #319 corrective User Admin authorization head in Maven PR Tests. Prior run 33417054906 / job 99570129359 failed because UserAdminAuthorizationIntegrationTest looked up reserved users before invoking the production security bootstrap; commit d4b7389a1508d70237eb1b5e0e6c71865cc9655d corrects the shared fixture. If green, record exact final-head CI evidence and hand the draft PR to the owner for desktop acceptance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -171,7 +171,7 @@ Company Administration PR #318 exact final head `89e7948fbfda3b776cdc5f829c88aea
 Active continuation branch: `codex/P20-S3-user-admin-authorization`
 Starting base: merged `main` `4991916c114c8e1ecc96367201bc3f841d3c3dc9`
 Pull request: #319
-Recorded behavior/documentation head before this PLAN successor: `c341e347f2bfe0aaec267d367ed82bbaf9f7c5be`
+Recorded behavior/documentation head before this PLAN successor: `d4b7389a1508d70237eb1b5e0e6c71865cc9655d`
 
 Completed P20-S3 behavior to date:
 
@@ -198,6 +198,7 @@ Current #319 User Admin tranche:
 - preserves global username/role-code uniqueness, reserved ADMIN identity/role protections, required singleton-ADMIN assignment protection, overlap checks, deactivation restrictions, and retained assignment history;
 - keeps password and inactivity-timeout administration in `SecurityAdminService` for a later focused tranche;
 - adds direct H2 coverage proving VIEWER/ACCOUNTANT/MANAGER denial/no durable mutation, ADMIN success, non-ADMIN union denial, immediate role/company switching, wrong-company and absent-session fail-closed behavior, durable authorization-denial facts, and preserved reserved/lifecycle protections;
+- failed Maven PR Tests run `33417054906`, job `99570129359`, exposed that `UserAdminAuthorizationIntegrationTest` attempted reserved-user lookup before invoking the existing production security bootstrap; corrective commit `d4b7389a1508d70237eb1b5e0e6c71865cc9655d` now initializes the shared unguarded fixture through `AuthenticationService.initializeSecurityIfUnambiguous()` rather than synthesizing reserved identities or adding read-side effects;
 - updates `doc/administration/user-role-maintenance.md` to reflect current P20-S2 authentication and P20-S3 service authorization while explicitly retaining authenticated audit-actor conversion and JavaFX gating as remaining work.
 
 Still required before P20-S3 completion:
