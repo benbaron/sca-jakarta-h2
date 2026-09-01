@@ -857,7 +857,7 @@ public class FixedAssetService
         Account assetAccount = asset.getAssetAccount();
         Account accumulatedAccount = asset.getAccumulatedDepreciationAccount();
         Fund assetFund = asset.getFund();
-        ownership.ensureOwnedBy(em, company, assetAccount, "Fixed asset");
+        ownership.ensureOwnedBy(em, company, assetAccount, "Asset account");
         ownership.ensureOwnedBy(em, company, accumulatedAccount, "Accumulated depreciation account");
         ownership.ensureOwnedBy(em, company, assetFund, "Asset fund");
         validateAssetAccount(assetAccount);
