@@ -158,7 +158,7 @@ class SecurityAdminAuthorizationIntegrationTest
 
     private static UserAdminService userAdmin(Jpa jpa, String companyCode)
     {
-        new AuthenticationService(jpa).initializeSecurityIfUnambiguous();
+        new SecurityBootstrapService(jpa, CLOCK).initializeIfUnambiguous();
         return new UserAdminService(jpa, () -> companyCode, CLOCK, () -> { });
     }
 
