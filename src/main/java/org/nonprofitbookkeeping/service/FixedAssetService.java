@@ -37,6 +37,7 @@ public class FixedAssetService
     private final TransactionEntryService transactionEntryService;
     private final TransactionCorrectionService transactionCorrectionService;
     private final Supplier<String> companyCodeSupplier;
+    private final AuthorizationGuard authorizationGuard;
     private final Supplier<UUID> transactionPortableIdSupplier;
     private final Supplier<UUID> runPortableIdSupplier;
     private final Supplier<String> auditActorSupplier;
@@ -84,12 +85,21 @@ public class FixedAssetService
             TransactionEntryService transactionEntryService,
             Supplier<String> companyCodeSupplier)
     {
+        this(jpa, transactionEntryService, companyCodeSupplier, null);
+    }
+
+    public FixedAssetService(
+            Jpa jpa,
+            TransactionEntryService transactionEntryService,
+            Supplier<String> companyCodeSupplier,
+            AuthorizationGuard authorizationGuard)
+    {
         this(jpa, transactionEntryService,
                 new TransactionCorrectionService(jpa, companyCodeSupplier), companyCodeSupplier,
                 UUID::randomUUID, UUID::randomUUID, () -> "system",
                 (em, asset, transaction, runDate, amount, runPortableId) -> { },
                 UUID::randomUUID, UUID::randomUUID, UUID::randomUUID,
-                (em, asset, transaction, preview) -> { });
+                (em, asset, transaction, preview) -> { }, authorizationGuard);
     }
 
     FixedAssetService(
@@ -105,7 +115,7 @@ public class FixedAssetService
                 new TransactionCorrectionService(jpa, companyCodeSupplier), companyCodeSupplier,
                 transactionPortableIdSupplier, runPortableIdSupplier, auditActorSupplier,
                 depreciationWriteHook, UUID::randomUUID, UUID::randomUUID, UUID::randomUUID,
-                (em, asset, transaction, preview) -> { });
+                (em, asset, transaction, preview) -> { }, null);
     }
 
     FixedAssetService(
@@ -122,7 +132,7 @@ public class FixedAssetService
                 UUID::randomUUID, UUID::randomUUID, () -> "system",
                 (em, asset, transaction, runDate, amount, runPortableId) -> { },
                 lifecycleTransactionPortableIdSupplier, lifecycleEventPortableIdSupplier,
-                lifecycleReversalPortableIdSupplier, lifecycleWriteHook);
+                lifecycleReversalPortableIdSupplier, lifecycleWriteHook, null);
     }
 
     private FixedAssetService(
@@ -137,13 +147,15 @@ public class FixedAssetService
             Supplier<UUID> lifecycleTransactionPortableIdSupplier,
             Supplier<UUID> lifecycleEventPortableIdSupplier,
             Supplier<UUID> lifecycleReversalPortableIdSupplier,
-            LifecycleWriteHook lifecycleWriteHook)
+            LifecycleWriteHook lifecycleWriteHook,
+            AuthorizationGuard authorizationGuard)
     {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.transactionEntryService = Objects.requireNonNull(transactionEntryService, "transactionEntryService");
         this.transactionCorrectionService = Objects.requireNonNull(
                 transactionCorrectionService, "transactionCorrectionService");
         this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
+        this.authorizationGuard = authorizationGuard;
         this.transactionPortableIdSupplier = Objects.requireNonNull(
                 transactionPortableIdSupplier, "transactionPortableIdSupplier");
         this.runPortableIdSupplier = Objects.requireNonNull(runPortableIdSupplier, "runPortableIdSupplier");
@@ -160,6 +172,11 @@ public class FixedAssetService
 
     public FixedAssetView create(FixedAssetCommand command)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "create fixed asset");
         requireInteractiveCreateStatus(command);
         try (EntityManager em = jpa.em())
         {
@@ -182,6 +199,11 @@ public class FixedAssetService
 
     public FixedAssetView update(long assetId, FixedAssetCommand command)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "update fixed asset");
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
@@ -221,6 +243,11 @@ public class FixedAssetService
             String actor,
             String reason)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "change fixed-asset status");
         if (targetStatus == null)
         {
             throw new IllegalArgumentException("targetStatus is required");
@@ -359,6 +386,11 @@ public class FixedAssetService
 
     public DepreciationRunView runMonthlyDepreciation(long assetId, LocalDate runDate, String notes)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "run fixed-asset depreciation");
         if (runDate == null)
         {
             throw new IllegalArgumentException("runDate is required");
@@ -490,6 +522,11 @@ public class FixedAssetService
     /** Commits the frozen lifecycle preview, canonical accounting, status, and audit atomically. */
     public FixedAssetLifecycleEventView recordLifecycleEvent(LifecyclePreview preview, String actor)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "record fixed-asset lifecycle event");
         Objects.requireNonNull(preview, "preview");
         String normalizedActor = requireText(actor, "actor");
         String activeCompany = normalizeCompanyCode(companyCodeSupplier.get());
@@ -619,6 +656,11 @@ public class FixedAssetService
             LifecycleReversalPreview preview,
             String actor)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "reverse fixed-asset lifecycle event");
         Objects.requireNonNull(preview, "preview");
         String normalizedActor = requireText(actor, "actor");
         String activeCompany = normalizeCompanyCode(companyCodeSupplier.get());
@@ -815,7 +857,7 @@ public class FixedAssetService
         Account assetAccount = asset.getAssetAccount();
         Account accumulatedAccount = asset.getAccumulatedDepreciationAccount();
         Fund assetFund = asset.getFund();
-        ownership.ensureOwnedBy(em, company, assetAccount, "Asset account");
+        ownership.ensureOwnedBy(em, company, assetAccount, "Fixed asset");
         ownership.ensureOwnedBy(em, company, accumulatedAccount, "Accumulated depreciation account");
         ownership.ensureOwnedBy(em, company, assetFund, "Asset fund");
         validateAssetAccount(assetAccount);
