@@ -255,6 +255,7 @@ class TransactionAuthorizationIntegrationTest
                 "Operator",
                 companyCode,
                 roles,
+                now,
                 now);
     }
 
