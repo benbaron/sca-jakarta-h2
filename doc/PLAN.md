@@ -1,12 +1,12 @@
 ---
-plan_version: 266
+plan_version: 267
 active_phase: P20
 active_slice: P20-S3
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P20-S3-fixed-asset-authorization
-active_pull_request: null
-active_head: 240ffadef3a7ade6182800738efae5fef45cd622
-next_action: "Fixed-asset authorization behavior, direct H2 regression coverage, and governing tranche documentation are published from merged main 77be356ed3351936b623b208898f61a0acec23ee. Open the focused draft PR, validate Maven PR Tests on the exact PR head, fix only failures attributable to this tranche, then record green CI evidence before owner acceptance."
+active_pull_request: 322
+active_head: bd87f30026ce332c5478d762d815af4b1449a260
+next_action: "Fixed-asset authorization behavior/documentation head bd87f30026ce332c5478d762d815af4b1449a260 passed Maven PR Tests run 33552052900, job 100003612459: clean headless verification, repeat tests, and production JavaFX route compliance all succeeded. Validate this PLAN-only successor on the exact PR head, then stop for owner acceptance; do not merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -176,8 +176,9 @@ Journal PR #321 exact final head `b7310405390c342e02a378606f766d8a1173b3de` pass
 
 Active continuation branch: `codex/P20-S3-fixed-asset-authorization`
 Starting base: merged `main` `77be356ed3351936b623b208898f61a0acec23ee`
-Pull request: not opened yet
-Recorded behavior/documentation head before this PLAN successor: `240ffadef3a7ade6182800738efae5fef45cd622`
+Pull request: #322
+Behavior/documentation head: `bd87f30026ce332c5478d762d815af4b1449a260`
+Validation: Maven PR Tests run `33552052900`, job `100003612459` passed clean headless verification, repeat tests, and production JavaFX route compliance on that exact head.
 
 Completed P20-S3 behavior to date:
 
