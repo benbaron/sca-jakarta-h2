@@ -95,6 +95,19 @@ The Journal exposes a real correction action only for a selected or loaded durab
 
 There is no disabled placeholder Delete control for an unsaved record; action availability follows whether a durable transaction is selected or loaded.
 
+## Runtime authorization
+
+P20-S3 makes the canonical service-owned Journal mutation boundary authoritative for bookkeeping authorization.
+
+- `TransactionEntryService.enter(TransactionCommand)` and `update(...)` require `BOOKKEEPING_WRITE` in the active company context before validation or transaction work begins.
+- `TransactionCorrectionService.directEdit(...)`, `delete(...)`, and the service-owned `reverse(...)` require the same `BOOKKEEPING_WRITE` permission before correction validation or transaction work begins.
+- `load(...)`, `search(...)`, and `journalView(...)` remain non-mutating reads and are not blocked by the write permission.
+- caller-owned `EntityManager` entry/reversal/import relationship overloads are transactional seams for an outer import or domain workflow. They intentionally do not perform a second authorization check; the outer service that owns the atomic commit must authorize the whole operation once.
+- existing period-close, reconciliation, fixed-asset lifecycle, balanced-entry, company-ownership, and other accounting protections remain in force after authorization succeeds.
+- this service tranche does not yet replace legacy/free-form transaction audit actors with authenticated `AppUser.username`, and it does not yet constitute JavaFX command gating or production `UiServiceRegistry` guard wiring. Those remain separate P20-S3 completion work.
+
+A lower-privilege direct call to the guarded service-owned mutation methods fails closed and records the central durable `AUTHORIZATION_DENIED` security fact. UI disabling is explanatory only and is not the enforcement boundary.
+
 ## Resizable layout
 
 The Journal workspace uses nested visible `SplitPane` dividers between:

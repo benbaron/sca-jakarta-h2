@@ -25,21 +25,36 @@ public class TransactionCorrectionService
 {
     private final Jpa jpa;
     private final Supplier<String> companyCodeSupplier;
+    private final AuthorizationGuard authorizationGuard;
 
     @Inject
     public TransactionCorrectionService(Jpa jpa)
     {
-        this(jpa, () -> "DEFAULT");
+        this(jpa, () -> "DEFAULT", null);
     }
 
     public TransactionCorrectionService(Jpa jpa, Supplier<String> companyCodeSupplier)
     {
+        this(jpa, companyCodeSupplier, null);
+    }
+
+    public TransactionCorrectionService(
+            Jpa jpa,
+            Supplier<String> companyCodeSupplier,
+            AuthorizationGuard authorizationGuard)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
+        this.authorizationGuard = authorizationGuard;
     }
 
     public Txn directEdit(long transactionId, LocalDate transactionDate, String memo, String correctionNote, String actor)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "edit journal transaction");
         requireText(actor, "actor");
         if (transactionDate == null)
         {
@@ -79,6 +94,11 @@ public class TransactionCorrectionService
 
     public void delete(long transactionId, String actor, String reason)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "delete journal transaction");
         requireText(actor, "actor");
         try (EntityManager em = jpa.em())
         {
@@ -110,6 +130,11 @@ public class TransactionCorrectionService
 
     public CorrectionResult reverse(long transactionId, LocalDate reversalDate, String actor, String reason, boolean createReplacement)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "reverse journal transaction");
         requireText(actor, "actor");
         if (reversalDate == null)
         {

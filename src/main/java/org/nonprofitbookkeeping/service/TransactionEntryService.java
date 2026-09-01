@@ -42,21 +42,30 @@ public class TransactionEntryService
     private final Jpa jpa;
     private final TransactionCommandValidator validator;
     private final Supplier<String> companyCodeSupplier;
+    private final AuthorizationGuard authorizationGuard;
 
     @Inject
     public TransactionEntryService(Jpa jpa)
     {
-        this(jpa, new TransactionCommandValidator(), () -> "DEFAULT");
+        this(jpa, new TransactionCommandValidator(), () -> "DEFAULT", null);
     }
 
     public TransactionEntryService(Jpa jpa, TransactionCommandValidator validator)
     {
-        this(jpa, validator, () -> "DEFAULT");
+        this(jpa, validator, () -> "DEFAULT", null);
     }
 
     public TransactionEntryService(Jpa jpa, Supplier<String> companyCodeSupplier)
     {
-        this(jpa, new TransactionCommandValidator(), companyCodeSupplier);
+        this(jpa, new TransactionCommandValidator(), companyCodeSupplier, null);
+    }
+
+    public TransactionEntryService(
+            Jpa jpa,
+            Supplier<String> companyCodeSupplier,
+            AuthorizationGuard authorizationGuard)
+    {
+        this(jpa, new TransactionCommandValidator(), companyCodeSupplier, authorizationGuard);
     }
 
     public TransactionEntryService(
@@ -64,13 +73,28 @@ public class TransactionEntryService
             TransactionCommandValidator validator,
             Supplier<String> companyCodeSupplier)
     {
+        this(jpa, validator, companyCodeSupplier, null);
+    }
+
+    public TransactionEntryService(
+            Jpa jpa,
+            TransactionCommandValidator validator,
+            Supplier<String> companyCodeSupplier,
+            AuthorizationGuard authorizationGuard)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.validator = Objects.requireNonNull(validator, "validator");
         this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
+        this.authorizationGuard = authorizationGuard;
     }
 
     public TransactionView enter(TransactionCommand command)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "enter journal transaction");
         return saveNew(command, null);
     }
 
@@ -143,6 +167,11 @@ public class TransactionEntryService
 
     public TransactionView update(long transactionId, TransactionCommand command)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "update journal transaction");
         validateCommand(command);
         try (EntityManager em = jpa.em())
         {
