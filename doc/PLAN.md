@@ -1,12 +1,12 @@
 ---
-plan_version: 265
+plan_version: 267
 active_phase: P20
 active_slice: P20-S3
-active_status: IN_PROGRESS
-active_branch: codex/P20-S3-journal-authorization
-active_pull_request: 321
-active_head: 78fb7c72ebeb9f3f77e557f2b507b44021423d96
-next_action: "Journal authorization PR #321 behavior/documentation head 78fb7c72ebeb9f3f77e557f2b507b44021423d96 is published. Validate Maven PR Tests on the exact PR head; if green, record the CI evidence in PLAN and validate the PLAN-only successor before owner desktop acceptance."
+active_status: VERIFYING
+active_branch: codex/P20-S3-fixed-asset-authorization
+active_pull_request: 322
+active_head: bd87f30026ce332c5478d762d815af4b1449a260
+next_action: "Fixed-asset authorization behavior/documentation head bd87f30026ce332c5478d762d815af4b1449a260 passed Maven PR Tests run 33552052900, job 100003612459: clean headless verification, repeat tests, and production JavaFX route compliance all succeeded. Validate this PLAN-only successor on the exact PR head, then stop for owner acceptance; do not merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -172,10 +172,13 @@ User Administration PR #319 exact final behavior/documentation head `dcec480d570
 
 Security Administration PR #320 exact final head `4514737d7c695a3a0a9c358575dff71aa4313dd8` passed Maven PR Tests run `33447487143`, job `99669737473`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded. The owner accepted and merged PR #320 to `main` at `67fdcc819f2716263ea952ffff60e3ad87c7fea4`.
 
-Active continuation branch: `codex/P20-S3-journal-authorization`
-Starting base: merged `main` `67fdcc819f2716263ea952ffff60e3ad87c7fea4`
-Pull request: #321
-Recorded behavior/documentation head before this PLAN successor: `78fb7c72ebeb9f3f77e557f2b507b44021423d96`
+Journal PR #321 exact final head `b7310405390c342e02a378606f766d8a1173b3de` passed Maven PR Tests run `33468647019`, job `99733662262`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded. The owner accepted and merged PR #321 to `main` at `77be356ed3351936b623b208898f61a0acec23ee`.
+
+Active continuation branch: `codex/P20-S3-fixed-asset-authorization`
+Starting base: merged `main` `77be356ed3351936b623b208898f61a0acec23ee`
+Pull request: #322
+Behavior/documentation head: `bd87f30026ce332c5478d762d815af4b1449a260`
+Validation: Maven PR Tests run `33552052900`, job `100003612459` passed clean headless verification, repeat tests, and production JavaFX route compliance on that exact head.
 
 Completed P20-S3 behavior to date:
 
@@ -197,21 +200,25 @@ Completed P20-S3 behavior to date:
 - User Administration stable-ID user/role/assignment mutations require `SECURITY_ADMIN` in the active-company context while read/usage queries remain non-mutating;
 - direct H2 User Administration tests prove VIEWER/ACCOUNTANT/MANAGER denial/no durable mutation, ADMIN success, non-ADMIN union denial, immediate role/company switching, wrong-company and absent-session fail-closed behavior, durable authorization-denial facts, and preserved reserved/lifecycle protections;
 - Security Administration password set/replace/clear and inactivity-timeout changes require `SECURITY_ADMIN`, while credential/configuration reads remain non-mutating;
-- direct H2 Security Administration tests prove VIEWER/ACCOUNTANT/MANAGER denial/no credential or timeout mutation, ADMIN success, non-ADMIN union denial, immediate session/company switching, wrong-company and absent-session fail-closed behavior, durable authorization-denial facts, and preserved singleton-ADMIN/inactive-target protections.
+- direct H2 Security Administration tests prove VIEWER/ACCOUNTANT/MANAGER denial/no credential or timeout mutation, ADMIN success, non-ADMIN union denial, immediate session/company switching, wrong-company and absent-session fail-closed behavior, durable authorization-denial facts, and preserved singleton-ADMIN/inactive-target protections;
+- Journal service-owned entry/update/direct-edit/delete/reversal mutations require `BOOKKEEPING_WRITE`; Journal reads remain non-mutating and caller-owned transaction/import seams remain outer-governed;
+- direct H2 Journal tests prove VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and non-ADMIN role-union success, immediate session/company switching, absent-session and wrong-company fail-closed behavior, durable denial facts, and continued caller-owned seam use.
 
-Current #321 Journal authorization tranche:
+Current fixed-asset authorization tranche:
 
-- adds source-compatible guarded construction to `TransactionEntryService` and `TransactionCorrectionService`;
-- requires `BOOKKEEPING_WRITE` for service-owned Journal `enter(...)`, `update(...)`, `directEdit(...)`, `delete(...)`, and `reverse(...)` mutations before validation or transaction work;
-- leaves Journal `load(...)`, `search(...)`, and `journalView(...)` as non-mutating reads;
-- leaves caller-owned `EntityManager` transaction entry/reversal/import-relationship seams unguarded so their outer import/domain service remains the single authorization and atomic commit owner;
-- preserves period-close, reconciliation, fixed-asset lifecycle, balancing, company-ownership, and other accounting protections after authorization succeeds;
-- adds direct H2 coverage proving VIEWER denial/no durable Journal mutation, ACCOUNTANT/MANAGER/ADMIN and non-ADMIN role-union success, immediate session switching, absent-session and wrong-company fail-closed behavior, durable `AUTHORIZATION_DENIED` facts, and continued caller-owned seam use within an outer transaction;
-- updates `doc/accounting/transaction-editor-and-journal.md` to record the service boundary while retaining production registry/UI wiring and authenticated audit-actor conversion as later P20-S3 work.
+- adds source-compatible guarded construction to `FixedAssetService`;
+- requires `BOOKKEEPING_WRITE` before validation or transaction work for interactive fixed-asset create/update/status, monthly depreciation, lifecycle commit, and lifecycle reversal;
+- leaves fixed-asset loads/lists and non-mutating lifecycle previews readable;
+- leaves `createForImport(...)` and `recordCompletedRunForImport(...)` as caller-owned transaction seams so the later import/SCLX commit guard remains the single outer authorization/atomicity owner;
+- preserves canonical transaction entry/reversal as caller-owned inner seams under the fixed-asset service-owned outer operation;
+- adds direct H2 coverage for VIEWER denial on all six mutation routes, ACCOUNTANT/MANAGER/ADMIN and multi-role success, immediate session changes, absent-session and wrong-company fail-closed behavior, durable denial facts, and continued caller-owned import seam use;
+- changes no schema/migration, UI wiring, or audit-actor authority.
+
+Governing tranche note: `doc/P20-S3-fixed-asset-authorization.md`.
 
 Still required before P20-S3 completion:
 
-- guarded service boundaries for fixed assets, inventory, reconciliation, period close, and import/SCLX commit services;
+- guarded service boundaries for inventory, reconciliation, period close, and import/SCLX commit services;
 - production `UiServiceRegistry`/current-session guard wiring for all guarded services;
 - authenticated identity as the authoritative actor for protected audit writes;
 - database administration authorization;
@@ -223,6 +230,7 @@ Required reading:
 
 - `doc/P20-S1-authentication-authorization-boundary.md`;
 - `doc/P20-S3-runtime-authorization.md`;
+- `doc/P20-S3-fixed-asset-authorization.md`;
 - `doc/administration/user-role-maintenance.md`;
 - `doc/interface-operation-matrix.md`;
 - `doc/ui_design_rules.md`;
