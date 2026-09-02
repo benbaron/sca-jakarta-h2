@@ -1,12 +1,12 @@
 ---
-plan_version: 269
+plan_version: 270
 active_phase: P20
 active_slice: P20-S3
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P20-S3-reconciliation-authorization
-active_pull_request: null
-active_head: 4d1a741b6c7bc70c52c4387cabea7d7fb21ee1b7
-next_action: "Implement the focused reconciliation authorization tranche from merged main 4d1a741b6c7bc70c52c4387cabea7d7fb21ee1b7, publish a draft PR, and validate Maven PR Tests on the exact behavior/documentation head."
+active_pull_request: 324
+active_head: ca124f846178f5b1abcf34e7c9cafab1a079bbdb
+next_action: "Reconciliation authorization PR #324 behavior/documentation head ca124f846178f5b1abcf34e7c9cafab1a079bbdb passed Maven PR Tests run 33578682023, job 100088178045. Validate this PLAN-only successor on its exact head, then stop for owner acceptance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -180,9 +180,9 @@ Inventory PR #323 exact final head `b8e861c6107aa7de0ecd4c1aa024b60effd8aa68` pa
 
 Active continuation branch: `codex/P20-S3-reconciliation-authorization`
 Starting base: merged `main` `4d1a741b6c7bc70c52c4387cabea7d7fb21ee1b7`
-Pull request: pending
-Behavior/documentation head: pending
-Validation: pending.
+Pull request: #324
+Behavior/documentation head: `ca124f846178f5b1abcf34e7c9cafab1a079bbdb`
+Validation: Maven PR Tests run `33578682023`, job `100088178045` passed clean headless verification, the full Maven test suite, and production JavaFX route compliance on the exact behavior/documentation head. The PLAN-only successor still requires exact-head validation before owner acceptance.
 
 Completed P20-S3 behavior to date:
 
@@ -210,16 +210,18 @@ Completed P20-S3 behavior to date:
 - Fixed Asset service-owned create/update/status, depreciation, lifecycle commit, and lifecycle reversal mutations require `BOOKKEEPING_WRITE`; reads/previews and caller-owned import seams remain outside the service-owned write guard;
 - direct H2 Fixed Asset tests prove VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and multi-role success, immediate session/company switching, absent-session and wrong-company fail-closed behavior, durable denial facts, and continued caller-owned import seam use;
 - Inventory service-owned create/update/status, confirmed movement commit, compatibility movement commit, and governed movement reversal mutations require `BOOKKEEPING_WRITE`; reads/previews and caller-owned import seams remain outside the service-owned write guard;
-- direct H2 Inventory tests prove VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and multi-role success, immediate session/company switching, absent-session and wrong-company fail-closed behavior, durable denial facts, and continued caller-owned import seam use.
+- direct H2 Inventory tests prove VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and multi-role success, immediate session/company switching, absent-session and wrong-company fail-closed behavior, durable denial facts, and continued caller-owned import seam use;
+- Reconciliation workspace session start/successor, manual statement entry, matching/unmatching, cleared-state, factual explanation, save/finalization, and direct reviewed-row cleared-state mutations require `BOOKKEEPING_WRITE`; configured-account/session/snapshot reads and caller-owned interchange seams remain outside the service-owned write guard;
+- direct H2 Reconciliation tests prove VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and multi-role success, immediate session/company switching, absent-session and wrong-company fail-closed behavior, durable denial facts, and continued caller-owned interchange seam use.
 
 Current reconciliation authorization tranche:
 
-- guard `BankReconciliationWorkspaceService` service-owned session start/successor, manual statement entry, matching/unmatching, cleared-state, explanation, save/finalization operations with `BOOKKEEPING_WRITE`;
-- guard direct service-owned `BankClearedStateService.markMatchedAndCleared(...)` with `BOOKKEEPING_WRITE` while retaining its caller-owned interchange seam;
-- leave configured-account/session reads, comparison/snapshot review, and `importForInterchange(...)` caller-owned transaction seams outside this service-owned guard;
-- preserve the P16 finalized-session, company/account ownership, symmetric match/unmatch, cleared-state, and successor-history rules after authorization succeeds;
-- add direct H2 coverage for VIEWER denial/no durable reconciliation mutation, bookkeeping-role/multi-role success, absent/wrong-company fail-closed behavior, immediate session switching, durable denial facts, and retained caller-owned import seams;
-- change no schema/migration, JavaFX wiring, legacy reconciliation-run compatibility authority, or authenticated audit-actor authority.
+- `BankReconciliationWorkspaceService` service-owned session start/successor, manual statement entry, matching/unmatching, cleared-state, explanation, save/finalization operations require `BOOKKEEPING_WRITE`;
+- direct service-owned `BankClearedStateService.markMatchedAndCleared(...)` requires `BOOKKEEPING_WRITE` while its caller-owned interchange seam remains outer-governed;
+- configured-account/session reads, comparison/snapshot review, and `importForInterchange(...)` caller-owned transaction seams remain outside this service-owned guard;
+- the P16 finalized-session, company/account ownership, symmetric match/unmatch, cleared-state, and successor-history rules remain in force after authorization succeeds;
+- `ReconciliationAuthorizationIntegrationTest` uses the canonical authentication bootstrap and proves VIEWER denial/no durable reconciliation mutation, bookkeeping-role/multi-role success, absent/wrong-company fail-closed behavior, immediate session switching, durable denial facts, and retained caller-owned import seams;
+- no schema/migration, JavaFX wiring, legacy reconciliation-run compatibility authority, or authenticated audit-actor authority changed.
 
 Governing reconciliation design: `doc/banking/banking-and-reconciliation.md`.
 
