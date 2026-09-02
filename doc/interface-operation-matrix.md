@@ -58,7 +58,7 @@ Status: reconciled to current production architecture through P17-C11. Historica
 | Chart of Accounts | `ChartOfAccountsPanel` | account/chart services | `AccountAdminService` | Stable account ID; deactivate instead of invented hard delete for referenced history. |
 | Funds | Funds administration panel | fund lookup/admin services | `FundAdminService` | Stable IDs; unused delete only after usage checks, otherwise deactivate. |
 | Reconciliation | reconciliation workspace | current reconciliation query/workspace services | current reconciliation finalization/matching services | Matching and cleared-state mutation remain reconciliation-owned. |
-| Period Close | `PeriodCloseRunsPanel` | `PeriodCloseRangeService` and factual history | range close/reopen/adjustment operations | Calculated period honors configured period start day. |
+| Period Close | `PeriodCloseRunsPanel` | `PeriodCloseRangeService` and factual history | `PeriodCloseRangeService` guarded close/reopen operations | `BOOKKEEPING_WRITE` is authoritative at the service boundary; calculated period honors configured period start day. |
 | Bank Transactions | current bank-transaction workspace | canonical configured-bank split projection plus statement-review facts | explicit reviewed-row acceptance/correction routes only | No second bank ledger. |
 | Import Preview | `ImportPreviewPanel` and format-specific review surfaces | transient frozen preview state plus current target facts | format-specific atomic commit service | Preview is intentionally transient; accepted facts become H2 authority. |
 | Report Library | report library panels/services | report query/execution services | export only where supported | Explicit report dates may detach from shell-selected accounting period. |

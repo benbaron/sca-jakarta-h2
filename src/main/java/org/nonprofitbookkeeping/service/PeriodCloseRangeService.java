@@ -35,10 +35,17 @@ public class PeriodCloseRangeService
             """;
 
     private final Jpa jpa;
+    private final AuthorizationGuard authorizationGuard;
 
     public PeriodCloseRangeService(Jpa jpa)
     {
+        this(jpa, null);
+    }
+
+    public PeriodCloseRangeService(Jpa jpa, AuthorizationGuard authorizationGuard)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
+        this.authorizationGuard = authorizationGuard;
     }
 
     /**
@@ -168,6 +175,13 @@ public class PeriodCloseRangeService
             String actor,
             String reason)
     {
+        String requestedCompany = companyCode == null
+                ? "" : companyCode.trim().toUpperCase(Locale.ROOT);
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                requestedCompany,
+                "close accounting period");
         String company = normalizeCompanyCode(companyCode);
         LocalDate start = requireDate(startDate, "startDate");
         LocalDate end = requireDate(endDate, "endDate");
@@ -253,6 +267,12 @@ public class PeriodCloseRangeService
             boolean requireReason)
     {
         UUID id = Objects.requireNonNull(rangeId, "rangeId");
+        String company = companyCodeForRange(id);
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                company,
+                "reopen accounting period");
         String cleanActor = requireText(actor, "actor");
         ClosedPeriodPolicy effectivePolicy = Objects.requireNonNull(policy, "policy");
         String cleanReason = blankToNull(reason);
@@ -437,6 +457,16 @@ public class PeriodCloseRangeService
                     "Multiple active close ranges contain " + date + " for company " + company);
         }
         return rows.stream().findFirst().map(PeriodCloseRangeService::mapRange);
+    }
+
+    private String companyCodeForRange(UUID rangeId)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            Object[] current = singleRangeRow(em, rangeId)
+                    .orElseThrow(() -> new IllegalArgumentException("Unknown close range: " + rangeId));
+            return String.valueOf(current[1]);
+        }
     }
 
     private static Optional<Object[]> singleRangeRow(EntityManager em, UUID id)
