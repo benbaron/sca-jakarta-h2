@@ -154,7 +154,7 @@ P05-S1 implements the model-level portion of this design. A configured bank is a
 
 A new configured bank account write links one `CompanyBankAccount` to exactly one `Bank` and exactly one chart-of-accounts `Account`. Existing legacy `CompanyBankAccount` rows may remain without those links until migrated or edited, but new P05 service writes require stable bank and account IDs.
 
-The linked chart account must be a posting asset bank ledger account with `AccountType.ASSET`, `AccountFunction.BANK`, and `NormalBalance.DEBIT`. `AccountSubtype.CASH` remains the normal classification for ordinary deposit accounts, but is not a prerequisite for banking operations. Configured bank accounts store masked account number, nickname/display name, opening date/balance, preferred statement import format, OFX bank/account identifiers, notes, and active flag.
+The linked chart account must be a posting asset bank ledger account with `AccountType.ASSET`, `AccountFunction.BANK`, and `NormalBalance.DEBIT`. `AccountSubtype.CASH` remains the normal classification for ordinary deposit accounts, but is not a prerequisite for banking operations. Configured bank accounts store masked account number, nickname, opening date, opening balance, preferred statement import format, OFX bank/account identifiers, notes, and active flag.
 
 This model is configuration metadata only; it does not create accepted accounting transactions and does not act as a second ledger. P05-S2 owns the JavaFX Banking panel under Accounting, P05-S3 owns import normalization and review wiring, and P05-S4 owns cleared-state mapping from reviewed bank statement facts to canonical ledger bank lines.
 
