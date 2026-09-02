@@ -267,11 +267,10 @@ public class PeriodCloseRangeService
             boolean requireReason)
     {
         UUID id = Objects.requireNonNull(rangeId, "rangeId");
-        String company = companyCodeForRange(id);
         ServiceAuthorization.require(
                 authorizationGuard,
                 ApplicationPermission.BOOKKEEPING_WRITE,
-                company,
+                companyCodeForRange(id),
                 "reopen accounting period");
         String cleanActor = requireText(actor, "actor");
         ClosedPeriodPolicy effectivePolicy = Objects.requireNonNull(policy, "policy");
