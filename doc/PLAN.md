@@ -1,12 +1,12 @@
 ---
-plan_version: 270
+plan_version: 271
 active_phase: P20
 active_slice: P20-S3
 active_status: VERIFYING
-active_branch: codex/P20-S3-reconciliation-authorization
-active_pull_request: 324
-active_head: ca124f846178f5b1abcf34e7c9cafab1a079bbdb
-next_action: "Reconciliation authorization PR #324 behavior/documentation head ca124f846178f5b1abcf34e7c9cafab1a079bbdb passed Maven PR Tests run 33578682023, job 100088178045. Validate this PLAN-only successor on its exact head, then stop for owner acceptance before merge."
+active_branch: codex/P20-S3-period-close-authorization
+active_pull_request: 325
+active_head: a63bbb7517e1513427541d9dd381b5c2d482c8e2
+next_action: "Period-close authorization PR #325 behavior/documentation head a63bbb7517e1513427541d9dd381b5c2d482c8e2 passed Maven PR Tests run 33590252083, job 100122611644. Validate this PLAN-only successor on its exact head, then stop for owner acceptance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -178,11 +178,13 @@ Fixed Asset PR #322 exact final head `b8144b9ea609a2150c63912b3ad7e83aab87ff46` 
 
 Inventory PR #323 exact final head `b8e861c6107aa7de0ecd4c1aa024b60effd8aa68` passed Maven PR Tests run `33565845969`, job `100048785715`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded. The owner accepted and merged PR #323 to `main` at `4d1a741b6c7bc70c52c4387cabea7d7fb21ee1b7`.
 
-Active continuation branch: `codex/P20-S3-reconciliation-authorization`
-Starting base: merged `main` `4d1a741b6c7bc70c52c4387cabea7d7fb21ee1b7`
-Pull request: #324
-Behavior/documentation head: `ca124f846178f5b1abcf34e7c9cafab1a079bbdb`
-Validation: Maven PR Tests run `33578682023`, job `100088178045` passed clean headless verification, the full Maven test suite, and production JavaFX route compliance on the exact behavior/documentation head. The PLAN-only successor still requires exact-head validation before owner acceptance.
+Previous reconciliation authorization tranche: PR #324 final head `1a420aae36fb01c019a5b72f487591bcfcaaf54a` merged to `main` at `5d591e4d767264490611870d80fe271303b79017`. Its behavior/documentation head `ca124f846178f5b1abcf34e7c9cafab1a079bbdb` passed Maven PR Tests run `33578682023`, job `100088178045`; the final PLAN successor was merged with the PR and the post-merge `main` workflow run `33582591691` also passed.
+
+Active continuation branch: `codex/P20-S3-period-close-authorization`
+Starting base: merged `main` `5d591e4d767264490611870d80fe271303b79017`
+Pull request: #325
+Behavior/documentation head: `a63bbb7517e1513427541d9dd381b5c2d482c8e2`
+Validation: Maven PR Tests run `33590252083`, job `100122611644` passed clean headless verification, the repeated full Maven test suite, and production JavaFX route compliance on the exact behavior/documentation head. Initial head `477dff6d76bf6707756981706fcaa798f9059d56` failed compile in run `33589880061`, job `100121542032` because the new reopen authorization local `company` variable collided with the existing transaction-local `company`; corrective commit `a63bbb7517e1513427541d9dd381b5c2d482c8e2` removed only that local-name collision without changing authorization semantics. This PLAN-only successor still requires exact-head validation before owner acceptance.
 
 Completed P20-S3 behavior to date:
 
@@ -214,20 +216,20 @@ Completed P20-S3 behavior to date:
 - Reconciliation workspace session start/successor, manual statement entry, matching/unmatching, cleared-state, factual explanation, save/finalization, and direct reviewed-row cleared-state mutations require `BOOKKEEPING_WRITE`; configured-account/session/snapshot reads and caller-owned interchange seams remain outside the service-owned write guard;
 - direct H2 Reconciliation tests prove VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and multi-role success, immediate session/company switching, absent-session and wrong-company fail-closed behavior, durable denial facts, and continued caller-owned interchange seam use.
 
-Current reconciliation authorization tranche:
+Current period-close authorization tranche:
 
-- `BankReconciliationWorkspaceService` service-owned session start/successor, manual statement entry, matching/unmatching, cleared-state, explanation, save/finalization operations require `BOOKKEEPING_WRITE`;
-- direct service-owned `BankClearedStateService.markMatchedAndCleared(...)` requires `BOOKKEEPING_WRITE` while its caller-owned interchange seam remains outer-governed;
-- configured-account/session reads, comparison/snapshot review, and `importForInterchange(...)` caller-owned transaction seams remain outside this service-owned guard;
-- the P16 finalized-session, company/account ownership, symmetric match/unmatch, cleared-state, and successor-history rules remain in force after authorization succeeds;
-- `ReconciliationAuthorizationIntegrationTest` uses the canonical authentication bootstrap and proves VIEWER denial/no durable reconciliation mutation, bookkeeping-role/multi-role success, absent/wrong-company fail-closed behavior, immediate session switching, durable denial facts, and retained caller-owned import seams;
-- no schema/migration, JavaFX wiring, legacy reconciliation-run compatibility authority, or authenticated audit-actor authority changed.
+- `PeriodCloseRangeService.closeRange(...)` and `reopenRange(...)` require `BOOKKEEPING_WRITE` before interactive validation or service-owned mutation;
+- reopen authorization is evaluated against the durable selected range's company owner so wrong-company sessions fail closed;
+- range/history reads, `requireOpen(...)`, and caller-owned `importForInterchange(...)` remain outside the service-owned write guard;
+- overlap, reopen-policy/reason, factual-history, and closed-period protections remain authoritative after authorization succeeds;
+- `PeriodCloseAuthorizationIntegrationTest` covers VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and multi-role success, absent/wrong-company fail-closed behavior, immediate session switching, durable denial facts, read access, and retained caller-owned interchange use;
+- no schema/migration, JavaFX wiring, legacy period-close-run compatibility authority, or authenticated audit-actor authority changes in this tranche.
 
-Governing reconciliation design: `doc/banking/banking-and-reconciliation.md`.
+Governing period-close design: `doc/accounting/period-close-design.md` and `doc/P20-S3-period-close-authorization.md`.
 
 Still required before P20-S3 completion:
 
-- guarded service boundaries for period close and import/SCLX commit services;
+- guarded service boundaries for import/SCLX commit services;
 - production `UiServiceRegistry`/current-session guard wiring for all guarded services;
 - authenticated identity as the authoritative actor for protected audit writes;
 - database administration authorization;
@@ -241,6 +243,8 @@ Required reading:
 - `doc/P20-S3-runtime-authorization.md`;
 - `doc/P20-S3-fixed-asset-authorization.md`;
 - `doc/P20-S3-inventory-authorization.md`;
+- `doc/P20-S3-period-close-authorization.md`;
+- `doc/accounting/period-close-design.md`;
 - `doc/banking/banking-and-reconciliation.md`;
 - `doc/administration/user-role-maintenance.md`;
 - `doc/interface-operation-matrix.md`;
