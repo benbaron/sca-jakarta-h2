@@ -35,6 +35,7 @@ public class InventoryService
     private final TransactionEntryService transactionEntryService;
     private final TransactionCorrectionService transactionCorrectionService;
     private final Supplier<String> companyCodeSupplier;
+    private final AuthorizationGuard authorizationGuard;
     private final Supplier<UUID> transactionPortableIdSupplier;
     private final Supplier<UUID> movementPortableIdSupplier;
     private final MovementWriteHook movementWriteHook;
@@ -70,9 +71,19 @@ public class InventoryService
             TransactionCorrectionService transactionCorrectionService,
             Supplier<String> companyCodeSupplier)
     {
+        this(jpa, transactionEntryService, transactionCorrectionService, companyCodeSupplier, null);
+    }
+
+    public InventoryService(
+            Jpa jpa,
+            TransactionEntryService transactionEntryService,
+            TransactionCorrectionService transactionCorrectionService,
+            Supplier<String> companyCodeSupplier,
+            AuthorizationGuard authorizationGuard)
+    {
         this(jpa, transactionEntryService, transactionCorrectionService, companyCodeSupplier,
                 UUID::randomUUID, UUID::randomUUID,
-                (em, item, transaction, preview) -> { });
+                (em, item, transaction, preview) -> { }, authorizationGuard);
     }
 
     InventoryService(
@@ -84,11 +95,26 @@ public class InventoryService
             Supplier<UUID> movementPortableIdSupplier,
             MovementWriteHook movementWriteHook)
     {
+        this(jpa, transactionEntryService, transactionCorrectionService, companyCodeSupplier,
+                transactionPortableIdSupplier, movementPortableIdSupplier, movementWriteHook, null);
+    }
+
+    private InventoryService(
+            Jpa jpa,
+            TransactionEntryService transactionEntryService,
+            TransactionCorrectionService transactionCorrectionService,
+            Supplier<String> companyCodeSupplier,
+            Supplier<UUID> transactionPortableIdSupplier,
+            Supplier<UUID> movementPortableIdSupplier,
+            MovementWriteHook movementWriteHook,
+            AuthorizationGuard authorizationGuard)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.transactionEntryService = Objects.requireNonNull(transactionEntryService, "transactionEntryService");
         this.transactionCorrectionService = Objects.requireNonNull(
                 transactionCorrectionService, "transactionCorrectionService");
         this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
+        this.authorizationGuard = authorizationGuard;
         this.transactionPortableIdSupplier = Objects.requireNonNull(
                 transactionPortableIdSupplier, "transactionPortableIdSupplier");
         this.movementPortableIdSupplier = Objects.requireNonNull(
@@ -98,6 +124,11 @@ public class InventoryService
 
     public InventoryItemView create(InventoryItemCommand command)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "create inventory item");
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
@@ -137,6 +168,11 @@ public class InventoryService
 
     public InventoryItemView update(long itemId, InventoryItemCommand command)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "update inventory item");
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
@@ -191,6 +227,11 @@ public class InventoryService
             String actor,
             String reason)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "change inventory-item status");
         Objects.requireNonNull(targetStatus, "targetStatus");
         String normalizedActor = requireText(actor, "actor");
         String normalizedReason = requireText(reason, "reason");
@@ -318,6 +359,11 @@ public class InventoryService
     /** Commits the frozen preview, canonical transaction, movement, quantity, and audit atomically. */
     public InventoryMovementView recordMovement(MovementPreview preview, String actor)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "record inventory movement");
         Objects.requireNonNull(preview, "preview");
         String normalizedActor = requireText(actor, "actor");
         String activeCompany = normalizeCompanyCode(companyCodeSupplier.get());
@@ -419,6 +465,11 @@ public class InventoryService
     /** Compatibility entry point; governed callers should retain and confirm the returned preview. */
     public InventoryMovementView recordMovement(long itemId, InventoryMovementCommand command)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "record inventory movement");
         return recordMovement(previewMovement(itemId, command), "system");
     }
 
@@ -454,6 +505,11 @@ public class InventoryService
     /** Atomically reverses the canonical transaction and records the inverse quantity movement. */
     public InventoryMovementView reverseMovement(MovementReversalPreview preview, String actor)
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "reverse inventory movement");
         Objects.requireNonNull(preview, "preview");
         String normalizedActor = requireText(actor, "actor");
         String activeCompany = normalizeCompanyCode(companyCodeSupplier.get());
