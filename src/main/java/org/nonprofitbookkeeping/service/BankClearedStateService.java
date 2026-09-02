@@ -14,14 +14,22 @@ import java.time.LocalDate;
 public class BankClearedStateService
 {
     private final Jpa jpa;
+    private final AuthorizationGuard authorizationGuard;
 
     public BankClearedStateService(Jpa jpa)
     {
+        this(jpa, null);
+    }
+
+    public BankClearedStateService(Jpa jpa, AuthorizationGuard authorizationGuard)
+    {
         this.jpa = jpa;
+        this.authorizationGuard = authorizationGuard;
     }
 
     public BankClearedStateResult markMatchedAndCleared(long statementLineId, long splitId)
     {
+        requireBookkeepingWrite(statementLineId);
         try (EntityManager em = jpa.em())
         {
             var tx = em.getTransaction();
@@ -104,6 +112,28 @@ public class BankClearedStateService
         split.setBankCleared(true);
         split.setBankClearedOn(clearedOn);
         split.setMatchedBankStatementLine(statementLine);
+    }
+
+    private void requireBookkeepingWrite(long statementLineId)
+    {
+        if (authorizationGuard == null)
+        {
+            return;
+        }
+        String companyCode;
+        try (EntityManager em = jpa.em())
+        {
+            BankStatementLine statementLine = required(
+                    em, BankStatementLine.class, statementLineId, "Bank statement line");
+            companyCode = statementLine.getCompany() == null
+                    ? null
+                    : statementLine.getCompany().getCode();
+        }
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCode,
+                "mark bank statement line matched and cleared");
     }
 
     private static <T> T required(EntityManager em, Class<T> type, long id, String label)
