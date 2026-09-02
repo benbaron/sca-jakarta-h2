@@ -120,16 +120,31 @@ public class BankReconciliationWorkspaceService
 
     private final Jpa jpa;
     private final BankStatementManualEntryService manualStatementService;
+    private final AuthorizationGuard authorizationGuard;
 
     public BankReconciliationWorkspaceService(Jpa jpa)
     {
-        this(jpa, new BankStatementManualEntryService());
+        this(jpa, new BankStatementManualEntryService(), null);
+    }
+
+    public BankReconciliationWorkspaceService(Jpa jpa, AuthorizationGuard authorizationGuard)
+    {
+        this(jpa, new BankStatementManualEntryService(), authorizationGuard);
     }
 
     BankReconciliationWorkspaceService(Jpa jpa, BankStatementManualEntryService manualStatementService)
     {
+        this(jpa, manualStatementService, null);
+    }
+
+    BankReconciliationWorkspaceService(
+            Jpa jpa,
+            BankStatementManualEntryService manualStatementService,
+            AuthorizationGuard authorizationGuard)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.manualStatementService = Objects.requireNonNull(manualStatementService, "manualStatementService");
+        this.authorizationGuard = authorizationGuard;
     }
 
     public List<BankAccountOption> listConfiguredBankAccounts(String companyCode)
@@ -178,6 +193,9 @@ public class BankReconciliationWorkspaceService
 
     public Snapshot start(StartCommand command)
     {
+        requireBookkeepingWriteForCompany(
+                command == null ? null : command.companyCode(),
+                "start reconciliation");
         validateStart(command);
         long sessionId;
         try (EntityManager em = jpa.em())
@@ -224,6 +242,9 @@ public class BankReconciliationWorkspaceService
      */
     public Snapshot startSuccessor(SuccessorCommand command)
     {
+        requireBookkeepingWriteForSession(
+                command == null ? null : command.finalizedSessionId(),
+                "start reconciliation successor");
         if (command == null || command.finalizedSessionId() <= 0 || command.statementEndDate() == null)
         {
             throw new IllegalArgumentException("Finalized session and successor statement ending date are required.");
@@ -309,11 +330,14 @@ public class BankReconciliationWorkspaceService
         try (EntityManager em = jpa.em())
         {
             return snapshot(em, sessionId);
-     }
+        }
     }
 
     public Snapshot addManualLine(ManualStatementLineCommand command)
     {
+        requireBookkeepingWriteForSession(
+                command == null ? null : command.sessionId(),
+                "add reconciliation statement line");
         if (command == null || command.date() == null || command.amount() == null || compare(command.amount(), BigDecimal.ZERO) == 0)
         {
             throw new IllegalArgumentException("Manual statement date and nonzero amount are required.");
@@ -348,6 +372,7 @@ public class BankReconciliationWorkspaceService
 
     public Snapshot autoMatch(long sessionId)
     {
+        requireBookkeepingWriteForSession(sessionId, "auto-match reconciliation");
         try (EntityManager em = jpa.em())
         {
             EntityTransaction tx = em.getTransaction();
@@ -389,6 +414,7 @@ public class BankReconciliationWorkspaceService
 
     public Snapshot matchSelected(long sessionId, Long statementLineId, Long splitId, boolean overwriteCleared)
     {
+        requireBookkeepingWriteForSession(sessionId, "match reconciliation lines");
         if (statementLineId == null || splitId == null)
         {
             throw new IllegalArgumentException("Select one statement entry and one ledger line to match.");
@@ -413,6 +439,7 @@ public class BankReconciliationWorkspaceService
 
     public Snapshot unmatchSelected(long sessionId, Long statementLineId, Long splitId)
     {
+        requireBookkeepingWriteForSession(sessionId, "unmatch reconciliation lines");
         if (statementLineId == null || splitId == null)
         {
             throw new IllegalArgumentException("Select the exact matched statement entry and ledger line to unmatch.");
@@ -469,6 +496,7 @@ public class BankReconciliationWorkspaceService
 
     public Snapshot markCleared(long sessionId, Long splitId)
     {
+        requireBookkeepingWriteForSession(sessionId, "mark reconciliation ledger line cleared");
         if (splitId == null)
         {
             throw new IllegalArgumentException("Select a ledger line to mark cleared.");
@@ -499,6 +527,7 @@ public class BankReconciliationWorkspaceService
     /** Records factual reconciliation context only; no canonical accounting write occurs. */
     public Snapshot recordDifferenceExplanation(long sessionId, Long statementLineId, Long splitId, String note)
     {
+        requireBookkeepingWriteForSession(sessionId, "record reconciliation difference explanation");
         if (statementLineId == null && splitId == null)
         {
             throw new IllegalArgumentException("Select a statement entry or ledger line to explain.");
@@ -543,6 +572,9 @@ public class BankReconciliationWorkspaceService
 
     public Snapshot save(long sessionId, boolean finalize)
     {
+        requireBookkeepingWriteForSession(
+                sessionId,
+                finalize ? "finalize reconciliation" : "save reconciliation");
         Snapshot current = load(sessionId);
         if (current.status() == SessionStatus.FINALIZED)
         {
@@ -588,6 +620,41 @@ public class BankReconciliationWorkspaceService
             }
         }
         return load(sessionId);
+    }
+
+    private void requireBookkeepingWriteForCompany(String companyCode, String operation)
+    {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCode,
+                operation);
+    }
+
+    private void requireBookkeepingWriteForSession(Long sessionId, String operation)
+    {
+        if (authorizationGuard == null)
+        {
+            return;
+        }
+        if (sessionId == null || sessionId <= 0)
+        {
+            ServiceAuthorization.require(
+                    authorizationGuard,
+                    ApplicationPermission.BOOKKEEPING_WRITE,
+                    operation);
+            return;
+        }
+        String companyCode;
+        try (EntityManager em = jpa.em())
+        {
+            companyCode = session(em, sessionId).company().getCode();
+        }
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCode,
+                operation);
     }
 
     private Snapshot snapshot(EntityManager em, long sessionId)
