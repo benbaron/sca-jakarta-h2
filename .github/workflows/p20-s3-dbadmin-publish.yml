@@ -54,7 +54,10 @@ jobs:
           src/test/java/org/nonprofitbookkeeping/ui/DatabaseAdministrationProductionRouteSourceTest.java
           EOF
           sed -i 's/^          //' /tmp/expected-paths
-          git diff --name-only | sort > /tmp/actual-paths
+          {
+            git diff --name-only
+            git ls-files --others --exclude-standard
+          } | sort > /tmp/actual-paths
           sort -o /tmp/expected-paths /tmp/expected-paths
           diff -u /tmp/expected-paths /tmp/actual-paths
 
