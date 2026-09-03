@@ -1,12 +1,12 @@
 ---
-plan_version: 272
+plan_version: 273
 active_phase: P20
 active_slice: P20-S3
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P20-S3-import-commit-authorization
-active_pull_request: null
-active_head: 128660a4793e2232920ff0ec32ee8d8c7736d18f
-next_action: "Implement and publish the authorized outer SCLX/COA CSV import-commit authorization tranche on codex/P20-S3-import-commit-authorization from merged main 128660a4793e2232920ff0ec32ee8d8c7736d18f, open a draft PR, and validate Maven PR Tests on the exact head."
+active_pull_request: 326
+active_head: effb5f3dcc7423a8946fbf0cdd3e1fb1027505ce
+next_action: "Import-commit authorization PR #326 behavior/documentation head effb5f3dcc7423a8946fbf0cdd3e1fb1027505ce passed Maven PR Tests run 33705042519, job 100492254318. Validate this PLAN-only successor on its exact head, then stop for owner acceptance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -184,9 +184,9 @@ Previous period-close authorization tranche: PR #325 final head `bc62b4c192d7ecb
 
 Active continuation branch: `codex/P20-S3-import-commit-authorization`
 Starting base: merged `main` `128660a4793e2232920ff0ec32ee8d8c7736d18f`
-Pull request: pending
-Head: branch exists at the exact starting base; behavior commit pending publication.
-Validation: not yet run for the import-commit tranche.
+Pull request: #326
+Behavior/documentation head: `effb5f3dcc7423a8946fbf0cdd3e1fb1027505ce`
+Validation: Maven PR Tests run `33705042519`, job `100492254318` passed clean headless `mvn clean verify`, the repeated full Maven test suite, and production JavaFX route compliance on the exact behavior/documentation head. The PLAN-only successor still requires exact-head validation before owner acceptance.
 
 Completed P20-S3 behavior to date:
 
