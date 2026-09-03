@@ -5,6 +5,8 @@ import org.nonprofitbookkeeping.model.BankCsvMappingProfile;
 import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.CompanyBankAccount;
 import org.nonprofitbookkeeping.persistence.Jpa;
+import org.nonprofitbookkeeping.service.ApplicationPermission;
+import org.nonprofitbookkeeping.service.AuthorizationGuard;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,14 +17,22 @@ public final class BankCsvMappingProfileService
     private static final int MAX_PROFILES_PER_COMPANY = 1_000;
 
     private final Jpa jpa;
+    private final AuthorizationGuard authorizationGuard;
 
     public BankCsvMappingProfileService(Jpa jpa)
     {
+        this(jpa, null);
+    }
+
+    public BankCsvMappingProfileService(Jpa jpa, AuthorizationGuard authorizationGuard)
+    {
         this.jpa = java.util.Objects.requireNonNull(jpa, "jpa");
+        this.authorizationGuard = authorizationGuard;
     }
 
     public ProfileSummary create(String companyCode, long bankAccountId, String profileJson)
     {
+        requireBookkeepingWrite(companyCode, "create bank CSV mapping profile");
         BankCsvMappingProfileDefinition definition = BankCsvMappingProfileDefinition.parse(profileJson);
         try (EntityManager em = jpa.em())
         {
@@ -77,6 +87,7 @@ public final class BankCsvMappingProfileService
 
     public ProfileSummary replace(long profileId, String companyCode, String profileJson)
     {
+        requireBookkeepingWrite(companyCode, "replace bank CSV mapping profile");
         BankCsvMappingProfileDefinition definition = BankCsvMappingProfileDefinition.parse(profileJson);
         try (EntityManager em = jpa.em())
         {
@@ -135,6 +146,7 @@ public final class BankCsvMappingProfileService
 
     public void setActive(long profileId, String companyCode, boolean active)
     {
+        requireBookkeepingWrite(companyCode, "change bank CSV mapping profile active state");
         try (EntityManager em = jpa.em())
         {
             var transaction = em.getTransaction();
@@ -153,6 +165,15 @@ public final class BankCsvMappingProfileService
                 throw ex;
             }
         }
+    }
+
+    private void requireBookkeepingWrite(String companyCode, String operation)
+    {
+        if (authorizationGuard == null)
+        {
+            return;
+        }
+        authorizationGuard.require(ApplicationPermission.BOOKKEEPING_WRITE, companyCode, operation);
     }
 
     static BankCsvMappingProfile owned(EntityManager em, Company company, long profileId)

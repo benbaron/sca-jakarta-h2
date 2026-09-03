@@ -11,6 +11,8 @@ import org.nonprofitbookkeeping.model.CompanyBankAccount;
 import org.nonprofitbookkeeping.model.ImportIssue;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.persistence.Jpa;
+import org.nonprofitbookkeeping.service.ApplicationPermission;
+import org.nonprofitbookkeeping.service.AuthorizationGuard;
 import org.nonprofitbookkeeping.service.BankImportNormalizationService;
 
 import java.math.BigDecimal;
@@ -38,10 +40,17 @@ public final class NormalizedBankCsvReviewService
     private final NormalizedBankCsvParser parser;
     private final BankStatementAccountMatcher accountMatcher;
     private final Runnable afterPersistHook;
+    private final AuthorizationGuard authorizationGuard;
 
     public NormalizedBankCsvReviewService(Jpa jpa)
     {
-        this(jpa, new NormalizedBankCsvParser(), new BankStatementAccountMatcher(), () -> { });
+        this(jpa, new NormalizedBankCsvParser(), new BankStatementAccountMatcher(), () -> { }, null);
+    }
+
+    public NormalizedBankCsvReviewService(Jpa jpa, AuthorizationGuard authorizationGuard)
+    {
+        this(jpa, new NormalizedBankCsvParser(), new BankStatementAccountMatcher(),
+                () -> { }, authorizationGuard);
     }
 
     NormalizedBankCsvReviewService(
@@ -50,10 +59,21 @@ public final class NormalizedBankCsvReviewService
             BankStatementAccountMatcher accountMatcher,
             Runnable afterPersistHook)
     {
+        this(jpa, parser, accountMatcher, afterPersistHook, null);
+    }
+
+    NormalizedBankCsvReviewService(
+            Jpa jpa,
+            NormalizedBankCsvParser parser,
+            BankStatementAccountMatcher accountMatcher,
+            Runnable afterPersistHook,
+            AuthorizationGuard authorizationGuard)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.parser = Objects.requireNonNull(parser, "parser");
         this.accountMatcher = Objects.requireNonNull(accountMatcher, "accountMatcher");
         this.afterPersistHook = Objects.requireNonNull(afterPersistHook, "afterPersistHook");
+        this.authorizationGuard = authorizationGuard;
     }
 
     public NormalizedBankCsvReviewPreview preview(
@@ -124,6 +144,7 @@ public final class NormalizedBankCsvReviewService
             boolean accountIdentityConfirmed,
             String actor)
     {
+        requireBookkeepingWrite(approvedPreview);
         if (approvedPreview == null)
         {
             throw new IllegalArgumentException("Approved normalized bank CSV preview is required.");
@@ -316,6 +337,25 @@ public final class NormalizedBankCsvReviewService
                 throw ex;
             }
         }
+    }
+
+    private void requireBookkeepingWrite(NormalizedBankCsvReviewPreview approvedPreview)
+    {
+        if (authorizationGuard == null)
+        {
+            return;
+        }
+        if (approvedPreview == null)
+        {
+            authorizationGuard.require(
+                    ApplicationPermission.BOOKKEEPING_WRITE,
+                    "commit normalized bank CSV review import");
+            return;
+        }
+        authorizationGuard.require(
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                approvedPreview.companyCode(),
+                "commit normalized bank CSV review import");
     }
 
     private static void validateExternalIdentityConflicts(
