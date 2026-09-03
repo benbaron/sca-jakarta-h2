@@ -1,12 +1,12 @@
 ---
-plan_version: 275
+plan_version: 276
 active_phase: P20
 active_slice: P20-S3
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P20-S3-bank-csv-authorization
-active_pull_request: null
-active_head: f6f41c5a0550251ffef4af9f148415c51852b201
-next_action: "Finish the focused P20-S3 bank CSV authorization documentation on branch codex/P20-S3-bank-csv-authorization, open a draft PR from merged main 0e7d71a1322446a8dfe4f5d98245a94c54b93922, and validate Maven PR Tests on the exact published head before owner acceptance."
+active_pull_request: 328
+active_head: d5fe34f12be75e88dd4fdb32f9215f8d469745d7
+next_action: "PR #328 behavior/documentation head d5fe34f12be75e88dd4fdb32f9215f8d469745d7 passed Maven PR Tests run 33777774277, job 100723658952. Publish this PLAN-only verification successor, validate Maven PR Tests on that exact final PR head, then stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -182,12 +182,6 @@ Previous reconciliation authorization tranche: PR #324 final head `1a420aae36fb0
 
 Previous period-close authorization tranche: PR #325 final head `bc62b4c192d7ecb2098ee86bd787e7a3db163b31` passed Maven PR Tests run `33590915729`, job `100124557154`, and merged to `main` at `128660a4793e2232920ff0ec32ee8d8c7736d18f` after owner acceptance. Post-merge `main` workflow run `33653699552` also passed.
 
-Active continuation branch: `codex/P20-S3-import-commit-authorization`
-Starting base: merged `main` `128660a4793e2232920ff0ec32ee8d8c7736d18f`
-Pull request: #326
-Behavior/documentation head: `effb5f3dcc7423a8946fbf0cdd3e1fb1027505ce`
-Validation: Maven PR Tests run `33705042519`, job `100492254318` passed clean headless `mvn clean verify`, the repeated full Maven test suite, and production JavaFX route compliance on the exact behavior/documentation head. The PLAN-only successor still requires exact-head validation before owner acceptance.
-
 Completed P20-S3 behavior to date:
 
 - fixed `ApplicationPermission` policy and multi-role union are established;
@@ -248,6 +242,7 @@ Current bank CSV authorization tranche:
 - `BankCsvMappingProfileService.create(...)`, `replace(...)`, and `setActive(...)` require `BOOKKEEPING_WRITE` before profile parsing or transaction work while `list(...)` remains read-only;
 - direct H2 coverage exercises VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and non-ADMIN role-union success, immediate current-session switching, absent/wrong-company fail-closed behavior, durable `AUTHORIZATION_DENIED` facts, and continued preview/list read access;
 - no schema, migration, JavaFX layout, or authenticated-audit-actor change is included in this tranche.
+- behavior/documentation head `d5fe34f12be75e88dd4fdb32f9215f8d469745d7` passed Maven PR Tests run `33777774277`, job `100723658952`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded.
 
 Governing bank-CSV authorization design: `doc/P20-S3-bank-csv-authorization.md`, `doc/banking/import-and-reconciliation.md`, and `doc/interface-operation-matrix.md`.
 
