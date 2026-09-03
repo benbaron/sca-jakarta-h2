@@ -1,0 +1,17 @@
+name: Cleanup P20-S3 bank import transport refs
+
+on:
+  push:
+    branches:
+      - codex/P20-S3-bank-import-authorization-cleanup
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Delete temporary refs
+        run: git push origin --delete codex/P20-S3-bank-import-authorization-transport-2 codex/P20-S3-bank-import-authorization-cleanup
