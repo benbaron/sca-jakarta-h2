@@ -45,13 +45,23 @@ public final class ReviewedStatementAcceptanceService
     private final TransactionEntryService transactionEntry;
     private final Supplier<String> companyCodeSupplier;
     private final CommitHook commitHook;
+    private final AuthorizationGuard authorizationGuard;
 
     public ReviewedStatementAcceptanceService(
             Jpa jpa,
             TransactionEntryService transactionEntry,
             Supplier<String> companyCodeSupplier)
     {
-        this(jpa, transactionEntry, companyCodeSupplier, () -> { });
+        this(jpa, transactionEntry, companyCodeSupplier, () -> { }, null);
+    }
+
+    public ReviewedStatementAcceptanceService(
+            Jpa jpa,
+            TransactionEntryService transactionEntry,
+            Supplier<String> companyCodeSupplier,
+            AuthorizationGuard authorizationGuard)
+    {
+        this(jpa, transactionEntry, companyCodeSupplier, () -> { }, authorizationGuard);
     }
 
     ReviewedStatementAcceptanceService(
@@ -60,10 +70,21 @@ public final class ReviewedStatementAcceptanceService
             Supplier<String> companyCodeSupplier,
             CommitHook commitHook)
     {
+        this(jpa, transactionEntry, companyCodeSupplier, commitHook, null);
+    }
+
+    ReviewedStatementAcceptanceService(
+            Jpa jpa,
+            TransactionEntryService transactionEntry,
+            Supplier<String> companyCodeSupplier,
+            CommitHook commitHook,
+            AuthorizationGuard authorizationGuard)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.transactionEntry = Objects.requireNonNull(transactionEntry, "transactionEntry");
         this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
         this.commitHook = Objects.requireNonNull(commitHook, "commitHook");
+        this.authorizationGuard = authorizationGuard;
     }
 
     /** Creates a non-mutating frozen preview for one currently reviewable row. */
@@ -97,6 +118,7 @@ public final class ReviewedStatementAcceptanceService
             boolean probableDuplicateConfirmed,
             String actor)
     {
+        requireBookkeepingWrite();
         Objects.requireNonNull(approvedPreview, "approvedPreview");
         Objects.requireNonNull(command, "command");
         String selectedCompanyCode = requiredCompanyCode();
@@ -167,6 +189,15 @@ public final class ReviewedStatementAcceptanceService
                 throw ex;
             }
         }
+    }
+
+    private void requireBookkeepingWrite()
+    {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "accept reviewed bank statement row");
     }
 
     private AcceptancePreview preview(EntityManager em, Company company, BankStatementLine line)

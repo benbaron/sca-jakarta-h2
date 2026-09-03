@@ -25,20 +25,36 @@ public class BankImportReviewService
 {
     private final Jpa jpa;
     private final BankImportNormalizationService normalizationService;
+    private final AuthorizationGuard authorizationGuard;
 
     public BankImportReviewService(Jpa jpa)
     {
-        this(jpa, new BankImportNormalizationService());
+        this(jpa, new BankImportNormalizationService(), null);
+    }
+
+    public BankImportReviewService(Jpa jpa, AuthorizationGuard authorizationGuard)
+    {
+        this(jpa, new BankImportNormalizationService(), authorizationGuard);
     }
 
     BankImportReviewService(Jpa jpa, BankImportNormalizationService normalizationService)
     {
-        this.jpa = jpa;
-        this.normalizationService = normalizationService;
+        this(jpa, normalizationService, null);
+    }
+
+    BankImportReviewService(
+            Jpa jpa,
+            BankImportNormalizationService normalizationService,
+            AuthorizationGuard authorizationGuard)
+    {
+        this.jpa = Objects.requireNonNull(jpa, "jpa");
+        this.normalizationService = Objects.requireNonNull(normalizationService, "normalizationService");
+        this.authorizationGuard = authorizationGuard;
     }
 
     public BankImportReviewResult createReviewBatch(BankImportReviewCommand command)
     {
+        requireBookkeepingWrite(command);
         if (command == null)
         {
             throw new IllegalArgumentException("Bank import review command is required.");
@@ -129,6 +145,23 @@ public class BankImportReviewService
                 throw ex;
             }
         }
+    }
+
+    private void requireBookkeepingWrite(BankImportReviewCommand command)
+    {
+        if (command == null)
+        {
+            ServiceAuthorization.require(
+                    authorizationGuard,
+                    ApplicationPermission.BOOKKEEPING_WRITE,
+                    "create bank import review batch");
+            return;
+        }
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                command.companyCode(),
+                "create bank import review batch");
     }
 
     /** Recreates reviewed statement facts inside an interchange caller's existing transaction. */
