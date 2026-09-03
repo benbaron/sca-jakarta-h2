@@ -1,12 +1,12 @@
 ---
-plan_version: 274
+plan_version: 275
 active_phase: P20
 active_slice: P20-S3
 active_status: IN_PROGRESS
-active_branch: codex/P20-S3-bank-import-authorization
+active_branch: codex/P20-S3-bank-csv-authorization
 active_pull_request: null
-active_head: 09c209097fbd0bba71299c88db5745cc83943002
-next_action: "Implement and validate the owner-authorized P20-S3 bank import review/acceptance service guards on fresh branch codex/P20-S3-bank-import-authorization from merged main 09c209097fbd0bba71299c88db5745cc83943002, then open a draft PR and stop before merge."
+active_head: f6f41c5a0550251ffef4af9f148415c51852b201
+next_action: "Finish the focused P20-S3 bank CSV authorization documentation on branch codex/P20-S3-bank-csv-authorization, open a draft PR from merged main 0e7d71a1322446a8dfe4f5d98245a94c54b93922, and validate Maven PR Tests on the exact published head before owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -229,22 +229,31 @@ Previous import-commit authorization tranche:
 
 Governing import-commit design: `doc/P20-S3-import-commit-authorization.md`, `doc/data-exchange/sclx.md`, and `doc/interface-operation-matrix.md`.
 
-Current bank import review/acceptance authorization tranche:
+Previous bank import review/acceptance authorization tranche:
 
+- PR #327 final head `750b3493d1e90329ce62f2099c933a7b5189bf4c` passed Maven PR Tests run `33715100237`, job `100522508886`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded;
+- the owner accepted and merged PR #327 to `main` at `0e7d71a1322446a8dfe4f5d98245a94c54b93922`;
 - `BankStatementReviewService.commit(...)`, `BankImportReviewService.createReviewBatch(...)`, and `ReviewedStatementAcceptanceService.accept(...)` require `BOOKKEEPING_WRITE` before ordinary commit validation or durable mutation;
 - strict statement preview and reviewed-row acceptance preview remain non-mutating and outside the write guard;
-- mapped CSV remains a delegated `BankStatementReviewService` commit and will receive the current-session guard through the later consolidated production wiring tranche;
 - `BankImportReviewService.importForInterchange(...)` remains a caller-owned SCLX seam and is deliberately not independently guarded;
-- existing source hash, configured-account identity, duplicate/idempotency, reviewed-row accounting, closed-period/finalized-reconciliation, and rollback protections remain authoritative after authorization succeeds;
-- focused direct H2 coverage exercises VIEWER denial/no business mutation, ACCOUNTANT/MANAGER/ADMIN and non-ADMIN union success, immediate session changes, absent/wrong-company fail-closed behavior, durable denial facts, and continued preview/read access;
-- current-source inspection identified direct `NormalizedBankCsvReviewService.commit(...)` and `BankCsvMappingProfileService` create/replace/active-state mutations as additional independent `BOOKKEEPING_WRITE` routes outside this owner-authorized file scope; they remain the next bank-service authorization correction before production guard wiring.
+- existing source hash, configured-account identity, duplicate/idempotency, reviewed-row accounting, closed-period/finalized-reconciliation, and rollback protections remain authoritative after authorization succeeds.
 
 Governing bank-import authorization design: `doc/P20-S3-bank-import-authorization.md`, `doc/banking/import-and-reconciliation.md`, and `doc/interface-operation-matrix.md`.
 
+Current bank CSV authorization tranche:
+
+- branch `codex/P20-S3-bank-csv-authorization` starts from merged `main` `0e7d71a1322446a8dfe4f5d98245a94c54b93922`;
+- behavior head `f6f41c5a0550251ffef4af9f148415c51852b201` adds guarded constructors without removing source-compatible unguarded/test constructors;
+- direct `NormalizedBankCsvReviewService.commit(...)` requires `BOOKKEEPING_WRITE` before ordinary preview/actor/commit validation while `preview(...)` remains non-mutating;
+- `BankCsvMappingProfileService.create(...)`, `replace(...)`, and `setActive(...)` require `BOOKKEEPING_WRITE` before profile parsing or transaction work while `list(...)` remains read-only;
+- direct H2 coverage exercises VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and non-ADMIN role-union success, immediate current-session switching, absent/wrong-company fail-closed behavior, durable `AUTHORIZATION_DENIED` facts, and continued preview/list read access;
+- no schema, migration, JavaFX layout, or authenticated-audit-actor change is included in this tranche.
+
+Governing bank-CSV authorization design: `doc/P20-S3-bank-csv-authorization.md`, `doc/banking/import-and-reconciliation.md`, and `doc/interface-operation-matrix.md`.
+
 Still required before P20-S3 completion:
 
-- guarded service boundaries for direct normalized-bank-CSV commit and bank CSV mapping-profile mutations;
-- production `UiServiceRegistry`/current-session guard wiring for all guarded services, including mapped-CSV delegation through guarded `BankStatementReviewService`;
+- production `UiServiceRegistry`/current-session guard wiring for all guarded services, including mapped-CSV delegation through guarded `BankStatementReviewService`, guarded mapping-profile service construction, and guarded normalized-CSV service construction;
 - authenticated identity as the authoritative actor for protected audit writes;
 - database administration authorization;
 - JavaFX global and panel-local mutation gating using the same fixed policy;
@@ -259,6 +268,8 @@ Required reading:
 - `doc/P20-S3-inventory-authorization.md`;
 - `doc/P20-S3-period-close-authorization.md`;
 - `doc/P20-S3-import-commit-authorization.md`;
+- `doc/P20-S3-bank-import-authorization.md`;
+- `doc/P20-S3-bank-csv-authorization.md`;
 - `doc/data-exchange/sclx.md`;
 - `doc/accounting/period-close-design.md`;
 - `doc/banking/banking-and-reconciliation.md`;
