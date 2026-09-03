@@ -106,6 +106,21 @@ It stores no independent session, role, or permission state. Production service 
 
 JavaFX controls may use the same policy to disable commands and provide a concise explanation, but UI state is never the security boundary. Tests must call guarded services directly under lower-privilege sessions and prove the mutation is rejected.
 
+### Production current-session composition
+
+`UiServiceRegistry` is the one production composition point for P20-S3 guarded services. Each active `ServiceBundle` owns one `AuthorizationGuard` constructed from:
+
+- that bundle's current `Jpa`; and
+- `ApplicationSessionContext.sharedSessionState()::authenticatedUser`.
+
+The bundle guard is supplied to the guarded constructors for Account, Fund, Budget Category, Budget Plan, Bank Configuration, Fixed Asset, Inventory, Company Administration, User Administration, Journal transaction entry/correction, Reconciliation, and Period Close. On-demand production constructors for CoA CSV commit, SCLX commit, strict bank-statement review, mapped CSV review, bank CSV mapping profiles, normalized CSV review, reviewed-statement acceptance, Security Administration, and company UI preference/state writes reuse the same current bundle guard.
+
+Mapped CSV retains one authorization owner: its public guarded composition constructs the delegated `BankStatementReviewService` with the current guard, and `BankCsvReviewService.commit(...)` continues to delegate the durable review write instead of adding another independent authorization check.
+
+Source-compatible unguarded constructors remain available for tests and documented caller-owned transaction/import seams. Their existence is not a production bypass because production composition deliberately chooses the guarded constructors. Nested SCLX/CoA helpers continue to rely on the already-guarded outer atomic commit boundary rather than performing repeated inner authorization checks.
+
+Database switching prepares a new `ServiceBundle` around the target `Jpa` before activation. Activating the prepared bundle swaps the entire service/guard authority, and the existing database-session controller clears the authenticated session on a database change. A guard therefore cannot retain the old database's `Jpa` or a cached permission snapshot. Company switching continues to use `AuthenticationService.rebind(...)`; because the guard calls the shared session supplier on each decision, the newly rebound company/roles take effect immediately.
+
 ## Company and role switching
 
 Changing company preserves the authenticated `AppUser` and uses the P20-S2 `AuthenticationService.rebind(...)` path to recompute effective roles. Authorization decisions must consume the current session each time rather than cache permissions independently. Therefore the same user may have write authority in one company and VIEWER-only authority in another, and the change takes effect immediately after the session rebind.

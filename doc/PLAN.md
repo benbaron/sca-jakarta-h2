@@ -1,12 +1,12 @@
 ---
-plan_version: 276
+plan_version: 277
 active_phase: P20
 active_slice: P20-S3
-active_status: VERIFYING
-active_branch: codex/P20-S3-bank-csv-authorization
-active_pull_request: 328
-active_head: d5fe34f12be75e88dd4fdb32f9215f8d469745d7
-next_action: "PR #328 behavior/documentation head d5fe34f12be75e88dd4fdb32f9215f8d469745d7 passed Maven PR Tests run 33777774277, job 100723658952. Publish this PLAN-only verification successor, validate Maven PR Tests on that exact final PR head, then stop before merge for owner acceptance."
+active_status: IN_PROGRESS
+active_branch: codex/P20-S3-production-authorization-wiring
+active_pull_request: null
+active_head: 034b9cb6dad340b3a3a9630416c8d1e9a4c35f72
+next_action: "Complete the focused production current-session authorization wiring tranche, reconcile its governing documentation and source-route tests, publish a draft PR to main, validate Maven PR Tests on the exact PR head, and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -234,25 +234,33 @@ Previous bank import review/acceptance authorization tranche:
 
 Governing bank-import authorization design: `doc/P20-S3-bank-import-authorization.md`, `doc/banking/import-and-reconciliation.md`, and `doc/interface-operation-matrix.md`.
 
-Current bank CSV authorization tranche:
+Completed bank CSV authorization tranche:
 
-- branch `codex/P20-S3-bank-csv-authorization` starts from merged `main` `0e7d71a1322446a8dfe4f5d98245a94c54b93922`;
-- behavior head `f6f41c5a0550251ffef4af9f148415c51852b201` adds guarded constructors without removing source-compatible unguarded/test constructors;
+- PR #328 final head `449ab6b5947ad8d5e6148eced11e3dd60c61b857` passed Maven PR Tests run `33778610783` and merged to `main` at `d91262dbe22983a017e567aba6f7de5e723ecdb3` after owner verification;
 - direct `NormalizedBankCsvReviewService.commit(...)` requires `BOOKKEEPING_WRITE` before ordinary preview/actor/commit validation while `preview(...)` remains non-mutating;
 - `BankCsvMappingProfileService.create(...)`, `replace(...)`, and `setActive(...)` require `BOOKKEEPING_WRITE` before profile parsing or transaction work while `list(...)` remains read-only;
 - direct H2 coverage exercises VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and non-ADMIN role-union success, immediate current-session switching, absent/wrong-company fail-closed behavior, durable `AUTHORIZATION_DENIED` facts, and continued preview/list read access;
-- no schema, migration, JavaFX layout, or authenticated-audit-actor change is included in this tranche.
-- behavior/documentation head `d5fe34f12be75e88dd4fdb32f9215f8d469745d7` passed Maven PR Tests run `33777774277`, job `100723658952`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded.
+- no schema, migration, JavaFX layout, or authenticated-audit-actor change was included in that tranche.
 
 Governing bank-CSV authorization design: `doc/P20-S3-bank-csv-authorization.md`, `doc/banking/import-and-reconciliation.md`, and `doc/interface-operation-matrix.md`.
 
-Still required before P20-S3 completion:
+Current production current-session authorization wiring tranche:
 
-- production `UiServiceRegistry`/current-session guard wiring for all guarded services, including mapped-CSV delegation through guarded `BankStatementReviewService`, guarded mapping-profile service construction, and guarded normalized-CSV service construction;
+- branch `codex/P20-S3-production-authorization-wiring` starts from exact merged `main` `d91262dbe22983a017e567aba6f7de5e723ecdb3`;
+- current inspection found that `UiServiceRegistry` still selected source-compatible unguarded constructors for the already-guarded P20-S3 service boundaries, so production JavaFX could bypass the service guards even though direct guarded integration tests passed;
+- the selected architecture creates one `AuthorizationGuard` per production `ServiceBundle`, bound to that bundle's `Jpa` and `ApplicationSessionContext.sharedSessionState()::authenticatedUser`, so authorization consumes the current session on every decision without a second cache or session authority;
+- bundle-owned Account, Fund, Budget Category, Budget Plan, Bank Configuration, Fixed Asset, Inventory, Company Admin, User Admin, Journal entry/correction, Reconciliation, and Period Close services use their guarded constructors;
+- on-demand CoA/SCLX commit, strict bank review, mapped CSV, mapping-profile, normalized CSV, reviewed-statement acceptance, Security Admin, and Company UI preference services reuse the current bundle guard;
+- mapped CSV preserves one authorization owner by constructing its delegated `BankStatementReviewService` with the guard rather than adding a second independent check;
+- database preparation builds a new guarded bundle around the target `Jpa`; activation swaps that bundle and database-change logout clears the authenticated session, so no guard retains the obsolete H2 authority;
+- source-compatible unguarded constructors and documented caller-owned transaction/import seams remain intact.
+
+Still required before P20-S3 completion after this tranche:
+
 - authenticated identity as the authoritative actor for protected audit writes;
 - database administration authorization;
 - JavaFX global and panel-local mutation gating using the same fixed policy;
-- governing interface/user-role documentation updates;
+- final governing interface/user-role documentation reconciliation;
 - final Maven PR Tests and owner desktop acceptance.
 
 Required reading:

@@ -36,7 +36,7 @@ class BankStatementPreviewProductionRouteSourceTest
     }
 
     @Test
-    void productionImportPreviewComposesNormalizedCsvWithoutMappingProfile() throws Exception
+    void productionImportPreviewComposesGuardedNormalizedCsvWithoutMappingProfile() throws Exception
     {
         String panel = Files.readString(Path.of(
                 "src/main/java/org/nonprofitbookkeeping/ui/ImportPreviewPanel.java"));
@@ -47,6 +47,7 @@ class BankStatementPreviewProductionRouteSourceTest
         String registry = Files.readString(Path.of(
                 "src/main/java/org/nonprofitbookkeeping/ui/UiServiceRegistry.java"));
         String compactPanel = compact(panel);
+        String compactRegistry = compact(registry);
 
         assertTrue(panel.contains("Preview Normalized Bank CSV…"));
         assertTrue(panel.contains("previewNormalizedBankCsvButton"));
@@ -57,7 +58,9 @@ class BankStatementPreviewProductionRouteSourceTest
         assertFalse(compactPanel.contains("normalizedBankCsvReviewService.get().preview"));
         assertTrue(factory.contains("services::normalizedBankCsvReviewService"));
         assertTrue(services.contains("UiServiceRegistry::normalizedBankCsvReview"));
-        assertTrue(registry.contains("new NormalizedBankCsvReviewService(services().jpa())"));
+        assertTrue(compactRegistry.contains(
+                "newNormalizedBankCsvReviewService(current.jpa(),current.authorizationGuard())"));
+        assertFalse(compactRegistry.contains("newNormalizedBankCsvReviewService(services().jpa())"));
     }
 
     private static String compact(String source)

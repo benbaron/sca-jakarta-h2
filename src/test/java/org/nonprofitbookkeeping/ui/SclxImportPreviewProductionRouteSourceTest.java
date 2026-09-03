@@ -19,6 +19,7 @@ class SclxImportPreviewProductionRouteSourceTest
         String workspaceServices = source("WorkspaceServices.java");
         String registry = source("UiServiceRegistry.java");
         String compactPanel = panel.replaceAll("\\s+", "");
+        String compactRegistry = registry.replaceAll("\\s+", "");
 
         assertTrue(panel.contains("Preview SCLX…"));
         assertTrue(panel.contains("Re-preview Same SCLX"));
@@ -43,8 +44,11 @@ class SclxImportPreviewProductionRouteSourceTest
         assertTrue(factory.contains("services::sclxImportCommitService"));
         assertTrue(workspaceServices.contains("Supplier<SclxImportPreviewService>"));
         assertTrue(workspaceServices.contains("Function<String, SclxImportCommitService>"));
-        assertTrue(registry.contains("new SclxImportPreviewService(services().jpa()"));
-        assertTrue(registry.contains("new SclxImportCommitService(services().jpa()"));
+        assertTrue(compactRegistry.contains("newSclxImportPreviewService(services().jpa(),()->fixedCompanyCode)"));
+        assertTrue(compactRegistry.contains(
+                "newSclxImportCommitService(current.jpa(),()->fixedCompanyCode,current.authorizationGuard())"));
+        assertFalse(compactRegistry.contains(
+                "newSclxImportCommitService(services().jpa(),()->fixedCompanyCode)"));
     }
 
     private static String source(String filename) throws IOException

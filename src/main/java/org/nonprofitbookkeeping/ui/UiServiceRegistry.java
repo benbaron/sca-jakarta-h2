@@ -24,6 +24,7 @@ import org.nonprofitbookkeeping.service.AccountAdminService;
 import org.nonprofitbookkeeping.service.AccountLookupService;
 import org.nonprofitbookkeeping.service.AuthenticationService;
 import org.nonprofitbookkeeping.service.AuditHistoryService;
+import org.nonprofitbookkeeping.service.AuthorizationGuard;
 import org.nonprofitbookkeeping.service.BankConfigurationService;
 import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService;
 import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
@@ -80,7 +81,9 @@ public final class UiServiceRegistry
     public static AccountAdminService accountAdmin() { return services().accountAdmin(); }
     public static CoaCsvImportService coaCsvImport()
     {
-        return new CoaCsvImportService(services().jpa(), UiServiceRegistry::activeCompanyCode);
+        ServiceBundle current = services();
+        return new CoaCsvImportService(
+                current.jpa(), UiServiceRegistry::activeCompanyCode, current.authorizationGuard());
     }
     public static FundAdminService fundAdmin() { return services().fundAdmin(); }
     public static BudgetCategoryAdminService budgetCategoryAdmin() { return services().budgetCategoryAdmin(); }
@@ -88,19 +91,23 @@ public final class UiServiceRegistry
     public static BankConfigurationService bankConfiguration() { return services().bankConfiguration(); }
     public static BankStatementReviewService bankStatementReview()
     {
-        return new BankStatementReviewService(services().jpa());
+        ServiceBundle current = services();
+        return new BankStatementReviewService(current.jpa(), current.authorizationGuard());
     }
     public static BankCsvReviewService bankCsvReview()
     {
-        return new BankCsvReviewService(services().jpa());
+        ServiceBundle current = services();
+        return new BankCsvReviewService(current.jpa(), current.authorizationGuard());
     }
     public static BankCsvMappingProfileService bankCsvMappingProfiles()
     {
-        return new BankCsvMappingProfileService(services().jpa());
+        ServiceBundle current = services();
+        return new BankCsvMappingProfileService(current.jpa(), current.authorizationGuard());
     }
     public static NormalizedBankCsvReviewService normalizedBankCsvReview()
     {
-        return new NormalizedBankCsvReviewService(services().jpa());
+        ServiceBundle current = services();
+        return new NormalizedBankCsvReviewService(current.jpa(), current.authorizationGuard());
     }
     public static BankReviewQueryService bankReviewQuery()
     {
@@ -129,12 +136,18 @@ public final class UiServiceRegistry
     }
     public static CompanyUiPreferencesService companyUiPreferences()
     {
+        ServiceBundle current = services();
         return new CompanyUiPreferencesService(
-                new JdbcCompanyUiPreferenceRepository(UiDataSources.forCurrentSessionDatabase()));
+                new JdbcCompanyUiPreferenceRepository(UiDataSources.forCurrentSessionDatabase()),
+                current.authorizationGuard());
     }
     public static UserAdminService userAdmin() { return services().userAdmin(); }
     public static AuthenticationService authentication() { return new AuthenticationService(services().jpa()); }
-    public static SecurityAdminService securityAdmin() { return new SecurityAdminService(services().jpa()); }
+    public static SecurityAdminService securityAdmin()
+    {
+        ServiceBundle current = services();
+        return new SecurityAdminService(current.jpa(), current.authorizationGuard());
+    }
     public static SecurityBootstrapService securityBootstrap() { return new SecurityBootstrapService(services().jpa()); }
     public static FundBalanceService fundBalance() { return services().fundBalance(); }
     public static ScheduleEligibilityService schedules() { return services().schedules(); }
@@ -146,7 +159,8 @@ public final class UiServiceRegistry
     {
         ServiceBundle current = services();
         return new ReviewedStatementAcceptanceService(
-                current.jpa(), current.transactionEntry(), UiServiceRegistry::activeCompanyCode);
+                current.jpa(), current.transactionEntry(), UiServiceRegistry::activeCompanyCode,
+                current.authorizationGuard());
     }
     public static SampleCompanyService sampleCompany() { return services().sampleCompany(); }
     public static FinancialReportService financialReports() { return services().financialReports(); }
@@ -196,7 +210,9 @@ public final class UiServiceRegistry
         {
             throw new IllegalArgumentException("companyCode must not be blank");
         }
-        return new SclxImportCommitService(services().jpa(), () -> fixedCompanyCode);
+        ServiceBundle current = services();
+        return new SclxImportCommitService(
+                current.jpa(), () -> fixedCompanyCode, current.authorizationGuard());
     }
     public static BankReconciliationWorkspaceService bankReconciliationWorkspace() { return services().bankReconciliationWorkspace(); }
     public static PeriodCloseRangeService periodCloseRangeService() { return services().periodCloseRangeService(); }
@@ -269,25 +285,32 @@ public final class UiServiceRegistry
     private static ServiceBundle buildServices(Jpa jpa)
     {
         System.err.println("[NPBK] Building UI service bundle.");
-        TransactionEntryService transactionEntry = new TransactionEntryService(jpa, UiServiceRegistry::activeCompanyCode);
+        AuthorizationGuard authorizationGuard = new AuthorizationGuard(
+                jpa,
+                ApplicationSessionContext.sharedSessionState()::authenticatedUser);
+        TransactionEntryService transactionEntry = new TransactionEntryService(
+                jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard);
         TransactionCorrectionService transactionCorrection = new TransactionCorrectionService(
-                jpa, UiServiceRegistry::activeCompanyCode);
-        PeriodCloseRangeService periodCloseRange = new PeriodCloseRangeService(jpa);
+                jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard);
+        PeriodCloseRangeService periodCloseRange = new PeriodCloseRangeService(jpa, authorizationGuard);
         return new ServiceBundle(
                 jpa,
+                authorizationGuard,
                 new AccountLookupService(jpa, UiServiceRegistry::activeCompanyCode),
                 new FundLookupService(jpa, UiServiceRegistry::activeCompanyCode),
                 new BudgetCategoryLookupService(jpa, UiServiceRegistry::activeCompanyCode),
-                new AccountAdminService(jpa, UiServiceRegistry::activeCompanyCode),
-                new FundAdminService(jpa, UiServiceRegistry::activeCompanyCode),
-                new BudgetCategoryAdminService(jpa, UiServiceRegistry::activeCompanyCode),
-                new BudgetPlanService(jpa, UiServiceRegistry::activeCompanyCode),
-                new BankConfigurationService(jpa),
-                new FixedAssetService(jpa, transactionEntry, UiServiceRegistry::activeCompanyCode),
+                new AccountAdminService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
+                new FundAdminService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
+                new BudgetCategoryAdminService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
+                new BudgetPlanService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
+                new BankConfigurationService(jpa, authorizationGuard),
+                new FixedAssetService(
+                        jpa, transactionEntry, UiServiceRegistry::activeCompanyCode, authorizationGuard),
                 new InventoryService(
-                        jpa, transactionEntry, transactionCorrection, UiServiceRegistry::activeCompanyCode),
-                new CompanyAdminService(jpa),
-                new UserAdminService(jpa, UiServiceRegistry::activeCompanyCode),
+                        jpa, transactionEntry, transactionCorrection, UiServiceRegistry::activeCompanyCode,
+                        authorizationGuard),
+                new CompanyAdminService(jpa, authorizationGuard),
+                new UserAdminService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
                 new FundBalanceService(jpa),
                 new ScheduleEligibilityService(jpa),
                 new LedgerQueryService(jpa),
@@ -297,7 +320,7 @@ public final class UiServiceRegistry
                 new SampleCompanyService(jpa),
                 new FinancialReportService(jpa, UiServiceRegistry::activeCompanyCode),
                 new JpaDashboardQueryService(jpa),
-                new BankReconciliationWorkspaceService(jpa),
+                new BankReconciliationWorkspaceService(jpa, authorizationGuard),
                 periodCloseRange,
                 new AuditHistoryService(jpa, UiServiceRegistry::activeCompanyCode));
     }
@@ -472,6 +495,7 @@ public final class UiServiceRegistry
 
     private record ServiceBundle(
             Jpa jpa,
+            AuthorizationGuard authorizationGuard,
             AccountLookupService accountLookup,
             FundLookupService fundLookup,
             BudgetCategoryLookupService budgetCategoryLookup,
