@@ -118,7 +118,12 @@ public final class ReviewedStatementAcceptanceService
             boolean probableDuplicateConfirmed,
             String actor)
     {
-        requireBookkeepingWrite();
+        String auditActor = normalizedActor(ServiceAuthorization.actor(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "accept reviewed bank statement row",
+                actor));
         Objects.requireNonNull(approvedPreview, "approvedPreview");
         Objects.requireNonNull(command, "command");
         String selectedCompanyCode = requiredCompanyCode();
@@ -166,7 +171,7 @@ public final class ReviewedStatementAcceptanceService
                         company,
                         command,
                         transactionPortableId,
-                        normalizedActor(actor),
+                        auditActor,
                         reason);
                 em.flush();
                 commitHook.afterTransactionPersisted();
@@ -176,7 +181,7 @@ public final class ReviewedStatementAcceptanceService
                 line.setDispositionNote("Accepted explicitly into canonical transaction " + txn.getPortableId() + ".");
                 line.touchUpdatedAt();
                 updateBatchDisposition(em, line.getBatch());
-                em.persist(acceptanceAudit(company, line, txn, actor, probableDuplicateConfirmed));
+                em.persist(acceptanceAudit(company, line, txn, auditActor, probableDuplicateConfirmed));
                 em.flush();
                 tx.commit();
                 return new AcceptanceResult(
@@ -189,15 +194,6 @@ public final class ReviewedStatementAcceptanceService
                 throw ex;
             }
         }
-    }
-
-    private void requireBookkeepingWrite()
-    {
-        ServiceAuthorization.require(
-                authorizationGuard,
-                ApplicationPermission.BOOKKEEPING_WRITE,
-                companyCodeSupplier.get(),
-                "accept reviewed bank statement row");
     }
 
     private AcceptancePreview preview(EntityManager em, Company company, BankStatementLine line)

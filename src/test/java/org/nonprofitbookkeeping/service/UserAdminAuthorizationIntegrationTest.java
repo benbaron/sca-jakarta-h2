@@ -132,6 +132,9 @@ class UserAdminAuthorizationIntegrationTest
                     .filter(value -> "SECURITY_EDITOR".equals(value.getCode()))
                     .count());
             assertFalse(assignmentActive(jpa, assignment.getId()));
+            assertEquals(4L, maintainedSecurityAuditActorCount(jpa, "operator"));
+            assertEquals(0L, maintainedSecurityAuditActorCount(jpa, "admin"),
+                    "guarded User Admin must ignore spoofable command actor values");
         }
     }
 
@@ -262,6 +265,20 @@ class UserAdminAuthorizationIntegrationTest
                 roles,
                 now,
                 now);
+    }
+
+    private static long maintainedSecurityAuditActorCount(Jpa jpa, String actor)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            return em.createQuery(
+                            "select count(a) from AuditEvent a "
+                                    + "where a.actor = :actor and a.actionType in "
+                                    + "('APP_USER_CREATED', 'APP_ROLE_CREATED', 'USER_ROLE_ASSIGNED', 'USER_ROLE_ENDED')",
+                            Long.class)
+                    .setParameter("actor", actor)
+                    .getSingleResult();
+        }
     }
 
     private static long userCount(Jpa jpa)

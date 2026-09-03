@@ -144,12 +144,12 @@ public final class NormalizedBankCsvReviewService
             boolean accountIdentityConfirmed,
             String actor)
     {
-        requireBookkeepingWrite(approvedPreview);
+        String auditActor = authoritativeActor(approvedPreview, actor);
         if (approvedPreview == null)
         {
             throw new IllegalArgumentException("Approved normalized bank CSV preview is required.");
         }
-        if (actor == null || actor.isBlank())
+        if (auditActor == null || auditActor.isBlank())
         {
             throw new IllegalArgumentException("Audit actor is required.");
         }
@@ -309,7 +309,7 @@ public final class NormalizedBankCsvReviewService
                 afterPersistHook.run();
                 AuditEvent audit = new AuditEvent();
                 audit.setCompany(company);
-                audit.setActor(actor.trim());
+                audit.setActor(auditActor.trim());
                 audit.setActionType("NORMALIZED_BANK_CSV_IMPORTED");
                 audit.setEntityType("BANK_IMPORT_BATCH_SET");
                 audit.setEntityId(current.sourceHash());
@@ -339,20 +339,20 @@ public final class NormalizedBankCsvReviewService
         }
     }
 
-    private void requireBookkeepingWrite(NormalizedBankCsvReviewPreview approvedPreview)
+    private String authoritativeActor(NormalizedBankCsvReviewPreview approvedPreview, String fallbackActor)
     {
         if (authorizationGuard == null)
         {
-            return;
+            return fallbackActor;
         }
         if (approvedPreview == null)
         {
-            authorizationGuard.require(
+            return authorizationGuard.requireActor(
                     ApplicationPermission.BOOKKEEPING_WRITE,
+                    null,
                     "commit normalized bank CSV review import");
-            return;
         }
-        authorizationGuard.require(
+        return authorizationGuard.requireActor(
                 ApplicationPermission.BOOKKEEPING_WRITE,
                 approvedPreview.companyCode(),
                 "commit normalized bank CSV review import");

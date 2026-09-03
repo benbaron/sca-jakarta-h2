@@ -227,13 +227,13 @@ public class InventoryService
             String actor,
             String reason)
     {
-        ServiceAuthorization.require(
+        String normalizedActor = requireText(ServiceAuthorization.actor(
                 authorizationGuard,
                 ApplicationPermission.BOOKKEEPING_WRITE,
                 companyCodeSupplier.get(),
-                "change inventory-item status");
+                "change inventory-item status",
+                actor), "actor");
         Objects.requireNonNull(targetStatus, "targetStatus");
-        String normalizedActor = requireText(actor, "actor");
         String normalizedReason = requireText(reason, "reason");
         String activeCompany = normalizeCompanyCode(companyCodeSupplier.get());
         try (EntityManager em = jpa.em())
@@ -359,13 +359,13 @@ public class InventoryService
     /** Commits the frozen preview, canonical transaction, movement, quantity, and audit atomically. */
     public InventoryMovementView recordMovement(MovementPreview preview, String actor)
     {
-        ServiceAuthorization.require(
+        String normalizedActor = requireText(ServiceAuthorization.actor(
                 authorizationGuard,
                 ApplicationPermission.BOOKKEEPING_WRITE,
                 companyCodeSupplier.get(),
-                "record inventory movement");
+                "record inventory movement",
+                actor), "actor");
         Objects.requireNonNull(preview, "preview");
-        String normalizedActor = requireText(actor, "actor");
         String activeCompany = normalizeCompanyCode(companyCodeSupplier.get());
         if (!activeCompany.equals(preview.companyCode()))
         {
@@ -505,13 +505,13 @@ public class InventoryService
     /** Atomically reverses the canonical transaction and records the inverse quantity movement. */
     public InventoryMovementView reverseMovement(MovementReversalPreview preview, String actor)
     {
-        ServiceAuthorization.require(
+        String normalizedActor = requireText(ServiceAuthorization.actor(
                 authorizationGuard,
                 ApplicationPermission.BOOKKEEPING_WRITE,
                 companyCodeSupplier.get(),
-                "reverse inventory movement");
+                "reverse inventory movement",
+                actor), "actor");
         Objects.requireNonNull(preview, "preview");
-        String normalizedActor = requireText(actor, "actor");
         String activeCompany = normalizeCompanyCode(companyCodeSupplier.get());
         if (!activeCompany.equals(preview.companyCode()))
         {

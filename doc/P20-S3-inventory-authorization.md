@@ -21,11 +21,11 @@ Read-only item/movement loads and lists, `previewMovement(...)`, and `previewMov
 
 The canonical transaction-entry and transaction-correction helpers invoked from confirmed inventory movements likewise remain caller-owned inner transaction seams. The outer `InventoryService` mutation is the authorization decision for the complete atomic inventory/accounting operation.
 
-## Compatibility and deferred work
+## Compatibility and production composition
 
-Existing unguarded constructors remain source-compatible for tests and already-governed internal seams. A guarded constructor accepts the current `AuthorizationGuard`; production registry/session injection remains a later P20-S3 tranche.
+Existing unguarded constructors remain source-compatible for tests and already-governed internal seams. Production `UiServiceRegistry` now constructs the service with the current-bundle `AuthorizationGuard`.
 
-This tranche deliberately does not convert caller-supplied inventory audit actor strings to authenticated identity. P20-S3 authenticated audit-actor conversion remains a separate cross-cutting task so authorization enforcement and audit provenance are not conflated.
+Guarded inventory status, movement, and reversal operations override caller actor text with the current authenticated username and pass that actor into nested canonical transaction/correction audits. Caller-owned import seams retain their established source/caller semantics. Governing detail: `doc/P20-S3-authenticated-audit-actor.md`.
 
 There are no schema or migration changes.
 

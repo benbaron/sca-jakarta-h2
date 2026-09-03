@@ -243,11 +243,12 @@ public class FixedAssetService
             String actor,
             String reason)
     {
-        ServiceAuthorization.require(
+        String normalizedActor = requireText(ServiceAuthorization.actor(
                 authorizationGuard,
                 ApplicationPermission.BOOKKEEPING_WRITE,
                 companyCodeSupplier.get(),
-                "change fixed-asset status");
+                "change fixed-asset status",
+                actor), "actor");
         if (targetStatus == null)
         {
             throw new IllegalArgumentException("targetStatus is required");
@@ -257,7 +258,6 @@ public class FixedAssetService
             throw new IllegalArgumentException(
                     "DISPOSED is created only by the governed Sale or Retirement workflow");
         }
-        String normalizedActor = requireText(actor, "actor");
         String normalizedReason = requireText(reason, "reason");
         String companyCode = normalizeCompanyCode(companyCodeSupplier.get());
 
@@ -386,11 +386,13 @@ public class FixedAssetService
 
     public DepreciationRunView runMonthlyDepreciation(long assetId, LocalDate runDate, String notes)
     {
-        ServiceAuthorization.require(
+        String authorizedActor = ServiceAuthorization.actor(
                 authorizationGuard,
                 ApplicationPermission.BOOKKEEPING_WRITE,
                 companyCodeSupplier.get(),
-                "run fixed-asset depreciation");
+                "run fixed-asset depreciation",
+                null);
+        String auditActor = authorizedActor == null ? auditActorSupplier.get() : authorizedActor;
         if (runDate == null)
         {
             throw new IllegalArgumentException("runDate is required");
@@ -471,7 +473,7 @@ public class FixedAssetService
                         company,
                         command,
                         transactionPortableId,
-                        auditActorSupplier.get(),
+                        auditActor,
                         "Monthly fixed-asset depreciation");
                 depreciationWriteHook.afterTransactionPersisted(
                         em, asset, transaction, runDate, amount, runPortableId);
@@ -522,13 +524,13 @@ public class FixedAssetService
     /** Commits the frozen lifecycle preview, canonical accounting, status, and audit atomically. */
     public FixedAssetLifecycleEventView recordLifecycleEvent(LifecyclePreview preview, String actor)
     {
-        ServiceAuthorization.require(
+        String normalizedActor = requireText(ServiceAuthorization.actor(
                 authorizationGuard,
                 ApplicationPermission.BOOKKEEPING_WRITE,
                 companyCodeSupplier.get(),
-                "record fixed-asset lifecycle event");
+                "record fixed-asset lifecycle event",
+                actor), "actor");
         Objects.requireNonNull(preview, "preview");
-        String normalizedActor = requireText(actor, "actor");
         String activeCompany = normalizeCompanyCode(companyCodeSupplier.get());
         if (!activeCompany.equals(preview.companyCode()))
         {
@@ -656,13 +658,13 @@ public class FixedAssetService
             LifecycleReversalPreview preview,
             String actor)
     {
-        ServiceAuthorization.require(
+        String normalizedActor = requireText(ServiceAuthorization.actor(
                 authorizationGuard,
                 ApplicationPermission.BOOKKEEPING_WRITE,
                 companyCodeSupplier.get(),
-                "reverse fixed-asset lifecycle event");
+                "reverse fixed-asset lifecycle event",
+                actor), "actor");
         Objects.requireNonNull(preview, "preview");
-        String normalizedActor = requireText(actor, "actor");
         String activeCompany = normalizeCompanyCode(companyCodeSupplier.get());
         if (!activeCompany.equals(preview.companyCode()))
         {

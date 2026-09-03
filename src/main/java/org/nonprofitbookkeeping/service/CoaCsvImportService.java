@@ -90,17 +90,6 @@ public final class CoaCsvImportService
         this.identityService = new InterchangeIdentityService(jpa, ownership);
     }
 
-    private void requireBookkeepingWrite()
-    {
-        if (authorizationGuard != null)
-        {
-            authorizationGuard.require(
-                    ApplicationPermission.BOOKKEEPING_WRITE,
-                    companyCodeSupplier.get(),
-                    "commit Chart of Accounts CSV import");
-        }
-    }
-
     /** Produces a non-mutating preview bound to the exact source, company, chart, and target state. */
     public CoaCsvBatchPreview preview(Path source)
     {
@@ -137,12 +126,17 @@ public final class CoaCsvImportService
     /** Commits only the exact confirmed preview. Any commit-time failure rolls the entire batch back. */
     public CoaCsvBatchCommitResult commit(CoaCsvBatchPreview approvedPreview, String actor)
     {
-        requireBookkeepingWrite();
+        String authorizedActor = ServiceAuthorization.actor(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "commit Chart of Accounts CSV import",
+                actor);
         Objects.requireNonNull(approvedPreview, "approvedPreview");
         String cleanActor;
         try
         {
-            cleanActor = requireText(actor, "Import actor", 200);
+            cleanActor = requireText(authorizedActor, "Import actor", 200);
         }
         catch (RuntimeException ex)
         {

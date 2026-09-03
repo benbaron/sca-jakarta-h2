@@ -57,6 +57,8 @@ public class PeriodCloseRunsPanel implements AppPanel
         rangeKind.setValue("CALCULATED");
         reopenPolicy.getItems().setAll(ClosedPeriodPolicy.values());
         applyPreferenceDefaults();
+        actor.setPromptText("Authenticated audit actor");
+        actor.setEditable(false);
         reason.setPromptText("Optional close/reopen reason");
         companyFormat.install(startDate);
         companyFormat.install(endDate);

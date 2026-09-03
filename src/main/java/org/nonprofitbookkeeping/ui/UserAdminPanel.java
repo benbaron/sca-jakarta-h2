@@ -52,7 +52,7 @@ public class UserAdminPanel implements AppPanel
     private final Label assignmentCompany = new Label(activeCompanyCode());
     private final CompanyUiFormat companyFormat = CompanyUiFormat.activeCompany();
 
-    private final TextField actor = new TextField(factualActor());
+    private final TextField actor = new TextField(DesktopActorIdentity.current());
     private final TextField username = new TextField();
     private final TextField displayName = new TextField();
     private final TextField email = new TextField();
@@ -95,10 +95,11 @@ public class UserAdminPanel implements AppPanel
         Label help = new Label(
                 "Maintain durable users, global role definitions, dated company assignments, and account credentials. Effective role state is derived from H2 assignments; runtime operation enforcement completes in P20-S3.");
         help.setWrapText(true);
-        actor.setPromptText("Factual operator");
+        actor.setPromptText("Authenticated audit actor");
+        actor.setEditable(false);
         Button refresh = new Button("Refresh");
         refresh.setOnAction(event -> refreshWithDiscardProtection());
-        HBox actions = new HBox(8, refresh, new Label("Audit actor (legacy until P20-S3)"), actor, status);
+        HBox actions = new HBox(8, refresh, new Label("Authenticated audit actor"), actor, status);
         HBox.setHgrow(actor, Priority.ALWAYS);
         VBox header = new VBox(6, title, help, actions);
         header.setPadding(new Insets(8));
@@ -736,12 +737,6 @@ public class UserAdminPanel implements AppPanel
     {
         String value = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
         return value == null || value.isBlank() ? "DEFAULT" : value.trim().toUpperCase();
-    }
-
-    private static String factualActor()
-    {
-        String value = System.getProperty("user.name");
-        return value == null || value.isBlank() ? "local operator" : value.trim();
     }
 
     private static String nullToBlank(String value)

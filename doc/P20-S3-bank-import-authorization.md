@@ -34,7 +34,7 @@ Authorization does not replace bank-import or acceptance validation. After permi
 - reviewed-row source freezing, company/account/currency validation, balanced canonical transaction validation, duplicate confirmation, closed-period protection, and finalized-reconciliation protection; and
 - complete rollback on late failure.
 
-Free-form actor parameters remain compatibility inputs in this tranche. Authenticated audit-actor conversion remains a separate P20-S3 cross-cutting task.
+Free-form actor parameters remain source-compatible inputs, but guarded production review/acceptance commits override them with the current authenticated username. Reviewed-row acceptance passes that same authenticated actor into the nested canonical transaction and its acceptance audit fact. Governing detail: `doc/P20-S3-authenticated-audit-actor.md`.
 
 ## Explicitly remaining bank authorization work
 

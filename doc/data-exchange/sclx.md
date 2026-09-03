@@ -553,7 +553,7 @@ one distinct local `SCLX_IMPORTED` operation fact; an identical reimport remains
 
 The production Import Preview workspace exposes **Import Previewed SCLX…** only while it retains the
 exact source path and a nonblocking identity-aware preview. A `MAPPED` preview additionally requires explicit approval of every displayed
-account/fund mapping after the last mapping selection and fresh preview. A nonblank audit actor is required.
+account/fund mapping after the last mapping selection and fresh preview. In guarded production composition, the current authenticated username is the authoritative actor for the new local import and canonical transaction audit facts; the displayed actor is read-only. Historical actor values inside imported period-close/audit-history extensions remain source facts and are preserved.
 Confirmation names the source, fixed target, SHA-256, entity count, target-preservation rule, and atomic
 rollback risk. Commit runs away from the JavaFX thread and the service re-reads and re-previews the exact
 approved mapping and conflict-choice set before beginning the transaction. A changed source, changed target,

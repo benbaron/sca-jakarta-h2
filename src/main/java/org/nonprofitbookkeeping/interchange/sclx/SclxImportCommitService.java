@@ -205,7 +205,7 @@ public final class SclxImportCommitService
             boolean approvedMappings,
             boolean approvedExistingCompanyImport)
     {
-        requireBookkeepingWrite();
+        String commitActor = authoritativeActor(actor);
         Objects.requireNonNull(source, "source");
         Objects.requireNonNull(approvedPreview, "approvedPreview");
         List<SclxImportMappingSelection> approvedSelections = approvedPreview.mappings().stream()
@@ -331,7 +331,7 @@ public final class SclxImportCommitService
                 writes += merchants.size();
                 TransactionWrite transactions = writeTransactions(
                         em, company, root.path("transactions"), accounts, funds, activities,
-                        counterparties, merchants, details, previews, actor, writes);
+                        counterparties, merchants, details, previews, commitActor, writes);
                 writes += transactions.transactionCount();
                 writes += writeCorrectionRelationships(
                         em, company, corrections, transactions.transactions(), writes);
@@ -371,7 +371,7 @@ public final class SclxImportCommitService
 
                 AuditEvent operationAudit = new AuditEvent();
                 operationAudit.setCompany(company);
-                operationAudit.setActor(cleanActor(actor));
+                operationAudit.setActor(commitActor);
                 operationAudit.setActionType("SCLX_IMPORTED");
                 operationAudit.setEntityType("Company");
                 operationAudit.setEntityId(String.valueOf(company.getId()));
@@ -426,15 +426,16 @@ public final class SclxImportCommitService
         }
     }
 
-    private void requireBookkeepingWrite()
+    private String authoritativeActor(String fallbackActor)
     {
-        if (authorizationGuard != null)
+        if (authorizationGuard == null)
         {
-            authorizationGuard.require(
-                    ApplicationPermission.BOOKKEEPING_WRITE,
-                    companyCodeSupplier.get(),
-                    "commit SCLX import");
+            return cleanActor(fallbackActor);
         }
+        return authorizationGuard.requireActor(
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(),
+                "commit SCLX import");
     }
 
     private static void requireSupportedSections(SclxImportPreview preview, JsonNode root)

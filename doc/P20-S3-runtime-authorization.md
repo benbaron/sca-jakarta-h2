@@ -127,11 +127,11 @@ Changing company preserves the authenticated `AppUser` and uses the P20-S2 `Auth
 
 ## Authoritative audit actor
 
-Once P20-S3 is active, the authenticated `AppUser.username` is the authoritative actor for protected writes and security-denial events.
+The authenticated `AppUser.username` is the authoritative actor for protected writes and security-denial events. Guarded production services derive that username from the same current-session `AuthorizationGuard` used for permission enforcement on every mutation.
 
-Existing command DTO actor strings may remain temporarily as compatibility parameters where removing them would create an unrelated API migration, but production guarded services must derive/override the authoritative actor from the authenticated session. JavaFX actor fields may display the authenticated username but must not permit an operator to spoof the authoritative audit identity.
+Existing command DTO/method actor strings remain only as source-compatible inputs for unguarded tests and explicitly caller-owned seams. A guarded production service overrides those values with `AuthorizationGuard.requireActor(...)`; JavaFX actor fields for protected operations display the authenticated username and are non-editable.
 
-Literal production actors such as `"ui"`, `"ui-operator"`, or workstation usernames must not remain an alternate authority for protected writes.
+Literal actors such as `"ui"`, `"ui-operator"`, or workstation usernames are not alternate authority for protected writes. `DesktopActorIdentity` prefers the authenticated session and its workstation fallback is compatibility/pre-login display only. Imported historical SCLX actor facts remain source history and are not rewritten as current-operation identity. Governing detail: `doc/P20-S3-authenticated-audit-actor.md`.
 
 ## UI command behavior
 
