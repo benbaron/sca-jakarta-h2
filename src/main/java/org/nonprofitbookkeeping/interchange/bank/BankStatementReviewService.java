@@ -10,6 +10,8 @@ import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.CompanyBankAccount;
 import org.nonprofitbookkeeping.model.ImportIssue;
 import org.nonprofitbookkeeping.persistence.Jpa;
+import org.nonprofitbookkeeping.service.ApplicationPermission;
+import org.nonprofitbookkeeping.service.AuthorizationGuard;
 import org.nonprofitbookkeeping.service.BankImportNormalizationService;
 
 import java.io.IOException;
@@ -36,11 +38,18 @@ public final class BankStatementReviewService
     private final BankStatementAccountMatcher accountMatcher;
     private final BankImportNormalizationService normalizationService;
     private final Runnable afterPersistHook;
+    private final AuthorizationGuard authorizationGuard;
 
     public BankStatementReviewService(Jpa jpa)
     {
         this(jpa, new BankStatementParser(), new BankStatementAccountMatcher(),
-                new BankImportNormalizationService(), () -> { });
+                new BankImportNormalizationService(), () -> { }, null);
+    }
+
+    public BankStatementReviewService(Jpa jpa, AuthorizationGuard authorizationGuard)
+    {
+        this(jpa, new BankStatementParser(), new BankStatementAccountMatcher(),
+                new BankImportNormalizationService(), () -> { }, authorizationGuard);
     }
 
     BankStatementReviewService(
@@ -50,11 +59,23 @@ public final class BankStatementReviewService
             BankImportNormalizationService normalizationService,
             Runnable afterPersistHook)
     {
+        this(jpa, parser, accountMatcher, normalizationService, afterPersistHook, null);
+    }
+
+    BankStatementReviewService(
+            Jpa jpa,
+            BankStatementParser parser,
+            BankStatementAccountMatcher accountMatcher,
+            BankImportNormalizationService normalizationService,
+            Runnable afterPersistHook,
+            AuthorizationGuard authorizationGuard)
+    {
         this.jpa = java.util.Objects.requireNonNull(jpa, "jpa");
         this.parser = java.util.Objects.requireNonNull(parser, "parser");
         this.accountMatcher = java.util.Objects.requireNonNull(accountMatcher, "accountMatcher");
         this.normalizationService = java.util.Objects.requireNonNull(normalizationService, "normalizationService");
         this.afterPersistHook = java.util.Objects.requireNonNull(afterPersistHook, "afterPersistHook");
+        this.authorizationGuard = authorizationGuard;
     }
 
     public BankStatementReviewPreview preview(Path source, String companyCode, long bankAccountId)
@@ -120,6 +141,7 @@ public final class BankStatementReviewService
             String actor,
             Function<Path, BankStatementDocument> documentParser)
     {
+        requireBookkeepingWrite(approvedPreview);
         if (approvedPreview == null)
         {
             throw new IllegalArgumentException("Approved bank-statement preview is required.");
@@ -235,6 +257,25 @@ public final class BankStatementReviewService
                 throw ex;
             }
         }
+    }
+
+    private void requireBookkeepingWrite(BankStatementReviewPreview approvedPreview)
+    {
+        if (authorizationGuard == null)
+        {
+            return;
+        }
+        if (approvedPreview == null)
+        {
+            authorizationGuard.require(
+                    ApplicationPermission.BOOKKEEPING_WRITE,
+                    "commit bank statement review import");
+            return;
+        }
+        authorizationGuard.require(
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                approvedPreview.companyCode(),
+                "commit bank statement review import");
     }
 
     private static BankImportBatch batch(
