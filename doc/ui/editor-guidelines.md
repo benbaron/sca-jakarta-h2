@@ -73,7 +73,7 @@ Older P03 callers may still request Ledger Register or Transaction Editor. `AppP
 
 ## Sample-company system testing
 
-P03 system testing uses an explicit sample-company lifecycle action, not automatic production seed data. Testers create or select a disposable database, then choose **File -> Create / Refresh Sample Company Data** to run `SampleCompanyService` against the active database.
+P03 system testing uses an explicit sample-company lifecycle action, not automatic production seed data. Testers create or select a disposable database, authenticate as ADMIN, then choose **File -> Create / Refresh Sample Company Data** to run the guarded `SampleCompanyService` against the active database. The post-login mutation requires P20 `DATABASE_ADMIN`; non-ADMIN roles remain unable to seed/refresh sample business data.
 
 Manual validation:
 

@@ -76,7 +76,7 @@ Status: reconciled to current production architecture through P17-C11. Historica
 | Normalized CSV | normalized identity/validation preview | guarded `NormalizedBankCsvReviewService.commit(...)` | accepted durable review requires `BOOKKEEPING_WRITE`; preview remains non-mutating and preserves external IDs/PAYEEID and governed review facts. |
 | Reviewed statement acceptance | selected durable statement row | guarded `ReviewedStatementAcceptanceService` + caller-owned canonical `TransactionEntryService` seam | accepted row requires `BOOKKEEPING_WRITE`; preview remains non-mutating; one explicit canonical transaction acceptance; reconciliation retains cleared-state ownership. |
 | SCLX | complete target-company preview, ownership gate, per-record classification/resolution | guarded `SclxImportCommitService` outer atomic target-company graph commit | Accepted commit requires `BOOKKEEPING_WRITE`; nested import helpers remain outer-governed; `NEW`/`IDENTICAL`/`CONFLICT` decisions are revalidated with no partial commit. |
-| Whole database transfer | explicit backup/restore preparation | supported H2 transfer/session activation path | preserves full database including compatibility data; activation only after validation. |
+| Whole database transfer | explicit backup/restore preparation | guarded `DatabaseAdministrationService` -> supported H2 `DatabaseTransferService` / session activation path | post-login backup, restore-copy creation, and validated-copy activation require `DATABASE_ADMIN`; preserves full database including compatibility data; activation only after validation; outer login-gate select/create/retry remains pre-authentication. |
 
 There is no production `UiWorkspaceDataStore` generic job list and no generic Import/Export Jobs route.
 

@@ -125,6 +125,8 @@ Checksums are SHA-256. Date/time metadata uses UTC RFC 3339. Any textual manifes
 
 ## 10. Relationship to current services
 
+Post-login **Back Up Database**, **Restore Database Copy**, and **Switch to Validated Copy** require P20 `DATABASE_ADMIN` at the service layer. `DatabaseAdministrationService` owns that authorization decision and delegates the file/database mechanics to `DatabaseTransferService`; the persistence implementation itself does not become a permission-policy authority. The service resolves the current production authorization guard for each operation so a workspace surviving a database switch cannot retain stale authority. Database select/create/retry at the outer login gate remains the documented pre-login exception.
+
 Implementation MUST compose with:
 
 - `DatabaseSessionController` for selected-path and safe-switch authority;

@@ -38,11 +38,18 @@ public class CompanyOwnershipService
             "PERIOD_CLOSE_RANGE", "PERIOD_CLOSE_EVENT");
 
     private final Jpa jpa;
+    private final AuthorizationGuard authorizationGuard;
 
     @Inject
     public CompanyOwnershipService(Jpa jpa)
     {
+        this(jpa, null);
+    }
+
+    public CompanyOwnershipService(Jpa jpa, AuthorizationGuard authorizationGuard)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
+        this.authorizationGuard = authorizationGuard;
     }
 
     public Company requireCompany(EntityManager em, String companyCode)
@@ -356,7 +363,12 @@ public class CompanyOwnershipService
             String actor,
             String reason)
     {
-        String cleanActor = requireBoundedText(actor, "Actor", 200);
+        String effectiveActor = ServiceAuthorization.actor(
+                authorizationGuard,
+                ApplicationPermission.DATABASE_ADMIN,
+                "assign company ownership",
+                actor);
+        String cleanActor = requireBoundedText(effectiveActor, "Actor", 200);
         String cleanReason = requireBoundedText(reason, "Reason", 1000);
         try (EntityManager em = jpa.em())
         {

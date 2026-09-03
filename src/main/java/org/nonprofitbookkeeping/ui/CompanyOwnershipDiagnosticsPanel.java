@@ -34,7 +34,7 @@ public final class CompanyOwnershipDiagnosticsPanel implements AppPanel
     private final TableView<CompanyOwnershipIssueView> issues = new TableView<>();
     private final Label targetCompany = new Label("No active import company");
     private CompanyView importCompany;
-    private final TextField actor = new TextField("ui-operator");
+    private final TextField actor = new TextField(DesktopActorIdentity.current());
     private final TextArea reason = new TextArea();
     private final TextArea details = new TextArea();
     private final Button assignOwner = new Button("Assign to Import Company…");
@@ -145,6 +145,8 @@ public final class CompanyOwnershipDiagnosticsPanel implements AppPanel
         targetCompany.setId("ownershipDiagnosticsTargetCompany");
         targetCompany.setMaxWidth(Double.MAX_VALUE);
         actor.setId("ownershipDiagnosticsActor");
+        actor.setPromptText("Authenticated audit actor");
+        actor.setEditable(false);
         reason.setId("ownershipDiagnosticsReason");
         reason.setPromptText("Record why this company is receiving the imported record.");
         reason.setWrapText(true);
@@ -268,8 +270,8 @@ public final class CompanyOwnershipDiagnosticsPanel implements AppPanel
         CompanyView company = importCompany;
         if (issue == null || company == null || assignOwner.isDisabled())
         {
-            status.setText("Select an assignable diagnostic and enter an actor and audit note. "
-                    + "The active import company must satisfy any related-company constraint.");
+            status.setText("Select an assignable diagnostic and enter an audit note. "
+                    + "An authenticated ADMIN session and a compatible active import company are required.");
             return;
         }
 

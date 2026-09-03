@@ -35,7 +35,7 @@ SCLX factual period-close and audit-history extensions are different: their acto
 
 Existing JavaFX actor controls for protected P20-S3 workflows may continue to display actor identity for operator clarity, but they are read-only and initialized from `DesktopActorIdentity.current()`. Literal protected-operation actors such as `ui` and `ui-operator` are removed from those routes.
 
-`CompanyOwnershipDiagnosticsPanel` is deliberately excluded from this tranche because company-ownership repair is classified as `DATABASE_ADMIN`, whose service authorization is the next separate P20-S3 tranche. Its legacy actor input must be converted when that database-administration boundary becomes guarded; it is not evidence of an alternate actor authority for an already-guarded mutation. Legacy `AccountingPeriodService` likewise has no production route and is not promoted back to canonical period-close authority.
+Company-ownership diagnostic repair is classified as `DATABASE_ADMIN` and is governed by the separate database-administration authorization tranche. Once that boundary is guarded, its actor presentation is read-only and successful repair audit history derives the actor from the authenticated ADMIN session rather than caller text. Legacy `AccountingPeriodService` likewise has no production route and is not promoted back to canonical period-close authority.
 
 ## Security and atomicity
 

@@ -2,6 +2,7 @@ package org.nonprofitbookkeeping.ui;
 
 import javafx.stage.Window;
 import org.nonprofitbookkeeping.persistence.DatabaseTransferService;
+import org.nonprofitbookkeeping.service.DatabaseAdministrationService;
 
 import java.nio.file.Path;
 import java.util.Objects;
@@ -58,8 +59,10 @@ public final class WorkspaceServicesFactory
         DatabaseTransferService databaseTransferService = new DatabaseTransferService(
                 databaseSessionController::activeDatabasePath,
                 databaseSwitcher);
+        DatabaseAdministrationService databaseAdministrationService =
+                UiServiceRegistry.databaseAdministration(databaseTransferService);
         DatabaseTransferActions databaseTransferActions = new DatabaseTransferCoordinator(
-                databaseTransferService,
+                databaseAdministrationService,
                 databaseSessionController::activeDatabasePath,
                 ownerWindow,
                 afterSuccessfulDatabaseSwitch);

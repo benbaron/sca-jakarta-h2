@@ -121,6 +121,8 @@ Source-compatible unguarded constructors remain available for tests and document
 
 Database switching prepares a new `ServiceBundle` around the target `Jpa` before activation. Activating the prepared bundle swaps the entire service/guard authority, and the existing database-session controller clears the authenticated session on a database change. A guard therefore cannot retain the old database's `Jpa` or a cached permission snapshot. Company switching continues to use `AuthenticationService.rebind(...)`; because the guard calls the shared session supplier on each decision, the newly rebound company/roles take effect immediately.
 
+Post-login whole-database transfer uses `DatabaseAdministrationService` as a service-layer authorization facade over the existing persistence `DatabaseTransferService`. Because transfer actions survive database switches, the facade resolves the current `UiServiceRegistry` bundle guard on every operation rather than retaining the guard from workspace construction. `CompanyOwnershipService.assignOwner(...)` and production `SampleCompanyService.createOrRefresh()` likewise enforce `DATABASE_ADMIN`; their read/query or compatibility seams remain unchanged.
+
 ## Company and role switching
 
 Changing company preserves the authenticated `AppUser` and uses the P20-S2 `AuthenticationService.rebind(...)` path to recompute effective roles. Authorization decisions must consume the current session each time rather than cache permissions independently. Therefore the same user may have write authority in one company and VIEWER-only authority in another, and the change takes effect immediately after the session rebind.
@@ -132,6 +134,7 @@ The authenticated `AppUser.username` is the authoritative actor for protected wr
 Existing command DTO/method actor strings remain only as source-compatible inputs for unguarded tests and explicitly caller-owned seams. A guarded production service overrides those values with `AuthorizationGuard.requireActor(...)`; JavaFX actor fields for protected operations display the authenticated username and are non-editable.
 
 Literal actors such as `"ui"`, `"ui-operator"`, or workstation usernames are not alternate authority for protected writes. `DesktopActorIdentity` prefers the authenticated session and its workstation fallback is compatibility/pre-login display only. Imported historical SCLX actor facts remain source history and are not rewritten as current-operation identity. Governing detail: `doc/P20-S3-authenticated-audit-actor.md`.
+Company Ownership Diagnostics follows the same rule once its `DATABASE_ADMIN` mutation is guarded: the repair audit actor is the authenticated ADMIN username and the displayed actor field is read-only.
 
 ## UI command behavior
 

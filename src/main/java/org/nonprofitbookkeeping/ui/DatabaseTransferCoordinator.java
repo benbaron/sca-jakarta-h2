@@ -13,6 +13,7 @@ import javafx.scene.control.ButtonType;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import org.nonprofitbookkeeping.persistence.DatabaseTransferService;
+import org.nonprofitbookkeeping.service.DatabaseAdministrationService;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -31,7 +32,7 @@ final class DatabaseTransferCoordinator implements DatabaseTransferActions
 {
     private static final DateTimeFormatter BACKUP_TIMESTAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
 
-    private final DatabaseTransferService transferService;
+    private final DatabaseAdministrationService transferService;
     private final Supplier<Path> activeDatabasePath;
     private final Supplier<Window> ownerWindow;
     private final Runnable afterSuccessfulSwitch;
@@ -47,7 +48,7 @@ final class DatabaseTransferCoordinator implements DatabaseTransferActions
             new ReadOnlyObjectWrapper<>();
 
     DatabaseTransferCoordinator(
-            DatabaseTransferService transferService,
+            DatabaseAdministrationService transferService,
             Supplier<Path> activeDatabasePath,
             Supplier<Window> ownerWindow,
             Runnable afterSuccessfulSwitch)
@@ -61,7 +62,7 @@ final class DatabaseTransferCoordinator implements DatabaseTransferActions
     }
 
     DatabaseTransferCoordinator(
-            DatabaseTransferService transferService,
+            DatabaseAdministrationService transferService,
             Supplier<Path> activeDatabasePath,
             Supplier<Window> ownerWindow,
             Runnable afterSuccessfulSwitch,

@@ -99,8 +99,8 @@ preview as a blocking `SCLX_COMPANY_OWNERSHIP_UNRESOLVED` message before commit 
 message identifies the entity type and stable record ID and directs the operator to **Administration ->
 Company Ownership Diagnostics**. That Administration surface shows a human-readable record description
 and any company ownership found through related records, then permits only an explicit owner assignment
-for a direct ownerless record: the operator selects a compatible active company, supplies an actor and evidence/reason,
-and confirms one row. The service locks the diagnostic and record, rejects stale or already-owned rows,
+for a direct ownerless record: an authenticated ADMIN selects a compatible active company, supplies evidence/reason,
+and confirms one row. The authoritative audit actor is the authenticated username rather than editable caller text. The service locks the diagnostic and record, rejects stale or already-owned rows,
 sets the owner and resolves the diagnostic in one transaction, and writes a factual
 `COMPANY_OWNERSHIP_ASSIGNED` audit event. Close-range events additionally require the selected owner to
 match the already-owned parent range. Any failure rolls the entire repair back.
