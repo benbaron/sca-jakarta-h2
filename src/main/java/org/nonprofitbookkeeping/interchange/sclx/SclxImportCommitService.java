@@ -40,6 +40,8 @@ import org.nonprofitbookkeeping.model.TxnSupplementalLine;
 import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
 import org.nonprofitbookkeeping.service.AuditHistoryService;
+import org.nonprofitbookkeeping.service.ApplicationPermission;
+import org.nonprofitbookkeeping.service.AuthorizationGuard;
 import org.nonprofitbookkeeping.service.BankAccountImportCommand;
 import org.nonprofitbookkeeping.service.BankClearedStateService;
 import org.nonprofitbookkeeping.service.BankCommand;
@@ -123,10 +125,19 @@ public final class SclxImportCommitService
     private final TransactionEntryService transactionEntryService;
     private final TransactionCorrectionService transactionCorrectionService;
     private final IntConsumer afterBusinessWrite;
+    private final AuthorizationGuard authorizationGuard;
 
     public SclxImportCommitService(Jpa jpa, Supplier<String> companyCodeSupplier)
     {
-        this(jpa, companyCodeSupplier, ignored -> { });
+        this(jpa, companyCodeSupplier, null, ignored -> { });
+    }
+
+    public SclxImportCommitService(
+            Jpa jpa,
+            Supplier<String> companyCodeSupplier,
+            AuthorizationGuard authorizationGuard)
+    {
+        this(jpa, companyCodeSupplier, authorizationGuard, ignored -> { });
     }
 
     SclxImportCommitService(
@@ -134,9 +145,19 @@ public final class SclxImportCommitService
             Supplier<String> companyCodeSupplier,
             IntConsumer afterBusinessWrite)
     {
+        this(jpa, companyCodeSupplier, null, afterBusinessWrite);
+    }
+
+    SclxImportCommitService(
+            Jpa jpa,
+            Supplier<String> companyCodeSupplier,
+            AuthorizationGuard authorizationGuard,
+            IntConsumer afterBusinessWrite)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
         this.afterBusinessWrite = Objects.requireNonNull(afterBusinessWrite, "afterBusinessWrite");
+        this.authorizationGuard = authorizationGuard;
         this.previewService = new SclxImportPreviewService(jpa, companyCodeSupplier);
         this.parser = new SclxDocumentParser();
         this.ownership = new CompanyOwnershipService(jpa);
@@ -184,6 +205,7 @@ public final class SclxImportCommitService
             boolean approvedMappings,
             boolean approvedExistingCompanyImport)
     {
+        requireBookkeepingWrite();
         Objects.requireNonNull(source, "source");
         Objects.requireNonNull(approvedPreview, "approvedPreview");
         List<SclxImportMappingSelection> approvedSelections = approvedPreview.mappings().stream()
@@ -401,6 +423,17 @@ public final class SclxImportCommitService
                         messages,
                         counts);
             }
+        }
+    }
+
+    private void requireBookkeepingWrite()
+    {
+        if (authorizationGuard != null)
+        {
+            authorizationGuard.require(
+                    ApplicationPermission.BOOKKEEPING_WRITE,
+                    companyCodeSupplier.get(),
+                    "commit SCLX import");
         }
     }
 
