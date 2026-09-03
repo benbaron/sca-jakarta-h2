@@ -149,7 +149,7 @@ public class ImportPreviewPanel implements AppPanel
 	private final TableView<
 		org.nonprofitbookkeeping.interchange.bank.BankCsvParser.OriginalRow> bankCsvOriginalRows =
 			new TableView<>();
-	private final TextField sclxActor = new TextField("ui-operator");
+	private final TextField sclxActor = new TextField(DesktopActorIdentity.current());
 	private CoaCsvImportService.CoaCsvBatchPreview lastCoaPreview;
 	private Path lastSclxSource;
 	private SclxImportPreview lastSclxPreview;
@@ -310,7 +310,8 @@ public class ImportPreviewPanel implements AppPanel
 		confirmExistingCompanyImport.selectedProperty().addListener(
 			(observable, oldValue, newValue) -> updateSclxCommitAvailability());
 		sclxActor.setId("sclxImportActor");
-		sclxActor.setPromptText("Audit actor");
+		sclxActor.setPromptText("Authenticated audit actor");
+		sclxActor.setEditable(false);
 		sclxActor.textProperty().addListener(
 			(observable, oldValue, newValue) -> updateSclxCommitAvailability());
 		sclxActor.textProperty().addListener(
@@ -348,7 +349,7 @@ public class ImportPreviewPanel implements AppPanel
 				previewBank, previewNormalizedBankCsv),
 			new HBox(8, new Label("Mapped CSV profile"), bankCsvProfile,
 				saveBankCsvProfile, previewBankCsv),
-			new HBox(8, new Label("Import actor"), sclxActor,
+			new HBox(8, new Label("Authenticated actor"), sclxActor,
 				applySclxMappings, confirmExistingCompanyImport,
 				confirmSclxMappings, commitSclx,
 				confirmBankIdentity, commitBankReview),

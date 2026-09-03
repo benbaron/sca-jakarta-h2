@@ -494,7 +494,8 @@ public class BankTransactionsPanel implements AppPanel
                 () -> {
                     ReviewedStatementAcceptanceService acceptanceService = this.acceptanceService.get();
                     return acceptanceService.accept(
-                            preview, draft.command(), draft.probableDuplicateConfirmed(), "ui");
+                            preview, draft.command(), draft.probableDuplicateConfirmed(),
+                            DesktopActorIdentity.current());
                 },
                 result -> {
                     reload();

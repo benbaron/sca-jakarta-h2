@@ -177,11 +177,12 @@ public class PeriodCloseRangeService
     {
         String requestedCompany = companyCode == null
                 ? "" : companyCode.trim().toUpperCase(Locale.ROOT);
-        ServiceAuthorization.require(
+        String cleanActor = requireText(ServiceAuthorization.actor(
                 authorizationGuard,
                 ApplicationPermission.BOOKKEEPING_WRITE,
                 requestedCompany,
-                "close accounting period");
+                "close accounting period",
+                actor), "actor");
         String company = normalizeCompanyCode(companyCode);
         LocalDate start = requireDate(startDate, "startDate");
         LocalDate end = requireDate(endDate, "endDate");
@@ -191,7 +192,6 @@ public class PeriodCloseRangeService
         }
 
         String kind = normalizeKind(rangeKind);
-        String cleanActor = requireText(actor, "actor");
         String cleanReason = blankToNull(reason);
         UUID id = UUID.randomUUID();
         UUID eventId = UUID.randomUUID();
@@ -267,12 +267,12 @@ public class PeriodCloseRangeService
             boolean requireReason)
     {
         UUID id = Objects.requireNonNull(rangeId, "rangeId");
-        ServiceAuthorization.require(
+        String cleanActor = requireText(ServiceAuthorization.actor(
                 authorizationGuard,
                 ApplicationPermission.BOOKKEEPING_WRITE,
                 companyCodeForRange(id),
-                "reopen accounting period");
-        String cleanActor = requireText(actor, "actor");
+                "reopen accounting period",
+                actor), "actor");
         ClosedPeriodPolicy effectivePolicy = Objects.requireNonNull(policy, "policy");
         String cleanReason = blankToNull(reason);
 

@@ -90,12 +90,13 @@ public class TransactionEntryService
 
     public TransactionView enter(TransactionCommand command)
     {
-        ServiceAuthorization.require(
+        String auditActor = ServiceAuthorization.actor(
                 authorizationGuard,
                 ApplicationPermission.BOOKKEEPING_WRITE,
                 companyCodeSupplier.get(),
-                "enter journal transaction");
-        return saveNew(command, null);
+                "enter journal transaction",
+                "system");
+        return saveNew(command, null, auditActor);
     }
 
     /**
@@ -167,11 +168,12 @@ public class TransactionEntryService
 
     public TransactionView update(long transactionId, TransactionCommand command)
     {
-        ServiceAuthorization.require(
+        String auditActor = ServiceAuthorization.actor(
                 authorizationGuard,
                 ApplicationPermission.BOOKKEEPING_WRITE,
                 companyCodeSupplier.get(),
-                "update journal transaction");
+                "update journal transaction",
+                "system");
         validateCommand(command);
         try (EntityManager em = jpa.em())
         {
@@ -205,7 +207,7 @@ public class TransactionEntryService
                 persistLines(em, company, txn, command.lines());
                 persistSupplementalLines(em, txn, command.supplementalLines());
                 txn.touchUpdatedAt();
-                em.persist(audit(company, "system", "TRANSACTION_UPDATED", txn, before, snapshot(txn), null));
+                em.persist(audit(company, auditActor, "TRANSACTION_UPDATED", txn, before, snapshot(txn), null));
                 em.getTransaction().commit();
                 return load(transactionId);
             }
@@ -276,7 +278,7 @@ public class TransactionEntryService
         return new AccountingJournalProjection(view.id(), view.date(), view.payeeName(), view.memo(), lines);
     }
 
-    private TransactionView saveNew(TransactionCommand command, Txn replacementFor)
+    private TransactionView saveNew(TransactionCommand command, Txn replacementFor, String auditActor)
     {
         validateCommand(command);
         try (EntityManager em = jpa.em())
@@ -297,7 +299,7 @@ public class TransactionEntryService
                 em.persist(txn);
                 persistLines(em, company, txn, command.lines());
                 persistSupplementalLines(em, txn, command.supplementalLines());
-                em.persist(audit(company, "system", "TRANSACTION_ENTERED", txn, null, snapshot(txn), null));
+                em.persist(audit(company, auditActor, "TRANSACTION_ENTERED", txn, null, snapshot(txn), null));
                 em.getTransaction().commit();
                 return load(txn.getId());
             }

@@ -50,6 +50,7 @@ final class FixedAssetLifecycleDialog
                 .filter(a -> a.getAccountType() == AccountType.EXPENSE)
                 .toList());
         TextField actor = new TextField(DesktopActorIdentity.current());
+        actor.setEditable(false);
         TextArea notes = new TextArea();
         notes.setPrefRowCount(3);
 
@@ -123,6 +124,7 @@ final class FixedAssetLifecycleDialog
         DatePicker date = new DatePicker(LocalDate.now());
         TextField reason = new TextField();
         TextField actor = new TextField(DesktopActorIdentity.current());
+        actor.setEditable(false);
         GridPane grid = new GridPane();
         grid.setHgap(8);
         grid.setVgap(6);

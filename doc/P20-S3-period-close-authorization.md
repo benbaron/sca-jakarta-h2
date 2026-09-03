@@ -17,11 +17,11 @@ Read-only range/history queries and `requireOpen(...)` remain outside the bookke
 
 `importForInterchange(...)` remains a caller-owned transaction seam. It requires an already-active JPA transaction and restores already-authoritative factual period-close history without replaying interactive Close/Reopen policy. It is not independently guarded here. P20-S3 must authorize the outer SCLX/import commit boundary before this helper is reached.
 
-## Compatibility and deferred work
+## Compatibility and production composition
 
-The existing one-argument constructor remains source-compatible for tests and already-governed internal seams. A guarded constructor accepts the current `AuthorizationGuard`; production `UiServiceRegistry`/session injection remains a later P20-S3 tranche.
+The existing one-argument constructor remains source-compatible for tests and already-governed internal seams. Production `UiServiceRegistry` now constructs the service with the current-bundle `AuthorizationGuard`.
 
-This tranche deliberately does not convert the existing close/reopen actor input to authenticated identity. P20-S3 authenticated audit-actor conversion remains a separate cross-cutting task so runtime authorization and audit provenance are not conflated.
+Guarded interactive close/reopen operations override caller actor text with the current authenticated username for range actor columns, factual close/reopen events, and company-owned `AuditEvent` facts. `importForInterchange(...)` deliberately preserves source historical actors. Governing detail: `doc/P20-S3-authenticated-audit-actor.md`.
 
 Legacy `PeriodCloseService`/`PeriodCloseRunRepository` artifacts remain compatibility/history support and are not promoted back to canonical close-state authority. There are no schema or migration changes.
 

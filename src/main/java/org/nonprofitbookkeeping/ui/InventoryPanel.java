@@ -72,8 +72,8 @@ public class InventoryPanel implements AppPanel
     private final DatePicker movementDate = new DatePicker(LocalDate.now());
     private final TextField movementNotes = new TextField();
     private final ComboBox<Account> movementOffsetAccount = new ComboBox<>();
-    private final TextField movementActor = new TextField("ui");
-    private final TextField lifecycleActor = new TextField("ui");
+    private final TextField movementActor = new TextField(DesktopActorIdentity.current());
+    private final TextField lifecycleActor = new TextField(DesktopActorIdentity.current());
     private final TextField lifecycleReason = new TextField();
     private final Button deactivateItem = new Button("Deactivate Item");
     private final Button reactivateItem = new Button("Reactivate Item");
@@ -90,6 +90,8 @@ public class InventoryPanel implements AppPanel
     public InventoryPanel()
     {
         root.setPadding(new Insets(8));
+        movementActor.setEditable(false);
+        lifecycleActor.setEditable(false);
         Label title = new Label("Inventory");
         title.getStyleClass().add("panel-title");
         root.setTop(new VBox(6, title, status, new Separator()));

@@ -50,12 +50,12 @@ public class TransactionCorrectionService
 
     public Txn directEdit(long transactionId, LocalDate transactionDate, String memo, String correctionNote, String actor)
     {
-        ServiceAuthorization.require(
+        String auditActor = requireText(ServiceAuthorization.actor(
                 authorizationGuard,
                 ApplicationPermission.BOOKKEEPING_WRITE,
                 companyCodeSupplier.get(),
-                "edit journal transaction");
-        requireText(actor, "actor");
+                "edit journal transaction",
+                actor), "actor");
         if (transactionDate == null)
         {
             throw new IllegalArgumentException("transactionDate is required");
@@ -80,7 +80,7 @@ public class TransactionCorrectionService
                 txn.setMemo(blankToNull(memo));
                 txn.setCorrectionNote(blankToNull(correctionNote));
                 txn.touchUpdatedAt();
-                em.persist(audit(company, actor, "TRANSACTION_EDITED", txn, before, snapshot(txn), correctionNote));
+                em.persist(audit(company, auditActor, "TRANSACTION_EDITED", txn, before, snapshot(txn), correctionNote));
                 em.getTransaction().commit();
                 return txn;
             }
@@ -94,12 +94,12 @@ public class TransactionCorrectionService
 
     public void delete(long transactionId, String actor, String reason)
     {
-        ServiceAuthorization.require(
+        String auditActor = requireText(ServiceAuthorization.actor(
                 authorizationGuard,
                 ApplicationPermission.BOOKKEEPING_WRITE,
                 companyCodeSupplier.get(),
-                "delete journal transaction");
-        requireText(actor, "actor");
+                "delete journal transaction",
+                actor), "actor");
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
@@ -113,7 +113,7 @@ public class TransactionCorrectionService
                 requireNotReconciled(em, transactionId, "delete transaction");
                 requireOpenRange(em, txn.getTxnDate(), "delete transaction");
 
-                AuditEvent event = audit(company, actor, "TRANSACTION_DELETED", txn, snapshot(txn), null, reason);
+                AuditEvent event = audit(company, auditActor, "TRANSACTION_DELETED", txn, snapshot(txn), null, reason);
                 event.setEntityId(Long.toString(transactionId));
                 em.persist(event);
                 em.flush();
@@ -130,12 +130,12 @@ public class TransactionCorrectionService
 
     public CorrectionResult reverse(long transactionId, LocalDate reversalDate, String actor, String reason, boolean createReplacement)
     {
-        ServiceAuthorization.require(
+        String auditActor = requireText(ServiceAuthorization.actor(
                 authorizationGuard,
                 ApplicationPermission.BOOKKEEPING_WRITE,
                 companyCodeSupplier.get(),
-                "reverse journal transaction");
-        requireText(actor, "actor");
+                "reverse journal transaction",
+                actor), "actor");
         if (reversalDate == null)
         {
             throw new IllegalArgumentException("reversalDate is required");
@@ -189,7 +189,7 @@ public class TransactionCorrectionService
                     }
                 }
 
-                em.persist(audit(company, actor, "TRANSACTION_REVERSED", original, before, snapshot(reversal), reason));
+                em.persist(audit(company, auditActor, "TRANSACTION_REVERSED", original, before, snapshot(reversal), reason));
                 em.getTransaction().commit();
                 return new CorrectionResult(reversal.getId(), replacement == null ? null : replacement.getId());
             }

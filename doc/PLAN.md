@@ -1,12 +1,12 @@
 ---
-plan_version: 277
+plan_version: 278
 active_phase: P20
 active_slice: P20-S3
 active_status: IN_PROGRESS
-active_branch: codex/P20-S3-production-authorization-wiring
+active_branch: codex/P20-S3-authenticated-audit-actor
 active_pull_request: null
-active_head: 034b9cb6dad340b3a3a9630416c8d1e9a4c35f72
-next_action: "Complete the focused production current-session authorization wiring tranche, reconcile its governing documentation and source-route tests, publish a draft PR to main, validate Maven PR Tests on the exact PR head, and stop before merge for owner acceptance."
+active_head: 7f190a68fe37284440225d6b90edfb2afde669c3
+next_action: "Complete the focused authenticated-audit-actor tranche, reconcile production UI/source guardrails and governing documentation, publish a draft PR to main, validate Maven PR Tests on the exact final behavior/documentation head, and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -244,20 +244,31 @@ Completed bank CSV authorization tranche:
 
 Governing bank-CSV authorization design: `doc/P20-S3-bank-csv-authorization.md`, `doc/banking/import-and-reconciliation.md`, and `doc/interface-operation-matrix.md`.
 
-Current production current-session authorization wiring tranche:
+Completed production current-session authorization wiring tranche:
 
-- branch `codex/P20-S3-production-authorization-wiring` starts from exact merged `main` `d91262dbe22983a017e567aba6f7de5e723ecdb3`;
-- current inspection found that `UiServiceRegistry` still selected source-compatible unguarded constructors for the already-guarded P20-S3 service boundaries, so production JavaFX could bypass the service guards even though direct guarded integration tests passed;
-- the selected architecture creates one `AuthorizationGuard` per production `ServiceBundle`, bound to that bundle's `Jpa` and `ApplicationSessionContext.sharedSessionState()::authenticatedUser`, so authorization consumes the current session on every decision without a second cache or session authority;
-- bundle-owned Account, Fund, Budget Category, Budget Plan, Bank Configuration, Fixed Asset, Inventory, Company Admin, User Admin, Journal entry/correction, Reconciliation, and Period Close services use their guarded constructors;
-- on-demand CoA/SCLX commit, strict bank review, mapped CSV, mapping-profile, normalized CSV, reviewed-statement acceptance, Security Admin, and Company UI preference services reuse the current bundle guard;
-- mapped CSV preserves one authorization owner by constructing its delegated `BankStatementReviewService` with the guard rather than adding a second independent check;
-- database preparation builds a new guarded bundle around the target `Jpa`; activation swaps that bundle and database-change logout clears the authenticated session, so no guard retains the obsolete H2 authority;
+- PR #329 final head `b7748eb32a86bac302e0a1130da4549f64732339` passed Maven PR Tests run `33787354446`, job `100755384759`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded;
+- the owner accepted and merged PR #329 to `main` at `7f190a68fe37284440225d6b90edfb2afde669c3`;
+- `UiServiceRegistry` now creates one `AuthorizationGuard` per production `ServiceBundle`, bound to that bundle's `Jpa` and `ApplicationSessionContext.sharedSessionState()::authenticatedUser`, so authorization consumes the live current session without another cache or session authority;
+- bundle-owned and on-demand protected services select guarded constructors, including Account, Fund, Budget, Bank Configuration, Fixed Asset, Inventory, Company/User/Security Administration, Journal, Reconciliation, Period Close, CoA/SCLX commit, bank review/CSV/profile/normalized review, reviewed-statement acceptance, and company preference/state writes;
+- mapped CSV preserves one authorization owner through its guarded `BankStatementReviewService` delegate; database preparation creates a fresh target-`Jpa` guard and database-switch activation clears the old authenticated session;
 - source-compatible unguarded constructors and documented caller-owned transaction/import seams remain intact.
+
+Current authenticated audit actor tranche:
+
+- branch `codex/P20-S3-authenticated-audit-actor` starts from exact merged `main` `7f190a68fe37284440225d6b90edfb2afde669c3`;
+- guarded production audit-producing mutations derive `AuthenticatedUserSession.username` from the same current-session `AuthorizationGuard` that authorizes the write, rather than trusting caller actor text;
+- `ServiceAuthorization.actor(...)` is the shared compatibility adapter inside the service package, while interchange services use public `AuthorizationGuard.requireActor(...)`; unguarded tests and explicitly caller-owned seams retain their established fallback actor behavior;
+- Journal, fixed asset/depreciation/lifecycle, inventory, period close/reopen, reconciliation successor, reviewed-statement acceptance, CoA CSV, SCLX, strict/normalized bank review, and User Admin current-operation audit writes are covered;
+- SCLX source period-close and audit-history actor values remain historical source facts and are not rewritten; only new local import/canonical-transaction audit facts use the authenticated current actor;
+- `DesktopActorIdentity` resolves authenticated session identity first, protected JavaFX actor displays are read-only, and literal/workstation actors no longer act as authority on already-guarded production routes;
+- Company Ownership Diagnostics remains outside this tranche because its mutations are classified `DATABASE_ADMIN` and are deliberately deferred to the next authorization tranche; legacy `AccountingPeriodService` has no production route and remains non-authoritative;
+- direct H2 regression coverage proves spoofed Journal/User Admin actor inputs are replaced by authenticated username, while source-route coverage requires authenticated actor derivation across all current guarded audit-producing production boundaries and read-only actor displays;
+- there is no schema or migration change.
+
+Governing actor design: `doc/P20-S3-authenticated-audit-actor.md`.
 
 Still required before P20-S3 completion after this tranche:
 
-- authenticated identity as the authoritative actor for protected audit writes;
 - database administration authorization;
 - JavaFX global and panel-local mutation gating using the same fixed policy;
 - final governing interface/user-role documentation reconciliation;
@@ -267,6 +278,7 @@ Required reading:
 
 - `doc/P20-S1-authentication-authorization-boundary.md`;
 - `doc/P20-S3-runtime-authorization.md`;
+- `doc/P20-S3-authenticated-audit-actor.md`;
 - `doc/P20-S3-fixed-asset-authorization.md`;
 - `doc/P20-S3-inventory-authorization.md`;
 - `doc/P20-S3-period-close-authorization.md`;

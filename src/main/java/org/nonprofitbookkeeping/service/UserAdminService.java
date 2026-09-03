@@ -120,12 +120,14 @@ public class UserAdminService
     /** Creates or updates one user by stable database ID. */
     public AppUser saveUser(AppUserCommand command)
     {
-        ServiceAuthorization.require(
+        String authorizedActor = ServiceAuthorization.actor(
                 authorizationGuard,
                 ApplicationPermission.SECURITY_ADMIN,
                 companyCodeSupplier.get(),
-                "maintain application user");
+                "maintain application user",
+                null);
         Objects.requireNonNull(command, "User details are required.");
+        String auditActor = authorizedActor == null ? command.actor() : authorizedActor;
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
@@ -175,7 +177,7 @@ public class UserAdminService
                 em.flush();
                 String action = before == null ? "APP_USER_CREATED"
                         : command.active() ? "APP_USER_UPDATED" : "APP_USER_DEACTIVATED";
-                em.persist(audit(auditCompany, command.actor(), action, "AppUser", user.getId(),
+                em.persist(audit(auditCompany, auditActor, action, "AppUser", user.getId(),
                         actionSummary(action, user.getUsername()), before, userSnapshot(user), null));
                 em.flush();
                 commitHook.afterDomainWrite();
@@ -193,12 +195,14 @@ public class UserAdminService
     /** Creates or updates one global role by stable database ID. */
     public AppRole saveRole(AppRoleCommand command)
     {
-        ServiceAuthorization.require(
+        String authorizedActor = ServiceAuthorization.actor(
                 authorizationGuard,
                 ApplicationPermission.SECURITY_ADMIN,
                 companyCodeSupplier.get(),
-                "maintain application role");
+                "maintain application role",
+                null);
         Objects.requireNonNull(command, "Role details are required.");
+        String auditActor = authorizedActor == null ? command.actor() : authorizedActor;
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
@@ -248,7 +252,7 @@ public class UserAdminService
                 em.flush();
                 String action = before == null ? "APP_ROLE_CREATED"
                         : command.active() ? "APP_ROLE_UPDATED" : "APP_ROLE_DEACTIVATED";
-                em.persist(audit(auditCompany, command.actor(), action, "AppRole", role.getId(),
+                em.persist(audit(auditCompany, auditActor, action, "AppRole", role.getId(),
                         actionSummary(action, role.getCode()), before, roleSnapshot(role), null));
                 em.flush();
                 commitHook.afterDomainWrite();
@@ -275,12 +279,14 @@ public class UserAdminService
     /** Creates a new history row; a previously ended row is never reactivated. */
     public UserCompanyRole assignRole(UserRoleAssignmentCommand command)
     {
-        ServiceAuthorization.require(
+        String authorizedActor = ServiceAuthorization.actor(
                 authorizationGuard,
                 ApplicationPermission.SECURITY_ADMIN,
                 companyCodeSupplier.get(),
-                "assign application role");
+                "assign application role",
+                null);
         Objects.requireNonNull(command, "Assignment details are required.");
+        String auditActor = authorizedActor == null ? command.actor() : authorizedActor;
         if (command.userId() == null || command.roleId() == null)
         {
             throw new IllegalArgumentException("User and role are required.");
@@ -326,7 +332,7 @@ public class UserAdminService
                 assignment.touchUpdatedAt();
                 em.persist(assignment);
                 em.flush();
-                em.persist(audit(company, command.actor(), "USER_ROLE_ASSIGNED", "UserCompanyRole",
+                em.persist(audit(company, auditActor, "USER_ROLE_ASSIGNED", "UserCompanyRole",
                         assignment.getId(), "assigned " + role.getCode() + " to " + user.getUsername()
                                 + " for " + company.getCode(), null, assignmentSnapshot(assignment), null));
                 em.flush();
@@ -345,12 +351,14 @@ public class UserAdminService
     /** Ends or revokes an assignment while retaining its stable history row. */
     public UserCompanyRole endAssignment(UserRoleAssignmentEndCommand command)
     {
-        ServiceAuthorization.require(
+        String authorizedActor = ServiceAuthorization.actor(
                 authorizationGuard,
                 ApplicationPermission.SECURITY_ADMIN,
                 companyCodeSupplier.get(),
-                "end or revoke application role assignment");
+                "end or revoke application role assignment",
+                null);
         Objects.requireNonNull(command, "Assignment end details are required.");
+        String auditActor = authorizedActor == null ? command.actor() : authorizedActor;
         if (command.assignmentId() == null)
         {
             throw new IllegalArgumentException("Select an assignment to end or revoke.");
@@ -395,7 +403,7 @@ public class UserAdminService
                 assignment.setEndReason(reason);
                 assignment.touchUpdatedAt();
                 String action = command.revoked() ? "USER_ROLE_REVOKED" : "USER_ROLE_ENDED";
-                em.persist(audit(company, command.actor(), action, "UserCompanyRole", assignment.getId(),
+                em.persist(audit(company, auditActor, action, "UserCompanyRole", assignment.getId(),
                         (command.revoked() ? "revoked " : "ended ") + assignment.getRole().getCode()
                                 + " for " + assignment.getUser().getUsername() + " in " + company.getCode(),
                         before, assignmentSnapshot(assignment), reason));

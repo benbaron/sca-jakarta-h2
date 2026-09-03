@@ -17,7 +17,7 @@ There is no schema, migration, JavaFX layout, or new persistence authority in th
 
 `commit(...)` checks `BOOKKEEPING_WRITE` before ordinary preview or actor validation. When a preview is present, the authorization decision is bound to the preview company code. A null preview still reaches the authorization boundary first so a lower-privilege direct caller cannot probe protected commit validation. After authorization succeeds, all existing source-hash, configured-account identity, portable/external identity, matched-transaction, idempotency, rollback, and audit behavior remains unchanged.
 
-The existing free-form actor parameter remains a compatibility input in this focused tranche. The P20-S3 authenticated-audit-actor conversion remains a separate cross-cutting task.
+The existing free-form actor parameter remains a source-compatible input. In guarded production composition, normalized CSV commit derives the authoritative audit actor from the current authenticated session rather than trusting that input. Governing detail: `doc/P20-S3-authenticated-audit-actor.md`.
 
 ## Mapping-profile authority
 
@@ -29,7 +29,7 @@ Mapped statement review continues to delegate durable review commit through `Ban
 
 ## Production wiring boundary
 
-This tranche establishes service enforcement but does not perform the consolidated `UiServiceRegistry`/JavaFX current-session wiring. The later P20-S3 wiring tranche must construct:
+This tranche establishes service enforcement but does not perform the consolidated `UiServiceRegistry`/JavaFX current-session wiring. Production `UiServiceRegistry` now constructs:
 
 - `BankCsvMappingProfileService` with the current-session `AuthorizationGuard`;
 - `NormalizedBankCsvReviewService` with the same guard; and

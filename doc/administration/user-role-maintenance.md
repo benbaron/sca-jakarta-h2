@@ -10,7 +10,7 @@ P20-S1 defines the approved authentication/authorization contract in `doc/P20-S1
 
 Roles never own passwords. Credentials belong only to `AppUser` accounts. The reserved ADMIN, MANAGER, ACCOUNTANT, and VIEWER accounts begin passwordless unless an ADMIN has deliberately configured a credential. Password set/replace/clear and inactivity-timeout changes remain owned by `SecurityAdminService`, not `UserAdminService`. Those `SecurityAdminService` mutation entry points now require `SECURITY_ADMIN` in the requested company context before password validation or service-owned transaction work begins. The existing persistence-backed singleton-ADMIN/effective-ADMIN check remains in force after authorization succeeds, so injecting or fabricating a nominal ADMIN permission cannot replace the reserved ADMIN identity invariant. `passwordConfigured(...)` and `settings()` remain non-mutating reads.
 
-Authenticated session identity is now available, but the existing User Admin command DTO actor strings remain a temporary compatibility input until the P20-S3 authenticated-audit-actor tranche replaces them as authoritative audit identity. They must not survive as a parallel actor authority when P20-S3 is complete.
+Authenticated session identity is authoritative for guarded User Admin audit writes. Existing command DTO actor strings remain only as source-compatible inputs for unguarded/test composition; a guarded `UserAdminService` derives the audit actor from the current authenticated `AppUser.username` and ignores submitted actor text.
 
 ## Users and roles
 
@@ -53,7 +53,7 @@ Audit action types include:
 - `APP_ROLE_CREATED`, `APP_ROLE_UPDATED`, `APP_ROLE_DEACTIVATED`;
 - `USER_ROLE_ASSIGNED`, `USER_ROLE_ENDED`, `USER_ROLE_REVOKED`.
 
-Runtime authorization denial is recorded separately as factual H2 `AUTHORIZATION_DENIED` security history. Login/logout/credential/recovery events remain owned by the authentication/security services. The remaining P20-S3 actor-conversion work must make authenticated `AppUser.username` authoritative for protected `AuditEvent` writes without storing submitted passwords or creating a second audit identity.
+Runtime authorization denial is recorded separately as factual H2 `AUTHORIZATION_DENIED` security history. Login/logout/credential/recovery events remain owned by the authentication/security services. Protected User Admin `AuditEvent` writes use authenticated `AppUser.username`; submitted passwords are never stored in those audit facts and no second audit identity exists.
 
 ## User interface
 
@@ -61,7 +61,7 @@ The Administration destination retains one User Admin tab. Its inner Users, Role
 
 Tables remain sortable, resizable, reorderable, independently scrollable, and separated from their editors by company-owned horizontal dividers. Assignment dates use active-company display preferences and selectors retain stable entity IDs.
 
-P20-S3 service authorization is authoritative even before JavaFX command gating is wired. The later consolidated UI pass must inject the current-session guard through `UiServiceRegistry` and disable/explain User Admin and security-admin mutation commands for accounts without `SECURITY_ADMIN`; it must not create duplicate panels or a second user/role repository.
+P20-S3 service authorization is authoritative even before JavaFX command gating is wired. `UiServiceRegistry` already injects the current-session guard, and the User Admin actor display is read-only authenticated identity. The remaining consolidated UI pass must disable/explain User Admin and security-admin mutation commands for accounts without `SECURITY_ADMIN`; it must not create duplicate panels or a second user/role repository.
 
 ## Donor-reference decision
 

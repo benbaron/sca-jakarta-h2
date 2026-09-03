@@ -242,14 +242,15 @@ public class BankReconciliationWorkspaceService
      */
     public Snapshot startSuccessor(SuccessorCommand command)
     {
-        requireBookkeepingWriteForSession(
+        String authorizedActor = bookkeepingActorForSession(
                 command == null ? null : command.finalizedSessionId(),
-                "start reconciliation successor");
+                "start reconciliation successor",
+                command == null ? null : command.actor());
         if (command == null || command.finalizedSessionId() <= 0 || command.statementEndDate() == null)
         {
             throw new IllegalArgumentException("Finalized session and successor statement ending date are required.");
         }
-        String actor = requireText(command.actor(), "Successor actor");
+        String actor = requireText(authorizedActor, "Successor actor");
         String reason = requireText(command.reason(), "Successor reason");
         long successorId;
         try (EntityManager em = jpa.em())
@@ -655,6 +656,37 @@ public class BankReconciliationWorkspaceService
                 ApplicationPermission.BOOKKEEPING_WRITE,
                 companyCode,
                 operation);
+    }
+
+    private String bookkeepingActorForSession(
+            Long sessionId,
+            String operation,
+            String fallbackActor)
+    {
+        if (authorizationGuard == null)
+        {
+            return fallbackActor;
+        }
+        if (sessionId == null || sessionId <= 0)
+        {
+            return ServiceAuthorization.actor(
+                    authorizationGuard,
+                    ApplicationPermission.BOOKKEEPING_WRITE,
+                    null,
+                    operation,
+                    fallbackActor);
+        }
+        String companyCode;
+        try (EntityManager em = jpa.em())
+        {
+            companyCode = session(em, sessionId).company().getCode();
+        }
+        return ServiceAuthorization.actor(
+                authorizationGuard,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCode,
+                operation,
+                fallbackActor);
     }
 
     private Snapshot snapshot(EntityManager em, long sessionId)

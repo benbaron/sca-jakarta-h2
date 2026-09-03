@@ -21,11 +21,11 @@ Read-only loads/lists and the non-mutating lifecycle preview methods remain read
 
 The canonical transaction helpers invoked from fixed-asset depreciation/lifecycle commits likewise remain caller-owned inner transaction seams. The outer `FixedAssetService` mutation is the authorization decision for the complete atomic asset/accounting operation.
 
-## Compatibility and deferred work
+## Compatibility and production composition
 
-Existing unguarded constructors remain source-compatible for tests and already-governed internal seams. A guarded constructor accepts the current `AuthorizationGuard`; production registry/session injection remains a later P20-S3 tranche.
+Existing unguarded constructors remain source-compatible for tests and already-governed internal seams. Production `UiServiceRegistry` now constructs the service with the current-bundle `AuthorizationGuard`.
 
-This tranche deliberately does not convert caller-supplied fixed-asset audit actor strings to authenticated identity. P20-S3 authenticated audit-actor conversion remains a separate cross-cutting task so authorization enforcement and audit provenance are not conflated.
+Guarded fixed-asset status/lifecycle operations override caller actor text with the current authenticated username. Monthly depreciation likewise passes that authenticated actor into the nested canonical transaction audit; unguarded test composition retains its existing actor supplier. Caller-owned inner transaction/correction seams still accept the actor supplied by their already-governed outer operation. Governing detail: `doc/P20-S3-authenticated-audit-actor.md`.
 
 There are no schema or migration changes.
 

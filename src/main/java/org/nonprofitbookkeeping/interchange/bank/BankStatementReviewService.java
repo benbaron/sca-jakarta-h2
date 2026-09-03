@@ -141,12 +141,12 @@ public final class BankStatementReviewService
             String actor,
             Function<Path, BankStatementDocument> documentParser)
     {
-        requireBookkeepingWrite(approvedPreview);
+        String auditActor = authoritativeActor(approvedPreview, actor);
         if (approvedPreview == null)
         {
             throw new IllegalArgumentException("Approved bank-statement preview is required.");
         }
-        if (actor == null || actor.isBlank())
+        if (auditActor == null || auditActor.isBlank())
         {
             throw new IllegalArgumentException("Audit actor is required.");
         }
@@ -229,7 +229,7 @@ public final class BankStatementReviewService
 
                 AuditEvent audit = new AuditEvent();
                 audit.setCompany(company);
-                audit.setActor(actor.trim());
+                audit.setActor(auditActor.trim());
                 audit.setActionType("BANK_STATEMENT_REVIEW_IMPORTED");
                 audit.setEntityType("BANK_IMPORT_BATCH");
                 audit.setEntityId(batch.getPortableId().toString());
@@ -259,20 +259,20 @@ public final class BankStatementReviewService
         }
     }
 
-    private void requireBookkeepingWrite(BankStatementReviewPreview approvedPreview)
+    private String authoritativeActor(BankStatementReviewPreview approvedPreview, String fallbackActor)
     {
         if (authorizationGuard == null)
         {
-            return;
+            return fallbackActor;
         }
         if (approvedPreview == null)
         {
-            authorizationGuard.require(
+            return authorizationGuard.requireActor(
                     ApplicationPermission.BOOKKEEPING_WRITE,
+                    null,
                     "commit bank statement review import");
-            return;
         }
-        authorizationGuard.require(
+        return authorizationGuard.requireActor(
                 ApplicationPermission.BOOKKEEPING_WRITE,
                 approvedPreview.companyCode(),
                 "commit bank statement review import");

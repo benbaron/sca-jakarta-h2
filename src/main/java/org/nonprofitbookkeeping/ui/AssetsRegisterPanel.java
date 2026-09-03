@@ -55,7 +55,7 @@ public class AssetsRegisterPanel implements AppPanel
     private final ComboBox<Fund> fund = new ComboBox<>();
     private final ComboBox<Integer> usefulLifeMonths = new ComboBox<>();
     private final Label lifecycleStatus = new Label("ACTIVE");
-    private final TextField lifecycleActor = new TextField(System.getProperty("user.name", "operator"));
+    private final TextField lifecycleActor = new TextField(DesktopActorIdentity.current());
     private final TextField lifecycleReason = new TextField();
     private final Button deactivateAsset = new Button("Deactivate Asset");
     private final Button reactivateAsset = new Button("Reactivate Asset");
@@ -179,7 +179,8 @@ public class AssetsRegisterPanel implements AppPanel
         notes.setPrefRowCount(2);
         form.add(new Label("Notes"), 0, row);
         form.add(notes, 1, row++);
-        lifecycleActor.setPromptText("Factual operator");
+        lifecycleActor.setPromptText("Authenticated audit actor");
+        lifecycleActor.setEditable(false);
         lifecycleReason.setPromptText("Required for Activate / Deactivate");
         form.add(new Label("Lifecycle actor"), 0, row);
         form.add(lifecycleActor, 1, row++);

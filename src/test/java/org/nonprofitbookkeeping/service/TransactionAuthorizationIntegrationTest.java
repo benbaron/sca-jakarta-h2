@@ -128,6 +128,8 @@ class TransactionAuthorizationIntegrationTest
                     () -> entry.update(first.id(), command("Viewer denied", new BigDecimal("90.00"))));
             assertEquals("Manager edit", transactionMemo(jpa, first.id()));
             assertEquals(1L, authorizationDenialCount(jpa));
+            assertEquals(auditCount(jpa), auditActorCount(jpa, "operator"),
+                    "guarded journal writes must ignore caller-supplied actor text");
         }
     }
 
@@ -314,6 +316,17 @@ class TransactionAuthorizationIntegrationTest
         try (EntityManager em = jpa.em())
         {
             return em.createQuery("select count(a) from AuditEvent a", Long.class).getSingleResult();
+        }
+    }
+
+    private static long auditActorCount(Jpa jpa, String actor)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            return em.createQuery(
+                            "select count(a) from AuditEvent a where a.actor = :actor", Long.class)
+                    .setParameter("actor", actor)
+                    .getSingleResult();
         }
     }
 

@@ -21,7 +21,7 @@ The selected target company supplied to the outer commit service is part of the 
 
 Authorization does not replace import validation. After authorization succeeds, all existing protections remain authoritative, including exact source hashing, fresh preview/re-preview requirements, mapping and conflict approval, populated-target confirmation, company/chart ownership, target fingerprint drift, idempotent identities, closed-period and finalized-reconciliation protections, and all-or-nothing rollback.
 
-Legacy constructors remain source-compatible for existing tests and already-governed caller-owned seams. Production `UiServiceRegistry` current-session guard wiring remains a later P20-S3 tranche. Free-form import actor parameters also remain compatibility inputs until the separate authenticated audit-actor tranche.
+Legacy constructors remain source-compatible for existing tests and already-governed caller-owned seams. Production `UiServiceRegistry` now supplies the current-bundle guard. Free-form import actor parameters remain compatibility inputs only: guarded CoA CSV and SCLX commits derive the authoritative current-operation actor from the authenticated session. SCLX still preserves actor values inside imported historical period-close and audit-history facts. Governing detail: `doc/P20-S3-authenticated-audit-actor.md`.
 
 ## Required regression coverage
 

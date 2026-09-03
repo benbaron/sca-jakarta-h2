@@ -11,7 +11,10 @@ final class DesktopActorIdentity
 
     static String current()
     {
-        return fromUserName(System.getProperty("user.name"));
+        return ApplicationSessionContext.sharedSessionState()
+                .authenticatedUser()
+                .map(session -> fromUserName(session.username()))
+                .orElseGet(() -> fromUserName(System.getProperty("user.name")));
     }
 
     static String fromUserName(String userName)
