@@ -152,20 +152,20 @@ public class BankImportAuthorizationIntegrationTest
                     security.accountantId(), "SCA", Set.of(ReservedSecurityRole.ACCOUNTANT))));
             ReviewedStatementAcceptanceService.AcceptanceResult created =
                     service.accept(preview, command, false, "compatibility-actor");
-            assertFalse(created.alreadyAccepted());
+            assertFalse(created.reusedExisting());
 
             current.set(Optional.of(session(
                     security.managerId(), "SCA", Set.of(ReservedSecurityRole.MANAGER))));
-            assertTrue(service.accept(preview, command, false, "manager").alreadyAccepted());
+            assertTrue(service.accept(preview, command, false, "manager").reusedExisting());
 
             current.set(Optional.of(session(
                     security.adminId(), "SCA", Set.of(ReservedSecurityRole.ADMIN))));
-            assertTrue(service.accept(preview, command, false, "admin").alreadyAccepted());
+            assertTrue(service.accept(preview, command, false, "admin").reusedExisting());
 
             current.set(Optional.of(session(
                     security.accountantId(), "SCA",
                     Set.of(ReservedSecurityRole.VIEWER, ReservedSecurityRole.ACCOUNTANT))));
-            assertTrue(service.accept(preview, command, false, "union").alreadyAccepted());
+            assertTrue(service.accept(preview, command, false, "union").reusedExisting());
 
             current.set(Optional.of(session(
                     security.accountantId(), "OTHER", Set.of(ReservedSecurityRole.ACCOUNTANT))));
