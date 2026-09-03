@@ -69,13 +69,13 @@ Status: reconciled to current production architecture through P17-C11. Historica
 
 | Format / operation | Preview/review boundary | Commit/write authority | Important invariant |
 |---|---|---|---|
-| Chart of Accounts CSV | frozen COA preview with source/company/chart/target identity | `CoaCsvImportService` + caller-owned `AccountAdminService` transaction | accepted rows commit atomically; drift requires new preview. |
+| Chart of Accounts CSV | frozen COA preview with source/company/chart/target identity | `CoaCsvImportService` guarded outer commit + caller-owned `AccountAdminService` transaction | Accepted commit requires `BOOKKEEPING_WRITE`; preview remains non-mutating; accepted rows commit atomically and drift requires new preview. |
 | Chart of Accounts JSON | chart-only import/export validation | chart/account services | no transaction-history transfer. |
 | OFX/QFX | strict statement preview and configured-account validation | bank statement import service | persists statement evidence only; does not auto-post ledger transactions. |
 | Mapped CSV | mapping/parse preview | bank CSV import service | same durable bank-review authority as other statement formats. |
 | Normalized CSV | normalized identity/validation preview | normalized bank CSV service | preserves external IDs/PAYEEID and governed review facts. |
 | Reviewed statement acceptance | selected durable statement row | `ReviewedStatementAcceptanceService` + canonical `TransactionEntryService` | one explicit canonical transaction acceptance; reconciliation retains cleared-state ownership. |
-| SCLX | complete target-company preview, ownership gate, per-record classification/resolution | SCLX caller-owned atomic target-company graph commit | `NEW`/`IDENTICAL`/`CONFLICT` decisions are revalidated; no partial commit. |
+| SCLX | complete target-company preview, ownership gate, per-record classification/resolution | guarded `SclxImportCommitService` outer atomic target-company graph commit | Accepted commit requires `BOOKKEEPING_WRITE`; nested import helpers remain outer-governed; `NEW`/`IDENTICAL`/`CONFLICT` decisions are revalidated with no partial commit. |
 | Whole database transfer | explicit backup/restore preparation | supported H2 transfer/session activation path | preserves full database including compatibility data; activation only after validation. |
 
 There is no production `UiWorkspaceDataStore` generic job list and no generic Import/Export Jobs route.

@@ -1,12 +1,12 @@
 ---
-plan_version: 271
+plan_version: 272
 active_phase: P20
 active_slice: P20-S3
-active_status: VERIFYING
-active_branch: codex/P20-S3-period-close-authorization
-active_pull_request: 325
-active_head: a63bbb7517e1513427541d9dd381b5c2d482c8e2
-next_action: "Period-close authorization PR #325 behavior/documentation head a63bbb7517e1513427541d9dd381b5c2d482c8e2 passed Maven PR Tests run 33590252083, job 100122611644. Validate this PLAN-only successor on its exact head, then stop for owner acceptance before merge."
+active_status: IN_PROGRESS
+active_branch: codex/P20-S3-import-commit-authorization
+active_pull_request: null
+active_head: 128660a4793e2232920ff0ec32ee8d8c7736d18f
+next_action: "Implement and publish the authorized outer SCLX/COA CSV import-commit authorization tranche on codex/P20-S3-import-commit-authorization from merged main 128660a4793e2232920ff0ec32ee8d8c7736d18f, open a draft PR, and validate Maven PR Tests on the exact head."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -180,11 +180,13 @@ Inventory PR #323 exact final head `b8e861c6107aa7de0ecd4c1aa024b60effd8aa68` pa
 
 Previous reconciliation authorization tranche: PR #324 final head `1a420aae36fb01c019a5b72f487591bcfcaaf54a` merged to `main` at `5d591e4d767264490611870d80fe271303b79017`. Its behavior/documentation head `ca124f846178f5b1abcf34e7c9cafab1a079bbdb` passed Maven PR Tests run `33578682023`, job `100088178045`; the final PLAN successor was merged with the PR and the post-merge `main` workflow run `33582591691` also passed.
 
-Active continuation branch: `codex/P20-S3-period-close-authorization`
-Starting base: merged `main` `5d591e4d767264490611870d80fe271303b79017`
-Pull request: #325
-Behavior/documentation head: `a63bbb7517e1513427541d9dd381b5c2d482c8e2`
-Validation: Maven PR Tests run `33590252083`, job `100122611644` passed clean headless verification, the repeated full Maven test suite, and production JavaFX route compliance on the exact behavior/documentation head. Initial head `477dff6d76bf6707756981706fcaa798f9059d56` failed compile in run `33589880061`, job `100121542032` because the new reopen authorization local `company` variable collided with the existing transaction-local `company`; corrective commit `a63bbb7517e1513427541d9dd381b5c2d482c8e2` removed only that local-name collision without changing authorization semantics. This PLAN-only successor still requires exact-head validation before owner acceptance.
+Previous period-close authorization tranche: PR #325 final head `bc62b4c192d7ecb2098ee86bd787e7a3db163b31` passed Maven PR Tests run `33590915729`, job `100124557154`, and merged to `main` at `128660a4793e2232920ff0ec32ee8d8c7736d18f` after owner acceptance. Post-merge `main` workflow run `33653699552` also passed.
+
+Active continuation branch: `codex/P20-S3-import-commit-authorization`
+Starting base: merged `main` `128660a4793e2232920ff0ec32ee8d8c7736d18f`
+Pull request: pending
+Head: branch exists at the exact starting base; behavior commit pending publication.
+Validation: not yet run for the import-commit tranche.
 
 Completed P20-S3 behavior to date:
 
@@ -215,21 +217,25 @@ Completed P20-S3 behavior to date:
 - direct H2 Inventory tests prove VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and multi-role success, immediate session/company switching, absent-session and wrong-company fail-closed behavior, durable denial facts, and continued caller-owned import seam use;
 - Reconciliation workspace session start/successor, manual statement entry, matching/unmatching, cleared-state, factual explanation, save/finalization, and direct reviewed-row cleared-state mutations require `BOOKKEEPING_WRITE`; configured-account/session/snapshot reads and caller-owned interchange seams remain outside the service-owned write guard;
 - direct H2 Reconciliation tests prove VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and multi-role success, immediate session/company switching, absent-session and wrong-company fail-closed behavior, durable denial facts, and continued caller-owned interchange seam use.
+- Period Close service-owned close/reopen mutations require `BOOKKEEPING_WRITE`; range/history reads, `requireOpen(...)`, and caller-owned interchange restore remain outside the service-owned write guard;
+- direct H2 Period Close tests prove VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and multi-role success, immediate session/company switching, absent-session and wrong-company fail-closed behavior, durable denial facts, read access, and continued caller-owned interchange use.
 
-Current period-close authorization tranche:
+Current import-commit authorization tranche:
 
-- `PeriodCloseRangeService.closeRange(...)` and `reopenRange(...)` require `BOOKKEEPING_WRITE` before interactive validation or service-owned mutation;
-- reopen authorization is evaluated against the durable selected range's company owner so wrong-company sessions fail closed;
-- range/history reads, `requireOpen(...)`, and caller-owned `importForInterchange(...)` remain outside the service-owned write guard;
-- overlap, reopen-policy/reason, factual-history, and closed-period protections remain authoritative after authorization succeeds;
-- `PeriodCloseAuthorizationIntegrationTest` covers VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and multi-role success, absent/wrong-company fail-closed behavior, immediate session switching, durable denial facts, read access, and retained caller-owned interchange use;
-- no schema/migration, JavaFX wiring, legacy period-close-run compatibility authority, or authenticated audit-actor authority changes in this tranche.
+- `SclxImportCommitService.commit(...)` and `CoaCsvImportService.commit(...)` require `BOOKKEEPING_WRITE` at their outer atomic commit boundaries before interactive commit validation or mutation;
+- target-company context participates in authorization so absent and wrong-company sessions fail closed;
+- SCLX and COA preview/review paths remain non-mutating and do not require bookkeeping-write authority;
+- nested caller-owned import transaction seams remain deliberately unguarded because the outer import service owns authorization and atomicity once;
+- existing source hash, preview freshness, mapping/conflict confirmation, company/chart ownership, drift, identity, closed-period/reconciliation, and rollback protections remain authoritative after authorization succeeds;
+- focused direct H2 tests cover VIEWER denial/no business import, ACCOUNTANT/MANAGER/ADMIN and non-ADMIN union success, immediate session changes, absent/wrong-company fail-closed behavior, and durable denial facts;
+- bank-statement review/import and reviewed-row acceptance remain a separate later P20-S3 banking-import tranche; production guard wiring and authenticated actor conversion remain later cross-cutting work.
 
-Governing period-close design: `doc/accounting/period-close-design.md` and `doc/P20-S3-period-close-authorization.md`.
+
+Governing import-commit design: `doc/P20-S3-import-commit-authorization.md`, `doc/data-exchange/sclx.md`, and `doc/interface-operation-matrix.md`.
 
 Still required before P20-S3 completion:
 
-- guarded service boundaries for import/SCLX commit services;
+- guarded service boundaries for bank-statement review/import and reviewed-row acceptance;
 - production `UiServiceRegistry`/current-session guard wiring for all guarded services;
 - authenticated identity as the authoritative actor for protected audit writes;
 - database administration authorization;
@@ -244,6 +250,8 @@ Required reading:
 - `doc/P20-S3-fixed-asset-authorization.md`;
 - `doc/P20-S3-inventory-authorization.md`;
 - `doc/P20-S3-period-close-authorization.md`;
+- `doc/P20-S3-import-commit-authorization.md`;
+- `doc/data-exchange/sclx.md`;
 - `doc/accounting/period-close-design.md`;
 - `doc/banking/banking-and-reconciliation.md`;
 - `doc/administration/user-role-maintenance.md`;

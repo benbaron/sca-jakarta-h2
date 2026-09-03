@@ -51,10 +51,19 @@ public final class CoaCsvImportService
     private final CompanyOwnershipService ownership;
     private final InterchangeIdentityService identityService;
     private final IntConsumer afterAccountWrite;
+    private final AuthorizationGuard authorizationGuard;
 
     public CoaCsvImportService(Jpa jpa, Supplier<String> companyCodeSupplier)
     {
-        this(jpa, companyCodeSupplier, ignored -> { });
+        this(jpa, companyCodeSupplier, null, ignored -> { });
+    }
+
+    public CoaCsvImportService(
+            Jpa jpa,
+            Supplier<String> companyCodeSupplier,
+            AuthorizationGuard authorizationGuard)
+    {
+        this(jpa, companyCodeSupplier, authorizationGuard, ignored -> { });
     }
 
     CoaCsvImportService(
@@ -62,13 +71,34 @@ public final class CoaCsvImportService
             Supplier<String> companyCodeSupplier,
             IntConsumer afterAccountWrite)
     {
+        this(jpa, companyCodeSupplier, null, afterAccountWrite);
+    }
+
+    CoaCsvImportService(
+            Jpa jpa,
+            Supplier<String> companyCodeSupplier,
+            AuthorizationGuard authorizationGuard,
+            IntConsumer afterAccountWrite)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
         this.afterAccountWrite = Objects.requireNonNull(afterAccountWrite, "afterAccountWrite");
+        this.authorizationGuard = authorizationGuard;
         this.syntaxPreviewService = new ImportPreviewService();
         this.accountAdminService = new AccountAdminService(jpa, companyCodeSupplier);
         this.ownership = new CompanyOwnershipService(jpa);
         this.identityService = new InterchangeIdentityService(jpa, ownership);
+    }
+
+    private void requireBookkeepingWrite()
+    {
+        if (authorizationGuard != null)
+        {
+            authorizationGuard.require(
+                    ApplicationPermission.BOOKKEEPING_WRITE,
+                    companyCodeSupplier.get(),
+                    "commit Chart of Accounts CSV import");
+        }
     }
 
     /** Produces a non-mutating preview bound to the exact source, company, chart, and target state. */
@@ -107,6 +137,7 @@ public final class CoaCsvImportService
     /** Commits only the exact confirmed preview. Any commit-time failure rolls the entire batch back. */
     public CoaCsvBatchCommitResult commit(CoaCsvBatchPreview approvedPreview, String actor)
     {
+        requireBookkeepingWrite();
         Objects.requireNonNull(approvedPreview, "approvedPreview");
         String cleanActor;
         try
