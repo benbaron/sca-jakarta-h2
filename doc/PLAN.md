@@ -1,12 +1,12 @@
 ---
-plan_version: 278
+plan_version: 279
 active_phase: P20
 active_slice: P20-S3
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P20-S3-authenticated-audit-actor
-active_pull_request: null
-active_head: 7f190a68fe37284440225d6b90edfb2afde669c3
-next_action: "Complete the focused authenticated-audit-actor tranche, reconcile production UI/source guardrails and governing documentation, publish a draft PR to main, validate Maven PR Tests on the exact final behavior/documentation head, and stop before merge for owner acceptance."
+active_pull_request: 330
+active_head: d3667270f34bc971a87d887ae96141db5af0d900
+next_action: "Validate Maven PR Tests on the PLAN-only successor to PR #330 after recording the green behavior/documentation head d3667270f34bc971a87d887ae96141db5af0d900 (run 33807059790, job 100819950561), then stop before merge for owner desktop acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -263,7 +263,8 @@ Current authenticated audit actor tranche:
 - `DesktopActorIdentity` resolves authenticated session identity first, protected JavaFX actor displays are read-only, and literal/workstation actors no longer act as authority on already-guarded production routes;
 - Company Ownership Diagnostics remains outside this tranche because its mutations are classified `DATABASE_ADMIN` and are deliberately deferred to the next authorization tranche; legacy `AccountingPeriodService` has no production route and remains non-authoritative;
 - direct H2 regression coverage proves spoofed Journal/User Admin actor inputs are replaced by authenticated username, while source-route coverage requires authenticated actor derivation across all current guarded audit-producing production boundaries and read-only actor displays;
-- there is no schema or migration change.
+- there is no schema or migration change;
+- PR #330 behavior/documentation head `d3667270f34bc971a87d887ae96141db5af0d900` passed Maven PR Tests run `33807059790`, job `100819950561`: clean headless verification, repeated full Maven tests, and production JavaFX route compliance all succeeded.
 
 Governing actor design: `doc/P20-S3-authenticated-audit-actor.md`.
 
