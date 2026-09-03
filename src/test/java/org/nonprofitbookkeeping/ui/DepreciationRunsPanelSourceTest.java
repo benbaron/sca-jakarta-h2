@@ -34,7 +34,7 @@ class DepreciationRunsPanelSourceTest
     }
 
     @Test
-    void batchServiceDelegatesActualWritesToAtomicFixedAssetOperation() throws Exception
+    void batchServiceDelegatesActualWritesToAtomicGuardedFixedAssetOperation() throws Exception
     {
         String source = Files.readString(Path.of(
                 "src/main/java/org/nonprofitbookkeeping/service/DepreciationPeriodBatchService.java"));
@@ -46,6 +46,9 @@ class DepreciationRunsPanelSourceTest
         assertTrue(source.contains("Disposition.LATER_RUN_EXISTS"));
         assertTrue(source.contains("Preview changed before commit"));
         assertTrue(registry.contains(
+                "new FixedAssetService(\n"
+                        + "                        jpa, transactionEntry, UiServiceRegistry::activeCompanyCode, authorizationGuard)"));
+        assertFalse(registry.contains(
                 "new FixedAssetService(jpa, transactionEntry, UiServiceRegistry::activeCompanyCode)"));
         assertFalse(source.contains("EntityManager"));
         assertFalse(source.contains("new TransactionCommand"));
