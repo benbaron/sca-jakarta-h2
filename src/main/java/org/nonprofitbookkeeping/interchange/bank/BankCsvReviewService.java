@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.BankCsvMappingProfile;
 import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.persistence.Jpa;
+import org.nonprofitbookkeeping.service.AuthorizationGuard;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -21,6 +22,15 @@ public final class BankCsvReviewService
     public BankCsvReviewService(Jpa jpa)
     {
         this(jpa, new BankCsvParser(), new BankStatementReviewService(jpa));
+    }
+
+    /**
+     * Production composition that keeps {@link BankStatementReviewService} as the
+     * single durable-review authorization owner for mapped CSV commits.
+     */
+    public BankCsvReviewService(Jpa jpa, AuthorizationGuard authorizationGuard)
+    {
+        this(jpa, new BankCsvParser(), new BankStatementReviewService(jpa, authorizationGuard));
     }
 
     BankCsvReviewService(Jpa jpa, BankCsvParser parser, BankStatementReviewService reviewService)
