@@ -1,12 +1,12 @@
 ---
-plan_version: 283
+plan_version: 284
 active_phase: P20
 active_slice: P20-S3
 active_status: VERIFYING
-active_branch: codex/P20-S3-final-reconciliation
-active_pull_request: 333
-active_head: 966c4dff0d214a3c8e29dc7895d529acfea32ac2
-next_action: "Complete owner desktop acceptance for draft PR #333 across VIEWER, ACCOUNTANT, MANAGER, and ADMIN permission behavior plus company/session switching; do not merge before acceptance. After acceptance and merge, verify post-merge main before marking P20-S3 DONE."
+active_branch: codex/P20-S3-post-merge-verification
+active_pull_request: null
+active_head: 7c1f5ae69b7631de801fdb8169230967767316ac
+next_action: "Complete owner desktop acceptance across VIEWER, ACCOUNTANT, MANAGER, and ADMIN permission behavior plus company/session switching. P20-S3 implementation and post-merge CI verification are complete; do not mark P20-S3 or P20 DONE until owner desktop acceptance is explicitly recorded."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -32,7 +32,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P17 | Cross-cutting UI, authority, cleanup, durable-record, documentation corrections | DONE through P17-C12 / PR #305 |
 | P18 | Depreciation-run workflow completion | DONE through P18-S1 / PR #306 |
 | P19 | Deferred Company Administration extensions | DONE through P19-S3 / PR #309 |
-| P20 | Authentication and runtime authorization | P20-S3 IN_PROGRESS |
+| P20 | Authentication and runtime authorization | P20-S3 VERIFYING |
 
 ## 3. Established product decisions
 
@@ -152,7 +152,7 @@ Completed behavior includes:
 
 ### P20-S3 — Runtime authorization enforcement
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Foundation PR #312 exact final head `db3a30289aa17b967948a79a048f9ebdf9c5042e` passed Maven PR Tests run `33293417227`, job `99208891671`, and merged to `main` at `1b11df7cdc98775c618e8489ca7608bde36ea547`.
 
@@ -295,17 +295,32 @@ Completed JavaFX permission-gating tranche:
 - the final source-route assertion verifies the stable permission-check and denial-explanation behavior rather than depending on a local variable name;
 - no schema or migration change.
 
-Current final P20-S3 reconciliation tranche:
+Completed final P20-S3 reconciliation tranche:
 
-- branch `codex/P20-S3-final-reconciliation` starts from exact merged `main` `d2dba2c270c8c23594f1073f757c40d15d3d9186`;
-- reconcile stale User Admin documentation to the implemented JavaFX `SECURITY_ADMIN` gating and record the completed #332/CI/merge evidence in this execution ledger;
-- no Java production/test code, schema, migration, or interface-operation-matrix change is required by this documentation-only reconciliation;
-- draft PR #333 behavior/documentation head `966c4dff0d214a3c8e29dc7895d529acfea32ac2` passed Maven PR Tests run `33833984753`, job `100902609878`: clean headless verification, repeated full Maven tests, and production JavaFX route compliance all succeeded.
+- branch `codex/P20-S3-final-reconciliation` started from exact merged `main` `d2dba2c270c8c23594f1073f757c40d15d3d9186`;
+- the tranche reconciled stale User Admin documentation to the implemented JavaFX `SECURITY_ADMIN` gating and recorded the completed #332/CI/merge evidence in this execution ledger;
+- no Java production/test code, schema, migration, or interface-operation-matrix change was included;
+- PR #333 behavior/documentation head `966c4dff0d214a3c8e29dc7895d529acfea32ac2` passed Maven PR Tests run `33833984753`, job `100902609878`: clean headless verification, repeated full Maven tests, and production JavaFX route compliance all succeeded;
+- PR #333 final exact head `5efced5e170db390292cdbf77a7a3b016538d718` passed Maven PR Tests run `33834473777`, job `100904026212`: clean headless verification, repeated full Maven tests, and production JavaFX route compliance all succeeded;
+- the owner merged PR #333 to `main` at `7c1f5ae69b7631de801fdb8169230967767316ac`;
+- post-merge `main` Maven PR Tests run `33839082567`, job `100917493733` passed clean headless verification, repeated full Maven tests, and production JavaFX route compliance.
+
+Current post-merge verification:
+
+- current `main` is exact merge commit `7c1f5ae69b7631de801fdb8169230967767316ac` for PR #333;
+- repository/governing-document inspection found no additional missing production service or JavaFX authorization boundary requiring another P20-S3 implementation tranche;
+- the previously stale source-route assertion remains correctly based on stable `UiPermissionGate` behavior rather than a local variable name;
+- P20-S3 remains in VERIFYING solely because owner desktop acceptance has not yet been recorded.
 
 Still required before P20-S3 completion:
 
-- exact-head Maven PR Tests for this final documentation reconciliation;
-- owner desktop acceptance of the completed reserved-role permission behavior, including company/session switching, before P20-S3 is marked DONE.
+- owner desktop acceptance of the completed reserved-role permission behavior, including company/session switching, before P20-S3 is marked DONE:
+  - VIEWER: protected mutation controls are disabled/explained while read/report/export behavior remains available according to policy;
+  - ACCOUNTANT: bookkeeping mutation is available while Company Admin, Security Admin, and Database Admin are unavailable;
+  - MANAGER: bookkeeping plus non-security Company Admin are available while Security Admin and Database Admin are unavailable;
+  - ADMIN: all protected operations are available;
+  - company switch: permissions update immediately from current effective roles without application restart;
+  - Chart of Accounts JSON preview remains readable while accepted import requires `BOOKKEEPING_WRITE`.
 
 Required reading:
 
