@@ -4,8 +4,8 @@ active_phase: P20
 active_slice: P20-S3
 active_status: VERIFYING
 active_branch: codex/P20-S3-post-merge-verification
-active_pull_request: null
-active_head: 7c1f5ae69b7631de801fdb8169230967767316ac
+active_pull_request: 334
+active_head: 53b555722a78f58294f029c11fb27a91d1570bda
 next_action: "Complete owner desktop acceptance across VIEWER, ACCOUNTANT, MANAGER, and ADMIN permission behavior plus company/session switching. P20-S3 implementation and post-merge CI verification are complete; do not mark P20-S3 or P20 DONE until owner desktop acceptance is explicitly recorded."
 ---
 
