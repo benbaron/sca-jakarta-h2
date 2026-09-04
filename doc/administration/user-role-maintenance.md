@@ -61,7 +61,7 @@ The Administration destination retains one User Admin tab. Its inner Users, Role
 
 Tables remain sortable, resizable, reorderable, independently scrollable, and separated from their editors by company-owned horizontal dividers. Assignment dates use active-company display preferences and selectors retain stable entity IDs.
 
-P20-S3 service authorization is authoritative even before JavaFX command gating is wired. `UiServiceRegistry` already injects the current-session guard, and the User Admin actor display is read-only authenticated identity. The remaining consolidated UI pass must disable/explain User Admin and security-admin mutation commands for accounts without `SECURITY_ADMIN`; it must not create duplicate panels or a second user/role repository.
+P20-S3 service authorization remains authoritative beneath JavaFX permission gating. `UiServiceRegistry` injects the current-session guard, the User Admin actor display is read-only authenticated identity, and the production JavaFX shell/panel controls now disable and explain User Admin and security-administration mutations for sessions without `SECURITY_ADMIN`. This presentation gating does not replace the guarded service boundary and creates no duplicate panel or second user/role repository.
 
 ## Donor-reference decision
 
