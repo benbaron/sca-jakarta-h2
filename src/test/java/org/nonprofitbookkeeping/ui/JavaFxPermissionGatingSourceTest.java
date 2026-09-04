@@ -19,7 +19,8 @@ class JavaFxPermissionGatingSourceTest
         assertTrue(appPanel.contains("requiredPermission(AppCommand command)"));
         assertTrue(host.contains("activeRequiredPermission(AppCommand command)"));
         assertTrue(production.contains("panelHost.activeRequiredPermission(command)"));
-        assertTrue(production.contains("UiPermissionGate.deniedExplanation(permission"));
+        assertTrue(production.contains("UiPermissionGate.allows("));
+        assertTrue(production.contains("UiPermissionGate.deniedExplanation("));
         assertTrue(production.contains("ApplicationPermission.DATABASE_ADMIN"));
     }
 
