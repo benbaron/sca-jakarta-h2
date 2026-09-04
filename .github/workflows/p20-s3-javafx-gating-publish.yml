@@ -1,0 +1,47 @@
+name: P20-S3 JavaFX gating publication bootstrap
+
+on:
+  push:
+    branches:
+      - codex/P20-S3-javafx-permission-gating
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply and verify reviewed JavaFX gating patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "841f17d91bf85f1337f3f71b4fcd719c26f15404"
+          base64 -d .github/p20-s3-javafx-permission-gating.patch.gz.b64 | gunzip > /tmp/p20-ui.patch
+          test "$(sha256sum /tmp/p20-ui.patch | awk '{print $1}')" = "ae5dde5052de491c5afa06b92445eb0828ffd95077860cdf30b35d9b06e12810"
+          cp .github/p20-s3-javafx-permission-gating.blobs /tmp/expected.blobs
+          rm .github/p20-s3-javafx-permission-gating.patch.gz.b64
+          rm .github/p20-s3-javafx-permission-gating.blobs
+          rm .github/workflows/p20-s3-javafx-gating-publish.yml
+          git apply --check /tmp/p20-ui.patch
+          git apply /tmp/p20-ui.patch
+          git diff --check
+          git add -A
+          git diff --cached --name-only > /tmp/actual.paths
+          awk '{print $2}' /tmp/expected.blobs > /tmp/expected.paths
+          diff -u /tmp/expected.paths /tmp/actual.paths
+          while read -r expected path; do
+            actual="$(git hash-object "$path")"
+            test "$actual" = "$expected" || {
+              echo "Blob mismatch: $path expected $expected actual $actual" >&2
+              exit 1
+            }
+          done < /tmp/expected.blobs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "P20-S3: gate JavaFX mutations by permission"
+          git push origin HEAD:codex/P20-S3-javafx-permission-gating
