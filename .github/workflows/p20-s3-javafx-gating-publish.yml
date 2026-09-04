@@ -20,18 +20,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "HEAD=$(git rev-parse HEAD)"
-          echo "HEAD^=$(git rev-parse HEAD^)"
-          echo "HEAD^^=$(git rev-parse HEAD^^)"
-          echo "HEAD^^^=$(git rev-parse HEAD^^^)"
-          echo "HEAD^^^^=$(git rev-parse HEAD^^^^)"
-          test "$(git rev-parse HEAD^)" = "bac0835e40c6157b6c5adeff4f3c42ad361c320f"
-          test "$(git rev-parse HEAD^^)" = "8b3259bf3f2b8f0e754031973ad1af35648aeb01"
-          test "$(git rev-parse HEAD^^^)" = "290c0e05dd01b477766f45f1c32adb45d30374bc"
-          test "$(git rev-parse HEAD^^^^)" = "841f17d91bf85f1337f3f71b4fcd719c26f15404"
+          test "$(git rev-parse HEAD^)" = "8bf6f946d4704cd52732b4bf2783aaa10335ef25"
+          test "$(git rev-parse HEAD^^^^^)" = "841f17d91bf85f1337f3f71b4fcd719c26f15404"
           payload_sha="$(sha256sum .github/p20-s3-javafx-permission-gating.patch.gz.b64 | awk '{print $1}')"
           echo "payload_sha=$payload_sha"
-          test "$payload_sha" = "b446bd2695f988205a125ca8901ebaaebc0ef51d3c392b79547718d962a2368d"
+          test "$payload_sha" = "ec64f21db51b19150d0e15901c6f876be98eab9673ede4d96863991e4bcd9a34"
           gunzip -c .github/p20-s3-javafx-permission-gating.patch.gz.b64 > /tmp/p20-ui.patch
           patch_sha="$(sha256sum /tmp/p20-ui.patch | awk '{print $1}')"
           echo "patch_sha=$patch_sha"
@@ -48,15 +41,13 @@ jobs:
             | grep -v -E '^\.github/(p20-s3-javafx-permission-gating\.patch\.gz\.b64|p20-s3-javafx-permission-gating\.blobs|workflows/p20-s3-javafx-gating-publish\.yml)$' \
             > /tmp/actual.paths
           awk '{print $2}' /tmp/expected.blobs > /tmp/expected.paths
-          echo '--- expected paths ---'
-          cat /tmp/expected.paths
-          echo '--- actual paths ---'
-          cat /tmp/actual.paths
           diff -u /tmp/expected.paths /tmp/actual.paths
           while read -r expected path; do
             actual="$(git hash-object "$path")"
-            echo "$path expected=$expected actual=$actual"
-            test "$actual" = "$expected" || exit 1
+            test "$actual" = "$expected" || {
+              echo "Blob mismatch: $path expected $expected actual $actual" >&2
+              exit 1
+            }
           done < /tmp/expected.blobs
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
