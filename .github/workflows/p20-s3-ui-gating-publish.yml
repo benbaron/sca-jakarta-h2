@@ -21,8 +21,9 @@ jobs:
           set -euo pipefail
           BASE=841f17d91bf85f1337f3f71b4fcd719c26f15404
           TARGET=codex/P20-S3-javafx-permission-gating
+          EXPECTED_TARGET=85b2481b1aa32fe08f24a4ce443294f64e347373
           current="$(git ls-remote origin refs/heads/$TARGET | awk '{print $1}')"
-          test "$current" = "$BASE"
+          test "$current" = "$EXPECTED_TARGET"
           cp .github/p20-s3-ui-gating-paths.txt /tmp/expected-paths.txt
           cp .github/p20-s3-ui-gating-blobs.txt /tmp/expected-blobs.txt
           cat .github/p20-s3-ui-gating-chunks/chunk-* > /tmp/patch.b64
@@ -31,11 +32,15 @@ jobs:
           echo '250f9c2fc69905e0a1208ee2c8f37c1d58cdf8945988edb485ab980650f93dc8  /tmp/patch.gz' | sha256sum -c -
           gunzip -c /tmp/patch.gz > /tmp/patch
           echo '0cb19f49fa07a6e83a31ec0a7eade6cc0196f95e6330c771e59de9e856fc3a07  /tmp/patch' | sha256sum -c -
-          git reset --hard "$BASE"
+          git checkout -B publish "$current"
+          test "$(git merge-base "$BASE" HEAD)" = "$BASE"
+          rm .github/p20-s3-javafx-permission-gating.patch.gz.b64
+          rm .github/p20-s3-javafx-permission-gating.blobs
+          rm .github/workflows/p20-s3-javafx-gating-publish.yml
           git apply --check /tmp/patch
           git apply /tmp/patch
           git diff --check
-          git diff --name-only | LC_ALL=C sort > /tmp/actual-paths.txt
+          git diff "$BASE" --name-only | LC_ALL=C sort > /tmp/actual-paths.txt
           diff -u /tmp/expected-paths.txt /tmp/actual-paths.txt
           while read -r expected path; do
             actual="$(git hash-object "$path")"
@@ -46,5 +51,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "P20-S3: enforce JavaFX permission gating"
-          test "$(git rev-parse HEAD^)" = "$BASE"
+          test "$(git rev-parse HEAD^)" = "$EXPECTED_TARGET"
           git push origin HEAD:$TARGET
