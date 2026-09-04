@@ -20,12 +20,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "8b3259bf3f2b8f0e754031973ad1af35648aeb01"
-          test "$(git rev-parse HEAD^^)" = "290c0e05dd01b477766f45f1c32adb45d30374bc"
-          test "$(git rev-parse HEAD^^^)" = "841f17d91bf85f1337f3f71b4fcd719c26f15404"
-          test "$(sha256sum .github/p20-s3-javafx-permission-gating.patch.gz.b64 | awk '{print $1}')" = "b446bd2695f988205a125ca8901ebaaebc0ef51d3c392b79547718d962a2368d"
+          echo "HEAD=$(git rev-parse HEAD)"
+          echo "HEAD^=$(git rev-parse HEAD^)"
+          echo "HEAD^^=$(git rev-parse HEAD^^)"
+          echo "HEAD^^^=$(git rev-parse HEAD^^^)"
+          echo "HEAD^^^^=$(git rev-parse HEAD^^^^)"
+          test "$(git rev-parse HEAD^)" = "bac0835e40c6157b6c5adeff4f3c42ad361c320f"
+          test "$(git rev-parse HEAD^^)" = "8b3259bf3f2b8f0e754031973ad1af35648aeb01"
+          test "$(git rev-parse HEAD^^^)" = "290c0e05dd01b477766f45f1c32adb45d30374bc"
+          test "$(git rev-parse HEAD^^^^)" = "841f17d91bf85f1337f3f71b4fcd719c26f15404"
+          payload_sha="$(sha256sum .github/p20-s3-javafx-permission-gating.patch.gz.b64 | awk '{print $1}')"
+          echo "payload_sha=$payload_sha"
+          test "$payload_sha" = "b446bd2695f988205a125ca8901ebaaebc0ef51d3c392b79547718d962a2368d"
           gunzip -c .github/p20-s3-javafx-permission-gating.patch.gz.b64 > /tmp/p20-ui.patch
-          test "$(sha256sum /tmp/p20-ui.patch | awk '{print $1}')" = "ae5dde5052de491c5afa06b92445eb0828ffd95077860cdf30b35d9b06e12810"
+          patch_sha="$(sha256sum /tmp/p20-ui.patch | awk '{print $1}')"
+          echo "patch_sha=$patch_sha"
+          test "$patch_sha" = "ae5dde5052de491c5afa06b92445eb0828ffd95077860cdf30b35d9b06e12810"
           cp .github/p20-s3-javafx-permission-gating.blobs /tmp/expected.blobs
           rm .github/p20-s3-javafx-permission-gating.patch.gz.b64
           rm .github/p20-s3-javafx-permission-gating.blobs
@@ -38,13 +48,15 @@ jobs:
             | grep -v -E '^\.github/(p20-s3-javafx-permission-gating\.patch\.gz\.b64|p20-s3-javafx-permission-gating\.blobs|workflows/p20-s3-javafx-gating-publish\.yml)$' \
             > /tmp/actual.paths
           awk '{print $2}' /tmp/expected.blobs > /tmp/expected.paths
+          echo '--- expected paths ---'
+          cat /tmp/expected.paths
+          echo '--- actual paths ---'
+          cat /tmp/actual.paths
           diff -u /tmp/expected.paths /tmp/actual.paths
           while read -r expected path; do
             actual="$(git hash-object "$path")"
-            test "$actual" = "$expected" || {
-              echo "Blob mismatch: $path expected $expected actual $actual" >&2
-              exit 1
-            }
+            echo "$path expected=$expected actual=$actual"
+            test "$actual" = "$expected" || exit 1
           done < /tmp/expected.blobs
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
