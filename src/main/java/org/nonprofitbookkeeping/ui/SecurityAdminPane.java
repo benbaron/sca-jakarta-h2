@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -107,12 +108,15 @@ final class SecurityAdminPane
         Button clearPassword = new Button("Clear Password");
         clearPassword.setId("securityClearPassword");
         clearPassword.setOnAction(event -> clearPassword());
+        UiPermissionGate.gate(setPassword, ApplicationPermission.SECURITY_ADMIN, "Set or replace an account password");
+        UiPermissionGate.gate(clearPassword, ApplicationPermission.SECURITY_ADMIN, "Clear an account password");
 
         inactivityMinutes.setId("securityInactivityTimeoutMinutes");
         inactivityMinutes.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 10080, 0));
         inactivityMinutes.setEditable(true);
         Button saveTimeout = new Button("Save Timeout");
         saveTimeout.setOnAction(event -> saveTimeout());
+        UiPermissionGate.gate(saveTimeout, ApplicationPermission.SECURITY_ADMIN, "Change the inactivity timeout");
         Button refreshRoles = new Button("Refresh Session Roles");
         refreshRoles.setId("securityRefreshSessionRoles");
         refreshRoles.setOnAction(event -> refreshSessionRoles());

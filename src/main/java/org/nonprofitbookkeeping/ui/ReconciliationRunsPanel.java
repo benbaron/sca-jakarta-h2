@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -107,6 +108,15 @@ public class ReconciliationRunsPanel implements AppPanel
         companyFormat.install(successorEndDate);
         warnOnly.setSelected(true);
         configureMutationActions();
+        UiPermissionGate.gate(addManualButton, ApplicationPermission.BOOKKEEPING_WRITE, "Add a reconciliation statement line");
+        UiPermissionGate.gate(autoMatchButton, ApplicationPermission.BOOKKEEPING_WRITE, "Auto-match reconciliation lines");
+        UiPermissionGate.gate(matchButton, ApplicationPermission.BOOKKEEPING_WRITE, "Match reconciliation lines");
+        UiPermissionGate.gate(unmatchButton, ApplicationPermission.BOOKKEEPING_WRITE, "Unmatch reconciliation lines");
+        UiPermissionGate.gate(markClearedButton, ApplicationPermission.BOOKKEEPING_WRITE, "Mark a ledger line cleared");
+        UiPermissionGate.gate(explainDifferenceButton, ApplicationPermission.BOOKKEEPING_WRITE, "Record a reconciliation difference explanation");
+        UiPermissionGate.gate(saveUnresolvedButton, ApplicationPermission.BOOKKEEPING_WRITE, "Save an unresolved reconciliation");
+        UiPermissionGate.gate(finalizeButton, ApplicationPermission.BOOKKEEPING_WRITE, "Finalize a reconciliation");
+        UiPermissionGate.gate(successorButton, ApplicationPermission.BOOKKEEPING_WRITE, "Start a successor reconciliation");
         root.setTop(new VBox(6, title, subtitle, sessionSummary, status, new Separator()));
         root.setCenter(workflowTabs);
         loadBankAccountsAndSessions();
@@ -195,6 +205,7 @@ public class ReconciliationRunsPanel implements AppPanel
         load.setOnAction(e -> reloadSnapshot());
         Button startNew = new Button("New Reconciliation");
         startNew.setOnAction(e -> startNewSession());
+        UiPermissionGate.gate(startNew, ApplicationPermission.BOOKKEEPING_WRITE, "Start a reconciliation");
         Button editExisting = new Button("Edit Existing");
         editExisting.setOnAction(e -> editExistingSession());
         HBox actions = new HBox(8, load, startNew, editExisting, nextButton("Next: Statement", 1));

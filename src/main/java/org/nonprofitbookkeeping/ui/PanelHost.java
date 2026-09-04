@@ -252,6 +252,12 @@ public class PanelHost extends TabPane
         return executeActive(command);
     }
 
+    public java.util.Optional<org.nonprofitbookkeeping.service.ApplicationPermission> activeRequiredPermission(AppCommand command)
+    {
+        AppPanel panel = getActive();
+        return panel == null ? java.util.Optional.empty() : panel.requiredPermission(command);
+    }
+
     public java.util.Optional<AppPanel.JournalSelection> activeJournalSelection()
     {
         AppPanel panel = getActive();

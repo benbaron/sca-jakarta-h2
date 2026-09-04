@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -163,6 +164,7 @@ public final class CompanyOwnershipDiagnosticsPanel implements AppPanel
         assignOwner.setId("ownershipDiagnosticsAssignOwnerButton");
         assignOwner.setDisable(true);
         assignOwner.setOnAction(event -> confirmAssignment());
+        UiPermissionGate.gate(assignOwner, ApplicationPermission.DATABASE_ADMIN, "Repair company ownership");
 
         GridPane form = new GridPane();
         form.setHgap(10);

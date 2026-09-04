@@ -104,7 +104,7 @@ All authenticated roles may persist presentation-only UI preferences such as tab
 
 It stores no independent session, role, or permission state. Production service wiring must inject/use this guard for mutation entry points. A denied operation records `AUTHORIZATION_DENIED` in the existing H2 `security_event` authority and then fails without changing the requested business state.
 
-JavaFX controls may use the same policy to disable commands and provide a concise explanation, but UI state is never the security boundary. Tests must call guarded services directly under lower-privilege sessions and prove the mutation is rejected.
+JavaFX controls use the same fixed policy to disable mutation commands and provide a concise explanation. `UiPermissionGate` is presentation-only and reads the current shared authenticated session; UI state is never the security boundary. Tests still call guarded services directly under lower-privilege sessions and prove the mutation is rejected. Governing UI detail: `doc/P20-S3-javafx-permission-gating.md`.
 
 ### Production current-session composition
 
@@ -113,7 +113,7 @@ JavaFX controls may use the same policy to disable commands and provide a concis
 - that bundle's current `Jpa`; and
 - `ApplicationSessionContext.sharedSessionState()::authenticatedUser`.
 
-The bundle guard is supplied to the guarded constructors for Account, Fund, Budget Category, Budget Plan, Bank Configuration, Fixed Asset, Inventory, Company Administration, User Administration, Journal transaction entry/correction, Reconciliation, and Period Close. On-demand production constructors for CoA CSV commit, SCLX commit, strict bank-statement review, mapped CSV review, bank CSV mapping profiles, normalized CSV review, reviewed-statement acceptance, Security Administration, and company UI preference/state writes reuse the same current bundle guard.
+The bundle guard is supplied to the guarded constructors for Account, Fund, Budget Category, Budget Plan, Bank Configuration, Fixed Asset, Inventory, Company Administration, User Administration, Journal transaction entry/correction, Reconciliation, and Period Close. On-demand production constructors for CoA CSV commit, Chart of Accounts JSON commit, SCLX commit, strict bank-statement review, mapped CSV review, bank CSV mapping profiles, normalized CSV review, reviewed-statement acceptance, Security Administration, and company UI preference/state writes reuse the same current bundle guard.
 
 Mapped CSV retains one authorization owner: its public guarded composition constructs the delegated `BankStatementReviewService` with the current guard, and `BankCsvReviewService.commit(...)` continues to delegate the durable review write instead of adding another independent authorization check.
 
@@ -138,14 +138,14 @@ Company Ownership Diagnostics follows the same rule once its `DATABASE_ADMIN` mu
 
 ## UI command behavior
 
-Global New/Save/Validate availability is the conjunction of:
+The production shell now enforces this presentation contract through `AppPanel.requiredPermission(...)`, `PanelHost.activeRequiredPermission(...)`, and `UiPermissionGate`. Global New/Save/Validate availability is the conjunction of:
 
 1. the active panel declaring a genuine command capability; and
 2. the current authenticated session holding the permission required by that command.
 
-Panel-local mutation controls follow the same rule. A denied control is disabled or unavailable with concise explanatory text; it must not appear enabled and then silently do nothing.
+Panel-local mutation controls follow the same rule. Unbound controls use `UiPermissionGate.gate(...)`; controls already bound to busy/selection/lifecycle state compose their existing disable binding with `UiPermissionGate.deniedProperty(...)`. A denied control is disabled or unavailable with concise explanatory text; it must not appear enabled and then silently do nothing.
 
-Read/navigation controls remain available to any authenticated account with effective access to the active company.
+Read/navigation/preview controls remain available to any authenticated account with effective access to the active company. Export actions require `EXPORT`; company presentation preferences require `UI_PREFERENCE_WRITE`. Session/company-role changes refresh the permission presentation immediately without a second role cache.
 
 ## Test requirements
 

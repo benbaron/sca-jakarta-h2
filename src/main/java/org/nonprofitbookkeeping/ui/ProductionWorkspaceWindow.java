@@ -20,6 +20,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import org.nonprofitbookkeeping.service.SampleCompanyService;
 import org.nonprofitbookkeeping.service.CompanyView;
 
@@ -120,6 +121,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         setCenter(buildWorkspace());
         setBottom(buildStatusBar());
         panelHost.setCommandCapabilitiesChangedListener(this::refreshGlobalCommandState);
+        MainWindow.sharedSessionState().onAuthenticationChanged(ignored -> refreshGlobalCommandState());
 
         updateActiveDatabaseLabel();
         refreshActiveCompanySelector();
@@ -201,6 +203,18 @@ public class ProductionWorkspaceWindow extends BorderPane
     public AppPanel.RunCommandResult executeCommand(AppCommand command)
     {
         Objects.requireNonNull(command, "command");
+        Optional<ApplicationPermission> required =
+                panelHost.activeRequiredPermission(command);
+        if (required.isPresent() && !UiPermissionGate.allows(required.orElseThrow()))
+        {
+            AppPanel.RunCommandResult denied = new AppPanel.RunCommandResult(
+                    false,
+                    UiPermissionGate.deniedExplanation(
+                            required.orElseThrow(),
+                            GlobalCommandRegistry.label(command) + " in " + panelHost.getActiveTitle()));
+            presentCommandResult(denied);
+            return denied;
+        }
         AppPanel.RunCommandResult result = switch (command)
         {
             case NEW_ACTIVE -> panelHost.newItemActive();
@@ -298,6 +312,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         repairDatabase.setOnAction(event -> executeDatabaseRecoveryCommand(DatabaseRecoveryCommand.RETRY_CURRENT));
         MenuItem sampleCompany = new MenuItem("Create / Refresh Sample Company Data");
         sampleCompany.setOnAction(event -> createOrRefreshSampleCompany());
+        sampleCompany.disableProperty().bind(UiPermissionGate.deniedProperty(ApplicationPermission.DATABASE_ADMIN));
         GlobalCommandRegistry.Definition newDefinition =
                 GlobalCommandRegistry.definition(AppCommand.NEW_ACTIVE);
         newMenuItem = new MenuItem(newDefinition.label());
@@ -464,14 +479,30 @@ public class ProductionWorkspaceWindow extends BorderPane
             Button button)
     {
         boolean supported = capabilities.contains(command);
-        menuItem.setDisable(!supported);
-        button.setDisable(!supported);
-        String explanation = supported
-                ? GlobalCommandRegistry.label(command) + " is available in " + panelHost.getActiveTitle() + "."
-                : GlobalCommandRegistry.label(command) + " is not available in " + panelHost.getActiveTitle() + ".";
-        menuItem.setText(supported
+        Optional<ApplicationPermission> required =
+                panelHost.activeRequiredPermission(command);
+        boolean permitted = required.isEmpty() || UiPermissionGate.allows(required.orElseThrow());
+        boolean enabled = supported && permitted;
+        menuItem.setDisable(!enabled);
+        button.setDisable(!enabled);
+        String explanation;
+        if (!supported)
+        {
+            explanation = GlobalCommandRegistry.label(command) + " is not available in " + panelHost.getActiveTitle() + ".";
+        }
+        else if (!permitted)
+        {
+            explanation = UiPermissionGate.deniedExplanation(
+                    required.orElseThrow(),
+                    GlobalCommandRegistry.label(command) + " in " + panelHost.getActiveTitle());
+        }
+        else
+        {
+            explanation = GlobalCommandRegistry.label(command) + " is available in " + panelHost.getActiveTitle() + ".";
+        }
+        menuItem.setText(enabled
                 ? GlobalCommandRegistry.label(command)
-                : GlobalCommandRegistry.label(command) + " — not available in " + panelHost.getActiveTitle());
+                : GlobalCommandRegistry.label(command) + " — " + explanation);
         button.setTooltip(new Tooltip(explanation));
     }
 

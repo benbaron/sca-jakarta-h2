@@ -9,10 +9,14 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.nonprofitbookkeeping.persistence.DatabaseTransferService;
+import org.nonprofitbookkeeping.service.AuthenticatedUserSession;
 
 import java.nio.file.Path;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -21,6 +25,30 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DatabaseTransferMenuInstallerTest
 {
+    private Optional<AuthenticatedUserSession> previousSession;
+
+    @BeforeEach
+    void installAdminSession()
+    {
+        UiSessionState session = MainWindow.sharedSessionState();
+        previousSession = session.authenticatedUser();
+        session.setAuthenticatedUser(UiPermissionTestSessions.admin());
+    }
+
+    @AfterEach
+    void restoreSession()
+    {
+        UiSessionState session = MainWindow.sharedSessionState();
+        if (previousSession != null && previousSession.isPresent())
+        {
+            session.setAuthenticatedUser(previousSession.orElseThrow());
+        }
+        else
+        {
+            session.clearAuthenticatedUser();
+        }
+    }
+
     @Test
     void fileMenuRoutesSharedActionsAndInstallsOnlyOnce()
     {

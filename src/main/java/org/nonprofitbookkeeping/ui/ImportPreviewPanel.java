@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -336,6 +337,10 @@ public class ImportPreviewPanel implements AppPanel
 			(observable, oldValue, newValue) -> updateBankCommitAvailability());
 		configureBankSelectors();
 		commitAccepted.setOnAction(e -> commitAcceptedCoaRows());
+		UiPermissionGate.gate(commitAccepted, ApplicationPermission.BOOKKEEPING_WRITE, "Commit accepted Chart of Accounts rows");
+		UiPermissionGate.gate(commitSclx, ApplicationPermission.BOOKKEEPING_WRITE, "Import previewed SCLX data");
+		UiPermissionGate.gate(saveBankCsvProfile, ApplicationPermission.BOOKKEEPING_WRITE, "Save a bank CSV mapping profile");
+		UiPermissionGate.gate(commitBankReview, ApplicationPermission.BOOKKEEPING_WRITE, "Commit previewed bank review rows");
 		commitAccepted.setId("commitAcceptedCoaRowsButton");
 		commitAccepted.setDisable(true);
 		

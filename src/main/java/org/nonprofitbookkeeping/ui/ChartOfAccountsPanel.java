@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -71,6 +72,8 @@ public class ChartOfAccountsPanel implements AppPanel
 
         Button save = new Button("Save");
         save.setOnAction(e -> saveForm());
+        UiPermissionGate.gate(add, ApplicationPermission.BOOKKEEPING_WRITE, "Create an account");
+        UiPermissionGate.gate(save, ApplicationPermission.BOOKKEEPING_WRITE, "Save an account");
 
         refresh = new Button("Refresh");
         refresh.setOnAction(e -> reloadWithDiscardProtection());
@@ -146,6 +149,16 @@ public class ChartOfAccountsPanel implements AppPanel
 
     @Override public String title() { return "Chart of Accounts"; }
     @Override public Node root() { return root; }
+
+    @Override
+    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return switch (command)
+        {
+            case NEW_ACTIVE, SAVE_ACTIVE -> java.util.Optional.of(ApplicationPermission.BOOKKEEPING_WRITE);
+            default -> java.util.Optional.empty();
+        };
+    }
 
     @Override
     public java.util.Set<AppCommand> commandCapabilities()

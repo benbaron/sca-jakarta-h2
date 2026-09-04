@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Menu;
@@ -49,18 +50,22 @@ final class DatabaseTransferMenuInstaller
         MenuItem backup = new MenuItem("Backup Database…");
         backup.setId(BACKUP_MENU_ID);
         backup.setOnAction(event -> actions.requestBackup());
-        backup.disableProperty().bind(actions.busyProperty());
+        backup.disableProperty().bind(
+                actions.busyProperty().or(UiPermissionGate.deniedProperty(ApplicationPermission.DATABASE_ADMIN)));
 
         MenuItem restore = new MenuItem("Restore Database Copy…");
         restore.setId(RESTORE_MENU_ID);
         restore.setOnAction(event -> actions.requestRestore());
-        restore.disableProperty().bind(actions.busyProperty());
+        restore.disableProperty().bind(
+                actions.busyProperty().or(UiPermissionGate.deniedProperty(ApplicationPermission.DATABASE_ADMIN)));
 
         MenuItem switchDatabase = new MenuItem("Switch to Validated Copy");
         switchDatabase.setId(SWITCH_MENU_ID);
         switchDatabase.setOnAction(event -> actions.requestSwitchToValidatedCopy());
         switchDatabase.disableProperty().bind(
-                actions.busyProperty().or(actions.switchAvailableProperty().not()));
+                actions.busyProperty()
+                        .or(actions.switchAvailableProperty().not())
+                        .or(UiPermissionGate.deniedProperty(ApplicationPermission.DATABASE_ADMIN)));
 
         int insertionIndex = insertionIndex(fileMenu);
         fileMenu.getItems().addAll(

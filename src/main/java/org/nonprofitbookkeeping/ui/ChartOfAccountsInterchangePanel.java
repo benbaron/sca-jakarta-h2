@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Insets;
@@ -29,7 +30,6 @@ import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import org.nonprofitbookkeeping.interchange.InterchangeConfirmation;
 import org.nonprofitbookkeeping.interchange.InterchangeValidationMessage;
-import org.nonprofitbookkeeping.interchange.coa.ChartOfAccountsJsonImportService;
 import org.nonprofitbookkeeping.interchange.coa.ChartOfAccountsJsonService;
 import org.nonprofitbookkeeping.interchange.coa.CoaExportResult;
 import org.nonprofitbookkeeping.interchange.coa.CoaImportMode;
@@ -75,8 +75,10 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         progress.setMaxSize(18.0, 18.0);
         progress.visibleProperty().bind(busy);
         progress.managedProperty().bind(progress.visibleProperty());
-        importJson.disableProperty().bind(busy);
-        exportJson.disableProperty().bind(busy);
+        importJson.disableProperty().bind(
+                busy.or(UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE)));
+        exportJson.disableProperty().bind(
+                busy.or(UiPermissionGate.deniedProperty(ApplicationPermission.EXPORT)));
         importJson.setOnAction(event -> requestImport());
         exportJson.setOnAction(event -> requestExport());
 
@@ -195,7 +197,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
                             jpa,
                             this::activeCompanyCode);
                     CoaImportPreview confirmed = previewService.preview(confirmedRequest);
-                    return new ChartOfAccountsJsonImportService(jpa, this::activeCompanyCode).commit(confirmed);
+                    return UiServiceRegistry.coaJsonImport().commit(confirmed);
                 }),
                 this::importCompleted,
                 error -> operationFailed("Chart of Accounts JSON import failed", error));
@@ -554,6 +556,12 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
     public RunCommandResult executeCommand(AppCommand command)
     {
         return delegate.executeCommand(command);
+    }
+
+    @Override
+    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return delegate.requiredPermission(command);
     }
 
     @Override

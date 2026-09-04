@@ -43,8 +43,10 @@ class GlobalCommandCapabilitySourceTest
         assertFalse(help.contains("Ctrl+G"));
         assertFalse(navigation.contains("toolbar Find/Journal"));
         assertTrue(production.contains("panelHost.activeCommandCapabilities()"));
-        assertTrue(production.contains("menuItem.setDisable(!supported)"));
-        assertTrue(production.contains("button.setDisable(!supported)"));
+        assertTrue(production.contains("panelHost.activeRequiredPermission(command)"));
+        assertTrue(production.contains("UiPermissionGate.allows(required.orElseThrow())"));
+        assertTrue(production.contains("menuItem.setDisable(!enabled)"));
+        assertTrue(production.contains("button.setDisable(!enabled)"));
     }
 
     private static String source(String filename) throws Exception

@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -64,6 +65,7 @@ public class DepreciationRunsPanel implements AppPanel
 
         refresh.setOnAction(e -> reload(null));
         run.setOnAction(e -> runPeriodDepreciation());
+        UiPermissionGate.gate(run, ApplicationPermission.BOOKKEEPING_WRITE, "Run depreciation");
         openReport.setOnAction(e -> openDepreciationReport());
         ActivePeriodContext.activeDateProperty().addListener((obs, oldValue, newValue) -> {
             if (!busy.get())

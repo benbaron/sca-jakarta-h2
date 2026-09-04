@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
@@ -130,6 +131,14 @@ public final class DashboardHomePanel implements AppPanel
     public Node root()
     {
         return root;
+    }
+
+    @Override
+    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return command == AppCommand.NEW_ACTIVE
+                ? java.util.Optional.of(ApplicationPermission.BOOKKEEPING_WRITE)
+                : java.util.Optional.empty();
     }
 
     @Override

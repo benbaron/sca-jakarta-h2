@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -84,10 +85,12 @@ public class AssetsRegisterPanel implements AppPanel
         refresh.disableProperty().bind(busy);
         refresh.setOnAction(e -> reloadWithDiscardProtection());
         Button newAsset = new Button("New Asset");
-        newAsset.disableProperty().bind(busy);
+        newAsset.disableProperty().bind(
+                busy.or(UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE)));
         newAsset.setOnAction(e -> onNew());
         Button save = new Button("Save Asset");
-        save.disableProperty().bind(busy);
+        save.disableProperty().bind(
+                busy.or(UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE)));
         save.setOnAction(e -> saveAsset());
         deactivateAsset.setId("deactivateFixedAssetButton");
         deactivateAsset.setDisable(true);
@@ -95,17 +98,21 @@ public class AssetsRegisterPanel implements AppPanel
         reactivateAsset.setId("reactivateFixedAssetButton");
         reactivateAsset.setDisable(true);
         reactivateAsset.setOnAction(e -> changeSelectedStatus(FixedAsset.Status.ACTIVE));
+        UiPermissionGate.gate(deactivateAsset, ApplicationPermission.BOOKKEEPING_WRITE, "Deactivate a fixed asset");
+        UiPermissionGate.gate(reactivateAsset, ApplicationPermission.BOOKKEEPING_WRITE, "Reactivate a fixed asset");
         busy.addListener((obs, oldValue, newValue) ->
                 updateLifecycleActions(table.getSelectionModel().getSelectedItem()));
         Button lifecycle = new Button("Record Lifecycle Event...");
         lifecycle.setId("recordFixedAssetLifecycleButton");
         lifecycle.disableProperty().bind(
-                busy.or(table.getSelectionModel().selectedItemProperty().isNull()));
+                busy.or(table.getSelectionModel().selectedItemProperty().isNull())
+                        .or(UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE)));
         lifecycle.setOnAction(e -> recordLifecycleEvent());
         Button reverse = new Button("Reverse Selected Lifecycle Event");
         reverse.setId("reverseFixedAssetLifecycleButton");
         reverse.disableProperty().bind(
-                busy.or(lifecycleTable.getSelectionModel().selectedItemProperty().isNull()));
+                busy.or(lifecycleTable.getSelectionModel().selectedItemProperty().isNull())
+                        .or(UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE)));
         reverse.setOnAction(e -> reverseSelectedLifecycleEvent());
         Button drill = new Button("Drill Selected Event to Ledger");
         drill.disableProperty().bind(
@@ -854,6 +861,16 @@ public class AssetsRegisterPanel implements AppPanel
 
     @Override public String title() { return "Asset Register"; }
     @Override public Node root() { return root; }
+    @Override
+    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return switch (command)
+        {
+            case NEW_ACTIVE, SAVE_ACTIVE -> java.util.Optional.of(ApplicationPermission.BOOKKEEPING_WRITE);
+            default -> java.util.Optional.empty();
+        };
+    }
+
     @Override
     public java.util.Set<AppCommand> commandCapabilities()
     {

@@ -14,10 +14,14 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.VBox;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.nonprofitbookkeeping.service.AuthenticatedUserSession;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -27,6 +31,30 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProductionWorkspaceCommandRoutingTest
 {
+    private Optional<AuthenticatedUserSession> previousSession;
+
+    @BeforeEach
+    void installAdminSession()
+    {
+        UiSessionState session = MainWindow.sharedSessionState();
+        previousSession = session.authenticatedUser();
+        session.setAuthenticatedUser(UiPermissionTestSessions.admin());
+    }
+
+    @AfterEach
+    void restoreSession()
+    {
+        UiSessionState session = MainWindow.sharedSessionState();
+        if (previousSession != null && previousSession.isPresent())
+        {
+            session.setAuthenticatedUser(previousSession.orElseThrow());
+        }
+        else
+        {
+            session.clearAuthenticatedUser();
+        }
+    }
+
     @BeforeAll
     static void setupFx()
     {

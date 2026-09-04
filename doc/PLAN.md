@@ -1,12 +1,12 @@
 ---
-plan_version: 280
+plan_version: 281
 active_phase: P20
 active_slice: P20-S3
 active_status: IN_PROGRESS
-active_branch: codex/P20-S3-database-administration-authorization
+active_branch: codex/P20-S3-javafx-permission-gating
 active_pull_request: null
-active_head: 56c792c3787ac0a0d9cef980e8a07bee07b26b1c
-next_action: "Implement and publish the focused P20-S3 DATABASE_ADMIN authorization tranche from merged main 56c792c3787ac0a0d9cef980e8a07bee07b26b1c, validate exact-head Maven PR Tests, and stop before merge for owner acceptance."
+active_head: 841f17d91bf85f1337f3f71b4fcd719c26f15404
+next_action: "Implement and publish the focused P20-S3 JavaFX permission-gating tranche from merged main 841f17d91bf85f1337f3f71b4fcd719c26f15404, validate exact-head Maven PR Tests, and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -269,9 +269,10 @@ Current authenticated audit actor tranche:
 
 Governing actor design: `doc/P20-S3-authenticated-audit-actor.md`.
 
-Current database administration authorization tranche:
+Completed database administration authorization tranche:
 
-- branch `codex/P20-S3-database-administration-authorization` starts from exact merged `main` `56c792c3787ac0a0d9cef980e8a07bee07b26b1c`;
+- PR #331 exact head `ec544039444d014c3e50deceea9a653372b119a5` passed Maven PR Tests run `33815258946`, job `100845874647`: clean headless verification, repeated full Maven tests, and production JavaFX route compliance all succeeded;
+- the owner verified and merged PR #331 to `main` at `841f17d91bf85f1337f3f71b4fcd719c26f15404`;
 - post-login whole-database backup, restore-to-validated-copy, and validated-copy activation route through service-layer `DatabaseAdministrationService` requiring `DATABASE_ADMIN`, while persistence `DatabaseTransferService` remains policy-free;
 - the transfer facade resolves the current `UiServiceRegistry` bundle guard on each operation so a long-lived workspace cannot retain the old database's authorization guard after switching;
 - `CompanyOwnershipService.assignOwner(...)` and production `SampleCompanyService.createOrRefresh()` require `DATABASE_ADMIN`; ownership repair derives the factual audit actor from the authenticated ADMIN session;
@@ -281,9 +282,19 @@ Current database administration authorization tranche:
 
 Governing database-admin design: `doc/P20-S3-database-administration-authorization.md`.
 
-Still required before P20-S3 completion after this tranche:
+Current JavaFX permission-gating tranche:
 
-- JavaFX global and panel-local mutation gating using the same fixed policy;
+- branch `codex/P20-S3-javafx-permission-gating` starts from exact merged `main` `841f17d91bf85f1337f3f71b4fcd719c26f15404`;
+- global mutation commands declare their required fixed permission through `AppPanel.requiredPermission(...)`;
+- `ProductionWorkspaceWindow` combines active-panel capability with current-session permission and returns an explanatory denial before dispatch if invoked directly;
+- panel-local durable actions use the same fixed permission policy without replacing independent busy/selection/lifecycle disable reasons;
+- the audit identified one directly blocking prerequisite defect: production Chart of Accounts JSON import was a durable mutation without a P20 service guard; this tranche adds `BOOKKEEPING_WRITE` to that commit boundary and guarded production composition rather than relying on UI disabling;
+- read/navigation/preview controls remain available; export and presentation-preference actions retain `EXPORT` and `UI_PREFERENCE_WRITE` respectively;
+- focused JavaFX/session and source-route regression coverage is included;
+- no schema or migration change.
+
+Still required after this tranche before P20-S3 completion:
+
 - final governing interface/user-role documentation reconciliation;
 - final Maven PR Tests and owner desktop acceptance.
 
@@ -293,6 +304,7 @@ Required reading:
 - `doc/P20-S3-runtime-authorization.md`;
 - `doc/P20-S3-authenticated-audit-actor.md`;
 - `doc/P20-S3-database-administration-authorization.md`;
+- `doc/P20-S3-javafx-permission-gating.md`;
 - `doc/P20-S3-fixed-asset-authorization.md`;
 - `doc/P20-S3-inventory-authorization.md`;
 - `doc/P20-S3-period-close-authorization.md`;
