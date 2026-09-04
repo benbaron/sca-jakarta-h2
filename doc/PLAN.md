@@ -1,12 +1,12 @@
 ---
-plan_version: 282
+plan_version: 283
 active_phase: P20
 active_slice: P20-S3
 active_status: VERIFYING
 active_branch: codex/P20-S3-final-reconciliation
-active_pull_request: null
-active_head: d2dba2c270c8c23594f1073f757c40d15d3d9186
-next_action: "Reconcile the final P20-S3 governing user-role and execution-ledger documentation on codex/P20-S3-final-reconciliation from merged main d2dba2c270c8c23594f1073f757c40d15d3d9186, open a draft PR, validate exact-head Maven PR Tests, and stop for owner desktop acceptance before marking P20-S3 DONE."
+active_pull_request: 333
+active_head: 966c4dff0d214a3c8e29dc7895d529acfea32ac2
+next_action: "Complete owner desktop acceptance for draft PR #333 across VIEWER, ACCOUNTANT, MANAGER, and ADMIN permission behavior plus company/session switching; do not merge before acceptance. After acceptance and merge, verify post-merge main before marking P20-S3 DONE."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -299,7 +299,8 @@ Current final P20-S3 reconciliation tranche:
 
 - branch `codex/P20-S3-final-reconciliation` starts from exact merged `main` `d2dba2c270c8c23594f1073f757c40d15d3d9186`;
 - reconcile stale User Admin documentation to the implemented JavaFX `SECURITY_ADMIN` gating and record the completed #332/CI/merge evidence in this execution ledger;
-- no Java production/test code, schema, migration, or interface-operation-matrix change is required by this documentation-only reconciliation.
+- no Java production/test code, schema, migration, or interface-operation-matrix change is required by this documentation-only reconciliation;
+- draft PR #333 behavior/documentation head `966c4dff0d214a3c8e29dc7895d529acfea32ac2` passed Maven PR Tests run `33833984753`, job `100902609878`: clean headless verification, repeated full Maven tests, and production JavaFX route compliance all succeeded.
 
 Still required before P20-S3 completion:
 
