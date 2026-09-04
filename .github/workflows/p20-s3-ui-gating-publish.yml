@@ -40,13 +40,13 @@ jobs:
           git apply --check /tmp/patch
           git apply /tmp/patch
           git diff --check
-          git diff "$BASE" --name-only | LC_ALL=C sort > /tmp/actual-paths.txt
+          git add -A
+          git diff --cached "$BASE" --name-only | LC_ALL=C sort > /tmp/actual-paths.txt
           diff -u /tmp/expected-paths.txt /tmp/actual-paths.txt
           while read -r expected path; do
             actual="$(git hash-object "$path")"
             test "$actual" = "$expected" || { echo "blob mismatch: $path expected=$expected actual=$actual" >&2; exit 1; }
           done < /tmp/expected-blobs.txt
-          git add -A
           git diff --cached --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
