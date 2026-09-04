@@ -43,4 +43,17 @@ final class ServiceAuthorization
         }
         return guard.requireActor(permission, companyCode, operation);
     }
+
+    static String actor(
+            AuthorizationGuard guard,
+            ApplicationPermission permission,
+            String operation,
+            String fallbackActor)
+    {
+        if (guard == null)
+        {
+            return fallbackActor;
+        }
+        return guard.require(permission, operation).username();
+    }
 }

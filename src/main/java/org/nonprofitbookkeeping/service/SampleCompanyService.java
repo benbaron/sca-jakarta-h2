@@ -30,14 +30,25 @@ public class SampleCompanyService
     private static final String SAMPLE_VERSION = "P03-S00";
 
     private final Jpa jpa;
+    private final AuthorizationGuard authorizationGuard;
 
     public SampleCompanyService(Jpa jpa)
     {
+        this(jpa, null);
+    }
+
+    public SampleCompanyService(Jpa jpa, AuthorizationGuard authorizationGuard)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
+        this.authorizationGuard = authorizationGuard;
     }
 
     public SampleCompanySummary createOrRefresh()
     {
+        ServiceAuthorization.require(
+                authorizationGuard,
+                ApplicationPermission.DATABASE_ADMIN,
+                "create or refresh sample company data");
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();

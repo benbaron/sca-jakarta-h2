@@ -1,12 +1,12 @@
 ---
-plan_version: 279
+plan_version: 280
 active_phase: P20
 active_slice: P20-S3
-active_status: VERIFYING
-active_branch: codex/P20-S3-authenticated-audit-actor
-active_pull_request: 330
-active_head: d3667270f34bc971a87d887ae96141db5af0d900
-next_action: "Validate Maven PR Tests on the PLAN-only successor to PR #330 after recording the green behavior/documentation head d3667270f34bc971a87d887ae96141db5af0d900 (run 33807059790, job 100819950561), then stop before merge for owner desktop acceptance."
+active_status: IN_PROGRESS
+active_branch: codex/P20-S3-database-administration-authorization
+active_pull_request: null
+active_head: 56c792c3787ac0a0d9cef980e8a07bee07b26b1c
+next_action: "Implement and publish the focused P20-S3 DATABASE_ADMIN authorization tranche from merged main 56c792c3787ac0a0d9cef980e8a07bee07b26b1c, validate exact-head Maven PR Tests, and stop before merge for owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -261,16 +261,28 @@ Current authenticated audit actor tranche:
 - Journal, fixed asset/depreciation/lifecycle, inventory, period close/reopen, reconciliation successor, reviewed-statement acceptance, CoA CSV, SCLX, strict/normalized bank review, and User Admin current-operation audit writes are covered;
 - SCLX source period-close and audit-history actor values remain historical source facts and are not rewritten; only new local import/canonical-transaction audit facts use the authenticated current actor;
 - `DesktopActorIdentity` resolves authenticated session identity first, protected JavaFX actor displays are read-only, and literal/workstation actors no longer act as authority on already-guarded production routes;
-- Company Ownership Diagnostics remains outside this tranche because its mutations are classified `DATABASE_ADMIN` and are deliberately deferred to the next authorization tranche; legacy `AccountingPeriodService` has no production route and remains non-authoritative;
+- Company Ownership Diagnostics was outside the actor tranche because its mutations are classified `DATABASE_ADMIN`; the following database-administration tranche owns that guard and actor conversion. Legacy `AccountingPeriodService` has no production route and remains non-authoritative;
 - direct H2 regression coverage proves spoofed Journal/User Admin actor inputs are replaced by authenticated username, while source-route coverage requires authenticated actor derivation across all current guarded audit-producing production boundaries and read-only actor displays;
 - there is no schema or migration change;
-- PR #330 behavior/documentation head `d3667270f34bc971a87d887ae96141db5af0d900` passed Maven PR Tests run `33807059790`, job `100819950561`: clean headless verification, repeated full Maven tests, and production JavaFX route compliance all succeeded.
+- PR #330 behavior/documentation head `d3667270f34bc971a87d887ae96141db5af0d900` passed Maven PR Tests run `33807059790`, job `100819950561`: clean headless verification, repeated full Maven tests, and production JavaFX route compliance all succeeded;
+- final exact PR head `abdef30d53655ee19d753ca80af2104e0efbff4a` passed Maven PR Tests run `33807732460`, job `100822104225`, was owner-accepted, and merged to `main` at `56c792c3787ac0a0d9cef980e8a07bee07b26b1c`.
 
 Governing actor design: `doc/P20-S3-authenticated-audit-actor.md`.
 
+Current database administration authorization tranche:
+
+- branch `codex/P20-S3-database-administration-authorization` starts from exact merged `main` `56c792c3787ac0a0d9cef980e8a07bee07b26b1c`;
+- post-login whole-database backup, restore-to-validated-copy, and validated-copy activation route through service-layer `DatabaseAdministrationService` requiring `DATABASE_ADMIN`, while persistence `DatabaseTransferService` remains policy-free;
+- the transfer facade resolves the current `UiServiceRegistry` bundle guard on each operation so a long-lived workspace cannot retain the old database's authorization guard after switching;
+- `CompanyOwnershipService.assignOwner(...)` and production `SampleCompanyService.createOrRefresh()` require `DATABASE_ADMIN`; ownership repair derives the factual audit actor from the authenticated ADMIN session;
+- database selection/create/retry at the outer login gate remains deliberately pre-authentication;
+- direct integration and source-route coverage are added for non-ADMIN denial/no mutation, ADMIN success, durable denial facts, authenticated repair actor, current-session changes, and guarded production composition;
+- there is no schema or migration change.
+
+Governing database-admin design: `doc/P20-S3-database-administration-authorization.md`.
+
 Still required before P20-S3 completion after this tranche:
 
-- database administration authorization;
 - JavaFX global and panel-local mutation gating using the same fixed policy;
 - final governing interface/user-role documentation reconciliation;
 - final Maven PR Tests and owner desktop acceptance.
@@ -280,6 +292,7 @@ Required reading:
 - `doc/P20-S1-authentication-authorization-boundary.md`;
 - `doc/P20-S3-runtime-authorization.md`;
 - `doc/P20-S3-authenticated-audit-actor.md`;
+- `doc/P20-S3-database-administration-authorization.md`;
 - `doc/P20-S3-fixed-asset-authorization.md`;
 - `doc/P20-S3-inventory-authorization.md`;
 - `doc/P20-S3-period-close-authorization.md`;

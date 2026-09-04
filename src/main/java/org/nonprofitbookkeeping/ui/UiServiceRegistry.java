@@ -12,6 +12,7 @@ import org.nonprofitbookkeeping.interchange.bank.BankStatementOfxExportService;
 import org.nonprofitbookkeeping.interchange.bank.BankStatementReviewService;
 import org.nonprofitbookkeeping.interchange.bank.NormalizedBankCsvReviewService;
 import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
+import org.nonprofitbookkeeping.persistence.DatabaseTransferService;
 import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.repository.JdbcCompanyUiPreferenceRepository;
 import org.nonprofitbookkeeping.repository.JdbcPeriodCloseRunRepository;
@@ -35,6 +36,7 @@ import org.nonprofitbookkeeping.service.CompanyOwnershipService;
 import org.nonprofitbookkeeping.service.CompanyView;
 import org.nonprofitbookkeeping.service.CompanyUiPreferencesService;
 import org.nonprofitbookkeeping.service.CoaCsvImportService;
+import org.nonprofitbookkeeping.service.DatabaseAdministrationService;
 import org.nonprofitbookkeeping.service.DiagnosticsQueryService;
 import org.nonprofitbookkeeping.service.FinancialReportService;
 import org.nonprofitbookkeeping.service.FixedAssetService;
@@ -132,7 +134,15 @@ public final class UiServiceRegistry
     public static CompanyAdminService companyAdmin() { return services().companyAdmin(); }
     public static CompanyOwnershipService companyOwnership()
     {
-        return new CompanyOwnershipService(services().jpa());
+        ServiceBundle current = services();
+        return new CompanyOwnershipService(current.jpa(), current.authorizationGuard());
+    }
+    public static DatabaseAdministrationService databaseAdministration(DatabaseTransferService transferService)
+    {
+        Objects.requireNonNull(transferService, "transferService");
+        return new DatabaseAdministrationService(
+                transferService,
+                () -> services().authorizationGuard());
     }
     public static CompanyUiPreferencesService companyUiPreferences()
     {
@@ -317,7 +327,7 @@ public final class UiServiceRegistry
                 transactionEntry,
                 transactionCorrection,
                 new TransactionReferenceDataService(jpa, UiServiceRegistry::activeCompanyCode),
-                new SampleCompanyService(jpa),
+                new SampleCompanyService(jpa, authorizationGuard),
                 new FinancialReportService(jpa, UiServiceRegistry::activeCompanyCode),
                 new JpaDashboardQueryService(jpa),
                 new BankReconciliationWorkspaceService(jpa, authorizationGuard),
