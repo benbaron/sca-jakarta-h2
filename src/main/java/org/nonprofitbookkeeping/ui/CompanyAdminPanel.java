@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.animation.PauseTransition;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -117,6 +118,11 @@ public class CompanyAdminPanel implements AppPanel
         add.setOnAction(event -> onNew());
         Button save = new Button("Save");
         save.setOnAction(event -> saveCompany());
+        UiPermissionGate.gate(add, ApplicationPermission.COMPANY_ADMIN, "Create a company");
+        UiPermissionGate.gate(save, ApplicationPermission.COMPANY_ADMIN, "Save company administration changes");
+        UiPermissionGate.gate(makeActiveChart, ApplicationPermission.COMPANY_ADMIN, "Change the active Chart of Accounts");
+        UiPermissionGate.gate(defaultReport, ApplicationPermission.COMPANY_ADMIN, "Change company reporting defaults");
+        UiPermissionGate.gate(defaultReportExportFormat, ApplicationPermission.COMPANY_ADMIN, "Change company reporting defaults");
         Button refresh = new Button("Refresh");
         refresh.setOnAction(event -> reload(editingCompanyId));
         selectActive.setDisable(true);
@@ -773,6 +779,16 @@ public class CompanyAdminPanel implements AppPanel
     public Node root()
     {
         return root;
+    }
+
+    @Override
+    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return switch (command)
+        {
+            case NEW_ACTIVE, SAVE_ACTIVE -> java.util.Optional.of(ApplicationPermission.COMPANY_ADMIN);
+            default -> java.util.Optional.empty();
+        };
     }
 
     @Override

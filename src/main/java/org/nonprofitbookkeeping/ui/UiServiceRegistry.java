@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.interchange.coa.ChartOfAccountsJsonImportService;
 import org.nonprofitbookkeeping.interchange.sclx.SclxCoreSnapshotQueryService;
 import org.nonprofitbookkeeping.interchange.sclx.SclxFileExportService;
 import org.nonprofitbookkeeping.interchange.sclx.SclxImportPreviewService;
@@ -85,6 +86,12 @@ public final class UiServiceRegistry
     {
         ServiceBundle current = services();
         return new CoaCsvImportService(
+                current.jpa(), UiServiceRegistry::activeCompanyCode, current.authorizationGuard());
+    }
+    public static ChartOfAccountsJsonImportService coaJsonImport()
+    {
+        ServiceBundle current = services();
+        return new ChartOfAccountsJsonImportService(
                 current.jpa(), UiServiceRegistry::activeCompanyCode, current.authorizationGuard());
     }
     public static FundAdminService fundAdmin() { return services().fundAdmin(); }

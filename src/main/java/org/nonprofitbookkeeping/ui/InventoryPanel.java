@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -111,6 +112,16 @@ public class InventoryPanel implements AppPanel
     }
 
     @Override
+    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return switch (command)
+        {
+            case NEW_ACTIVE, SAVE_ACTIVE -> java.util.Optional.of(ApplicationPermission.BOOKKEEPING_WRITE);
+            default -> java.util.Optional.empty();
+        };
+    }
+
+    @Override
     public java.util.Set<AppCommand> commandCapabilities()
     {
         return AppPanel.capabilities(AppCommand.NEW_ACTIVE, AppCommand.SAVE_ACTIVE);
@@ -167,6 +178,15 @@ public class InventoryPanel implements AppPanel
         adjust.setOnAction(e -> recordMovement(InventoryMovement.MovementType.ADJUSTMENT));
         Button reverse = new Button("Reverse Selected Movement");
         reverse.setOnAction(e -> reverseSelectedMovement());
+        UiPermissionGate.gate(newItem, ApplicationPermission.BOOKKEEPING_WRITE, "Create an inventory item");
+        UiPermissionGate.gate(editItem, ApplicationPermission.BOOKKEEPING_WRITE, "Edit an inventory item");
+        UiPermissionGate.gate(receive, ApplicationPermission.BOOKKEEPING_WRITE, "Receive inventory quantity");
+        UiPermissionGate.gate(issue, ApplicationPermission.BOOKKEEPING_WRITE, "Issue inventory quantity");
+        UiPermissionGate.gate(adjust, ApplicationPermission.BOOKKEEPING_WRITE, "Adjust inventory quantity");
+        UiPermissionGate.gate(reverse, ApplicationPermission.BOOKKEEPING_WRITE, "Reverse an inventory movement");
+        UiPermissionGate.gate(deactivateItem, ApplicationPermission.BOOKKEEPING_WRITE, "Deactivate an inventory item");
+        UiPermissionGate.gate(reactivateItem, ApplicationPermission.BOOKKEEPING_WRITE, "Reactivate an inventory item");
+        UiPermissionGate.gate(disposeItem, ApplicationPermission.BOOKKEEPING_WRITE, "Dispose an inventory item");
         Button drill = new Button("Drill Selected Txn to Ledger");
         drill.setOnAction(e -> drillSelectedMovement());
 
@@ -210,6 +230,7 @@ public class InventoryPanel implements AppPanel
         editorTitle.getStyleClass().add("panel-title");
         Button save = new Button("Save Item");
         save.setOnAction(e -> saveItem());
+        UiPermissionGate.gate(save, ApplicationPermission.BOOKKEEPING_WRITE, "Save an inventory item");
         Button cancel = new Button("Cancel");
         cancel.setOnAction(e -> cancelItemEditor());
         HBox actions = new HBox(8, save, cancel);

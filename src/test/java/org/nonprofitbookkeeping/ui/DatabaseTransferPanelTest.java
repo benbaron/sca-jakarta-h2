@@ -6,11 +6,15 @@ import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.persistence.DatabaseTransferService;
+import org.nonprofitbookkeeping.service.AuthenticatedUserSession;
 
 import java.nio.file.Path;
+import java.util.Optional;
 import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,6 +23,30 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DatabaseTransferPanelTest
 {
+    private Optional<AuthenticatedUserSession> previousSession;
+
+    @BeforeEach
+    void installAdminSession()
+    {
+        UiSessionState session = MainWindow.sharedSessionState();
+        previousSession = session.authenticatedUser();
+        session.setAuthenticatedUser(UiPermissionTestSessions.admin());
+    }
+
+    @AfterEach
+    void restoreSession()
+    {
+        UiSessionState session = MainWindow.sharedSessionState();
+        if (previousSession != null && previousSession.isPresent())
+        {
+            session.setAuthenticatedUser(previousSession.orElseThrow());
+        }
+        else
+        {
+            session.clearAuthenticatedUser();
+        }
+    }
+
     @TempDir
     Path tempDir;
 

@@ -32,6 +32,7 @@ import org.nonprofitbookkeeping.report.ReportRequest;
 import org.nonprofitbookkeeping.report.ReportResult;
 import org.nonprofitbookkeeping.model.FixedAsset;
 import org.nonprofitbookkeeping.model.InventoryItem;
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import org.nonprofitbookkeeping.service.FiscalPeriodRange;
 import org.nonprofitbookkeeping.service.CompanyReportingDefaults;
 import org.nonprofitbookkeeping.service.CompanyUiPreferencesService;
@@ -127,6 +128,7 @@ public class ReportLibraryPanel implements AppPanel
 
         Button run = new Button("Run");
         Button export = new Button("Export");
+        UiPermissionGate.gate(export, ApplicationPermission.EXPORT, "Export a financial report");
         Button drillLedger = new Button("Drill to Journal");
         exportFormat.getItems().setAll(FinancialReportExportFormat.values());
         exportFormat.getSelectionModel().select(reportingDefaults.defaultExportFormat());

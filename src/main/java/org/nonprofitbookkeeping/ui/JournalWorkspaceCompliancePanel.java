@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.animation.PauseTransition;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
@@ -97,6 +98,12 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
     public void onSave()
     {
         delegate.onSave();
+    }
+
+    @Override
+    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return delegate.requiredPermission(command);
     }
 
     @Override

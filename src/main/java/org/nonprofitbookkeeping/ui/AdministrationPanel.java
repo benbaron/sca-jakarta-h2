@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.scene.Node;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -108,6 +109,13 @@ public final class AdministrationPanel implements AppPanel
     {
         AppPanel selected = selectedPanel();
         return selected == null ? Set.of() : Set.copyOf(selected.commandCapabilities());
+    }
+
+    @Override
+    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        AppPanel selected = selectedPanel();
+        return selected == null ? java.util.Optional.empty() : selected.requiredPermission(command);
     }
 
     @Override

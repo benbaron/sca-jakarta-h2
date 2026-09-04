@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -210,6 +211,10 @@ public final class JournalWorkspacePanel implements AppPanel
         editButton.setOnAction(event -> editSelectedTransaction());
         saveButton.setOnAction(event -> saveCurrentEntry());
         deleteButton.setOnAction(event -> deleteOrReverseCurrentTransaction());
+        UiPermissionGate.gate(newButton, ApplicationPermission.BOOKKEEPING_WRITE, "Create a journal entry");
+        UiPermissionGate.gate(editButton, ApplicationPermission.BOOKKEEPING_WRITE, "Edit a journal entry");
+        UiPermissionGate.gate(saveButton, ApplicationPermission.BOOKKEEPING_WRITE, "Save a journal entry");
+        UiPermissionGate.gate(deleteButton, ApplicationPermission.BOOKKEEPING_WRITE, "Delete or reverse a journal entry");
         refreshButton.setOnAction(event -> reloadJournal());
         searchText.setOnAction(event -> reloadJournal());
 
@@ -1293,6 +1298,16 @@ public final class JournalWorkspacePanel implements AppPanel
     public Node root()
     {
         return root;
+    }
+
+    @Override
+    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return switch (command)
+        {
+            case NEW_ACTIVE, SAVE_ACTIVE -> java.util.Optional.of(ApplicationPermission.BOOKKEEPING_WRITE);
+            default -> java.util.Optional.empty();
+        };
     }
 
     @Override

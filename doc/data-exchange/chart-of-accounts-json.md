@@ -212,3 +212,8 @@ Owner desktop verification for this slice:
 Final automated verification passed in GitHub Actions run `30141967625`: proxy-free `mvn clean verify`, the repeated normal Maven test suite, and the focused JavaFX route-compliance suite all completed successfully on clean-verification head `555206c60009410fe0a51afe9a1fff6957572cd6`.
 
 The owner confirmed the desktop verification checklist, and PR #197 merged to `main` at `80fc7367d5b66f77a0d8d4414b1fc20a224b93e7`.
+
+
+## P20-S3 runtime authorization
+
+Production Chart of Accounts JSON import commits require `BOOKKEEPING_WRITE` at `ChartOfAccountsJsonImportService.commit(...)` before ordinary commit validation. The production JavaFX wrapper obtains that guarded service from `UiServiceRegistry`; JSON preview remains non-mutating. The **Import JSON…** control reflects `BOOKKEEPING_WRITE`, while **Export JSON…** reflects `EXPORT`. UI disabling is explanatory only; direct service calls remain the authoritative authorization boundary.

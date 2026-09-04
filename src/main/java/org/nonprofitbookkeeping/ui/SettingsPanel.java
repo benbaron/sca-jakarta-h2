@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -181,6 +182,8 @@ public class SettingsPanel implements AppPanel
 
         Button save = new Button("Save");
         save.setOnAction(e -> onSave());
+        UiPermissionGate.gate(apply, ApplicationPermission.UI_PREFERENCE_WRITE, "Apply presentation preferences");
+        UiPermissionGate.gate(save, ApplicationPermission.UI_PREFERENCE_WRITE, "Save presentation preferences");
 
         return new VBox(8, grid, new HBox(8, apply, save));
     }
@@ -324,6 +327,14 @@ public class SettingsPanel implements AppPanel
     void setPeriodStartDayForTests(int value)
     {
         periodStartDay.getValueFactory().setValue(value);
+    }
+
+    @Override
+    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return command == AppCommand.SAVE_ACTIVE
+                ? java.util.Optional.of(ApplicationPermission.UI_PREFERENCE_WRITE)
+                : java.util.Optional.empty();
     }
 
     @Override

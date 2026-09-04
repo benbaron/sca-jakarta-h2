@@ -10,6 +10,8 @@ import org.nonprofitbookkeeping.model.ChartOfAccounts;
 import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.persistence.Jpa;
+import org.nonprofitbookkeeping.service.ApplicationPermission;
+import org.nonprofitbookkeeping.service.AuthorizationGuard;
 import org.nonprofitbookkeeping.service.CompanyOwnershipService;
 import org.nonprofitbookkeeping.service.InterchangeIdentityService;
 
@@ -40,10 +42,19 @@ public final class ChartOfAccountsJsonImportService
     private final CompanyOwnershipService ownership;
     private final InterchangeIdentityService identityService;
     private final IntConsumer afterAccountWrite;
+    private final AuthorizationGuard authorizationGuard;
 
     public ChartOfAccountsJsonImportService(Jpa jpa, Supplier<String> companyCodeSupplier)
     {
-        this(jpa, companyCodeSupplier, ignored -> { });
+        this(jpa, companyCodeSupplier, null, ignored -> { });
+    }
+
+    public ChartOfAccountsJsonImportService(
+            Jpa jpa,
+            Supplier<String> companyCodeSupplier,
+            AuthorizationGuard authorizationGuard)
+    {
+        this(jpa, companyCodeSupplier, authorizationGuard, ignored -> { });
     }
 
     ChartOfAccountsJsonImportService(
@@ -51,9 +62,19 @@ public final class ChartOfAccountsJsonImportService
             Supplier<String> companyCodeSupplier,
             IntConsumer afterAccountWrite)
     {
+        this(jpa, companyCodeSupplier, null, afterAccountWrite);
+    }
+
+    ChartOfAccountsJsonImportService(
+            Jpa jpa,
+            Supplier<String> companyCodeSupplier,
+            AuthorizationGuard authorizationGuard,
+            IntConsumer afterAccountWrite)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
         this.afterAccountWrite = Objects.requireNonNull(afterAccountWrite, "afterAccountWrite");
+        this.authorizationGuard = authorizationGuard;
         this.jsonService = new ChartOfAccountsJsonService(jpa, companyCodeSupplier);
         this.ownership = new CompanyOwnershipService(jpa);
         this.identityService = new InterchangeIdentityService(jpa, ownership);
@@ -65,6 +86,13 @@ public final class ChartOfAccountsJsonImportService
      */
     public CoaImportResult commit(CoaImportPreview approvedPreview)
     {
+        if (authorizationGuard != null)
+        {
+            authorizationGuard.require(
+                    ApplicationPermission.BOOKKEEPING_WRITE,
+                    companyCodeSupplier.get(),
+                    "commit Chart of Accounts JSON import");
+        }
         Objects.requireNonNull(approvedPreview, "approvedPreview");
         CoaImportPreview current = jsonService.preview(approvedPreview.request());
         if (!approvedPreview.sourceSha256().equals(current.sourceSha256()))

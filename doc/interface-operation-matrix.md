@@ -1,6 +1,6 @@
 # Interface operation matrix
 
-Status: reconciled to current production architecture through P17-C11. Historical phase notes remain in archived plans and completed slice documents; this file describes current reachable production behavior.
+Status: reconciled to current production architecture through P20-S3 JavaFX permission gating. Historical phase notes remain in archived plans and completed slice documents; this file describes current reachable production behavior.
 
 ## Scope and authority
 
@@ -16,15 +16,20 @@ Status: reconciled to current production architecture through P17-C11. Historica
 
 | Command/source | Current behavior | Authority / boundary |
 |---|---|---|
-| New | Enabled only when the active panel declares a real New capability. | Active `AppPanel.commandCapabilities()` and panel `onNew`. |
-| Save | Enabled only when the active panel declares a real Save capability. | Active panel `onSave`; no empty success path. |
-| Validate | Journal-only validation command. | Canonical Journal editor/service validation; not a posting or approval workflow. |
+| New | Enabled only when the active panel declares a real New capability and the current session has that panel's required permission. | Active `AppPanel.commandCapabilities()` + `requiredPermission(...)`; panel `onNew`; guarded service remains authoritative. |
+| Save | Enabled only when the active panel declares a real Save capability and the current session has that panel's required permission. | Active `AppPanel.requiredPermission(...)` + panel `onSave`; guarded service remains authoritative. |
+| Validate | Journal-only non-mutating validation command; no write permission is added merely because it is global. | Canonical Journal editor/service validation; not a posting or approval workflow. |
 | Copy/Paste | Native JavaFX text-control behavior. | Focused standard text control; production shell does not intercept `Ctrl+C`/`Ctrl+V`. |
 | Close All Tabs | Closes closable workspace tabs with dirty-state protection. | `ProductionWorkspaceWindow` / `PanelHost`. |
 | Close Inspector | Hides the production inspector. | Production shell state. |
 | Find / command palette | Not installed or advertised. | Retired with legacy shell authority in P17-C11. |
 | Database create/open/switch/recovery | Prepares and validates the target database/service bundle before activation. | `DatabaseSessionController`, migration/location services, `UiServiceRegistry`, company-session validation. |
 | Import / export | Format-specific production actions; there is no generic Jobs workflow. | `ImportExportOrchestrationService` plus format-specific preview/review/commit services. |
+
+
+### JavaFX authorization presentation
+
+Production global and panel-local mutation controls reflect the same fixed `ApplicationPermission` policy enforced by guarded services. `UiPermissionGate` reads the shared current authenticated session and refreshes on login/logout/company-role rebind. A disabled JavaFX control is explanatory presentation only; the service boundary remains authoritative. Read/navigation/preview controls remain available, report/export actions require `EXPORT`, and presentation preference Apply/Save requires `UI_PREFERENCE_WRITE`.
 
 ## Production command capability matrix
 
@@ -70,9 +75,9 @@ Status: reconciled to current production architecture through P17-C11. Historica
 | Format / operation | Preview/review boundary | Commit/write authority | Important invariant |
 |---|---|---|---|
 | Chart of Accounts CSV | frozen COA preview with source/company/chart/target identity | `CoaCsvImportService` guarded outer commit + caller-owned `AccountAdminService` transaction | Accepted commit requires `BOOKKEEPING_WRITE`; preview remains non-mutating; accepted rows commit atomically and drift requires new preview. |
-| Chart of Accounts JSON | chart-only import/export validation | chart/account services | no transaction-history transfer. |
+| Chart of Accounts JSON | chart-only import/export validation | guarded `ChartOfAccountsJsonImportService.commit(...)`; export remains read-only | JSON import requires `BOOKKEEPING_WRITE`; export requires `EXPORT` in JavaFX; no transaction-history transfer. |
 | OFX/QFX | strict statement preview and configured-account validation | guarded `BankStatementReviewService` commit | accepted durable review requires `BOOKKEEPING_WRITE`; preview remains non-mutating and import does not auto-post ledger transactions. |
-| Mapped CSV | mapping/parse preview | guarded mapping-profile create/replace/active-state service + `BankCsvReviewService` delegation to guarded `BankStatementReviewService` commit | mapping-profile mutations and accepted durable review require `BOOKKEEPING_WRITE`; list/preview remain non-mutating; production current-session guard construction remains a consolidated wiring task. |
+| Mapped CSV | mapping/parse preview | guarded mapping-profile create/replace/active-state service + `BankCsvReviewService` delegation to guarded `BankStatementReviewService` commit | mapping-profile mutations and accepted durable review require `BOOKKEEPING_WRITE`; list/preview remain non-mutating; production composition uses the current-session guard. |
 | Normalized CSV | normalized identity/validation preview | guarded `NormalizedBankCsvReviewService.commit(...)` | accepted durable review requires `BOOKKEEPING_WRITE`; preview remains non-mutating and preserves external IDs/PAYEEID and governed review facts. |
 | Reviewed statement acceptance | selected durable statement row | guarded `ReviewedStatementAcceptanceService` + caller-owned canonical `TransactionEntryService` seam | accepted row requires `BOOKKEEPING_WRITE`; preview remains non-mutating; one explicit canonical transaction acceptance; reconciliation retains cleared-state ownership. |
 | SCLX | complete target-company preview, ownership gate, per-record classification/resolution | guarded `SclxImportCommitService` outer atomic target-company graph commit | Accepted commit requires `BOOKKEEPING_WRITE`; nested import helpers remain outer-governed; `NEW`/`IDENTICAL`/`CONFLICT` decisions are revalidated with no partial commit. |

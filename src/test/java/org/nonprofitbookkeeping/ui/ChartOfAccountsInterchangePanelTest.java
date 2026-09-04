@@ -39,7 +39,7 @@ class ChartOfAccountsInterchangePanelTest
         assertTrue(panel.contains("coaImportJsonButton"));
         assertTrue(panel.contains("coaExportJsonButton"));
         assertTrue(panel.contains("coaJsonPreviewTable"));
-        assertTrue(panel.contains("new ChartOfAccountsJsonImportService"));
+        assertTrue(panel.contains("UiServiceRegistry.coaJsonImport().commit(confirmed)"));
         assertTrue(panel.contains("delegate.onPanelShown()"));
         assertTrue(panel.contains("UiAsync.run"));
     }

@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -69,6 +70,8 @@ public class PeriodCloseRunsPanel implements AppPanel
         close.setOnAction(event -> closeRange());
         Button reopen = new Button("Reopen Selected");
         reopen.setOnAction(event -> reopenSelected());
+        UiPermissionGate.gate(close, ApplicationPermission.BOOKKEEPING_WRITE, "Close an accounting period range");
+        UiPermissionGate.gate(reopen, ApplicationPermission.BOOKKEEPING_WRITE, "Reopen an accounting period range");
         Button refresh = new Button("Refresh");
         refresh.setOnAction(event -> reload());
 

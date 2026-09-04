@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.ui;
 
 import javafx.scene.Node;
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 
 import java.util.EnumSet;
 import java.util.Optional;
@@ -31,6 +32,12 @@ public interface AppPanel
     default boolean supportsCommand(AppCommand command)
     {
         return commandCapabilities().contains(command);
+    }
+
+    /** Permission required for a genuine command in the panel's current mode. */
+    default Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return Optional.empty();
     }
 
     /**

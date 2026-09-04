@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -67,10 +68,14 @@ public final class DatabaseTransferPanel implements AppPanel
         backupButton.setOnAction(event -> actions.requestBackup());
         restoreButton.setOnAction(event -> actions.requestRestore());
         switchButton.setOnAction(event -> actions.requestSwitchToValidatedCopy());
-        backupButton.disableProperty().bind(actions.busyProperty());
-        restoreButton.disableProperty().bind(actions.busyProperty());
+        backupButton.disableProperty().bind(
+                actions.busyProperty().or(UiPermissionGate.deniedProperty(ApplicationPermission.DATABASE_ADMIN)));
+        restoreButton.disableProperty().bind(
+                actions.busyProperty().or(UiPermissionGate.deniedProperty(ApplicationPermission.DATABASE_ADMIN)));
         switchButton.disableProperty().bind(
-                actions.busyProperty().or(actions.switchAvailableProperty().not()));
+                actions.busyProperty()
+                        .or(actions.switchAvailableProperty().not())
+                        .or(UiPermissionGate.deniedProperty(ApplicationPermission.DATABASE_ADMIN)));
 
         ScrollPane scroll = new ScrollPane(buildContent());
         scroll.setId("databaseTransferScroll");

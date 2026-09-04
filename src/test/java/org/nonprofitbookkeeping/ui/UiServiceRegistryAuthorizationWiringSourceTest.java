@@ -60,6 +60,8 @@ class UiServiceRegistryAuthorizationWiringSourceTest
         assertTrue(registry.contains(
                 "newCoaCsvImportService(current.jpa(),UiServiceRegistry::activeCompanyCode,current.authorizationGuard())"));
         assertTrue(registry.contains(
+                "newChartOfAccountsJsonImportService(current.jpa(),UiServiceRegistry::activeCompanyCode,current.authorizationGuard())"));
+        assertTrue(registry.contains(
                 "newBankStatementReviewService(current.jpa(),current.authorizationGuard())"));
         assertTrue(registry.contains("newBankCsvReviewService(current.jpa(),current.authorizationGuard())"));
         assertTrue(registry.contains(

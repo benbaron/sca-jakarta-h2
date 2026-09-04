@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
@@ -160,6 +161,8 @@ public class UserAdminPanel implements AppPanel
         add.setOnAction(event -> newUser());
         Button save = new Button("Save User");
         save.setOnAction(event -> saveUser());
+        UiPermissionGate.gate(add, ApplicationPermission.SECURITY_ADMIN, "Create a user");
+        UiPermissionGate.gate(save, ApplicationPermission.SECURITY_ADMIN, "Save a user");
         form.add(new HBox(8, add, save), 1, row);
         return form;
     }
@@ -180,6 +183,8 @@ public class UserAdminPanel implements AppPanel
         add.setOnAction(event -> newRole());
         Button save = new Button("Save Role");
         save.setOnAction(event -> saveRole());
+        UiPermissionGate.gate(add, ApplicationPermission.SECURITY_ADMIN, "Create a role");
+        UiPermissionGate.gate(save, ApplicationPermission.SECURITY_ADMIN, "Save a role");
         form.add(new HBox(8, add, save), 1, row);
         return form;
     }
@@ -199,6 +204,10 @@ public class UserAdminPanel implements AppPanel
         add.setOnAction(event -> newAssignment());
         Button assign = new Button("Assign Role");
         assign.setOnAction(event -> assignRole());
+        UiPermissionGate.gate(add, ApplicationPermission.SECURITY_ADMIN, "Create a user-role assignment");
+        UiPermissionGate.gate(assign, ApplicationPermission.SECURITY_ADMIN, "Assign a user role");
+        UiPermissionGate.gate(endAssignment, ApplicationPermission.SECURITY_ADMIN, "End a user-role assignment");
+        UiPermissionGate.gate(revokeAssignment, ApplicationPermission.SECURITY_ADMIN, "Revoke a user-role assignment");
         form.add(new HBox(8, add, assign), 1, row++);
         form.addRow(row++, new Label("End / Revoke Date"), assignmentEnd);
         form.addRow(row++, new Label("Reason"), assignmentReason);
@@ -649,6 +658,16 @@ public class UserAdminPanel implements AppPanel
 
     @Override public String title() { return "User Admin"; }
     @Override public Node root() { return root; }
+
+    @Override
+    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return switch (command)
+        {
+            case NEW_ACTIVE, SAVE_ACTIVE -> java.util.Optional.of(ApplicationPermission.SECURITY_ADMIN);
+            default -> java.util.Optional.empty();
+        };
+    }
 
     @Override
     public Set<AppCommand> commandCapabilities()

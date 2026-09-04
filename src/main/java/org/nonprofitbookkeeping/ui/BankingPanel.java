@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
@@ -106,6 +107,10 @@ public class BankingPanel implements AppPanel
         newAccount.setOnAction(event -> startNewBankAccount());
         saveAccount.setOnAction(event -> saveBankAccount());
         refresh.setOnAction(event -> reloadWithDiscardProtection());
+        UiPermissionGate.gate(newBank, ApplicationPermission.COMPANY_ADMIN, "Create bank configuration");
+        UiPermissionGate.gate(saveBank, ApplicationPermission.COMPANY_ADMIN, "Save bank configuration");
+        UiPermissionGate.gate(newAccount, ApplicationPermission.COMPANY_ADMIN, "Create bank-account configuration");
+        UiPermissionGate.gate(saveAccount, ApplicationPermission.COMPANY_ADMIN, "Save bank-account configuration");
 
         configureBankTable();
         configureBankAccountTable();
@@ -137,6 +142,16 @@ public class BankingPanel implements AppPanel
 
     @Override public String title() { return "Banking"; }
     @Override public Node root() { return root; }
+
+    @Override
+    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return switch (command)
+        {
+            case NEW_ACTIVE, SAVE_ACTIVE -> java.util.Optional.of(ApplicationPermission.COMPANY_ADMIN);
+            default -> java.util.Optional.empty();
+        };
+    }
 
     @Override
     public java.util.Set<AppCommand> commandCapabilities()

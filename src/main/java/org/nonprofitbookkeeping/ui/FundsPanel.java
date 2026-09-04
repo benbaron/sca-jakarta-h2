@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.animation.PauseTransition;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -105,6 +106,9 @@ public class FundsPanel implements AppPanel
         add.setOnAction(event -> onNew());
         Button save = new Button("Save");
         save.setOnAction(event -> saveForm());
+        UiPermissionGate.gate(add, ApplicationPermission.BOOKKEEPING_WRITE, "Create a fund");
+        UiPermissionGate.gate(save, ApplicationPermission.BOOKKEEPING_WRITE, "Save a fund");
+        UiPermissionGate.gate(deleteUnused, ApplicationPermission.BOOKKEEPING_WRITE, "Delete an unused fund");
         deleteUnused.setDisable(true);
         deleteUnused.setOnAction(event -> deleteUnusedFund());
         refresh.setOnAction(event -> reload(editingFundId));
@@ -616,6 +620,16 @@ public class FundsPanel implements AppPanel
     public Node root()
     {
         return root;
+    }
+
+    @Override
+    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return switch (command)
+        {
+            case NEW_ACTIVE, SAVE_ACTIVE -> java.util.Optional.of(ApplicationPermission.BOOKKEEPING_WRITE);
+            default -> java.util.Optional.empty();
+        };
     }
 
     @Override

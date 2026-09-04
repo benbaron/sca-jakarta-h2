@@ -20,6 +20,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.NormalBalance;
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import org.nonprofitbookkeeping.service.ReviewedStatementAcceptanceService;
 import org.nonprofitbookkeeping.service.TransactionCommand;
 import org.nonprofitbookkeeping.service.TransactionCommandValidator;
@@ -75,6 +76,10 @@ final class ReviewedStatementAcceptanceDialog extends Dialog<ReviewedStatementAc
         FullTextTooltipInstaller.install(getDialogPane());
 
         Button accept = (Button) getDialogPane().lookupButton(getDialogPane().getButtonTypes().get(0));
+        UiPermissionGate.gate(
+                accept,
+                ApplicationPermission.BOOKKEEPING_WRITE,
+                "Create a transaction from the reviewed bank row");
         accept.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
             try
             {

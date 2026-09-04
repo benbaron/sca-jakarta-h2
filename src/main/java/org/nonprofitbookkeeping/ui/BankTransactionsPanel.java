@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -170,6 +171,10 @@ public class BankTransactionsPanel implements AppPanel
         acceptReviewedRow.setId("bankTransactionsAcceptReviewedRowButton");
         acceptReviewedRow.setDisable(true);
         acceptReviewedRow.setOnAction(event -> acceptSelectedReviewedRow());
+        UiPermissionGate.gate(acceptReviewedRow, ApplicationPermission.BOOKKEEPING_WRITE, "Create a transaction from a reviewed bank row");
+        UiPermissionGate.gate(exportCsv, ApplicationPermission.EXPORT, "Export bank CSV");
+        UiPermissionGate.gate(exportOfx, ApplicationPermission.EXPORT, "Export OFX");
+        UiPermissionGate.gate(exportQfx, ApplicationPermission.EXPORT, "Export QFX");
         configureStatementExport();
 
         HBox exportControls = new HBox(8,

@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -74,6 +75,11 @@ public class BudgetEditorPanel implements AppPanel
         Button newDraft = new Button("New Draft");
         newDraft.setId("budgetEditorNewDraftButton");
         newDraft.setOnAction(e -> createDraft());
+        UiPermissionGate.gate(newDraft, ApplicationPermission.BOOKKEEPING_WRITE, "Create a budget draft");
+        UiPermissionGate.gate(saveTargetButton, ApplicationPermission.BOOKKEEPING_WRITE, "Save a budget draft amount");
+        UiPermissionGate.gate(createRevisionButton, ApplicationPermission.BOOKKEEPING_WRITE, "Create a budget revision");
+        UiPermissionGate.gate(activateButton, ApplicationPermission.BOOKKEEPING_WRITE, "Activate a budget version");
+        UiPermissionGate.gate(archiveButton, ApplicationPermission.BOOKKEEPING_WRITE, "Archive a budget draft");
         createRevisionButton.setId("budgetEditorCreateRevisionButton");
         createRevisionButton.setOnAction(e -> createRevision());
         saveTargetButton.setId("budgetEditorSaveDraftAmountButton");
@@ -460,6 +466,14 @@ public class BudgetEditorPanel implements AppPanel
 
     @Override public String title() { return "Budget Editor"; }
     @Override public Node root() { return root; }
+    @Override
+    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return command == AppCommand.SAVE_ACTIVE
+                ? java.util.Optional.of(ApplicationPermission.BOOKKEEPING_WRITE)
+                : java.util.Optional.empty();
+    }
+
     @Override
     public java.util.Set<AppCommand> commandCapabilities()
     {
