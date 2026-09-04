@@ -20,8 +20,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "841f17d91bf85f1337f3f71b4fcd719c26f15404"
-          base64 -d .github/p20-s3-javafx-permission-gating.patch.gz.b64 | gunzip > /tmp/p20-ui.patch
+          test "$(git rev-parse HEAD^)" = "290c0e05dd01b477766f45f1c32adb45d30374bc"
+          test "$(git rev-parse HEAD^^)" = "841f17d91bf85f1337f3f71b4fcd719c26f15404"
+          test "$(sha256sum .github/p20-s3-javafx-permission-gating.patch.gz.b64 | awk '{print $1}')" = "b446bd2695f988205a125ca8901ebaaebc0ef51d3c392b79547718d962a2368d"
+          gunzip -c .github/p20-s3-javafx-permission-gating.patch.gz.b64 > /tmp/p20-ui.patch
           test "$(sha256sum /tmp/p20-ui.patch | awk '{print $1}')" = "ae5dde5052de491c5afa06b92445eb0828ffd95077860cdf30b35d9b06e12810"
           cp .github/p20-s3-javafx-permission-gating.blobs /tmp/expected.blobs
           rm .github/p20-s3-javafx-permission-gating.patch.gz.b64
