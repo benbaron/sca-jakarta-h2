@@ -1,0 +1,152 @@
+name: P20-S3 JavaFX gating publication bootstrap
+
+on:
+  push:
+    branches:
+      - codex/P20-S3-javafx-permission-gating-bootstrap
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Publish reviewed JavaFX permission gating patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=841f17d91bf85f1337f3f71b4fcd719c26f15404
+          TARGET=codex/P20-S3-javafx-permission-gating
+          current="$(git ls-remote origin refs/heads/$TARGET | awk '{print $1}')"
+          test "$current" = "$BASE"
+
+          cat > /tmp/expected-paths.txt <<'PATHS'
+doc/P20-S3-javafx-permission-gating.md
+doc/P20-S3-runtime-authorization.md
+doc/PLAN.md
+doc/data-exchange/chart-of-accounts-json.md
+doc/interface-operation-matrix.md
+src/main/java/org/nonprofitbookkeeping/interchange/coa/ChartOfAccountsJsonImportService.java
+src/main/java/org/nonprofitbookkeeping/ui/AdministrationPanel.java
+src/main/java/org/nonprofitbookkeeping/ui/AppPanel.java
+src/main/java/org/nonprofitbookkeeping/ui/AssetsRegisterPanel.java
+src/main/java/org/nonprofitbookkeeping/ui/BankTransactionsPanel.java
+src/main/java/org/nonprofitbookkeeping/ui/BankingPanel.java
+src/main/java/org/nonprofitbookkeeping/ui/BudgetEditorPanel.java
+src/main/java/org/nonprofitbookkeeping/ui/ChartOfAccountsInterchangePanel.java
+src/main/java/org/nonprofitbookkeeping/ui/ChartOfAccountsPanel.java
+src/main/java/org/nonprofitbookkeeping/ui/CompanyAdminPanel.java
+src/main/java/org/nonprofitbookkeeping/ui/CompanyOwnershipDiagnosticsPanel.java
+src/main/java/org/nonprofitbookkeeping/ui/DashboardHomePanel.java
+src/main/java/org/nonprofitbookkeeping/ui/DatabaseTransferMenuInstaller.java
+src/main/java/org/nonprofitbookkeeping/ui/DatabaseTransferPanel.java
+src/main/java/org/nonprofitbookkeeping/ui/DepreciationRunsPanel.java
+src/main/java/org/nonprofitbookkeeping/ui/FundsPanel.java
+src/main/java/org/nonprofitbookkeeping/ui/ImportPreviewPanel.java
+src/main/java/org/nonprofitbookkeeping/ui/InventoryPanel.java
+src/main/java/org/nonprofitbookkeeping/ui/JournalWorkspaceCompliancePanel.java
+src/main/java/org/nonprofitbookkeeping/ui/JournalWorkspacePanel.java
+src/main/java/org/nonprofitbookkeeping/ui/PanelHost.java
+src/main/java/org/nonprofitbookkeeping/ui/PeriodCloseRunsPanel.java
+src/main/java/org/nonprofitbookkeeping/ui/ProductionWorkspaceWindow.java
+src/main/java/org/nonprofitbookkeeping/ui/ReconciliationRunsPanel.java
+src/main/java/org/nonprofitbookkeeping/ui/ReportLibraryPanel.java
+src/main/java/org/nonprofitbookkeeping/ui/ReviewedStatementAcceptanceDialog.java
+src/main/java/org/nonprofitbookkeeping/ui/SecurityAdminPane.java
+src/main/java/org/nonprofitbookkeeping/ui/SettingsPanel.java
+src/main/java/org/nonprofitbookkeeping/ui/UiPermissionGate.java
+src/main/java/org/nonprofitbookkeeping/ui/UiServiceRegistry.java
+src/main/java/org/nonprofitbookkeeping/ui/UserAdminPanel.java
+src/test/java/org/nonprofitbookkeeping/interchange/coa/ChartOfAccountsJsonAuthorizationIntegrationTest.java
+src/test/java/org/nonprofitbookkeeping/ui/ChartOfAccountsInterchangePanelTest.java
+src/test/java/org/nonprofitbookkeeping/ui/DatabaseTransferMenuInstallerTest.java
+src/test/java/org/nonprofitbookkeeping/ui/DatabaseTransferPanelTest.java
+src/test/java/org/nonprofitbookkeeping/ui/GlobalCommandCapabilitySourceTest.java
+src/test/java/org/nonprofitbookkeeping/ui/JavaFxPermissionGatingSourceTest.java
+src/test/java/org/nonprofitbookkeeping/ui/ProductionWorkspaceCommandRoutingTest.java
+src/test/java/org/nonprofitbookkeeping/ui/UiPermissionGateTest.java
+src/test/java/org/nonprofitbookkeeping/ui/UiPermissionTestSessions.java
+src/test/java/org/nonprofitbookkeeping/ui/UiServiceRegistryAuthorizationWiringSourceTest.java
+PATHS
+          cat > /tmp/expected-blobs.txt <<'BLOBS'
+3094bc732599c97da58172156bf352b08c24d66d  doc/P20-S3-javafx-permission-gating.md
+d3e6671fc10d6ff081a08d5e5c720f3ea7f75f7a  doc/P20-S3-runtime-authorization.md
+ef8b0f332ca85d282889c778d0e76becbd358a1b  doc/PLAN.md
+eb2c5ef59a2d58fd9325b181e383d85ab001062a  doc/data-exchange/chart-of-accounts-json.md
+8ed39790bb715156139bdbb8faf75fa952352400  doc/interface-operation-matrix.md
+5e70a24c6f22a7ec7f7986a15db496cc5849bc14  src/main/java/org/nonprofitbookkeeping/interchange/coa/ChartOfAccountsJsonImportService.java
+9d2915d725cd23c1ca3bf92d26f7c8775418731e  src/main/java/org/nonprofitbookkeeping/ui/AdministrationPanel.java
+d4bb4dad2d709a3e15da8bccd7083d82023e897d  src/main/java/org/nonprofitbookkeeping/ui/AppPanel.java
+dde4315b16c5e2a6ccf1422e5bf8aa8bd798ac8a  src/main/java/org/nonprofitbookkeeping/ui/AssetsRegisterPanel.java
+1f38c370608fd9d7fc12e2910b1395ced6e6c99f  src/main/java/org/nonprofitbookkeeping/ui/BankTransactionsPanel.java
+84edcfb03ca2a0dac6e622e307c91d32f1a896b6  src/main/java/org/nonprofitbookkeeping/ui/BankingPanel.java
+429d129c55db31235eb55991844179fa800e2cf2  src/main/java/org/nonprofitbookkeeping/ui/BudgetEditorPanel.java
+521ebb28416740880c4f5bd3d9b582dda5d5cf6a  src/main/java/org/nonprofitbookkeeping/ui/ChartOfAccountsInterchangePanel.java
+738b40dd31c9d65aee03183fede5ab41053dad37  src/main/java/org/nonprofitbookkeeping/ui/ChartOfAccountsPanel.java
+006257e45352d28748c228cb618644169b50d896  src/main/java/org/nonprofitbookkeeping/ui/CompanyAdminPanel.java
+09f8fdb7ac75e37f6ef9ecad335f9dafe68286c5  src/main/java/org/nonprofitbookkeeping/ui/CompanyOwnershipDiagnosticsPanel.java
+b3495a66f7cabe279e005d834c1e1c6506859b45  src/main/java/org/nonprofitbookkeeping/ui/DashboardHomePanel.java
+b031cdfd20b357b7b16fc1a89b72ddb1d56b783a  src/main/java/org/nonprofitbookkeeping/ui/DatabaseTransferMenuInstaller.java
+3dd09cd02d066f7682e57a1aaf69c567a70ee868  src/main/java/org/nonprofitbookkeeping/ui/DatabaseTransferPanel.java
+4c3d40a06b5d77dbe8e5c1c006dd1fec3d7bce99  src/main/java/org/nonprofitbookkeeping/ui/DepreciationRunsPanel.java
+7a35d0294285934d46d1a39acd497e9672391065  src/main/java/org/nonprofitbookkeeping/ui/FundsPanel.java
+61907873a2e7b86382fd62851e5117095c20e9ac  src/main/java/org/nonprofitbookkeeping/ui/ImportPreviewPanel.java
+dcc38ad65874a315c8499b65617dcd0a0bccc20c  src/main/java/org/nonprofitbookkeeping/ui/InventoryPanel.java
+5084eeac0efb3de838e1eab93c0362acc83e717d  src/main/java/org/nonprofitbookkeeping/ui/JournalWorkspaceCompliancePanel.java
+84e36c948ff9c7ac7c851b5ae9b8e9b81e260e78  src/main/java/org/nonprofitbookkeeping/ui/JournalWorkspacePanel.java
+900a28a7238b846f0991f74e474c0acaf6ad2440  src/main/java/org/nonprofitbookkeeping/ui/PanelHost.java
+0010d67709529d7fe0942e83702e76f24b47c75f  src/main/java/org/nonprofitbookkeeping/ui/PeriodCloseRunsPanel.java
+59458d2506ca3dfacd4d8c63956447f5d7fe08c5  src/main/java/org/nonprofitbookkeeping/ui/ProductionWorkspaceWindow.java
+5b9266ef42cc1a311baae6d51f021c8806f7eb40  src/main/java/org/nonprofitbookkeeping/ui/ReconciliationRunsPanel.java
+eea45117aefadcb39aa23619b8005a47f360f18d  src/main/java/org/nonprofitbookkeeping/ui/ReportLibraryPanel.java
+38be7f6634fbfebfeaf461e9fadc041e1cbd18d8  src/main/java/org/nonprofitbookkeeping/ui/ReviewedStatementAcceptanceDialog.java
+f8ee1710337ecf032251addb4695349a8546ffad  src/main/java/org/nonprofitbookkeeping/ui/SecurityAdminPane.java
+528a954b2c7bea40674d04713c8889b1ada08241  src/main/java/org/nonprofitbookkeeping/ui/SettingsPanel.java
+e68a4373f8d9dbc8f7470ce4b8da00feee31a86e  src/main/java/org/nonprofitbookkeeping/ui/UiPermissionGate.java
+75a2b1d18a0543c0fcac1448ab24c3bc23cd0da8  src/main/java/org/nonprofitbookkeeping/ui/UiServiceRegistry.java
+86e9f45b501e86f2b4560a8783457f4303c5b347  src/main/java/org/nonprofitbookkeeping/ui/UserAdminPanel.java
+e58e18f6a6420ae54cdff2e1371f881af1b34b92  src/test/java/org/nonprofitbookkeeping/interchange/coa/ChartOfAccountsJsonAuthorizationIntegrationTest.java
+27772da97400693883b388e41fbe28a53dcf5d0e  src/test/java/org/nonprofitbookkeeping/ui/ChartOfAccountsInterchangePanelTest.java
+2e9e4c6415eaf4ccffb2b7b3e39682ca3d3f0173  src/test/java/org/nonprofitbookkeeping/ui/DatabaseTransferMenuInstallerTest.java
+74d9f5393ba82b39bd16f9dbe90c3180c83c2502  src/test/java/org/nonprofitbookkeeping/ui/DatabaseTransferPanelTest.java
+534c5e1f7b0c57dd23604703cd5abafb14b2e3a2  src/test/java/org/nonprofitbookkeeping/ui/GlobalCommandCapabilitySourceTest.java
+b839da8c9fa7fb374c0c1be9087799963752221f  src/test/java/org/nonprofitbookkeeping/ui/JavaFxPermissionGatingSourceTest.java
+5bcbe79a2e1af41aec08d74f10a14aa2ec0111d3  src/test/java/org/nonprofitbookkeeping/ui/ProductionWorkspaceCommandRoutingTest.java
+67d8aa0ed2e04e6d1b1e21f517e759da86d023cd  src/test/java/org/nonprofitbookkeeping/ui/UiPermissionGateTest.java
+0b86d98c8b3cffb0c2bc17fbc57fd1f2a9741258  src/test/java/org/nonprofitbookkeeping/ui/UiPermissionTestSessions.java
+94c7260c9064b534463f472bf68b1269a0879df1  src/test/java/org/nonprofitbookkeeping/ui/UiServiceRegistryAuthorizationWiringSourceTest.java
+BLOBS
+
+          cat .github/p20-s3-ui-gating-chunks/chunk-* > /tmp/patch.b64
+          echo 'd75a8ad2d4fea22289dcce57deae2bb0fd1db9a6e87c419b9d87781dbd381b3c  /tmp/patch.b64' | sha256sum -c -
+          base64 -d /tmp/patch.b64 > /tmp/patch.gz
+          echo '250f9c2fc69905e0a1208ee2c8f37c1d58cdf8945988edb485ab980650f93dc8  /tmp/patch.gz' | sha256sum -c -
+          gunzip -c /tmp/patch.gz > /tmp/patch
+          echo '0cb19f49fa07a6e83a31ec0a7eade6cc0196f95e6330c771e59de9e856fc3a07  /tmp/patch' | sha256sum -c -
+
+          git reset --hard "$BASE"
+          git apply --check /tmp/patch
+          git apply /tmp/patch
+          git diff --check
+          git diff --name-only | LC_ALL=C sort > /tmp/actual-paths.txt
+          diff -u /tmp/expected-paths.txt /tmp/actual-paths.txt
+
+          while read -r expected path; do
+            actual="$(git hash-object "$path")"
+            if [ "$actual" != "$expected" ]; then
+              echo "blob mismatch: $path expected=$expected actual=$actual" >&2
+              exit 1
+            fi
+          done < /tmp/expected-blobs.txt
+
+          git add -A
+          git diff --cached --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "P20-S3: enforce JavaFX permission gating"
+          test "$(git rev-parse HEAD^)" = "$BASE"
+          git push origin HEAD:$TARGET
