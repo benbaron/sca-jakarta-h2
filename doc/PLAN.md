@@ -1,12 +1,12 @@
 ---
-plan_version: 284
+plan_version: 285
 active_phase: P20
 active_slice: P20-S3
-active_status: VERIFYING
-active_branch: codex/P20-S3-post-merge-verification
-active_pull_request: 334
-active_head: 53b555722a78f58294f029c11fb27a91d1570bda
-next_action: "Complete owner desktop acceptance across VIEWER, ACCOUNTANT, MANAGER, and ADMIN permission behavior plus company/session switching. P20-S3 implementation and post-merge CI verification are complete; do not mark P20-S3 or P20 DONE until owner desktop acceptance is explicitly recorded."
+active_status: DONE
+active_branch: null
+active_pull_request: null
+active_head: null
+next_action: "P20 is complete through P20-S3. Rescan current main and deliberately define or select the next phase before implementation; no successor phase is currently defined in this PLAN."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -32,7 +32,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P17 | Cross-cutting UI, authority, cleanup, durable-record, documentation corrections | DONE through P17-C12 / PR #305 |
 | P18 | Depreciation-run workflow completion | DONE through P18-S1 / PR #306 |
 | P19 | Deferred Company Administration extensions | DONE through P19-S3 / PR #309 |
-| P20 | Authentication and runtime authorization | P20-S3 VERIFYING |
+| P20 | Authentication and runtime authorization | DONE through P20-S3 |
 
 ## 3. Established product decisions
 
@@ -152,7 +152,7 @@ Completed behavior includes:
 
 ### P20-S3 — Runtime authorization enforcement
 
-Status: VERIFYING.
+Status: DONE.
 
 Foundation PR #312 exact final head `db3a30289aa17b967948a79a048f9ebdf9c5042e` passed Maven PR Tests run `33293417227`, job `99208891671`, and merged to `main` at `1b11df7cdc98775c618e8489ca7608bde36ea547`.
 
@@ -305,22 +305,15 @@ Completed final P20-S3 reconciliation tranche:
 - the owner merged PR #333 to `main` at `7c1f5ae69b7631de801fdb8169230967767316ac`;
 - post-merge `main` Maven PR Tests run `33839082567`, job `100917493733` passed clean headless verification, repeated full Maven tests, and production JavaFX route compliance.
 
-Current post-merge verification:
+Completed P20-S3 verification and owner acceptance:
 
-- current `main` is exact merge commit `7c1f5ae69b7631de801fdb8169230967767316ac` for PR #333;
+- PR #334 exact final head `47903ad0db0556c19ba98f11a52022d56b73fea9` passed Maven PR Tests run `33921783760`, job `101181576090`: clean headless verification, Maven tests, and production JavaFX route compliance all succeeded;
+- the owner merged PR #334 to `main` at `7f611dd94b5d69d75e5dbed96730bea6a5941410`;
+- post-merge `main` Maven PR Tests run `33944333008`, job `101247580392` passed clean headless verification, Maven tests, and production JavaFX route compliance;
 - repository/governing-document inspection found no additional missing production service or JavaFX authorization boundary requiring another P20-S3 implementation tranche;
 - the previously stale source-route assertion remains correctly based on stable `UiPermissionGate` behavior rather than a local variable name;
-- P20-S3 remains in VERIFYING solely because owner desktop acceptance has not yet been recorded.
-
-Still required before P20-S3 completion:
-
-- owner desktop acceptance of the completed reserved-role permission behavior, including company/session switching, before P20-S3 is marked DONE:
-  - VIEWER: protected mutation controls are disabled/explained while read/report/export behavior remains available according to policy;
-  - ACCOUNTANT: bookkeeping mutation is available while Company Admin, Security Admin, and Database Admin are unavailable;
-  - MANAGER: bookkeeping plus non-security Company Admin are available while Security Admin and Database Admin are unavailable;
-  - ADMIN: all protected operations are available;
-  - company switch: permissions update immediately from current effective roles without application restart;
-  - Chart of Accounts JSON preview remains readable while accepted import requires `BOOKKEEPING_WRITE`.
+- on 2026-09-06 the owner explicitly accepted the completed desktop role/permission behavior, including VIEWER, ACCOUNTANT, MANAGER, ADMIN, company/session switching, and the Chart of Accounts JSON preview/import boundary;
+- all P20-S3 completion gates are satisfied, so P20-S3 and P20 are complete.
 
 Required reading:
 
@@ -370,4 +363,4 @@ Completion gate:
 
 ## 7. Advancement rule
 
-Execute only the active slice. Do not begin P20-S2 implementation until P20-S1 requirements are merged and current `main` is rescanned. Do not begin P20-S3 until P20-S2 is merged and authenticated session identity is authoritative.
+P20 is complete through P20-S3. No successor phase is currently defined in this PLAN. Before implementation resumes, rescan current `main`, deliberately define or select the next phase and first coherent slice, add its governing reading/inspection requirements, and only then set that slice to `READY`. Do not invent a successor phase from chat memory or an obsolete branch.
