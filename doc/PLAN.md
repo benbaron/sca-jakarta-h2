@@ -4,8 +4,8 @@ active_phase: P21
 active_slice: P21-S1
 active_status: READY
 active_branch: codex/P21-activity-event-accounting-plan
-active_pull_request: null
-active_head: 271bd417a918d02fff5aa82b588ffdb6700cceec
+active_pull_request: 336
+active_head: ffeaf29aca51cf3edce26a3043896cb1b211015e
 next_action: "Publish and verify the P21 planning boundary, then implement P21-S1 Activity administration from current main only after this planning PR is merged and the selected slice is re-read from the merged PLAN."
 ---
 
@@ -302,7 +302,7 @@ Completed final P20-S3 reconciliation tranche:
 - the tranche reconciled stale User Admin documentation to the implemented JavaFX `SECURITY_ADMIN` gating and recorded the completed #332/CI/merge evidence in this execution ledger;
 - no Java production/test code, schema, migration, or interface-operation-matrix change was included;
 - PR #333 behavior/documentation head `966c4dff0d214a3c8e29dc7895d529acfea32ac2` passed Maven PR Tests run `33833984753`, job `100902609878`: clean headless verification, repeated full Maven tests, and production JavaFX route compliance all succeeded;
-- PR #333 final exact head `5efced5e170db390292cdbf77a7a3b016538d718` passed Maven PR Tests run `33834473777`, job `100904026212`: clean headless verification, repeated full Maven tests, and production JavaFX route compliance all succeeded;
+- PR #333 final exact head `5efced5e170db390292bdb8169230967767316ac` passed Maven PR Tests run `33834473777`, job `100904026212`: clean headless verification, repeated full Maven tests, and production JavaFX route compliance all succeeded;
 - the owner merged PR #333 to `main` at `7c1f5ae69b7631de801fdb8169230967767316ac`;
 - post-merge `main` Maven PR Tests run `33839082567`, job `100917493733` passed clean headless verification, repeated full Maven tests, and production JavaFX route compliance.
 
