@@ -315,6 +315,12 @@ Completed P20-S3 verification and owner acceptance:
 - on 2026-09-06 the owner explicitly accepted the completed desktop role/permission behavior, including VIEWER, ACCOUNTANT, MANAGER, ADMIN, company/session switching, and the Chart of Accounts JSON preview/import boundary;
 - all P20-S3 completion gates are satisfied, so P20-S3 and P20 are complete.
 
+Completion-record publication:
+
+- branch `codex/P20-S3-completion` starts from exact merged `main` `7f611dd94b5d69d75e5dbed96730bea6a5941410`;
+- completion behavior/documentation head `e96d08eeb5b52982df89f304997d0ee3355fea50` records owner desktop acceptance and closes P20-S3/P20;
+- draft PR #335 changes only `doc/PLAN.md`; it does not define or begin a successor phase.
+
 Required reading:
 
 - `doc/P20-S1-authentication-authorization-boundary.md`;
