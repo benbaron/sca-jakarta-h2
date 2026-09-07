@@ -1,12 +1,12 @@
 ---
-plan_version: 285
-active_phase: P20
-active_slice: P20-S3
-active_status: DONE
-active_branch: null
-active_pull_request: null
-active_head: null
-next_action: "P20 is complete through P20-S3. Rescan current main and deliberately define or select the next phase before implementation; no successor phase is currently defined in this PLAN."
+plan_version: 286
+active_phase: P21
+active_slice: P21-S1
+active_status: READY
+active_branch: codex/P21-activity-event-accounting-plan
+active_pull_request: 336
+active_head: ffeaf29aca51cf3edce26a3043896cb1b211015e
+next_action: "Publish and verify the P21 planning boundary, then implement P21-S1 Activity administration from current main only after this planning PR is merged and the selected slice is re-read from the merged PLAN."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -33,6 +33,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P18 | Depreciation-run workflow completion | DONE through P18-S1 / PR #306 |
 | P19 | Deferred Company Administration extensions | DONE through P19-S3 / PR #309 |
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
+| P21 | Activity and Event Accounting | P21-S1 READY |
 
 ## 3. Established product decisions
 
@@ -319,7 +320,7 @@ Completion-record publication:
 
 - branch `codex/P20-S3-completion` starts from exact merged `main` `7f611dd94b5d69d75e5dbed96730bea6a5941410`;
 - completion behavior/documentation head `e96d08eeb5b52982df89f304997d0ee3355fea50` records owner desktop acceptance and closes P20-S3/P20;
-- draft PR #335 changes only `doc/PLAN.md`; it does not define or begin a successor phase.
+- draft PR #335 changed only `doc/PLAN.md` and merged to `main` at `6010a5563e70e58fc69a91197cbf1ec819bd346c`; post-merge Maven PR Tests run `34074737387`, job `101598529975` passed clean headless verification, Maven tests, and production JavaFX route compliance.
 
 Required reading:
 
@@ -367,6 +368,61 @@ Completion gate:
 - Maven PR Tests and production JavaFX route compliance are green on the exact final head;
 - owner desktop acceptance is complete.
 
-## 7. Advancement rule
+## 7. P21 — Activity and Event Accounting
 
-P20 is complete through P20-S3. No successor phase is currently defined in this PLAN. Before implementation resumes, rescan current `main`, deliberately define or select the next phase and first coherent slice, add its governing reading/inspection requirements, and only then set that slice to `READY`. Do not invent a successor phase from chat memory or an obsolete branch.
+Purpose: make the existing `Activity` accounting dimension operator-manageable and then provide a read-only event/project/occasion accounting workspace over canonical Activity-linked Journal transactions. P21 extends current H2/JPA authority and does not create an event ledger, posting workflow, schedule subsystem, approval workflow, or parallel persistence.
+
+Governing design: `doc/P21-activity-event-accounting.md`.
+
+### P21-S1 — Activity administration
+
+Status: READY.
+
+Required reading:
+
+- root `AGENTS.md`;
+- `doc/PLAN.md`;
+- `doc/P21-activity-event-accounting.md`;
+- `doc/interface-operation-matrix.md`;
+- `doc/ui_design_rules.md`;
+- `doc/ui/editor-guidelines.md`;
+- `doc/accounting/transaction-lifecycle.md`;
+- `doc/data-exchange/sclx.md`;
+- `doc/P20-S1-authentication-authorization-boundary.md`;
+- `doc/P20-S3-runtime-authorization.md`;
+- `doc/P20-S3-javafx-permission-gating.md`.
+
+Required inspection:
+
+- `Activity`, `TxnSplit`, `Txn`, `BudgetCategory`, and all current activity-related Flyway constraints;
+- `TransactionEntryService`, `TransactionReferenceDataService`, `CompanyOwnershipService`, and current stable-ID durable admin service patterns;
+- SCLX activity snapshot, preview, portable-identity, and commit paths;
+- `WorkspaceServices`, `UiServiceRegistry`, `PanelFactory`, `AppPanelId`, `NavigationPane`, `ProductionWorkspaceWindow`, and `UiPermissionGate`;
+- current table-state, production route-compliance, authorization, and durable-record lifecycle tests;
+- donor `benbaron/NonprofitAccounting` Activity/Event Accounting code only after current-repository inspection.
+
+Implement company-scoped stable-ID Activity create/update and governed lifecycle maintenance using current H2 authority. Activity code/name remain mutable business data; code remains company-unique; Journal and SCLX continue to consume the same Activity authority. Service-owned mutations require `BOOKKEEPING_WRITE`; VIEWER remains read-only; no parallel Activity cache or event entity is introduced. Determine physical-delete eligibility from current usage/lifecycle evidence before exposing any Delete action; used history must be preserved.
+
+Completion gate:
+
+- stable-ID Activity create/update/lifecycle behavior is atomic and company-scoped;
+- invalid, duplicate, cross-company, and unauthorized writes fail without partial mutation;
+- used Activity history is preserved under the adopted lifecycle rule;
+- P20 reserved-role/session switching behavior applies immediately at direct service and JavaFX boundaries;
+- production UI follows current New/Save/dirty-state/table/layout/lifecycle rules and truthfully explains unavailable deletion;
+- active Journal Activity choices refresh through existing H2 reference-data authority;
+- existing SCLX Activity import/export compatibility remains intact;
+- focused JUnit/H2/JavaFX tests, exact-head Maven PR Tests, and production JavaFX route compliance pass;
+- owner desktop acceptance is recorded before P21-S1 is marked DONE.
+
+### P21-S2 — Event Accounting workspace
+
+Status: BLOCKED on P21-S1.
+
+After P21-S1 is merged and accepted, implement a read-only Activity/event/project/occasion workspace that calculates income, expense, net, linked Journal detail, and factual deposit/refund/closeout presentation from canonical `Txn`/`TxnSplit` data. Adapt donor concepts to the current bank model: bank ledger accounts remain `AccountType.ASSET` with `AccountFunction.BANK`; do not introduce or restore `AccountType.BANK`. Drill-through must route to the existing Journal. The workspace does not post, approve, reconcile, or close accounting transactions.
+
+S2 remains blocked until S1 is merged and its Activity authority is current `main`.
+
+## 8. Advancement rule
+
+Execute only the active slice. P21-S1 may begin only after this P21 planning boundary is merged to current `main` and the merged PLAN/governing document are re-read. Do not begin P21-S2 until P21-S1 is merged, validation is green, and owner desktop acceptance is recorded. Candidate donor workflows such as donor/receipt management and monthly-close assistance are not active scope and require a later deliberate PLAN amendment.
