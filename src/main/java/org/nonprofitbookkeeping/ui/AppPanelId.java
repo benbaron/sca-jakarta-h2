@@ -39,6 +39,7 @@ public enum AppPanelId
 
     CHART_OF_ACCOUNTS,
     FUNDS,
+    ACTIVITIES,
     SETTINGS,
     DIAGNOSTICS,
     HELP;

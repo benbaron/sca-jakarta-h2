@@ -1,6 +1,6 @@
 # Model and persistence authority inventory
 
-Status: reconciled to current production authority through P17-C11. Historical migration/audit details remain in completed phase documents and archive material; this file identifies the authorities that current production must preserve and the compatibility stores that must not become a second business model.
+Status: reconciled to current production authority through the P21-S1 Activity administration implementation. Historical migration/audit details remain in completed phase documents and archive material; this file identifies the authorities that current production must preserve and the compatibility stores that must not become a second business model.
 
 ## Current persistence map
 
@@ -9,6 +9,7 @@ Status: reconciled to current production authority through P17-C11. Historical m
 | Canonical ledger / Journal | `Txn`, `TxnSplit`, `txn_supplemental_line`, `TransactionEntryService`, `TransactionCorrectionService` | yes | `JournalTransaction` / `PostingLine` JDBC compatibility model remains separate | Never add independent production writes to the compatibility model. |
 | Journal bank/cleared projection | `TxnSplit.bankCleared`, `bankClearedOn`, and exact reconciliation-session projection | yes | UI could become a second cleared-state writer | Journal renders `Not bank` / `Uncleared` / `Cleared` / `Mixed` read-only; reconciliation owns matching/cleared mutation. |
 | Fund master data | `Fund`, `FundAdminService`, `FundLookupService` | yes | code-keyed compatibility seams may remain for older callers | Stable ID is identity; referenced funds deactivate, unused funds may delete only after authoritative usage checks. |
+| Activity master data | `Activity`, `ActivityAdminService`, `ActivityLookupService` | yes | SCLX portable addressing remains company+current-code while source-specific `interchange_identity` rows preserve import traceability | Stable database ID is local identity; code/name are mutable. Journal/interchange-linked Activities deactivate/reactivate; only completely unreferenced Activities may delete. |
 | Company master data / selection | `Company`, `CompanyAdminService`, `CompanySessionController` | yes | recent/session selection is convenience, not company authority | Active selection requires an existing active H2 company. |
 | User/role/company assignment admin | `AppUser`, `AppRole`, `UserCompanyRole`, `UserAdminService` | yes for administration facts | no authentication/runtime authorization authority yet | Stable IDs and dated end/revoke history; no inferred authentication semantics. |
 | Budget | `BudgetPlan`, `BudgetLine`, `BudgetPlanService` | yes | retired sidecar target stores | Stable plan identity; draft/active/archived version lifecycle remains service-owned. |

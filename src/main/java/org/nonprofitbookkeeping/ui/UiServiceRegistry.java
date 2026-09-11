@@ -24,6 +24,8 @@ import org.nonprofitbookkeeping.report.SemanticAccountingReportQueryService;
 import org.nonprofitbookkeeping.report.AssetInventoryReportQueryService;
 import org.nonprofitbookkeeping.service.AccountAdminService;
 import org.nonprofitbookkeeping.service.AccountLookupService;
+import org.nonprofitbookkeeping.service.ActivityAdminService;
+import org.nonprofitbookkeeping.service.ActivityLookupService;
 import org.nonprofitbookkeeping.service.AuthenticationService;
 import org.nonprofitbookkeeping.service.AuditHistoryService;
 import org.nonprofitbookkeeping.service.AuthorizationGuard;
@@ -81,6 +83,7 @@ public final class UiServiceRegistry
     public static AccountLookupService accountLookup() { return services().accountLookup(); }
     public static FundLookupService fundLookup() { return services().fundLookup(); }
     public static BudgetCategoryLookupService budgetCategoryLookup() { return services().budgetCategoryLookup(); }
+    public static ActivityLookupService activityLookup() { return services().activityLookup(); }
     public static AccountAdminService accountAdmin() { return services().accountAdmin(); }
     public static CoaCsvImportService coaCsvImport()
     {
@@ -95,6 +98,7 @@ public final class UiServiceRegistry
                 current.jpa(), UiServiceRegistry::activeCompanyCode, current.authorizationGuard());
     }
     public static FundAdminService fundAdmin() { return services().fundAdmin(); }
+    public static ActivityAdminService activityAdmin() { return services().activityAdmin(); }
     public static BudgetCategoryAdminService budgetCategoryAdmin() { return services().budgetCategoryAdmin(); }
     public static BudgetPlanService budgetPlan() { return services().budgetPlan(); }
     public static BankConfigurationService bankConfiguration() { return services().bankConfiguration(); }
@@ -316,8 +320,10 @@ public final class UiServiceRegistry
                 new AccountLookupService(jpa, UiServiceRegistry::activeCompanyCode),
                 new FundLookupService(jpa, UiServiceRegistry::activeCompanyCode),
                 new BudgetCategoryLookupService(jpa, UiServiceRegistry::activeCompanyCode),
+                new ActivityLookupService(jpa, UiServiceRegistry::activeCompanyCode),
                 new AccountAdminService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
                 new FundAdminService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
+                new ActivityAdminService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
                 new BudgetCategoryAdminService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
                 new BudgetPlanService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
                 new BankConfigurationService(jpa, authorizationGuard),
@@ -516,8 +522,10 @@ public final class UiServiceRegistry
             AccountLookupService accountLookup,
             FundLookupService fundLookup,
             BudgetCategoryLookupService budgetCategoryLookup,
+            ActivityLookupService activityLookup,
             AccountAdminService accountAdmin,
             FundAdminService fundAdmin,
+            ActivityAdminService activityAdmin,
             BudgetCategoryAdminService budgetCategoryAdmin,
             BudgetPlanService budgetPlan,
             BankConfigurationService bankConfiguration,

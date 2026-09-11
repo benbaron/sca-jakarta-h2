@@ -33,6 +33,8 @@ class UiServiceRegistryAuthorizationWiringSourceTest
         assertTrue(registry.contains(
                 "newFundAdminService(jpa,UiServiceRegistry::activeCompanyCode,authorizationGuard)"));
         assertTrue(registry.contains(
+                "newActivityAdminService(jpa,UiServiceRegistry::activeCompanyCode,authorizationGuard)"));
+        assertTrue(registry.contains(
                 "newBudgetCategoryAdminService(jpa,UiServiceRegistry::activeCompanyCode,authorizationGuard)"));
         assertTrue(registry.contains(
                 "newBudgetPlanService(jpa,UiServiceRegistry::activeCompanyCode,authorizationGuard)"));

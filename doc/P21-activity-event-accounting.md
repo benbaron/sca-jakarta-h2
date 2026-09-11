@@ -46,6 +46,17 @@ The donor is reference only. Do not copy it blindly:
 9. **SCLX authority is preserved.** Activity administration must remain compatible with existing company-scoped SCLX activity identity and imports/exports; no second portable-identity scheme is introduced.
 10. **No schema change is assumed.** Add a migration only if implementation inspection proves the current `activity` schema cannot satisfy the adopted lifecycle contract.
 
+### P21-S1 implementation decisions
+
+Current-main inspection resolves the remaining Activity lifecycle question without a migration:
+
+- `Activity.id` remains the stable local identity used by `TxnSplit.activity_id` and by the maintenance service; renaming code/name updates that same row.
+- Physical deletion is permitted only when authoritative usage shows **zero `TxnSplit` references and zero Activity `interchange_identity` rows linked by `local_entity_id`**.
+- A Journal-linked or interchange-linked Activity remains durable history and uses deactivate/reactivate instead of physical deletion.
+- The existing SCLX company+current-code `activityId` format remains unchanged. A rename changes the next exported portable address consistently in both the Activity extension and transaction-line references; source-specific import identities remain traceability facts linked to the stable local row.
+- Activity create/update/deactivate/reactivate/delete writes create factual company-owned `AuditEvent` history using the authenticated username in guarded production composition.
+- No `Activity` entity change, Flyway migration, event entity, or parallel cache is required.
+
 ## P21-S1 — Activity administration
 
 ### Goal
