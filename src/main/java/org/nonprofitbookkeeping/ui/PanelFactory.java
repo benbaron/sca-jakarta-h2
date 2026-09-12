@@ -75,6 +75,7 @@ public final class PanelFactory
     {
         factories.put(AppPanelId.DASHBOARD, dashboardFactory);
         factories.put(AppPanelId.JOURNAL_PANE, JournalWorkspaceCompliancePanel::new);
+        factories.put(AppPanelId.EVENT_ACCOUNTING, EventAccountingPanel::new);
         factories.putIfAbsent(AppPanelId.BANKING, BankingPanel::new);
         factories.put(AppPanelId.BUDGET_EDITOR, BudgetEditorPanel::new);
         factories.put(AppPanelId.BUDGET_VS_ACTUAL, BudgetVsActualPanel::new);

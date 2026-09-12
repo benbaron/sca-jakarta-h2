@@ -39,6 +39,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 |---|---:|---:|---:|---|
 | Dashboard | yes | no | no | New opens the canonical Journal entry workflow. |
 | Journal | yes | yes | yes | Retired Ledger Register/Transaction Editor aliases normalize here. |
+| Event Accounting | no | no | no | Read-only Activity-linked accounting, related configured-bank context, and Journal drill-through. |
 | Banking | yes | yes | no | Durable bank/configuration editing plus panel-local statement import/review actions. |
 | Asset Register | yes | yes | no | Stable asset identity and governed lifecycle operations. |
 | Inventory | yes | yes | no | Stable item identity and governed movement/lifecycle operations. |
@@ -56,6 +57,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 |---|---|---|---|---|
 | Dashboard | `DashboardHomePanel` | Dashboard/report/fund query services | navigation only | No fictional values or second data path. |
 | Journal | `JournalWorkspaceCompliancePanel` -> `JournalWorkspacePanel` | `TransactionEntryService.search/load`, reference-data services, reconciliation projection | `TransactionEntryService`, `TransactionCorrectionService` | `Txn`/`TxnSplit` are canonical. Cleared facts are read-only service projections in Journal. |
+| Event Accounting | `EventAccountingPanel` | `EventAccountingQueryService` over company-scoped canonical Activity-tagged `TxnSplit` rows plus configured `CompanyBankAccount` split context | none | Read-only. Income/expense retain signed natural-balance amounts; related bank rows require configured `ASSET + BANK function + DEBIT normal` authority and are contextual rather than inferred Activity allocation. |
 | Banking | `BankingPanel` | `BankConfigurationService`, account lookup, `BankReviewQueryService` | bank/configuration services; explicit navigation to import/review | Bank statement import is non-posting until explicit reviewed-row acceptance. |
 | Budget Editor | `BudgetEditorPanel` | `BudgetPlanService` | draft/revision/save/activate/archive via same service | Stable `BudgetPlan.id`; retained archived history. |
 | Budget vs Actual | `BudgetVsActualPanel` | active budget plus canonical ledger actuals in company fiscal/accounting-period context | none | No calendar-year substitution. |
