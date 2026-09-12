@@ -65,6 +65,7 @@ public class NavigationPane extends VBox
 
         section(content, "ACCOUNTING");
         addItem(content, AppPanelId.JOURNAL_PANE, "Journal", UiIcons.Glyph.LEDGER);
+        addItem(content, AppPanelId.EVENT_ACCOUNTING, "Event Accounting", UiIcons.Glyph.CALENDAR);
         addItem(content, AppPanelId.BANKING, "Banking", UiIcons.Glyph.BANK);
         addItem(content, AppPanelId.RECONCILIATION_RUNS, "Bank Reconciliation", UiIcons.Glyph.BANK);
         addItem(content, AppPanelId.BANK_TRANSACTIONS, "Bank Transactions", UiIcons.Glyph.CREDIT_CARD);

@@ -63,6 +63,7 @@ class AppPanelCommandCapabilityTest
         expected.put(AppPanelId.LEDGER_REGISTER, journalCommands());
         expected.put(AppPanelId.TXN_EDITOR, journalCommands());
         expected.put(AppPanelId.JOURNAL_PANE, journalCommands());
+        expected.put(AppPanelId.EVENT_ACCOUNTING, Set.of());
         expected.put(AppPanelId.BANKING, editorCommands());
         expected.put(AppPanelId.BUDGET_EDITOR, Set.of(AppCommand.SAVE_ACTIVE));
         expected.put(AppPanelId.BUDGET_VS_ACTUAL, Set.of());

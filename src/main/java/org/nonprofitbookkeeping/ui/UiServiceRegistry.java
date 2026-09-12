@@ -41,6 +41,7 @@ import org.nonprofitbookkeeping.service.CompanyUiPreferencesService;
 import org.nonprofitbookkeeping.service.CoaCsvImportService;
 import org.nonprofitbookkeeping.service.DatabaseAdministrationService;
 import org.nonprofitbookkeeping.service.DiagnosticsQueryService;
+import org.nonprofitbookkeeping.service.EventAccountingQueryService;
 import org.nonprofitbookkeeping.service.FinancialReportService;
 import org.nonprofitbookkeeping.service.FixedAssetService;
 import org.nonprofitbookkeeping.service.FundAdminService;
@@ -84,6 +85,10 @@ public final class UiServiceRegistry
     public static FundLookupService fundLookup() { return services().fundLookup(); }
     public static BudgetCategoryLookupService budgetCategoryLookup() { return services().budgetCategoryLookup(); }
     public static ActivityLookupService activityLookup() { return services().activityLookup(); }
+    public static EventAccountingQueryService eventAccounting()
+    {
+        return new EventAccountingQueryService(services().jpa(), UiServiceRegistry::activeCompanyCode);
+    }
     public static AccountAdminService accountAdmin() { return services().accountAdmin(); }
     public static CoaCsvImportService coaCsvImport()
     {
