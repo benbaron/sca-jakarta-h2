@@ -2,11 +2,11 @@
 plan_version: 286
 active_phase: P21
 active_slice: P21-S1
-active_status: READY
-active_branch: codex/P21-activity-event-accounting-plan
-active_pull_request: 336
-active_head: ffeaf29aca51cf3edce26a3043896cb1b211015e
-next_action: "Publish and verify the P21 planning boundary, then implement P21-S1 Activity administration from current main only after this planning PR is merged and the selected slice is re-read from the merged PLAN."
+active_status: IN_PROGRESS
+active_branch: codex/P21-S1-activity-administration
+active_pull_request: null
+active_head: 8d0a2a887ee3c64084de4cae081a314fe9c12e18
+next_action: "Implement and validate P21-S1 Activity administration on the fresh branch from merged P21 planning main; publish a draft PR and stop before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -376,7 +376,7 @@ Governing design: `doc/P21-activity-event-accounting.md`.
 
 ### P21-S1 — Activity administration
 
-Status: READY.
+Status: IN_PROGRESS.
 
 Required reading:
 

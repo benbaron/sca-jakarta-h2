@@ -12,6 +12,8 @@ import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.FundType;
 import org.nonprofitbookkeeping.model.NormalBalance;
+import org.nonprofitbookkeeping.model.Txn;
+import org.nonprofitbookkeeping.model.TxnSplit;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -86,6 +88,62 @@ class SclxCoreSnapshotAssemblerTest
                 List.of(),
                 List.of(),
                 Instant.EPOCH));
+    }
+
+
+    @Test
+    void renamedActivityUsesCurrentCodeConsistentlyAcrossMasterAndTransactionReferences()
+    {
+        Company company = company("TEST");
+        ChartOfAccounts chart = activeChart(company);
+        Account cash = account(chart, "1010", "Cash", AccountType.ASSET);
+        Account expense = account(chart, "6100", "Expense", AccountType.EXPENSE);
+        Fund general = fund(company, "GENERAL");
+        Activity activity = activity(company, "OLD-CODE");
+
+        // Stable database identity is outside the SCLX DTO. Renaming changes the
+        // current portable company+code address, and every export reference must
+        // use that new address consistently.
+        activity.setCode("NEW-CODE");
+        activity.setName("Renamed Activity");
+
+        Txn txn = new Txn();
+        txn.setCompany(company);
+        txn.setTxnDate(java.time.LocalDate.of(2026, 9, 1));
+        txn.setMemo("Activity rename export");
+
+        TxnSplit debit = new TxnSplit();
+        debit.setTxn(txn);
+        debit.setAccount(cash);
+        debit.setFund(general);
+        debit.setActivity(activity);
+        debit.setAmountSigned(BigDecimal.TEN);
+
+        TxnSplit credit = new TxnSplit();
+        credit.setTxn(txn);
+        credit.setAccount(expense);
+        credit.setFund(general);
+        credit.setAmountSigned(BigDecimal.TEN.negate());
+
+        SclxExportDocument document = assembler.assemble(
+                company,
+                List.of(cash, expense),
+                List.of(general),
+                List.of(activity),
+                List.of(),
+                List.of(),
+                List.of(txn),
+                List.of(debit, credit),
+                Instant.parse("2026-09-07T23:30:00Z"));
+
+        SclxActivityExtension.Entry exported = SclxActivityExtension.entries(document.extensions()).get(0);
+        assertEquals("activity:TEST:NEW-CODE", exported.activityId());
+        assertEquals("NEW-CODE", exported.code());
+        assertEquals("activity:TEST:NEW-CODE", document.transactions().get(0).lines().stream()
+                .map(SclxExportDocument.TransactionLine::activityId)
+                .filter(java.util.Objects::nonNull)
+                .findFirst()
+                .orElseThrow());
     }
 
     @Test

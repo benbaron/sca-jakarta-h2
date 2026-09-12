@@ -198,6 +198,8 @@ Standard SCLX fields MUST be used when they can faithfully express the fact. Ext
 
 A canonical transaction line with an activity writes `activityId` in the standard transaction-line DTO. Every nonblank `activityId` MUST resolve to exactly one entry in this extension. Duplicate activity identities, cross-company activities, malformed entries, and unresolved references are blocking export errors. Activity records contribute to the operation entity counts, and the `ACTIVITIES` section is no longer reported as deferred.
 
+P21-S1 Activity administration does not replace this interchange addressing rule. The local H2 `Activity.id` is the stable identity used by Journal relationships and administration edits, while SCLX continues to derive the exported portable address from the selected company and the Activity's **current** code. Renaming an Activity therefore updates the next exported `activityId` and every exported transaction-line reference consistently without changing `TxnSplit.activity_id`. Source-specific `interchange_identity` rows remain durable import/idempotency traceability linked to the local Activity ID; they are not a second current Activity identity. Because deleting such a row would sever that traceability, an Activity with an Activity `interchange_identity` may be deactivated but is not physically deletable.
+
 ### 8.2 Counterparties and merchants extension
 
 `extensions.scaJakartaH2.counterparties` is an object with exactly three arrays:

@@ -89,6 +89,7 @@ public class NavigationPane extends VBox
         section(content, "ADMINISTRATION");
         addItem(content, AppPanelId.CHART_OF_ACCOUNTS, "Chart of Accounts", UiIcons.Glyph.ACCOUNTS);
         addItem(content, AppPanelId.FUNDS, "Funds", UiIcons.Glyph.FUNDS);
+        addItem(content, AppPanelId.ACTIVITIES, "Activities", UiIcons.Glyph.CALENDAR);
         addItem(content, AppPanelId.SETTINGS, "Administration", UiIcons.Glyph.SETTINGS);
         addItem(content, AppPanelId.DIAGNOSTICS, "Diagnostics", UiIcons.Glyph.DIAGNOSTICS);
         addItem(content, AppPanelId.HELP, "Help", UiIcons.Glyph.HELP);
