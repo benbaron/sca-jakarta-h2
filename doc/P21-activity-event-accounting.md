@@ -8,17 +8,17 @@ This phase extends existing H2/JPA authority. It does not introduce an event led
 
 ## Current-main findings
 
-Current `main` already provides the durable accounting foundation:
+Current `main` now provides the complete P21-S1 Activity master-data authority plus the durable accounting foundation required by P21-S2:
 
 - `Activity` is a company-owned H2/JPA entity with stable database ID, company-scoped unique code, name, and active state.
-- `TxnSplit.activity` is the canonical optional transaction-line relationship for an event, project, or occasion.
-- `TransactionEntryService` validates company ownership when a Journal line selects an activity.
-- `TransactionReferenceDataService` already supplies active activities to the Journal editor.
-- SCLX exports/imports activities and preserves activity-linked transaction data.
-- Sample-company and SCLX paths can create activities, but current production JavaFX has no operator-facing Activity maintenance service/editor.
-- `AppPanelId`, `PanelFactory`, and `NavigationPane` expose no Activity or Event Accounting production destination.
+- `ActivityAdminService` and `ActivityLookupService` provide company-scoped stable-ID maintenance and reads; used/interchange-linked Activities preserve history through deactivate/reactivate, while only completely unreferenced Activities may be physically deleted.
+- `ActivitiesPanel` is a production Administration destination wired through `AppPanelId`, `PanelFactory`, `NavigationPane`, and `UiServiceRegistry`, with `BOOKKEEPING_WRITE` mutation gating and company-owned table/divider state.
+- `TxnSplit.activity` remains the canonical optional transaction-line relationship for an event, project, or occasion.
+- `TransactionEntryService` validates company ownership when a Journal line selects an Activity, and `TransactionReferenceDataService` supplies active Activities directly from the same H2 authority.
+- SCLX continues to export/import Activities using company+current-code portable addressing while stable local database identity preserves Journal relationships across code/name edits.
+- There is still no Event entity, event ledger, or Event Accounting production destination.
 
-Therefore the first missing vertical behavior is not another accounting model. It is governed Activity master-data maintenance. Event reporting follows only after that authority is operator-manageable.
+Therefore the remaining P21 vertical behavior is the read-only Event Accounting workspace over canonical Activity-linked Journal data, not another accounting or Activity model.
 
 ## Donor assessment
 
@@ -56,6 +56,14 @@ Current-main inspection resolves the remaining Activity lifecycle question witho
 - The existing SCLX company+current-code `activityId` format remains unchanged. A rename changes the next exported portable address consistently in both the Activity extension and transaction-line references; source-specific import identities remain traceability facts linked to the stable local row.
 - Activity create/update/deactivate/reactivate/delete writes create factual company-owned `AuditEvent` history using the authenticated username in guarded production composition.
 - No `Activity` entity change, Flyway migration, event entity, or parallel cache is required.
+
+### P21-S1 completion record
+
+- PR #337 exact implementation head `adea4f127141a26a6ce11a601c93591e2c145e3c` passed Maven PR Tests run `34551426152`, job `103114964058`: clean headless verification, Maven tests, and production JavaFX route compliance all succeeded.
+- Owner desktop verification was explicitly accepted before merge.
+- PR #337 merged to `main` at `f3509ff55e4da404f47e3f837ea525ad8dbeeb94`.
+- Post-merge `main` Maven PR Tests run `34667078105`, job `103481051301` passed clean headless verification, Maven tests, and production JavaFX route compliance.
+- P21-S1 is DONE. P21-S2 may use this merged Activity authority but may not replace or parallel it.
 
 ## P21-S1 — Activity administration
 
@@ -130,7 +138,7 @@ S1 is complete only when:
 
 ### Dependency
 
-Blocked until P21-S1 is merged and accepted. S2 may not create a substitute Activity maintenance authority.
+Satisfied. P21-S1 is merged into current `main`, exact-head and post-merge validation are green, and owner desktop acceptance is recorded. S2 may not create a substitute Activity maintenance authority.
 
 ### Goal
 
