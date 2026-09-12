@@ -14,6 +14,9 @@ public enum AppPanelId
     /** Canonical identifier for the unified Journal workspace. */
     JOURNAL_PANE,
 
+    /** Read-only Activity/event/project accounting workspace. */
+    EVENT_ACCOUNTING,
+
     BANKING,
 
     /**

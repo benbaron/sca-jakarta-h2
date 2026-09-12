@@ -146,16 +146,21 @@ Provide a read-only production workspace for one Activity/event/project/occasion
 
 ### Planned behavior
 
-The workspace should provide, subject to implementation inspection:
+The implementation provides:
 
-- active/inactive Activity selection and factual identity/status display;
-- income, expense, and net totals calculated from Activity-linked canonical splits using current account classification;
-- linked Journal transaction rows with date, payee/counterparty where available, memo, account, fund, and amount context sufficient to explain totals;
-- bank/deposit/refund presentation based on canonical configured bank/account classification, not `AccountType.BANK`;
-- drill-through to the existing Journal destination for a selected transaction;
-- a factual closeout checklist that reports review state without inventing a posting, approval, reconciliation, or period-close authority;
-- company/date/fund scoping only where current reporting/period semantics can be reused without creating a second date-range authority;
-- read access for VIEWER and the other reserved roles under the established P20 permission policy.
+- active/inactive Activity selection by stable H2 ID with factual code/name/lifecycle display;
+- inclusive company-scoped date filtering, defaulted from the active company's fiscal-year start through the end of the shell-selected accounting period; manually edited dates detach from later shell-period changes until the operator chooses **Use Active Period Scope**;
+- **All funds** or one persisted active/inactive historical Fund ID;
+- income and expense totals from only the canonical `TxnSplit` rows explicitly tagged with the selected Activity. `amountSigned` remains in the account's natural-balance direction, including negative corrections/reversals, and net is `income - expense`;
+- one explanatory Activity-tagged split table with canonical transaction ID/date, payee, memo, account, fund, debit, and credit presentation;
+- a separate **Related configured-bank movement** table. A row qualifies only when the canonical transaction also contains the selected Activity and the bank split belongs to a `CompanyBankAccount` whose ledger account is `ASSET + AccountFunction.BANK + DEBIT normal balance`; bank-function accounts that are not configured bank accounts do not qualify;
+- related bank **Inflow / Outflow** and persisted cleared facts. A related bank row is contextual transaction evidence and is not claimed to be allocated to the Activity unless that split itself carries the Activity;
+- drill-through to the existing Journal destination using the canonical transaction ID;
+- a factual read-only closeout checklist for Journal linkage, related-bank clearing, Activity lifecycle, and selected scope. It creates no event-close, approval, posting, reconciliation, or period-close fact;
+- read access for VIEWER, ACCOUNTANT, MANAGER, and ADMIN. S2 itself has no `BOOKKEEPING_WRITE` gate because it performs no durable accounting mutation;
+- current company-owned table/divider state plus established company money/date formatting and laptop-width scrolling rules.
+
+S2 adds no `Event` entity, schema/Flyway migration, second ledger, alternate bank model, SCLX persistence change, or write path.
 
 ### Required inspection before S2 design
 

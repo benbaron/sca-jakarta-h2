@@ -1,12 +1,12 @@
 ---
-plan_version: 287
+plan_version: 288
 active_phase: P21
 active_slice: P21-S2
-active_status: READY
-active_branch: null
+active_status: IN_PROGRESS
+active_branch: codex/P21-S2-event-accounting-workspace
 active_pull_request: null
-active_head: f3509ff55e4da404f47e3f837ea525ad8dbeeb94
-next_action: "Begin P21-S2 Event Accounting workspace from current main after re-reading the merged P21 contract and inspecting the current reporting, banking-classification, Journal drill-through, and period/date authorities; create a fresh implementation branch and draft PR."
+active_head: 98759bb15818423c7c997f2ae35ff0adfc69cf15
+next_action: "Implement and validate P21-S2 Event Accounting on codex/P21-S2-event-accounting-workspace; publish a draft PR, run exact-head Maven PR Tests and production JavaFX route compliance, then complete owner desktop acceptance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -33,7 +33,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P18 | Depreciation-run workflow completion | DONE through P18-S1 / PR #306 |
 | P19 | Deferred Company Administration extensions | DONE through P19-S3 / PR #309 |
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
-| P21 | Activity and Event Accounting | P21-S1 DONE; P21-S2 READY |
+| P21 | Activity and Event Accounting | P21-S1 DONE; P21-S2 IN_PROGRESS |
 
 ## 3. Established product decisions
 
@@ -425,10 +425,16 @@ Completion gate satisfied:
 
 ### P21-S2 — Event Accounting workspace
 
-Status: READY.
+Status: IN_PROGRESS.
 
-P21-S1 is merged, exact-head and post-merge validation are green, and owner desktop acceptance is recorded. Implement a read-only Activity/event/project/occasion workspace that calculates income, expense, net, linked Journal detail, and factual deposit/refund/closeout presentation from canonical `Txn`/`TxnSplit` data. Adapt donor concepts to the current bank model: bank ledger accounts remain `AccountType.ASSET` with `AccountFunction.BANK`; do not introduce or restore `AccountType.BANK`. Drill-through must route to the existing Journal. The workspace does not post, approve, reconcile, or close accounting transactions.
+Implementation branch: `codex/P21-S2-event-accounting-workspace` from current-main base `98759bb15818423c7c997f2ae35ff0adfc69cf15`.
+
+Implement the read-only **Accounting -> Event Accounting** workspace over canonical company-owned `Activity`, `Txn`, and `TxnSplit` authority. Income/expense/net use signed natural-balance Activity-tagged splits, including negative corrections/reversals. Related bank movement is a separate contextual projection and qualifies only through configured `CompanyBankAccount` evidence plus `ASSET + AccountFunction.BANK + DEBIT normal balance`; it must not be presented as an Activity allocation merely because the bank split shares the transaction.
+
+The workspace supports active/inactive Activity selection, fiscal-year-to-selected-period default dates with explicit-date detachment/reset, all-funds or stable-ID fund filtering, canonical split detail, related bank inflow/outflow and cleared facts, factual closeout review, and drill-through to the existing Journal by transaction ID. It is available to VIEWER and all higher reserved roles and introduces no durable mutation, `Event` entity, schema migration, alternate ledger/bank model, or SCLX write authority.
+
+Acceptance is governed by `doc/P21-S2-event-accounting-user-testing.md` plus focused H2/source tests, exact-head Maven PR Tests, production JavaFX route compliance, and owner desktop acceptance.
 
 ## 8. Advancement rule
 
-Execute only the active slice. P21-S1 is DONE. P21-S2 is READY because P21-S1 is merged, exact-head and post-merge validation are green, and owner desktop acceptance is recorded. Candidate donor workflows such as donor/receipt management and monthly-close assistance are not active scope and require a later deliberate PLAN amendment.
+Execute only the active slice. P21-S1 is DONE. P21-S2 is IN_PROGRESS on `codex/P21-S2-event-accounting-workspace`; it is not DONE until the implementation is merged, exact-head/post-merge validation is green as required, and owner desktop acceptance is recorded. Candidate donor workflows such as donor/receipt management and monthly-close assistance are not active scope and require a later deliberate PLAN amendment.
