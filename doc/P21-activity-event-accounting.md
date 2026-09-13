@@ -8,7 +8,7 @@ This phase extends existing H2/JPA authority. It does not introduce an event led
 
 ## Current-main findings
 
-Current `main` now provides the complete P21-S1 Activity master-data authority plus the durable accounting foundation required by P21-S2:
+Current `main` now provides the complete P21 Activity master-data authority and read-only Event Accounting workspace:
 
 - `Activity` is a company-owned H2/JPA entity with stable database ID, company-scoped unique code, name, and active state.
 - `ActivityAdminService` and `ActivityLookupService` provide company-scoped stable-ID maintenance and reads; used/interchange-linked Activities preserve history through deactivate/reactivate, while only completely unreferenced Activities may be physically deleted.
@@ -16,9 +16,10 @@ Current `main` now provides the complete P21-S1 Activity master-data authority p
 - `TxnSplit.activity` remains the canonical optional transaction-line relationship for an event, project, or occasion.
 - `TransactionEntryService` validates company ownership when a Journal line selects an Activity, and `TransactionReferenceDataService` supplies active Activities directly from the same H2 authority.
 - SCLX continues to export/import Activities using company+current-code portable addressing while stable local database identity preserves Journal relationships across code/name edits.
-- There is still no Event entity, event ledger, or Event Accounting production destination.
+- `EventAccountingQueryService` and `EventAccountingPanel` provide the production read-only Activity/event/project/occasion workspace over canonical company-owned Journal data, with configured-bank context and Journal drill-through.
+- There is still no Event entity, event ledger, alternate bank model, or writable Event Accounting authority.
 
-Therefore the remaining P21 vertical behavior is the read-only Event Accounting workspace over canonical Activity-linked Journal data, not another accounting or Activity model.
+Therefore P21 is complete: Activity administration and Event Accounting both use the existing canonical accounting authority without introducing a parallel model.
 
 ## Donor assessment
 
@@ -175,6 +176,14 @@ In addition to the S1 required reading, inspect:
 ### Completion gate
 
 S2 is complete only when its totals reconcile to canonical Activity-linked Journal splits, bank/deposit identification uses the current `ASSET + BANK function` model, drill-through reaches the existing Journal workflow, no durable accounting state is mutated by the workspace, full tests/CI pass, and owner desktop acceptance is recorded.
+
+### P21-S2 completion record
+
+- PR #339 exact implementation head `a2397749dda98fe098920c7fb97a2417e9a3fdfd` passed Maven PR Tests run `34675164328`, job `103503607827`: clean headless verification, Maven tests, and production JavaFX route compliance all succeeded.
+- PR #339 merged to `main` at `942cf2c9af69bbb3973184bc4da1d94d4e1d1a70`.
+- Post-merge `main` Maven PR Tests run `34721261596`, job `103627445343` passed clean headless verification, Maven tests, and production JavaFX route compliance.
+- Owner desktop verification was explicitly accepted on 2026-09-12.
+- P21-S2 is DONE, and with P21-S1 already DONE, P21 is complete.
 
 ## Candidate later work deliberately not activated
 
