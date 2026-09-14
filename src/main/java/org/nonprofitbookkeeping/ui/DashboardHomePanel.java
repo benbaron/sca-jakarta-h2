@@ -184,24 +184,35 @@ public final class DashboardHomePanel implements AppPanel
         UiDebug.log("dashboard", "Applying snapshot with "
                 + snapshot.recentTransactions().size() + " recent transaction(s), "
                 + snapshot.reconciliations().size() + " reconciliation row(s), "
-                + snapshot.budgetActuals().size() + " budget row(s), and "
-                + snapshot.openItems().totalOpenItems() + " open item(s).");
+                + snapshot.budgetActuals().size() + " budget row(s), and open-item authority "
+                + (snapshot.openItems().available() ? "available" : "unavailable") + ".");
         bookCash.setText(companyFormat.formatMoney(snapshot.bookCash()));
         clearedCash.setText(snapshot.reconciledCash()
-                .map(value -> "Cleared " + companyFormat.formatMoney(value))
-                .orElse("Cleared balance not available"));
+                .map(value -> "Reconciled " + companyFormat.formatMoney(value))
+                .orElse("Reconciled balance not available"));
         cashAsOf.setText("as of " + companyFormat.formatDate(snapshot.asOfDate()));
         yearToDateSurplus.setText(companyFormat.formatMoney(snapshot.yearToDateSurplus()));
 
-        Map<String, Long> counts = snapshot.openItems().countsByKind();
-        long genericBankItems = counts.getOrDefault("OUTSTANDING_BANK_ITEM", 0L);
-        outstandingChecks.setText(Long.toString(
-                counts.getOrDefault("OUTSTANDING_CHECK", genericBankItems)));
-        depositsInTransit.setText(Long.toString(
-                counts.getOrDefault("DEPOSIT_IN_TRANSIT", 0L)));
-        receivables.setText(Long.toString(counts.getOrDefault("RECEIVABLE", 0L)));
-        payables.setText(Long.toString(counts.getOrDefault("PAYABLE", 0L)));
-        totalOpenItems.setText(Long.toString(snapshot.openItems().totalOpenItems()));
+        if (snapshot.openItems().available())
+        {
+            Map<String, Long> counts = snapshot.openItems().countsByKind();
+            long genericBankItems = counts.getOrDefault("OUTSTANDING_BANK_ITEM", 0L);
+            outstandingChecks.setText(Long.toString(
+                    counts.getOrDefault("OUTSTANDING_CHECK", genericBankItems)));
+            depositsInTransit.setText(Long.toString(
+                    counts.getOrDefault("DEPOSIT_IN_TRANSIT", 0L)));
+            receivables.setText(Long.toString(counts.getOrDefault("RECEIVABLE", 0L)));
+            payables.setText(Long.toString(counts.getOrDefault("PAYABLE", 0L)));
+            totalOpenItems.setText(Long.toString(snapshot.openItems().totalOpenItems()));
+        }
+        else
+        {
+            outstandingChecks.setText("Not available");
+            depositsInTransit.setText("Not available");
+            receivables.setText("Not available");
+            payables.setText("Not available");
+            totalOpenItems.setText("Not available");
+        }
 
         applyCashTrend(snapshot.recentTransactions());
         applySurplusBars(snapshot.budgetActuals());
@@ -425,8 +436,8 @@ public final class DashboardHomePanel implements AppPanel
         reconciliations.setFixedCellSize(28);
         reconciliations.getColumns().setAll(
                 column(
-                        "Bank / Format",
-                        DashboardSnapshot.ReconciliationStatus::bankFormat,
+                        "Bank Account",
+                        DashboardSnapshot.ReconciliationStatus::bankAccount,
                         150),
                 column(
                         "Statement Date",
@@ -437,11 +448,11 @@ public final class DashboardHomePanel implements AppPanel
                         row -> displayStatus(row.status()),
                         100),
                 column(
-                        "Imported",
-                        row -> Integer.toString(row.importedTransactionCount()),
-                        70));
+                        "Difference",
+                        row -> companyFormat.formatMoney(row.differenceAmount()),
+                        90));
         reconciliations.setPlaceholder(
-                new Label("No reconciliation runs for the active organization."));
+                new Label("No current reconciliation sessions for the active organization."));
     }
 
     private void configureBudgetActuals()
