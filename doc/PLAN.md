@@ -1,11 +1,11 @@
 ---
-plan_version: 289
+plan_version: 290
 active_phase: P21
 active_slice: P21-S2
 active_status: DONE
 active_branch: null
 active_pull_request: null
-active_head: 942cf2c9af69bbb3973184bc4da1d94d4e1d1a70
+active_head: b7e4f45daa4aa5befda89a164e3bd6ced876c07e
 next_action: "P21 is complete through P21-S2. Do not invent a successor phase; begin new work only from a deliberate PLAN amendment or an explicit owner-selected phase/slice."
 ---
 
@@ -33,7 +33,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P18 | Depreciation-run workflow completion | DONE through P18-S1 / PR #306 |
 | P19 | Deferred Company Administration extensions | DONE through P19-S3 / PR #309 |
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
-| P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339 |
+| P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 
 ## 3. Established product decisions
 
@@ -124,9 +124,249 @@ Governing design: `doc/P19-S3-company-ein-metadata.md`.
 
 ## 6. P20 — Authentication and runtime authorization
 
-P20 is DONE. P20-S1 requirements merged in PR #310; P20-S2 authentication merged in PR #311; P20-S3 runtime authorization was delivered through PRs #312-#334 and final owner desktop acceptance. The completed authority is local H2 authentication with reserved ADMIN/MANAGER/ACCOUNTANT/VIEWER roles, current-session permission enforcement, fail-closed service guards and durable denial facts, authenticated audit actors, protected production mutation/import/database-administration boundaries, database-switch-safe service composition, and matching JavaFX permission gating.
+### P20-S1 — Authentication and authorization requirements boundary
 
-Completion PR #335 merged to `main` at `6010a5563e70e58fc69a91197cbf1ec819bd346c`; post-merge Maven PR Tests run `34074737387`, job `101598529975` passed clean headless verification, Maven tests, and production JavaFX route compliance. Governing detail remains in `doc/P20-S1-authentication-authorization-boundary.md`, `doc/P20-S3-runtime-authorization.md`, `doc/P20-S3-authenticated-audit-actor.md`, `doc/P20-S3-database-administration-authorization.md`, `doc/P20-S3-javafx-permission-gating.md`, and the focused P20-S3 authorization documents.
+Status: DONE.
+
+PR #310 exact final head `17077c2c2ba68a7c152554bccde04f3bb2aaa6ce` passed Maven PR Tests run `33279457435`, job `99172041566`, and merged to `main` at `3d4f0d775e454e506ca4e20d7101eff613f47d0a` after owner acceptance.
+
+Governing requirements: `doc/P20-S1-authentication-authorization-boundary.md`.
+
+### P20-S2 — Authentication implementation
+
+Status: DONE.
+
+PR #311 exact final head `630d022584449298ad900ee00126f41eafe96917` passed Maven PR Tests run `33292407265`, job `99206247747`: clean headless verification, repeat tests, and production JavaFX route compliance all succeeded. Owner confirmed the tests and merged PR #311 to `main` at `40a4a37aaeed7fa94d847009d55a177f94b1d407`.
+
+Completed behavior includes:
+
+- H2-owned optional `AppUser` credentials; roles never own passwords;
+- passwordless reserved ADMIN/MANAGER/ACCOUNTANT/VIEWER accounts and per-company assignments;
+- singleton effective ADMIN and required ADMIN assignment protection;
+- explicit login/logout and authenticated in-memory session identity;
+- effective reserved roles derived from current company-scoped H2 assignments;
+- company-switch role recomputation and no-access rejection;
+- default inactivity timeout disabled, with ADMIN-controlled nonzero configuration;
+- ADMIN password set/replace/clear including self;
+- explicit offline ADMIN credential recovery;
+- factual security events and real User Admin authentication controls.
+
+### P20-S3 — Runtime authorization enforcement
+
+Status: DONE.
+
+Foundation PR #312 exact final head `db3a30289aa17b967948a79a048f9ebdf9c5042e` passed Maven PR Tests run `33293417227`, job `99208891671`, and merged to `main` at `1b11df7cdc98775c618e8489ca7608bde36ea547`.
+
+Fund-service PR #313 final head `9cb928554546be938841cd391e6e13995ad77918` passed Maven PR Tests run `33337392090`, job `99326671667`: clean headless verification, full tests, and production JavaFX route compliance all succeeded. The owner merged PR #313 to `main` at `19f85937b154cb8a6ad6517a4564425440ae0aa1`.
+
+Budget Category PR #314 exact final head `17fe284c2c6986efdfd076d47e68caa3c44f3167` passed Maven PR Tests run `33337813403`, job `99327841889`: clean headless verification, full tests, and production JavaFX route compliance all succeeded. The owner merged PR #314 to `main` at `79eb9e52f4bf4a834587f9e66d34a60c1749f71d`.
+
+Account PR #315 exact final head `17f0d4e5675007f5e136e0c948e413fc97f0a3a4` passed Maven PR Tests run `33347854910`, job `99355352917`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded. The owner accepted and merged PR #315 to `main` at `e96b33fb6b7a8016ff4568737bab4cd1bc5ec6f2`.
+
+Budget Plan PR #316 exact final head `bcae13e291738abb5003ad6899ced7ac9496db08` passed Maven PR Tests run `33350574686`, job `99363005574`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded. The owner accepted and merged PR #316 to `main` at `bf7a373208c7f207cb4764140768cb6d793209c0`.
+
+Bank Configuration PR #317 exact final head `62e882d807ea4ffeeb9c66ffefac075635f86703` passed Maven PR Tests run `33351860101`, job `99366659502`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded. The owner accepted and merged PR #317 to `main` at `fee2728eca53c8d0da7a9d0bcbddc75a7daa4965`.
+
+Company Administration PR #318 exact final head `89e7948fbfda3b776cdc5f829c88aea1683cf5e8` passed Maven PR Tests run `33354408246`, job `99373686535`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded. The owner accepted and merged PR #318 to `main` at `4991916c114c8e1ecc96367201bc3f841d3c3dc9`.
+
+User Administration PR #319 exact final behavior/documentation head `dcec480d5702662567e29fc37a14f90cafec0531` passed Maven PR Tests run `33431783480`, job `99618708073`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded. The owner accepted and merged PR #319 to `main` at `b7397b72395033d0cbb57df418b11e3b24807bc1`.
+
+Security Administration PR #320 exact final head `4514737d7c695a3a0a9c358575dff71aa4313dd8` passed Maven PR Tests run `33447487143`, job `99669737473`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded. The owner accepted and merged PR #320 to `main` at `67fdcc819f2716263ea952ffff60e3ad87c7fea4`.
+
+Journal PR #321 exact final head `b7310405390c342e02a378606f766d8a1173b3de` passed Maven PR Tests run `33468647019`, job `99733662262`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded. The owner accepted and merged PR #321 to `main` at `77be356ed3351936b623b208898f61a0acec23ee`.
+
+Fixed Asset PR #322 exact final head `b8144b9ea609a2150c63912b3ad7e83aab87ff46` passed Maven PR Tests run `33552680761`, job `100005736808`: clean headless verification, repeat tests, and production JavaFX route compliance all succeeded. The owner accepted and merged PR #322 to `main` at `2f22b2cc3f2a40e77151d6c2892ad62772cdcc05`.
+
+Inventory PR #323 exact final head `b8e861c6107aa7de0ecd4c1aa024b60effd8aa68` passed Maven PR Tests run `33565845969`, job `100048785715`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded. The owner accepted and merged PR #323 to `main` at `4d1a741b6c7bc70c52c4387cabea7d7fb21ee1b7`.
+
+Previous reconciliation authorization tranche: PR #324 final head `1a420aae36fb01c019a5b72f487591bcfcaaf54a` merged to `main` at `5d591e4d767264490611870d80fe271303b79017`. Its behavior/documentation head `ca124f846178f5b1abcf34e7c9cafab1a079bbdb` passed Maven PR Tests run `33578682023`, job `100088178045`; the final PLAN successor was merged with the PR and the post-merge `main` workflow run `33582591691` also passed.
+
+Previous period-close authorization tranche: PR #325 final head `bc62b4c192d7ecb2098ee86bd787e7a3db163b31` passed Maven PR Tests run `33590915729`, job `100124557154`, and merged to `main` at `128660a4793e2232920ff0ec32ee8d8c7736d18f` after owner acceptance. Post-merge `main` workflow run `33653699552` also passed.
+
+Completed P20-S3 behavior to date:
+
+- fixed `ApplicationPermission` policy and multi-role union are established;
+- `AuthorizationGuard` reads the current authenticated session on every decision and writes durable `AUTHORIZATION_DENIED` facts;
+- `ServiceAuthorization` provides a nullable adapter so legacy/test constructors remain source-compatible while guarded constructors fail closed;
+- Fund service create/update/upsert/delete requires `BOOKKEEPING_WRITE`; Fund queries remain readable;
+- direct H2 Fund tests prove VIEWER denial, immediate ACCOUNTANT enablement, immediate switch back to VIEWER denial, and wrong-company rejection without stale authorization state;
+- Budget Category service-owned `upsert(...)` requires `BOOKKEEPING_WRITE`, while caller-owned import transaction seams remain governed by the outer import commit;
+- direct H2 Budget Category tests prove the same VIEWER/ACCOUNTANT/company-switch behavior;
+- Account stable-ID `save(...)` and service-owned code-addressed `upsert(...)` require `BOOKKEEPING_WRITE`, while caller-owned account import helpers remain governed by the outer import commit;
+- direct H2 Account tests prove VIEWER denial/no write, immediate role/company switching, MANAGER/ADMIN/non-ADMIN union success, and preserved BANK/company/chart validation;
+- Budget Plan service-owned draft/revision/save/activate/archive mutations require `BOOKKEEPING_WRITE`, while caller-owned budget import helpers remain governed by the outer import commit;
+- direct H2 Budget Plan tests prove VIEWER denial/no write, immediate role/company switching, ACCOUNTANT/MANAGER/ADMIN/non-ADMIN union success, and preserved duplicate-scope and draft/version lifecycle protections;
+- Bank Configuration service-owned Bank create/update and configured-bank-account create/update mutations require `COMPANY_ADMIN`, while list methods remain read-only and caller-owned import helpers remain governed by the outer import commit;
+- direct H2 Bank Configuration tests prove VIEWER/ACCOUNTANT denial/no durable change, immediate role/company switching, MANAGER/ADMIN/non-ADMIN union success, preserved bank-ledger-account classification and lifecycle protections, and continued caller-owned import-helper use inside an explicitly authorized outer transaction;
+- Company Administration stable-ID company create/update/deactivate and active Chart of Accounts assignment require `COMPANY_ADMIN`; `reportingDefaults.*` state writes also require `COMPANY_ADMIN`, while presentation-only company UI state retains `UI_PREFERENCE_WRITE`;
+- direct H2 Company Administration tests prove VIEWER/ACCOUNTANT denial, MANAGER/ADMIN/non-ADMIN union success, immediate role/company switching, wrong-company rejection, preserved company/chart lifecycle protections, reporting-default bypass prevention, and continued VIEWER presentation preference persistence;
+- User Administration stable-ID user/role/assignment mutations require `SECURITY_ADMIN` in the active-company context while read/usage queries remain non-mutating;
+- direct H2 User Administration tests prove VIEWER/ACCOUNTANT/MANAGER denial/no durable mutation, ADMIN success, non-ADMIN union denial, immediate role/company switching, wrong-company and absent-session fail-closed behavior, durable authorization-denial facts, and preserved reserved/lifecycle protections;
+- Security Administration password set/replace/clear and inactivity-timeout changes require `SECURITY_ADMIN`, while credential/configuration reads remain non-mutating;
+- direct H2 Security Administration tests prove VIEWER/ACCOUNTANT/MANAGER denial/no credential or timeout mutation, ADMIN success, non-ADMIN union denial, immediate session/company switching, wrong-company and absent-session fail-closed behavior, durable authorization-denial facts, and preserved singleton-ADMIN/inactive-target protections;
+- Journal service-owned entry/update/direct-edit/delete/reversal mutations require `BOOKKEEPING_WRITE`; Journal reads remain non-mutating and caller-owned transaction/import seams remain outer-governed;
+- direct H2 Journal tests prove VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and non-ADMIN role-union success, immediate session/company switching, absent-session and wrong-company fail-closed behavior, durable denial facts, and continued caller-owned seam use;
+- Fixed Asset service-owned create/update/status, depreciation, lifecycle commit, and lifecycle reversal mutations require `BOOKKEEPING_WRITE`; reads/previews and caller-owned import seams remain outside the service-owned write guard;
+- direct H2 Fixed Asset tests prove VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and multi-role success, immediate session/company switching, absent-session and wrong-company fail-closed behavior, durable denial facts, and continued caller-owned import seam use;
+- Inventory service-owned create/update/status, confirmed movement commit, compatibility movement commit, and governed movement reversal mutations require `BOOKKEEPING_WRITE`; reads/previews and caller-owned import seams remain outside the service-owned write guard;
+- direct H2 Inventory tests prove VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and multi-role success, immediate session/company switching, absent-session and wrong-company fail-closed behavior, durable denial facts, and continued caller-owned import seam use;
+- Reconciliation workspace session start/successor, manual statement entry, matching/unmatching, cleared-state, factual explanation, save/finalization, and direct reviewed-row cleared-state mutations require `BOOKKEEPING_WRITE`; configured-account/session/snapshot reads and caller-owned interchange seams remain outside the service-owned write guard;
+- direct H2 Reconciliation tests prove VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and multi-role success, immediate session/company switching, absent-session and wrong-company fail-closed behavior, durable denial facts, and continued caller-owned interchange seam use.
+- Period Close service-owned close/reopen mutations require `BOOKKEEPING_WRITE`; range/history reads, `requireOpen(...)`, and caller-owned interchange restore remain outside the service-owned write guard;
+- direct H2 Period Close tests prove VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and multi-role success, immediate session/company switching, absent-session and wrong-company fail-closed behavior, durable denial facts, read access, and continued caller-owned interchange use.
+
+Previous import-commit authorization tranche:
+
+- PR #326 behavior/documentation head `effb5f3dcc7423a8946fbf0cdd3e1fb1027505ce` passed Maven PR Tests run `33705042519`, job `100492254318`;
+- final PLAN-only head `8696b59a9d49d7d88a1ae994e9ba5be81a055098` was owner-accepted and merged to `main` at `09c209097fbd0bba71299c88db5745cc83943002`;
+- post-merge `main` workflow run `33708842774`, job `100503792968` passed clean headless verification, full tests, and production JavaFX route compliance;
+- `SclxImportCommitService.commit(...)` and `CoaCsvImportService.commit(...)` require `BOOKKEEPING_WRITE` at their outer atomic commit boundaries while nested caller-owned import seams remain outer-governed.
+
+Governing import-commit design: `doc/P20-S3-import-commit-authorization.md`, `doc/data-exchange/sclx.md`, and `doc/interface-operation-matrix.md`.
+
+Previous bank import review/acceptance authorization tranche:
+
+- PR #327 final head `750b3493d1e90329ce62f2099c933a7b5189bf4c` passed Maven PR Tests run `33715100237`, job `100522508886`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded;
+- the owner accepted and merged PR #327 to `main` at `0e7d71a1322446a8dfe4f5d98245a94c54b93922`;
+- `BankStatementReviewService.commit(...)`, `BankImportReviewService.createReviewBatch(...)`, and `ReviewedStatementAcceptanceService.accept(...)` require `BOOKKEEPING_WRITE` before ordinary commit validation or durable mutation;
+- strict statement preview and reviewed-row acceptance preview remain non-mutating and outside the write guard;
+- `BankImportReviewService.importForInterchange(...)` remains a caller-owned SCLX seam and is deliberately not independently guarded;
+- existing source hash, configured-account identity, duplicate/idempotency, reviewed-row accounting, closed-period/finalized-reconciliation, and rollback protections remain authoritative after authorization succeeds.
+
+Governing bank-import authorization design: `doc/P20-S3-bank-import-authorization.md`, `doc/banking/import-and-reconciliation.md`, and `doc/interface-operation-matrix.md`.
+
+Completed bank CSV authorization tranche:
+
+- PR #328 final head `449ab6b5947ad8d5e6148eced11e3dd60c61b857` passed Maven PR Tests run `33778610783` and merged to `main` at `d91262dbe22983a017e567aba6f7de5e723ecdb3` after owner verification;
+- direct `NormalizedBankCsvReviewService.commit(...)` requires `BOOKKEEPING_WRITE` before ordinary preview/actor/commit validation while `preview(...)` remains non-mutating;
+- `BankCsvMappingProfileService.create(...)`, `replace(...)`, and `setActive(...)` require `BOOKKEEPING_WRITE` before profile parsing or transaction work while `list(...)` remains read-only;
+- direct H2 coverage exercises VIEWER denial/no durable mutation, ACCOUNTANT/MANAGER/ADMIN and non-ADMIN role-union success, immediate current-session switching, absent/wrong-company fail-closed behavior, durable `AUTHORIZATION_DENIED` facts, and continued preview/list read access;
+- no schema, migration, JavaFX layout, or authenticated-audit-actor change was included in that tranche.
+
+Governing bank-CSV authorization design: `doc/P20-S3-bank-csv-authorization.md`, `doc/banking/import-and-reconciliation.md`, and `doc/interface-operation-matrix.md`.
+
+Completed production current-session authorization wiring tranche:
+
+- PR #329 final head `b7748eb32a86bac302e0a1130da4549f64732339` passed Maven PR Tests run `33787354446`, job `100755384759`: clean headless verification, full Maven tests, and production JavaFX route compliance all succeeded;
+- the owner accepted and merged PR #329 to `main` at `7f190a68fe37284440225d6b90edfb2afde669c3`;
+- `UiServiceRegistry` now creates one `AuthorizationGuard` per production `ServiceBundle`, bound to that bundle's `Jpa` and `ApplicationSessionContext.sharedSessionState()::authenticatedUser`, so authorization consumes the live current session without another cache or session authority;
+- bundle-owned and on-demand protected services select guarded constructors, including Account, Fund, Budget, Bank Configuration, Fixed Asset, Inventory, Company/User/Security Administration, Journal, Reconciliation, Period Close, CoA/SCLX commit, bank review/CSV/profile/normalized review, reviewed-statement acceptance, and company preference/state writes;
+- mapped CSV preserves one authorization owner through its guarded `BankStatementReviewService` delegate; database preparation creates a fresh target-`Jpa` guard and database-switch activation clears the old authenticated session;
+- source-compatible unguarded constructors and documented caller-owned transaction/import seams remain intact.
+
+Current authenticated audit actor tranche:
+
+- branch `codex/P20-S3-authenticated-audit-actor` starts from exact merged `main` `7f190a68fe37284440225d6b90edfb2afde669c3`;
+- guarded production audit-producing mutations derive `AuthenticatedUserSession.username` from the same current-session `AuthorizationGuard` that authorizes the write, rather than trusting caller actor text;
+- `ServiceAuthorization.actor(...)` is the shared compatibility adapter inside the service package, while interchange services use public `AuthorizationGuard.requireActor(...)`; unguarded tests and explicitly caller-owned seams retain their established fallback actor behavior;
+- Journal, fixed asset/depreciation/lifecycle, inventory, period close/reopen, reconciliation successor, reviewed-statement acceptance, CoA CSV, SCLX, strict/normalized bank review, and User Admin current-operation audit writes are covered;
+- SCLX source period-close and audit-history actor values remain historical source facts and are not rewritten; only new local import/canonical-transaction audit facts use the authenticated current actor;
+- `DesktopActorIdentity` resolves authenticated session identity first, protected JavaFX actor displays are read-only, and literal/workstation actors no longer act as authority on already-guarded production routes;
+- Company Ownership Diagnostics was outside the actor tranche because its mutations are classified `DATABASE_ADMIN`; the following database-administration tranche owns that guard and actor conversion. Legacy `AccountingPeriodService` has no production route and remains non-authoritative;
+- direct H2 regression coverage proves spoofed Journal/User Admin actor inputs are replaced by authenticated username, while source-route coverage requires authenticated actor derivation across all current guarded audit-producing production boundaries and read-only actor displays;
+- there is no schema or migration change;
+- PR #330 behavior/documentation head `d3667270f34bc971a87d887ae96141db5af0d900` passed Maven PR Tests run `33807059790`, job `100819950561`: clean headless verification, repeated full Maven tests, and production JavaFX route compliance all succeeded;
+- final exact PR head `abdef30d53655ee19d753ca80af2104e0efbff4a` passed Maven PR Tests run `33807732460`, job `100822104225`, was owner-accepted, and merged to `main` at `56c792c3787ac0a0d9cef980e8a07bee07b26b1c`.
+
+Governing actor design: `doc/P20-S3-authenticated-audit-actor.md`.
+
+Completed database administration authorization tranche:
+
+- PR #331 exact head `ec544039444d014c3e50deceea9a653372b119a5` passed Maven PR Tests run `33815258946`, job `100845874647`: clean headless verification, repeated full Maven tests, and production JavaFX route compliance all succeeded;
+- the owner verified and merged PR #331 to `main` at `841f17d91bf85f1337f3f71b4fcd719c26f15404`;
+- post-login whole-database backup, restore-to-validated-copy, and validated-copy activation route through service-layer `DatabaseAdministrationService` requiring `DATABASE_ADMIN`, while persistence `DatabaseTransferService` remains policy-free;
+- the transfer facade resolves the current `UiServiceRegistry` bundle guard on each operation so a long-lived workspace cannot retain the old database's authorization guard after switching;
+- `CompanyOwnershipService.assignOwner(...)` and production `SampleCompanyService.createOrRefresh()` require `DATABASE_ADMIN`; ownership repair derives the factual audit actor from the authenticated ADMIN session;
+- database selection/create/retry at the outer login gate remains deliberately pre-authentication;
+- direct integration and source-route coverage are added for non-ADMIN denial/no mutation, ADMIN success, durable denial facts, authenticated repair actor, current-session changes, and guarded production composition;
+- there is no schema or migration change.
+
+Governing database-admin design: `doc/P20-S3-database-administration-authorization.md`.
+
+Completed JavaFX permission-gating tranche:
+
+- PR #332 final exact head `43405195a9598baf371a50d19f9ac7e5bd5d6185` passed Maven PR Tests run `33832728168`, job `100898934346`: clean headless verification, repeated full Maven tests, and production JavaFX route compliance all succeeded;
+- the owner merged PR #332 to `main` at `d2dba2c270c8c23594f1073f757c40d15d3d9186`; post-merge `main` workflow run `33833200591`, job `100900327559` also passed;
+- global mutation commands declare their required fixed permission through `AppPanel.requiredPermission(...)`;
+- `ProductionWorkspaceWindow` combines active-panel capability with current-session permission and returns an explanatory denial before dispatch if invoked directly;
+- panel-local durable actions use the same fixed permission policy without replacing independent busy/selection/lifecycle disable reasons;
+- the tranche corrected the directly blocking Chart of Accounts JSON import authorization gap by requiring `BOOKKEEPING_WRITE` at that commit boundary and using guarded production composition rather than relying on UI disabling;
+- read/navigation/preview controls remain available; export and presentation-preference actions retain `EXPORT` and `UI_PREFERENCE_WRITE` respectively;
+- focused JavaFX/session and source-route regression coverage is included;
+- the final source-route assertion verifies the stable permission-check and denial-explanation behavior rather than depending on a local variable name;
+- no schema or migration change.
+
+Completed final P20-S3 reconciliation tranche:
+
+- branch `codex/P20-S3-final-reconciliation` started from exact merged `main` `d2dba2c270c8c23594f1073f757c40d15d3d9186`;
+- the tranche reconciled stale User Admin documentation to the implemented JavaFX `SECURITY_ADMIN` gating and recorded the completed #332/CI/merge evidence in this execution ledger;
+- no Java production/test code, schema, migration, or interface-operation-matrix change was included;
+- PR #333 behavior/documentation head `966c4dff0d214a3c8e29dc7895d529acfea32ac2` passed Maven PR Tests run `33833984753`, job `100902609878`: clean headless verification, repeated full Maven tests, and production JavaFX route compliance all succeeded;
+- PR #333 final exact head `5efced5e170db390292cdbf77a7a3b016538d718` passed Maven PR Tests run `33834473777`, job `100904026212`: clean headless verification, repeated full Maven tests, and production JavaFX route compliance all succeeded;
+- the owner merged PR #333 to `main` at `7c1f5ae69b7631de801fdb8169230967767316ac`;
+- post-merge `main` Maven PR Tests run `33839082567`, job `100917493733` passed clean headless verification, repeated full Maven tests, and production JavaFX route compliance.
+
+Completed P20-S3 verification and owner acceptance:
+
+- PR #334 exact final head `47903ad0db0556c19ba98f11a52022d56b73fea9` passed Maven PR Tests run `33921783760`, job `101181576090`: clean headless verification, Maven tests, and production JavaFX route compliance all succeeded;
+- the owner merged PR #334 to `main` at `7f611dd94b5d69d75e5dbed96730bea6a5941410`;
+- post-merge `main` Maven PR Tests run `33944333008`, job `101247580392` passed clean headless verification, Maven tests, and production JavaFX route compliance;
+- repository/governing-document inspection found no additional missing production service or JavaFX authorization boundary requiring another P20-S3 implementation tranche;
+- the previously stale source-route assertion remains correctly based on stable `UiPermissionGate` behavior rather than a local variable name;
+- on 2026-09-06 the owner explicitly accepted the completed desktop role/permission behavior, including VIEWER, ACCOUNTANT, MANAGER, ADMIN, company/session switching, and the Chart of Accounts JSON preview/import boundary;
+- all P20-S3 completion gates are satisfied, so P20-S3 and P20 are complete.
+
+Completion-record publication:
+
+- branch `codex/P20-S3-completion` starts from exact merged `main` `7f611dd94b5d69d75e5dbed96730bea6a5941410`;
+- completion behavior/documentation head `e96d08eeb5b52982df89f304997d0ee3355fea50` records owner desktop acceptance and closes P20-S3/P20;
+- draft PR #335 changed only `doc/PLAN.md` and merged to `main` at `6010a5563e70e58fc69a91197cbf1ec819bd346c`; post-merge Maven PR Tests run `34074737387`, job `101598529975` passed clean headless verification, Maven tests, and production JavaFX route compliance.
+
+Required reading:
+
+- `doc/P20-S1-authentication-authorization-boundary.md`;
+- `doc/P20-S3-runtime-authorization.md`;
+- `doc/P20-S3-authenticated-audit-actor.md`;
+- `doc/P20-S3-database-administration-authorization.md`;
+- `doc/P20-S3-javafx-permission-gating.md`;
+- `doc/P20-S3-fixed-asset-authorization.md`;
+- `doc/P20-S3-inventory-authorization.md`;
+- `doc/P20-S3-period-close-authorization.md`;
+- `doc/P20-S3-import-commit-authorization.md`;
+- `doc/P20-S3-bank-import-authorization.md`;
+- `doc/P20-S3-bank-csv-authorization.md`;
+- `doc/data-exchange/sclx.md`;
+- `doc/accounting/period-close-design.md`;
+- `doc/banking/banking-and-reconciliation.md`;
+- `doc/administration/user-role-maintenance.md`;
+- `doc/interface-operation-matrix.md`;
+- `doc/ui_design_rules.md`;
+- `doc/ui/editor-guidelines.md`.
+
+Required inspection:
+
+- `AuthenticatedUserSession`, `ReservedSecurityRole`, `AuthenticationService`, `SecurityAdminService`, `SecurityRepository`;
+- `ApplicationSessionContext`, `UiSessionState`, `ProductionWorkspaceWindow`, `PanelHost`, `AppPanel`, `UiServiceRegistry`;
+- every production mutation service/factory listed by the interface operation matrix;
+- current free-form actor fields and audit-producing service paths;
+- current role/session/security tests and source-route guard tests.
+
+Implement the fixed reserved-role permission model consistently at shell/panel and authoritative service mutation boundaries. UI disabling is explanatory only; direct lower-privilege service calls must fail closed and write factual authorization-denial security events. Replace free-form audit actor authority with authenticated identity without creating a parallel audit identity.
+
+Governing enforcement design: `doc/P20-S3-runtime-authorization.md`.
+
+Completion gate:
+
+- fixed permission matrix is implemented from current effective reserved roles with multi-role union;
+- all production protected mutation routes use the central authorization guard;
+- VIEWER cannot mutate durable business/accounting state even through direct service calls;
+- MANAGER, ACCOUNTANT, and ADMIN boundaries match the adopted P20 contract;
+- company/role switching immediately changes permissions without a stale cache;
+- authenticated identity is the authoritative actor for protected audit writes;
+- denial events are durable H2 `security_event` facts;
+- JavaFX commands/actions reflect the same permissions and explain unavailable operations;
+- Maven PR Tests and production JavaFX route compliance are green on the exact final head;
+- owner desktop acceptance is complete.
 
 ## 7. P21 — Activity and Event Accounting
 
@@ -198,6 +438,13 @@ Completion evidence:
 - post-merge `main` Maven PR Tests run `34721261596`, job `103627445343` passed clean headless verification, Maven tests, and production JavaFX route compliance;
 - owner desktop verification was explicitly accepted on 2026-09-12;
 - P21-S2 and P21 are complete.
+
+Completion-record publication:
+
+- PR #340 exact completion head `3046eb014b355df67718c2ac7266737f56b40df5` passed Maven PR Tests run `34784883704`, job `103798424392`: clean headless verification, Maven tests, and production JavaFX route compliance all succeeded;
+- PR #340 merged to `main` at `b7e4f45daa4aa5befda89a164e3bd6ced876c07e`;
+- post-merge `main` Maven PR Tests run `34793559393`, job `103822237567` passed clean headless verification, Maven tests, and production JavaFX route compliance;
+- PR #340's P21 completion state is retained. This corrective publication restores detailed P20 execution-ledger history that PR #340 compacted and makes no production-behavior change.
 
 ## 8. Advancement rule
 
