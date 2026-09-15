@@ -36,12 +36,14 @@ Use in-memory H2 to verify:
 
 Verify database-backed values for:
 
-- book, reconciled, and unreconciled cash;
+- book, reconciled, and unreconciled cash from canonical cleared-state facts;
+- strict multi-company isolation for all Dashboard ledger/budget/reconciliation projections;
 - multiple bank accounts;
-- year-to-date result by unrestricted, restricted, and designated classification;
-- budget exceptions and thresholds;
-- pending import and reconciliation work;
-- recent entered transactions;
+- fiscal-year-to-selected-period result by unrestricted, restricted, and designated classification;
+- budget exceptions and thresholds using the active company fiscal year;
+- current `bank_reconciliation_session` status/difference facts rather than legacy reconciliation runs;
+- truthful unavailable Open Items state until canonical supplemental settlement/open-balance authority exists;
+- recent entered transactions and running bank balance;
 - empty-state behavior without fictional values.
 
 ## Import and interchange tests

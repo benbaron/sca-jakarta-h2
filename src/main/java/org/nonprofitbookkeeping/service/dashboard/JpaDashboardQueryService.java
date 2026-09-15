@@ -7,13 +7,17 @@ import org.nonprofitbookkeeping.model.AccountFunction;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.BudgetPlan;
+import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.persistence.Jpa;
+import org.nonprofitbookkeeping.service.FiscalPeriodRange;
 
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -36,20 +40,20 @@ public class JpaDashboardQueryService implements DashboardQueryService
     }
 
     @Override
-    public DashboardSnapshot load(LocalDate asOfDate, int recentTransactionLimit)
+    public DashboardSnapshot load(LocalDate selectedPeriodStart, int recentTransactionLimit)
     {
-        return load("", asOfDate, recentTransactionLimit);
+        return load("", selectedPeriodStart, recentTransactionLimit);
     }
 
     @Override
     public DashboardSnapshot load(
             String groupCode,
-            LocalDate asOfDate,
+            LocalDate selectedPeriodStart,
             int recentTransactionLimit)
     {
-        if (asOfDate == null)
+        if (selectedPeriodStart == null)
         {
-            throw new IllegalArgumentException("asOfDate is required");
+            throw new IllegalArgumentException("selectedPeriodStart is required");
         }
         if (recentTransactionLimit <= 0)
         {
@@ -63,30 +67,43 @@ public class JpaDashboardQueryService implements DashboardQueryService
             em.getTransaction().begin();
             try
             {
-                BigDecimal bookCash = loadBookCash(em, asOfDate);
-                BigDecimal yearToDate = loadYearToDateSurplus(em, asOfDate);
-                Map<String, BigDecimal> fundClassTotals = loadFundClassTotals(em, asOfDate);
-                List<DashboardSnapshot.BankAccountBalance> bankAccounts = loadBankAccounts(em, asOfDate);
+                Optional<Company> company = findCompany(em, normalizedGroupCode);
+                if (company.isEmpty())
+                {
+                    em.getTransaction().commit();
+                    return emptySnapshot(normalizedGroupCode, selectedPeriodStart);
+                }
+
+                Company owner = company.orElseThrow();
+                FiscalPeriodRange fiscalRange = FiscalPeriodRange.of(
+                        owner.getFiscalYearStartMonth(),
+                        owner.getFiscalYearStartDay(),
+                        selectedPeriodStart);
+                LocalDate projectionDate = fiscalRange.periodEnd();
+                BigDecimal bookCash = loadBookCash(em, owner, projectionDate);
+                Optional<BigDecimal> reconciledCash = loadReconciledCash(em, owner, projectionDate);
+                Optional<BigDecimal> unreconciledDifference = reconciledCash.map(bookCash::subtract);
+                BigDecimal yearToDate = loadYearToDateSurplus(em, owner, fiscalRange.fiscalYearStart(), projectionDate);
+                Map<String, BigDecimal> fundClassTotals = loadFundClassTotals(em, owner, projectionDate);
+                List<DashboardSnapshot.BankAccountBalance> bankAccounts = loadBankAccounts(em, owner, projectionDate);
                 List<DashboardSnapshot.RecentTransaction> recentTransactions =
-                        loadRecentTransactions(em, asOfDate, recentTransactionLimit);
-                DashboardSnapshot.OpenItemSummary openItems =
-                        loadOpenItems(em, normalizedGroupCode, asOfDate);
+                        loadRecentTransactions(em, owner, projectionDate, recentTransactionLimit);
+                DashboardSnapshot.OpenItemSummary openItems = DashboardSnapshot.OpenItemSummary.unavailable();
                 List<DashboardSnapshot.ReconciliationStatus> reconciliations =
-                        loadReconciliations(em, normalizedGroupCode, asOfDate);
+                        loadReconciliations(em, owner, projectionDate);
                 List<DashboardSnapshot.BudgetActual> budgetActuals =
-                        loadBudgetActuals(em, asOfDate);
-                DashboardSnapshot.OrganizationSummary organization =
-                        loadOrganization(em, normalizedGroupCode);
-                DashboardSnapshot.PeriodSummary period = loadPeriod(em, asOfDate);
+                        loadBudgetActuals(em, owner, fiscalRange, projectionDate);
+                DashboardSnapshot.OrganizationSummary organization = loadOrganization(owner);
+                DashboardSnapshot.PeriodSummary period = loadPeriod(em, owner, fiscalRange);
                 List<DashboardSnapshot.MonthlyResult> monthlyResults =
-                        loadMonthlyResults(em, asOfDate);
+                        loadMonthlyResults(em, owner, fiscalRange.fiscalYearStart(), projectionDate);
 
                 em.getTransaction().commit();
                 return new DashboardSnapshot(
-                        asOfDate,
+                        projectionDate,
                         bookCash,
-                        Optional.empty(),
-                        Optional.empty(),
+                        reconciledCash,
+                        unreconciledDifference,
                         yearToDate,
                         Map.copyOf(fundClassTotals),
                         List.copyOf(bankAccounts),
@@ -109,23 +126,113 @@ public class JpaDashboardQueryService implements DashboardQueryService
         }
     }
 
-    private static BigDecimal loadBookCash(EntityManager em, LocalDate asOfDate)
+    private static DashboardSnapshot emptySnapshot(String companyCode, LocalDate asOfDate)
+    {
+        return new DashboardSnapshot(
+                asOfDate,
+                BigDecimal.ZERO,
+                Optional.empty(),
+                Optional.empty(),
+                BigDecimal.ZERO,
+                Map.of(),
+                List.of(),
+                List.of(),
+                DashboardSnapshot.OpenItemSummary.unavailable(),
+                List.of(),
+                List.of(),
+                DashboardSnapshot.OrganizationSummary.unavailable(companyCode),
+                DashboardSnapshot.PeriodSummary.unavailable(),
+                List.of());
+    }
+
+    private static Optional<Company> findCompany(EntityManager em, String companyCode)
+    {
+        if (companyCode == null || companyCode.isBlank())
+        {
+            return Optional.empty();
+        }
+        List<Company> matches = em.createQuery(
+                        "from Company c where upper(c.code) = :code",
+                        Company.class)
+                .setParameter("code", companyCode.trim().toUpperCase(java.util.Locale.ROOT))
+                .setMaxResults(2)
+                .getResultList();
+        if (matches.size() > 1)
+        {
+            throw new IllegalStateException("Company code is ambiguous: " + companyCode);
+        }
+        return matches.stream().findFirst();
+    }
+
+    private static BigDecimal loadBookCash(EntityManager em, Company company, LocalDate asOfDate)
     {
         return decimal(em.createQuery("""
                 select coalesce(sum(s.amountSigned), 0)
                 from TxnSplit s
-                where s.txn.txnDate <= :asOf
+                where s.txn.company = :company
+                  and s.txn.txnDate <= :asOf
                   and s.txn.status = 'ENTERED'
                   and s.account.accountType = :assetType
                   and s.account.subtype = :cashSubtype
                 """, BigDecimal.class)
+                .setParameter("company", company)
                 .setParameter("asOf", asOfDate)
                 .setParameter("assetType", AccountType.ASSET)
                 .setParameter("cashSubtype", AccountSubtype.CASH)
                 .getSingleResult());
     }
 
-    private static BigDecimal loadYearToDateSurplus(EntityManager em, LocalDate asOfDate)
+    /**
+     * Cash not classified as a bank account is always included. Bank-function cash is included only after the
+     * authoritative reconciliation-owned cleared flag is set, so Book Cash minus this value is the uncleared bank-cash delta.
+     */
+    private static Optional<BigDecimal> loadReconciledCash(EntityManager em, Company company, LocalDate asOfDate)
+    {
+        long bankCashAccounts = em.createQuery("""
+                select count(a)
+                from Account a
+                where a.chart.company = :company
+                  and a.accountType = :assetType
+                  and a.subtype = :cashSubtype
+                  and a.accountFunction = :bankFunction
+                """, Long.class)
+                .setParameter("company", company)
+                .setParameter("assetType", AccountType.ASSET)
+                .setParameter("cashSubtype", AccountSubtype.CASH)
+                .setParameter("bankFunction", AccountFunction.BANK)
+                .getSingleResult();
+        if (bankCashAccounts == 0L)
+        {
+            return Optional.empty();
+        }
+
+        BigDecimal reconciled = decimal(em.createQuery("""
+                select coalesce(sum(case
+                    when s.account.accountFunction <> :bankFunction or s.account.accountFunction is null
+                        then s.amountSigned
+                    when s.bankCleared = true then s.amountSigned
+                    else 0 end), 0)
+                from TxnSplit s
+                where s.txn.company = :company
+                  and s.txn.txnDate <= :asOf
+                  and s.txn.status = 'ENTERED'
+                  and s.account.accountType = :assetType
+                  and s.account.subtype = :cashSubtype
+                """, BigDecimal.class)
+                .setParameter("company", company)
+                .setParameter("asOf", asOfDate)
+                .setParameter("assetType", AccountType.ASSET)
+                .setParameter("cashSubtype", AccountSubtype.CASH)
+                .setParameter("bankFunction", AccountFunction.BANK)
+                .getSingleResult());
+        return Optional.of(reconciled);
+    }
+
+    private static BigDecimal loadYearToDateSurplus(
+            EntityManager em,
+            Company company,
+            LocalDate fiscalYearStart,
+            LocalDate asOfDate)
     {
         return decimal(em.createQuery("""
                 select coalesce(sum(case
@@ -133,17 +240,22 @@ public class JpaDashboardQueryService implements DashboardQueryService
                     when s.account.accountType = :expenseType then -s.amountSigned
                     else 0 end), 0)
                 from TxnSplit s
-                where s.txn.txnDate between :start and :asOf
+                where s.txn.company = :company
+                  and s.txn.txnDate between :start and :asOf
                   and s.txn.status = 'ENTERED'
                 """, BigDecimal.class)
+                .setParameter("company", company)
                 .setParameter("incomeType", AccountType.INCOME)
                 .setParameter("expenseType", AccountType.EXPENSE)
-                .setParameter("start", LocalDate.of(asOfDate.getYear(), 1, 1))
+                .setParameter("start", fiscalYearStart)
                 .setParameter("asOf", asOfDate)
                 .getSingleResult());
     }
 
-    private static Map<String, BigDecimal> loadFundClassTotals(EntityManager em, LocalDate asOfDate)
+    private static Map<String, BigDecimal> loadFundClassTotals(
+            EntityManager em,
+            Company company,
+            LocalDate asOfDate)
     {
         Map<String, BigDecimal> totals = new LinkedHashMap<>();
         List<Object[]> rows = em.createQuery("""
@@ -155,11 +267,13 @@ public class JpaDashboardQueryService implements DashboardQueryService
                 from TxnSplit s
                 join s.fund f
                 join s.account a
-                where s.txn.txnDate <= :asOf
+                where s.txn.company = :company
+                  and s.txn.txnDate <= :asOf
                   and s.txn.status = 'ENTERED'
                 group by f.fundType
                 order by f.fundType
                 """, Object[].class)
+                .setParameter("company", company)
                 .setParameter("equityType", AccountType.EQUITY)
                 .setParameter("incomeType", AccountType.INCOME)
                 .setParameter("expenseType", AccountType.EXPENSE)
@@ -174,18 +288,21 @@ public class JpaDashboardQueryService implements DashboardQueryService
 
     private static List<DashboardSnapshot.BankAccountBalance> loadBankAccounts(
             EntityManager em,
+            Company company,
             LocalDate asOfDate)
     {
         return em.createQuery("""
                 select new org.nonprofitbookkeeping.service.dashboard.DashboardSnapshot$BankAccountBalance(
                     a.id, a.code, a.name, coalesce(sum(s.amountSigned), 0))
                 from TxnSplit s join s.account a
-                where s.txn.txnDate <= :asOf
+                where s.txn.company = :company
+                  and s.txn.txnDate <= :asOf
                   and s.txn.status = 'ENTERED'
                   and a.accountFunction = :bankFunction
                 group by a.id, a.code, a.name
                 order by abs(sum(s.amountSigned)) desc, a.code
                 """, DashboardSnapshot.BankAccountBalance.class)
+                .setParameter("company", company)
                 .setParameter("asOf", asOfDate)
                 .setParameter("bankFunction", AccountFunction.BANK)
                 .getResultList();
@@ -193,6 +310,7 @@ public class JpaDashboardQueryService implements DashboardQueryService
 
     private static List<DashboardSnapshot.RecentTransaction> loadRecentTransactions(
             EntityManager em,
+            Company company,
             LocalDate asOfDate,
             int limit)
     {
@@ -200,9 +318,11 @@ public class JpaDashboardQueryService implements DashboardQueryService
                 select t.id, t.txnDate, coalesce(t.memo, ''), t.status,
                        coalesce(p.displayName, '')
                 from Txn t left join t.payee p
-                where t.txnDate <= :asOf
+                where t.company = :company
+                  and t.txnDate <= :asOf
                 order by t.txnDate desc, t.id desc
                 """, Object[].class)
+                .setParameter("company", company)
                 .setParameter("asOf", asOfDate)
                 .setMaxResults(limit)
                 .getResultList();
@@ -257,7 +377,7 @@ public class JpaDashboardQueryService implements DashboardQueryService
             }
         }
 
-        assignRunningBankBalances(em, accumulators);
+        assignRunningBankBalances(em, company, accumulators);
         return accumulators.values().stream()
                 .map(RecentAccumulator::toSnapshot)
                 .toList();
@@ -265,13 +385,16 @@ public class JpaDashboardQueryService implements DashboardQueryService
 
     private static void assignRunningBankBalances(
             EntityManager em,
+            Company company,
             Map<Long, RecentAccumulator> accumulators)
     {
         long bankAccountCount = em.createQuery("""
                 select count(a)
                 from Account a
-                where a.accountFunction = :bankFunction
+                where a.chart.company = :company
+                  and a.accountFunction = :bankFunction
                 """, Long.class)
+                .setParameter("company", company)
                 .setParameter("bankFunction", AccountFunction.BANK)
                 .getSingleResult();
         if (bankAccountCount == 0)
@@ -289,11 +412,13 @@ public class JpaDashboardQueryService implements DashboardQueryService
         BigDecimal runningBalance = decimal(em.createQuery("""
                 select coalesce(sum(s.amountSigned), 0)
                 from TxnSplit s
-                where s.txn.status = 'ENTERED'
+                where s.txn.company = :company
+                  and s.txn.status = 'ENTERED'
                   and s.account.accountFunction = :bankFunction
                   and (s.txn.txnDate < :firstDate
                        or (s.txn.txnDate = :firstDate and s.txn.id < :firstId))
                 """, BigDecimal.class)
+                .setParameter("company", company)
                 .setParameter("bankFunction", AccountFunction.BANK)
                 .setParameter("firstDate", first.transactionDate())
                 .setParameter("firstId", first.transactionId())
@@ -309,74 +434,21 @@ public class JpaDashboardQueryService implements DashboardQueryService
         }
     }
 
-    private static DashboardSnapshot.OpenItemSummary loadOpenItems(
-            EntityManager em,
-            String groupCode,
-            LocalDate asOfDate)
-    {
-        if (groupCode.isBlank())
-        {
-            return new DashboardSnapshot.OpenItemSummary(
-                    Map.of(),
-                    Map.of(),
-                    0L,
-                    BigDecimal.ZERO);
-        }
-
-        @SuppressWarnings("unchecked")
-        List<Object[]> rows = em.createNativeQuery("""
-                SELECT item_kind, COUNT(*), COALESCE(SUM(open_amount), 0)
-                FROM open_item_snapshot
-                WHERE group_code = ?1
-                  AND last_updated_on <= ?2
-                  AND open_amount <> 0
-                GROUP BY item_kind
-                ORDER BY item_kind
-                """)
-                .setParameter(1, groupCode)
-                .setParameter(2, Date.valueOf(asOfDate))
-                .getResultList();
-
-        Map<String, Long> counts = new LinkedHashMap<>();
-        Map<String, BigDecimal> amounts = new LinkedHashMap<>();
-        long totalCount = 0L;
-        BigDecimal totalAmount = BigDecimal.ZERO;
-        for (Object[] row : rows)
-        {
-            String itemKind = string(row[0]);
-            long count = ((Number) row[1]).longValue();
-            BigDecimal amount = decimal(row[2]);
-            counts.put(itemKind, count);
-            amounts.put(itemKind, amount);
-            totalCount += count;
-            totalAmount = totalAmount.add(amount);
-        }
-        return new DashboardSnapshot.OpenItemSummary(
-                Map.copyOf(counts),
-                Map.copyOf(amounts),
-                totalCount,
-                totalAmount);
-    }
-
     private static List<DashboardSnapshot.ReconciliationStatus> loadReconciliations(
             EntityManager em,
-            String groupCode,
+            Company company,
             LocalDate asOfDate)
     {
-        if (groupCode.isBlank())
-        {
-            return List.of();
-        }
-
         @SuppressWarnings("unchecked")
         List<Object[]> rows = em.createNativeQuery("""
-                SELECT statement_ending_on, bank_format, status, imported_transaction_count
-                FROM reconciliation_run
-                WHERE group_code = ?1
-                  AND statement_ending_on <= ?2
-                ORDER BY statement_ending_on DESC, created_at DESC
+                SELECT s.statement_end_date, cba.name, s.status, s.difference_amount
+                FROM bank_reconciliation_session s
+                JOIN company_bank_account cba ON cba.id = s.bank_account_id
+                WHERE s.company_id = ?1
+                  AND s.statement_end_date <= ?2
+                ORDER BY s.statement_end_date DESC, s.id DESC
                 """)
-                .setParameter(1, groupCode)
+                .setParameter(1, company.getId())
                 .setParameter(2, Date.valueOf(asOfDate))
                 .setMaxResults(4)
                 .getResultList();
@@ -386,21 +458,26 @@ public class JpaDashboardQueryService implements DashboardQueryService
                         localDate(row[0]),
                         string(row[1]),
                         string(row[2]),
-                        ((Number) row[3]).intValue()))
+                        decimal(row[3])))
                 .toList();
     }
 
     private static List<DashboardSnapshot.BudgetActual> loadBudgetActuals(
             EntityManager em,
+            Company company,
+            FiscalPeriodRange fiscalRange,
             LocalDate asOfDate)
     {
         Map<String, BudgetActualAccumulator> accumulators = new LinkedHashMap<>();
         List<Long> activePlanIds = em.createQuery("""
                 select p.id from BudgetPlan p
-                where p.fiscalYear = :year and p.status = :status
+                where p.company = :company
+                  and p.fiscalYear = :year
+                  and p.status = :status
                 order by p.activatedAt desc, p.id desc
                 """, Long.class)
-                .setParameter("year", asOfDate.getYear())
+                .setParameter("company", company)
+                .setParameter("year", fiscalRange.fiscalYear())
                 .setParameter("status", BudgetPlan.Status.ACTIVE)
                 .setMaxResults(1)
                 .getResultList();
@@ -416,7 +493,7 @@ public class JpaDashboardQueryService implements DashboardQueryService
                     order by bc.code
                     """, Object[].class)
                     .setParameter("planId", activePlanIds.get(0))
-                    .setParameter("period", java.time.YearMonth.from(asOfDate).toString())
+                    .setParameter("period", YearMonth.from(asOfDate).toString())
                     .getResultList();
             for (Object[] row : budgetRows)
             {
@@ -433,14 +510,16 @@ public class JpaDashboardQueryService implements DashboardQueryService
                 from TxnSplit s
                 join s.budgetCategory bc
                 join s.account a
-                where s.txn.txnDate between :start and :asOf
+                where s.txn.company = :company
+                  and s.txn.txnDate between :start and :asOf
                   and s.txn.status = 'ENTERED'
                 group by bc.code, bc.name
                 order by bc.code
                 """, Object[].class)
+                .setParameter("company", company)
                 .setParameter("incomeType", AccountType.INCOME)
                 .setParameter("expenseType", AccountType.EXPENSE)
-                .setParameter("start", LocalDate.of(asOfDate.getYear(), 1, 1))
+                .setParameter("start", fiscalRange.fiscalYearStart())
                 .setParameter("asOf", asOfDate)
                 .getResultList();
         for (Object[] row : actualRows)
@@ -459,101 +538,104 @@ public class JpaDashboardQueryService implements DashboardQueryService
         return rows.computeIfAbsent(code, ignored -> new BudgetActualAccumulator(code, string(row[1])));
     }
 
-    private static DashboardSnapshot.OrganizationSummary loadOrganization(
-            EntityManager em,
-            String groupCode)
+    private static DashboardSnapshot.OrganizationSummary loadOrganization(Company company)
     {
-        if (groupCode.isBlank())
-        {
-            return DashboardSnapshot.OrganizationSummary.unavailable(groupCode);
-        }
-
-        List<Object[]> rows = em.createQuery("""
-                select c.code, c.displayName, coalesce(c.branchType, ''),
-                       coalesce(c.parentOrganization, ''), c.active, c.defaultCurrency
-                from Company c
-                where c.code = :code
-                """, Object[].class)
-                .setParameter("code", groupCode)
-                .setMaxResults(1)
-                .getResultList();
-        if (rows.isEmpty())
-        {
-            return DashboardSnapshot.OrganizationSummary.unavailable(groupCode);
-        }
-
-        Object[] row = rows.get(0);
         return new DashboardSnapshot.OrganizationSummary(
-                string(row[0]),
-                string(row[1]),
-                string(row[2]),
-                string(row[3]),
-                Boolean.TRUE.equals(row[4]),
-                string(row[5]));
+                string(company.getCode()),
+                string(company.getDisplayName()),
+                string(company.getBranchType()),
+                string(company.getParentOrganization()),
+                company.isActive(),
+                string(company.getDefaultCurrency()));
     }
 
     private static DashboardSnapshot.PeriodSummary loadPeriod(
             EntityManager em,
-            LocalDate asOfDate)
+            Company company,
+            FiscalPeriodRange fiscalRange)
     {
-        List<Object[]> rows = em.createQuery("""
-                select p.fiscalYear, p.periodNumber, p.startDate, p.endDate, p.status
-                from AccountingPeriod p
-                where p.startDate <= :asOf
-                  and p.endDate >= :asOf
-                order by p.startDate desc
-                """, Object[].class)
-                .setParameter("asOf", asOfDate)
-                .setMaxResults(1)
-                .getResultList();
-        if (rows.isEmpty())
-        {
-            return DashboardSnapshot.PeriodSummary.unavailable();
-        }
-
-        Object[] row = rows.get(0);
+        Number covering = (Number) em.createNativeQuery("""
+                SELECT COUNT(*)
+                FROM period_close_range
+                WHERE company_id = ?1
+                  AND status = 'CLOSED'
+                  AND start_date <= ?2
+                  AND end_date >= ?3
+                """)
+                .setParameter(1, company.getId())
+                .setParameter(2, Date.valueOf(fiscalRange.periodStart()))
+                .setParameter(3, Date.valueOf(fiscalRange.periodEnd()))
+                .getSingleResult();
+        Number overlapping = (Number) em.createNativeQuery("""
+                SELECT COUNT(*)
+                FROM period_close_range
+                WHERE company_id = ?1
+                  AND status = 'CLOSED'
+                  AND start_date <= ?3
+                  AND end_date >= ?2
+                """)
+                .setParameter(1, company.getId())
+                .setParameter(2, Date.valueOf(fiscalRange.periodStart()))
+                .setParameter(3, Date.valueOf(fiscalRange.periodEnd()))
+                .getSingleResult();
+        int periodNumber = Math.toIntExact(
+                ChronoUnit.MONTHS.between(
+                        YearMonth.from(fiscalRange.fiscalYearStart()),
+                        YearMonth.from(fiscalRange.periodStart())) + 1L);
+        String status = covering.longValue() > 0L
+                ? "CLOSED"
+                : overlapping.longValue() > 0L ? "PARTIALLY_CLOSED" : "OPEN";
         return new DashboardSnapshot.PeriodSummary(
-                Optional.of(((Number) row[0]).intValue()),
-                Optional.of(((Number) row[1]).intValue()),
-                Optional.of(localDate(row[2])),
-                Optional.of(localDate(row[3])),
-                string(row[4]));
+                Optional.of(fiscalRange.fiscalYear()),
+                Optional.of(periodNumber),
+                Optional.of(fiscalRange.periodStart()),
+                Optional.of(fiscalRange.periodEnd()),
+                status);
     }
 
     private static List<DashboardSnapshot.MonthlyResult> loadMonthlyResults(
             EntityManager em,
+            Company company,
+            LocalDate fiscalYearStart,
             LocalDate asOfDate)
     {
         List<Object[]> rows = em.createQuery("""
-                select month(s.txn.txnDate),
+                select year(s.txn.txnDate), month(s.txn.txnDate),
                        coalesce(sum(case
                            when s.account.accountType = :incomeType then -s.amountSigned
                            when s.account.accountType = :expenseType then -s.amountSigned
                            else 0 end), 0)
                 from TxnSplit s
-                where s.txn.txnDate between :start and :asOf
+                where s.txn.company = :company
+                  and s.txn.txnDate between :start and :asOf
                   and s.txn.status = 'ENTERED'
-                group by month(s.txn.txnDate)
-                order by month(s.txn.txnDate)
+                group by year(s.txn.txnDate), month(s.txn.txnDate)
+                order by year(s.txn.txnDate), month(s.txn.txnDate)
                 """, Object[].class)
+                .setParameter("company", company)
                 .setParameter("incomeType", AccountType.INCOME)
                 .setParameter("expenseType", AccountType.EXPENSE)
-                .setParameter("start", LocalDate.of(asOfDate.getYear(), 1, 1))
+                .setParameter("start", fiscalYearStart)
                 .setParameter("asOf", asOfDate)
                 .getResultList();
 
-        Map<Integer, BigDecimal> byMonth = new LinkedHashMap<>();
+        Map<YearMonth, BigDecimal> byMonth = new LinkedHashMap<>();
         for (Object[] row : rows)
         {
-            byMonth.put(((Number) row[0]).intValue(), decimal(row[1]));
+            byMonth.put(
+                    YearMonth.of(((Number) row[0]).intValue(), ((Number) row[1]).intValue()),
+                    decimal(row[2]));
         }
 
         List<DashboardSnapshot.MonthlyResult> results = new ArrayList<>();
-        for (int month = 1; month <= asOfDate.getMonthValue(); month++)
+        YearMonth month = YearMonth.from(fiscalYearStart);
+        YearMonth through = YearMonth.from(asOfDate);
+        while (!month.isAfter(through))
         {
             results.add(new DashboardSnapshot.MonthlyResult(
-                    month,
+                    month.getMonthValue(),
                     byMonth.getOrDefault(month, BigDecimal.ZERO)));
+            month = month.plusMonths(1);
         }
         return results;
     }

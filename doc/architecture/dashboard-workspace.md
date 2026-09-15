@@ -10,7 +10,7 @@ The dashboard is separated into three layers:
 
 - `DashboardHomePanel` builds the active JavaFX dashboard and binds a completed projection.
 - `DashboardQueryService` defines the read-only query boundary.
-- `JpaDashboardQueryService` obtains authoritative values from H2 inside one explicit read transaction.
+- `JpaDashboardQueryService` obtains authoritative values from H2 inside one explicit read transaction. Every financial projection is scoped by the active persisted `Company`; the company code is never used merely as display metadata while ledger queries remain global.
 
 The JavaFX panel contains no SQL. Accounting derivation remains in the service layer rather than in cell factories or click handlers.
 
@@ -69,6 +69,12 @@ The dashboard sits in a fit-to-width `ScrollPane`. The transaction table keeps h
 
 The headless geometry assessments model the center viewport after sidebar and divider widths are applied. They also evaluate startup window bounds, sidebar allocation, KPI-card minimum widths, transaction-table minimum and preferred widths, and whether horizontal or vertical scrolling is required.
 
+## Active-period and company scope
+
+The top-chrome active-period value is the selected accounting-period **start**. Dashboard projects through that selected period's calculated end, using the same company fiscal-year start month/day authority as Budget and Event Accounting. All canonical transaction, fund-class, bank, budget, recent-transaction, running-balance, and monthly-result queries require the active `Txn.company`; another company in the same H2 database must not affect any Dashboard amount or row.
+
+The Period Information card is derived from the company fiscal range plus authoritative `period_close_range` facts. Legacy `AccountingPeriod` rows are compatibility/history and do not define current Dashboard close status. A selected period is `CLOSED` when one current closed range covers it, `PARTIALLY_CLOSED` when only part overlaps, and `OPEN` otherwise.
+
 ## Derived transaction columns
 
 ### Balance
@@ -78,6 +84,8 @@ For the displayed transaction window, the service derives an aggregate running b
 When no bank account exists, the balance cannot be established reliably, or the displayed transaction is not posted, the cell is blank.
 
 **Book Cash** is a financial-statement measure, not a banking-operation measure: it sums posted `ASSET` accounts classified with subtype `CASH`. A bank-function account with a non-CASH subtype is excluded from Book Cash but still participates in banking/reconciliation.
+
+**Reconciled Cash** is derived from current canonical cleared-state authority: non-bank cash is included at book value, while `BANK + CASH` splits contribute only when reconciliation-owned `TxnSplit.bankCleared` is true. **Unreconciled Difference** is signed `Book Cash - Reconciled Cash`, so it represents the remaining uncleared bank-cash delta without consulting legacy reconciliation-run snapshots.
 
 ### Affects Bank
 
@@ -93,6 +101,12 @@ Reversed and other non-posted history remains visible but does not claim current
 
 The inspector's unrestricted, restricted, and designated values represent net assets by fund classification. The query includes posted equity, income, and expense lines and converts their debit-positive storage signs into net-asset effects. It does not sum every line in a balanced transaction, which would incorrectly collapse ordinary same-fund activity to zero.
 
+## Reconciliation and open-item authority
+
+The reconciliation-status card reads `bank_reconciliation_session` joined to the company-owned configured bank account and shows the current session status and difference amount. It does not read legacy `reconciliation_run` rows.
+
+The old `open_item_snapshot` table is compatibility data and is not a current Dashboard authority. The canonical Journal persists receivable/payable/prepaid/deferred/other supplemental details in `txn_supplemental_line`, but current production does not yet persist a governed settlement/open-balance lifecycle for those rows. Until the dedicated P22 supplemental/open-item slice supplies that authority, the Open Items card explicitly reports the metric as unavailable rather than presenting stale compatibility values as current accounting facts.
+
 ## Budget values
 
 P04 supplies authoritative budget-target amounts through active `budget_plan` and `budget_line` rows. Dashboard Budget Performance and YTD Budget vs Actual projections read the selected active normalized budget version and canonical ledger actuals through `DashboardQueryService`; when no active budget version exists, the dashboard shows the documented neutral no-budget state rather than inventing values.
@@ -100,7 +114,7 @@ P04 supplies authoritative budget-target amounts through active `budget_plan` an
 ## Data and safety rules
 
 - All money uses `BigDecimal`.
-- Posted balances use stable database IDs and posted transaction status.
+- Posted balances use stable database IDs, active-company ownership, and posted transaction status.
 - The dashboard never inserts, updates, deletes, posts, reverses, or migrates accounting records.
 - Database startup and recovery behavior remains in the production workspace shell.
 - A failed database selection still leads to the recovery dashboard, where a database can be retried, selected, or created.
