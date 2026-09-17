@@ -1,7 +1,11 @@
 package org.nonprofitbookkeeping.ui;
 
 import org.nonprofitbookkeeping.service.ApplicationPermission;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableBooleanValue;
+import javafx.beans.value.WeakChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
@@ -17,6 +21,7 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -172,9 +177,6 @@ public class BankTransactionsPanel implements AppPanel
         acceptReviewedRow.setDisable(true);
         acceptReviewedRow.setOnAction(event -> acceptSelectedReviewedRow());
         UiPermissionGate.gate(acceptReviewedRow, ApplicationPermission.BOOKKEEPING_WRITE, "Create a transaction from a reviewed bank row");
-        UiPermissionGate.gate(exportCsv, ApplicationPermission.EXPORT, "Export bank CSV");
-        UiPermissionGate.gate(exportOfx, ApplicationPermission.EXPORT, "Export OFX");
-        UiPermissionGate.gate(exportQfx, ApplicationPermission.EXPORT, "Export QFX");
         configureStatementExport();
 
         HBox exportControls = new HBox(8,
@@ -386,9 +388,12 @@ public class BankTransactionsPanel implements AppPanel
         exportFrom.setValue(activeDate.withDayOfMonth(1));
         exportThrough.setValue(activeDate);
         exportAccount.setPrefWidth(260);
-        exportCsv.disableProperty().bind(exportActions.busyProperty());
-        exportOfx.disableProperty().bind(exportActions.busyProperty());
-        exportQfx.disableProperty().bind(exportActions.busyProperty());
+        exportCsv.setId("bankStatementExportCsvButton");
+        exportOfx.setId("bankStatementExportOfxButton");
+        exportQfx.setId("bankStatementExportQfxButton");
+        bindExportButtonAvailability(exportCsv, exportActions.busyProperty(), "Export bank CSV");
+        bindExportButtonAvailability(exportOfx, exportActions.busyProperty(), "Export OFX");
+        bindExportButtonAvailability(exportQfx, exportActions.busyProperty(), "Export QFX");
         exportProgress.setId("bankStatementExportProgress");
         exportProgress.setMaxSize(22.0, 22.0);
         exportProgress.visibleProperty().bind(exportActions.busyProperty());
@@ -397,6 +402,28 @@ public class BankTransactionsPanel implements AppPanel
         exportOfx.setOnAction(event -> requestStatementExport(BankStatementExportFormat.OFX_2_XML));
         exportQfx.setOnAction(event -> requestStatementExport(BankStatementExportFormat.QFX_2_XML));
         exportStatus.textProperty().bind(exportActions.statusProperty());
+    }
+
+    static void bindExportButtonAvailability(
+            Button button,
+            ObservableBooleanValue busy,
+            String operation)
+    {
+        Objects.requireNonNull(button, "button");
+        Objects.requireNonNull(busy, "busy");
+        var denied = UiPermissionGate.deniedProperty(ApplicationPermission.EXPORT);
+        button.disableProperty().bind(Bindings.or(busy, denied));
+
+        Tooltip allowedTooltip = new Tooltip(button.getText());
+        Tooltip deniedTooltip = new Tooltip(UiPermissionGate.deniedExplanation(
+                ApplicationPermission.EXPORT, operation));
+        ChangeListener<Boolean> permissionListener = (observable, oldValue, deniedNow) ->
+                button.setTooltip(Boolean.TRUE.equals(deniedNow) ? deniedTooltip : allowedTooltip);
+        button.getProperties().put(
+                BankTransactionsPanel.class.getName() + ".exportPermissionTooltipListener",
+                permissionListener);
+        denied.addListener(new WeakChangeListener<>(permissionListener));
+        button.setTooltip(denied.get() ? deniedTooltip : allowedTooltip);
     }
 
     private void reloadExportAccounts(String activeCompany)
