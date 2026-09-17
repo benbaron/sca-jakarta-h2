@@ -1,25 +1,25 @@
 # Model and persistence authority inventory
 
-Status: reconciled to current production authority through the P21-S1 Activity administration implementation. Historical migration/audit details remain in completed phase documents and archive material; this file identifies the authorities that current production must preserve and the compatibility stores that must not become a second business model.
+Status: reconciled to current production authority through P22-S3 alternate-writer retirement. Historical migration/audit details remain in completed phase documents and archive material; this file identifies the authorities that current production must preserve and the compatibility stores that must not become a second business model.
 
 ## Current persistence map
 
 | Area | Current authority | H2 authoritative? | Compatibility / duplicate risk | Rule |
 |---|---|---:|---|---|
-| Canonical ledger / Journal | `Txn`, `TxnSplit`, `txn_supplemental_line`, `TransactionEntryService`, `TransactionCorrectionService` | yes | `JournalTransaction` / `PostingLine` JDBC compatibility model remains separate | Never add independent production writes to the compatibility model. |
+| Canonical ledger / Journal | `Txn`, `TxnSplit`, `txn_supplemental_line`, `TransactionEntryService`, `TransactionCorrectionService` | yes | `JournalTransaction` / `PostingLine` JDBC compatibility model remains separate; obsolete direct `PostingService` is retired | Never add independent production writes to the compatibility model or restore the retired direct writer. |
 | Journal bank/cleared projection | `TxnSplit.bankCleared`, `bankClearedOn`, and exact reconciliation-session projection | yes | UI could become a second cleared-state writer | Journal renders `Not bank` / `Uncleared` / `Cleared` / `Mixed` read-only; reconciliation owns matching/cleared mutation. |
-| Fund master data | `Fund`, `FundAdminService`, `FundLookupService` | yes | code-keyed compatibility seams may remain for older callers | Stable ID is identity; referenced funds deactivate, unused funds may delete only after authoritative usage checks. |
+| Fund master data | `Fund`, `FundAdminService`, `FundLookupService` | yes | code-keyed compatibility seams may remain for older callers; obsolete `CoaFundIo` writer is retired | Stable ID is identity; referenced funds deactivate, unused funds may delete only after authoritative usage checks. |
 | Activity master data | `Activity`, `ActivityAdminService`, `ActivityLookupService` | yes | SCLX portable addressing remains company+current-code while source-specific `interchange_identity` rows preserve import traceability | Stable database ID is local identity; code/name are mutable. Journal/interchange-linked Activities deactivate/reactivate; only completely unreferenced Activities may delete. |
 | Company master data / selection | `Company`, `CompanyAdminService`, `CompanySessionController` | yes | recent/session selection is convenience, not company authority | Active selection requires an existing active H2 company. |
 | User/role/company assignment admin | `AppUser`, `AppRole`, `UserCompanyRole`, `UserAdminService` | yes for administration facts | no authentication/runtime authorization authority yet | Stable IDs and dated end/revoke history; no inferred authentication semantics. |
 | Budget | `BudgetPlan`, `BudgetLine`, `BudgetPlanService` | yes | retired sidecar target stores | Stable plan identity; draft/active/archived version lifecycle remains service-owned. |
-| Chart of Accounts | `ChartOfAccounts`, `Account`, `AccountAdminService` | yes | code-keyed compatibility import seams | Account ID is identity; code is editable business data. |
+| Chart of Accounts | `ChartOfAccounts`, `Account`, `AccountAdminService` | yes | guarded CSV/JSON interchange seams; obsolete `CoaFundIo` writer is retired | Account ID is identity; code is editable business data. |
 | COA CSV preview | frozen transient preview + `CoaCsvImportService` | preview no; accepted facts yes | generic staging/job-store reintroduction | Accepted rows, external identities, and audit commit atomically; drift requires re-preview. |
 | COA JSON | chart DTO import/export services | accepted chart/account facts yes | accidental whole-database semantics | Chart structure only; no transaction-history transfer. |
 | Bank statement import/review | `bank_import_batch`, `bank_statement_line`, `import_issue`, mapping profiles, format-specific import services, `BankReviewQueryService` | yes after commit | raw preview is intentionally transient | OFX/QFX/mapped CSV/normalized CSV commit durable review evidence but do not auto-post ledger transactions. |
 | Reviewed statement acceptance | `ReviewedStatementAcceptanceService` + canonical `TransactionEntryService` | yes | second bank-transaction ledger | Explicit acceptance creates/links canonical `Txn`/`TxnSplit`; no second ledger table. |
 | Reconciliation | current reconciliation workspace/query/finalization authority plus `bank_reconciliation_session` / match facts | yes | older `ReconciliationRunRepository`/service family remains compatibility/history and some comparison/SCLX consumption | Current workspace authority owns matching/finalization/cleared state. Retain legacy run APIs only while a live current consumer exists. |
-| Period close | `period_close_range`, `period_close_event`, `AuditEvent`, `PeriodCloseRangeService` | yes | `AccountingPeriod`, `PeriodCloseService`, and run repository remain compatibility/history | Range service is canonical close/reopen authority; compatibility wrappers do not define production close state. |
+| Period close | `period_close_range`, `period_close_event`, `AuditEvent`, `PeriodCloseRangeService` | yes | `AccountingPeriod`, `PeriodCloseService`, and run repository remain compatibility/history; obsolete writable `AccountingPeriodService` is retired | Range service is canonical close/reopen authority; compatibility history does not define production close state. |
 | Fixed assets / depreciation / lifecycle | `FixedAsset`, `FixedAssetDepreciationRun`, `FixedAssetLifecycleEvent`, `FixedAssetService` | yes | old text/runbook sidecars removed | Lifecycle/depreciation facts and linked canonical transactions stay synchronized through domain services. P18 may add batching, not a second engine. |
 | Inventory / supplies | `InventoryItem`, `InventoryMovement`, `InventoryService` | yes | old text runbook removed | Financial movements link atomically to canonical transactions; nonfinancial movement is explicit. Reporting already reads these authorities. |
 | Audit history | company-owned `AuditEvent`, `AuditHistoryService` | yes | `approval_audit_record` compatibility data | Production Audit History and SCLX factual audit use `AuditEvent`; legacy approval records do not create an approval workflow. |
@@ -37,6 +37,7 @@ Status: reconciled to current production authority through the P21-S1 Activity a
 - Delete/reverse routes through `TransactionCorrectionService` with closed-period and completed-reconciliation protection.
 - `LEDGER_REGISTER` and `TXN_EDITOR` are compatibility destination aliases only; they are not persistence models or separate panels.
 - `JournalTransaction` / `PostingLine` and older JDBC journal/open-item repositories remain compatibility structures. No production feature may create a parallel writable ledger through them.
+- P22-S3 removes the unconsumed `PostingService` direct writer. New composition or tests must not reintroduce it; canonical writes stay behind `TransactionEntryService` / `TransactionCorrectionService`.
 
 ## Banking and reconciliation authority
 
@@ -59,6 +60,7 @@ Legacy reconciliation-run repositories/services remain only as classified P17-C1
 - Canonical transaction services call `requireOpen(...)` before protected ledger mutations.
 - Reconciliation protection remains an independent prerequisite.
 - `AccountingPeriod`, `PeriodCloseService`, and legacy period-close-run repositories/services are compatibility/history structures only where still consumed.
+- `AccountingPeriodService` is retired; no production or compatibility caller remained. The `AccountingPeriod`/`PeriodReopenEvent` entities and historical schema remain nondestructively for compatibility and ownership/migration handling.
 - Calculated active periods use the configured period-start day; wall-clock/calendar-year shortcuts are not production authority.
 
 ## Fixed-asset authority
@@ -96,6 +98,8 @@ Transient preview is permitted because review state is not accepted business dat
 - **Whole database:** H2 backup/restore and prepared-session activation, not a preview-family import.
 
 No accepted data depends on `UiWorkspaceDataStore`, a generic Import/Export Jobs history, a donor sidecar repository, static company authority, or a second ledger.
+
+P22-S3 also retires `CoaFundIo`, whose direct CSV/JSON Fund/Chart/Account writes had no current consumer. Current COA/fund import and administration remain behind `CoaCsvImportService`, `ChartOfAccountsJsonImportService`, `AccountAdminService`, and `FundAdminService`.
 
 ## SCLX selected-company authority
 
