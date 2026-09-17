@@ -59,12 +59,15 @@ class BankStatementExportPermissionBindingTest
                     button, busy.getReadOnlyProperty(), "Export bank CSV");
 
             assertTrue(button.disableProperty().isBound());
+            assertFalse(button.tooltipProperty().isBound());
             assertTrue(button.isDisable());
             assertNotNull(button.getTooltip());
             assertTrue(button.getTooltip().getText().contains("EXPORT"));
 
             session.setAuthenticatedUser(UiPermissionTestSessions.viewer());
             assertFalse(button.isDisable());
+            assertEquals("Export Bank CSV…", button.getTooltip().getText());
+            assertFalse(FullTextTooltipInstaller.refreshForTests(button));
             assertEquals("Export Bank CSV…", button.getTooltip().getText());
 
             busy.set(true);
