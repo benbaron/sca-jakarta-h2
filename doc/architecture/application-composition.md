@@ -37,6 +37,10 @@ P17-C11 classifies, but does not destructively migrate, the remaining pre-worksp
 
 Accordingly, no historical H2 run tables are removed and no applied migration is edited or dropped in P17-C11.
 
+### P22-S3 retired alternate writers
+
+P22-S3 audits three `@ApplicationScoped` writer-era services that were no longer present in `UiServiceRegistry`, `WorkspaceServices`, `PanelFactory`, interchange composition, or any other production caller. Because no current compatibility consumer remained, the application retires `PostingService`, `AccountingPeriodService`, and `CoaFundIo` rather than wrapping them with a second layer of guards. Their production responsibilities are already owned by `TransactionEntryService` / `TransactionCorrectionService`, `PeriodCloseRangeService`, and the guarded account/fund/COA admin and interchange services. Historical database entities and tables are not removed by this source-level retirement.
+
 ## Atomic database switching
 
 P01-S3 makes database selection a candidate-swap operation. The selected

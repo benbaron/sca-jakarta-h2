@@ -1,12 +1,12 @@
 ---
-plan_version: 292
+plan_version: 293
 active_phase: P22
-active_slice: P22-S2
+active_slice: P22-S3
 active_status: IN_PROGRESS
-active_branch: codex/P22-S2-bank-export-permission-binding
+active_branch: codex/P22-S3-retire-alternate-writers
 active_pull_request: null
-active_head: 83da79b062d029cbb22b8e2ed448bd7f7f4a1b17
-next_action: "Implement and validate P22-S2 on the fresh branch from merged P22-S1 main: replace the bank-statement export gate/busy dual disable writers with one permission-plus-busy binding, retain permission/full-text tooltip behavior, add JavaFX interaction coverage, then open a draft PR and stop before merge."
+active_head: 5bb8e28174e5133a2b115eda490da8dc30eb21be
+next_action: "Retire the unconsumed PostingService, AccountingPeriodService, and CoaFundIo alternate writers from current main, remove tests that only exercise those obsolete paths, add a source guard against their return, update governing authority documentation, validate in GitHub Actions, and stop before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -34,7 +34,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P19 | Deferred Company Administration extensions | DONE through P19-S3 / PR #309 |
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
-| P22 | Post-P21 correctness and authority corrections | IN PROGRESS — P22-S2 bank-export permission/busy correction |
+| P22 | Post-P21 correctness and authority corrections | IN PROGRESS — P22-S3 alternate-writer retirement |
 
 ## 3. Established product decisions
 
@@ -263,7 +263,7 @@ Current authenticated audit actor tranche:
 - Journal, fixed asset/depreciation/lifecycle, inventory, period close/reopen, reconciliation successor, reviewed-statement acceptance, CoA CSV, SCLX, strict/normalized bank review, and User Admin current-operation audit writes are covered;
 - SCLX source period-close and audit-history actor values remain historical source facts and are not rewritten; only new local import/canonical-transaction audit facts use the authenticated current actor;
 - `DesktopActorIdentity` resolves authenticated session identity first, protected JavaFX actor displays are read-only, and literal/workstation actors no longer act as authority on already-guarded production routes;
-- Company Ownership Diagnostics was outside the actor tranche because its mutations are classified `DATABASE_ADMIN`; the following database-administration tranche owns that guard and actor conversion. Legacy `AccountingPeriodService` has no production route and remains non-authoritative;
+- Company Ownership Diagnostics was outside the actor tranche because its mutations are classified `DATABASE_ADMIN`; the following database-administration tranche owns that guard and actor conversion. The former legacy `AccountingPeriodService` had no production route, remained non-authoritative, and is retired by P22-S3;
 - direct H2 regression coverage proves spoofed Journal/User Admin actor inputs are replaced by authenticated username, while source-route coverage requires authenticated actor derivation across all current guarded audit-producing production boundaries and read-only actor displays;
 - there is no schema or migration change;
 - PR #330 behavior/documentation head `d3667270f34bc971a87d887ae96141db5af0d900` passed Maven PR Tests run `33807059790`, job `100819950561`: clean headless verification, repeated full Maven tests, and production JavaFX route compliance all succeeded;
@@ -504,54 +504,72 @@ Validation state:
 
 ### P22-S2 — Bank-statement export permission/busy binding correction
 
+Status: DONE.
+
+PR #343 exact head `6c58b05b2267cec7ba492cd4139ae6dbc7da2dc8` merged to `main` at `5bb8e28174e5133a2b115eda490da8dc30eb21be` after owner acceptance.
+
+Scope delivered:
+
+- removed `UiPermissionGate.gate(...)` from the three bank-statement export buttons because those controls also require a busy-state binding;
+- bound each export button disabled state once as export busy OR denied `EXPORT` permission;
+- retained permission-denied explanatory tooltips while keeping `tooltipProperty()` unbound so the production full-text tooltip installer can still operate;
+- added stable JavaFX IDs and focused permission/busy/full-text-tooltip regression coverage;
+- did not change export serialization, destination/overwrite behavior, services, persistence, interchange formats, or authorization policy.
+
+Validation state:
+
+- exact PR head `6c58b05b2267cec7ba492cd4139ae6dbc7da2dc8` passed Maven PR Tests run `35264848366`, job `105349328123`: clean headless verification, repeated Maven tests, and production JavaFX route compliance all succeeded;
+- post-merge `main` run `35265278336`, job `105350785585`, completed successfully at merge commit `5bb8e28174e5133a2b115eda490da8dc30eb21be`: clean headless verification, repeated Maven tests, and production JavaFX route compliance all succeeded;
+- local Maven remained unavailable in the execution environment, so no local Maven result was claimed;
+- owner acceptance and merge are recorded above.
+
+### P22-S3 — Retire obsolete alternate writable services
+
 Status: IN_PROGRESS.
 
-Branch: `codex/P22-S2-bank-export-permission-binding`.
+Branch: `codex/P22-S3-retire-alternate-writers`.
 
 Scope:
 
-- remove `UiPermissionGate.gate(...)` from the three bank-statement export buttons because those controls also require a busy-state binding;
-- bind each export button disabled state once as `exportActions.busyProperty() OR UiPermissionGate.deniedProperty(EXPORT)`;
-- retain an explicit permission-denied tooltip and the full visible button text tooltip when export permission is allowed;
-- give the CSV/OFX/QFX buttons stable JavaFX IDs for behavior testing;
-- add JavaFX interaction coverage proving unauthenticated permission denial, permitted idle enablement, permitted busy disablement, return to idle, and subsequent permission denial without attempting `setDisable(...)` on a bound property;
-- do not change export serialization, destination/overwrite behavior, services, persistence, interchange formats, or authorization policy.
+- retire `PostingService`, whose direct `Txn`/`TxnSplit` write path has no current production or compatibility caller and bypasses the current company/authorization/period/correction command boundary;
+- retire legacy `AccountingPeriodService`, whose writable `AccountingPeriod` close/reopen path has no current production or compatibility caller and is superseded by `PeriodCloseRangeService`;
+- retire `CoaFundIo`, whose direct Fund/Chart/Account CSV/JSON writes have no current caller and are superseded by guarded administration/interchange services;
+- remove tests that exist only to exercise those retired writer implementations;
+- retain historical entities/tables, applied migrations, and live compatibility/history services where current consumers still exist;
+- add source-level regression coverage proving the three retired writer types cannot reappear in production source and that their canonical replacements remain present;
+- reconcile ledger, persistence-authority, application-composition, and P20 actor documentation to the current authority map.
 
 Required reading:
 
 - root `AGENTS.md`;
 - `doc/PLAN.md`;
-- `doc/data-exchange/bank-statement-interchange.md`;
-- `doc/interface-operation-matrix.md`;
-- `doc/ui_design_rules.md`;
-- `doc/ui/editor-guidelines.md`;
-- `doc/testing/production-workspace-test-plan.md`.
+- `doc/accounting/ledger-authority.md`;
+- `doc/persistence-authority-inventory.md`;
+- `doc/architecture/application-composition.md`;
+- `doc/accounting/period-and-correction-policy.md`;
+- `doc/interface-operation-matrix.md`.
 
 Required inspection:
 
-- `BankTransactionsPanel`;
-- `UiPermissionGate`;
-- `BankStatementExportActions` / `BankStatementExportCoordinator`;
-- current JavaFX permission-gate tests and bank-statement export UI/source tests.
+- `PostingService`, `AccountingPeriodService`, `CoaFundIo`;
+- all current production/test references to those types;
+- `TransactionEntryService`, `TransactionCorrectionService`, `PeriodCloseRangeService`;
+- `AccountAdminService`, `FundAdminService`, `CoaCsvImportService`, `ChartOfAccountsJsonImportService`;
+- `UiServiceRegistry` / workspace composition and current authority/source-guard tests.
 
 User-visible changes / manual owner testing:
 
-1. Log in as a role with Export permission, open Bank Transactions -> Statement Review, and confirm CSV/OFX/QFX export buttons are enabled while idle.
-2. Start an export and confirm all three export buttons remain disabled for the busy interval and re-enable after completion/failure.
-3. With no authenticated export authority, confirm the export buttons remain disabled and their tooltip explains the Export permission requirement.
-4. Confirm no JavaFX bound-property exception appears when export busy state changes.
+1. No user-visible command or route is intentionally removed; the retired services had no production caller.
+2. Smoke-test Journal entry/edit and confirm canonical transactions still save through the existing Journal workflow.
+3. Smoke-test Period Close close/reopen and confirm the current range-based workspace behaves unchanged.
+4. Smoke-test Chart of Accounts CSV/JSON operations and Funds administration and confirm their current guarded workflows remain available.
 
 Validation state:
 
-- implementation and focused JavaFX interaction coverage are in progress;
-- local Maven availability must be checked and actual results recorded;
-- exact-head GitHub Actions validation is required before owner acceptance.
-
-### P22-S3 — Fence obsolete alternate writable services
-
-Status: BLOCKED by P22-S2 completion.
-
-Audit and retire or explicitly compatibility-fence direct writable `PostingService`, legacy `AccountingPeriodService`, and `CoaFundIo` paths so no production injection/composition can bypass current company, authorization, close-period, and canonical command authority. Preserve compatibility only where an identified current consumer still requires it.
+- exact merged-main source scan found no production or compatibility caller for any of the three retired writer types;
+- successful post-P22-S2 `main` run `35265278336`, job `105350785585`, is the exact merged-main baseline;
+- local Maven is unavailable in the current execution environment, so executable validation will use exact-head GitHub Actions;
+- draft-PR exact-head validation remains required before owner acceptance.
 
 ### P22-S4 — Journal company UI-state single authority
 
@@ -573,4 +591,4 @@ Correct production-facing Settings/help wording that still claims completed P20 
 
 ## 9. Advancement rule
 
-P21 and P22-S1 are complete. P22-S2 is the only active corrective slice. Do not begin P22-S3 or later work until P22-S2 is merged and owner-accepted. Candidate donor workflows such as donor/receipt management and monthly-close assistance remain uncommitted future candidates and require a separate deliberate PLAN amendment.
+P21, P22-S1, and P22-S2 are complete. P22-S3 is the only active corrective slice. Do not begin P22-S4 or later work until P22-S3 is merged and owner-accepted. Candidate donor workflows such as donor/receipt management and monthly-close assistance remain uncommitted future candidates and require a separate deliberate PLAN amendment.
