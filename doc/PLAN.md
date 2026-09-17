@@ -1,12 +1,12 @@
 ---
-plan_version: 291
+plan_version: 292
 active_phase: P22
-active_slice: P22-S1
-active_status: VERIFYING
-active_branch: codex/P22-S1-dashboard-authority-correction
-active_pull_request: 342
-active_head: 406a41a8b5a3bcbd1ff1ab69c55f63a18981bf54
-next_action: "Owner-test P22-S1 from draft PR #342 after exact behavior head 406a41a8b5a3bcbd1ff1ab69c55f63a18981bf54 passed required CI; do not merge without explicit owner authorization and do not begin P22-S2 until P22-S1 is merged and accepted."
+active_slice: P22-S2
+active_status: IN_PROGRESS
+active_branch: codex/P22-S2-bank-export-permission-binding
+active_pull_request: null
+active_head: 83da79b062d029cbb22b8e2ed448bd7f7f4a1b17
+next_action: "Implement and validate P22-S2 on the fresh branch from merged P22-S1 main: replace the bank-statement export gate/busy dual disable writers with one permission-plus-busy binding, retain permission/full-text tooltip behavior, add JavaFX interaction coverage, then open a draft PR and stop before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -34,7 +34,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P19 | Deferred Company Administration extensions | DONE through P19-S3 / PR #309 |
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
-| P22 | Post-P21 correctness and authority corrections | IN PROGRESS — P22-S1 Dashboard authority correction |
+| P22 | Post-P21 correctness and authority corrections | IN PROGRESS — P22-S2 bank-export permission/busy correction |
 
 ## 3. Established product decisions
 
@@ -453,13 +453,9 @@ Purpose: correct semantic and authority defects discovered by the post-P21 repos
 
 ### P22-S1 — Dashboard authority and company/fiscal correctness
 
-Status: VERIFYING.
+Status: DONE.
 
-Branch: `codex/P22-S1-dashboard-authority-correction`.
-
-Draft PR: #342.
-
-Validated behavior head: `406a41a8b5a3bcbd1ff1ab69c55f63a18981bf54`.
+PR #342 final head `a20aebabaadaabc406cb352202e05baa258ae1ef` merged to `main` at `83da79b062d029cbb22b8e2ed448bd7f7f4a1b17` after owner acceptance.
 
 Scope:
 
@@ -501,16 +497,55 @@ User-visible changes / manual owner testing:
 
 Validation state:
 
-- exact behavior head `406a41a8b5a3bcbd1ff1ab69c55f63a18981bf54` passed Maven PR Tests run `34866284854`, job `104050825643`: clean headless verification, repeated Maven tests, and production JavaFX route compliance all succeeded;
-- local Maven remains unavailable in the current execution environment, so no local Maven result is claimed;
-- the final PLAN-only publication head must repeat required exact-head GitHub Actions before owner acceptance;
-- desktop/manual owner testing remains distinct from automated CI.
+- exact behavior head `406a41a8b5a3bcbd1ff1ab69c55f63a18981bf54` passed Maven PR Tests run `34866284854`, job `104050825643`;
+- exact final head `a20aebabaadaabc406cb352202e05baa258ae1ef` passed Maven PR Tests run `34923265219`, job `104235794126`: clean headless verification, repeated Maven tests, and production JavaFX route compliance all succeeded;
+- local Maven remained unavailable in the execution environment, so no local Maven result was claimed;
+- owner acceptance and merge are recorded above.
 
 ### P22-S2 — Bank-statement export permission/busy binding correction
 
-Status: BLOCKED by P22-S1 completion.
+Status: IN_PROGRESS.
 
-Correct the `UiPermissionGate.gate(...)` plus bound `disableProperty()` conflict on bank-statement export controls and add interaction coverage that exercises busy-state transitions under permission gating.
+Branch: `codex/P22-S2-bank-export-permission-binding`.
+
+Scope:
+
+- remove `UiPermissionGate.gate(...)` from the three bank-statement export buttons because those controls also require a busy-state binding;
+- bind each export button disabled state once as `exportActions.busyProperty() OR UiPermissionGate.deniedProperty(EXPORT)`;
+- retain an explicit permission-denied tooltip and the full visible button text tooltip when export permission is allowed;
+- give the CSV/OFX/QFX buttons stable JavaFX IDs for behavior testing;
+- add JavaFX interaction coverage proving unauthenticated permission denial, permitted idle enablement, permitted busy disablement, return to idle, and subsequent permission denial without attempting `setDisable(...)` on a bound property;
+- do not change export serialization, destination/overwrite behavior, services, persistence, interchange formats, or authorization policy.
+
+Required reading:
+
+- root `AGENTS.md`;
+- `doc/PLAN.md`;
+- `doc/data-exchange/bank-statement-interchange.md`;
+- `doc/interface-operation-matrix.md`;
+- `doc/ui_design_rules.md`;
+- `doc/ui/editor-guidelines.md`;
+- `doc/testing/production-workspace-test-plan.md`.
+
+Required inspection:
+
+- `BankTransactionsPanel`;
+- `UiPermissionGate`;
+- `BankStatementExportActions` / `BankStatementExportCoordinator`;
+- current JavaFX permission-gate tests and bank-statement export UI/source tests.
+
+User-visible changes / manual owner testing:
+
+1. Log in as a role with Export permission, open Bank Transactions -> Statement Review, and confirm CSV/OFX/QFX export buttons are enabled while idle.
+2. Start an export and confirm all three export buttons remain disabled for the busy interval and re-enable after completion/failure.
+3. With no authenticated export authority, confirm the export buttons remain disabled and their tooltip explains the Export permission requirement.
+4. Confirm no JavaFX bound-property exception appears when export busy state changes.
+
+Validation state:
+
+- implementation and focused JavaFX interaction coverage are in progress;
+- local Maven availability must be checked and actual results recorded;
+- exact-head GitHub Actions validation is required before owner acceptance.
 
 ### P22-S3 — Fence obsolete alternate writable services
 
@@ -538,4 +573,4 @@ Correct production-facing Settings/help wording that still claims completed P20 
 
 ## 9. Advancement rule
 
-P21 is complete. P22-S1 is the only active corrective slice. Do not begin P22-S2 or later work until P22-S1 is merged and owner-accepted. Candidate donor workflows such as donor/receipt management and monthly-close assistance remain uncommitted future candidates and require a separate deliberate PLAN amendment.
+P21 and P22-S1 are complete. P22-S2 is the only active corrective slice. Do not begin P22-S3 or later work until P22-S2 is merged and owner-accepted. Candidate donor workflows such as donor/receipt management and monthly-close assistance remain uncommitted future candidates and require a separate deliberate PLAN amendment.
