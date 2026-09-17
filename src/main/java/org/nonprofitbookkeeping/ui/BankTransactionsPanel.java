@@ -3,7 +3,9 @@ package org.nonprofitbookkeeping.ui;
 import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableBooleanValue;
+import javafx.beans.value.WeakChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
@@ -415,9 +417,13 @@ public class BankTransactionsPanel implements AppPanel
         Tooltip allowedTooltip = new Tooltip(button.getText());
         Tooltip deniedTooltip = new Tooltip(UiPermissionGate.deniedExplanation(
                 ApplicationPermission.EXPORT, operation));
-        button.tooltipProperty().bind(Bindings.createObjectBinding(
-                () -> denied.get() ? deniedTooltip : allowedTooltip,
-                denied));
+        ChangeListener<Boolean> permissionListener = (observable, oldValue, deniedNow) ->
+                button.setTooltip(Boolean.TRUE.equals(deniedNow) ? deniedTooltip : allowedTooltip);
+        button.getProperties().put(
+                BankTransactionsPanel.class.getName() + ".exportPermissionTooltipListener",
+                permissionListener);
+        denied.addListener(new WeakChangeListener<>(permissionListener));
+        button.setTooltip(denied.get() ? deniedTooltip : allowedTooltip);
     }
 
     private void reloadExportAccounts(String activeCompany)
