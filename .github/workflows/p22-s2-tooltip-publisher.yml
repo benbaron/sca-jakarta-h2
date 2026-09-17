@@ -1,0 +1,32 @@
+name: P22 S2 Tooltip Publisher
+
+on:
+  push:
+    branches:
+      - codex/P22-S2-tooltip-publisher
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: github.event.head_commit.message == 'P22-S2: stage tooltip publisher'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply verified tooltip correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply --check .github/p22-s2-tooltip.patch
+          git apply .github/p22-s2-tooltip.patch
+          test "$(git hash-object src/main/java/org/nonprofitbookkeeping/ui/BankTransactionsPanel.java)" = "e847069c504c6a96fa0e5d10aa6190522d09582c"
+          test "$(git hash-object src/test/java/org/nonprofitbookkeeping/ui/BankStatementExportPermissionBindingTest.java)" = "531e72517c4ea5310d9fa128935c358d3366d5d2"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/java/org/nonprofitbookkeeping/ui/BankTransactionsPanel.java \
+                  src/test/java/org/nonprofitbookkeeping/ui/BankStatementExportPermissionBindingTest.java
+          git commit -m "P22-S2: keep export tooltips unbound"
+          git push origin HEAD:${GITHUB_REF_NAME}

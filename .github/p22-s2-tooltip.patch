@@ -1,0 +1,48 @@
+--- a/src/main/java/org/nonprofitbookkeeping/ui/BankTransactionsPanel.java
++++ b/src/main/java/org/nonprofitbookkeeping/ui/BankTransactionsPanel.java
+@@ -3,7 +3,9 @@
+ import org.nonprofitbookkeeping.service.ApplicationPermission;
+ import javafx.beans.binding.Bindings;
+ import javafx.beans.property.SimpleStringProperty;
++import javafx.beans.value.ChangeListener;
+ import javafx.beans.value.ObservableBooleanValue;
++import javafx.beans.value.WeakChangeListener;
+ import javafx.geometry.Insets;
+ import javafx.geometry.Orientation;
+ import javafx.scene.Node;
+@@ -415,9 +417,13 @@
+         Tooltip allowedTooltip = new Tooltip(button.getText());
+         Tooltip deniedTooltip = new Tooltip(UiPermissionGate.deniedExplanation(
+                 ApplicationPermission.EXPORT, operation));
+-        button.tooltipProperty().bind(Bindings.createObjectBinding(
+-                () -> denied.get() ? deniedTooltip : allowedTooltip,
+-                denied));
++        ChangeListener<Boolean> permissionListener = (observable, oldValue, deniedNow) ->
++                button.setTooltip(Boolean.TRUE.equals(deniedNow) ? deniedTooltip : allowedTooltip);
++        button.getProperties().put(
++                BankTransactionsPanel.class.getName() + ".exportPermissionTooltipListener",
++                permissionListener);
++        denied.addListener(new WeakChangeListener<>(permissionListener));
++        button.setTooltip(denied.get() ? deniedTooltip : allowedTooltip);
+     }
+ 
+     private void reloadExportAccounts(String activeCompany)
+--- a/src/test/java/org/nonprofitbookkeeping/ui/BankStatementExportPermissionBindingTest.java
++++ b/src/test/java/org/nonprofitbookkeeping/ui/BankStatementExportPermissionBindingTest.java
+@@ -59,6 +59,7 @@
+                     button, busy.getReadOnlyProperty(), "Export bank CSV");
+ 
+             assertTrue(button.disableProperty().isBound());
++            assertFalse(button.tooltipProperty().isBound());
+             assertTrue(button.isDisable());
+             assertNotNull(button.getTooltip());
+             assertTrue(button.getTooltip().getText().contains("EXPORT"));
+@@ -66,6 +67,8 @@
+             session.setAuthenticatedUser(UiPermissionTestSessions.viewer());
+             assertFalse(button.isDisable());
+             assertEquals("Export Bank CSV…", button.getTooltip().getText());
++            assertFalse(FullTextTooltipInstaller.refreshForTests(button));
++            assertEquals("Export Bank CSV…", button.getTooltip().getText());
+ 
+             busy.set(true);
+             assertTrue(button.isDisable());
