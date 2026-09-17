@@ -53,8 +53,14 @@ public record DashboardSnapshot(
             Map<String, Long> countsByKind,
             Map<String, BigDecimal> amountsByKind,
             long totalOpenItems,
-            BigDecimal totalOpenAmount)
+            BigDecimal totalOpenAmount,
+            boolean available)
     {
+        public static OpenItemSummary unavailable()
+        {
+            return new OpenItemSummary(Map.of(), Map.of(), 0L, BigDecimal.ZERO, false);
+        }
+
         public long countFor(String itemKind)
         {
             return countsByKind.getOrDefault(itemKind, 0L);
@@ -68,9 +74,9 @@ public record DashboardSnapshot(
 
     public record ReconciliationStatus(
             LocalDate statementEndingOn,
-            String bankFormat,
+            String bankAccount,
             String status,
-            int importedTransactionCount)
+            BigDecimal differenceAmount)
     {
     }
 

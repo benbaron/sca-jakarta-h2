@@ -1,12 +1,12 @@
 ---
-plan_version: 290
-active_phase: P21
-active_slice: P21-S2
-active_status: DONE
-active_branch: null
-active_pull_request: null
-active_head: b7e4f45daa4aa5befda89a164e3bd6ced876c07e
-next_action: "P21 is complete through P21-S2. Do not invent a successor phase; begin new work only from a deliberate PLAN amendment or an explicit owner-selected phase/slice."
+plan_version: 291
+active_phase: P22
+active_slice: P22-S1
+active_status: VERIFYING
+active_branch: codex/P22-S1-dashboard-authority-correction
+active_pull_request: 342
+active_head: 406a41a8b5a3bcbd1ff1ab69c55f63a18981bf54
+next_action: "Owner-test P22-S1 from draft PR #342 after exact behavior head 406a41a8b5a3bcbd1ff1ab69c55f63a18981bf54 passed required CI; do not merge without explicit owner authorization and do not begin P22-S2 until P22-S1 is merged and accepted."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -34,6 +34,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P19 | Deferred Company Administration extensions | DONE through P19-S3 / PR #309 |
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
+| P22 | Post-P21 correctness and authority corrections | IN PROGRESS — P22-S1 Dashboard authority correction |
 
 ## 3. Established product decisions
 
@@ -446,6 +447,95 @@ Completion-record publication:
 - post-merge `main` Maven PR Tests run `34793559393`, job `103822237567` passed clean headless verification, Maven tests, and production JavaFX route compliance;
 - PR #340's P21 completion state is retained. This corrective publication restores detailed P20 execution-ledger history that PR #340 compacted and makes no production-behavior change.
 
-## 8. Advancement rule
+## 8. P22 — Post-P21 correctness and authority corrections
 
-P21-S1 and P21-S2 are DONE, so P21 is complete. No later P21 slice is active. Candidate donor workflows such as donor/receipt management and monthly-close assistance remain uncommitted future candidates and require a deliberate PLAN amendment before implementation.
+Purpose: correct semantic and authority defects discovered by the post-P21 repository audit without reopening completed feature phases or creating parallel persistence/workflows. Execute one corrective slice at a time from current `main`.
+
+### P22-S1 — Dashboard authority and company/fiscal correctness
+
+Status: VERIFYING.
+
+Branch: `codex/P22-S1-dashboard-authority-correction`.
+
+Draft PR: #342.
+
+Validated behavior head: `406a41a8b5a3bcbd1ff1ab69c55f63a18981bf54`.
+
+Scope:
+
+- scope every Dashboard ledger, cash, fund, budget, recent-transaction, running-balance, reconciliation, and monthly-result projection to the active persisted `Company`;
+- interpret the top-chrome active-period value as the selected period start and project through the calculated period end using company fiscal-year configuration;
+- derive Period Information from company fiscal authority plus `period_close_range`, not legacy `AccountingPeriod`;
+- derive reconciliation status from `bank_reconciliation_session`, not legacy `reconciliation_run`;
+- derive reconciled cash/unreconciled difference from canonical reconciliation-owned `TxnSplit.bankCleared` facts;
+- stop presenting `open_item_snapshot` compatibility data as current Dashboard authority; until P22-S5 establishes canonical supplemental settlement/open-balance reporting, show Open Items as unavailable rather than fictional/current;
+- add regression coverage proving another company and contradictory legacy compatibility rows cannot contaminate the active-company Dashboard;
+- no schema migration, mutation-service change, alternate ledger, or reconciliation write path in this slice.
+
+Required reading:
+
+- root `AGENTS.md`;
+- `doc/PLAN.md`;
+- `doc/architecture/dashboard-workspace.md`;
+- `doc/persistence-authority-inventory.md`;
+- `doc/testing/production-workspace-test-plan.md`;
+- `doc/interface-operation-matrix.md`;
+- `doc/ui_design_rules.md`;
+- `doc/ui/editor-guidelines.md`;
+- `doc/accounting/period-and-correction-policy.md`;
+- `doc/banking/banking-and-reconciliation.md`.
+
+Required inspection:
+
+- `DashboardHomePanel`, `DashboardQueryService`, `JpaDashboardQueryService`, `DashboardSnapshot`, `InspectorPane`;
+- `Company`, `Txn`, `TxnSplit`, `CompanyBankAccount`, `BankReconciliationSession`, `PeriodCloseRange`, `BudgetPlan`, `BudgetLine`;
+- `FiscalPeriodRange`, active-period workspace composition, Dashboard tests, reconciliation tests, and current migrations defining company ownership/cleared/close-range authority.
+
+User-visible changes / manual owner testing:
+
+1. With two companies containing different transactions, switch companies and confirm Dashboard cash, YTD, bank balances, recent transactions, budget rows, and reconciliation rows contain only the active company.
+2. For a company whose fiscal year does not start January 1, select a period and confirm YTD/monthly values begin at the configured fiscal-year start and extend through the selected period end.
+3. Reconcile/clear some but not all bank-cash activity and confirm Dashboard/Inspector Book Cash, Reconciled Cash, and Unreconciled Difference agree with Journal/reconciliation facts.
+4. Confirm Bank Reconciliation Status names the configured bank account and current session status/difference rather than showing legacy import-run fields.
+5. Confirm Open Items explicitly displays `Not available` until the canonical supplemental settlement slice is implemented; legacy snapshot rows must not appear.
+
+Validation state:
+
+- exact behavior head `406a41a8b5a3bcbd1ff1ab69c55f63a18981bf54` passed Maven PR Tests run `34866284854`, job `104050825643`: clean headless verification, repeated Maven tests, and production JavaFX route compliance all succeeded;
+- local Maven remains unavailable in the current execution environment, so no local Maven result is claimed;
+- the final PLAN-only publication head must repeat required exact-head GitHub Actions before owner acceptance;
+- desktop/manual owner testing remains distinct from automated CI.
+
+### P22-S2 — Bank-statement export permission/busy binding correction
+
+Status: BLOCKED by P22-S1 completion.
+
+Correct the `UiPermissionGate.gate(...)` plus bound `disableProperty()` conflict on bank-statement export controls and add interaction coverage that exercises busy-state transitions under permission gating.
+
+### P22-S3 — Fence obsolete alternate writable services
+
+Status: BLOCKED by P22-S2 completion.
+
+Audit and retire or explicitly compatibility-fence direct writable `PostingService`, legacy `AccountingPeriodService`, and `CoaFundIo` paths so no production injection/composition can bypass current company, authorization, close-period, and canonical command authority. Preserve compatibility only where an identified current consumer still requires it.
+
+### P22-S4 — Journal company UI-state single authority
+
+Status: BLOCKED by P22-S3 completion.
+
+Remove duplicate Journal Java `Preferences` table/divider persistence so established company-owned H2 UI state is the sole authority. Preserve current user-visible table/divider behavior.
+
+### P22-S5 — Supplemental/open-item reporting and eliminated-Schedules cleanup
+
+Status: BLOCKED by P22-S4 completion.
+
+Define the canonical settlement/open-balance projection for `txn_supplemental_line`, add domain-specific receivable/payable/prepaid/deferred/other supplemental reporting, remove remaining `SCHEDULES` `AppPanelId` compatibility only after proving no current consumer requires it, and then restore Dashboard Open Items from that canonical authority. Do not revive a top-level Schedules workspace.
+
+### P22-S6 — Stale production copy and compatibility wording cleanup
+
+Status: BLOCKED by P22-S5 completion.
+
+Correct production-facing Settings/help wording that still claims completed P20 authentication/authorization is unimplemented and perform a focused scan for other compatibility/future wording that is now factually false.
+
+## 9. Advancement rule
+
+P21 is complete. P22-S1 is the only active corrective slice. Do not begin P22-S2 or later work until P22-S1 is merged and owner-accepted. Candidate donor workflows such as donor/receipt management and monthly-close assistance remain uncommitted future candidates and require a separate deliberate PLAN amendment.
