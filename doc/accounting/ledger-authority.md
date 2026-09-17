@@ -4,7 +4,7 @@
 
 The canonical writable ledger for accepted accounting activity is the JPA/Hibernate `Txn` header and `TxnSplit` line model backed by the `txn` and `txn_split` H2 tables.
 
-All P02 and later accepted accounting writes must enter H2 through the canonical transaction command service built on this model. Existing `PostingService` behavior is therefore treated as the seed implementation path to be replaced or wrapped by the P02 command service in later slices, not as a second ledger.
+All accepted accounting writes must enter H2 through the canonical transaction command services built on this model. `TransactionEntryService` is the production entry/update authority and `TransactionCorrectionService` owns governed correction behavior. P22-S3 retires the obsolete direct-writing `PostingService` after source inspection found no current production or compatibility consumer; it must not be restored as a second ledger path.
 
 ## Rationale
 
@@ -88,7 +88,7 @@ P16-S10 extends `TransactionView.Line` with the authoritative `TxnSplit` bank-li
 
 ## Correction, period, reconciliation, and audit behavior
 
-P02-S4 completes the canonical transaction write policy around the `Txn` ledger. New entries and direct updates now check configured accounting periods before writing and add factual `audit_event` rows for entered and updated transactions. Correction operations continue to support direct edit, deletion with a pre-delete snapshot, reversal, and optional replacement in one resource-local JPA transaction. Closed configured periods raise `ClosedAccountingPeriodException` so UI flows can warn and reopen through `AccountingPeriodService` before retrying; the service does not silently bypass a closed period.
+P02-S4 established the canonical transaction write policy around the `Txn` ledger. Current entry and correction paths enforce company-scoped closed-date ranges through `PeriodCloseRangeService.requireOpen(...)` and add factual `audit_event` rows for entered, updated, and corrected transactions. Correction operations support direct edit, deletion with a pre-delete snapshot, reversal, and optional replacement in one resource-local JPA transaction. The routed Period Close workspace reopens authoritative `period_close_range` state through `PeriodCloseRangeService`; legacy `AccountingPeriod` rows remain compatibility data only, and P22-S3 retires the obsolete writable `AccountingPeriodService`.
 
 Completed bank reconciliations protect canonical transactions through `txn_reconciliation_protection`, which links a `txn` row to the durable `reconciliation_run` that cleared it. The entry and correction services reject update, direct edit, deletion, and reversal while a linked reconciliation run remains `COMPLETED`. Reopening a reconciliation in a later banking phase can remove or inactivate that protection deliberately; until then, protected transactions remain immutable.
 
