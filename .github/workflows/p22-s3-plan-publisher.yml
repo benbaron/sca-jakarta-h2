@@ -1,0 +1,31 @@
+name: P22 S3 PLAN Publisher
+
+on:
+  push:
+    branches:
+      - codex/P22-S3-plan-publisher
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply and verify PLAN update
+        shell: bash
+        run: |
+          set -euo pipefail
+          patch -p1 < p22s3-plan.patch
+          test "$(git hash-object doc/PLAN.md)" = "56159ba7877703fe0df5cfe9cf1b3e0509eb28df"
+          rm p22s3-plan.patch .github/workflows/p22-s3-plan-publisher.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git diff --cached --name-status
+          git commit -m "P22-S3: activate alternate writer retirement"
+          git push origin HEAD:codex/P22-S3-plan-publisher
