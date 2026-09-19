@@ -1,12 +1,12 @@
 ---
-plan_version: 294
+plan_version: 295
 active_phase: P22
 active_slice: P22-S4
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P22-S4-journal-ui-state-authority
-active_pull_request: null
-active_head: d68e8f52ac06022254a9fa221779bcb6ba6e2157
-next_action: "Implement P22-S4 on fresh branch codex/P22-S4-journal-ui-state-authority: remove JournalWorkspacePanel Java Preferences table/divider persistence so JournalWorkspaceCompliancePanel plus CompanyUiPreferencesService is the sole company-owned H2 UI-state authority, add regression coverage, validate in GitHub Actions, and stop before merge."
+active_pull_request: 345
+active_head: 6df380d19264b9c2ac9f4451f2c912e818b8900a
+next_action: "Run exact-final-head GitHub Actions after the P22-S4 PLAN verification commit, then owner-test PR #345 Journal table/divider persistence and company isolation; do not merge without explicit owner authorization and do not begin P22-S5."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -548,9 +548,11 @@ Validation state:
 
 ### P22-S4 — Journal company UI-state single authority
 
-Status: IN_PROGRESS.
+Status: VERIFYING.
 
 Branch: `codex/P22-S4-journal-ui-state-authority`.
+
+Draft PR: #345.
 
 Scope:
 
@@ -589,8 +591,10 @@ User-visible changes / manual owner testing:
 Validation state:
 
 - merged-main baseline `d68e8f52ac06022254a9fa221779bcb6ba6e2157` passed post-merge run `35476426775`, job `105986345643`;
-- local Maven is unavailable in the current execution environment, so executable validation will use exact-head GitHub Actions;
-- exact-head draft-PR validation and owner desktop verification remain required before merge.
+- exact behavior/documentation head `6df380d19264b9c2ac9f4451f2c912e818b8900a` passed Maven PR Tests run `35476893181`, job `105987569383`: clean headless verification, repeated Maven tests, and production JavaFX route compliance all succeeded;
+- local Maven is unavailable in the current execution environment, so no local Maven result is claimed;
+- this PLAN-only verification commit requires exact-final-head GitHub Actions before owner acceptance;
+- owner desktop verification remains required before merge.
 
 ### P22-S5 — Supplemental/open-item reporting and eliminated-Schedules cleanup
 
