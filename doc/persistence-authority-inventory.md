@@ -23,7 +23,7 @@ Status: reconciled to current production authority through P22-S3 alternate-writ
 | Fixed assets / depreciation / lifecycle | `FixedAsset`, `FixedAssetDepreciationRun`, `FixedAssetLifecycleEvent`, `FixedAssetService` | yes | old text/runbook sidecars removed | Lifecycle/depreciation facts and linked canonical transactions stay synchronized through domain services. P18 may add batching, not a second engine. |
 | Inventory / supplies | `InventoryItem`, `InventoryMovement`, `InventoryService` | yes | old text runbook removed | Financial movements link atomically to canonical transactions; nonfinancial movement is explicit. Reporting already reads these authorities. |
 | Audit history | company-owned `AuditEvent`, `AuditHistoryService` | yes | `approval_audit_record` compatibility data | Production Audit History and SCLX factual audit use `AuditEvent`; legacy approval records do not create an approval workflow. |
-| Company UI preferences/state | company preference/state tables, `CompanyUiPreferencesService`, table/split binders | yes for company-owned UI state | machine/session preferences are separate by design | UI state never becomes accounting authority; company switching changes owner context. |
+| Company UI preferences/state | company preference/state tables, `CompanyUiPreferencesService`, table/split binders | yes for company-owned UI state | machine/session preferences are separate by design; Journal Java `Preferences` duplicate retired by P22-S4 | UI state never becomes accounting authority; company switching changes owner context; production Journal table/divider state has one H2-backed owner. |
 | Desktop session | `ApplicationSessionContext` / `UiSessionState` | no accounting persistence | deprecated `MainWindow` facade | Session facts are runtime context only. `MainWindow` owns no production shell or commands. |
 | Whole-database transfer | supported H2 backup/restore + prepared database/session activation | yes for transferred database | treating interchange previews as database authority | Preserve all database records; activate only after migration/service/company validation. |
 | Generic Import/Export Jobs | none | no | historical references could reintroduce generic job tracking | Panel, route, enum destination, session job list, and `UiWorkspaceDataStore` generic authority remain removed. |
@@ -119,7 +119,7 @@ Ambiguous ownership fails closed; the application must not silently assign histo
 
 - `ApplicationSessionContext` / `UiSessionState` hold runtime database/company/session selection facts.
 - `MainWindow` is a deprecated compatibility facade only; it is not production JavaFX shell authority.
-- Company money/date formatting and company table/split state are H2-backed through current preference/state services.
+- Company money/date formatting and company table/split state are H2-backed through current preference/state services. P22-S4 removes the Journal delegate's duplicate Java `Preferences` table/divider store; `JournalWorkspaceCompliancePanel` persists Journal UI state only through `CompanyUiPreferencesService`.
 - Theme, top-level window geometry, native decoration choice, and similar machine/session preferences remain non-accounting state.
 - No preference control may mutate active database authority or present a compatibility value as authentication/authorization policy.
 
