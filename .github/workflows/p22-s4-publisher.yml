@@ -1,0 +1,187 @@
+name: P22 S4 Publisher
+
+on:
+  push:
+    branches:
+      - codex/P22-S4-publisher
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply and verify P22-S4
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path("src/main/java/org/nonprofitbookkeeping/ui/JournalWorkspacePanel.java")
+          s = p.read_text()
+          s = s.replace("import javafx.collections.ListChangeListener;\n", "")
+          s = s.replace("import java.util.Comparator;\n", "")
+          s = s.replace("import java.util.prefs.Preferences;\n", "")
+          s = s.replace('    private static final Preferences VIEW_STATE = Preferences.userNodeForPackage(JournalWorkspacePanel.class)\n            .node("company-journal-workspace");\n\n', "")
+          s = s.replace("    private boolean restoringTableState;\n", "")
+          for line in [
+              '        installDividerState(outerSplit, "outer", 0.43);\n',
+              '        installDividerState(editorSplit, "editor", 0.22, 0.64);\n',
+              '        installDividerState(detailSplit, "detail", 0.36);\n',
+              '        restoreTableState(journalTable, JOURNAL_TABLE_ID);\n',
+              '        installTableStatePersistence(journalTable, JOURNAL_TABLE_ID);\n',
+              '        restoreTableState(lineTable, LINE_TABLE_ID);\n',
+              '        installTableStatePersistence(lineTable, LINE_TABLE_ID);\n',
+              '        restoreTableState(table, "supplemental-" + kind.name());\n',
+              '        installTableStatePersistence(table, "supplemental-" + kind.name());\n',
+          ]:
+              if line not in s:
+                  raise SystemExit(f"missing Journal state call: {line!r}")
+              s = s.replace(line, "")
+          start = s.index("    private <S> void restoreTableState(")
+          end = s.index("    private final class OptionTableCell", start)
+          s = s[:start] + s[end:]
+          p.write_text(s)
+
+          p = Path("src/test/java/org/nonprofitbookkeeping/ui/JournalWorkspacePortSourceTest.java")
+          s = p.read_text()
+          anchor = '        assertTrue(source.contains("CompanyUiPreferencesService"));\n'
+          s = s.replace(anchor, anchor + '        assertTrue(source.contains("preferencesService.loadState(companyCode, STATE_PREFIX)"));\n        assertTrue(source.contains("preferencesService.saveState(companyCode, snapshot)"));\n', 1)
+          old = '        assertTrue(source.contains("TransactionSupplementalLineCommand"));\n        assertFalse(source.contains("CurrentCompany"));\n        assertFalse(source.contains("nonprofitbookkeeping.persistence"));\n'
+          new = '        assertTrue(source.contains("TransactionSupplementalLineCommand"));\n        assertFalse(source.contains("java.util.prefs.Preferences"));\n        assertFalse(source.contains("Preferences.userNodeForPackage"));\n        assertFalse(source.contains("restoreTableState("));\n        assertFalse(source.contains("installTableStatePersistence("));\n        assertFalse(source.contains("installDividerState("));\n        assertFalse(source.contains("VIEW_STATE"));\n        assertFalse(source.contains("CurrentCompany"));\n        assertFalse(source.contains("nonprofitbookkeeping.persistence"));\n'
+          if old not in s:
+              raise SystemExit("Journal source-test anchor missing")
+          p.write_text(s.replace(old, new))
+
+          p = Path("doc/ui/editor-guidelines.md")
+          s = p.read_text()
+          old = 'Divider positions and table state are remembered for the active company through `CompanyUiPreferencesService`. Table state includes column width, column order, sort direction, and multi-column sort priority. Every table uses unconstrained resizing and every column remains sortable, resizable, and reorderable.\n'
+          new = 'Divider positions and table state are remembered for the active company through `CompanyUiPreferencesService`. Table state includes column width, column order, sort direction, and multi-column sort priority. `JournalWorkspaceCompliancePanel` is the sole persistence owner for this state; `JournalWorkspacePanel` provides only default geometry and table configuration and must not read or write Java `Preferences` or any second UI-state store. Every table uses unconstrained resizing and every column remains sortable, resizable, and reorderable.\n'
+          if old not in s:
+              raise SystemExit("editor-guidelines anchor missing")
+          p.write_text(s.replace(old, new))
+
+          p = Path("doc/persistence-authority-inventory.md")
+          s = p.read_text()
+          old = '| Company UI preferences/state | company preference/state tables, `CompanyUiPreferencesService`, table/split binders | yes for company-owned UI state | machine/session preferences are separate by design | UI state never becomes accounting authority; company switching changes owner context. |\n'
+          new = '| Company UI preferences/state | company preference/state tables, `CompanyUiPreferencesService`, table/split binders | yes for company-owned UI state | machine/session preferences are separate by design; Journal Java `Preferences` duplicate retired by P22-S4 | UI state never becomes accounting authority; company switching changes owner context; production Journal table/divider state has one H2-backed owner. |\n'
+          if old not in s:
+              raise SystemExit("persistence inventory row missing")
+          s = s.replace(old, new)
+          old = '- Company money/date formatting and company table/split state are H2-backed through current preference/state services.\n'
+          new = '- Company money/date formatting and company table/split state are H2-backed through current preference/state services. P22-S4 removes the Journal delegate\'s duplicate Java `Preferences` table/divider store; `JournalWorkspaceCompliancePanel` persists Journal UI state only through `CompanyUiPreferencesService`.\n'
+          if old not in s:
+              raise SystemExit("persistence inventory section anchor missing")
+          p.write_text(s.replace(old, new))
+
+          p = Path("doc/PLAN.md")
+          s = p.read_text()
+          s = s.replace("plan_version: 293", "plan_version: 294", 1)
+          s = s.replace("active_slice: P22-S3", "active_slice: P22-S4", 1)
+          s = s.replace("active_branch: codex/P22-S3-retire-alternate-writers", "active_branch: codex/P22-S4-journal-ui-state-authority", 1)
+          s = s.replace("active_head: 5bb8e28174e5133a2b115eda490da8dc30eb21be", "active_head: d68e8f52ac06022254a9fa221779bcb6ba6e2157", 1)
+          s = s.replace(
+              'next_action: "Retire the unconsumed PostingService, AccountingPeriodService, and CoaFundIo alternate writers from current main, remove tests that only exercise those obsolete paths, add a source guard against their return, update governing authority documentation, validate in GitHub Actions, and stop before merge."',
+              'next_action: "Implement P22-S4 on fresh branch codex/P22-S4-journal-ui-state-authority: remove JournalWorkspacePanel Java Preferences table/divider persistence so JournalWorkspaceCompliancePanel plus CompanyUiPreferencesService is the sole company-owned H2 UI-state authority, add regression coverage, validate in GitHub Actions, and stop before merge."',
+              1)
+          s = s.replace("| P22 | Post-P21 correctness and authority corrections | IN PROGRESS — P22-S3 alternate-writer retirement |",
+                        "| P22 | Post-P21 correctness and authority corrections | IN PROGRESS — P22-S4 Journal company UI-state single authority |", 1)
+          start = s.index("### P22-S3 — Retire obsolete alternate writable services")
+          end = s.index("### P22-S5 — Supplemental/open-item reporting and eliminated-Schedules cleanup")
+          replacement = """### P22-S3 — Retire obsolete alternate writable services
+
+Status: DONE.
+
+PR #344 exact behavior head `e7991d5771639cb19e7cad567bb3c2a2f7e62840` merged to `main` at `d68e8f52ac06022254a9fa221779bcb6ba6e2157` after owner acceptance.
+
+Scope delivered:
+
+- retired `PostingService`, whose direct `Txn`/`TxnSplit` write path had no current production or compatibility caller and bypassed the current company/authorization/period/correction command boundary;
+- retired legacy `AccountingPeriodService`, whose writable `AccountingPeriod` close/reopen path had no current production or compatibility caller and was superseded by `PeriodCloseRangeService`;
+- retired `CoaFundIo`, whose direct Fund/Chart/Account CSV/JSON writes had no current caller and were superseded by guarded administration/interchange services;
+- removed tests that existed only to exercise those retired writer implementations;
+- retained historical entities/tables, applied migrations, and live compatibility/history services where current consumers still exist;
+- added source-level regression coverage preventing the three retired writer types from returning while preserving canonical replacements;
+- reconciled ledger, persistence-authority, application-composition, and P20 actor documentation to the current authority map.
+
+Validation state:
+
+- exact PR head `e7991d5771639cb19e7cad567bb3c2a2f7e62840` passed Maven PR Tests run `35269724312`, job `105365693725`: clean headless verification, repeated Maven tests, and production JavaFX route compliance all succeeded;
+- post-merge `main` run `35476426775`, job `105986345643`, passed at merge commit `d68e8f52ac06022254a9fa221779bcb6ba6e2157`: clean headless verification, repeated Maven tests, and production JavaFX route compliance all succeeded;
+- local Maven remained unavailable in the execution environment, so no local Maven result was claimed;
+- owner acceptance and merge are recorded above.
+
+### P22-S4 — Journal company UI-state single authority
+
+Status: IN_PROGRESS.
+
+Branch: `codex/P22-S4-journal-ui-state-authority`.
+
+Scope:
+
+- remove `JournalWorkspacePanel`'s duplicate Java `Preferences` persistence for Journal, entry-line, and supplemental table width/order/sort state;
+- remove the delegate's duplicate Java `Preferences` persistence for outer/editor/detail divider positions;
+- retain the delegate's default column geometry, sortability/resizability/reorderability, and default divider positions;
+- retain `JournalWorkspaceCompliancePanel` as the production decorator and sole persistence owner for Journal table/divider state through company-owned H2 `CompanyUiPreferencesService`;
+- add source regression coverage proving the delegate cannot reintroduce Java `Preferences` or its former table/divider persistence helpers while the compliance layer still loads/saves company state;
+- no migration, accounting-service, Journal transaction, formatting, routing, or visible layout-structure change in this slice.
+
+Required reading:
+
+- root `AGENTS.md`;
+- `doc/PLAN.md`;
+- `doc/interface-operation-matrix.md`;
+- `doc/ui_design_rules.md`;
+- `doc/ui/editor-guidelines.md`;
+- `doc/persistence-authority-inventory.md`.
+
+Required inspection:
+
+- `JournalWorkspacePanel`;
+- `JournalWorkspaceCompliancePanel`;
+- `CompanyUiPreferencesService` and current company table/split state binders;
+- `PanelFactory` Journal route;
+- `JournalWorkspacePortSourceTest` and company UI-state tests.
+
+User-visible changes / manual owner testing:
+
+1. Open Journal, resize and reorder Journal and entry-line columns, and apply a single- or multi-column sort.
+2. Move the Journal/editor, editor subsection, and detail dividers.
+3. Close and reopen Journal for the same active company and confirm the table/divider state is restored.
+4. Switch to another company and confirm it has independent Journal table/divider state; switch back and confirm the original company's state returns.
+5. Confirm Journal New/Edit/Save/Delete-or-Reverse, scrolling, formatting, and reconciliation read-only state behave unchanged.
+
+Validation state:
+
+- merged-main baseline `d68e8f52ac06022254a9fa221779bcb6ba6e2157` passed post-merge run `35476426775`, job `105986345643`;
+- local Maven is unavailable in the current execution environment, so executable validation will use exact-head GitHub Actions;
+- exact-head draft-PR validation and owner desktop verification remain required before merge.
+
+"""
+          s = s[:start] + replacement + s[end:]
+          s = s.replace(
+              "P21, P22-S1, and P22-S2 are complete. P22-S3 is the only active corrective slice. Do not begin P22-S4 or later work until P22-S3 is merged and owner-accepted.",
+              "P21 and P22-S1 through P22-S3 are complete. P22-S4 is the only active corrective slice. Do not begin P22-S5 or later work until P22-S4 is merged and owner-accepted.",
+              1)
+          p.write_text(s)
+          PY
+          test "$(git hash-object doc/PLAN.md)" = "a285874d561accc737eb285c8c8aecde80dd96b8"
+          test "$(git hash-object doc/persistence-authority-inventory.md)" = "6e19a1e877afd7406b375d9c8e423c73ee1d3508"
+          test "$(git hash-object doc/ui/editor-guidelines.md)" = "579acc7e1a0d1f250b09c4f763abd92dd529173a"
+          test "$(git hash-object src/main/java/org/nonprofitbookkeeping/ui/JournalWorkspacePanel.java)" = "031d98dd3577996fa294cf2e656b2f3548a026ab"
+          test "$(git hash-object src/test/java/org/nonprofitbookkeeping/ui/JournalWorkspacePortSourceTest.java)" = "5d25d4c00762b2ec7ad2b162a049d3e561bf540f"
+          ! grep -q 'java.util.prefs.Preferences' src/main/java/org/nonprofitbookkeeping/ui/JournalWorkspacePanel.java
+          git diff --check
+          rm .github/workflows/p22-s4-publisher.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git diff --cached --name-status
+          git commit -m "P22-S4: establish Journal UI-state authority"
+          git push origin HEAD:codex/P22-S4-publisher
