@@ -43,7 +43,7 @@ The major regions are separated by visible draggable `SplitPane` dividers:
 
 The complete middle/editor region is wrapped in a single vertical `ScrollPane` identified as `journalWorkspaceEditorScroll`. The nested resize bars remain inside that scrollable editor. Journal, entry-line, and supplemental `TableView` controls keep their own horizontal and vertical scrolling and must not expand to their complete row count.
 
-Divider positions and table state are remembered for the active company through `CompanyUiPreferencesService`. Table state includes column width, column order, sort direction, and multi-column sort priority. Every table uses unconstrained resizing and every column remains sortable, resizable, and reorderable.
+Divider positions and table state are remembered for the active company through `CompanyUiPreferencesService`. Table state includes column width, column order, sort direction, and multi-column sort priority. `JournalWorkspaceCompliancePanel` is the sole persistence owner for this state; `JournalWorkspacePanel` provides only default geometry and table configuration and must not read or write Java `Preferences` or any second UI-state store. Every table uses unconstrained resizing and every column remains sortable, resizable, and reorderable.
 
 Money and date controls use `CompanyUiFormat` and the active company's `CompanyUiPreferences`. Formatting changes presentation and accepted input only; it does not change canonical service values or H2 precision/types.
 
