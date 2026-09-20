@@ -1,12 +1,12 @@
 ---
-plan_version: 293
+plan_version: 295
 active_phase: P22
-active_slice: P22-S3
-active_status: IN_PROGRESS
-active_branch: codex/P22-S3-retire-alternate-writers
-active_pull_request: null
-active_head: 5bb8e28174e5133a2b115eda490da8dc30eb21be
-next_action: "Retire the unconsumed PostingService, AccountingPeriodService, and CoaFundIo alternate writers from current main, remove tests that only exercise those obsolete paths, add a source guard against their return, update governing authority documentation, validate in GitHub Actions, and stop before merge."
+active_slice: P22-S4
+active_status: VERIFYING
+active_branch: codex/P22-S4-journal-ui-state-authority
+active_pull_request: 345
+active_head: 6df380d19264b9c2ac9f4451f2c912e818b8900a
+next_action: "Run exact-final-head GitHub Actions after the P22-S4 PLAN verification commit, then owner-test PR #345 Journal table/divider persistence and company isolation; do not merge without explicit owner authorization and do not begin P22-S5."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -34,7 +34,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P19 | Deferred Company Administration extensions | DONE through P19-S3 / PR #309 |
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
-| P22 | Post-P21 correctness and authority corrections | IN PROGRESS — P22-S3 alternate-writer retirement |
+| P22 | Post-P21 correctness and authority corrections | IN PROGRESS — P22-S4 Journal company UI-state single authority |
 
 ## 3. Established product decisions
 
@@ -525,57 +525,76 @@ Validation state:
 
 ### P22-S3 — Retire obsolete alternate writable services
 
-Status: IN_PROGRESS.
+Status: DONE.
 
-Branch: `codex/P22-S3-retire-alternate-writers`.
+PR #344 exact behavior head `e7991d5771639cb19e7cad567bb3c2a2f7e62840` merged to `main` at `d68e8f52ac06022254a9fa221779bcb6ba6e2157` after owner acceptance.
+
+Scope delivered:
+
+- retired `PostingService`, whose direct `Txn`/`TxnSplit` write path had no current production or compatibility caller and bypassed the current company/authorization/period/correction command boundary;
+- retired legacy `AccountingPeriodService`, whose writable `AccountingPeriod` close/reopen path had no current production or compatibility caller and was superseded by `PeriodCloseRangeService`;
+- retired `CoaFundIo`, whose direct Fund/Chart/Account CSV/JSON writes had no current caller and were superseded by guarded administration/interchange services;
+- removed tests that existed only to exercise those retired writer implementations;
+- retained historical entities/tables, applied migrations, and live compatibility/history services where current consumers still exist;
+- added source-level regression coverage preventing the three retired writer types from returning while preserving canonical replacements;
+- reconciled ledger, persistence-authority, application-composition, and P20 actor documentation to the current authority map.
+
+Validation state:
+
+- exact PR head `e7991d5771639cb19e7cad567bb3c2a2f7e62840` passed Maven PR Tests run `35269724312`, job `105365693725`: clean headless verification, repeated Maven tests, and production JavaFX route compliance all succeeded;
+- post-merge `main` run `35476426775`, job `105986345643`, passed at merge commit `d68e8f52ac06022254a9fa221779bcb6ba6e2157`: clean headless verification, repeated Maven tests, and production JavaFX route compliance all succeeded;
+- local Maven remained unavailable in the execution environment, so no local Maven result was claimed;
+- owner acceptance and merge are recorded above.
+
+### P22-S4 — Journal company UI-state single authority
+
+Status: VERIFYING.
+
+Branch: `codex/P22-S4-journal-ui-state-authority`.
+
+Draft PR: #345.
 
 Scope:
 
-- retire `PostingService`, whose direct `Txn`/`TxnSplit` write path has no current production or compatibility caller and bypasses the current company/authorization/period/correction command boundary;
-- retire legacy `AccountingPeriodService`, whose writable `AccountingPeriod` close/reopen path has no current production or compatibility caller and is superseded by `PeriodCloseRangeService`;
-- retire `CoaFundIo`, whose direct Fund/Chart/Account CSV/JSON writes have no current caller and are superseded by guarded administration/interchange services;
-- remove tests that exist only to exercise those retired writer implementations;
-- retain historical entities/tables, applied migrations, and live compatibility/history services where current consumers still exist;
-- add source-level regression coverage proving the three retired writer types cannot reappear in production source and that their canonical replacements remain present;
-- reconcile ledger, persistence-authority, application-composition, and P20 actor documentation to the current authority map.
+- remove `JournalWorkspacePanel`'s duplicate Java `Preferences` persistence for Journal, entry-line, and supplemental table width/order/sort state;
+- remove the delegate's duplicate Java `Preferences` persistence for outer/editor/detail divider positions;
+- retain the delegate's default column geometry, sortability/resizability/reorderability, and default divider positions;
+- retain `JournalWorkspaceCompliancePanel` as the production decorator and sole persistence owner for Journal table/divider state through company-owned H2 `CompanyUiPreferencesService`;
+- add source regression coverage proving the delegate cannot reintroduce Java `Preferences` or its former table/divider persistence helpers while the compliance layer still loads/saves company state;
+- no migration, accounting-service, Journal transaction, formatting, routing, or visible layout-structure change in this slice.
 
 Required reading:
 
 - root `AGENTS.md`;
 - `doc/PLAN.md`;
-- `doc/accounting/ledger-authority.md`;
-- `doc/persistence-authority-inventory.md`;
-- `doc/architecture/application-composition.md`;
-- `doc/accounting/period-and-correction-policy.md`;
-- `doc/interface-operation-matrix.md`.
+- `doc/interface-operation-matrix.md`;
+- `doc/ui_design_rules.md`;
+- `doc/ui/editor-guidelines.md`;
+- `doc/persistence-authority-inventory.md`.
 
 Required inspection:
 
-- `PostingService`, `AccountingPeriodService`, `CoaFundIo`;
-- all current production/test references to those types;
-- `TransactionEntryService`, `TransactionCorrectionService`, `PeriodCloseRangeService`;
-- `AccountAdminService`, `FundAdminService`, `CoaCsvImportService`, `ChartOfAccountsJsonImportService`;
-- `UiServiceRegistry` / workspace composition and current authority/source-guard tests.
+- `JournalWorkspacePanel`;
+- `JournalWorkspaceCompliancePanel`;
+- `CompanyUiPreferencesService` and current company table/split state binders;
+- `PanelFactory` Journal route;
+- `JournalWorkspacePortSourceTest` and company UI-state tests.
 
 User-visible changes / manual owner testing:
 
-1. No user-visible command or route is intentionally removed; the retired services had no production caller.
-2. Smoke-test Journal entry/edit and confirm canonical transactions still save through the existing Journal workflow.
-3. Smoke-test Period Close close/reopen and confirm the current range-based workspace behaves unchanged.
-4. Smoke-test Chart of Accounts CSV/JSON operations and Funds administration and confirm their current guarded workflows remain available.
+1. Open Journal, resize and reorder Journal and entry-line columns, and apply a single- or multi-column sort.
+2. Move the Journal/editor, editor subsection, and detail dividers.
+3. Close and reopen Journal for the same active company and confirm the table/divider state is restored.
+4. Switch to another company and confirm it has independent Journal table/divider state; switch back and confirm the original company's state returns.
+5. Confirm Journal New/Edit/Save/Delete-or-Reverse, scrolling, formatting, and reconciliation read-only state behave unchanged.
 
 Validation state:
 
-- exact merged-main source scan found no production or compatibility caller for any of the three retired writer types;
-- successful post-P22-S2 `main` run `35265278336`, job `105350785585`, is the exact merged-main baseline;
-- local Maven is unavailable in the current execution environment, so executable validation will use exact-head GitHub Actions;
-- draft-PR exact-head validation remains required before owner acceptance.
-
-### P22-S4 — Journal company UI-state single authority
-
-Status: BLOCKED by P22-S3 completion.
-
-Remove duplicate Journal Java `Preferences` table/divider persistence so established company-owned H2 UI state is the sole authority. Preserve current user-visible table/divider behavior.
+- merged-main baseline `d68e8f52ac06022254a9fa221779bcb6ba6e2157` passed post-merge run `35476426775`, job `105986345643`;
+- exact behavior/documentation head `6df380d19264b9c2ac9f4451f2c912e818b8900a` passed Maven PR Tests run `35476893181`, job `105987569383`: clean headless verification, repeated Maven tests, and production JavaFX route compliance all succeeded;
+- local Maven is unavailable in the current execution environment, so no local Maven result is claimed;
+- this PLAN-only verification commit requires exact-final-head GitHub Actions before owner acceptance;
+- owner desktop verification remains required before merge.
 
 ### P22-S5 — Supplemental/open-item reporting and eliminated-Schedules cleanup
 
@@ -591,4 +610,4 @@ Correct production-facing Settings/help wording that still claims completed P20 
 
 ## 9. Advancement rule
 
-P21, P22-S1, and P22-S2 are complete. P22-S3 is the only active corrective slice. Do not begin P22-S4 or later work until P22-S3 is merged and owner-accepted. Candidate donor workflows such as donor/receipt management and monthly-close assistance remain uncommitted future candidates and require a separate deliberate PLAN amendment.
+P21 and P22-S1 through P22-S3 are complete. P22-S4 is the only active corrective slice. Do not begin P22-S5 or later work until P22-S4 is merged and owner-accepted. Candidate donor workflows such as donor/receipt management and monthly-close assistance remain uncommitted future candidates and require a separate deliberate PLAN amendment.

@@ -8,7 +8,6 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.Event;
 import javafx.geometry.Insets;
@@ -63,7 +62,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
@@ -73,7 +71,6 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.prefs.Preferences;
 
 /**
  * Unified Journal workspace derived from the donor JournalPanelFX and
@@ -83,9 +80,6 @@ public final class JournalWorkspacePanel implements AppPanel
 {
     private static final String JOURNAL_TABLE_ID = "journalWorkspaceJournalTable";
     private static final String LINE_TABLE_ID = "journalWorkspaceEntryLineTable";
-    private static final Preferences VIEW_STATE = Preferences.userNodeForPackage(JournalWorkspacePanel.class)
-            .node("company-journal-workspace");
-
     private final BorderPane root = new BorderPane();
     private final TableView<JournalTransactionRow> journalTable = new TableView<>();
     private final TableView<EditorLine> lineTable = new TableView<>();
@@ -124,7 +118,6 @@ public final class JournalWorkspacePanel implements AppPanel
     private Long requestedTransactionId;
     private boolean dirty;
     private boolean loading;
-    private boolean restoringTableState;
 
     public JournalWorkspacePanel()
     {
@@ -160,9 +153,6 @@ public final class JournalWorkspacePanel implements AppPanel
         outerSplit.setMinSize(0, 0);
         root.setCenter(outerSplit);
 
-        installDividerState(outerSplit, "outer", 0.43);
-        installDividerState(editorSplit, "editor", 0.22, 0.64);
-        installDividerState(detailSplit, "detail", 0.36);
         configureEditorListeners();
         loadReferenceData();
         startNew(false);
@@ -248,8 +238,6 @@ public final class JournalWorkspacePanel implements AppPanel
         journalTable.getColumns().add(journalColumn("Transaction ID", "transactionId", 110, row -> String.valueOf(row.transactionId())));
         journalTable.getColumns().add(journalColumn("Supplemental", "supplemental", 140, JournalTransactionRow::supplemental));
         journalTable.getColumns().add(multilineJournalColumn("Memo / Details", "details", 320, JournalTransactionRow::details));
-        restoreTableState(journalTable, JOURNAL_TABLE_ID);
-        installTableStatePersistence(journalTable, JOURNAL_TABLE_ID);
 
         journalTable.setRowFactory(table -> {
             TableRow<JournalTransactionRow> row = new TableRow<>();
@@ -424,8 +412,6 @@ public final class JournalWorkspacePanel implements AppPanel
                 EditorLine::notesProperty,
                 EditorLine::setNotes));
 
-        restoreTableState(lineTable, LINE_TABLE_ID);
-        installTableStatePersistence(lineTable, LINE_TABLE_ID);
         lineTable.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> updateActionState());
         lineTable.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.INSERT)
@@ -584,8 +570,6 @@ public final class JournalWorkspacePanel implements AppPanel
             table.getColumns().add(supplementalTextColumn("End Date", "endDate", 120, SupplementalRow::endDateProperty, SupplementalRow::setEndDate));
         }
         table.getColumns().add(supplementalTextColumn("Notes", "notes", 240, SupplementalRow::notesProperty, SupplementalRow::setNotes));
-        restoreTableState(table, "supplemental-" + kind.name());
-        installTableStatePersistence(table, "supplemental-" + kind.name());
         supplementalTables.put(kind, table);
 
         Button add = new Button("Add Detail");
@@ -1500,114 +1484,6 @@ public final class JournalWorkspacePanel implements AppPanel
         column.setSortable(true);
         column.setResizable(true);
         column.setReorderable(true);
-    }
-
-    private <S> void restoreTableState(TableView<S> table, String tableKey)
-    {
-        restoringTableState = true;
-        try
-        {
-            Preferences state = tableState(tableKey);
-            for (TableColumn<S, ?> column : table.getColumns())
-            {
-                column.setPrefWidth(state.getDouble(columnKey(column) + ".width", column.getPrefWidth()));
-                String sort = state.get(columnKey(column) + ".sort", "");
-                if ("ASCENDING".equals(sort))
-                {
-                    column.setSortType(TableColumn.SortType.ASCENDING);
-                }
-                else if ("DESCENDING".equals(sort))
-                {
-                    column.setSortType(TableColumn.SortType.DESCENDING);
-                }
-            }
-            String order = state.get("order", "");
-            if (!order.isBlank())
-            {
-                List<String> keys = List.of(order.split(","));
-                List<TableColumn<S, ?>> columns = new ArrayList<>(table.getColumns());
-                columns.sort(Comparator.comparingInt(column -> {
-                    int index = keys.indexOf(columnKey(column));
-                    return index < 0 ? Integer.MAX_VALUE : index;
-                }));
-                table.getColumns().setAll(columns);
-            }
-            String sortOrder = state.get("sortOrder", "");
-            if (!sortOrder.isBlank())
-            {
-                List<TableColumn<S, ?>> restored = new ArrayList<>();
-                for (String key : sortOrder.split(","))
-                {
-                    table.getColumns().stream()
-                            .filter(column -> Objects.equals(columnKey(column), key))
-                            .findFirst()
-                            .ifPresent(restored::add);
-                }
-                table.getSortOrder().setAll(restored);
-            }
-        }
-        finally
-        {
-            restoringTableState = false;
-        }
-    }
-
-    private <S> void installTableStatePersistence(TableView<S> table, String tableKey)
-    {
-        table.getColumns().addListener((ListChangeListener<TableColumn<S, ?>>) change -> saveTableState(table, tableKey));
-        table.getSortOrder().addListener((ListChangeListener<TableColumn<S, ?>>) change -> saveTableState(table, tableKey));
-        for (TableColumn<S, ?> column : table.getColumns())
-        {
-            column.widthProperty().addListener((obs, oldValue, newValue) -> saveTableState(table, tableKey));
-            column.sortTypeProperty().addListener((obs, oldValue, newValue) -> saveTableState(table, tableKey));
-        }
-    }
-
-    private <S> void saveTableState(TableView<S> table, String tableKey)
-    {
-        if (restoringTableState)
-        {
-            return;
-        }
-        Preferences state = tableState(tableKey);
-        state.put("order", String.join(",", table.getColumns().stream().map(JournalWorkspacePanel::columnKey).toList()));
-        state.put("sortOrder", String.join(",", table.getSortOrder().stream().map(JournalWorkspacePanel::columnKey).toList()));
-        for (TableColumn<S, ?> column : table.getColumns())
-        {
-            state.putDouble(columnKey(column) + ".width", column.getWidth() > 0 ? column.getWidth() : column.getPrefWidth());
-            state.put(columnKey(column) + ".sort", column.getSortType() == null ? "" : column.getSortType().name());
-        }
-    }
-
-    private Preferences tableState(String tableKey)
-    {
-        return VIEW_STATE.node(companyKey()).node(tableKey);
-    }
-
-    private static String columnKey(TableColumn<?, ?> column)
-    {
-        Object key = column.getUserData();
-        return key == null ? column.getText() : String.valueOf(key);
-    }
-
-    private void installDividerState(SplitPane splitPane, String key, double... defaults)
-    {
-        Preferences state = VIEW_STATE.node(companyKey()).node("dividers");
-        for (int index = 0; index < splitPane.getDividers().size(); index++)
-        {
-            double fallback = index < defaults.length ? defaults[index] : splitPane.getDividers().get(index).getPosition();
-            splitPane.getDividers().get(index).setPosition(state.getDouble(key + "." + index, fallback));
-            int dividerIndex = index;
-            splitPane.getDividers().get(index).positionProperty().addListener((obs, oldValue, newValue) ->
-                    state.putDouble(key + "." + dividerIndex, newValue.doubleValue()));
-        }
-    }
-
-    private static String companyKey()
-    {
-        String company = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
-        String value = company == null || company.isBlank() ? "DEFAULT" : company.trim().toUpperCase(Locale.ROOT);
-        return value.replaceAll("[^A-Z0-9_-]", "_");
     }
 
     private final class OptionTableCell extends TableCell<EditorLine, TransactionLineEditorModel.Option>

@@ -72,6 +72,8 @@ class JournalWorkspacePortSourceTest
         assertTrue(source.contains("installDividerState"));
         assertTrue(source.contains("CompanyUiFormat"));
         assertTrue(source.contains("CompanyUiPreferencesService"));
+        assertTrue(source.contains("preferencesService.loadState(companyCode, STATE_PREFIX)"));
+        assertTrue(source.contains("preferencesService.saveState(companyCode, snapshot)"));
         assertFalse(source.contains("Columns are sortable, resizable, and rearrangeable"));
         assertFalse(source.contains("The table scrolls independently in both directions"));
         assertFalse(source.contains("java.util.prefs.Preferences"));
@@ -89,6 +91,12 @@ class JournalWorkspacePortSourceTest
         assertTrue(source.contains("transactionCorrection().delete"));
         assertTrue(source.contains("transactionCorrection().reverse"));
         assertTrue(source.contains("TransactionSupplementalLineCommand"));
+        assertFalse(source.contains("java.util.prefs.Preferences"));
+        assertFalse(source.contains("Preferences.userNodeForPackage"));
+        assertFalse(source.contains("restoreTableState("));
+        assertFalse(source.contains("installTableStatePersistence("));
+        assertFalse(source.contains("installDividerState("));
+        assertFalse(source.contains("VIEW_STATE"));
         assertFalse(source.contains("CurrentCompany"));
         assertFalse(source.contains("nonprofitbookkeeping.persistence"));
     }
