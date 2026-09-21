@@ -3,10 +3,10 @@ plan_version: 295
 active_phase: P22
 active_slice: P22-S4
 active_status: VERIFYING
-active_branch: codex/P22-S4-journal-ui-state-authority
-active_pull_request: 345
-active_head: 6df380d19264b9c2ac9f4451f2c912e818b8900a
-next_action: "Run exact-final-head GitHub Actions after the P22-S4 PLAN verification commit, then owner-test PR #345 Journal table/divider persistence and company isolation; do not merge without explicit owner authorization and do not begin P22-S5."
+active_branch: codex/P22-S4-journal-company-ui-state
+active_pull_request: 346
+active_head: d5e91f961cda3ef6dbf3e7d36afa5a2b5252ebfb
+next_action: "Owner-test P22-S4 from draft PR #346: verify Journal table/divider state restores independently per company and Journal editing behavior is unchanged; do not merge without explicit owner authorization and do not begin P22-S5 until P22-S4 is merged and accepted."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -548,11 +548,9 @@ Validation state:
 
 ### P22-S4 — Journal company UI-state single authority
 
-Status: VERIFYING.
+Status: IN_PROGRESS.
 
-Branch: `codex/P22-S4-journal-ui-state-authority`.
-
-Draft PR: #345.
+Branch: `codex/P22-S4-journal-company-ui-state`.
 
 Scope:
 
@@ -591,10 +589,9 @@ User-visible changes / manual owner testing:
 Validation state:
 
 - merged-main baseline `d68e8f52ac06022254a9fa221779bcb6ba6e2157` passed post-merge run `35476426775`, job `105986345643`;
-- exact behavior/documentation head `6df380d19264b9c2ac9f4451f2c912e818b8900a` passed Maven PR Tests run `35476893181`, job `105987569383`: clean headless verification, repeated Maven tests, and production JavaFX route compliance all succeeded;
+- exact behavior head `d5e91f961cda3ef6dbf3e7d36afa5a2b5252ebfb` passed Maven PR Tests run `35479049732`, job `105993358897`: clean headless verification, repeated Maven tests, and production JavaFX route compliance all succeeded;
 - local Maven is unavailable in the current execution environment, so no local Maven result is claimed;
-- this PLAN-only verification commit requires exact-final-head GitHub Actions before owner acceptance;
-- owner desktop verification remains required before merge.
+- draft PR #346 is ready for owner desktop verification; merge still requires separate explicit owner authorization.
 
 ### P22-S5 — Supplemental/open-item reporting and eliminated-Schedules cleanup
 
