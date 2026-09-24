@@ -2,6 +2,7 @@ package org.nonprofitbookkeeping.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 /** Read projection for a supplemental detail row attached to a transaction. */
 public record TransactionSupplementalLineView(Long id,
@@ -14,7 +15,11 @@ public record TransactionSupplementalLineView(Long id,
                                               LocalDate dueDate,
                                               LocalDate startDate,
                                               LocalDate endDate,
-                                              String notes)
+                                              String notes,
+                                              UUID itemId,
+                                              String itemEffect,
+                                              Long txnSplitId,
+                                              Integer transactionLineIndex)
 {
     public TransactionSupplementalLineView
     {

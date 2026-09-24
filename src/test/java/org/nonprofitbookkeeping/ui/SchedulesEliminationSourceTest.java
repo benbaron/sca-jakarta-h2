@@ -24,10 +24,12 @@ class SchedulesEliminationSourceTest
         String panelFactory = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/PanelFactory.java"));
         String navigationPane = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/NavigationPane.java"));
 
-        assertTrue(appPanelId.contains("Retired compatibility identifier"));
         assertFalse(panelFactory.contains("SchedulesPanel"));
         assertFalse(panelFactory.contains("AppPanelId.SCHEDULES"));
         assertFalse(navigationPane.contains("AppPanelId.SCHEDULES"));
+        assertFalse(appPanelId.contains("SCHEDULES,"));
+        String registry = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/UiServiceRegistry.java"));
+        assertFalse(registry.contains("ScheduleEligibilityService"));
         assertFalse(navigationPane.contains("\"Schedules\""));
     }
 

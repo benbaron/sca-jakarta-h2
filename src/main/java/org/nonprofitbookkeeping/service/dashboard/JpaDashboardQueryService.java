@@ -11,6 +11,7 @@ import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.service.FiscalPeriodRange;
+import org.nonprofitbookkeeping.service.SupplementalOpenItemQueryService;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -88,7 +89,7 @@ public class JpaDashboardQueryService implements DashboardQueryService
                 List<DashboardSnapshot.BankAccountBalance> bankAccounts = loadBankAccounts(em, owner, projectionDate);
                 List<DashboardSnapshot.RecentTransaction> recentTransactions =
                         loadRecentTransactions(em, owner, projectionDate, recentTransactionLimit);
-                DashboardSnapshot.OpenItemSummary openItems = DashboardSnapshot.OpenItemSummary.unavailable();
+                DashboardSnapshot.OpenItemSummary openItems = loadOpenItems(owner, projectionDate);
                 List<DashboardSnapshot.ReconciliationStatus> reconciliations =
                         loadReconciliations(em, owner, projectionDate);
                 List<DashboardSnapshot.BudgetActual> budgetActuals =
@@ -124,6 +125,38 @@ public class JpaDashboardQueryService implements DashboardQueryService
                 throw ex;
             }
         }
+    }
+
+    private DashboardSnapshot.OpenItemSummary loadOpenItems(Company company, LocalDate asOfDate)
+    {
+        Map<SupplementalOpenItemQueryService.Kind, SupplementalOpenItemQueryService.Result> projections =
+                new SupplementalOpenItemQueryService(jpa, company::getCode).queryAll(asOfDate);
+        Map<String, Long> counts = new LinkedHashMap<>();
+        Map<String, BigDecimal> amounts = new LinkedHashMap<>();
+        long totalCount = 0L;
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        boolean available = false;
+        for (SupplementalOpenItemQueryService.Kind kind : SupplementalOpenItemQueryService.Kind.values())
+        {
+            SupplementalOpenItemQueryService.Result result = projections.get(kind);
+            if (result == null)
+            {
+                continue;
+            }
+            available |= result.authorityAvailable();
+            long count = result.openCount();
+            BigDecimal amount = result.openAmount();
+            counts.put(kind.name(), count);
+            amounts.put(kind.name(), amount);
+            totalCount += count;
+            totalAmount = totalAmount.add(amount);
+        }
+        if (!available)
+        {
+            return DashboardSnapshot.OpenItemSummary.unavailable();
+        }
+        return new DashboardSnapshot.OpenItemSummary(
+                Map.copyOf(counts), Map.copyOf(amounts), totalCount, totalAmount, true);
     }
 
     private static DashboardSnapshot emptySnapshot(String companyCode, LocalDate asOfDate)

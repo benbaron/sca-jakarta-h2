@@ -113,7 +113,8 @@ Current examples:
 - `MainWindow`: deprecated non-JavaFX session compatibility facade only.
 - `DateRange` / `DateRangeContext`: retained for intentional Report Library explicit-range behavior.
 - `DateRangeSelector` / `DateRangeUtil`: retired dead legacy shell/editor helpers.
-- `ScheduleEligibilityService`: retained unrouted compatibility/domain query where existing metadata consumers still require it; it does not restore a Schedules workspace.
+- P22-S5 retired the unconsumed `ScheduleEligibilityService` and `AppPanelId.SCHEDULES` executable compatibility seams. Historical schedule schema/account metadata remains retained without a Schedules destination.
+- Supplemental receivable/payable/prepaid/deferred/other lifecycle is maintained inside Journal and reported through Report Library/Dashboard; there is no separate Open Items or Schedules editor.
 - legacy reconciliation-run repositories/services: retained only where current SCLX/comparison/history compatibility paths consume them; they are not the canonical reconciliation workspace authority.
 - legacy period-close-run repositories/services: retained for compatibility/history where consumed; `PeriodCloseRangeService` remains canonical production close-state authority.
 

@@ -27,17 +27,26 @@ Status: reconciled to current production authority through P22-S3 alternate-writ
 | Desktop session | `ApplicationSessionContext` / `UiSessionState` | no accounting persistence | deprecated `MainWindow` facade | Session facts are runtime context only. `MainWindow` owns no production shell or commands. |
 | Whole-database transfer | supported H2 backup/restore + prepared database/session activation | yes for transferred database | treating interchange previews as database authority | Preserve all database records; activate only after migration/service/company validation. |
 | Generic Import/Export Jobs | none | no | historical references could reintroduce generic job tracking | Panel, route, enum destination, session job list, and `UiWorkspaceDataStore` generic authority remain removed. |
-| Former Schedules UI | none | no active top-level UI authority | historical schedule/open-item schema and `ScheduleEligibilityService` compatibility query | Do not restore a Schedules workspace. Retain compatibility data/query only while a current consumer requires it. |
+| Former Schedules UI | none | no active top-level UI authority | historical schedule/open-item schema only | P22-S5 retires the unconsumed `ScheduleEligibilityService`/`AppPanelId.SCHEDULES` executable seams; do not restore a Schedules workspace. |
 
 ## Canonical ledger and Journal authority
 
 - `Txn`/`TxnSplit` are the canonical accounting transaction model used by entry, correction, reports, banking acceptance, reconciliation, assets, inventory, and interchange.
-- `txn_supplemental_line` is authoritative for transaction-attached Receivable, Payable, Prepaid Expense, Deferred Revenue, Other Asset, and Other Liability details.
+- `txn_supplemental_line` is authoritative for transaction-attached Receivable, Payable, Prepaid Expense, Deferred Revenue, Other Asset, and Other Liability details. Lifecycle-aware rows bind a stable `item_id`, exact canonical `txn_split_id`, and `INCREASE`/`DECREASE` effect; `SupplementalOpenItemQueryService` derives as-of balances from those facts without storing mutable open/closed balances.
 - `JournalWorkspacePanel` queries `TransactionEntryService.search(...)` / `load(...)` and writes through `TransactionEntryService.enter(...)` / `update(...)`.
 - Delete/reverse routes through `TransactionCorrectionService` with closed-period and completed-reconciliation protection.
 - `LEDGER_REGISTER` and `TXN_EDITOR` are compatibility destination aliases only; they are not persistence models or separate panels.
 - `JournalTransaction` / `PostingLine` and older JDBC journal/open-item repositories remain compatibility structures. No production feature may create a parallel writable ledger through them.
 - P22-S3 removes the unconsumed `PostingService` direct writer. New composition or tests must not reintroduce it; canonical writes stay behind `TransactionEntryService` / `TransactionCorrectionService`.
+
+### Supplemental/open-item authority
+
+- `Txn` / `TxnSplit` remain the sole canonical ledger.
+- `txn_supplemental_line.item_id` is logical open-item identity; `txn_split_id` explicitly binds the supplemental allocation to a canonical accounting movement; `item_effect` supplies `INCREASE`/`DECREASE` direction while `amount` stays non-negative.
+- `SupplementalOpenItemQueryService` computes as-of increases, reductions/recognition, open balance, and diagnostic status using only `ENTERED` transactions through the requested date. Reversed/future transactions do not contribute.
+- `open_item_snapshot` is never read as current Dashboard/Report Library authority.
+- Legacy supplemental rows lacking the lifecycle triple remain preserved and are reported as unmatched legacy detail; the application does not synthesize identities from `entryRef`.
+- Current SCLX is deliberately unchanged and does not preserve P22-S5 lifecycle linkage; it remains legacy-detail interchange only for these rows until a separately authorized format revision.
 
 ## Banking and reconciliation authority
 
@@ -139,7 +148,7 @@ Ambiguous ownership fails closed; the application must not silently assign histo
 - `JournalTransaction` / `PostingLine`: compatibility model, never a second production ledger.
 - legacy reconciliation-run family: compatibility/history only where a current consumer remains.
 - legacy period-close-run family: compatibility/history only; `PeriodCloseRangeService` is production authority.
-- `ScheduleEligibilityService` and historical schedule schema: compatibility query/data only; no Schedules destination.
+- historical schedule/open-item schema: retained compatibility/history data only; `ScheduleEligibilityService` and `AppPanelId.SCHEDULES` are retired and there is no Schedules destination.
 - `ApprovalAuditRecord`: compatibility history only; `AuditEvent` is factual production audit authority.
 - deprecated `MainWindow`: session facade only; production shell is `ProductionWorkspaceWindow`.
 

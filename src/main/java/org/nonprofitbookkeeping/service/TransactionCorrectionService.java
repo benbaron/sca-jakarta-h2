@@ -8,11 +8,14 @@ import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
+import org.nonprofitbookkeeping.model.TxnSupplementalLine;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -117,6 +120,9 @@ public class TransactionCorrectionService
                 event.setEntityId(Long.toString(transactionId));
                 em.persist(event);
                 em.flush();
+                em.createQuery("delete from TxnSupplementalLine l where l.txn = :txn")
+                        .setParameter("txn", txn)
+                        .executeUpdate();
                 em.remove(txn);
                 em.getTransaction().commit();
             }
@@ -183,10 +189,14 @@ public class TransactionCorrectionService
                     replacement.setStatus("ENTERED");
                     replacement.setCorrectionNote(blankToNull(reason));
                     em.persist(replacement);
+                    Map<Long, TxnSplit> replacementSplits = new LinkedHashMap<>();
                     for (TxnSplit split : originalSplits)
                     {
-                        em.persist(copySplit(split, replacement, split.getAmountSigned()));
+                        TxnSplit replacementSplit = copySplit(split, replacement, split.getAmountSigned());
+                        em.persist(replacementSplit);
+                        replacementSplits.put(split.getId(), replacementSplit);
                     }
+                    copySupplementalLines(em, original, replacement, replacementSplits);
                 }
 
                 em.persist(audit(company, auditActor, "TRANSACTION_REVERSED", original, before, snapshot(reversal), reason));
@@ -404,6 +414,51 @@ public class TransactionCorrectionService
         target.setMemo(source.getMemo());
         target.setBankAccount(source.getBankAccount());
         return target;
+    }
+
+    private static void copySupplementalLines(
+            EntityManager em,
+            Txn original,
+            Txn replacement,
+            Map<Long, TxnSplit> replacementSplits)
+    {
+        List<TxnSupplementalLine> details = em.createQuery("""
+                select l from TxnSupplementalLine l
+                left join fetch l.txnSplit
+                where l.txn = :txn
+                order by l.lineOrder, l.id
+                """, TxnSupplementalLine.class)
+                .setParameter("txn", original)
+                .getResultList();
+        for (TxnSupplementalLine source : details)
+        {
+            TxnSupplementalLine copy = new TxnSupplementalLine();
+            copy.setTxn(replacement);
+            copy.setLineOrder(source.getLineOrder());
+            copy.setKind(source.getKind());
+            copy.setEntryRef(source.getEntryRef());
+            copy.setCounterparty(source.getCounterparty());
+            copy.setDescription(source.getDescription());
+            copy.setReference(source.getReference());
+            copy.setAmount(source.getAmount());
+            copy.setDueDate(source.getDueDate());
+            copy.setStartDate(source.getStartDate());
+            copy.setEndDate(source.getEndDate());
+            copy.setNotes(source.getNotes());
+            copy.setItemId(source.getItemId());
+            copy.setItemEffect(source.getItemEffect());
+            if (source.getTxnSplit() != null)
+            {
+                TxnSplit linked = replacementSplits.get(source.getTxnSplit().getId());
+                if (linked == null)
+                {
+                    throw new IllegalStateException(
+                            "Replacement transaction cannot preserve supplemental split linkage.");
+                }
+                copy.setTxnSplit(linked);
+            }
+            em.persist(copy);
+        }
     }
 
     private static TxnSplit copySplit(TxnSplit source, Txn target, BigDecimal amount)

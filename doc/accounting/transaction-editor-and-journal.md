@@ -69,21 +69,37 @@ The JavaFX table provides Add Line, Duplicate Line, and Remove Line. Immediate t
 
 The Additional Details region shows only fields supported by current authoritative services. Unsupported donor fields such as legacy check/reference, clearing-bank text, or budget-tracking text must not appear as enabled fake-save fields. New fields require a deliberate H2/service slice before becoming editable production data.
 
-## Supplemental transaction records
+## Supplemental transaction records and open-item lifecycle
 
-Receivable, Payable, Prepaid Expense, Deferred Revenue, Other Asset, and Other Liability rows are persisted in `txn_supplemental_line` and linked to canonical `txn` records by stable ID.
+Receivable, Payable, Prepaid Expense, Deferred Revenue, Other Asset, and Other Liability rows are persisted in `txn_supplemental_line` and attached to canonical `Txn` records. P22-S5 adds an optional governed lifecycle link for current open-item accounting without creating a second ledger.
 
-The canonical transaction command/view types carry supplemental line DTOs. `TransactionEntryService.enter(...)` persists them atomically with a new transaction, `update(...)` replaces them atomically with the edited transaction, and `load(...)` returns them for editor repopulation.
+A lifecycle-aware row carries all three of these facts together:
 
-The service rejects:
+- stable company-scoped logical `item_id` (UUID);
+- `txn_split_id` pointing to the exact canonical accounting split explained by the row;
+- `item_effect` of `INCREASE` or `DECREASE`.
 
-- unsupported kinds;
-- missing descriptions;
-- negative amounts;
-- unpaired start/end dates;
-- start dates after end dates.
+`amount` remains non-negative. Direction comes from `item_effect`, while the linked split must have the compatible account subtype and accounting sign. Multiple supplemental rows may allocate one split among multiple logical items, but their combined allocation may not exceed that split's absolute accounting movement. `entryRef` remains descriptive operator data; it is not item identity and is not required to be unique.
 
-These rows are transaction-attached details, not a reintroduction of the eliminated generic Schedules module or a sidecar ledger.
+The Journal **Add Open Item Detail** action creates a new UUID with `INCREASE`. **Apply Existing Item** reads the canonical as-of projection, selects an existing open item, and creates a `DECREASE` row using the same UUID. The operator explicitly supplies the 1-based ledger line; Journal does not guess an account/split relationship. Existing historical/imported rows with none of the three lifecycle fields remain legal legacy supplemental detail and are not rewritten or guessed into an item relationship.
+
+The canonical transaction command/view types carry supplemental line DTOs. `TransactionEntryService.enter(...)` persists them atomically with a new transaction, `update(...)` replaces them atomically with the edited transaction, and `load(...)` returns them for editor repopulation. The service rejects:
+
+- unsupported kinds or missing descriptions;
+- negative legacy amounts and non-positive lifecycle allocations;
+- partial lifecycle triples (identity/effect/ledger-line must appear together);
+- unsupported lifecycle effects;
+- out-of-range ledger-line references;
+- account subtypes incompatible with the supplemental kind;
+- INCREASE/DECREASE effects whose linked canonical split moves in the wrong direction;
+- total supplemental allocations exceeding the linked split amount;
+- DECREASE allocations that have no existing same-company, same-kind INCREASE as of the transaction date;
+- reuse of one company-scoped item identity across different supplemental kinds;
+- unpaired start/end dates or start dates after end dates.
+
+As-of open balances are derived by `SupplementalOpenItemQueryService` from `ENTERED` transaction allocations: increases minus decreases. `REVERSED` transactions contribute nothing. A reverse-and-replacement correction copies supplemental facts only to the replacement's corresponding canonical splits; the reversal itself carries no supplemental allocation.
+
+These rows are transaction-attached details, not a reintroduction of the eliminated generic Schedules module or a sidecar ledger. The current SCLX contract is intentionally unchanged by P22-S5: its legacy supplemental fields remain readable/writable, but it does **not** carry `item_id`, `txn_split_id`, or `item_effect`. Therefore SCLX is not a round-trip format for P22-S5 lifecycle linkage until a separate SCLX-format change is authorized. Journal surfaces this limitation rather than silently claiming portability.
 
 ## Correction operations
 

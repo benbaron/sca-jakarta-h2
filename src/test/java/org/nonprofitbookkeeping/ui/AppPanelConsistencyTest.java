@@ -36,7 +36,6 @@ public class AppPanelConsistencyTest
         EnumSet<AppPanelId> expected = EnumSet.allOf(AppPanelId.class);
         expected.remove(AppPanelId.LEDGER_REGISTER);
         expected.remove(AppPanelId.TXN_EDITOR);
-        expected.remove(AppPanelId.SCHEDULES);
         assertEquals(expected, indexed);
     }
 
@@ -47,10 +46,6 @@ public class AppPanelConsistencyTest
             PanelHost host = new PanelHost();
             for (AppPanelId id : AppPanelId.values())
             {
-                if (id == AppPanelId.SCHEDULES)
-                {
-                    continue;
-                }
                 host.show(id);
                 assertNotNull(host.activeRoot(), "active root missing for " + id);
                 assertFalse(host.getActiveTitle().isBlank(), "blank title for " + id);

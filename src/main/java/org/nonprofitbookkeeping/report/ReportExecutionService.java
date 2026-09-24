@@ -8,6 +8,7 @@ import org.nonprofitbookkeeping.report.template.WorkbookSemanticReportService;
 import org.nonprofitbookkeeping.service.FinancialReportDisplayFormat;
 import org.nonprofitbookkeeping.service.FinancialReportRenderer;
 import org.nonprofitbookkeeping.service.FinancialReportService;
+import org.nonprofitbookkeeping.service.SupplementalOpenItemQueryService;
 
 import java.time.LocalDate;
 import java.util.Objects;
@@ -19,13 +20,14 @@ public final class ReportExecutionService
     private final FinancialReportDisplayFormat displayFormat;
     private final SemanticAccountingReportQueryService semanticQueries;
     private final AssetInventoryReportQueryService assetInventoryQueries;
+    private final SupplementalOpenItemQueryService supplementalQueries;
     private final ReportPresentationMetadata presentationMetadata;
 
     public ReportExecutionService(
             FinancialReportService reports,
             FinancialReportDisplayFormat displayFormat)
     {
-        this(reports, displayFormat, null, null, ReportPresentationMetadata.EMPTY);
+        this(reports, displayFormat, null, null, null, ReportPresentationMetadata.EMPTY);
     }
 
     public ReportExecutionService(
@@ -33,7 +35,7 @@ public final class ReportExecutionService
             FinancialReportDisplayFormat displayFormat,
             SemanticAccountingReportQueryService semanticQueries)
     {
-        this(reports, displayFormat, semanticQueries, null, ReportPresentationMetadata.EMPTY);
+        this(reports, displayFormat, semanticQueries, null, null, ReportPresentationMetadata.EMPTY);
     }
 
     public ReportExecutionService(
@@ -42,7 +44,7 @@ public final class ReportExecutionService
             SemanticAccountingReportQueryService semanticQueries,
             AssetInventoryReportQueryService assetInventoryQueries)
     {
-        this(reports, displayFormat, semanticQueries, assetInventoryQueries,
+        this(reports, displayFormat, semanticQueries, assetInventoryQueries, null,
                 ReportPresentationMetadata.EMPTY);
     }
 
@@ -53,12 +55,24 @@ public final class ReportExecutionService
             AssetInventoryReportQueryService assetInventoryQueries,
             ReportPresentationMetadata presentationMetadata)
     {
+        this(reports, displayFormat, semanticQueries, assetInventoryQueries, null, presentationMetadata);
+    }
+
+    public ReportExecutionService(
+            FinancialReportService reports,
+            FinancialReportDisplayFormat displayFormat,
+            SemanticAccountingReportQueryService semanticQueries,
+            AssetInventoryReportQueryService assetInventoryQueries,
+            SupplementalOpenItemQueryService supplementalQueries,
+            ReportPresentationMetadata presentationMetadata)
+    {
         this.reports = Objects.requireNonNull(reports, "reports");
         this.displayFormat = displayFormat == null
                 ? FinancialReportDisplayFormat.plain()
                 : displayFormat;
         this.semanticQueries = semanticQueries;
         this.assetInventoryQueries = assetInventoryQueries;
+        this.supplementalQueries = supplementalQueries;
         this.presentationMetadata = presentationMetadata == null
                 ? ReportPresentationMetadata.EMPTY : presentationMetadata;
     }
@@ -69,6 +83,10 @@ public final class ReportExecutionService
         if (request.definition().source() == ReportDefinition.ReportSource.SEMANTIC)
         {
             return executeSemantic(request);
+        }
+        if (request.definition().source() == ReportDefinition.ReportSource.SUPPLEMENTAL)
+        {
+            return executeSupplemental(request);
         }
         return executeCore(request);
     }
@@ -161,6 +179,18 @@ public final class ReportExecutionService
     private static LocalDate previousDay(LocalDate value)
     {
         return LocalDate.MIN.equals(value) ? value : value.minusDays(1);
+    }
+
+    private ReportResult executeSupplemental(ReportRequest request)
+    {
+        if (supplementalQueries == null)
+        {
+            throw new IllegalStateException("Supplemental report query service is unavailable.");
+        }
+        SupplementalOpenItemQueryService.Kind kind =
+                SupplementalOpenItemQueryService.Kind.valueOf(request.definition().templateId());
+        return SupplementalOpenItemReportBuilder.result(
+                request, supplementalQueries.query(kind, request.asOfDate()), displayFormat);
     }
 
     private ReportResult executeSemantic(ReportRequest request)

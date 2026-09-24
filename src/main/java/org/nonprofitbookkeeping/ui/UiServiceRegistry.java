@@ -54,8 +54,8 @@ import org.nonprofitbookkeeping.service.PeriodCloseService;
 import org.nonprofitbookkeeping.service.ReconciliationComparisonService;
 import org.nonprofitbookkeeping.service.ReconciliationService;
 import org.nonprofitbookkeeping.service.ReviewedStatementAcceptanceService;
-import org.nonprofitbookkeeping.service.ScheduleEligibilityService;
 import org.nonprofitbookkeeping.service.SampleCompanyService;
+import org.nonprofitbookkeeping.service.SupplementalOpenItemQueryService;
 import org.nonprofitbookkeeping.service.SecurityAdminService;
 import org.nonprofitbookkeeping.service.SecurityBootstrapService;
 import org.nonprofitbookkeeping.service.TransactionEntryService;
@@ -176,7 +176,6 @@ public final class UiServiceRegistry
     }
     public static SecurityBootstrapService securityBootstrap() { return new SecurityBootstrapService(services().jpa()); }
     public static FundBalanceService fundBalance() { return services().fundBalance(); }
-    public static ScheduleEligibilityService schedules() { return services().schedules(); }
     public static LedgerQueryService ledgerQuery() { return services().ledgerQuery(); }
     public static TransactionEntryService transactionEntry() { return services().transactionEntry(); }
     public static TransactionCorrectionService transactionCorrection() { return services().transactionCorrection(); }
@@ -198,6 +197,11 @@ public final class UiServiceRegistry
     public static AssetInventoryReportQueryService assetInventoryReports()
     {
         return new AssetInventoryReportQueryService(
+                services().jpa(), UiServiceRegistry::activeCompanyCode);
+    }
+    public static SupplementalOpenItemQueryService supplementalOpenItems()
+    {
+        return new SupplementalOpenItemQueryService(
                 services().jpa(), UiServiceRegistry::activeCompanyCode);
     }
     public static DashboardQueryService dashboardQuery() { return services().dashboardQuery(); }
@@ -340,7 +344,6 @@ public final class UiServiceRegistry
                 new CompanyAdminService(jpa, authorizationGuard),
                 new UserAdminService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
                 new FundBalanceService(jpa),
-                new ScheduleEligibilityService(jpa),
                 new LedgerQueryService(jpa),
                 transactionEntry,
                 transactionCorrection,
@@ -539,7 +542,6 @@ public final class UiServiceRegistry
             CompanyAdminService companyAdmin,
             UserAdminService userAdmin,
             FundBalanceService fundBalance,
-            ScheduleEligibilityService schedules,
             LedgerQueryService ledgerQuery,
             TransactionEntryService transactionEntry,
             TransactionCorrectionService transactionCorrection,

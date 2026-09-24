@@ -18,6 +18,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
@@ -57,6 +58,7 @@ import org.nonprofitbookkeeping.service.TransactionSupplementalLineCommand;
 import org.nonprofitbookkeeping.service.TransactionSupplementalLineView;
 import org.nonprofitbookkeeping.service.TransactionValidationResult;
 import org.nonprofitbookkeeping.service.TransactionView;
+import org.nonprofitbookkeeping.service.SupplementalOpenItemQueryService;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -68,6 +70,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -554,7 +557,10 @@ public final class JournalWorkspacePanel implements AppPanel
         table.setEditable(true);
         table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         table.setPlaceholder(new Label("No " + kind.tabTitle().toLowerCase(Locale.ROOT) + " details."));
-        table.getColumns().add(supplementalTextColumn("Link to Entry", "entryRef", 140, SupplementalRow::entryRefProperty, SupplementalRow::setEntryRef));
+        table.getColumns().add(supplementalTextColumn("Item ID", "itemId", 220, SupplementalRow::itemIdProperty, SupplementalRow::setItemId));
+        table.getColumns().add(supplementalTextColumn("Effect", "itemEffect", 105, SupplementalRow::itemEffectProperty, SupplementalRow::setItemEffect));
+        table.getColumns().add(supplementalTextColumn("Ledger Line", "transactionLine", 95, SupplementalRow::transactionLineProperty, SupplementalRow::setTransactionLine));
+        table.getColumns().add(supplementalTextColumn("Entry Ref", "entryRef", 140, SupplementalRow::entryRefProperty, SupplementalRow::setEntryRef));
         table.getColumns().add(supplementalTextColumn("Counterparty", "counterparty", 170, SupplementalRow::counterpartyProperty, SupplementalRow::setCounterparty));
         table.getColumns().add(supplementalTextColumn("Description", "description", 240, SupplementalRow::descriptionProperty, SupplementalRow::setDescription));
         table.getColumns().add(supplementalTextColumn("Reference", "reference", 150, SupplementalRow::referenceProperty, SupplementalRow::setReference));
@@ -572,9 +578,11 @@ public final class JournalWorkspacePanel implements AppPanel
         table.getColumns().add(supplementalTextColumn("Notes", "notes", 240, SupplementalRow::notesProperty, SupplementalRow::setNotes));
         supplementalTables.put(kind, table);
 
-        Button add = new Button("Add Detail");
+        Button add = new Button("Add Open Item Detail");
+        Button apply = new Button("Apply Existing Item");
         Button remove = new Button("Remove Detail");
         add.setOnAction(event -> addSupplementalRow(kind));
+        apply.setOnAction(event -> applyExistingSupplementalItem(kind));
         remove.disableProperty().bind(table.getSelectionModel().selectedItemProperty().isNull());
         remove.setOnAction(event -> {
             SupplementalRow selected = table.getSelectionModel().getSelectedItem();
@@ -584,7 +592,12 @@ public final class JournalWorkspacePanel implements AppPanel
                 markDirty();
             }
         });
-        VBox panel = new VBox(6, new HBox(8, add, remove), table);
+        Label lifecycleHelp = new Label(
+                "Open-item rows use a stable Item ID, INCREASE/DECREASE effect, and a 1-based Ledger Line. "
+                        + "Current SCLX interchange preserves legacy supplemental detail but does not preserve these lifecycle linkage fields.");
+        lifecycleHelp.setWrapText(true);
+        lifecycleHelp.getStyleClass().add("field-help");
+        VBox panel = new VBox(6, new HBox(8, add, apply, remove), lifecycleHelp, table);
         VBox.setVgrow(table, Priority.ALWAYS);
         panel.setMinSize(0, 0);
         Tab tab = new Tab(kind.tabTitle(), panel);
@@ -958,6 +971,48 @@ public final class JournalWorkspacePanel implements AppPanel
                 {
                     throw new IllegalArgumentException(kind.tabTitle() + " detail row " + rowNumber + " start date must be on or before end date.");
                 }
+                UUID itemId = null;
+                String itemEffect = blankToNull(row.getItemEffect());
+                Integer transactionLineIndex = null;
+                boolean lifecycleInput = !row.getItemId().isBlank() || itemEffect != null
+                        || !row.getTransactionLine().isBlank();
+                if (lifecycleInput)
+                {
+                    if (row.getItemId().isBlank() || itemEffect == null || row.getTransactionLine().isBlank())
+                    {
+                        throw new IllegalArgumentException(kind.tabTitle() + " detail row " + rowNumber
+                                + " requires Item ID, Effect, and Ledger Line together.");
+                    }
+                    try
+                    {
+                        itemId = UUID.fromString(row.getItemId().trim());
+                    }
+                    catch (IllegalArgumentException ex)
+                    {
+                        throw new IllegalArgumentException(kind.tabTitle() + " detail row " + rowNumber
+                                + " has an invalid Item ID UUID.");
+                    }
+                    itemEffect = itemEffect.trim().toUpperCase(Locale.ROOT);
+                    if (!itemEffect.equals("INCREASE") && !itemEffect.equals("DECREASE"))
+                    {
+                        throw new IllegalArgumentException(kind.tabTitle() + " detail row " + rowNumber
+                                + " Effect must be INCREASE or DECREASE.");
+                    }
+                    try
+                    {
+                        int lineNumber = Integer.parseInt(row.getTransactionLine().trim());
+                        if (lineNumber < 1)
+                        {
+                            throw new NumberFormatException();
+                        }
+                        transactionLineIndex = lineNumber - 1;
+                    }
+                    catch (NumberFormatException ex)
+                    {
+                        throw new IllegalArgumentException(kind.tabTitle() + " detail row " + rowNumber
+                                + " Ledger Line must be a positive 1-based line number.");
+                    }
+                }
                 commands.add(new TransactionSupplementalLineCommand(
                         kind.name(),
                         blankToNull(row.getEntryRef()),
@@ -968,7 +1023,8 @@ public final class JournalWorkspacePanel implements AppPanel
                         dueDate,
                         startDate,
                         endDate,
-                        blankToNull(row.getNotes())));
+                        blankToNull(row.getNotes()),
+                        null, itemId, itemEffect, transactionLineIndex));
             }
         }
         return commands;
@@ -1124,6 +1180,78 @@ public final class JournalWorkspacePanel implements AppPanel
         updateActionState();
     }
 
+    private void applyExistingSupplementalItem(SupplementalKind kind)
+    {
+        LocalDate asOf = entryDate.getValue() == null ? LocalDate.now() : entryDate.getValue();
+        SupplementalOpenItemQueryService.Kind queryKind =
+                SupplementalOpenItemQueryService.Kind.valueOf(kind.name());
+        status.setText("Loading open " + kind.tabTitle().toLowerCase(Locale.ROOT) + " items...");
+        UiAsync.run("journal-workspace-open-items-" + queryKind.name().toLowerCase(Locale.ROOT),
+                () -> UiServiceRegistry.supplementalOpenItems().query(queryKind, asOf),
+                projection -> showExistingSupplementalItemChoice(kind, asOf, projection),
+                ex -> status.setText("Open items unavailable: " + UiErrors.safeMessage(ex)));
+    }
+
+    private void showExistingSupplementalItemChoice(
+            SupplementalKind kind,
+            LocalDate asOf,
+            SupplementalOpenItemQueryService.Result projection)
+    {
+        List<OpenItemChoice> choices = projection.authoritativeRows().stream()
+                .filter(row -> row.openBalance().signum() > 0)
+                .map(row -> new OpenItemChoice(
+                        row.itemId(),
+                        (row.entryRef() == null || row.entryRef().isBlank() ? row.itemId().toString() : row.entryRef())
+                                + " — " + row.description() + " — open " + companyMoney(row.openBalance()),
+                        row))
+                .toList();
+        if (choices.isEmpty())
+        {
+            status.setText("No open " + kind.tabTitle().toLowerCase(Locale.ROOT) + " items are available as of " + asOf + ".");
+            return;
+        }
+        ChoiceDialog<OpenItemChoice> dialog = new ChoiceDialog<>(choices.get(0), choices);
+        dialog.setTitle("Apply Existing " + kind.tabTitle());
+        dialog.setHeaderText("Select the open item this transaction reduces or recognizes.");
+        dialog.setContentText("Open item:");
+        dialog.showAndWait().ifPresent(choice -> {
+            SupplementalRow row = new SupplementalRow();
+            row.setItemId(choice.itemId().toString());
+            row.setItemEffect("DECREASE");
+            row.setEntryRef(choice.row().entryRef());
+            row.setCounterparty(choice.row().counterparty());
+            row.setDescription(choice.row().description());
+            row.setReference(choice.row().reference());
+            row.setAmount(normalizeMoney(choice.row().openBalance().toPlainString()));
+            if (lineTable.getItems().size() == 1)
+            {
+                row.setTransactionLine("1");
+            }
+            supplementalTables.get(kind).getItems().add(row);
+            supplementalSelections.get(kind).setSelected(true);
+            supplementalTabs.getSelectionModel().select(supplementalTabIndex.get(kind));
+            markDirty();
+            status.setText("Applied open item " + choice.itemId() + "; select the reducing ledger line before saving.");
+        });
+    }
+
+    private String companyMoney(BigDecimal amount)
+    {
+        return CompanyUiFormat.activeCompany().formatMoney(amount);
+    }
+
+    private record OpenItemChoice(
+            UUID itemId,
+            String label,
+            SupplementalOpenItemQueryService.Row row)
+    {
+        @Override
+        public String toString()
+        {
+            return label;
+        }
+    }
+
     private void addSupplementalRow(SupplementalKind kind)
     {
         CheckBox selection = supplementalSelections.get(kind);
@@ -1134,6 +1262,12 @@ public final class JournalWorkspacePanel implements AppPanel
         updateSupplementalAvailability();
         TableView<SupplementalRow> table = supplementalTables.get(kind);
         SupplementalRow row = new SupplementalRow();
+        row.setItemId(UUID.randomUUID().toString());
+        row.setItemEffect("INCREASE");
+        if (lineTable.getItems().size() == 1)
+        {
+            row.setTransactionLine("1");
+        }
         table.getItems().add(row);
         table.getSelectionModel().select(row);
         table.scrollTo(row);
@@ -1890,6 +2024,9 @@ public final class JournalWorkspacePanel implements AppPanel
 
     static final class SupplementalRow
     {
+        private final StringProperty itemId = new SimpleStringProperty("");
+        private final StringProperty itemEffect = new SimpleStringProperty("");
+        private final StringProperty transactionLine = new SimpleStringProperty("");
         private final StringProperty entryRef = new SimpleStringProperty("");
         private final StringProperty counterparty = new SimpleStringProperty("");
         private final StringProperty description = new SimpleStringProperty("");
@@ -1903,6 +2040,9 @@ public final class JournalWorkspacePanel implements AppPanel
         static SupplementalRow from(TransactionSupplementalLineView view)
         {
             SupplementalRow row = new SupplementalRow();
+            row.setItemId(view.itemId() == null ? "" : view.itemId().toString());
+            row.setItemEffect(view.itemEffect());
+            row.setTransactionLine(view.transactionLineIndex() == null ? "" : Integer.toString(view.transactionLineIndex() + 1));
             row.setEntryRef(view.entryRef());
             row.setCounterparty(view.counterparty());
             row.setDescription(view.description());
@@ -1915,6 +2055,9 @@ public final class JournalWorkspacePanel implements AppPanel
             return row;
         }
 
+        StringProperty itemIdProperty() { return itemId; }
+        StringProperty itemEffectProperty() { return itemEffect; }
+        StringProperty transactionLineProperty() { return transactionLine; }
         StringProperty entryRefProperty() { return entryRef; }
         StringProperty counterpartyProperty() { return counterparty; }
         StringProperty descriptionProperty() { return description; }
@@ -1925,6 +2068,12 @@ public final class JournalWorkspacePanel implements AppPanel
         StringProperty endDateProperty() { return endDate; }
         StringProperty notesProperty() { return notes; }
 
+        String getItemId() { return itemId.get(); }
+        void setItemId(String value) { itemId.set(safe(value)); }
+        String getItemEffect() { return itemEffect.get(); }
+        void setItemEffect(String value) { itemEffect.set(safe(value)); }
+        String getTransactionLine() { return transactionLine.get(); }
+        void setTransactionLine(String value) { transactionLine.set(safe(value)); }
         String getEntryRef() { return entryRef.get(); }
         void setEntryRef(String value) { entryRef.set(safe(value)); }
         String getCounterparty() { return counterparty.get(); }
@@ -1947,7 +2096,8 @@ public final class JournalWorkspacePanel implements AppPanel
         boolean hasAnyInput()
         {
             BigDecimal parsedAmount = parseMoney(getAmount());
-            return !getEntryRef().isBlank() || !getCounterparty().isBlank() || !getDescription().isBlank()
+            return !getItemId().isBlank() || !getItemEffect().isBlank() || !getTransactionLine().isBlank()
+                    || !getEntryRef().isBlank() || !getCounterparty().isBlank() || !getDescription().isBlank()
                     || !getReference().isBlank() || parsedAmount == null || parsedAmount.signum() != 0
                     || !getDueDate().isBlank() || !getStartDate().isBlank() || !getEndDate().isBlank()
                     || !getNotes().isBlank();

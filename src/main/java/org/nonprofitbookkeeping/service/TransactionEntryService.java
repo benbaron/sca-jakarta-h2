@@ -6,6 +6,7 @@ import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.AccountClassification;
 import org.nonprofitbookkeeping.model.AccountType;
+import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.BudgetCategory;
 import org.nonprofitbookkeeping.model.Counterparty;
@@ -16,6 +17,7 @@ import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.model.TxnSplit;
 import org.nonprofitbookkeeping.model.TxnSupplementalLine;
+import org.nonprofitbookkeeping.model.SupplementalItemEffect;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.math.BigDecimal;
@@ -153,8 +155,8 @@ public class TransactionEntryService
         txn.setPortableId(portableId);
         applyHeader(em, company, txn, command);
         em.persist(txn);
-        persistLines(em, company, txn, command.lines());
-        persistSupplementalLines(em, txn, command.supplementalLines());
+        List<TxnSplit> persistedSplits = persistLines(em, company, txn, command.lines());
+        persistSupplementalLines(em, txn, command.supplementalLines(), persistedSplits);
         em.persist(audit(
                 company,
                 actor == null || actor.isBlank() ? "system" : actor.trim(),
@@ -204,8 +206,8 @@ public class TransactionEntryService
                 em.createQuery("delete from TxnSplit s where s.txn = :txn")
                         .setParameter("txn", txn)
                         .executeUpdate();
-                persistLines(em, company, txn, command.lines());
-                persistSupplementalLines(em, txn, command.supplementalLines());
+                List<TxnSplit> persistedSplits = persistLines(em, company, txn, command.lines());
+                persistSupplementalLines(em, txn, command.supplementalLines(), persistedSplits);
                 txn.touchUpdatedAt();
                 em.persist(audit(company, auditActor, "TRANSACTION_UPDATED", txn, before, snapshot(txn), null));
                 em.getTransaction().commit();
@@ -297,8 +299,8 @@ public class TransactionEntryService
                 }
                 applyHeader(em, company, txn, command);
                 em.persist(txn);
-                persistLines(em, company, txn, command.lines());
-                persistSupplementalLines(em, txn, command.supplementalLines());
+                List<TxnSplit> persistedSplits = persistLines(em, company, txn, command.lines());
+                persistSupplementalLines(em, txn, command.supplementalLines(), persistedSplits);
                 em.persist(audit(company, auditActor, "TRANSACTION_ENTERED", txn, null, snapshot(txn), null));
                 em.getTransaction().commit();
                 return load(txn.getId());
@@ -339,6 +341,31 @@ public class TransactionEntryService
             if (command.amount() == null || command.amount().signum() < 0)
             {
                 throw new PostingException(label + " requires a non-negative amount.");
+            }
+            if (command.hasLifecycleLink())
+            {
+                if (command.itemId() == null || command.itemEffect() == null
+                        || command.transactionLineIndex() == null)
+                {
+                    throw new PostingException(label
+                            + " requires item identity, effect, and ledger line together.");
+                }
+                try
+                {
+                    SupplementalItemEffect.valueOf(command.itemEffect());
+                }
+                catch (IllegalArgumentException ex)
+                {
+                    throw new PostingException(label + " has an unsupported item effect.");
+                }
+                if (command.transactionLineIndex() < 0)
+                {
+                    throw new PostingException(label + " requires a non-negative ledger line index.");
+                }
+                if (command.amount().signum() <= 0)
+                {
+                    throw new PostingException(label + " lifecycle allocation must be greater than zero.");
+                }
             }
             if (command.lineOrder() != null && command.lineOrder() < 0)
             {
@@ -408,8 +435,9 @@ public class TransactionEntryService
         txn.setBankAccount(bankAccount);
     }
 
-    private void persistLines(EntityManager em, Company company, Txn txn, List<TransactionLineCommand> lines)
+    private List<TxnSplit> persistLines(EntityManager em, Company company, Txn txn, List<TransactionLineCommand> lines)
     {
+        List<TxnSplit> persisted = new ArrayList<>();
         for (TransactionLineCommand command : lines)
         {
             Account account = required(em, Account.class, command.accountId(), "Account");
@@ -433,11 +461,14 @@ public class TransactionEntryService
             split.setNotes(command.notes());
             split.setAmountSigned(toSignedAmount(account, command));
             em.persist(split);
+            persisted.add(split);
         }
+        return persisted;
     }
 
-    private void persistSupplementalLines(EntityManager em, Txn txn, List<TransactionSupplementalLineCommand> lines)
+    private void persistSupplementalLines(EntityManager em, Txn txn, List<TransactionSupplementalLineCommand> lines, List<TxnSplit> persistedSplits)
     {
+        Map<Integer, BigDecimal> allocatedBySplit = new LinkedHashMap<>();
         int order = 0;
         for (TransactionSupplementalLineCommand command : lines)
         {
@@ -455,7 +486,103 @@ public class TransactionEntryService
             line.setStartDate(command.startDate());
             line.setEndDate(command.endDate());
             line.setNotes(blankToNull(command.notes()));
+            if (command.hasLifecycleLink())
+            {
+                int splitIndex = command.transactionLineIndex();
+                if (splitIndex >= persistedSplits.size())
+                {
+                    throw new PostingException("Supplemental detail references ledger line "
+                            + (splitIndex + 1) + " but the transaction has only "
+                            + persistedSplits.size() + " ledger lines.");
+                }
+                TxnSplit split = persistedSplits.get(splitIndex);
+                SupplementalItemEffect effect = SupplementalItemEffect.valueOf(command.itemEffect());
+                requireCompatibleSupplementalSplit(command.kind(), effect, split);
+                requireItemIdentityConsistency(em, txn, command.itemId(), command.kind(), effect);
+                BigDecimal allocated = allocatedBySplit.getOrDefault(splitIndex, BigDecimal.ZERO)
+                        .add(command.amount());
+                if (allocated.compareTo(split.getAmountSigned().abs()) > 0)
+                {
+                    throw new PostingException("Supplemental allocations for ledger line "
+                            + (splitIndex + 1) + " exceed its accounting amount.");
+                }
+                allocatedBySplit.put(splitIndex, allocated);
+                line.setItemId(command.itemId());
+                line.setTxnSplit(split);
+                line.setItemEffect(effect);
+            }
             em.persist(line);
+        }
+    }
+
+    private static void requireItemIdentityConsistency(
+            EntityManager em, Txn txn, UUID itemId, String kind, SupplementalItemEffect effect)
+    {
+        long differentKind = em.createQuery("""
+                select count(l) from TxnSupplementalLine l
+                where l.itemId = :itemId
+                  and l.txn.company = :company
+                  and l.kind <> :kind
+                """, Long.class)
+                .setParameter("itemId", itemId)
+                .setParameter("company", txn.getCompany())
+                .setParameter("kind", kind)
+                .getSingleResult();
+        if (differentKind > 0)
+        {
+            throw new PostingException("Supplemental item identity is already used by a different kind.");
+        }
+        if (effect == SupplementalItemEffect.DECREASE)
+        {
+            long increases = em.createQuery("""
+                    select count(l) from TxnSupplementalLine l
+                    where l.itemId = :itemId
+                      and l.txn.company = :company
+                      and l.kind = :kind
+                      and l.itemEffect = :effect
+                      and l.txn.status = 'ENTERED'
+                      and l.txn.txnDate <= :txnDate
+                    """, Long.class)
+                    .setParameter("itemId", itemId)
+                    .setParameter("company", txn.getCompany())
+                    .setParameter("kind", kind)
+                    .setParameter("effect", SupplementalItemEffect.INCREASE)
+                    .setParameter("txnDate", txn.getTxnDate())
+                    .getSingleResult();
+            if (increases == 0)
+            {
+                throw new PostingException("A DECREASE supplemental allocation must reference an existing item increase.");
+            }
+        }
+    }
+
+    private static void requireCompatibleSupplementalSplit(
+            String kind, SupplementalItemEffect effect, TxnSplit split)
+    {
+        AccountSubtype expected = switch (kind)
+        {
+            case "RECEIVABLE" -> AccountSubtype.RECEIVABLE;
+            case "PAYABLE" -> AccountSubtype.PAYABLE;
+            case "PREPAID_EXPENSE" -> AccountSubtype.PREPAID;
+            case "DEFERRED_REVENUE" -> AccountSubtype.DEFERRED_REVENUE;
+            case "OTHER_ASSET" -> AccountSubtype.OTHER_ASSET;
+            case "OTHER_LIABILITY" -> AccountSubtype.OTHER_LIABILITY;
+            default -> throw new PostingException("Unsupported supplemental kind: " + kind);
+        };
+        Account account = split.getAccount();
+        if (account.getSubtype() != expected)
+        {
+            throw new PostingException("Supplemental kind " + kind
+                    + " must link to an account with subtype " + expected + ".");
+        }
+        int sign = split.getAmountSigned().signum();
+        if (effect == SupplementalItemEffect.INCREASE && sign <= 0)
+        {
+            throw new PostingException("An INCREASE supplemental allocation must link to an increasing ledger movement.");
+        }
+        if (effect == SupplementalItemEffect.DECREASE && sign >= 0)
+        {
+            throw new PostingException("A DECREASE supplemental allocation must link to a reducing ledger movement.");
         }
     }
 
@@ -523,15 +650,30 @@ public class TransactionEntryService
                     split.isBankCleared(), split.getBankClearedOn(), reconciliationSessions.get(split.getId())));
         }
         List<TxnSupplementalLine> supplementalEntities = em.createQuery(
-                        "from TxnSupplementalLine l where l.txn = :txn order by l.lineOrder, l.id", TxnSupplementalLine.class)
+                        "select l from TxnSupplementalLine l left join fetch l.txnSplit where l.txn = :txn order by l.lineOrder, l.id", TxnSupplementalLine.class)
                 .setParameter("txn", txn)
                 .getResultList();
         List<TransactionSupplementalLineView> supplementalLines = new ArrayList<>();
         for (TxnSupplementalLine line : supplementalEntities)
         {
+            Integer splitIndex = null;
+            if (line.getTxnSplit() != null)
+            {
+                for (int i = 0; i < splits.size(); i++)
+                {
+                    if (Objects.equals(splits.get(i).getId(), line.getTxnSplit().getId()))
+                    {
+                        splitIndex = i;
+                        break;
+                    }
+                }
+            }
             supplementalLines.add(new TransactionSupplementalLineView(
                     line.getId(), line.getKind(), line.getEntryRef(), line.getCounterparty(), line.getDescription(),
-                    line.getReference(), line.getAmount(), line.getDueDate(), line.getStartDate(), line.getEndDate(), line.getNotes()));
+                    line.getReference(), line.getAmount(), line.getDueDate(), line.getStartDate(), line.getEndDate(),
+                    line.getNotes(), line.getItemId(),
+                    line.getItemEffect() == null ? null : line.getItemEffect().name(),
+                    line.getTxnSplit() == null ? null : line.getTxnSplit().getId(), splitIndex));
         }
         Counterparty payee = txn.getPayee();
         Account bankAccount = txn.getBankAccount();

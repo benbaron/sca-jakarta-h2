@@ -107,7 +107,25 @@ public enum ReportDefinition
             DateMode.RANGE,
             true,
             true,
-            DomainFilterMode.INVENTORY);
+            DomainFilterMode.INVENTORY),
+    ACCOUNTS_RECEIVABLE(
+            "accounts-receivable", "Accounts Receivable", ReportSource.SUPPLEMENTAL,
+            "RECEIVABLE", DateMode.AS_OF, false, true),
+    ACCOUNTS_PAYABLE(
+            "accounts-payable", "Accounts Payable", ReportSource.SUPPLEMENTAL,
+            "PAYABLE", DateMode.AS_OF, false, true),
+    PREPAID_EXPENSES(
+            "prepaid-expenses", "Prepaid Expenses", ReportSource.SUPPLEMENTAL,
+            "PREPAID_EXPENSE", DateMode.AS_OF, false, true),
+    DEFERRED_REVENUE(
+            "deferred-revenue", "Deferred Revenue", ReportSource.SUPPLEMENTAL,
+            "DEFERRED_REVENUE", DateMode.AS_OF, false, true),
+    OTHER_ASSETS(
+            "other-assets", "Other Assets", ReportSource.SUPPLEMENTAL,
+            "OTHER_ASSET", DateMode.AS_OF, false, true),
+    OTHER_LIABILITIES(
+            "other-liabilities", "Other Liabilities", ReportSource.SUPPLEMENTAL,
+            "OTHER_LIABILITY", DateMode.AS_OF, false, true);
 
     private final String id;
     private final String displayName;
@@ -199,7 +217,8 @@ public enum ReportDefinition
     public enum ReportSource
     {
         CORE,
-        SEMANTIC
+        SEMANTIC,
+        SUPPLEMENTAL
     }
 
     public enum DateMode

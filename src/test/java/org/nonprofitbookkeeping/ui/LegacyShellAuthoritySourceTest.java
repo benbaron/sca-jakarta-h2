@@ -58,10 +58,9 @@ class LegacyShellAuthoritySourceTest
 
         assertTrue(registry.contains("ReconciliationService"));
         assertTrue(registry.contains("PeriodCloseService"));
-        assertTrue(registry.contains("ScheduleEligibilityService"));
+        assertFalse(registry.contains("ScheduleEligibilityService"));
         assertFalse(panelFactory.contains("case SCHEDULES ->"));
 
-        assertTrue(composition.contains("ScheduleEligibilityService"));
         assertTrue(composition.contains("ReconciliationService"));
         assertTrue(composition.contains("PeriodCloseService"));
         assertTrue(composition.contains("no historical H2 run tables are removed"));

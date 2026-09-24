@@ -101,6 +101,7 @@ public class ReportLibraryPanel implements AppPanel
                     companyFormat,
                     UiServiceRegistry.semanticAccountingReports(),
                     assetInventoryReportService,
+                    UiServiceRegistry.supplementalOpenItems(),
                     reportPresentationMetadata);
     private final PauseTransition dividerSaveDelay = new PauseTransition(Duration.millis(350));
     private final PauseTransition previewDividerSaveDelay = new PauseTransition(Duration.millis(350));

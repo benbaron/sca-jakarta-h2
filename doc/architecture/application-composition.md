@@ -33,7 +33,8 @@ P17-C11 classifies, but does not destructively migrate, the remaining pre-worksp
 
 - `ReconciliationService` plus `ReconciliationRunRepository` / `JdbcReconciliationRunRepository` remain required compatibility authorities. Current reconciliation comparison and SCLX import paths still consume them, while the routed reconciliation workspace uses `BankReconciliationWorkspaceService`.
 - `PeriodCloseService` plus `PeriodCloseRunRepository` / `JdbcPeriodCloseRunRepository` remain required compatibility authorities. SCLX snapshot/history compatibility still consumes that service, while the routed Period Close workspace uses `PeriodCloseRangeService` for current range policy.
-- `ScheduleEligibilityService` has no routed Schedules workspace consumer after P07 elimination. It remains a registry-exposed compatibility query over retained schedule metadata; it is not a production navigation or accounting authority. Removing that public/schema-facing compatibility surface is not required for shell retirement and would require a separate deliberate compatibility/persistence decision.
+- P22-S5 removes the unconsumed `ScheduleEligibilityService` runtime surface and the obsolete `AppPanelId.SCHEDULES` compatibility identifier after verifying that no production route or service consumer remains. Historical schedule tables/entities and account subtype metadata remain nondestructively retained; no Schedules workspace is restored.
+- `SupplementalOpenItemQueryService` is the single read authority for receivable/payable/prepaid/deferred/other open-item balances. Report Library and Dashboard consume that same projection; the service derives balances from lifecycle-linked `txn_supplemental_line` rows and canonical `TxnSplit` accounting facts.
 
 Accordingly, no historical H2 run tables are removed and no applied migration is edited or dropped in P17-C11.
 
