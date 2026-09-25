@@ -28,7 +28,7 @@ public final class PreferenceConsumerMatrix
             active("themePreference", "user machine", "ProductionWorkspaceWindow theme classes", "Applies immediately."),
             active("useNativeWindowDecorations", "user machine", "MainApp StageStyle", "Applies after restart."),
             active("rememberWindowState", "user machine", "MainApp window geometry and shell dividers", "Applies after restart."),
-            deferred("defaultPrivilege", "compatibility", "Authentication and effective authorization are not implemented."),
+            deferred("defaultPrivilege", "compatibility", "Authentication and effective authorization use the signed-in account and company role assignments; this legacy stored privilege label is not used."),
             active("correctionMethod", "desktop session", "Journal correction/delete action", "Applies to subsequent Journal actions."),
             active("closedPeriodPolicy", "desktop session", "PeriodCloseRunsPanel reopening defaults", "Applies when Period Close opens or refreshes."),
             active("requireReopenReason", "desktop session", "PeriodCloseRunsPanel reopening defaults", "Applies when Period Close opens or refreshes."),
