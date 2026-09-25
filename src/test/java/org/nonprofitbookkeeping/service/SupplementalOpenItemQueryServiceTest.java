@@ -82,8 +82,8 @@ class SupplementalOpenItemQueryServiceTest
             entry.enter(new TransactionCommand(
                     LocalDate.of(2026, 4, 1), null, "legacy supplemental", null,
                     List.of(
-                            line(7L, new BigDecimal("5.00"), BigDecimal.ZERO),
-                            line(3L, BigDecimal.ZERO, new BigDecimal("5.00"))),
+                            line(1007L, new BigDecimal("5.00"), BigDecimal.ZERO),
+                            line(1003L, BigDecimal.ZERO, new BigDecimal("5.00"))),
                     List.of(new TransactionSupplementalLineCommand(
                             "RECEIVABLE", "LEGACY-1", "Legacy", "Legacy detail", null,
                             new BigDecimal("5.00"), null, null, null, null))));
@@ -148,8 +148,8 @@ class SupplementalOpenItemQueryServiceTest
                 || kind.accountSubtype().name().contains("LIABILITY")
                 || kind == SupplementalOpenItemQueryService.Kind.DEFERRED_REVENUE;
         List<TransactionLineCommand> lines = liability
-                ? List.of(line(6L, amount, BigDecimal.ZERO), line(account, BigDecimal.ZERO, amount))
-                : List.of(line(account, amount, BigDecimal.ZERO), line(3L, BigDecimal.ZERO, amount));
+                ? List.of(line(1006L, amount, BigDecimal.ZERO), line(account, BigDecimal.ZERO, amount))
+                : List.of(line(account, amount, BigDecimal.ZERO), line(1003L, BigDecimal.ZERO, amount));
         int supplementalLine = liability ? 1 : 0;
         return entry.enter(new TransactionCommand(
                 date, null, "open " + kind.name(), null, lines,
@@ -171,8 +171,8 @@ class SupplementalOpenItemQueryServiceTest
                 || kind.accountSubtype().name().contains("LIABILITY")
                 || kind == SupplementalOpenItemQueryService.Kind.DEFERRED_REVENUE;
         List<TransactionLineCommand> lines = liability
-                ? List.of(line(account, amount, BigDecimal.ZERO), line(7L, BigDecimal.ZERO, amount))
-                : List.of(line(7L, amount, BigDecimal.ZERO), line(account, BigDecimal.ZERO, amount));
+                ? List.of(line(account, amount, BigDecimal.ZERO), line(1007L, BigDecimal.ZERO, amount))
+                : List.of(line(1007L, amount, BigDecimal.ZERO), line(account, BigDecimal.ZERO, amount));
         int supplementalLine = liability ? 0 : 1;
         return entry.enter(new TransactionCommand(
                 date, null, "settle " + kind.name(), null, lines,
@@ -184,19 +184,19 @@ class SupplementalOpenItemQueryServiceTest
 
     private static TransactionLineCommand line(long accountId, BigDecimal debit, BigDecimal credit)
     {
-        return new TransactionLineCommand(accountId, 1L, null, null, null, debit, credit, false, null);
+        return new TransactionLineCommand(accountId, 1001L, null, null, null, debit, credit, false, null);
     }
 
     private static long accountId(SupplementalOpenItemQueryService.Kind kind)
     {
         return switch (kind)
         {
-            case RECEIVABLE -> 1L;
-            case PAYABLE -> 2L;
-            case PREPAID_EXPENSE -> 4L;
-            case DEFERRED_REVENUE -> 5L;
-            case OTHER_ASSET -> 8L;
-            case OTHER_LIABILITY -> 9L;
+            case RECEIVABLE -> 1001L;
+            case PAYABLE -> 1002L;
+            case PREPAID_EXPENSE -> 1004L;
+            case DEFERRED_REVENUE -> 1005L;
+            case OTHER_ASSET -> 1008L;
+            case OTHER_LIABILITY -> 1009L;
         };
     }
 
@@ -210,16 +210,16 @@ class SupplementalOpenItemQueryServiceTest
             em.createNativeQuery("""
                     insert into txn (id, company_id, txn_date, memo, status)
                     values
-                    (9001,1,DATE '2026-04-05','unmatched reduction','ENTERED'),
-                    (9002,1,DATE '2026-04-06','inconsistent item','ENTERED')
+                    (9001,100,DATE '2026-04-05','unmatched reduction','ENTERED'),
+                    (9002,100,DATE '2026-04-06','inconsistent item','ENTERED')
                     """).executeUpdate();
             em.createNativeQuery("""
                     insert into txn_split (id, txn_id, account_id, fund_id, amount_signed)
                     values
-                    (9001,9001,7,1,10.0000),
-                    (9002,9001,1,1,-10.0000),
-                    (9003,9002,7,1,10.0000),
-                    (9004,9002,3,1,-10.0000)
+                    (9001,9001,1007,1001,10.0000),
+                    (9002,9001,1001,1001,-10.0000),
+                    (9003,9002,1007,1001,10.0000),
+                    (9004,9002,1003,1001,-10.0000)
                     """).executeUpdate();
             em.createNativeQuery("""
                     insert into txn_supplemental_line
@@ -240,23 +240,23 @@ class SupplementalOpenItemQueryServiceTest
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
-            em.createNativeQuery("insert into company (id, code, display_name) values (1, 'TEST', 'Test'), (2, 'OTHER', 'Other')").executeUpdate();
-            em.createNativeQuery("insert into chart_of_accounts (id, company_id, name, version, status) values (1,1,'Test','1','ACTIVE'),(2,2,'Other','1','ACTIVE')").executeUpdate();
-            em.createNativeQuery("update company set active_chart_of_accounts_id = id where id in (1,2)").executeUpdate();
+            em.createNativeQuery("insert into company (id, code, display_name) values (100, 'TEST', 'Test'), (200, 'OTHER', 'Other')").executeUpdate();
+            em.createNativeQuery("insert into chart_of_accounts (id, company_id, name, version, status) values (100,100,'Test','1','ACTIVE'),(200,200,'Other','1','ACTIVE')").executeUpdate();
+            em.createNativeQuery("update company set active_chart_of_accounts_id = id where id in (100,200)").executeUpdate();
             em.createNativeQuery("""
                     insert into account (id, chart_id, code, name, account_type, subtype, normal_balance)
                     values
-                    (1,1,'1100','Receivable','ASSET','RECEIVABLE','DEBIT'),
-                    (2,1,'2100','Payable','LIABILITY','PAYABLE','CREDIT'),
-                    (3,1,'4000','Income','INCOME',null,'CREDIT'),
-                    (4,1,'1200','Prepaid','ASSET','PREPAID','DEBIT'),
-                    (5,1,'2200','Deferred','LIABILITY','DEFERRED_REVENUE','CREDIT'),
-                    (6,1,'5000','Expense','EXPENSE',null,'DEBIT'),
-                    (7,1,'1000','Cash','ASSET','CASH','DEBIT'),
-                    (8,1,'1300','Other Asset','ASSET','OTHER_ASSET','DEBIT'),
-                    (9,1,'2300','Other Liability','LIABILITY','OTHER_LIABILITY','CREDIT')
+                    (1001,100,'1100','Receivable','ASSET','RECEIVABLE','DEBIT'),
+                    (1002,100,'2100','Payable','LIABILITY','PAYABLE','CREDIT'),
+                    (1003,100,'4000','Income','INCOME',null,'CREDIT'),
+                    (1004,100,'1200','Prepaid','ASSET','PREPAID','DEBIT'),
+                    (1005,100,'2200','Deferred','LIABILITY','DEFERRED_REVENUE','CREDIT'),
+                    (1006,100,'5000','Expense','EXPENSE',null,'DEBIT'),
+                    (1007,100,'1000','Cash','ASSET','CASH','DEBIT'),
+                    (1008,100,'1300','Other Asset','ASSET','OTHER_ASSET','DEBIT'),
+                    (1009,100,'2300','Other Liability','LIABILITY','OTHER_LIABILITY','CREDIT')
                     """).executeUpdate();
-            em.createNativeQuery("insert into fund (id, company_id, code, name, fund_type) values (1,1,'OPERATING','Operating','UNRESTRICTED')").executeUpdate();
+            em.createNativeQuery("insert into fund (id, company_id, code, name, fund_type) values (1001,100,'OPERATING','Operating','UNRESTRICTED')").executeUpdate();
             em.getTransaction().commit();
         }
     }

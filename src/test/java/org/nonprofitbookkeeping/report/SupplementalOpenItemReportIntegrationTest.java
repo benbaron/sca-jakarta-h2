@@ -72,34 +72,34 @@ class SupplementalOpenItemReportIntegrationTest
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
-            em.createNativeQuery("insert into company (id, code, display_name) values (1, 'TEST', 'Test')")
+            em.createNativeQuery("insert into company (id, code, display_name) values (100, 'TEST', 'Test')")
                     .executeUpdate();
-            em.createNativeQuery("insert into chart_of_accounts (id, company_id, name, version, status) values (1,1,'Test','1','ACTIVE')")
+            em.createNativeQuery("insert into chart_of_accounts (id, company_id, name, version, status) values (100,100,'Test','1','ACTIVE')")
                     .executeUpdate();
-            em.createNativeQuery("update company set active_chart_of_accounts_id = 1 where id = 1")
+            em.createNativeQuery("update company set active_chart_of_accounts_id = 100 where id = 100")
                     .executeUpdate();
             em.createNativeQuery("""
                     insert into account (id, chart_id, code, name, account_type, subtype, normal_balance)
                     values
-                    (1,1,'1100','Receivable','ASSET','RECEIVABLE','DEBIT'),
-                    (2,1,'4000','Income','INCOME',null,'CREDIT')
+                    (101,100,'1100','Receivable','ASSET','RECEIVABLE','DEBIT'),
+                    (102,100,'4000','Income','INCOME',null,'CREDIT')
                     """).executeUpdate();
-            em.createNativeQuery("insert into fund (id, company_id, code, name, fund_type) values (1,1,'OPERATING','Operating','UNRESTRICTED')")
+            em.createNativeQuery("insert into fund (id, company_id, code, name, fund_type) values (1001,100,'OPERATING','Operating','UNRESTRICTED')")
                     .executeUpdate();
-            em.createNativeQuery("insert into txn (id, company_id, txn_date, memo, status) values (1,1,DATE '2026-01-10','invoice','ENTERED')")
+            em.createNativeQuery("insert into txn (id, company_id, txn_date, memo, status) values (2001,100,DATE '2026-01-10','invoice','ENTERED')")
                     .executeUpdate();
             em.createNativeQuery("""
                     insert into txn_split (id, txn_id, account_id, fund_id, amount_signed)
-                    values (1,1,1,1,100.0000), (2,1,2,1,-100.0000)
+                    values (3001,2001,101,1001,100.0000), (3002,2001,102,1001,-100.0000)
                     """).executeUpdate();
             em.createNativeQuery("""
                     insert into txn_supplemental_line
                         (id, txn_id, line_order, kind, entry_ref, description, amount,
                          item_id, txn_split_id, item_effect)
-                    values (1,1,0,'RECEIVABLE','INV-1','Invoice',100.0000,?,?, 'INCREASE')
+                    values (4001,2001,0,'RECEIVABLE','INV-1','Invoice',100.0000,?,?, 'INCREASE')
                     """)
                     .setParameter(1, itemId)
-                    .setParameter(2, 1L)
+                    .setParameter(2, 3001L)
                     .executeUpdate();
             em.getTransaction().commit();
         }
