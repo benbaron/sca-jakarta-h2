@@ -21,7 +21,7 @@ Use a disposable or backed-up database. Complete this checklist on the exact pul
 ## Company display and truthful deferred state
 
 11. Change currency symbol, money print format, and date format for one company. Save, switch away and back, and confirm production money/date views restore the company-specific formats without changing another company.
-12. Confirm Settings does not offer an editable **Default privilege** or **Default reopening scope**. It must explain that authentication/authorization is not implemented and that calculated/custom close ranges have no session reopen-scope mode.
+12. Confirm Settings does not offer an editable **Default privilege** or **Default reopening scope**. This historical checklist predates P20; current Settings must instead explain that authentication/authorization uses the signed-in account and company role assignments, while the legacy stored privilege label is not used. Calculated/custom close ranges still have no session reopen-scope mode.
 13. Confirm Audit History, Diagnostics, and Preferences are not enabled/disabled based on a stored default-privilege label; the application must not imply that this preference authenticates the operator.
 
 Record the exact tested commit, operating system, Java version, and pass/fail notes in the PR before merge.
