@@ -1,12 +1,12 @@
 ---
-plan_version: 297
+plan_version: 298
 active_phase: P22
-active_slice: P22-S5
-active_status: VERIFYING
-active_branch: codex/P22-S5-supplemental-open-items
-active_pull_request: 347
-active_head: 8ed1a340b8d748406f61f0da17a609c39278c15a
-next_action: "Run exact-final-head GitHub Actions after this P22-S5 PLAN verification commit, then owner-test draft PR #347 using doc/P22-S5-supplemental-open-items-user-testing.md; do not merge without separate explicit owner authorization."
+active_slice: P22-S6
+active_status: IN_PROGRESS
+active_branch: codex/P22-S6-stale-production-copy
+active_pull_request: null
+active_head: 027fee3c4e04cb1dd6d78c2884cc6d6ca6090a1b
+next_action: "Validate P22-S6 stale production-copy cleanup, open a draft PR to main, then owner-test the corrected Settings compatibility explanation; do not merge without explicit owner authorization."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -34,7 +34,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P19 | Deferred Company Administration extensions | DONE through P19-S3 / PR #309 |
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
-| P22 | Post-P21 correctness and authority corrections | IN PROGRESS — P22-S5 supplemental/open-item authority and reporting |
+| P22 | Post-P21 correctness and authority corrections | IN PROGRESS — P22-S6 stale production copy and compatibility wording cleanup |
 
 ## 3. Established product decisions
 
@@ -567,9 +567,9 @@ Validation state:
 
 ### P22-S5 — Supplemental/open-item reporting and eliminated-Schedules cleanup
 
-Status: IN_PROGRESS.
+Status: DONE.
 
-Branch: `codex/P22-S5-supplemental-open-items`.
+PR #347 final head `86b88e09c733d51fbd5841af61777d6d9c3de1a2` merged to `main` at `39da667a7e2499dfb6dcd8122341cef4932f1dd3` after owner acceptance.
 
 Base: merged `main` `471e3b0c269d079d730a170446c6a6db01e523d8`.
 
@@ -604,16 +604,28 @@ Validation state:
 
 - baseline `main` merge `471e3b0c269d079d730a170446c6a6db01e523d8` passed post-merge Maven PR Tests run `35548359913`, job `106178350043`;
 - exact behavior head `8ed1a340b8d748406f61f0da17a609c39278c15a` passed Maven PR Tests run `36082153566`, job `107906242503`: clean headless verification, full tests, and production JavaFX route compliance all succeeded;
-- draft PR #347 is open against `main`;
+- exact final PR head `86b88e09c733d51fbd5841af61777d6d9c3de1a2` passed Maven PR Tests run `36090114072`, job `107930549770`;
+- post-merge `main` run `36091432198`, job `107934507846`, passed at merge commit `39da667a7e2499dfb6dcd8122341cef4932f1dd3`: clean headless verification, full tests, and production JavaFX route compliance all succeeded;
 - local Maven is unavailable in the current execution environment, so no local Maven result is claimed;
-- this PLAN-only verification successor requires exact-final-head GitHub Actions, followed by owner desktop verification before merge.
+- owner acceptance and merge are complete.
 
 ### P22-S6 — Stale production copy and compatibility wording cleanup
 
-Status: BLOCKED by P22-S5 completion.
+Status: IN_PROGRESS.
 
-Correct production-facing Settings/help wording that still claims completed P20 authentication/authorization is unimplemented and perform a focused scan for other compatibility/future wording that is now factually false.
+Branch: `codex/P22-S6-stale-production-copy`.
+
+Base: merged `main` `39da667a7e2499dfb6dcd8122341cef4932f1dd3`.
+
+Scope:
+
+- correct the production Settings explanation for legacy `defaultPrivilege` so it reflects completed P20 authentication and company-scoped authorization;
+- keep `defaultPrivilege` disabled because the stored compatibility value is not authentication or effective authorization;
+- reconcile stale historical owner-testing wording that otherwise instructs testers to expect the false pre-P20 claim;
+- scan production JavaFX/help copy for other obsolete "not implemented", future, or compatibility statements and change only claims that are now factually false;
+- add regression coverage for the corrected Settings message;
+- no persistence, migration, accounting, authentication, authorization-policy, routing, or preference-consumer behavior change.
 
 ## 9. Advancement rule
 
-P21 and P22-S1 through P22-S4 are complete. P22-S5 is the only active corrective slice. Do not begin P22-S6 or later work until P22-S5 is merged and owner-accepted. Candidate donor workflows such as donor/receipt management and monthly-close assistance remain uncommitted future candidates and require a separate deliberate PLAN amendment.
+P21 and P22-S1 through P22-S5 are complete. P22-S6 is the only active corrective slice. Candidate donor workflows such as donor/receipt management and monthly-close assistance remain uncommitted future candidates and require a separate deliberate PLAN amendment.
