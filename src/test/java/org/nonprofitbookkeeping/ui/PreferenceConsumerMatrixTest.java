@@ -54,6 +54,11 @@ class PreferenceConsumerMatrixTest
     {
         assertEquals(PreferenceConsumerMatrix.Status.DEFERRED,
                 PreferenceConsumerMatrix.entry("defaultPrivilege").status());
+        PreferenceConsumerMatrix.Entry defaultPrivilege = PreferenceConsumerMatrix.entry("defaultPrivilege");
+        assertEquals(PreferenceConsumerMatrix.Status.DEFERRED, defaultPrivilege.status());
+        assertTrue(defaultPrivilege.userMessage().contains("signed-in account"));
+        assertTrue(defaultPrivilege.userMessage().contains("company role assignments"));
+        assertFalse(defaultPrivilege.userMessage().contains("not implemented"));
         assertEquals(PreferenceConsumerMatrix.Status.DEFERRED,
                 PreferenceConsumerMatrix.entry("defaultReopenScope").status());
     }
