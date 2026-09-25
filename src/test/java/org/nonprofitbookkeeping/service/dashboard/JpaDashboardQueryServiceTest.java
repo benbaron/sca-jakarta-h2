@@ -114,6 +114,58 @@ public class JpaDashboardQueryServiceTest
     }
 
     @Test
+    public void openItemsUseCanonicalSupplementalProjectionNotLegacySnapshot(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("dashboard-open-items")))
+        {
+            seedTwoCompanies(jpa);
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                em.createNativeQuery("""
+                        INSERT INTO account
+                            (id, chart_id, code, name, account_type, subtype, normal_balance)
+                        VALUES (1004, 100, '1100', 'Accounts Receivable', 'ASSET', 'RECEIVABLE', 'DEBIT')
+                        """).executeUpdate();
+                em.createNativeQuery("""
+                        INSERT INTO txn (id, company_id, txn_date, memo, status)
+                        VALUES
+                            (1010, 100, DATE '2026-04-01', 'Invoice', 'ENTERED'),
+                            (1011, 100, DATE '2026-05-01', 'Partial payment', 'ENTERED')
+                        """).executeUpdate();
+                em.createNativeQuery("""
+                        INSERT INTO txn_split
+                            (id, txn_id, account_id, fund_id, amount_signed, bank_cleared)
+                        VALUES
+                            (1010, 1010, 1004, 1001, 100.0000, FALSE),
+                            (1011, 1010, 1002, 1001, -100.0000, FALSE),
+                            (1012, 1011, 1001, 1001, 30.0000, FALSE),
+                            (1013, 1011, 1004, 1001, -30.0000, FALSE)
+                        """).executeUpdate();
+                em.createNativeQuery("""
+                        INSERT INTO txn_supplemental_line
+                            (txn_id, line_order, kind, entry_ref, description, amount, item_id, txn_split_id, item_effect)
+                        VALUES
+                            (1010, 0, 'RECEIVABLE', 'INV-1', 'Invoice', 100.0000,
+                             UUID '11111111-1111-1111-1111-111111111111', 1010, 'INCREASE'),
+                            (1011, 0, 'RECEIVABLE', 'INV-1', 'Invoice', 30.0000,
+                             UUID '11111111-1111-1111-1111-111111111111', 1013, 'DECREASE')
+                        """).executeUpdate();
+                em.getTransaction().commit();
+            }
+
+            DashboardSnapshot snapshot = new JpaDashboardQueryService(jpa)
+                    .load("BARONY-RED", LocalDate.of(2026, 6, 1), 10);
+
+            assertTrue(snapshot.openItems().available());
+            assertEquals(1L, snapshot.openItems().countFor("RECEIVABLE"));
+            assertEquals(new BigDecimal("70.0000"), snapshot.openItems().amountFor("RECEIVABLE"));
+            assertEquals(1L, snapshot.openItems().totalOpenItems());
+            assertEquals(new BigDecimal("70.0000"), snapshot.openItems().totalOpenAmount());
+        }
+    }
+
+    @Test
     public void reversedTransactionsRemainVisibleButDoNotAffectDerivedIndicators(@TempDir Path tempDir)
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("dashboard-reversed")))

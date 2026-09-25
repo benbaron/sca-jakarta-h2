@@ -59,10 +59,12 @@ public final class DashboardHomePanel implements AppPanel
     private final Label yearToDateSurplus = moneyLabel();
     private final Label surplusBudget = new Label("Budget not configured");
     private final Label surplusComparison = new Label();
-    private final Label outstandingChecks = valueLabel();
-    private final Label depositsInTransit = valueLabel();
     private final Label receivables = valueLabel();
     private final Label payables = valueLabel();
+    private final Label prepaidExpenses = valueLabel();
+    private final Label deferredRevenue = valueLabel();
+    private final Label otherAssets = valueLabel();
+    private final Label otherLiabilities = valueLabel();
     private final Label totalOpenItems = linkValueLabel();
     private final LineChart<Number, Number> cashTrend = createCashTrend();
     private final BarChart<String, Number> surplusBars = createSurplusBars();
@@ -196,21 +198,22 @@ public final class DashboardHomePanel implements AppPanel
         if (snapshot.openItems().available())
         {
             Map<String, Long> counts = snapshot.openItems().countsByKind();
-            long genericBankItems = counts.getOrDefault("OUTSTANDING_BANK_ITEM", 0L);
-            outstandingChecks.setText(Long.toString(
-                    counts.getOrDefault("OUTSTANDING_CHECK", genericBankItems)));
-            depositsInTransit.setText(Long.toString(
-                    counts.getOrDefault("DEPOSIT_IN_TRANSIT", 0L)));
             receivables.setText(Long.toString(counts.getOrDefault("RECEIVABLE", 0L)));
             payables.setText(Long.toString(counts.getOrDefault("PAYABLE", 0L)));
+            prepaidExpenses.setText(Long.toString(counts.getOrDefault("PREPAID_EXPENSE", 0L)));
+            deferredRevenue.setText(Long.toString(counts.getOrDefault("DEFERRED_REVENUE", 0L)));
+            otherAssets.setText(Long.toString(counts.getOrDefault("OTHER_ASSET", 0L)));
+            otherLiabilities.setText(Long.toString(counts.getOrDefault("OTHER_LIABILITY", 0L)));
             totalOpenItems.setText(Long.toString(snapshot.openItems().totalOpenItems()));
         }
         else
         {
-            outstandingChecks.setText("Not available");
-            depositsInTransit.setText("Not available");
             receivables.setText("Not available");
             payables.setText("Not available");
+            prepaidExpenses.setText("Not available");
+            deferredRevenue.setText("Not available");
+            otherAssets.setText("Not available");
+            otherLiabilities.setText("Not available");
             totalOpenItems.setText("Not available");
         }
 
@@ -324,10 +327,12 @@ public final class DashboardHomePanel implements AppPanel
         GridPane values = new GridPane();
         values.setHgap(16);
         values.setVgap(8);
-        addKeyValue(values, 0, "Outstanding Checks", outstandingChecks);
-        addKeyValue(values, 1, "Deposits in Transit", depositsInTransit);
-        addKeyValue(values, 2, "Receivables", receivables);
-        addKeyValue(values, 3, "Payables", payables);
+        addKeyValue(values, 0, "Receivables", receivables);
+        addKeyValue(values, 1, "Payables", payables);
+        addKeyValue(values, 2, "Prepaid Expenses", prepaidExpenses);
+        addKeyValue(values, 3, "Deferred Revenue", deferredRevenue);
+        addKeyValue(values, 4, "Other Assets", otherAssets);
+        addKeyValue(values, 5, "Other Liabilities", otherLiabilities);
         Region line = new Region();
         line.getStyleClass().add("dashboard-rule");
         VBox body = new VBox(

@@ -14,9 +14,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ReportRequestTest
 {
     @Test
-    void catalogHasOnlyRealCoreOrSemanticDefinitions()
+    void catalogHasOnlyRealAuthoritativeDefinitions()
     {
-        assertEquals(12, ReportDefinition.catalog().size());
+        assertEquals(18, ReportDefinition.catalog().size());
         assertTrue(ReportDefinition.catalog().stream()
                 .allMatch(definition -> definition.source() == ReportDefinition.ReportSource.CORE
                         || definition.templateId() != null));
@@ -25,6 +25,13 @@ class ReportRequestTest
         assertFalse(ReportDefinition.catalog().stream()
                 .anyMatch(definition -> "BalanceStmt".equals(definition.templateId())
                         || "IncomeStmt".equals(definition.templateId())));
+        assertEquals(6, ReportDefinition.catalog().stream()
+                .filter(definition -> definition.source() == ReportDefinition.ReportSource.SUPPLEMENTAL)
+                .count());
+        assertTrue(ReportDefinition.catalog().stream()
+                .filter(definition -> definition.source() == ReportDefinition.ReportSource.SUPPLEMENTAL)
+                .allMatch(definition -> definition.dateMode() == ReportDefinition.DateMode.AS_OF
+                        && definition.templateId() != null));
     }
 
     @Test

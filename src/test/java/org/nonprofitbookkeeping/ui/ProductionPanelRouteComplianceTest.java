@@ -57,10 +57,8 @@ class ProductionPanelRouteComplianceTest
                 EnumSet<AppPanelId> expectedRoutes = EnumSet.allOf(AppPanelId.class);
                 expectedRoutes.remove(AppPanelId.LEDGER_REGISTER);
                 expectedRoutes.remove(AppPanelId.TXN_EDITOR);
-                expectedRoutes.remove(AppPanelId.SCHEDULES);
                 assertEquals(expectedRoutes, canonicalRoutes,
                         "Production smoke must enumerate every canonical destination exactly once.");
-                assertFalse(routeInventory.supportedPanelIds().contains(AppPanelId.SCHEDULES));
                 for (AppPanelId panelId : canonicalRoutes)
                 {
                     window.openPanel(panelId);

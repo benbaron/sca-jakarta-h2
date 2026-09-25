@@ -33,7 +33,7 @@ P16-S6 aligns the default Report Library date request with fiscal authority. Whe
 
 ## Parameters
 
-- Trial Balance, Fixed Asset Register, and Inventory On Hand & Valuation use an as-of date.
+- Trial Balance, Fixed Asset Register, Inventory On Hand & Valuation, Accounts Receivable, Accounts Payable, Prepaid Expenses, Deferred Revenue, Other Assets, and Other Liabilities use an as-of date.
 - Balance Sheet uses a comparative range: the beginning column is the day before the selected start and
   the ending column is the selected end date. Income Statement uses the same selected range.
 - General Ledger Detail, Income Statement, Workbook Summary, Transactions List, Bank Account Activity, Fund Transfers, Fixed Asset Depreciation History & Schedule, and Inventory Movement History use a date range.
@@ -48,6 +48,14 @@ P16-S6 aligns the default Report Library date request with fiscal authority. Whe
 ## Fixed-asset and inventory predicates
 
 P16-S15 adds four specialized projections without introducing a reporting store. Their immutable request, semantic value table, preview, TEXT/CSV/PDF/XLSX export, and Journal drill-through context are shared.
+
+### Supplemental open-item reports
+
+P22-S5 adds six domain-named as-of reports: **Accounts Receivable**, **Accounts Payable**, **Prepaid Expenses**, **Deferred Revenue**, **Other Assets**, and **Other Liabilities**. They are not generic Schedules reports. All six use one `SupplementalOpenItemQueryService` and the same lifecycle projection consumed by Dashboard.
+
+Each row exposes logical Item ID, opening transaction/date, human entry reference, counterparty, description/reference, total increases, total reductions/recognition, current open balance, applicable due/start/end dates, derived status, notes, and any reconciliation diagnostic. `OPEN`, `CLOSED`, `OVER_APPLIED`, `UNMATCHED_REDUCTION`, `INCONSISTENT`, and `UNMATCHED_LEGACY` are derived presentation states rather than mutable persisted workflow statuses. Legacy/unmatched rows remain visible but do not become authoritative Dashboard balances.
+
+The report table keeps typed date/money values so JavaFX/PDF/XLSX formatting continues to use the active company's display contract. Text and CSV are generated from the same immutable `ReportRequest` and projection.
 
 ### Fixed Asset Register
 

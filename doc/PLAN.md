@@ -1,12 +1,12 @@
 ---
-plan_version: 295
+plan_version: 297
 active_phase: P22
-active_slice: P22-S4
+active_slice: P22-S5
 active_status: VERIFYING
-active_branch: codex/P22-S4-journal-company-ui-state
-active_pull_request: 346
-active_head: d5e91f961cda3ef6dbf3e7d36afa5a2b5252ebfb
-next_action: "Owner-test P22-S4 from draft PR #346: verify Journal table/divider state restores independently per company and Journal editing behavior is unchanged; do not merge without explicit owner authorization and do not begin P22-S5 until P22-S4 is merged and accepted."
+active_branch: codex/P22-S5-supplemental-open-items
+active_pull_request: 347
+active_head: 8ed1a340b8d748406f61f0da17a609c39278c15a
+next_action: "Run exact-final-head GitHub Actions after this P22-S5 PLAN verification commit, then owner-test draft PR #347 using doc/P22-S5-supplemental-open-items-user-testing.md; do not merge without separate explicit owner authorization."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -34,7 +34,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P19 | Deferred Company Administration extensions | DONE through P19-S3 / PR #309 |
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
-| P22 | Post-P21 correctness and authority corrections | IN PROGRESS — P22-S4 Journal company UI-state single authority |
+| P22 | Post-P21 correctness and authority corrections | IN PROGRESS — P22-S5 supplemental/open-item authority and reporting |
 
 ## 3. Established product decisions
 
@@ -548,56 +548,65 @@ Validation state:
 
 ### P22-S4 — Journal company UI-state single authority
 
-Status: IN_PROGRESS.
+Status: DONE.
 
-Branch: `codex/P22-S4-journal-company-ui-state`.
+PR #346 final head `a2fbf19928be15b785da0e90730212d6dab76c38` merged to `main` at `471e3b0c269d079d730a170446c6a6db01e523d8` after owner acceptance.
 
-Scope:
+Completed scope:
 
-- remove `JournalWorkspacePanel`'s duplicate Java `Preferences` persistence for Journal, entry-line, and supplemental table width/order/sort state;
-- remove the delegate's duplicate Java `Preferences` persistence for outer/editor/detail divider positions;
-- retain the delegate's default column geometry, sortability/resizability/reorderability, and default divider positions;
-- retain `JournalWorkspaceCompliancePanel` as the production decorator and sole persistence owner for Journal table/divider state through company-owned H2 `CompanyUiPreferencesService`;
-- add source regression coverage proving the delegate cannot reintroduce Java `Preferences` or its former table/divider persistence helpers while the compliance layer still loads/saves company state;
-- no migration, accounting-service, Journal transaction, formatting, routing, or visible layout-structure change in this slice.
-
-Required reading:
-
-- root `AGENTS.md`;
-- `doc/PLAN.md`;
-- `doc/interface-operation-matrix.md`;
-- `doc/ui_design_rules.md`;
-- `doc/ui/editor-guidelines.md`;
-- `doc/persistence-authority-inventory.md`.
-
-Required inspection:
-
-- `JournalWorkspacePanel`;
-- `JournalWorkspaceCompliancePanel`;
-- `CompanyUiPreferencesService` and current company table/split state binders;
-- `PanelFactory` Journal route;
-- `JournalWorkspacePortSourceTest` and company UI-state tests.
-
-User-visible changes / manual owner testing:
-
-1. Open Journal, resize and reorder Journal and entry-line columns, and apply a single- or multi-column sort.
-2. Move the Journal/editor, editor subsection, and detail dividers.
-3. Close and reopen Journal for the same active company and confirm the table/divider state is restored.
-4. Switch to another company and confirm it has independent Journal table/divider state; switch back and confirm the original company's state returns.
-5. Confirm Journal New/Edit/Save/Delete-or-Reverse, scrolling, formatting, and reconciliation read-only state behave unchanged.
+- removed the Journal delegate's duplicate Java `Preferences` persistence for table state and divider positions;
+- retained `JournalWorkspaceCompliancePanel` / `CompanyUiPreferencesService` as the single company-owned H2 UI-state authority;
+- preserved Journal behavior and visible layout while strengthening source guards.
 
 Validation state:
 
-- merged-main baseline `d68e8f52ac06022254a9fa221779bcb6ba6e2157` passed post-merge run `35476426775`, job `105986345643`;
-- exact behavior head `d5e91f961cda3ef6dbf3e7d36afa5a2b5252ebfb` passed Maven PR Tests run `35479049732`, job `105993358897`: clean headless verification, repeated Maven tests, and production JavaFX route compliance all succeeded;
-- local Maven is unavailable in the current execution environment, so no local Maven result is claimed;
-- draft PR #346 is ready for owner desktop verification; merge still requires separate explicit owner authorization.
+- exact final PR head `a2fbf19928be15b785da0e90730212d6dab76c38` passed Maven PR Tests run `35484432468`, job `106008076783`: clean headless verification, repeated Maven tests, and production JavaFX route compliance all succeeded;
+- post-merge `main` run `35548359913`, job `106178350043`, passed at merge commit `471e3b0c269d079d730a170446c6a6db01e523d8` with the same three gates successful;
+- local Maven was unavailable in the execution environment, so no local Maven result is claimed;
+- owner acceptance and merge are complete.
 
 ### P22-S5 — Supplemental/open-item reporting and eliminated-Schedules cleanup
 
-Status: BLOCKED by P22-S4 completion.
+Status: IN_PROGRESS.
 
-Define the canonical settlement/open-balance projection for `txn_supplemental_line`, add domain-specific receivable/payable/prepaid/deferred/other supplemental reporting, remove remaining `SCHEDULES` `AppPanelId` compatibility only after proving no current consumer requires it, and then restore Dashboard Open Items from that canonical authority. Do not revive a top-level Schedules workspace.
+Branch: `codex/P22-S5-supplemental-open-items`.
+
+Base: merged `main` `471e3b0c269d079d730a170446c6a6db01e523d8`.
+
+Scope / adopted design:
+
+- retain `Txn` / `TxnSplit` as the sole canonical ledger;
+- extend `txn_supplemental_line` nondestructively with optional stable `item_id`, exact `txn_split_id`, and `INCREASE` / `DECREASE` lifecycle effect;
+- keep supplemental amount non-negative and derive direction from the lifecycle effect plus canonical split sign;
+- preserve legacy supplemental rows with no lifecycle triple and report them as unmatched rather than guessing identity from `entryRef`;
+- derive company-scoped as-of open balances in one `SupplementalOpenItemQueryService`, excluding `REVERSED` and future transactions;
+- surface over-applied, unmatched, and inconsistent rows explicitly;
+- make Journal the lifecycle input surface with new-item creation and apply-existing-item behavior; do not add a separate Open Items editor;
+- add Accounts Receivable, Accounts Payable, Prepaid Expenses, Deferred Revenue, Other Assets, and Other Liabilities Report Library entries backed by the shared projection;
+- restore Dashboard Open Items from that same projection and never read `open_item_snapshot` as current authority;
+- retire unconsumed `AppPanelId.SCHEDULES` and `ScheduleEligibilityService` executable compatibility seams while retaining historical schema/entities nondestructively;
+- repair reverse-and-replacement so replacement canonical splits retain the original supplemental lifecycle allocations while reversal rows do not duplicate supplemental effects;
+- current SCLX is explicitly out of scope by owner direction: no SCLX format/import/export files are changed. Current SCLX does not round-trip P22-S5 lifecycle linkage, and production UI/docs must state that limitation rather than claiming portability.
+
+Required reading / governing updates:
+
+- root `AGENTS.md` and `doc/PLAN.md`;
+- `doc/accounting/transaction-editor-and-journal.md`;
+- `doc/architecture/application-composition.md`;
+- `doc/architecture/dashboard-workspace.md`;
+- `doc/interface-operation-matrix.md`;
+- `doc/persistence-authority-inventory.md`;
+- `doc/reporting/report-library.md`;
+- `doc/ui_design_rules.md` and `doc/ui/editor-guidelines.md`;
+- `doc/P22-S5-supplemental-open-items-user-testing.md`.
+
+Validation state:
+
+- baseline `main` merge `471e3b0c269d079d730a170446c6a6db01e523d8` passed post-merge Maven PR Tests run `35548359913`, job `106178350043`;
+- exact behavior head `8ed1a340b8d748406f61f0da17a609c39278c15a` passed Maven PR Tests run `36082153566`, job `107906242503`: clean headless verification, full tests, and production JavaFX route compliance all succeeded;
+- draft PR #347 is open against `main`;
+- local Maven is unavailable in the current execution environment, so no local Maven result is claimed;
+- this PLAN-only verification successor requires exact-final-head GitHub Actions, followed by owner desktop verification before merge.
 
 ### P22-S6 — Stale production copy and compatibility wording cleanup
 
@@ -607,4 +616,4 @@ Correct production-facing Settings/help wording that still claims completed P20 
 
 ## 9. Advancement rule
 
-P21 and P22-S1 through P22-S3 are complete. P22-S4 is the only active corrective slice. Do not begin P22-S5 or later work until P22-S4 is merged and owner-accepted. Candidate donor workflows such as donor/receipt management and monthly-close assistance remain uncommitted future candidates and require a separate deliberate PLAN amendment.
+P21 and P22-S1 through P22-S4 are complete. P22-S5 is the only active corrective slice. Do not begin P22-S6 or later work until P22-S5 is merged and owner-accepted. Candidate donor workflows such as donor/receipt management and monthly-close assistance remain uncommitted future candidates and require a separate deliberate PLAN amendment.

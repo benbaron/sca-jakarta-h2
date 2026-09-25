@@ -9,18 +9,23 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.UUID;
 
 /** Supplemental detail row attached to an authoritative transaction. */
 @Entity
 @Table(name = "txn_supplemental_line",
        indexes = {
            @Index(name = "ix_txn_supplemental_line_txn", columnList = "txn_id"),
-           @Index(name = "ix_txn_supplemental_line_kind", columnList = "kind")
+           @Index(name = "ix_txn_supplemental_line_kind", columnList = "kind"),
+           @Index(name = "ix_txn_supplemental_line_item", columnList = "item_id"),
+           @Index(name = "ix_txn_supplemental_line_split", columnList = "txn_split_id")
        })
 public class TxnSupplementalLine
 {
@@ -40,6 +45,17 @@ public class TxnSupplementalLine
 
     @Column(name = "entry_ref", length = 200)
     private String entryRef;
+
+    @Column(name = "item_id")
+    private UUID itemId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "txn_split_id")
+    private TxnSplit txnSplit;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "item_effect", length = 20)
+    private SupplementalItemEffect itemEffect;
 
     @Column(length = 255)
     private String counterparty;
@@ -80,6 +96,12 @@ public class TxnSupplementalLine
     public void setKind(String kind) { this.kind = kind; }
     public String getEntryRef() { return entryRef; }
     public void setEntryRef(String entryRef) { this.entryRef = entryRef; }
+    public UUID getItemId() { return itemId; }
+    public void setItemId(UUID itemId) { this.itemId = itemId; }
+    public TxnSplit getTxnSplit() { return txnSplit; }
+    public void setTxnSplit(TxnSplit txnSplit) { this.txnSplit = txnSplit; }
+    public SupplementalItemEffect getItemEffect() { return itemEffect; }
+    public void setItemEffect(SupplementalItemEffect itemEffect) { this.itemEffect = itemEffect; }
     public String getCounterparty() { return counterparty; }
     public void setCounterparty(String counterparty) { this.counterparty = counterparty; }
     public String getDescription() { return description; }
