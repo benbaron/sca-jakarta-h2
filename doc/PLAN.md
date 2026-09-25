@@ -1,12 +1,12 @@
 ---
-plan_version: 296
+plan_version: 297
 active_phase: P22
 active_slice: P22-S5
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P22-S5-supplemental-open-items
-active_pull_request: null
-active_head: 471e3b0c269d079d730a170446c6a6db01e523d8
-next_action: "Complete P22-S5 lifecycle/projection/report/Dashboard/Schedules-retirement validation, publish the reviewed branch to a draft PR, and validate its exact head in GitHub Actions; do not merge without separate owner authorization."
+active_pull_request: 347
+active_head: 8ed1a340b8d748406f61f0da17a609c39278c15a
+next_action: "Run exact-final-head GitHub Actions after this P22-S5 PLAN verification commit, then owner-test draft PR #347 using doc/P22-S5-supplemental-open-items-user-testing.md; do not merge without separate explicit owner authorization."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -603,8 +603,10 @@ Required reading / governing updates:
 Validation state:
 
 - baseline `main` merge `471e3b0c269d079d730a170446c6a6db01e523d8` passed post-merge Maven PR Tests run `35548359913`, job `106178350043`;
-- local Maven is unavailable in the current execution environment, so focused/full executable validation must use GitHub Actions after publication;
-- exact final-head CI and owner desktop verification remain required before merge.
+- exact behavior head `8ed1a340b8d748406f61f0da17a609c39278c15a` passed Maven PR Tests run `36082153566`, job `107906242503`: clean headless verification, full tests, and production JavaFX route compliance all succeeded;
+- draft PR #347 is open against `main`;
+- local Maven is unavailable in the current execution environment, so no local Maven result is claimed;
+- this PLAN-only verification successor requires exact-final-head GitHub Actions, followed by owner desktop verification before merge.
 
 ### P22-S6 — Stale production copy and compatibility wording cleanup
 
