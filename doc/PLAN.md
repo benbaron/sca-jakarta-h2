@@ -1,12 +1,12 @@
 ---
-plan_version: 298
-active_phase: P22
-active_slice: P22-S6
-active_status: IN_PROGRESS
-active_branch: codex/P22-S6-stale-production-copy
+plan_version: 299
+active_phase: null
+active_slice: null
+active_status: DONE
+active_branch: null
 active_pull_request: null
-active_head: 027fee3c4e04cb1dd6d78c2884cc6d6ca6090a1b
-next_action: "Validate P22-S6 stale production-copy cleanup, open a draft PR to main, then owner-test the corrected Settings compatibility explanation; do not merge without explicit owner authorization."
+active_head: a1e739254b4d63b2bc3df6b0d71aa6ef4658d2a4
+next_action: "P22 is complete. Select and define the next phase deliberately; do not invent a successor slice from uncommitted future candidates."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -34,7 +34,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P19 | Deferred Company Administration extensions | DONE through P19-S3 / PR #309 |
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
-| P22 | Post-P21 correctness and authority corrections | IN PROGRESS — P22-S6 stale production copy and compatibility wording cleanup |
+| P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 
 ## 3. Established product decisions
 
@@ -611,9 +611,9 @@ Validation state:
 
 ### P22-S6 — Stale production copy and compatibility wording cleanup
 
-Status: IN_PROGRESS.
+Status: DONE.
 
-Branch: `codex/P22-S6-stale-production-copy`.
+PR #348 head `d61fd8b0cacf7b89cb083fa9a24d77bbb715e3c2` merged to `main` at `a1e739254b4d63b2bc3df6b0d71aa6ef4658d2a4` after owner verification and acceptance.
 
 Base: merged `main` `39da667a7e2499dfb6dcd8122341cef4932f1dd3`.
 
@@ -626,6 +626,13 @@ Scope:
 - add regression coverage for the corrected Settings message;
 - no persistence, migration, accounting, authentication, authorization-policy, routing, or preference-consumer behavior change.
 
+Validation state:
+
+- owner verified and accepted P22-S6 before merge;
+- PR #348 is merged into current `main` at `a1e739254b4d63b2bc3df6b0d71aa6ef4658d2a4`;
+- no post-merge GitHub Actions run was returned for that merge commit when closure was recorded, so no post-merge CI result is claimed;
+- P22-S6 and P22 are complete.
+
 ## 9. Advancement rule
 
-P21 and P22-S1 through P22-S5 are complete. P22-S6 is the only active corrective slice. Candidate donor workflows such as donor/receipt management and monthly-close assistance remain uncommitted future candidates and require a separate deliberate PLAN amendment.
+P21 and P22-S1 through P22-S6 are complete. P22 has no remaining committed slice. Candidate donor workflows such as donor/receipt management and monthly-close assistance remain uncommitted future candidates and require a separate deliberate PLAN amendment before implementation.
