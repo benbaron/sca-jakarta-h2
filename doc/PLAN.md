@@ -5,7 +5,7 @@ active_slice: P23-S1
 active_status: VERIFYING
 active_branch: codex/P23-S1-adopt-correction-plan
 active_pull_request: null
-active_head: 849dc4e8f652d47aff05c124790f78d6dc7f93dc
+active_head: 1993128454ed026c4ad3c9a9e26726ba358fe66a
 next_action: "Review and authorize publication of P23-S1 documentation; obtain exact-head CI and owner acceptance, then merge before selecting P23-S2."
 ---
 
@@ -706,9 +706,9 @@ Status: VERIFYING (local documentation implemented; not DONE).
 - Base: `849dc4e8f652d47aff05c124790f78d6dc7f93dc`.
 - Branch: `codex/P23-S1-adopt-correction-plan`.
 - Pull request: none; publication authorization for this implementation slice is not yet recorded.
-- Current local delivery commit: the commit containing this handoff; obtain with `git rev-parse HEAD` (the recorded front-matter head is the inspected base until the publication handoff).
+- Reviewed implementation commit: `1993128454ed026c4ad3c9a9e26726ba358fe66a`; the following handoff-only commit records this immutable content head. Obtain final branch head with `git rev-parse HEAD` before publication.
 - Completed: live adopted P23–P28 contract; all slice statuses/dependencies; G1–G14 source/test/owner/disposition ledger; A01–A14 reproducible specifications; runbook coverage matrix; retrieved named workbook identity/structure and instruction anchors; D01–D10 pending-input decisions; owner review instructions.
 - No production code, migrations, workbook data or archived proposal changes.
-- Validation: source/route/test inventory inspection and read-only workbook structure inspection completed. Local Markdown links, G/A coverage, slice coverage, archive identity and `git diff --check` are checked before commit. `mvn clean verify` attempted: exit 127, Maven unavailable; no Maven wrapper. No application tests, desktop acceptance or exact-head CI pass claimed.
+- Validation: source/route/test inventory inspection and read-only workbook structure inspection completed. Local validation passed: four changed documents, 26 adopted slices plus conditional P27-S5, G1–G14/A01–A14 coverage, local Markdown links, unchanged archive, active selection, and `git diff --check`. An initial validator assumed 27 baseline slices; checking the actual adopted headings corrected that count to 26 plus one conditional slice, and the complete check passed. `mvn clean verify` attempted: exit 127, Maven unavailable; no Maven wrapper. No application tests, desktop acceptance or exact-head CI pass claimed.
 - Remaining: owner supplies/verifies D01 installed-build evidence and confirms D02 submission authority; policy inputs gate only their affected later slices. S1 owner documentation acceptance, authorized publication, required CI and merge remain outstanding.
 - Next exact action: after authorization publish the reviewed commit through the connected GitHub service, verify matching tree and branch/PR heads, record actual CI/publication evidence here, and request owner review. Do not implement S2 until S1 merge is confirmed.
