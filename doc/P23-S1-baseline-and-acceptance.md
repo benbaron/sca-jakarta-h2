@@ -81,6 +81,8 @@ Use an explicitly created disposable test database, company TEST and a second co
 
 All A01–A14 execution results: **not executed in P23-S1**. Future owners must retain actual failures and exact test commits, not convert this table into checkmarks based on source presence.
 
+P23-S2 subsequently reproduced A01 and added `BudgetReversalActualsTest`; see the [execution ledger](PLAN.md#p23-s2-implementation-and-validation) for failure and validation evidence and [manual acceptance](P23-S2-budget-reversal-user-testing.md) for owner checks. This does not change the historical S1 execution record or claim acceptance of A02–A14.
+
 ## Runbook action-to-test matrix
 
 This is the baseline coverage map, including actions already supported. Section ranges group like actions; future implementation adds per-action test evidence where branches differ. Duplicate section 12 is identified by heading, not silently collapsed.

@@ -27,6 +27,16 @@ The fiscal-year label is the calendar year in which the company's configured fis
 
 Budget Editor and Budget vs Actual consume this same fiscal request. When Report Library has no explicit `DateRangeContext` range, its default request starts at the same fiscal-year start and ends at the same selected accounting-period end; preview and export continue to reuse the resulting immutable `ReportRequest`. Explicit report date parameters remain user-controlled. Dashboard budget cards continue to consume `DashboardQueryService`; changing their broader dashboard projection semantics is outside P16-S6. The legacy sidecar `BudgetTargetPersistence` file store remains removed and `UiWorkspaceDataStore` exposes no budget target maps.
 
+## P23-S2 correction actuals
+
+Budget actuals include canonical splits whose transaction status is `ENTERED` or `REVERSED`, within the selected company's fiscal start and inclusive cutoff. `REVERSED` describes the original's correction history; it does not remove that original from the ledger. The inverse entry offsets it on its own transaction date. Thus a February expense reversed in March remains in February actuals, and a reversal across fiscal years does not erase the prior year's activity. A replacement contributes independently on its own date.
+
+Actuals retain the existing expense-minus-income convention: expenses use their natural signed amount and income negates its natural signed amount. Refunds use the inverse sign. Fund and category groupings and company ownership remain authoritative. Budget comparison aggregates all events; event-specific budget filters remain owned by P26-S3. For an equivalent event-tagged scope, event accounting, GL and Income Statement must reconcile to these same signed facts.
+
+Income/expense splits without a budget category appear separately by fund with an empty category code and the label **Unclassified (no budget category)**. Their budget is zero. This is a read-only diagnostic grouping, not a new category or a persisted assignment. Balance-sheet splits do not create unclassified budget rows. Users can review the Journal classifications under the existing correction policy. Zero-net groups may remain visible after reversal.
+
+See [P23-S2 user testing](../P23-S2-budget-reversal-user-testing.md) for the dated acceptance examples.
+
 ## P17-C3 retained version lifecycle
 
 P17-C3 closes the Budget Editor durable-record lifecycle gap without adding physical deletion. The editor lists retained `DRAFT`, `ACTIVE`, and `ARCHIVED` versions for the selected fiscal year by stable database ID. An abandoned draft may be retired explicitly with **Archive Draft**; the service requires that the selected version still be `DRAFT`, preserves the plan and every line, records `archived_at`, and returns the same durable plan ID.
