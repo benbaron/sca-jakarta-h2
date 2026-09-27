@@ -1,12 +1,12 @@
 ---
-plan_version: 303
+plan_version: 304
 active_phase: P23
 active_slice: P23-S3
-active_status: READY
-active_branch: null
+active_status: VERIFYING
+active_branch: codex/P23-S3-historical-open-items
 active_pull_request: null
 active_head: 321a3fd3a702931775ac47073229a3e389e4cb45
-next_action: "P23-S2 is closed; P23-S3 is READY. On owner instruction, start a fresh S3 branch from current main and reproduce A02 before implementation."
+next_action: "P23-S2 is closed; P23-S3 is selected. Reproduce A02, implement effective-date projection, and validate before publication."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -35,7 +35,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
-| P23 | Accounting correctness and open-item integrity | READY — P23-S3 historical open-item balances |
+| P23 | Accounting correctness and open-item integrity | IN_PROGRESS — P23-S3 historical open-item balances |
 | P24 | Named events and usable entry workflows | BLOCKED — P23 |
 | P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
@@ -671,7 +671,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 |---|---|---|---|
 | P23-S1 | Adopt scope and establish reproducible acceptance cases | DONE | Documentation validation, owner review, publication and merge |
 | P23-S2 | Correct Budget vs Actual reversal treatment (G1) | DONE | P23-S1 merged; owning contract and D01–D10 gates as applicable |
-| P23-S3 | Preserve historical open-item balances (G2) | READY | P23-S2 merged; owning contract and D01–D10 gates as applicable |
+| P23-S3 | Preserve historical open-item balances (G2) | VERIFYING | P23-S2 merged; owning contract and D01–D10 gates as applicable |
 | P23-S4 | Enforce and explain schedule-to-ledger completeness (G3) | BLOCKED | P23-S3 merged; owning contract and D01–D10 gates as applicable |
 | P23-S5 | Preserve open-item lifecycle in SCLX (G4) | BLOCKED | P23-S4 merged; owning contract and D01–D10 gates as applicable |
 | P24-S1 | Make event creation and discovery explicit (G14) | BLOCKED | P23-S5 merged; owning contract and D01–D10 gates as applicable |
@@ -759,3 +759,21 @@ On 2026-09-27 the owner confirmed acceptance and merge of PR #352. GitHub verifi
 P23-S2 is DONE. All preceding S2 pending-publication, acceptance and merge statements are historical. P23-S3 is READY, with no implementation branch or PR yet. It owns G2/A02 historical open-item balances; read the adopted S3 contract and required lifecycle/report sources before coding. No later slice has been implemented.
 
 This documentation-only closeout is recorded on fresh branch `codex/P23-S2-closeout`, based on the verified merge above; local only, no closeout PR. Validation: merge and exact-head CI verified; `git diff --check` passed. When beginning S3, preserve this closeout record in the S3 plan update if it has not separately reached main. Next action: await owner selection of S3, then refresh main and create a fresh S3 branch.
+
+
+## 14. P23-S3 execution
+
+Owner selected S3 on 2026-09-27. Branch `codex/P23-S3-historical-open-items` starts from current main `321a3fd3a702931775ac47073229a3e389e4cb45` and preserves the S2 closeout record. PR: none. Scope: G2/A02 effective-date supplemental projection only; S4 completeness and S5 interchange remain separate.
+
+Required reading/inspection completed: root AGENTS, PLAN, adopted program S3 and baseline A02; transaction/editor, lifecycle, correction-policy and report-library contracts; SupplementalOpenItemQueryService, Txn/TxnSupplementalLine, entry/correction services, V77 migration, six-report builder, Dashboard and Apply Existing Item consumers, existing query/report/migration tests.
+
+Design finding: reversal transactions have inverse ledger splits and a unique reversalOf link but no supplemental allocations; replacements copy the original allocations with the same item identity. The projection must retain original allocations until their dated inverse facts apply, including reversal chains and permitted backdating. Derive corrections from those existing facts; do not add persisted allocations or a schema migration. Update the earlier current-status-only specification in this slice.
+
+
+### P23-S3 implementation and validation
+
+- Delivered: effective-date original/inverse projection for all six kinds; reversal chains and independent replacements; explicit explanation when an inverse precedes its source date; shared save-time increase validation using the same projection and current EntityManager. No migration, persisted duplicate reversal allocations, new report model, or UI layout changes.
+- Baseline compile passed. Red reproduction against unchanged production query: 10 tests run, seven assertion failures and one missing-row error in the eight new cases; two existing cases passed. All six kind fixtures changed February from 75 to 100 after a March reversal; opening replacement erased prior balances and a backdated inverse had no row.
+- Focused verification passed: 18 tests, no failures/errors/skips, covering query, six report definitions, legacy migration, Dashboard/report/control-ledger agreement, opening/settlement corrections and company isolation. Final full verification follows in the handoff.
+- Specifications updated: [transaction supplemental lifecycle](accounting/transaction-editor-and-journal.md#supplemental-transaction-records-and-open-item-lifecycle), [reports](reporting/report-library.md#supplemental-open-item-reports), and [owner testing](P23-S3-historical-open-items-user-testing.md).
+- Scope boundary: earlier direct-edit/delete policy remains in force; S3 does not reconstruct deleted versions. S4 completeness/over-application protections and S5 SCLX lifecycle portability remain separate. Owner desktop acceptance, publication/exact-head CI and merge remain outstanding; S3 is not DONE.

@@ -534,22 +534,11 @@ public class TransactionEntryService
         }
         if (effect == SupplementalItemEffect.DECREASE)
         {
-            long increases = em.createQuery("""
-                    select count(l) from TxnSupplementalLine l
-                    where l.itemId = :itemId
-                      and l.txn.company = :company
-                      and l.kind = :kind
-                      and l.itemEffect = :effect
-                      and l.txn.status = 'ENTERED'
-                      and l.txn.txnDate <= :txnDate
-                    """, Long.class)
-                    .setParameter("itemId", itemId)
-                    .setParameter("company", txn.getCompany())
-                    .setParameter("kind", kind)
-                    .setParameter("effect", SupplementalItemEffect.INCREASE)
-                    .setParameter("txnDate", txn.getTxnDate())
-                    .getSingleResult();
-            if (increases == 0)
+            boolean hasIncrease = SupplementalOpenItemQueryService.query(
+                    em, txn.getCompany().getCode(), SupplementalOpenItemQueryService.Kind.valueOf(kind), txn.getTxnDate())
+                    .authoritativeRows().stream()
+                    .anyMatch(row -> itemId.equals(row.itemId()) && row.increases().signum() > 0);
+            if (!hasIncrease)
             {
                 throw new PostingException("A DECREASE supplemental allocation must reference an existing item increase.");
             }

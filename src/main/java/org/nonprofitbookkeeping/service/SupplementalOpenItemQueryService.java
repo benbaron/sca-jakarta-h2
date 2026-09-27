@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.SupplementalItemEffect;
 import org.nonprofitbookkeeping.model.TxnSupplementalLine;
+import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.math.BigDecimal;
@@ -12,6 +13,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -20,7 +22,7 @@ import java.util.function.Supplier;
 
 /**
  * Canonical company-scoped as-of projection for transaction-attached supplemental open items.
- * Balances are derived from immutable INCREASE/DECREASE allocations on ENTERED transactions;
+ * Balances are derived from dated allocations and their canonical reversal chains;
  * no mutable open/closed balance is persisted.
  */
 public final class SupplementalOpenItemQueryService
@@ -38,60 +40,116 @@ public final class SupplementalOpenItemQueryService
 
     public Result query(Kind kind, LocalDate asOfDate)
     {
+        try (EntityManager em = jpa.em())
+        {
+            return query(em, companyCodeSupplier.get(), kind, asOfDate);
+        }
+    }
+
+    /** Shares the projection with save-time validation inside its existing transaction. */
+    static Result query(EntityManager em, String companyCode, Kind kind, LocalDate asOfDate)
+    {
         Objects.requireNonNull(kind, "kind");
         Objects.requireNonNull(asOfDate, "asOfDate");
-        String companyCode = companyCodeSupplier.get();
         if (companyCode == null || companyCode.isBlank())
         {
             throw new IllegalStateException("An active company is required for supplemental reporting.");
         }
 
-        try (EntityManager em = jpa.em())
+        List<TxnSupplementalLine> lines = em.createQuery("""
+                select l from TxnSupplementalLine l
+                join fetch l.txn t
+                left join fetch l.txnSplit s
+                left join fetch s.account a
+                where upper(t.company.code) = :companyCode
+                  and t.status in ('ENTERED', 'REVERSED')
+                  and l.kind = :kind
+                order by t.txnDate, l.id
+                """, TxnSupplementalLine.class)
+                .setParameter("companyCode", companyCode.trim().toUpperCase(java.util.Locale.ROOT))
+                .setParameter("kind", kind.name())
+                .getResultList();
+
+        // Load all dates: a permitted inverse may precede its source, and inverse
+        // transactions can themselves be reversed. Status alone cannot reconstruct this.
+        Map<Long, Txn> reversals = new LinkedHashMap<>();
+        for (Txn reversal : em.createQuery("""
+                select t from Txn t join fetch t.reversalOf original
+                where upper(t.company.code) = :companyCode
+                  and t.company = original.company
+                  and t.status in ('ENTERED', 'REVERSED')
+                """, Txn.class)
+                .setParameter("companyCode", companyCode.trim().toUpperCase(java.util.Locale.ROOT))
+                .getResultList())
         {
-            List<TxnSupplementalLine> lines = em.createQuery("""
-                    select l from TxnSupplementalLine l
-                    join fetch l.txn t
-                    left join fetch l.txnSplit s
-                    left join fetch s.account a
-                    where upper(t.company.code) = :companyCode
-                      and t.txnDate <= :asOfDate
-                      and t.status = 'ENTERED'
-                      and l.kind = :kind
-                    order by t.txnDate, l.id
-                    """, TxnSupplementalLine.class)
-                    .setParameter("companyCode", companyCode.trim().toUpperCase(java.util.Locale.ROOT))
-                    .setParameter("asOfDate", asOfDate)
-                    .setParameter("kind", kind.name())
-                    .getResultList();
-
-            Map<UUID, Accumulator> grouped = new LinkedHashMap<>();
-            List<Row> diagnostics = new ArrayList<>();
-            for (TxnSupplementalLine line : lines)
-            {
-                if (!lifecycleComplete(line))
-                {
-                    diagnostics.add(legacyDiagnostic(line, kind));
-                    continue;
-                }
-                String mismatch = lifecycleMismatch(line, kind);
-                if (mismatch != null)
-                {
-                    diagnostics.add(inconsistentDiagnostic(line, kind, mismatch));
-                    continue;
-                }
-                grouped.computeIfAbsent(line.getItemId(), ignored -> new Accumulator(kind, line.getItemId()))
-                        .accept(line);
-            }
-
-            List<Row> rows = new ArrayList<>();
-            for (Accumulator accumulator : grouped.values())
-            {
-                rows.add(accumulator.finish());
-            }
-            boolean authorityAvailable = rows.stream().anyMatch(Row::authoritative);
-            rows.addAll(diagnostics);
-            return new Result(kind, asOfDate, rows, authorityAvailable);
+            reversals.put(reversal.getReversalOf().getId(), reversal);
         }
+
+        Map<UUID, Accumulator> grouped = new LinkedHashMap<>();
+        List<Row> diagnostics = new ArrayList<>();
+        for (TxnSupplementalLine line : lines)
+        {
+            List<DatedEffect> effects = datedEffects(line.getTxn(), reversals, asOfDate);
+            if (effects.isEmpty())
+            {
+                continue;
+            }
+            if (!lifecycleComplete(line))
+            {
+                diagnostics.add(legacyDiagnostic(line, kind));
+                continue;
+            }
+            String mismatch = lifecycleMismatch(line, kind);
+            if (mismatch != null)
+            {
+                diagnostics.add(inconsistentDiagnostic(line, kind, mismatch));
+                continue;
+            }
+            Accumulator accumulator = grouped.computeIfAbsent(
+                    line.getItemId(), ignored -> new Accumulator(kind, line.getItemId()));
+            for (DatedEffect effect : effects)
+            {
+                accumulator.accept(line, effect);
+            }
+        }
+
+        List<Row> rows = new ArrayList<>();
+        for (Accumulator accumulator : grouped.values())
+        {
+            rows.add(accumulator.finish());
+        }
+        boolean authorityAvailable = rows.stream().anyMatch(Row::authoritative);
+        rows.addAll(diagnostics);
+        return new Result(kind, asOfDate, rows, authorityAvailable);
+    }
+
+    private record DatedEffect(int direction, boolean backdated)
+    {
+    }
+
+    private static List<DatedEffect> datedEffects(Txn source, Map<Long, Txn> reversals, LocalDate asOfDate)
+    {
+        List<DatedEffect> effects = new ArrayList<>();
+        var visited = new HashSet<Long>();
+        Txn current = source;
+        int direction = 1;
+        boolean backdated = false;
+        while (current != null)
+        {
+            if (!visited.add(current.getId()))
+            {
+                throw new IllegalStateException("Cyclic transaction reversal history for transaction " + source.getId());
+            }
+            if (!current.getTxnDate().isAfter(asOfDate))
+            {
+                effects.add(new DatedEffect(direction, backdated));
+            }
+            Txn next = reversals.get(current.getId());
+            backdated = next != null && next.getTxnDate().isBefore(current.getTxnDate());
+            current = next;
+            direction = -direction;
+        }
+        return effects;
     }
 
     public Map<Kind, Result> queryAll(LocalDate asOfDate)
@@ -237,6 +295,7 @@ public final class SupplementalOpenItemQueryService
         private final UUID itemId;
         private TxnSupplementalLine firstIncrease;
         private TxnSupplementalLine firstEvent;
+        private boolean backdated;
         private BigDecimal increases = ZERO;
         private BigDecimal reductions = ZERO;
 
@@ -246,23 +305,25 @@ public final class SupplementalOpenItemQueryService
             this.itemId = itemId;
         }
 
-        private void accept(TxnSupplementalLine line)
+        private void accept(TxnSupplementalLine line, DatedEffect effect)
         {
+            backdated |= effect.backdated();
+            BigDecimal amount = scale(line.getAmount()).multiply(BigDecimal.valueOf(effect.direction()));
             if (firstEvent == null)
             {
                 firstEvent = line;
             }
             if (line.getItemEffect() == SupplementalItemEffect.INCREASE)
             {
-                if (firstIncrease == null)
+                if (firstIncrease == null && effect.direction() > 0)
                 {
                     firstIncrease = line;
                 }
-                increases = increases.add(scale(line.getAmount()));
+                increases = increases.add(amount);
             }
             else
             {
-                reductions = reductions.add(scale(line.getAmount()));
+                reductions = reductions.add(amount);
             }
         }
 
@@ -290,6 +351,11 @@ public final class SupplementalOpenItemQueryService
             {
                 status = "OVER_APPLIED";
                 explanation = "Reductions/recognition exceed increases; the mismatch is not silently allocated.";
+            }
+            if (backdated)
+            {
+                explanation = (explanation.isEmpty() ? "" : explanation + " ")
+                        + "Backdated reversal precedes its source transaction; effects use their own dates.";
             }
             return new Row(
                     itemId, kind, source.getTxn().getId(), source.getTxn().getTxnDate(), source.getEntryRef(),
