@@ -4,9 +4,9 @@ active_phase: P23
 active_slice: P23-S3
 active_status: VERIFYING
 active_branch: codex/P23-S3-historical-open-items
-active_pull_request: null
-active_head: 04801e5265ae1c199af7367a8de3021f54d66c00
-next_action: "Obtain owner authorization to publish P23-S3 and open its PR, then verify exact-head CI and owner acceptance. S4 remains blocked until S3 merges."
+active_pull_request: 353
+active_head: c1e98e59dc87656616358a50c0f1587a2577dc44
+next_action: "Verify final-head CI for PR #353, then obtain owner desktop acceptance and merge. S4 remains blocked until S3 merges."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -786,3 +786,15 @@ Design finding: reversal transactions have inverse ledger splits and a unique re
 - Baseline compile and 18 focused checks passed. Final diff whitespace and changed-document local links passed. Maven was restored to `/tmp` because it was no longer present; all dependencies resolved from the existing local cache. No build configuration changed. Build-generated removal of the tracked manifest was restored.
 - Completed: A02 reproduction/correction, shared read/save projection, regression/consumer checks, governing specifications, user testing notes and S2 closure carry-forward. No schema or SCLX changes.
 - Remaining: owner publication authorization under AGENTS.md section 5, draft PR, exact-head CI, manual acceptance and merge. No GitHub S3 result is claimed. Next exact action after authorization: publish the reviewed local commit sequence without force, verify each tree and PR head, run/inspect CI, and record results. P23-S4 remains BLOCKED.
+
+
+### P23-S3 publication
+
+Owner authorized publication on 2026-09-27. Draft PR: https://github.com/benbaron/sca-jakarta-h2/pull/353. Branch: `codex/P23-S3-historical-open-items`. Verified published content head: `c1e98e59dc87656616358a50c0f1587a2577dc44`. Preceding local-only and authorization-pending handoffs are historical.
+
+- Local `2f4f88cb2771299ee93fca9e01eb9e9f1b8d6995` → remote `b4c7d8dbc7ec1adcc3230c17a12af7bbcadb8bc9`, matching tree `81ee7e8696a83414889c2dbc5826ec28226e7d14`.
+- Local `04801e5265ae1c199af7367a8de3021f54d66c00` → remote `54d09c8b6599c9f50db3e4699bf8247ae00954cf`, matching tree `4989a9a55cb6b18a36498cd485f551fe41515c9b`.
+- Local `dfb50428d860b37e975076e3df1528d5eedd6472` → remote `c1e98e59dc87656616358a50c0f1587a2577dc44`, matching tree `f9ac4ae346a1fb5031c14ee98b818551d75c9f76`.
+- All messages, ordering and file trees preserved through connected-service publication. A documentation transfer mismatch was caught before branch creation and corrected with exact blob bytes; only matching trees were published. No force update occurred.
+- This publication-record commit follows the reviewed content head. CI is pending at preparation; inspect the successor final-head Maven PR Tests run. The final result and head are recorded in the PR description after completion.
+- Remaining: final-head CI, owner desktop checks in P23-S3-historical-open-items-user-testing.md, and merge. S3 remains VERIFYING; S4 remains BLOCKED. Next action: resolve any final-head check failure, then owner acceptance/merge.
