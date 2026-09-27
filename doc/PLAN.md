@@ -636,3 +636,8 @@ Validation state:
 ## 9. Advancement rule
 
 P21 and P22-S1 through P22-S6 are complete. P22 has no remaining committed slice. Candidate donor workflows such as donor/receipt management and monthly-close assistance remain uncommitted future candidates and require a separate deliberate PLAN amendment before implementation.
+
+## 10. Archived proposals
+
+- [2026 deficiency correction action plan](archive/SCA_2026_Deficiency_Correction_Action_Plan.md) — archived at the owner's request on 2026-09-26. Preserves the proposed P23–P28 roadmap and G1–G14 acceptance criteria. Archiving does not adopt these phases, resolve their policy decisions, or change the active execution state.
+- Archive publication branch: `codex/docs-archive-2026-deficiency-plan`. Documentation-only validation: the archived file matches the delivered plan byte-for-byte and `git diff --check` passes; application tests are not run for this archive-only change. Next action: review and merge the archive PR; select and adopt any successor phase separately.
