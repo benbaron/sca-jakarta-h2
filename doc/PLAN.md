@@ -4,9 +4,9 @@ active_phase: P23
 active_slice: P23-S2
 active_status: VERIFYING
 active_branch: codex/P23-S2-budget-reversal-actuals
-active_pull_request: null
-active_head: d8fae86a2cb6fcfa47856db56de187b4538c19c9
-next_action: "Obtain authorization to publish the reviewed P23-S2 commits and open its PR, then verify exact-head CI; P23-S3 remains blocked until S2 merges."
+active_pull_request: 352
+active_head: 0703e2a17abca00f3a9aa81069e65ceb2c91a21e
+next_action: "Verify final-head CI for PR #352 and obtain owner desktop acceptance; merge before advancing to P23-S3."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -739,3 +739,14 @@ P23-S2 is VERIFYING on `codex/P23-S2-budget-reversal-actuals`, based on that mer
 - Environment recovery: installed Maven in `/tmp` and used runtime proxy settings outside the repository. Initial dependency resolution failed with the stale proxy; an offline clean attempt lacked a cached plugin. Refreshing the private settings and rerunning online completed successfully. No project build configuration changed; no known failing test remains. The build-generated removal of the tracked manifest was restored.
 - Changed documents: this plan, P23-S1 baseline execution cross-reference, accounting/budget-model.md, and P23-S2-budget-reversal-user-testing.md. Archive unchanged.
 - Next exact action: obtain owner authorization for S2 publication under AGENTS.md section 5, then publish the reviewed commit sequence to the named branch without force, create the S2 PR with actual validation evidence, verify matching tree/head and exact-head CI, and record those results here. Owner desktop checks and merge remain required before DONE or advancement.
+
+
+### P23-S2 publication
+
+Owner authorized publication on 2026-09-27. Draft PR: https://github.com/benbaron/sca-jakarta-h2/pull/352. Branch: `codex/P23-S2-budget-reversal-actuals`; verified published content head: `0703e2a17abca00f3a9aa81069e65ceb2c91a21e`. The preceding local handoff is historical.
+
+- Local `d8fae86a2cb6fcfa47856db56de187b4538c19c9` → remote `e7bc3e9e4104c9211d5c1bc363a78ed4ee49d1a7`, matching tree `eca2bd215884256216c4176ff09b25f15a67328f`.
+- Local `5158780268318819523ca46ceead112264c17352` → remote `0703e2a17abca00f3a9aa81069e65ceb2c91a21e`, matching tree `f902e32d1fde4177199e5dc87578be0028b2adac`.
+- Connected-service publication preserved commit messages, order and file trees. The branch was absent and created at the reviewed head; no force update occurred. Remote main remains the verified S1 merge base.
+- This publication-record commit follows that content head. Require the successor exact-head Maven PR Tests run, not a result for an earlier head. At preparation, GitHub validation is pending; final result is recorded in the PR description after the run completes.
+- Remaining: exact-head CI, owner execution of P23-S2-budget-reversal-user-testing.md, and merge. S2 stays VERIFYING and S3 stays BLOCKED. Next action: inspect PR #352's final-head checks and resolve any failure before owner review/merge.
