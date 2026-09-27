@@ -1,12 +1,12 @@
 ---
-plan_version: 300
+plan_version: 301
 active_phase: P23
 active_slice: P23-S1
 active_status: VERIFYING
 active_branch: codex/P23-S1-adopt-correction-plan
-active_pull_request: null
-active_head: 1993128454ed026c4ad3c9a9e26726ba358fe66a
-next_action: "Review and authorize publication of P23-S1 documentation; obtain exact-head CI and owner acceptance, then merge before selecting P23-S2."
+active_pull_request: 351
+active_head: f01ae14a85c61d6bdd56f7988d6c2d41df1b37a8
+next_action: "Verify final-head CI for PR #351 and obtain owner documentation acceptance; merge before selecting P23-S2."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -705,10 +705,11 @@ Status: VERIFYING (local documentation implemented; not DONE).
 
 - Base: `849dc4e8f652d47aff05c124790f78d6dc7f93dc`.
 - Branch: `codex/P23-S1-adopt-correction-plan`.
-- Pull request: none; publication authorization for this implementation slice is not yet recorded.
-- Reviewed implementation commit: `1993128454ed026c4ad3c9a9e26726ba358fe66a`; the following handoff-only commit records this immutable content head. Obtain final branch head with `git rev-parse HEAD` before publication.
+- Pull request: https://github.com/benbaron/sca-jakarta-h2/pull/351 (draft). Owner authorized publication on 2026-09-26.
+- Publication mapping: local `1993128` -> remote `739c31ab23f34794085d73fc54ce33777d32bda4`, tree `78f74144e79797f4b2fb8220f8d2a9b596f7800a`; local `215ba5b` -> remote `f01ae14a85c61d6bdd56f7988d6c2d41df1b37a8`, tree `b611bf60fece88bc90d8c3f9e826108925328020`. Both trees match; connected-service commit identities differ from local identities. This publication-handoff commit follows that reviewed content head.
 - Completed: live adopted P23–P28 contract; all slice statuses/dependencies; G1–G14 source/test/owner/disposition ledger; A01–A14 reproducible specifications; runbook coverage matrix; retrieved named workbook identity/structure and instruction anchors; D01–D10 pending-input decisions; owner review instructions.
 - No production code, migrations, workbook data or archived proposal changes.
 - Validation: source/route/test inventory inspection and read-only workbook structure inspection completed. Local validation passed: four changed documents, 26 adopted slices plus conditional P27-S5, G1–G14/A01–A14 coverage, local Markdown links, unchanged archive, active selection, and `git diff --check`. An initial validator assumed 27 baseline slices; checking the actual adopted headings corrected that count to 26 plus one conditional slice, and the complete check passed. `mvn clean verify` attempted: exit 127, Maven unavailable; no Maven wrapper. No application tests, desktop acceptance or exact-head CI pass claimed.
-- Remaining: owner supplies/verifies D01 installed-build evidence and confirms D02 submission authority; policy inputs gate only their affected later slices. S1 owner documentation acceptance, authorized publication, required CI and merge remain outstanding.
-- Next exact action: after authorization publish the reviewed commit through the connected GitHub service, verify matching tree and branch/PR heads, record actual CI/publication evidence here, and request owner review. Do not implement S2 until S1 merge is confirmed.
+- Remaining: owner supplies/verifies D01 installed-build evidence and confirms D02 submission authority; policy inputs gate only their affected later slices. S1 owner documentation acceptance, final-head CI and merge remain outstanding.
+- CI: Maven PR Tests run `36292168364` started for published head `f01ae14`; it was in progress when this handoff was prepared. This handoff changes the head, so require the successor final-head run; no CI pass is claimed in this record.
+- Next exact action: inspect final-head Maven PR Tests for PR #351, resolve any failure, and review `doc/P23-S1-user-testing.md` with the owner. Do not implement S2 until S1 merge is confirmed.
