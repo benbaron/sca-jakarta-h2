@@ -5,8 +5,8 @@ active_slice: P23-S3
 active_status: VERIFYING
 active_branch: codex/P23-S3-historical-open-items
 active_pull_request: null
-active_head: 321a3fd3a702931775ac47073229a3e389e4cb45
-next_action: "P23-S2 is closed; P23-S3 is selected. Reproduce A02, implement effective-date projection, and validate before publication."
+active_head: 04801e5265ae1c199af7367a8de3021f54d66c00
+next_action: "Obtain owner authorization to publish P23-S3 and open its PR, then verify exact-head CI and owner acceptance. S4 remains blocked until S3 merges."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -777,3 +777,12 @@ Design finding: reversal transactions have inverse ledger splits and a unique re
 - Focused verification passed: 18 tests, no failures/errors/skips, covering query, six report definitions, legacy migration, Dashboard/report/control-ledger agreement, opening/settlement corrections and company isolation. Final full verification follows in the handoff.
 - Specifications updated: [transaction supplemental lifecycle](accounting/transaction-editor-and-journal.md#supplemental-transaction-records-and-open-item-lifecycle), [reports](reporting/report-library.md#supplemental-open-item-reports), and [owner testing](P23-S3-historical-open-items-user-testing.md).
 - Scope boundary: earlier direct-edit/delete policy remains in force; S3 does not reconstruct deleted versions. S4 completeness/over-application protections and S5 SCLX lifecycle portability remain separate. Owner desktop acceptance, publication/exact-head CI and merge remain outstanding; S3 is not DONE.
+
+
+### P23-S3 final local handoff
+
+- Status: VERIFYING; branch `codex/P23-S3-historical-open-items`; PR: none, not published. Verified implementation head: `04801e5265ae1c199af7367a8de3021f54d66c00`; this documentation-only handoff follows it. `git rev-parse HEAD` identifies the local tip for publication. The branch also carries the preserved S2 closeout commit.
+- Final gate: Maven 3.9.9 `mvn --offline --settings .mvn/settings-github.xml clean verify` passed on 2026-09-27: **815 tests, 0 failures, 0 errors, 31 skips**, BUILD SUCCESS. All 16 supplemental query cases passed, including the final changed replacement amount. No test failure remains. Headless skips are not visual acceptance.
+- Baseline compile and 18 focused checks passed. Final diff whitespace and changed-document local links passed. Maven was restored to `/tmp` because it was no longer present; all dependencies resolved from the existing local cache. No build configuration changed. Build-generated removal of the tracked manifest was restored.
+- Completed: A02 reproduction/correction, shared read/save projection, regression/consumer checks, governing specifications, user testing notes and S2 closure carry-forward. No schema or SCLX changes.
+- Remaining: owner publication authorization under AGENTS.md section 5, draft PR, exact-head CI, manual acceptance and merge. No GitHub S3 result is claimed. Next exact action after authorization: publish the reviewed local commit sequence without force, verify each tree and PR head, run/inspect CI, and record results. P23-S4 remains BLOCKED.
