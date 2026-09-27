@@ -1,12 +1,12 @@
 ---
-plan_version: 302
+plan_version: 303
 active_phase: P23
-active_slice: P23-S2
-active_status: VERIFYING
-active_branch: codex/P23-S2-budget-reversal-actuals
-active_pull_request: 352
-active_head: 0703e2a17abca00f3a9aa81069e65ceb2c91a21e
-next_action: "Verify final-head CI for PR #352 and obtain owner desktop acceptance; merge before advancing to P23-S3."
+active_slice: P23-S3
+active_status: READY
+active_branch: null
+active_pull_request: null
+active_head: 321a3fd3a702931775ac47073229a3e389e4cb45
+next_action: "P23-S2 is closed; P23-S3 is READY. On owner instruction, start a fresh S3 branch from current main and reproduce A02 before implementation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -35,7 +35,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
-| P23 | Accounting correctness and open-item integrity | IN_PROGRESS — P23-S2 budget reversal actuals |
+| P23 | Accounting correctness and open-item integrity | READY — P23-S3 historical open-item balances |
 | P24 | Named events and usable entry workflows | BLOCKED — P23 |
 | P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21, P22-S1 through P22-S6, and P23-S1 remain complete. On 2026-09-27 the owner explicitly selected P23-S2 after S1 merged. Execute only S2; advance to S3 only after S2 is accepted, validated, and merged into current main. Conditional P27-S5 remains unadopted; unrelated donor/receipt workflows are not implicitly included.
+P21, P22-S1 through P22-S6, and P23-S1 through P23-S2 are complete. The owner confirmed acceptance and merge of S2 on 2026-09-27. P23-S3 is the next unblocked slice and is READY; implementation has not started. Conditional P27-S5 remains unadopted.
 
 ## 10. Archived proposal and adoption
 
@@ -670,8 +670,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | Slice | Deliverable | Status | Prerequisite / gate |
 |---|---|---|---|
 | P23-S1 | Adopt scope and establish reproducible acceptance cases | DONE | Documentation validation, owner review, publication and merge |
-| P23-S2 | Correct Budget vs Actual reversal treatment (G1) | VERIFYING | P23-S1 merged; owning contract and D01–D10 gates as applicable |
-| P23-S3 | Preserve historical open-item balances (G2) | BLOCKED | P23-S2 merged; owning contract and D01–D10 gates as applicable |
+| P23-S2 | Correct Budget vs Actual reversal treatment (G1) | DONE | P23-S1 merged; owning contract and D01–D10 gates as applicable |
+| P23-S3 | Preserve historical open-item balances (G2) | READY | P23-S2 merged; owning contract and D01–D10 gates as applicable |
 | P23-S4 | Enforce and explain schedule-to-ledger completeness (G3) | BLOCKED | P23-S3 merged; owning contract and D01–D10 gates as applicable |
 | P23-S5 | Preserve open-item lifecycle in SCLX (G4) | BLOCKED | P23-S4 merged; owning contract and D01–D10 gates as applicable |
 | P24-S1 | Make event creation and discovery explicit (G14) | BLOCKED | P23-S5 merged; owning contract and D01–D10 gates as applicable |
@@ -750,3 +750,12 @@ Owner authorized publication on 2026-09-27. Draft PR: https://github.com/benbaro
 - Connected-service publication preserved commit messages, order and file trees. The branch was absent and created at the reviewed head; no force update occurred. Remote main remains the verified S1 merge base.
 - This publication-record commit follows that content head. Require the successor exact-head Maven PR Tests run, not a result for an earlier head. At preparation, GitHub validation is pending; final result is recorded in the PR description after the run completes.
 - Remaining: exact-head CI, owner execution of P23-S2-budget-reversal-user-testing.md, and merge. S2 stays VERIFYING and S3 stays BLOCKED. Next action: inspect PR #352's final-head checks and resolve any failure before owner review/merge.
+
+
+## 13. P23-S2 closure
+
+On 2026-09-27 the owner confirmed acceptance and merge of PR #352. GitHub verifies merge commit `321a3fd3a702931775ac47073229a3e389e4cb45` in current main. Final PR head `5d238989ed06ce1c5ad8774746080d6e239d7ec6` passed Maven PR Tests run `36337954378`, including clean headless verification, the additional test pass and production JavaFX route compliance. Local verification was 801 tests, zero failures/errors, 31 skips. No post-merge CI result is claimed.
+
+P23-S2 is DONE. All preceding S2 pending-publication, acceptance and merge statements are historical. P23-S3 is READY, with no implementation branch or PR yet. It owns G2/A02 historical open-item balances; read the adopted S3 contract and required lifecycle/report sources before coding. No later slice has been implemented.
+
+This documentation-only closeout is recorded on fresh branch `codex/P23-S2-closeout`, based on the verified merge above; local only, no closeout PR. Validation: merge and exact-head CI verified; `git diff --check` passed. When beginning S3, preserve this closeout record in the S3 plan update if it has not separately reached main. Next action: await owner selection of S3, then refresh main and create a fresh S3 branch.
