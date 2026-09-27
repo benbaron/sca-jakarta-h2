@@ -1,12 +1,12 @@
 ---
-plan_version: 301
+plan_version: 302
 active_phase: P23
-active_slice: P23-S1
+active_slice: P23-S2
 active_status: VERIFYING
-active_branch: codex/P23-S1-adopt-correction-plan
-active_pull_request: 351
-active_head: f01ae14a85c61d6bdd56f7988d6c2d41df1b37a8
-next_action: "Verify final-head CI for PR #351 and obtain owner documentation acceptance; merge before selecting P23-S2."
+active_branch: codex/P23-S2-budget-reversal-actuals
+active_pull_request: 352
+active_head: 0703e2a17abca00f3a9aa81069e65ceb2c91a21e
+next_action: "Verify final-head CI for PR #352 and obtain owner desktop acceptance; merge before advancing to P23-S3."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -35,7 +35,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
-| P23 | Accounting correctness and open-item integrity | IN_PROGRESS — P23-S1 adopted scope and baseline |
+| P23 | Accounting correctness and open-item integrity | IN_PROGRESS — P23-S2 budget reversal actuals |
 | P24 | Named events and usable entry workflows | BLOCKED — P23 |
 | P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21 and P22-S1 through P22-S6 remain complete. On 2026-09-26 the owner adopted the archived correction program and explicitly selected P23-S1. Execute only that slice. Advance to P23-S2 only after S1 is accepted, validated, and merged into current main. Conditional P27-S5 remains unadopted; unrelated donor/receipt workflows are not implicitly included.
+P21, P22-S1 through P22-S6, and P23-S1 remain complete. On 2026-09-27 the owner explicitly selected P23-S2 after S1 merged. Execute only S2; advance to S3 only after S2 is accepted, validated, and merged into current main. Conditional P27-S5 remains unadopted; unrelated donor/receipt workflows are not implicitly included.
 
 ## 10. Archived proposal and adoption
 
@@ -669,8 +669,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 
 | Slice | Deliverable | Status | Prerequisite / gate |
 |---|---|---|---|
-| P23-S1 | Adopt scope and establish reproducible acceptance cases | VERIFYING | Documentation validation, owner review, publication and merge |
-| P23-S2 | Correct Budget vs Actual reversal treatment (G1) | BLOCKED | P23-S1 merged; owning contract and D01–D10 gates as applicable |
+| P23-S1 | Adopt scope and establish reproducible acceptance cases | DONE | Documentation validation, owner review, publication and merge |
+| P23-S2 | Correct Budget vs Actual reversal treatment (G1) | VERIFYING | P23-S1 merged; owning contract and D01–D10 gates as applicable |
 | P23-S3 | Preserve historical open-item balances (G2) | BLOCKED | P23-S2 merged; owning contract and D01–D10 gates as applicable |
 | P23-S4 | Enforce and explain schedule-to-ledger completeness (G3) | BLOCKED | P23-S3 merged; owning contract and D01–D10 gates as applicable |
 | P23-S5 | Preserve open-item lifecycle in SCLX (G4) | BLOCKED | P23-S4 merged; owning contract and D01–D10 gates as applicable |
@@ -713,3 +713,40 @@ Status: VERIFYING (local documentation implemented; not DONE).
 - Remaining: owner supplies/verifies D01 installed-build evidence and confirms D02 submission authority; policy inputs gate only their affected later slices. S1 owner documentation acceptance, final-head CI and merge remain outstanding.
 - CI: Maven PR Tests run `36292168364` started for published head `f01ae14`; it was in progress when this handoff was prepared. This handoff changes the head, so require the successor final-head run; no CI pass is claimed in this record.
 - Next exact action: inspect final-head Maven PR Tests for PR #351, resolve any failure, and review `doc/P23-S1-user-testing.md` with the owner. Do not implement S2 until S1 merge is confirmed.
+
+## 12. P23-S1 closure and P23-S2 selection
+
+P23-S1 is DONE: owner merged PR #351 at `654825ba8f2855204cc52ca3302f878f8746e500`; exact final head `08ace942e745282a2d02aa053f7b3fa9837e8725` passed Maven PR Tests run `36292208118`. The owner explicitly selected P23-S2 on 2026-09-27. The preceding S1 handoff is historical.
+
+P23-S2 is VERIFYING on `codex/P23-S2-budget-reversal-actuals`, based on that merged main. Scope is G1/A01 only; no schema, lifecycle-write, event UI, SCLX or open-item query changes. Required reading: AGENTS.md, this plan, adopted P23-S2 program contract, P23-S1 A01 baseline, budget model, transaction lifecycle/correction policy and report-library contract. Required inspection: BudgetPlanService, TransactionEntryService, TransactionCorrectionService, FinancialReportService, Txn/TxnSplit, FiscalPeriodRange, V48 status constraints, BudgetPlanServiceTest and correction/report tests.
+
+
+### P23-S2 implementation and validation
+
+- Completed: actuals explicitly include ENTERED and REVERSED canonical transactions by their own dates; signed expense/income rules retained; missing categories appear as separate unclassified income/expense groups per fund. No lifecycle writes, schema changes or invented persisted categories.
+- Regression: `BudgetReversalActualsTest` reproduces A01 through real entry/reversal/replacement commands, checks same/later-period cutoffs, income signs, refunds, category/fund separation, July fiscal boundaries, and unclassified amounts. GL, Income Statement and event/fund projections are compared on equivalent scopes. Budget comparison itself still aggregates all events; event budget filtering remains P26-S3.
+- Reproduction evidence: on the unchanged production query, all seven original regression cases failed while eight existing BudgetPlanServiceTest cases passed. Before-cutoff originals became 0 instead of ±100; replacement expense was −20 instead of 80 (income 20 instead of −80); prior fiscal-year expense became 0 instead of 100. The initial fixture omitted active-chart selection; that fixture was corrected before recording these seven accounting failures.
+- Baseline compile passed. Focused gate passed: 19 tests, zero failures/errors/skips, covering new budget regression tests and existing budget/correction tests. Full verification and final handoff follow below.
+- Governing specification: [budget actuals](accounting/budget-model.md#p23-s2-correction-actuals). [User-visible changes and manual acceptance](P23-S2-budget-reversal-user-testing.md).
+- Remaining: publication authorization, PR/exact-head CI, owner desktop acceptance and merge. No PR or GitHub S2 result is claimed. P23-S2 is not DONE; P23-S3 stays blocked.
+
+
+### P23-S2 final local handoff
+
+- Status: VERIFYING; branch `codex/P23-S2-budget-reversal-actuals`; PR: none (not published).
+- Reviewed implementation head: `d8fae86a2cb6fcfa47856db56de187b4538c19c9`. This documentation-only handoff commit follows that head; resolve the branch tip with `git rev-parse HEAD` before publication. The active-head field identifies the verified implementation commit.
+- Final local gate: `mvn --settings /tmp/p23-maven-settings.xml clean verify` passed on 2026-09-27 using Maven 3.9.9: **801 tests, 0 failures, 0 errors, 31 skipped**, BUILD SUCCESS. New regression class: 8 passing cases, including event/fund reconciliation. Headless skips are not desktop acceptance. `git diff --check` and changed-document local link validation passed.
+- Environment recovery: installed Maven in `/tmp` and used runtime proxy settings outside the repository. Initial dependency resolution failed with the stale proxy; an offline clean attempt lacked a cached plugin. Refreshing the private settings and rerunning online completed successfully. No project build configuration changed; no known failing test remains. The build-generated removal of the tracked manifest was restored.
+- Changed documents: this plan, P23-S1 baseline execution cross-reference, accounting/budget-model.md, and P23-S2-budget-reversal-user-testing.md. Archive unchanged.
+- Next exact action: obtain owner authorization for S2 publication under AGENTS.md section 5, then publish the reviewed commit sequence to the named branch without force, create the S2 PR with actual validation evidence, verify matching tree/head and exact-head CI, and record those results here. Owner desktop checks and merge remain required before DONE or advancement.
+
+
+### P23-S2 publication
+
+Owner authorized publication on 2026-09-27. Draft PR: https://github.com/benbaron/sca-jakarta-h2/pull/352. Branch: `codex/P23-S2-budget-reversal-actuals`; verified published content head: `0703e2a17abca00f3a9aa81069e65ceb2c91a21e`. The preceding local handoff is historical.
+
+- Local `d8fae86a2cb6fcfa47856db56de187b4538c19c9` → remote `e7bc3e9e4104c9211d5c1bc363a78ed4ee49d1a7`, matching tree `eca2bd215884256216c4176ff09b25f15a67328f`.
+- Local `5158780268318819523ca46ceead112264c17352` → remote `0703e2a17abca00f3a9aa81069e65ceb2c91a21e`, matching tree `f902e32d1fde4177199e5dc87578be0028b2adac`.
+- Connected-service publication preserved commit messages, order and file trees. The branch was absent and created at the reviewed head; no force update occurred. Remote main remains the verified S1 merge base.
+- This publication-record commit follows that content head. Require the successor exact-head Maven PR Tests run, not a result for an earlier head. At preparation, GitHub validation is pending; final result is recorded in the PR description after the run completes.
+- Remaining: exact-head CI, owner execution of P23-S2-budget-reversal-user-testing.md, and merge. S2 stays VERIFYING and S3 stays BLOCKED. Next action: inspect PR #352's final-head checks and resolve any failure before owner review/merge.

@@ -542,6 +542,8 @@ public class BudgetPlanService
             accumulator(rows, row).budget = decimal(row[5]);
         }
 
+        // REVERSED originals remain ledger facts on their original dates. Their inverse
+        // entries offset them only when the inverse transaction's own date is in range.
         List<Object[]> actualRows = em.createQuery("""
                 select bc.code, bc.name, f.id, f.code, f.name,
                        coalesce(sum(case
@@ -549,13 +551,14 @@ public class BudgetPlanService
                            when a.accountType = :expenseType then s.amountSigned
                            else 0 end), 0)
                 from TxnSplit s
-                join s.budgetCategory bc
+                left join s.budgetCategory bc
                 join s.account a
                 join s.fund f
                 where (s.txn.company = :company
                        or (s.txn.company is null and (select count(c) from Company c) = 1))
                   and s.txn.txnDate between :start and :asOf
-                  and s.txn.status = 'ENTERED'
+                  and s.txn.status in ('ENTERED', 'REVERSED')
+                  and a.accountType in (:incomeType, :expenseType)
                 group by bc.code, bc.name, f.id, f.code, f.name
                 order by bc.code, f.code
                 """, Object[].class)
@@ -576,10 +579,10 @@ public class BudgetPlanService
     {
         String categoryCode = string(row[0]);
         Long fundId = row[2] == null ? null : ((Number) row[2]).longValue();
-        String key = categoryCode + "|" + fundId;
+        String key = (row[0] == null ? "unclassified:" : "category:" + categoryCode) + "|" + fundId;
         return rows.computeIfAbsent(key, ignored -> new VarianceAccumulator(
                 categoryCode,
-                string(row[1]),
+                row[0] == null ? "Unclassified (no budget category)" : string(row[1]),
                 fundId,
                 string(row[3]),
                 string(row[4])));
