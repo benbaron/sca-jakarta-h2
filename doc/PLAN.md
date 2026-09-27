@@ -5,8 +5,8 @@ active_slice: P23-S2
 active_status: VERIFYING
 active_branch: codex/P23-S2-budget-reversal-actuals
 active_pull_request: null
-active_head: 654825ba8f2855204cc52ca3302f878f8746e500
-next_action: "Finish P23-S2 verification, then obtain publication authorization under AGENTS.md; P23-S3 remains blocked until S2 merges."
+active_head: d8fae86a2cb6fcfa47856db56de187b4538c19c9
+next_action: "Obtain authorization to publish the reviewed P23-S2 commits and open its PR, then verify exact-head CI; P23-S3 remains blocked until S2 merges."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -728,4 +728,14 @@ P23-S2 is VERIFYING on `codex/P23-S2-budget-reversal-actuals`, based on that mer
 - Reproduction evidence: on the unchanged production query, all seven original regression cases failed while eight existing BudgetPlanServiceTest cases passed. Before-cutoff originals became 0 instead of ±100; replacement expense was −20 instead of 80 (income 20 instead of −80); prior fiscal-year expense became 0 instead of 100. The initial fixture omitted active-chart selection; that fixture was corrected before recording these seven accounting failures.
 - Baseline compile passed. Focused gate passed: 19 tests, zero failures/errors/skips, covering new budget regression tests and existing budget/correction tests. Full verification and final handoff follow below.
 - Governing specification: [budget actuals](accounting/budget-model.md#p23-s2-correction-actuals). [User-visible changes and manual acceptance](P23-S2-budget-reversal-user-testing.md).
-- Remaining: full local verification, publication authorization, PR/exact-head CI, owner desktop acceptance and merge. No PR or GitHub S2 result is claimed. P23-S2 is not DONE; P23-S3 stays blocked.
+- Remaining: publication authorization, PR/exact-head CI, owner desktop acceptance and merge. No PR or GitHub S2 result is claimed. P23-S2 is not DONE; P23-S3 stays blocked.
+
+
+### P23-S2 final local handoff
+
+- Status: VERIFYING; branch `codex/P23-S2-budget-reversal-actuals`; PR: none (not published).
+- Reviewed implementation head: `d8fae86a2cb6fcfa47856db56de187b4538c19c9`. This documentation-only handoff commit follows that head; resolve the branch tip with `git rev-parse HEAD` before publication. The active-head field identifies the verified implementation commit.
+- Final local gate: `mvn --settings /tmp/p23-maven-settings.xml clean verify` passed on 2026-09-27 using Maven 3.9.9: **801 tests, 0 failures, 0 errors, 31 skipped**, BUILD SUCCESS. New regression class: 8 passing cases, including event/fund reconciliation. Headless skips are not desktop acceptance. `git diff --check` and changed-document local link validation passed.
+- Environment recovery: installed Maven in `/tmp` and used runtime proxy settings outside the repository. Initial dependency resolution failed with the stale proxy; an offline clean attempt lacked a cached plugin. Refreshing the private settings and rerunning online completed successfully. No project build configuration changed; no known failing test remains. The build-generated removal of the tracked manifest was restored.
+- Changed documents: this plan, P23-S1 baseline execution cross-reference, accounting/budget-model.md, and P23-S2-budget-reversal-user-testing.md. Archive unchanged.
+- Next exact action: obtain owner authorization for S2 publication under AGENTS.md section 5, then publish the reviewed commit sequence to the named branch without force, create the S2 PR with actual validation evidence, verify matching tree/head and exact-head CI, and record those results here. Owner desktop checks and merge remain required before DONE or advancement.
