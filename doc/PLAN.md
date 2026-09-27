@@ -1,12 +1,12 @@
 ---
-plan_version: 299
-active_phase: null
-active_slice: null
-active_status: DONE
-active_branch: null
+plan_version: 300
+active_phase: P23
+active_slice: P23-S1
+active_status: VERIFYING
+active_branch: codex/P23-S1-adopt-correction-plan
 active_pull_request: null
-active_head: a1e739254b4d63b2bc3df6b0d71aa6ef4658d2a4
-next_action: "P22 is complete. Select and define the next phase deliberately; do not invent a successor slice from uncommitted future candidates."
+active_head: 849dc4e8f652d47aff05c124790f78d6dc7f93dc
+next_action: "Review and authorize publication of P23-S1 documentation; obtain exact-head CI and owner acceptance, then merge before selecting P23-S2."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -35,6 +35,12 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
+| P23 | Accounting correctness and open-item integrity | IN_PROGRESS — P23-S1 adopted scope and baseline |
+| P24 | Named events and usable entry workflows | BLOCKED — P23 |
+| P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
+| P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
+| P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
+| P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
 ## 3. Established product decisions
 
@@ -635,9 +641,74 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21 and P22-S1 through P22-S6 are complete. P22 has no remaining committed slice. Candidate donor workflows such as donor/receipt management and monthly-close assistance remain uncommitted future candidates and require a separate deliberate PLAN amendment before implementation.
+P21 and P22-S1 through P22-S6 remain complete. On 2026-09-26 the owner adopted the archived correction program and explicitly selected P23-S1. Execute only that slice. Advance to P23-S2 only after S1 is accepted, validated, and merged into current main. Conditional P27-S5 remains unadopted; unrelated donor/receipt workflows are not implicitly included.
 
-## 10. Archived proposals
+## 10. Archived proposal and adoption
 
-- [2026 deficiency correction action plan](archive/SCA_2026_Deficiency_Correction_Action_Plan.md) — archived at the owner's request on 2026-09-26. Preserves the proposed P23–P28 roadmap and G1–G14 acceptance criteria. Archiving does not adopt these phases, resolve their policy decisions, or change the active execution state.
-- Archive publication branch: `codex/docs-archive-2026-deficiency-plan`. Documentation-only validation: the archived file matches the delivered plan byte-for-byte and `git diff --check` passes; application tests are not run for this archive-only change. Next action: review and merge the archive PR; select and adopt any successor phase separately.
+- [2026 deficiency correction action plan](archive/SCA_2026_Deficiency_Correction_Action_Plan.md) remains the immutable proposal archived by PR #350, merged at `849dc4e8f652d47aff05c124790f78d6dc7f93dc`. The archive PR's exact-head Maven PR Tests run `36289042355` passed.
+- The owner subsequently adopted P23–P28 and selected P23-S1 on 2026-09-26. The [live governing program](P23-P28-runbook-correction-program.md) supersedes the proposal for execution scope; explicit pending policy decisions remain pending.
+
+## 11. P23–P28 — Adopted correction execution ledger
+
+Required reading for P23-S1:
+
+- root `AGENTS.md` and this plan;
+- [adopted program](P23-P28-runbook-correction-program.md);
+- [baseline, evidence and acceptance contract](P23-S1-baseline-and-acceptance.md);
+- [owner review and evidence collection](P23-S1-user-testing.md);
+- `doc/P21-activity-event-accounting.md`;
+- `doc/P22-S5-supplemental-open-items-user-testing.md`;
+- `doc/interface-operation-matrix.md`, `doc/ui_design_rules.md`, `doc/ui/editor-guidelines.md`;
+- `doc/accounting/transaction-lifecycle.md` and `doc/accounting/period-and-correction-policy.md`.
+
+Required inspection for S1 is the finding ledger in the baseline contract: refresh source evidence and test inventory for G1–G14, inspect V77's existing lifecycle protections, establish workbook/runbook identity, and record installed-build evidence gaps. Future slice owners must perform the additional scoped implementation/migration/test inspection named there before editing code.
+
+### Slice statuses and prerequisites
+
+The adopted program owns each slice's deliverables and acceptance criteria. The table below owns execution status. Sequential prerequisites prevent multiple selected slices; accounting-policy and external-evidence dependencies are recorded as D01–D10 in the baseline contract. Input collection may occur in S1 without starting later implementation.
+
+| Slice | Deliverable | Status | Prerequisite / gate |
+|---|---|---|---|
+| P23-S1 | Adopt scope and establish reproducible acceptance cases | VERIFYING | Documentation validation, owner review, publication and merge |
+| P23-S2 | Correct Budget vs Actual reversal treatment (G1) | BLOCKED | P23-S1 merged; owning contract and D01–D10 gates as applicable |
+| P23-S3 | Preserve historical open-item balances (G2) | BLOCKED | P23-S2 merged; owning contract and D01–D10 gates as applicable |
+| P23-S4 | Enforce and explain schedule-to-ledger completeness (G3) | BLOCKED | P23-S3 merged; owning contract and D01–D10 gates as applicable |
+| P23-S5 | Preserve open-item lifecycle in SCLX (G4) | BLOCKED | P23-S4 merged; owning contract and D01–D10 gates as applicable |
+| P24-S1 | Make event creation and discovery explicit (G14) | BLOCKED | P23-S5 merged; owning contract and D01–D10 gates as applicable |
+| P24-S2 | Make Fund/Event tagging obvious and reliable (G14) | BLOCKED | P24-S1 merged; owning contract and D01–D10 gates as applicable |
+| P24-S3 | Attribute generated inventory costs (G6) | BLOCKED | P24-S2 merged; owning contract and D01–D10 gates as applicable |
+| P24-S4 | Complete lookup maintenance (G8) | BLOCKED | P24-S3 merged; owning contract and D01–D10 gates as applicable |
+| P25-S1 | Implement one internal fund-transfer operation (G7) | BLOCKED | P24-S4 merged; owning contract and D01–D10 gates as applicable |
+| P25-S2 | Add structured payment/check references (G9) | BLOCKED | P25-S1 merged; owning contract and D01–D10 gates as applicable |
+| P25-S3 | Complete check exception and reconciliation workflows (G9) | BLOCKED | P25-S2 merged; owning contract and D01–D10 gates as applicable |
+| P25-S4 | Implement the adopted NMR accounting contract (G10) | BLOCKED | P25-S3 merged; owning contract and D01–D10 gates as applicable |
+| P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | P25-S4 merged; owning contract and D01–D10 gates as applicable |
+| P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
+| P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
+| P26-S3 | Complete event/fund budget planning and reporting filters (G12) | BLOCKED | P26-S2 merged; owning contract and D01–D10 gates as applicable |
+| P26-S4 | Add governed prepaid/deferred recognition assistance (G12) | BLOCKED | P26-S3 merged; owning contract and D01–D10 gates as applicable |
+| P26-S5 | Resolve inventory valuation limitations (G12) | BLOCKED | P26-S4 merged; owning contract and D01–D10 gates as applicable |
+| P26-S6 | Provide controlled conversion and merchant-settlement assistance | BLOCKED | P26-S5 merged; owning contract and D01–D10 gates as applicable |
+| P27-S1 | Finalize the form contract and resolve runbook conflicts (G5/G10/G13) | BLOCKED | P26-S6 merged; owning contract and D01–D10 gates as applicable |
+| P27-S2 | Export the complete required workbook and supporting packet (G5) | BLOCKED | P27-S1 merged; owning contract and D01–D10 gates as applicable |
+| P27-S3 | Add factual close readiness and evidence references (G3/G5/G13) | BLOCKED | P27-S2 merged; owning contract and D01–D10 gates as applicable |
+| P27-S4 | Complete interchange coverage for all new fields (G4 and cross-cutting) | BLOCKED | P27-S3 merged; owning contract and D01–D10 gates as applicable |
+| P28-S1 | Run the complete runbook acceptance matrix | BLOCKED | P27-S4 merged; owning contract and D01–D10 gates as applicable |
+| P28-S2 | Release and close the correction program | BLOCKED | P28-S1 merged; owning contract and D01–D10 gates as applicable |
+| P27-S5 (conditional) | Internal attachments and approvals | BLOCKED | Not adopted; explicit scope amendment and separate specifications required; not a prerequisite for baseline P28 |
+
+P27-S1 consolidates earlier template/policy collection. Its position does not defer D02–D07: relevant facts must be settled before the earlier affected code slices, without marking P27 implementation active.
+
+### P23-S1 handoff
+
+Status: VERIFYING (local documentation implemented; not DONE).
+
+- Base: `849dc4e8f652d47aff05c124790f78d6dc7f93dc`.
+- Branch: `codex/P23-S1-adopt-correction-plan`.
+- Pull request: none; publication authorization for this implementation slice is not yet recorded.
+- Current local delivery commit: the commit containing this handoff; obtain with `git rev-parse HEAD` (the recorded front-matter head is the inspected base until the publication handoff).
+- Completed: live adopted P23–P28 contract; all slice statuses/dependencies; G1–G14 source/test/owner/disposition ledger; A01–A14 reproducible specifications; runbook coverage matrix; retrieved named workbook identity/structure and instruction anchors; D01–D10 pending-input decisions; owner review instructions.
+- No production code, migrations, workbook data or archived proposal changes.
+- Validation: source/route/test inventory inspection and read-only workbook structure inspection completed. Local Markdown links, G/A coverage, slice coverage, archive identity and `git diff --check` are checked before commit. `mvn clean verify` attempted: exit 127, Maven unavailable; no Maven wrapper. No application tests, desktop acceptance or exact-head CI pass claimed.
+- Remaining: owner supplies/verifies D01 installed-build evidence and confirms D02 submission authority; policy inputs gate only their affected later slices. S1 owner documentation acceptance, authorized publication, required CI and merge remain outstanding.
+- Next exact action: after authorization publish the reviewed commit through the connected GitHub service, verify matching tree and branch/PR heads, record actual CI/publication evidence here, and request owner review. Do not implement S2 until S1 merge is confirmed.
