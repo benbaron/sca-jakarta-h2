@@ -1,12 +1,12 @@
 ---
-plan_version: 302
+plan_version: 304
 active_phase: P23
-active_slice: P23-S2
+active_slice: P23-S3
 active_status: VERIFYING
-active_branch: codex/P23-S2-budget-reversal-actuals
-active_pull_request: 352
-active_head: 0703e2a17abca00f3a9aa81069e65ceb2c91a21e
-next_action: "Verify final-head CI for PR #352 and obtain owner desktop acceptance; merge before advancing to P23-S3."
+active_branch: codex/P23-S3-historical-open-items
+active_pull_request: 353
+active_head: c1e98e59dc87656616358a50c0f1587a2577dc44
+next_action: "Verify final-head CI for PR #353, then obtain owner desktop acceptance and merge. S4 remains blocked until S3 merges."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -35,7 +35,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
-| P23 | Accounting correctness and open-item integrity | IN_PROGRESS — P23-S2 budget reversal actuals |
+| P23 | Accounting correctness and open-item integrity | IN_PROGRESS — P23-S3 historical open-item balances |
 | P24 | Named events and usable entry workflows | BLOCKED — P23 |
 | P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21, P22-S1 through P22-S6, and P23-S1 remain complete. On 2026-09-27 the owner explicitly selected P23-S2 after S1 merged. Execute only S2; advance to S3 only after S2 is accepted, validated, and merged into current main. Conditional P27-S5 remains unadopted; unrelated donor/receipt workflows are not implicitly included.
+P21, P22-S1 through P22-S6, and P23-S1 through P23-S2 are complete. The owner confirmed acceptance and merge of S2 on 2026-09-27. P23-S3 is the next unblocked slice and is READY; implementation has not started. Conditional P27-S5 remains unadopted.
 
 ## 10. Archived proposal and adoption
 
@@ -670,8 +670,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | Slice | Deliverable | Status | Prerequisite / gate |
 |---|---|---|---|
 | P23-S1 | Adopt scope and establish reproducible acceptance cases | DONE | Documentation validation, owner review, publication and merge |
-| P23-S2 | Correct Budget vs Actual reversal treatment (G1) | VERIFYING | P23-S1 merged; owning contract and D01–D10 gates as applicable |
-| P23-S3 | Preserve historical open-item balances (G2) | BLOCKED | P23-S2 merged; owning contract and D01–D10 gates as applicable |
+| P23-S2 | Correct Budget vs Actual reversal treatment (G1) | DONE | P23-S1 merged; owning contract and D01–D10 gates as applicable |
+| P23-S3 | Preserve historical open-item balances (G2) | VERIFYING | P23-S2 merged; owning contract and D01–D10 gates as applicable |
 | P23-S4 | Enforce and explain schedule-to-ledger completeness (G3) | BLOCKED | P23-S3 merged; owning contract and D01–D10 gates as applicable |
 | P23-S5 | Preserve open-item lifecycle in SCLX (G4) | BLOCKED | P23-S4 merged; owning contract and D01–D10 gates as applicable |
 | P24-S1 | Make event creation and discovery explicit (G14) | BLOCKED | P23-S5 merged; owning contract and D01–D10 gates as applicable |
@@ -750,3 +750,51 @@ Owner authorized publication on 2026-09-27. Draft PR: https://github.com/benbaro
 - Connected-service publication preserved commit messages, order and file trees. The branch was absent and created at the reviewed head; no force update occurred. Remote main remains the verified S1 merge base.
 - This publication-record commit follows that content head. Require the successor exact-head Maven PR Tests run, not a result for an earlier head. At preparation, GitHub validation is pending; final result is recorded in the PR description after the run completes.
 - Remaining: exact-head CI, owner execution of P23-S2-budget-reversal-user-testing.md, and merge. S2 stays VERIFYING and S3 stays BLOCKED. Next action: inspect PR #352's final-head checks and resolve any failure before owner review/merge.
+
+
+## 13. P23-S2 closure
+
+On 2026-09-27 the owner confirmed acceptance and merge of PR #352. GitHub verifies merge commit `321a3fd3a702931775ac47073229a3e389e4cb45` in current main. Final PR head `5d238989ed06ce1c5ad8774746080d6e239d7ec6` passed Maven PR Tests run `36337954378`, including clean headless verification, the additional test pass and production JavaFX route compliance. Local verification was 801 tests, zero failures/errors, 31 skips. No post-merge CI result is claimed.
+
+P23-S2 is DONE. All preceding S2 pending-publication, acceptance and merge statements are historical. P23-S3 is READY, with no implementation branch or PR yet. It owns G2/A02 historical open-item balances; read the adopted S3 contract and required lifecycle/report sources before coding. No later slice has been implemented.
+
+This documentation-only closeout is recorded on fresh branch `codex/P23-S2-closeout`, based on the verified merge above; local only, no closeout PR. Validation: merge and exact-head CI verified; `git diff --check` passed. When beginning S3, preserve this closeout record in the S3 plan update if it has not separately reached main. Next action: await owner selection of S3, then refresh main and create a fresh S3 branch.
+
+
+## 14. P23-S3 execution
+
+Owner selected S3 on 2026-09-27. Branch `codex/P23-S3-historical-open-items` starts from current main `321a3fd3a702931775ac47073229a3e389e4cb45` and preserves the S2 closeout record. PR: none. Scope: G2/A02 effective-date supplemental projection only; S4 completeness and S5 interchange remain separate.
+
+Required reading/inspection completed: root AGENTS, PLAN, adopted program S3 and baseline A02; transaction/editor, lifecycle, correction-policy and report-library contracts; SupplementalOpenItemQueryService, Txn/TxnSupplementalLine, entry/correction services, V77 migration, six-report builder, Dashboard and Apply Existing Item consumers, existing query/report/migration tests.
+
+Design finding: reversal transactions have inverse ledger splits and a unique reversalOf link but no supplemental allocations; replacements copy the original allocations with the same item identity. The projection must retain original allocations until their dated inverse facts apply, including reversal chains and permitted backdating. Derive corrections from those existing facts; do not add persisted allocations or a schema migration. Update the earlier current-status-only specification in this slice.
+
+
+### P23-S3 implementation and validation
+
+- Delivered: effective-date original/inverse projection for all six kinds; reversal chains and independent replacements; explicit explanation when an inverse precedes its source date; shared save-time increase validation using the same projection and current EntityManager. No migration, persisted duplicate reversal allocations, new report model, or UI layout changes.
+- Baseline compile passed. Red reproduction against unchanged production query: 10 tests run, seven assertion failures and one missing-row error in the eight new cases; two existing cases passed. All six kind fixtures changed February from 75 to 100 after a March reversal; opening replacement erased prior balances and a backdated inverse had no row.
+- Focused verification passed: 18 tests, no failures/errors/skips, covering query, six report definitions, legacy migration, Dashboard/report/control-ledger agreement, opening/settlement corrections and company isolation. Final full verification follows in the handoff.
+- Specifications updated: [transaction supplemental lifecycle](accounting/transaction-editor-and-journal.md#supplemental-transaction-records-and-open-item-lifecycle), [reports](reporting/report-library.md#supplemental-open-item-reports), and [owner testing](P23-S3-historical-open-items-user-testing.md).
+- Scope boundary: earlier direct-edit/delete policy remains in force; S3 does not reconstruct deleted versions. S4 completeness/over-application protections and S5 SCLX lifecycle portability remain separate. Owner desktop acceptance, publication/exact-head CI and merge remain outstanding; S3 is not DONE.
+
+
+### P23-S3 final local handoff
+
+- Status: VERIFYING; branch `codex/P23-S3-historical-open-items`; PR: none, not published. Verified implementation head: `04801e5265ae1c199af7367a8de3021f54d66c00`; this documentation-only handoff follows it. `git rev-parse HEAD` identifies the local tip for publication. The branch also carries the preserved S2 closeout commit.
+- Final gate: Maven 3.9.9 `mvn --offline --settings .mvn/settings-github.xml clean verify` passed on 2026-09-27: **815 tests, 0 failures, 0 errors, 31 skips**, BUILD SUCCESS. All 16 supplemental query cases passed, including the final changed replacement amount. No test failure remains. Headless skips are not visual acceptance.
+- Baseline compile and 18 focused checks passed. Final diff whitespace and changed-document local links passed. Maven was restored to `/tmp` because it was no longer present; all dependencies resolved from the existing local cache. No build configuration changed. Build-generated removal of the tracked manifest was restored.
+- Completed: A02 reproduction/correction, shared read/save projection, regression/consumer checks, governing specifications, user testing notes and S2 closure carry-forward. No schema or SCLX changes.
+- Remaining: owner publication authorization under AGENTS.md section 5, draft PR, exact-head CI, manual acceptance and merge. No GitHub S3 result is claimed. Next exact action after authorization: publish the reviewed local commit sequence without force, verify each tree and PR head, run/inspect CI, and record results. P23-S4 remains BLOCKED.
+
+
+### P23-S3 publication
+
+Owner authorized publication on 2026-09-27. Draft PR: https://github.com/benbaron/sca-jakarta-h2/pull/353. Branch: `codex/P23-S3-historical-open-items`. Verified published content head: `c1e98e59dc87656616358a50c0f1587a2577dc44`. Preceding local-only and authorization-pending handoffs are historical.
+
+- Local `2f4f88cb2771299ee93fca9e01eb9e9f1b8d6995` → remote `b4c7d8dbc7ec1adcc3230c17a12af7bbcadb8bc9`, matching tree `81ee7e8696a83414889c2dbc5826ec28226e7d14`.
+- Local `04801e5265ae1c199af7367a8de3021f54d66c00` → remote `54d09c8b6599c9f50db3e4699bf8247ae00954cf`, matching tree `4989a9a55cb6b18a36498cd485f551fe41515c9b`.
+- Local `dfb50428d860b37e975076e3df1528d5eedd6472` → remote `c1e98e59dc87656616358a50c0f1587a2577dc44`, matching tree `f9ac4ae346a1fb5031c14ee98b818551d75c9f76`.
+- All messages, ordering and file trees preserved through connected-service publication. A documentation transfer mismatch was caught before branch creation and corrected with exact blob bytes; only matching trees were published. No force update occurred.
+- This publication-record commit follows the reviewed content head. CI is pending at preparation; inspect the successor final-head Maven PR Tests run. The final result and head are recorded in the PR description after completion.
+- Remaining: final-head CI, owner desktop checks in P23-S3-historical-open-items-user-testing.md, and merge. S3 remains VERIFYING; S4 remains BLOCKED. Next action: resolve any final-head check failure, then owner acceptance/merge.

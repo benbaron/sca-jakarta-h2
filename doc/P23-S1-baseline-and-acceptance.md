@@ -129,3 +129,8 @@ After S1 is accepted and merged, start a fresh branch from then-current main. Re
 - Attempted `mvn clean verify`: unavailable, exit 127. Java is installed; no Maven wrapper exists. CI and desktop results remain unverified for this slice.
 - Required local documentation checks: all G1–G14/A01–A14 mappings, all adopted slices, local Markdown targets, unchanged archive, and `git diff --check`.
 - Required owner review: [P23-S1 user testing](P23-S1-user-testing.md). No UI functionality is claimed changed by this slice.
+
+
+## A02 execution follow-up
+
+P23-S3 reproduced the current-status historical defect across all six supplemental kinds. See [S3 validation](PLAN.md#p23-s3-implementation-and-validation) for red/green evidence and [owner testing](P23-S3-historical-open-items-user-testing.md) for dated acceptance checks. The S1 execution record remains historical; this does not assert acceptance of other cases.

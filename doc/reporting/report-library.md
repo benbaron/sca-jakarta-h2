@@ -51,7 +51,7 @@ P16-S15 adds four specialized projections without introducing a reporting store.
 
 ### Supplemental open-item reports
 
-P22-S5 adds six domain-named as-of reports: **Accounts Receivable**, **Accounts Payable**, **Prepaid Expenses**, **Deferred Revenue**, **Other Assets**, and **Other Liabilities**. They are not generic Schedules reports. All six use one `SupplementalOpenItemQueryService` and the same lifecycle projection consumed by Dashboard.
+P22-S5 adds six domain-named as-of reports: **Accounts Receivable**, **Accounts Payable**, **Prepaid Expenses**, **Deferred Revenue**, **Other Assets**, and **Other Liabilities**. They are not generic Schedules reports. All six use one `SupplementalOpenItemQueryService` and the same lifecycle projection consumed by Dashboard and Apply Existing Item. P23-S3 includes original allocations and derived inverse effects on their own transaction dates, preserving earlier balances after later corrections. Increases/reductions are net of their respective corrections; a reversal dated before its source is identified in the row explanation.
 
 Each row exposes logical Item ID, opening transaction/date, human entry reference, counterparty, description/reference, total increases, total reductions/recognition, current open balance, applicable due/start/end dates, derived status, notes, and any reconciliation diagnostic. `OPEN`, `CLOSED`, `OVER_APPLIED`, `UNMATCHED_REDUCTION`, `INCONSISTENT`, and `UNMATCHED_LEGACY` are derived presentation states rather than mutable persisted workflow statuses. Legacy/unmatched rows remain visible but do not become authoritative Dashboard balances.
 
