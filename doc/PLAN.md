@@ -1,12 +1,12 @@
 ---
-plan_version: 304
+plan_version: 305
 active_phase: P23
-active_slice: P23-S3
-active_status: VERIFYING
-active_branch: codex/P23-S3-historical-open-items
-active_pull_request: 353
-active_head: c1e98e59dc87656616358a50c0f1587a2577dc44
-next_action: "Verify final-head CI for PR #353, then obtain owner desktop acceptance and merge. S4 remains blocked until S3 merges."
+active_slice: P23-S4
+active_status: BLOCKED
+active_branch: codex/P23-S4-supplemental-completeness
+active_pull_request: null
+active_head: 114cc045761fb64c5e22b03f1f8ab2a3944024e0
+next_action: "Resolve D08 using the P23-S4 completeness policy proposal, then implement and validate S4 on this fresh branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -35,7 +35,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
-| P23 | Accounting correctness and open-item integrity | IN_PROGRESS — P23-S3 historical open-item balances |
+| P23 | Accounting correctness and open-item integrity | BLOCKED — P23-S4 D08 allocation policy |
 | P24 | Named events and usable entry workflows | BLOCKED — P23 |
 | P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
@@ -671,7 +671,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 |---|---|---|---|
 | P23-S1 | Adopt scope and establish reproducible acceptance cases | DONE | Documentation validation, owner review, publication and merge |
 | P23-S2 | Correct Budget vs Actual reversal treatment (G1) | DONE | P23-S1 merged; owning contract and D01–D10 gates as applicable |
-| P23-S3 | Preserve historical open-item balances (G2) | VERIFYING | P23-S2 merged; owning contract and D01–D10 gates as applicable |
+| P23-S3 | Preserve historical open-item balances (G2) | DONE | P23-S2 merged; owning contract and D01–D10 gates as applicable |
 | P23-S4 | Enforce and explain schedule-to-ledger completeness (G3) | BLOCKED | P23-S3 merged; owning contract and D01–D10 gates as applicable |
 | P23-S5 | Preserve open-item lifecycle in SCLX (G4) | BLOCKED | P23-S4 merged; owning contract and D01–D10 gates as applicable |
 | P24-S1 | Make event creation and discovery explicit (G14) | BLOCKED | P23-S5 merged; owning contract and D01–D10 gates as applicable |
@@ -798,3 +798,14 @@ Owner authorized publication on 2026-09-27. Draft PR: https://github.com/benbaro
 - All messages, ordering and file trees preserved through connected-service publication. A documentation transfer mismatch was caught before branch creation and corrected with exact blob bytes; only matching trees were published. No force update occurred.
 - This publication-record commit follows the reviewed content head. CI is pending at preparation; inspect the successor final-head Maven PR Tests run. The final result and head are recorded in the PR description after completion.
 - Remaining: final-head CI, owner desktop checks in P23-S3-historical-open-items-user-testing.md, and merge. S3 remains VERIFYING; S4 remains BLOCKED. Next action: resolve any final-head check failure, then owner acceptance/merge.
+
+
+## 15. P23-S3 closure and P23-S4 policy gate
+
+Owner accepted and merged S3 on 2026-09-27 (America/Denver), then instructed proceeding to S4. GitHub confirms PR #353 merged into current main at `114cc045761fb64c5e22b03f1f8ab2a3944024e0`. Exact final head `231fa1a643d557c3175d5606e4109e4d9432d328` passed Maven PR Tests run `36356514191`. S3 is DONE; preceding outstanding S3 acceptance/merge statements are historical. No post-merge CI result is claimed.
+
+S4 is selected on fresh branch `codex/P23-S4-supplemental-completeness`, based on that main. PR: none. Status: BLOCKED on the explicit D08 prerequisite in P23-S1-baseline-and-acceptance.md. Inspection confirms that full allocation enforcement affects historical SCLX imports, which currently carry no lifecycle linkage. The adopted reject-excess default is already settled; the historical import exception and remediation contract still need resolution.
+
+Completed: merge/CI verification; S4/A03/D08 contract review; entry/correction/import boundary inspection; [concrete D08 policy proposal](P23-S4-completeness-policy-proposal.md). The proposal preserves historical data through an acknowledged exception while rejecting incomplete new entries and excess applications, and keeps S5 portability separate. No production changes or tests were made while the policy gate is unresolved. Documentation-only validation: local links and diff whitespace. No application validation or S4 completion is claimed.
+
+Remaining: owner decision on the proposed legacy exception contract; implementation, regression/concurrency/consumer testing, full verification, publication authorization, exact-head CI and manual acceptance. Next action: adopt or revise the proposal, update D08 to the actual decision, mark S4 IN_PROGRESS and perform remaining required UI/source inspection before implementing. Local documentation handoff only; not published.
