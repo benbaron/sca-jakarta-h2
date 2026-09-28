@@ -49,6 +49,11 @@ public final class SupplementalOpenItemQueryService
     /** Shares the projection with save-time validation inside its existing transaction. */
     static Result query(EntityManager em, String companyCode, Kind kind, LocalDate asOfDate)
     {
+        return query(em, companyCode, kind, asOfDate, true);
+    }
+
+    static Result query(EntityManager em, String companyCode, Kind kind, LocalDate asOfDate, boolean reconcile)
+    {
         Objects.requireNonNull(kind, "kind");
         Objects.requireNonNull(asOfDate, "asOfDate");
         if (companyCode == null || companyCode.isBlank())
@@ -120,7 +125,9 @@ public final class SupplementalOpenItemQueryService
         }
         boolean authorityAvailable = rows.stream().anyMatch(Row::authoritative);
         rows.addAll(diagnostics);
-        return new Result(kind, asOfDate, rows, authorityAvailable);
+        return new Result(kind, asOfDate, rows, authorityAvailable,
+                reconcile ? SupplementalReconciliationService.query(em, companyCode, kind, asOfDate)
+                        : new SupplementalReconciliationService.Reconciliation(List.of(), List.of()));
     }
 
     private record DatedEffect(int direction, boolean backdated)
@@ -167,7 +174,7 @@ public final class SupplementalOpenItemQueryService
         return line.getItemId() != null && line.getTxnSplit() != null && line.getItemEffect() != null;
     }
 
-    private static String lifecycleMismatch(TxnSupplementalLine line, Kind kind)
+    static String lifecycleMismatch(TxnSupplementalLine line, Kind kind)
     {
         if (line.getTxnSplit().getTxn() == null
                 || !Objects.equals(line.getTxnSplit().getTxn().getId(), line.getTxn().getId()))
@@ -241,11 +248,17 @@ public final class SupplementalOpenItemQueryService
         public AccountSubtype accountSubtype() { return accountSubtype; }
     }
 
-    public record Result(Kind kind, LocalDate asOfDate, List<Row> rows, boolean authorityAvailable)
+    public record Result(Kind kind, LocalDate asOfDate, List<Row> rows, boolean authorityAvailable,
+                         SupplementalReconciliationService.Reconciliation reconciliation)
     {
         public Result
         {
             rows = rows == null ? List.of() : List.copyOf(rows);
+        }
+
+        public boolean ready()
+        {
+            return reconciliation.ready() && rows.stream().allMatch(row -> row.authoritative() && row.openBalance().signum() >= 0);
         }
 
         public List<Row> authoritativeRows()

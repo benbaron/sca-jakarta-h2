@@ -114,7 +114,7 @@ Current examples:
 - `DateRange` / `DateRangeContext`: retained for intentional Report Library explicit-range behavior.
 - `DateRangeSelector` / `DateRangeUtil`: retired dead legacy shell/editor helpers.
 - P22-S5 retired the unconsumed `ScheduleEligibilityService` and `AppPanelId.SCHEDULES` executable compatibility seams. Historical schedule schema/account metadata remains retained without a Schedules destination.
-- Supplemental receivable/payable/prepaid/deferred/other lifecycle is maintained inside Journal and reported through Report Library/Dashboard; there is no separate Open Items or Schedules editor.
+- Supplemental receivable/payable/prepaid/deferred/other lifecycle is maintained inside Journal and reported through Report Library/Dashboard; there is no separate Open Items or Schedules editor. P23-S4 supplemental reports expose control-account reconciliation and stable-transaction repair navigation to Journal, with summary actions disabled and a resizable, horizontally/vertically scrollable table. Legacy SCLX allocation exceptions require a separate explicit acknowledgment and remain NOT READY until reviewed repair.
 - legacy reconciliation-run repositories/services: retained only where current SCLX/comparison/history compatibility paths consume them; they are not the canonical reconciliation workspace authority.
 - legacy period-close-run repositories/services: retained for compatibility/history where consumed; `PeriodCloseRangeService` remains canonical production close-state authority.
 

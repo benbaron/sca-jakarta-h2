@@ -1,12 +1,12 @@
 ---
-plan_version: 304
+plan_version: 306
 active_phase: P23
-active_slice: P23-S3
+active_slice: P23-S4
 active_status: VERIFYING
-active_branch: codex/P23-S3-historical-open-items
-active_pull_request: 353
-active_head: c1e98e59dc87656616358a50c0f1587a2577dc44
-next_action: "Verify final-head CI for PR #353, then obtain owner desktop acceptance and merge. S4 remains blocked until S3 merges."
+active_branch: codex/P23-S4-supplemental-completeness
+active_pull_request: 354
+active_head: 524c635f3c56167770637ba2d92e08f731b95fcd
+next_action: "Verify the final PR #354 head in GitHub CI, including the supplemental report JavaFX route, then complete desktop acceptance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -35,7 +35,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
-| P23 | Accounting correctness and open-item integrity | IN_PROGRESS — P23-S3 historical open-item balances |
+| P23 | Accounting correctness and open-item integrity | IN_PROGRESS — P23-S4 supplemental completeness |
 | P24 | Named events and usable entry workflows | BLOCKED — P23 |
 | P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
@@ -671,8 +671,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 |---|---|---|---|
 | P23-S1 | Adopt scope and establish reproducible acceptance cases | DONE | Documentation validation, owner review, publication and merge |
 | P23-S2 | Correct Budget vs Actual reversal treatment (G1) | DONE | P23-S1 merged; owning contract and D01–D10 gates as applicable |
-| P23-S3 | Preserve historical open-item balances (G2) | VERIFYING | P23-S2 merged; owning contract and D01–D10 gates as applicable |
-| P23-S4 | Enforce and explain schedule-to-ledger completeness (G3) | BLOCKED | P23-S3 merged; owning contract and D01–D10 gates as applicable |
+| P23-S3 | Preserve historical open-item balances (G2) | DONE | P23-S2 merged; owning contract and D01–D10 gates as applicable |
+| P23-S4 | Enforce and explain schedule-to-ledger completeness (G3) | VERIFYING | P23-S3 merged; owning contract and D01–D10 gates as applicable |
 | P23-S5 | Preserve open-item lifecycle in SCLX (G4) | BLOCKED | P23-S4 merged; owning contract and D01–D10 gates as applicable |
 | P24-S1 | Make event creation and discovery explicit (G14) | BLOCKED | P23-S5 merged; owning contract and D01–D10 gates as applicable |
 | P24-S2 | Make Fund/Event tagging obvious and reliable (G14) | BLOCKED | P24-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -798,3 +798,37 @@ Owner authorized publication on 2026-09-27. Draft PR: https://github.com/benbaro
 - All messages, ordering and file trees preserved through connected-service publication. A documentation transfer mismatch was caught before branch creation and corrected with exact blob bytes; only matching trees were published. No force update occurred.
 - This publication-record commit follows the reviewed content head. CI is pending at preparation; inspect the successor final-head Maven PR Tests run. The final result and head are recorded in the PR description after completion.
 - Remaining: final-head CI, owner desktop checks in P23-S3-historical-open-items-user-testing.md, and merge. S3 remains VERIFYING; S4 remains BLOCKED. Next action: resolve any final-head check failure, then owner acceptance/merge.
+
+
+## 15. P23-S3 closure and P23-S4 policy gate
+
+Owner accepted and merged S3 on 2026-09-27 (America/Denver), then instructed proceeding to S4. GitHub confirms PR #353 merged into current main at `114cc045761fb64c5e22b03f1f8ab2a3944024e0`. Exact final head `231fa1a643d557c3175d5606e4109e4d9432d328` passed Maven PR Tests run `36356514191`. S3 is DONE; preceding outstanding S3 acceptance/merge statements are historical. No post-merge CI result is claimed.
+
+S4 is selected on fresh branch `codex/P23-S4-supplemental-completeness`, based on that main. PR: none. Status: BLOCKED on the explicit D08 prerequisite in P23-S1-baseline-and-acceptance.md. Inspection confirms that full allocation enforcement affects historical SCLX imports, which currently carry no lifecycle linkage. The adopted reject-excess default is already settled; the historical import exception and remediation contract still need resolution.
+
+Completed: merge/CI verification; S4/A03/D08 contract review; entry/correction/import boundary inspection; [concrete D08 policy proposal](P23-S4-completeness-policy-proposal.md). The proposal preserves historical data through an acknowledged exception while rejecting incomplete new entries and excess applications, and keeps S5 portability separate. No production changes or tests were made while the policy gate is unresolved. Documentation-only validation: local links and diff whitespace. No application validation or S4 completion is claimed.
+
+Remaining: owner decision on the proposed legacy exception contract; implementation, regression/concurrency/consumer testing, full verification, publication authorization, exact-head CI and manual acceptance. Next action: adopt or revise the proposal, update D08 to the actual decision, mark S4 IN_PROGRESS and perform remaining required UI/source inspection before implementing. Local documentation handoff only; not published.
+
+
+## 16. P23-S4 policy adoption and implementation
+
+Owner adopted D08 on 2026-09-27 after clarification of SCLX behavior. The [policy](P23-S4-completeness-policy-proposal.md) is now governing. Prior BLOCKED statements are historical. S4 is IN_PROGRESS on `codex/P23-S4-supplemental-completeness`; no PR yet. New entries require complete explicit allocations; excess applications are rejected; legacy imports require explicit acknowledgment and remain visibly incomplete until repaired. No guessed links or new overpayment workflow.
+
+
+### S4 implementation and validation handoff
+
+- Implemented strict complete control-split allocations for normal and generated entries; company-lock serialization and effective-date availability checks for writes, edits, deletes and corrections; excess application rollback.
+- Implemented explicit legacy SCLX acknowledgment, source/hash audit evidence, precise per-line preview warnings (including textual decimal amounts), and truthful preserved-data incompleteness. No lifecycle portability, guessed allocations, schema migration or overpayment workflow is introduced.
+- Added all-six-kind control reconciliation with ledger/explained/gross unmatched/difference, stable transaction/split diagnostics, supplemental readiness, text/CSV/table output and Journal repair navigation. Offsetting missing allocations cannot cancel gross deficiencies. P27 general close readiness remains separate.
+- Governing documents updated: [adopted D08 policy](P23-S4-completeness-policy-proposal.md), [decision baseline](P23-S1-baseline-and-acceptance.md), [Journal](accounting/transaction-editor-and-journal.md), [Report Library](reporting/report-library.md), [SCLX](data-exchange/sclx.md) and [interface matrix](interface-operation-matrix.md). [Desktop/user acceptance instructions](P23-S4-supplemental-completeness-user-testing.md) cover the visible behavior and remaining visual check.
+- Evidence: baseline compile passed after replacing two corrupt local Maven cache artifacts (ECJ and POI; no project dependency/configuration change). New missing/partial and competing-application regression tests first failed on prior behavior, then passed. Focused integration run: 52 tests, zero failures/errors/skips. An intermediate full run exposed old assertions that expected permitted excess applications or omitted control rows; those assertions were updated to the adopted contract. The first full verification attempt also caught a test-call signature typo, corrected before the successful run. Full verification before the final textual-decimal edge-case fix passed: 820 tests, zero failures/errors, 31 headless skips. Final-source `mvn --offline --settings .mvn/settings-github.xml clean verify` passed on 2026-09-27 (America/Denver): **820 tests, 0 failures, 0 errors, 31 skips**, BUILD SUCCESS. This includes the textual-decimal regression. Local documentation links and `git diff --check` also passed. No known test failure remains; headless skips do not establish desktop visual acceptance.
+- Status: VERIFYING, branch `codex/P23-S4-supplemental-completeness`, PR: none. Verified implementation commit: `b7ee73cddcb2a1b4511383f619d267ba331e0f87`. This documentation-only handoff follows it; `git rev-parse HEAD` identifies the local tip for publication. Worktree was reviewed; generated manifest restored. No published-head CI or desktop visual acceptance is claimed. S5 remains BLOCKED until S4 is merged.
+- Next exact action: request owner publication authorization under AGENTS.md section 5; after authorization publish the exact reviewed commit sequence without force, verify trees/head and CI, and complete owner desktop acceptance before merge.
+
+
+### S4 authorized publication — PR #354
+
+Owner authorized publication on 2026-09-27 (America/Denver). Draft [PR #354](https://github.com/benbaron/sca-jakarta-h2/pull/354) targets unchanged main `114cc045761fb64c5e22b03f1f8ab2a3944024e0`. Connected-service publication preserved the reviewed three-commit sequence/messages; every tree matched the corresponding local tree. Remote head `524c635f3c56167770637ba2d92e08f731b95fcd` corresponds to local `88664fa9b4785f94d633c49e3c6425ba0314675c`. Commit IDs differ because publication creates server-authored commit objects; content is identical.
+
+Initial Maven PR Tests run `36375036852` started on that head. Inspection of the existing CI workflow found that the new renderer geometry/repair test would remain headless-skipped even though other route tests run under Xvfb. This follow-up adds `FormattedReportFxRendererTest` to that existing Xvfb test list so CI actually exercises the new behavior. No production source changed after the locally successful 820-test gate. Final-head CI remains pending; desktop visual acceptance, owner acceptance and merge remain required. Previous publication-authorization requests are satisfied. S4 remains VERIFYING and S5 BLOCKED.

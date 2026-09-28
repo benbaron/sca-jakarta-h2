@@ -75,8 +75,46 @@ final class FormattedReportFxRenderer
         {
             root.getChildren().add(metadataHeader(model.headerLines()));
         }
-        root.getChildren().addAll(title, subtitle, table);
+        if (model.columns().stream().anyMatch(column -> column.key().equals("transaction")))
+        {
+            javafx.scene.control.Button repair = new javafx.scene.control.Button("Open Selected in Journal");
+            repair.setId("supplementalReportRepair");
+            repair.setTooltip(new Tooltip("Review and repair the selected transaction's supplemental allocations in Journal."));
+            repair.disableProperty().bind(javafx.beans.binding.Bindings.createBooleanBinding(
+                    () -> selectedTransaction(table) == null, table.getSelectionModel().selectedItemProperty()));
+            Runnable open = () ->
+            {
+                Long id = selectedTransaction(table);
+                if (id != null)
+                {
+                    DrillThroughCoordinator.openPanelWithContext(AppPanelId.JOURNAL_PANE, "Txn #" + id + " from supplemental allocation review");
+                }
+            };
+            repair.setOnAction(event -> open.run());
+            table.setOnMouseClicked(event ->
+            {
+                if (event.getClickCount() == 2)
+                {
+                    open.run();
+                }
+            });
+            javafx.scene.control.SplitPane split = new javafx.scene.control.SplitPane(new VBox(8, title, subtitle, repair), table);
+            split.setOrientation(javafx.geometry.Orientation.VERTICAL);
+            split.setDividerPositions(0.2);
+            VBox.setVgrow(split, Priority.ALWAYS);
+            root.getChildren().add(split);
+        }
+        else
+        {
+            root.getChildren().addAll(title, subtitle, table);
+        }
         return root;
+    }
+
+    private static Long selectedTransaction(TableView<ReportTableModel.Row> table)
+    {
+        ReportTableModel.Row row = table.getSelectionModel().getSelectedItem();
+        return row != null && row.value("transaction") instanceof Number id && id.longValue() > 0 ? id.longValue() : null;
     }
 
     private static GridPane metadataHeader(List<ReportTableModel.HeaderLine> lines)

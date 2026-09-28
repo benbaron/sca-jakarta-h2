@@ -73,20 +73,12 @@ class SupplementalOpenItemQueryServiceTest
             assertEquals("CLOSED", closed.authoritativeRows().get(0).status());
             assertEquals(0L, closed.openCount());
 
-            TransactionView excess = enterDecrease(entry, SupplementalOpenItemQueryService.Kind.RECEIVABLE,
+            assertThrows(PostingException.class, () -> enterDecrease(entry,
+                    SupplementalOpenItemQueryService.Kind.RECEIVABLE,
                     items.get(SupplementalOpenItemQueryService.Kind.RECEIVABLE),
-                    LocalDate.of(2026, 3, 20), new BigDecimal("5.00"));
-            SupplementalOpenItemQueryService.Result overApplied =
-                    query.query(SupplementalOpenItemQueryService.Kind.RECEIVABLE, LocalDate.of(2026, 3, 31));
-            assertEquals(new BigDecimal("-5.0000"), overApplied.authoritativeRows().get(0).openBalance());
-            assertEquals("OVER_APPLIED", overApplied.authoritativeRows().get(0).status());
-            assertEquals(0L, overApplied.openCount());
-
-            new TransactionCorrectionService(jpa, () -> "TEST")
-                    .delete(excess.id(), "tester", "remove excess settlement");
-            SupplementalOpenItemQueryService.Result restoredClosed =
-                    query.query(SupplementalOpenItemQueryService.Kind.RECEIVABLE, LocalDate.of(2026, 3, 31));
-            assertEquals("CLOSED", restoredClosed.authoritativeRows().get(0).status());
+                    LocalDate.of(2026, 3, 20), new BigDecimal("5.00")));
+            assertEquals("CLOSED", query.query(SupplementalOpenItemQueryService.Kind.RECEIVABLE,
+                    LocalDate.of(2026, 3, 31)).authoritativeRows().get(0).status());
 
             TransactionView legacy = entry.enter(new TransactionCommand(
                     LocalDate.of(2026, 4, 1), null, "legacy supplemental", null,
@@ -202,7 +194,7 @@ class SupplementalOpenItemQueryServiceTest
     }
 
     @Test
-    void permittedBackdatingUsesInverseDateEvenBeforeOriginal(@TempDir Path dir)
+    void legacyBackdatingRemainsVisibleButNewOverdrawIsRejected(@TempDir Path dir)
     {
         try (Jpa jpa = new Jpa(dir.resolve("backdated")))
         {
@@ -211,8 +203,19 @@ class SupplementalOpenItemQueryServiceTest
             var entry = new TransactionEntryService(jpa, () -> "TEST");
             var query = new SupplementalOpenItemQueryService(jpa, () -> "TEST");
             var original = enterIncrease(entry, kind, UUID.randomUUID(), LocalDate.of(2026, 3, 10), new BigDecimal("100"));
-            new TransactionCorrectionService(jpa, () -> "TEST").reverse(
-                    original.id(), LocalDate.of(2026, 2, 10), "tester", "permitted backdate", false);
+            assertThrows(PostingException.class, () -> new TransactionCorrectionService(jpa, () -> "TEST").reverse(
+                    original.id(), LocalDate.of(2026, 2, 10), "tester", "invalid backdate", false));
+            // Preserved pre-S4/imported facts remain readable; do not rewrite history.
+            try (var em = jpa.em())
+            {
+                em.getTransaction().begin();
+                em.createNativeQuery("UPDATE txn SET status = 'REVERSED' WHERE id = :id").setParameter("id", original.id()).executeUpdate();
+                em.createNativeQuery("INSERT INTO txn (id, company_id, txn_date, reversal_of_txn_id, status) VALUES (9900,100,DATE '2026-02-10',:id,'ENTERED')")
+                        .setParameter("id", original.id()).executeUpdate();
+                em.createNativeQuery("INSERT INTO txn_split (txn_id,account_id,fund_id,amount_signed) SELECT 9900,account_id,fund_id,-amount_signed FROM txn_split WHERE txn_id = :id")
+                        .setParameter("id", original.id()).executeUpdate();
+                em.getTransaction().commit();
+            }
             var february = query.query(kind, LocalDate.of(2026, 2, 28));
             assertEquals(new BigDecimal("-100.0000"), february.rows().get(0).openBalance());
             assertTrue(february.rows().get(0).explanation().contains("Backdated"));
@@ -232,7 +235,7 @@ class SupplementalOpenItemQueryServiceTest
             var query = new SupplementalOpenItemQueryService(jpa, () -> "TEST");
             UUID item = UUID.randomUUID();
             var opening = enterIncrease(entry, kind, item, LocalDate.of(2026, 1, 10), new BigDecimal("100"));
-            correction.reverse(opening.id(), LocalDate.of(2026, 3, 5), "tester", "cancel opening", false);
+            correction.reverse(opening.id(), LocalDate.of(2026, 3, 5), "tester", "replace opening", true);
             // The same projection used by Apply Existing Item must also permit saving
             // a historically valid application after a later opening reversal.
             var settlement = enterDecrease(entry, kind, item, LocalDate.of(2026, 2, 10), new BigDecimal("25"));
@@ -243,8 +246,8 @@ class SupplementalOpenItemQueryServiceTest
             assertEquals(new BigDecimal("75.0000"), query.query(kind, LocalDate.of(2026, 2, 19)).openAmount());
             assertEquals(new BigDecimal("85.0000"), query.query(kind, LocalDate.of(2026, 2, 28)).openAmount());
             assertThrows(PostingException.class, () -> enterDecrease(entry, kind, item,
-                    LocalDate.of(2026, 3, 20), new BigDecimal("5")));
-            assertEquals(new BigDecimal("-15.0000"), query.query(kind, LocalDate.of(2026, 3, 31)).rows().get(0).openBalance());
+                    LocalDate.of(2026, 3, 20), new BigDecimal("120")));
+            assertEquals(new BigDecimal("85.0000"), query.query(kind, LocalDate.of(2026, 3, 31)).rows().get(0).openBalance());
         }
     }
 
@@ -266,7 +269,8 @@ class SupplementalOpenItemQueryServiceTest
         };
         var result = execution.execute(new ReportRequest(definition, date, date, ReportFundOption.ALL_FUNDS, 100));
         assertTrue(result.csv().contains(expected), "Report must retain the historical open amount");
-        assertEquals(1, result.tableModel().rows().size());
+        assertEquals(1L, result.tableModel().rows().stream().filter(row -> row.value("item") != null).count());
+        assertTrue(result.text().contains("Supplemental readiness: COMPLETE"));
         try (var em = jpa.em())
         {
             BigDecimal ledger = em.createQuery("""
@@ -277,12 +281,18 @@ class SupplementalOpenItemQueryServiceTest
         }
     }
 
-    private static TransactionView enterIncrease(
+    static TransactionView enterIncrease(
             TransactionEntryService entry,
             SupplementalOpenItemQueryService.Kind kind,
             UUID itemId,
             LocalDate date,
             BigDecimal amount)
+    {
+        return entry.enter(increaseCommand(kind, itemId, date, amount));
+    }
+
+    static TransactionCommand increaseCommand(
+            SupplementalOpenItemQueryService.Kind kind, UUID itemId, LocalDate date, BigDecimal amount)
     {
         long account = accountId(kind);
         boolean liability = kind.accountSubtype().name().contains("PAYABLE")
@@ -292,15 +302,15 @@ class SupplementalOpenItemQueryServiceTest
                 ? List.of(line(1006L, amount, BigDecimal.ZERO), line(account, BigDecimal.ZERO, amount))
                 : List.of(line(account, amount, BigDecimal.ZERO), line(1003L, BigDecimal.ZERO, amount));
         int supplementalLine = liability ? 1 : 0;
-        return entry.enter(new TransactionCommand(
+        return new TransactionCommand(
                 date, null, "open " + kind.name(), null, lines,
                 List.of(new TransactionSupplementalLineCommand(
                         kind.name(), kind.name() + "-REF", "Counterparty", kind.displayName(), null,
                         amount, date.plusDays(30), null, null, null,
-                        null, itemId, "INCREASE", supplementalLine))));
+                        null, itemId, "INCREASE", supplementalLine)));
     }
 
-    private static TransactionView enterDecrease(
+    static TransactionView enterDecrease(
             TransactionEntryService entry,
             SupplementalOpenItemQueryService.Kind kind,
             UUID itemId,
@@ -310,7 +320,7 @@ class SupplementalOpenItemQueryServiceTest
         return entry.enter(decreaseCommand(kind, itemId, date, amount));
     }
 
-    private static TransactionCommand decreaseCommand(
+    static TransactionCommand decreaseCommand(
             SupplementalOpenItemQueryService.Kind kind, UUID itemId, LocalDate date, BigDecimal amount)
     {
         long account = accountId(kind);
@@ -382,7 +392,7 @@ class SupplementalOpenItemQueryServiceTest
         }
     }
 
-    private static void seed(Jpa jpa)
+    static void seed(Jpa jpa)
     {
         try (EntityManager em = jpa.em())
         {

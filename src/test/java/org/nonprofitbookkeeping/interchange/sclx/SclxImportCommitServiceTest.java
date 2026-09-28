@@ -83,6 +83,52 @@ class SclxImportCommitServiceTest
     private static final UUID REPLACEMENT_TRANSACTION_UUID = UUID.fromString("34567890-abcd-ef12-3456-7890abcdef12");
 
     @Test
+    void legacyControlAllocationsRequireAcknowledgmentAndRemainUnready(@TempDir Path dir) throws Exception
+    {
+        Path source = writeSource(dir.resolve("legacy-control.sclx"));
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode root = (ObjectNode) mapper.readTree(source.toFile());
+        ((ObjectNode) root.path("chartOfAccounts").get(0)).put("subtype", "RECEIVABLE");
+        for (var transaction : root.path("transactions"))
+        {
+            for (var line : transaction.path("lines"))
+            {
+                ((ObjectNode) line).put("debit", line.path("debit").asText());
+                ((ObjectNode) line).put("credit", line.path("credit").asText());
+            }
+        }
+        mapper.writeValue(source.toFile(), root);
+        try (Jpa jpa = new Jpa(dir.resolve("legacy-control-db")))
+        {
+            seedEmptyTarget(jpa);
+            var previewService = new SclxImportPreviewService(jpa, () -> TARGET);
+            var preview = previewService.preview(source);
+            assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+            assertTrue(preview.operation().messages().stream()
+                    .anyMatch(message -> message.code().equals("SCLX_UNALLOCATED_CONTROL_LINE")
+                            && message.path().contains(".lines[")));
+            var commit = new SclxImportCommitService(jpa, () -> TARGET);
+            assertFalse(commit.commit(source, preview, "tester", false, false, false).committed());
+            try (var em = jpa.em())
+            {
+                assertEquals(0L, em.createQuery("select count(t) from Txn t", Long.class).getSingleResult());
+            }
+            var accepted = commit.commit(source, previewService.preview(source), "tester", false, false, true);
+            assertTrue(accepted.committed(), () -> accepted.messages().toString());
+            var result = new org.nonprofitbookkeeping.service.SupplementalOpenItemQueryService(jpa, () -> TARGET)
+                    .query(org.nonprofitbookkeeping.service.SupplementalOpenItemQueryService.Kind.RECEIVABLE, LocalDate.of(2026, 12, 31));
+            assertFalse(result.ready());
+            assertFalse(result.reconciliation().gaps().isEmpty());
+            try (var em = jpa.em())
+            {
+                assertTrue(em.createQuery("select count(a) from AuditEvent a where a.reason like :reason", Long.class)
+                        .setParameter("reason", "%" + preview.operation().sourceSha256() + "%").getSingleResult() > 0);
+            }
+            assertTrue(commit.commit(source, previewService.preview(source), "tester", false, false, true).committed());
+        }
+    }
+
+    @Test
     void importsNormalizedDonorDocumentAndPreservesOmittedTargetSettings(@TempDir Path tempDir)
     {
         Path source = Path.of("src/test/resources/compatibility/sclx/donor-sclx-1.3.json");

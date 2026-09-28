@@ -113,7 +113,7 @@ This is the baseline coverage map, including actions already supported. Section 
 | D05 | §28 conflates Budget/Event and Fund creation despite describing distinct purposes; §§25–26 installment rows are workbook presentation, not new logical item identity | Program preserves independent Activity/Fund/Budget and stable item IDs; owner confirms form mapping before P26/P27; no duplicate master authorities |
 | D06 | Required inventory cost method and opening historical basis | Owner/authority / before P26-S5; do not invent FIFO history |
 | D07 | AR/OA/FR exact meanings, report basis and permitted defaults | Owner/authority / before P25-S5 |
-| D08 | Legacy allocation exceptions and genuine overpayment handling | Reject silent excess; specify separate credit/overpayment workflow before P23-S4; remediation must not invent historical links |
+| D08 | RESOLVED 2026-09-27: owner adopted the [S4 allocation policy](P23-S4-completeness-policy-proposal.md) | Full new-entry allocations; reject excess; explicitly acknowledged legacy SCLX exception with diagnostics and readiness blocking; no invented historical links or implicit credit workflow |
 | D09 | Internal attachments and enforced approvals | Not adopted; P27-S5 remains conditional. External evidence baseline is adopted. Revisit only on explicit scope amendment |
 | D10 | Older transaction-lifecycle/period-policy documents contain pre-P20 actor/reconciliation wording | Current P20 guards and reconciliation services win; affected future slice reconciles owning documentation before changing policy; do not restore obsolete authority |
 

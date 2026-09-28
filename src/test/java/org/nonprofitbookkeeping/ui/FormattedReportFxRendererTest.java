@@ -27,6 +27,63 @@ class FormattedReportFxRendererTest
     }
 
     @Test
+    void supplementalRepairUsesStableTransactionAndScrollableTable()
+    {
+        FxTestSupport.onFx(() ->
+        {
+            var columns = new java.util.ArrayList<ReportTableModel.Column>();
+            columns.add(new ReportTableModel.Column("transaction", "Transaction", ReportTableModel.ValueFormat.TEXT, 150));
+            for (int i = 0; i < 10; i++)
+            {
+                columns.add(new ReportTableModel.Column("c" + i, "Detail " + i, ReportTableModel.ValueFormat.TEXT, 180));
+            }
+            var rows = new java.util.ArrayList<ReportTableModel.Row>();
+            rows.add(new ReportTableModel.Row(ReportTableModel.RowStyle.TOTAL, Map.of("c0", "Control account")));
+            for (int i = 0; i < 60; i++)
+            {
+                rows.add(new ReportTableModel.Row(ReportTableModel.RowStyle.STATUS_WARNING, Map.of("transaction", 123L, "c0", "Repair allocations")));
+            }
+            Node rendered = new FormattedReportFxRenderer(FinancialReportDisplayFormat.plain()).render(
+                    new ReportTableModel("supplemental", "Allocation review", "NOT READY", columns, rows));
+            var root = (VBox) rendered;
+            var scene = new javafx.scene.Scene(root, 720, 420);
+            root.applyCss();
+            root.layout();
+            var split = (javafx.scene.control.SplitPane) root.lookup(".split-pane");
+            assertNotNull(split);
+            var button = (javafx.scene.control.Button) root.lookup("#supplementalReportRepair");
+            TableView<?> table = CompanyTableStateBinder.findTables(root).get(0);
+            table.getSelectionModel().select(0);
+            assertTrue(button.isDisabled());
+            java.util.concurrent.atomic.AtomicReference<AppPanelId> destination = new java.util.concurrent.atomic.AtomicReference<>();
+            DrillThroughCoordinator.configureOpener(destination::set);
+            try
+            {
+                table.getSelectionModel().select(1);
+                button.fire();
+                assertEquals(AppPanelId.JOURNAL_PANE, destination.get());
+                assertTrue(DrillThroughCoordinator.consumeContext(AppPanelId.JOURNAL_PANE).contains("Txn #123"));
+                split.setDividerPositions(0.3);
+                root.resize(620, 360);
+                root.layout();
+                assertTrue(table.getWidth() <= root.getWidth());
+                assertTrue(table.getHeight() < root.getHeight());
+                assertTrue(table.lookupAll(".scroll-bar").stream().anyMatch(node ->
+                        node instanceof javafx.scene.control.ScrollBar bar && bar.isVisible()
+                                && bar.getOrientation() == javafx.geometry.Orientation.HORIZONTAL));
+                assertTrue(table.lookupAll(".scroll-bar").stream().anyMatch(node ->
+                        node instanceof javafx.scene.control.ScrollBar bar && bar.isVisible()
+                                && bar.getOrientation() == javafx.geometry.Orientation.VERTICAL));
+            }
+            finally
+            {
+                DrillThroughCoordinator.configureOpener(null);
+            }
+            return null;
+        });
+    }
+
+    @Test
     void rendersInteractiveWorkbookStyledTable()
     {
         ReportTableModel model = new ReportTableModel(

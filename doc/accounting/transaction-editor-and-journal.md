@@ -161,3 +161,9 @@ JournalWorkspacePanel
 ```
 
 The Journal panel contains no SQL, no static authoritative transaction collection, and no alternate transaction model. Cleared-state facts are projected from authoritative transaction/reconciliation data and are never recomputed or written by the Journal UI.
+
+## P23-S4 supplemental completeness
+
+Every new or edited split in one of the six supplemental control-account subtypes must have matching lifecycle allocations totaling its absolute amount. Normal Journal and caller-owned generated-entry services enforce this inside the atomic write. Company-level pessimistic locking serializes entry, correction and SCLX writes; affected items are checked at every transaction-date boundary so concurrent applications and backdated edits cannot create an excess application. A failed check rolls back the entire operation. Reversals inherit the canonical original's lifecycle effect without duplicate detail rows.
+
+Preserved legacy facts remain readable. Only the explicitly acknowledged SCLX preservation route may omit lifecycle linkage, with source name/hash and the exception recorded in audit history. Editing legacy entries requires full allocations; repair uses the existing Journal and retains correction-method, reconciliation and closed-period protections. No overpayment workflow or guessed allocation is introduced. See [the adopted D08 policy](../P23-S4-completeness-policy-proposal.md).

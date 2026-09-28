@@ -205,6 +205,12 @@ public final class SclxImportCommitService
             boolean approvedMappings,
             boolean approvedExistingCompanyImport)
     {
+        return commit(source, approvedPreview, actor, approvedMappings, approvedExistingCompanyImport, false);
+    }
+
+    public SclxImportResult commit(Path source, SclxImportPreview approvedPreview, String actor,
+            boolean approvedMappings, boolean approvedExistingCompanyImport, boolean acknowledgedLegacyAllocations)
+    {
         String commitActor = authoritativeActor(actor);
         Objects.requireNonNull(source, "source");
         Objects.requireNonNull(approvedPreview, "approvedPreview");
@@ -279,6 +285,7 @@ public final class SclxImportCommitService
             try
             {
                 Company company = ownership.requireCompany(em, companyCodeSupplier.get());
+                org.nonprofitbookkeeping.service.SupplementalIntegrityService.lock(em, company);
                 if (!company.isActive())
                 {
                     throw new IllegalStateException("SCLX target company is inactive: " + company.getCode() + ".");
@@ -331,7 +338,8 @@ public final class SclxImportCommitService
                 writes += merchants.size();
                 TransactionWrite transactions = writeTransactions(
                         em, company, root.path("transactions"), accounts, funds, activities,
-                        counterparties, merchants, details, previews, commitActor, writes);
+                        counterparties, merchants, details, previews, commitActor, writes, acknowledgedLegacyAllocations,
+                        current.operation().sourceSha256(), current.operation().sourceName());
                 writes += transactions.transactionCount();
                 writes += writeCorrectionRelationships(
                         em, company, corrections, transactions.transactions(), writes);
@@ -385,7 +393,8 @@ public final class SclxImportCommitService
                         + ",mappings=" + mappingAudit(current.mappings())
                         + ",targetReuses=" + targetReuseAudit(current));
                 operationAudit.setReason(
-                        "Atomic SCLX core, supported extension, banking, reconciliation, period-close, factual audit-history, and correction-relationship import.");
+                        "Atomic SCLX core, supported extension, banking, reconciliation, period-close, factual audit-history, and correction-relationship import."
+                        + (acknowledgedLegacyAllocations ? " Acknowledged legacy allocation exception; missing links require reviewed repair before readiness." : ""));
                 em.persist(operationAudit);
                 afterBusinessWrite.accept(++writes);
 
@@ -1043,7 +1052,10 @@ public final class SclxImportCommitService
             SclxTransactionDetailImportData details,
             Map<EntityKey, SclxImportEntityPreview> previews,
             String actor,
-            int writesBefore)
+            int writesBefore,
+            boolean acknowledgedLegacyAllocations,
+            String sourceHash,
+            String sourceName)
     {
         Map<String, Txn> transactions = new LinkedHashMap<>();
         Map<String, TxnSplit> lines = new LinkedHashMap<>();
@@ -1166,8 +1178,10 @@ public final class SclxImportCommitService
                     null,
                     commands,
                     supplementalCommands);
-            Txn transaction = transactionEntryService.enter(
-                    em, company, command, portableUuid(transactionId), cleanActor(actor));
+            Txn transaction = acknowledgedLegacyAllocations
+                    ? transactionEntryService.enterAcknowledgedLegacySclx(
+                            em, company, command, portableUuid(transactionId), cleanActor(actor), sourceHash, sourceName)
+                    : transactionEntryService.enter(em, company, command, portableUuid(transactionId), cleanActor(actor));
             transaction.setStatus(text(value, "status"));
             transactions.put(transactionId, transaction);
             em.flush();
