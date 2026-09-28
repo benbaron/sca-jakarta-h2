@@ -4,9 +4,9 @@ active_phase: P23
 active_slice: P23-S4
 active_status: VERIFYING
 active_branch: codex/P23-S4-supplemental-completeness
-active_pull_request: null
-active_head: b7ee73cddcb2a1b4511383f619d267ba331e0f87
-next_action: "Obtain publication authorization for the locally verified S4 branch; publish reviewed commits, verify exact-head CI and complete desktop acceptance before merge."
+active_pull_request: 354
+active_head: 524c635f3c56167770637ba2d92e08f731b95fcd
+next_action: "Verify the final PR #354 head in GitHub CI, including the supplemental report JavaFX route, then complete desktop acceptance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -825,3 +825,10 @@ Owner adopted D08 on 2026-09-27 after clarification of SCLX behavior. The [polic
 - Evidence: baseline compile passed after replacing two corrupt local Maven cache artifacts (ECJ and POI; no project dependency/configuration change). New missing/partial and competing-application regression tests first failed on prior behavior, then passed. Focused integration run: 52 tests, zero failures/errors/skips. An intermediate full run exposed old assertions that expected permitted excess applications or omitted control rows; those assertions were updated to the adopted contract. The first full verification attempt also caught a test-call signature typo, corrected before the successful run. Full verification before the final textual-decimal edge-case fix passed: 820 tests, zero failures/errors, 31 headless skips. Final-source `mvn --offline --settings .mvn/settings-github.xml clean verify` passed on 2026-09-27 (America/Denver): **820 tests, 0 failures, 0 errors, 31 skips**, BUILD SUCCESS. This includes the textual-decimal regression. Local documentation links and `git diff --check` also passed. No known test failure remains; headless skips do not establish desktop visual acceptance.
 - Status: VERIFYING, branch `codex/P23-S4-supplemental-completeness`, PR: none. Verified implementation commit: `b7ee73cddcb2a1b4511383f619d267ba331e0f87`. This documentation-only handoff follows it; `git rev-parse HEAD` identifies the local tip for publication. Worktree was reviewed; generated manifest restored. No published-head CI or desktop visual acceptance is claimed. S5 remains BLOCKED until S4 is merged.
 - Next exact action: request owner publication authorization under AGENTS.md section 5; after authorization publish the exact reviewed commit sequence without force, verify trees/head and CI, and complete owner desktop acceptance before merge.
+
+
+### S4 authorized publication — PR #354
+
+Owner authorized publication on 2026-09-27 (America/Denver). Draft [PR #354](https://github.com/benbaron/sca-jakarta-h2/pull/354) targets unchanged main `114cc045761fb64c5e22b03f1f8ab2a3944024e0`. Connected-service publication preserved the reviewed three-commit sequence/messages; every tree matched the corresponding local tree. Remote head `524c635f3c56167770637ba2d92e08f731b95fcd` corresponds to local `88664fa9b4785f94d633c49e3c6425ba0314675c`. Commit IDs differ because publication creates server-authored commit objects; content is identical.
+
+Initial Maven PR Tests run `36375036852` started on that head. Inspection of the existing CI workflow found that the new renderer geometry/repair test would remain headless-skipped even though other route tests run under Xvfb. This follow-up adds `FormattedReportFxRendererTest` to that existing Xvfb test list so CI actually exercises the new behavior. No production source changed after the locally successful 820-test gate. Final-head CI remains pending; desktop visual acceptance, owner acceptance and merge remain required. Previous publication-authorization requests are satisfied. S4 remains VERIFYING and S5 BLOCKED.
