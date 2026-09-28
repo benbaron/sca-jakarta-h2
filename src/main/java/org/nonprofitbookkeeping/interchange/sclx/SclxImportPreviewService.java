@@ -149,6 +149,7 @@ public final class SclxImportPreviewService
         List<SclxImportEntityPreview> entities = classify(
                 extraction.entities(), target, messages, conflictSelections);
         MappingResult mapping = mappings(document.root(), target, messages, mappingSelections);
+        addAllocationWarnings(document.root(), target, mapping, messages);
         TransactionResult transactionResult = transactions(document.root(), target, messages);
 
         if (!organization.code().equalsIgnoreCase(target.companyCode()))
@@ -301,6 +302,55 @@ public final class SclxImportPreviewService
                             + " Resolution: " + issue.resolutionGuidance()
                             + " Open Administration -> Company Ownership Diagnostics.",
                     true));
+        }
+    }
+
+    private static void addAllocationWarnings(JsonNode root, SclxImportTargetSnapshot target,
+            MappingResult mapping, List<InterchangeValidationMessage> messages)
+    {
+        Map<String, String> subtypes = new LinkedHashMap<>();
+        for (JsonNode account : root.path("chartOfAccounts"))
+        {
+            subtypes.put(account.path("accountId").asText(), account.path("subtype").asText());
+        }
+        for (var requirement : mapping.requirements())
+        {
+            if (requirement.kind() == SclxImportMappingRequirement.Kind.ACCOUNT && requirement.targetCode() != null)
+            {
+                var existing = target.accountsByCode().get(requirement.targetCode());
+                if (existing != null)
+                {
+                    subtypes.put(requirement.sourceId(), existing.subtype());
+                }
+            }
+        }
+        Set<String> governed = java.util.Arrays.stream(org.nonprofitbookkeeping.service.SupplementalOpenItemQueryService.Kind.values())
+                .map(kind -> kind.accountSubtype().name()).collect(java.util.stream.Collectors.toSet());
+        int transactionIndex = 0;
+        for (JsonNode transaction : root.path("transactions"))
+        {
+            int lineIndex = 0;
+            for (JsonNode line : transaction.path("lines"))
+            {
+                String subtype = subtypes.get(line.path("accountId").asText());
+                if (subtype != null && governed.contains(subtype))
+                {
+                    // Transaction validation reports malformed amounts; warnings share its exact-decimal parser.
+                    List<InterchangeValidationMessage> amountErrors = new ArrayList<>();
+                    BigDecimal amount = decimal(line.get("debit"), "debit", amountErrors)
+                            .subtract(decimal(line.get("credit"), "credit", amountErrors)).abs();
+                    if (amountErrors.isEmpty() && amount.signum() > 0)
+                    {
+                        messages.add(message(InterchangeMessageSeverity.WARNING, "SCLX_UNALLOCATED_CONTROL_LINE",
+                                "$.transactions[" + transactionIndex + "].lines[" + lineIndex + "]",
+                                "Transaction " + transaction.path("transactionId").asText() + ", ledger line " + (lineIndex + 1)
+                                        + ": " + subtype + " amount " + amount + " has no portable item allocation links. "
+                                        + "Explicitly acknowledge preserving historical data, then repair allocations in Journal; supplemental readiness remains blocked.", false));
+                    }
+                }
+                lineIndex++;
+            }
+            transactionIndex++;
         }
     }
 

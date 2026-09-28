@@ -135,6 +135,8 @@ public class ImportPreviewPanel implements AppPanel
 		new CheckBox("Confirm suffix-only account identity");
 	private final CheckBox confirmSclxMappings =
 		new CheckBox("Approve shown SCLX account/fund mappings");
+	private final CheckBox confirmLegacySclxAllocations =
+		new CheckBox("Preserve incomplete historical allocations (review and repair required)");
 	private final CheckBox confirmExistingCompanyImport =
 		new CheckBox("Import into existing company (preserve settings)");
 	private final java.util.Map<String, String> sclxMappingSelections =
@@ -300,8 +302,15 @@ public class ImportPreviewPanel implements AppPanel
 		applySclxMappings.setId("applySclxMappingsButton");
 		applySclxMappings.setDisable(true);
 		applySclxMappings.setOnAction(e -> repreviewSclxMappings());
+		confirmLegacySclxAllocations.setId("confirmLegacySclxAllocations");
+		confirmLegacySclxAllocations.selectedProperty().addListener(
+			(observable, oldValue, newValue) -> updateSclxCommitAvailability());
+		confirmLegacySclxAllocations.setTooltip(new javafx.scene.control.Tooltip(
+			"Allow historical SCLX data without item allocations. Gaps remain visible and block supplemental readiness until repaired."));
 		confirmSclxMappings.setId("confirmSclxMappings");
 		confirmSclxMappings.setVisible(false);
+		confirmLegacySclxAllocations.setVisible(false);
+		confirmLegacySclxAllocations.setManaged(false);
 		confirmSclxMappings.setManaged(false);
 		confirmSclxMappings.selectedProperty().addListener(
 			(observable, oldValue, newValue) -> updateSclxCommitAvailability());
@@ -354,6 +363,7 @@ public class ImportPreviewPanel implements AppPanel
 				previewBank, previewNormalizedBankCsv),
 			new HBox(8, new Label("Mapped CSV profile"), bankCsvProfile,
 				saveBankCsvProfile, previewBankCsv),
+			confirmLegacySclxAllocations,
 			new HBox(8, new Label("Authenticated actor"), sclxActor,
 				applySclxMappings, confirmExistingCompanyImport,
 				confirmSclxMappings, commitSclx,
@@ -1617,6 +1627,7 @@ public class ImportPreviewPanel implements AppPanel
 	{
 		sclxMappingsDirty = true;
 		confirmSclxMappings.setSelected(false);
+		confirmLegacySclxAllocations.setSelected(false);
 		confirmExistingCompanyImport.setSelected(false);
 		applySclxMappings.setDisable(false);
 		updateSclxCommitAvailability();
@@ -1648,6 +1659,11 @@ public class ImportPreviewPanel implements AppPanel
 			(result.operation().counts().created() > 0L ||
 				result.operation().counts().updated() > 0L);
 		confirmSclxMappings.setSelected(false);
+		confirmLegacySclxAllocations.setSelected(false);
+		boolean legacyAllocationReview = result.operation().messages().stream()
+			.anyMatch(message -> message.code().equals("SCLX_UNALLOCATED_CONTROL_LINE"));
+		confirmLegacySclxAllocations.setVisible(legacyAllocationReview);
+		confirmLegacySclxAllocations.setManaged(legacyAllocationReview);
 		confirmSclxMappings.setVisible(mappingsRequired);
 		confirmSclxMappings.setManaged(mappingsRequired);
 		confirmExistingCompanyImport.setSelected(false);
@@ -1732,6 +1748,7 @@ public class ImportPreviewPanel implements AppPanel
 	private boolean sclxCommitReady(SclxImportPreview preview)
 	{
 		return sclxPreviewEligible(preview) && !sclxMappingsDirty &&
+			(!confirmLegacySclxAllocations.isManaged() || confirmLegacySclxAllocations.isSelected()) &&
 			(!confirmExistingCompanyImport.isManaged() ||
 				confirmExistingCompanyImport.isSelected()) &&
 			(preview.recommendedAccountMode() !=
@@ -1756,6 +1773,7 @@ public class ImportPreviewPanel implements AppPanel
 		SclxImportCommitService commitService = lastSclxCommitService;
 		String actor = sclxActor.getText().strip();
 		boolean mappingsApproved = confirmSclxMappings.isSelected();
+		boolean legacyAllocationsApproved = confirmLegacySclxAllocations.isSelected();
 		boolean existingCompanyImportApproved =
 			confirmExistingCompanyImport.isSelected();
 		
@@ -1763,7 +1781,7 @@ public class ImportPreviewPanel implements AppPanel
 			actor.isBlank() || !sclxCommitReady(preview))
 		{
 			status.setText(
-				"Import unavailable: resolve preview errors and approve every displayed account/fund mapping first.");
+				"Import unavailable: resolve preview errors and complete all displayed mapping, company and legacy-allocation approvals first.");
 			updateSclxCommitAvailability();
 			return;
 		}
@@ -1775,6 +1793,7 @@ public class ImportPreviewPanel implements AppPanel
 				"?\n\nSHA-256: " + preview.operation().sourceSha256() +
 				"\n\nExisting company settings and approved mapped accounts/funds are preserved. " +
 				"New governed entities are added in one transaction; any failure rolls everything back." +
+				(legacyAllocationsApproved ? "\n\nYou acknowledge preserving incomplete historical item allocations. Gaps will block supplemental readiness until reviewed repair." : "") +
 				sclxCompatibilityConfirmationText(preview),
 			ButtonType.OK, ButtonType.CANCEL);
 		confirmation.setTitle("Confirm Atomic SCLX Import");
@@ -1793,7 +1812,7 @@ public class ImportPreviewPanel implements AppPanel
 		runCommitOperation("import-preview-sclx-commit",
 			"Committing SCLX atomically",
 			() -> commitService.commit(source, preview, actor, mappingsApproved,
-				existingCompanyImportApproved),
+				existingCompanyImportApproved, legacyAllocationsApproved),
 			this::applySclxImportResult,
 			ex ->
 			{
@@ -1846,7 +1865,10 @@ public class ImportPreviewPanel implements AppPanel
 			sclxDispositionSelections.clear();
 			sclxMappingsDirty = false;
 			confirmSclxMappings.setSelected(false);
+		confirmLegacySclxAllocations.setSelected(false);
 			confirmSclxMappings.setVisible(false);
+		confirmLegacySclxAllocations.setVisible(false);
+		confirmLegacySclxAllocations.setManaged(false);
 			confirmSclxMappings.setManaged(false);
 			confirmExistingCompanyImport.setSelected(false);
 			confirmExistingCompanyImport.setVisible(false);
@@ -1872,7 +1894,10 @@ public class ImportPreviewPanel implements AppPanel
 		sclxDispositionSelections.clear();
 		sclxMappingsDirty = false;
 		confirmSclxMappings.setSelected(false);
+		confirmLegacySclxAllocations.setSelected(false);
 		confirmSclxMappings.setVisible(false);
+		confirmLegacySclxAllocations.setVisible(false);
+		confirmLegacySclxAllocations.setManaged(false);
 		confirmSclxMappings.setManaged(false);
 		confirmExistingCompanyImport.setSelected(false);
 		confirmExistingCompanyImport.setVisible(false);
@@ -1956,7 +1981,10 @@ public class ImportPreviewPanel implements AppPanel
 		sclxDispositionSelections.clear();
 		sclxMappingsDirty = false;
 		confirmSclxMappings.setSelected(false);
+		confirmLegacySclxAllocations.setSelected(false);
 		confirmSclxMappings.setVisible(false);
+		confirmLegacySclxAllocations.setVisible(false);
+		confirmLegacySclxAllocations.setManaged(false);
 		confirmSclxMappings.setManaged(false);
 		confirmExistingCompanyImport.setSelected(false);
 		confirmExistingCompanyImport.setVisible(false);

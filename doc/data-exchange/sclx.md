@@ -684,3 +684,9 @@ The action is unavailable without an active database and nonblank selected compa
 while its export is running. Completion presents the exact company, SCLX version, timestamp, destination,
 byte count, SHA-256, included record counts, validation messages, deferred governed sections, and explicit
 exclusions. Deferred sections remain visible warnings and are not represented as implemented empty data.
+
+## P23-S4 legacy allocation acknowledgment
+
+Until P23-S5 adds lifecycle portability, SCLX does not preserve item/split/effect linkage. Preview identifies each nonzero imported line mapped to a supplemental control-account subtype with `SCLX_UNALLOCATED_CONTROL_LINE`, including transaction, line and amount. Such historical imports require the explicit **Preserve incomplete historical allocations (review and repair required)** acknowledgment in addition to existing mapping/company approvals. A new preview clears that acknowledgment.
+
+Commit without acknowledgment rejects incomplete control allocations atomically. Acknowledged commit preserves historical facts through the dedicated entry-service exception and audits source name, SHA-256 and the missing-linkage reason. It does not infer item IDs or effects, waive other validation, or claim completeness. Supplemental reports remain NOT READY until reviewed repairs explain the ledger. Identical reimport remains a no-write operation. Normal Journal and generated-entry calls cannot acquire the exception through ordinary entry arguments. S5 remains responsible for actual lifecycle interchange.

@@ -1,12 +1,12 @@
 ---
-plan_version: 305
+plan_version: 306
 active_phase: P23
 active_slice: P23-S4
-active_status: BLOCKED
+active_status: VERIFYING
 active_branch: codex/P23-S4-supplemental-completeness
 active_pull_request: null
-active_head: 114cc045761fb64c5e22b03f1f8ab2a3944024e0
-next_action: "Resolve D08 using the P23-S4 completeness policy proposal, then implement and validate S4 on this fresh branch."
+active_head: d23f3bd
+next_action: "Obtain publication authorization for the locally verified S4 branch; publish reviewed commits, verify exact-head CI and complete desktop acceptance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -35,7 +35,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
-| P23 | Accounting correctness and open-item integrity | BLOCKED — P23-S4 D08 allocation policy |
+| P23 | Accounting correctness and open-item integrity | IN_PROGRESS — P23-S4 supplemental completeness |
 | P24 | Named events and usable entry workflows | BLOCKED — P23 |
 | P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
@@ -672,7 +672,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P23-S1 | Adopt scope and establish reproducible acceptance cases | DONE | Documentation validation, owner review, publication and merge |
 | P23-S2 | Correct Budget vs Actual reversal treatment (G1) | DONE | P23-S1 merged; owning contract and D01–D10 gates as applicable |
 | P23-S3 | Preserve historical open-item balances (G2) | DONE | P23-S2 merged; owning contract and D01–D10 gates as applicable |
-| P23-S4 | Enforce and explain schedule-to-ledger completeness (G3) | BLOCKED | P23-S3 merged; owning contract and D01–D10 gates as applicable |
+| P23-S4 | Enforce and explain schedule-to-ledger completeness (G3) | VERIFYING | P23-S3 merged; owning contract and D01–D10 gates as applicable |
 | P23-S5 | Preserve open-item lifecycle in SCLX (G4) | BLOCKED | P23-S4 merged; owning contract and D01–D10 gates as applicable |
 | P24-S1 | Make event creation and discovery explicit (G14) | BLOCKED | P23-S5 merged; owning contract and D01–D10 gates as applicable |
 | P24-S2 | Make Fund/Event tagging obvious and reliable (G14) | BLOCKED | P24-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -809,3 +809,19 @@ S4 is selected on fresh branch `codex/P23-S4-supplemental-completeness`, based o
 Completed: merge/CI verification; S4/A03/D08 contract review; entry/correction/import boundary inspection; [concrete D08 policy proposal](P23-S4-completeness-policy-proposal.md). The proposal preserves historical data through an acknowledged exception while rejecting incomplete new entries and excess applications, and keeps S5 portability separate. No production changes or tests were made while the policy gate is unresolved. Documentation-only validation: local links and diff whitespace. No application validation or S4 completion is claimed.
 
 Remaining: owner decision on the proposed legacy exception contract; implementation, regression/concurrency/consumer testing, full verification, publication authorization, exact-head CI and manual acceptance. Next action: adopt or revise the proposal, update D08 to the actual decision, mark S4 IN_PROGRESS and perform remaining required UI/source inspection before implementing. Local documentation handoff only; not published.
+
+
+## 16. P23-S4 policy adoption and implementation
+
+Owner adopted D08 on 2026-09-27 after clarification of SCLX behavior. The [policy](P23-S4-completeness-policy-proposal.md) is now governing. Prior BLOCKED statements are historical. S4 is IN_PROGRESS on `codex/P23-S4-supplemental-completeness`; no PR yet. New entries require complete explicit allocations; excess applications are rejected; legacy imports require explicit acknowledgment and remain visibly incomplete until repaired. No guessed links or new overpayment workflow.
+
+
+### S4 implementation and validation handoff
+
+- Implemented strict complete control-split allocations for normal and generated entries; company-lock serialization and effective-date availability checks for writes, edits, deletes and corrections; excess application rollback.
+- Implemented explicit legacy SCLX acknowledgment, source/hash audit evidence, precise per-line preview warnings (including textual decimal amounts), and truthful preserved-data incompleteness. No lifecycle portability, guessed allocations, schema migration or overpayment workflow is introduced.
+- Added all-six-kind control reconciliation with ledger/explained/gross unmatched/difference, stable transaction/split diagnostics, supplemental readiness, text/CSV/table output and Journal repair navigation. Offsetting missing allocations cannot cancel gross deficiencies. P27 general close readiness remains separate.
+- Governing documents updated: [adopted D08 policy](P23-S4-completeness-policy-proposal.md), [decision baseline](P23-S1-baseline-and-acceptance.md), [Journal](accounting/transaction-editor-and-journal.md), [Report Library](reporting/report-library.md), [SCLX](data-exchange/sclx.md) and [interface matrix](interface-operation-matrix.md). [Desktop/user acceptance instructions](P23-S4-supplemental-completeness-user-testing.md) cover the visible behavior and remaining visual check.
+- Evidence: baseline compile passed after replacing two corrupt local Maven cache artifacts (ECJ and POI; no project dependency/configuration change). New missing/partial and competing-application regression tests first failed on prior behavior, then passed. Focused integration run: 52 tests, zero failures/errors/skips. An intermediate full run exposed old assertions that expected permitted excess applications or omitted control rows; those assertions were updated to the adopted contract. The first full verification attempt also caught a test-call signature typo, corrected before the successful run. Full verification before the final textual-decimal edge-case fix passed: 820 tests, zero failures/errors, 31 headless skips. Final-source `mvn --offline --settings .mvn/settings-github.xml clean verify` passed on 2026-09-27 (America/Denver): **820 tests, 0 failures, 0 errors, 31 skips**, BUILD SUCCESS. This includes the textual-decimal regression. Local documentation links and `git diff --check` also passed. No known test failure remains; headless skips do not establish desktop visual acceptance.
+- Status: VERIFYING, branch `codex/P23-S4-supplemental-completeness`, PR: none. Implementation is reviewed and ready for the local commit; the following documentation handoff records its exact hash. No published-head CI or desktop visual acceptance is claimed. S5 remains BLOCKED until S4 is merged.
+- Next exact action: commit the verified implementation and record its exact head. Then request owner publication authorization under AGENTS.md section 5; after authorization publish the exact reviewed commit sequence without force, verify trees/head and CI, and complete owner desktop acceptance before merge.

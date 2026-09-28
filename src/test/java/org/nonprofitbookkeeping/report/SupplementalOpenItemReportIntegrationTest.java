@@ -62,7 +62,8 @@ class SupplementalOpenItemReportIntegrationTest
                     ReportFundOption.ALL_FUNDS,
                     400));
             assertTrue(receivables.text().contains("100.0000"));
-            assertEquals(1, receivables.tableModel().rows().size());
+            assertEquals(1L, receivables.tableModel().rows().stream().filter(row -> row.value("item") != null).count());
+            assertTrue(receivables.text().contains("Supplemental readiness: COMPLETE"));
         }
     }
 

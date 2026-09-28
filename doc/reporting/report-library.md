@@ -190,3 +190,11 @@ chart labels do not contain SCA sample names. Confirm the displayed parent organ
 group, currency, fiscal quarter, statement rows, and expense allocation columns exactly follow that
 company and chart. Change the selected period and confirm the Balance Sheet beginning/end/difference
 columns and both statements' reconciliation rows update together.
+
+## P23-S4 supplemental reconciliation and repair
+
+All six supplemental reports expose control-account ledger balance, explained balance, gross unmatched amount and signed difference at the selected cutoff, followed by transaction/split gaps and existing item details. Gross unmatched sums absolute line deficiencies, so offsetting unallocated transactions cannot disguise incompleteness. Account opening balances without lifecycle linkage also remain unmatched. Canonical inverse splits inherit their original coverage only when ordered account/fund/amount correspondence is intact.
+
+A report is COMPLETE only when control coverage reconciles and every item is authoritative and nonnegative. Otherwise it is NOT READY. This is supplemental readiness; the broader P27 close-readiness workflow is separate. CSV exports retain existing item columns and append reconciliation fields and ITEM/CONTROL/GAP record types. Text and table views show the same reconciliation. Item row limits do not truncate readiness evaluation or control/gap diagnostics.
+
+Select a transaction gap and choose **Open Selected in Journal**, or double-click it, to open the canonical transaction by stable ID. Summary rows have no repair action. The table scrolls in both directions and has a draggable header/table divider. Repairs remain subject to Journal correction and closed-period rules. Opening balances require reviewed opening-balance conversion; the report does not fabricate transactions or item links.

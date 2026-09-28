@@ -70,6 +70,7 @@ public class TransactionCorrectionService
             try
             {
                 Company company = selectedCompany(em);
+                SupplementalIntegrityService.lock(em, company);
                 Txn txn = requireTransaction(em, transactionId);
                 ownership().ensureOwnedBy(em, company, txn, "Transaction");
                 requireEntered(txn);
@@ -83,6 +84,13 @@ public class TransactionCorrectionService
                 txn.setMemo(blankToNull(memo));
                 txn.setCorrectionNote(blankToNull(correctionNote));
                 txn.touchUpdatedAt();
+                if (txn.getReversalOf() == null)
+                {
+                    SupplementalIntegrityService.requireComplete(em, em.createQuery(
+                            "from TxnSplit s where s.txn = :txn order by s.id", TxnSplit.class)
+                            .setParameter("txn", txn).getResultList());
+                }
+                SupplementalIntegrityService.requireAvailable(em, company, SupplementalIntegrityService.items(em, txn));
                 em.persist(audit(company, auditActor, "TRANSACTION_EDITED", txn, before, snapshot(txn), correctionNote));
                 em.getTransaction().commit();
                 return txn;
@@ -109,6 +117,7 @@ public class TransactionCorrectionService
             try
             {
                 Company company = selectedCompany(em);
+                SupplementalIntegrityService.lock(em, company);
                 Txn txn = requireTransaction(em, transactionId);
                 ownership().ensureOwnedBy(em, company, txn, "Transaction");
                 requireEntered(txn);
@@ -116,6 +125,7 @@ public class TransactionCorrectionService
                 requireNotReconciled(em, transactionId, "delete transaction");
                 requireOpenRange(em, txn.getTxnDate(), "delete transaction");
 
+                var affectedItems = SupplementalIntegrityService.items(em, txn);
                 AuditEvent event = audit(company, auditActor, "TRANSACTION_DELETED", txn, snapshot(txn), null, reason);
                 event.setEntityId(Long.toString(transactionId));
                 em.persist(event);
@@ -124,6 +134,7 @@ public class TransactionCorrectionService
                         .setParameter("txn", txn)
                         .executeUpdate();
                 em.remove(txn);
+                SupplementalIntegrityService.requireAvailable(em, company, affectedItems);
                 em.getTransaction().commit();
             }
             catch (RuntimeException ex)
@@ -153,6 +164,7 @@ public class TransactionCorrectionService
             try
             {
                 Company company = selectedCompany(em);
+                SupplementalIntegrityService.lock(em, company);
                 Txn original = requireTransaction(em, transactionId);
                 ownership().ensureOwnedBy(em, company, original, "Transaction");
                 requireEntered(original);
@@ -197,8 +209,10 @@ public class TransactionCorrectionService
                         replacementSplits.put(split.getId(), replacementSplit);
                     }
                     copySupplementalLines(em, original, replacement, replacementSplits);
+                    SupplementalIntegrityService.requireComplete(em, new java.util.ArrayList<>(replacementSplits.values()));
                 }
 
+                SupplementalIntegrityService.requireAvailable(em, company, SupplementalIntegrityService.items(em, original));
                 em.persist(audit(company, auditActor, "TRANSACTION_REVERSED", original, before, snapshot(reversal), reason));
                 em.getTransaction().commit();
                 return new CorrectionResult(reversal.getId(), replacement == null ? null : replacement.getId());
@@ -242,6 +256,7 @@ public class TransactionCorrectionService
             throw new IllegalArgumentException("Company and original transaction must be managed by the caller.");
         }
 
+        SupplementalIntegrityService.lock(em, company);
         ownership().ensureOwnedBy(em, company, original, "Transaction");
         requireEntered(original);
         requireNotReconciled(em, original.getId(), "reverse transaction");
@@ -277,6 +292,7 @@ public class TransactionCorrectionService
         original.touchUpdatedAt();
         em.persist(audit(
                 company, normalizedActor, "TRANSACTION_REVERSED", original, before, snapshot(reversal), reason));
+        SupplementalIntegrityService.requireAvailable(em, company, SupplementalIntegrityService.items(em, original));
         return reversal;
     }
 

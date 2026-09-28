@@ -135,6 +135,25 @@ public class TransactionEntryService
             String actor,
             String auditReason)
     {
+        return enterInternal(em, company, command, portableId, actor, auditReason, false);
+    }
+
+    /** Explicit, audited SCLX-only legacy preservation path; normal entry APIs remain strict. */
+    public Txn enterAcknowledgedLegacySclx(EntityManager em, Company company, TransactionCommand command,
+            UUID portableId, String actor, String sourceHash, String sourceName)
+    {
+        if (sourceHash == null || !sourceHash.matches("[0-9a-fA-F]{64}") || sourceName == null || sourceName.isBlank())
+        {
+            throw new IllegalArgumentException("Acknowledged legacy SCLX source identity is required.");
+        }
+        return enterInternal(em, company, command, portableId, actor,
+                "Acknowledged legacy SCLX allocation exception; source=" + sourceName + "; sha256=" + sourceHash
+                        + "; historical linkage unavailable; readiness requires reviewed repair.", true);
+    }
+
+    private Txn enterInternal(EntityManager em, Company company, TransactionCommand command,
+            UUID portableId, String actor, String auditReason, boolean legacySclx)
+    {
         Objects.requireNonNull(em, "em");
         Objects.requireNonNull(company, "company");
         Objects.requireNonNull(portableId, "portableId");
@@ -147,6 +166,7 @@ public class TransactionEntryService
         {
             throw new IllegalArgumentException("Company must be managed by the caller-owned transaction.");
         }
+        SupplementalIntegrityService.lock(em, company);
         PeriodCloseRangeService.requireOpen(em, company.getCode(), command.date(), "enter transaction");
         validateReferences(em, company, command);
 
@@ -156,7 +176,7 @@ public class TransactionEntryService
         applyHeader(em, company, txn, command);
         em.persist(txn);
         List<TxnSplit> persistedSplits = persistLines(em, company, txn, command.lines());
-        persistSupplementalLines(em, txn, command.supplementalLines(), persistedSplits);
+        persistSupplementalLines(em, txn, command.supplementalLines(), persistedSplits, legacySclx);
         em.persist(audit(
                 company,
                 actor == null || actor.isBlank() ? "system" : actor.trim(),
@@ -183,6 +203,7 @@ public class TransactionEntryService
             try
             {
                 Company company = selectedCompany(em);
+                SupplementalIntegrityService.lock(em, company);
                 Txn txn = em.find(Txn.class, transactionId);
                 if (txn == null)
                 {
@@ -199,6 +220,7 @@ public class TransactionEntryService
                 requireOpenRange(em, command.date(), "update transaction");
                 String before = snapshot(txn);
 
+                var affectedItems = SupplementalIntegrityService.items(em, txn);
                 applyHeader(em, company, txn, command);
                 em.createQuery("delete from TxnSupplementalLine s where s.txn = :txn")
                         .setParameter("txn", txn)
@@ -208,6 +230,8 @@ public class TransactionEntryService
                         .executeUpdate();
                 List<TxnSplit> persistedSplits = persistLines(em, company, txn, command.lines());
                 persistSupplementalLines(em, txn, command.supplementalLines(), persistedSplits);
+                affectedItems.addAll(SupplementalIntegrityService.items(em, txn));
+                SupplementalIntegrityService.requireAvailable(em, company, affectedItems);
                 txn.touchUpdatedAt();
                 em.persist(audit(company, auditActor, "TRANSACTION_UPDATED", txn, before, snapshot(txn), null));
                 em.getTransaction().commit();
@@ -289,6 +313,7 @@ public class TransactionEntryService
             try
             {
                 Company company = selectedCompany(em);
+                SupplementalIntegrityService.lock(em, company);
                 requireOpenRange(em, command.date(), "enter transaction");
                 Txn txn = new Txn();
                 txn.setCompany(company);
@@ -468,6 +493,12 @@ public class TransactionEntryService
 
     private void persistSupplementalLines(EntityManager em, Txn txn, List<TransactionSupplementalLineCommand> lines, List<TxnSplit> persistedSplits)
     {
+        persistSupplementalLines(em, txn, lines, persistedSplits, false);
+    }
+
+    private void persistSupplementalLines(EntityManager em, Txn txn, List<TransactionSupplementalLineCommand> lines,
+            List<TxnSplit> persistedSplits, boolean legacySclx)
+    {
         Map<Integer, BigDecimal> allocatedBySplit = new LinkedHashMap<>();
         int order = 0;
         for (TransactionSupplementalLineCommand command : lines)
@@ -513,6 +544,11 @@ public class TransactionEntryService
             }
             em.persist(line);
         }
+        if (!legacySclx)
+        {
+            SupplementalIntegrityService.requireComplete(em, persistedSplits);
+        }
+        SupplementalIntegrityService.requireAvailable(em, txn.getCompany(), SupplementalIntegrityService.items(em, txn));
     }
 
     private static void requireItemIdentityConsistency(
