@@ -4,9 +4,9 @@ active_phase: P23
 active_slice: P23-S5
 active_status: VERIFYING
 active_branch: codex/P23-S5-sclx-lifecycle
-active_pull_request: null
-active_head: 83bb730a64626cc8b5c3f0bf43fef614d162fc9c
-next_action: "Obtain S5 publication authorization, publish the reviewed local commits, and inspect exact-head CI before owner acceptance and merge."
+active_pull_request: 355
+active_head: 7f21285bb4568f6768e2501368339b454f9771aa
+next_action: "Inspect final-head CI for PR #355, then complete owner desktop acceptance and merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -854,3 +854,13 @@ Existing baseline compile and 31 supplemental/import tests passed. Focused integ
 Compatibility inspection: external SCLX specification/workbook exporter at `109b99e360d2bf5eaf6bbf829c3e808c29e7c2e0` was read only. Its current v14 exporter emits legacy supplemental details without lifecycle objects; the optional extension fits the existing schema extension boundary. No external repository or workbook was changed, and no Excel round-trip fidelity is claimed. Governing [SCLX specification](data-exchange/sclx.md#p23-s5-versioned-supplemental-lifecycle), [Journal contract](accounting/transaction-editor-and-journal.md#p23-s5-sclx-history-validation) and [S5 user testing](P23-S5-sclx-lifecycle-user-testing.md) describe the actual behavior and reduced-information compatibility.
 
 Status: VERIFYING on `codex/P23-S5-sclx-lifecycle`, based on main `820ab4235350999a8123d2b195cb18eaeb6793c0`; PR: none. Remaining: publication authorization, exact published-head CI, desktop acceptance and merge. No S5 GitHub or visual result is claimed. Verified implementation commit: `83bb730a64626cc8b5c3f0bf43fef614d162fc9c`. This documentation-only handoff follows it; `git rev-parse HEAD` identifies the local publication tip. Generated tracked manifest restored and diff whitespace checked. Next exact action: obtain S5 publication authorization, publish the reviewed commit sequence and inspect final-head CI.
+
+
+### S5 authorized publication — 2026-09-28 (America/Denver)
+
+Owner explicitly authorized S5 publication. Draft [PR #355](https://github.com/benbaron/sca-jakarta-h2/pull/355) targets main `820ab4235350999a8123d2b195cb18eaeb6793c0`. Local Git push lacked credentials; connected-service publication preserved both reviewed commit messages, sequence and exact trees:
+
+- Local `83bb730a64626cc8b5c3f0bf43fef614d162fc9c` maps to remote `92936695411ac965539162bf0ce48da7e1d1655b`, tree `6b58916a16350cb0010347a21f6f63d4d8104289`.
+- Local `5e4b50e6a933ca97535fec5abfd9c1a2ba4a0f88` maps to verified PR head `7f21285bb4568f6768e2501368339b454f9771aa`, tree `3aadafce6a6c858430a183fb147490f19541ea79`.
+
+Earlier publication-authorization requests are satisfied. This documentation-only publication record follows that content head. GitHub validation is pending at preparation; inspect the successor final-head Maven PR Tests run and record its outcome in the PR description. Local full verification passed 831 tests with zero failures/errors and 31 headless skips. Desktop visual/user acceptance and merge remain outstanding. S5 remains VERIFYING; no later slice is activated.
