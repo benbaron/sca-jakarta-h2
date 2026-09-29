@@ -216,7 +216,7 @@ Every nonblank transaction-line `counterpartyId` MUST resolve to exactly one exp
 
 ### 8.3 Supplemental transaction details extension
 
-`extensions.scaJakartaH2.supplementalDetails` is an array containing every persisted `TxnSupplementalLine` whose canonical transaction belongs to the selected company. Each entry contains exactly:
+`extensions.scaJakartaH2.supplementalDetails` is an array containing every persisted `TxnSupplementalLine` whose canonical transaction belongs to the selected company. Each entry contains the following base fields, plus the optional versioned `lifecycle` object described below:
 
 - `supplementalDetailId`: `supplemental-detail:<transaction-id>:<ordinal>` using the governed portable-identity encoding;
 - `transactionId`: the canonical exported transaction identity;
@@ -228,7 +228,7 @@ Every nonblank transaction-line `counterpartyId` MUST resolve to exactly one exp
 - nullable `dueDate`; and
 - nullable paired `startDate` and `endDate`.
 
-The supplemental-detail identity never uses `txn_supplemental_line.id`. Details are grouped by canonical transaction, sorted by persisted `lineOrder` and then by all exported business fields, and assigned a positive deterministic ordinal. Exact duplicate rows remain byte deterministic because their exported content is identical and only the sequential ordinal distinguishes them.
+The supplemental-detail identity never uses `txn_supplemental_line.id`. Details are grouped by canonical transaction, sorted by persisted `lineOrder` and then by all exported business fields, and assigned a positive deterministic ordinal. Lifecycle-linked rows additionally sort by item UUID, effect and canonical linked-split order. Exact duplicate rows remain byte deterministic because their exported content is identical and only the sequential ordinal distinguishes them.
 
 Every `transactionId` MUST resolve to exactly one exported canonical transaction. Both start and end dates are present or absent together, and start MUST NOT follow end. Negative amounts, unsupported kinds, duplicate identities, malformed fields, cross-company transactions, and details whose transaction is outside the selected snapshot are blocking export errors. Supplemental details contribute to export counts, and `SUPPLEMENTAL_DETAILS` is no longer reported as deferred.
 
@@ -687,6 +687,36 @@ exclusions. Deferred sections remain visible warnings and are not represented as
 
 ## P23-S4 legacy allocation acknowledgment
 
-Until P23-S5 adds lifecycle portability, SCLX does not preserve item/split/effect linkage. Preview identifies each nonzero imported line mapped to a supplemental control-account subtype with `SCLX_UNALLOCATED_CONTROL_LINE`, including transaction, line and amount. Such historical imports require the explicit **Preserve incomplete historical allocations (review and repair required)** acknowledgment in addition to existing mapping/company approvals. A new preview clears that acknowledgment.
+Older producers and exports made before P23-S5 do not preserve item/split/effect linkage. Preview identifies each nonzero imported line mapped to a supplemental control-account subtype with `SCLX_UNALLOCATED_CONTROL_LINE`, including transaction, line and amount. Such historical imports require the explicit **Preserve incomplete historical allocations (review and repair required)** acknowledgment in addition to existing mapping/company approvals. A new preview clears that acknowledgment.
 
-Commit without acknowledgment rejects incomplete control allocations atomically. Acknowledged commit preserves historical facts through the dedicated entry-service exception and audits source name, SHA-256 and the missing-linkage reason. It does not infer item IDs or effects, waive other validation, or claim completeness. Supplemental reports remain NOT READY until reviewed repairs explain the ledger. Identical reimport remains a no-write operation. Normal Journal and generated-entry calls cannot acquire the exception through ordinary entry arguments. S5 remains responsible for actual lifecycle interchange.
+Commit without acknowledgment rejects incomplete control allocations atomically. Acknowledged commit preserves historical facts through the dedicated entry-service exception and audits source name, SHA-256 and the missing-linkage reason. It does not infer item IDs or effects, waive other validation, or claim completeness. Supplemental reports remain NOT READY until reviewed repairs explain the ledger. Identical reimport remains a no-write operation. Normal Journal and generated-entry calls cannot acquire the exception through ordinary entry arguments. P23-S5 lifecycle-aware documents follow the contract below.
+
+
+## P23-S5 versioned supplemental lifecycle
+
+An existing `supplementalDetails` record may include:
+
+```json
+"lifecycle": {
+  "version": 1,
+  "itemId": "11111111-1111-4111-8111-111111111111",
+  "itemEffect": "INCREASE",
+  "transactionLineId": "<portable lineId in this detail's transaction>"
+}
+```
+
+All four fields are required together. `version` is integer 1; `itemId` is the intrinsic canonical UUID (not an amount, name or generated match); `itemEffect` is INCREASE or DECREASE. `transactionLineId` must resolve to a nonzero split of this record's `transactionId`. Its control subtype must match the kind (`PREPAID_EXPENSE` uses account subtype `PREPAID`), its normal-balance direction must match the effect, and positive allocations must not exceed its absolute amount. An item cannot change kind. Unknown versions/fields, malformed UUIDs, dangling/foreign transaction-line references and inconsistent directions are rejected. Omitted/null `lifecycle` means legacy detail; it never creates an item identity.
+
+The outer SCLX writer remains 1.3; lifecycle is an independently versioned, optional application extension within the existing detail record. The existing detail portable identity and content fingerprint include this object, so changed allocations require existing supported conflict resolution rather than silently reusing old linkage. Keeping a target transaction retains its complete protected target record; unsupported source replacement remains blocked.
+
+Linked transactions and their inverse chains export canonical split order. Portable line ordinals sort numerically, including orders above nine. This retains the original-to-inverse split correspondence required for control reconciliation, including repeated account/fund pairs with different allocations. Other transactions retain their prior deterministic ordering. Older snapshots whose line order differs must undergo normal preview conflict review; old identities are never silently remapped.
+
+Import stages commands and correction relationships within the existing company-locked database transaction. The scoped history writer validates each accounting command, ownership, open period, subtype/direction and per-line allocation immediately, then checks complete coverage and effective item balances after the entire history exists. File order does not substitute for accounting date. New canonical inverses inherit the original allocations and cannot duplicate lifecycle detail. Any failure rolls back masters, ledger, links, identities and audit facts together. Normal Journal/generated writes still validate immediately. No new table or second ledger is introduced.
+
+Preview suppresses the legacy acknowledgment only for fully explained control lines, including valid inverse coverage. Gaps still require the S4 acknowledgment and remain NOT READY. Acknowledgment cannot waive malformed linked data or excess applications. Native foreign-company identities are blocked by existing preview ownership checks; item ownership and final effective balances are rechecked at commit. Reimport is idempotent. Full-database backup remains the recovery mechanism; SCLX is not a complete backup.
+
+### Workbook producer compatibility
+
+Read-only inspection of `benbaron/SCFX-SCA-Data-Exchange-Format` at `109b99e360d2bf5eaf6bbf829c3e808c29e7c2e0` found the active v14 macro at `SCLX-VBA-Macro-Package/SCLX_Ledger_IO_v14_canonical_import.bas`. It exports canonical supplemental detail but no intrinsic item UUID/effect/split lifecycle object. It therefore remains a reduced-information producer under S4 acknowledgment. No workbook row/name/amount inference is added and no VBA change is needed to keep importing it. The repository's `SCLX-specification-package/sclx-1.3-ledger.json` permits application extensions; this optional object does not require changing the core schema version.
+
+A future workbook bridge must persist these identities and correction links before claiming lifecycle round-trip fidelity. Current Excel/VBA import/export is not asserted to preserve the new object. Preserve the original lifecycle-aware SCLX file and database backup if passing through a legacy consumer. This slice changes the Java application and its governed specification only; the external exporter repository was inspected but not modified.

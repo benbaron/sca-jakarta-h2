@@ -149,6 +149,24 @@ public final class SclxPortableIdentity
         return identity("transaction", companyCode, durableTransactionKey);
     }
 
+    static int compareTransactionLines(String left, String right)
+    {
+        int a = left.lastIndexOf(':');
+        int b = right.lastIndexOf(':');
+        if (a >= 0 && b >= 0 && left.substring(0, a).equals(right.substring(0, b)))
+        {
+            try
+            {
+                return Integer.compare(Integer.parseInt(left.substring(a + 1)), Integer.parseInt(right.substring(b + 1)));
+            }
+            catch (NumberFormatException ex)
+            {
+                // Non-native producer IDs retain lexical order.
+            }
+        }
+        return left.compareTo(right);
+    }
+
     public static String transactionLine(String transactionId, int ordinal)
     {
         if (ordinal < 1)

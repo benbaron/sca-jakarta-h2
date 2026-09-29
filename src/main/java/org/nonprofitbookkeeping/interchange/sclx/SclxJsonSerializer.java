@@ -57,6 +57,7 @@ public final class SclxJsonSerializer
         root.set("budgets", budgets(document.budgets()));
         root.set("transactions", transactions(document.transactions()));
         root.set("extensions", extensions(document.extensions()));
+        SclxSupplementalLifecycle.explained(root);
 
         DefaultIndenter indenter = new DefaultIndenter("  ", "\n");
         DefaultPrettyPrinter printer = new DefaultPrettyPrinter();
@@ -174,7 +175,7 @@ public final class SclxJsonSerializer
                     optionalText(node, "correctionOfTransactionId", transaction.correctionOfTransactionId());
                     ArrayNode lines = node.putArray("lines");
                     transaction.lines().stream()
-                            .sorted(Comparator.comparing(SclxExportDocument.TransactionLine::lineId))
+                            .sorted(Comparator.comparing(line -> line.lineId(), SclxPortableIdentity::compareTransactionLines))
                             .forEach(line -> {
                                 ObjectNode lineNode = lines.addObject();
                                 lineNode.put("lineId", line.lineId());

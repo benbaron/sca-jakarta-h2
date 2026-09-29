@@ -62,6 +62,7 @@ final class SclxTransactionDetailImportData
         List<ActivityValue> activities = activities(app.get("activities"));
         PartyValues parties = parties(app.get("counterparties"));
         List<SupplementalValue> supplemental = supplemental(app.get("supplementalDetails"));
+        SclxSupplementalLifecycle.parse(root);
 
         Map<String, JsonNode> transactions = new LinkedHashMap<>();
         Map<String, JsonNode> lines = new LinkedHashMap<>();
@@ -259,7 +260,9 @@ final class SclxTransactionDetailImportData
         Set<String> identities = new HashSet<>();
         for (int index = 0; index < values.size(); index++)
         {
-            JsonNode item = object(values.get(index), SUPPLEMENTAL_FIELDS,
+            Set<String> fields = new HashSet<>(SUPPLEMENTAL_FIELDS);
+            if (values.get(index).has("lifecycle")) fields.add("lifecycle");
+            JsonNode item = object(values.get(index), fields,
                     "supplementalDetails[" + index + "]");
             SupplementalValue detail = new SupplementalValue(
                     text(item, "supplementalDetailId", "supplemental detail"),
@@ -274,7 +277,8 @@ final class SclxTransactionDetailImportData
                     optionalDate(item, "dueDate", "supplemental detail"),
                     optionalDate(item, "startDate", "supplemental detail"),
                     optionalDate(item, "endDate", "supplemental detail"),
-                    optionalText(item, "notes", "supplemental detail"));
+                    optionalText(item, "notes", "supplemental detail"),
+                    SclxSupplementalLifecycle.link(item.get("lifecycle")));
             validateSupplemental(detail);
             unique(identities, detail.externalId(), "supplemental-detail identity");
             result.add(detail);
@@ -472,7 +476,8 @@ final class SclxTransactionDetailImportData
             LocalDate dueDate,
             LocalDate startDate,
             LocalDate endDate,
-            String notes)
+            String notes,
+            SclxSupplementalLifecycle.Link lifecycle)
     {
     }
 

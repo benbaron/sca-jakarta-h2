@@ -308,6 +308,17 @@ public final class SclxImportPreviewService
     private static void addAllocationWarnings(JsonNode root, SclxImportTargetSnapshot target,
             MappingResult mapping, List<InterchangeValidationMessage> messages)
     {
+        Map<String, BigDecimal> explained;
+        try
+        {
+            explained = SclxSupplementalLifecycle.explained(root);
+        }
+        catch (IllegalStateException ex)
+        {
+            messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_LIFECYCLE_INVALID",
+                    "$.extensions.scaJakartaH2.supplementalDetails", ex.getMessage(), true));
+            return;
+        }
         Map<String, String> subtypes = new LinkedHashMap<>();
         for (JsonNode account : root.path("chartOfAccounts"))
         {
@@ -339,12 +350,13 @@ public final class SclxImportPreviewService
                     List<InterchangeValidationMessage> amountErrors = new ArrayList<>();
                     BigDecimal amount = decimal(line.get("debit"), "debit", amountErrors)
                             .subtract(decimal(line.get("credit"), "credit", amountErrors)).abs();
-                    if (amountErrors.isEmpty() && amount.signum() > 0)
+                    if (amountErrors.isEmpty() && amount.signum() > 0
+                            && amount.compareTo(explained.getOrDefault(line.path("lineId").asText(), BigDecimal.ZERO)) != 0)
                     {
                         messages.add(message(InterchangeMessageSeverity.WARNING, "SCLX_UNALLOCATED_CONTROL_LINE",
                                 "$.transactions[" + transactionIndex + "].lines[" + lineIndex + "]",
                                 "Transaction " + transaction.path("transactionId").asText() + ", ledger line " + (lineIndex + 1)
-                                        + ": " + subtype + " amount " + amount + " has no portable item allocation links. "
+                                        + ": " + subtype + " amount " + amount + " is not fully explained by portable item allocation links. "
                                         + "Explicitly acknowledge preserving historical data, then repair allocations in Journal; supplemental readiness remains blocked.", false));
                     }
                 }
