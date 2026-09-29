@@ -97,13 +97,19 @@ final class SclxSupplementalDetailExtension
                 throw new IllegalArgumentException(
                         "extensions.scaJakartaH2.supplementalDetails[" + index + "] must be an object");
             }
-            if (!map.keySet().equals(ENTRY_KEYS))
+            Set<Object> fields = new HashSet<>(map.keySet());
+            fields.remove("lifecycle");
+            if (!fields.equals(ENTRY_KEYS))
             {
                 throw new IllegalArgumentException(
                         "extensions.scaJakartaH2.supplementalDetails[" + index
                                 + "] has unsupported fields");
             }
 
+            if (map.containsKey("lifecycle"))
+            {
+                SclxSupplementalLifecycle.link(new com.fasterxml.jackson.databind.ObjectMapper().valueToTree(map.get("lifecycle")));
+            }
             Entry entry = new Entry(
                     text(map, "supplementalDetailId", index),
                     text(map, "transactionId", index),

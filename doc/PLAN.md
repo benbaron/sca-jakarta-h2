@@ -1,12 +1,12 @@
 ---
-plan_version: 306
+plan_version: 307
 active_phase: P23
-active_slice: P23-S4
+active_slice: P23-S5
 active_status: VERIFYING
-active_branch: codex/P23-S4-supplemental-completeness
-active_pull_request: 354
-active_head: 524c635f3c56167770637ba2d92e08f731b95fcd
-next_action: "Verify the final PR #354 head in GitHub CI, including the supplemental report JavaFX route, then complete desktop acceptance before merge."
+active_branch: codex/P23-S5-sclx-lifecycle
+active_pull_request: 355
+active_head: 7f21285bb4568f6768e2501368339b454f9771aa
+next_action: "Inspect final-head CI for PR #355, then complete owner desktop acceptance and merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -35,7 +35,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
-| P23 | Accounting correctness and open-item integrity | IN_PROGRESS — P23-S4 supplemental completeness |
+| P23 | Accounting correctness and open-item integrity | IN_PROGRESS — P23-S5 SCLX lifecycle preservation |
 | P24 | Named events and usable entry workflows | BLOCKED — P23 |
 | P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21, P22-S1 through P22-S6, and P23-S1 through P23-S2 are complete. The owner confirmed acceptance and merge of S2 on 2026-09-27. P23-S3 is the next unblocked slice and is READY; implementation has not started. Conditional P27-S5 remains unadopted.
+P21, P22 and P23-S1 through P23-S4 are complete. S5 is selected and under verification; P24 remains blocked until P23-S5 is accepted and merged. Conditional P27-S5 remains unadopted.
 
 ## 10. Archived proposal and adoption
 
@@ -672,8 +672,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P23-S1 | Adopt scope and establish reproducible acceptance cases | DONE | Documentation validation, owner review, publication and merge |
 | P23-S2 | Correct Budget vs Actual reversal treatment (G1) | DONE | P23-S1 merged; owning contract and D01–D10 gates as applicable |
 | P23-S3 | Preserve historical open-item balances (G2) | DONE | P23-S2 merged; owning contract and D01–D10 gates as applicable |
-| P23-S4 | Enforce and explain schedule-to-ledger completeness (G3) | VERIFYING | P23-S3 merged; owning contract and D01–D10 gates as applicable |
-| P23-S5 | Preserve open-item lifecycle in SCLX (G4) | BLOCKED | P23-S4 merged; owning contract and D01–D10 gates as applicable |
+| P23-S4 | Enforce and explain schedule-to-ledger completeness (G3) | DONE | P23-S3 merged; owning contract and D01–D10 gates as applicable |
+| P23-S5 | Preserve open-item lifecycle in SCLX (G4) | VERIFYING | P23-S4 merged; owning contract and D01–D10 gates as applicable |
 | P24-S1 | Make event creation and discovery explicit (G14) | BLOCKED | P23-S5 merged; owning contract and D01–D10 gates as applicable |
 | P24-S2 | Make Fund/Event tagging obvious and reliable (G14) | BLOCKED | P24-S1 merged; owning contract and D01–D10 gates as applicable |
 | P24-S3 | Attribute generated inventory costs (G6) | BLOCKED | P24-S2 merged; owning contract and D01–D10 gates as applicable |
@@ -832,3 +832,35 @@ Owner adopted D08 on 2026-09-27 after clarification of SCLX behavior. The [polic
 Owner authorized publication on 2026-09-27 (America/Denver). Draft [PR #354](https://github.com/benbaron/sca-jakarta-h2/pull/354) targets unchanged main `114cc045761fb64c5e22b03f1f8ab2a3944024e0`. Connected-service publication preserved the reviewed three-commit sequence/messages; every tree matched the corresponding local tree. Remote head `524c635f3c56167770637ba2d92e08f731b95fcd` corresponds to local `88664fa9b4785f94d633c49e3c6425ba0314675c`. Commit IDs differ because publication creates server-authored commit objects; content is identical.
 
 Initial Maven PR Tests run `36375036852` started on that head. Inspection of the existing CI workflow found that the new renderer geometry/repair test would remain headless-skipped even though other route tests run under Xvfb. This follow-up adds `FormattedReportFxRendererTest` to that existing Xvfb test list so CI actually exercises the new behavior. No production source changed after the locally successful 820-test gate. Final-head CI remains pending; desktop visual acceptance, owner acceptance and merge remain required. Previous publication-authorization requests are satisfied. S4 remains VERIFYING and S5 BLOCKED.
+
+
+## 17. P23-S4 closure and P23-S5 execution
+
+Owner confirmed completion and instructed continuing on 2026-09-27 (America/Denver). GitHub verifies PR #354 merged at current main `820ab4235350999a8123d2b195cb18eaeb6793c0`. Final head `cf19103e15c27bb8e56fde0e0ee3b007e6220ea2` passed Maven PR Tests run `36375133299`, job `108779350961`, including both report renderer tests under Xvfb without skips. S4 is DONE; earlier pending S4 records are historical.
+
+S5 is IN_PROGRESS on fresh branch `codex/P23-S5-sclx-lifecycle` from that main. Scope is G4/A04 only. Required inspection covers SCLX specification, snapshot/serialization/preview/identity/commit/correction code, canonical entry/query services, V77 and existing supplemental/import tests. Baseline compile passed using restored Maven 3.9.9; no build configuration change.
+
+Design: add optional version-1 `lifecycle` objects to existing supplemental detail records, carrying the intrinsic item UUID, effect and portable transaction-line reference. Missing objects remain legacy. The existing detail identity/hash owns conflict handling; no second item ledger or migration. Linked exports preserve canonical split order and validate links. Import stages complete transaction/correction history within its existing atomic boundary and validates allocations and effective balances after relationships exist, independent of file ordering. Ordinary/generated entry validation stays strict. Unsupported versions, malformed or foreign/dangling links block preview/commit. Legacy acknowledgment remains explicit and never suppresses invalid linked data.
+
+
+### S5 implementation and verification
+
+Implemented optional version-1 lifecycle payloads within existing supplemental records, export-side reference validation, preview rejection of invalid linkage, allocation-aware legacy warnings, and canonical command mapping. Existing detail hashes include lifecycle content for conflict review. Linked exports preserve source/inverse split correspondence and numeric portable ordinals; ordinary exports retain established ordering. No migration or new persistent authority.
+
+The SCLX transaction batch uses the existing entry service with a scoped history writer. Commands, ownership, period and line rules remain enforced. Complete-source/inverse coverage and effective available balances are checked after correction relationships are restored; failure marks the caller transaction rollback-only. Normal/generated entry APIs remain immediate and strict. Legacy acknowledgment never waives malformed links, foreign item identity or excess allocation.
+
+Existing baseline compile and 31 supplemental/import tests passed. Focused integration gate passed 38 tests after correcting a regression that initially applied linked inverse correspondence to unrelated legacy corrections. Eleven new round-trip cases passed, including all six kinds, partial/reversed/replacement history, reordered transaction arrays, repeat import/re-export, malformed links, changed identities, foreign-company conflict, 60+60 against 100 batch rollback, repeated control accounts with thirteen ledger lines, and explicit acknowledgment for an inverse of an existing legacy source. A detached-baseline regression run was initiated before a runtime replacement; its temporary log is unavailable, so no red-run result is claimed. Final `mvn clean verify` passed on 2026-09-28 (America/Denver): 831 tests, zero failures/errors, 31 headless skips. This includes all eleven new lifecycle cases after the final source-completeness review.
+
+Compatibility inspection: external SCLX specification/workbook exporter at `109b99e360d2bf5eaf6bbf829c3e808c29e7c2e0` was read only. Its current v14 exporter emits legacy supplemental details without lifecycle objects; the optional extension fits the existing schema extension boundary. No external repository or workbook was changed, and no Excel round-trip fidelity is claimed. Governing [SCLX specification](data-exchange/sclx.md#p23-s5-versioned-supplemental-lifecycle), [Journal contract](accounting/transaction-editor-and-journal.md#p23-s5-sclx-history-validation) and [S5 user testing](P23-S5-sclx-lifecycle-user-testing.md) describe the actual behavior and reduced-information compatibility.
+
+Status: VERIFYING on `codex/P23-S5-sclx-lifecycle`, based on main `820ab4235350999a8123d2b195cb18eaeb6793c0`; PR: none. Remaining: publication authorization, exact published-head CI, desktop acceptance and merge. No S5 GitHub or visual result is claimed. Verified implementation commit: `83bb730a64626cc8b5c3f0bf43fef614d162fc9c`. This documentation-only handoff follows it; `git rev-parse HEAD` identifies the local publication tip. Generated tracked manifest restored and diff whitespace checked. Next exact action: obtain S5 publication authorization, publish the reviewed commit sequence and inspect final-head CI.
+
+
+### S5 authorized publication — 2026-09-28 (America/Denver)
+
+Owner explicitly authorized S5 publication. Draft [PR #355](https://github.com/benbaron/sca-jakarta-h2/pull/355) targets main `820ab4235350999a8123d2b195cb18eaeb6793c0`. Local Git push lacked credentials; connected-service publication preserved both reviewed commit messages, sequence and exact trees:
+
+- Local `83bb730a64626cc8b5c3f0bf43fef614d162fc9c` maps to remote `92936695411ac965539162bf0ce48da7e1d1655b`, tree `6b58916a16350cb0010347a21f6f63d4d8104289`.
+- Local `5e4b50e6a933ca97535fec5abfd9c1a2ba4a0f88` maps to verified PR head `7f21285bb4568f6768e2501368339b454f9771aa`, tree `3aadafce6a6c858430a183fb147490f19541ea79`.
+
+Earlier publication-authorization requests are satisfied. This documentation-only publication record follows that content head. GitHub validation is pending at preparation; inspect the successor final-head Maven PR Tests run and record its outcome in the PR description. Local full verification passed 831 tests with zero failures/errors and 31 headless skips. Desktop visual/user acceptance and merge remain outstanding. S5 remains VERIFYING; no later slice is activated.

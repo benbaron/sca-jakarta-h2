@@ -135,7 +135,7 @@ public class TransactionEntryService
             String actor,
             String auditReason)
     {
-        return enterInternal(em, company, command, portableId, actor, auditReason, false);
+        return enterInternal(em, company, command, portableId, actor, auditReason, false, false);
     }
 
     /** Explicit, audited SCLX-only legacy preservation path; normal entry APIs remain strict. */
@@ -148,11 +148,145 @@ public class TransactionEntryService
         }
         return enterInternal(em, company, command, portableId, actor,
                 "Acknowledged legacy SCLX allocation exception; source=" + sourceName + "; sha256=" + sourceHash
-                        + "; historical linkage unavailable; readiness requires reviewed repair.", true);
+                        + "; historical linkage unavailable; readiness requires reviewed repair.", true, false);
+    }
+
+    /** Stages SCLX history inside the caller's transaction and validates it before returning. */
+    public <T> T importSclxHistory(EntityManager em, Company company, String actor, String sourceHash,
+            String sourceName, boolean legacyAcknowledged, java.util.function.Function<SclxHistoryWriter, T> work)
+    {
+        if (!em.getTransaction().isActive() || !em.contains(company)
+                || sourceHash == null || !sourceHash.matches("[0-9a-fA-F]{64}") || sourceName == null || sourceName.isBlank())
+        {
+            throw new IllegalArgumentException("Managed company, active transaction and SCLX source identity are required.");
+        }
+        SupplementalIntegrityService.lock(em, company);
+        SclxHistoryWriter writer = new SclxHistoryWriter(em, company, actor, sourceHash, sourceName, legacyAcknowledged);
+        try
+        {
+            T result = work.apply(writer);
+            writer.validate();
+            return result;
+        }
+        catch (RuntimeException ex)
+        {
+            em.getTransaction().setRollbackOnly();
+            throw ex;
+        }
+        finally
+        {
+            writer.active = false;
+        }
+    }
+
+    /** Scoped writer: only valid during importSclxHistory; it cannot commit partial history. */
+    public final class SclxHistoryWriter
+    {
+        private final EntityManager em;
+        private final Company company;
+        private final String actor;
+        private final String source;
+        private final boolean legacyAcknowledged;
+        private final Map<Txn, Boolean> created = new LinkedHashMap<>();
+        private boolean active = true;
+
+        private SclxHistoryWriter(EntityManager em, Company company, String actor, String hash, String name, boolean legacy)
+        {
+            this.em = em;
+            this.company = company;
+            this.actor = actor;
+            this.source = "source=" + name + "; sha256=" + hash;
+            this.legacyAcknowledged = legacy;
+        }
+
+        public Txn enter(TransactionCommand command, UUID portableId)
+        {
+            if (!active || !em.getTransaction().isActive())
+            {
+                throw new IllegalStateException("SCLX history writer is no longer active.");
+            }
+            Txn txn = enterInternal(em, company, command, portableId, actor,
+                    (legacyAcknowledged ? "Acknowledged legacy SCLX allocation exception; missing links require repair; "
+                            : "SCLX lifecycle history; ") + source, legacyAcknowledged, true);
+            created.put(txn, legacyAcknowledged);
+            return txn;
+        }
+
+        private void validate()
+        {
+            em.flush();
+            Set<SupplementalIntegrityService.Item> affected = new java.util.HashSet<>();
+            for (var entry : created.entrySet())
+            {
+                Txn txn = entry.getKey();
+                List<TxnSplit> splits = em.createQuery("from TxnSplit s where s.txn = :txn order by s.id", TxnSplit.class)
+                        .setParameter("txn", txn).getResultList();
+                if (txn.getReversalOf() == null)
+                {
+                    if (!entry.getValue())
+                    {
+                        SupplementalIntegrityService.requireComplete(em, splits);
+                    }
+                }
+                else
+                {
+                    List<TxnSplit> originals = em.createQuery("from TxnSplit s where s.txn = :txn order by s.id", TxnSplit.class)
+                            .setParameter("txn", txn.getReversalOf()).getResultList();
+                    boolean linkedSource = !SupplementalIntegrityService.items(em, txn.getReversalOf()).isEmpty();
+                    if (!entry.getValue())
+                    {
+                        Txn allocationSource = txn.getReversalOf();
+                        Set<Long> visited = new java.util.HashSet<>();
+                        while (allocationSource.getReversalOf() != null)
+                        {
+                            if (!visited.add(allocationSource.getId()))
+                            {
+                                throw new PostingException("Cyclic SCLX reversal history.");
+                            }
+                            allocationSource = allocationSource.getReversalOf();
+                        }
+                        SupplementalIntegrityService.requireComplete(em, em.createQuery(
+                                "from TxnSplit s where s.txn = :txn order by s.id", TxnSplit.class)
+                                .setParameter("txn", allocationSource).getResultList());
+                    }
+                    if (linkedSource && originals.size() != splits.size())
+                    {
+                        throw new PostingException("SCLX inverse split count differs from its source.");
+                    }
+                    for (int i = 0; linkedSource && i < splits.size(); i++)
+                    {
+                        TxnSplit original = originals.get(i), inverse = splits.get(i);
+                        if (!original.getAccount().getId().equals(inverse.getAccount().getId())
+                                || !original.getFund().getId().equals(inverse.getFund().getId())
+                                || original.getAmountSigned().negate().compareTo(inverse.getAmountSigned()) != 0)
+                        {
+                            throw new PostingException("SCLX inverse must preserve source split order, accounts, funds and opposite amounts.");
+                        }
+                    }
+                }
+                for (TxnSupplementalLine line : em.createQuery("from TxnSupplementalLine l where l.txn = :txn and l.itemId is not null", TxnSupplementalLine.class)
+                        .setParameter("txn", txn).getResultList())
+                {
+                    if (txn.getReversalOf() != null)
+                    {
+                        throw new PostingException("SCLX inverse cannot duplicate lifecycle allocations.");
+                    }
+                    long foreign = em.createQuery("select count(l) from TxnSupplementalLine l where l.itemId = :item and l.txn.company <> :company", Long.class)
+                            .setParameter("item", line.getItemId()).setParameter("company", company).getSingleResult();
+                    if (foreign > 0)
+                    {
+                        throw new PostingException("SCLX item identity belongs to another company.");
+                    }
+                    requireItemIdentityConsistency(em, txn, line.getItemId(), line.getKind(), line.getItemEffect());
+                }
+                affected.addAll(SupplementalIntegrityService.items(em, txn));
+            }
+            SupplementalIntegrityService.requireAvailable(em, company, affected);
+        }
     }
 
     private Txn enterInternal(EntityManager em, Company company, TransactionCommand command,
-            UUID portableId, String actor, String auditReason, boolean legacySclx)
+            UUID portableId, String actor, String auditReason, boolean legacySclx, boolean deferredHistory)
     {
         Objects.requireNonNull(em, "em");
         Objects.requireNonNull(company, "company");
@@ -176,7 +310,7 @@ public class TransactionEntryService
         applyHeader(em, company, txn, command);
         em.persist(txn);
         List<TxnSplit> persistedSplits = persistLines(em, company, txn, command.lines());
-        persistSupplementalLines(em, txn, command.supplementalLines(), persistedSplits, legacySclx);
+        persistSupplementalLines(em, txn, command.supplementalLines(), persistedSplits, legacySclx, deferredHistory);
         em.persist(audit(
                 company,
                 actor == null || actor.isBlank() ? "system" : actor.trim(),
@@ -493,11 +627,11 @@ public class TransactionEntryService
 
     private void persistSupplementalLines(EntityManager em, Txn txn, List<TransactionSupplementalLineCommand> lines, List<TxnSplit> persistedSplits)
     {
-        persistSupplementalLines(em, txn, lines, persistedSplits, false);
+        persistSupplementalLines(em, txn, lines, persistedSplits, false, false);
     }
 
     private void persistSupplementalLines(EntityManager em, Txn txn, List<TransactionSupplementalLineCommand> lines,
-            List<TxnSplit> persistedSplits, boolean legacySclx)
+            List<TxnSplit> persistedSplits, boolean legacySclx, boolean deferredHistory)
     {
         Map<Integer, BigDecimal> allocatedBySplit = new LinkedHashMap<>();
         int order = 0;
@@ -529,7 +663,10 @@ public class TransactionEntryService
                 TxnSplit split = persistedSplits.get(splitIndex);
                 SupplementalItemEffect effect = SupplementalItemEffect.valueOf(command.itemEffect());
                 requireCompatibleSupplementalSplit(command.kind(), effect, split);
-                requireItemIdentityConsistency(em, txn, command.itemId(), command.kind(), effect);
+                if (!deferredHistory)
+                {
+                    requireItemIdentityConsistency(em, txn, command.itemId(), command.kind(), effect);
+                }
                 BigDecimal allocated = allocatedBySplit.getOrDefault(splitIndex, BigDecimal.ZERO)
                         .add(command.amount());
                 if (allocated.compareTo(split.getAmountSigned().abs()) > 0)
@@ -544,11 +681,14 @@ public class TransactionEntryService
             }
             em.persist(line);
         }
-        if (!legacySclx)
+        if (!legacySclx && !deferredHistory)
         {
             SupplementalIntegrityService.requireComplete(em, persistedSplits);
         }
-        SupplementalIntegrityService.requireAvailable(em, txn.getCompany(), SupplementalIntegrityService.items(em, txn));
+        if (!deferredHistory)
+        {
+            SupplementalIntegrityService.requireAvailable(em, txn.getCompany(), SupplementalIntegrityService.items(em, txn));
+        }
     }
 
     private static void requireItemIdentityConsistency(

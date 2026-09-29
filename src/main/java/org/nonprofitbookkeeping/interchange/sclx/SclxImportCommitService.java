@@ -336,13 +336,19 @@ public final class SclxImportCommitService
                 Map<String, Merchant> merchants = writeMerchants(
                         em, company, details.merchants(), previews, writes);
                 writes += merchants.size();
-                TransactionWrite transactions = writeTransactions(
-                        em, company, root.path("transactions"), accounts, funds, activities,
-                        counterparties, merchants, details, previews, commitActor, writes, acknowledgedLegacyAllocations,
-                        current.operation().sourceSha256(), current.operation().sourceName());
-                writes += transactions.transactionCount();
-                writes += writeCorrectionRelationships(
-                        em, company, corrections, transactions.transactions(), writes);
+                final int writesBeforeHistory = writes;
+                int[] restoredCorrections = {0};
+                TransactionWrite transactions = transactionEntryService.importSclxHistory(
+                        em, company, commitActor, current.operation().sourceSha256(), current.operation().sourceName(),
+                        acknowledgedLegacyAllocations, history ->
+                        {
+                            TransactionWrite written = writeTransactions(em, company, root.path("transactions"), accounts, funds,
+                                    activities, counterparties, merchants, details, previews, writesBeforeHistory, history);
+                            restoredCorrections[0] = writeCorrectionRelationships(em, company, corrections,
+                                    written.transactions(), writesBeforeHistory + written.transactionCount());
+                            return written;
+                        });
+                writes += transactions.transactionCount() + restoredCorrections[0];
                 FixedAssetWrite writtenFixedAssets = writeFixedAssets(
                         em, company, fixedAssets, accounts, funds, transactions.transactions(), previews, writes);
                 writes += writtenFixedAssets.businessWriteCount();
@@ -1051,11 +1057,8 @@ public final class SclxImportCommitService
             Map<String, Merchant> merchants,
             SclxTransactionDetailImportData details,
             Map<EntityKey, SclxImportEntityPreview> previews,
-            String actor,
             int writesBefore,
-            boolean acknowledgedLegacyAllocations,
-            String sourceHash,
-            String sourceName)
+            TransactionEntryService.SclxHistoryWriter history)
     {
         Map<String, Txn> transactions = new LinkedHashMap<>();
         Map<String, TxnSplit> lines = new LinkedHashMap<>();
@@ -1169,7 +1172,10 @@ public final class SclxImportCommitService
                     .map(detail -> new TransactionSupplementalLineCommand(
                             detail.kind(), detail.entryRef(), detail.counterparty(), detail.description(),
                             detail.reference(), detail.amount(), detail.dueDate(), detail.startDate(),
-                            detail.endDate(), detail.notes(), detail.lineOrder()))
+                            detail.endDate(), detail.notes(), detail.lineOrder(),
+                            detail.lifecycle() == null ? null : detail.lifecycle().itemId(),
+                            detail.lifecycle() == null ? null : detail.lifecycle().effect(),
+                            detail.lifecycle() == null ? null : postingLineIds.indexOf(detail.lifecycle().lineId())))
                     .toList();
             TransactionCommand command = new TransactionCommand(
                     LocalDate.parse(text(value, "transactionDate")),
@@ -1178,10 +1184,7 @@ public final class SclxImportCommitService
                     null,
                     commands,
                     supplementalCommands);
-            Txn transaction = acknowledgedLegacyAllocations
-                    ? transactionEntryService.enterAcknowledgedLegacySclx(
-                            em, company, command, portableUuid(transactionId), cleanActor(actor), sourceHash, sourceName)
-                    : transactionEntryService.enter(em, company, command, portableUuid(transactionId), cleanActor(actor));
+            Txn transaction = history.enter(command, portableUuid(transactionId));
             transaction.setStatus(text(value, "status"));
             transactions.put(transactionId, transaction);
             em.flush();

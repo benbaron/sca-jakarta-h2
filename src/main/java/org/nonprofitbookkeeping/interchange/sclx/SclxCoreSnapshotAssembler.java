@@ -65,7 +65,10 @@ public final class SclxCoreSnapshotAssembler
             .thenComparing(line -> nullableSort(line.getDueDate()))
             .thenComparing(line -> nullableSort(line.getStartDate()))
             .thenComparing(line -> nullableSort(line.getEndDate()))
-            .thenComparing(line -> nullableSort(line.getNotes()));
+            .thenComparing(line -> nullableSort(line.getNotes()))
+            .thenComparing(line -> nullableSort(line.getItemId()))
+            .thenComparing(line -> nullableSort(line.getItemEffect()))
+            .thenComparing(line -> line.getTxnSplit() == null ? -1L : line.getTxnSplit().getId());
 
     private final SclxExportDocumentValidator validator = new SclxExportDocumentValidator();
 
@@ -372,6 +375,20 @@ public final class SclxCoreSnapshotAssembler
         Set<Txn> includedTransactions = identitySet(transactions);
         Map<Txn, String> exportedTransactionIds = new IdentityHashMap<>();
         Map<TxnSplit, String> exportedLineIds = new IdentityHashMap<>();
+        Set<Txn> lifecycleTransactions = identitySet(supplementalDetails.stream()
+                .filter(detail -> detail.getItemId() != null).map(TxnSupplementalLine::getTxn).toList());
+        for (Txn transaction : transactions)
+        {
+            Set<Txn> visited = identitySet(List.of());
+            for (Txn source = transaction.getReversalOf(); source != null && visited.add(source); source = source.getReversalOf())
+            {
+                if (lifecycleTransactions.contains(source))
+                {
+                    lifecycleTransactions.add(transaction);
+                    break;
+                }
+            }
+        }
         List<SclxExportDocument.Transaction> exportedTransactions = transactions.stream()
                 .peek(transaction -> requireTransactionOwnership(transaction, company, includedTransactions, includedCounterparties))
                 .sorted(Comparator.comparing(Txn::getTxnDate)
@@ -385,7 +402,7 @@ public final class SclxCoreSnapshotAssembler
                                     .filter(line -> line.getTxn() == transaction)
                                     .peek(line -> requireTransactionLineOwnership(
                                             line, company, activeChart, includedTransactions, includedCounterparties, includedMerchants))
-                                    .sorted(TRANSACTION_LINE_ORDER)
+                                    .sorted(lifecycleTransactions.contains(transaction) ? Comparator.comparing(TxnSplit::getId) : TRANSACTION_LINE_ORDER)
                                     .toList(),
                             exportedLineIds);
                     exportedTransactionIds.put(transaction, exported.transactionId());
@@ -420,7 +437,7 @@ public final class SclxCoreSnapshotAssembler
                         exportedSupplementalDetails.add(mapSupplementalDetail(
                                 transactionId,
                                 ordinal++,
-                                detail));
+                                detail, exportedLineIds));
                     }
                 });
 
@@ -763,9 +780,9 @@ public final class SclxCoreSnapshotAssembler
     private static Map<String, Object> mapSupplementalDetail(
             String transactionId,
             int ordinal,
-            TxnSupplementalLine detail)
+            TxnSupplementalLine detail, Map<TxnSplit, String> exportedLineIds)
     {
-        return SclxSupplementalDetailExtension.entry(
+        Map<String, Object> value = new LinkedHashMap<>(SclxSupplementalDetailExtension.entry(
                 SclxPortableIdentity.supplementalDetail(transactionId, ordinal),
                 transactionId,
                 detail.getLineOrder(),
@@ -778,7 +795,18 @@ public final class SclxCoreSnapshotAssembler
                 detail.getDueDate(),
                 detail.getStartDate(),
                 detail.getEndDate(),
-                detail.getNotes());
+                detail.getNotes()));
+        if (detail.getItemId() != null || detail.getTxnSplit() != null || detail.getItemEffect() != null)
+        {
+            if (detail.getItemId() == null || detail.getTxnSplit() == null || detail.getItemEffect() == null
+                    || detail.getTxnSplit().getTxn() != detail.getTxn())
+            {
+                throw new IllegalStateException("Cannot export incomplete or foreign supplemental lifecycle links.");
+            }
+            value.put("lifecycle", new SclxSupplementalLifecycle.Link(detail.getItemId(), detail.getItemEffect().name(),
+                    Objects.requireNonNull(exportedLineIds.get(detail.getTxnSplit()), "exported lifecycle split")).value());
+        }
+        return java.util.Collections.unmodifiableMap(value);
     }
 
     private static String transactionDescription(Txn transaction)
