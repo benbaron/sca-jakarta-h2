@@ -4,9 +4,9 @@ active_phase: P24
 active_slice: P24-S1
 active_status: VERIFYING
 active_branch: codex/P24-S1-event-discovery
-active_pull_request: null
-active_head: a448bdac93731eff1d3c5af60c159605368ccbea
-next_action: "Obtain P24-S1 publication authorization, publish the reviewed commits, and inspect exact-head CI before D01 desktop evidence and owner acceptance."
+active_pull_request: 356
+active_head: 69107cc696a2e9b66846b4d914745d5885fd3872
+next_action: "Inspect final-head CI for PR #356, then complete D01 desktop evidence and owner acceptance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -897,3 +897,14 @@ Final-gate prerequisite repair: the first full run reported 833 tests, one failu
 
 
 Verified implementation commit: `a448bdac93731eff1d3c5af60c159605368ccbea`. This documentation-only handoff follows it; `git rev-parse HEAD` identifies the publication tip. Diff whitespace and local documentation links passed; the generated tracked manifest was restored. Worktree changes were reviewed and committed. No P24-S1 PR, published-head CI or owner desktop acceptance is claimed. Next exact action: obtain explicit publication authorization under AGENTS.md, publish this branch's reviewed sequence (including the P23 closeout), open a draft PR and inspect its final-head workflow.
+
+
+### P24-S1 authorized publication — 2026-09-29 (America/Denver)
+
+Owner explicitly authorized publication. Draft [PR #356](https://github.com/benbaron/sca-jakarta-h2/pull/356) targets unchanged main `74efca9bd67d4e47c5d54b07822691cf78e49034`. Connected-service publication preserved the reviewed sequence/messages and verified all local trees:
+
+- Local `f709b38d8c58223244d20c8ae9cd75508c9c211b` → remote `f9072d5b2e3852c79ab98509c93654f156d43aae`, tree `acfe8040744270bae61baa723d67bc72eb4c9482`.
+- Local `a448bdac93731eff1d3c5af60c159605368ccbea` → remote `8937ff50ad15568cf12926f01d8efa83ff33db8d`, tree `8ddba76222e98f91b5c609373033888ad1fb26fb`.
+- Local `7d4a7bdb75fd52abae2b7242da01b249882d8d8d` → verified PR head `69107cc696a2e9b66846b4d914745d5885fd3872`, tree `7b2d996e406e1fb1314ef2d59a6f77865a5c95ad`.
+
+Earlier publication requests are satisfied. This documentation-only record follows that content head. Published-head CI is pending at preparation; inspect the successor final-head Maven PR Tests run and record the outcome in the PR description. Local validation passed 833 tests with zero failures/errors and 33 headless skips; both new JavaFX tests separately passed. D01 installed-build/layout evidence, owner desktop acceptance and merge remain outstanding. P24-S1 remains VERIFYING; P24-S2 remains blocked.
