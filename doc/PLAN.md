@@ -5,7 +5,7 @@ active_slice: P24-S1
 active_status: VERIFYING
 active_branch: codex/P24-S1-event-discovery
 active_pull_request: null
-active_head: 74efca9bd67d4e47c5d54b07822691cf78e49034
+active_head: a448bdac93731eff1d3c5af60c159605368ccbea
 next_action: "Obtain P24-S1 publication authorization, publish the reviewed commits, and inspect exact-head CI before D01 desktop evidence and owner acceptance."
 ---
 
@@ -890,7 +890,10 @@ Baseline compile and eight focused tests passed. The modified focused Maven run 
 
 Donor review: `NonprofitAccounting` at `c697630ec1f784ebe8338d7300da6c9ac801b180` supplies a read-only event list concept, but no better canonical maintenance authority; no donor persistence/UI framework was copied. Governing [P21/P24 contract](P21-activity-event-accounting.md#p24-s1--event-discovery-and-maintenance-navigation), [operation matrix](interface-operation-matrix.md) and [user testing](P24-S1-event-discovery-user-testing.md) describe the implemented workflow. No migration or accounting policy change.
 
-Status: VERIFYING on `codex/P24-S1-event-discovery`; PR: none. Final local `mvn clean verify` passed on 2026-09-29 (America/Denver): 833 tests, zero failures/errors, 33 headless skips. The two new JavaFX tests separately passed on Monocle as recorded above. Remaining: local commit handoff, publication authorization, exact published-head CI, D01 installed-build/layout evidence, owner desktop acceptance and merge. P24-S2 is not started.
+Status: VERIFYING on `codex/P24-S1-event-discovery`; PR: none. Final local `mvn clean verify` passed on 2026-09-29 (America/Denver): 833 tests, zero failures/errors, 33 headless skips. The two new JavaFX tests separately passed on Monocle as recorded above. Remaining: publication authorization, exact published-head CI, D01 installed-build/layout evidence, owner desktop acceptance and merge. P24-S2 is not started.
 
 
 Final-gate prerequisite repair: the first full run reported 833 tests, one failure, zero errors and 33 headless skips. Existing `ActivePeriodContextTest` expected notification when setting 2026-09-30, which equaled this replacement runtime's current date; JavaFX correctly emits no change for the same value. The test now establishes a distinct starting date and removes its listener after asserting the change. This narrowly scoped, test-only repair is required to complete the slice's full gate; no period behavior changed. The fresh full verification passed: 833 tests, zero failures/errors and 33 headless skips. No known failing test remains.
+
+
+Verified implementation commit: `a448bdac93731eff1d3c5af60c159605368ccbea`. This documentation-only handoff follows it; `git rev-parse HEAD` identifies the publication tip. Diff whitespace and local documentation links passed; the generated tracked manifest was restored. Worktree changes were reviewed and committed. No P24-S1 PR, published-head CI or owner desktop acceptance is claimed. Next exact action: obtain explicit publication authorization under AGENTS.md, publish this branch's reviewed sequence (including the P23 closeout), open a draft PR and inspect its final-head workflow.
