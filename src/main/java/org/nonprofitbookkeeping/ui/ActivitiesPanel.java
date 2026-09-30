@@ -4,6 +4,8 @@ import javafx.animation.PauseTransition;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
@@ -18,7 +20,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
@@ -44,7 +46,13 @@ public class ActivitiesPanel implements AppPanel
     private final TableView<ActivityView> table = new TableView<>();
     private final Label status = new Label("Ready.");
     private final Label lifecycleStatus = new Label("Select an existing Activity to review deletion eligibility.");
-    private final Label editMode = new Label("New Activity");
+    private final Label editMode = new Label("New Event");
+    private final TextField search = new TextField();
+    private final javafx.collections.ObservableList<ActivityView> activities = FXCollections.observableArrayList();
+    private final FilteredList<ActivityView> filtered = new FilteredList<>(activities);
+    private final Button edit = new Button("Edit");
+    private long formRevision;
+    private long loadGeneration;
     private final TextField codeField = new TextField();
     private final TextField nameField = new TextField();
     private final CheckBox activeField = new CheckBox("Active");
@@ -58,6 +66,7 @@ public class ActivitiesPanel implements AppPanel
     private final Map<String, String> savedState = new LinkedHashMap<>();
     private final Map<String, TableColumn<ActivityView, String>> columnsByKey = new LinkedHashMap<>();
 
+    private final java.util.function.BooleanSupplier discardConfirmation;
     private Long editingActivityId;
     private boolean populating;
     private boolean dirty;
@@ -66,6 +75,12 @@ public class ActivitiesPanel implements AppPanel
 
     public ActivitiesPanel()
     {
+        this(ActivitiesPanel::showDiscardConfirmation);
+    }
+
+    ActivitiesPanel(java.util.function.BooleanSupplier discardConfirmation)
+    {
+        this.discardConfirmation = Objects.requireNonNull(discardConfirmation, "discardConfirmation");
         savedState.putAll(preferencesService.loadState(companyCode, STATE_PREFIX));
         build();
         restoreLayoutState();
@@ -80,43 +95,71 @@ public class ActivitiesPanel implements AppPanel
         root.setMinWidth(0.0);
         root.setMinHeight(0.0);
 
-        Label title = new Label("Activities");
+        Label title = new Label("Events / Activities");
         title.getStyleClass().add("panel-title");
         Label help = new Label(
-                "Activities identify events, projects, or occasions on Journal lines. Edit by stable database identity; code and name are business data and may change without changing existing Journal links.");
+                "Create and find named events, projects, or occasions here. Use a distinct code for each annual event; names may repeat. Renaming preserves existing Journal links.");
         help.setWrapText(true);
         lifecycleStatus.setWrapText(true);
 
-        Button add = new Button("New");
+        Button add = new Button("New Event");
+        add.setId("activitiesNewEvent");
         add.setOnAction(event -> onNew());
         Button save = new Button("Save");
+        save.setId("activitiesSave");
+        edit.setId("activitiesEdit");
+        edit.setDisable(true);
+        edit.setOnAction(event -> nameField.requestFocus());
         save.setOnAction(event -> saveForm());
         deleteUnused.setDisable(true);
         deleteUnused.setOnAction(event -> deleteUnusedActivity());
-        refresh.setOnAction(event -> reload(editingActivityId));
+        refresh.setOnAction(event ->
+        {
+            if (!dirty || confirmDiscard())
+            {
+                Long selectedId = editingActivityId;
+                clearFormForNew(false);
+                reload(selectedId);
+            }
+        });
 
         UiPermissionGate.gate(add, ApplicationPermission.BOOKKEEPING_WRITE, "Create an Activity");
+        UiPermissionGate.gate(edit, ApplicationPermission.BOOKKEEPING_WRITE, "Edit an event");
         UiPermissionGate.gate(save, ApplicationPermission.BOOKKEEPING_WRITE, "Save an Activity");
         UiPermissionGate.gate(deleteUnused, ApplicationPermission.BOOKKEEPING_WRITE, "Delete an unused Activity");
         UiPermissionGate.gate(codeField, ApplicationPermission.BOOKKEEPING_WRITE, "Edit an Activity code");
         UiPermissionGate.gate(nameField, ApplicationPermission.BOOKKEEPING_WRITE, "Edit an Activity name");
         UiPermissionGate.gate(activeField, ApplicationPermission.BOOKKEEPING_WRITE, "Change Activity lifecycle state");
 
-        HBox actions = new HBox(8, add, save, deleteUnused, refresh);
-        VBox header = new VBox(6, title, help, actions, status, lifecycleStatus);
+        FlowPane actions = new FlowPane(8, 6, add, edit, save, deleteUnused, refresh);
+        search.setId("activitiesSearch");
+        search.setPromptText("Search event name or code");
+        search.setAccessibleText("Search Events / Activities by name or code");
+        search.textProperty().addListener((obs, before, after) -> applySearch());
+        VBox header = new VBox(6, title, help, actions, search, status, lifecycleStatus);
+        ScrollPane headerScroll = new ScrollPane(header);
+        headerScroll.setId("activitiesHeaderScroll");
+        headerScroll.setFitToWidth(true);
+        headerScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        headerScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        headerScroll.setMinSize(0, 0);
+        headerScroll.setPrefHeight(180);
+        headerScroll.setMaxHeight(180);
 
         configureTable();
         Node editor = buildEditor();
 
-        VBox tableRegion = new VBox(6, new Label("Activity list"), table);
+        VBox tableRegion = new VBox(6, new Label("Events / Activities — including inactive"), table);
         tableRegion.setPadding(new Insets(8, 8, 8, 0));
         tableRegion.setMinHeight(0.0);
+        tableRegion.setMinWidth(0.0);
         VBox.setVgrow(table, Priority.ALWAYS);
 
         ScrollPane editorScroll = new ScrollPane(editor);
         editorScroll.setId("activitiesEditorScroll");
         editorScroll.setFitToWidth(true);
         editorScroll.setMinHeight(0.0);
+        editorScroll.setMinWidth(0.0);
         editorScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         editorScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
@@ -126,7 +169,7 @@ public class ActivitiesPanel implements AppPanel
         split.setDividerPositions(0.58);
         VBox.setVgrow(split, Priority.ALWAYS);
 
-        root.getChildren().addAll(header, split);
+        root.getChildren().addAll(headerScroll, split);
         installDirtyListeners();
     }
 
@@ -135,7 +178,10 @@ public class ActivitiesPanel implements AppPanel
         table.setId("activitiesTable");
         table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         CompanyTableStateBinder.markCompanyStateOwned(table);
-        table.setPlaceholder(new Label("No Activities found. Choose New to create one."));
+        table.setPlaceholder(new Label("No matching events. Clear search or choose New Event."));
+        SortedList<ActivityView> sorted = new SortedList<>(filtered);
+        sorted.comparatorProperty().bind(table.comparatorProperty());
+        table.setItems(sorted);
 
         addColumn("code", "Code", ActivityView::code, 150);
         addColumn("name", "Name", ActivityView::name, 300);
@@ -143,12 +189,16 @@ public class ActivitiesPanel implements AppPanel
 
         table.getSelectionModel().selectedItemProperty().addListener((obs, oldRow, newRow) ->
         {
+            edit.setDisable(newRow == null);
             if (suppressSelection || newRow == null)
             {
                 return;
             }
-            if (dirty && editingActivityId != null
-                    && !Objects.equals(editingActivityId, newRow.id())
+            if (dirty && Objects.equals(editingActivityId, newRow.id()))
+            {
+                return;
+            }
+            if (dirty && !Objects.equals(editingActivityId, newRow.id())
                     && !confirmDiscard())
             {
                 suppressSelection = true;
@@ -182,6 +232,9 @@ public class ActivitiesPanel implements AppPanel
     private Node buildEditor()
     {
         activeField.setSelected(true);
+        codeField.setId("activitiesCode");
+        nameField.setId("activitiesName");
+        activeField.setId("activitiesActive");
 
         GridPane form = new GridPane();
         form.setHgap(10);
@@ -200,8 +253,9 @@ public class ActivitiesPanel implements AppPanel
         Label lifecycle = new Label(
                 "Clearing Active and saving deactivates the Activity without changing historical Journal lines. Inactive Activities remain visible here but are omitted from new Journal Activity choices. Delete Unused is available only when there are no Journal transaction-split references and no durable interchange identity; otherwise deactivate the Activity instead.");
         lifecycle.setWrapText(true);
-        VBox editor = new VBox(8, new Label("Activity editor"), form, lifecycle);
+        VBox editor = new VBox(8, new Label("Event / Activity editor"), form, lifecycle);
         editor.setPadding(new Insets(8));
+        editor.setMinWidth(0);
         return editor;
     }
 
@@ -217,6 +271,7 @@ public class ActivitiesPanel implements AppPanel
         if (!populating)
         {
             dirty = true;
+            formRevision++;
         }
     }
 
@@ -225,15 +280,15 @@ public class ActivitiesPanel implements AppPanel
         populating = true;
         try
         {
+            formRevision++;
             editingActivityId = row.id();
             codeField.setText(row.code());
             nameField.setText(row.name());
             activeField.setSelected(row.active());
-            editMode.setText("Editing Activity ID " + row.id());
+            editMode.setText("Editing " + row.name() + " (" + row.code() + ")");
             dirty = false;
             deleteUnused.setDisable(true);
-            status.setText("Editing Activity " + row.code()
-                    + ". Save preserves stable ID " + row.id() + " even when the code changes.");
+            status.setText("Editing " + row.name() + " (" + row.code() + "). Choose Save to keep changes.");
             lifecycleStatus.setText("Checking Activity references...");
         }
         finally
@@ -247,6 +302,7 @@ public class ActivitiesPanel implements AppPanel
         populating = true;
         try
         {
+            formRevision++;
             editingActivityId = null;
             suppressSelection = true;
             table.getSelectionModel().clearSelection();
@@ -254,13 +310,13 @@ public class ActivitiesPanel implements AppPanel
             codeField.clear();
             nameField.clear();
             activeField.setSelected(true);
-            editMode.setText("New Activity");
+            editMode.setText("New Event");
             deleteUnused.setDisable(true);
             dirty = false;
             lifecycleStatus.setText("New Activities have no history until referenced by Journal or interchange data.");
             if (announce)
             {
-                status.setText("New Activity: enter a code and name, then choose Save.");
+                status.setText("New Event: enter a distinct code and a name, then choose Save.");
             }
         }
         finally
@@ -281,6 +337,7 @@ public class ActivitiesPanel implements AppPanel
             editingActivityId = saved.id();
             dirty = false;
             status.setText("Saved Activity " + saved.code() + ".");
+            search.clear();
             reload(saved.id());
         }
         catch (RuntimeException ex)
@@ -363,35 +420,73 @@ public class ActivitiesPanel implements AppPanel
         }
     }
 
+    private void applySearch()
+    {
+        String query = search.getText().strip().toLowerCase(Locale.ROOT);
+        suppressSelection = true;
+        try
+        {
+            filtered.setPredicate(row -> row.name().toLowerCase(Locale.ROOT).contains(query)
+                    || row.code().toLowerCase(Locale.ROOT).contains(query));
+        }
+        finally
+        {
+            suppressSelection = false;
+        }
+        // Filtering changes the list only; the current unsaved editor remains intact.
+    }
+
     private void reload(Long reselectId)
     {
+        long revision = formRevision;
+        long generation = ++loadGeneration;
         refresh.setDisable(true);
-        status.setText("Loading Activities...");
+        status.setText("Loading Events / Activities...");
         UiAsync.run("activity-load",
                 () -> UiServiceRegistry.activityLookup().listAllActivities(),
-                rows -> {
-                    table.setItems(FXCollections.observableArrayList(rows));
-                    if (reselectId != null)
+                rows ->
+                {
+                    if (generation != loadGeneration)
+                    {
+                        return;
+                    }
+                    suppressSelection = true;
+                    try
+                    {
+                        activities.setAll(rows);
+                    }
+                    finally
+                    {
+                        suppressSelection = false;
+                    }
+                    if (reselectId != null && !dirty && revision == formRevision)
                     {
                         rows.stream()
                                 .filter(row -> Objects.equals(row.id(), reselectId))
                                 .findFirst()
                                 .ifPresent(table.getSelectionModel()::select);
                     }
-                    else if (editingActivityId == null)
-                    {
-                        dirty = false;
-                    }
-                    status.setText("Loaded " + rows.size() + " Activity record(s), including inactive Activities.");
+                    status.setText("Loaded " + rows.size() + " Events / Activities, including inactive records."
+                            + (dirty ? " Unsaved editor changes retained." : ""));
                     refresh.setDisable(false);
                 },
-                ex -> {
-                    status.setText("Failed to load Activities: " + UiErrors.safeMessage(ex));
+                ex ->
+                {
+                    if (generation != loadGeneration)
+                    {
+                        return;
+                    }
+                    status.setText("Failed to load Events / Activities: " + UiErrors.safeMessage(ex));
                     refresh.setDisable(false);
                 });
     }
 
     private boolean confirmDiscard()
+    {
+        return discardConfirmation.getAsBoolean();
+    }
+
+    private static boolean showDiscardConfirmation()
     {
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
         confirmation.setTitle("Discard Activity edits");
@@ -536,7 +631,7 @@ public class ActivitiesPanel implements AppPanel
     @Override
     public String title()
     {
-        return "Activities";
+        return "Events / Activities";
     }
 
     @Override
@@ -570,7 +665,7 @@ public class ActivitiesPanel implements AppPanel
         }
         else
         {
-            status.setText("New Activity cancelled; unsaved changes remain.");
+            status.setText("New Event cancelled; unsaved changes remain.");
         }
     }
 

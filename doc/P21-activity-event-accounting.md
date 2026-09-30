@@ -188,3 +188,14 @@ S2 is complete only when its totals reconcile to canonical Activity-linked Journ
 ## Candidate later work deliberately not activated
 
 The donor repository also contains donor/receipt and monthly-close concepts. They remain candidates for a future deliberately selected phase or slice. P21 does not silently import them, and this document does not establish them as committed scope.
+
+
+## P24-S1 — Event discovery and maintenance navigation
+
+The adopted P24 correction extends P21's navigation contract. **Events / Activities** is the Administration destination and maintenance title. **New Event**, **Edit**, **Save**, the Active checkbox and protected **Delete Unused** operate through the same `ActivityAdminService`. The name/code search is case-insensitive and includes inactive records. Repeated names are allowed; company-unique codes distinguish annual events, and stable IDs preserve history across renames.
+
+Event Accounting now offers **Events / Activities** navigation to that existing maintenance destination, including for VIEWER. Event Accounting remains read-only; maintenance mutations retain both UI permission gating and service authorization. Returning to Event Accounting refreshes its selectors through its existing `onPanelShown` behavior.
+
+Search changes only the visible list, preserving an unsaved editor. Selecting a different record or refreshing requires discarding unsaved changes; cancelling retains the draft, including a never-saved new event. Stale asynchronous loads cannot replace a newer draft or load. Successful save clears the search and reveals the saved record. Existing `ACTIVITIES` route IDs and `activities.*` company layout keys remain compatible. The header and editor scroll independently of the table; table sorting remains live through filtering.
+
+No schema, portable identity, accounting calculations or Journal assignment behavior changes. P24-S2 owns Fund/Event tagging improvements. Owner-installed-build, launch, role/company, display/scaling and saved-layout evidence (D01) remains required for desktop reproduction acceptance.

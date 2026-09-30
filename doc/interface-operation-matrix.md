@@ -39,13 +39,13 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 |---|---:|---:|---:|---|
 | Dashboard | yes | no | no | New opens the canonical Journal entry workflow. |
 | Journal | yes | yes | yes | Retired Ledger Register/Transaction Editor aliases normalize here. |
-| Event Accounting | no | no | no | Read-only Activity-linked accounting, related configured-bank context, and Journal drill-through. |
+| Event Accounting | no | no | no | Read-only Activity-linked accounting, related configured-bank context, Journal drill-through and navigation to Events / Activities maintenance. |
 | Banking | yes | yes | no | Durable bank/configuration editing plus panel-local statement import/review actions. |
 | Asset Register | yes | yes | no | Stable asset identity and governed lifecycle operations. |
 | Inventory | yes | yes | no | Stable item identity and governed movement/lifecycle operations. |
 | Chart of Accounts | yes | yes | no | Stable account ID editing; code is mutable business data. |
 | Funds | yes | yes | no | Stable fund ID editing with protected delete/deactivation rules. |
-| Activities | yes | yes | no | Stable Activity ID editing; referenced/interchange-linked history deactivates rather than deletes. |
+| Events / Activities | yes | yes | no | New Event, name/code search and Edit over stable Activity IDs; referenced/interchange-linked history deactivates rather than deletes. |
 | Budget Editor | no | yes | no | Version creation/activation/archive remain explicit panel actions. |
 | Administration — Preferences | no | yes | no | Capabilities follow the selected inner tab. |
 | Administration — Company/User maintenance | yes | yes | no | Stable durable-record maintenance. |
@@ -65,7 +65,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Inventory | `InventoryPanel` | `InventoryService` | inventory movement/lifecycle services | Financial movements link atomically to canonical transactions. |
 | Chart of Accounts | `ChartOfAccountsPanel` | account/chart services | `AccountAdminService` | Stable account ID; deactivate instead of invented hard delete for referenced history. |
 | Funds | Funds administration panel | fund lookup/admin services | `FundAdminService` | Stable IDs; unused delete only after usage checks, otherwise deactivate. |
-| Activities | `ActivitiesPanel` | `ActivityLookupService` | `ActivityAdminService` | Stable Activity ID; code/name are mutable. Delete requires no `TxnSplit` or Activity `interchange_identity` references; otherwise deactivate/reactivate. |
+| Events / Activities | `ActivitiesPanel` | `ActivityLookupService` | `ActivityAdminService` | Stable Activity ID; code/name are mutable. Delete requires no `TxnSplit` or Activity `interchange_identity` references; otherwise deactivate/reactivate. |
 | Reconciliation | reconciliation workspace | current reconciliation query/workspace services | current reconciliation finalization/matching services | Matching and cleared-state mutation remain reconciliation-owned. |
 | Period Close | `PeriodCloseRunsPanel` | `PeriodCloseRangeService` and factual history | `PeriodCloseRangeService` guarded close/reopen operations | `BOOKKEEPING_WRITE` is authoritative at the service boundary; calculated period honors configured period start day. |
 | Bank Transactions | current bank-transaction workspace | canonical configured-bank split projection plus statement-review facts | explicit reviewed-row acceptance/correction routes only | No second bank ledger. |

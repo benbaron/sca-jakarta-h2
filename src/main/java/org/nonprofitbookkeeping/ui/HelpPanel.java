@@ -39,12 +39,19 @@ public class HelpPanel implements AppPanel
                 + "4) Use Journal for transaction entry/review, Banking and Bank Reconciliation for bank work, and Import Preview before accepting supported imports.");
 
         Label navigation = wrapped("Production destinations\n"
-                + "Accounting: Journal, Banking, Bank Reconciliation, Bank Transactions\n"
+                + "Accounting: Journal, Event Accounting, Banking, Bank Reconciliation, Bank Transactions\n"
                 + "Planning: Budget Editor, Budget vs Actual\n"
                 + "Assets & Inventory: Asset Register, Depreciation Runs, Inventory\n"
                 + "Import & Oversight: Import Preview, Audit History, Period Close\n"
                 + "Reports: Report Library\n"
-                + "Administration: Chart of Accounts, Funds, Administration, Diagnostics");
+                + "Administration: Chart of Accounts, Funds, Events / Activities, Administration, Diagnostics");
+
+        Label events = wrapped("Events / Activities\n"
+                + "Open Events / Activities under Administration, or use the Events / Activities button in Event Accounting. "
+                + "Choose New Event, enter a distinct code and a name, and Save. Search by name or code; annual events may share a name but need different codes. "
+                + "Select a row and choose Edit to rename it. Clear Active and Save to deactivate; select Active and Save to reactivate. "
+                + "Used events retain their history and cannot be permanently deleted. Return to Event Accounting to review the event. "
+                + "Fund, Event/Activity and Budget remain separate Journal classifications.");
 
         Label shortcuts = wrapped(GlobalCommandRegistry.shortcutHelpText()
                 + "\n\nCopy and Paste use the standard shortcuts of the focused text control; "
@@ -64,6 +71,7 @@ public class HelpPanel implements AppPanel
                 gettingStarted,
                 new Separator(),
                 navigation,
+                events,
                 new Separator(),
                 shortcuts,
                 new Separator(),

@@ -150,6 +150,10 @@ public final class EventAccountingPanel implements AppPanel
         fromDate.setId("eventAccountingFromDate");
         throughDate.setId("eventAccountingThroughDate");
 
+        Button manageEvents = new Button("Events / Activities");
+        manageEvents.setId("eventAccountingManageEvents");
+        manageEvents.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(
+                AppPanelId.ACTIVITIES, ""));
         Button refresh = new Button("Refresh");
         Button resetScope = new Button("Use Active Period Scope");
         refresh.setOnAction(event -> reloadWorkspace());
@@ -168,11 +172,11 @@ public final class EventAccountingPanel implements AppPanel
         throughDate.valueProperty().addListener((obs, oldValue, newValue) -> dateChanged());
 
         FlowPane controls = new FlowPane(8, 6,
-                new Label("Activity"), activity,
+                new Label("Event / Activity"), activity,
                 new Label("From"), fromDate,
                 new Label("Through"), throughDate,
                 new Label("Fund"), fund,
-                refresh, resetScope, openJournal);
+                manageEvents, refresh, resetScope, openJournal);
         controls.setAlignment(Pos.CENTER_LEFT);
 
         GridPane summary = new GridPane();
@@ -401,7 +405,7 @@ public final class EventAccountingPanel implements AppPanel
         LocalDate end = throughDate.getValue();
         if (selectedActivity == null)
         {
-            clearWorkspace("Select an Activity to review Event Accounting.");
+            clearWorkspace("Choose Events / Activities to create an event, then return here to select it.");
             return;
         }
         if (start == null || end == null)

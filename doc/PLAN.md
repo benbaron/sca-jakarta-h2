@@ -1,12 +1,12 @@
 ---
-plan_version: 308
+plan_version: 309
 active_phase: P24
 active_slice: P24-S1
-active_status: READY
-active_branch: null
+active_status: VERIFYING
+active_branch: codex/P24-S1-event-discovery
 active_pull_request: null
 active_head: 74efca9bd67d4e47c5d54b07822691cf78e49034
-next_action: "Begin P24-S1 event creation/discovery inspection from current main; retain D01 installed-build/layout evidence as a reproduction acceptance prerequisite."
+next_action: "Obtain P24-S1 publication authorization, publish the reviewed commits, and inspect exact-head CI before D01 desktop evidence and owner acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -36,7 +36,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
-| P24 | Named events and usable entry workflows | READY — P24-S1 event creation and discovery |
+| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S1 event creation and discovery |
 | P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
@@ -674,7 +674,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P23-S3 | Preserve historical open-item balances (G2) | DONE | P23-S2 merged; owning contract and D01–D10 gates as applicable |
 | P23-S4 | Enforce and explain schedule-to-ledger completeness (G3) | DONE | P23-S3 merged; owning contract and D01–D10 gates as applicable |
 | P23-S5 | Preserve open-item lifecycle in SCLX (G4) | DONE | P23-S4 merged; owning contract and D01–D10 gates as applicable |
-| P24-S1 | Make event creation and discovery explicit (G14) | READY | P23-S5 merged; owning contract and D01–D10 gates as applicable |
+| P24-S1 | Make event creation and discovery explicit (G14) | VERIFYING | P23-S5 merged; owning contract and D01–D10 gates as applicable |
 | P24-S2 | Make Fund/Event tagging obvious and reliable (G14) | BLOCKED | P24-S1 merged; owning contract and D01–D10 gates as applicable |
 | P24-S3 | Attribute generated inventory costs (G6) | BLOCKED | P24-S2 merged; owning contract and D01–D10 gates as applicable |
 | P24-S4 | Complete lookup maintenance (G8) | BLOCKED | P24-S3 merged; owning contract and D01–D10 gates as applicable |
@@ -873,3 +873,24 @@ Owner confirmed acceptance and merge of S5. GitHub verifies [PR #355](https://gi
 P23-S5 and P23 are DONE. P24-S1 is READY, with no implementation branch or PR. Its scope is named event creation and discovery through the existing Activity authority; Fund/Event Journal tagging belongs to P24-S2. D01 installed executable, launch route, role/company, display/scaling and saved-layout evidence remains required for P24-S1 reproduction acceptance; no such evidence is invented by this closeout.
 
 This documentation-only closeout is on fresh branch `codex/P23-closeout`, based on the verified merge above; the merged S5 branch is not reused. Validation: GitHub merge/final-head CI verification and `git diff --check`; no application changes or additional application test run. Next exact action: start P24-S1 scoped inspection from current main when execution resumes, preserving this closure record. No P24 implementation has begun.
+
+
+## 19. P24-S1 execution — 2026-09-29 (America/Denver)
+
+Owner selected the next slice. Fresh branch `codex/P24-S1-event-discovery` starts from main `74efca9bd67d4e47c5d54b07822691cf78e49034` and carries the documentation-only P23 closure commit `f709b38`. No PR yet. Baseline compile passed. Current Activity service already enforces stable identity, ownership, authorization and referenced-record protection. Source reproduction finds maintenance labelled only Activities, no name-search control, no Event Accounting maintenance route, and row selection that can discard a dirty new form. D01 owner-installed-build/layout evidence remains a desktop reproduction acceptance prerequisite; source findings do not claim that evidence.
+
+Design: retain Activity authority and existing route/state keys; expose Events / Activities, New Event, Edit and existing Active/Save lifecycle controls, case-insensitive name/code search, and a maintenance navigation action from Event Accounting. Preserve unsaved forms through filtering and asynchronous refresh. No schema or accounting-service policy change. P24-S2 Journal tagging is outside this slice.
+
+
+### P24-S1 implementation and validation
+
+Implemented Events / Activities navigation/title/help, New Event and explicit Edit focus, case-insensitive name/code search including inactive records, and the Event Accounting maintenance route. Existing Activity service, stable IDs, ownership, permission gates, lifecycle/delete rules and `activities.*` layout keys remain authoritative. Filtering and asynchronous loads retain unsaved drafts; selecting a different row and Refresh preserve drafts when discard is cancelled. Sorting remains live through search. The header/editor expose scrolling at narrow widths.
+
+Baseline compile and eight focused tests passed. The modified focused Maven run passed ten tests with two display-dependent skips. Both new `EventDiscoveryPanelTest` cases then passed without skips using a temporary JavaFX Monocle headless backend and JUnit console: repeated names/distinct codes, name/code search, dirty new/edit cancellation, save, VIEWER gating, customized column order/width/sort, 900/600-pixel widths with enlarged text, table horizontal/vertical scrolling, editor overflow, divider movement, maintenance routing and refreshed Event Accounting choices. The test confirmation callback replaces modal automation only in tests; production retains the normal discard dialog. Initial modal automation hung; an initial teardown emitted late preference-save authorization errors. Both were corrected, and the final two-test run passed without those errors. No native desktop visual acceptance is claimed. Temporary tools/logs were lost in the subsequent runtime replacement; the observed results above are retained here. CI now includes these tests in its existing Xvfb step.
+
+Donor review: `NonprofitAccounting` at `c697630ec1f784ebe8338d7300da6c9ac801b180` supplies a read-only event list concept, but no better canonical maintenance authority; no donor persistence/UI framework was copied. Governing [P21/P24 contract](P21-activity-event-accounting.md#p24-s1--event-discovery-and-maintenance-navigation), [operation matrix](interface-operation-matrix.md) and [user testing](P24-S1-event-discovery-user-testing.md) describe the implemented workflow. No migration or accounting policy change.
+
+Status: VERIFYING on `codex/P24-S1-event-discovery`; PR: none. Final local `mvn clean verify` passed on 2026-09-29 (America/Denver): 833 tests, zero failures/errors, 33 headless skips. The two new JavaFX tests separately passed on Monocle as recorded above. Remaining: local commit handoff, publication authorization, exact published-head CI, D01 installed-build/layout evidence, owner desktop acceptance and merge. P24-S2 is not started.
+
+
+Final-gate prerequisite repair: the first full run reported 833 tests, one failure, zero errors and 33 headless skips. Existing `ActivePeriodContextTest` expected notification when setting 2026-09-30, which equaled this replacement runtime's current date; JavaFX correctly emits no change for the same value. The test now establishes a distinct starting date and removes its listener after asserting the change. This narrowly scoped, test-only repair is required to complete the slice's full gate; no period behavior changed. The fresh full verification passed: 833 tests, zero failures/errors and 33 headless skips. No known failing test remains.
