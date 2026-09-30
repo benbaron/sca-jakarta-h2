@@ -1,12 +1,12 @@
 ---
-plan_version: 307
-active_phase: P23
-active_slice: P23-S5
-active_status: VERIFYING
-active_branch: codex/P23-S5-sclx-lifecycle
-active_pull_request: 355
-active_head: 7f21285bb4568f6768e2501368339b454f9771aa
-next_action: "Inspect final-head CI for PR #355, then complete owner desktop acceptance and merge."
+plan_version: 308
+active_phase: P24
+active_slice: P24-S1
+active_status: READY
+active_branch: null
+active_pull_request: null
+active_head: 74efca9bd67d4e47c5d54b07822691cf78e49034
+next_action: "Begin P24-S1 event creation/discovery inspection from current main; retain D01 installed-build/layout evidence as a reproduction acceptance prerequisite."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -35,8 +35,8 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
-| P23 | Accounting correctness and open-item integrity | IN_PROGRESS — P23-S5 SCLX lifecycle preservation |
-| P24 | Named events and usable entry workflows | BLOCKED — P23 |
+| P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
+| P24 | Named events and usable entry workflows | READY — P24-S1 event creation and discovery |
 | P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21, P22 and P23-S1 through P23-S4 are complete. S5 is selected and under verification; P24 remains blocked until P23-S5 is accepted and merged. Conditional P27-S5 remains unadopted.
+P21, P22 and P23-S1 through P23-S5 are complete. Owner accepted S5 and GitHub verified PR #355 merged on 2026-09-29. P24-S1 is the next slice and is READY; implementation has not started. D01 remains required for its reproduction acceptance. Conditional P27-S5 remains unadopted.
 
 ## 10. Archived proposal and adoption
 
@@ -673,8 +673,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P23-S2 | Correct Budget vs Actual reversal treatment (G1) | DONE | P23-S1 merged; owning contract and D01–D10 gates as applicable |
 | P23-S3 | Preserve historical open-item balances (G2) | DONE | P23-S2 merged; owning contract and D01–D10 gates as applicable |
 | P23-S4 | Enforce and explain schedule-to-ledger completeness (G3) | DONE | P23-S3 merged; owning contract and D01–D10 gates as applicable |
-| P23-S5 | Preserve open-item lifecycle in SCLX (G4) | VERIFYING | P23-S4 merged; owning contract and D01–D10 gates as applicable |
-| P24-S1 | Make event creation and discovery explicit (G14) | BLOCKED | P23-S5 merged; owning contract and D01–D10 gates as applicable |
+| P23-S5 | Preserve open-item lifecycle in SCLX (G4) | DONE | P23-S4 merged; owning contract and D01–D10 gates as applicable |
+| P24-S1 | Make event creation and discovery explicit (G14) | READY | P23-S5 merged; owning contract and D01–D10 gates as applicable |
 | P24-S2 | Make Fund/Event tagging obvious and reliable (G14) | BLOCKED | P24-S1 merged; owning contract and D01–D10 gates as applicable |
 | P24-S3 | Attribute generated inventory costs (G6) | BLOCKED | P24-S2 merged; owning contract and D01–D10 gates as applicable |
 | P24-S4 | Complete lookup maintenance (G8) | BLOCKED | P24-S3 merged; owning contract and D01–D10 gates as applicable |
@@ -864,3 +864,12 @@ Owner explicitly authorized S5 publication. Draft [PR #355](https://github.com/b
 - Local `5e4b50e6a933ca97535fec5abfd9c1a2ba4a0f88` maps to verified PR head `7f21285bb4568f6768e2501368339b454f9771aa`, tree `3aadafce6a6c858430a183fb147490f19541ea79`.
 
 Earlier publication-authorization requests are satisfied. This documentation-only publication record follows that content head. GitHub validation is pending at preparation; inspect the successor final-head Maven PR Tests run and record its outcome in the PR description. Local full verification passed 831 tests with zero failures/errors and 31 headless skips. Desktop visual/user acceptance and merge remain outstanding. S5 remains VERIFYING; no later slice is activated.
+
+
+## 18. P23 closure and P24 readiness — 2026-09-29 (America/Denver)
+
+Owner confirmed acceptance and merge of S5. GitHub verifies [PR #355](https://github.com/benbaron/sca-jakarta-h2/pull/355) merged at current main `74efca9bd67d4e47c5d54b07822691cf78e49034`. Its final head `82487d07b5e14b2cecac3c3add938e7bf0acb26f` passed [Maven PR Tests run 36515069363](https://github.com/benbaron/sca-jakarta-h2/actions/runs/36515069363), job `109235479177`: both full test passes reported 831 tests, zero failures/errors and 31 headless skips; the Xvfb JavaFX pass reported 11 tests with zero failures/errors/skips. Owner acceptance is recorded separately from automated visual checks. Earlier S5 pending acceptance/publication/merge records are historical.
+
+P23-S5 and P23 are DONE. P24-S1 is READY, with no implementation branch or PR. Its scope is named event creation and discovery through the existing Activity authority; Fund/Event Journal tagging belongs to P24-S2. D01 installed executable, launch route, role/company, display/scaling and saved-layout evidence remains required for P24-S1 reproduction acceptance; no such evidence is invented by this closeout.
+
+This documentation-only closeout is on fresh branch `codex/P23-closeout`, based on the verified merge above; the merged S5 branch is not reused. Validation: GitHub merge/final-head CI verification and `git diff --check`; no application changes or additional application test run. Next exact action: start P24-S1 scoped inspection from current main when execution resumes, preserving this closure record. No P24 implementation has begun.
