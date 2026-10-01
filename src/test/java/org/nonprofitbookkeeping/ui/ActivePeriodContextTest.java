@@ -25,14 +25,22 @@ public class ActivePeriodContextTest
     public void setUpdatesSharedDateAndNotifiesListeners()
     {
         LocalDate expected = LocalDate.of(2026, 9, 30);
+        // Exercise an actual value change even when the test runs on the expected date.
+        ActivePeriodContext.set(expected.minusDays(1));
         AtomicReference<LocalDate> observed = new AtomicReference<>();
-        ActivePeriodContext.activeDateProperty().addListener(
-                (observable, oldDate, newDate) -> observed.set(newDate));
-
-        ActivePeriodContext.set(expected);
-
-        assertEquals(expected, ActivePeriodContext.get());
-        assertEquals(expected, observed.get());
+        javafx.beans.value.ChangeListener<LocalDate> listener =
+                (observable, oldDate, newDate) -> observed.set(newDate);
+        ActivePeriodContext.activeDateProperty().addListener(listener);
+        try
+        {
+            ActivePeriodContext.set(expected);
+            assertEquals(expected, ActivePeriodContext.get());
+            assertEquals(expected, observed.get());
+        }
+        finally
+        {
+            ActivePeriodContext.activeDateProperty().removeListener(listener);
+        }
     }
 
     @Test

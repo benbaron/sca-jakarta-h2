@@ -17,6 +17,9 @@ class ActivitiesPanelLifecycleSourceTest
                 "src/main/java/org/nonprofitbookkeeping/ui/ActivitiesPanel.java"));
 
         assertTrue(source.contains("private Long editingActivityId"));
+        assertTrue(source.contains("Events / Activities"));
+        assertTrue(source.contains("New Event"));
+        assertTrue(source.contains("activitiesSearch"));
         assertTrue(source.contains("new ActivityCommand("));
         assertTrue(source.contains("activityAdmin().save("));
         assertTrue(source.contains("activityAdmin().usage("));

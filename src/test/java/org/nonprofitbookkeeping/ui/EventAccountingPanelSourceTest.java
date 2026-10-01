@@ -28,6 +28,8 @@ class EventAccountingPanelSourceTest
         assertTrue(registry.contains("new EventAccountingQueryService(services().jpa(), UiServiceRegistry::activeCompanyCode)"));
 
         assertTrue(panel.contains("DrillThroughCoordinator.openPanelWithContext"));
+        assertTrue(panel.contains("eventAccountingManageEvents"));
+        assertTrue(panel.contains("AppPanelId.ACTIVITIES"));
         assertTrue(panel.contains("\"Txn #\" + transactionId + \" from Event Accounting\""));
         assertFalse(panel.contains("BOOKKEEPING_WRITE"));
         assertFalse(panel.contains("requiredPermission("));
