@@ -1,11 +1,11 @@
 ---
-plan_version: 314
+plan_version: 315
 active_phase: P24
 active_slice: P24-S2
 active_status: VERIFYING
 active_branch: codex/P24-S2-journal-fund-event
 active_pull_request: 357
-active_head: 8a5964065f72fa9feff0aedb62933be3eab673f4
+active_head: 1fd7944715361551c763f18e66d2d82bc9e43524
 next_action: "Inspect final-head CI for PR #357, then complete D01 desktop evidence and owner acceptance before merge."
 ---
 
@@ -36,7 +36,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
-| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S1 complete; P24-S2 READY |
+| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S1 complete; P24-S2 VERIFYING |
 | P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is the next slice and is READY; its implementation has not started. Conditional P27-S5 remains unadopted.
+P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is implemented and VERIFYING in draft PR #357; CI and owner desktop acceptance/merge remain required before P24-S3. Conditional P27-S5 remains unadopted.
 
 ## 10. Archived proposal and adoption
 
@@ -951,3 +951,5 @@ Owner explicitly authorized publication. Draft [PR #357](https://github.com/benb
 - Local `0b0fd6600c036dbbe0a768be680fb85bf1cdec41` → remote `8a5964065f72fa9feff0aedb62933be3eab673f4`; verified tree `30584fb26d35077ab02e2afd50c4472d40986d18`.
 
 All earlier publication-authorization requests are satisfied. This documentation-only record follows the verified content head above. Final-head CI is pending at preparation; inspect its Maven PR Tests workflow and record the result in the PR description. Local clean verification passed 837 tests, zero failures/errors and 35 headless skips; both new JavaFX tests separately passed. Remaining: exact final-head CI, D01 installed-build/layout evidence, owner desktop acceptance and merge. S2 remains VERIFYING; S3 remains blocked.
+
+Publication follow-up: remote documentation head `1fd7944715361551c763f18e66d2d82bc9e43524` was fetched and its tree `b1877e25f4af379bbc8096ac26a5025a7582946e` matched local `c5e438a2491479a7651f011b772465ae8b93f652`. [Run 36950856982](https://github.com/benbaron/sca-jakarta-h2/actions/runs/36950856982), job `110663322715`, entered clean headless verification. This documentation-only follow-up synchronizes two stale current-status summaries; inspect the successor final-head run and record its outcome in PR #357.
