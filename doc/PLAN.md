@@ -1,12 +1,12 @@
 ---
-plan_version: 310
+plan_version: 312
 active_phase: P24
 active_slice: P24-S2
-active_status: READY
-active_branch: null
+active_status: VERIFYING
+active_branch: codex/P24-S2-journal-fund-event
 active_pull_request: null
 active_head: ab580628740228812e32649d19e723d50e81b152
-next_action: "Begin P24-S2 inspection of Journal Fund/Event selectors, saved-entry review and filters from current main."
+next_action: "Request owner authorization to publish the locally verified P24-S2 commits and draft PR; then inspect exact-head CI and obtain desktop acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -675,7 +675,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P23-S4 | Enforce and explain schedule-to-ledger completeness (G3) | DONE | P23-S3 merged; owning contract and D01–D10 gates as applicable |
 | P23-S5 | Preserve open-item lifecycle in SCLX (G4) | DONE | P23-S4 merged; owning contract and D01–D10 gates as applicable |
 | P24-S1 | Make event creation and discovery explicit (G14) | DONE | P23-S5 merged; owning contract and D01–D10 gates as applicable |
-| P24-S2 | Make Fund/Event tagging obvious and reliable (G14) | READY | P24-S1 merged; owning contract and D01–D10 gates as applicable |
+| P24-S2 | Make Fund/Event tagging obvious and reliable (G14) | VERIFYING | P24-S1 merged; owning contract and D01–D10 gates as applicable |
 | P24-S3 | Attribute generated inventory costs (G6) | BLOCKED | P24-S2 merged; owning contract and D01–D10 gates as applicable |
 | P24-S4 | Complete lookup maintenance (G8) | BLOCKED | P24-S3 merged; owning contract and D01–D10 gates as applicable |
 | P25-S1 | Implement one internal fund-transfer operation (G7) | BLOCKED | P24-S4 merged; owning contract and D01–D10 gates as applicable |
@@ -917,3 +917,21 @@ Owner explicitly confirmed acceptance and merge. GitHub verifies [PR #356](https
 P24-S1 is DONE. P24 remains IN_PROGRESS; P24-S2 is READY with no implementation branch or PR. S2 owns visible/searchable Journal Fund/Event choices, independent line assignments, saved-entry review and event-name filtering, with refresh that preserves drafts. No S2 implementation has begun.
 
 This documentation-only closeout uses fresh branch `codex/P24-S1-closeout` from the verified merge; the merged implementation branch is not reused. Validation: merge and final-head CI verification, plan status review and `git diff --check`. No application code changed or additional application test run was needed. Next exact action when execution resumes: create a fresh P24-S2 implementation branch from current main, preserve this closeout record, and inspect the owning contract and current Journal workflow.
+
+
+## 21. P24-S2 execution — 2026-09-30 (America/Denver)
+
+Owner selected S2. Fresh branch `codex/P24-S2-journal-fund-event` starts from main `ab580628740228812e32649d19e723d50e81b152` and carries the S1 documentation closeout `f993eb3`. PR: none. Baseline compile passed. Source inspection finds the Event column far right, non-searchable option cells, absent event names in saved Journal rows, ID-only inactive event rendering, and reference choices loaded only on construction.
+
+Design: retain canonical per-line Fund/Activity assignments. Add a visible selected-line tagging area with name/code search, independent Apply Fund / Apply Event and explicit Clear Event actions; no inferred transaction-wide event and no automatic overwrite of mixed allocations. Keep existing table column/state IDs and expose Event next to Fund by default. Enrich transaction line read projections with current event code/name, including inactive history. Add service-backed Fund/Event name/code filters before row limiting; when both filters are supplied, require one split to match both. Refresh reference choices on return or explicit request without losing drafts or changing dirty state. No migration or second event authority; generated inventory tags remain P24-S3.
+
+
+Implementation: visible selected-line tagging controls with independent active name/code searches, multi-selection Apply/Clear, current event labels in saved review and inactive loaded assignments, same-split Fund/Event filters before the result limit, and draft-preserving active-choice refresh. Existing IDs and per-company table preferences are retained; remembered dividers size filters and tagging regions. Corrected combo initialization/value commits and dirty tracking for applied dimensions. Journal drill-through New/Edit now respects the existing discard confirmation.
+
+Donor: inspected `NonprofitAccounting` at `c697630ec1f784ebe8338d7300da6c9ac801b180`, especially the associated-fund selector refresh in `JournalEntryWorkspaceFX`. Reused the refresh intent, not its name-based transaction-level assignment or persistence. No additional donor feature is needed in this slice.
+
+Documentation: updated [Journal editor guidelines](ui/editor-guidelines.md), [interface operation matrix](interface-operation-matrix.md), and added [P24-S2 user testing](P24-S2-user-testing.md). Workflow includes the production JavaFX tagging test in the existing Xvfb gate. No SCLX or schema change.
+
+Validation completed locally on 2026-10-01 (America/Denver): `/tmp/apache-maven-3.9.9/bin/mvn --offline --settings .mvn/settings-github.xml clean verify` passed: **837 tests, zero failures/errors, 35 headless skips**. The retained reports from the prior run had the same totals; the gate was repeated after the runtime restart because its temporary log was lost. Focused service/review tests passed, including same-split filtering before row limiting, mixed IDs, inactive rename/reopen, reversal preservation, company scope and untagged review. Both new production JavaFX tests separately passed with temporary Monocle headless rendering on 2026-09-30: two executed, zero skipped or failed. They cover selected-line tagging, draft-preserving refresh, permissions, restored wide/reordered columns, narrow/scaled geometry, divider movement and the reproduced combo initialization/value-commit defect. No native desktop acceptance is claimed.
+
+Remaining: explicit publication authorization under AGENTS §5 Step 6, exact published-head CI, D01 installed-build/layout evidence and owner acceptance/merge. No known local test failures. P24-S3 remains blocked by S2 completion. The branch includes the S1 closeout, S2 implementation and a subsequent documentation-only handoff; current content head is recorded in that handoff.

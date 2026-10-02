@@ -89,6 +89,17 @@ public final class JournalWorkspacePanel implements AppPanel
     private final DatePicker fromDate = new DatePicker();
     private final DatePicker toDate = new DatePicker();
     private final TextField searchText = new TextField();
+    private final TextField fundFilter = new TextField();
+    private final TextField eventFilter = new TextField();
+    private final TextField fundChoiceSearch = new TextField();
+    private final TextField eventChoiceSearch = new TextField();
+    private final ComboBox<TransactionLineEditorModel.Option> selectedFund = new ComboBox<>();
+    private final ComboBox<TransactionLineEditorModel.Option> selectedEvent = new ComboBox<>();
+    private final Button applyFund = new Button("Apply Fund to Selected Lines");
+    private final Button applyEvent = new Button("Apply Event to Selected Lines");
+    private final Button clearEvent = new Button("Clear Event on Selected Lines");
+    private long referenceGeneration;
+    private long journalGeneration;
     private final DatePicker entryDate = new DatePicker();
     private final TextArea memoArea = new TextArea();
     private final ComboBox<TransactionLineEditorModel.Option> payeeBox = new ComboBox<>();
@@ -126,7 +137,7 @@ public final class JournalWorkspacePanel implements AppPanel
     {
         root.setPadding(new Insets(8));
         root.getStyleClass().add("journal-workspace");
-        root.setTop(buildWorkspaceHeader());
+        Node workspaceHeader = buildWorkspaceHeader();
 
         buildJournalTable();
         buildLineTable();
@@ -154,7 +165,12 @@ public final class JournalWorkspacePanel implements AppPanel
         outerSplit.getItems().setAll(journalRegion, editorSplit);
         outerSplit.setDividerPositions(0.43);
         outerSplit.setMinSize(0, 0);
-        root.setCenter(outerSplit);
+        SplitPane workspaceSplit = new SplitPane(workspaceHeader, outerSplit);
+        workspaceSplit.setId("journalWorkspaceFiltersSplit");
+        workspaceSplit.setOrientation(Orientation.VERTICAL);
+        workspaceSplit.setDividerPositions(0.22);
+        workspaceSplit.setMinSize(0, 0);
+        root.setCenter(workspaceSplit);
 
         configureEditorListeners();
         loadReferenceData();
@@ -165,7 +181,8 @@ public final class JournalWorkspacePanel implements AppPanel
     {
         Label title = new Label("Journal");
         title.getStyleClass().add("panel-title");
-        Label caption = new Label("Review complete transactions and create or edit the selected journal entry in one workspace.");
+        Label caption = new Label("Review complete transactions. Fund + Event filters must match the same line; displayed totals include all transaction lines.");
+        caption.setWrapText(true);
 
         searchText.setPromptText("Memo or payee");
         searchText.setPrefColumnCount(18);
@@ -181,16 +198,18 @@ public final class JournalWorkspacePanel implements AppPanel
         refreshButton.setId("journalWorkspaceRefreshButton");
         status.setId("journalWorkspaceStatusLabel");
 
-        HBox filters = new HBox(8,
+        javafx.scene.layout.FlowPane filters = new javafx.scene.layout.FlowPane(8, 6,
                 new Label("From"), fromDate,
                 new Label("To"), toDate,
                 new Label("Search"), searchText,
+                new Label("Fund name/code"), fundFilter,
+                new Label("Event name/code"), eventFilter,
                 applyFilters,
                 clearFilters);
         filters.setAlignment(Pos.CENTER_LEFT);
 
         deleteButton.setText(deleteActionLabel());
-        HBox actions = new HBox(8, newButton, editButton, saveButton, deleteButton, refreshButton);
+        javafx.scene.layout.FlowPane actions = new javafx.scene.layout.FlowPane(8, 6, newButton, editButton, saveButton, deleteButton, refreshButton);
         actions.setAlignment(Pos.CENTER_LEFT);
 
         applyFilters.setOnAction(event -> reloadJournal());
@@ -198,6 +217,8 @@ public final class JournalWorkspacePanel implements AppPanel
             fromDate.setValue(null);
             toDate.setValue(null);
             searchText.clear();
+            fundFilter.clear();
+            eventFilter.clear();
             reloadJournal();
         });
         newButton.setOnAction(event -> startNew(true));
@@ -210,9 +231,19 @@ public final class JournalWorkspacePanel implements AppPanel
         UiPermissionGate.gate(deleteButton, ApplicationPermission.BOOKKEEPING_WRITE, "Delete or reverse a journal entry");
         refreshButton.setOnAction(event -> reloadJournal());
         searchText.setOnAction(event -> reloadJournal());
+        fundFilter.setId("journalFundFilter");
+        eventFilter.setId("journalEventFilter");
+        fundFilter.setPromptText("All funds");
+        eventFilter.setPromptText("All events, including untagged");
+        fundFilter.setOnAction(event -> reloadJournal());
+        eventFilter.setOnAction(event -> reloadJournal());
 
         VBox header = new VBox(6, title, caption, filters, actions, status, new Separator());
-        return header;
+        ScrollPane headerScroll = scrollable(header, true);
+        headerScroll.setId("journalWorkspaceFiltersScroll");
+        headerScroll.setPrefHeight(155);
+
+        return headerScroll;
     }
 
     private Node buildJournalRegion()
@@ -235,6 +266,7 @@ public final class JournalWorkspacePanel implements AppPanel
         journalTable.getColumns().add(journalColumn("Date", "date", 110, JournalTransactionRow::date));
         journalTable.getColumns().add(multilineJournalColumn("Account Title and Description", "accounts", 340, JournalTransactionRow::accounts));
         journalTable.getColumns().add(multilineJournalColumn("Fund", "funds", 180, JournalTransactionRow::funds));
+        journalTable.getColumns().add(multilineJournalColumn("Event / Activity", "events", 210, JournalTransactionRow::events));
         journalTable.getColumns().add(journalColumn("Cleared", "cleared", 120, JournalTransactionRow::cleared));
         journalTable.getColumns().add(multilineJournalColumn("Debit", "debits", 120, JournalTransactionRow::debits));
         journalTable.getColumns().add(multilineJournalColumn("Credit", "credits", 120, JournalTransactionRow::credits));
@@ -351,17 +383,121 @@ public final class JournalWorkspacePanel implements AppPanel
         drillReconciliationButton.setOnAction(event -> openSelectedLineReconciliation());
         removeLineButton.setOnAction(event -> removeSelectedLine());
         ToolBar tools = new ToolBar(addLine, duplicateLine, removeLineButton, drillReconciliationButton);
-        VBox region = new VBox(6, sectionHeading("Entry Lines"), tools, lineTable);
+        SplitPane taggingSplit = new SplitPane(buildTaggingControls(), lineTable);
+        taggingSplit.setId("journalTaggingSplit");
+        taggingSplit.setOrientation(Orientation.VERTICAL);
+        taggingSplit.setDividerPositions(0.4);
+        taggingSplit.setMinSize(0, 0);
+        VBox region = new VBox(6, sectionHeading("Entry Lines"), tools, taggingSplit);
         region.setPadding(new Insets(4));
         region.setMinSize(0, 0);
-        VBox.setVgrow(lineTable, Priority.ALWAYS);
+        VBox.setVgrow(taggingSplit, Priority.ALWAYS);
         return region;
+    }
+
+    private Node buildTaggingControls()
+    {
+        fundChoiceSearch.setId("journalFundChoiceSearch");
+        eventChoiceSearch.setId("journalEventChoiceSearch");
+        selectedFund.setId("journalSelectedFund");
+        selectedEvent.setId("journalSelectedEvent");
+        applyFund.setId("journalApplyFund");
+        applyEvent.setId("journalApplyEvent");
+        clearEvent.setId("journalClearEvent");
+        fundChoiceSearch.setPromptText("Find fund by name/code");
+        eventChoiceSearch.setPromptText("Find event by name/code");
+        selectedFund.setPrefWidth(230);
+        selectedEvent.setPrefWidth(230);
+        selectedFund.setConverter(new OptionConverter());
+        selectedEvent.setConverter(new OptionConverter());
+        fundChoiceSearch.textProperty().addListener((obs, oldValue, newValue) -> filterTagChoices());
+        eventChoiceSearch.textProperty().addListener((obs, oldValue, newValue) -> filterTagChoices());
+        selectedFund.valueProperty().addListener((obs, oldValue, newValue) -> updateTagActions());
+        selectedEvent.valueProperty().addListener((obs, oldValue, newValue) -> updateTagActions());
+        lineTable.getSelectionModel().getSelectedItems().addListener(
+                (javafx.collections.ListChangeListener<EditorLine>) change -> updateTagActions());
+        applyFund.setOnAction(event -> applyTags(true, false));
+        applyEvent.setOnAction(event -> applyTags(false, false));
+        clearEvent.setOnAction(event -> applyTags(false, true));
+        UiPermissionGate.gate(applyFund, ApplicationPermission.BOOKKEEPING_WRITE, "Assign a fund");
+        UiPermissionGate.gate(applyEvent, ApplicationPermission.BOOKKEEPING_WRITE, "Assign an event");
+        UiPermissionGate.gate(clearEvent, ApplicationPermission.BOOKKEEPING_WRITE, "Clear an event assignment");
+        Button refresh = new Button("Refresh Fund/Event Choices");
+        refresh.setId("journalRefreshChoices");
+        refresh.setOnAction(event -> loadReferenceData());
+        Button events = new Button("Events / Activities");
+        events.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.ACTIVITIES, ""));
+        Button funds = new Button("Funds");
+        funds.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.FUNDS, ""));
+        Label help = new Label("Select one or more lines, find a Fund or Event, then Apply. Only selected lines change; Fund and Event are independent.");
+        help.setWrapText(true);
+        javafx.scene.layout.FlowPane controls = new javafx.scene.layout.FlowPane(8, 6,
+                new Label("Fund"), fundChoiceSearch, selectedFund, applyFund,
+                new Label("Event / Activity"), eventChoiceSearch, selectedEvent, applyEvent, clearEvent,
+                refresh, events, funds);
+        updateTagActions();
+        ScrollPane scroll = scrollable(new VBox(4, help, controls), true);
+        scroll.setId("journalTaggingScroll");
+        scroll.setPrefHeight(130);
+        return scroll;
+    }
+
+    private void filterTagChoices()
+    {
+        String fundText = fundChoiceSearch.getText().strip().toLowerCase(Locale.ROOT);
+        String eventText = eventChoiceSearch.getText().strip().toLowerCase(Locale.ROOT);
+        var previousFund = selectedFund.getValue();
+        var previousEvent = selectedEvent.getValue();
+        selectedFund.getItems().setAll(referenceData.funds().stream()
+                .filter(option -> option.label().toLowerCase(Locale.ROOT).contains(fundText)).toList());
+        selectedEvent.getItems().setAll(referenceData.activities().stream()
+                .filter(option -> option.label().toLowerCase(Locale.ROOT).contains(eventText)).toList());
+        selectedFund.setValue(selectedFund.getItems().stream()
+                .filter(option -> previousFund != null && option.id().equals(previousFund.id())).findFirst().orElse(null));
+        selectedEvent.setValue(selectedEvent.getItems().stream()
+                .filter(option -> previousEvent != null && option.id().equals(previousEvent.id())).findFirst().orElse(null));
+        updateTagActions();
+    }
+
+    private void updateTagActions()
+    {
+        boolean empty = lineTable.getSelectionModel().getSelectedItems().isEmpty();
+        applyFund.setDisable(empty || selectedFund.getValue() == null);
+        applyEvent.setDisable(empty || selectedEvent.getValue() == null);
+        clearEvent.setDisable(empty);
+    }
+
+    private void applyTags(boolean fund, boolean clear)
+    {
+        if (!UiPermissionGate.allows(ApplicationPermission.BOOKKEEPING_WRITE))
+        {
+            return;
+        }
+        var value = fund ? selectedFund.getValue() : selectedEvent.getValue();
+        if (!clear && value == null)
+        {
+            return;
+        }
+        for (EditorLine row : List.copyOf(lineTable.getSelectionModel().getSelectedItems()))
+        {
+            if (fund)
+            {
+                row.setFund(value);
+            }
+            else
+            {
+                row.setActivity(clear ? null : value);
+            }
+        }
+        lineTable.refresh();
+        recalculateTotals();
     }
 
     private void buildLineTable()
     {
         lineTable.setId(LINE_TABLE_ID);
         lineTable.setEditable(true);
+        lineTable.getSelectionModel().setSelectionMode(javafx.scene.control.SelectionMode.MULTIPLE);
         lineTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         lineTable.setPlaceholder(new Label("Use Add Line to create accounting lines."));
 
@@ -371,6 +507,9 @@ public final class JournalWorkspacePanel implements AppPanel
         lineTable.getColumns().add(optionColumn("Fund", "fund", 185,
                 EditorLine::fundProperty,
                 () -> referenceData.funds()));
+        lineTable.getColumns().add(optionColumn("Event / Activity", "activity", 210,
+                EditorLine::activityProperty,
+                () -> referenceData.activities()));
         lineTable.getColumns().add(readOnlyTextColumn("Bank state", "bankState", 115,
                 EditorLine::bankStateProperty));
         lineTable.getColumns().add(readOnlyTextColumn("Cleared on", "clearedOn", 120,
@@ -398,9 +537,6 @@ public final class JournalWorkspacePanel implements AppPanel
                         row.setDebit("");
                     }
                 }));
-        lineTable.getColumns().add(optionColumn("Activity", "activity", 165,
-                EditorLine::activityProperty,
-                () -> referenceData.activities()));
         lineTable.getColumns().add(optionColumn("Merchant", "merchant", 165,
                 EditorLine::merchantProperty,
                 () -> referenceData.merchants()));
@@ -635,15 +771,37 @@ public final class JournalWorkspacePanel implements AppPanel
 
     private void loadReferenceData()
     {
+        long generation = ++referenceGeneration;
         UiAsync.run("journal-workspace-reference-data",
                 () -> UiServiceRegistry.transactionReferenceData().loadActiveReferenceData(),
-                data -> {
-                    referenceData = data;
-                    payeeBox.getItems().setAll(data.counterparties());
-                    bankAccountBox.getItems().setAll(data.accounts());
-                    resolveLoadedOptions();
-                    lineTable.refresh();
-                    status.setText("Loaded journal reference choices.");
+                data ->
+                {
+                    if (generation != referenceGeneration)
+                    {
+                        return;
+                    }
+                    boolean wasLoading = loading;
+                    boolean wasDirty = dirty;
+                    loading = true;
+                    try
+                    {
+                        referenceData = data;
+                        var payee = payeeBox.getValue();
+                        var bank = bankAccountBox.getValue();
+                        payeeBox.getItems().setAll(data.counterparties());
+                        bankAccountBox.getItems().setAll(data.accounts());
+                        payeeBox.setValue(payee);
+                        bankAccountBox.setValue(bank);
+                        resolveLoadedOptions();
+                        filterTagChoices();
+                        lineTable.refresh();
+                    }
+                    finally
+                    {
+                        loading = wasLoading;
+                        dirty = wasDirty;
+                    }
+                    status.setText("Refreshed choices; current entry and line assignments retained.");
                 },
                 ex -> status.setText("Reference choices unavailable: " + UiErrors.safeMessage(ex)));
     }
@@ -677,9 +835,16 @@ public final class JournalWorkspacePanel implements AppPanel
     {
         status.setText("Loading journal transactions...");
         Long centerId = requestedTransactionId != null ? requestedTransactionId : selectedTransactionId();
+        long generation = ++journalGeneration;
+        LocalDate from = fromDate.getValue(), through = toDate.getValue();
+        String text = searchText.getText(), fundText = fundFilter.getText(), eventText = eventFilter.getText();
         UiAsync.run("journal-workspace-load",
-                () -> UiServiceRegistry.transactionEntry().search(fromDate.getValue(), toDate.getValue(), searchText.getText(), 500),
+                () -> UiServiceRegistry.transactionEntry().search(from, through, text, fundText, eventText, 500),
                 views -> {
+                    if (generation != journalGeneration)
+                    {
+                        return;
+                    }
                     List<JournalTransactionRow> rows = views.stream().map(JournalTransactionRow::from).toList();
                     journalTable.getItems().setAll(rows);
                     centerJournalSelection(centerId);
@@ -807,7 +972,7 @@ public final class JournalWorkspacePanel implements AppPanel
         row.setAccount(option(line.accountId(), line.accountCode(), line.accountName()));
         row.setFund(option(line.fundId(), line.fundCode(), line.fundName()));
         row.setBudget(option(line.budgetCategoryId(), "", ""));
-        row.setActivity(option(line.activityId(), "", ""));
+        row.setActivity(option(line.activityId(), line.activityCode(), line.activityName()));
         row.setMerchant(option(line.merchantId(), "", ""));
         row.setDebit(line.debit().signum() == 0 ? "" : normalizeMoney(line.debit().toPlainString()));
         row.setCredit(line.credit().signum() == 0 ? "" : normalizeMoney(line.credit().toPlainString()));
@@ -1142,6 +1307,8 @@ public final class JournalWorkspacePanel implements AppPanel
 
     private void attachLineListeners(EditorLine row)
     {
+        row.fundProperty().addListener((obs, oldValue, newValue) -> markDirty());
+        row.activityProperty().addListener((obs, oldValue, newValue) -> markDirty());
         row.nmrProperty().addListener((obs, oldValue, newValue) -> markDirty());
     }
 
@@ -1464,16 +1631,17 @@ public final class JournalWorkspacePanel implements AppPanel
     @Override
     public void onPanelShown()
     {
+        loadReferenceData();
         String context = DrillThroughCoordinator.consumeContext(AppPanelId.JOURNAL_PANE);
         Long transactionId = transactionIdFromContext(context);
         if (transactionId != null)
         {
             requestedTransactionId = transactionId;
-            loadTransactionIntoEditor(transactionId, false);
+            loadTransactionIntoEditor(transactionId, true);
         }
         else if (context != null && context.toLowerCase(Locale.ROOT).contains("new"))
         {
-            startNew(false);
+            startNew(true);
         }
         reloadJournal();
     }
@@ -1623,6 +1791,7 @@ public final class JournalWorkspacePanel implements AppPanel
     private final class OptionTableCell extends TableCell<EditorLine, TransactionLineEditorModel.Option>
     {
         private final Supplier<List<TransactionLineEditorModel.Option>> options;
+        private boolean updatingEditor;
         private final ComboBox<TransactionLineEditorModel.Option> editor = new ComboBox<>();
 
         private OptionTableCell(Supplier<List<TransactionLineEditorModel.Option>> options)
@@ -1630,10 +1799,10 @@ public final class JournalWorkspacePanel implements AppPanel
             this.options = options;
             editor.setConverter(new OptionConverter());
             editor.setMaxWidth(Double.MAX_VALUE);
-            editor.setOnAction(event -> {
-                if (isEditing())
+            editor.valueProperty().addListener((obs, oldValue, newValue) -> {
+                if (isEditing() && !updatingEditor)
                 {
-                    commitEdit(editor.getValue());
+                    commitEdit(newValue);
                 }
             });
             editor.focusedProperty().addListener((obs, oldValue, focused) -> {
@@ -1652,8 +1821,20 @@ public final class JournalWorkspacePanel implements AppPanel
                 return;
             }
             super.startEdit();
-            editor.getItems().setAll(options.get());
-            editor.setValue(getItem());
+            updatingEditor = true;
+            try
+            {
+                editor.getItems().setAll(options.get());
+                if (getItem() != null && !editor.getItems().contains(getItem()))
+                {
+                    editor.getItems().add(getItem());
+                }
+                editor.setValue(getItem());
+            }
+            finally
+            {
+                updatingEditor = false;
+            }
             setText(null);
             setGraphic(editor);
             editor.show();
@@ -1670,7 +1851,9 @@ public final class JournalWorkspacePanel implements AppPanel
             }
             else if (isEditing())
             {
+                updatingEditor = true;
                 editor.setValue(item);
+                updatingEditor = false;
                 setText(null);
                 setGraphic(editor);
             }
@@ -1843,6 +2026,7 @@ public final class JournalWorkspacePanel implements AppPanel
         private final TransactionView view;
         private final String accounts;
         private final String funds;
+        private final String events;
         private final String debits;
         private final String credits;
         private final String details;
@@ -1852,6 +2036,7 @@ public final class JournalWorkspacePanel implements AppPanel
             this.view = view;
             StringBuilder accountBuilder = new StringBuilder();
             StringBuilder fundBuilder = new StringBuilder();
+            StringBuilder eventBuilder = new StringBuilder();
             StringBuilder debitBuilder = new StringBuilder();
             StringBuilder creditBuilder = new StringBuilder();
             StringBuilder detailBuilder = new StringBuilder();
@@ -1861,6 +2046,8 @@ public final class JournalWorkspacePanel implements AppPanel
                 lineNumber++;
                 append(accountBuilder, (line.credit().signum() > 0 ? "    " : "") + safe(line.accountCode()) + " " + safe(line.accountName()));
                 append(fundBuilder, safe(line.fundCode()) + " " + safe(line.fundName()));
+                append(eventBuilder, line.activityId() == null ? "No event"
+                        : safe(line.activityCode()) + " — " + safe(line.activityName()));
                 append(debitBuilder, line.debit().signum() == 0 ? "" : money(line.debit()));
                 append(creditBuilder, line.credit().signum() == 0 ? "" : money(line.credit()));
                 if (line.notes() != null && !line.notes().isBlank())
@@ -1882,6 +2069,7 @@ public final class JournalWorkspacePanel implements AppPanel
             }
             accounts = accountBuilder.toString();
             funds = fundBuilder.toString();
+            events = eventBuilder.toString();
             debits = debitBuilder.toString();
             credits = creditBuilder.toString();
             details = detailBuilder.length() == 0 ? "" : detailBuilder.toString();
@@ -1910,6 +2098,11 @@ public final class JournalWorkspacePanel implements AppPanel
         String funds()
         {
             return funds;
+        }
+
+        String events()
+        {
+            return events;
         }
 
         String cleared()

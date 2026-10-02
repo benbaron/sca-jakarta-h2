@@ -396,6 +396,15 @@ public class TransactionEntryService
 
     public List<TransactionView> search(LocalDate fromDate, LocalDate toDate, String text, int maxRows)
     {
+        return search(fromDate, toDate, text, null, null, maxRows);
+    }
+
+    /** Filters complete transactions by explicitly tagged splits before applying the row limit. */
+    public List<TransactionView> search(LocalDate fromDate, LocalDate toDate, String text,
+            String fundText, String eventText, int maxRows)
+    {
+        String fundNeedle = searchNeedle(fundText);
+        String eventNeedle = searchNeedle(eventText);
         int limit = maxRows <= 0 ? 100 : maxRows;
         String needle = text == null || text.isBlank() ? null : "%" + text.trim().toLowerCase() + "%";
         try (EntityManager em = jpa.em())
@@ -409,11 +418,17 @@ public class TransactionEntryService
                                     "and (:toDate is null or t.txnDate <= :toDate) " +
                                     "and (:needle is null or lower(coalesce(t.memo, '')) like :needle " +
                                     "or lower(coalesce(p.displayName, '')) like :needle) " +
+                                    "and ((:fundNeedle is null and :eventNeedle is null) or exists (" +
+                                    "select s.id from TxnSplit s left join s.activity a where s.txn = t " +
+                                    "and (:fundNeedle is null or lower(s.fund.code) like :fundNeedle or lower(s.fund.name) like :fundNeedle) " +
+                                    "and (:eventNeedle is null or lower(a.code) like :eventNeedle or lower(a.name) like :eventNeedle))) " +
                                     "order by t.txnDate desc, t.id desc", Txn.class)
                     .setParameter("company", company)
                     .setParameter("fromDate", fromDate)
                     .setParameter("toDate", toDate)
                     .setParameter("needle", needle)
+                    .setParameter("fundNeedle", fundNeedle)
+                    .setParameter("eventNeedle", eventNeedle)
                     .setMaxResults(limit)
                     .getResultList();
             List<TransactionView> views = new ArrayList<>();
@@ -423,6 +438,11 @@ public class TransactionEntryService
             }
             return views;
         }
+    }
+
+    private static String searchNeedle(String text)
+    {
+        return text == null || text.isBlank() ? null : "%" + text.strip().toLowerCase(java.util.Locale.ROOT) + "%";
     }
 
     public AccountingJournalProjection journalView(long transactionId)
@@ -812,7 +832,9 @@ public class TransactionEntryService
                     split.getMerchant() == null ? null : split.getMerchant().getId(),
                     debit, credit, split.isNmr(), split.getNotes(),
                     AccountClassification.isBank(split.getAccount()),
-                    split.isBankCleared(), split.getBankClearedOn(), reconciliationSessions.get(split.getId())));
+                    split.isBankCleared(), split.getBankClearedOn(), reconciliationSessions.get(split.getId()),
+                    split.getActivity() == null ? null : split.getActivity().getCode(),
+                    split.getActivity() == null ? null : split.getActivity().getName()));
         }
         List<TxnSupplementalLine> supplementalEntities = em.createQuery(
                         "select l from TxnSupplementalLine l left join fetch l.txnSplit where l.txn = :txn order by l.lineOrder, l.id", TxnSupplementalLine.class)

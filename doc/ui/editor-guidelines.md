@@ -28,7 +28,7 @@ The production Accounting navigation exposes one **Journal** destination. `LEDGE
 
 The Journal workspace contains:
 
-1. A grouped transaction journal with date and text filters. One row represents one complete canonical transaction and displays account lines, funds, authoritative `Not bank`/`Uncleared`/`Cleared`/`Mixed` state, debit and credit lines, transaction ID, supplemental count, and memo/details.
+1. A grouped transaction journal with date, memo/payee, Fund-name/code and Event-name/code filters. One row represents one complete canonical transaction and displays account lines, funds, event codes/names (or **No event** per untagged line), authoritative `Not bank`/`Uncleared`/`Cleared`/`Mixed` state, debit and credit lines, transaction ID, supplemental count, and memo/details.
 2. An integrated New/Edit header with date, memo, transaction identity/status, live debit/credit/difference totals, and validation text.
 3. An editable entry-line table with Add Line, Duplicate Line, Remove Line, stable-ID reference selectors, one-sided Debit/Credit behavior, NMR, notes, read-only persisted bank state/cleared date, exact-session reconciliation drill-through when available, and per-company table state. Journal never edits the read-only reconciliation facts.
 4. An Additional Details region containing only transaction fields currently backed by H2 services.
@@ -85,3 +85,13 @@ Manual validation:
 6. Reorder and resize columns, apply single- and multi-column sorts, reopen the company, and confirm the state is restored.
 7. Enter and save a balanced transaction with supplemental details.
 8. Refresh the Journal, select the transaction, choose Edit Selected, and confirm all accounting and supplemental rows reload.
+
+## P24-S2 Fund/Event tagging
+
+The Entry Lines region exposes searchable Fund and Event/Activity choices above the table. Select one or more lines (Ctrl/Shift selection), choose an active reference, and explicitly Apply Fund or Apply Event. Clear Event removes only the selected lines' event assignments. Applying either dimension preserves the other dimension and unselected lines. There is no inferred transaction-wide event, default allocation, or assignment from memo text. The existing stable-ID `TxnSplit.fund` and optional `TxnSplit.activity` remain authoritative.
+
+Event appears beside Fund in the default column order. Existing company column IDs, widths, order and sorts remain valid; the tagging controls remain available independently of saved table geometry. Remembered vertical dividers separate filters from the workspace and tagging controls from the entry table. Both expose scrolling. Events / Activities and Funds buttons open existing maintenance routes. Refresh Fund/Event Choices and returning to Journal refresh active choices while preserving unsaved headers, line assignments and dirty state. Existing inactive event assignments retain their current stored code/name on reopen; they are not offered for new assignments.
+
+Saved-entry filters match names/codes case-insensitively, including inactive references. When both Fund and Event are supplied, at least one split must match both. Filtering occurs before the 500-row Journal limit. Results show complete transactions, including untagged or differently tagged lines; displayed amounts are not Fund/Event subtotals. Blank filters include untagged transactions. Event Accounting remains the accounting-summary destination. No SCLX import policy, schema or correction rule changes in this slice.
+
+Donor review at `NonprofitAccounting` commit `c697630ec1f784ebe8338d7300da6c9ac801b180`: `JournalEntryWorkspaceFX.configureFundSelector/refreshFundChoices` refreshes a name-based associated-fund selector while retaining its selection. We retain that refresh intent using the production service and stable IDs; a transaction-level name field would lose intentional multi-fund/multi-event splits and is not imported.

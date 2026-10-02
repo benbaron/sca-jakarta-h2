@@ -166,6 +166,64 @@ public class TransactionEntryServiceTest
         }
     }
 
+    @Test
+    public void fundEventSearchMatchesSameSplitBeforeLimitAndRetainsInactiveNames(@TempDir Path tempDir)
+    {
+        Path database = tempDir.resolve("journal-tags");
+        Long taggedId;
+        try (Jpa jpa = new Jpa(database))
+        {
+            seedMasterData(jpa);
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                em.createNativeQuery("INSERT INTO fund (id, code, name, fund_type) VALUES (2, 'RELIEF', 'Relief Fund', 'UNRESTRICTED')").executeUpdate();
+                em.createNativeQuery("INSERT INTO activity (id, code, name, is_active) VALUES (1, 'FAIR-26', 'Autumn Fair', TRUE), (2, 'FAIR-27', 'Autumn Fair', TRUE)").executeUpdate();
+                em.getTransaction().commit();
+            }
+            TransactionEntryService service = new TransactionEntryService(jpa);
+            taggedId = service.enter(new TransactionCommand(LocalDate.of(2026, 3, 14), null, "Mixed allocations", null,
+                    List.of(new TransactionLineCommand(1L, 1L, null, 1L, null, BigDecimal.TEN, BigDecimal.ZERO, false, null),
+                            new TransactionLineCommand(2L, 2L, null, 2L, null, BigDecimal.ZERO, BigDecimal.TEN, false, null)))).id();
+            service.enter(command("Newer untagged", BigDecimal.TEN));
+            assertEquals(taggedId, service.search(null, null, null, null, " fair-26 ", 1).get(0).id());
+            assertEquals(2, service.search(null, null, null, "oPERATing", "autumn", 1).get(0).lines().size());
+            assertTrue(service.search(null, null, null, "RELIEF", "FAIR-26", 20).isEmpty(), "Both filters must match the same split");
+            assertEquals(1, service.search(null, null, null, "relief", "fair-27", 20).size());
+            assertEquals(2, service.search(null, null, null, null, null, 20).size(), "Blank filters include untagged entries");
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                em.createNativeQuery("INSERT INTO company (id, code, display_name) VALUES (2, 'OTHER', 'Other company')").executeUpdate();
+                em.getTransaction().commit();
+            }
+            assertTrue(new TransactionEntryService(jpa, () -> "OTHER").search(null, null, null, null, "autumn", 20).isEmpty());
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                em.createNativeQuery("UPDATE activity SET name = 'Historic Fair', is_active = FALSE WHERE id = 1").executeUpdate();
+                em.getTransaction().commit();
+            }
+        }
+        try (Jpa reopened = new Jpa(database))
+        {
+            TransactionEntryService service = new TransactionEntryService(reopened);
+            TransactionView loaded = service.load(taggedId);
+            assertEquals("FAIR-26", loaded.lines().get(0).activityCode());
+            assertEquals("Historic Fair", loaded.lines().get(0).activityName());
+            assertEquals(2L, loaded.lines().get(1).activityId());
+            assertEquals(taggedId, service.search(null, null, null, null, "historic", 1).get(0).id());
+            assertEquals(loaded.debitTotal(), loaded.creditTotal());
+            var correction = new TransactionCorrectionService(reopened).reverse(taggedId,
+                    LocalDate.of(2026, 3, 15), "test", "Preserve mixed dimensions", false);
+            var reversed = service.load(correction.reversalTransactionId());
+            assertEquals(List.of(1L, 2L), reversed.lines().stream().map(TransactionView.Line::activityId).toList());
+            assertEquals(List.of(1L, 2L), reversed.lines().stream().map(TransactionView.Line::fundId).toList());
+            assertEquals("Historic Fair", reversed.lines().get(0).activityName());
+            assertEquals(reversed.debitTotal(), reversed.creditTotal());
+        }
+    }
+
     private static TransactionCommand command(String memo, BigDecimal amount)
     {
         return new TransactionCommand(
