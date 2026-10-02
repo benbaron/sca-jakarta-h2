@@ -1,12 +1,12 @@
 ---
-plan_version: 313
+plan_version: 314
 active_phase: P24
 active_slice: P24-S2
 active_status: VERIFYING
 active_branch: codex/P24-S2-journal-fund-event
-active_pull_request: null
-active_head: 4f87aeb212911354e9fb533a5e4ae95c9cb2dcc4
-next_action: "Request owner authorization to publish the locally verified P24-S2 commits and draft PR; then inspect exact-head CI and obtain desktop acceptance."
+active_pull_request: 357
+active_head: 8a5964065f72fa9feff0aedb62933be3eab673f4
+next_action: "Inspect final-head CI for PR #357, then complete D01 desktop evidence and owner acceptance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -941,3 +941,13 @@ Remaining: explicit publication authorization under AGENTS §5 Step 6, exact pub
 Status: VERIFYING. Branch: `codex/P24-S2-journal-fund-event`. PR: none. Verified implementation head: `4f87aeb212911354e9fb533a5e4ae95c9cb2dcc4`; this documentation-only commit follows it. The branch carries `f993eb3` (accepted S1 closeout) and the S2 implementation. `origin/main` was rechecked at `ab580628740228812e32649d19e723d50e81b152`. Final local clean verification: 837 tests, zero failures/errors, 35 headless skips; the two new JavaFX tests separately passed under Monocle. Diff review and whitespace checks passed. Generated tracked manifest restored after Maven clean; no generated build output is part of the implementation commit.
 
 Completed: canonical selected-line tagging, searchable choices, event labels in saved/reopened entries, same-split Fund/Event filters, draft-preserving refresh, combo commits, resizable/scrollable controls, regression tests, CI selection and user testing notes. Remaining: owner publication authorization, draft PR and exact-head CI, installed desktop validation and acceptance/merge. Next exact action upon publication authorization: verify the clean local branch and remote state, publish the reviewed commit sequence without force-updating, create the P24-S2 draft PR with actual validation and desktop checks, then inspect its final-head Maven PR Tests result. Do not start P24-S3 before S2 is accepted and merged.
+
+## 23. P24-S2 authorized publication — 2026-10-01 (America/Denver)
+
+Owner explicitly authorized publication. Draft [PR #357](https://github.com/benbaron/sca-jakarta-h2/pull/357) targets unchanged main `ab580628740228812e32649d19e723d50e81b152`. Local Git lacked credentials, so connected GitHub publication preserved the reviewed sequence/messages and verified each tree:
+
+- Local `f993eb345b8849675ce4303d95529e9f1560333f` → remote `9153340ae0981e85b9f12412b32ea35de620c3f9`; verified tree `d0a4834fed30fdddc8b0e8fbd279a26212a721a7`.
+- Local `4f87aeb212911354e9fb533a5e4ae95c9cb2dcc4` → remote `bf0637cb424c602038f5a2f068b496eabd898c69`; verified tree `9b087601b7fc57269430507826ffb85f4baf5ad9`.
+- Local `0b0fd6600c036dbbe0a768be680fb85bf1cdec41` → remote `8a5964065f72fa9feff0aedb62933be3eab673f4`; verified tree `30584fb26d35077ab02e2afd50c4472d40986d18`.
+
+All earlier publication-authorization requests are satisfied. This documentation-only record follows the verified content head above. Final-head CI is pending at preparation; inspect its Maven PR Tests workflow and record the result in the PR description. Local clean verification passed 837 tests, zero failures/errors and 35 headless skips; both new JavaFX tests separately passed. Remaining: exact final-head CI, D01 installed-build/layout evidence, owner desktop acceptance and merge. S2 remains VERIFYING; S3 remains blocked.
