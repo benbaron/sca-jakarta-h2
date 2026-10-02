@@ -167,8 +167,10 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
         scroll.setMinSize(0, 0);
         outer.getItems().add(index, scroll);
 
+        installDividerState(findById(workspaceRoot, "journalWorkspaceFiltersSplit", SplitPane.class), "filters");
         installDividerState(outer, "outer");
         installDividerState(editor, "editor");
+        installDividerState(findById(workspaceRoot, "journalTaggingSplit", SplitPane.class), "tagging");
         SplitPane detail = findById(workspaceRoot, "journalWorkspaceDetailSplit", SplitPane.class);
         if (detail != null)
         {

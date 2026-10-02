@@ -104,8 +104,21 @@ public record TransactionView(Long id,
                        boolean bankAccount,
                        boolean bankCleared,
                        LocalDate bankClearedOn,
-                       Long reconciliationSessionId)
+                       Long reconciliationSessionId,
+                       String activityCode,
+                       String activityName)
     {
+        public Line(Long id, Long accountId, String accountCode, String accountName,
+                    Long fundId, String fundCode, String fundName, Long budgetCategoryId,
+                    Long activityId, Long merchantId, BigDecimal debit, BigDecimal credit,
+                    boolean nmr, String notes, boolean bankAccount, boolean bankCleared,
+                    LocalDate bankClearedOn, Long reconciliationSessionId)
+        {
+            this(id, accountId, accountCode, accountName, fundId, fundCode, fundName,
+                    budgetCategoryId, activityId, merchantId, debit, credit, nmr, notes,
+                    bankAccount, bankCleared, bankClearedOn, reconciliationSessionId, null, null);
+        }
+
         public Line(Long id,
                     Long accountId,
                     String accountCode,

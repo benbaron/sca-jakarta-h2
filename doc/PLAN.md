@@ -1,12 +1,12 @@
 ---
-plan_version: 309
+plan_version: 315
 active_phase: P24
-active_slice: P24-S1
+active_slice: P24-S2
 active_status: VERIFYING
-active_branch: codex/P24-S1-event-discovery
-active_pull_request: 356
-active_head: 69107cc696a2e9b66846b4d914745d5885fd3872
-next_action: "Inspect final-head CI for PR #356, then complete D01 desktop evidence and owner acceptance before merge."
+active_branch: codex/P24-S2-journal-fund-event
+active_pull_request: 357
+active_head: 1fd7944715361551c763f18e66d2d82bc9e43524
+next_action: "Inspect final-head CI for PR #357, then complete D01 desktop evidence and owner acceptance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -36,7 +36,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
-| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S1 event creation and discovery |
+| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S1 complete; P24-S2 VERIFYING |
 | P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21, P22 and P23-S1 through P23-S5 are complete. Owner accepted S5 and GitHub verified PR #355 merged on 2026-09-29. P24-S1 is the next slice and is READY; implementation has not started. D01 remains required for its reproduction acceptance. Conditional P27-S5 remains unadopted.
+P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is implemented and VERIFYING in draft PR #357; CI and owner desktop acceptance/merge remain required before P24-S3. Conditional P27-S5 remains unadopted.
 
 ## 10. Archived proposal and adoption
 
@@ -674,8 +674,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P23-S3 | Preserve historical open-item balances (G2) | DONE | P23-S2 merged; owning contract and D01–D10 gates as applicable |
 | P23-S4 | Enforce and explain schedule-to-ledger completeness (G3) | DONE | P23-S3 merged; owning contract and D01–D10 gates as applicable |
 | P23-S5 | Preserve open-item lifecycle in SCLX (G4) | DONE | P23-S4 merged; owning contract and D01–D10 gates as applicable |
-| P24-S1 | Make event creation and discovery explicit (G14) | VERIFYING | P23-S5 merged; owning contract and D01–D10 gates as applicable |
-| P24-S2 | Make Fund/Event tagging obvious and reliable (G14) | BLOCKED | P24-S1 merged; owning contract and D01–D10 gates as applicable |
+| P24-S1 | Make event creation and discovery explicit (G14) | DONE | P23-S5 merged; owning contract and D01–D10 gates as applicable |
+| P24-S2 | Make Fund/Event tagging obvious and reliable (G14) | VERIFYING | P24-S1 merged; owning contract and D01–D10 gates as applicable |
 | P24-S3 | Attribute generated inventory costs (G6) | BLOCKED | P24-S2 merged; owning contract and D01–D10 gates as applicable |
 | P24-S4 | Complete lookup maintenance (G8) | BLOCKED | P24-S3 merged; owning contract and D01–D10 gates as applicable |
 | P25-S1 | Implement one internal fund-transfer operation (G7) | BLOCKED | P24-S4 merged; owning contract and D01–D10 gates as applicable |
@@ -908,3 +908,48 @@ Owner explicitly authorized publication. Draft [PR #356](https://github.com/benb
 - Local `7d4a7bdb75fd52abae2b7242da01b249882d8d8d` → verified PR head `69107cc696a2e9b66846b4d914745d5885fd3872`, tree `7b2d996e406e1fb1314ef2d59a6f77865a5c95ad`.
 
 Earlier publication requests are satisfied. This documentation-only record follows that content head. Published-head CI is pending at preparation; inspect the successor final-head Maven PR Tests run and record the outcome in the PR description. Local validation passed 833 tests with zero failures/errors and 33 headless skips; both new JavaFX tests separately passed. D01 installed-build/layout evidence, owner desktop acceptance and merge remain outstanding. P24-S1 remains VERIFYING; P24-S2 remains blocked.
+
+
+## 20. P24-S1 closure and P24-S2 readiness — 2026-09-30 (America/Denver)
+
+Owner explicitly confirmed acceptance and merge. GitHub verifies [PR #356](https://github.com/benbaron/sca-jakarta-h2/pull/356) merged at current main `ab580628740228812e32649d19e723d50e81b152`. Final head `671deec0bb38223ec9fafb38d0db543677569510` passed [Maven PR Tests run 36670303713](https://github.com/benbaron/sca-jakarta-h2/actions/runs/36670303713), job `109743720948`: both full passes reported 833 tests with zero failures/errors and 33 headless skips; Xvfb reported 13 tests with zero failures/errors/skips, including both event-discovery cases. Owner acceptance supersedes the earlier pending-acceptance statements; no specific screenshots, display settings or D01 measurements are invented by this record.
+
+P24-S1 is DONE. P24 remains IN_PROGRESS; P24-S2 is READY with no implementation branch or PR. S2 owns visible/searchable Journal Fund/Event choices, independent line assignments, saved-entry review and event-name filtering, with refresh that preserves drafts. No S2 implementation has begun.
+
+This documentation-only closeout uses fresh branch `codex/P24-S1-closeout` from the verified merge; the merged implementation branch is not reused. Validation: merge and final-head CI verification, plan status review and `git diff --check`. No application code changed or additional application test run was needed. Next exact action when execution resumes: create a fresh P24-S2 implementation branch from current main, preserve this closeout record, and inspect the owning contract and current Journal workflow.
+
+
+## 21. P24-S2 execution — 2026-09-30 (America/Denver)
+
+Owner selected S2. Fresh branch `codex/P24-S2-journal-fund-event` starts from main `ab580628740228812e32649d19e723d50e81b152` and carries the S1 documentation closeout `f993eb3`. PR: none. Baseline compile passed. Source inspection finds the Event column far right, non-searchable option cells, absent event names in saved Journal rows, ID-only inactive event rendering, and reference choices loaded only on construction.
+
+Design: retain canonical per-line Fund/Activity assignments. Add a visible selected-line tagging area with name/code search, independent Apply Fund / Apply Event and explicit Clear Event actions; no inferred transaction-wide event and no automatic overwrite of mixed allocations. Keep existing table column/state IDs and expose Event next to Fund by default. Enrich transaction line read projections with current event code/name, including inactive history. Add service-backed Fund/Event name/code filters before row limiting; when both filters are supplied, require one split to match both. Refresh reference choices on return or explicit request without losing drafts or changing dirty state. No migration or second event authority; generated inventory tags remain P24-S3.
+
+
+Implementation: visible selected-line tagging controls with independent active name/code searches, multi-selection Apply/Clear, current event labels in saved review and inactive loaded assignments, same-split Fund/Event filters before the result limit, and draft-preserving active-choice refresh. Existing IDs and per-company table preferences are retained; remembered dividers size filters and tagging regions. Corrected combo initialization/value commits and dirty tracking for applied dimensions. Journal drill-through New/Edit now respects the existing discard confirmation.
+
+Donor: inspected `NonprofitAccounting` at `c697630ec1f784ebe8338d7300da6c9ac801b180`, especially the associated-fund selector refresh in `JournalEntryWorkspaceFX`. Reused the refresh intent, not its name-based transaction-level assignment or persistence. No additional donor feature is needed in this slice.
+
+Documentation: updated [Journal editor guidelines](ui/editor-guidelines.md), [interface operation matrix](interface-operation-matrix.md), and added [P24-S2 user testing](P24-S2-user-testing.md). Workflow includes the production JavaFX tagging test in the existing Xvfb gate. No SCLX or schema change.
+
+Validation completed locally on 2026-10-01 (America/Denver): `/tmp/apache-maven-3.9.9/bin/mvn --offline --settings .mvn/settings-github.xml clean verify` passed: **837 tests, zero failures/errors, 35 headless skips**. The retained reports from the prior run had the same totals; the gate was repeated after the runtime restart because its temporary log was lost. Focused service/review tests passed, including same-split filtering before row limiting, mixed IDs, inactive rename/reopen, reversal preservation, company scope and untagged review. Both new production JavaFX tests separately passed with temporary Monocle headless rendering on 2026-09-30: two executed, zero skipped or failed. They cover selected-line tagging, draft-preserving refresh, permissions, restored wide/reordered columns, narrow/scaled geometry, divider movement and the reproduced combo initialization/value-commit defect. No native desktop acceptance is claimed.
+
+Remaining: explicit publication authorization under AGENTS §5 Step 6, exact published-head CI, D01 installed-build/layout evidence and owner acceptance/merge. No known local test failures. P24-S3 remains blocked by S2 completion. The branch includes the S1 closeout, S2 implementation and a subsequent documentation-only handoff; current content head is recorded in that handoff.
+
+## 22. P24-S2 local handoff — 2026-10-01 (America/Denver)
+
+Status: VERIFYING. Branch: `codex/P24-S2-journal-fund-event`. PR: none. Verified implementation head: `4f87aeb212911354e9fb533a5e4ae95c9cb2dcc4`; this documentation-only commit follows it. The branch carries `f993eb3` (accepted S1 closeout) and the S2 implementation. `origin/main` was rechecked at `ab580628740228812e32649d19e723d50e81b152`. Final local clean verification: 837 tests, zero failures/errors, 35 headless skips; the two new JavaFX tests separately passed under Monocle. Diff review and whitespace checks passed. Generated tracked manifest restored after Maven clean; no generated build output is part of the implementation commit.
+
+Completed: canonical selected-line tagging, searchable choices, event labels in saved/reopened entries, same-split Fund/Event filters, draft-preserving refresh, combo commits, resizable/scrollable controls, regression tests, CI selection and user testing notes. Remaining: owner publication authorization, draft PR and exact-head CI, installed desktop validation and acceptance/merge. Next exact action upon publication authorization: verify the clean local branch and remote state, publish the reviewed commit sequence without force-updating, create the P24-S2 draft PR with actual validation and desktop checks, then inspect its final-head Maven PR Tests result. Do not start P24-S3 before S2 is accepted and merged.
+
+## 23. P24-S2 authorized publication — 2026-10-01 (America/Denver)
+
+Owner explicitly authorized publication. Draft [PR #357](https://github.com/benbaron/sca-jakarta-h2/pull/357) targets unchanged main `ab580628740228812e32649d19e723d50e81b152`. Local Git lacked credentials, so connected GitHub publication preserved the reviewed sequence/messages and verified each tree:
+
+- Local `f993eb345b8849675ce4303d95529e9f1560333f` → remote `9153340ae0981e85b9f12412b32ea35de620c3f9`; verified tree `d0a4834fed30fdddc8b0e8fbd279a26212a721a7`.
+- Local `4f87aeb212911354e9fb533a5e4ae95c9cb2dcc4` → remote `bf0637cb424c602038f5a2f068b496eabd898c69`; verified tree `9b087601b7fc57269430507826ffb85f4baf5ad9`.
+- Local `0b0fd6600c036dbbe0a768be680fb85bf1cdec41` → remote `8a5964065f72fa9feff0aedb62933be3eab673f4`; verified tree `30584fb26d35077ab02e2afd50c4472d40986d18`.
+
+All earlier publication-authorization requests are satisfied. This documentation-only record follows the verified content head above. Final-head CI is pending at preparation; inspect its Maven PR Tests workflow and record the result in the PR description. Local clean verification passed 837 tests, zero failures/errors and 35 headless skips; both new JavaFX tests separately passed. Remaining: exact final-head CI, D01 installed-build/layout evidence, owner desktop acceptance and merge. S2 remains VERIFYING; S3 remains blocked.
+
+Publication follow-up: remote documentation head `1fd7944715361551c763f18e66d2d82bc9e43524` was fetched and its tree `b1877e25f4af379bbc8096ac26a5025a7582946e` matched local `c5e438a2491479a7651f011b772465ae8b93f652`. [Run 36950856982](https://github.com/benbaron/sca-jakarta-h2/actions/runs/36950856982), job `110663322715`, entered clean headless verification. This documentation-only follow-up synchronizes two stale current-status summaries; inspect the successor final-head run and record its outcome in PR #357.
