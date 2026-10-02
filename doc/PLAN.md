@@ -1,11 +1,11 @@
 ---
-plan_version: 312
+plan_version: 313
 active_phase: P24
 active_slice: P24-S2
 active_status: VERIFYING
 active_branch: codex/P24-S2-journal-fund-event
 active_pull_request: null
-active_head: ab580628740228812e32649d19e723d50e81b152
+active_head: 4f87aeb212911354e9fb533a5e4ae95c9cb2dcc4
 next_action: "Request owner authorization to publish the locally verified P24-S2 commits and draft PR; then inspect exact-head CI and obtain desktop acceptance."
 ---
 
@@ -935,3 +935,9 @@ Documentation: updated [Journal editor guidelines](ui/editor-guidelines.md), [in
 Validation completed locally on 2026-10-01 (America/Denver): `/tmp/apache-maven-3.9.9/bin/mvn --offline --settings .mvn/settings-github.xml clean verify` passed: **837 tests, zero failures/errors, 35 headless skips**. The retained reports from the prior run had the same totals; the gate was repeated after the runtime restart because its temporary log was lost. Focused service/review tests passed, including same-split filtering before row limiting, mixed IDs, inactive rename/reopen, reversal preservation, company scope and untagged review. Both new production JavaFX tests separately passed with temporary Monocle headless rendering on 2026-09-30: two executed, zero skipped or failed. They cover selected-line tagging, draft-preserving refresh, permissions, restored wide/reordered columns, narrow/scaled geometry, divider movement and the reproduced combo initialization/value-commit defect. No native desktop acceptance is claimed.
 
 Remaining: explicit publication authorization under AGENTS §5 Step 6, exact published-head CI, D01 installed-build/layout evidence and owner acceptance/merge. No known local test failures. P24-S3 remains blocked by S2 completion. The branch includes the S1 closeout, S2 implementation and a subsequent documentation-only handoff; current content head is recorded in that handoff.
+
+## 22. P24-S2 local handoff — 2026-10-01 (America/Denver)
+
+Status: VERIFYING. Branch: `codex/P24-S2-journal-fund-event`. PR: none. Verified implementation head: `4f87aeb212911354e9fb533a5e4ae95c9cb2dcc4`; this documentation-only commit follows it. The branch carries `f993eb3` (accepted S1 closeout) and the S2 implementation. `origin/main` was rechecked at `ab580628740228812e32649d19e723d50e81b152`. Final local clean verification: 837 tests, zero failures/errors, 35 headless skips; the two new JavaFX tests separately passed under Monocle. Diff review and whitespace checks passed. Generated tracked manifest restored after Maven clean; no generated build output is part of the implementation commit.
+
+Completed: canonical selected-line tagging, searchable choices, event labels in saved/reopened entries, same-split Fund/Event filters, draft-preserving refresh, combo commits, resizable/scrollable controls, regression tests, CI selection and user testing notes. Remaining: owner publication authorization, draft PR and exact-head CI, installed desktop validation and acceptance/merge. Next exact action upon publication authorization: verify the clean local branch and remote state, publish the reviewed commit sequence without force-updating, create the P24-S2 draft PR with actual validation and desktop checks, then inspect its final-head Maven PR Tests result. Do not start P24-S3 before S2 is accepted and merged.
