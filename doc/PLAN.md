@@ -1,12 +1,12 @@
 ---
-plan_version: 309
+plan_version: 310
 active_phase: P24
-active_slice: P24-S1
-active_status: VERIFYING
-active_branch: codex/P24-S1-event-discovery
-active_pull_request: 356
-active_head: 69107cc696a2e9b66846b4d914745d5885fd3872
-next_action: "Inspect final-head CI for PR #356, then complete D01 desktop evidence and owner acceptance before merge."
+active_slice: P24-S2
+active_status: READY
+active_branch: null
+active_pull_request: null
+active_head: ab580628740228812e32649d19e723d50e81b152
+next_action: "Begin P24-S2 inspection of Journal Fund/Event selectors, saved-entry review and filters from current main."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -36,7 +36,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
-| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S1 event creation and discovery |
+| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S1 complete; P24-S2 READY |
 | P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21, P22 and P23-S1 through P23-S5 are complete. Owner accepted S5 and GitHub verified PR #355 merged on 2026-09-29. P24-S1 is the next slice and is READY; implementation has not started. D01 remains required for its reproduction acceptance. Conditional P27-S5 remains unadopted.
+P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is the next slice and is READY; its implementation has not started. Conditional P27-S5 remains unadopted.
 
 ## 10. Archived proposal and adoption
 
@@ -674,8 +674,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P23-S3 | Preserve historical open-item balances (G2) | DONE | P23-S2 merged; owning contract and D01–D10 gates as applicable |
 | P23-S4 | Enforce and explain schedule-to-ledger completeness (G3) | DONE | P23-S3 merged; owning contract and D01–D10 gates as applicable |
 | P23-S5 | Preserve open-item lifecycle in SCLX (G4) | DONE | P23-S4 merged; owning contract and D01–D10 gates as applicable |
-| P24-S1 | Make event creation and discovery explicit (G14) | VERIFYING | P23-S5 merged; owning contract and D01–D10 gates as applicable |
-| P24-S2 | Make Fund/Event tagging obvious and reliable (G14) | BLOCKED | P24-S1 merged; owning contract and D01–D10 gates as applicable |
+| P24-S1 | Make event creation and discovery explicit (G14) | DONE | P23-S5 merged; owning contract and D01–D10 gates as applicable |
+| P24-S2 | Make Fund/Event tagging obvious and reliable (G14) | READY | P24-S1 merged; owning contract and D01–D10 gates as applicable |
 | P24-S3 | Attribute generated inventory costs (G6) | BLOCKED | P24-S2 merged; owning contract and D01–D10 gates as applicable |
 | P24-S4 | Complete lookup maintenance (G8) | BLOCKED | P24-S3 merged; owning contract and D01–D10 gates as applicable |
 | P25-S1 | Implement one internal fund-transfer operation (G7) | BLOCKED | P24-S4 merged; owning contract and D01–D10 gates as applicable |
@@ -908,3 +908,12 @@ Owner explicitly authorized publication. Draft [PR #356](https://github.com/benb
 - Local `7d4a7bdb75fd52abae2b7242da01b249882d8d8d` → verified PR head `69107cc696a2e9b66846b4d914745d5885fd3872`, tree `7b2d996e406e1fb1314ef2d59a6f77865a5c95ad`.
 
 Earlier publication requests are satisfied. This documentation-only record follows that content head. Published-head CI is pending at preparation; inspect the successor final-head Maven PR Tests run and record the outcome in the PR description. Local validation passed 833 tests with zero failures/errors and 33 headless skips; both new JavaFX tests separately passed. D01 installed-build/layout evidence, owner desktop acceptance and merge remain outstanding. P24-S1 remains VERIFYING; P24-S2 remains blocked.
+
+
+## 20. P24-S1 closure and P24-S2 readiness — 2026-09-30 (America/Denver)
+
+Owner explicitly confirmed acceptance and merge. GitHub verifies [PR #356](https://github.com/benbaron/sca-jakarta-h2/pull/356) merged at current main `ab580628740228812e32649d19e723d50e81b152`. Final head `671deec0bb38223ec9fafb38d0db543677569510` passed [Maven PR Tests run 36670303713](https://github.com/benbaron/sca-jakarta-h2/actions/runs/36670303713), job `109743720948`: both full passes reported 833 tests with zero failures/errors and 33 headless skips; Xvfb reported 13 tests with zero failures/errors/skips, including both event-discovery cases. Owner acceptance supersedes the earlier pending-acceptance statements; no specific screenshots, display settings or D01 measurements are invented by this record.
+
+P24-S1 is DONE. P24 remains IN_PROGRESS; P24-S2 is READY with no implementation branch or PR. S2 owns visible/searchable Journal Fund/Event choices, independent line assignments, saved-entry review and event-name filtering, with refresh that preserves drafts. No S2 implementation has begun.
+
+This documentation-only closeout uses fresh branch `codex/P24-S1-closeout` from the verified merge; the merged implementation branch is not reused. Validation: merge and final-head CI verification, plan status review and `git diff --check`. No application code changed or additional application test run was needed. Next exact action when execution resumes: create a fresh P24-S2 implementation branch from current main, preserve this closeout record, and inspect the owning contract and current Journal workflow.
