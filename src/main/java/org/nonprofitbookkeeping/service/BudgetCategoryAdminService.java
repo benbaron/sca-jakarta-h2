@@ -3,6 +3,9 @@ package org.nonprofitbookkeeping.service;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import org.nonprofitbookkeeping.model.AuditEvent;
+import java.util.Locale;
 import org.nonprofitbookkeeping.model.BudgetCategory;
 import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.persistence.Jpa;
@@ -40,6 +43,105 @@ public class BudgetCategoryAdminService
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
         this.authorizationGuard = authorizationGuard;
+    }
+
+    /** Saves the exact selected category and its audit atomically; categories are retained, not deleted. */
+    public BudgetCategoryView save(BudgetCategoryCommand command)
+    {
+        Objects.requireNonNull(command, "Category details are required");
+        String companyCode = companyCodeSupplier.get();
+        String actor = ServiceAuthorization.actor(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCode, "save budget category", "SYSTEM");
+        String code = bounded(command.code(), "Budget category code", 64);
+        String name = bounded(command.name(), "Budget category name", 200);
+        if (command.effectiveFrom() != null && command.effectiveTo() != null
+                && command.effectiveFrom().isAfter(command.effectiveTo()))
+        {
+            throw new IllegalArgumentException("Effective from must not follow effective to.");
+        }
+        try (EntityManager em = jpa.em())
+        {
+            em.getTransaction().begin();
+            try
+            {
+                CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
+                Company company = ownership.requireCompany(em, companyCode);
+                em.lock(company, LockModeType.PESSIMISTIC_WRITE);
+                BudgetCategory category;
+                if (command.id() == null)
+                {
+                    category = new BudgetCategory();
+                    category.setCompany(company);
+                }
+                else
+                {
+                    category = em.find(BudgetCategory.class, command.id(), LockModeType.PESSIMISTIC_WRITE);
+                    if (category == null)
+                    {
+                        throw new IllegalArgumentException("Unknown Budget Category ID: " + command.id());
+                    }
+                    ownership.requireOwnedBy(company, category, "Budget category");
+                }
+                var duplicates = em.createQuery("select b.id from BudgetCategory b where b.company = :company "
+                                + "and upper(b.code) = :code", Long.class)
+                        .setParameter("company", company).setParameter("code", code.toUpperCase(Locale.ROOT))
+                        .getResultList();
+                if (duplicates.stream().anyMatch(id -> !id.equals(command.id())))
+                {
+                    throw new IllegalArgumentException("Budget category code already exists: " + code);
+                }
+                String before = category.getId() == null ? null : describe(category);
+                category.setCode(code);
+                category.setName(name);
+                category.setActive(command.active());
+                category.setEffectiveFrom(command.effectiveFrom());
+                category.setEffectiveTo(command.effectiveTo());
+                category.setDescription(command.description() == null ? null : command.description().trim());
+                category.touchUpdatedAt();
+                if (category.getId() == null)
+                {
+                    em.persist(category);
+                }
+                em.flush();
+                AuditEvent audit = new AuditEvent();
+                audit.setCompany(company);
+                audit.setActor(actor);
+                audit.setActionType(before == null ? "BUDGET_CATEGORY_CREATED" : "BUDGET_CATEGORY_UPDATED");
+                audit.setEntityType("BUDGET_CATEGORY");
+                audit.setEntityId(category.getId().toString());
+                audit.setSummary((before == null ? "Created " : "Updated ") + "Budget category " + code);
+                audit.setBeforeValue(before);
+                audit.setAfterValue(describe(category));
+                em.persist(audit);
+                em.getTransaction().commit();
+                return BudgetCategoryLookupService.view(category);
+            }
+            catch (RuntimeException ex)
+            {
+                if (em.getTransaction().isActive())
+                {
+                    em.getTransaction().rollback();
+                }
+                throw ex;
+            }
+        }
+    }
+
+    private static String describe(BudgetCategory category)
+    {
+        return "code=" + category.getCode() + "; name=" + category.getName() + "; active=" + category.isActive()
+                + "; from=" + category.getEffectiveFrom() + "; to=" + category.getEffectiveTo()
+                + "; description=" + Objects.toString(category.getDescription(), "");
+    }
+
+    private static String bounded(String value, String label, int limit)
+    {
+        String text = requireText(value, label);
+        if (text.length() > limit)
+        {
+            throw new IllegalArgumentException(label + " must be at most " + limit + " characters.");
+        }
+        return text;
     }
 
     public BudgetCategory upsert(String code, String name, boolean active)

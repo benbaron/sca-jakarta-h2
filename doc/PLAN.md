@@ -1,12 +1,12 @@
 ---
-plan_version: 317
+plan_version: 321
 active_phase: P24
-active_slice: P24-S3
+active_slice: P24-S4A
 active_status: VERIFYING
-active_branch: codex/P24-S3-inventory-event-costs
-active_pull_request: 358
-active_head: e1631b1e4bb360ec3236e834ea41f2fc88209221
-next_action: "Inspect final-head Maven PR Tests for PR #358, then complete D01 desktop evidence and owner acceptance before merge."
+active_branch: codex/P24-S4A-budget-category-maintenance
+active_pull_request: 359
+active_head: 1b32e410aa83cd80f6f1527126782f98ac9dbaa2
+next_action: "Inspect final-head CI for draft PR #359 and complete owner desktop acceptance; do not merge until separately authorized."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -36,7 +36,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
-| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S2 complete; P24-S3 VERIFYING |
+| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S3 complete; P24-S4A IN_PROGRESS |
 | P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is implemented and VERIFYING. Conditional P27-S5 remains unadopted.
+P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is VERIFYING. Conditional P27-S5 remains unadopted.
 
 ## 10. Archived proposal and adoption
 
@@ -676,8 +676,11 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P23-S5 | Preserve open-item lifecycle in SCLX (G4) | DONE | P23-S4 merged; owning contract and D01–D10 gates as applicable |
 | P24-S1 | Make event creation and discovery explicit (G14) | DONE | P23-S5 merged; owning contract and D01–D10 gates as applicable |
 | P24-S2 | Make Fund/Event tagging obvious and reliable (G14) | DONE | P24-S1 merged; owning contract and D01–D10 gates as applicable |
-| P24-S3 | Attribute generated inventory costs (G6) | VERIFYING | P24-S2 merged; owning contract and D01–D10 gates as applicable |
-| P24-S4 | Complete lookup maintenance (G8) | BLOCKED | P24-S3 merged; owning contract and D01–D10 gates as applicable |
+| P24-S3 | Attribute generated inventory costs (G6) | DONE | P24-S2 merged; owning contract and D01–D10 gates as applicable |
+| P24-S4 | Complete lookup maintenance (G8) | IN_PROGRESS | P24-S3 merged; owning contract and D01–D10 gates as applicable |
+| P24-S4A | Budget Category maintenance | VERIFYING | P24-S3 merged; A08 category workflow |
+| P24-S4B | Payee/Counterparty maintenance | BLOCKED | P24-S4A merged; A08 party workflow |
+| P24-S4C | Merchant maintenance | BLOCKED | P24-S4B merged; A08 merchant workflow |
 | P25-S1 | Implement one internal fund-transfer operation (G7) | BLOCKED | P24-S4 merged; owning contract and D01–D10 gates as applicable |
 | P25-S2 | Add structured payment/check references (G9) | BLOCKED | P25-S1 merged; owning contract and D01–D10 gates as applicable |
 | P25-S3 | Complete check exception and reconciliation workflows (G9) | BLOCKED | P25-S2 merged; owning contract and D01–D10 gates as applicable |
@@ -996,3 +999,42 @@ Owner explicitly authorized publication. Draft [PR #358](https://github.com/benb
 - Local `90a9a80bf14416a943a172eec4ce1813665d9918` → remote `e1631b1e4bb360ec3236e834ea41f2fc88209221`, tree `ca3500ba0aa6c25c313df56b6d203812ceeae8c3`.
 
 Remote main remained `a7a7ca6964884cbadf27af8b8891d68520e939c4`; the new branch was created without force updates. Fetched published head/tree match the expected values. [Initial run 37080636631](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37080636631) entered Maven PR Tests. This documentation-only publication record follows the content head above. Inspect the successor final-head run and record its outcome in the PR description. The publication-authorization requirement is satisfied; earlier requests are historical. Remaining: exact final-head CI, D01 installed-build/layout evidence, owner desktop acceptance and merge. S3 remains VERIFYING; S4 is not started.
+
+
+## 25. P24-S3 accepted merge and P24-S4 readiness — 2026-10-02 (America/Denver)
+
+Owner accepted and merged PR #358. GitHub confirms merge `e5570f2d413df853a684f93db8a59616dad53321`, fetched as current main. Final PR head `1afd706d5b3600337bf828162c6a8d93c14f6ceb` has tree `b1a3f1c40baac755db8505b92181dd979c585044`, matching local publication-record commit `07574fef97dc7f7360c48e92796ffe2dd08db4a5`. [Maven PR Tests run 37080733410](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37080733410), job `111080791303`, completed successfully: both full passes 843 tests, zero failures/errors, 36 headless skips; Xvfb production JavaFX pass 16 tests, zero failures/errors/skips. Logs were inspected and PR #358 updated with the actual results. Initial superseded run 37080636631 was cancelled. Earlier pending publication, CI and acceptance records are historical.
+
+P24-S3 is DONE. P24-S4 lookup maintenance is the first unblocked slice and is READY, not started. This documentation-only closeout is committed locally on fresh `codex/P24-S3-closeout` from the merge, without reusing the merged implementation branch. No closeout PR is open. On the next implementation run, carry this closeout ledger forward, read the P24-S4 contract and relevant authorities, and select one master-data family before implementation. No known local or GitHub test failure remains; owner acceptance is recorded without inventing additional desktop evidence.
+
+
+## 26. P24-S4A Budget Category maintenance — 2026-10-02 (America/Denver)
+
+Selected the category family under the adopted P24-S4 contract; Payee/Counterparty and Merchant are separate S4B/S4C slices. Fresh branch `codex/P24-S4A-budget-category-maintenance` starts at current main `e5570f2d413df853a684f93db8a59616dad53321` and carries S3 closeout `80bb126`. No PR. Baseline compile and three existing BudgetCategory service/authorization tests passed.
+
+Inspected: BudgetCategory/alias model, V45/V50/V61 relationships, BudgetCategoryAdminService/LookupService, authorization wiring, canonical Budget and Journal consumers, Activity maintenance conventions, panel/navigation/command routing and UI rules. Existing code-keyed upsert cannot serve a stable-ID editor and there is no category maintenance route. Add audited stable-ID create/edit with company lock, case-insensitive duplicate detection, date validation and existing write authorization. Retain categories rather than hard-delete: UI explains deactivation preserves Journal, Budget, alias and interchange history. Existing import/upsert compatibility seams remain available; no schema or interchange-policy change. Journal and Inventory gain maintenance navigation and preserve drafts on choice refresh. Existing date fields are maintained, with optional bounds and required from <= to.
+
+Donor `NonprofitAccounting` at `c697630ec1f784ebe8338d7300da6c9ac801b180`: BudgetEditorPanel uses editable string account/fund rows and BudgetWorkspaceStore, with no suitable category master editor. Retain its explicit refresh intent but use existing H2 category IDs, production table/divider state and service authorization; no donor persistence import. See [Budget model](accounting/budget-model.md) for maintenance policy.
+
+### P24-S4A implementation and local verification
+
+Implemented on `codex/P24-S4A-budget-category-maintenance`:
+
+- added immutable `BudgetCategoryCommand`/`BudgetCategoryView` projections and a stable-ID `BudgetCategoryAdminService.save(...)` path with company locking, ownership checks, case-insensitive duplicate-code validation, effective-date validation, and same-transaction create/update audit events;
+- added the production `BudgetCategoriesPanel` with searchable active/inactive table, New/Edit/Save/Refresh behavior, company date formatting, draft-preserving refresh, deactivation guidance instead of physical Delete, write-permission gating, and Journal/Inventory return navigation;
+- routed the panel through `AppPanelId`, `PanelFactory`, Planning navigation, Journal and Inventory maintenance actions, and the production command-capability contract; the existing compatibility `upsert(...)` and SCLX import seam remain unchanged;
+- added service authorization/audit regression coverage, a JavaFX panel behavior/layout test, and the panel to the existing CI Xvfb selection; updated the budget model, interface matrix and manual acceptance checklist.
+
+Validation completed locally: all production Java sources and all test sources compile with the cached Java 17 compiler (`--release 17`, no annotation processing); the focused `BudgetCategoryAuthorizationIntegrationTest` passed 2/2 tests; `git diff --check` passed. The focused JavaFX capability test had 3 successful tests and 3 display-dependent aborts; the new `BudgetCategoriesPanelTest` was display-dependent and aborted because this runtime has no `DISPLAY`/Xvfb. Maven is not installed in this runtime, so `mvn clean verify` and the full CI test gate remain pending; no native installed-build visual acceptance is claimed.
+
+Current handoff: implementation is locally ready but not published. Implementation commit: `0458d48cef80cdc686087237cf932f4c5e906d78` (`feat(P24-S4A): add budget category maintenance`). Remaining gates are explicit owner publication authorization, draft PR/final-head GitHub checks, and owner desktop acceptance. Do not mark S4A or P24-S4 DONE until the change is merged into current `main` and those gates are satisfied.
+
+### P24-S4A authorized publication — 2026-10-03 (America/Denver)
+
+Owner explicitly authorized publication. Draft [PR #359](https://github.com/benbaron/sca-jakarta-h2/pull/359) is open from `codex/P24-S4A-budget-category-maintenance` to `main`. Connected GitHub publication reproduced the reviewed sequence with matching trees:
+
+- Local `80bb1261726a55cc14304614377260ba90c2c5e2` → remote `9879d55683c9848a75f284f43cff9ee30f14ca19`, tree `f2ba36834c5a6fd045af4ae7a50143fc1321a0e7`.
+- Local `0458d48cef80cdc686087237cf932f4c5e906d78` → remote `14af1c2e173a8c425b550e3683ff5e1602f23db4`, tree `1b28c900e5aa10d1682296720c8cc88cff30d4c5`.
+- Local `abe69455bf4882a74542bf9c71d3664b38fe23b1` → remote `1b32e410aa83cd80f6f1527126782f98ac9dbaa2`, tree `9b252c80d4d20a1628c3964140bf80d6b431a044`.
+
+Remote main remained `e5570f2d413df853a684f93db8a59616dad53321`; the branch was created without force updates. The draft PR remains open and unmerged. Inspect its successor final-head CI and complete the owner desktop acceptance in `doc/P24-S4A-user-testing.md`. Do not mark S4A or P24-S4 DONE until the change is merged into current `main` and those gates are satisfied.

@@ -429,12 +429,15 @@ public final class JournalWorkspacePanel implements AppPanel
         events.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.ACTIVITIES, ""));
         Button funds = new Button("Funds");
         funds.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.FUNDS, ""));
+        Button budgetCategories = new Button("Budget Categories");
+        budgetCategories.setId("journalBudgetCategories");
+        budgetCategories.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.BUDGET_CATEGORIES, ""));
         Label help = new Label("Select one or more lines, find a Fund or Event, then Apply. Only selected lines change; Fund and Event are independent.");
         help.setWrapText(true);
         javafx.scene.layout.FlowPane controls = new javafx.scene.layout.FlowPane(8, 6,
                 new Label("Fund"), fundChoiceSearch, selectedFund, applyFund,
                 new Label("Event / Activity"), eventChoiceSearch, selectedEvent, applyEvent, clearEvent,
-                refresh, events, funds);
+                refresh, events, funds, budgetCategories);
         updateTagActions();
         ScrollPane scroll = scrollable(new VBox(4, help, controls), true);
         scroll.setId("journalTaggingScroll");
