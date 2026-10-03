@@ -93,7 +93,7 @@ class P16EndToEndClosureTest
                             ACTIVITY_DATE,
                             ALPHA.inventoryExpenseAccountId(),
                             false,
-                            "S17 inventory receipt"));
+                            "S17 inventory receipt", null, null, true));
             alphaInventory.recordMovement(movement, "architect");
             inventory(jpa, BETA.code()).create(item(BETA, "Beta event kits"));
 

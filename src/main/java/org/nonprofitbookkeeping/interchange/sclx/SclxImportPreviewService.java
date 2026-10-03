@@ -44,7 +44,7 @@ public final class SclxImportPreviewService
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Set<String> RECOGNIZED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
-            "supplementalDetails", "bankConfiguration",
+            "supplementalDetails", "transactionBudgets", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "fixedAssets", "inventory",
             "periodClose", "auditHistory");
     private static final Set<String> UNSUPPORTED_ROOT_SECTIONS = Set.of(
@@ -136,8 +136,18 @@ public final class SclxImportPreviewService
         structure.warnings().forEach(warning -> messages.add(message(
                 InterchangeMessageSeverity.WARNING, "SCLX_STRUCTURE_WARNING", pathOf(warning), warning, false)));
 
+        JsonNode identityRoot = document.root();
+        try
+        {
+            identityRoot = SclxTransactionBudgetExtension.identityDocument(document.root());
+        }
+        catch (IllegalStateException ex)
+        {
+            messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_TRANSACTION_BUDGET_INVALID",
+                    "$.extensions.scaJakartaH2.transactionBudgets", ex.getMessage(), true));
+        }
         OrganizationData organization = organization(document.root(), messages);
-        Extraction extraction = extract(document.root(), messages);
+        Extraction extraction = extract(identityRoot, messages);
         String targetCode = requireText(companyCodeSupplier.get(), "target company code");
         Set<SclxImportTargetSnapshot.NativePortableKey> nativePortableKeys = extraction.entities().stream()
                 .map(entity -> SclxNativePortableIdentity.key(entity.entityType(), entity.externalId()))
@@ -150,7 +160,7 @@ public final class SclxImportPreviewService
                 extraction.entities(), target, messages, conflictSelections);
         MappingResult mapping = mappings(document.root(), target, messages, mappingSelections);
         addAllocationWarnings(document.root(), target, mapping, messages);
-        TransactionResult transactionResult = transactions(document.root(), target, messages);
+        TransactionResult transactionResult = transactions(identityRoot, target, messages);
 
         if (!organization.code().equalsIgnoreCase(target.companyCode()))
         {

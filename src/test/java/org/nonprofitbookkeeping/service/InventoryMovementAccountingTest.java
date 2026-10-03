@@ -11,6 +11,8 @@ import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.UUID;
+import java.util.List;
+import org.nonprofitbookkeeping.interchange.sclx.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -80,6 +82,7 @@ class InventoryMovementAccountingTest
             assertThrows(IllegalStateException.class, () -> normal.recordMovement(stale, "treasurer"));
             assertEquals(afterWinner, counts(jpa));
 
+            seedTags(jpa);
             InventoryService failing = new InventoryService(
                     jpa,
                     new TransactionEntryService(jpa, () -> COMPANY),
@@ -92,7 +95,8 @@ class InventoryMovementAccountingTest
                         throw new IllegalStateException("injected inventory late failure");
                     });
             InventoryService.MovementPreview lateFailure = failing.previewMovement(
-                    item.id(), command(InventoryMovement.MovementType.ISSUE, "1.0000", "Late failure"));
+                    item.id(), new InventoryMovementCommand(InventoryMovement.MovementType.ISSUE, BigDecimal.ONE,
+                            MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Late failure", 31001L, 31001L, false));
 
             IllegalStateException failure = assertThrows(
                     IllegalStateException.class, () -> failing.recordMovement(lateFailure, "treasurer"));
@@ -135,7 +139,7 @@ class InventoryMovementAccountingTest
                             MOVEMENT_DATE,
                             null,
                             false,
-                            "Not confirmed")));
+                            "Not confirmed", null, null, true)));
             InventoryService.MovementPreview preview = service.previewMovement(
                     zeroValue.id(), new InventoryMovementCommand(
                             InventoryMovement.MovementType.RECEIPT,
@@ -143,7 +147,7 @@ class InventoryMovementAccountingTest
                             MOVEMENT_DATE,
                             null,
                             true,
-                            "Confirmed nonfinancial"));
+                            "Confirmed nonfinancial", null, null, true));
             InventoryMovementView movement = service.recordMovement(preview, "custodian");
             assertNull(movement.transactionId());
             assertEquals(0L, count(jpa, "txn"));
@@ -162,7 +166,7 @@ class InventoryMovementAccountingTest
                             MOVEMENT_DATE,
                             BANK_OFFSET_ACCOUNT_ID,
                             false,
-                            "Inside finalized range")));
+                            "Inside finalized range", null, null, true)));
         }
     }
 
@@ -214,6 +218,207 @@ class InventoryMovementAccountingTest
         }
     }
 
+    @Test
+    void eventCostBudgetReversalAndSclxRoundTripUseCanonicalSplits(@TempDir Path tempDir) throws Exception
+    {
+        Path sourceDatabase = tempDir.resolve("event-cost-source");
+        Path exchange = tempDir.resolve("event-cost.sclx");
+        long itemId;
+        try (Jpa jpa = new Jpa(sourceDatabase))
+        {
+            seed(jpa);
+            seedTags(jpa);
+            InventoryService inventory = service(jpa, COMPANY);
+            var item = inventory.create(itemCommand("Event stock", new BigDecimal("20")));
+            itemId = item.id();
+            inventory.recordMovement(inventory.previewMovement(item.id(), new InventoryMovementCommand(
+                    InventoryMovement.MovementType.RECEIPT, BigDecimal.TEN, MOVEMENT_DATE,
+                    BANK_OFFSET_ACCOUNT_ID, false, "Stock received", null, null, true)), "tester");
+            TransactionEntryService journal = new TransactionEntryService(jpa, () -> COMPANY);
+            journal.enter(new TransactionCommand(MOVEMENT_DATE, null, "Event sales", null, List.of(
+                    new TransactionLineCommand(BANK_OFFSET_ACCOUNT_ID, FUND_ID, null, null, null,
+                            new BigDecimal("500"), BigDecimal.ZERO, false, null),
+                    new TransactionLineCommand(31004L, FUND_ID, null, 31001L, null,
+                            BigDecimal.ZERO, new BigDecimal("500"), false, null))));
+            var preview = inventory.previewMovement(item.id(), new InventoryMovementCommand(
+                    InventoryMovement.MovementType.ISSUE, BigDecimal.TEN, MOVEMENT_DATE,
+                    OFFSET_ACCOUNT_ID, false, "Event cost", 31001L, 31001L, false));
+            assertEquals("FAIR — Autumn Fair", preview.eventLabel());
+            assertNull(preview.transactionCommand().lines().get(0).activityId());
+            assertNull(preview.transactionCommand().lines().get(0).budgetCategoryId());
+            assertEquals(31001L, preview.transactionCommand().lines().get(1).activityId());
+            assertEquals(31001L, preview.transactionCommand().lines().get(1).budgetCategoryId());
+            var movement = inventory.recordMovement(preview, "tester");
+            assertEquals("FAIR — Autumn Fair", movement.events());
+            assertEquals("COST — Event Cost", movement.budgetCategories());
+            assertEquals(movement.id(), inventory.recordMovement(preview, "tester").id());
+            var totals = new EventAccountingQueryService(jpa, () -> COMPANY)
+                    .workspace(31001L, MOVEMENT_DATE, MOVEMENT_DATE, FUND_ID).summary();
+            assertEquals(new BigDecimal("500.0000"), totals.income());
+            assertEquals(new BigDecimal("200.0000"), totals.expenses());
+            assertEquals(new BigDecimal("300.0000"), totals.net());
+            BudgetPlanService budgets = new BudgetPlanService(jpa, () -> COMPANY);
+            var plan = budgets.createDraft(new BudgetPlanCommand("Event budget", 2026, "v1",
+                    LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31), ""));
+            budgets.replaceDraftLines(plan.id(), List.of(new BudgetLineCommand(31001L, FUND_ID, null, new BigDecimal("200"), "")));
+            budgets.activate(plan.id());
+            assertEquals(new BigDecimal("200.0000"), budgets.activeVariance(MOVEMENT_DATE).stream()
+                    .filter(row -> "COST".equals(row.budgetCategoryCode())).findFirst().orElseThrow().actual());
+            assertEquals(new BigDecimal("0.0000"), inventory.load(item.id()).quantity());
+            var reversal = inventory.reverseMovement(inventory.previewMovementReversal(
+                    movement.id(), MOVEMENT_DATE.plusDays(1), "Return unused stock"), "tester");
+            assertEquals(movement.events(), reversal.events());
+            assertEquals(movement.budgetCategories(), reversal.budgetCategories());
+            assertEquals(new BigDecimal("10.0000"), inventory.load(item.id()).quantity());
+            assertEquals(new BigDecimal("0.0000"), new EventAccountingQueryService(jpa, () -> COMPANY)
+                    .workspace(31001L, MOVEMENT_DATE, MOVEMENT_DATE.plusDays(1), FUND_ID).summary().expenses());
+            assertEquals(new BigDecimal("0.0000"), budgets.activeVariance(MOVEMENT_DATE.plusDays(1)).stream()
+                    .filter(row -> "COST".equals(row.budgetCategoryCode())).findFirst().orElseThrow().actual());
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                em.createNativeQuery("update activity set name = 'Historic Fair', is_active = false where id = 31001").executeUpdate();
+                em.getTransaction().commit();
+            }
+            new SclxFileExportService(new SclxCoreSnapshotQueryService(jpa, () -> COMPANY), () -> sourceDatabase)
+                    .export(new SclxExportRequest(exchange, java.time.Instant.now(), false));
+        }
+        try (Jpa reopened = new Jpa(sourceDatabase))
+        {
+            assertEquals(new BigDecimal("10.0000"), service(reopened, COMPANY).load(itemId).quantity());
+            assertEquals(2, service(reopened, COMPANY).listMovements(COMPANY).stream()
+                    .filter(row -> "FAIR — Historic Fair".equals(row.events())).count());
+        }
+        try (Jpa target = new Jpa(tempDir.resolve("event-cost-target")))
+        {
+            try (EntityManager em = target.em())
+            {
+                em.getTransaction().begin();
+                em.createNativeQuery("insert into company (id, code, display_name) values (31001, 'SCA', 'Target')").executeUpdate();
+                em.getTransaction().commit();
+            }
+            var previews = new SclxImportPreviewService(target, () -> COMPANY);
+            var preview = previews.preview(exchange);
+            assertTrue(!preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+            var importer = new SclxImportCommitService(target, () -> COMPANY);
+            var result = importer.commit(exchange, preview, "tester");
+            assertTrue(result.committed(), result.toString());
+            assertEquals(3, service(target, COMPANY).listMovements(COMPANY).size());
+            // SCLX preserves category codes; a new target initializes the category name from its code.
+            assertEquals(2, service(target, COMPANY).listMovements(COMPANY).stream()
+                    .filter(row -> "FAIR — Historic Fair".equals(row.events()) && "COST — COST".equals(row.budgetCategories())).count(),
+                    () -> service(target, COMPANY).listMovements(COMPANY).toString());
+            assertEquals(new BigDecimal("200.0000"), new BudgetPlanService(target, () -> COMPANY)
+                    .activeVariance(MOVEMENT_DATE).stream().filter(row -> "COST".equals(row.budgetCategoryCode()))
+                    .findFirst().orElseThrow().actual());
+            var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            var changed = mapper.readTree(java.nio.file.Files.readAllBytes(exchange));
+            ((com.fasterxml.jackson.databind.node.ObjectNode) changed.path("extensions").path("scaJakartaH2")
+                    .path("transactionBudgets").path("lines").get(0)).put("categoryCode", "DIFFERENT");
+            Path changedExchange = tempDir.resolve("changed-budget.sclx");
+            mapper.writeValue(changedExchange.toFile(), changed);
+            var conflict = previews.preview(changedExchange);
+            assertTrue(conflict.operation().items().stream().anyMatch(row ->
+                    row.identityMatch() == org.nonprofitbookkeeping.interchange.InterchangeIdentityMatch.CONFLICT));
+            assertTrue(importer.commit(exchange, previews.preview(exchange), "tester").committed());
+            assertEquals(3, service(target, COMPANY).listMovements(COMPANY).size());
+        }
+    }
+
+    @Test
+    void attributionRequiresExplicitChoiceAndRevalidatesBeforeAtomicCommit(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("tag-policies")))
+        {
+            seed(jpa);
+            seedTags(jpa);
+            var inventory = service(jpa, COMPANY);
+            var item = inventory.create(itemCommand("Stock", BigDecimal.TEN));
+            var missing = new InventoryMovementCommand(InventoryMovement.MovementType.RECEIPT, BigDecimal.ONE,
+                    MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Missing choice", null, null, false);
+            assertThrows(IllegalArgumentException.class, () -> inventory.previewMovement(item.id(), missing));
+            var both = new InventoryMovementCommand(InventoryMovement.MovementType.RECEIPT, BigDecimal.ONE,
+                    MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Conflicting choice", 31001L, null, true);
+            assertThrows(IllegalArgumentException.class, () -> inventory.previewMovement(item.id(), both));
+            var tagged = new InventoryMovementCommand(InventoryMovement.MovementType.RECEIPT, BigDecimal.ONE,
+                    MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Tagged", 31001L, 31001L, false);
+            var preview = inventory.previewMovement(item.id(), tagged);
+            Counts before = counts(jpa);
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                em.createNativeQuery("update activity set is_active = false where id = 31001").executeUpdate();
+                em.getTransaction().commit();
+            }
+            assertThrows(IllegalStateException.class, () -> inventory.recordMovement(preview, "tester"));
+            assertEquals(before, counts(jpa));
+            assertEquals(new BigDecimal("0.0000"), inventory.load(item.id()).quantity());
+            var zero = inventory.create(zeroValueItemCommand("Zero value"));
+            assertThrows(IllegalArgumentException.class, () -> inventory.previewMovement(zero.id(),
+                    new InventoryMovementCommand(InventoryMovement.MovementType.RECEIPT, BigDecimal.ONE,
+                            MOVEMENT_DATE, null, true, "No ledger", 31001L, null, false)));
+        }
+    }
+
+    @Test
+    void attributionRejectsForeignAndIneligibleReferencesWithoutWrites(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("tag-eligibility")))
+        {
+            seed(jpa);
+            seedTags(jpa);
+            var inventory = service(jpa, COMPANY);
+            var item = inventory.create(itemCommand("Stock", BigDecimal.TEN));
+            try (EntityManager em = jpa.em())
+            {
+                em.getTransaction().begin();
+                em.createNativeQuery("insert into company (id, code, display_name) values (32001, 'OTHER', 'Other')").executeUpdate();
+                em.createNativeQuery("insert into activity (id, company_id, code, name) values (32001, 32001, 'FOREIGN', 'Foreign')").executeUpdate();
+                em.createNativeQuery("insert into budget_category (id, company_id, code, name) values (32001, 32001, 'FOREIGN', 'Foreign')").executeUpdate();
+                em.getTransaction().commit();
+            }
+            Counts before = counts(jpa);
+            for (var command : List.of(
+                    new InventoryMovementCommand(InventoryMovement.MovementType.RECEIPT, BigDecimal.ONE,
+                            MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Foreign Event", 32001L, null, false),
+                    new InventoryMovementCommand(InventoryMovement.MovementType.RECEIPT, BigDecimal.ONE,
+                            MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Foreign Budget", null, 32001L, true)))
+            {
+                assertThrows(CompanyOwnershipException.class, () -> inventory.previewMovement(item.id(), command));
+            }
+            var command = new InventoryMovementCommand(InventoryMovement.MovementType.RECEIPT, BigDecimal.ONE,
+                    MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Independent Budget", null, 31001L, true);
+            var preview = inventory.previewMovement(item.id(), command);
+            assertEquals("Non-event", preview.eventLabel());
+            for (String restriction : List.of("is_active = false", "is_active = true, effective_from = DATE '2026-06-01'",
+                    "effective_from = null, effective_to = DATE '2026-04-30'"))
+            {
+                try (EntityManager em = jpa.em())
+                {
+                    em.getTransaction().begin();
+                    em.createNativeQuery("update budget_category set " + restriction + " where id = 31001").executeUpdate();
+                    em.getTransaction().commit();
+                }
+                assertThrows(IllegalStateException.class, () -> inventory.previewMovement(item.id(), command));
+                assertThrows(IllegalStateException.class, () -> inventory.recordMovement(preview, "tester"));
+                assertEquals(before, counts(jpa));
+                assertEquals(new BigDecimal("0.0000"), inventory.load(item.id()).quantity());
+            }
+        }
+    }
+
+    private static void seedTags(Jpa jpa)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            em.getTransaction().begin();
+            em.createNativeQuery("insert into activity (id, company_id, code, name, is_active) values (31001, 31001, 'FAIR', 'Autumn Fair', true)").executeUpdate();
+            em.createNativeQuery("insert into budget_category (id, company_id, code, name, is_active) values (31001, 31001, 'COST', 'Event Cost', true)").executeUpdate();
+            em.createNativeQuery("insert into account (id, chart_id, code, name, account_type, normal_balance) values (31004, 31001, '4000', 'Event Income', 'INCOME', 'CREDIT')").executeUpdate();
+            em.getTransaction().commit();
+        }
+    }
+
     private static InventoryService service(Jpa jpa, String companyCode)
     {
         return new InventoryService(
@@ -229,7 +434,7 @@ class InventoryMovementAccountingTest
             String notes)
     {
         return new InventoryMovementCommand(
-                type, new BigDecimal(quantity), MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, notes);
+                type, new BigDecimal(quantity), MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, notes, null, null, true);
     }
 
     private static InventoryItemCommand itemCommand(String name, BigDecimal unitValue)

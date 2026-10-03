@@ -13,6 +13,9 @@ import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.Fund;
 import org.nonprofitbookkeeping.model.InventoryItem;
 import org.nonprofitbookkeeping.model.InventoryMovement;
+import org.nonprofitbookkeeping.model.Activity;
+import org.nonprofitbookkeeping.model.BudgetCategory;
+import org.nonprofitbookkeeping.model.TxnSplit;
 import org.nonprofitbookkeeping.model.Txn;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
@@ -388,12 +391,13 @@ public class InventoryService
                         || !preview.movementDate().equals(existing.getMovementDate())
                         || preview.quantityChange().compareTo(scale(existing.getQuantityChange())) != 0
                         || preview.quantityAfter().compareTo(scale(existing.getResultingQuantity())) != 0
-                        || !sameTransaction)
+                        || !sameTransaction
+                        || !sameMovementTags(em, existing, preview))
                 {
                     throw new IllegalStateException(
                             "Inventory movement portable identity is already used by a different operation");
                 }
-                return toMovementView(existing);
+                return toMovementView(em, existing);
             }
 
             em.getTransaction().begin();
@@ -417,7 +421,7 @@ public class InventoryService
                 if (!preview.equals(refreshed))
                 {
                     throw new IllegalStateException(
-                            "Inventory quantity, value, accounts, fund, or company changed after preview; reopen the preview");
+                            "Inventory quantity, value, accounts, Fund, Event, Budget, or company changed after preview; reopen the preview");
                 }
                 validatePortableIdentityAvailability(em, preview);
 
@@ -450,7 +454,7 @@ public class InventoryService
                 em.persist(inventoryAudit(company, normalizedActor, item, movement, preview));
                 em.flush();
 
-                InventoryMovementView result = toMovementView(movement);
+                InventoryMovementView result = toMovementView(em, movement);
                 em.getTransaction().commit();
                 return result;
             }
@@ -534,7 +538,7 @@ public class InventoryService
                     throw new IllegalStateException(
                             "Inventory reversal portable identity is already used by a different operation");
                 }
-                return toMovementView(existing);
+                return toMovementView(em, existing);
             }
 
             em.getTransaction().begin();
@@ -589,7 +593,7 @@ public class InventoryService
                 em.persist(reversalAudit(company, normalizedActor, item, correction, preview));
                 em.flush();
 
-                InventoryMovementView result = toMovementView(correction);
+                InventoryMovementView result = toMovementView(em, correction);
                 em.getTransaction().commit();
                 return result;
             }
@@ -616,7 +620,7 @@ public class InventoryService
                     .setParameter("companyCode", normalizeCompanyCode(companyCode))
                     .getResultList()
                     .stream()
-                    .map(InventoryService::toMovementView)
+                    .map(movement -> toMovementView(em, movement))
                     .toList();
         }
     }
@@ -913,8 +917,34 @@ public class InventoryService
         boolean financial = unitValue.signum() > 0;
         Account offsetAccount = null;
         TransactionCommand transactionCommand = null;
+        Activity activity = null;
+        BudgetCategory budget = null;
         if (financial)
         {
+            if ((command.activityId() != null) == command.nonEventConfirmed())
+            {
+                throw new IllegalArgumentException("Choose an Event or explicitly confirm Non-event, but not both");
+            }
+            if (command.activityId() != null)
+            {
+                activity = require(em, Activity.class, command.activityId(), "Event");
+                ownership.ensureOwnedBy(em, company, activity, "Event");
+                if (!activity.isActive())
+                {
+                    throw new IllegalStateException("Event is inactive");
+                }
+            }
+            if (command.budgetCategoryId() != null)
+            {
+                budget = require(em, BudgetCategory.class, command.budgetCategoryId(), "Budget category");
+                ownership.ensureOwnedBy(em, company, budget, "Budget category");
+                if (!budget.isActive()
+                        || (budget.getEffectiveFrom() != null && command.movementDate().isBefore(budget.getEffectiveFrom()))
+                        || (budget.getEffectiveTo() != null && command.movementDate().isAfter(budget.getEffectiveTo())))
+                {
+                    throw new IllegalStateException("Budget category is inactive or outside its effective dates");
+                }
+            }
             if (extendedValue.signum() == 0)
             {
                 throw new IllegalArgumentException(
@@ -934,6 +964,10 @@ public class InventoryService
         }
         else
         {
+            if (command.activityId() != null || command.budgetCategoryId() != null)
+            {
+                throw new IllegalArgumentException("Nonfinancial movements cannot carry accounting Event/Budget tags");
+            }
             if (!command.nonfinancialConfirmed())
             {
                 throw new IllegalArgumentException(
@@ -973,7 +1007,9 @@ public class InventoryService
                 transactionCommand,
                 transactionPortableId,
                 movementPortableId,
-                blankToNull(command.notes()));
+                blankToNull(command.notes()),
+                activity == null ? (financial ? "Non-event" : "Not financial") : activity.getCode() + " — " + activity.getName(),
+                budget == null ? "No budget category" : budget.getCode() + " — " + budget.getName());
     }
 
     private static TransactionCommand movementTransaction(
@@ -994,7 +1030,7 @@ public class InventoryService
                 increase ? ZERO : amount,
                 false, lineNote);
         TransactionLineCommand offsetLine = new TransactionLineCommand(
-                offsetAccount.getId(), fund.getId(), null, null, null,
+                offsetAccount.getId(), fund.getId(), command.budgetCategoryId(), command.activityId(), null,
                 increase ? ZERO : amount,
                 increase ? amount : ZERO,
                 false, lineNote);
@@ -1342,8 +1378,35 @@ public class InventoryService
                 item.getNotes() == null ? "" : item.getNotes());
     }
 
-    private static InventoryMovementView toMovementView(InventoryMovement movement)
+    private static boolean sameMovementTags(EntityManager em, InventoryMovement movement, MovementPreview preview)
     {
+        if (movement.getTransaction() == null)
+        {
+            return preview.command().activityId() == null && preview.command().budgetCategoryId() == null;
+        }
+        List<TxnSplit> splits = em.createQuery("from TxnSplit s where s.txn = :txn order by s.id", TxnSplit.class)
+                .setParameter("txn", movement.getTransaction()).getResultList();
+        if (splits.size() != 2)
+        {
+            return false;
+        }
+        TxnSplit offset = splits.get(1);
+        return Objects.equals(preview.command().activityId(), offset.getActivity() == null ? null : offset.getActivity().getId())
+                && Objects.equals(preview.command().budgetCategoryId(), offset.getBudgetCategory() == null ? null : offset.getBudgetCategory().getId());
+    }
+
+    private static InventoryMovementView toMovementView(EntityManager em, InventoryMovement movement)
+    {
+        List<TxnSplit> splits = movement.getTransaction() == null ? List.of() : em.createQuery(
+                "select s from TxnSplit s left join fetch s.activity left join fetch s.budgetCategory "
+                        + "where s.txn = :txn order by s.id", TxnSplit.class)
+                .setParameter("txn", movement.getTransaction()).getResultList();
+        String events = splits.stream().filter(line -> line.getActivity() != null)
+                .map(line -> line.getActivity().getCode() + " — " + line.getActivity().getName())
+                .distinct().collect(java.util.stream.Collectors.joining("; "));
+        String budgets = splits.stream().filter(line -> line.getBudgetCategory() != null)
+                .map(line -> line.getBudgetCategory().getCode() + " — " + line.getBudgetCategory().getName())
+                .distinct().collect(java.util.stream.Collectors.joining("; "));
         return new InventoryMovementView(
                 movement.getId(),
                 movement.getInventoryItem().getId(),
@@ -1354,7 +1417,9 @@ public class InventoryService
                 scale(movement.getResultingQuantity()),
                 scale(movement.getUnitValue()),
                 movement.getTransaction() == null ? null : movement.getTransaction().getId(),
-                movement.getNotes() == null ? "" : movement.getNotes());
+                movement.getNotes() == null ? "" : movement.getNotes(),
+                events.isEmpty() ? (movement.getTransaction() == null ? "Not financial" : "No event") : events,
+                budgets.isEmpty() ? "No budget category" : budgets);
     }
 
     private static String normalizeCompanyCode(String companyCode)
@@ -1439,7 +1504,9 @@ public class InventoryService
             TransactionCommand transactionCommand,
             UUID transactionPortableId,
             UUID movementPortableId,
-            String notes)
+            String notes,
+            String eventLabel,
+            String budgetLabel)
     {
     }
 

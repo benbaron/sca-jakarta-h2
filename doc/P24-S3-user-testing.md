@@ -1,0 +1,18 @@
+# P24-S3 — Inventory Event and Budget attribution
+
+Inventory now offers Event / Activity, explicit **Non-event movement**, and independent optional **Budget category** choices. Receive, Issue and Count Adjustment put those tags on the generated offset line; the inventory asset line stays untagged. Both lines retain the item's Fund. The confirmation names the tags and shows debit/credit direction and amount. History shows current Event/Budget labels, and reversal retains the original tags. The controls and tables have separate draggable dividers and scrolling.
+
+## Desktop acceptance
+
+Use an installed build from this slice, a disposable company, an open period, and a manager account. Record the build/commit and display scale with the results.
+
+1. Create or select an Event, an expense account, a Fund, and a Budget category. Create stock at fixed unit value $20 with zero initial quantity; receive 10 units using an appropriate offset account and explicit Non-event. Verify quantity 10 and inventory value $200.
+2. In Journal record a $500 sale with the income line tagged to the Event and same Fund. Issue 10 stock units, choose the expense offset, Event and Budget category. Confirm debit expense $200 / credit inventory $200, with both lines in the item Fund and Event/Budget on the expense line only.
+3. Verify Event Accounting income $500, expense $200, net $300. With an active Budget plan for this category/Fund, verify actual expense $200. Inventory quantity/value should be zero. Company ledger totals must include the same balanced transaction, not a second cost transaction.
+4. Reverse that issue on an open date with a reason. Verify quantity 10, inventory value $200, offsetting Event/Budget expense and retained tags in history. Restart and verify the same results. Historical references must remain readable after Event rename/deactivation; reversal of history must not require an active original Event.
+5. Try a valued movement without Event or Non-event, and with an inactive or foreign-company reference through a stale preview. It must fail without changing quantity, transactions, movement history or audit. Selecting Event clears Non-event; selecting Non-event clears Event but keeps Budget. Zero-value nonfinancial movements must reject accounting tags and require their existing nonfinancial confirmation.
+6. Leave quantity, notes and selections in a movement draft; create a new Event elsewhere and return or press **Refresh Event/Budget Choices**. Active choices refresh while the draft remains. Deactivating a selected Event removes it and must not silently select Non-event. A viewer can refresh/read history but cannot receive or issue.
+7. Resize near 900 and 600 pixels wide, use larger text/display scaling, move both dividers, and collapse shell sidebars. Verify readable controls and accessible horizontal/vertical scrollbars; widen history columns and scroll to the Event/Budget columns. Verify saved table/divider preferences after reopening.
+8. Export SCLX, preview and import into a disposable target under the existing import policy. Verify quantity, movement links, Event totals, Budget actuals and reversal history. New Budget category names initialize from their codes; the attribution code must survive. Reimport the identical file: no duplicates. Use an updated application reader for files containing the new `transactionBudgets` extension.
+
+Automated checks cover accounting, reference eligibility, rollback, restart, reversal, SCLX round trip/conflict identity and headless JavaFX controls/layout. Native desktop visual acceptance remains an owner check. Fixed unit value costing is unchanged; D06/P26-S5 owns future cost-method policy.

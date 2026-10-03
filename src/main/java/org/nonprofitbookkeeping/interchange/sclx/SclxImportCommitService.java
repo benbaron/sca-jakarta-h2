@@ -103,7 +103,7 @@ public final class SclxImportCommitService
             "PERIOD_CLOSE_RANGE", "PERIOD_CLOSE_EVENT", "AUDIT_EVENT");
     private static final Set<String> SUPPORTED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
-            "supplementalDetails", "fixedAssets", "inventory", "bankConfiguration",
+            "supplementalDetails", "transactionBudgets", "fixedAssets", "inventory", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "periodClose", "auditHistory");
 
     private final Jpa jpa;
@@ -275,6 +275,7 @@ public final class SclxImportCommitService
         SclxPeriodCloseImportData periodClose = SclxPeriodCloseImportData.parse(root);
         SclxAuditHistoryImportData auditHistory = SclxAuditHistoryImportData.parse(root);
         SclxTransactionDetailImportData details = SclxTransactionDetailImportData.parse(root);
+        Map<String, String> transactionBudgetCodes = SclxTransactionBudgetExtension.parse(root);
         SclxCorrectionImportData corrections = SclxCorrectionImportData.parse(root);
         requireSupportedTransactionShape(root, details);
         ownership.requireNoOpenOwnershipIssues();
@@ -324,7 +325,7 @@ public final class SclxImportCommitService
                         em, company, root.path("funds"), current.mappings(), previews, writes);
                 writes += newMasterCount(current.mappings(), SclxImportMappingRequirement.Kind.FUND);
                 BudgetWrite writtenBudgets = writeBudgets(
-                        em, company, budgets, funds, previews, writes);
+                        em, company, budgets, funds, previews, transactionBudgetCodes, writes);
                 writes += writtenBudgets.businessWriteCount();
                 Map<String, Activity> activities = writeActivities(
                         em, company, details.activities(), previews, writes);
@@ -343,7 +344,8 @@ public final class SclxImportCommitService
                         acknowledgedLegacyAllocations, history ->
                         {
                             TransactionWrite written = writeTransactions(em, company, root.path("transactions"), accounts, funds,
-                                    activities, counterparties, merchants, details, previews, writesBeforeHistory, history);
+                                    activities, counterparties, merchants, details, previews, transactionBudgetCodes,
+                                    writtenBudgets.categories(), writesBeforeHistory, history);
                             restoredCorrections[0] = writeCorrectionRelationships(em, company, corrections,
                                     written.transactions(), writesBeforeHistory + written.transactionCount());
                             return written;
@@ -824,9 +826,17 @@ public final class SclxImportCommitService
             SclxBudgetImportData source,
             Map<String, Fund> funds,
             Map<EntityKey, SclxImportEntityPreview> previews,
+            Map<String, String> transactionBudgetCodes,
             int writesBefore)
     {
         Set<String> categoryCodes = new HashSet<>();
+        transactionBudgetCodes.forEach((lineId, code) ->
+        {
+            if (!reuseExisting(required(previews, new EntityKey("TRANSACTION_LINE", lineId), "Budget line identity")))
+            {
+                categoryCodes.add(code);
+            }
+        });
         for (SclxBudgetImportData.BudgetValue budget : source.budgets())
         {
             for (SclxBudgetImportData.LineValue line : budget.lines())
@@ -955,6 +965,7 @@ public final class SclxImportCommitService
         return new BudgetWrite(
                 plans,
                 lines,
+                categories,
                 businessWrites);
     }
 
@@ -1057,6 +1068,8 @@ public final class SclxImportCommitService
             Map<String, Merchant> merchants,
             SclxTransactionDetailImportData details,
             Map<EntityKey, SclxImportEntityPreview> previews,
+            Map<String, String> transactionBudgetCodes,
+            Map<String, BudgetCategory> categories,
             int writesBefore,
             TransactionEntryService.SclxHistoryWriter history)
     {
@@ -1150,8 +1163,10 @@ public final class SclxImportCommitService
                 String merchantId = details.merchantForLine(lineId);
                 Merchant merchant = merchantId == null ? null
                         : required(merchants, merchantId, "transaction merchant");
+                String categoryCode = transactionBudgetCodes.get(lineId);
+                BudgetCategory category = categoryCode == null ? null : required(categories, categoryCode, "transaction Budget category");
                 commands.add(new TransactionLineCommand(
-                        account.getId(), fund.getId(), null,
+                        account.getId(), fund.getId(), category == null ? null : category.getId(),
                         activity == null ? null : activity.getId(),
                         merchant == null ? null : merchant.getId(),
                         debit, credit, false, optionalText(line, "memo")));
@@ -2409,12 +2424,14 @@ public final class SclxImportCommitService
     private record BudgetWrite(
             Map<String, BudgetPlan> plans,
             Map<String, BudgetLine> lines,
+            Map<String, BudgetCategory> categories,
             int businessWriteCount)
     {
         private BudgetWrite
         {
             plans = Map.copyOf(plans);
             lines = Map.copyOf(lines);
+            categories = Map.copyOf(categories);
         }
     }
 

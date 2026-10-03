@@ -1,12 +1,12 @@
 ---
-plan_version: 315
+plan_version: 316
 active_phase: P24
-active_slice: P24-S2
+active_slice: P24-S3
 active_status: VERIFYING
-active_branch: codex/P24-S2-journal-fund-event
-active_pull_request: 357
-active_head: 1fd7944715361551c763f18e66d2d82bc9e43524
-next_action: "Inspect final-head CI for PR #357, then complete D01 desktop evidence and owner acceptance before merge."
+active_branch: codex/P24-S3-inventory-event-costs
+active_pull_request: null
+active_head: a7a7ca6964884cbadf27af8b8891d68520e939c4
+next_action: "Obtain P24-S3 publication authorization, publish the reviewed branch and draft PR, then verify final-head CI and desktop acceptance."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -36,7 +36,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
-| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S1 complete; P24-S2 VERIFYING |
+| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S2 complete; P24-S3 VERIFYING |
 | P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is implemented and VERIFYING in draft PR #357; CI and owner desktop acceptance/merge remain required before P24-S3. Conditional P27-S5 remains unadopted.
+P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is implemented and VERIFYING. Conditional P27-S5 remains unadopted.
 
 ## 10. Archived proposal and adoption
 
@@ -675,8 +675,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P23-S4 | Enforce and explain schedule-to-ledger completeness (G3) | DONE | P23-S3 merged; owning contract and D01–D10 gates as applicable |
 | P23-S5 | Preserve open-item lifecycle in SCLX (G4) | DONE | P23-S4 merged; owning contract and D01–D10 gates as applicable |
 | P24-S1 | Make event creation and discovery explicit (G14) | DONE | P23-S5 merged; owning contract and D01–D10 gates as applicable |
-| P24-S2 | Make Fund/Event tagging obvious and reliable (G14) | VERIFYING | P24-S1 merged; owning contract and D01–D10 gates as applicable |
-| P24-S3 | Attribute generated inventory costs (G6) | BLOCKED | P24-S2 merged; owning contract and D01–D10 gates as applicable |
+| P24-S2 | Make Fund/Event tagging obvious and reliable (G14) | DONE | P24-S1 merged; owning contract and D01–D10 gates as applicable |
+| P24-S3 | Attribute generated inventory costs (G6) | VERIFYING | P24-S2 merged; owning contract and D01–D10 gates as applicable |
 | P24-S4 | Complete lookup maintenance (G8) | BLOCKED | P24-S3 merged; owning contract and D01–D10 gates as applicable |
 | P25-S1 | Implement one internal fund-transfer operation (G7) | BLOCKED | P24-S4 merged; owning contract and D01–D10 gates as applicable |
 | P25-S2 | Add structured payment/check references (G9) | BLOCKED | P25-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -953,3 +953,29 @@ Owner explicitly authorized publication. Draft [PR #357](https://github.com/benb
 All earlier publication-authorization requests are satisfied. This documentation-only record follows the verified content head above. Final-head CI is pending at preparation; inspect its Maven PR Tests workflow and record the result in the PR description. Local clean verification passed 837 tests, zero failures/errors and 35 headless skips; both new JavaFX tests separately passed. Remaining: exact final-head CI, D01 installed-build/layout evidence, owner desktop acceptance and merge. S2 remains VERIFYING; S3 remains blocked.
 
 Publication follow-up: remote documentation head `1fd7944715361551c763f18e66d2d82bc9e43524` was fetched and its tree `b1877e25f4af379bbc8096ac26a5025a7582946e` matched local `c5e438a2491479a7651f011b772465ae8b93f652`. [Run 36950856982](https://github.com/benbaron/sca-jakarta-h2/actions/runs/36950856982), job `110663322715`, entered clean headless verification. This documentation-only follow-up synchronizes two stale current-status summaries; inspect the successor final-head run and record its outcome in PR #357.
+
+## 24. P24-S2 closure and P24-S3 execution — 2026-10-02 (America/Denver)
+
+Owner verified and merged S2. GitHub confirms PR #357 merged at current main `a7a7ca6964884cbadf27af8b8891d68520e939c4`. Final head `3ceef546ec38abcaf75256242e2779d5beebfa34` passed run `36951048419`: both full passes 837 tests, zero failures/errors, 35 skips; Xvfb 15 tests, zero failures/errors/skips. Prior pending S2 acceptance/merge records are historical. S2 is DONE.
+
+S3 starts on fresh `codex/P24-S3-inventory-event-costs` from that main; no PR. Baseline compile and eight focused inventory/accounting/authorization/interchange tests passed. Required inspection: InventoryMovementCommand, InventoryService previews/writes/reversals/import seams, InventoryPanel, TxnSplit, Event Accounting/Budget actuals, inventory SCLX snapshot/import and existing tests. G6/A06 owns this slice; D06 cost-method policy remains a P26-S5 gate and does not change the existing fixed unit value here.
+
+Design: Event and optional Budget Category apply only to the generated offset split, whose account determines accounting recognition; the inventory split remains untagged. Both lines retain the item's Fund. Financial commands require an Event or explicit Non-event confirmation; nonfinancial zero-value movements reject accounting tags. Active/company/date eligibility is checked at preview and again under the existing commit lock. History reads current labels from canonical linked splits. SCLX retains existing Event/Fund references and movement-to-transaction provenance; the round-trip regression exposed missing Budget split attribution, repaired with the bounded transactionBudgets version 1 extension documented in the inventory contract. No duplicate movement dimension columns or database migration is introduced. Reversal copies canonical dimensions. No inference from a sale, memo or item default. Existing value/correction/closed-period/authorization policies remain in force.
+
+
+### P24-S3 implementation and validation
+
+Completed locally: canonical command/preview/offset-split attribution, explicit Non-event choice, active/company/effective-date checks, current-label movement history, governed reversal, draft-preserving Event/Budget choice refresh, confirmation debit/credit and tag labels, scrollable/resizable controls, and CI JavaFX selection. See [inventory contract](inventory/inventory-and-assets.md), [interchange contract](data-exchange/inventory-sclx.md), [interface matrix](interface-operation-matrix.md), and [P24-S3 desktop checks](P24-S3-user-testing.md).
+
+Direct prerequisite repair: the generated-cost round-trip test proved that SCLX omitted Budget split links. A bounded transactionBudgets version 1 extension now carries line ID/category code, restores company-owned categories with the existing code-as-initial-name policy, includes attribution in transaction/line conflict hashes, and rejects invalid relationships before writes. Old files remain valid; older readers cannot commit a populated unsupported extension. Inventory extension/schema are unchanged. No category master-data maintenance or costing-policy expansion is included.
+
+Donor inspection: NonprofitAccounting `c697630ec1f784ebe8338d7300da6c9ac801b180`, InventoryService lines 30–92 uses static-map/JSON storage. That authority is unsuitable here; existing H2/JPA commands, canonical TxnSplit dimensions and transaction-correction services were extended instead. No donor import or independent future feature was needed.
+
+Focused accounting/authorization/interchange validation: 19 tests passed with zero failures/errors/skips. The A06 case proves $500 income, $200 expense, $300 net, Budget actuals, quantity, reversal, restart, tag-preserving SCLX import and idempotence; foreign/inactive/out-of-date choices and injected late-write failures leave no partial writes. Invalid extension relationships and tag-change conflict identity have regression coverage. Final full verification and final JavaFX geometry result are recorded in the handoff below.
+
+
+### P24-S3 local verification — 2026-10-02 (America/Denver)
+
+Final `mvn --offline --settings .mvn/settings-github.xml -Duser.home=/tmp/p24s3-test-home clean verify` passed: 843 tests, zero failures/errors, 36 headless skips. The initial full run had three existing UI-test cleanup errors because the replacement container's `/root` home is read-only; rerunning with an isolated writable Java home resolved them without changing application code. Final new JavaFX test separately passed under temporary Monocle 17.0.10/JUnit Console 1.10.2 (one test, zero failures/skips), including Event/Non-event exclusivity, optional Budget, draft-preserving refresh, inactive-choice removal, viewer write restrictions, 900/600-width and larger-text controls, horizontal/vertical history scrolling and divider movement. Native desktop visual acceptance is not claimed.
+
+Final diff review, whitespace check, and new documentation links passed. Generated tracked manifest restored after Maven clean. Current `origin/main` was rechecked at `a7a7ca6964884cbadf27af8b8891d68520e939c4`; the owner's renewed merge confirmation refers to the S2 merge present there. S3 remains local, VERIFYING, with no PR or published-head CI. Remaining: explicit publication authorization under AGENTS §5 Step 6, draft PR and exact final-head CI, D01 installed-build/layout evidence, owner desktop acceptance and merge. P24-S4 is not started.

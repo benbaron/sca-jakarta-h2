@@ -93,3 +93,11 @@ Import preserves the intrinsic item and movement UUIDs, item facts, movement fac
 P16-S9 does not route restore through the interactive movement preview/posting command. `createForImport(...)` and `recordMovementForImport(...)` remain the only SCLX inventory seams: an imported `transactionId` reattaches the already restored canonical transaction, while an absent reference stays null. Neither case synthesizes a second transaction or movement audit fact.
 
 The target must remain empty under the governed P15-S5 merge policy. A populated inventory item is sufficient to block preview and commit. Banking, reconciliation, period-close, imported audit-history, correction, and unknown populated extensions remain blocked after C6.
+
+## P24-S3 Event and Budget attribution
+
+Inventory movement attribution lives on the linked canonical transaction splits. Event and Fund continue through the existing core line references. Budget split attribution uses optional `extensions.scaJakartaH2.transactionBudgets`, an object with integer `version: 1` and `lines: [{lineId, categoryCode}]`. Only attributed posting lines appear. Export sorts relationships by portable line ID and checks company ownership through the canonical snapshot. Inventory extension version 1 is unchanged.
+
+Import strictly validates the extension version, fields, nonblank category code (maximum 64 characters), unique line relationships, and references to nonzero posting lines. It resolves category codes within the selected company through the existing category import service, even when there is no Budget plan. A newly created category uses its code as its initial name; this extension carries attribution, not category master metadata. Transaction and line conflict hashes include the Budget code, so changed tags cannot be silently treated as an identical import. Identical reimport is a no-op. Tags, categories, transactions and movement links commit or roll back together.
+
+Old files without this extension continue to import without inferred Budget tags. Older application versions do not support committing a populated `transactionBudgets` extension; use the updated reader to preserve attribution. The existing SCLX merge, correction-history, inactive-reference, and authorization policies remain in force. No new transaction is generated from inventory history during import.
