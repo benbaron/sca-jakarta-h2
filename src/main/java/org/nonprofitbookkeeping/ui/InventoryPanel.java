@@ -260,9 +260,12 @@ public class InventoryPanel implements AppPanel
         refreshTags.setOnAction(event -> refreshMovementChoices());
         Button clearBudget = new Button("Clear Budget");
         clearBudget.setOnAction(event -> movementBudget.setValue(null));
+        Button maintainBudget = new Button("Budget Categories");
+        maintainBudget.setId("inventoryBudgetCategories");
+        maintainBudget.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.BUDGET_CATEGORIES, ""));
         javafx.scene.layout.FlowPane tagging = new javafx.scene.layout.FlowPane(8, 6,
                 new Label("Event / Activity"), movementEvent, confirmNonEvent,
-                new Label("Budget category"), movementBudget, clearBudget, refreshTags);
+                new Label("Budget category"), movementBudget, clearBudget, refreshTags, maintainBudget);
         Label taggingHelp = new Label("Event and Budget apply to the offset line. Both lines retain the item Fund. Zero-value nonfinancial movements cannot carry accounting tags.");
         taggingHelp.setWrapText(true);
 

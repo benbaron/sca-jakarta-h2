@@ -45,6 +45,17 @@ public class BudgetCategoryLookupService
         return list(false);
     }
 
+    public List<BudgetCategoryView> listForMaintenance()
+    {
+        return list(false).stream().map(BudgetCategoryLookupService::view).toList();
+    }
+
+    static BudgetCategoryView view(BudgetCategory category)
+    {
+        return new BudgetCategoryView(category.getId(), category.getCode(), category.getName(), category.isActive(),
+                category.getEffectiveFrom(), category.getEffectiveTo(), category.getDescription());
+    }
+
     private List<BudgetCategory> list(boolean activeOnly)
     {
         try (EntityManager em = jpa.em())

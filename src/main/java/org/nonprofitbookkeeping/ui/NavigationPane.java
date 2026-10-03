@@ -73,6 +73,7 @@ public class NavigationPane extends VBox
         section(content, "PLANNING");
         addItem(content, AppPanelId.BUDGET_EDITOR, "Budget Editor", UiIcons.Glyph.BUDGET);
         addItem(content, AppPanelId.BUDGET_VS_ACTUAL, "Budget vs Actual", UiIcons.Glyph.CHART);
+        addItem(content, AppPanelId.BUDGET_CATEGORIES, "Budget Categories", UiIcons.Glyph.BUDGET);
 
         section(content, "ASSETS & INVENTORY");
         addItem(content, AppPanelId.ASSETS_REGISTER, "Asset Register", UiIcons.Glyph.ACCOUNTS);
