@@ -5,7 +5,7 @@ active_slice: P24-S4A
 active_status: VERIFYING
 active_branch: codex/P24-S4A-budget-category-maintenance
 active_pull_request: null
-active_head: e5570f2d413df853a684f93db8a59616dad53321
+active_head: 0458d48cef80cdc686087237cf932f4c5e906d78
 next_action: "After owner publication authorization, publish P24-S4A, open its draft PR, inspect final-head CI, and complete owner desktop acceptance."
 ---
 
@@ -1027,4 +1027,4 @@ Implemented on `codex/P24-S4A-budget-category-maintenance`:
 
 Validation completed locally: all production Java sources and all test sources compile with the cached Java 17 compiler (`--release 17`, no annotation processing); the focused `BudgetCategoryAuthorizationIntegrationTest` passed 2/2 tests; `git diff --check` passed. The focused JavaFX capability test had 3 successful tests and 3 display-dependent aborts; the new `BudgetCategoriesPanelTest` was display-dependent and aborted because this runtime has no `DISPLAY`/Xvfb. Maven is not installed in this runtime, so `mvn clean verify` and the full CI test gate remain pending; no native installed-build visual acceptance is claimed.
 
-Current handoff: implementation is locally ready but not published. The exact commit must be recorded in this front matter after the local commit. Remaining gates are explicit owner publication authorization, draft PR/final-head GitHub checks, and owner desktop acceptance. Do not mark S4A or P24-S4 DONE until the change is merged into current `main` and those gates are satisfied.
+Current handoff: implementation is locally ready but not published. Implementation commit: `0458d48cef80cdc686087237cf932f4c5e906d78` (`feat(P24-S4A): add budget category maintenance`). Remaining gates are explicit owner publication authorization, draft PR/final-head GitHub checks, and owner desktop acceptance. Do not mark S4A or P24-S4 DONE until the change is merged into current `main` and those gates are satisfied.
