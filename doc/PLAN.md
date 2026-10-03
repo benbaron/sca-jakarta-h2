@@ -1,12 +1,12 @@
 ---
-plan_version: 316
+plan_version: 317
 active_phase: P24
 active_slice: P24-S3
 active_status: VERIFYING
 active_branch: codex/P24-S3-inventory-event-costs
-active_pull_request: null
-active_head: c210c742e49eb3a8683a8ede7c737a0169f5b8fa
-next_action: "Obtain P24-S3 publication authorization, publish the reviewed branch and draft PR, then verify final-head CI and desktop acceptance."
+active_pull_request: 358
+active_head: e1631b1e4bb360ec3236e834ea41f2fc88209221
+next_action: "Inspect final-head Maven PR Tests for PR #358, then complete D01 desktop evidence and owner acceptance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -986,3 +986,13 @@ Final diff review, whitespace check, and new documentation links passed. Generat
 Branch: `codex/P24-S3-inventory-event-costs`. PR: none. Verified implementation head: `c210c742e49eb3a8683a8ede7c737a0169f5b8fa`; this documentation-only handoff follows it, and `git rev-parse HEAD` identifies the publication tip. All implementation, regression tests, CI test selection, governing documentation and desktop notes are committed. No known local test failure remains.
 
 Next exact action after owner publication authorization: confirm the clean local branch and expected remote parent, publish both reviewed commits without force-updating (matching tree SHAs if using connected GitHub transport), open a P24-S3 draft PR with the SCLX compatibility detail and actual validation above, inspect its final-head Maven PR Tests workflow, and complete the desktop checks in `doc/P24-S3-user-testing.md`. Do not begin P24-S4 until S3 is accepted and merged.
+
+
+### P24-S3 authorized publication — 2026-10-02 (America/Denver)
+
+Owner explicitly authorized publication. Draft [PR #358](https://github.com/benbaron/sca-jakarta-h2/pull/358) is open from `codex/P24-S3-inventory-event-costs` to main. Connected GitHub publication reproduced both reviewed commits with matching trees:
+
+- Local `c210c742e49eb3a8683a8ede7c737a0169f5b8fa` → remote `e9bb37e34b73ba129e31ef6ff02bfc89fcb46776`, tree `0b4e5f6c2f7e8137789c68bebfadd4a26ae26f3a`.
+- Local `90a9a80bf14416a943a172eec4ce1813665d9918` → remote `e1631b1e4bb360ec3236e834ea41f2fc88209221`, tree `ca3500ba0aa6c25c313df56b6d203812ceeae8c3`.
+
+Remote main remained `a7a7ca6964884cbadf27af8b8891d68520e939c4`; the new branch was created without force updates. Fetched published head/tree match the expected values. [Initial run 37080636631](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37080636631) entered Maven PR Tests. This documentation-only publication record follows the content head above. Inspect the successor final-head run and record its outcome in the PR description. The publication-authorization requirement is satisfied; earlier requests are historical. Remaining: exact final-head CI, D01 installed-build/layout evidence, owner desktop acceptance and merge. S3 remains VERIFYING; S4 is not started.
