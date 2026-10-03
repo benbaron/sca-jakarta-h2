@@ -14,6 +14,8 @@ public record InventoryMovementView(Long id,
                                     BigDecimal resultingQuantity,
                                     BigDecimal unitValue,
                                     Long transactionId,
-                                    String notes)
+                                    String notes,
+                                    String events,
+                                    String budgetCategories)
 {
 }

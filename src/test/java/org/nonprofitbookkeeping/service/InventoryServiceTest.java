@@ -61,28 +61,28 @@ public class InventoryServiceTest
                     LocalDate.of(2026, 2, 1),
                     CASH_ACCOUNT_ID,
                     false,
-                    "Received ten trays"));
+                    "Received ten trays", null, null, true));
             service.recordMovement(item.id(), new InventoryMovementCommand(
                     InventoryMovement.MovementType.RECEIPT,
                     new BigDecimal("2.0000"),
                     LocalDate.of(2026, 2, 1),
                     CASH_ACCOUNT_ID,
                     false,
-                    "Received two trays"));
+                    "Received two trays", null, null, true));
             service.recordMovement(item.id(), new InventoryMovementCommand(
                     InventoryMovement.MovementType.ISSUE,
                     new BigDecimal("4.0000"),
                     LocalDate.of(2026, 2, 2),
                     CASH_ACCOUNT_ID,
                     false,
-                    "Issued four trays"));
+                    "Issued four trays", null, null, true));
             InventoryMovementView adjustment = service.recordMovement(item.id(), new InventoryMovementCommand(
                     InventoryMovement.MovementType.ADJUSTMENT,
                     new BigDecimal("7.0000"),
                     LocalDate.of(2026, 2, 3),
                     CASH_ACCOUNT_ID,
                     false,
-                    "Counted seven trays"));
+                    "Counted seven trays", null, null, true));
 
             assertEquals(new BigDecimal("7.0000"), adjustment.resultingQuantity());
             assertEquals(new BigDecimal("7.0000"), service.load(item.id()).quantity());
@@ -105,7 +105,7 @@ public class InventoryServiceTest
                     LocalDate.of(2026, 1, 31),
                     CASH_ACCOUNT_ID,
                     false,
-                    "One banner"));
+                    "One banner", null, null, true));
 
             assertThrows(IllegalArgumentException.class, () -> service.recordMovement(item.id(), new InventoryMovementCommand(
                     InventoryMovement.MovementType.ISSUE,
@@ -113,7 +113,7 @@ public class InventoryServiceTest
                     LocalDate.of(2026, 2, 1),
                     CASH_ACCOUNT_ID,
                     false,
-                    "Too many issued")));
+                    "Too many issued", null, null, true)));
         }
     }
 
@@ -185,7 +185,7 @@ public class InventoryServiceTest
                     LocalDate.of(2026, 2, 1),
                     CASH_ACCOUNT_ID,
                     false,
-                    "Receive two"));
+                    "Receive two", null, null, true));
 
             IllegalStateException quantityGuard = assertThrows(IllegalStateException.class,
                     () -> service.changeStatus(item.id(), InventoryItem.Status.INACTIVE,
@@ -200,7 +200,7 @@ public class InventoryServiceTest
                     LocalDate.of(2026, 2, 2),
                     CASH_ACCOUNT_ID,
                     false,
-                    "Issue two"));
+                    "Issue two", null, null, true));
             InventoryItemView disposed = service.changeStatus(
                     item.id(), InventoryItem.Status.DISPOSED, "tester", "retired from inventory");
             assertEquals(InventoryItem.Status.DISPOSED, disposed.status());

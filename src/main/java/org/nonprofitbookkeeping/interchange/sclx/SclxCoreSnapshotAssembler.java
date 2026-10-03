@@ -493,6 +493,16 @@ public final class SclxCoreSnapshotAssembler
         extensionValues.put(SclxReconciliationExtension.KEY, exportedBanking.reconciliation());
         extensionValues.put(SclxFixedAssetsExtension.KEY, exportedFixedAssets);
         extensionValues.put(SclxInventoryExtension.KEY, exportedInventory);
+        List<Map<String, String>> transactionBudgets = transactionLines.stream()
+                .filter(line -> line.getBudgetCategory() != null)
+                .map(line -> Map.of("lineId", Objects.requireNonNull(exportedLineIds.get(line)),
+                        "categoryCode", requireText(line.getBudgetCategory().getCode(), "Budget category code")))
+                .sorted(Comparator.comparing(link -> link.get("lineId")))
+                .toList();
+        if (!transactionBudgets.isEmpty())
+        {
+            extensionValues.put(SclxTransactionBudgetExtension.KEY, Map.of("version", 1, "lines", transactionBudgets));
+        }
         extensionValues.put(SclxPeriodCloseExtension.KEY,
                 new SclxPeriodCloseSnapshotAssembler().assemble(companyCode, periodCloseRanges, periodCloseEvents));
         extensionValues.put(SclxAuditHistoryExtension.KEY,

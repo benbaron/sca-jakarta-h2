@@ -62,7 +62,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Budget Editor | `BudgetEditorPanel` | `BudgetPlanService` | draft/revision/save/activate/archive via same service | Stable `BudgetPlan.id`; retained archived history. |
 | Budget vs Actual | `BudgetVsActualPanel` | active budget plus canonical ledger actuals in company fiscal/accounting-period context | none | No calendar-year substitution. |
 | Asset Register | `AssetsRegisterPanel` | `FixedAssetService` | fixed-asset lifecycle/depreciation/correction services | Asset-linked transactions are domain-governed. |
-| Inventory | `InventoryPanel` | `InventoryService` | inventory movement/lifecycle services | Financial movements link atomically to canonical transactions. |
+| Inventory | `InventoryPanel` | `InventoryService` | inventory movement/lifecycle services | Financial movements require Event or explicit Non-event, with independent optional Budget on the offset split; both lines retain the item Fund. Preview, history and reversal use canonical tags, and financial movements link atomically to canonical transactions. |
 | Chart of Accounts | `ChartOfAccountsPanel` | account/chart services | `AccountAdminService` | Stable account ID; deactivate instead of invented hard delete for referenced history. |
 | Funds | Funds administration panel | fund lookup/admin services | `FundAdminService` | Stable IDs; unused delete only after usage checks, otherwise deactivate. |
 | Events / Activities | `ActivitiesPanel` | `ActivityLookupService` | `ActivityAdminService` | Stable Activity ID; code/name are mutable. Delete requires no `TxnSplit` or Activity `interchange_identity` references; otherwise deactivate/reactivate. |

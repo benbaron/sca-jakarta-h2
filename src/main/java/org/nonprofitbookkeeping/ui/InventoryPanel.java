@@ -73,6 +73,9 @@ public class InventoryPanel implements AppPanel
     private final DatePicker movementDate = new DatePicker(LocalDate.now());
     private final TextField movementNotes = new TextField();
     private final ComboBox<Account> movementOffsetAccount = new ComboBox<>();
+    private final ComboBox<TransactionLineEditorModel.Option> movementEvent = new ComboBox<>();
+    private final ComboBox<TransactionLineEditorModel.Option> movementBudget = new ComboBox<>();
+    private final CheckBox confirmNonEvent = new CheckBox("Non-event movement");
     private final TextField movementActor = new TextField(DesktopActorIdentity.current());
     private final TextField lifecycleActor = new TextField(DesktopActorIdentity.current());
     private final TextField lifecycleReason = new TextField();
@@ -171,8 +174,10 @@ public class InventoryPanel implements AppPanel
         disposeItem.setOnAction(e -> changeSelectedStatus(InventoryItem.Status.DISPOSED));
         updateLifecycleActions(null);
         Button receive = new Button("Receive Quantity");
+        receive.setId("inventoryReceive");
         receive.setOnAction(e -> recordMovement(InventoryMovement.MovementType.RECEIPT));
         Button issue = new Button("Issue Quantity");
+        issue.setId("inventoryIssue");
         issue.setOnAction(e -> recordMovement(InventoryMovement.MovementType.ISSUE));
         Button adjust = new Button("Adjust Count To Quantity");
         adjust.setOnAction(e -> recordMovement(InventoryMovement.MovementType.ADJUSTMENT));
@@ -206,13 +211,60 @@ public class InventoryPanel implements AppPanel
                 new Label("Movement notes"), movementNotes,
                 new Label("Offset account"), movementOffsetAccount,
                 new Label("Actor"), movementActor);
-        HBox movementActions = new HBox(8,
+        javafx.scene.layout.FlowPane movementActions = new javafx.scene.layout.FlowPane(8, 6,
                 confirmNonfinancial, receive, issue, adjust, reverse, drill);
+        movementQuantity.setId("inventoryMovementQuantity");
+        movementNotes.setId("inventoryMovementNotes");
         movementQuantity.setPrefWidth(90);
         movementDate.setPrefWidth(130);
         movementNotes.setPrefWidth(240);
         movementOffsetAccount.setPrefWidth(260);
         movementActor.setPrefWidth(110);
+
+        movementEvent.setId("inventoryMovementEvent");
+        movementBudget.setId("inventoryMovementBudget");
+        confirmNonEvent.setId("inventoryNonEvent");
+        movementEvent.setPrefWidth(240);
+        movementBudget.setPrefWidth(240);
+        StringConverter<TransactionLineEditorModel.Option> tags = new StringConverter<>()
+        {
+            @Override public String toString(TransactionLineEditorModel.Option value)
+            {
+                return value == null ? "" : value.label();
+            }
+            @Override public TransactionLineEditorModel.Option fromString(String text)
+            {
+                return null;
+            }
+        };
+        movementEvent.setConverter(tags);
+        movementBudget.setConverter(tags);
+        movementEvent.setPromptText("Choose Event / Activity");
+        movementBudget.setPromptText("Optional budget category");
+        confirmNonEvent.selectedProperty().addListener((obs, oldValue, selected) ->
+        {
+            if (selected)
+            {
+                movementEvent.setValue(null);
+            }
+        });
+        movementEvent.valueProperty().addListener((obs, oldValue, selected) ->
+        {
+            if (selected != null)
+            {
+                confirmNonEvent.setSelected(false);
+            }
+        });
+        Button refreshTags = new Button("Refresh Event/Budget Choices");
+        refreshTags.setId("inventoryRefreshTags");
+        refreshTags.setOnAction(event -> refreshMovementChoices());
+        Button clearBudget = new Button("Clear Budget");
+        clearBudget.setOnAction(event -> movementBudget.setValue(null));
+        javafx.scene.layout.FlowPane tagging = new javafx.scene.layout.FlowPane(8, 6,
+                new Label("Event / Activity"), movementEvent, confirmNonEvent,
+                new Label("Budget category"), movementBudget, clearBudget, refreshTags);
+        Label taggingHelp = new Label("Event and Budget apply to the offset line. Both lines retain the item Fund. Zero-value nonfinancial movements cannot carry accounting tags.");
+        taggingHelp.setWrapText(true);
 
         SplitPane split = new SplitPane(new VBox(6, new Label("Inventory Items"), itemTable), new VBox(6, new Label("Movement History"), movementTable));
         split.setOrientation(Orientation.VERTICAL);
@@ -222,7 +274,24 @@ public class InventoryPanel implements AppPanel
         VBox.setVgrow(itemTable, Priority.ALWAYS);
         VBox.setVgrow(movementTable, Priority.ALWAYS);
         VBox.setVgrow(split, Priority.ALWAYS);
-        listPanel.getChildren().setAll(itemActions, lifecycleHelp, lifecycleInputs, lifecycleActions, movementInputs, movementActions, split);
+        movementInputs.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
+        VBox controls = new VBox(6, itemActions, lifecycleHelp, lifecycleInputs, lifecycleActions,
+                movementInputs, tagging, taggingHelp, movementActions);
+        ScrollPane controlsScroll = new ScrollPane(controls);
+        controlsScroll.setId("inventoryMovementControlsScroll");
+        controlsScroll.setFitToWidth(true);
+        controlsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        controlsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        controlsScroll.setMinSize(0, 0);
+        split.setMinSize(0, 0);
+        SplitPane workspace = new SplitPane(controlsScroll, split);
+        workspace.setId("inventoryMovementWorkspaceSplit");
+        workspace.setOrientation(Orientation.VERTICAL);
+        workspace.setMinSize(0, 0);
+        CompanySplitPaneStateBinder.bind(workspace, "inventory-movement-workspace", 0.4);
+        VBox.setVgrow(workspace, Priority.ALWAYS);
+        listPanel.setMinSize(0, 0);
+        listPanel.getChildren().setAll(workspace);
     }
 
     private void configureItemEditorPanel()
@@ -274,6 +343,8 @@ public class InventoryPanel implements AppPanel
         addMovementColumn("Result", v -> formatQuantity(v.resultingQuantity()), 100);
         addMovementColumn("Unit Value", v -> formatMoney(v.unitValue()), 120);
         addMovementColumn("Txn", v -> v.transactionId() == null ? "" : String.valueOf(v.transactionId()), 80);
+        addMovementColumn("Event / Activity", InventoryMovementView::events, 220);
+        addMovementColumn("Budget category", InventoryMovementView::budgetCategories, 220);
         addMovementColumn("Notes", InventoryMovementView::notes, 220);
         movementTable.setPlaceholder(new Label("No inventory movements recorded."));
     }
@@ -349,6 +420,7 @@ public class InventoryPanel implements AppPanel
         status.setText("Loading inventory...");
         try
         {
+            refreshMovementChoices();
             List<Account> inventoryAccounts = UiServiceRegistry.accountLookup().listActivePostingAccounts().stream()
                     .filter(a -> a.getSubtype() == AccountSubtype.INVENTORY)
                     .toList();
@@ -375,6 +447,35 @@ public class InventoryPanel implements AppPanel
         {
             status.setText("Could not load inventory: " + UiErrors.safeMessage(ex));
         }
+    }
+
+    @Override
+    public void onPanelShown()
+    {
+        refreshMovementChoices();
+    }
+
+    private void refreshMovementChoices()
+    {
+        try
+        {
+            var references = UiServiceRegistry.transactionReferenceData().loadActiveReferenceData();
+            refreshChoice(movementEvent, references.activities());
+            refreshChoice(movementBudget, references.budgetCategories());
+        }
+        catch (RuntimeException ex)
+        {
+            status.setText("Could not refresh Event/Budget choices: " + UiErrors.safeMessage(ex));
+        }
+    }
+
+    private static void refreshChoice(ComboBox<TransactionLineEditorModel.Option> choices,
+            List<TransactionLineEditorModel.Option> values)
+    {
+        var selected = choices.getValue();
+        choices.getItems().setAll(values);
+        choices.setValue(selected == null ? null : values.stream()
+                .filter(value -> value.id().equals(selected.id())).findFirst().orElse(null));
     }
 
     private void openNewItemEditor()
@@ -522,7 +623,10 @@ public class InventoryPanel implements AppPanel
                     requiredDate(movementDate, "Movement date"),
                     offset == null ? null : offset.getId(),
                     confirmNonfinancial.isSelected(),
-                    movementNotes.getText()));
+                    movementNotes.getText(),
+                    movementEvent.getValue() == null ? null : movementEvent.getValue().id(),
+                    movementBudget.getValue() == null ? null : movementBudget.getValue().id(),
+                    confirmNonEvent.isSelected()));
             if (!confirmMovement(preview))
             {
                 status.setText("Inventory movement cancelled; no quantity or ledger change was made.");
@@ -546,10 +650,12 @@ public class InventoryPanel implements AppPanel
         confirmation.setHeaderText(preview.financial()
                 ? "Create this inventory movement and balanced canonical transaction?"
                 : "Record this explicitly nonfinancial zero-value movement?");
+        boolean increase = preview.quantityChange().signum() > 0;
         String accounting = preview.financial()
-                ? "Debit/Credit accounts: " + preview.inventoryAccountCode() + " — "
-                        + preview.inventoryAccountName() + " / " + preview.offsetAccountCode() + " — "
-                        + preview.offsetAccountName()
+                ? (increase ? "Debit " : "Credit ") + preview.inventoryAccountCode() + " — "
+                        + preview.inventoryAccountName() + ": " + formatMoney(preview.extendedValue())
+                        + "\n" + (increase ? "Credit " : "Debit ") + preview.offsetAccountCode() + " — "
+                        + preview.offsetAccountName() + ": " + formatMoney(preview.extendedValue())
                 : "No canonical transaction will be created.";
         confirmation.setContentText(
                 "Item: " + preview.inventoryItemName()
@@ -559,6 +665,8 @@ public class InventoryPanel implements AppPanel
                         + "\nUnit value: " + formatMoney(preview.unitValue())
                         + "\nExtended value: " + formatMoney(preview.extendedValue())
                         + "\nFund: " + preview.fundCode() + " — " + preview.fundName()
+                        + "\nOffset Event: " + preview.eventLabel()
+                        + "\nOffset Budget: " + preview.budgetLabel()
                         + "\n" + accounting);
         return confirmation.showAndWait().filter(ButtonType.OK::equals).isPresent();
     }
@@ -588,6 +696,8 @@ public class InventoryPanel implements AppPanel
                             + "\nQuantity: " + formatQuantity(preview.quantityBefore())
                             + " → " + formatQuantity(preview.quantityAfter())
                             + "\nReversal value: " + formatMoney(preview.extendedValue())
+                            + "\nEvent: " + selected.events()
+                            + "\nBudget: " + selected.budgetCategories()
                             + "\nReason: " + preview.reason());
             if (confirmation.showAndWait().filter(ButtonType.OK::equals).isEmpty())
             {

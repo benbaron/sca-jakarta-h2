@@ -318,7 +318,7 @@ class InventoryAuthorizationIntegrationTest
                 date,
                 CASH_ACCOUNT_ID,
                 false,
-                "Receive inventory");
+                "Receive inventory", null, null, true);
     }
 
     private static void seedMasterData(Jpa jpa)
