@@ -5,7 +5,7 @@ active_slice: P24-S3
 active_status: VERIFYING
 active_branch: codex/P24-S3-inventory-event-costs
 active_pull_request: null
-active_head: a7a7ca6964884cbadf27af8b8891d68520e939c4
+active_head: c210c742e49eb3a8683a8ede7c737a0169f5b8fa
 next_action: "Obtain P24-S3 publication authorization, publish the reviewed branch and draft PR, then verify final-head CI and desktop acceptance."
 ---
 
@@ -979,3 +979,10 @@ Focused accounting/authorization/interchange validation: 19 tests passed with ze
 Final `mvn --offline --settings .mvn/settings-github.xml -Duser.home=/tmp/p24s3-test-home clean verify` passed: 843 tests, zero failures/errors, 36 headless skips. The initial full run had three existing UI-test cleanup errors because the replacement container's `/root` home is read-only; rerunning with an isolated writable Java home resolved them without changing application code. Final new JavaFX test separately passed under temporary Monocle 17.0.10/JUnit Console 1.10.2 (one test, zero failures/skips), including Event/Non-event exclusivity, optional Budget, draft-preserving refresh, inactive-choice removal, viewer write restrictions, 900/600-width and larger-text controls, horizontal/vertical history scrolling and divider movement. Native desktop visual acceptance is not claimed.
 
 Final diff review, whitespace check, and new documentation links passed. Generated tracked manifest restored after Maven clean. Current `origin/main` was rechecked at `a7a7ca6964884cbadf27af8b8891d68520e939c4`; the owner's renewed merge confirmation refers to the S2 merge present there. S3 remains local, VERIFYING, with no PR or published-head CI. Remaining: explicit publication authorization under AGENTS §5 Step 6, draft PR and exact final-head CI, D01 installed-build/layout evidence, owner desktop acceptance and merge. P24-S4 is not started.
+
+
+### P24-S3 commit handoff
+
+Branch: `codex/P24-S3-inventory-event-costs`. PR: none. Verified implementation head: `c210c742e49eb3a8683a8ede7c737a0169f5b8fa`; this documentation-only handoff follows it, and `git rev-parse HEAD` identifies the publication tip. All implementation, regression tests, CI test selection, governing documentation and desktop notes are committed. No known local test failure remains.
+
+Next exact action after owner publication authorization: confirm the clean local branch and expected remote parent, publish both reviewed commits without force-updating (matching tree SHAs if using connected GitHub transport), open a P24-S3 draft PR with the SCLX compatibility detail and actual validation above, inspect its final-head Maven PR Tests workflow, and complete the desktop checks in `doc/P24-S3-user-testing.md`. Do not begin P24-S4 until S3 is accepted and merged.
