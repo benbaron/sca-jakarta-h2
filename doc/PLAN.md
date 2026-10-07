@@ -5,8 +5,8 @@ active_slice: P24-S4B
 active_status: VERIFYING
 active_branch: codex/P24-S4B-counterparty-maintenance
 active_pull_request: 360
-active_head: 48ddd15910866304f700caa10181fe3786d556e5
-next_action: "Inspect final-head Maven/JavaFX CI for draft PR #360, repair failures, and complete owner desktop acceptance before separately authorized merge."
+active_head: 8c4b7b6c2b98d0024b48afb426456fb4289d6852
+next_action: "Owner desktop acceptance for draft PR #360, then separate merge authorization; S4C stays blocked until S4B merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1076,3 +1076,10 @@ Owner explicitly authorized publication. Draft [PR #360](https://github.com/benb
 - Local `03fd833bbda8b6241855be53fe8e4b0b65372211` → remote `48ddd15910866304f700caa10181fe3786d556e5`; tree `20862bcb69519bc7e500b6d80aa3587b4062627c`.
 
 The new branch was created at the verified publication head, without force updates. This documentation-only successor records PR/authorization; it requires final-head CI. At publication, CI and both display-dependent CounterpartiesPanelTest cases remain pending. Inspect Maven PR Tests for the final PR head, repair failures, and record the exact workflow evidence in the PR. Owner desktop acceptance using P24-S4B-user-testing.md remains required. S4B is VERIFYING, unmerged; S4C remains BLOCKED. No S4B GitHub pass or native desktop result is claimed by this snapshot.
+
+
+### P24-S4B final-head GitHub verification
+
+Final published head `8c4b7b6c2b98d0024b48afb426456fb4289d6852` passed [Maven PR Tests run 37560761479](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37560761479), job `112597449168`. Both full passes: 851 tests, zero failures/errors, 39 headless skips. Production Xvfb gate: 19 tests, zero failures/errors/skips, including both CounterpartiesPanelTest cases. Clean verify, repeat tests, production JavaFX route compliance and cleanup all succeeded. Source publication ledger `a04daad5982a3f209b6e09756cb913a23fbf7ec8` maps to remote final head with identical tree `1e5393072bc3823050a5f90bb20c642a0d8f5806`.
+
+PR #360 records the final result and owner testing link. This post-CI documentation handoff is local only, deliberately not published to avoid replacing the verified PR head with an unverified successor. No implementation change followed the successful CI head. Status remains VERIFYING; owner native desktop acceptance and separate merge authorization remain required. S4C stays BLOCKED. Preserve this closeout evidence when continuing from the merged PR or publishing a later documentation successor.
