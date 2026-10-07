@@ -95,6 +95,7 @@ class MerchantsPanelTest
             stage.show();
             lines(journal[0]).getItems().get(0).setMerchant(TransactionLineEditorModel.option(original.id(), "", original.name()));
             lines(journal[0]).getItems().get(1).setMerchant(TransactionLineEditorModel.option(second.id(), "", second.name()));
+            assertTrue(journal[0].hasUnsavedChanges(), "Merchant assignment must mark the draft dirty");
             lines(journal[0]).getItems().get(0).setDebit("25.00");
             lines(journal[0]).getItems().get(1).setCredit("25.00");
             lines(journal[0]).getItems().get(0).setNotes("Keep draft notes");
@@ -135,11 +136,11 @@ class MerchantsPanelTest
             if (FxTestSupport.onFx(condition::getAsBoolean)) return;
             Thread.sleep(30);
         }
-        fail("Timed out waiting for Journal reference refresh");
+        fail("Timed out waiting for UI refresh or layout");
     }
 
     @Test
-    void stableIdEditDeactivationRefreshAndLayoutRemainUsable()
+    void stableIdEditDeactivationRefreshAndLayoutRemainUsable() throws Exception
     {
         MerchantView initial = UiServiceRegistry.merchantAdmin().save(
                 new MerchantCommand(null, "Operations", "", true));
@@ -197,9 +198,22 @@ class MerchantsPanelTest
             ((javafx.scene.Parent) panel.root()).layout();
             assertTrue(editor.getViewportBounds().getWidth() > 0);
             split.setDividerPositions(0.90);
-            ((javafx.scene.layout.Region) editor.getContent()).setMinWidth(850);
+            ((javafx.scene.layout.Region) editor.getContent()).setMinWidth(editor.getViewportBounds().getWidth() + 300);
             panel.root().applyCss();
             ((javafx.scene.Parent) panel.root()).layout();
+            return null;
+        });
+        await(() ->
+        {
+            ScrollPane editor = (ScrollPane) panel.root().lookup("#merchantsEditorScroll");
+            return editor.getContent().getLayoutBounds().getHeight() > editor.getViewportBounds().getHeight()
+                    && editor.getContent().getLayoutBounds().getWidth() > editor.getViewportBounds().getWidth()
+                    && editor.lookupAll(".scroll-bar").stream().filter(node ->
+                            node instanceof javafx.scene.control.ScrollBar bar && bar.isVisible()).count() == 2;
+        });
+        FxTestSupport.onFx(() ->
+        {
+            ScrollPane editor = (ScrollPane) panel.root().lookup("#merchantsEditorScroll");
             assertTrue(editor.getContent().getLayoutBounds().getHeight() > editor.getViewportBounds().getHeight(),
                     "Shrinking the editor must expose vertical overflow");
             assertTrue(editor.getContent().getLayoutBounds().getWidth() > editor.getViewportBounds().getWidth(),

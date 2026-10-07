@@ -1,11 +1,11 @@
 ---
-plan_version: 326
+plan_version: 327
 active_phase: P24
 active_slice: P24-S4C
 active_status: VERIFYING
 active_branch: codex/P24-S4C-merchant-maintenance
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/361
-active_head: 849bcf95a3af399e51d13126baf5332d3a18fa7f
+active_head: a4386001b443e61446959c19f414309f9da704fc
 next_action: "Verify final published head of draft PR #361 with Maven PR Tests including MerchantsPanelTest under Xvfb, repair any failure, and record actual results; owner desktop acceptance and merge remain pending."
 ---
 
@@ -1130,3 +1130,10 @@ Owner explicitly authorized all three requested actions: publish branch, open dr
 | `5c0f3497e18411fb8b14d08ead7a5e9e90561f3a` | `849bcf95a3af399e51d13126baf5332d3a18fa7f` | `994771c8cf9c725f41bfd467ca63eb954ed34c49` |
 
 This documentation-only publication ledger follows the reviewed implementation and will be fast-forwarded under the same authorization; active_head records its known parent because a commit cannot embed its own hash. Verify the resulting branch/PR tip and run CI against that final published head. Full Maven, Xvfb and owner desktop results are still pending at this checkpoint; S4C is VERIFYING, not DONE. After final CI, record evidence locally and in the PR body without publishing another evidence-only successor that would replace the verified head. No application changes were introduced by this publication ledger.
+
+
+### P24-S4C first final-head CI and narrow corrections
+
+Published publication-ledger head `a4386001b443e61446959c19f414309f9da704fc` (local `b170f02b770738b41fc16436aa5458f88dd5f978`, matching tree `d6f8ec05a555a1ff60a62280fd234c2aea886eaf`) was confirmed on branch and draft PR #361. [Run 37628321930](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37628321930), job `112815990896`, passed both full Maven runs: 858 tests each, zero failures/errors, 41 headless skips. Xvfb ran 21 tests with two errors, both MerchantsPanelTest assertions. No final CI success is claimed.
+
+The Merchant-only assignment regression exposed a missing Merchant property dirty listener in Journal; add that narrow listener beside the existing Fund/Event listeners so assignment changes are protected as unsaved drafts. The refresh callback already suppresses loading changes and restores the previous dirty state. The overflow stress test also used a fixed 850-pixel minimum immediately after requesting a narrower Stage, before the window resize/layout pulse had completed. Size the stress content relative to the actual viewport and await real width/height overflow plus both visible scrollbars before asserting; preserve all geometry requirements rather than weakening them. Explicitly assert Merchant-only dirty state before other draft changes. These two corrections are within the authorized S4C publication/verification scope. Local Maven/display/dependency cache remains unavailable in this resumed environment; compile/display validation will run in CI. Whitespace checks passed; final-head CI and owner desktop acceptance remain pending.

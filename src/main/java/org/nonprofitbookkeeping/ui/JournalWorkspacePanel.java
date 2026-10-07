@@ -1319,6 +1319,7 @@ public final class JournalWorkspacePanel implements AppPanel
     {
         row.fundProperty().addListener((obs, oldValue, newValue) -> markDirty());
         row.activityProperty().addListener((obs, oldValue, newValue) -> markDirty());
+        row.merchantProperty().addListener((obs, oldValue, newValue) -> markDirty());
         row.nmrProperty().addListener((obs, oldValue, newValue) -> markDirty());
     }
 
