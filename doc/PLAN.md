@@ -5,7 +5,7 @@ active_slice: P24-S4B
 active_status: VERIFYING
 active_branch: codex/P24-S4B-counterparty-maintenance
 active_pull_request: null
-active_head: null
+active_head: 5dc0b20a501292ad5542bc6a05045774c3de2c94
 next_action: "Obtain explicit publication authorization, publish reviewed S4B commits as a draft PR, and inspect final-head Maven/JavaFX CI; complete owner desktop acceptance before merge."
 ---
 
@@ -1064,3 +1064,5 @@ Actual verification:
 - Final diff review, documentation-link validation and `git diff --check` passed. Archived proposal unchanged.
 
 Status: VERIFYING, local branch `codex/P24-S4B-counterparty-maintenance`, based on main `9eeb4c239630a721d3c99ec93b49bfbb9f7b6dd3`; no PR or GitHub S4B result. User testing: [P24-S4B](P24-S4B-user-testing.md). Next: after explicit publication authorization under AGENTS §5 Step 6, confirm local/remote state, publish the reviewed sequence without force, create a draft PR, inspect exact-head Maven/Xvfb checks and fix failures. Owner desktop acceptance and merge remain required. S4C remains BLOCKED.
+
+Reviewed implementation commit: `5dc0b20a501292ad5542bc6a05045774c3de2c94`. This documentation-only successor records its head for publication; `git rev-parse HEAD` identifies the final local tip. Both commits must be published in order with matching trees when using connected-service transport.
