@@ -4,9 +4,9 @@ active_phase: P24
 active_slice: P24-S4B
 active_status: VERIFYING
 active_branch: codex/P24-S4B-counterparty-maintenance
-active_pull_request: null
-active_head: 5dc0b20a501292ad5542bc6a05045774c3de2c94
-next_action: "Obtain explicit publication authorization, publish reviewed S4B commits as a draft PR, and inspect final-head Maven/JavaFX CI; complete owner desktop acceptance before merge."
+active_pull_request: 360
+active_head: 48ddd15910866304f700caa10181fe3786d556e5
+next_action: "Inspect final-head Maven/JavaFX CI for draft PR #360, repair failures, and complete owner desktop acceptance before separately authorized merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1066,3 +1066,13 @@ Actual verification:
 Status: VERIFYING, local branch `codex/P24-S4B-counterparty-maintenance`, based on main `9eeb4c239630a721d3c99ec93b49bfbb9f7b6dd3`; no PR or GitHub S4B result. User testing: [P24-S4B](P24-S4B-user-testing.md). Next: after explicit publication authorization under AGENTS §5 Step 6, confirm local/remote state, publish the reviewed sequence without force, create a draft PR, inspect exact-head Maven/Xvfb checks and fix failures. Owner desktop acceptance and merge remain required. S4C remains BLOCKED.
 
 Reviewed implementation commit: `5dc0b20a501292ad5542bc6a05045774c3de2c94`. This documentation-only successor records its head for publication; `git rev-parse HEAD` identifies the final local tip. Both commits must be published in order with matching trees when using connected-service transport.
+
+
+### P24-S4B authorized publication — 2026-10-06 (America/Denver)
+
+Owner explicitly authorized publication. Draft [PR #360](https://github.com/benbaron/sca-jakarta-h2/pull/360) is open from `codex/P24-S4B-counterparty-maintenance` to main. Current main remained `9eeb4c239630a721d3c99ec93b49bfbb9f7b6dd3`. Connected publication preserved the reviewed commit messages, order and exact trees:
+
+- Local `5dc0b20a501292ad5542bc6a05045774c3de2c94` → remote `8a1aeb9d5887b1167ee04e5b50bb6ee8e3b1c8a5`; tree `22653cf3255637e4a9c8ba52d0c8e889c20e00f1`.
+- Local `03fd833bbda8b6241855be53fe8e4b0b65372211` → remote `48ddd15910866304f700caa10181fe3786d556e5`; tree `20862bcb69519bc7e500b6d80aa3587b4062627c`.
+
+The new branch was created at the verified publication head, without force updates. This documentation-only successor records PR/authorization; it requires final-head CI. At publication, CI and both display-dependent CounterpartiesPanelTest cases remain pending. Inspect Maven PR Tests for the final PR head, repair failures, and record the exact workflow evidence in the PR. Owner desktop acceptance using P24-S4B-user-testing.md remains required. S4B is VERIFYING, unmerged; S4C remains BLOCKED. No S4B GitHub pass or native desktop result is claimed by this snapshot.
