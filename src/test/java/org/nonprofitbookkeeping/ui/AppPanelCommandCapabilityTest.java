@@ -69,6 +69,7 @@ class AppPanelCommandCapabilityTest
         expected.put(AppPanelId.BUDGET_VS_ACTUAL, Set.of());
         expected.put(AppPanelId.BUDGET_CATEGORIES, editorCommands());
         expected.put(AppPanelId.COUNTERPARTIES, editorCommands());
+        expected.put(AppPanelId.MERCHANTS, editorCommands());
         expected.put(AppPanelId.ASSETS_REGISTER, editorCommands());
         expected.put(AppPanelId.DEPRECIATION_RUNS, Set.of());
         expected.put(AppPanelId.INVENTORY, editorCommands());

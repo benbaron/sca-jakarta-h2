@@ -81,6 +81,7 @@ public final class PanelFactory
         factories.put(AppPanelId.BUDGET_VS_ACTUAL, BudgetVsActualPanel::new);
         factories.put(AppPanelId.BUDGET_CATEGORIES, BudgetCategoriesPanel::new);
         factories.put(AppPanelId.COUNTERPARTIES, CounterpartiesPanel::new);
+        factories.put(AppPanelId.MERCHANTS, MerchantsPanel::new);
         factories.put(AppPanelId.ASSETS_REGISTER, AssetsRegisterPanel::new);
         factories.put(AppPanelId.DEPRECIATION_RUNS, DepreciationRunsPanel::new);
         factories.put(AppPanelId.INVENTORY, InventoryPanel::new);

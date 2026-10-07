@@ -201,13 +201,21 @@ public class TransactionLineEditorModel
         }
     }
 
+    /** Active choice lists plus retained Merchant labels for existing selections; retained labels are not choices. */
     public record ReferenceData(List<Option> accounts,
                                 List<Option> funds,
                                 List<Option> budgetCategories,
                                 List<Option> activities,
                                 List<Option> merchants,
-                                List<Option> counterparties)
+                                List<Option> counterparties,
+                                List<Option> retainedMerchants)
     {
+        public ReferenceData(List<Option> accounts, List<Option> funds, List<Option> budgetCategories,
+                             List<Option> activities, List<Option> merchants, List<Option> counterparties)
+        {
+            this(accounts, funds, budgetCategories, activities, merchants, counterparties, merchants);
+        }
+
         public ReferenceData
         {
             accounts = List.copyOf(accounts == null ? List.of() : accounts);
@@ -216,6 +224,7 @@ public class TransactionLineEditorModel
             activities = List.copyOf(activities == null ? List.of() : activities);
             merchants = List.copyOf(merchants == null ? List.of() : merchants);
             counterparties = List.copyOf(counterparties == null ? List.of() : counterparties);
+            retainedMerchants = List.copyOf(retainedMerchants == null ? List.of() : retainedMerchants);
         }
     }
 

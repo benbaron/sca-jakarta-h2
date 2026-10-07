@@ -1,12 +1,12 @@
 ---
-plan_version: 323
+plan_version: 325
 active_phase: P24
 active_slice: P24-S4C
-active_status: READY
-active_branch: null
+active_status: VERIFYING
+active_branch: codex/P24-S4C-merchant-maintenance
 active_pull_request: null
 active_head: null
-next_action: "Start P24-S4C Merchant maintenance from current main when the owner selects execution; carry S4B closeout forward."
+next_action: "Obtain explicit S4C publication authorization, publish the reviewed branch as a draft PR, and verify final-head Maven/Xvfb CI; owner desktop acceptance and merge remain pending."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -36,7 +36,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
-| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S4B merged; P24-S4C READY |
+| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S4B merged; P24-S4C VERIFYING |
 | P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is merged; P24-S4B is DONE; P24-S4C is READY. Conditional P27-S5 remains unadopted.
+P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is merged; P24-S4B is DONE; P24-S4C is VERIFYING. Conditional P27-S5 remains unadopted.
 
 ## 10. Archived proposal and adoption
 
@@ -680,7 +680,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P24-S4 | Complete lookup maintenance (G8) | IN_PROGRESS | P24-S3 merged; owning contract and D01–D10 gates as applicable |
 | P24-S4A | Budget Category maintenance | DONE | P24-S3 merged; A08 category workflow |
 | P24-S4B | Payee/Counterparty maintenance | DONE | P24-S4A merged; A08 party workflow |
-| P24-S4C | Merchant maintenance | READY | P24-S4B merged; A08 merchant workflow |
+| P24-S4C | Merchant maintenance | VERIFYING | P24-S4B merged; A08 merchant workflow |
 | P25-S1 | Implement one internal fund-transfer operation (G7) | BLOCKED | P24-S4 merged; owning contract and D01–D10 gates as applicable |
 | P25-S2 | Add structured payment/check references (G9) | BLOCKED | P25-S1 merged; owning contract and D01–D10 gates as applicable |
 | P25-S3 | Complete check exception and reconciliation workflows (G9) | BLOCKED | P25-S2 merged; owning contract and D01–D10 gates as applicable |
@@ -1090,3 +1090,27 @@ PR #360 records the final result and owner testing link. This post-CI documentat
 While final CI evidence was being recorded, owner `benbaron` merged PR #360 at `e60c8211094548f36a5df1d4ee76db74c9c9d580` (2026-10-07 02:19:43 UTC / 2026-10-06 20:19:43 America/Denver). Current origin/main was fetched and confirmed at that merge. Final PR-head CI passed as recorded above. Owner merge is the acceptance/advancement evidence; no separate desktop evidence is invented. S4B is DONE. S4C Merchant maintenance is the first unblocked successor, READY and not started; P24-S4 remains IN_PROGRESS.
 
 This documentation-only closeout is local on fresh `codex/P24-S4B-closeout` based on the confirmed merge, with the local final-CI evidence cherry-picked as `ac2accb`. The merged implementation branch is not reused. No closeout PR or S4C implementation exists. Next: when the owner selects S4C, start a fresh branch from current main, carry this closeout ledger forward, inspect Merchant authority and consumers, and implement that one family. Diff whitespace checks passed; no application changes or repeated application tests were required for closeout.
+
+
+## 28. P24-S4C Merchant maintenance — 2026-10-06 (America/Denver)
+
+Owner selected S4C with “proceed.” Current main is `e60c8211094548f36a5df1d4ee76db74c9c9d580`, the confirmed owner merge of PR #360 after final-head CI passed. Fresh branch `codex/P24-S4C-merchant-maintenance` carries the local S4B final-CI/closeout records as `850d0b5` and `11dd7e6`. No PR or Merchant implementation existed at selection.
+
+Inspected Merchant, TxnSplit, V1/V61/V63 migrations, ownership/reference-data/transaction/correction consumers, SCLX parties, Counterparty maintenance service/UI/tests, factory/navigation/global commands, adopted G8/A08 contract and UI rules. Merchant name is company-unique in the existing schema, portable identity is durable, and no merchant maintenance service or route exists. Baseline production compilation passed using Java 17 and cached dependencies; Maven remains unavailable.
+
+Design: add an audited stable-ID MerchantAdminService and immutable command/view using the existing Merchant master. Company lock serializes case-insensitive trimmed-name duplicate checks; authorization/ownership and the existing database unique constraint remain enforced. Name and notes plus active/inactive lifecycle are the entire mapped family; no unsupported contact or settlement fields. Retain records instead of physical deletion with a visible history explanation. New/Edit/Save/Refresh/search maintenance uses existing production layout/state conventions. Journal navigation refreshes active choices without discarding draft lines, including mixed merchants. No migration, alternate master, or SCLX change; settlement assistance stays P26-S6. Governing contract: [Merchant maintenance](accounting/merchant-maintenance.md).
+
+Donor review at `NonprofitAccounting` `c697630ec1f784ebe8338d7300da6c9ac801b180`: legacy outstanding/undeposited records use free-text `from_to_card_merchant`; no suitable company-owned Merchant master editor was found in the inspected persistence/UI paths. Do not port name-based persistence. Reuse the established production stable-ID maintenance/refresh approach instead.
+
+Narrow S4C prerequisite repair: Journal previously projected Merchant ID without its name when reopening a transaction, making inactive historical assignments blank. TransactionView now carries the current Merchant name; reference refresh carries company-owned retained Merchant labels separately from active choices. Resolve existing selections by ID against those labels, including a rename and deactivation in one save, without offering inactive merchants for new selection or changing mixed line assignments. Existing constructors remain compatible. Regression coverage belongs to this slice.
+
+
+### P24-S4C local implementation and verification handoff
+
+Implemented company-owned MerchantAdminService, immutable command/view, atomic authenticated creation/update audit, bounded trimmed-name validation, duplicate-name checks including inactive records, exact-ID ownership checks and company-serialized concurrent creation. The existing schema and portable identities are retained. MerchantsPanel provides New/Edit/Save/Refresh, name/notes search, active lifecycle, draft protection, permissions, table-state binding, remembered dividers, overflow scrolling and hover tooltips. Accounting navigation, production factory/service bundle, global commands and Journal maintenance/return refresh are wired. No later settlement work is included.
+
+The directly blocking historical-label defect is repaired narrowly: TransactionView.Line carries Merchant name, and Journal reference refresh resolves current retained labels by stable ID separately from active new-choice lists. Mixed line assignments and draft dirty state remain intact. Existing projection constructors are compatible. Service regression covers restart, mixed canonical balanced lines, inactive names, reversal, and portable SCLX master/line-link round trip. No SCLX format/policy change or migration. Five Merchant service tests and two JavaFX tests are added; both JavaFX cases are included in the CI Xvfb gate.
+
+Actual local validation: Java 17 compilation of all production and test sources passed using cached dependency jars (two pre-existing ReportLibraryPanel varargs warnings). Initial focused run: 38 tests found, 33 passed, five aborted for unavailable DISPLAY, zero failures. Broader ownership/correction/authorization/SCLX/source-policy regression run: 78 found, 75 passed, three display-dependent tests aborted, zero failures. These runs overlap and are not unique-test totals. The fifth Merchant service test deliberately rejects the audit insert after Merchant flush and proves the entire update rolls back. After final naming/comment and UI stress-assertion refinements, all sources compiled again. Native JavaFX assertions remain unexecuted here. `mvn clean verify` was attempted and exited 127 because Maven is not installed. This is not a Maven or desktop visual pass. No known application failure from executed checks; full Maven, Xvfb and owner desktop acceptance are outstanding. Final diff whitespace check passed.
+
+Documentation: [Merchant maintenance](accounting/merchant-maintenance.md), [owner acceptance](P24-S4C-user-testing.md), interface-operation matrix and editor guidelines updated alongside this plan. Branch `codex/P24-S4C-merchant-maintenance`; no PR or remote publication yet. S4C remains VERIFYING and S4D remains BLOCKED until S4C is merged. Next exact action: after explicit owner publication authorization under AGENTS.md, reproduce the reviewed local commit sequence through authenticated Git/GitHub transport, confirm matching tree hashes and remote/PR head, create a draft PR, run/inspect final-head Maven PR Tests including MerchantsPanelTest under Xvfb, correct any failure, and update the PR/plan with actual CI evidence. Owner desktop acceptance and separate merge authorization follow.

@@ -100,3 +100,8 @@ Donor review at `NonprofitAccounting` commit `c697630ec1f784ebe8338d7300da6c9ac8
 ## P24-S4B Payee maintenance
 
 Journal exposes Payees / Counterparties maintenance. Return to Journal refreshes active choices without discarding entry lines, selected Payee identity or dirty state. Existing inactive Payees remain valid historical selections; they are omitted from new choices. Master editing uses the existing Counterparty IDs and portable identity, with audited saves and deactivation instead of physical deletion. Supplemental counterparty text remains narrative. See [Counterparty maintenance](../accounting/counterparty-maintenance.md).
+
+
+## P24-S4C Merchant maintenance
+
+Journal exposes Merchants maintenance and refreshes active choices on return without discarding draft headers, amounts, individual line references or dirty state. Merchant is an optional split-level dimension; mixed merchants remain independent. Historical inactive assignments display their current master name on reopen. Existing selected IDs resolve refreshed labels against a separate company-owned retained-label projection, while choice lists contain active merchants only. Name/notes maintenance uses the existing Merchant IDs and portable identity, with audited saves and a visible deactivation/history explanation. See [Merchant maintenance](../accounting/merchant-maintenance.md) and [acceptance](../P24-S4C-user-testing.md).
