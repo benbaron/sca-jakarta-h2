@@ -429,6 +429,9 @@ public final class JournalWorkspacePanel implements AppPanel
         events.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.ACTIVITIES, ""));
         Button funds = new Button("Funds");
         funds.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.FUNDS, ""));
+        Button counterparties = new Button("Payees / Counterparties");
+        counterparties.setId("journalCounterparties");
+        counterparties.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.COUNTERPARTIES, ""));
         Button budgetCategories = new Button("Budget Categories");
         budgetCategories.setId("journalBudgetCategories");
         budgetCategories.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.BUDGET_CATEGORIES, ""));
@@ -437,7 +440,7 @@ public final class JournalWorkspacePanel implements AppPanel
         javafx.scene.layout.FlowPane controls = new javafx.scene.layout.FlowPane(8, 6,
                 new Label("Fund"), fundChoiceSearch, selectedFund, applyFund,
                 new Label("Event / Activity"), eventChoiceSearch, selectedEvent, applyEvent, clearEvent,
-                refresh, events, funds, budgetCategories);
+                refresh, events, funds, budgetCategories, counterparties);
         updateTagActions();
         ScrollPane scroll = scrollable(new VBox(4, help, controls), true);
         scroll.setId("journalTaggingScroll");
@@ -630,6 +633,7 @@ public final class JournalWorkspacePanel implements AppPanel
 
     private Node buildAdditionalDetailsRegion()
     {
+        payeeBox.setId("journalPayee");
         payeeBox.setConverter(new OptionConverter());
         bankAccountBox.setConverter(new OptionConverter());
         payeeBox.setMaxWidth(Double.MAX_VALUE);

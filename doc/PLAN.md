@@ -1,12 +1,12 @@
 ---
-plan_version: 321
+plan_version: 322
 active_phase: P24
-active_slice: P24-S4A
+active_slice: P24-S4B
 active_status: VERIFYING
-active_branch: codex/P24-S4A-budget-category-maintenance
-active_pull_request: 359
-active_head: 1b32e410aa83cd80f6f1527126782f98ac9dbaa2
-next_action: "Inspect final-head CI for draft PR #359 and complete owner desktop acceptance; do not merge until separately authorized."
+active_branch: codex/P24-S4B-counterparty-maintenance
+active_pull_request: 360
+active_head: 48ddd15910866304f700caa10181fe3786d556e5
+next_action: "Inspect final-head Maven/JavaFX CI for draft PR #360, repair failures, and complete owner desktop acceptance before separately authorized merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -36,7 +36,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
-| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S3 complete; P24-S4A IN_PROGRESS |
+| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S4A merged; P24-S4B VERIFYING |
 | P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is VERIFYING. Conditional P27-S5 remains unadopted.
+P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is merged; P24-S4B is VERIFYING. Conditional P27-S5 remains unadopted.
 
 ## 10. Archived proposal and adoption
 
@@ -678,8 +678,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P24-S2 | Make Fund/Event tagging obvious and reliable (G14) | DONE | P24-S1 merged; owning contract and D01–D10 gates as applicable |
 | P24-S3 | Attribute generated inventory costs (G6) | DONE | P24-S2 merged; owning contract and D01–D10 gates as applicable |
 | P24-S4 | Complete lookup maintenance (G8) | IN_PROGRESS | P24-S3 merged; owning contract and D01–D10 gates as applicable |
-| P24-S4A | Budget Category maintenance | VERIFYING | P24-S3 merged; A08 category workflow |
-| P24-S4B | Payee/Counterparty maintenance | BLOCKED | P24-S4A merged; A08 party workflow |
+| P24-S4A | Budget Category maintenance | DONE | P24-S3 merged; A08 category workflow |
+| P24-S4B | Payee/Counterparty maintenance | VERIFYING | P24-S4A merged; A08 party workflow |
 | P24-S4C | Merchant maintenance | BLOCKED | P24-S4B merged; A08 merchant workflow |
 | P25-S1 | Implement one internal fund-transfer operation (G7) | BLOCKED | P24-S4 merged; owning contract and D01–D10 gates as applicable |
 | P25-S2 | Add structured payment/check references (G9) | BLOCKED | P25-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -1038,3 +1038,41 @@ Owner explicitly authorized publication. Draft [PR #359](https://github.com/benb
 - Local `abe69455bf4882a74542bf9c71d3664b38fe23b1` → remote `1b32e410aa83cd80f6f1527126782f98ac9dbaa2`, tree `9b252c80d4d20a1628c3964140bf80d6b431a044`.
 
 Remote main remained `e5570f2d413df853a684f93db8a59616dad53321`; the branch was created without force updates. The draft PR remains open and unmerged. Inspect its successor final-head CI and complete the owner desktop acceptance in `doc/P24-S4A-user-testing.md`. Do not mark S4A or P24-S4 DONE until the change is merged into current `main` and those gates are satisfied.
+
+
+## 27. P24-S4A merge reconciliation and P24-S4B selection — 2026-10-06 (America/Denver)
+
+Owner selected S4B with “ok. proceed” after the repository rescan. PR #359 was merged by the owner on 2026-10-02 (America/Denver) at `9eeb4c239630a721d3c99ec93b49bfbb9f7b6dd3`, now current main. Final-head Maven PR Tests run [37092325277](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37092325277) completed successfully for `3d72b08e7e15e798d2d103055801c5becc44109a`. No PR remains open. The previous VERIFYING controller was stale. Owner merge and subsequent selection are the acceptance/advancement evidence; no additional desktop evidence is invented. S4A is DONE; S4B begins on fresh `codex/P24-S4B-counterparty-maintenance` from that main. S4C stays BLOCKED.
+
+Inspected Counterparty mapping/kind/portable identity, company ownership, TransactionEntryService and reference-data service, Journal refresh, SCLX parties, Budget Category service/panel conventions, routing, authorization, and UI rules. Baseline production compilation passed with Java 17 using cached dependencies. Maven executable is unavailable; full Maven verification is not yet claimed.
+
+Design: keep Counterparty as the sole Payee authority. Add company-scoped immutable maintenance projections and audited stable-ID create/edit, company locking and case-insensitive name duplicate checks, contact field bounds, active/inactive retention, production maintenance navigation and draft-preserving Journal choice refresh. Existing SCLX identities and import behavior stay authoritative. No schema or ledger change. Retain all parties instead of hard deletion, with a visible deactivation/history explanation. Merchant remains S4C. Governing maintenance contract: [Counterparty maintenance](accounting/counterparty-maintenance.md).
+
+Donor review: `NonprofitAccounting` at `c697630ec1f784ebe8338d7300da6c9ac801b180` uses `CounterpartySyncAdapter` to merge/delete parties by name/kind from legacy Person/Donor records. That creates a second authority and can delete history, so it is not imported. Production Counterparty stable/portable IDs and company ownership remain the sole authority. UI refresh intent follows the established production Journal mechanism.
+
+
+### P24-S4B implementation and verification handoff
+
+Implemented audited company-scoped CounterpartyAdminService, immutable command/view, name/contact/kind validation and serialized duplicate checks. Added Payees / Counterparties maintenance with search/sort, New/Edit Selected/Save/Refresh, contact/lifecycle fields, discard protection, visible history-retention explanation, resizable scrolling regions, company table/divider state, tooltips and permission gates. Wired Accounting navigation, PanelFactory/global commands, UiServiceRegistry and Journal maintenance/return refresh. No migration or interchange source changes. Added service, concurrent duplicate, identity/restart, authorization/ownership, GUI draft/geometry and Journal choice-refresh regressions; both new GUI cases are in the CI Xvfb gate.
+
+Actual verification:
+
+- Current main baseline production compilation passed with Java 17; final production and test-source compilation also passed using cached dependencies and the installed Java compiler module. Existing ReportLibrary varargs warnings remain unchanged.
+- JUnit launcher focused verification: **35 started, 30 successful, zero failures, five display-dependent aborts**. Includes CounterpartyAdminServiceTest (four successful), TransactionEntryServiceTest, SclxLifecycleRoundTripTest, SclxPortableIdentityTest and command capability tests. Three capability GUI tests and both CounterpartiesPanelTest cases require a display and were not executed here. No desktop or Xvfb pass is claimed.
+- First new ownership assertion expected IllegalArgumentException; the established ownership guard returns CompanyOwnershipException. Corrected the assertion to the existing contract; subsequent tests passed. No production ownership behavior was changed.
+- `mvn clean verify` exited 127 because Maven is unavailable. Attempt to obtain Maven from Maven Central timed out under this runtime's network restrictions. Full Maven, exact published-head GitHub CI and native owner acceptance remain pending.
+- Final diff review, documentation-link validation and `git diff --check` passed. Archived proposal unchanged.
+
+Status: VERIFYING, local branch `codex/P24-S4B-counterparty-maintenance`, based on main `9eeb4c239630a721d3c99ec93b49bfbb9f7b6dd3`; no PR or GitHub S4B result. User testing: [P24-S4B](P24-S4B-user-testing.md). Next: after explicit publication authorization under AGENTS §5 Step 6, confirm local/remote state, publish the reviewed sequence without force, create a draft PR, inspect exact-head Maven/Xvfb checks and fix failures. Owner desktop acceptance and merge remain required. S4C remains BLOCKED.
+
+Reviewed implementation commit: `5dc0b20a501292ad5542bc6a05045774c3de2c94`. This documentation-only successor records its head for publication; `git rev-parse HEAD` identifies the final local tip. Both commits must be published in order with matching trees when using connected-service transport.
+
+
+### P24-S4B authorized publication — 2026-10-06 (America/Denver)
+
+Owner explicitly authorized publication. Draft [PR #360](https://github.com/benbaron/sca-jakarta-h2/pull/360) is open from `codex/P24-S4B-counterparty-maintenance` to main. Current main remained `9eeb4c239630a721d3c99ec93b49bfbb9f7b6dd3`. Connected publication preserved the reviewed commit messages, order and exact trees:
+
+- Local `5dc0b20a501292ad5542bc6a05045774c3de2c94` → remote `8a1aeb9d5887b1167ee04e5b50bb6ee8e3b1c8a5`; tree `22653cf3255637e4a9c8ba52d0c8e889c20e00f1`.
+- Local `03fd833bbda8b6241855be53fe8e4b0b65372211` → remote `48ddd15910866304f700caa10181fe3786d556e5`; tree `20862bcb69519bc7e500b6d80aa3587b4062627c`.
+
+The new branch was created at the verified publication head, without force updates. This documentation-only successor records PR/authorization; it requires final-head CI. At publication, CI and both display-dependent CounterpartiesPanelTest cases remain pending. Inspect Maven PR Tests for the final PR head, repair failures, and record the exact workflow evidence in the PR. Owner desktop acceptance using P24-S4B-user-testing.md remains required. S4B is VERIFYING, unmerged; S4C remains BLOCKED. No S4B GitHub pass or native desktop result is claimed by this snapshot.

@@ -95,3 +95,8 @@ Event appears beside Fund in the default column order. Existing company column I
 Saved-entry filters match names/codes case-insensitively, including inactive references. When both Fund and Event are supplied, at least one split must match both. Filtering occurs before the 500-row Journal limit. Results show complete transactions, including untagged or differently tagged lines; displayed amounts are not Fund/Event subtotals. Blank filters include untagged transactions. Event Accounting remains the accounting-summary destination. No SCLX import policy, schema or correction rule changes in this slice.
 
 Donor review at `NonprofitAccounting` commit `c697630ec1f784ebe8338d7300da6c9ac801b180`: `JournalEntryWorkspaceFX.configureFundSelector/refreshFundChoices` refreshes a name-based associated-fund selector while retaining its selection. We retain that refresh intent using the production service and stable IDs; a transaction-level name field would lose intentional multi-fund/multi-event splits and is not imported.
+
+
+## P24-S4B Payee maintenance
+
+Journal exposes Payees / Counterparties maintenance. Return to Journal refreshes active choices without discarding entry lines, selected Payee identity or dirty state. Existing inactive Payees remain valid historical selections; they are omitted from new choices. Master editing uses the existing Counterparty IDs and portable identity, with audited saves and deactivation instead of physical deletion. Supplemental counterparty text remains narrative. See [Counterparty maintenance](../accounting/counterparty-maintenance.md).
