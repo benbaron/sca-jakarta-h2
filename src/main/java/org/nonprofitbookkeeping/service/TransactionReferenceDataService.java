@@ -54,7 +54,10 @@ public class TransactionReferenceDataService
                             .map(m -> TransactionLineEditorModel.option(m.getId(), "", m.getName())).toList(),
                     em.createQuery("from Counterparty c where c.company = :company and c.active = true order by c.displayName", Counterparty.class)
                             .setParameter("company", company).getResultList().stream()
-                            .map(c -> TransactionLineEditorModel.option(c.getId(), "", c.getDisplayName())).toList());
+                            .map(c -> TransactionLineEditorModel.option(c.getId(), "", c.getDisplayName())).toList(),
+                    em.createQuery("from Merchant m where m.company = :company order by m.name, m.id", Merchant.class)
+                            .setParameter("company", company).getResultList().stream()
+                            .map(m -> TransactionLineEditorModel.option(m.getId(), "", m.getName())).toList());
         }
     }
 }

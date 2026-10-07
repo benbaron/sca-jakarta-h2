@@ -33,6 +33,7 @@ import org.nonprofitbookkeeping.service.BankConfigurationService;
 import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService;
 import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
 import org.nonprofitbookkeeping.service.CounterpartyAdminService;
+import org.nonprofitbookkeeping.service.MerchantAdminService;
 import org.nonprofitbookkeeping.service.BudgetCategoryLookupService;
 import org.nonprofitbookkeeping.service.BudgetPlanService;
 import org.nonprofitbookkeeping.service.CompanyAdminService;
@@ -106,6 +107,7 @@ public final class UiServiceRegistry
     public static FundAdminService fundAdmin() { return services().fundAdmin(); }
     public static ActivityAdminService activityAdmin() { return services().activityAdmin(); }
     public static CounterpartyAdminService counterpartyAdmin() { return services().counterpartyAdmin(); }
+    public static MerchantAdminService merchantAdmin() { return services().merchantAdmin(); }
     public static BudgetCategoryAdminService budgetCategoryAdmin() { return services().budgetCategoryAdmin(); }
     public static BudgetPlanService budgetPlan() { return services().budgetPlan(); }
     public static BankConfigurationService bankConfiguration() { return services().bankConfiguration(); }
@@ -337,6 +339,7 @@ public final class UiServiceRegistry
                 new ActivityAdminService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
                 new BudgetCategoryAdminService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
                 new CounterpartyAdminService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
+                new MerchantAdminService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
                 new BudgetPlanService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
                 new BankConfigurationService(jpa, authorizationGuard),
                 new FixedAssetService(
@@ -539,6 +542,7 @@ public final class UiServiceRegistry
             ActivityAdminService activityAdmin,
             BudgetCategoryAdminService budgetCategoryAdmin,
             CounterpartyAdminService counterpartyAdmin,
+            MerchantAdminService merchantAdmin,
             BudgetPlanService budgetPlan,
             BankConfigurationService bankConfiguration,
             FixedAssetService fixedAssets,

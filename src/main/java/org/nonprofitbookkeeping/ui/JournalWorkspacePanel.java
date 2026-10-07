@@ -429,6 +429,9 @@ public final class JournalWorkspacePanel implements AppPanel
         events.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.ACTIVITIES, ""));
         Button funds = new Button("Funds");
         funds.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.FUNDS, ""));
+        Button merchants = new Button("Merchants");
+        merchants.setId("journalMerchants");
+        merchants.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.MERCHANTS, ""));
         Button counterparties = new Button("Payees / Counterparties");
         counterparties.setId("journalCounterparties");
         counterparties.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.COUNTERPARTIES, ""));
@@ -440,7 +443,7 @@ public final class JournalWorkspacePanel implements AppPanel
         javafx.scene.layout.FlowPane controls = new javafx.scene.layout.FlowPane(8, 6,
                 new Label("Fund"), fundChoiceSearch, selectedFund, applyFund,
                 new Label("Event / Activity"), eventChoiceSearch, selectedEvent, applyEvent, clearEvent,
-                refresh, events, funds, budgetCategories, counterparties);
+                refresh, events, funds, budgetCategories, counterparties, merchants);
         updateTagActions();
         ScrollPane scroll = scrollable(new VBox(4, help, controls), true);
         scroll.setId("journalTaggingScroll");
@@ -823,7 +826,7 @@ public final class JournalWorkspacePanel implements AppPanel
             row.setFund(resolveOption(row.getFund(), referenceData.funds()));
             row.setBudget(resolveOption(row.getBudget(), referenceData.budgetCategories()));
             row.setActivity(resolveOption(row.getActivity(), referenceData.activities()));
-            row.setMerchant(resolveOption(row.getMerchant(), referenceData.merchants()));
+            row.setMerchant(resolveOption(row.getMerchant(), referenceData.retainedMerchants()));
         }
     }
 
@@ -980,7 +983,7 @@ public final class JournalWorkspacePanel implements AppPanel
         row.setFund(option(line.fundId(), line.fundCode(), line.fundName()));
         row.setBudget(option(line.budgetCategoryId(), "", ""));
         row.setActivity(option(line.activityId(), line.activityCode(), line.activityName()));
-        row.setMerchant(option(line.merchantId(), "", ""));
+        row.setMerchant(option(line.merchantId(), "", line.merchantName()));
         row.setDebit(line.debit().signum() == 0 ? "" : normalizeMoney(line.debit().toPlainString()));
         row.setCredit(line.credit().signum() == 0 ? "" : normalizeMoney(line.credit().toPlainString()));
         row.setNmr(line.nmr());
@@ -1316,6 +1319,7 @@ public final class JournalWorkspacePanel implements AppPanel
     {
         row.fundProperty().addListener((obs, oldValue, newValue) -> markDirty());
         row.activityProperty().addListener((obs, oldValue, newValue) -> markDirty());
+        row.merchantProperty().addListener((obs, oldValue, newValue) -> markDirty());
         row.nmrProperty().addListener((obs, oldValue, newValue) -> markDirty());
     }
 

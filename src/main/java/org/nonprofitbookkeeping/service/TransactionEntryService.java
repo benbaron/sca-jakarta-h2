@@ -834,7 +834,8 @@ public class TransactionEntryService
                     AccountClassification.isBank(split.getAccount()),
                     split.isBankCleared(), split.getBankClearedOn(), reconciliationSessions.get(split.getId()),
                     split.getActivity() == null ? null : split.getActivity().getCode(),
-                    split.getActivity() == null ? null : split.getActivity().getName()));
+                    split.getActivity() == null ? null : split.getActivity().getName(),
+                    split.getMerchant() == null ? null : split.getMerchant().getName()));
         }
         List<TxnSupplementalLine> supplementalEntities = em.createQuery(
                         "select l from TxnSupplementalLine l left join fetch l.txnSplit where l.txn = :txn order by l.lineOrder, l.id", TxnSupplementalLine.class)
