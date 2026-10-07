@@ -1,12 +1,12 @@
 ---
-plan_version: 325
+plan_version: 326
 active_phase: P24
 active_slice: P24-S4C
 active_status: VERIFYING
 active_branch: codex/P24-S4C-merchant-maintenance
-active_pull_request: null
-active_head: 8c5b5a36b163f5946def133b1b4a52cbe5eaee90
-next_action: "Obtain explicit S4C publication authorization, publish the reviewed branch as a draft PR, and verify final-head Maven/Xvfb CI; owner desktop acceptance and merge remain pending."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/361
+active_head: 849bcf95a3af399e51d13126baf5332d3a18fa7f
+next_action: "Verify final published head of draft PR #361 with Maven PR Tests including MerchantsPanelTest under Xvfb, repair any failure, and record actual results; owner desktop acceptance and merge remain pending."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1116,3 +1116,17 @@ Actual local validation: Java 17 compilation of all production and test sources 
 Documentation: [Merchant maintenance](accounting/merchant-maintenance.md), [owner acceptance](P24-S4C-user-testing.md), interface-operation matrix and editor guidelines updated alongside this plan. Branch `codex/P24-S4C-merchant-maintenance`; no PR or remote publication yet. S4C remains VERIFYING; P25-S1 remains BLOCKED until P24-S4 is accepted and merged. Next exact action: after explicit owner publication authorization under AGENTS.md, reproduce the reviewed local commit sequence through authenticated Git/GitHub transport, confirm matching tree hashes and remote/PR head, create a draft PR, run/inspect final-head Maven PR Tests including MerchantsPanelTest under Xvfb, correct any failure, and update the PR/plan with actual CI evidence. Owner desktop acceptance and separate merge authorization follow.
 
 Reviewed implementation/source head `8c5b5a36b163f5946def133b1b4a52cbe5eaee90`, tree `7015e61f39939f8429d8c857cc66f324e532290e`. The following documentation-only handoff commit records this source head; resolve `git rev-parse HEAD` for the publication tip. There have been no application changes after this verified source head.
+
+
+### P24-S4C authorized draft PR publication — 2026-10-07
+
+Owner explicitly authorized all three requested actions: publish branch, open draft PR and verify GitHub CI. Current remote main remains `e60c8211094548f36a5df1d4ee76db74c9c9d580`; the fresh S4C branch was absent and the local worktree was clean before publication. Published the reviewed sequence without force-updating, with every tree matching its corresponding local commit. Draft [PR #361](https://github.com/benbaron/sca-jakarta-h2/pull/361) targets main; verified initial branch and PR head `849bcf95a3af399e51d13126baf5332d3a18fa7f`.
+
+| Local commit | Published commit | Matching tree |
+|---|---|---|
+| `850d0b54985bf8e5074042975f282fd2ac2a760e` | `16082457f058a2e215f7dae86dd7ef079e15fff4` | `9f33a7ac2352e96cbe496d0711483244356f35f8` |
+| `11dd7e6eb75df7061d4b92eae422c40e3a3ce4bf` | `855d1f6440631662d95c7a204c0e2835be8a12cc` | `4aa540d3bcd4b80b454dfcf31fd5941ea1ebe6d7` |
+| `8c5b5a36b163f5946def133b1b4a52cbe5eaee90` | `b9737623430b7a084bcc86ad81573735d5e3dc9d` | `7015e61f39939f8429d8c857cc66f324e532290e` |
+| `5c0f3497e18411fb8b14d08ead7a5e9e90561f3a` | `849bcf95a3af399e51d13126baf5332d3a18fa7f` | `994771c8cf9c725f41bfd467ca63eb954ed34c49` |
+
+This documentation-only publication ledger follows the reviewed implementation and will be fast-forwarded under the same authorization; active_head records its known parent because a commit cannot embed its own hash. Verify the resulting branch/PR tip and run CI against that final published head. Full Maven, Xvfb and owner desktop results are still pending at this checkpoint; S4C is VERIFYING, not DONE. After final CI, record evidence locally and in the PR body without publishing another evidence-only successor that would replace the verified head. No application changes were introduced by this publication ledger.
