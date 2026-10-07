@@ -1,12 +1,12 @@
 ---
-plan_version: 322
+plan_version: 323
 active_phase: P24
-active_slice: P24-S4B
-active_status: VERIFYING
-active_branch: codex/P24-S4B-counterparty-maintenance
-active_pull_request: 360
-active_head: 8c4b7b6c2b98d0024b48afb426456fb4289d6852
-next_action: "Owner desktop acceptance for draft PR #360, then separate merge authorization; S4C stays blocked until S4B merge."
+active_slice: P24-S4C
+active_status: READY
+active_branch: null
+active_pull_request: null
+active_head: null
+next_action: "Start P24-S4C Merchant maintenance from current main when the owner selects execution; carry S4B closeout forward."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -36,7 +36,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
-| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S4A merged; P24-S4B VERIFYING |
+| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S4B merged; P24-S4C READY |
 | P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is merged; P24-S4B is VERIFYING. Conditional P27-S5 remains unadopted.
+P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is merged; P24-S4B is DONE; P24-S4C is READY. Conditional P27-S5 remains unadopted.
 
 ## 10. Archived proposal and adoption
 
@@ -679,8 +679,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P24-S3 | Attribute generated inventory costs (G6) | DONE | P24-S2 merged; owning contract and D01–D10 gates as applicable |
 | P24-S4 | Complete lookup maintenance (G8) | IN_PROGRESS | P24-S3 merged; owning contract and D01–D10 gates as applicable |
 | P24-S4A | Budget Category maintenance | DONE | P24-S3 merged; A08 category workflow |
-| P24-S4B | Payee/Counterparty maintenance | VERIFYING | P24-S4A merged; A08 party workflow |
-| P24-S4C | Merchant maintenance | BLOCKED | P24-S4B merged; A08 merchant workflow |
+| P24-S4B | Payee/Counterparty maintenance | DONE | P24-S4A merged; A08 party workflow |
+| P24-S4C | Merchant maintenance | READY | P24-S4B merged; A08 merchant workflow |
 | P25-S1 | Implement one internal fund-transfer operation (G7) | BLOCKED | P24-S4 merged; owning contract and D01–D10 gates as applicable |
 | P25-S2 | Add structured payment/check references (G9) | BLOCKED | P25-S1 merged; owning contract and D01–D10 gates as applicable |
 | P25-S3 | Complete check exception and reconciliation workflows (G9) | BLOCKED | P25-S2 merged; owning contract and D01–D10 gates as applicable |
@@ -1083,3 +1083,10 @@ The new branch was created at the verified publication head, without force updat
 Final published head `8c4b7b6c2b98d0024b48afb426456fb4289d6852` passed [Maven PR Tests run 37560761479](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37560761479), job `112597449168`. Both full passes: 851 tests, zero failures/errors, 39 headless skips. Production Xvfb gate: 19 tests, zero failures/errors/skips, including both CounterpartiesPanelTest cases. Clean verify, repeat tests, production JavaFX route compliance and cleanup all succeeded. Source publication ledger `a04daad5982a3f209b6e09756cb913a23fbf7ec8` maps to remote final head with identical tree `1e5393072bc3823050a5f90bb20c642a0d8f5806`.
 
 PR #360 records the final result and owner testing link. This post-CI documentation handoff is local only, deliberately not published to avoid replacing the verified PR head with an unverified successor. No implementation change followed the successful CI head. Status remains VERIFYING; owner native desktop acceptance and separate merge authorization remain required. S4C stays BLOCKED. Preserve this closeout evidence when continuing from the merged PR or publishing a later documentation successor.
+
+
+### P24-S4B owner merge and P24-S4C readiness — 2026-10-06 (America/Denver)
+
+While final CI evidence was being recorded, owner `benbaron` merged PR #360 at `e60c8211094548f36a5df1d4ee76db74c9c9d580` (2026-10-07 02:19:43 UTC / 2026-10-06 20:19:43 America/Denver). Current origin/main was fetched and confirmed at that merge. Final PR-head CI passed as recorded above. Owner merge is the acceptance/advancement evidence; no separate desktop evidence is invented. S4B is DONE. S4C Merchant maintenance is the first unblocked successor, READY and not started; P24-S4 remains IN_PROGRESS.
+
+This documentation-only closeout is local on fresh `codex/P24-S4B-closeout` based on the confirmed merge, with the local final-CI evidence cherry-picked as `ac2accb`. The merged implementation branch is not reused. No closeout PR or S4C implementation exists. Next: when the owner selects S4C, start a fresh branch from current main, carry this closeout ledger forward, inspect Merchant authority and consumers, and implement that one family. Diff whitespace checks passed; no application changes or repeated application tests were required for closeout.
