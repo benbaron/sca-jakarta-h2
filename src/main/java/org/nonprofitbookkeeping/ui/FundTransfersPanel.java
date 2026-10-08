@@ -122,7 +122,9 @@ public final class FundTransfersPanel implements AppPanel
         String[] ids = {"Date", "From", "To", "Allocation", "Equity", "Amount", "Explanation"};
         for (int i = 0; i < inputs.length; i++)
         {
-            fields.add(new Label(labels[i]), 0, i);
+            Label fieldLabel = new Label(labels[i]);
+            fieldLabel.setMinWidth(Region.USE_PREF_SIZE);
+            fields.add(fieldLabel, 0, i);
             fields.add(inputs[i], 1, i);
             inputs[i].setId("fundTransfers" + ids[i]);
             UiPermissionGate.gate(inputs[i], ApplicationPermission.BOOKKEEPING_WRITE, "Enter transfer details");

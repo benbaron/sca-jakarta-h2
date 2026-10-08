@@ -174,7 +174,17 @@ class FundTransfersPanelTest
             }
             Thread.sleep(30);
         }
-        fail("Timed out waiting for transfer panel layout");
+        String geometry = FxTestSupport.onFx(() ->
+        {
+            ScrollPane editor = (ScrollPane) panel.root().lookup("#fundTransfersEditorScroll");
+            var content = (javafx.scene.layout.Region) editor.getContent();
+            return "content=" + content.getLayoutBounds() + ", viewport=" + editor.getViewportBounds()
+                    + ", minWidth=" + content.minWidth(-1) + ", prefWidth=" + content.prefWidth(-1)
+                    + ", bars=" + editor.lookupAll(".scroll-bar").stream()
+                    .filter(ScrollBar.class::isInstance).map(ScrollBar.class::cast)
+                    .map(bar -> bar.getOrientation() + ":" + bar.isVisible()).toList();
+        });
+        fail("Timed out waiting for transfer panel layout: " + geometry);
     }
 
     private Button button(String suffix)

@@ -1,11 +1,11 @@
 ---
-plan_version: 335
+plan_version: 336
 active_phase: P25
 active_slice: P25-S1
 active_status: VERIFYING
 active_branch: codex/P25-S1-internal-fund-transfers
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/362
-active_head: 81fde3393c3e7315cd7e7b718736bff9e9def8ca
+active_head: 170dcecdd854d505e944f06c5e69b4c1b88b9cd2
 next_action: "Inspect actual final published head of draft PR #362 with Maven/headless/Xvfb CI, repair any failure, then complete owner desktop acceptance and separately authorized merge. D03 continues to gate legal-entity mappings."
 ---
 
@@ -1208,3 +1208,10 @@ Narrow correction: replace the new FundTransfersPanel wildcard imports with expl
 ### P25-S1 explicit import completion
 
 The import correction local `74aa82ec3d7600dec99a54fdfecca511d5fc95c3` published as `81fde3393c3e7315cd7e7b718736bff9e9def8ca`, matching tree `1ecf3ee52422a8a78b25c5bfebb60a8f61f98158`, was verified on branch/PR. [Run 37714081173](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37714081173), job `113106439364`, confirmed the GridPane source-lookup error was removed but main compilation found the omitted javafx.scene.control.Control import for the gated input array. Add that explicit import; no behavior or tests change. Full actual-head CI remains required; tests/Xvfb were skipped in this run.
+
+
+### P25-S1 first complete Maven passes and Xvfb geometry correction
+
+Import completion local `b336ecb6d135a994cacc9d1682712eb405454478` published as `170dcecdd854d505e944f06c5e69b4c1b88b9cd2`, matching tree `fe2dc19066ad84ea9bd98f8b81fdc38f80effa88`, with branch/PR head verified. [Run 37714257844](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37714257844), job `113106999871`: clean headless Maven verify and repeat tests both passed, each 873 tests with zero failures/errors and 43 headless skips. Production Xvfb ran 23 tests: 22 passed, one failed, no errors/skips. The real transfer save/retry/draft/Journal/reversal/permission test passed; scaled transfer-editor two-axis overflow timed out.
+
+Narrow geometry correction: ordinary form Labels could compress below their preferred text width, leaving no horizontal overflow at the test's narrow/scaled viewport. Retain each field label's natural preferred minimum width while allowing the surrounding panel and ScrollPane to shrink. Existing selector minimum/preferred widths and independent dividers remain; real horizontal scrolling now exposes full labels and controls. Add actual content/viewport/minimum/preferred widths and scrollbar visibility to the geometry test's timeout diagnostic. This preserves the two-axis assertion instead of widening the panel or weakening the test. Publish and rerun final-head full Maven/Xvfb checks; native owner desktop acceptance remains pending.
