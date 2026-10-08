@@ -1,12 +1,12 @@
 ---
-plan_version: 328
-active_phase: P24
-active_slice: P24-S4C
-active_status: VERIFYING
-active_branch: codex/P24-S4C-merchant-maintenance
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/361
-active_head: 6ebaea8ec851ff3bed65dbbcd07851873d174bec
-next_action: "Owner desktop acceptance using doc/P24-S4C-user-testing.md and separate merge authorization for draft PR #361; after confirmed merge, close P24-S4 and ready P25-S1 from current main."
+plan_version: 329
+active_phase: P25
+active_slice: P25-S1
+active_status: READY
+active_branch: null
+active_pull_request: null
+active_head: null
+next_action: "When execution resumes, start P25-S1 internal fund-transfer inspection on a fresh branch from current main, carrying the P24 closeout; preserve D03 as a gate before any legal-entity mappings."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -36,8 +36,8 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
-| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S4B merged; P24-S4C VERIFYING |
-| P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
+| P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
+| P25 | Transfers, payment references, reporting classification | READY — P25-S1 internal transfers; relevant policy gates retained |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is merged; P24-S4B is DONE; P24-S4C is VERIFYING. Conditional P27-S5 remains unadopted.
+P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is merged; P24-S4B and P24-S4C are DONE; P24 is complete. P25-S1 is READY for internal fund transfers; unresolved D03 remains a gate before entity mappings. Conditional P27-S5 remains unadopted.
 
 ## 10. Archived proposal and adoption
 
@@ -677,11 +677,11 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P24-S1 | Make event creation and discovery explicit (G14) | DONE | P23-S5 merged; owning contract and D01–D10 gates as applicable |
 | P24-S2 | Make Fund/Event tagging obvious and reliable (G14) | DONE | P24-S1 merged; owning contract and D01–D10 gates as applicable |
 | P24-S3 | Attribute generated inventory costs (G6) | DONE | P24-S2 merged; owning contract and D01–D10 gates as applicable |
-| P24-S4 | Complete lookup maintenance (G8) | IN_PROGRESS | P24-S3 merged; owning contract and D01–D10 gates as applicable |
+| P24-S4 | Complete lookup maintenance (G8) | DONE | P24-S3 merged; owning contract and D01–D10 gates as applicable |
 | P24-S4A | Budget Category maintenance | DONE | P24-S3 merged; A08 category workflow |
 | P24-S4B | Payee/Counterparty maintenance | DONE | P24-S4A merged; A08 party workflow |
-| P24-S4C | Merchant maintenance | VERIFYING | P24-S4B merged; A08 merchant workflow |
-| P25-S1 | Implement one internal fund-transfer operation (G7) | BLOCKED | P24-S4 merged; owning contract and D01–D10 gates as applicable |
+| P24-S4C | Merchant maintenance | DONE | P24-S4B merged; A08 merchant workflow |
+| P25-S1 | Implement one internal fund-transfer operation (G7) | READY | P24-S4 merged; internal-only scope; D03 required before legal-entity mappings; other applicable acceptance gates retained |
 | P25-S2 | Add structured payment/check references (G9) | BLOCKED | P25-S1 merged; owning contract and D01–D10 gates as applicable |
 | P25-S3 | Complete check exception and reconciliation workflows (G9) | BLOCKED | P25-S2 merged; owning contract and D01–D10 gates as applicable |
 | P25-S4 | Implement the adopted NMR accounting contract (G10) | BLOCKED | P25-S3 merged; owning contract and D01–D10 gates as applicable |
@@ -1146,3 +1146,12 @@ Final published correction head `6ebaea8ec851ff3bed65dbbcd07851873d174bec` passe
 Correction source commit `106e890c6876dae2ec4fc911429af2e9f6af7ba4` maps to final published head with matching tree `a327f9f8fa15bc31519f8aafc709ed0fc7a24941`. Together with the four original commits and publication ledger recorded above, all six published commits retain reviewed messages/order and matching trees, with only expected-head fast-forward ref updates. PR description records actual final-head results and the initial failure/correction rationale.
 
 This post-CI evidence commit is **local only**, deliberately leaving the successful published head unchanged. No application change follows the verified source head. The worktree is clean after recording this handoff; `git rev-parse HEAD` identifies the documentation tip. Carry this evidence forward from confirmed main after owner merge. S4C remains VERIFYING, P24-S4 remains IN_PROGRESS, and P25-S1 stays BLOCKED. Next exact action: owner follows [acceptance notes](P24-S4C-user-testing.md), then separately authorizes/merges PR #361. On reported merge, fetch current main, verify PR merge and final CI head, close S4C/P24-S4, and select the first unblocked dependent slice. Do not merge or advance without that evidence.
+
+
+## 29. P24 completion and P25-S1 readiness — 2026-10-07 (America/Denver)
+
+Owner reported “tested and merged.” GitHub independently confirms owner `benbaron` merged PR #361 at `a9275ad1b9a970a084829d5659d792375ed196fb` on 2026-10-07 23:34:25 UTC / 17:34:25 America/Denver. Fetched origin/main and confirmed that merge as current main. PR final head `6ebaea8ec851ff3bed65dbbcd07851873d174bec` matches successful Maven PR Tests run `37629410014`: both full runs 858 tests, zero failures/errors, 41 headless skips; Xvfb 21 tests, zero failures/errors/skips. Owner testing statement supplies desktop acceptance; no additional device/scaling evidence is invented.
+
+P24-S4C and the Budget Category/Payee/Merchant P24-S4 family are DONE. All P24 slices are accepted and merged, so P24 is DONE. Clear obsolete active branch/PR/head fields and select P25-S1 as READY, not started. Its adopted contract is [internal fund transfers](P23-P28-runbook-correction-program.md#p25-s1--implement-one-internal-fund-transfer-operation-g7): one atomic operation linking canonical balanced accounting and existing FundTransfer reporting, with restriction, closed-period, duplicate/failure and reversal protections. A07 distinguishes internal reallocation, bank movement and inter-entity payment. D03 remains unresolved before legal-entity mappings; readiness for internal transfers does not resolve that policy or authorize external mapping implementation. P25-S2 and later slices stay BLOCKED.
+
+This documentation-only closeout is local on fresh `codex/P24-closeout`, based on the confirmed merge; the merged implementation branch is not reused. Preserved the local final-CI evidence commit `76f8c2d` by cherry-picking it as `165446e`. No closeout PR or P25 implementation branch exists. Validation: current-main ancestry, PR merge/final-head CI confirmation, scoped governing/acceptance dependency review and diff whitespace checks; no application changes or repeated application tests. Next exact action when the owner resumes execution: fetch current main, create a focused P25-S1 branch, carry this closeout forward, read the adopted G7/A07 and D03 contracts, inspect FundTransfer/FundAdminService/FundsPanel, canonical transaction/correction/ownership/authorization services, bank-transfer authority, semantic transfer report and relevant migrations/tests, then establish baseline before design.
