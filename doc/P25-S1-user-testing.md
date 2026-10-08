@@ -17,3 +17,6 @@ Funds now opens Fund Transfers, also reachable from navigation. Save creates one
 ## Automated evidence
 
 Service tests cover per-fund/company reconciliation, request restart/concurrency, overdraft/backdating, restrictions/ownership/accounts, period/authorization, generic correction guards, dated reversals and audit-failure rollback. V77-to-V78 in-memory upgrade preserves legacy rows and enforces unique new requests. SCLX round-trip checks canonical lines/reversal links and explicit missing-operational-link disclosure. Real JavaFX service/layout tests are included in the Xvfb CI route suite; this container has no display and cannot supply desktop visual acceptance.
+
+
+Final local evidence (2026-10-08): all main/test sources compiled with Java 17; focused regression 18/18 passed. Isolated full JUnit discovery found 904 tests: 873 started, 830 passed, 43 headless aborts, zero failures; 31 tests did not start after headless container aborts. Maven is absent (`mvn clean verify` exit 127), so Maven/Xvfb CI and desktop acceptance remain pending. Verified implementation commit: `0103def5449d69b6a527375fbad9ab6188b81981`.

@@ -1,12 +1,12 @@
 ---
-plan_version: 331
+plan_version: 332
 active_phase: P25
 active_slice: P25-S1
 active_status: VERIFYING
 active_branch: codex/P25-S1-internal-fund-transfers
 active_pull_request: null
-active_head: null
-next_action: "Finish the isolated local regression run, then obtain explicit P25-S1 publication authorization for a draft PR and actual-head Maven/Xvfb CI; owner desktop acceptance and merge remain pending. D03 continues to gate legal-entity mappings."
+active_head: 0103def5449d69b6a527375fbad9ab6188b81981
+next_action: "Obtain explicit P25-S1 publication authorization, publish the reviewed local commit sequence as a draft PR and run actual-head Maven/Xvfb CI; resolve failures, then await owner desktop acceptance and merge. D03 continues to gate legal-entity mappings."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1176,4 +1176,9 @@ Added the production FUND_TRANSFERS route, Funds action, service registry author
 
 Documents: [governing transfer contract](funds/internal-fund-transfers.md), [desktop acceptance notes](P25-S1-user-testing.md), interface operation matrix, editor guidelines, transaction lifecycle and SCLX specification. Tests cover accounting/report reconciliation, restart and concurrent retries/overdraw, future-date availability, restrictions/ancestors/ownership/accounts/authorization/periods, generic corrections, reversal chains and audit-failure atomic rollback. V77-to-V78 in-memory upgrade and untracked-history recovery preserve legacy facts/request uniqueness. The Xvfb CI list includes real FundTransfersPanel service/layout tests.
 
-Local baseline/final Maven commands are unavailable (`mvn: command not found`, exit 127); baseline and final all-main/all-test Java 17 compilation succeeds with the same two existing ReportLibraryPanel varargs warnings. A custom JUnit Platform 1.10.3 launcher uses cached project dependencies, with older cached Platform 1.9.3 jars excluded. Final focused regression: 18 tests started/successful, zero failures/aborts. Broad regression initially exposed replay failures in untracked-schema recovery; unapplied V78 now follows existing replay-safe migration conventions, and the recovery regression passes. A subsequent broad run hit only stale checksums in the earlier test-created default database; the final broad run uses an isolated JVM user.home and leaves that database untouched. Broad result pending at this implementation checkpoint. No GitHub publication or CI is claimed; owner desktop testing is pending.
+Local baseline/final Maven commands are unavailable (`mvn: command not found`, exit 127); baseline and final all-main/all-test Java 17 compilation succeeds with the same two existing ReportLibraryPanel varargs warnings. A custom JUnit Platform 1.10.3 launcher uses cached project dependencies, with older cached Platform 1.9.3 jars excluded. Final focused regression: 18 tests started/successful, zero failures/aborts. Broad regression initially exposed replay failures in untracked-schema recovery; unapplied V78 now follows existing replay-safe migration conventions, and the recovery regression passes. A subsequent broad run hit only stale checksums in the earlier test-created default database; the final broad run uses an isolated JVM user.home and leaves that database untouched. Final isolated broad regression completed: 904 tests discovered, 873 started, 830 successful, 43 aborted because the graphical toolkit/display is unavailable, zero failures; 12 headless containers aborted and their 31 tests did not start. This custom-launcher evidence is not a Maven or Xvfb success claim. No GitHub publication or CI is claimed; owner desktop testing is pending.
+
+
+**Final local handoff:** P25-S1 VERIFYING on `codex/P25-S1-internal-fund-transfers`; implementation/verified code head `0103def5449d69b6a527375fbad9ab6188b81981`, based on merged main `a9275ad1b9a970a084829d5659d792375ed196fb`. Local sequence includes P24 evidence/closeout `82ce8a4`, `8cc7a71`, the implementation commit, then this documentation-only evidence commit (resolve final branch tip with `git rev-parse HEAD`; `active_head` identifies the verified implementation). PR is null/unpublished. The final tree/whitespace review is clean and intentional. Local application compilation and focused/broad JUnit runs pass; no unresolved functional failures from the completed local runs. `mvn clean verify` remains unavailable, graphical tests/owner desktop acceptance remain pending, and GitHub has not run this branch.
+
+Remaining exact action after explicit owner publication authorization: confirm current remote main and expected branch state, publish the complete reviewed local sequence through authenticated Git or the connected GitHub service without force updates, compare every remote tree to its local tree, create a draft P25-S1 PR, confirm its actual head and inspect the repository Maven/headless/Xvfb workflow. Repair any failures in this slice and record actual CI evidence; use [P25-S1 desktop acceptance](P25-S1-user-testing.md) for owner testing. Do not mark DONE or activate P25-S2 before confirmed merge and required acceptance. D03 is still unresolved for legal-entity mappings; no later-phase work is authorized by this handoff.
