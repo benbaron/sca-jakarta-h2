@@ -75,6 +75,7 @@ public class TransactionCorrectionService
                 ownership().ensureOwnedBy(em, company, txn, "Transaction");
                 requireEntered(txn);
                 requireNotFixedAssetLifecycleTransaction(em, transactionId, "edit transaction");
+                FundTransferIntegrityService.requireUnlinked(em, transactionId, "edit");
                 requireNotReconciled(em, transactionId, "edit transaction");
                 requireOpenRange(em, txn.getTxnDate(), "edit transaction");
                 requireOpenRange(em, transactionDate, "move transaction");
@@ -122,6 +123,7 @@ public class TransactionCorrectionService
                 ownership().ensureOwnedBy(em, company, txn, "Transaction");
                 requireEntered(txn);
                 requireNotFixedAssetLifecycleTransaction(em, transactionId, "delete transaction");
+                FundTransferIntegrityService.requireUnlinked(em, transactionId, "delete");
                 requireNotReconciled(em, transactionId, "delete transaction");
                 requireOpenRange(em, txn.getTxnDate(), "delete transaction");
 
@@ -169,6 +171,10 @@ public class TransactionCorrectionService
                 ownership().ensureOwnedBy(em, company, original, "Transaction");
                 requireEntered(original);
                 requireNotFixedAssetLifecycleTransaction(em, transactionId, "reverse transaction");
+                if (createReplacement)
+                {
+                    FundTransferIntegrityService.requireUnlinked(em, transactionId, "reverse and replace");
+                }
                 requireNotReconciled(em, transactionId, "reverse transaction");
                 requireOpenRange(em, reversalDate, "create reversal");
 
@@ -190,6 +196,7 @@ public class TransactionCorrectionService
                     em.persist(copySplit(split, reversal, split.getAmountSigned().negate()));
                 }
 
+                FundTransferIntegrityService.reverseLinked(em, company, original, reversal, auditActor);
                 original.setStatus("REVERSED");
                 original.touchUpdatedAt();
 
@@ -288,6 +295,7 @@ public class TransactionCorrectionService
         {
             em.persist(copySplit(split, reversal, split.getAmountSigned().negate()));
         }
+        FundTransferIntegrityService.reverseLinked(em, company, original, reversal, normalizedActor);
         original.setStatus("REVERSED");
         original.touchUpdatedAt();
         em.persist(audit(

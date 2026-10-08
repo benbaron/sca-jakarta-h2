@@ -349,6 +349,7 @@ public class TransactionEntryService
                     throw new PostingException("Only ENTERED transactions can be updated by the entry service.");
                 }
                 requireNotFixedAssetLifecycleTransaction(em, transactionId);
+                FundTransferIntegrityService.requireUnlinked(em, transactionId, "edit");
                 requireNotReconciled(em, transactionId, "update transaction");
                 requireOpenRange(em, txn.getTxnDate(), "update transaction");
                 requireOpenRange(em, command.date(), "update transaction");

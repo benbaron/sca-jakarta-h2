@@ -44,7 +44,8 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Asset Register | yes | yes | no | Stable asset identity and governed lifecycle operations. |
 | Inventory | yes | yes | no | Stable item identity and governed movement/lifecycle operations. |
 | Chart of Accounts | yes | yes | no | Stable account ID editing; code is mutable business data. |
-| Funds | yes | yes | no | Stable fund ID editing with protected delete/deactivation rules. |
+| Funds | yes | yes | no | Stable fund ID editing with protected delete/deactivation rules; Fund Transfers navigation preserves the Fund draft. |
+| Fund Transfers | yes | yes | no | Same-company internal allocations, retained history, dated reversal and Journal drill-through. Linked transfers cannot be edited/deleted; reverse then enter a corrected transfer. |
 | Events / Activities | yes | yes | no | New Event, name/code search and Edit over stable Activity IDs; referenced/interchange-linked history deactivates rather than deletes. |
 | Budget Editor | no | yes | no | Version creation/activation/archive remain explicit panel actions. |
 | Administration — Preferences | no | yes | no | Capabilities follow the selected inner tab. |
@@ -67,6 +68,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Asset Register | `AssetsRegisterPanel` | `FixedAssetService` | fixed-asset lifecycle/depreciation/correction services | Asset-linked transactions are domain-governed. |
 | Inventory | `InventoryPanel` | `InventoryService` | inventory movement/lifecycle services | Financial movements require Event or explicit Non-event, with independent optional Budget on the offset split; both lines retain the item Fund. Preview, history and reversal use canonical tags, and financial movements link atomically to canonical transactions. |
 | Chart of Accounts | `ChartOfAccountsPanel` | account/chart services | `AccountAdminService` | Stable account ID; deactivate instead of invented hard delete for referenced history. |
+| Fund Transfers | `FundTransfersPanel` | `FundTransferService.list()/choices()` | `FundTransferService.save()/reverse()` | Atomic canonical ledger and existing transfer facts, BOOKKEEPING_WRITE, stable request IDs, current-company restrictions, period protection and correction history. |
 | Funds | Funds administration panel | fund lookup/admin services | `FundAdminService` | Stable IDs; unused delete only after usage checks, otherwise deactivate. |
 | Events / Activities | `ActivitiesPanel` | `ActivityLookupService` | `ActivityAdminService` | Stable Activity ID; code/name are mutable. Delete requires no `TxnSplit` or Activity `interchange_identity` references; otherwise deactivate/reactivate. |
 | Reconciliation | reconciliation workspace | current reconciliation query/workspace services | current reconciliation finalization/matching services | Matching and cleared-state mutation remain reconciliation-owned. |

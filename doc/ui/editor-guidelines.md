@@ -105,3 +105,12 @@ Journal exposes Payees / Counterparties maintenance. Return to Journal refreshes
 ## P24-S4C Merchant maintenance
 
 Journal exposes Merchants maintenance and refreshes active choices on return without discarding draft headers, amounts, individual line references or dirty state. Merchant is an optional split-level dimension; mixed merchants remain independent. Historical inactive assignments display their current master name on reopen. Existing selected IDs resolve refreshed labels against a separate company-owned retained-label projection, while choice lists contain active merchants only. Name/notes maintenance uses the existing Merchant IDs and portable identity, with audited saves and a visible deactivation/history explanation. See [Merchant maintenance](../accounting/merchant-maintenance.md) and [acceptance](../P24-S4C-user-testing.md).
+
+
+## P25-S1 internal fund transfers
+
+Funds / Fund Transfers opens a separate tab and preserves existing Fund and Journal drafts. Choose two company-owned unrestricted/designated funds, a transfer date, amount, explanation, ordinary non-bank allocation ASSET account and net-assets EQUITY account. No bank money moves. Saved entry fields lock; New starts a distinct request, with an intentional discard for unsaved edits. Save retries reuse the same durable request. Refresh and history selection preserve the draft. History sorts on typed date/amount values, uses company-owned widths/order/sorts, and exposes the latest 500 saved facts.
+
+A visible retention explanation replaces Delete: generic Journal edits/deletes/replacements cannot detach linked accounting. Reverse Selected takes an open date and required reason, retaining the original and opposite-direction facts. Journal reversals create the same facts atomically. Open Selected in Journal navigates by transaction ID. Header/actions, history and entry have independent remembered vertical dividers and scrolling; entry selectors retain usable widths under scaling with horizontal overflow. Date and money controls use company formatting, write controls use live permission gates and errors remain visible.
+
+Current SCLX exports canonical transfer and reversal lines but does not reconstruct operational transfer links. The panel and export warnings disclose this; a whole-database backup preserves those links. See [Internal fund transfers](../funds/internal-fund-transfers.md) and [user testing](../P25-S1-user-testing.md).

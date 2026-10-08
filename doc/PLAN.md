@@ -1,12 +1,12 @@
 ---
-plan_version: 329
+plan_version: 331
 active_phase: P25
 active_slice: P25-S1
-active_status: READY
-active_branch: null
+active_status: VERIFYING
+active_branch: codex/P25-S1-internal-fund-transfers
 active_pull_request: null
 active_head: null
-next_action: "When execution resumes, start P25-S1 internal fund-transfer inspection on a fresh branch from current main, carrying the P24 closeout; preserve D03 as a gate before any legal-entity mappings."
+next_action: "Finish the isolated local regression run, then obtain explicit P25-S1 publication authorization for a draft PR and actual-head Maven/Xvfb CI; owner desktop acceptance and merge remain pending. D03 continues to gate legal-entity mappings."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,7 +37,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | READY — P25-S1 internal transfers; relevant policy gates retained |
+| P25 | Transfers, payment references, reporting classification | VERIFYING — P25-S1 local implementation; publication/CI/desktop/merge pending |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -681,7 +681,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P24-S4A | Budget Category maintenance | DONE | P24-S3 merged; A08 category workflow |
 | P24-S4B | Payee/Counterparty maintenance | DONE | P24-S4A merged; A08 party workflow |
 | P24-S4C | Merchant maintenance | DONE | P24-S4B merged; A08 merchant workflow |
-| P25-S1 | Implement one internal fund-transfer operation (G7) | READY | P24-S4 merged; internal-only scope; D03 required before legal-entity mappings; other applicable acceptance gates retained |
+| P25-S1 | Implement one internal fund-transfer operation (G7) | VERIFYING | P24-S4 merged; internal-only scope; D03 required before legal-entity mappings; other applicable acceptance gates retained |
 | P25-S2 | Add structured payment/check references (G9) | BLOCKED | P25-S1 merged; owning contract and D01–D10 gates as applicable |
 | P25-S3 | Complete check exception and reconciliation workflows (G9) | BLOCKED | P25-S2 merged; owning contract and D01–D10 gates as applicable |
 | P25-S4 | Implement the adopted NMR accounting contract (G10) | BLOCKED | P25-S3 merged; owning contract and D01–D10 gates as applicable |
@@ -1155,3 +1155,25 @@ Owner reported “tested and merged.” GitHub independently confirms owner `ben
 P24-S4C and the Budget Category/Payee/Merchant P24-S4 family are DONE. All P24 slices are accepted and merged, so P24 is DONE. Clear obsolete active branch/PR/head fields and select P25-S1 as READY, not started. Its adopted contract is [internal fund transfers](P23-P28-runbook-correction-program.md#p25-s1--implement-one-internal-fund-transfer-operation-g7): one atomic operation linking canonical balanced accounting and existing FundTransfer reporting, with restriction, closed-period, duplicate/failure and reversal protections. A07 distinguishes internal reallocation, bank movement and inter-entity payment. D03 remains unresolved before legal-entity mappings; readiness for internal transfers does not resolve that policy or authorize external mapping implementation. P25-S2 and later slices stay BLOCKED.
 
 This documentation-only closeout is local on fresh `codex/P24-closeout`, based on the confirmed merge; the merged implementation branch is not reused. Preserved the local final-CI evidence commit `76f8c2d` by cherry-picking it as `165446e`. No closeout PR or P25 implementation branch exists. Validation: current-main ancestry, PR merge/final-head CI confirmation, scoped governing/acceptance dependency review and diff whitespace checks; no application changes or repeated application tests. Next exact action when the owner resumes execution: fetch current main, create a focused P25-S1 branch, carry this closeout forward, read the adopted G7/A07 and D03 contracts, inspect FundTransfer/FundAdminService/FundsPanel, canonical transaction/correction/ownership/authorization services, bank-transfer authority, semantic transfer report and relevant migrations/tests, then establish baseline before design.
+
+
+## 30. P25-S1 internal fund transfers — selected 2026-10-07
+
+Owner selected P25-S1 with “Ok, proceed.” Fetched and confirmed main `a9275ad1b9a970a084829d5659d792375ed196fb`. Fresh `codex/P25-S1-internal-fund-transfers` carries P24 evidence/closeout as `82ce8a4` and `8cc7a71`. Inspected the existing FundTransfer master and report, Fund maintenance/ownership, canonical entry/correction caller-owned transactions, period/reconciliation protections, SCLX coverage, V1 and current migration history, G7/A07/D03 and production UI rules. Existing FundBalanceService sums natural-signed amounts of all account types without company scope; it is not a sound net-assets availability authority and will not be used for transfer policy.
+
+Design and governing contract: [Internal fund transfers](funds/internal-fund-transfers.md). One atomic service operation creates existing FundTransfer and canonical Txn facts, with audit and UUID request idempotency. Four lines reallocate a selected ordinary non-bank ASSET allocation account and EQUITY net-assets account between funds; bank, income and expense company totals remain unchanged and each fund's balance sheet stays balanced. Accounts are explicitly selected from current active chart; no automatic accounting data. Both funds and their parent hierarchy must be active/effective, unrestricted or designated and free of restriction text. Ledger-defined source net assets must cover the amount. D03 remains a gate on external/legal-entity mappings, which are excluded.
+
+Generic Journal edits/deletes of linked transfers must fail with a transfer-workflow explanation; reversal preserves original operational facts and creates the opposite-direction dated transfer fact atomically, including generic Journal reversals. No replacement shortcut may produce an unlinked transfer. New migration adds nullable request identity/hash for legacy compatibility, unique new request identity, and indexes; existing FundTransfer status remains storage vocabulary, not a new visible posting workflow. SCLX already omits FundTransfer facts: this slice must verify portable canonical line/reversal effects and visibly disclose the existing operational-link portability limit; full operational-field coverage remains P27-S4.
+
+Donor reviewed at `c697630ec1f784ebe8338d7300da6c9ac801b180`: FundTransferPostingService supplies four-line source/destination accounting but uses separate posting/lifecycle commits and alternate JDBC ledger; adapt four-line intent with one production JPA transaction, not donor persistence/status queues. Legacy FundsPanelFX uses name-based transaction metadata; retain stable IDs instead.
+
+
+### P25-S1 local implementation and verification — 2026-10-08
+
+Implemented company-scoped FundTransferService and immutable commands/views, UUID request/hash migration V78, four-line canonical accounting and atomic audit facts. Added source net-assets checks through the transfer date and every future recorded day, company-row serialization and exact-request restart/concurrency handling. Generic Journal entry update/direct edit/delete/reverse-and-replace reject linked transfers; both public and caller-owned Journal reversals create inverse operational history with a required reason, preserving dated facts and historical retirement corrections. New-transfer restrictions do not prevent historical correction.
+
+Added the production FUND_TRANSFERS route, Funds action, service registry authorization wiring and navigation. Entry, latest-500 history, New/Save/Refresh, dated reasoned reversal and transaction-ID Journal navigation are real operations. Saved drafts lock; New intentionally discards unsaved changes, while refresh/history selection preserve drafts. Company date/money formatting, typed sortable columns, saved table/divider preferences, independent scrolling and live write-permission gates are integrated. Visible retention and SCLX portability explanations replace deletion. Export inventory warns about deferred operational transfer links while existing canonical ledger/reversal export/import is verified. D03 and later-slice gates remain unchanged.
+
+Documents: [governing transfer contract](funds/internal-fund-transfers.md), [desktop acceptance notes](P25-S1-user-testing.md), interface operation matrix, editor guidelines, transaction lifecycle and SCLX specification. Tests cover accounting/report reconciliation, restart and concurrent retries/overdraw, future-date availability, restrictions/ancestors/ownership/accounts/authorization/periods, generic corrections, reversal chains and audit-failure atomic rollback. V77-to-V78 in-memory upgrade and untracked-history recovery preserve legacy facts/request uniqueness. The Xvfb CI list includes real FundTransfersPanel service/layout tests.
+
+Local baseline/final Maven commands are unavailable (`mvn: command not found`, exit 127); baseline and final all-main/all-test Java 17 compilation succeeds with the same two existing ReportLibraryPanel varargs warnings. A custom JUnit Platform 1.10.3 launcher uses cached project dependencies, with older cached Platform 1.9.3 jars excluded. Final focused regression: 18 tests started/successful, zero failures/aborts. Broad regression initially exposed replay failures in untracked-schema recovery; unapplied V78 now follows existing replay-safe migration conventions, and the recovery regression passes. A subsequent broad run hit only stale checksums in the earlier test-created default database; the final broad run uses an isolated JVM user.home and leaves that database untouched. Broad result pending at this implementation checkpoint. No GitHub publication or CI is claimed; owner desktop testing is pending.

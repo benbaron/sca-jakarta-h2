@@ -9,6 +9,7 @@ public enum SclxExportSection
     BUDGETS(Support.INCLUDED, "budgets", "Budget categories, plans, and lines"),
     ACTIVITIES(Support.EXTENSION, true, "extensions.scaJakartaH2.activities", "Company activities"),
     COUNTERPARTIES(Support.EXTENSION, true, "extensions.scaJakartaH2.counterparties", "Company counterparties, merchants, and transaction references"),
+    FUND_TRANSFERS(Support.EXTENSION, false, "extensions.scaJakartaH2.fundTransfers", "Operational fund-transfer metadata (links and retry identities; canonical lines are exported; use a whole-database backup to preserve transfer links)"),
     TRANSACTIONS(Support.INCLUDED, "transactions", "Canonical balanced transactions and splits"),
     SUPPLEMENTAL_DETAILS(Support.EXTENSION, true, "extensions.scaJakartaH2.supplementalDetails", "Canonical transaction supplemental details"),
     BANK_CONFIGURATION(Support.EXTENSION, true, "extensions.scaJakartaH2.bankConfiguration", "Configured bank accounts without credentials"),

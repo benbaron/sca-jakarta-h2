@@ -45,6 +45,12 @@ public class FundTransfer
     @JoinColumn(name = "posted_txn_id")
     private Txn postedTxn;
 
+    @Column(name = "request_id", unique = true)
+    private java.util.UUID requestId;
+
+    @Column(name = "request_hash", length = 64)
+    private String requestHash;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
@@ -52,6 +58,22 @@ public class FundTransfer
     private Instant updatedAt = Instant.now();
 
     public Long getId() { return id; }
+    public java.util.UUID getRequestId()
+    {
+        return requestId;
+    }
+    public void setRequestId(java.util.UUID value)
+    {
+        requestId = value;
+    }
+    public String getRequestHash()
+    {
+        return requestHash;
+    }
+    public void setRequestHash(String value)
+    {
+        requestHash = value;
+    }
     public LocalDate getTransferDate() { return transferDate; }
     public void setTransferDate(LocalDate transferDate) { this.transferDate = transferDate; }
     public Fund getFromFund() { return fromFund; }
