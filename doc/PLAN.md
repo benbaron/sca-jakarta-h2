@@ -1,11 +1,11 @@
 ---
-plan_version: 334
+plan_version: 335
 active_phase: P25
 active_slice: P25-S1
 active_status: VERIFYING
 active_branch: codex/P25-S1-internal-fund-transfers
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/362
-active_head: 3c7623a092b453aa585c3a25ff4f3228ff549625
+active_head: 81fde3393c3e7315cd7e7b718736bff9e9def8ca
 next_action: "Inspect actual final published head of draft PR #362 with Maven/headless/Xvfb CI, repair any failure, then complete owner desktop acceptance and separately authorized merge. D03 continues to gate legal-entity mappings."
 ---
 
@@ -1203,3 +1203,8 @@ This publication-ledger successor is documentation only and will be fast-forward
 Published local publication-ledger `5011f0bd33b4ec49712aaaae07698a9726618b0f` as `3c7623a092b453aa585c3a25ff4f3228ff549625`, with matching tree `5bed2504b9dff2ed5c9af0fb81e1bca035534b1f`; fetched and verified the final branch and PR head. [Maven PR Tests run 37713786924](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37713786924), job `113105502284`, failed during main compilation before tests. Maven source lookup interpreted the panel's wildcard layout import against the existing package-local `GridPane.java` compatibility file, which declares GridPaneAlias. The earlier explicit-all-files local javac invocation did not exercise Maven's implicit source lookup. Repeat tests and Xvfb were skipped; no CI pass is claimed.
 
 Narrow correction: replace the new FundTransfersPanel wildcard imports with explicit JavaFX control/layout imports, including javafx.scene.layout.GridPane. Preserve the existing compatibility file and all accounting/UI behavior. Final local Maven remains unavailable and the earlier container's cached dependencies are absent in this resumed runtime; current validation is import/diff review, with fresh actual-head Maven/Xvfb CI required. Publish the correction under the owner's existing authorization, verify matching tree/head with an expected-parent non-force update, inspect the replacement workflow and resolve any remaining failure before owner desktop acceptance. No later-phase feature or merge is included.
+
+
+### P25-S1 explicit import completion
+
+The import correction local `74aa82ec3d7600dec99a54fdfecca511d5fc95c3` published as `81fde3393c3e7315cd7e7b718736bff9e9def8ca`, matching tree `1ecf3ee52422a8a78b25c5bfebb60a8f61f98158`, was verified on branch/PR. [Run 37714081173](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37714081173), job `113106439364`, confirmed the GridPane source-lookup error was removed but main compilation found the omitted javafx.scene.control.Control import for the gated input array. Add that explicit import; no behavior or tests change. Full actual-head CI remains required; tests/Xvfb were skipped in this run.
