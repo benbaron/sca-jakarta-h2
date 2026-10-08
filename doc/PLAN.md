@@ -1,11 +1,11 @@
 ---
-plan_version: 333
+plan_version: 334
 active_phase: P25
 active_slice: P25-S1
 active_status: VERIFYING
 active_branch: codex/P25-S1-internal-fund-transfers
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/362
-active_head: 8b507cf89b9dc172ceae138980f15c4b5d334a52
+active_head: 3c7623a092b453aa585c3a25ff4f3228ff549625
 next_action: "Inspect actual final published head of draft PR #362 with Maven/headless/Xvfb CI, repair any failure, then complete owner desktop acceptance and separately authorized merge. D03 continues to gate legal-entity mappings."
 ---
 
@@ -1196,3 +1196,10 @@ Owner explicitly authorized branch publication, draft PR creation and CI verific
 | `af23712447c1ed66fb2f5b81f6d78bfb9a572317` | `8b507cf89b9dc172ceae138980f15c4b5d334a52` | `55083f0c28690f092292b1c34643b735d0de0ec9` |
 
 This publication-ledger successor is documentation only and will be fast-forwarded under the same owner authorization. active_head records its known published parent because a commit cannot embed its own SHA. Verify the resulting branch and PR tip and inspect CI for that actual final head; no Maven/Xvfb or desktop pass is claimed at this checkpoint. P25-S1 remains VERIFYING and P25-S2 remains BLOCKED. After final CI, record evidence locally and in the PR body without replacing the verified head with another evidence-only publication. Owner desktop acceptance remains required via [testing notes](P25-S1-user-testing.md).
+
+
+### P25-S1 first final-head CI and compile correction
+
+Published local publication-ledger `5011f0bd33b4ec49712aaaae07698a9726618b0f` as `3c7623a092b453aa585c3a25ff4f3228ff549625`, with matching tree `5bed2504b9dff2ed5c9af0fb81e1bca035534b1f`; fetched and verified the final branch and PR head. [Maven PR Tests run 37713786924](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37713786924), job `113105502284`, failed during main compilation before tests. Maven source lookup interpreted the panel's wildcard layout import against the existing package-local `GridPane.java` compatibility file, which declares GridPaneAlias. The earlier explicit-all-files local javac invocation did not exercise Maven's implicit source lookup. Repeat tests and Xvfb were skipped; no CI pass is claimed.
+
+Narrow correction: replace the new FundTransfersPanel wildcard imports with explicit JavaFX control/layout imports, including javafx.scene.layout.GridPane. Preserve the existing compatibility file and all accounting/UI behavior. Final local Maven remains unavailable and the earlier container's cached dependencies are absent in this resumed runtime; current validation is import/diff review, with fresh actual-head Maven/Xvfb CI required. Publish the correction under the owner's existing authorization, verify matching tree/head with an expected-parent non-force update, inspect the replacement workflow and resolve any remaining failure before owner desktop acceptance. No later-phase feature or merge is included.
