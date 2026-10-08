@@ -1,12 +1,12 @@
 ---
-plan_version: 332
+plan_version: 333
 active_phase: P25
 active_slice: P25-S1
 active_status: VERIFYING
 active_branch: codex/P25-S1-internal-fund-transfers
-active_pull_request: null
-active_head: 0103def5449d69b6a527375fbad9ab6188b81981
-next_action: "Obtain explicit P25-S1 publication authorization, publish the reviewed local commit sequence as a draft PR and run actual-head Maven/Xvfb CI; resolve failures, then await owner desktop acceptance and merge. D03 continues to gate legal-entity mappings."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/362
+active_head: 8b507cf89b9dc172ceae138980f15c4b5d334a52
+next_action: "Inspect actual final published head of draft PR #362 with Maven/headless/Xvfb CI, repair any failure, then complete owner desktop acceptance and separately authorized merge. D03 continues to gate legal-entity mappings."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1182,3 +1182,17 @@ Local baseline/final Maven commands are unavailable (`mvn: command not found`, e
 **Final local handoff:** P25-S1 VERIFYING on `codex/P25-S1-internal-fund-transfers`; implementation/verified code head `0103def5449d69b6a527375fbad9ab6188b81981`, based on merged main `a9275ad1b9a970a084829d5659d792375ed196fb`. Local sequence includes P24 evidence/closeout `82ce8a4`, `8cc7a71`, the implementation commit, then this documentation-only evidence commit (resolve final branch tip with `git rev-parse HEAD`; `active_head` identifies the verified implementation). PR is null/unpublished. The final tree/whitespace review is clean and intentional. Local application compilation and focused/broad JUnit runs pass; no unresolved functional failures from the completed local runs. `mvn clean verify` remains unavailable, graphical tests/owner desktop acceptance remain pending, and GitHub has not run this branch.
 
 Remaining exact action after explicit owner publication authorization: confirm current remote main and expected branch state, publish the complete reviewed local sequence through authenticated Git or the connected GitHub service without force updates, compare every remote tree to its local tree, create a draft P25-S1 PR, confirm its actual head and inspect the repository Maven/headless/Xvfb workflow. Repair any failures in this slice and record actual CI evidence; use [P25-S1 desktop acceptance](P25-S1-user-testing.md) for owner testing. Do not mark DONE or activate P25-S2 before confirmed merge and required acceptance. D03 is still unresolved for legal-entity mappings; no later-phase work is authorized by this handoff.
+
+
+### P25-S1 authorized draft PR publication — 2026-10-07 (America/Denver)
+
+Owner explicitly authorized branch publication, draft PR creation and CI verification. Remote main remained `a9275ad1b9a970a084829d5659d792375ed196fb`, the task branch was absent, and the local worktree was clean before publication. Published the complete reviewed local sequence with original messages and identical per-commit trees, then created the new branch at the publication head without force updates. Draft [PR #362](https://github.com/benbaron/sca-jakarta-h2/pull/362) targets main; verified initial branch/PR head `8b507cf89b9dc172ceae138980f15c4b5d334a52`.
+
+| Local commit | Published commit | Matching tree |
+|---|---|---|
+| `82ce8a48146708f5559fc5969c1b003ad830b4f2` | `4be52df7e347983c9f99acba3ea2206f4669d24c` | `e2c0daff2d1f13fcde04aa71f7057336901dbb2c` |
+| `8cc7a71fb48a9227be3f12fdfe9fc6aabc9a4211` | `3402a425707ff3b294377b01689123769b5b4453` | `09b62524f9b4c8607f08ac4fbe545a12fc04ce60` |
+| `0103def5449d69b6a527375fbad9ab6188b81981` | `571fb6a1a413087071ad892f2eff4a962e376414` | `e7be9e049ab684043872c68502e14007ecd8ef45` |
+| `af23712447c1ed66fb2f5b81f6d78bfb9a572317` | `8b507cf89b9dc172ceae138980f15c4b5d334a52` | `55083f0c28690f092292b1c34643b735d0de0ec9` |
+
+This publication-ledger successor is documentation only and will be fast-forwarded under the same owner authorization. active_head records its known published parent because a commit cannot embed its own SHA. Verify the resulting branch and PR tip and inspect CI for that actual final head; no Maven/Xvfb or desktop pass is claimed at this checkpoint. P25-S1 remains VERIFYING and P25-S2 remains BLOCKED. After final CI, record evidence locally and in the PR body without replacing the verified head with another evidence-only publication. Owner desktop acceptance remains required via [testing notes](P25-S1-user-testing.md).
