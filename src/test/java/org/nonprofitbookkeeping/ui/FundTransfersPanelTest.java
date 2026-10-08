@@ -134,6 +134,15 @@ class FundTransfersPanelTest
     {
         FxTestSupport.onFx(() ->
         {
+            ((DatePicker) panel.root().lookup("#fundTransfersDate")).setValue(FundTransferTestFixture.DATE);
+            select("From", fixture.source());
+            select("To", fixture.destination());
+            select("Allocation", fixture.allocation());
+            select("Equity", fixture.equity());
+            text("Amount").setText("75");
+            ((TextArea) panel.root().lookup("#fundTransfersExplanation")).setText("Layout history fixture");
+            button("Save").fire();
+            assertEquals(1, UiServiceRegistry.fundTransfers().list().size(), panel.commandResultMessage(AppCommand.SAVE_ACTIVE));
             stage.setWidth(520);
             stage.setHeight(550);
             panel.root().setStyle("-fx-font-size: 17px;");
