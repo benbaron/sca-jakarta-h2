@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+
 import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
@@ -89,6 +90,7 @@ public final class JournalWorkspacePanel implements AppPanel
     private final DatePicker fromDate = new DatePicker();
     private final DatePicker toDate = new DatePicker();
     private final TextField searchText = new TextField();
+    private final TextField paymentBankFilter = new TextField();
     private final TextField fundFilter = new TextField();
     private final TextField eventFilter = new TextField();
     private final TextField fundChoiceSearch = new TextField();
@@ -184,7 +186,7 @@ public final class JournalWorkspacePanel implements AppPanel
         Label caption = new Label("Review complete transactions. Fund + Event filters must match the same line; displayed totals include all transaction lines.");
         caption.setWrapText(true);
 
-        searchText.setPromptText("Memo or payee");
+        searchText.setPromptText("Memo, payee, check/reference or bank");
         searchText.setPrefColumnCount(18);
         Button applyFilters = new Button("Apply Filters");
         Button clearFilters = new Button("Clear Filters");
@@ -203,7 +205,7 @@ public final class JournalWorkspacePanel implements AppPanel
                 new Label("To"), toDate,
                 new Label("Search"), searchText,
                 new Label("Fund name/code"), fundFilter,
-                new Label("Event name/code"), eventFilter,
+                new Label("Event name/code"), eventFilter, new Label("Payment bank"), paymentBankFilter,
                 applyFilters,
                 clearFilters);
         filters.setAlignment(Pos.CENTER_LEFT);
@@ -219,6 +221,7 @@ public final class JournalWorkspacePanel implements AppPanel
             searchText.clear();
             fundFilter.clear();
             eventFilter.clear();
+            paymentBankFilter.clear();
             reloadJournal();
         });
         newButton.setOnAction(event -> startNew(true));
@@ -231,6 +234,9 @@ public final class JournalWorkspacePanel implements AppPanel
         UiPermissionGate.gate(deleteButton, ApplicationPermission.BOOKKEEPING_WRITE, "Delete or reverse a journal entry");
         refreshButton.setOnAction(event -> reloadJournal());
         searchText.setOnAction(event -> reloadJournal());
+        paymentBankFilter.setId("journalPaymentBankFilter");
+        paymentBankFilter.setPromptText("Issuing bank code/name");
+        paymentBankFilter.setOnAction(event -> reloadJournal());
         fundFilter.setId("journalFundFilter");
         eventFilter.setId("journalEventFilter");
         fundFilter.setPromptText("All funds");
@@ -556,6 +562,18 @@ public final class JournalWorkspacePanel implements AppPanel
         nmr.setCellFactory(CheckBoxTableCell.forTableColumn(nmr));
         lineTable.getColumns().add(nmr);
 
+        TableColumn<EditorLine, String> paymentMethodColumn = new TableColumn<>("Payment method");
+        configureColumn(paymentMethodColumn, "paymentMethod", 135);
+        paymentMethodColumn.setCellValueFactory(cell -> cell.getValue().paymentMethod);
+        paymentMethodColumn.setCellFactory(ignored -> new PaymentMethodTableCell());
+        paymentMethodColumn.setOnEditCommit(event -> event.getRowValue().paymentMethod.set(safe(event.getNewValue())));
+        lineTable.getColumns().add(paymentMethodColumn);
+        lineTable.getColumns().add(textColumn("Check / Reference", "paymentReference", 160,
+                row -> row.paymentReference, (row, value) -> row.paymentReference.set(value)));
+        lineTable.getColumns().add(textColumn("Issued on", "paymentIssued", 130,
+                row -> row.paymentIssued, (row, value) -> row.paymentIssued.set(paymentDateText(value))));
+        lineTable.getColumns().add(textColumn("Delivered on", "paymentDelivered", 130,
+                row -> row.paymentDelivered, (row, value) -> row.paymentDelivered.set(paymentDateText(value))));
         lineTable.getColumns().add(textColumn("Notes", "notes", 260,
                 EditorLine::notesProperty,
                 EditorLine::setNotes));
@@ -655,7 +673,7 @@ public final class JournalWorkspacePanel implements AppPanel
         addDetailField(grid, 2, "Payee", payeeBox);
         addDetailField(grid, 3, "Bank account", bankAccountBox);
 
-        Label scope = new Label("Only H2-backed transaction fields are editable here. Check/reference and other legacy-only fields are not presented as fake saveable data.");
+        Label scope = new Label("Only H2-backed transaction fields are editable here. Payment method, Check / Reference and issue/delivery dates belong to individual BANK lines. Check numbers must be unique within the issuing account, including retained reversed checks. The header bank is compatibility context only.");
         scope.setWrapText(true);
         VBox content = new VBox(8, sectionHeading("Additional Details"), grid, scope);
         content.setPadding(new Insets(4));
@@ -847,9 +865,9 @@ public final class JournalWorkspacePanel implements AppPanel
         Long centerId = requestedTransactionId != null ? requestedTransactionId : selectedTransactionId();
         long generation = ++journalGeneration;
         LocalDate from = fromDate.getValue(), through = toDate.getValue();
-        String text = searchText.getText(), fundText = fundFilter.getText(), eventText = eventFilter.getText();
+        String text = searchText.getText(), fundText = fundFilter.getText(), eventText = eventFilter.getText(), paymentBankText = paymentBankFilter.getText();
         UiAsync.run("journal-workspace-load",
-                () -> UiServiceRegistry.transactionEntry().search(from, through, text, fundText, eventText, 500),
+                () -> UiServiceRegistry.transactionEntry().search(from, through, text, fundText, eventText, paymentBankText, 500),
                 views -> {
                     if (generation != journalGeneration)
                     {
@@ -988,6 +1006,13 @@ public final class JournalWorkspacePanel implements AppPanel
         row.setCredit(line.credit().signum() == 0 ? "" : normalizeMoney(line.credit().toPlainString()));
         row.setNmr(line.nmr());
         row.setNotes(safe(line.notes()));
+        if (line.payment() != null)
+        {
+            row.paymentMethod.set(line.payment().method().name());
+            row.paymentReference.set(safe(line.payment().reference()));
+            row.paymentIssued.set(paymentDateText(line.payment().issuedOn() == null ? "" : line.payment().issuedOn().toString()));
+            row.paymentDelivered.set(paymentDateText(line.payment().deliveredOn() == null ? "" : line.payment().deliveredOn().toString()));
+        }
         row.setBankState(line.clearedDisplay());
         row.setClearedOn(line.bankClearedOn() == null ? "" : line.bankClearedOn().toString());
         row.setReconciliationSessionId(line.reconciliationSessionId());
@@ -1095,7 +1120,7 @@ public final class JournalWorkspacePanel implements AppPanel
                     debit,
                     credit,
                     row.isNmr(),
-                    blankToNull(row.getNotes())));
+                    blankToNull(row.getNotes()), row.payment()));
         }
         List<TransactionSupplementalLineCommand> supplemental = supplementalCommands();
         return new TransactionCommand(
@@ -1203,6 +1228,16 @@ public final class JournalWorkspacePanel implements AppPanel
             }
         }
         return commands;
+    }
+
+    private static String paymentDateText(String value)
+    {
+        if (value == null || value.isBlank())
+        {
+            return "";
+        }
+        CompanyUiFormat format = CompanyUiFormat.activeCompany();
+        return format.formatDate(format.parseDate(value));
     }
 
     private LocalDate parseDate(String value, String kind, int row, String field)
@@ -1320,6 +1355,10 @@ public final class JournalWorkspacePanel implements AppPanel
         row.fundProperty().addListener((obs, oldValue, newValue) -> markDirty());
         row.activityProperty().addListener((obs, oldValue, newValue) -> markDirty());
         row.merchantProperty().addListener((obs, oldValue, newValue) -> markDirty());
+        row.paymentMethod.addListener((obs, oldValue, newValue) -> markDirty());
+        row.paymentReference.addListener((obs, oldValue, newValue) -> markDirty());
+        row.paymentIssued.addListener((obs, oldValue, newValue) -> markDirty());
+        row.paymentDelivered.addListener((obs, oldValue, newValue) -> markDirty());
         row.nmrProperty().addListener((obs, oldValue, newValue) -> markDirty());
     }
 
@@ -1876,6 +1915,80 @@ public final class JournalWorkspacePanel implements AppPanel
         }
     }
 
+    private final class PaymentMethodTableCell extends TableCell<EditorLine, String>
+    {
+        private boolean updatingEditor;
+        private final ComboBox<String> editor = new ComboBox<>();
+
+        private PaymentMethodTableCell()
+        {
+            editor.setMaxWidth(Double.MAX_VALUE);
+            editor.valueProperty().addListener((obs, oldValue, newValue) -> {
+                if (isEditing() && !updatingEditor)
+                {
+                    commitEdit(newValue);
+                }
+            });
+            editor.focusedProperty().addListener((obs, oldValue, focused) -> {
+                if (!focused && isEditing())
+                {
+                    commitEdit(editor.getValue());
+                }
+            });
+        }
+
+        @Override
+        public void startEdit()
+        {
+            if (!isEditable() || !getTableView().isEditable() || !getTableColumn().isEditable())
+            {
+                return;
+            }
+            super.startEdit();
+            updatingEditor = true;
+            try
+            {
+                editor.getItems().setAll("", "CHECK", "EFT", "CARD", "CASH", "OTHER");
+                if (getItem() != null && !editor.getItems().contains(getItem()))
+                {
+                    editor.getItems().add(getItem());
+                }
+                editor.setValue(getItem());
+            }
+            finally
+            {
+                updatingEditor = false;
+            }
+            setText(null);
+            setGraphic(editor);
+            editor.show();
+        }
+
+        @Override
+        protected void updateItem(String item, boolean empty)
+        {
+            super.updateItem(item, empty);
+            if (empty)
+            {
+                setText(null);
+                setGraphic(null);
+            }
+            else if (isEditing())
+            {
+                updatingEditor = true;
+                editor.setValue(item);
+                updatingEditor = false;
+                setText(null);
+                setGraphic(editor);
+            }
+            else
+            {
+                setText(item == null ? "" : item);
+                setGraphic(null);
+            }
+        }
+    }
+
     private static final class OptionConverter extends StringConverter<TransactionLineEditorModel.Option>
     {
         @Override
@@ -2061,6 +2174,13 @@ public final class JournalWorkspacePanel implements AppPanel
                         : safe(line.activityCode()) + " — " + safe(line.activityName()));
                 append(debitBuilder, line.debit().signum() == 0 ? "" : money(line.debit()));
                 append(creditBuilder, line.credit().signum() == 0 ? "" : money(line.credit()));
+                if (line.payment() != null)
+                {
+                    append(detailBuilder, "Line " + lineNumber + " bank " + line.accountCode() + ": "
+                            + line.payment().method() + " " + safe(line.payment().reference())
+                            + " issued " + paymentDateText(line.payment().issuedOn() == null ? "" : line.payment().issuedOn().toString())
+                            + " delivered " + paymentDateText(line.payment().deliveredOn() == null ? "" : line.payment().deliveredOn().toString()));
+                }
                 if (line.notes() != null && !line.notes().isBlank())
                 {
                     append(detailBuilder, "Line " + lineNumber + ": " + line.notes());
@@ -2163,6 +2283,28 @@ public final class JournalWorkspacePanel implements AppPanel
         private final StringProperty credit = new SimpleStringProperty("");
         private final BooleanProperty nmr = new SimpleBooleanProperty(false);
         private final StringProperty notes = new SimpleStringProperty("");
+        final StringProperty paymentMethod = new SimpleStringProperty("");
+        final StringProperty paymentReference = new SimpleStringProperty("");
+        final StringProperty paymentIssued = new SimpleStringProperty("");
+        final StringProperty paymentDelivered = new SimpleStringProperty("");
+
+        org.nonprofitbookkeeping.service.PaymentReference payment()
+        {
+            if (paymentMethod.get().isBlank() && paymentReference.get().isBlank()
+                    && paymentIssued.get().isBlank() && paymentDelivered.get().isBlank())
+            {
+                return null;
+            }
+            if (paymentMethod.get().isBlank())
+            {
+                throw new IllegalArgumentException("Select a payment method for reference/date facts.");
+            }
+            return new org.nonprofitbookkeeping.service.PaymentReference(
+                    org.nonprofitbookkeeping.service.PaymentReference.Method.valueOf(paymentMethod.get()),
+                    paymentReference.get(), CompanyUiFormat.activeCompany().parseDate(paymentIssued.get()),
+                    CompanyUiFormat.activeCompany().parseDate(paymentDelivered.get()));
+        }
+
         private final StringProperty bankState = new SimpleStringProperty("");
         private final StringProperty clearedOn = new SimpleStringProperty("");
         private Long reconciliationSessionId;
@@ -2207,7 +2349,8 @@ public final class JournalWorkspacePanel implements AppPanel
             return getAccount() != null || getFund() != null || getBudget() != null || getActivity() != null
                     || getMerchant() != null || parseMoney(getDebit()) != null && parseMoney(getDebit()).signum() != 0
                     || parseMoney(getCredit()) != null && parseMoney(getCredit()).signum() != 0
-                    || isNmr() || !getNotes().isBlank();
+                    || isNmr() || !getNotes().isBlank() || !paymentMethod.get().isBlank()
+                    || !paymentReference.get().isBlank() || !paymentIssued.get().isBlank() || !paymentDelivered.get().isBlank();
         }
 
         EditorLine copy()
@@ -2222,6 +2365,10 @@ public final class JournalWorkspacePanel implements AppPanel
             copy.setCredit(getCredit());
             copy.setNmr(isNmr());
             copy.setNotes(getNotes());
+            copy.paymentMethod.set(paymentMethod.get());
+            copy.paymentReference.set(paymentReference.get());
+            copy.paymentIssued.set(paymentIssued.get());
+            copy.paymentDelivered.set(paymentDelivered.get());
             return copy;
         }
     }

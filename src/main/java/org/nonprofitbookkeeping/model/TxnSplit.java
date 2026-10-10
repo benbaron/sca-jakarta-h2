@@ -51,6 +51,17 @@ public class TxnSplit
     @JoinColumn(name = "merchant_id")
     private Merchant merchant;
 
+    @Column(name = "payment_method", length = 16)
+    private String paymentMethod;
+    @Column(name = "payment_reference", length = 80)
+    private String paymentReference;
+    @Column(name = "payment_issued_on")
+    private LocalDate paymentIssuedOn;
+    @Column(name = "payment_delivered_on")
+    private LocalDate paymentDeliveredOn;
+    @Column(name = "payment_check_key", length = 80)
+    private String paymentCheckKey;
+
     @Column(name = "nmr_flag", nullable = false)
     private boolean nmr = false;
 
@@ -75,6 +86,17 @@ public class TxnSplit
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "matched_bank_statement_line_id")
     private BankStatementLine matchedBankStatementLine;
+
+    public String getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(String value) { paymentMethod = value; }
+    public String getPaymentReference() { return paymentReference; }
+    public void setPaymentReference(String value) { paymentReference = value; }
+    public LocalDate getPaymentIssuedOn() { return paymentIssuedOn; }
+    public void setPaymentIssuedOn(LocalDate value) { paymentIssuedOn = value; }
+    public LocalDate getPaymentDeliveredOn() { return paymentDeliveredOn; }
+    public void setPaymentDeliveredOn(LocalDate value) { paymentDeliveredOn = value; }
+    public String getPaymentCheckKey() { return paymentCheckKey; }
+    public void setPaymentCheckKey(String value) { paymentCheckKey = value; }
 
     public Long getId() { return id; }
     public Txn getTxn() { return txn; }

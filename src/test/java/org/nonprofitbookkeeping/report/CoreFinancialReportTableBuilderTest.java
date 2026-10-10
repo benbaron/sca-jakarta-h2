@@ -52,16 +52,19 @@ class CoreFinancialReportTableBuilderTest
                         "GEN",
                         "General Fund",
                         new BigDecimal("25.00"),
-                        BigDecimal.ZERO));
+                        BigDecimal.ZERO, "CHECK", "000123", LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 2)));
 
         ReportTableModel table = CoreFinancialReportTableBuilder.generalLedger(values);
 
         assertEquals(List.of(
                         "Date", "Transaction", "Account", "Account Name", "Fund", "Fund Name",
-                        "Payee", "Memo", "Debit", "Credit"),
+                        "Payee", "Memo", "Payment Method", "Check / Reference", "Issued on", "Delivered on", "Debit", "Credit"),
                 table.columns().stream().map(ReportTableModel.Column::label).toList());
         assertEquals("Complete memo text", table.rows().get(0).value("memo"));
         assertEquals("Complete payee text", table.rows().get(0).value("payee"));
+        assertEquals("000123", table.rows().get(0).value("paymentReference"));
+        assertEquals("CHECK", table.rows().get(0).value("paymentMethod"));
+        assertEquals(LocalDate.of(2026, 3, 2), table.rows().get(0).value("deliveredOn"));
     }
 
     @Test

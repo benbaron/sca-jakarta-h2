@@ -103,7 +103,7 @@ public final class SclxImportCommitService
             "PERIOD_CLOSE_RANGE", "PERIOD_CLOSE_EVENT", "AUDIT_EVENT");
     private static final Set<String> SUPPORTED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
-            "supplementalDetails", "transactionBudgets", "fixedAssets", "inventory", "bankConfiguration",
+            "supplementalDetails", "transactionBudgets", "paymentReferences", "fixedAssets", "inventory", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "periodClose", "auditHistory");
 
     private final Jpa jpa;
@@ -276,6 +276,7 @@ public final class SclxImportCommitService
         SclxAuditHistoryImportData auditHistory = SclxAuditHistoryImportData.parse(root);
         SclxTransactionDetailImportData details = SclxTransactionDetailImportData.parse(root);
         Map<String, String> transactionBudgetCodes = SclxTransactionBudgetExtension.parse(root);
+        var paymentReferences = SclxPaymentReferences.parse(root);
         SclxCorrectionImportData corrections = SclxCorrectionImportData.parse(root);
         requireSupportedTransactionShape(root, details);
         ownership.requireNoOpenOwnershipIssues();
@@ -348,6 +349,25 @@ public final class SclxImportCommitService
                                     writtenBudgets.categories(), writesBeforeHistory, history);
                             restoredCorrections[0] = writeCorrectionRelationships(em, company, corrections,
                                     written.transactions(), writesBeforeHistory + written.transactionCount());
+                            for (var fact : paymentReferences.entrySet())
+                            {
+                                TxnSplit split = required(written.lines(), fact.getKey(), "payment bank line");
+                                if (reuseExisting(required(previews, new EntityKey("TRANSACTION_LINE", fact.getKey()), "payment preview")))
+                                {
+                                    continue; // Selected complete target history wins unchanged.
+                                }
+                                org.nonprofitbookkeeping.service.PaymentReferences.apply(em, split, fact.getValue());
+                                AuditEvent paymentAudit = new AuditEvent();
+                                paymentAudit.setCompany(company);
+                                paymentAudit.setActor(commitActor);
+                                paymentAudit.setActionType("PAYMENT_REFERENCE_IMPORTED");
+                                paymentAudit.setEntityType("TxnSplit");
+                                paymentAudit.setEntityId(split.getId().toString());
+                                paymentAudit.setSummary("Imported structured payment reference");
+                                paymentAudit.setAfterValue(fact.getValue().toString());
+                                em.persist(paymentAudit);
+                                em.flush();
+                            }
                             return written;
                         });
                 writes += transactions.transactionCount() + restoredCorrections[0];

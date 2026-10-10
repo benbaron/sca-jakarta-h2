@@ -1,12 +1,12 @@
 ---
-plan_version: 337
+plan_version: 341
 active_phase: P25
-active_slice: P25-S1
+active_slice: P25-S2
 active_status: VERIFYING
-active_branch: codex/P25-S1-internal-fund-transfers
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/362
-active_head: be6484a9c794760a5ab422c0d3e24116a839f6ce
-next_action: "Inspect actual final published head of draft PR #362 with Maven/headless/Xvfb CI, repair any failure, then complete owner desktop acceptance and separately authorized merge. D03 continues to gate legal-entity mappings."
+active_branch: codex/P25-S2-payment-references
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/363
+active_head: 4e846a6128db3e559d4e8428425f14c8af38901f
+next_action: "Inspect final published head of draft PR #363 with Maven/repeat/Xvfb CI including JournalPaymentReferencesTest, repair failures and record actual results; owner desktop acceptance and merge remain pending."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,7 +37,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | VERIFYING — P25-S1 local implementation; publication/CI/desktop/merge pending |
+| P25 | Transfers, payment references, reporting classification | VERIFYING — S1 merged in PR #362; S2 local implementation verified |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is merged; P24-S4B and P24-S4C are DONE; P24 is complete. P25-S1 is READY for internal fund transfers; unresolved D03 remains a gate before entity mappings. Conditional P27-S5 remains unadopted.
+P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is merged; P24-S4B and P24-S4C are DONE; P24 is complete. P25-S1 is accepted and merged in PR #362. P25-S2 structured payment references is active; unresolved D03 remains a gate before entity mappings. Conditional P27-S5 remains unadopted.
 
 ## 10. Archived proposal and adoption
 
@@ -681,8 +681,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P24-S4A | Budget Category maintenance | DONE | P24-S3 merged; A08 category workflow |
 | P24-S4B | Payee/Counterparty maintenance | DONE | P24-S4A merged; A08 party workflow |
 | P24-S4C | Merchant maintenance | DONE | P24-S4B merged; A08 merchant workflow |
-| P25-S1 | Implement one internal fund-transfer operation (G7) | VERIFYING | P24-S4 merged; internal-only scope; D03 required before legal-entity mappings; other applicable acceptance gates retained |
-| P25-S2 | Add structured payment/check references (G9) | BLOCKED | P25-S1 merged; owning contract and D01–D10 gates as applicable |
+| P25-S1 | Implement one internal fund-transfer operation (G7) | DONE | P24-S4 merged; internal-only scope; D03 required before legal-entity mappings; other applicable acceptance gates retained |
+| P25-S2 | Add structured payment/check references (G9) | VERIFYING | P25-S1 merged; owning contract and D01–D10 gates as applicable |
 | P25-S3 | Complete check exception and reconciliation workflows (G9) | BLOCKED | P25-S2 merged; owning contract and D01–D10 gates as applicable |
 | P25-S4 | Implement the adopted NMR accounting contract (G10) | BLOCKED | P25-S3 merged; owning contract and D01–D10 gates as applicable |
 | P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | P25-S4 merged; owning contract and D01–D10 gates as applicable |
@@ -1222,3 +1222,43 @@ Narrow geometry correction: ordinary form Labels could compress below their pref
 Label-width correction local `0a8b52c84568d0b876c1cd864bf7bd7d3dc2d685` published as `be6484a9c794760a5ab422c0d3e24116a839f6ce`, matching tree `0ee81c7bd53901d47ffd98dd220bd9f6562f2af6`. [Run 37715012139](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37715012139), job `113109390815`, passed both full Maven runs (873 tests each, zero failures/errors, 43 skips). The editor's real two-axis overflow passed. Xvfb then failed the table horizontal scrollbar assertion because its empty history displays the TableView placeholder instead of the populated virtual flow. The functional transfer test still passed.
 
 Correct the geometry fixture by saving one real transfer through the production UI before resizing. Keep both editor-axis and table-horizontal scrollbar assertions, company preference persistence and divider checks. No production behavior changes in this correction. Publish with matching tree and expected-parent non-force update, then verify full actual-head CI. Owner desktop acceptance and merge remain pending; P25-S1 stays VERIFYING.
+
+
+## 31. P25-S1 closeout and P25-S2 implementation — 2026-10-09
+
+Owner reported merging P25-S1 and explicitly selected S2. GitHub confirms PR #362 merged at `d20c1ba23fa57a7271860c97e5fdff4e7acf2477`; fetched current origin/main matches. Final published source head `164b73922410228ad850cd0530a31be1492bfeb2` passed run 37715654192: both full Maven passes 873 tests, zero failures/errors, 43 headless skips; Xvfb 23 tests, zero failures/errors/skips. Owner's merge is recorded as acceptance of the slice; no independent native visual validation is claimed. Carry forward the local S1 evidence-only commit by this record; do not reuse the merged branch.
+
+Selected P25-S2 on fresh `codex/P25-S2-payment-references`, based on confirmed main. D03 continues to gate legal-entity mapping/NMR and D04 gates P25-S3 stale accounting; neither blocks structured factual references. Governing contract: [Payment references](accounting/payment-references.md). Required inspection completed: Txn/TxnSplit, TransactionCommand/LineCommand/View, TransactionEntryService and correction/reconciliation protection, JournalWorkspacePanel and compliance, bank statement reference model, SCLX export/preview/commit/correction graph, FinancialReportService and typed GL builder, existing transfer/migration/Journal tests. Root UI rules, interface matrix, editor guidelines, lifecycle and period policy read before design.
+
+Donor reference at `c697630ec1f784ebe8338d7300da6c9ac801b180` has check/reference fields in SclxDocument and its import target. Retain textual identity intent; do not import its alternate persistence or ambiguous header-wide references. Production ownership is one optional payment-fact set per bank split. One issued check may allocate bank effects across funds with consistent shared facts and one reservation; distinct payments retain separate identities; no memo inference. Existing canonical company lock, period/reconciliation gates, atomic saves and audit remain authoritative.
+
+Initial `mvn -DskipTests compile` unavailable (executable absent). Recovered Java compiler via `java com.sun.tools.javac.Main`, downloaded Maven 3.9.9 into temporary scratch and repaired missing/corrupt dependency jars in an isolated temporary cache. Offline Maven compile passed. First focused pass: 24 tests, one SCLX unsupported-extension error; corrected both extension support lists. Payment service round-trip run subsequently passed 7/7. Migration/UI/broader checks pending; no final validation claim yet. Branch is not published and has no PR. Next exact action: finish migration/parser/UI tests, run isolated full `mvn clean verify`, inspect final diff and write desktop testing notes before committing the slice.
+
+
+### P25-S2 final focused verification
+
+Recovered local Maven compile passed without production errors. Updated sources/tests passed the focused Maven run: 18 tests total, 17 succeeded, one display-dependent JournalPaymentReferencesTest skipped, zero failures/errors. Eight payment-service cases cover restart/text identity, same-bank/reference search, mixed bank accounts and EFT repeats, one check allocated across funds with consistent facts, reversal retention and replacement guard, ownership/authorization/closed dates, audit rollback and concurrent issuance, plus SCLX reversal/alphanumeric round-trip and idempotency. Migration upgrade/recovery and parser identity/malformed-data cases pass. The existing GL table projection test now explicitly checks the four new fields. First broad verify exposed only its obsolete column-list expectation; corrected, and the preceding full source head passed 885 tests with 44 headless skips. A later multi-fund instrument improvement is covered in the focused run; complete final-source Maven verification is now running and must finish before claiming final validation.
+
+Required desktop acceptance: [P25-S2 testing notes](P25-S2-user-testing.md). Final JavaFX method cell uses initialization suppression and focus-loss commit; company-formatted date cells use the existing compliance renderer. Production JavaFX CI includes JournalPaymentReferencesTest. Local Xvfb/native display remains unavailable; no owner acceptance is inferred. No publication or PR exists, and S3 remains BLOCKED until S2 merges. D04 stale accounting stays unresolved for S3.
+
+
+### P25-S2 final local verification and handoff
+
+Final source passed offline `mvn clean verify` using recovered Maven 3.9.9 and an isolated temporary dependency cache/home: **886 tests, zero failures/errors, 44 headless skips**, BUILD SUCCESS on 2026-10-09. This includes the final multi-fund instrument grouping, metadata/outgoing-bank validation, SCLX preview/export/atomic commit, replay-safe V79 migration, audit snapshots, GL projection and production Journal changes. Focused final run: 18 tests, zero failures/errors, one display skip. Only brace/whitespace formatting and documentation follow this verification; no behavior change follows the final source gate. No unresolved functional failure remains from executed tests. GitHub Maven/repeat/Xvfb, the new Journal method-cell/save/draft/permission case and native owner desktop acceptance remain pending.
+
+S2 is VERIFYING, not DONE. Branch `codex/P25-S2-payment-references`, base confirmed current main `d20c1ba23fa57a7271860c97e5fdff4e7acf2477`; no PR or remote publication. Changed documents: this plan, payment-reference accounting contract, SCLX specification, editor guidelines, interface-operation matrix and owner testing notes. Local final diff/whitespace and new documentation links are clean. Generated tracked build manifest is restored to its baseline and excluded from the slice. Next exact action after owner authorization: reproduce the reviewed local commit sequence on a new remote branch without force-updates, compare each tree hash, open a draft PR, verify actual head CI including JournalPaymentReferencesTest under Xvfb, repair failures and record evidence. Owner tests [P25-S2 notes](P25-S2-user-testing.md), then accepts/merges; confirm current main before S3 closeout. D03/D04 and later slices remain gated. Do not reuse the merged S1 branch.
+
+
+Verified implementation commit `f4acf08fd0f7bbeba8b72e9261e1de1262dea4a0`, tree `f42d2350b41e3844b21d116419e49dbf214b38cc`. This documentation-only successor records that source head (a commit cannot embed its own SHA). Resolve the complete local tip with `git rev-parse HEAD`; publish the implementation and this handoff in reviewed order only after explicit owner authorization. Worktree is clean after handoff; no PR or remote S2 branch has been created.
+
+
+### P25-S2 authorized draft publication — 2026-10-09 (America/Denver)
+
+Owner explicitly authorized publication, draft PR and CI with “yes, proceed.” Local Git push had no credentials; used the connected GitHub service under AGENTS.md without force updates. Confirmed clean worktree, exact repository and current main `d20c1ba23fa57a7271860c97e5fdff4e7acf2477`, and absence of a remote S2 branch before creating it at that base. Reconstructed changed file contents from verified base blobs and local line deltas, compared all 30 blob writes with local object IDs, and preserved reviewed commit messages/order. No unrelated files were published.
+
+| Local commit | Published commit | Verified matching tree |
+|---|---|---|
+| `f4acf08fd0f7bbeba8b72e9261e1de1262dea4a0` | `5257953855846b13f5a3154929bfe512c59edf08` | `f42d2350b41e3844b21d116419e49dbf214b38cc` |
+| `510f24a7b2f6130e7c492d61749edba61f8d3e0b` | `4e846a6128db3e559d4e8428425f14c8af38901f` | `13eed5e4c777de37255ed8793b281d98cbc960f9` |
+
+Expected-parent fast-forward ref update succeeded. Opened draft [PR #363](https://github.com/benbaron/sca-jakarta-h2/pull/363), head `4e846a6128db3e559d4e8428425f14c8af38901f`; fetched the published branch and independently compared its final tree. PR records local tests, current scope and remaining gates. This publication-ledger successor is documentation only and will be published under the same authorization; active_head identifies the known parent because a commit cannot embed its own SHA. Verify the resulting branch and PR tip before inspecting actual-head CI. S2 stays VERIFYING; no GitHub CI success or native acceptance is claimed yet. Owner testing and separately accepted merge follow final-head CI; S3 remains blocked.

@@ -100,7 +100,7 @@ public class FinancialReportService
         {
             var query = em.createQuery(
                             "select t.txnDate, t.id, coalesce(t.memo, ''), coalesce(p.displayName, ''), " +
-                                    "a.code, a.name, f.code, f.name, a.normalBalance, s.amountSigned " +
+                                    "a.code, a.name, f.code, f.name, a.normalBalance, s.amountSigned, s.paymentMethod, s.paymentReference, s.paymentIssuedOn, s.paymentDeliveredOn " +
                                     "from TxnSplit s " +
                                     "join s.txn t " +
                                     "join s.account a " +
@@ -147,7 +147,7 @@ public class FinancialReportService
                         (String) r[6],
                         (String) r[7],
                         debit,
-                        credit));
+                        credit, (String) r[10], (String) r[11], (LocalDate) r[12], (LocalDate) r[13]));
             }
             return out;
         }
@@ -446,8 +446,19 @@ public class FinancialReportService
                                    String fundCode,
                                    String fundName,
                                    BigDecimal debit,
-                                   BigDecimal credit)
+                                   BigDecimal credit,
+                                   String paymentMethod,
+                                   String paymentReference,
+                                   LocalDate paymentIssuedOn,
+                                   LocalDate paymentDeliveredOn)
     {
+        public GeneralLedgerRow(LocalDate txnDate, Long txnId, String memo, String payee,
+                String accountCode, String accountName, String fundCode, String fundName,
+                BigDecimal debit, BigDecimal credit)
+        {
+            this(txnDate, txnId, memo, payee, accountCode, accountName, fundCode, fundName,
+                    debit, credit, null, null, null, null);
+        }
     }
 
     public record StatementRow(

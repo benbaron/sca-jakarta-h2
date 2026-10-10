@@ -317,7 +317,7 @@ public class TransactionEntryService
                 "TRANSACTION_ENTERED",
                 txn,
                 null,
-                snapshot(txn),
+                snapshot(em, txn),
                 blankToNull(auditReason)));
         return txn;
     }
@@ -353,7 +353,7 @@ public class TransactionEntryService
                 requireNotReconciled(em, transactionId, "update transaction");
                 requireOpenRange(em, txn.getTxnDate(), "update transaction");
                 requireOpenRange(em, command.date(), "update transaction");
-                String before = snapshot(txn);
+                String before = snapshot(em, txn);
 
                 var affectedItems = SupplementalIntegrityService.items(em, txn);
                 applyHeader(em, company, txn, command);
@@ -368,7 +368,7 @@ public class TransactionEntryService
                 affectedItems.addAll(SupplementalIntegrityService.items(em, txn));
                 SupplementalIntegrityService.requireAvailable(em, company, affectedItems);
                 txn.touchUpdatedAt();
-                em.persist(audit(company, auditActor, "TRANSACTION_UPDATED", txn, before, snapshot(txn), null));
+                em.persist(audit(company, auditActor, "TRANSACTION_UPDATED", txn, before, snapshot(em, txn), null));
                 em.getTransaction().commit();
                 return load(transactionId);
             }
@@ -404,6 +404,14 @@ public class TransactionEntryService
     public List<TransactionView> search(LocalDate fromDate, LocalDate toDate, String text,
             String fundText, String eventText, int maxRows)
     {
+        return search(fromDate, toDate, text, fundText, eventText, null, maxRows);
+    }
+
+    /** Searches payment identity and issuing account on the same bank line. */
+    public List<TransactionView> search(LocalDate fromDate, LocalDate toDate, String text,
+            String fundText, String eventText, String paymentBankText, int maxRows)
+    {
+        String bankNeedle = searchNeedle(paymentBankText);
         String fundNeedle = searchNeedle(fundText);
         String eventNeedle = searchNeedle(eventText);
         int limit = maxRows <= 0 ? 100 : maxRows;
@@ -418,16 +426,24 @@ public class TransactionEntryService
                                     "and (:fromDate is null or t.txnDate >= :fromDate) " +
                                     "and (:toDate is null or t.txnDate <= :toDate) " +
                                     "and (:needle is null or lower(coalesce(t.memo, '')) like :needle " +
-                                    "or lower(coalesce(p.displayName, '')) like :needle) " +
+                                    "or lower(coalesce(p.displayName, '')) like :needle " +
+                                    "or exists (select ps.id from TxnSplit ps where ps.txn = t and (" +
+                                    "lower(coalesce(ps.paymentReference, '')) like :needle " +
+                                    "or lower(ps.account.code) like :needle or lower(ps.account.name) like :needle))) " +
                                     "and ((:fundNeedle is null and :eventNeedle is null) or exists (" +
                                     "select s.id from TxnSplit s left join s.activity a where s.txn = t " +
                                     "and (:fundNeedle is null or lower(s.fund.code) like :fundNeedle or lower(s.fund.name) like :fundNeedle) " +
                                     "and (:eventNeedle is null or lower(a.code) like :eventNeedle or lower(a.name) like :eventNeedle))) " +
+                                    "and (:bankNeedle is null or exists (select bs.id from TxnSplit bs where bs.txn = t " +
+                                    "and bs.paymentMethod is not null " +
+                                    "and (lower(bs.account.code) like :bankNeedle or lower(bs.account.name) like :bankNeedle) " +
+                                    "and (:needle is null or lower(coalesce(bs.paymentReference, '')) like :needle))) " +
                                     "order by t.txnDate desc, t.id desc", Txn.class)
                     .setParameter("company", company)
                     .setParameter("fromDate", fromDate)
                     .setParameter("toDate", toDate)
                     .setParameter("needle", needle)
+                    .setParameter("bankNeedle", bankNeedle)
                     .setParameter("fundNeedle", fundNeedle)
                     .setParameter("eventNeedle", eventNeedle)
                     .setMaxResults(limit)
@@ -481,7 +497,7 @@ public class TransactionEntryService
                 em.persist(txn);
                 List<TxnSplit> persistedSplits = persistLines(em, company, txn, command.lines());
                 persistSupplementalLines(em, txn, command.supplementalLines(), persistedSplits);
-                em.persist(audit(company, auditActor, "TRANSACTION_ENTERED", txn, null, snapshot(txn), null));
+                em.persist(audit(company, auditActor, "TRANSACTION_ENTERED", txn, null, snapshot(em, txn), null));
                 em.getTransaction().commit();
                 return load(txn.getId());
             }
@@ -640,6 +656,7 @@ public class TransactionEntryService
             split.setNmr(command.nmr());
             split.setNotes(command.notes());
             split.setAmountSigned(toSignedAmount(account, command));
+            PaymentReferences.apply(em, split, command.payment());
             em.persist(split);
             persisted.add(split);
         }
@@ -836,7 +853,7 @@ public class TransactionEntryService
                     split.isBankCleared(), split.getBankClearedOn(), reconciliationSessions.get(split.getId()),
                     split.getActivity() == null ? null : split.getActivity().getCode(),
                     split.getActivity() == null ? null : split.getActivity().getName(),
-                    split.getMerchant() == null ? null : split.getMerchant().getName()));
+                    split.getMerchant() == null ? null : split.getMerchant().getName(), PaymentReferences.read(split)));
         }
         List<TxnSupplementalLine> supplementalEntities = em.createQuery(
                         "select l from TxnSupplementalLine l left join fetch l.txnSplit where l.txn = :txn order by l.lineOrder, l.id", TxnSupplementalLine.class)
@@ -965,10 +982,10 @@ public class TransactionEntryService
         return event;
     }
 
-    private static String snapshot(Txn txn)
+    private static String snapshot(EntityManager em, Txn txn)
     {
         return "id=" + txn.getId() + ",date=" + txn.getTxnDate() + ",status=" + txn.getStatus()
-                + ",memo=" + (txn.getMemo() == null ? "" : txn.getMemo());
+                + ",memo=" + (txn.getMemo() == null ? "" : txn.getMemo()) + ",payments=" + PaymentReferences.snapshot(em, txn);
     }
 
     private static String blankToNull(String value)

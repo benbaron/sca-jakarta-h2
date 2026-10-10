@@ -114,3 +114,8 @@ Funds / Fund Transfers opens a separate tab and preserves existing Fund and Jour
 A visible retention explanation replaces Delete: generic Journal edits/deletes/replacements cannot detach linked accounting. Reverse Selected takes an open date and required reason, retaining the original and opposite-direction facts. Journal reversals create the same facts atomically. Open Selected in Journal navigates by transaction ID. Header/actions, history and entry have independent remembered vertical dividers and scrolling; entry selectors retain usable widths under scaling with horizontal overflow. Date and money controls use company formatting, write controls use live permission gates and errors remain visible.
 
 Current SCLX exports canonical transfer and reversal lines but does not reconstruct operational transfer links. The panel and export warnings disclose this; a whole-database backup preserves those links. See [Internal fund transfers](../funds/internal-fund-transfers.md) and [user testing](../P25-S1-user-testing.md).
+
+
+## P25-S2 structured payment facts
+
+Journal bank lines expose Payment method, Check / Reference, Issued on and Delivered on. Identity belongs to the selected BANK account line, with independent references for multiple bank lines. Dates follow company formatting; method/reference/date changes protect the unsaved draft. Reference search and Payment bank code/name filter match one split and display the whole transaction. GL Detail exposes the same structured facts for export. Retained reversed checks reserve their numbers; use a new reference for a replacement. See [Payment references](../accounting/payment-references.md).
