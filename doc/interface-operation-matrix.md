@@ -126,3 +126,8 @@ Current examples:
 ## Verification rule
 
 When current production behavior and an older completed-phase statement disagree, current `main`, migrations/tests, and the owning current service boundary win. Correct the governing document rather than restoring retired UI or duplicate authority merely to satisfy stale documentation.
+
+
+### P25-S2 payment references
+
+Journal saves optional per-bank-line method, textual check/reference and issue/delivery facts through canonical TransactionEntryService. Search accepts reference and issuing account code/name on the same split. GL Detail reports/exports structured facts. Existing Delete/correction permission, closed-period and reconciliation gates remain in force. Generic reversal preserves reference evidence; automatic replacement of a referenced instrument is blocked with instructions to reverse then enter a new reference. No stale accounting policy or delivery mutation workflow is introduced. See [payment contract](accounting/payment-references.md).

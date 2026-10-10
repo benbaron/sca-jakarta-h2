@@ -503,6 +503,13 @@ public final class SclxCoreSnapshotAssembler
         {
             extensionValues.put(SclxTransactionBudgetExtension.KEY, Map.of("version", 1, "lines", transactionBudgets));
         }
+        List<Map<String, Object>> paymentReferences = transactionLines.stream()
+                .filter(line -> line.getPaymentMethod() != null)
+                .map(line -> SclxPaymentReferences.export(line, exportedLineIds.get(line))).toList();
+        if (!paymentReferences.isEmpty())
+        {
+            extensionValues.put(SclxPaymentReferences.KEY, Map.of("version", 1, "lines", paymentReferences));
+        }
         extensionValues.put(SclxPeriodCloseExtension.KEY,
                 new SclxPeriodCloseSnapshotAssembler().assemble(companyCode, periodCloseRanges, periodCloseEvents));
         extensionValues.put(SclxAuditHistoryExtension.KEY,

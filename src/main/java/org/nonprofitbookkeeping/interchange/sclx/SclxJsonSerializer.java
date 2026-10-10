@@ -59,6 +59,7 @@ public final class SclxJsonSerializer
         root.set("extensions", extensions(document.extensions()));
         SclxSupplementalLifecycle.explained(root);
         SclxTransactionBudgetExtension.parse(root);
+        SclxPaymentReferences.parse(root);
 
         DefaultIndenter indenter = new DefaultIndenter("  ", "\n");
         DefaultPrettyPrinter printer = new DefaultPrettyPrinter();

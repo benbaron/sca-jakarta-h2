@@ -261,7 +261,7 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
                 {
                     column.setCellFactory(ignored -> new MoneyEditCell(format));
                 }
-                else if ("dueDate".equals(key) || "startDate".equals(key) || "endDate".equals(key))
+                else if ("dueDate".equals(key) || "startDate".equals(key) || "endDate".equals(key) || "paymentIssued".equals(key) || "paymentDelivered".equals(key))
                 {
                     column.setCellFactory(ignored -> new DateEditCell(format));
                 }

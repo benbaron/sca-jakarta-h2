@@ -78,7 +78,9 @@ final class CoreFinancialReportTableBuilder
                     "payee", value.payee(),
                     "memo", value.memo(),
                     "debit", value.debit(),
-                    "credit", value.credit()));
+                    "credit", value.credit(),
+                    "paymentMethod", value.paymentMethod(), "paymentReference", value.paymentReference(),
+                    "issuedOn", value.paymentIssuedOn(), "deliveredOn", value.paymentDeliveredOn()));
         }
         if (values.isEmpty())
         {
@@ -99,6 +101,10 @@ final class CoreFinancialReportTableBuilder
                         column("fundName", "Fund Name", ReportTableModel.ValueFormat.TEXT, 180),
                         column("payee", "Payee", ReportTableModel.ValueFormat.TEXT, 190),
                         column("memo", "Memo", ReportTableModel.ValueFormat.TEXT, 280),
+                        column("paymentMethod", "Payment Method", ReportTableModel.ValueFormat.TEXT, 130),
+                        column("paymentReference", "Check / Reference", ReportTableModel.ValueFormat.TEXT, 160),
+                        column("issuedOn", "Issued on", ReportTableModel.ValueFormat.DATE, 115),
+                        column("deliveredOn", "Delivered on", ReportTableModel.ValueFormat.DATE, 115),
                         column("debit", "Debit", ReportTableModel.ValueFormat.MONEY, 140),
                         column("credit", "Credit", ReportTableModel.ValueFormat.MONEY, 140)),
                 rows);

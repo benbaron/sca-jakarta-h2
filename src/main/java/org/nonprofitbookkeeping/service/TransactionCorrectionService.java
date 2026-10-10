@@ -80,7 +80,7 @@ public class TransactionCorrectionService
                 requireOpenRange(em, txn.getTxnDate(), "edit transaction");
                 requireOpenRange(em, transactionDate, "move transaction");
 
-                String before = snapshot(txn);
+                String before = snapshot(em, txn);
                 txn.setTxnDate(transactionDate);
                 txn.setMemo(blankToNull(memo));
                 txn.setCorrectionNote(blankToNull(correctionNote));
@@ -92,7 +92,7 @@ public class TransactionCorrectionService
                             .setParameter("txn", txn).getResultList());
                 }
                 SupplementalIntegrityService.requireAvailable(em, company, SupplementalIntegrityService.items(em, txn));
-                em.persist(audit(company, auditActor, "TRANSACTION_EDITED", txn, before, snapshot(txn), correctionNote));
+                em.persist(audit(company, auditActor, "TRANSACTION_EDITED", txn, before, snapshot(em, txn), correctionNote));
                 em.getTransaction().commit();
                 return txn;
             }
@@ -128,7 +128,7 @@ public class TransactionCorrectionService
                 requireOpenRange(em, txn.getTxnDate(), "delete transaction");
 
                 var affectedItems = SupplementalIntegrityService.items(em, txn);
-                AuditEvent event = audit(company, auditActor, "TRANSACTION_DELETED", txn, snapshot(txn), null, reason);
+                AuditEvent event = audit(company, auditActor, "TRANSACTION_DELETED", txn, snapshot(em, txn), null, reason);
                 event.setEntityId(Long.toString(transactionId));
                 em.persist(event);
                 em.flush();
@@ -174,6 +174,10 @@ public class TransactionCorrectionService
                 if (createReplacement)
                 {
                     FundTransferIntegrityService.requireUnlinked(em, transactionId, "reverse and replace");
+                    if (!PaymentReferences.snapshot(em, original).isEmpty())
+                    {
+                        throw new IllegalStateException("Reverse this payment, then enter its replacement with a new reference; automatic replacement cannot issue the same instrument twice.");
+                    }
                 }
                 requireNotReconciled(em, transactionId, "reverse transaction");
                 requireOpenRange(em, reversalDate, "create reversal");
@@ -186,7 +190,7 @@ public class TransactionCorrectionService
                 validateBalanced(originalSplits);
 
                 validateSplitOwnership(em, company, originalSplits);
-                String before = snapshot(original);
+                String before = snapshot(em, original);
                 Txn reversal = copyHeader(original, reversalDate);
                 reversal.setReversalOf(original);
                 reversal.setCorrectionNote(blankToNull(reason));
@@ -220,7 +224,7 @@ public class TransactionCorrectionService
                 }
 
                 SupplementalIntegrityService.requireAvailable(em, company, SupplementalIntegrityService.items(em, original));
-                em.persist(audit(company, auditActor, "TRANSACTION_REVERSED", original, before, snapshot(reversal), reason));
+                em.persist(audit(company, auditActor, "TRANSACTION_REVERSED", original, before, snapshot(em, reversal), reason));
                 em.getTransaction().commit();
                 return new CorrectionResult(reversal.getId(), replacement == null ? null : replacement.getId());
             }
@@ -284,7 +288,7 @@ public class TransactionCorrectionService
                 .getResultList();
         validateBalanced(originalSplits);
         validateSplitOwnership(em, company, originalSplits);
-        String before = snapshot(original);
+        String before = snapshot(em, original);
 
         Txn reversal = copyHeader(original, reversalDate);
         reversal.setPortableId(reversalPortableId);
@@ -299,7 +303,7 @@ public class TransactionCorrectionService
         original.setStatus("REVERSED");
         original.touchUpdatedAt();
         em.persist(audit(
-                company, normalizedActor, "TRANSACTION_REVERSED", original, before, snapshot(reversal), reason));
+                company, normalizedActor, "TRANSACTION_REVERSED", original, before, snapshot(em, reversal), reason));
         SupplementalIntegrityService.requireAvailable(em, company, SupplementalIntegrityService.items(em, original));
         return reversal;
     }
@@ -497,6 +501,12 @@ public class TransactionCorrectionService
         copy.setNmr(source.isNmr());
         copy.setNotes(source.getNotes());
         copy.setAmountSigned(amount);
+        copy.setPaymentMethod(source.getPaymentMethod());
+        copy.setPaymentReference(source.getPaymentReference());
+        copy.setPaymentIssuedOn(source.getPaymentIssuedOn());
+        copy.setPaymentDeliveredOn(source.getPaymentDeliveredOn());
+        // Reversal is historical evidence of the same instrument, never another issued check.
+        copy.setPaymentCheckKey(null);
         return copy;
     }
 
@@ -562,10 +572,10 @@ public class TransactionCorrectionService
         return event;
     }
 
-    private static String snapshot(Txn txn)
+    private static String snapshot(EntityManager em, Txn txn)
     {
         return "id=" + txn.getId() + ",date=" + txn.getTxnDate() + ",status=" + txn.getStatus()
-                + ",memo=" + (txn.getMemo() == null ? "" : txn.getMemo());
+                + ",memo=" + (txn.getMemo() == null ? "" : txn.getMemo()) + ",payments=" + PaymentReferences.snapshot(em, txn);
     }
 
     private static String requireText(String value, String label)

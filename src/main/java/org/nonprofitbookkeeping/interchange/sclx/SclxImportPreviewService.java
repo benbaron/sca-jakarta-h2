@@ -44,7 +44,7 @@ public final class SclxImportPreviewService
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Set<String> RECOGNIZED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
-            "supplementalDetails", "transactionBudgets", "bankConfiguration",
+            "supplementalDetails", "transactionBudgets", "paymentReferences", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "fixedAssets", "inventory",
             "periodClose", "auditHistory");
     private static final Set<String> UNSUPPORTED_ROOT_SECTIONS = Set.of(
@@ -139,12 +139,12 @@ public final class SclxImportPreviewService
         JsonNode identityRoot = document.root();
         try
         {
-            identityRoot = SclxTransactionBudgetExtension.identityDocument(document.root());
+            identityRoot = SclxPaymentReferences.identityDocument(SclxTransactionBudgetExtension.identityDocument(document.root()));
         }
         catch (IllegalStateException ex)
         {
-            messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_TRANSACTION_BUDGET_INVALID",
-                    "$.extensions.scaJakartaH2.transactionBudgets", ex.getMessage(), true));
+            messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_TRANSACTION_METADATA_INVALID",
+                    "$.extensions.scaJakartaH2", ex.getMessage(), true));
         }
         OrganizationData organization = organization(document.root(), messages);
         Extraction extraction = extract(identityRoot, messages);
