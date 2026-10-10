@@ -1,12 +1,12 @@
 ---
-plan_version: 345
+plan_version: 346
 active_phase: P25
 active_slice: P25-S3
 active_status: VERIFYING
 active_branch: codex/P25-S3-check-exceptions
-active_pull_request: null
-active_head: 3f12e60e04c7796d3390f3680c8b8601f7108806
-next_action: "After owner publication authorization, confirm main and branch state, publish reviewed S3 commits with matching trees, open a draft PR and inspect final-head Maven/repeat/Xvfb CI; owner desktop acceptance and separate merge follow. D04 stale accounting and S4 remain gated."
+active_pull_request: 364
+active_head: 38db5cdb889e5110334916ef1f9ade9927acd816
+next_action: "Publish this authorized documentation ledger with a matching tree, verify branch/PR #364 final head and clean/repeat/Xvfb CI, repair failures; owner desktop acceptance and separate merge follow. S3 stays VERIFYING; D04 and S4 remain gated."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,7 +37,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | VERIFYING — S1/S2 merged in PRs #362/#363; S3 check exceptions implemented locally |
+| P25 | Transfers, payment references, reporting classification | VERIFYING — S1/S2 merged in PRs #362/#363; S3 check exceptions in draft PR #364 |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -1288,3 +1288,15 @@ Branch `codex/P25-S3-check-exceptions`, base/current main confirmed `5f6bec4b6c9
 Next exact action after explicit owner publication authorization under AGENTS.md: confirm current main, clean local worktree and expected remote branch; publish the complete reviewed local sequence on a fresh remote S3 branch without force updates, preserving messages/order and matching every tree; open a draft PR; verify branch/PR head and actual-head clean/repeat/Xvfb workflow including CheckExceptionsPaneTest; repair failures and record actual results. Owner follows desktop notes and separately accepts/merges. Only after confirmed merge into current main close S3 and select the first unblocked dependent slice.
 
 Verified implementation commit `3f12e60e04c7796d3390f3680c8b8601f7108806`, tree `e48ba6111aea78780746888217382deb2c9d8ef9`. This documentation-only successor records the verified source head; resolve `git rev-parse HEAD` for the complete local publication tip. Publish both commits in reviewed order with matching trees only after owner authorization. Worktree is clean after this handoff; no remote S3 branch or PR is created. No application change follows final clean/Xvfb verification.
+
+
+### P25-S3 authorized draft publication — 2026-10-10 (America/Denver)
+
+Owner explicitly authorized publication, draft PR and CI with “yes.” Confirmed clean worktree, main `5f6bec4b6c9632a25d23b9d4635fa6fd324649bc` and absent remote S3 branch before creating it at that base. Used the connected GitHub service under AGENTS.md; preserved reviewed commit messages/order, compared all published blob IDs and both tree IDs, and fast-forwarded with the expected parent and force disabled. No unrelated files were included.
+
+| Local commit | Published commit | Verified matching tree |
+|---|---|---|
+| `3f12e60e04c7796d3390f3680c8b8601f7108806` | `559699bc0838fbee5e1a95dcbaf054e731157134` | `e48ba6111aea78780746888217382deb2c9d8ef9` |
+| `99c7f88cec13cee2b12182907f239d54b9662e6d` | `38db5cdb889e5110334916ef1f9ade9927acd816` | `0653c5a9bc1381a8ab857e45e02ef509fc3ff7a9` |
+
+Opened draft [PR #364](https://github.com/benbaron/sca-jakarta-h2/pull/364), head `38db5cdb889e5110334916ef1f9ade9927acd816`. This documentation-only ledger will be published under the same authorization; active_head records its known parent because the successor cannot embed its own SHA. Verify final branch and PR tip/tree before inspecting actual-head Maven clean verify, repeat tests and Xvfb. No GitHub S3 success is claimed yet. Local final-source evidence remains 894 tests with 45 headless skips and 25 production Xvfb tests without skips, zero failures/errors. Owner desktop acceptance and separately authorized merge remain pending; S3 stays VERIFYING, S4/D04 remain gated.
