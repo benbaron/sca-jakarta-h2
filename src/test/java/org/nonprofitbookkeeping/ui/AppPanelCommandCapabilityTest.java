@@ -81,6 +81,7 @@ class AppPanelCommandCapabilityTest
         expected.put(AppPanelId.REPORT_LIBRARY, Set.of());
         expected.put(AppPanelId.CHART_OF_ACCOUNTS, editorCommands());
         expected.put(AppPanelId.FUNDS, editorCommands());
+        expected.put(AppPanelId.FUND_TRANSFERS, editorCommands());
         expected.put(AppPanelId.ACTIVITIES, editorCommands());
         expected.put(AppPanelId.SETTINGS, Set.of(AppCommand.SAVE_ACTIVE));
         expected.put(AppPanelId.DIAGNOSTICS, Set.of());

@@ -1,0 +1,22 @@
+# P25-S1 — internal fund transfers: user testing
+
+Branch: `codex/P25-S1-internal-fund-transfers`. Status: local implementation; publication, CI, owner desktop acceptance and merge pending.
+
+Funds now opens Fund Transfers, also reachable from navigation. Save creates one balanced canonical transaction and a linked transfer-report fact atomically. Internal allocation changes each fund's assets and net assets equally; it does not move bank money. Transfers are retained; Reverse Selected or Journal reversal records dated opposite lines and opposite-direction history. New/Save retries, company restrictions, available source net assets, period protection and authorization are enforced by the service. No accounts or production funds are auto-created.
+
+## Desktop acceptance
+
+1. Use a working copy of a company database with active unrestricted/designated funds and canonical source-fund net assets. Prepare an ordinary DEBIT-normal ASSET posting account representing allocation claims on pooled resources and an ordinary CREDIT-normal EQUITY posting account. Both must be in the active chart and have no subtype or function. Do not choose a bank or revenue/expense account.
+2. In Funds, leave an unsaved draft and open Fund Transfers. Confirm the Funds draft remains. Save a $100 transfer with date, source/destination, accounts and explanation. Save again: only one transfer and one transaction should exist. New starts another request. Change a draft, Refresh and select history: the draft remains. Decline New's discard confirmation: the draft remains.
+3. Compare company and per-fund balance sheets before/after. Source assets/net assets decrease $100; destination increases $100; each fund stays balanced. Company net assets/assets, bank balances and income/expense stay unchanged. The transfer report has the linked source/destination pair; Journal has four non-bank lines. Open Selected in Journal selects the exact transaction and honors any Journal draft-discard protection.
+4. Try same funds, zero/negative/excess amount, restricted/inactive/ineffective funds or ancestors, bank/wrong-chart accounts, missing explanation and closed dates. Each fails visibly without new accounting/history. A backdated transfer must not overdraw a later recorded source balance.
+5. Reverse with an open date and reason. Original-date reports retain the original; reports through reversal date have the opposite pair and net effect zero. Journal and history reconcile. Reversing a reversal restores direction. Retire a used fund and confirm its historical reversal still works. Journal direct edit/delete/reverse-and-replace of linked transfer entries must fail with a transfer-workflow explanation. A viewer can inspect history but cannot save/reverse.
+6. At laptop size and increased font scaling, drag both dividers. Verify header/actions and entry scroll independently; narrow entry width exposes a horizontal scrollbar, short height exposes vertical scrolling, and the table scrolls horizontally. Resize/reorder/sort columns, reopen and check company-owned layout persistence. Verify company money/date formatting and hover help.
+7. Export SCLX and read the operational-transfer-link warning. SCLX preserves the ledger lines and reversal relationship, but import currently does not restore transfer-report links/request identities. Use a whole-database backup/restore when those links are required. No bank transfer, NMR or other-entity mapping behavior is added; D03 remains unresolved.
+
+## Automated evidence
+
+Service tests cover per-fund/company reconciliation, request restart/concurrency, overdraft/backdating, restrictions/ownership/accounts, period/authorization, generic correction guards, dated reversals and audit-failure rollback. V77-to-V78 in-memory upgrade preserves legacy rows and enforces unique new requests. SCLX round-trip checks canonical lines/reversal links and explicit missing-operational-link disclosure. Real JavaFX service/layout tests are included in the Xvfb CI route suite; this container has no display and cannot supply desktop visual acceptance.
+
+
+Final local evidence (2026-10-08): all main/test sources compiled with Java 17; focused regression 18/18 passed. Isolated full JUnit discovery found 904 tests: 873 started, 830 passed, 43 headless aborts, zero failures; 31 tests did not start after headless container aborts. Maven is absent (`mvn clean verify` exit 127), so Maven/Xvfb CI and desktop acceptance remain pending. Verified implementation commit: `0103def5449d69b6a527375fbad9ab6188b81981`.

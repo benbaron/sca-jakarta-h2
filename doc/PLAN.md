@@ -1,12 +1,12 @@
 ---
-plan_version: 327
-active_phase: P24
-active_slice: P24-S4C
+plan_version: 337
+active_phase: P25
+active_slice: P25-S1
 active_status: VERIFYING
-active_branch: codex/P24-S4C-merchant-maintenance
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/361
-active_head: a4386001b443e61446959c19f414309f9da704fc
-next_action: "Verify final published head of draft PR #361 with Maven PR Tests including MerchantsPanelTest under Xvfb, repair any failure, and record actual results; owner desktop acceptance and merge remain pending."
+active_branch: codex/P25-S1-internal-fund-transfers
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/362
+active_head: be6484a9c794760a5ab422c0d3e24116a839f6ce
+next_action: "Inspect actual final published head of draft PR #362 with Maven/headless/Xvfb CI, repair any failure, then complete owner desktop acceptance and separately authorized merge. D03 continues to gate legal-entity mappings."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -36,8 +36,8 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P21 | Activity and Event Accounting | DONE through P21-S2 / PR #339; completion record PR #340 |
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
-| P24 | Named events and usable entry workflows | IN_PROGRESS — P24-S4B merged; P24-S4C VERIFYING |
-| P25 | Transfers, payment references, reporting classification | BLOCKED — P23–P24 and relevant policy decisions |
+| P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
+| P25 | Transfers, payment references, reporting classification | VERIFYING — P25-S1 local implementation; publication/CI/desktop/merge pending |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is merged; P24-S4B is DONE; P24-S4C is VERIFYING. Conditional P27-S5 remains unadopted.
+P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is merged; P24-S4B and P24-S4C are DONE; P24 is complete. P25-S1 is READY for internal fund transfers; unresolved D03 remains a gate before entity mappings. Conditional P27-S5 remains unadopted.
 
 ## 10. Archived proposal and adoption
 
@@ -677,11 +677,11 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P24-S1 | Make event creation and discovery explicit (G14) | DONE | P23-S5 merged; owning contract and D01–D10 gates as applicable |
 | P24-S2 | Make Fund/Event tagging obvious and reliable (G14) | DONE | P24-S1 merged; owning contract and D01–D10 gates as applicable |
 | P24-S3 | Attribute generated inventory costs (G6) | DONE | P24-S2 merged; owning contract and D01–D10 gates as applicable |
-| P24-S4 | Complete lookup maintenance (G8) | IN_PROGRESS | P24-S3 merged; owning contract and D01–D10 gates as applicable |
+| P24-S4 | Complete lookup maintenance (G8) | DONE | P24-S3 merged; owning contract and D01–D10 gates as applicable |
 | P24-S4A | Budget Category maintenance | DONE | P24-S3 merged; A08 category workflow |
 | P24-S4B | Payee/Counterparty maintenance | DONE | P24-S4A merged; A08 party workflow |
-| P24-S4C | Merchant maintenance | VERIFYING | P24-S4B merged; A08 merchant workflow |
-| P25-S1 | Implement one internal fund-transfer operation (G7) | BLOCKED | P24-S4 merged; owning contract and D01–D10 gates as applicable |
+| P24-S4C | Merchant maintenance | DONE | P24-S4B merged; A08 merchant workflow |
+| P25-S1 | Implement one internal fund-transfer operation (G7) | VERIFYING | P24-S4 merged; internal-only scope; D03 required before legal-entity mappings; other applicable acceptance gates retained |
 | P25-S2 | Add structured payment/check references (G9) | BLOCKED | P25-S1 merged; owning contract and D01–D10 gates as applicable |
 | P25-S3 | Complete check exception and reconciliation workflows (G9) | BLOCKED | P25-S2 merged; owning contract and D01–D10 gates as applicable |
 | P25-S4 | Implement the adopted NMR accounting contract (G10) | BLOCKED | P25-S3 merged; owning contract and D01–D10 gates as applicable |
@@ -1136,4 +1136,89 @@ This documentation-only publication ledger follows the reviewed implementation a
 
 Published publication-ledger head `a4386001b443e61446959c19f414309f9da704fc` (local `b170f02b770738b41fc16436aa5458f88dd5f978`, matching tree `d6f8ec05a555a1ff60a62280fd234c2aea886eaf`) was confirmed on branch and draft PR #361. [Run 37628321930](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37628321930), job `112815990896`, passed both full Maven runs: 858 tests each, zero failures/errors, 41 headless skips. Xvfb ran 21 tests with two errors, both MerchantsPanelTest assertions. No final CI success is claimed.
 
-The Merchant-only assignment regression exposed a missing Merchant property dirty listener in Journal; add that narrow listener beside the existing Fund/Event listeners so assignment changes are protected as unsaved drafts. The refresh callback already suppresses loading changes and restores the previous dirty state. The overflow stress test also used a fixed 850-pixel minimum immediately after requesting a narrower Stage, before the window resize/layout pulse had completed. Size the stress content relative to the actual viewport and await real width/height overflow plus both visible scrollbars before asserting; preserve all geometry requirements rather than weakening them. Explicitly assert Merchant-only dirty state before other draft changes. These two corrections are within the authorized S4C publication/verification scope. Local Maven/display/dependency cache remains unavailable in this resumed environment; compile/display validation will run in CI. Whitespace checks passed; final-head CI and owner desktop acceptance remain pending.
+The Merchant-only assignment regression exposed a missing Merchant property dirty listener in Journal; add that narrow listener beside the existing Fund/Event listeners so assignment changes are protected as unsaved drafts. The refresh callback already suppresses loading changes and restores the previous dirty state. The overflow stress test also used a fixed 850-pixel minimum immediately after requesting a narrower Stage, before the window resize/layout pulse had completed. Size the stress content relative to the actual viewport and await real width/height overflow plus both visible scrollbars before asserting; preserve all geometry requirements rather than weakening them. Explicitly assert Merchant-only dirty state before other draft changes. These two corrections are within the authorized S4C publication/verification scope. Local Maven and DISPLAY remain unavailable. The dependency cache was subsequently rediscovered (145 cached jars); all corrected production and test sources compiled locally under Java 17, with the same two pre-existing ReportLibraryPanel warnings. Native display validation runs in CI. Whitespace checks passed; final-head CI and owner desktop acceptance remain pending.
+
+
+### P24-S4C successful final-head CI — 2026-10-07
+
+Final published correction head `6ebaea8ec851ff3bed65dbbcd07851873d174bec` passed [Maven PR Tests run 37629410014](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37629410014), job `112819446148`. Both full runs: **858 tests, zero failures/errors, 41 headless skips**. Production JavaFX/Xvfb gate: **21 tests, zero failures/errors/skips**, including both MerchantsPanelTest cases. All five Merchant service cases passed in both full runs. Clean verify, repeat tests, display compliance and job cleanup succeeded. Run head, branch ref and PR #361 head were confirmed identical after CI; draft PR is open, mergeable and unmerged. No application failure remains from executed gates. Native owner desktop testing is still required; Xvfb is not owner acceptance.
+
+Correction source commit `106e890c6876dae2ec4fc911429af2e9f6af7ba4` maps to final published head with matching tree `a327f9f8fa15bc31519f8aafc709ed0fc7a24941`. Together with the four original commits and publication ledger recorded above, all six published commits retain reviewed messages/order and matching trees, with only expected-head fast-forward ref updates. PR description records actual final-head results and the initial failure/correction rationale.
+
+This post-CI evidence commit is **local only**, deliberately leaving the successful published head unchanged. No application change follows the verified source head. The worktree is clean after recording this handoff; `git rev-parse HEAD` identifies the documentation tip. Carry this evidence forward from confirmed main after owner merge. S4C remains VERIFYING, P24-S4 remains IN_PROGRESS, and P25-S1 stays BLOCKED. Next exact action: owner follows [acceptance notes](P24-S4C-user-testing.md), then separately authorizes/merges PR #361. On reported merge, fetch current main, verify PR merge and final CI head, close S4C/P24-S4, and select the first unblocked dependent slice. Do not merge or advance without that evidence.
+
+
+## 29. P24 completion and P25-S1 readiness — 2026-10-07 (America/Denver)
+
+Owner reported “tested and merged.” GitHub independently confirms owner `benbaron` merged PR #361 at `a9275ad1b9a970a084829d5659d792375ed196fb` on 2026-10-07 23:34:25 UTC / 17:34:25 America/Denver. Fetched origin/main and confirmed that merge as current main. PR final head `6ebaea8ec851ff3bed65dbbcd07851873d174bec` matches successful Maven PR Tests run `37629410014`: both full runs 858 tests, zero failures/errors, 41 headless skips; Xvfb 21 tests, zero failures/errors/skips. Owner testing statement supplies desktop acceptance; no additional device/scaling evidence is invented.
+
+P24-S4C and the Budget Category/Payee/Merchant P24-S4 family are DONE. All P24 slices are accepted and merged, so P24 is DONE. Clear obsolete active branch/PR/head fields and select P25-S1 as READY, not started. Its adopted contract is [internal fund transfers](P23-P28-runbook-correction-program.md#p25-s1--implement-one-internal-fund-transfer-operation-g7): one atomic operation linking canonical balanced accounting and existing FundTransfer reporting, with restriction, closed-period, duplicate/failure and reversal protections. A07 distinguishes internal reallocation, bank movement and inter-entity payment. D03 remains unresolved before legal-entity mappings; readiness for internal transfers does not resolve that policy or authorize external mapping implementation. P25-S2 and later slices stay BLOCKED.
+
+This documentation-only closeout is local on fresh `codex/P24-closeout`, based on the confirmed merge; the merged implementation branch is not reused. Preserved the local final-CI evidence commit `76f8c2d` by cherry-picking it as `165446e`. No closeout PR or P25 implementation branch exists. Validation: current-main ancestry, PR merge/final-head CI confirmation, scoped governing/acceptance dependency review and diff whitespace checks; no application changes or repeated application tests. Next exact action when the owner resumes execution: fetch current main, create a focused P25-S1 branch, carry this closeout forward, read the adopted G7/A07 and D03 contracts, inspect FundTransfer/FundAdminService/FundsPanel, canonical transaction/correction/ownership/authorization services, bank-transfer authority, semantic transfer report and relevant migrations/tests, then establish baseline before design.
+
+
+## 30. P25-S1 internal fund transfers — selected 2026-10-07
+
+Owner selected P25-S1 with “Ok, proceed.” Fetched and confirmed main `a9275ad1b9a970a084829d5659d792375ed196fb`. Fresh `codex/P25-S1-internal-fund-transfers` carries P24 evidence/closeout as `82ce8a4` and `8cc7a71`. Inspected the existing FundTransfer master and report, Fund maintenance/ownership, canonical entry/correction caller-owned transactions, period/reconciliation protections, SCLX coverage, V1 and current migration history, G7/A07/D03 and production UI rules. Existing FundBalanceService sums natural-signed amounts of all account types without company scope; it is not a sound net-assets availability authority and will not be used for transfer policy.
+
+Design and governing contract: [Internal fund transfers](funds/internal-fund-transfers.md). One atomic service operation creates existing FundTransfer and canonical Txn facts, with audit and UUID request idempotency. Four lines reallocate a selected ordinary non-bank ASSET allocation account and EQUITY net-assets account between funds; bank, income and expense company totals remain unchanged and each fund's balance sheet stays balanced. Accounts are explicitly selected from current active chart; no automatic accounting data. Both funds and their parent hierarchy must be active/effective, unrestricted or designated and free of restriction text. Ledger-defined source net assets must cover the amount. D03 remains a gate on external/legal-entity mappings, which are excluded.
+
+Generic Journal edits/deletes of linked transfers must fail with a transfer-workflow explanation; reversal preserves original operational facts and creates the opposite-direction dated transfer fact atomically, including generic Journal reversals. No replacement shortcut may produce an unlinked transfer. New migration adds nullable request identity/hash for legacy compatibility, unique new request identity, and indexes; existing FundTransfer status remains storage vocabulary, not a new visible posting workflow. SCLX already omits FundTransfer facts: this slice must verify portable canonical line/reversal effects and visibly disclose the existing operational-link portability limit; full operational-field coverage remains P27-S4.
+
+Donor reviewed at `c697630ec1f784ebe8338d7300da6c9ac801b180`: FundTransferPostingService supplies four-line source/destination accounting but uses separate posting/lifecycle commits and alternate JDBC ledger; adapt four-line intent with one production JPA transaction, not donor persistence/status queues. Legacy FundsPanelFX uses name-based transaction metadata; retain stable IDs instead.
+
+
+### P25-S1 local implementation and verification — 2026-10-08
+
+Implemented company-scoped FundTransferService and immutable commands/views, UUID request/hash migration V78, four-line canonical accounting and atomic audit facts. Added source net-assets checks through the transfer date and every future recorded day, company-row serialization and exact-request restart/concurrency handling. Generic Journal entry update/direct edit/delete/reverse-and-replace reject linked transfers; both public and caller-owned Journal reversals create inverse operational history with a required reason, preserving dated facts and historical retirement corrections. New-transfer restrictions do not prevent historical correction.
+
+Added the production FUND_TRANSFERS route, Funds action, service registry authorization wiring and navigation. Entry, latest-500 history, New/Save/Refresh, dated reasoned reversal and transaction-ID Journal navigation are real operations. Saved drafts lock; New intentionally discards unsaved changes, while refresh/history selection preserve drafts. Company date/money formatting, typed sortable columns, saved table/divider preferences, independent scrolling and live write-permission gates are integrated. Visible retention and SCLX portability explanations replace deletion. Export inventory warns about deferred operational transfer links while existing canonical ledger/reversal export/import is verified. D03 and later-slice gates remain unchanged.
+
+Documents: [governing transfer contract](funds/internal-fund-transfers.md), [desktop acceptance notes](P25-S1-user-testing.md), interface operation matrix, editor guidelines, transaction lifecycle and SCLX specification. Tests cover accounting/report reconciliation, restart and concurrent retries/overdraw, future-date availability, restrictions/ancestors/ownership/accounts/authorization/periods, generic corrections, reversal chains and audit-failure atomic rollback. V77-to-V78 in-memory upgrade and untracked-history recovery preserve legacy facts/request uniqueness. The Xvfb CI list includes real FundTransfersPanel service/layout tests.
+
+Local baseline/final Maven commands are unavailable (`mvn: command not found`, exit 127); baseline and final all-main/all-test Java 17 compilation succeeds with the same two existing ReportLibraryPanel varargs warnings. A custom JUnit Platform 1.10.3 launcher uses cached project dependencies, with older cached Platform 1.9.3 jars excluded. Final focused regression: 18 tests started/successful, zero failures/aborts. Broad regression initially exposed replay failures in untracked-schema recovery; unapplied V78 now follows existing replay-safe migration conventions, and the recovery regression passes. A subsequent broad run hit only stale checksums in the earlier test-created default database; the final broad run uses an isolated JVM user.home and leaves that database untouched. Final isolated broad regression completed: 904 tests discovered, 873 started, 830 successful, 43 aborted because the graphical toolkit/display is unavailable, zero failures; 12 headless containers aborted and their 31 tests did not start. This custom-launcher evidence is not a Maven or Xvfb success claim. No GitHub publication or CI is claimed; owner desktop testing is pending.
+
+
+**Final local handoff:** P25-S1 VERIFYING on `codex/P25-S1-internal-fund-transfers`; implementation/verified code head `0103def5449d69b6a527375fbad9ab6188b81981`, based on merged main `a9275ad1b9a970a084829d5659d792375ed196fb`. Local sequence includes P24 evidence/closeout `82ce8a4`, `8cc7a71`, the implementation commit, then this documentation-only evidence commit (resolve final branch tip with `git rev-parse HEAD`; `active_head` identifies the verified implementation). PR is null/unpublished. The final tree/whitespace review is clean and intentional. Local application compilation and focused/broad JUnit runs pass; no unresolved functional failures from the completed local runs. `mvn clean verify` remains unavailable, graphical tests/owner desktop acceptance remain pending, and GitHub has not run this branch.
+
+Remaining exact action after explicit owner publication authorization: confirm current remote main and expected branch state, publish the complete reviewed local sequence through authenticated Git or the connected GitHub service without force updates, compare every remote tree to its local tree, create a draft P25-S1 PR, confirm its actual head and inspect the repository Maven/headless/Xvfb workflow. Repair any failures in this slice and record actual CI evidence; use [P25-S1 desktop acceptance](P25-S1-user-testing.md) for owner testing. Do not mark DONE or activate P25-S2 before confirmed merge and required acceptance. D03 is still unresolved for legal-entity mappings; no later-phase work is authorized by this handoff.
+
+
+### P25-S1 authorized draft PR publication — 2026-10-07 (America/Denver)
+
+Owner explicitly authorized branch publication, draft PR creation and CI verification. Remote main remained `a9275ad1b9a970a084829d5659d792375ed196fb`, the task branch was absent, and the local worktree was clean before publication. Published the complete reviewed local sequence with original messages and identical per-commit trees, then created the new branch at the publication head without force updates. Draft [PR #362](https://github.com/benbaron/sca-jakarta-h2/pull/362) targets main; verified initial branch/PR head `8b507cf89b9dc172ceae138980f15c4b5d334a52`.
+
+| Local commit | Published commit | Matching tree |
+|---|---|---|
+| `82ce8a48146708f5559fc5969c1b003ad830b4f2` | `4be52df7e347983c9f99acba3ea2206f4669d24c` | `e2c0daff2d1f13fcde04aa71f7057336901dbb2c` |
+| `8cc7a71fb48a9227be3f12fdfe9fc6aabc9a4211` | `3402a425707ff3b294377b01689123769b5b4453` | `09b62524f9b4c8607f08ac4fbe545a12fc04ce60` |
+| `0103def5449d69b6a527375fbad9ab6188b81981` | `571fb6a1a413087071ad892f2eff4a962e376414` | `e7be9e049ab684043872c68502e14007ecd8ef45` |
+| `af23712447c1ed66fb2f5b81f6d78bfb9a572317` | `8b507cf89b9dc172ceae138980f15c4b5d334a52` | `55083f0c28690f092292b1c34643b735d0de0ec9` |
+
+This publication-ledger successor is documentation only and will be fast-forwarded under the same owner authorization. active_head records its known published parent because a commit cannot embed its own SHA. Verify the resulting branch and PR tip and inspect CI for that actual final head; no Maven/Xvfb or desktop pass is claimed at this checkpoint. P25-S1 remains VERIFYING and P25-S2 remains BLOCKED. After final CI, record evidence locally and in the PR body without replacing the verified head with another evidence-only publication. Owner desktop acceptance remains required via [testing notes](P25-S1-user-testing.md).
+
+
+### P25-S1 first final-head CI and compile correction
+
+Published local publication-ledger `5011f0bd33b4ec49712aaaae07698a9726618b0f` as `3c7623a092b453aa585c3a25ff4f3228ff549625`, with matching tree `5bed2504b9dff2ed5c9af0fb81e1bca035534b1f`; fetched and verified the final branch and PR head. [Maven PR Tests run 37713786924](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37713786924), job `113105502284`, failed during main compilation before tests. Maven source lookup interpreted the panel's wildcard layout import against the existing package-local `GridPane.java` compatibility file, which declares GridPaneAlias. The earlier explicit-all-files local javac invocation did not exercise Maven's implicit source lookup. Repeat tests and Xvfb were skipped; no CI pass is claimed.
+
+Narrow correction: replace the new FundTransfersPanel wildcard imports with explicit JavaFX control/layout imports, including javafx.scene.layout.GridPane. Preserve the existing compatibility file and all accounting/UI behavior. Final local Maven remains unavailable and the earlier container's cached dependencies are absent in this resumed runtime; current validation is import/diff review, with fresh actual-head Maven/Xvfb CI required. Publish the correction under the owner's existing authorization, verify matching tree/head with an expected-parent non-force update, inspect the replacement workflow and resolve any remaining failure before owner desktop acceptance. No later-phase feature or merge is included.
+
+
+### P25-S1 explicit import completion
+
+The import correction local `74aa82ec3d7600dec99a54fdfecca511d5fc95c3` published as `81fde3393c3e7315cd7e7b718736bff9e9def8ca`, matching tree `1ecf3ee52422a8a78b25c5bfebb60a8f61f98158`, was verified on branch/PR. [Run 37714081173](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37714081173), job `113106439364`, confirmed the GridPane source-lookup error was removed but main compilation found the omitted javafx.scene.control.Control import for the gated input array. Add that explicit import; no behavior or tests change. Full actual-head CI remains required; tests/Xvfb were skipped in this run.
+
+
+### P25-S1 first complete Maven passes and Xvfb geometry correction
+
+Import completion local `b336ecb6d135a994cacc9d1682712eb405454478` published as `170dcecdd854d505e944f06c5e69b4c1b88b9cd2`, matching tree `fe2dc19066ad84ea9bd98f8b81fdc38f80effa88`, with branch/PR head verified. [Run 37714257844](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37714257844), job `113106999871`: clean headless Maven verify and repeat tests both passed, each 873 tests with zero failures/errors and 43 headless skips. Production Xvfb ran 23 tests: 22 passed, one failed, no errors/skips. The real transfer save/retry/draft/Journal/reversal/permission test passed; scaled transfer-editor two-axis overflow timed out.
+
+Narrow geometry correction: ordinary form Labels could compress below their preferred text width, leaving no horizontal overflow at the test's narrow/scaled viewport. Retain each field label's natural preferred minimum width while allowing the surrounding panel and ScrollPane to shrink. Existing selector minimum/preferred widths and independent dividers remain; real horizontal scrolling now exposes full labels and controls. Add actual content/viewport/minimum/preferred widths and scrollbar visibility to the geometry test's timeout diagnostic. This preserves the two-axis assertion instead of widening the panel or weakening the test. Publish and rerun final-head full Maven/Xvfb checks; native owner desktop acceptance remains pending.
+
+
+### P25-S1 populated history geometry fixture
+
+Label-width correction local `0a8b52c84568d0b876c1cd864bf7bd7d3dc2d685` published as `be6484a9c794760a5ab422c0d3e24116a839f6ce`, matching tree `0ee81c7bd53901d47ffd98dd220bd9f6562f2af6`. [Run 37715012139](https://github.com/benbaron/sca-jakarta-h2/actions/runs/37715012139), job `113109390815`, passed both full Maven runs (873 tests each, zero failures/errors, 43 skips). The editor's real two-axis overflow passed. Xvfb then failed the table horizontal scrollbar assertion because its empty history displays the TableView placeholder instead of the populated virtual flow. The functional transfer test still passed.
+
+Correct the geometry fixture by saving one real transfer through the production UI before resizing. Keep both editor-axis and table-horizontal scrollbar assertions, company preference persistence and divider checks. No production behavior changes in this correction. Publish with matching tree and expected-parent non-force update, then verify full actual-head CI. Owner desktop acceptance and merge remain pending; P25-S1 stays VERIFYING.

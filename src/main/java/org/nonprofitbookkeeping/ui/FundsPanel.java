@@ -113,7 +113,10 @@ public class FundsPanel implements AppPanel
         deleteUnused.setOnAction(event -> deleteUnusedFund());
         refresh.setOnAction(event -> reload(editingFundId));
 
-        HBox actions = new HBox(8, add, save, deleteUnused, refresh);
+        Button transfers = new Button("Fund Transfers");
+        transfers.setId("fundsTransfers");
+        transfers.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.FUND_TRANSFERS, ""));
+        HBox actions = new HBox(8, add, save, deleteUnused, refresh, transfers);
         root.setTop(new VBox(6, title, help, actions, status));
 
         configureTable();

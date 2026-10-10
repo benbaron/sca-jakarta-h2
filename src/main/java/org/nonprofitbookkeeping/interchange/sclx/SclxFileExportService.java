@@ -58,7 +58,7 @@ public final class SclxFileExportService
                         InterchangeMessageSeverity.WARNING,
                         "SCLX_DEFERRED_SECTION",
                         section.outputPath(),
-                        section.description() + " is not yet included by the current P15-S4 snapshot.",
+                        section.description() + " is not yet included by the current snapshot.",
                         false))
                 .toList();
 

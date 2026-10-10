@@ -34,6 +34,7 @@ import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService;
 import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
 import org.nonprofitbookkeeping.service.CounterpartyAdminService;
 import org.nonprofitbookkeeping.service.MerchantAdminService;
+import org.nonprofitbookkeeping.service.FundTransferService;
 import org.nonprofitbookkeeping.service.BudgetCategoryLookupService;
 import org.nonprofitbookkeeping.service.BudgetPlanService;
 import org.nonprofitbookkeeping.service.CompanyAdminService;
@@ -107,6 +108,7 @@ public final class UiServiceRegistry
     public static FundAdminService fundAdmin() { return services().fundAdmin(); }
     public static ActivityAdminService activityAdmin() { return services().activityAdmin(); }
     public static CounterpartyAdminService counterpartyAdmin() { return services().counterpartyAdmin(); }
+    public static FundTransferService fundTransfers() { return services().fundTransfers(); }
     public static MerchantAdminService merchantAdmin() { return services().merchantAdmin(); }
     public static BudgetCategoryAdminService budgetCategoryAdmin() { return services().budgetCategoryAdmin(); }
     public static BudgetPlanService budgetPlan() { return services().budgetPlan(); }
@@ -340,6 +342,7 @@ public final class UiServiceRegistry
                 new BudgetCategoryAdminService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
                 new CounterpartyAdminService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
                 new MerchantAdminService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
+                new FundTransferService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
                 new BudgetPlanService(jpa, UiServiceRegistry::activeCompanyCode, authorizationGuard),
                 new BankConfigurationService(jpa, authorizationGuard),
                 new FixedAssetService(
@@ -543,6 +546,7 @@ public final class UiServiceRegistry
             BudgetCategoryAdminService budgetCategoryAdmin,
             CounterpartyAdminService counterpartyAdmin,
             MerchantAdminService merchantAdmin,
+            FundTransferService fundTransfers,
             BudgetPlanService budgetPlan,
             BankConfigurationService bankConfiguration,
             FixedAssetService fixedAssets,
