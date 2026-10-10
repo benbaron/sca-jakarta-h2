@@ -1,12 +1,12 @@
 ---
-plan_version: 340
+plan_version: 341
 active_phase: P25
 active_slice: P25-S2
 active_status: VERIFYING
 active_branch: codex/P25-S2-payment-references
-active_pull_request: null
-active_head: f4acf08fd0f7bbeba8b72e9261e1de1262dea4a0
-next_action: "After explicit owner publication authorization, publish reviewed S2 commits as a draft PR, verify every remote tree/head and run final-head Maven/Xvfb CI including JournalPaymentReferencesTest; owner desktop acceptance and merge remain pending."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/363
+active_head: 4e846a6128db3e559d4e8428425f14c8af38901f
+next_action: "Inspect final published head of draft PR #363 with Maven/repeat/Xvfb CI including JournalPaymentReferencesTest, repair failures and record actual results; owner desktop acceptance and merge remain pending."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1250,3 +1250,15 @@ S2 is VERIFYING, not DONE. Branch `codex/P25-S2-payment-references`, base confir
 
 
 Verified implementation commit `f4acf08fd0f7bbeba8b72e9261e1de1262dea4a0`, tree `f42d2350b41e3844b21d116419e49dbf214b38cc`. This documentation-only successor records that source head (a commit cannot embed its own SHA). Resolve the complete local tip with `git rev-parse HEAD`; publish the implementation and this handoff in reviewed order only after explicit owner authorization. Worktree is clean after handoff; no PR or remote S2 branch has been created.
+
+
+### P25-S2 authorized draft publication — 2026-10-09 (America/Denver)
+
+Owner explicitly authorized publication, draft PR and CI with “yes, proceed.” Local Git push had no credentials; used the connected GitHub service under AGENTS.md without force updates. Confirmed clean worktree, exact repository and current main `d20c1ba23fa57a7271860c97e5fdff4e7acf2477`, and absence of a remote S2 branch before creating it at that base. Reconstructed changed file contents from verified base blobs and local line deltas, compared all 30 blob writes with local object IDs, and preserved reviewed commit messages/order. No unrelated files were published.
+
+| Local commit | Published commit | Verified matching tree |
+|---|---|---|
+| `f4acf08fd0f7bbeba8b72e9261e1de1262dea4a0` | `5257953855846b13f5a3154929bfe512c59edf08` | `f42d2350b41e3844b21d116419e49dbf214b38cc` |
+| `510f24a7b2f6130e7c492d61749edba61f8d3e0b` | `4e846a6128db3e559d4e8428425f14c8af38901f` | `13eed5e4c777de37255ed8793b281d98cbc960f9` |
+
+Expected-parent fast-forward ref update succeeded. Opened draft [PR #363](https://github.com/benbaron/sca-jakarta-h2/pull/363), head `4e846a6128db3e559d4e8428425f14c8af38901f`; fetched the published branch and independently compared its final tree. PR records local tests, current scope and remaining gates. This publication-ledger successor is documentation only and will be published under the same authorization; active_head identifies the known parent because a commit cannot embed its own SHA. Verify the resulting branch and PR tip before inspecting actual-head CI. S2 stays VERIFYING; no GitHub CI success or native acceptance is claimed yet. Owner testing and separately accepted merge follow final-head CI; S3 remains blocked.
