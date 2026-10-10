@@ -1,11 +1,11 @@
 ---
-plan_version: 339
+plan_version: 340
 active_phase: P25
 active_slice: P25-S2
 active_status: VERIFYING
 active_branch: codex/P25-S2-payment-references
 active_pull_request: null
-active_head: d20c1ba23fa57a7271860c97e5fdff4e7acf2477
+active_head: f4acf08fd0f7bbeba8b72e9261e1de1262dea4a0
 next_action: "After explicit owner publication authorization, publish reviewed S2 commits as a draft PR, verify every remote tree/head and run final-head Maven/Xvfb CI including JournalPaymentReferencesTest; owner desktop acceptance and merge remain pending."
 ---
 
@@ -1247,3 +1247,6 @@ Required desktop acceptance: [P25-S2 testing notes](P25-S2-user-testing.md). Fin
 Final source passed offline `mvn clean verify` using recovered Maven 3.9.9 and an isolated temporary dependency cache/home: **886 tests, zero failures/errors, 44 headless skips**, BUILD SUCCESS on 2026-10-09. This includes the final multi-fund instrument grouping, metadata/outgoing-bank validation, SCLX preview/export/atomic commit, replay-safe V79 migration, audit snapshots, GL projection and production Journal changes. Focused final run: 18 tests, zero failures/errors, one display skip. Only brace/whitespace formatting and documentation follow this verification; no behavior change follows the final source gate. No unresolved functional failure remains from executed tests. GitHub Maven/repeat/Xvfb, the new Journal method-cell/save/draft/permission case and native owner desktop acceptance remain pending.
 
 S2 is VERIFYING, not DONE. Branch `codex/P25-S2-payment-references`, base confirmed current main `d20c1ba23fa57a7271860c97e5fdff4e7acf2477`; no PR or remote publication. Changed documents: this plan, payment-reference accounting contract, SCLX specification, editor guidelines, interface-operation matrix and owner testing notes. Local final diff/whitespace and new documentation links are clean. Generated tracked build manifest is restored to its baseline and excluded from the slice. Next exact action after owner authorization: reproduce the reviewed local commit sequence on a new remote branch without force-updates, compare each tree hash, open a draft PR, verify actual head CI including JournalPaymentReferencesTest under Xvfb, repair failures and record evidence. Owner tests [P25-S2 notes](P25-S2-user-testing.md), then accepts/merges; confirm current main before S3 closeout. D03/D04 and later slices remain gated. Do not reuse the merged S1 branch.
+
+
+Verified implementation commit `f4acf08fd0f7bbeba8b72e9261e1de1262dea4a0`, tree `f42d2350b41e3844b21d116419e49dbf214b38cc`. This documentation-only successor records that source head (a commit cannot embed its own SHA). Resolve the complete local tip with `git rev-parse HEAD`; publish the implementation and this handoff in reviewed order only after explicit owner authorization. Worktree is clean after handoff; no PR or remote S2 branch has been created.
