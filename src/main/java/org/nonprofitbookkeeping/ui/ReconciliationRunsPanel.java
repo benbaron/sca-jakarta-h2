@@ -93,6 +93,7 @@ public class ReconciliationRunsPanel implements AppPanel
     private final TextField successorReason = new TextField();
 
     private Snapshot snapshot;
+    private CheckExceptionsPane checks;
 
     public ReconciliationRunsPanel()
     {
@@ -120,6 +121,12 @@ public class ReconciliationRunsPanel implements AppPanel
         root.setTop(new VBox(6, title, subtitle, sessionSummary, status, new Separator()));
         root.setCenter(workflowTabs);
         loadBankAccountsAndSessions();
+    }
+
+    @Override
+    public boolean hasUnsavedChanges()
+    {
+        return checks != null && checks.hasUnsavedChanges();
     }
 
     @Override
@@ -174,7 +181,8 @@ public class ReconciliationRunsPanel implements AppPanel
                 workflowTab("1. Setup", setupPane()),
                 workflowTab("2. Statement", statementPane()),
                 workflowTab("3. Match", matchPane()),
-                workflowTab("4. Review / Save", reviewPane()));
+                workflowTab("4. Review / Save", reviewPane()),
+                workflowTab("5. Checks / Exceptions", (checks = new CheckExceptionsPane()).root()));
     }
 
     private Tab workflowTab(String title, Node content)
@@ -396,6 +404,8 @@ public class ReconciliationRunsPanel implements AppPanel
         column(ledgerTable, "Date", v -> companyFormat.formatDate(v.date()), 110);
         column(ledgerTable, "Payee / Memo", LedgerLineView::memo, 240);
         column(ledgerTable, "Transaction #", LedgerLineView::transactionNumber, 120);
+        column(ledgerTable, "Check / Reference", LedgerLineView::paymentReference, 140);
+        column(ledgerTable, "Correction history", LedgerLineView::correctionHistory, 250);
         column(ledgerTable, "Amount", v -> money(v.amount()), 100);
         column(ledgerTable, "Cleared", v -> v.cleared() ? "Y" : "N", 80);
         column(ledgerTable, "Match Status", v -> v.matchStatus().name(), 150);

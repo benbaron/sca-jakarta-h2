@@ -1008,6 +1008,7 @@ public final class JournalWorkspacePanel implements AppPanel
         row.setNotes(safe(line.notes()));
         if (line.payment() != null)
         {
+            row.paymentReview = line.payment();
             row.paymentMethod.set(line.payment().method().name());
             row.paymentReference.set(safe(line.payment().reference()));
             row.paymentIssued.set(paymentDateText(line.payment().issuedOn() == null ? "" : line.payment().issuedOn().toString()));
@@ -2283,6 +2284,7 @@ public final class JournalWorkspacePanel implements AppPanel
         private final StringProperty credit = new SimpleStringProperty("");
         private final BooleanProperty nmr = new SimpleBooleanProperty(false);
         private final StringProperty notes = new SimpleStringProperty("");
+        private org.nonprofitbookkeeping.service.PaymentReference paymentReview;
         final StringProperty paymentMethod = new SimpleStringProperty("");
         final StringProperty paymentReference = new SimpleStringProperty("");
         final StringProperty paymentIssued = new SimpleStringProperty("");
@@ -2302,7 +2304,10 @@ public final class JournalWorkspacePanel implements AppPanel
             return new org.nonprofitbookkeeping.service.PaymentReference(
                     org.nonprofitbookkeeping.service.PaymentReference.Method.valueOf(paymentMethod.get()),
                     paymentReference.get(), CompanyUiFormat.activeCompany().parseDate(paymentIssued.get()),
-                    CompanyUiFormat.activeCompany().parseDate(paymentDelivered.get()));
+                    CompanyUiFormat.activeCompany().parseDate(paymentDelivered.get()),
+                    paymentReview == null ? null : paymentReview.evidenceReference(),
+                    paymentReview == null ? null : paymentReview.reviewedOn(),
+                    paymentReview == null ? null : paymentReview.reviewNote());
         }
 
         private final StringProperty bankState = new SimpleStringProperty("");
@@ -2365,6 +2370,7 @@ public final class JournalWorkspacePanel implements AppPanel
             copy.setCredit(getCredit());
             copy.setNmr(isNmr());
             copy.setNotes(getNotes());
+            copy.paymentReview = paymentReview;
             copy.paymentMethod.set(paymentMethod.get());
             copy.paymentReference.set(paymentReference.get());
             copy.paymentIssued.set(paymentIssued.get());

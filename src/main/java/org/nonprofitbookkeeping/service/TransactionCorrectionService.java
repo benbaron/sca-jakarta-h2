@@ -76,6 +76,7 @@ public class TransactionCorrectionService
                 requireEntered(txn);
                 requireNotFixedAssetLifecycleTransaction(em, transactionId, "edit transaction");
                 FundTransferIntegrityService.requireUnlinked(em, transactionId, "edit");
+                PaymentReferences.requireUnlinked(em, txn, "edit");
                 requireNotReconciled(em, transactionId, "edit transaction");
                 requireOpenRange(em, txn.getTxnDate(), "edit transaction");
                 requireOpenRange(em, transactionDate, "move transaction");
@@ -124,6 +125,7 @@ public class TransactionCorrectionService
                 requireEntered(txn);
                 requireNotFixedAssetLifecycleTransaction(em, transactionId, "delete transaction");
                 FundTransferIntegrityService.requireUnlinked(em, transactionId, "delete");
+                PaymentReferences.requireUnlinked(em, txn, "delete");
                 requireNotReconciled(em, transactionId, "delete transaction");
                 requireOpenRange(em, txn.getTxnDate(), "delete transaction");
 
@@ -148,6 +150,25 @@ public class TransactionCorrectionService
     }
 
     public CorrectionResult reverse(long transactionId, LocalDate reversalDate, String actor, String reason, boolean createReplacement)
+    {
+        return reverse(transactionId, reversalDate, actor, reason, createReplacement, null);
+    }
+
+    /** Atomically voids one issued check and creates a linked new instrument without double expense. */
+    public CorrectionResult reissueCheck(long transactionId, LocalDate date, String actor, String reason,
+            PaymentReference newInstrument)
+    {
+        Objects.requireNonNull(newInstrument, "New check facts are required");
+        requireText(reason, "Cancellation and reissue reason");
+        if (newInstrument.method() != PaymentReference.Method.CHECK || newInstrument.issuedOn() == null)
+        {
+            throw new IllegalArgumentException("Reissue requires CHECK, a new number and an issue date.");
+        }
+        return reverse(transactionId, date, actor, reason, true, newInstrument);
+    }
+
+    private CorrectionResult reverse(long transactionId, LocalDate reversalDate, String actor, String reason,
+            boolean createReplacement, PaymentReference newInstrument)
     {
         String auditActor = requireText(ServiceAuthorization.actor(
                 authorizationGuard,
@@ -174,7 +195,7 @@ public class TransactionCorrectionService
                 if (createReplacement)
                 {
                     FundTransferIntegrityService.requireUnlinked(em, transactionId, "reverse and replace");
-                    if (!PaymentReferences.snapshot(em, original).isEmpty())
+                    if (newInstrument == null && !PaymentReferences.snapshot(em, original).isEmpty())
                     {
                         throw new IllegalStateException("Reverse this payment, then enter its replacement with a new reference; automatic replacement cannot issue the same instrument twice.");
                     }
@@ -188,6 +209,10 @@ public class TransactionCorrectionService
                         .setParameter("id", transactionId)
                         .getResultList();
                 validateBalanced(originalSplits);
+                if (newInstrument != null)
+                {
+                    requireSingleCheck(originalSplits, newInstrument);
+                }
 
                 validateSplitOwnership(em, company, originalSplits);
                 String before = snapshot(em, original);
@@ -217,10 +242,19 @@ public class TransactionCorrectionService
                     {
                         TxnSplit replacementSplit = copySplit(split, replacement, split.getAmountSigned());
                         em.persist(replacementSplit);
+                        if (newInstrument != null && split.getPaymentMethod() != null)
+                        {
+                            PaymentReferences.apply(em, replacementSplit, newInstrument);
+                        }
                         replacementSplits.put(split.getId(), replacementSplit);
                     }
                     copySupplementalLines(em, original, replacement, replacementSplits);
                     SupplementalIntegrityService.requireComplete(em, new java.util.ArrayList<>(replacementSplits.values()));
+                    if (newInstrument != null)
+                    {
+                        em.persist(audit(company, auditActor, "CHECK_REISSUED", replacement, before,
+                                snapshot(em, replacement), reason));
+                    }
                 }
 
                 SupplementalIntegrityService.requireAvailable(em, company, SupplementalIntegrityService.items(em, original));
@@ -374,7 +408,7 @@ public class TransactionCorrectionService
         return new CompanyOwnershipService(jpa);
     }
 
-    private static void requireNotReconciled(EntityManager em, long transactionId, String operation)
+    static void requireNotReconciled(EntityManager em, long transactionId, String operation)
     {
         Number protectedCount = (Number) em.createNativeQuery("""
                 SELECT COUNT(*)
@@ -507,7 +541,42 @@ public class TransactionCorrectionService
         copy.setPaymentDeliveredOn(source.getPaymentDeliveredOn());
         // Reversal is historical evidence of the same instrument, never another issued check.
         copy.setPaymentCheckKey(null);
+        copy.setPaymentEvidenceReference(source.getPaymentEvidenceReference());
+        copy.setPaymentReviewedOn(source.getPaymentReviewedOn());
+        copy.setPaymentReviewNote(source.getPaymentReviewNote());
         return copy;
+    }
+
+    private static void requireSingleCheck(List<TxnSplit> splits, PaymentReference replacement)
+    {
+        Long bank = null;
+        String reference = null;
+        for (TxnSplit split : splits)
+        {
+            if (!org.nonprofitbookkeeping.model.AccountClassification.isBank(split.getAccount()))
+            {
+                continue;
+            }
+            if (split.isBankCleared() || split.getMatchedBankStatementLine() != null)
+            {
+                throw new IllegalStateException("A cleared or matched check must be reviewed in reconciliation before reissue.");
+            }
+            if (!"CHECK".equals(split.getPaymentMethod()) || split.getAmountSigned().signum() >= 0)
+            {
+                throw new IllegalArgumentException("Reissue requires one outgoing check instrument; use Journal correction for mixed payments.");
+            }
+            if (bank != null && (!bank.equals(split.getAccount().getId())
+                    || !reference.equals(split.getPaymentReference())))
+            {
+                throw new IllegalArgumentException("Reissue requires one check instrument; multiple fund allocations are supported.");
+            }
+            bank = split.getAccount().getId();
+            reference = split.getPaymentReference();
+        }
+        if (reference == null || reference.equals(replacement.reference()))
+        {
+            throw new IllegalArgumentException("Reissue requires an existing check and a different new check number.");
+        }
     }
 
     private static void validateBalanced(List<TxnSplit> splits)

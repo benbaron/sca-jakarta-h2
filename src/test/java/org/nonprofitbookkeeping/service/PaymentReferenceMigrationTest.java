@@ -29,11 +29,14 @@ class PaymentReferenceMigrationTest
             assertThrows(SQLException.class, () -> sql.execute("INSERT INTO txn_split (txn_id, account_id, fund_id, amount_signed, payment_method, payment_reference, payment_check_key) VALUES (1,1,1,-10,'CHECK','000123','000123')"));
             sql.execute("INSERT INTO txn_split (txn_id, account_id, fund_id, amount_signed, payment_method, payment_reference, payment_check_key) VALUES (1,2,1,-10,'CHECK','000123','000123')");
             assertThrows(SQLException.class, () -> sql.execute("UPDATE txn_split SET payment_delivered_on=DATE '2026-01-02' WHERE id=1"));
+            sql.execute("UPDATE txn_split SET payment_evidence_reference='receipt-folder/123', payment_reviewed_on=DATE '2026-02-01', payment_review_note='Obligation remains' WHERE id=1");
+            assertThrows(SQLException.class, () -> sql.execute("UPDATE txn_split SET payment_review_note=NULL WHERE id=1"));
             sql.execute("DELETE FROM flyway_schema_history");
             org.nonprofitbookkeeping.persistence.DatabaseMigrationService.migrateJdbcUrl(url);
-            try (var rows = sql.executeQuery("SELECT payment_reference, payment_check_key FROM txn_split WHERE id=1"))
+            try (var rows = sql.executeQuery("SELECT payment_reference, payment_check_key, payment_evidence_reference, payment_review_note FROM txn_split WHERE id=1"))
             {
                 assertTrue(rows.next()); assertEquals("000123", rows.getString(1)); assertEquals("000123", rows.getString(2));
+                assertEquals("receipt-folder/123", rows.getString(3)); assertEquals("Obligation remains", rows.getString(4));
             }
         }
     }

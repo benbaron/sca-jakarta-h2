@@ -97,7 +97,8 @@ public class BankReconciliationWorkspaceService
                                  BigDecimal amount,
                                  boolean cleared,
                                  Long matchedStatementLineId,
-                                 DifferenceCategory matchStatus) { }
+                                 DifferenceCategory matchStatus,
+                                 String paymentReference, String correctionHistory) { }
     public record DifferenceView(DifferenceCategory category,
                                  LocalDate ledgerDate,
                                  LocalDate statementDate,
@@ -893,7 +894,11 @@ public class BankReconciliationWorkspaceService
                 amount(split.getAmountSigned()),
                 split.isBankCleared(),
                 match == null ? (split.getMatchedBankStatementLine() == null ? null : split.getMatchedBankStatementLine().getId()) : match.statementLineId(),
-                match == null ? DifferenceCategory.UNMATCHED_LEDGER : match.status());
+                match == null ? DifferenceCategory.UNMATCHED_LEDGER : match.status(),
+                split.getPaymentReference(),
+                split.getTxn().getReversalOf() != null ? "Reversal of #" + split.getTxn().getReversalOf().getId()
+                        : split.getTxn().getReplacementFor() != null ? "Replacement of #" + split.getTxn().getReplacementFor().getId()
+                        : "REVERSED".equals(split.getTxn().getStatus()) ? "Cancelled original; linked reversal retained" : "");
     }
 
     private void recalculateBalances(EntityManager em, long sessionId, CompanyBankAccount bankAccount, LocalDate start, LocalDate end, BigDecimal statementEndingBalance)

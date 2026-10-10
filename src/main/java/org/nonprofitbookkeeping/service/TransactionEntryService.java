@@ -350,6 +350,7 @@ public class TransactionEntryService
                 }
                 requireNotFixedAssetLifecycleTransaction(em, transactionId);
                 FundTransferIntegrityService.requireUnlinked(em, transactionId, "edit");
+                PaymentReferences.requireUnlinked(em, txn, "edit");
                 requireNotReconciled(em, transactionId, "update transaction");
                 requireOpenRange(em, txn.getTxnDate(), "update transaction");
                 requireOpenRange(em, command.date(), "update transaction");

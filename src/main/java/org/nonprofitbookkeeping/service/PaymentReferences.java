@@ -17,7 +17,8 @@ public final class PaymentReferences
     {
         return split.getPaymentMethod() == null ? null : new PaymentReference(
                 PaymentReference.Method.valueOf(split.getPaymentMethod()), split.getPaymentReference(),
-                split.getPaymentIssuedOn(), split.getPaymentDeliveredOn());
+                split.getPaymentIssuedOn(), split.getPaymentDeliveredOn(), split.getPaymentEvidenceReference(),
+                split.getPaymentReviewedOn(), split.getPaymentReviewNote());
     }
 
     public static void apply(EntityManager em, TxnSplit split, PaymentReference value)
@@ -61,7 +62,22 @@ public final class PaymentReferences
         split.setPaymentReference(value == null ? null : value.reference());
         split.setPaymentIssuedOn(value == null ? null : value.issuedOn());
         split.setPaymentDeliveredOn(value == null ? null : value.deliveredOn());
+        split.setPaymentEvidenceReference(value == null ? null : value.evidenceReference());
+        split.setPaymentReviewedOn(value == null ? null : value.reviewedOn());
+        split.setPaymentReviewNote(value == null ? null : value.reviewNote());
         split.setPaymentCheckKey(key);
+    }
+
+    /** Retain issued-check correction identity; a linked replacement is corrected by reversal. */
+    public static void requireUnlinked(EntityManager em, Txn txn, String operation)
+    {
+        if (!snapshot(em, txn).isEmpty() && (txn.getReversalOf() != null || txn.getReplacementFor() != null
+                || em.createQuery("select count(t) from Txn t where t.replacementFor = :txn or t.reversalOf = :txn", Long.class)
+                        .setParameter("txn", txn).getSingleResult() > 0))
+        {
+            throw new IllegalStateException("Cannot " + operation
+                    + " linked payment history; reverse the current instrument instead.");
+        }
     }
 
     public static String snapshot(EntityManager em, Txn txn)
