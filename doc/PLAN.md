@@ -1,11 +1,11 @@
 ---
-plan_version: 344
+plan_version: 345
 active_phase: P25
 active_slice: P25-S3
 active_status: VERIFYING
 active_branch: codex/P25-S3-check-exceptions
 active_pull_request: null
-active_head: 5f6bec4b6c9632a25d23b9d4635fa6fd324649bc
+active_head: 3f12e60e04c7796d3390f3680c8b8601f7108806
 next_action: "After owner publication authorization, confirm main and branch state, publish reviewed S3 commits with matching trees, open a draft PR and inspect final-head Maven/repeat/Xvfb CI; owner desktop acceptance and separate merge follow. D04 stale accounting and S4 remain gated."
 ---
 
@@ -1286,3 +1286,5 @@ Final-source `mvn clean verify` passed **894 tests, zero failures/errors, 45 hea
 Branch `codex/P25-S3-check-exceptions`, base/current main confirmed `5f6bec4b6c9632a25d23b9d4635fa6fd324649bc`. Remote S3 branch absent; no PR/publication or GitHub S3 CI is claimed. Changed documents: this plan, [check contract](accounting/check-exceptions.md), [owner testing](P25-S3-user-testing.md), payment-reference/SCLX specifications and both interface/editor rule documents. Whitespace and documentation links are clean; generated tracked build manifest is restored to baseline and excluded. S3 stays VERIFYING, not DONE. D04 stale-triggered accounting remains unavailable; this slice’s factual age review never changes an obligation solely because of age. S4/NMR and D03 remain gated.
 
 Next exact action after explicit owner publication authorization under AGENTS.md: confirm current main, clean local worktree and expected remote branch; publish the complete reviewed local sequence on a fresh remote S3 branch without force updates, preserving messages/order and matching every tree; open a draft PR; verify branch/PR head and actual-head clean/repeat/Xvfb workflow including CheckExceptionsPaneTest; repair failures and record actual results. Owner follows desktop notes and separately accepts/merges. Only after confirmed merge into current main close S3 and select the first unblocked dependent slice.
+
+Verified implementation commit `3f12e60e04c7796d3390f3680c8b8601f7108806`, tree `e48ba6111aea78780746888217382deb2c9d8ef9`. This documentation-only successor records the verified source head; resolve `git rev-parse HEAD` for the complete local publication tip. Publish both commits in reviewed order with matching trees only after owner authorization. Worktree is clean after this handoff; no remote S3 branch or PR is created. No application change follows final clean/Xvfb verification.
