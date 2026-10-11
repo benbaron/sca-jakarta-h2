@@ -1,12 +1,12 @@
 ---
-plan_version: 341
+plan_version: 346
 active_phase: P25
-active_slice: P25-S2
+active_slice: P25-S3
 active_status: VERIFYING
-active_branch: codex/P25-S2-payment-references
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/363
-active_head: 4e846a6128db3e559d4e8428425f14c8af38901f
-next_action: "Inspect final published head of draft PR #363 with Maven/repeat/Xvfb CI including JournalPaymentReferencesTest, repair failures and record actual results; owner desktop acceptance and merge remain pending."
+active_branch: codex/P25-S3-check-exceptions
+active_pull_request: 364
+active_head: 38db5cdb889e5110334916ef1f9ade9927acd816
+next_action: "Publish this authorized documentation ledger with a matching tree, verify branch/PR #364 final head and clean/repeat/Xvfb CI, repair failures; owner desktop acceptance and separate merge follow. S3 stays VERIFYING; D04 and S4 remain gated."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,7 +37,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | VERIFYING — S1 merged in PR #362; S2 local implementation verified |
+| P25 | Transfers, payment references, reporting classification | VERIFYING — S1/S2 merged in PRs #362/#363; S3 check exceptions in draft PR #364 |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is merged; P24-S4B and P24-S4C are DONE; P24 is complete. P25-S1 is accepted and merged in PR #362. P25-S2 structured payment references is active; unresolved D03 remains a gate before entity mappings. Conditional P27-S5 remains unadopted.
+P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is merged; P24-S4B and P24-S4C are DONE; P24 is complete. P25-S1 is accepted and merged in PR #362. P25-S2 is accepted and merged in PR #363; P25-S3 check exceptions is active; unresolved D03 remains a gate before entity mappings. Conditional P27-S5 remains unadopted.
 
 ## 10. Archived proposal and adoption
 
@@ -682,8 +682,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P24-S4B | Payee/Counterparty maintenance | DONE | P24-S4A merged; A08 party workflow |
 | P24-S4C | Merchant maintenance | DONE | P24-S4B merged; A08 merchant workflow |
 | P25-S1 | Implement one internal fund-transfer operation (G7) | DONE | P24-S4 merged; internal-only scope; D03 required before legal-entity mappings; other applicable acceptance gates retained |
-| P25-S2 | Add structured payment/check references (G9) | VERIFYING | P25-S1 merged; owning contract and D01–D10 gates as applicable |
-| P25-S3 | Complete check exception and reconciliation workflows (G9) | BLOCKED | P25-S2 merged; owning contract and D01–D10 gates as applicable |
+| P25-S2 | Add structured payment/check references (G9) | DONE | P25-S1 merged; owning contract and D01–D10 gates as applicable |
+| P25-S3 | Complete check exception and reconciliation workflows (G9) | VERIFYING | P25-S2 merged; owning contract and D01–D10 gates as applicable |
 | P25-S4 | Implement the adopted NMR accounting contract (G10) | BLOCKED | P25-S3 merged; owning contract and D01–D10 gates as applicable |
 | P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | P25-S4 merged; owning contract and D01–D10 gates as applicable |
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
@@ -1262,3 +1262,41 @@ Owner explicitly authorized publication, draft PR and CI with “yes, proceed.�
 | `510f24a7b2f6130e7c492d61749edba61f8d3e0b` | `4e846a6128db3e559d4e8428425f14c8af38901f` | `13eed5e4c777de37255ed8793b281d98cbc960f9` |
 
 Expected-parent fast-forward ref update succeeded. Opened draft [PR #363](https://github.com/benbaron/sca-jakarta-h2/pull/363), head `4e846a6128db3e559d4e8428425f14c8af38901f`; fetched the published branch and independently compared its final tree. PR records local tests, current scope and remaining gates. This publication-ledger successor is documentation only and will be published under the same authorization; active_head identifies the known parent because a commit cannot embed its own SHA. Verify the resulting branch and PR tip before inspecting actual-head CI. S2 stays VERIFYING; no GitHub CI success or native acceptance is claimed yet. Owner testing and separately accepted merge follow final-head CI; S3 remains blocked.
+
+### P25-S2 closeout / P25-S3 selection — 2026-10-10 (America/Denver)
+
+Owner reports tests pass and PR #363 integrated and explicitly selects S3. GitHub confirms #363 merged at `5f6bec4b6c9632a25d23b9d4635fa6fd324649bc`, current origin/main. Final S2 head `bb0cb911c638d687b5364b262884e092fd2aaf46` passed run `38019118784`, including clean/repeat/Xvfb steps. The owner report is acceptance evidence; no additional native test result is invented. S2 is DONE. Carrying forward local post-CI evidence: publication ledger local `122af32e` matched remote final tree `879121fcf07618cfe5530ed2b01565e5a2cce423`; full local tests 886, zero failures/errors, 44 display skips.
+
+S3 begins on fresh `codex/P25-S3-check-exceptions` from confirmed main. D04 gates stale-triggered accounting only: stale review records facts and never extinguishes an obligation or creates income/expense. Linked void/reissue uses canonical correction relationships, with explicit cancellation reason and new instrument identity; outstanding obligation validity requires the operator's accounting decision. No automatic stale void is available. Read AGENTS, adopted S3/A09/D04, payment contract, lifecycle/period policy and all three production UI rules. Inspect canonical entry/correction seams, payment facts, reconciliation matching/protections, Journal, SCLX payment/correction graph and tests. Donor is reference only; retain the production canonical authority. Baseline Maven initially unavailable after environment restart; recover the runtime before claiming a build result.
+
+### P25-S3 implemented check exceptions / validation checkpoint
+
+Implemented [check exception contract](accounting/check-exceptions.md) and [owner acceptance notes](P25-S3-user-testing.md). Canonical atomic single-instrument reissue retains both references, dated original/reversal/replacement links, unchanged allocations and supplemental details. Mixed payments/duplicate references/cleared or matched instruments reject; finalized/completed reconciliation protects both review and correction. Linked payment history cannot be directly edited/deleted. Review writes canonical per-bank-line delivery/evidence/review facts atomically, with audit and company/period/authorization protection; it never changes amounts, obligation or cleared state. Replay-safe V80 and SCLX payment version 2 retain facts, version-1 compatibility and reimport identity. Reconciliation includes reference/correction columns and reachable typed bank-filtered check/exception review with live permissions, draft protection, company formatting/state and independent scrolling/dividers.
+
+Focused final checks: 25 service/migration/parser/reconciliation tests passed, zero failures/errors/skips. Local Xvfb was recovered via isolated downloaded runtime packages; both CheckExceptionsPaneTest and JournalPaymentReferencesTest passed, zero skips. Initial missing Maven/proxy/library conditions were environment failures, recovered without project dependency/configuration changes. The first new closed-period fixture omitted a required legacy UUID and was corrected to use the actual close service. A round-trip assertion assumed imported split order and was corrected to select the payment-bearing split by facts. No production defect was hidden by weakening an assertion. Full final clean verify and final geometry/production route gate remain pending at this checkpoint. No publication or GitHub CI is claimed. D04 remains unresolved; only stale-triggered accounting is unavailable. S4 remains BLOCKED.
+
+### P25-S3 final review / final-source rerun
+
+First full clean verify passed 894 tests, zero failures/errors, 45 headless skips. The strengthened CheckExceptionsPaneTest exposed a new form minimum-size defect: the form could shrink/clip rather than exposing both scrollbars. Corrected the scroll content to derive its minimum from its natural preferred size, preserving independent small viewport sizing; actual horizontal/vertical overflow and visible bars now pass. All 25 production Xvfb route tests subsequently passed without skips. Final diff review restricted CHECK_REISSUED audit to actual check operations (ordinary generic replacements retain their original audit semantics), added a regression assertion, and captured each async service/database/company context before starting its background operation. This final source is undergoing clean verify and the complete production Xvfb gate again before claiming the handoff. Undated imported statement ERROR rows remain explicit review exceptions; cancellation reversals are clearly labeled for full-chain review. No other phase is implemented and no stale-triggered accounting rule is guessed.
+
+### P25-S3 final local verification and publication handoff — 2026-10-10
+
+Final-source `mvn clean verify` passed **894 tests, zero failures/errors, 45 headless skips**, BUILD SUCCESS. The complete production Xvfb gate then passed **25 tests, zero failures/errors/skips**, including CheckExceptionsPaneTest, JournalPaymentReferencesTest and ProductionPanelRouteComplianceTest. New check geometry asserts actual content/viewport overflow and both visible editor scrollbars plus table horizontal scrolling/divider movement; save/draft/live VIEWER permissions pass. The ordinary-replacement audit regression, undated bank-error report and retained cancellation-reversal history pass in the full source gate. No production changes follow these results. Focused service/migration/parser/reconciliation evidence: 25 tests, zero failures/errors/skips. No known functional failure remains from executed tests. Native owner desktop acceptance is still required.
+
+Branch `codex/P25-S3-check-exceptions`, base/current main confirmed `5f6bec4b6c9632a25d23b9d4635fa6fd324649bc`. Remote S3 branch absent; no PR/publication or GitHub S3 CI is claimed. Changed documents: this plan, [check contract](accounting/check-exceptions.md), [owner testing](P25-S3-user-testing.md), payment-reference/SCLX specifications and both interface/editor rule documents. Whitespace and documentation links are clean; generated tracked build manifest is restored to baseline and excluded. S3 stays VERIFYING, not DONE. D04 stale-triggered accounting remains unavailable; this slice’s factual age review never changes an obligation solely because of age. S4/NMR and D03 remain gated.
+
+Next exact action after explicit owner publication authorization under AGENTS.md: confirm current main, clean local worktree and expected remote branch; publish the complete reviewed local sequence on a fresh remote S3 branch without force updates, preserving messages/order and matching every tree; open a draft PR; verify branch/PR head and actual-head clean/repeat/Xvfb workflow including CheckExceptionsPaneTest; repair failures and record actual results. Owner follows desktop notes and separately accepts/merges. Only after confirmed merge into current main close S3 and select the first unblocked dependent slice.
+
+Verified implementation commit `3f12e60e04c7796d3390f3680c8b8601f7108806`, tree `e48ba6111aea78780746888217382deb2c9d8ef9`. This documentation-only successor records the verified source head; resolve `git rev-parse HEAD` for the complete local publication tip. Publish both commits in reviewed order with matching trees only after owner authorization. Worktree is clean after this handoff; no remote S3 branch or PR is created. No application change follows final clean/Xvfb verification.
+
+
+### P25-S3 authorized draft publication — 2026-10-10 (America/Denver)
+
+Owner explicitly authorized publication, draft PR and CI with “yes.” Confirmed clean worktree, main `5f6bec4b6c9632a25d23b9d4635fa6fd324649bc` and absent remote S3 branch before creating it at that base. Used the connected GitHub service under AGENTS.md; preserved reviewed commit messages/order, compared all published blob IDs and both tree IDs, and fast-forwarded with the expected parent and force disabled. No unrelated files were included.
+
+| Local commit | Published commit | Verified matching tree |
+|---|---|---|
+| `3f12e60e04c7796d3390f3680c8b8601f7108806` | `559699bc0838fbee5e1a95dcbaf054e731157134` | `e48ba6111aea78780746888217382deb2c9d8ef9` |
+| `99c7f88cec13cee2b12182907f239d54b9662e6d` | `38db5cdb889e5110334916ef1f9ade9927acd816` | `0653c5a9bc1381a8ab857e45e02ef509fc3ff7a9` |
+
+Opened draft [PR #364](https://github.com/benbaron/sca-jakarta-h2/pull/364), head `38db5cdb889e5110334916ef1f9ade9927acd816`. This documentation-only ledger will be published under the same authorization; active_head records its known parent because the successor cannot embed its own SHA. Verify final branch and PR tip/tree before inspecting actual-head Maven clean verify, repeat tests and Xvfb. No GitHub S3 success is claimed yet. Local final-source evidence remains 894 tests with 45 headless skips and 25 production Xvfb tests without skips, zero failures/errors. Owner desktop acceptance and separately authorized merge remain pending; S3 stays VERIFYING, S4/D04 remain gated.

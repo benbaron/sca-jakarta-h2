@@ -184,6 +184,14 @@ public final class UiServiceRegistry
     public static FundBalanceService fundBalance() { return services().fundBalance(); }
     public static LedgerQueryService ledgerQuery() { return services().ledgerQuery(); }
     public static TransactionEntryService transactionEntry() { return services().transactionEntry(); }
+    public static org.nonprofitbookkeeping.service.CheckExceptionService checkExceptions()
+    {
+        ServiceBundle current = services();
+        String companyCode = activeCompanyCode();
+        return new org.nonprofitbookkeeping.service.CheckExceptionService(
+                current.jpa(), () -> companyCode, current.authorizationGuard());
+    }
+
     public static TransactionCorrectionService transactionCorrection() { return services().transactionCorrection(); }
     public static TransactionReferenceDataService transactionReferenceData() { return services().transactionReferenceData(); }
     public static ReviewedStatementAcceptanceService reviewedStatementAcceptance()

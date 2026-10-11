@@ -508,7 +508,7 @@ public final class SclxCoreSnapshotAssembler
                 .map(line -> SclxPaymentReferences.export(line, exportedLineIds.get(line))).toList();
         if (!paymentReferences.isEmpty())
         {
-            extensionValues.put(SclxPaymentReferences.KEY, Map.of("version", 1, "lines", paymentReferences));
+            extensionValues.put(SclxPaymentReferences.KEY, Map.of("version", 2, "lines", paymentReferences));
         }
         extensionValues.put(SclxPeriodCloseExtension.KEY,
                 new SclxPeriodCloseSnapshotAssembler().assemble(companyCode, periodCloseRanges, periodCloseEvents));

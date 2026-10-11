@@ -119,3 +119,8 @@ Current SCLX exports canonical transfer and reversal lines but does not reconstr
 ## P25-S2 structured payment facts
 
 Journal bank lines expose Payment method, Check / Reference, Issued on and Delivered on. Identity belongs to the selected BANK account line, with independent references for multiple bank lines. Dates follow company formatting; method/reference/date changes protect the unsaved draft. Reference search and Payment bank code/name filter match one split and display the whole transaction. GL Detail exposes the same structured facts for export. Retained reversed checks reserve their numbers; use a new reference for a replacement. See [Payment references](../accounting/payment-references.md).
+
+
+## P25-S3 check review
+
+Reconciliation’s Checks / Exceptions tab separates factual Record Review from ledger-changing Void/Reissue. Reasons and dates are explicit; age alone never triggers accounting. Linked correction history is retained, and cleared state stays with reconciliation. Bank-filtered typed history includes external evidence pointers and bank differences; both review regions have remembered vertical dividers and scrolling. Unsaved review fields prompt before selection/refresh and participate in panel dirty protection. Company formatting, table state and live permission gates apply. See [check contract](../accounting/check-exceptions.md).

@@ -43,6 +43,21 @@ class SclxPaymentReferencesTest
         assertThrows(IllegalStateException.class, () -> SclxPaymentReferences.parse(root));
     }
     @Test
+    void versionTwoReviewIdentityIsStrictAndAllNullIsCompatibleWithVersionOne() throws Exception
+    {
+        var root = document(); var originalIdentity = SclxPaymentReferences.identityDocument(root);
+        var extension = (ObjectNode)root.path("extensions").path("scaJakartaH2").path("paymentReferences");
+        extension.put("version", 2); var fact = (ObjectNode)extension.path("lines").get(0);
+        fact.putNull("evidenceReference"); fact.putNull("reviewedOn"); fact.putNull("reviewNote");
+        assertEquals(originalIdentity.path("transactions"), SclxPaymentReferences.identityDocument(root).path("transactions"));
+        fact.put("evidenceReference", "receipt/123"); fact.put("reviewedOn", "2026-02-02"); fact.put("reviewNote", "Delivered; obligation remains");
+        assertNotEquals(originalIdentity.path("transactions"), SclxPaymentReferences.identityDocument(root).path("transactions"));
+        fact.putNull("reviewNote"); assertThrows(IllegalStateException.class, () -> SclxPaymentReferences.parse(root));
+        fact.put("reviewNote", "Review"); fact.put("reviewedOn", "2026-01-01");
+        assertThrows(IllegalStateException.class, () -> SclxPaymentReferences.parse(root));
+    }
+
+    @Test
     void unsupportedVersionExtraFieldsAndZeroPostingCannotSilentlyDisappear() throws Exception
     {
         var root = document();

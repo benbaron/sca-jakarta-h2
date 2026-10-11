@@ -23,11 +23,12 @@ final class SclxPaymentReferences
         }
         fields(extension, Set.of("version", "lines"));
         if (!extension.path("version").isIntegralNumber() || !extension.path("version").canConvertToInt()
-                || extension.path("version").intValue() != 1
+                || (extension.path("version").intValue() != 1 && extension.path("version").intValue() != 2)
                 || !extension.path("lines").isArray())
         {
-            throw new IllegalStateException("paymentReferences requires version 1 and lines.");
+            throw new IllegalStateException("paymentReferences requires version 1 or 2 and lines.");
         }
+        int version = extension.path("version").intValue();
         Map<String, String> accountTypes = new LinkedHashMap<>();
         for (JsonNode account : root.path("chartOfAccounts"))
         {
@@ -44,12 +45,17 @@ final class SclxPaymentReferences
         Map<String, PaymentReference> result = new LinkedHashMap<>();
         for (JsonNode fact : extension.path("lines"))
         {
-            fields(fact, Set.of("lineId", "method", "reference", "issuedOn", "deliveredOn"));
+            fields(fact, version == 1 ? Set.of("lineId", "method", "reference", "issuedOn", "deliveredOn")
+                    : Set.of("lineId", "method", "reference", "issuedOn", "deliveredOn",
+                            "evidenceReference", "reviewedOn", "reviewNote"));
             String id = text(fact, "lineId");
             try
             {
                 PaymentReference value = new PaymentReference(PaymentReference.Method.valueOf(text(fact, "method")),
-                        nullableText(fact, "reference"), date(fact, "issuedOn"), date(fact, "deliveredOn"));
+                        nullableText(fact, "reference"), date(fact, "issuedOn"), date(fact, "deliveredOn"),
+                        version == 1 ? null : nullableText(fact, "evidenceReference"),
+                        version == 1 ? null : date(fact, "reviewedOn"),
+                        version == 1 ? null : nullableText(fact, "reviewNote"));
                 JsonNode line = lines.get(id);
                 if (line == null || !"BANK".equals(accountTypes.get(line.path("accountId").asText()))
                         || (new java.math.BigDecimal(line.path("debit").asText()).signum() == 0
@@ -87,6 +93,12 @@ final class SclxPaymentReferences
                     identity.put("reference", value.reference());
                     identity.put("issuedOn", value.issuedOn() == null ? null : value.issuedOn().toString());
                     identity.put("deliveredOn", value.deliveredOn() == null ? null : value.deliveredOn().toString());
+                    if (value.evidenceReference() != null || value.reviewedOn() != null || value.reviewNote() != null)
+                    {
+                        identity.put("evidenceReference", value.evidenceReference());
+                        identity.put("reviewedOn", value.reviewedOn() == null ? null : value.reviewedOn().toString());
+                        identity.put("reviewNote", value.reviewNote());
+                    }
                 }
             }
         }
@@ -102,6 +114,9 @@ final class SclxPaymentReferences
         result.put("reference", value.reference());
         result.put("issuedOn", value.issuedOn() == null ? null : value.issuedOn().toString());
         result.put("deliveredOn", value.deliveredOn() == null ? null : value.deliveredOn().toString());
+        result.put("evidenceReference", value.evidenceReference());
+        result.put("reviewedOn", value.reviewedOn() == null ? null : value.reviewedOn().toString());
+        result.put("reviewNote", value.reviewNote());
         return Collections.unmodifiableMap(result);
     }
 

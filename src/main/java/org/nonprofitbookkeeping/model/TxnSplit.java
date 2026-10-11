@@ -98,6 +98,22 @@ public class TxnSplit
     public String getPaymentCheckKey() { return paymentCheckKey; }
     public void setPaymentCheckKey(String value) { paymentCheckKey = value; }
 
+    @Column(name = "payment_evidence_reference", length = 500)
+    private String paymentEvidenceReference;
+
+    @Column(name = "payment_reviewed_on")
+    private java.time.LocalDate paymentReviewedOn;
+
+    @Column(name = "payment_review_note", length = 1000)
+    private String paymentReviewNote;
+
+    public String getPaymentEvidenceReference() { return paymentEvidenceReference; }
+    public void setPaymentEvidenceReference(String value) { paymentEvidenceReference = value; }
+    public java.time.LocalDate getPaymentReviewedOn() { return paymentReviewedOn; }
+    public void setPaymentReviewedOn(java.time.LocalDate value) { paymentReviewedOn = value; }
+    public String getPaymentReviewNote() { return paymentReviewNote; }
+    public void setPaymentReviewNote(String value) { paymentReviewNote = value; }
+
     public Long getId() { return id; }
     public Txn getTxn() { return txn; }
     public void setTxn(Txn txn) { this.txn = txn; }

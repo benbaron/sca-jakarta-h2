@@ -131,3 +131,8 @@ When current production behavior and an older completed-phase statement disagree
 ### P25-S2 payment references
 
 Journal saves optional per-bank-line method, textual check/reference and issue/delivery facts through canonical TransactionEntryService. Search accepts reference and issuing account code/name on the same split. GL Detail reports/exports structured facts. Existing Delete/correction permission, closed-period and reconciliation gates remain in force. Generic reversal preserves reference evidence; automatic replacement of a referenced instrument is blocked with instructions to reverse then enter a new reference. No stale accounting policy or delivery mutation workflow is introduced. See [payment contract](accounting/payment-references.md).
+
+
+## P25-S3 check exceptions
+
+Bank Reconciliation → Checks / Exceptions provides company/bank-scoped factual age, delivery and evidence review, linked Void/Reissue with required reason and confirmation, correction history and unresolved bank errors/differences. Canonical check correction and review services own atomic writes; reconciliation alone owns cleared state. Linked history cannot be deleted or edited. Typed table values, company formatting/state, independent vertical dividers, horizontal table scrolling and live permission gates apply. D04 stale-triggered accounting is unavailable. See [check contract](accounting/check-exceptions.md).

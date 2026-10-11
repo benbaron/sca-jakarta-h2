@@ -210,8 +210,11 @@ class PaymentReferenceServiceTest
             var f = seed(source);
             var service = new TransactionEntryService(source);
             var saved = service.enter(payment(f, f.bank(), check("000123")));
+            new CheckExceptionService(source, () -> "DEFAULT", null).review(saved.id(), f.bank(), "000123",
+                    DATE.plusDays(1), "receipt-folder/123", DATE.plusDays(1), "Delivery verified; obligation valid", "Tester");
             service.enter(payment(f, f.bank(), new PaymentReference(PaymentReference.Method.EFT, "ACH-A00Z", null, null)));
-            new TransactionCorrectionService(source).reverse(saved.id(), DATE.plusDays(2), "Tester", "Void", false);
+            new TransactionCorrectionService(source).reissueCheck(saved.id(), DATE.plusDays(2), "Tester", "Lost; reissue obligation",
+                    new PaymentReference(PaymentReference.Method.CHECK, "000124", DATE.plusDays(2), null));
             Path file = directory.resolve("payments.sclx");
             new SclxFileExportService(new SclxCoreSnapshotQueryService(source), () -> directory.resolve("source"))
                     .export(new SclxExportRequest(file, Instant.now(), false));
@@ -224,7 +227,12 @@ class PaymentReferenceServiceTest
             var loaded = new TransactionEntryService(target);
             assertEquals(2, loaded.search(null, null, "000123", 20).size());
             assertEquals(1, loaded.search(null, null, "ACH-A00Z", 20).size());
+            var checks = new CheckExceptionService(target, () -> "DEFAULT", null).report(null, DATE.plusDays(2), DATE);
+            assertEquals(2, checks.size()); assertEquals("REISSUED", checks.get(0).lifecycle());
+            assertNotNull(checks.get(0).replacementId()); assertNotNull(checks.get(1).replacesId());
             assertEquals(1L, number(target, "select count(*) from txn_split where payment_check_key = '000123'"));
+            assertEquals("receipt-folder/123", loaded.search(null, null, "000123", 20).get(0).lines().stream()
+                    .filter(line -> line.payment() != null).findFirst().orElseThrow().payment().evidenceReference());
             long before = count(target, "Txn");
             assertTrue(commit.commit(file, previews.preview(file), "Tester").committed());
             assertEquals(before, count(target, "Txn"));
