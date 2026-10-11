@@ -544,7 +544,9 @@ public class AssetsRegisterPanel implements AppPanel
                         + "\nStatus: " + preview.assetStatusBefore() + " → "
                         + preview.assetStatusAfter()
                         + "\n\nProposed balanced entry:\n" + lifecycleEntryText(preview));
-        return confirmation.showAndWait().filter(ButtonType.OK::equals).isPresent();
+        ButtonType save = new ButtonType("Save Lifecycle Event", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
+        confirmation.getButtonTypes().setAll(save, ButtonType.CANCEL);
+        return confirmation.showAndWait().filter(save::equals).isPresent();
     }
 
     private String lifecycleEntryText(FixedAssetService.LifecyclePreview preview)

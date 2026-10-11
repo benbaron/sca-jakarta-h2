@@ -57,7 +57,7 @@ Cover:
 - preview of valid and invalid rows;
 - frozen source/company/chart/target identity;
 - accepted/rejected disposition;
-- atomic **Commit Accepted COA Rows**;
+- atomic **Save Accepted COA Rows**;
 - rollback on any accepted-row failure;
 - idempotent identical recommit;
 - required re-preview after source, company, chart, or target drift.

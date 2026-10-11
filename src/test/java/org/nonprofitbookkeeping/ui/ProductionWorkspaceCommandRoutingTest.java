@@ -7,7 +7,6 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TabPane;
-import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
@@ -17,6 +16,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
 import org.nonprofitbookkeeping.service.AuthenticatedUserSession;
 
 import java.nio.file.Path;
@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@ResourceLock("ui-service-registry")
 public class ProductionWorkspaceCommandRoutingTest
 {
     private Optional<AuthenticatedUserSession> previousSession;
@@ -44,6 +45,11 @@ public class ProductionWorkspaceCommandRoutingTest
     @AfterEach
     void restoreSession()
     {
+        FxTestSupport.onFx(() ->
+        {
+            DrillThroughCoordinator.configureOpener(null);
+            return null;
+        });
         UiSessionState session = MainWindow.sharedSessionState();
         if (previousSession != null && previousSession.isPresent())
         {
@@ -109,13 +115,17 @@ public class ProductionWorkspaceCommandRoutingTest
                 return discard.get();
             });
             window.openPanel(AppPanelId.TXN_EDITOR);
-            firstTextField(window.panelHost().activeRoot()).setText("Unsaved payee");
+            new javafx.scene.Scene(window);
+            window.applyCss();
+            window.layout();
+            ((javafx.scene.control.TextArea) window.panelHost().activeRoot().lookup("#journalEntryMemo"))
+                    .setText("Unsaved memo");
 
             AppPanel.RunCommandResult cancelled = window.executeCommand(AppCommand.CLOSE_ALL_TABS);
 
             assertFalse(cancelled.handled());
             assertTrue(window.panelHost().isOpen(AppPanelId.TXN_EDITOR));
-            assertEquals(List.of("Transaction Editor"), promptedTitles.get());
+            assertEquals(List.of("Journal"), promptedTitles.get());
 
             discard.set(true);
             AppPanel.RunCommandResult closed = window.executeCommand(AppCommand.CLOSE_ALL_TABS);
@@ -272,7 +282,7 @@ public class ProductionWorkspaceCommandRoutingTest
                 .findFirst()
                 .orElseThrow();
         MenuItem menuItem = file.getItems().stream()
-                .filter(item -> item.getText().startsWith(label))
+                .filter(item -> item.getText() != null && item.getText().startsWith(label))
                 .findFirst()
                 .orElseThrow();
         ToolBar toolBar = (ToolBar) top.getChildren().get(1);
@@ -295,29 +305,6 @@ public class ProductionWorkspaceCommandRoutingTest
         }
         assertTrue(button.getTooltip().getText().contains(
                 expectedDisabled ? "not available" : "is available"));
-    }
-
-    private static TextField firstTextField(Node node)
-    {
-        if (node instanceof TextField textField)
-        {
-            return textField;
-        }
-        if (node instanceof Parent parent)
-        {
-            for (Node child : parent.getChildrenUnmodifiable())
-            {
-                try
-                {
-                    return firstTextField(child);
-                }
-                catch (IllegalStateException ignored)
-                {
-                    // Continue searching siblings.
-                }
-            }
-        }
-        throw new IllegalStateException("No text field found under node " + node);
     }
 
     private static TabPane findTabPane(Node node, String id)

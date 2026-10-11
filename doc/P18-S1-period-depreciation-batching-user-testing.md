@@ -7,7 +7,7 @@ Depreciation Runs is now an accounting-period workflow rather than a one-asset/a
 - The selected shell accounting period and company-configured period start day determine the preview period.
 - The posting date is the period end.
 - The upper table previews every fixed asset with its proposed amount, disposition, and reason.
-- **Run Eligible Depreciation** confirms the eligible count and total before committing.
+- **Save Eligible Depreciation** confirms the eligible count and total before committing.
 - Each asset remains an independently atomic canonical depreciation transaction/run.
 - **Open Depreciation Report** opens Report Library with the selected period range for the existing Fixed Asset Depreciation History & Schedule report.
 

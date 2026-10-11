@@ -119,6 +119,20 @@ public final class AdministrationPanel implements AppPanel
     }
 
     @Override
+    public String commandLabel(AppCommand command)
+    {
+        AppPanel selected = selectedPanel();
+        return selected == null ? AppPanel.super.commandLabel(command) : selected.commandLabel(command);
+    }
+
+    @Override
+    public String saveUnavailableReason()
+    {
+        AppPanel selected = selectedPanel();
+        return selected == null ? AppPanel.super.saveUnavailableReason() : selected.saveUnavailableReason();
+    }
+
+    @Override
     public RunCommandResult executeCommand(AppCommand command)
     {
         AppPanel selected = selectedPanel();

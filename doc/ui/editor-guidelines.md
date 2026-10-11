@@ -123,4 +123,9 @@ Journal bank lines expose Payment method, Check / Reference, Issued on and Deliv
 
 ## P25-S3 check review
 
-Reconciliation’s Checks / Exceptions tab separates factual Record Review from ledger-changing Void/Reissue. Reasons and dates are explicit; age alone never triggers accounting. Linked correction history is retained, and cleared state stays with reconciliation. Bank-filtered typed history includes external evidence pointers and bank differences; both review regions have remembered vertical dividers and scrolling. Unsaved review fields prompt before selection/refresh and participate in panel dirty protection. Company formatting, table state and live permission gates apply. See [check contract](../accounting/check-exceptions.md).
+Reconciliation’s Checks / Exceptions tab separates factual Save Review from ledger-changing Void/Reissue. Reasons and dates are explicit; age alone never triggers accounting. Linked correction history is retained, and cleared state stays with reconciliation. Bank-filtered typed history includes external evidence pointers and bank differences; both review regions have remembered vertical dividers and scrolling. Unsaved review fields prompt before selection/refresh and participate in panel dirty protection. Company formatting, table state and live permission gates apply. See [check contract](../accounting/check-exceptions.md).
+
+
+## P17-C13 Save scope
+
+The Journal header explains that Save Entry writes the header, entry lines, additional details and all supplemental tabs together through the existing canonical command. All other pane/subpane Save routes are recorded in [pane Save coverage](pane-save-coverage.md); selected composite subpanes expose their specific File/toolbar Save scope.

@@ -31,6 +31,7 @@ final class SecurityAdminPane
     private final Label currentSession = new Label();
     private final Label status = new Label();
     private final Spinner<Integer> inactivityMinutes = new Spinner<>();
+    private int savedTimeoutMinutes;
 
     SecurityAdminPane()
     {
@@ -62,6 +63,7 @@ final class SecurityAdminPane
             }
             SecuritySettingsView settings = UiServiceRegistry.securityAdmin().settings();
             inactivityMinutes.getValueFactory().setValue(settings.inactivityTimeoutMinutes());
+            savedTimeoutMinutes = settings.inactivityTimeoutMinutes();
             updateCredentialState();
             updateSessionState();
             status.setText("Security settings loaded. Zero inactivity minutes means no timeout.");
@@ -81,6 +83,8 @@ final class SecurityAdminPane
         credentialState.setWrapText(true);
         currentSession.setWrapText(true);
         status.setWrapText(true);
+        Label saveHelp = new Label("Save Password updates the chosen account. File → Save Timeout saves only the inactivity timeout.");
+        saveHelp.setWrapText(true);
 
         account.setId("securityCredentialAccount");
         account.setConverter(new StringConverter<>()
@@ -102,7 +106,7 @@ final class SecurityAdminPane
 
         password.setId("securityCredentialPassword");
         password.setPromptText("New password");
-        Button setPassword = new Button("Set / Replace Password");
+        Button setPassword = new Button("Save Password");
         setPassword.setId("securitySetPassword");
         setPassword.setOnAction(event -> setPassword());
         Button clearPassword = new Button("Clear Password");
@@ -115,13 +119,26 @@ final class SecurityAdminPane
         inactivityMinutes.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 10080, 0));
         inactivityMinutes.setEditable(true);
         Button saveTimeout = new Button("Save Timeout");
-        saveTimeout.setOnAction(event -> saveTimeout());
+        saveTimeout.setId("securitySaveTimeout");
+        saveTimeout.setOnAction(event -> onSave());
         UiPermissionGate.gate(saveTimeout, ApplicationPermission.SECURITY_ADMIN, "Change the inactivity timeout");
         Button refreshRoles = new Button("Refresh Session Roles");
         refreshRoles.setId("securityRefreshSessionRoles");
         refreshRoles.setOnAction(event -> refreshSessionRoles());
         Button refresh = new Button("Refresh");
-        refresh.setOnAction(event -> refresh());
+        refresh.setOnAction(event ->
+        {
+            if (!hasUnsavedChanges() || new javafx.scene.control.Alert(
+                    javafx.scene.control.Alert.AlertType.CONFIRMATION,
+                    "Discard unsaved password or timeout edits?",
+                    javafx.scene.control.ButtonType.OK, javafx.scene.control.ButtonType.CANCEL)
+                    .showAndWait().orElse(javafx.scene.control.ButtonType.CANCEL)
+                    == javafx.scene.control.ButtonType.OK)
+            {
+                password.clear();
+                refresh();
+            }
+        });
 
         GridPane form = new GridPane();
         form.setHgap(10);
@@ -137,6 +154,7 @@ final class SecurityAdminPane
 
         root.getChildren().setAll(
                 help,
+                saveHelp,
                 currentSession,
                 form,
                 new HBox(8, refreshRoles, refresh),
@@ -229,15 +247,17 @@ final class SecurityAdminPane
         }
     }
 
-    private void saveTimeout()
+    void onSave()
     {
         try
         {
             AuthenticatedUserSession session = requireSession();
+            inactivityMinutes.commitValue();
             int minutes = inactivityMinutes.getValue() == null ? 0 : inactivityMinutes.getValue();
             SecuritySettingsView saved = UiServiceRegistry.securityAdmin().setInactivityTimeoutMinutes(
                     session.userId(), session.companyCode(), minutes);
             inactivityMinutes.getValueFactory().setValue(saved.inactivityTimeoutMinutes());
+            savedTimeoutMinutes = saved.inactivityTimeoutMinutes();
             status.setText(saved.inactivityTimeoutMinutes() == 0
                     ? "Inactivity timeout disabled."
                     : "Inactivity timeout set to " + saved.inactivityTimeoutMinutes() + " minute(s).");
@@ -246,6 +266,17 @@ final class SecurityAdminPane
         {
             status.setText("Could not save inactivity timeout: " + UiErrors.safeMessage(ex));
         }
+    }
+
+    String saveResultMessage()
+    {
+        return status.getText();
+    }
+
+    boolean hasUnsavedChanges()
+    {
+        return !password.getText().isEmpty()
+                || !Integer.toString(savedTimeoutMinutes).equals(inactivityMinutes.getEditor().getText());
     }
 
     private void refreshSessionRoles()

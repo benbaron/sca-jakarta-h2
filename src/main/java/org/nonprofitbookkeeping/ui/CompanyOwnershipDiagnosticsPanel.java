@@ -38,11 +38,13 @@ public final class CompanyOwnershipDiagnosticsPanel implements AppPanel
     private final TextField actor = new TextField(DesktopActorIdentity.current());
     private final TextArea reason = new TextArea();
     private final TextArea details = new TextArea();
-    private final Button assignOwner = new Button("Assign to Import Company…");
+    private final Button assignOwner = new Button("Save Ownership Assignment…");
     private final Label status = new Label("Loading ownership diagnostics…");
     private final Supplier<CompanyOwnershipService> ownershipService;
     private final Supplier<CompanyAdminService> companyService;
     private final Supplier<String> activeCompanyCode;
+    private boolean saveReady;
+    private Runnable commandCapabilitiesChangedListener = () -> { };
 
     public CompanyOwnershipDiagnosticsPanel()
     {
@@ -256,7 +258,7 @@ public final class CompanyOwnershipDiagnosticsPanel implements AppPanel
     private void updateAvailability()
     {
         CompanyOwnershipIssueView issue = issues.getSelectionModel().getSelectedItem();
-        assignOwner.setDisable(issue == null
+        saveReady = !(issue == null
                 || !issue.directlyAssignable()
                 || importCompany == null
                 || !issue.companyChoiceCompatible(importCompany.code())
@@ -264,6 +266,8 @@ public final class CompanyOwnershipDiagnosticsPanel implements AppPanel
                 || actor.getText().isBlank()
                 || reason.getText() == null
                 || reason.getText().isBlank());
+        assignOwner.setDisable(!saveReady);
+        commandCapabilitiesChangedListener.run();
     }
 
     private void confirmAssignment()
@@ -335,6 +339,56 @@ public final class CompanyOwnershipDiagnosticsPanel implements AppPanel
     public void onPanelShown()
     {
         reload();
+    }
+
+    @Override
+    public java.util.Set<AppCommand> commandCapabilities()
+    {
+        return saveReady ? AppPanel.capabilities(AppCommand.SAVE_ACTIVE) : java.util.Set.of();
+    }
+
+    @Override
+    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return command == AppCommand.SAVE_ACTIVE
+                ? java.util.Optional.of(ApplicationPermission.DATABASE_ADMIN) : java.util.Optional.empty();
+    }
+
+    @Override
+    public String commandLabel(AppCommand command)
+    {
+        return command == AppCommand.SAVE_ACTIVE ? "Save Ownership Assignment…" : AppPanel.super.commandLabel(command);
+    }
+
+    @Override
+    public String saveUnavailableReason()
+    {
+        return "Select an assignable diagnostic and enter an audit note for the active import company.";
+    }
+
+    @Override
+    public void onSave()
+    {
+        confirmAssignment();
+    }
+
+    @Override
+    public String commandResultMessage(AppCommand command)
+    {
+        return status.getText();
+    }
+
+    @Override
+    public boolean hasUnsavedChanges()
+    {
+        return !reason.getText().isBlank();
+    }
+
+    @Override
+    public void setCommandCapabilitiesChangedListener(Runnable listener)
+    {
+        commandCapabilitiesChangedListener = Objects.requireNonNull(listener, "listener");
+        listener.run();
     }
 
     TableView<CompanyOwnershipIssueView> issuesForTests()

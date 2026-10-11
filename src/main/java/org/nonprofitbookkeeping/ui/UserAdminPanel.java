@@ -126,7 +126,7 @@ public class UserAdminPanel implements AppPanel
                 tab("Authentication", securityAdmin.root()));
         tabs.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, newTab) ->
         {
-            if (tabs.getSelectionModel().getSelectedIndex() == 3)
+            if (tabs.getSelectionModel().getSelectedIndex() == 3 && !securityAdmin.hasUnsavedChanges())
             {
                 securityAdmin.refresh();
             }
@@ -202,7 +202,7 @@ public class UserAdminPanel implements AppPanel
         form.add(boundary, 0, row++, 2, 1);
         Button add = new Button("New Assignment");
         add.setOnAction(event -> newAssignment());
-        Button assign = new Button("Assign Role");
+        Button assign = new Button("Save Assignment");
         assign.setOnAction(event -> assignRole());
         UiPermissionGate.gate(add, ApplicationPermission.SECURITY_ADMIN, "Create a user-role assignment");
         UiPermissionGate.gate(assign, ApplicationPermission.SECURITY_ADMIN, "Assign a user role");
@@ -673,7 +673,14 @@ public class UserAdminPanel implements AppPanel
     public Set<AppCommand> commandCapabilities()
     {
         return selectedMaintenanceTab() ? AppPanel.capabilities(AppCommand.NEW_ACTIVE, AppCommand.SAVE_ACTIVE)
-                : Set.of();
+                : AppPanel.capabilities(AppCommand.SAVE_ACTIVE);
+    }
+
+    @Override
+    public String commandLabel(AppCommand command)
+    {
+        return command == AppCommand.SAVE_ACTIVE && selectedTabIndex() == 3
+                ? "Save Timeout" : AppPanel.super.commandLabel(command);
     }
 
     @Override
@@ -684,7 +691,8 @@ public class UserAdminPanel implements AppPanel
             case 0 -> saveUser();
             case 1 -> saveRole();
             case 2 -> assignRole();
-            default -> throw new UnsupportedOperationException("Save is not available on Authentication.");
+            case 3 -> securityAdmin.onSave();
+            default -> throw new IllegalStateException("Select an administration tab before saving.");
         }
     }
 
@@ -707,10 +715,14 @@ public class UserAdminPanel implements AppPanel
         commandCapabilitiesChangedListener.run();
     }
 
-    @Override public String commandResultMessage(AppCommand command) { return status.getText(); }
+    @Override public String commandResultMessage(AppCommand command)
+    {
+        return selectedTabIndex() == 3 ? securityAdmin.saveResultMessage() : status.getText();
+    }
     @Override public boolean hasUnsavedChanges()
     {
-        return userDirty.isDirty() || roleDirty.isDirty() || assignmentDirty.isDirty();
+        return userDirty.isDirty() || roleDirty.isDirty() || assignmentDirty.isDirty()
+                || securityAdmin.hasUnsavedChanges();
     }
 
     private boolean selectedMaintenanceTab()

@@ -65,14 +65,14 @@ class AppPanelCommandCapabilityTest
         expected.put(AppPanelId.JOURNAL_PANE, journalCommands());
         expected.put(AppPanelId.EVENT_ACCOUNTING, Set.of());
         expected.put(AppPanelId.BANKING, editorCommands());
-        expected.put(AppPanelId.BUDGET_EDITOR, Set.of(AppCommand.SAVE_ACTIVE));
+        expected.put(AppPanelId.BUDGET_EDITOR, Set.of());
         expected.put(AppPanelId.BUDGET_VS_ACTUAL, Set.of());
         expected.put(AppPanelId.BUDGET_CATEGORIES, editorCommands());
         expected.put(AppPanelId.COUNTERPARTIES, editorCommands());
         expected.put(AppPanelId.MERCHANTS, editorCommands());
         expected.put(AppPanelId.ASSETS_REGISTER, editorCommands());
         expected.put(AppPanelId.DEPRECIATION_RUNS, Set.of());
-        expected.put(AppPanelId.INVENTORY, editorCommands());
+        expected.put(AppPanelId.INVENTORY, Set.of(AppCommand.NEW_ACTIVE));
         expected.put(AppPanelId.RECONCILIATION_RUNS, Set.of());
         expected.put(AppPanelId.PERIOD_CLOSE_RUNS, Set.of());
         expected.put(AppPanelId.IMPORT_PREVIEW, Set.of());
@@ -118,9 +118,12 @@ class AppPanelCommandCapabilityTest
             assertEquals(editorCommands(), panel.commandCapabilities());
 
             panel.tabsForTests().getSelectionModel().select(3);
+            assertEquals(Set.of(AppCommand.POST_VALIDATE), panel.commandCapabilities());
+            panel.tabsForTests().getSelectionModel().select(4);
             assertEquals(editorCommands(), panel.commandCapabilities());
             panel.usersForTests().tabsForTests().getSelectionModel().select(3);
-            assertEquals(Set.of(), panel.commandCapabilities());
+            assertEquals(Set.of(AppCommand.SAVE_ACTIVE), panel.commandCapabilities());
+            assertEquals("Save Timeout", panel.commandLabel(AppCommand.SAVE_ACTIVE));
             panel.usersForTests().tabsForTests().getSelectionModel().select(1);
             assertEquals(editorCommands(), panel.commandCapabilities());
             assertTrue(notifications.get() >= 4);
@@ -144,7 +147,8 @@ class AppPanelCommandCapabilityTest
             panel.tabsForTests().getSelectionModel().select(2);
             assertEquals(editorCommands(), panel.commandCapabilities());
             panel.tabsForTests().getSelectionModel().select(3);
-            assertEquals(Set.of(), panel.commandCapabilities());
+            assertEquals(Set.of(AppCommand.SAVE_ACTIVE), panel.commandCapabilities());
+            assertEquals("Save Timeout", panel.commandLabel(AppCommand.SAVE_ACTIVE));
             assertTrue(notifications.get() >= 4);
             return null;
         });

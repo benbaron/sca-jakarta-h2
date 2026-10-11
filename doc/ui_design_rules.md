@@ -21,9 +21,13 @@ Compatibility values such as `defaultPrivilege` and `defaultReopenScope` are not
 
 ## Global commands and shortcuts
 
+Every editable pane or subpane exposes its real save operation through a visible **Save** button or **File -> Save** entry. Shared transaction details use the owning editor's Save; the control or help text states that scope. Composite panels route Save to the selected subpane and refresh command availability when selection, readiness or busy state changes. Save must retain the same validation, permissions, confirmation and authoritative service as the existing operation.
+
+Read-only results and history have no independent draft to save. Their Save entry remains disabled with an explanation; supported report/file output uses Export or Backup. Deliberate accounting operations such as closing a period, running depreciation, reversing or matching retain their specific command and confirmation: those commands persist immediately and require no later Save.
+
 An enabled global command must identify a real operation in the active production panel. Panels publish current New, Save, and typed validation support through `AppPanel.commandCapabilities()`; the shell disables unsupported menu and toolbar controls and provides a concise explanation. Composite panels must recalculate capabilities when their selected mode changes.
 
-Production labels, accelerators, and Help shortcut text come from `GlobalCommandRegistry`. Help must not advertise an uninstalled shortcut. The workspace must not intercept standard Copy/Paste accelerators merely to route them to empty panel hooks; focused JavaFX text controls own their native editing behavior. A handled result is returned only after a declared operation has been invoked successfully; undeclared commands and thrown failures return a factual not-handled result.
+Default command labels, accelerators, and Help shortcut text come from `GlobalCommandRegistry`; `AppPanel.commandLabel` may supply the selected subpane's specific save scope. Help must not advertise an uninstalled shortcut. The workspace must not intercept standard Copy/Paste accelerators merely to route them to empty panel hooks; focused JavaFX text controls own their native editing behavior. A handled result is returned only after a declared operation has been invoked successfully; undeclared commands and thrown failures return a factual not-handled result.
 
 ## Tables
 

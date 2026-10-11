@@ -108,11 +108,11 @@ public class ImportPreviewPanel implements AppPanel
 		new TableView<>();
 	private final TabPane previewTabs = new TabPane();
 	private final Button commitAccepted =
-		new Button("Commit Accepted COA Rows");
+		new Button("Save Accepted COA Rows");
 	private final Button previewCoa = new Button("Preview COA CSV…");
 	private final Button previewSclx = new Button("Preview SCLX…");
 	private final Button repreviewSclx = new Button("Re-preview Same SCLX");
-	private final Button commitSclx = new Button("Import Previewed SCLX…");
+	private final Button commitSclx = new Button("Save Previewed SCLX Import…");
 	private final Button applySclxMappings = new Button("Re-preview with SCLX Choices");
 	private final Button previewBank = new Button("Preview Bank OFX/QFX…");
 	private final Button previewBankCsv =
@@ -121,7 +121,7 @@ public class ImportPreviewPanel implements AppPanel
 		new Button("Preview Normalized Bank CSV…");
 	private final Button saveBankCsvProfile = new Button("Save CSV Profile…");
 	private final Button commitBankReview =
-		new Button("Commit Previewed Bank Review…");
+		new Button("Save Previewed Bank Review…");
 	private final Button cancelOperation = new Button("Cancel Preview");
 	private final ProgressBar operationProgress = new ProgressBar(0.0);
 	private final Label operationStage = new Label();
@@ -165,6 +165,7 @@ public class ImportPreviewPanel implements AppPanel
 	private NormalizedBankCsvReviewService lastNormalizedBankCsvCommitService;
 	private Long returnReconciliationSessionId;
 	private Long reconciliationImportBankAccountId;
+	private Runnable commandCapabilitiesChangedListener = () -> { };
 	
 	public ImportPreviewPanel()
 	{
@@ -424,6 +425,15 @@ public class ImportPreviewPanel implements AppPanel
 				tableRegion("Normalized Durable Review Preview", bankRows)),
 			tab("CSV Original Rows",
 				tableRegion("Original CSV Logical Rows", bankCsvOriginalRows)));
+		previewTabs.getSelectionModel().selectedIndexProperty().addListener(
+			(observable, oldValue, newValue) -> commandCapabilitiesChangedListener.run());
+		for (Button button : java.util.List.of(commitAccepted, commitSclx, commitBankReview))
+		{
+			button.disabledProperty().addListener(
+				(observable, oldValue, newValue) -> commandCapabilitiesChangedListener.run());
+		}
+        operationController.busyProperty().addListener(
+                (observable, oldValue, newValue) -> commandCapabilitiesChangedListener.run());
 		
 		VBox warningRegion =
 			new VBox(6, new Label("Preview Messages"), warnings,
@@ -602,6 +612,71 @@ public class ImportPreviewPanel implements AppPanel
 		return root;
 		
 	}
+
+    private Button selectedSaveButton()
+    {
+        return switch (previewTabs.getSelectionModel().getSelectedIndex())
+        {
+            case 0 -> commitAccepted;
+            case 1, 2, 3, 4 -> commitSclx;
+            case 5, 6 -> commitBankReview;
+            default -> null;
+        };
+    }
+
+    @Override
+    public java.util.Set<AppCommand> commandCapabilities()
+    {
+        Button save = selectedSaveButton();
+        return save != null && !save.isDisabled() && !operationController.busyProperty().get()
+                && (save != commitAccepted || (lastCoaPreview != null && !lastCoaPreview.hasBlockingErrors()
+                        && !lastCoaPreview.acceptedRows().isEmpty() && !sclxActor.getText().isBlank()))
+                ? AppPanel.capabilities(AppCommand.SAVE_ACTIVE) : java.util.Set.of();
+    }
+
+    @Override
+    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return command == AppCommand.SAVE_ACTIVE
+                ? java.util.Optional.of(ApplicationPermission.BOOKKEEPING_WRITE) : java.util.Optional.empty();
+    }
+
+    @Override
+    public String commandLabel(AppCommand command)
+    {
+        Button save = selectedSaveButton();
+        return command == AppCommand.SAVE_ACTIVE && save != null
+                ? save.getText() : AppPanel.super.commandLabel(command);
+    }
+
+    @Override
+    public String saveUnavailableReason()
+    {
+        return "Preview and confirm valid rows for the selected import before saving. Save imports the complete reviewed batch through its existing confirmation.";
+    }
+
+    @Override
+    public void onSave()
+    {
+        if (!supportsCommand(AppCommand.SAVE_ACTIVE))
+        {
+            throw new IllegalStateException(saveUnavailableReason());
+        }
+        selectedSaveButton().fire();
+    }
+
+    @Override
+    public String commandResultMessage(AppCommand command)
+    {
+        return status.getText();
+    }
+
+    @Override
+    public void setCommandCapabilitiesChangedListener(Runnable listener)
+    {
+        commandCapabilitiesChangedListener = Objects.requireNonNull(listener, "listener");
+        listener.run();
+    }
 	
 	@Override
 	public void onPanelShown()
@@ -1412,7 +1487,7 @@ public class ImportPreviewPanel implements AppPanel
 			
 	}
 	
-	private void previewCoa(Path file)
+	void previewCoa(Path file)
 	{
 		clearCoaPreview();
 		clearSclxPreview();

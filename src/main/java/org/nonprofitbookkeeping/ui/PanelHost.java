@@ -258,6 +258,18 @@ public class PanelHost extends TabPane
         return panel == null ? java.util.Optional.empty() : panel.requiredPermission(command);
     }
 
+    public String activeCommandLabel(AppCommand command)
+    {
+        AppPanel panel = getActive();
+        return panel == null ? GlobalCommandRegistry.label(command) : panel.commandLabel(command);
+    }
+
+    public String activeSaveUnavailableReason()
+    {
+        AppPanel panel = getActive();
+        return panel == null ? "No active pane is selected." : panel.saveUnavailableReason();
+    }
+
     public java.util.Optional<AppPanel.JournalSelection> activeJournalSelection()
     {
         AppPanel panel = getActive();

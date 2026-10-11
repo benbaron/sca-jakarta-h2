@@ -66,7 +66,7 @@ public class PeriodCloseRunsPanel implements AppPanel
 
         Button useActiveMonth = new Button("Use Active Period");
         useActiveMonth.setOnAction(event -> setCalculatedMonth());
-        Button close = new Button("Close Range");
+        Button close = new Button("Save Closed Range");
         close.setOnAction(event -> closeRange());
         Button reopen = new Button("Reopen Selected");
         reopen.setOnAction(event -> reopenSelected());

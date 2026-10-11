@@ -29,7 +29,7 @@ write to H2 and does not expose an SCLX commit action.
    action.
 10. Review **Preview Warnings**. Confirm that each item includes severity, stable code, source path,
     and readable message.
-11. Confirm that **Commit Accepted COA Rows** is disabled after the SCLX preview and that no SCLX
+11. Confirm that **Save Accepted COA Rows** is disabled after the SCLX preview and that no SCLX
     commit/import button is present.
 12. Close and reopen the company or restart the application. Confirm that no accounts, funds,
     transactions, period-close facts, reconciliation facts, or external identities were created or

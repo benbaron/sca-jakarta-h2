@@ -38,7 +38,7 @@ public class ReconciliationRunsPanelSourceTest
         assertTrue(source.contains("Edit Existing"));
         assertTrue(source.contains("Save Unresolved"));
         assertTrue(source.contains("Finalize"));
-        assertTrue(source.contains("Add Manual Line"));
+        assertTrue(source.contains("Save Manual Line"));
         assertTrue(source.contains("Import Bank Statement…"));
         assertTrue(source.contains("OFX/QFX, mapped CSV, and normalized CSV"));
         assertFalse(source.contains("CSV Import"));
@@ -52,7 +52,7 @@ public class ReconciliationRunsPanelSourceTest
         assertTrue(source.contains("Match Selected"));
         assertTrue(source.contains("Unmatch"));
         assertTrue(source.contains("Mark Cleared"));
-        assertTrue(source.contains("Record Difference Explanation"));
+        assertTrue(source.contains("Save Difference Explanation"));
         assertTrue(source.contains("TableView.UNCONSTRAINED_RESIZE_POLICY"));
         assertFalse(source.contains("TableView.CONSTRAINED_RESIZE_POLICY"));
         assertFalse(source.contains("Delete unavailable"));

@@ -11,7 +11,7 @@ Use this checklist only after the exact PR head passes the complete Maven PR Tes
 ## A. Reconciliation import route and exact scope
 
 1. Open **Accounting → Bank Reconciliation** and load the mutable session for account A.
-2. Confirm the Statement step contains **Add Manual Line** and **Import Bank Statement…**; confirm there are no pasted CSV, OFX, or QIF import tabs/actions.
+2. Confirm the Statement step contains **Save Manual Line** and **Import Bank Statement…**; confirm there are no pasted CSV, OFX, or QIF import tabs/actions.
 3. Choose **Import Bank Statement…**.
 4. Confirm Import Preview opens with account A selected and the configured-account selector locked for this reconciliation-origin operation.
 5. Confirm the available bank preview actions are OFX/QFX, Mapped Bank CSV, and Normalized Bank CSV. Confirm there is no QIF preview/import action.
@@ -36,7 +36,7 @@ Use this checklist only after the exact PR head passes the complete Maven PR Tes
 
 1. In a mutable reconciliation, add one manual statement line and confirm it appears and survives reload.
 2. Confirm manual entry does not open Import Preview and does not imply a file format.
-3. Load a finalized reconciliation and confirm both **Add Manual Line** and **Import Bank Statement…** are disabled with the finalized/read-only explanation.
+3. Load a finalized reconciliation and confirm both **Save Manual Line** and **Import Bank Statement…** are disabled with the finalized/read-only explanation.
 
 ## E. Banking entry point remains governed
 

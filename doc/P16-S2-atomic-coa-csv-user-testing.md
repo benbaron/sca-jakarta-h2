@@ -6,8 +6,8 @@ Use a disposable migrated database with an active company and active Chart of Ac
 
 1. Open **Import Preview** and choose a COA CSV containing at least one parent account and one child account. Put the child before the parent in the CSV to exercise dependency ordering.
 2. Confirm the preview names the active company and target chart, reports the source SHA-256, and clearly separates accepted, rejected, warning, and blocking counts.
-3. Confirm **Commit Accepted COA Rows** is unavailable when the preview has a blocking duplicate-code, missing/inactive-parent, cycle, invalid type/balance, or other semantic error.
-4. With a valid preview, enter an import actor and choose **Commit Accepted COA Rows**.
+3. Confirm **Save Accepted COA Rows** is unavailable when the preview has a blocking duplicate-code, missing/inactive-parent, cycle, invalid type/balance, or other semantic error.
+4. With a valid preview, enter an import actor and choose **Save Accepted COA Rows**.
 5. Confirm the dialog names the exact company/chart, accepted-row count, and SHA-256 and states that the batch is atomic.
 6. Commit and confirm the completion message reports only committed `created`, `updated`, and `skipped` counts.
 7. Open **Chart of Accounts** and confirm all accepted rows are present with the expected parent hierarchy. Confirm rejected rows were not written.

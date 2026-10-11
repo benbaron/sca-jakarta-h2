@@ -37,7 +37,7 @@
    Ownership Diagnostics**.
 4. In **Administration -> Company Ownership Diagnostics**, select each direct ownerless row, review the
    record description and any related-company constraint, confirm the preselected active import company,
-   enter the actor and audit note, and confirm **Assign to Import Company…**. Confirm the remaining count decreases and a failed/stale assignment changes
+   enter the actor and audit note, and confirm **Save Ownership Assignment…**. Confirm the remaining count decreases and a failed/stale assignment changes
    nothing. Confirm cross-company reference rows are non-assignable and explain the appropriate next step.
 5. Return to Import Preview and click **Re-preview Same SCLX** after the open diagnostic count reaches zero.
    Confirm no file chooser is required and the same normalized path is used.
