@@ -1,11 +1,11 @@
 ---
-plan_version: 348
+plan_version: 349
 active_phase: P17
 active_slice: P17-C13
 active_status: VERIFYING
 active_branch: codex/P17-C13-pane-save-coverage
 active_pull_request: null
-active_head: f35179378199d8f9fd840c5f9029a34b3a683044
+active_head: d2bd56bac841c5710a869d0ef1b3c7da04a844e0
 next_action: "After owner publication authorization, confirm current main/remote branch, publish the reviewed local sequence without force updates, open a draft PR, verify actual-head CI and complete the pane-save desktop acceptance notes."
 ---
 
@@ -1338,3 +1338,5 @@ Branch: `codex/P17-C13-pane-save-coverage`, from confirmed main/PR #366 merge `f
 Changed documents: this plan; [pane Save audit and owner checks](ui/pane-save-coverage.md); [UI rules](ui_design_rules.md), [operation matrix](interface-operation-matrix.md), [editor guidelines](ui/editor-guidelines.md); [check contract](accounting/check-exceptions.md), [SCLX](data-exchange/sclx.md), [shared operation contract](data-exchange/shared-operation-contract.md), [production test plan](testing/production-workspace-test-plan.md); label-only updates to owner guides for P15-S5 import preview/commit, P16-C6 ownership repair, P16-S2 COA commit, P16-S3 reconciliation, P16-S4 statement import, P18-S1 depreciation and P25-S3 check review.
 
 Remaining: authorized publication, actual-head GitHub clean/repeat/Xvfb validation, native owner acceptance from the audit's seven steps, and merge. Next exact action after owner publication authorization: confirm `git status --short` is clean and `git rev-parse HEAD` identifies the reviewed tip; confirm current main and expected remote branch parent; publish the complete local sequence with matching trees and no force updates; open a draft PR and inspect its actual-head required checks. Record actual CI/native evidence before closing the slice. P25-S3 desktop acceptance and P25-S4/D03/D04 gates are unchanged.
+
+Verified local implementation commit `d2bd56bac841c5710a869d0ef1b3c7da04a844e0`, tree `1a83aaa0122e543dba58a9f7fb8896f06d535232`. This documentation-only successor records that verified source head because a commit cannot embed its own SHA; resolve `git rev-parse HEAD` for the complete local tip. Both commits remain local and must be published in reviewed order only after owner authorization. The worktree is clean after this handoff.
