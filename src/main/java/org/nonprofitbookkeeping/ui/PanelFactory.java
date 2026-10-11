@@ -30,6 +30,7 @@ public final class PanelFactory
         factories.put(AppPanelId.LEDGER_REGISTER, LedgerRegisterPanel::new);
         factories.put(AppPanelId.TXN_EDITOR, TransactionEditorPanel::new);
         factories.put(AppPanelId.JOURNAL_PANE, JournalPane::new);
+        factories.put(AppPanelId.BANKING, BankingPanel::new);
         factories.put(AppPanelId.SCHEDULES, SchedulesPanel::new);
         factories.put(AppPanelId.BUDGET_EDITOR, BudgetEditorPanel::new);
         factories.put(AppPanelId.BUDGET_VS_ACTUAL, BudgetVsActualPanel::new);

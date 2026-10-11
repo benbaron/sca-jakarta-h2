@@ -742,15 +742,18 @@ public class TransactionEditorPanel implements AppPanel
                             : service.enter(command);
                 },
                 view -> {
+                    boolean wasNew = editorMode == EditorMode.NEW;
                     lastSavedTransactionId = view.id();
-                    Long savedEditId = editTransactionId;
-                    resetForNewEntry();
+                    editorMode = EditorMode.EDIT;
+                    editTransactionId = view.id();
+                    applySavedView(view);
                     dirty = false;
                     lineEditorModel.markClean();
                     openSavedInLedger.setDisable(false);
-                    status.setText((savedEditId == null ? "Saved new transaction #" : "Updated transaction #") + view.id()
+                    deleteTransaction.setDisable(false);
+                    status.setText((wasNew ? "Saved new transaction #" : "Updated transaction #") + view.id()
                             + " through TransactionEntryService with " + view.lines().size()
-                            + " split line(s). The editor is ready for the next new transaction.");
+                            + " split line(s). The saved transaction remains loaded so Delete/Reverse can act on the durable record.");
                     UiDebug.log("transaction-editor", "Save completed for Txn #" + view.id()
                             + " with " + view.lines().size() + " split line(s).");
                 },

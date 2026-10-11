@@ -95,6 +95,12 @@ public class ChartOfAccountsPanel implements AppPanel
     @Override public Node root() { return root; }
 
     @Override
+    public void onSave()
+    {
+        saveForm();
+    }
+
+    @Override
     public void onNew()
     {
         clearFormForNew();

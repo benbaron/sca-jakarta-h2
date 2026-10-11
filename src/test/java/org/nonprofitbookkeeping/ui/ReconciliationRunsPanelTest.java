@@ -1,12 +1,18 @@
 package org.nonprofitbookkeeping.ui;
 
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * ReconciliationRunsPanelTest component.
@@ -20,18 +26,26 @@ public class ReconciliationRunsPanelTest
     }
 
     @Test
-    public void approveWithoutSelection_setsHelpfulStatus()
+    public void panelExposesComparisonActionsWithoutApprovalWorkflow()
     {
         ReconciliationRunsPanel panel = FxTestSupport.onFx(ReconciliationRunsPanel::new);
 
-        String status = FxTestSupport.onFx(() -> {
-            VBox top = (VBox) ((javafx.scene.layout.BorderPane) panel.root()).getTop();
+        FxTestSupport.onFx(() -> {
+            VBox top = (VBox) ((BorderPane) panel.root()).getTop();
             HBox actions = (HBox) top.getChildren().get(1);
-            Button approve = (Button) actions.getChildren().get(2);
-            approve.fire();
-            return ((javafx.scene.control.Label) top.getChildren().get(2)).getText();
-        });
+            List<String> actionLabels = actions.getChildren().stream()
+                    .map(Button.class::cast)
+                    .map(Button::getText)
+                    .toList();
+            Label workflowNote = (Label) top.getChildren().get(2);
 
-        assertEquals("Select a reconciliation run before recording an approval decision.", status);
+            assertEquals(List.of("Refresh", "Record Started", "Record Completed Run", "Record Failed"), actionLabels);
+            assertFalse(actionLabels.contains("Approve Selected"));
+            assertFalse(actionLabels.contains("Reject Selected"));
+            assertFalse(actionLabels.contains("View Approval Audit"));
+            assertTrue(workflowNote.getText().contains("comparison workflow"));
+            assertTrue(workflowNote.getText().contains("approve/reject decisions are not part of this panel"));
+            return null;
+        });
     }
 }

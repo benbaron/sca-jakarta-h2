@@ -194,4 +194,10 @@ public class BudgetEditorPanel implements AppPanel
 
     @Override public String title() { return "Budget Editor"; }
     @Override public Node root() { return root; }
+
+    @Override
+    public void onSave()
+    {
+        saveTarget();
+    }
 }

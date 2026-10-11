@@ -11,6 +11,7 @@ import org.nonprofitbookkeeping.repository.ReconciliationRunRepository;
 import org.nonprofitbookkeeping.service.AccountAdminService;
 import org.nonprofitbookkeeping.service.AccountLookupService;
 import org.nonprofitbookkeeping.service.ApprovalAuditService;
+import org.nonprofitbookkeeping.service.BankConfigurationService;
 import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
 import org.nonprofitbookkeeping.service.BudgetCategoryLookupService;
 import org.nonprofitbookkeeping.service.BudgetPlanService;
@@ -54,6 +55,7 @@ public final class UiServiceRegistry
     public static FundAdminService fundAdmin() { return services().fundAdmin(); }
     public static BudgetCategoryAdminService budgetCategoryAdmin() { return services().budgetCategoryAdmin(); }
     public static BudgetPlanService budgetPlan() { return services().budgetPlan(); }
+    public static BankConfigurationService bankConfiguration() { return services().bankConfiguration(); }
     public static CompanyAdminService companyAdmin() { return services().companyAdmin(); }
     public static UserAdminService userAdmin() { return services().userAdmin(); }
     public static FundBalanceService fundBalance() { return services().fundBalance(); }
@@ -131,6 +133,7 @@ public final class UiServiceRegistry
                 new FundAdminService(jpa),
                 new BudgetCategoryAdminService(jpa),
                 new BudgetPlanService(jpa),
+                new BankConfigurationService(jpa),
                 new CompanyAdminService(jpa),
                 new UserAdminService(jpa),
                 new FundBalanceService(jpa),
@@ -211,6 +214,7 @@ public final class UiServiceRegistry
             FundAdminService fundAdmin,
             BudgetCategoryAdminService budgetCategoryAdmin,
             BudgetPlanService budgetPlan,
+            BankConfigurationService bankConfiguration,
             CompanyAdminService companyAdmin,
             UserAdminService userAdmin,
             FundBalanceService fundBalance,

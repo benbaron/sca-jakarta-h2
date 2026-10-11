@@ -45,6 +45,10 @@ All date fields in all data views and editors must follow the active company's d
 
 Accounting periods must be stated in days, quarters, or years as appropriate for the screen, report, or workflow. The start of each fiscal year or period is calculated from the active company's configured start preference. The top chrome active-period selector chooses an accounting period, not an arbitrary day, and the active period start date is derived from the selected period plus the configured period start day.
 
+## Save command exposure
+
+Every pane or subpane that edits a durable record must expose a clearly labeled Save button in the editor and route the workspace **File -> Save**, toolbar **Save**, and `Ctrl+S` command through the same authoritative save method. A pane containing multiple independent editors must expose a Save button for each editor; the workspace Save command targets the editor that most recently held focus. Read-only, navigation-only, report, and immediate-action panes do not add placeholder Save operations.
+
 ## Completed-phase retrofit obligations
 
 These rules apply retroactively to UI surfaces delivered by completed phases. A completed phase is not reopened wholesale, but any corrective slice that touches an existing surface must bring that surface into conformance with this document or record a visible follow-up in `doc/PLAN.md`.
