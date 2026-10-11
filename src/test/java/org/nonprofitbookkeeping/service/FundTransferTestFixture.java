@@ -41,7 +41,7 @@ public record FundTransferTestFixture(long source, long destination, long bank, 
             em.getTransaction().commit();
         }
         new TransactionEntryService(jpa).enter(new TransactionCommand(OPENING, null, "Opening resources", null,
-                List.of(line(fixture.bank, fixture.source, "200", "0"), line(fixture.income, fixture.source, "0", "200"))));
+                List.of(line(fixture.bank, fixture.source(), "200", "0"), line(fixture.income, fixture.source, "0", "200"))));
         return fixture;
     }
 
