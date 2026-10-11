@@ -1,12 +1,12 @@
 ---
-plan_version: 346
+plan_version: 347
 active_phase: P25
 active_slice: P25-S3
 active_status: VERIFYING
-active_branch: codex/P25-S3-check-exceptions
+active_branch: null
 active_pull_request: 364
-active_head: 38db5cdb889e5110334916ef1f9ade9927acd816
-next_action: "Publish this authorized documentation ledger with a matching tree, verify branch/PR #364 final head and clean/repeat/Xvfb CI, repair failures; owner desktop acceptance and separate merge follow. S3 stays VERIFYING; D04 and S4 remain gated."
+active_head: 27fd0046dea33355bd621624055c0613750022cc
+next_action: "Record owner desktop acceptance before closing S3; live main and PR #364 final-head clean/repeat/Xvfb CI are confirmed. Do not republish or reuse its merged branch. Resolve D03 before P25-S4; D04 still gates stale-triggered accounting."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,7 +37,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | VERIFYING — S1/S2 merged in PRs #362/#363; S3 check exceptions in draft PR #364 |
+| P25 | Transfers, payment references, reporting classification | VERIFYING — S1/S2 merged in PRs #362/#363; S3 merged in local history via PR #364; final-head CI confirmed; desktop acceptance evidence remains outstanding |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is merged; P24-S4B and P24-S4C are DONE; P24 is complete. P25-S1 is accepted and merged in PR #362. P25-S2 is accepted and merged in PR #363; P25-S3 check exceptions is active; unresolved D03 remains a gate before entity mappings. Conditional P27-S5 remains unadopted.
+P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is merged; P24-S4B and P24-S4C are DONE; P24 is complete. P25-S1 is accepted and merged in PR #362. P25-S2 is accepted and merged in PR #363; P25-S3 check exceptions is merged in local history and remains VERIFYING pending closeout evidence; unresolved D03 remains a gate before entity mappings and P25-S4. Conditional P27-S5 remains unadopted.
 
 ## 10. Archived proposal and adoption
 
@@ -683,8 +683,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P24-S4C | Merchant maintenance | DONE | P24-S4B merged; A08 merchant workflow |
 | P25-S1 | Implement one internal fund-transfer operation (G7) | DONE | P24-S4 merged; internal-only scope; D03 required before legal-entity mappings; other applicable acceptance gates retained |
 | P25-S2 | Add structured payment/check references (G9) | DONE | P25-S1 merged; owning contract and D01–D10 gates as applicable |
-| P25-S3 | Complete check exception and reconciliation workflows (G9) | VERIFYING | P25-S2 merged; owning contract and D01–D10 gates as applicable |
-| P25-S4 | Implement the adopted NMR accounting contract (G10) | BLOCKED | P25-S3 merged; owning contract and D01–D10 gates as applicable |
+| P25-S3 | Complete check exception and reconciliation workflows (G9) | VERIFYING | PR #364 merged in local history; live main and final-head CI confirmed; owner desktop acceptance outstanding; D04 gates stale-triggered accounting only |
+| P25-S4 | Implement the adopted NMR accounting contract (G10) | BLOCKED | P25-S3 closeout evidence and unresolved D03 NMR contract/rates/exemptions/effective dates/legal-entity mapping; other applicable D01–D10 gates |
 | P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | P25-S4 merged; owning contract and D01–D10 gates as applicable |
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -1300,3 +1300,16 @@ Owner explicitly authorized publication, draft PR and CI with “yes.” Confirm
 | `99c7f88cec13cee2b12182907f239d54b9662e6d` | `38db5cdb889e5110334916ef1f9ade9927acd816` | `0653c5a9bc1381a8ab857e45e02ef509fc3ff7a9` |
 
 Opened draft [PR #364](https://github.com/benbaron/sca-jakarta-h2/pull/364), head `38db5cdb889e5110334916ef1f9ade9927acd816`. This documentation-only ledger will be published under the same authorization; active_head records its known parent because the successor cannot embed its own SHA. Verify final branch and PR tip/tree before inspecting actual-head Maven clean verify, repeat tests and Xvfb. No GitHub S3 success is claimed yet. Local final-source evidence remains 894 tests with 45 headless skips and 25 production Xvfb tests without skips, zero failures/errors. Owner desktop acceptance and separately authorized merge remain pending; S3 stays VERIFYING, S4/D04 remain gated.
+
+
+### P25-S3 post-merge repository reconciliation — 2026-10-11 (America/Denver)
+
+This checkpoint supersedes the preceding S3 publication/merge-pending next actions. Local history contains GitHub merge commit `f9ee8716e545572d66cb8d9494003b8c0b4099db` for [PR #364](https://github.com/benbaron/sca-jakarta-h2/pull/364), merging S3 head `47ce0808` into base `5f6bec4b`. The supplied checkout is clean branch `work` at `27fd0046dea33355bd621624055c0613750022cc`. That successor changes only FundTransferTestFixture record-field access to its equivalent accessor; it introduces no production behavior. The old S3 task branch is merged and must not be reused or republished. `active_branch` is cleared; `active_pull_request` retains the merged PR as the verification reference, and `active_head` identifies the tested source checkpoint rather than this documentation edit.
+
+Fresh offline `clean verify` on that checkout passed using the existing workspace Maven helper: **894 tests, zero failures, zero errors, 45 headless skips**, BUILD SUCCESS. Compilation targets Java 17; migration tests apply all 44 migrations through V80. No fresh Xvfb, repeat-test, GitHub CI or native desktop acceptance result is claimed. Earlier S3 local Xvfb evidence remains historical, not verification of this successor. Local `origin/main` still points to `5f6bec4b`; live remote main and final PR checks were not queried in this reconciliation.
+
+S3 remains VERIFYING because required final-head CI and owner desktop acceptance evidence have not been reconciled; merge alone does not establish the repository definition of DONE. P25-S4 remains BLOCKED on S3 closeout and unresolved D03. D04 remains unresolved for stale-triggered accounting, which is unavailable; factual age review and explicit ordinary cancellation/reissue do not resolve that policy. Later slices remain blocked.
+
+Completed: reconciled controller, phase index and slice dependencies with local merge history and current-source test evidence; retained historical handoffs. Changed document: `doc/PLAN.md` only. No production code, migration or policy decision changed. Next exact action: read live main and PR #364 final-head clean/repeat/Xvfb results, record actual evidence and owner desktop acceptance, then close S3 only if all gates are satisfied. Resolve the D03 accounting contract before activating or implementing S4.
+
+Publication verification — 2026-10-11: owner authorized publication of this repair. The connected GitHub service confirms live `main` at `27fd0046dea33355bd621624055c0613750022cc` and PR #364 merged. Its final head `47ce0808bf7124ebe51b2349f550495888b37fd1` passed [Maven PR Tests run 38088450792](https://github.com/benbaron/sca-jakarta-h2/actions/runs/38088450792); job `114319827665` reports successful clean headless verification, repeat tests and production JavaFX route compliance. This supersedes the preceding not-queried/CI-unreconciled statements. Native owner acceptance is still not recorded; S3 stays VERIFYING. Publish only `doc/PLAN.md` from current main on new branch `codex/P25-S3-plan-reconciliation`, with a draft PR targeting `main`; do not reuse the merged implementation branch. Local Git transport could not connect to the proxy and CLI authentication was unavailable, so publication uses the connected service with matching blob/tree verification. The repair PR is a documentation follow-up, not a new implementation slice. Next: inspect its actual-head CI and record owner S3 desktop acceptance before closure; D03/D04 gates remain unchanged.
