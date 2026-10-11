@@ -1,12 +1,12 @@
 ---
-plan_version: 349
+plan_version: 350
 active_phase: P17
 active_slice: P17-C13
 active_status: VERIFYING
 active_branch: codex/P17-C13-pane-save-coverage
-active_pull_request: null
-active_head: d2bd56bac841c5710a869d0ef1b3c7da04a844e0
-next_action: "After owner publication authorization, confirm current main/remote branch, publish the reviewed local sequence without force updates, open a draft PR, verify actual-head CI and complete the pane-save desktop acceptance notes."
+active_pull_request: 367
+active_head: e4c0497c3ff7f9fb3e0f7163817b2922624f7fe1
+next_action: "Verify draft PR #367 final-head clean/repeat/Xvfb CI and repair any failures; record native owner acceptance from the pane-save audit before separately authorized merge. P17-C13 remains VERIFYING."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1340,3 +1340,17 @@ Changed documents: this plan; [pane Save audit and owner checks](ui/pane-save-co
 Remaining: authorized publication, actual-head GitHub clean/repeat/Xvfb validation, native owner acceptance from the audit's seven steps, and merge. Next exact action after owner publication authorization: confirm `git status --short` is clean and `git rev-parse HEAD` identifies the reviewed tip; confirm current main and expected remote branch parent; publish the complete local sequence with matching trees and no force updates; open a draft PR and inspect its actual-head required checks. Record actual CI/native evidence before closing the slice. P25-S3 desktop acceptance and P25-S4/D03/D04 gates are unchanged.
 
 Verified local implementation commit `d2bd56bac841c5710a869d0ef1b3c7da04a844e0`, tree `1a83aaa0122e543dba58a9f7fb8896f06d535232`. This documentation-only successor records that verified source head because a commit cannot embed its own SHA; resolve `git rev-parse HEAD` for the complete local tip. Both commits remain local and must be published in reviewed order only after owner authorization. The worktree is clean after this handoff.
+
+
+### P17-C13 authorized draft publication — 2026-10-11 UTC
+
+Owner explicitly authorized publication with “push this as a draft.” Confirmed clean local branch/tip, GitHub main at `f35179378199d8f9fd840c5f9029a34b3a683044`, and absent remote task branch before creating it at that base. Local Git credentials were unavailable earlier in this session, so used the connected GitHub service under AGENTS.md. Preserved both reviewed commit messages and order; compared all 47 blob writes and both published trees to local object IDs, then advanced the branch with the expected parent and force disabled. No unrelated files were included.
+
+| Local commit | Published commit | Matching tree |
+|---|---|---|
+| `d2bd56bac841c5710a869d0ef1b3c7da04a844e0` | `bc382b761627682553a476290499ef22d757a66d` | `1a83aaa0122e543dba58a9f7fb8896f06d535232` |
+| `46cceffdacce666cdfe1f8ab20e451d943f3c610` | `e4c0497c3ff7f9fb3e0f7163817b2922624f7fe1` | `4a77dd2cf0a17140a853d1db4833845f0f719799` |
+
+Opened draft [PR #367](https://github.com/benbaron/sca-jakarta-h2/pull/367) targeting main on `codex/P17-C13-pane-save-coverage`, initial head `e4c0497c3ff7f9fb3e0f7163817b2922624f7fe1`. Fetched that branch and independently matched its final tree. PR records actual local tests, implemented scope and native acceptance steps. Initial-head [Maven run 38160919705](https://github.com/benbaron/sca-jakarta-h2/actions/runs/38160919705) is in progress; no GitHub success is claimed. This documentation-only publication ledger is included under the same authorization; active_head records its known remote parent because a successor cannot embed its own SHA. Verify the resulting remote branch/PR tip and inspect that final head's clean/repeat/expanded Xvfb workflow.
+
+P17-C13 remains VERIFYING. Completed: reviewed implementation and handoff are published as a draft with matching trees. Remaining: actual final-head GitHub checks, native owner acceptance and separately authorized merge. No known functional local failure remains; local clean verification is 898 tests with 49 headless skips, and expanded Xvfb is 42 tests without skips, zero failures/errors. No application or test change follows those results. P25-S3 desktop acceptance and P25-S4/D03/D04 gates remain unchanged.
