@@ -88,6 +88,7 @@ public class InventoryPanel implements AppPanel
     private boolean suppressDirty;
     private boolean dirty;
     private boolean editorOpen;
+    private Runnable commandCapabilitiesChangedListener = () -> { };
     private Long editingItemId;
     private InventoryItem.Status editingStatus = InventoryItem.Status.ACTIVE;
 
@@ -127,7 +128,8 @@ public class InventoryPanel implements AppPanel
     @Override
     public java.util.Set<AppCommand> commandCapabilities()
     {
-        return AppPanel.capabilities(AppCommand.NEW_ACTIVE, AppCommand.SAVE_ACTIVE);
+        return editorOpen ? AppPanel.capabilities(AppCommand.NEW_ACTIVE, AppCommand.SAVE_ACTIVE)
+                : AppPanel.capabilities(AppCommand.NEW_ACTIVE);
     }
 
     @Override
@@ -145,8 +147,21 @@ public class InventoryPanel implements AppPanel
         }
         else
         {
-            status.setText("Open New Item or Edit Selected before using Save for inventory items.");
+            throw new IllegalStateException(saveUnavailableReason());
         }
+    }
+
+    @Override
+    public String saveUnavailableReason()
+    {
+        return "Open New Item or Edit Selected to save item details. Movement actions show a separate Save Movement confirmation.";
+    }
+
+    @Override
+    public void setCommandCapabilitiesChangedListener(Runnable listener)
+    {
+        commandCapabilitiesChangedListener = java.util.Objects.requireNonNull(listener, "listener");
+        listener.run();
     }
 
     @Override
@@ -304,6 +319,7 @@ public class InventoryPanel implements AppPanel
         save.setOnAction(e -> saveItem());
         UiPermissionGate.gate(save, ApplicationPermission.BOOKKEEPING_WRITE, "Save an inventory item");
         Button cancel = new Button("Cancel");
+        cancel.setId("inventoryItemCancelButton");
         cancel.setOnAction(e -> cancelItemEditor());
         HBox actions = new HBox(8, save, cancel);
         ScrollPane editorScroll = new ScrollPane(form());
@@ -517,6 +533,7 @@ public class InventoryPanel implements AppPanel
         dirty = false;
         root.setCenter(listPanel);
         status.setText(message);
+        commandCapabilitiesChangedListener.run();
     }
 
     private void showEditorPanel(String message)
@@ -524,6 +541,7 @@ public class InventoryPanel implements AppPanel
         editorOpen = true;
         root.setCenter(itemEditorPanel);
         status.setText(message);
+        commandCapabilitiesChangedListener.run();
     }
 
     private void saveItem()
@@ -671,7 +689,9 @@ public class InventoryPanel implements AppPanel
                         + "\nOffset Event: " + preview.eventLabel()
                         + "\nOffset Budget: " + preview.budgetLabel()
                         + "\n" + accounting);
-        return confirmation.showAndWait().filter(ButtonType.OK::equals).isPresent();
+        ButtonType save = new ButtonType("Save Movement", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
+        confirmation.getButtonTypes().setAll(save, ButtonType.CANCEL);
+        return confirmation.showAndWait().filter(save::equals).isPresent();
     }
 
     private void reverseSelectedMovement()

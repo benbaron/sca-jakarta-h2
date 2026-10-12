@@ -1,12 +1,12 @@
 ---
-plan_version: 347
-active_phase: P25
-active_slice: P25-S3
+plan_version: 350
+active_phase: P17
+active_slice: P17-C13
 active_status: VERIFYING
-active_branch: null
-active_pull_request: 364
-active_head: 27fd0046dea33355bd621624055c0613750022cc
-next_action: "Record owner desktop acceptance before closing S3; live main and PR #364 final-head clean/repeat/Xvfb CI are confirmed. Do not republish or reuse its merged branch. Resolve D03 before P25-S4; D04 still gates stale-triggered accounting."
+active_branch: codex/P17-C13-pane-save-coverage
+active_pull_request: 367
+active_head: e4c0497c3ff7f9fb3e0f7163817b2922624f7fe1
+next_action: "Verify draft PR #367 final-head clean/repeat/Xvfb CI and repair any failures; record native owner acceptance from the pane-save audit before separately authorized merge. P17-C13 remains VERIFYING."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -29,7 +29,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P11 | Report Library | DONE through P11-C2 / PR #284; period-context correction P17-C9 DONE |
 | P12-P15 | Administration, diagnostics/exchange, hardening, versioned interchange | DONE for original contracts |
 | P16 | Interface-to-authority completion and integrity corrections | DONE through P16-C11 / PR #281 |
-| P17 | Cross-cutting UI, authority, cleanup, durable-record, documentation corrections | DONE through P17-C12 / PR #305 |
+| P17 | Cross-cutting UI, authority, cleanup, durable-record, documentation corrections | VERIFYING — corrective P17-C13 Save coverage; earlier slices DONE through P17-C12 / PR #305 |
 | P18 | Depreciation-run workflow completion | DONE through P18-S1 / PR #306 |
 | P19 | Deferred Company Administration extensions | DONE through P19-S3 / PR #309 |
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
@@ -1313,3 +1313,44 @@ S3 remains VERIFYING because required final-head CI and owner desktop acceptance
 Completed: reconciled controller, phase index and slice dependencies with local merge history and current-source test evidence; retained historical handoffs. Changed document: `doc/PLAN.md` only. No production code, migration or policy decision changed. Next exact action: read live main and PR #364 final-head clean/repeat/Xvfb results, record actual evidence and owner desktop acceptance, then close S3 only if all gates are satisfied. Resolve the D03 accounting contract before activating or implementing S4.
 
 Publication verification — 2026-10-11: owner authorized publication of this repair. The connected GitHub service confirms live `main` at `27fd0046dea33355bd621624055c0613750022cc` and PR #364 merged. Its final head `47ce0808bf7124ebe51b2349f550495888b37fd1` passed [Maven PR Tests run 38088450792](https://github.com/benbaron/sca-jakarta-h2/actions/runs/38088450792); job `114319827665` reports successful clean headless verification, repeat tests and production JavaFX route compliance. This supersedes the preceding not-queried/CI-unreconciled statements. Native owner acceptance is still not recorded; S3 stays VERIFYING. Publish only `doc/PLAN.md` from current main on new branch `codex/P25-S3-plan-reconciliation`, with a draft PR targeting `main`; do not reuse the merged implementation branch. Local Git transport could not connect to the proxy and CLI authentication was unavailable, so publication uses the connected service with matching blob/tree verification. The repair PR is a documentation follow-up, not a new implementation slice. Next: inspect its actual-head CI and record owner S3 desktop acceptance before closure; D03/D04 gates remain unchanged.
+
+
+### P17-C13 — pane and subpane Save coverage
+
+Status: VERIFYING. Owner requested review of every pane/subpane and visible Save buttons/menu entries on 2026-10-11. This maps to P17 cross-cutting UI corrections; it does not activate P25-S4 or change D03/D04. PR #366 is confirmed merged at current main `f35179378199d8f9fd840c5f9029a34b3a683044`. Fresh branch: `codex/P17-C13-pane-save-coverage`; PR: none. P25-S3 remains VERIFYING for its separately recorded desktop acceptance.
+
+Required reading: root AGENTS, PLAN, [UI rules](ui_design_rules.md), [interface matrix](interface-operation-matrix.md), [editor guidelines](ui/editor-guidelines.md). Required inspection: PanelFactory/AppPanelId route inventory, every production AppPanel and contained editor/dialog, AppPanel/PanelHost/ProductionWorkspaceWindow command routing, UiPermissionGate, existing command/panel/permission tests. Baseline offline compile passed using the workspace Maven helper. Existing services and persistence are retained; no new accounting save authority, policy, migration or donor model is needed in this existing UI area.
+
+Governing audit and manual testing: [pane Save coverage](ui/pane-save-coverage.md). Read-only views retain explained disabled Save; explicit accounting operations persist through their existing action/confirmation rather than an additional save workflow. Completed: full production pane/subpane audit and save controls/routing through existing services; selected-tab/busy/permission availability, authentication draft protection, Inventory/Budget mode readiness, shared Journal save scope, and current manual/specification labels. Focused final Xvfb tests passed 18 tests without failures/errors/skips. Full clean verification passed 898 tests, zero failures/errors and 49 headless skips. The expanded production Xvfb gate passed 42 tests, zero failures/errors/skips. Final clean verification after the test-isolation cleanup also passed 898 tests, zero failures/errors and 49 headless skips. Remaining: separately authorized publication, actual-head GitHub checks and native owner acceptance.
+
+
+### P17-C13 verification findings and scope
+
+The first full suite found one old source assertion for the ownership button label; its expected text now matches Save Ownership Assignment. Running the expanded production gate exposed a pre-existing cross-test navigation-handler leak: production-window tests left their global opener installed, causing FundTransfersPanelTest to lose its one-time Journal context. ProductionWorkspaceCommandRoutingTest and the new pane-save suite now clear that opener during cleanup; the routing suite also shares the registry resource lock. The complete 42-test Xvfb gate passes after this narrow test-isolation repair. No production navigation, accounting service, migration or permission rule was changed to satisfy these tests.
+
+User-visible changes and seven manual acceptance steps are in [the pane/subpane audit](ui/pane-save-coverage.md). Required native laptop/scaled-font checks and owner acceptance remain outstanding; automated Xvfb results do not establish that acceptance. The workflow now includes the new save coverage and shell capability/routing suites in its production Xvfb gate. No new PR, remote branch publication or GitHub CI result is claimed.
+
+
+### P17-C13 final local handoff — 2026-10-11 UTC
+
+Branch: `codex/P17-C13-pane-save-coverage`, from confirmed main/PR #366 merge `f35179378199d8f9fd840c5f9029a34b3a683044`. PR: none; local only. P17-C13 remains VERIFYING, not DONE. Completed: all production pane/subpane audit, visible Save routes, nested selected-tab menu/toolbar routing, meaningful persistence/cancellation/draft/permission tests, workflow gate expansion, current specifications and manual testing notes. Final source passed offline Maven clean verify: **898 tests, zero failures/errors, 49 headless skips**, BUILD SUCCESS; expanded production Xvfb gate: **42 tests, zero failures/errors/skips**, BUILD SUCCESS. No application or test change follows these final results. Final whitespace and changed-document links are clean; no known functional failure remains from executed tests. Tracked generated build files are excluded.
+
+Changed documents: this plan; [pane Save audit and owner checks](ui/pane-save-coverage.md); [UI rules](ui_design_rules.md), [operation matrix](interface-operation-matrix.md), [editor guidelines](ui/editor-guidelines.md); [check contract](accounting/check-exceptions.md), [SCLX](data-exchange/sclx.md), [shared operation contract](data-exchange/shared-operation-contract.md), [production test plan](testing/production-workspace-test-plan.md); label-only updates to owner guides for P15-S5 import preview/commit, P16-C6 ownership repair, P16-S2 COA commit, P16-S3 reconciliation, P16-S4 statement import, P18-S1 depreciation and P25-S3 check review.
+
+Remaining: authorized publication, actual-head GitHub clean/repeat/Xvfb validation, native owner acceptance from the audit's seven steps, and merge. Next exact action after owner publication authorization: confirm `git status --short` is clean and `git rev-parse HEAD` identifies the reviewed tip; confirm current main and expected remote branch parent; publish the complete local sequence with matching trees and no force updates; open a draft PR and inspect its actual-head required checks. Record actual CI/native evidence before closing the slice. P25-S3 desktop acceptance and P25-S4/D03/D04 gates are unchanged.
+
+Verified local implementation commit `d2bd56bac841c5710a869d0ef1b3c7da04a844e0`, tree `1a83aaa0122e543dba58a9f7fb8896f06d535232`. This documentation-only successor records that verified source head because a commit cannot embed its own SHA; resolve `git rev-parse HEAD` for the complete local tip. Both commits remain local and must be published in reviewed order only after owner authorization. The worktree is clean after this handoff.
+
+
+### P17-C13 authorized draft publication — 2026-10-11 UTC
+
+Owner explicitly authorized publication with “push this as a draft.” Confirmed clean local branch/tip, GitHub main at `f35179378199d8f9fd840c5f9029a34b3a683044`, and absent remote task branch before creating it at that base. Local Git credentials were unavailable earlier in this session, so used the connected GitHub service under AGENTS.md. Preserved both reviewed commit messages and order; compared all 47 blob writes and both published trees to local object IDs, then advanced the branch with the expected parent and force disabled. No unrelated files were included.
+
+| Local commit | Published commit | Matching tree |
+|---|---|---|
+| `d2bd56bac841c5710a869d0ef1b3c7da04a844e0` | `bc382b761627682553a476290499ef22d757a66d` | `1a83aaa0122e543dba58a9f7fb8896f06d535232` |
+| `46cceffdacce666cdfe1f8ab20e451d943f3c610` | `e4c0497c3ff7f9fb3e0f7163817b2922624f7fe1` | `4a77dd2cf0a17140a853d1db4833845f0f719799` |
+
+Opened draft [PR #367](https://github.com/benbaron/sca-jakarta-h2/pull/367) targeting main on `codex/P17-C13-pane-save-coverage`, initial head `e4c0497c3ff7f9fb3e0f7163817b2922624f7fe1`. Fetched that branch and independently matched its final tree. PR records actual local tests, implemented scope and native acceptance steps. Initial-head [Maven run 38160919705](https://github.com/benbaron/sca-jakarta-h2/actions/runs/38160919705) is in progress; no GitHub success is claimed. This documentation-only publication ledger is included under the same authorization; active_head records its known remote parent because a successor cannot embed its own SHA. Verify the resulting remote branch/PR tip and inspect that final head's clean/repeat/expanded Xvfb workflow.
+
+P17-C13 remains VERIFYING. Completed: reviewed implementation and handoff are published as a draft with matching trees. Remaining: actual final-head GitHub checks, native owner acceptance and separately authorized merge. No known functional local failure remains; local clean verification is 898 tests with 49 headless skips, and expanded Xvfb is 42 tests without skips, zero failures/errors. No application or test change follows those results. P25-S3 desktop acceptance and P25-S4/D03/D04 gates remain unchanged.

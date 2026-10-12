@@ -10,7 +10,7 @@ Status: required owner acceptance before P15-S5-C10 merge.
 
 ## Preview and protection
 
-1. Open **Import Preview** and confirm **Import Previewed SCLX…** is disabled before preview.
+1. Open **Import Preview** and confirm **Save Previewed SCLX Import…** is disabled before preview.
 2. Clear **Import actor** and confirm the import button remains disabled.
 3. Preview the representative file. Confirm the target, source, version, exact counts, identities, mappings, transaction diagnostics, warnings, and `READY TO IMPORT` status are readable at laptop width.
 4. Confirm the preview states that no data changed. Restore a nonblank actor and confirm the import button becomes enabled.
@@ -19,7 +19,7 @@ Status: required owner acceptance before P15-S5-C10 merge.
 
 ## Atomic commit and result
 
-1. Preview the representative file again, enter the intended audit actor, choose **Import Previewed SCLX…**, review the confirmation, and approve it.
+1. Preview the representative file again, enter the intended audit actor, choose **Save Previewed SCLX Import…**, review the confirmation, and approve it.
 2. Confirm the UI stays responsive while the import runs and prevents a duplicate click.
 3. Confirm success reports the fixed target, created/identical counts, and the previewed SHA-256, then disables the import button.
 4. Reopen the relevant workspaces and verify representative accounts/funds, budget, transaction details, asset/run, inventory/movement, bank/reconciliation, close history, imported audit fact, and reversal/replacement links.

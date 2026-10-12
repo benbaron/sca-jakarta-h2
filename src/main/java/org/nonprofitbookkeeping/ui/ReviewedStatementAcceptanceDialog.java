@@ -63,7 +63,7 @@ final class ReviewedStatementAcceptanceDialog extends Dialog<ReviewedStatementAc
         setTitle("Create Transaction from Reviewed Row");
         setHeaderText("Review the frozen bank source and complete a balanced canonical transaction.");
         getDialogPane().getButtonTypes().setAll(
-                new ButtonType("Create Transaction", ButtonBar.ButtonData.OK_DONE),
+                new ButtonType("Save Transaction", ButtonBar.ButtonData.OK_DONE),
                 ButtonType.CANCEL);
         getDialogPane().setPrefWidth(980);
         getDialogPane().setPrefHeight(760);

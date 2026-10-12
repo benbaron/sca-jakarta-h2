@@ -15,7 +15,7 @@ import org.nonprofitbookkeeping.service.PaymentReference;
 import java.time.LocalDate;
 import java.util.function.Function;
 /** Reachable reconciliation check review, with explicit ledger versus factual actions. */
-final class CheckExceptionsPane
+final class CheckExceptionsPane implements AppPanel
 {
     private final CompanyUiFormat format = CompanyUiFormat.activeCompany();
     private final VBox root = new VBox(8);
@@ -36,6 +36,8 @@ final class CheckExceptionsPane
     private boolean loading;
     private Row selectedRow;
     private VBox editor;
+    private Button saveReviewButton;
+    private Runnable commandCapabilitiesChangedListener = () -> { };
     CheckExceptionsPane()
     {
         root.setId("checkExceptionsPane");
@@ -87,7 +89,7 @@ final class CheckExceptionsPane
         note.setWrapText(true);
         evidence.setId("checkEvidenceReference");
         newNumber.setId("checkReplacementNumber");
-        Label explanation = new Label("Age review never changes the ledger or extinguishes an obligation. Record Review changes delivery/evidence facts only. Void requires an explicit cancellation reason and reverses the whole selected transaction. Reissue reverses one check transaction and creates a linked new check with unchanged allocation: no double expense. Cleared-state changes belong to Match. Retained correction history cannot be deleted or edited; correct the current instrument by reversal.");
+        Label explanation = new Label("Age review never changes the ledger or extinguishes an obligation. Save Review changes delivery/evidence facts only. Void requires an explicit cancellation reason and reverses the whole selected transaction. Reissue reverses one check transaction and creates a linked new check with unchanged allocation: no double expense. Cleared-state changes belong to Match. Retained correction history cannot be deleted or edited; correct the current instrument by reversal.");
         explanation.setWrapText(true);
         Label policy = new Label("D04 stale-triggered accounting awaits the accounting authority. Choose an age cutoff for review; no expiry is assumed. External evidence references are factual pointers, not attachments or proof verification. Bank errors/differences must be resolved in Bank Transactions or the matching workflow.");
         policy.setWrapText(true);
@@ -112,7 +114,7 @@ final class CheckExceptionsPane
         GridPane.setHgrow(evidence, Priority.ALWAYS);
         GridPane.setHgrow(note, Priority.ALWAYS);
         FlowPane actions = new FlowPane(8, 8,
-                action("Record Review", "checkRecordReview", this::review, true),
+                (saveReviewButton = action("Save Review", "checkRecordReview", this::review, true)),
                 action("Void Selected", "checkVoid", () -> correct(false), true),
                 action("Reissue Selected", "checkReissue", () -> correct(true), true),
                 action("Open in Journal", "checkOpenJournal", this::openJournal, false),
@@ -155,6 +157,7 @@ final class CheckExceptionsPane
             newNumber.clear();
             loading = false;
             dirty = false;
+            updateSaveAvailability();
         });
         note.textProperty().addListener((obs, old, value) -> changed());
         evidence.textProperty().addListener((obs, old, value) -> changed());
@@ -168,14 +171,79 @@ final class CheckExceptionsPane
         refresh();
     }
 
-    Node root()
+    public Node root()
     {
         return root;
     }
 
-    boolean hasUnsavedChanges()
+    public boolean hasUnsavedChanges()
     {
         return dirty;
+    }
+
+    private void updateSaveAvailability()
+    {
+        saveReviewButton.setDisable(!supportsCommand(AppCommand.SAVE_ACTIVE));
+        commandCapabilitiesChangedListener.run();
+    }
+
+    @Override
+    public String title()
+    {
+        return "Checks / Exceptions";
+    }
+
+    @Override
+    public java.util.Set<AppCommand> commandCapabilities()
+    {
+        return !busy && selectedRow != null && selectedRow.facts() != null
+                && selectedRow.transactionId() != null
+                && ("OUTSTANDING".equals(selectedRow.lifecycle()) || "CLEARED".equals(selectedRow.lifecycle()))
+                ? AppPanel.capabilities(AppCommand.SAVE_ACTIVE) : java.util.Set.of();
+    }
+
+    @Override
+    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return command == AppCommand.SAVE_ACTIVE
+                ? java.util.Optional.of(ApplicationPermission.BOOKKEEPING_WRITE) : java.util.Optional.empty();
+    }
+
+    @Override
+    public String commandLabel(AppCommand command)
+    {
+        return command == AppCommand.SAVE_ACTIVE ? "Save Review" : AppPanel.super.commandLabel(command);
+    }
+
+    @Override
+    public String saveUnavailableReason()
+    {
+        return busy ? "Wait for the check review operation to finish."
+                : "Select a check instrument to save its delivery, evidence and review facts.";
+    }
+
+    @Override
+    public void onSave()
+    {
+        if (busy)
+        {
+            throw new IllegalStateException("Wait for the check review operation to finish.");
+        }
+        selected();
+        review();
+    }
+
+    @Override
+    public String commandResultMessage(AppCommand command)
+    {
+        return busy ? "Saving check review facts; ledger and obligation remain unchanged." : status.getText();
+    }
+
+    @Override
+    public void setCommandCapabilitiesChangedListener(Runnable listener)
+    {
+        commandCapabilitiesChangedListener = java.util.Objects.requireNonNull(listener, "listener");
+        updateSaveAvailability();
     }
 
     private void changed()
@@ -211,6 +279,7 @@ final class CheckExceptionsPane
         LocalDate date = through.getValue(), cutoff = ageCutoff.getValue();
         busy = true;
         editor.setDisable(true);
+        updateSaveAvailability();
         var reviewService = UiServiceRegistry.checkExceptions();
         UiAsync.run("check-exception-report", () -> reviewService.report(bankId, date, cutoff),
                 values ->
@@ -222,12 +291,14 @@ final class CheckExceptionsPane
                     filter();
                     loading = false;
                     selectedRow = null;
+                    updateSaveAvailability();
                     status.setText("Check and bank exception report loaded.");
                 },
                 ex ->
                 {
                     busy = false;
                     editor.setDisable(false);
+                    updateSaveAvailability();
                     status.setText("Review failed: " + UiErrors.safeMessage(ex));
                 });
     }
@@ -321,6 +392,7 @@ final class CheckExceptionsPane
         }
         busy = true;
         editor.setDisable(true);
+        updateSaveAvailability();
         UiAsync.run("check-review-action", operation, value ->
         {
             busy = false;
@@ -333,6 +405,7 @@ final class CheckExceptionsPane
             busy = false;
             editor.setDisable(false);
             status.setText("Action failed: " + UiErrors.safeMessage(ex));
+            updateSaveAvailability();
         });
     }
 

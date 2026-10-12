@@ -218,10 +218,17 @@ public class CompanyAdminPanel implements AppPanel
                 "These defaults apply only when a new Report Library is opened. Report dates, fund, row limit, account, asset, and inventory filters remain controlled by the active accounting period or the operator and are not stored as company reporting policy.");
         reportingHelp.setWrapText(true);
         reportingDefaultsStatus.setWrapText(true);
+        Button saveReportingDefaults = new Button("Save Reporting Defaults");
+        saveReportingDefaults.setId("companySaveReportingDefaults");
+        saveReportingDefaults.disableProperty().bind(defaultReport.disabledProperty());
+        saveReportingDefaults.setOnAction(event -> reportingDefaultsChanged());
+        saveReportingDefaults.setTooltip(new javafx.scene.control.Tooltip(
+                "Save the displayed defaults for this company. Choice changes also save immediately; File → Save saves the company profile."));
         VBox reportingEditor = new VBox(
                 6,
                 new Label("Reporting defaults"),
                 reportingGrid,
+                saveReportingDefaults,
                 reportingDefaultsStatus,
                 reportingHelp);
         reportingEditor.setPadding(new Insets(8));

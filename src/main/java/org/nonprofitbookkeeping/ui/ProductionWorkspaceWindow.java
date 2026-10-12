@@ -483,26 +483,31 @@ public class ProductionWorkspaceWindow extends BorderPane
                 panelHost.activeRequiredPermission(command);
         boolean permitted = required.isEmpty() || UiPermissionGate.allows(required.orElseThrow());
         boolean enabled = supported && permitted;
+        String label = panelHost.activeCommandLabel(command);
         menuItem.setDisable(!enabled);
         button.setDisable(!enabled);
+        button.setText(label);
         String explanation;
         if (!supported)
         {
-            explanation = GlobalCommandRegistry.label(command) + " is not available in " + panelHost.getActiveTitle() + ".";
+            explanation = command == AppCommand.SAVE_ACTIVE
+                    ? "Save is not available in " + panelHost.getActiveTitle() + ". " + panelHost.activeSaveUnavailableReason()
+                    : GlobalCommandRegistry.label(command) + " is not available in " + panelHost.getActiveTitle() + ".";
         }
         else if (!permitted)
         {
             explanation = UiPermissionGate.deniedExplanation(
                     required.orElseThrow(),
-                    GlobalCommandRegistry.label(command) + " in " + panelHost.getActiveTitle());
+                    label + " in " + panelHost.getActiveTitle());
         }
         else
         {
-            explanation = GlobalCommandRegistry.label(command) + " is available in " + panelHost.getActiveTitle() + ".";
+            explanation = label + " is available in " + panelHost.getActiveTitle() + ".";
         }
         menuItem.setText(enabled
-                ? GlobalCommandRegistry.label(command)
-                : GlobalCommandRegistry.label(command) + " — " + explanation);
+                ? label
+                : label + " — " + (supported && !permitted
+                        ? "requires " + required.orElseThrow() : "not available"));
         button.setTooltip(new Tooltip(explanation));
     }
 

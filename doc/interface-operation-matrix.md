@@ -42,15 +42,20 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Event Accounting | no | no | no | Read-only Activity-linked accounting, related configured-bank context, Journal drill-through and navigation to Events / Activities maintenance. |
 | Banking | yes | yes | no | Durable bank/configuration editing plus panel-local statement import/review actions. |
 | Asset Register | yes | yes | no | Stable asset identity and governed lifecycle operations. |
-| Inventory | yes | yes | no | Stable item identity and governed movement/lifecycle operations. |
+| Inventory | yes | item editor only | no | Stable item identity and governed movement/lifecycle operations. |
 | Chart of Accounts | yes | yes | no | Stable account ID editing; code is mutable business data. |
 | Funds | yes | yes | no | Stable fund ID editing with protected delete/deactivation rules; Fund Transfers navigation preserves the Fund draft. |
 | Fund Transfers | yes | yes | no | Same-company internal allocations, retained history, dated reversal and Journal drill-through. Linked transfers cannot be edited/deleted; reverse then enter a corrected transfer. |
 | Events / Activities | yes | yes | no | New Event, name/code search and Edit over stable Activity IDs; referenced/interchange-linked history deactivates rather than deletes. |
-| Budget Editor | no | yes | no | Version creation/activation/archive remain explicit panel actions. |
+| Budget Editor | no | DRAFT only | no | Version creation/activation/archive remain explicit panel actions. |
+| Budget Categories, Payees / Counterparties, Merchants | yes | yes | no | Existing stable-ID maintenance services. |
 | Administration — Preferences | no | yes | no | Capabilities follow the selected inner tab. |
 | Administration — Company/User maintenance | yes | yes | no | Stable durable-record maintenance. |
-| Report Library, Budget vs Actual, Depreciation Runs, Reconciliation, Period Close, Import Preview, Audit History, Bank Transactions, Diagnostics, Help | no | no | no | Run/review/navigation commands remain panel-local. |
+| Administration — Authentication | no | yes | no | Selected Authentication exposes Save Timeout, with separate Save Password. |
+| Administration — Ownership repair | no | ready repair only | no | Save Ownership Assignment retains confirmation and DATABASE_ADMIN. |
+| Reconciliation | no | selected Review / Checks subpane | no | Save Unresolved or Save Review; finalized history is read-only. |
+| Import Preview | no | valid confirmed selected format | no | Save Accepted COA Rows, Save Previewed SCLX Import, or Save Previewed Bank Review use existing commit confirmations. |
+| Report Library, Budget vs Actual, Depreciation Runs, Period Close, Audit History, Bank Transactions, Diagnostics, Help | no | no | no | Run/review/navigation commands remain panel-local. |
 
 ## Canonical panel matrix
 
@@ -136,3 +141,8 @@ Journal saves optional per-bank-line method, textual check/reference and issue/d
 ## P25-S3 check exceptions
 
 Bank Reconciliation → Checks / Exceptions provides company/bank-scoped factual age, delivery and evidence review, linked Void/Reissue with required reason and confirmation, correction history and unresolved bank errors/differences. Canonical check correction and review services own atomic writes; reconciliation alone owns cleared state. Linked history cannot be deleted or edited. Typed table values, company formatting/state, independent vertical dividers, horizontal table scrolling and live permission gates apply. D04 stale-triggered accounting is unavailable. See [check contract](accounting/check-exceptions.md).
+
+
+## P17-C13 Save coverage
+
+All production panes/subpanes are audited in [pane Save coverage](ui/pane-save-coverage.md). Every editable draft has a visible Save route to the existing service; shared details state their owning save scope. Selected-tab Save labels/readiness propagate through composite panes to File/toolbar controls. Inventory Save requires an open item editor, Budget Save requires DRAFT, and read-only panes explain disabled Save. Explicit operational saves and import confirmations remain distinct from profile edits; no new persistence or accounting policy is introduced.

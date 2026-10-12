@@ -13,7 +13,7 @@ The exact green head and Actions run are recorded in `doc/PLAN.md` before owner 
 ## A. Mutable-session workflow
 
 1. Load an in-progress reconciliation session.
-2. Confirm the normal mutation controls are enabled: statement entry/import, Auto Match, Match, Unmatch, Mark Cleared, Record Difference Explanation, Save Unresolved, and Finalize.
+2. Confirm the normal mutation controls are enabled: statement entry/import, Auto Match, Match, Unmatch, Mark Cleared, Save Difference Explanation, Save Unresolved, and Finalize.
 3. Match a statement row to the correct ledger bank line, then Unmatch it. Confirm the UI refresh shows both sides as unmatched; rematch the same pair for finalization.
 4. Enter a factual difference explanation on an unresolved statement item. Confirm the text is represented as an explanation/resolution and is not presented as a newly created accounting transaction.
 5. Use **Save Unresolved** once and confirm the session reloads as still editable rather than appearing finalized.
@@ -22,7 +22,7 @@ The exact green head and Actions run are recorded in `doc/PLAN.md` before owner 
 
 1. Resolve the session to the state required by the UI, then press **Finalize**.
 2. Confirm the status reports the reconciliation as finalized and the displayed tables/balances refresh.
-3. Confirm manual statement entry, pasted/file import, Auto Match, Match, Unmatch, Mark Cleared, Record Difference Explanation, Save Unresolved, and Finalize are disabled.
+3. Confirm manual statement entry, pasted/file import, Auto Match, Match, Unmatch, Mark Cleared, Save Difference Explanation, Save Unresolved, and Finalize are disabled.
 4. Confirm the statement source controls and difference-explanation editor are also disabled.
 5. Select/reload the same finalized session from **Saved Reconciliations**. Confirm it remains read-only after reload; there is no ordinary Save path that makes it editable again.
 

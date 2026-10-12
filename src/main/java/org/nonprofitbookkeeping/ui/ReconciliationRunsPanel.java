@@ -76,13 +76,13 @@ public class ReconciliationRunsPanel implements AppPanel
     private final TextField manualDescription = new TextField();
     private final TextField manualReference = new TextField();
     private final TextField manualAmount = new TextField();
-    private final Button addManualButton = new Button("Add Manual Line");
+    private final Button addManualButton = new Button("Save Manual Line");
     private final Button importBankStatementButton = new Button("Import Bank Statement…");
     private final Button autoMatchButton = new Button("Auto Match");
     private final Button matchButton = new Button("Match Selected");
     private final Button unmatchButton = new Button("Unmatch");
     private final Button markClearedButton = new Button("Mark Cleared");
-    private final Button explainDifferenceButton = new Button("Record Difference Explanation");
+    private final Button explainDifferenceButton = new Button("Save Difference Explanation");
     private final Button saveUnresolvedButton = new Button("Save Unresolved");
     private final Button finalizeButton = new Button("Finalize");
     private final Button successorButton = new Button("Start Successor Reconciliation");
@@ -94,6 +94,7 @@ public class ReconciliationRunsPanel implements AppPanel
 
     private Snapshot snapshot;
     private CheckExceptionsPane checks;
+    private Runnable commandCapabilitiesChangedListener = () -> { };
 
     public ReconciliationRunsPanel()
     {
@@ -183,6 +184,75 @@ public class ReconciliationRunsPanel implements AppPanel
                 workflowTab("3. Match", matchPane()),
                 workflowTab("4. Review / Save", reviewPane()),
                 workflowTab("5. Checks / Exceptions", (checks = new CheckExceptionsPane()).root()));
+        workflowTabs.setId("reconciliationWorkflowTabs");
+        checks.setCommandCapabilitiesChangedListener(() -> commandCapabilitiesChangedListener.run());
+        workflowTabs.getSelectionModel().selectedIndexProperty().addListener(
+                (observable, oldValue, newValue) -> commandCapabilitiesChangedListener.run());
+    }
+
+    @Override
+    public java.util.Set<AppCommand> commandCapabilities()
+    {
+        if (workflowTabs.getSelectionModel().getSelectedIndex() == 4)
+        {
+            return checks.commandCapabilities();
+        }
+        return workflowTabs.getSelectionModel().getSelectedIndex() == 3 && snapshot != null
+                && snapshot.status() != BankReconciliationWorkspaceService.SessionStatus.FINALIZED
+                ? AppPanel.capabilities(AppCommand.SAVE_ACTIVE) : java.util.Set.of();
+    }
+
+    @Override
+    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return command == AppCommand.SAVE_ACTIVE
+                ? java.util.Optional.of(ApplicationPermission.BOOKKEEPING_WRITE) : java.util.Optional.empty();
+    }
+
+    @Override
+    public String commandLabel(AppCommand command)
+    {
+        return command == AppCommand.SAVE_ACTIVE
+                ? (workflowTabs.getSelectionModel().getSelectedIndex() == 4 ? "Save Review" : "Save Unresolved")
+                : AppPanel.super.commandLabel(command);
+    }
+
+    @Override
+    public String saveUnavailableReason()
+    {
+        return workflowTabs.getSelectionModel().getSelectedIndex() == 4 ? checks.saveUnavailableReason()
+                : "Load an open reconciliation and select Review / Save. Statement, matching and setup actions save immediately.";
+    }
+
+    @Override
+    public void onSave()
+    {
+        if (!supportsCommand(AppCommand.SAVE_ACTIVE))
+        {
+            throw new IllegalStateException(saveUnavailableReason());
+        }
+        if (workflowTabs.getSelectionModel().getSelectedIndex() == 4)
+        {
+            checks.onSave();
+        }
+        else
+        {
+            save(false);
+        }
+    }
+
+    @Override
+    public String commandResultMessage(AppCommand command)
+    {
+        return workflowTabs.getSelectionModel().getSelectedIndex() == 4
+                ? checks.commandResultMessage(command) : status.getText();
+    }
+
+    @Override
+    public void setCommandCapabilitiesChangedListener(Runnable listener)
+    {
+        commandCapabilitiesChangedListener = java.util.Objects.requireNonNull(listener, "listener");
+        listener.run();
     }
 
     private Tab workflowTab(String title, Node content)
@@ -211,7 +281,7 @@ public class ReconciliationRunsPanel implements AppPanel
 
         Button load = new Button("Load");
         load.setOnAction(e -> reloadSnapshot());
-        Button startNew = new Button("New Reconciliation");
+        Button startNew = new Button("Save New Reconciliation");
         startNew.setOnAction(e -> startNewSession());
         UiPermissionGate.gate(startNew, ApplicationPermission.BOOKKEEPING_WRITE, "Start a reconciliation");
         Button editExisting = new Button("Edit Existing");
@@ -561,6 +631,7 @@ public class ReconciliationRunsPanel implements AppPanel
         successorEndDate.setValue(next.statementEndDate().plusMonths(1));
         successorEndingBalance.setText(companyFormat.formatMoney(next.balances().statementEndingBalance()));
         applyFinalizedReadOnly(next.status() == BankReconciliationWorkspaceService.SessionStatus.FINALIZED);
+        commandCapabilitiesChangedListener.run();
     }
 
     private void applyFinalizedReadOnly(boolean finalized)

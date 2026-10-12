@@ -29,7 +29,7 @@ class SclxImportPreviewProductionRouteSourceTest
         assertTrue(compactPanel.contains("runCommitOperation(\"import-preview-sclx-commit\""));
         assertTrue(compactPanel.contains(
                 "commitService.commit(source,preview,actor,mappingsApproved,existingCompanyImportApproved,legacyAllocationsApproved)"));
-        assertTrue(panel.contains("Import Previewed SCLX…"));
+        assertTrue(panel.contains("Save Previewed SCLX Import…"));
         assertTrue(panel.contains("Re-preview with SCLX Choices"));
         assertTrue(panel.contains("Preview message"));
         assertTrue(panel.contains("SclxImportDisposition.MAKE_SUGGESTED_CORRECTION"));

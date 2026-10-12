@@ -56,6 +56,7 @@ public class BudgetEditorPanel implements AppPanel
     private BudgetPlanView currentPlan;
     private FiscalPeriodRange currentRange;
     private List<BudgetCategory> currentCategories = List.of();
+    private Runnable commandCapabilitiesChangedListener = () -> { };
 
     public BudgetEditorPanel()
     {
@@ -287,6 +288,7 @@ public class BudgetEditorPanel implements AppPanel
         archiveButton.setDisable(!draft);
         createRevisionButton.setDisable(!active);
         amountField.setDisable(!draft);
+        commandCapabilitiesChangedListener.run();
     }
 
     private void createDraft()
@@ -477,9 +479,31 @@ public class BudgetEditorPanel implements AppPanel
     @Override
     public java.util.Set<AppCommand> commandCapabilities()
     {
-        return AppPanel.capabilities(AppCommand.SAVE_ACTIVE);
+        return currentPlan != null && currentPlan.status() == BudgetPlan.Status.DRAFT
+                ? AppPanel.capabilities(AppCommand.SAVE_ACTIVE) : java.util.Set.of();
     }
-    @Override public void onSave() { saveTarget(); }
+    @Override
+    public void onSave()
+    {
+        if (!supportsCommand(AppCommand.SAVE_ACTIVE))
+        {
+            throw new IllegalStateException(saveUnavailableReason());
+        }
+        saveTarget();
+    }
+
+    @Override
+    public String saveUnavailableReason()
+    {
+        return "Select a draft budget version to save its amount; active and archived versions are read-only.";
+    }
+
+    @Override
+    public void setCommandCapabilitiesChangedListener(Runnable listener)
+    {
+        commandCapabilitiesChangedListener = java.util.Objects.requireNonNull(listener, "listener");
+        listener.run();
+    }
     @Override
     public String commandResultMessage(AppCommand command)
     {

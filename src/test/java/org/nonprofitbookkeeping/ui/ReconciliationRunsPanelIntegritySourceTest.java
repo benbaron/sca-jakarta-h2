@@ -17,7 +17,7 @@ public class ReconciliationRunsPanelIntegritySourceTest
         String panel = Files.readString(Path.of(
                 "src/main/java/org/nonprofitbookkeeping/ui/ReconciliationRunsPanel.java"));
 
-        assertTrue(panel.contains("Record Difference Explanation"));
+        assertTrue(panel.contains("Save Difference Explanation"));
         assertTrue(panel.contains("recordDifferenceExplanation(requireSession()"));
         assertTrue(panel.contains("no accounting transaction was created"));
         assertTrue(panel.contains("applyFinalizedReadOnly("));

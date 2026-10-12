@@ -37,7 +37,7 @@ public class DepreciationRunsPanel implements AppPanel
     private final Label period = new Label();
     private final Label status = new Label();
     private final Button refresh = new Button("Preview Active Period");
-    private final Button run = new Button("Run Eligible Depreciation");
+    private final Button run = new Button("Save Eligible Depreciation…");
     private final Button openReport = new Button("Open Depreciation Report");
     private final BooleanProperty busy = new SimpleBooleanProperty(false);
     private final CompanyUiFormat companyFormat = CompanyUiFormat.activeCompany();

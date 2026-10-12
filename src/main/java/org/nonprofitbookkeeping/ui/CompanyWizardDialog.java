@@ -76,7 +76,7 @@ final class CompanyWizardDialog
         grid.add(companyField, 1, 0);
         companyDialog.getDialogPane().setContent(grid);
 
-        ButtonType finish = new ButtonType("Finish", ButtonBar.ButtonData.OK_DONE);
+        ButtonType finish = new ButtonType("Save Company", ButtonBar.ButtonData.OK_DONE);
         companyDialog.getDialogPane().getButtonTypes().addAll(finish, ButtonType.CANCEL);
         companyDialog.setResultConverter(bt -> bt == finish ? companyField.getText() : null);
 

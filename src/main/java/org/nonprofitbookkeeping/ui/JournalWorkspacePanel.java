@@ -344,6 +344,7 @@ public final class JournalWorkspacePanel implements AppPanel
     private Node buildEntryHeaderRegion()
     {
         editorMode.getStyleClass().add("panel-title");
+        memoArea.setId("journalEntryMemo");
         memoArea.setWrapText(true);
         memoArea.setPrefRowCount(2);
         memoArea.setMaxWidth(Double.MAX_VALUE);
@@ -372,7 +373,9 @@ public final class JournalWorkspacePanel implements AppPanel
         totals.setAlignment(Pos.CENTER_LEFT);
         validationMessage.setWrapText(true);
 
-        VBox content = new VBox(8, editorMode, form, totals, validationMessage);
+        Label saveScope = new Label("Save Entry saves the header, entry lines, additional details and all supplemental tabs together.");
+        saveScope.setWrapText(true);
+        VBox content = new VBox(8, editorMode, form, totals, saveScope, validationMessage);
         content.setPadding(new Insets(6));
         content.setMinSize(0, 0);
         ScrollPane scroll = scrollable(content, true);

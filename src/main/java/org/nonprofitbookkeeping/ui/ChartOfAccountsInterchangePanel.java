@@ -356,7 +356,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         VBox.setVgrow(table, Priority.ALWAYS);
         dialog.getDialogPane().setContent(content);
 
-        ButtonType importButton = new ButtonType("Import", ButtonBar.ButtonData.OK_DONE);
+        ButtonType importButton = new ButtonType("Save Imported Accounts", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().setAll(importButton, ButtonType.CANCEL);
         Node importNode = dialog.getDialogPane().lookupButton(importButton);
         importNode.setDisable(preview.hasBlockingErrors()

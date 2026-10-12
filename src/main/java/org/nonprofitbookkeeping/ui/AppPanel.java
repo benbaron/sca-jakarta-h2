@@ -40,6 +40,18 @@ public interface AppPanel
         return Optional.empty();
     }
 
+    /** Visible command name, including the save scope of a selected subpane. */
+    default String commandLabel(AppCommand command)
+    {
+        return GlobalCommandRegistry.label(command);
+    }
+
+    /** Explains why this pane has no currently available Save operation. */
+    default String saveUnavailableReason()
+    {
+        return "This view has no editable draft to save; use its specific actions or export controls where available.";
+    }
+
     /**
      * Runs a supported panel command and reports whether a real operation was
      * accepted. Unsupported commands never fall through to an empty hook.
