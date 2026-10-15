@@ -127,6 +127,10 @@ Start collecting the authoritative workbook and resolving policy questions durin
 
 The owner authorized this preparatory slice on 2026-10-13 (America/Denver). Deliver the [D03 proposal](P25-S4A-nmr-contract-proposal.md), verified source/conflict register, required authority inputs, balanced synthetic examples and future acceptance specifications. Reconcile the preceding Save slice's merge/CI evidence in PLAN. Owner accepted the documentation framework and authorized publication on 2026-10-14. Actual policy inputs remain outstanding; this preparation introduces no application behavior. Parent P25-S4 implementation remains blocked until D03 is adopted and P25-S3 acceptance is recorded; preparing or merging the proposal alone does not clear either gate.
 
+### P25-S4B — Company NMR policy configuration
+
+Owner explicitly selected configuration-first on 2026-10-14. Deliver the [S4B contract](P25-S4B-nmr-policy-configuration.md) as an independent prerequisite: company-owned dated/sourced retained policy versions, real guarded Administration saves, no seeded rates or accounting entries. This bounded scope is permitted before full D03 values/P25-S3 acceptance; assessment/collection/remittance and the parent S4 accounting gate remain blocked.
+
 ### P25-S5 — Add independent functional-expense classification (G10)
 
 **Work:** Confirm the meanings and permitted use of AR/OA/FR in the required forms. Add the adopted independent line classification, defaults with explicit override, missing-classification diagnostics, and report/export mappings. Preserve it through generated entries, corrections, and interchange.

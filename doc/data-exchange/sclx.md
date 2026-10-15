@@ -735,3 +735,7 @@ Optional `extensions.scaJakartaH2.paymentReferences` version 1 carries a `lines`
 ### P25-S3 payment review facts
 
 `paymentReferences` version 2 adds exactly `evidenceReference`, `reviewedOn`, `reviewNote` to every version-1 line fact. Optional values are text/null and the review date is ISO/null. Evidence reference is at most 500 characters and review note at most 1000; a review date requires a note and cannot precede a known issue date. Export writes version 2; import accepts versions 1 and 2. Normalized non-null review facts affect conflict identity; all-null additions retain version-1 identity. Existing correction extension carries check reissue relationships, restored before instrument reservation validation. External evidence is a pointer, not an attachment or proof verification. See [check contract](../accounting/check-exceptions.md).
+
+## P25-S4B NMR configuration limitation
+
+Current SCLX does **not** export or import `nmr_policy_version`. Saving a source-backed policy does not make its configuration portable through SCLX. Factual `AuditEvent` records may describe NMR policy changes under the existing audit extension, but they do not reconstruct policy configuration. Use supported whole-database backup/restore to retain the versions and their audit together. Administration -> NMR Policies displays this limitation. No NMR assessment/collection/remittance records or extensions are introduced by this slice; full portability requires a later owning contract.

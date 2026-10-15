@@ -72,7 +72,8 @@ public final class AdministrationPanel implements AppPanel
                 tab("Company Admin", companies),
                 tab("Bank Accounts", bankAccounts),
                 tab("User Admin", users),
-                tab("Company Ownership Diagnostics", ownershipDiagnostics));
+                tab("Company Ownership Diagnostics", ownershipDiagnostics),
+                tab("NMR Policies", new NmrPoliciesPanel()));
         tabs.getTabs().stream()
                 .map(Tab::getUserData)
                 .filter(AppPanel.class::isInstance)

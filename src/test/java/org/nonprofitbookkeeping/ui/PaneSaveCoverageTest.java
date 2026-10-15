@@ -264,6 +264,33 @@ class PaneSaveCoverageTest
                 .stream().anyMatch(row -> row.facts() != null && "menu-evidence".equals(row.facts().evidenceReference())));
     }
 
+    @Test
+    void nestedNmrPolicySaveUsesFileMenuAndToolbarReadiness()
+    {
+        FxTestSupport.onFx(() ->
+        {
+            window.openPanel(AppPanelId.SETTINGS);
+            selectTab((TabPane) window.lookup("#administrationTabs"), "NMR Policies");
+            assertTrue(saveMenu().isDisable());
+            window.executeCommand(AppCommand.NEW_ACTIVE);
+            assertEquals("Save Policy Version", saveMenu().getText());
+            assertFalse(saveMenu().isDisable());
+            assertFalse(saveButton().isDisabled());
+            window.applyCss();
+            window.layout();
+            NmrPoliciesPanelTest.fill(window, "MENU-SAVE", "12.3456");
+            saveMenu().fire();
+            assertEquals(1, UiServiceRegistry.nmrPolicies().list().size());
+            assertEquals(new java.math.BigDecimal("12.3456"), UiServiceRegistry.nmrPolicies().list().get(0).terms().rate());
+            assertTrue(saveMenu().isDisable(), "Retained history has no editable Save draft.");
+            assertTrue(saveButton().isDisabled());
+            MainWindow.sharedSessionState().setAuthenticatedUser(UiPermissionTestSessions.viewer());
+            assertTrue(((Button) window.lookup("#nmrPolicyNew")).isDisabled());
+            assertTrue(((Button) window.lookup("#nmrPolicyEnd")).isDisabled());
+            return null;
+        });
+    }
+
     private MenuItem saveMenu()
     {
         MenuBar menus = (MenuBar) ((VBox) window.getTop()).getChildren().get(0);

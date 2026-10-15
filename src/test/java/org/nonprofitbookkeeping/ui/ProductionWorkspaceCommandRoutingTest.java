@@ -48,6 +48,8 @@ public class ProductionWorkspaceCommandRoutingTest
         FxTestSupport.onFx(() ->
         {
             DrillThroughCoordinator.configureOpener(null);
+            DrillThroughCoordinator.consumeContext(AppPanelId.JOURNAL_PANE);
+            DrillThroughCoordinator.consumeContext();
             return null;
         });
         UiSessionState session = MainWindow.sharedSessionState();
@@ -222,8 +224,40 @@ public class ProductionWorkspaceCommandRoutingTest
 
     private static ProductionWorkspaceWindow newWindow()
     {
+        // Shell routing must not restore another test's deleted temporary database.
+        UiSessionState session = MainWindow.sharedSessionState();
+        AppStateStore stateStore = new AppStateStore()
+        {
+            @Override
+            public Optional<org.nonprofitbookkeeping.model.AppPreferencesState> loadPreferences()
+            {
+                return Optional.of(session.preferences());
+            }
+
+            @Override
+            public Optional<org.nonprofitbookkeeping.model.MultiCompanyState> loadMultiCompany()
+            {
+                return Optional.of(session.multiCompany());
+            }
+
+            @Override
+            public Optional<org.nonprofitbookkeeping.model.DatabaseSelectionState> loadDatabaseSelection()
+            {
+                return Optional.of(session.databaseSelection());
+            }
+
+            @Override
+            public void savePreferences(org.nonprofitbookkeeping.model.AppPreferencesState value)
+            {
+            }
+
+            @Override
+            public void saveMultiCompany(org.nonprofitbookkeeping.model.MultiCompanyState value)
+            {
+            }
+        };
         return new ProductionWorkspaceWindow(
-                UserAppStateStore.create(),
+                stateStore,
                 (path, preferred) -> new DatabaseSessionController.PreparedConnection()
                 {
                     @Override

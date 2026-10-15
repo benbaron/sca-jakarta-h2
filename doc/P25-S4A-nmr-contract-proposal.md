@@ -140,3 +140,8 @@ Extend A10 with the authority's actual examples before writing feature expectati
 5. Confirm P25-S3 desktop acceptance separately. When that prerequisite and D03 are satisfied, select the first approved implementation slice on fresh current main, perform its remaining source/migration/test inspection and baseline, and implement one coherent vertical slice.
 
 Until then, P25-S4 is BLOCKED. P25-S4A delivers this reviewable proposal and its validation/handoff; the framework is owner-accepted, while missing policy inputs and native desktop acceptance cannot be inferred from preparation or merge. Publication was explicitly authorized with that acceptance; implementation remains gated.
+
+
+## Configuration-first scope amendment
+
+On 2026-10-14 the owner explicitly selected “Build policy configuration first, with no default rates or accounting entries.” [P25-S4B](P25-S4B-nmr-policy-configuration.md) is permitted as an independent prerequisite. Its configuration records do not settle outstanding actual policy inputs or authorize financial assessment/collection/remittance; the full-workflow gate above remains in force.
