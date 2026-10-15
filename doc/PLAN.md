@@ -1,12 +1,12 @@
 ---
-plan_version: 359
+plan_version: 360
 active_phase: P25
 active_slice: P25-S4B
 active_status: VERIFYING
 active_branch: codex/P25-S4B-nmr-policy-configuration
 active_pull_request: null
-active_head: 8df81bfbba07b30177b8701dcbede71257cd3bed
-next_action: "Review local S4B configuration implementation and its manual checks. On owner publication authorization, publish this focused branch and inspect exact-head GitHub clean/repeat/Xvfb CI. Native owner acceptance and full NMR accounting gates remain outstanding."
+active_head: 93e46b20b1cba8e1879a7002fcc222fbe1cb803f
+next_action: "Publish the owner-accepted local S4B commit sequence with matching trees, open its MR and inspect exact-head GitHub clean/repeat/Xvfb CI. Native owner acceptance and full NMR accounting gates remain outstanding."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1452,3 +1452,10 @@ Offline `mvn clean verify` passed with **911 tests, zero failures/errors, 54 dis
 Reviewed implementation commit `8df81bfbba07b30177b8701dcbede71257cd3bed`, tree `fd344fe814bd26ea509e3e650d82b98552d3569b`, includes the complete configuration slice, migration, tests, workflow fixture correction and current governing/manual-check documentation. Final gates: clean verify 911 tests / zero failures/errors / 54 display skips; expanded Xvfb 47 / zero failures/errors/skips. Source and test behavior did not change after those final gates. No known executed-check failure remains; the earlier failed desktop attempt is explained above. This documentation-only successor records the known implementation parent in active_head; `git rev-parse HEAD` identifies the full local tip.
 
 Branch: `codex/P25-S4B-nmr-policy-configuration`. PR/remote publication: none. Status: VERIFYING pending owner review, publication/exact-head GitHub CI, native acceptance and merge. No new financial workflow is authorized or unlocked. Next exact action: review this local branch and the S4B manual checks; on an explicit publication request, publish the preserved local sequence without force updates, verify matching trees/remote tip, open the MR, run/inspect the required clean/repeat/Xvfb workflow and record actual-head results. Native acceptance is not inferred from Xvfb.
+
+
+### P25-S4B owner review / publication authorization — 2026-10-15 (America/Denver)
+
+Owner reviewed the completed local handoff and said “good. move to the next action.” The immediately recorded next action is publication and actual-head CI; proceed with that accepted configuration slice. This does not authorize merge, certify native acceptance, supply missing actual D03 inputs, or unlock financial NMR implementation.
+
+Fresh checks confirm the clean local branch `codex/P25-S4B-nmr-policy-configuration` at `93e46b20b1cba8e1879a7002fcc222fbe1cb803f`, current GitHub main `5894e9ce46b79f34bd6e68cc3a6b6c091fd9b4f9`, and no remote task branch/MR. Preserve both local S4A closeout prerequisites, the reviewed implementation and its verification handoff, followed by this documentation-only authorization record. Use the connected GitHub service, compare every published commit tree with its local tree, and advance only the expected branch parent with force disabled. Local final clean verification remains 911 tests / zero failures/errors / 54 display skips; expanded Xvfb remains 47 / zero failures/errors/skips. No application/test behavior changes follow those gates. Native acceptance remains pending; no new GitHub success is claimed before the MR checks run.
