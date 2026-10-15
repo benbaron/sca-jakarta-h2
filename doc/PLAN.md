@@ -1,11 +1,11 @@
 ---
-plan_version: 351
+plan_version: 352
 active_phase: P25
 active_slice: P25-S4A
 active_status: VERIFYING
 active_branch: codex/P25-S4A-nmr-contract-proposal
 active_pull_request: null
-active_head: cc96e3a94703fd58bc70721513f72dd1fff0bd4b
+active_head: f4eaea0efaa94b761e274204cf19976bc6753466
 next_action: "Review the S4A proposal and D03-01–08 inputs with the responsible accounting authority; record adoption and P25-S3 acceptance before unblocking S4 implementation. Publish the reviewed documentation only after owner authorization."
 ---
 
@@ -1383,3 +1383,5 @@ Status: VERIFYING. Branch `codex/P25-S4A-nmr-contract-proposal`, based on curren
 Validation: original reference workbook fingerprint equals S1; document arithmetic checks passed for all four new fixture transactions, liability progression, cash result and withheld-unconfirmed variant; changed-document links, D03-01–08/A10-N01–N10 coverage and final whitespace checks passed. Fresh offline Maven clean verify on this documentation source passed **898 tests, zero failures/errors, 49 headless skips**, BUILD SUCCESS. No new feature or native desktop acceptance result is claimed; these are existing repository tests and document consistency checks. No known failure remains from executed checks. No new GitHub S4A CI is claimed; PR #367 final-head success is separately verified historical evidence. Generated tracked build files and private reference originals are excluded.
 
 Changed documents: this plan, [S4A proposal](P25-S4A-nmr-contract-proposal.md), [adopted program](P23-P28-runbook-correction-program.md) (preparatory slice only), and [S1 baseline](P23-S1-baseline-and-acceptance.md) (D03 proposal link, still unresolved). Remaining: owner/accounting-authority review and actual policy inputs/adoption, separately authorized documentation publication and actual-head CI/merge; P25-S3 native acceptance remains required before S4 code. Next exact action: review the proposal's decision table and approved worked example with the responsible authority; record every applicable answer and its source/date without interpreting preparation or merge as policy approval. After explicit publication authorization, confirm a clean local tip/current remote base, publish the reviewed sequence without force with matching trees, open a draft PR and inspect its actual-head checks. Do not activate S4 implementation while its gates remain unresolved.
+
+Verified local proposal commit `f4eaea0efaa94b761e274204cf19976bc6753466`, tree `7ff7b879cf3acc98686643be0c5f1684b1e6e3b6`. This documentation-only successor records that source head because a commit cannot embed its own SHA; resolve `git rev-parse HEAD` for the complete local handoff tip. Both commits remain local on the fresh S4A branch and require explicit owner publication authorization. The worktree is clean after this handoff.
