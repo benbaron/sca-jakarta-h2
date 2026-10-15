@@ -1,12 +1,12 @@
 ---
-plan_version: 353
+plan_version: 354
 active_phase: P25
 active_slice: P25-S4A
 active_status: VERIFYING
 active_branch: codex/P25-S4A-nmr-contract-proposal
-active_pull_request: null
-active_head: 6192c20c6f81ebf96f82dd193c9002cdf44aedcc
-next_action: "Publish the owner-accepted S4A documentation as an MR, verify matching trees/final head and inspect CI. Complete outstanding D03 policy inputs and P25-S3 acceptance before unblocking S4 implementation."
+active_pull_request: 368
+active_head: 77a2333a5c756e4ca11f4bdf7a1e18c7a933a51a
+next_action: "Inspect MR #368 final-head clean/repeat/Xvfb checks and repair failures; owner reviews/merges the accepted framework. Complete actual D03 policy inputs and P25-S3 acceptance before unblocking S4 implementation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1392,3 +1392,18 @@ Verified local proposal commit `f4eaea0efaa94b761e274204cf19976bc6753466`, tree 
 Owner explicitly accepted the prepared framework and requested publication with “accept. Put out the MR.” Record that acceptance in the contract, D03 baseline and adopted program. The custodial-liability design framework is accepted; missing actual rate/exemption/date/entity/merchant values remain outstanding rather than invented. D03 is partially resolved, not complete. P25-S4 implementation and P25-S3 native acceptance gates remain unchanged. No implementation or accounting data change is authorized by publishing this documentation.
 
 Fresh publication checks confirm a clean local S4A worktree, current GitHub main `cc96e3a94703fd58bc70721513f72dd1fff0bd4b`, and absent remote S4A branch. Preserve the reviewed proposal and verification commits, then this documentation-only acceptance record, with matching trees and no force updates. Local prior-source Maven evidence remains 898 tests, zero failures/errors, 49 headless skips; document arithmetic/source/links/whitespace are rechecked after this acceptance wording. No application/test change follows the clean verification. New MR and actual-head GitHub results will be recorded after publication.
+
+
+### P25-S4A authorized MR publication — 2026-10-14 (America/Denver)
+
+Owner accepted the framework and explicitly authorized publication with “accept. Put out the MR.” Confirmed clean local branch, repository, all reviewed commits, main `cc96e3a94703fd58bc70721513f72dd1fff0bd4b` and absent remote task branch. Used the connected GitHub service under AGENTS.md, preserving commit messages/order, comparing all nine blob writes and three commit trees, and advancing the branch with its expected parent and force disabled. No application code, private reference originals or financial rows were published.
+
+| Local commit | Published commit | Matching tree |
+|---|---|---|
+| `f4eaea0efaa94b761e274204cf19976bc6753466` | `b679f0b005b5c691fa7e8b3092304b3c1b813091` | `7ff7b879cf3acc98686643be0c5f1684b1e6e3b6` |
+| `6192c20c6f81ebf96f82dd193c9002cdf44aedcc` | `dc01689e0de5207f4fb3e185898b7978fdd2418f` | `56458477a3c762c732666b0bb9349a90571f7bf1` |
+| `9be4e49582cb12819d72254215fa105ae5785e60` | `77a2333a5c756e4ca11f4bdf7a1e18c7a933a51a` | `bcafd3dde770faf49a839aa80abd251f6ae6f770` |
+
+Opened [MR/PR #368](https://github.com/benbaron/sca-jakarta-h2/pull/368) targeting main, ready for review (not a draft), initial head `77a2333a5c756e4ca11f4bdf7a1e18c7a933a51a`. The MR records owner acceptance, exact scope, existing-source local Maven evidence (898 tests, zero failures/errors, 49 headless skips), passing document arithmetic/fingerprint/link/coverage checks and remaining policy inputs. Initial workflow lookup returned no run yet; no CI success is claimed. This documentation-only ledger is included under the same authorization. Its active_head records the known remote parent because a successor cannot embed its own SHA; verify final branch/PR tip and actual-head clean/repeat/Xvfb results.
+
+S4A stays VERIFYING until CI/merge. The custodial-liability framework is accepted, but D03 remains partially resolved while actual policy inputs are missing; P25-S4 implementation and P25-S3 native acceptance remain gated. No implementation or desktop result is inferred from this documentation MR. Next exact action: inspect the final MR head's required workflow, correct failures and record actual results before owner merge; then carry closure forward from confirmed main while retaining the outstanding input/acceptance gates.
