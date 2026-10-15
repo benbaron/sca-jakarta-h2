@@ -125,7 +125,7 @@ Start collecting the authoritative workbook and resolving policy questions durin
 
 ### P25-S4A — Prepare the D03 accounting contract (documentation only)
 
-The owner authorized this preparatory slice on 2026-10-13 (America/Denver). Deliver the [D03 proposal](P25-S4A-nmr-contract-proposal.md), verified source/conflict register, required authority inputs, balanced synthetic examples and future acceptance specifications. Reconcile the preceding Save slice's merge/CI evidence in PLAN. This preparation introduces no application behavior and does not adopt NMR policy. Parent P25-S4 implementation remains blocked until D03 is adopted and P25-S3 acceptance is recorded; preparing or merging the proposal alone does not clear either gate.
+The owner authorized this preparatory slice on 2026-10-13 (America/Denver). Deliver the [D03 proposal](P25-S4A-nmr-contract-proposal.md), verified source/conflict register, required authority inputs, balanced synthetic examples and future acceptance specifications. Reconcile the preceding Save slice's merge/CI evidence in PLAN. Owner accepted the documentation framework and authorized publication on 2026-10-14. Actual policy inputs remain outstanding; this preparation introduces no application behavior. Parent P25-S4 implementation remains blocked until D03 is adopted and P25-S3 acceptance is recorded; preparing or merging the proposal alone does not clear either gate.
 
 ### P25-S5 — Add independent functional-expense classification (G10)
 

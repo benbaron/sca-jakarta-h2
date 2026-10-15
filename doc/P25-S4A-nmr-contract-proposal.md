@@ -1,12 +1,12 @@
 # P25-S4A — D03 NMR accounting-contract proposal
 
-Status: **PROPOSED — not adopted**. Prepared on 2026-10-13 (America/Denver) at main `cc96e3a94703fd58bc70721513f72dd1fff0bd4b`. The owner authorized preparing this proposal with “Agree. Proceed.” Approval of its accounting rules, rates or entity mappings is not implied. [PLAN.md](PLAN.md) owns execution status; P25-S4 implementation remains BLOCKED on D03 and P25-S3 acceptance.
+Status: **OWNER-ACCEPTED FRAMEWORK — policy inputs pending**. Prepared on 2026-10-13 (America/Denver) at main `cc96e3a94703fd58bc70721513f72dd1fff0bd4b`; owner accepted the framework and authorized its MR on 2026-10-14 with “accept. Put out the MR.” Actual rates, exemptions, recognition-date choices, entity mappings and settlement arrangements remain to be supplied; acceptance does not fill those blanks. [PLAN.md](PLAN.md) owns execution status; P25-S4 implementation remains BLOCKED on D03 and P25-S3 acceptance.
 
-## Decision requested
+## Accepted framework and remaining decisions
 
-Recommend treating Non-Member Remittance (NMR) collected for another organization as a **custodial liability**, with event-linked assessment and settlement evidence. Record the full receipt or merchant receivable, split the branch's earned admission income from NMR owed, and reduce the liability only through a documented settlement or approved correction. Derive cash and balances from canonical Journal transactions. Keep workbook presentation mappings distinct from ledger recognition.
+The owner-accepted framework treats Non-Member Remittance (NMR) collected for another organization as a **custodial liability**, with event-linked assessment and settlement evidence. Record the full receipt or merchant receivable, split the branch's earned admission income from NMR owed, and reduce the liability only through a documented settlement or approved correction. Derive cash and balances from canonical Journal transactions. Keep workbook presentation mappings distinct from ledger recognition.
 
-This is a proposed resolution of D03, requiring the responsible accounting authority identified by the owner. If that authority requires another recognition model, revise the journal examples, tie-outs and acceptance cases together before adoption. No current charge rate, exemption, due date, legal classification or merchant arrangement is established by this document.
+This acceptance establishes the design framework. Completing D03 still requires the outstanding applicable policy inputs and their approval by the responsible accounting authority identified by the owner. If that authority requires another recognition model, revise the journal examples, tie-outs and acceptance cases together before adoption. No current charge rate, exemption, due date, legal classification or merchant arrangement is established by this document.
 
 ## Source evidence and conflict
 
@@ -139,4 +139,4 @@ Extend A10 with the authority's actual examples before writing feature expectati
 4. Record the authority's name/capacity, decision date, approved policy version and evidence reference. Update the D03 baseline and proposal status together only after adoption.
 5. Confirm P25-S3 desktop acceptance separately. When that prerequisite and D03 are satisfied, select the first approved implementation slice on fresh current main, perform its remaining source/migration/test inspection and baseline, and implement one coherent vertical slice.
 
-Until then, P25-S4 is BLOCKED. P25-S4A delivers this reviewable proposal and its validation/handoff; preparing or merging it does not approve the policy or certify a native desktop test. Publication of this new documentation follows the repository's separate owner-authorization rule.
+Until then, P25-S4 is BLOCKED. P25-S4A delivers this reviewable proposal and its validation/handoff; the framework is owner-accepted, while missing policy inputs and native desktop acceptance cannot be inferred from preparation or merge. Publication was explicitly authorized with that acceptance; implementation remains gated.
