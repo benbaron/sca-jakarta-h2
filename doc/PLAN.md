@@ -1,12 +1,12 @@
 ---
-plan_version: 360
+plan_version: 361
 active_phase: P25
 active_slice: P25-S4B
 active_status: VERIFYING
 active_branch: codex/P25-S4B-nmr-policy-configuration
-active_pull_request: null
-active_head: 93e46b20b1cba8e1879a7002fcc222fbe1cb803f
-next_action: "Publish the owner-accepted local S4B commit sequence with matching trees, open its MR and inspect exact-head GitHub clean/repeat/Xvfb CI. Native owner acceptance and full NMR accounting gates remain outstanding."
+active_pull_request: 369
+active_head: b62eca1dd8ced24f6085213d634b2d93d63578de
+next_action: "Inspect MR #369 final-head GitHub clean/repeat/Xvfb checks, repair failures and record actual results before owner merge. Native owner acceptance and full NMR accounting gates remain outstanding."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1459,3 +1459,20 @@ Branch: `codex/P25-S4B-nmr-policy-configuration`. PR/remote publication: none. S
 Owner reviewed the completed local handoff and said “good. move to the next action.” The immediately recorded next action is publication and actual-head CI; proceed with that accepted configuration slice. This does not authorize merge, certify native acceptance, supply missing actual D03 inputs, or unlock financial NMR implementation.
 
 Fresh checks confirm the clean local branch `codex/P25-S4B-nmr-policy-configuration` at `93e46b20b1cba8e1879a7002fcc222fbe1cb803f`, current GitHub main `5894e9ce46b79f34bd6e68cc3a6b6c091fd9b4f9`, and no remote task branch/MR. Preserve both local S4A closeout prerequisites, the reviewed implementation and its verification handoff, followed by this documentation-only authorization record. Use the connected GitHub service, compare every published commit tree with its local tree, and advance only the expected branch parent with force disabled. Local final clean verification remains 911 tests / zero failures/errors / 54 display skips; expanded Xvfb remains 47 / zero failures/errors/skips. No application/test behavior changes follow those gates. Native acceptance remains pending; no new GitHub success is claimed before the MR checks run.
+
+
+### P25-S4B authorized MR publication — 2026-10-15 (America/Denver)
+
+Owner accepted the local slice and requested the recorded next action with “good. move to the next action.” Published through the connected GitHub service after confirming clean local state, current main, repository, absent remote task branch/MR and the reviewed five-commit sequence. Created each remote tree from the corresponding local changes and required exact tree-SHA equality; preserved commit messages and order. Created the task branch from confirmed main and advanced it with expected parent `5894e9ce46b79f34bd6e68cc3a6b6c091fd9b4f9`, force disabled.
+
+| Local commit | Published commit | Matching tree |
+|---|---|---|
+| `58559d024f8bdeab28e4d425ebf95696958c92a3` | `55de503117f57a4da51e5876ab6ab753845e4570` | `90763bb028d1497b766942d60994b67bf8c04d33` |
+| `105aa4c8b13e181bb9cb3e3e78d296a06fdffcd9` | `59d58830b0da026ad0895c4439bce64a0ec610a4` | `ba8522fbeacbe044cc9192bd89398b9d7eee0251` |
+| `8df81bfbba07b30177b8701dcbede71257cd3bed` | `30a52f78dc1eccd62613ffce22912b13b12f044b` | `fd344fe814bd26ea509e3e650d82b98552d3569b` |
+| `93e46b20b1cba8e1879a7002fcc222fbe1cb803f` | `5ba2830011a8c531ee186a5d08d65988ffbb1404` | `b28535d88731e7a668d3a5a142cc1b879912df21` |
+| `f3f75753b204243c36d78dd014d6aaf5c7d85041` | `b62eca1dd8ced24f6085213d634b2d93d63578de` | `565a5fc8db36d5c0992cfdc15c6c299e80117358` |
+
+Opened [MR/PR #369](https://github.com/benbaron/sca-jakarta-h2/pull/369), **Add company-owned dated NMR policy configuration**, ready for review (not draft), targeting main from `codex/P25-S4B-nmr-policy-configuration`. Initial published head `b62eca1dd8ced24f6085213d634b2d93d63578de` has matching tree `565a5fc8db36d5c0992cfdc15c6c299e80117358`. The MR records actual local clean results (911 tests, zero failures/errors, 54 display skips), expanded Xvfb results (47 tests, no failures/errors/skips), the fixture-only prerequisite correction and native acceptance notes. Initial-head [Maven run 38742195674](https://github.com/benbaron/sca-jakarta-h2/actions/runs/38742195674) is in progress; no new GitHub success is claimed yet.
+
+This documentation-only publication ledger follows the same authorization. active_head records its known remote parent because a successor cannot embed its own SHA. Verify the final branch/PR tip and inspect that exact head's required clean/repeat/expanded Xvfb checks. No application or test behavior changes follow the local gates. S4B remains VERIFYING; native owner acceptance, CI and separately authorized merge remain outstanding. No financial NMR workflow or default rate is introduced, and parent S4/S3/D03 gates are unchanged. Next exact action: inspect the final MR head's workflow/jobs, repair failures if any, update the MR validation with actual results and leave a precise verification handoff before owner merge.
