@@ -1,11 +1,11 @@
 ---
-plan_version: 355
+plan_version: 356
 active_phase: P25
 active_slice: P25-S4
 active_status: BLOCKED
 active_branch: codex/P25-S4-closeout
 active_pull_request: null
-active_head: 5894e9ce46b79f34bd6e68cc3a6b6c091fd9b4f9
+active_head: 58559d024f8bdeab28e4d425ebf95696958c92a3
 next_action: "Resolve next-slice scope with owner: company policy configuration without default rates/accounting writes, or full NMR workflow after actual D03 policy inputs and P25-S3 acceptance. S4A is merged/DONE; full S4 implementation remains BLOCKED."
 ---
 
@@ -1418,3 +1418,5 @@ The next planned accounting implementation is parent P25-S4, still BLOCKED by th
 Owner clarification requested during this run: first deliver company policy configuration with no default rates or accounting entries, or provide an approved actual policy for the full workflow. A configuration-first answer would explicitly establish a bounded independent prerequisite slice while leaving assessment, collection/remittance accounting and the parent acceptance gates blocked. No such slice is activated before the answer. Existing policy requirements remain as recorded in the accepted contract.
 
 Completed: verified merge/final CI, closed S4A, cleared obsolete active MR/branch references and identified the exact next prerequisite. Remaining: owner's scope answer or actual policy inputs/acceptance; any subsequent implementation requires its own current-source inspection, baseline and vertically coherent tests. Changed document: PLAN only. Validation: exact-head GitHub evidence above, fresh offline `mvn -DskipTests compile` BUILD SUCCESS at the new merged base, and local document/whitespace/link/status checks passed. No new local full-suite, feature test or native acceptance is claimed. Next exact action: incorporate the owner's answer into the owning contract and slice ledger, then select one allowed slice on a focused branch from current main. If full workflow is selected, obtain the actual applicable D03 answers and P25-S3 acceptance before marking it READY.
+
+Verified local closeout commit `58559d024f8bdeab28e4d425ebf95696958c92a3`, tree `90763bb028d1497b766942d60994b67bf8c04d33`. This documentation-only successor records the known parent; `git rev-parse HEAD` identifies the full local tip. No closeout publication is claimed. Owner scope clarification remains pending before dependent implementation.
