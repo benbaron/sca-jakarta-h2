@@ -123,6 +123,10 @@ Start collecting the authoritative workbook and resolving policy questions durin
 
 **Acceptance:** A fixture with collected NMR, processor withholding, later remittance, and prior-period balance reconciles detail to liability and cash. No amount is counted both as retained event revenue and as a custodial obligation contrary to the adopted policy. Missing inputs prevent a misleading complete report.
 
+### P25-S4A — Prepare the D03 accounting contract (documentation only)
+
+The owner authorized this preparatory slice on 2026-10-13 (America/Denver). Deliver the [D03 proposal](P25-S4A-nmr-contract-proposal.md), verified source/conflict register, required authority inputs, balanced synthetic examples and future acceptance specifications. Reconcile the preceding Save slice's merge/CI evidence in PLAN. This preparation introduces no application behavior and does not adopt NMR policy. Parent P25-S4 implementation remains blocked until D03 is adopted and P25-S3 acceptance is recorded; preparing or merging the proposal alone does not clear either gate.
+
 ### P25-S5 — Add independent functional-expense classification (G10)
 
 **Work:** Confirm the meanings and permitted use of AR/OA/FR in the required forms. Add the adopted independent line classification, defaults with explicit override, missing-classification diagnostics, and report/export mappings. Preserve it through generated entries, corrections, and interchange.
