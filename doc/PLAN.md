@@ -1,12 +1,12 @@
 ---
-plan_version: 354
+plan_version: 355
 active_phase: P25
-active_slice: P25-S4A
-active_status: VERIFYING
-active_branch: codex/P25-S4A-nmr-contract-proposal
-active_pull_request: 368
-active_head: 77a2333a5c756e4ca11f4bdf7a1e18c7a933a51a
-next_action: "Inspect MR #368 final-head clean/repeat/Xvfb checks and repair failures; owner reviews/merges the accepted framework. Complete actual D03 policy inputs and P25-S3 acceptance before unblocking S4 implementation."
+active_slice: P25-S4
+active_status: BLOCKED
+active_branch: codex/P25-S4-closeout
+active_pull_request: null
+active_head: 5894e9ce46b79f34bd6e68cc3a6b6c091fd9b4f9
+next_action: "Resolve next-slice scope with owner: company policy configuration without default rates/accounting writes, or full NMR workflow after actual D03 policy inputs and P25-S3 acceptance. S4A is merged/DONE; full S4 implementation remains BLOCKED."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,7 +37,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | VERIFYING — S4A D03 proposal prepared; S1/S2 merged, S3 VERIFYING for desktop acceptance; S4 implementation remains BLOCKED |
+| P25 | Transfers, payment references, reporting classification | BLOCKED — S1/S2 and S4A DONE; S3 VERIFYING for desktop acceptance; full S4 implementation awaits actual D03 inputs; owner clarification requested for configuration-first scope |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -685,7 +685,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S2 | Add structured payment/check references (G9) | DONE | P25-S1 merged; owning contract and D01–D10 gates as applicable |
 | P25-S3 | Complete check exception and reconciliation workflows (G9) | VERIFYING | PR #364 merged in local history; live main and final-head CI confirmed; owner desktop acceptance outstanding; D04 gates stale-triggered accounting only |
 | P25-S4 | Implement the adopted NMR accounting contract (G10) | BLOCKED | P25-S3 closeout evidence and unresolved D03 NMR contract/rates/exemptions/effective dates/legal-entity mapping; other applicable D01–D10 gates |
-| P25-S4A | Prepare D03 NMR accounting-contract proposal (documentation only) | VERIFYING | Owner authorized proposal preparation; policy adoption is not implied and parent S4 implementation remains BLOCKED |
+| P25-S4A | Prepare D03 NMR accounting-contract proposal (documentation only) | DONE | Owner accepted framework; MR #368 merged at 5894e9ce; final-head clean/repeat/Xvfb CI passed; actual policy inputs remain outstanding for S4 implementation |
 | P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | P25-S4 merged; owning contract and D01–D10 gates as applicable |
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -1407,3 +1407,14 @@ Owner accepted the framework and explicitly authorized publication with “accep
 Opened [MR/PR #368](https://github.com/benbaron/sca-jakarta-h2/pull/368) targeting main, ready for review (not a draft), initial head `77a2333a5c756e4ca11f4bdf7a1e18c7a933a51a`. The MR records owner acceptance, exact scope, existing-source local Maven evidence (898 tests, zero failures/errors, 49 headless skips), passing document arithmetic/fingerprint/link/coverage checks and remaining policy inputs. Initial workflow lookup returned no run yet; no CI success is claimed. This documentation-only ledger is included under the same authorization. Its active_head records the known remote parent because a successor cannot embed its own SHA; verify final branch/PR tip and actual-head clean/repeat/Xvfb results.
 
 S4A stays VERIFYING until CI/merge. The custodial-liability framework is accepted, but D03 remains partially resolved while actual policy inputs are missing; P25-S4 implementation and P25-S3 native acceptance remain gated. No implementation or desktop result is inferred from this documentation MR. Next exact action: inspect the final MR head's required workflow, correct failures and record actual results before owner merge; then carry closure forward from confirmed main while retaining the outstanding input/acceptance gates.
+
+
+### P25-S4A closeout / next-slice prerequisite check — 2026-10-14 (America/Denver)
+
+Owner reports MR #368 merged and requests the next slice. GitHub confirms merge `5894e9ce46b79f34bd6e68cc3a6b6c091fd9b4f9` into current main (2026-10-15 00:16:43 UTC / 2026-10-14 America/Denver). Exact final head `7cc3dced0621c5ab688427156e04dab9118b0a3b` passed [Maven run 38657888270](https://github.com/benbaron/sca-jakarta-h2/actions/runs/38657888270), job `116172211446`: clean headless verification, repeat tests and production Xvfb all succeeded. The owner accepted the framework before publication; the documentation-only S4A contract is DONE. Earlier MR/publication-pending next actions are historical. The merged S4A branch is not reused; this closeout is on fresh `codex/P25-S4-closeout` from confirmed main. No new PR is open.
+
+The next planned accounting implementation is parent P25-S4, still BLOCKED by the accepted contract's actual D03 inputs and P25-S3 native acceptance. Approval of a framework or its merge cannot supply an applicable rate/exemption/date/entity/merchant value or prove a desktop pass. AGENTS §3.2 requires “BLOCKED: do not implement.” Do not bypass that gate by silently adding a configuration sub-slice.
+
+Owner clarification requested during this run: first deliver company policy configuration with no default rates or accounting entries, or provide an approved actual policy for the full workflow. A configuration-first answer would explicitly establish a bounded independent prerequisite slice while leaving assessment, collection/remittance accounting and the parent acceptance gates blocked. No such slice is activated before the answer. Existing policy requirements remain as recorded in the accepted contract.
+
+Completed: verified merge/final CI, closed S4A, cleared obsolete active MR/branch references and identified the exact next prerequisite. Remaining: owner's scope answer or actual policy inputs/acceptance; any subsequent implementation requires its own current-source inspection, baseline and vertically coherent tests. Changed document: PLAN only. Validation: exact-head GitHub evidence above, fresh offline `mvn -DskipTests compile` BUILD SUCCESS at the new merged base, and local document/whitespace/link/status checks passed. No new local full-suite, feature test or native acceptance is claimed. Next exact action: incorporate the owner's answer into the owning contract and slice ledger, then select one allowed slice on a focused branch from current main. If full workflow is selected, obtain the actual applicable D03 answers and P25-S3 acceptance before marking it READY.
