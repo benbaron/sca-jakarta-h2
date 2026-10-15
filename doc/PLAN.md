@@ -1,11 +1,11 @@
 ---
-plan_version: 358
+plan_version: 359
 active_phase: P25
 active_slice: P25-S4B
 active_status: VERIFYING
 active_branch: codex/P25-S4B-nmr-policy-configuration
 active_pull_request: null
-active_head: 105aa4c8b13e181bb9cb3e3e78d296a06fdffcd9
+active_head: 8df81bfbba07b30177b8701dcbede71257cd3bed
 next_action: "Review local S4B configuration implementation and its manual checks. On owner publication authorization, publish this focused branch and inspect exact-head GitHub clean/repeat/Xvfb CI. Native owner acceptance and full NMR accounting gates remain outstanding."
 ---
 
@@ -1445,3 +1445,10 @@ Focused checks cover restart/idempotency/changed or foreign request, company/rol
 Documents updated: PLAN, S4B governing/manual-check contract, adopted program, S4A scope amendment, interface operation matrix, pane Save coverage, persistence authority inventory, and SCLX specification. Workflow includes NmrPoliciesPanelTest in the existing expanded Xvfb gate. Native visual/owner acceptance is still pending under the [manual checks](P25-S4B-nmr-policy-configuration.md); Xvfb geometry is not claimed as native owner acceptance.
 
 Offline `mvn clean verify` passed with **911 tests, zero failures/errors, 54 display-related skips**, BUILD SUCCESS (2026-10-15 01:04 UTC). The first expanded Xvfb run exposed six existing shell-routing fixture errors: UserAppStateStore restored a previously deleted temporary database; a dummy Journal drill context then leaked into the following fixture and opened a modal prompt. That failed run was stopped after diagnosis. The narrowly scoped prerequisite fix makes ProductionWorkspaceCommandRoutingTest use a nonpersistent active-test session store and clears its dummy context during cleanup; production session behavior is unchanged. The focused configuration/routing/Save run passed **16 tests, zero failures/errors/skips**. The final post-fixture offline clean gate passed again with **911 tests, zero failures/errors, 54 display-related skips**, BUILD SUCCESS at 2026-10-15 01:13 UTC. The final expanded workflow Xvfb gate passed **47 tests, zero failures/errors/skips**, BUILD SUCCESS at 2026-10-15 01:14 UTC. This includes the corrected routing fixture, following Merchant regression (no leaked modal), new policy pane and real nested File/toolbar Save. Final local logs: `/workspace/work/nmr-clean-verify-final.log` and `/workspace/work/nmr-expanded-xvfb-final.log`; these are local evidence, not committed application data. Final diff, local documentation links, migration scope, service/UI boundaries and whitespace checks passed. No unresolved functional failure remains in executed final checks. All application and test behavior was frozen before the final clean/expanded gates; only verification documentation follows. No GitHub CI for this new source is claimed. Remaining: owner review, authorized publication/exact-head CI, native owner acceptance and merge. Next exact action: review this local configuration slice; when publication is explicitly requested, preserve its reviewed commit/tree sequence on the focused branch, open the MR and inspect the required exact-head workflow. Do not mark S4B DONE or unlock full NMR accounting from local verification.
+
+
+### P25-S4B local commit handoff
+
+Reviewed implementation commit `8df81bfbba07b30177b8701dcbede71257cd3bed`, tree `fd344fe814bd26ea509e3e650d82b98552d3569b`, includes the complete configuration slice, migration, tests, workflow fixture correction and current governing/manual-check documentation. Final gates: clean verify 911 tests / zero failures/errors / 54 display skips; expanded Xvfb 47 / zero failures/errors/skips. Source and test behavior did not change after those final gates. No known executed-check failure remains; the earlier failed desktop attempt is explained above. This documentation-only successor records the known implementation parent in active_head; `git rev-parse HEAD` identifies the full local tip.
+
+Branch: `codex/P25-S4B-nmr-policy-configuration`. PR/remote publication: none. Status: VERIFYING pending owner review, publication/exact-head GitHub CI, native acceptance and merge. No new financial workflow is authorized or unlocked. Next exact action: review this local branch and the S4B manual checks; on an explicit publication request, publish the preserved local sequence without force updates, verify matching trees/remote tip, open the MR, run/inspect the required clean/repeat/Xvfb workflow and record actual-head results. Native acceptance is not inferred from Xvfb.
