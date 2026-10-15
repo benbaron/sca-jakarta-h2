@@ -1,12 +1,12 @@
 ---
-plan_version: 350
-active_phase: P17
-active_slice: P17-C13
+plan_version: 354
+active_phase: P25
+active_slice: P25-S4A
 active_status: VERIFYING
-active_branch: codex/P17-C13-pane-save-coverage
-active_pull_request: 367
-active_head: e4c0497c3ff7f9fb3e0f7163817b2922624f7fe1
-next_action: "Verify draft PR #367 final-head clean/repeat/Xvfb CI and repair any failures; record native owner acceptance from the pane-save audit before separately authorized merge. P17-C13 remains VERIFYING."
+active_branch: codex/P25-S4A-nmr-contract-proposal
+active_pull_request: 368
+active_head: 77a2333a5c756e4ca11f4bdf7a1e18c7a933a51a
+next_action: "Inspect MR #368 final-head clean/repeat/Xvfb checks and repair failures; owner reviews/merges the accepted framework. Complete actual D03 policy inputs and P25-S3 acceptance before unblocking S4 implementation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -29,7 +29,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P11 | Report Library | DONE through P11-C2 / PR #284; period-context correction P17-C9 DONE |
 | P12-P15 | Administration, diagnostics/exchange, hardening, versioned interchange | DONE for original contracts |
 | P16 | Interface-to-authority completion and integrity corrections | DONE through P16-C11 / PR #281 |
-| P17 | Cross-cutting UI, authority, cleanup, durable-record, documentation corrections | VERIFYING — corrective P17-C13 Save coverage; earlier slices DONE through P17-C12 / PR #305 |
+| P17 | Cross-cutting UI, authority, cleanup, durable-record, documentation corrections | VERIFYING — P17-C13 merged in PR #367, final-head CI passed; explicit native acceptance evidence remains unrecorded; earlier slices DONE through P17-C12 / PR #305 |
 | P18 | Depreciation-run workflow completion | DONE through P18-S1 / PR #306 |
 | P19 | Deferred Company Administration extensions | DONE through P19-S3 / PR #309 |
 | P20 | Authentication and runtime authorization | DONE through P20-S3 |
@@ -37,7 +37,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | VERIFYING — S1/S2 merged in PRs #362/#363; S3 merged in local history via PR #364; final-head CI confirmed; desktop acceptance evidence remains outstanding |
+| P25 | Transfers, payment references, reporting classification | VERIFYING — S4A D03 proposal prepared; S1/S2 merged, S3 VERIFYING for desktop acceptance; S4 implementation remains BLOCKED |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -685,6 +685,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S2 | Add structured payment/check references (G9) | DONE | P25-S1 merged; owning contract and D01–D10 gates as applicable |
 | P25-S3 | Complete check exception and reconciliation workflows (G9) | VERIFYING | PR #364 merged in local history; live main and final-head CI confirmed; owner desktop acceptance outstanding; D04 gates stale-triggered accounting only |
 | P25-S4 | Implement the adopted NMR accounting contract (G10) | BLOCKED | P25-S3 closeout evidence and unresolved D03 NMR contract/rates/exemptions/effective dates/legal-entity mapping; other applicable D01–D10 gates |
+| P25-S4A | Prepare D03 NMR accounting-contract proposal (documentation only) | VERIFYING | Owner authorized proposal preparation; policy adoption is not implied and parent S4 implementation remains BLOCKED |
 | P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | P25-S4 merged; owning contract and D01–D10 gates as applicable |
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -1354,3 +1355,55 @@ Owner explicitly authorized publication with “push this as a draft.” Confirm
 Opened draft [PR #367](https://github.com/benbaron/sca-jakarta-h2/pull/367) targeting main on `codex/P17-C13-pane-save-coverage`, initial head `e4c0497c3ff7f9fb3e0f7163817b2922624f7fe1`. Fetched that branch and independently matched its final tree. PR records actual local tests, implemented scope and native acceptance steps. Initial-head [Maven run 38160919705](https://github.com/benbaron/sca-jakarta-h2/actions/runs/38160919705) is in progress; no GitHub success is claimed. This documentation-only publication ledger is included under the same authorization; active_head records its known remote parent because a successor cannot embed its own SHA. Verify the resulting remote branch/PR tip and inspect that final head's clean/repeat/expanded Xvfb workflow.
 
 P17-C13 remains VERIFYING. Completed: reviewed implementation and handoff are published as a draft with matching trees. Remaining: actual final-head GitHub checks, native owner acceptance and separately authorized merge. No known functional local failure remains; local clean verification is 898 tests with 49 headless skips, and expanded Xvfb is 42 tests without skips, zero failures/errors. No application or test change follows those results. P25-S3 desktop acceptance and P25-S4/D03/D04 gates remain unchanged.
+
+
+### P25-S4A — D03 NMR contract preparation — 2026-10-13 (America/Denver)
+
+Owner agreed to the recommended D03 proposal and PLAN reconciliation with “Agree. Proceed.” Selected one documentation-only preparatory slice, P25-S4A, on fresh `codex/P25-S4A-nmr-contract-proposal` from confirmed main `cc96e3a94703fd58bc70721513f72dd1fff0bd4b`. PR: none. This authorization prepares a reviewable proposal; it does not adopt an accounting policy or authorize blocked P25-S4 implementation. P25-S3 desktop acceptance and D03 remain implementation gates; D04 is unchanged.
+
+Required reading: root AGENTS, PLAN, adopted P23–P28 program, S1 baseline/D03/A10, ledger authority, period/correction policy, internal fund transfers, and P21 Activity authority. Required inspection: current TxnSplit/TransactionLineCommand NMR field, Journal checkbox, TransactionEntryService persistence, existing supplemental lifecycle migration and SCLX payload, plus original runbook/template evidence where retrievable. No production behavior, schema or accounting data change is in scope. Governing proposal and owner review steps: [P25-S4A D03 contract proposal](P25-S4A-nmr-contract-proposal.md). Remaining: decision/fixture review, documentation and repository checks, precise local handoff.
+
+### P17-C13 post-merge reconciliation carried into S4A
+
+This supersedes the preceding draft/publication-pending next actions. GitHub confirms owner `benbaron` merged [PR #367](https://github.com/benbaron/sca-jakarta-h2/pull/367) at `cc96e3a94703fd58bc70721513f72dd1fff0bd4b`, current main (2026-10-12 02:32:54 UTC / 2026-10-11 America/Denver). Exact final PR head `8bf9da4843b922ce7b0ca02f0570c54f2e1852a5` passed [Maven run 38161041038](https://github.com/benbaron/sca-jakarta-h2/actions/runs/38161041038), job `114533874687`: clean headless verification, repeat tests and the expanded production Xvfb gate all succeeded. Published source, handoff and ledger had trees matching the reviewed local sequence. The prior task branch is merged and must not be reused or republished; no Save implementation PR remains open.
+
+Merged behavior and CI are confirmed. Explicit native acceptance results were not supplied in this session; do not manufacture a desktop pass from the merge. P17-C13 remains VERIFYING for that outstanding evidence under the recorded acceptance contract. Active controller now selects the owner's independently authorized S4A documentation preparation; this is not implementation of blocked S4. P25-S3 similarly retains its separately recorded native acceptance gate. No D03/D04 policy decision is inferred from the Save PR merge or the instruction to prepare this proposal.
+
+### P25-S4A source and inspection findings
+
+Retrieved the original runbook read-only and inspected §8/§26.3: flow-through liability statements conflict with gross-event-income entry guidance. Retrieved only the baseline-matching named workbook (11,461,550 bytes, SHA-256 recorded in the proposal), rather than another same-name copy; its Instructions C135/D136–137/B139/B143–144 confirm the legal-entity and merchant-path dependencies. This verifies reference identity/guidance, not applicable policy or official submission approval. Private financial rows and original files are excluded from source commits.
+
+Current main saves the NMR checkbox on `TxnSplit` through the canonical entry service but has no count/rate/recipient/settlement contract. Inspected SCLX import initializes that flag to false and has no NMR-specific extension, so current round-trip completeness must not be claimed. The proposal uses existing Activity IDs, canonical accounting and OTHER_LIABILITY supplemental lifecycle authority; there is no proposed second running-balance ledger. Examples and future A10-N01–N10 specifications are synthetic and unexecuted feature acceptance, not adopted rates or passed NMR implementation tests. D03 remains UNRESOLVED.
+
+
+### P25-S4A final local preparation handoff — 2026-10-13 (America/Denver)
+
+Status: VERIFYING. Branch `codex/P25-S4A-nmr-contract-proposal`, based on current main `cc96e3a94703fd58bc70721513f72dd1fff0bd4b`; PR: none; local only. Completed: reviewable D03 custodial-liability recommendation, eight authority decision/input rows, verified runbook/workbook conflict and fingerprint record, balanced synthetic collection/merchant/remittance/carryover examples, ten future acceptance cases, existing authority/legacy/SCLX boundaries, owner review instructions and preceding Save merge/CI reconciliation. D03 is not adopted; no NMR implementation, policy configuration, migration or production-data write occurred.
+
+Validation: original reference workbook fingerprint equals S1; document arithmetic checks passed for all four new fixture transactions, liability progression, cash result and withheld-unconfirmed variant; changed-document links, D03-01–08/A10-N01–N10 coverage and final whitespace checks passed. Fresh offline Maven clean verify on this documentation source passed **898 tests, zero failures/errors, 49 headless skips**, BUILD SUCCESS. No new feature or native desktop acceptance result is claimed; these are existing repository tests and document consistency checks. No known failure remains from executed checks. No new GitHub S4A CI is claimed; PR #367 final-head success is separately verified historical evidence. Generated tracked build files and private reference originals are excluded.
+
+Changed documents: this plan, [S4A proposal](P25-S4A-nmr-contract-proposal.md), [adopted program](P23-P28-runbook-correction-program.md) (preparatory slice only), and [S1 baseline](P23-S1-baseline-and-acceptance.md) (D03 proposal link, still unresolved). Remaining: owner/accounting-authority review and actual policy inputs/adoption, separately authorized documentation publication and actual-head CI/merge; P25-S3 native acceptance remains required before S4 code. Next exact action: review the proposal's decision table and approved worked example with the responsible authority; record every applicable answer and its source/date without interpreting preparation or merge as policy approval. After explicit publication authorization, confirm a clean local tip/current remote base, publish the reviewed sequence without force with matching trees, open a draft PR and inspect its actual-head checks. Do not activate S4 implementation while its gates remain unresolved.
+
+Verified local proposal commit `f4eaea0efaa94b761e274204cf19976bc6753466`, tree `7ff7b879cf3acc98686643be0c5f1684b1e6e3b6`. This documentation-only successor records that source head because a commit cannot embed its own SHA; resolve `git rev-parse HEAD` for the complete local handoff tip. Both commits remain local on the fresh S4A branch and require explicit owner publication authorization. The worktree is clean after this handoff.
+
+
+### P25-S4A owner acceptance and publication authorization — 2026-10-14 (America/Denver)
+
+Owner explicitly accepted the prepared framework and requested publication with “accept. Put out the MR.” Record that acceptance in the contract, D03 baseline and adopted program. The custodial-liability design framework is accepted; missing actual rate/exemption/date/entity/merchant values remain outstanding rather than invented. D03 is partially resolved, not complete. P25-S4 implementation and P25-S3 native acceptance gates remain unchanged. No implementation or accounting data change is authorized by publishing this documentation.
+
+Fresh publication checks confirm a clean local S4A worktree, current GitHub main `cc96e3a94703fd58bc70721513f72dd1fff0bd4b`, and absent remote S4A branch. Preserve the reviewed proposal and verification commits, then this documentation-only acceptance record, with matching trees and no force updates. Local prior-source Maven evidence remains 898 tests, zero failures/errors, 49 headless skips; document arithmetic/source/links/whitespace are rechecked after this acceptance wording. No application/test change follows the clean verification. New MR and actual-head GitHub results will be recorded after publication.
+
+
+### P25-S4A authorized MR publication — 2026-10-14 (America/Denver)
+
+Owner accepted the framework and explicitly authorized publication with “accept. Put out the MR.” Confirmed clean local branch, repository, all reviewed commits, main `cc96e3a94703fd58bc70721513f72dd1fff0bd4b` and absent remote task branch. Used the connected GitHub service under AGENTS.md, preserving commit messages/order, comparing all nine blob writes and three commit trees, and advancing the branch with its expected parent and force disabled. No application code, private reference originals or financial rows were published.
+
+| Local commit | Published commit | Matching tree |
+|---|---|---|
+| `f4eaea0efaa94b761e274204cf19976bc6753466` | `b679f0b005b5c691fa7e8b3092304b3c1b813091` | `7ff7b879cf3acc98686643be0c5f1684b1e6e3b6` |
+| `6192c20c6f81ebf96f82dd193c9002cdf44aedcc` | `dc01689e0de5207f4fb3e185898b7978fdd2418f` | `56458477a3c762c732666b0bb9349a90571f7bf1` |
+| `9be4e49582cb12819d72254215fa105ae5785e60` | `77a2333a5c756e4ca11f4bdf7a1e18c7a933a51a` | `bcafd3dde770faf49a839aa80abd251f6ae6f770` |
+
+Opened [MR/PR #368](https://github.com/benbaron/sca-jakarta-h2/pull/368) targeting main, ready for review (not a draft), initial head `77a2333a5c756e4ca11f4bdf7a1e18c7a933a51a`. The MR records owner acceptance, exact scope, existing-source local Maven evidence (898 tests, zero failures/errors, 49 headless skips), passing document arithmetic/fingerprint/link/coverage checks and remaining policy inputs. Initial workflow lookup returned no run yet; no CI success is claimed. This documentation-only ledger is included under the same authorization. Its active_head records the known remote parent because a successor cannot embed its own SHA; verify final branch/PR tip and actual-head clean/repeat/Xvfb results.
+
+S4A stays VERIFYING until CI/merge. The custodial-liability framework is accepted, but D03 remains partially resolved while actual policy inputs are missing; P25-S4 implementation and P25-S3 native acceptance remain gated. No implementation or desktop result is inferred from this documentation MR. Next exact action: inspect the final MR head's required workflow, correct failures and record actual results before owner merge; then carry closure forward from confirmed main while retaining the outstanding input/acceptance gates.
