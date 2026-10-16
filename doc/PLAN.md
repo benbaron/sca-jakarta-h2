@@ -1,11 +1,11 @@
 ---
-plan_version: 363
+plan_version: 364
 active_phase: P25
 active_slice: P25-S4B
 active_status: VERIFYING
 active_branch: codex/P25-S4B-closeout
 active_pull_request: null
-active_head: 7943060ecc66cb747921ea3edfc0204cbb402218
+active_head: 400ebc552cf2a1f78726a5814ad185a00a6959d8
 next_action: "Record S4B native acceptance and resolve the next scope: approved D03 inputs for full NMR accounting, or explicit selection of the proposed independent policy SCLX portability slice. Do not implement blocked S4 accounting or start the proposed slice before selection."
 ---
 
@@ -1507,3 +1507,12 @@ Completed: live merge/main/final-CI verification, fresh branch, preservation of 
 Fresh merged-source baseline: offline `mvn -DskipTests compile` passed in 22.918 seconds (2026-10-16 UTC). The S4B governing document now records the actual merge/final-head CI instead of obsolete publication-pending text. Changed files in this closeout are PLAN and the S4B contract only; application/test/migration/workflow content remains identical to merged main. Required native checks remain visible; no native pass is invented. No new full-suite run was needed for the documentation-only reconciliation; the final merged-source CI evidence above is independently verified.
 
 The owner was asked to choose the concrete independent policy SCLX portability scope or resolve the approved accounting policy inputs. That choice is pending; do not treat the recommendation or elapsed time as selection. This is a scope clarification required by the accepted S4 gate, not a request to reauthorize the already completed configuration work.
+
+
+### P25-S4B merged-source closeout handoff
+
+Local closeout commit `400ebc552cf2a1f78726a5814ad185a00a6959d8` is on fresh `codex/P25-S4B-closeout`, based on verified current main `7943060ecc66cb747921ea3edfc0204cbb402218`. No new PR/publication exists. It carries the preceding local CI ledger and reconciles only PLAN and the S4B governing document; source/test/migration/workflow content equals merged main. Fresh offline compile passed; live final-head clean/repeat/Xvfb CI and local documentation links/whitespace/scope checks passed. Native acceptance evidence remains unrecorded; there is no claimed new desktop acceptance or actual policy input.
+
+The proposed S4C scope remains unselected pending the asynchronous owner choice. An additional inspected constraint for that candidate: NmrPolicyService's original request fingerprint includes the original validTo, while an audited end operation shortens current validTo without replacing the hash. Any portability design must preserve this retained retry identity and saved metadata rather than recomputing the hash from a shortened interval. This is an inspection finding, not an adopted import implementation.
+
+Remaining: owner selects the concrete independent policy-portability slice or resolves the applicable D03 accounting inputs; separately record the required native acceptance evidence. Next exact action: apply the owner's answer to the governing contract and controller, verify its prerequisites and complete the relevant current-source/donor/service/test inspection before implementing one authorized slice. If S4C is selected, rename this fresh unmerged closeout branch to a focused S4C branch while preserving its documentation commits, then record the configuration-only amendment before coding. If accounting policy inputs are selected, complete the adopted decision table without inventing values or lifting acceptance gates. This PLAN-only successor records the known closeout parent; `git rev-parse HEAD` identifies the complete local handoff tip.
