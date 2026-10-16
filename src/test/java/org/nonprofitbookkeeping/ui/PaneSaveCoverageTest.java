@@ -11,6 +11,7 @@ import org.junit.jupiter.api.parallel.ResourceLock;
 import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.service.AuthenticatedUserSession;
+import org.nonprofitbookkeeping.service.ReservedSecurityRole;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -195,6 +196,61 @@ class PaneSaveCoverageTest
         });
         await(() -> UiServiceRegistry.accountLookup().listActivePostingAccounts().stream()
                 .anyMatch(account -> "9910".equals(account.getCode())));
+    }
+
+    @Test
+    void policySclxPreviewSavePersistsVersionsAndRequiresCompanyAdmin() throws Exception
+    {
+        Path source = directory.resolve("policy.sclx");
+        try (var jpa = new org.nonprofitbookkeeping.persistence.Jpa(directory.resolve("policy-source")))
+        {
+            org.nonprofitbookkeeping.interchange.sclx.SclxNmrPolicyRoundTripTest.seed(jpa);
+            org.nonprofitbookkeeping.interchange.sclx.SclxNmrPolicyRoundTripTest.policies(jpa).save(java.util.UUID.randomUUID(),
+                    org.nonprofitbookkeeping.interchange.sclx.SclxNmrPolicyRoundTripTest.terms(
+                            java.time.LocalDate.of(2026, 1, 1), null));
+            org.nonprofitbookkeeping.interchange.sclx.SclxNmrPolicyRoundTripTest.export(jpa, source);
+        }
+        var preview = UiServiceRegistry.sclxImportPreview().preview(source);
+        assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+        ImportPreviewPanel panel = FxTestSupport.onFx(() ->
+        {
+            ImportPreviewPanel imported = new ImportPreviewPanel();
+            stage.getScene().setRoot((javafx.scene.Parent) imported.root());
+            imported.root().applyCss();
+            imported.applySclxPreview(source, preview);
+            ((CheckBox) imported.root().lookup("#confirmExistingCompanySclxImport")).setSelected(true);
+            ((CheckBox) imported.root().lookup("#confirmSclxMappings")).setSelected(true);
+            assertTrue(imported.supportsCommand(AppCommand.SAVE_ACTIVE));
+            var counts = (ListView<?>) imported.root().lookup("#sclxPreviewCounts");
+            assertTrue(counts.getItems().stream().anyMatch(value -> value.toString().contains("nmrPolicyVersions")));
+            var session = MainWindow.sharedSessionState();
+            var admin = session.authenticatedUser().orElseThrow();
+            var accountant = new AuthenticatedUserSession(admin.userId(), admin.username(), admin.displayName(),
+                    admin.companyCode(), java.util.Set.of(ReservedSecurityRole.ACCOUNTANT), admin.authenticatedAt(), admin.lastActivityAt());
+            session.setAuthenticatedUser(accountant);
+            assertFalse(imported.supportsCommand(AppCommand.SAVE_ACTIVE));
+            assertTrue(((Button) imported.root().lookup("#commitPreviewedSclxButton")).getTooltip().getText().contains("Company Administration"));
+            session.setAuthenticatedUser(new AuthenticatedUserSession(admin.userId(), admin.username(), admin.displayName(),
+                    admin.companyCode(), java.util.Set.of(ReservedSecurityRole.VIEWER), admin.authenticatedAt(), admin.lastActivityAt()));
+            assertFalse(imported.supportsCommand(AppCommand.SAVE_ACTIVE));
+            session.setAuthenticatedUser(accountant);
+            assertFalse(imported.supportsCommand(AppCommand.SAVE_ACTIVE));
+            assertTrue(((Button) imported.root().lookup("#commitPreviewedSclxButton")).getTooltip().getText().contains("Company Administration"));
+            session.setAuthenticatedUser(admin);
+            assertTrue(imported.supportsCommand(AppCommand.SAVE_ACTIVE));
+            javafx.application.Platform.runLater(() -> Window.getWindows().stream()
+                    .filter(Window::isShowing).filter(value -> value != stage).toList()
+                    .forEach(value -> ((Button) ((DialogPane) value.getScene().getRoot()).lookupButton(ButtonType.OK)).fire()));
+            assertTrue(imported.executeCommand(AppCommand.SAVE_ACTIVE).handled());
+            return imported;
+        });
+        await(() -> UiServiceRegistry.nmrPolicies().list().size() == 1);
+        FxTestSupport.onFx(() ->
+        {
+            assertFalse(panel.supportsCommand(AppCommand.SAVE_ACTIVE), "Committed preview must not remain an editable Save draft.");
+            return null;
+        });
+        assertEquals(new java.math.BigDecimal("15.1250"), UiServiceRegistry.nmrPolicies().list().get(0).terms().rate());
     }
 
     @Test

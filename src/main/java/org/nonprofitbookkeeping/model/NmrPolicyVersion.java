@@ -58,6 +58,17 @@ public class NmrPolicyVersion
     @Column(name = "source_date", nullable = false, updatable = false)
     private LocalDate sourceDate;
 
+    /** Restores retained metadata only while constructing a new imported version. */
+    public void initializeImportMetadata(UUID portableId, Instant savedAt)
+    {
+        if (id != null)
+        {
+            throw new IllegalStateException("Saved policy metadata is immutable.");
+        }
+        this.portableId = java.util.Objects.requireNonNull(portableId, "portableId");
+        this.savedAt = java.util.Objects.requireNonNull(savedAt, "savedAt");
+    }
+
     public Long getId()
     {
         return id;

@@ -73,7 +73,7 @@ public final class NmrPoliciesPanel implements AppPanel
         title.getStyleClass().add("panel-title");
         Label help = new Label("Record dated source policy for this company. Saving does not verify external approval, calculate NMR, or create accounting entries. No rate or currency is prefilled.");
         help.setWrapText(true);
-        Label retained = new Label("Saved version terms cannot be edited or deleted. End a version with a reason, then add a non-overlapping successor. Rule descriptions are recorded evidence, not calculated rules. Whole-database backup preserves these records; SCLX currently omits them.");
+        Label retained = new Label("Saved version terms cannot be edited or deleted. End a version with a reason, then add a non-overlapping successor. Rule descriptions are recorded evidence, not calculated rules. Whole-database backup preserves these records; SCLX exports and imports saved policy versions through Import Preview; import requires Company Administration permission.");
         retained.setId("nmrPolicyRetention");
         retained.setWrapText(true);
         status.setWrapText(true);

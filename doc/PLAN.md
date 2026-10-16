@@ -1,12 +1,12 @@
 ---
-plan_version: 364
+plan_version: 366
 active_phase: P25
-active_slice: P25-S4B
+active_slice: P25-S4C
 active_status: VERIFYING
-active_branch: codex/P25-S4B-closeout
+active_branch: codex/P25-S4C-nmr-policy-sclx
 active_pull_request: null
-active_head: 400ebc552cf2a1f78726a5814ad185a00a6959d8
-next_action: "Record S4B native acceptance and resolve the next scope: approved D03 inputs for full NMR accounting, or explicit selection of the proposed independent policy SCLX portability slice. Do not implement blocked S4 accounting or start the proposed slice before selection."
+active_head: 61eca28eb293616d0592951f3e3743e3a3f7f6ea
+next_action: "Review the completed local S4C change and owner checks; after explicit publication authorization, publish the reviewed commits without force, open the MR and inspect its actual-head clean/repeat/Xvfb CI. Parent S4 accounting remains blocked."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,7 +37,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | VERIFYING — S4B merged with final-head CI passed; native evidence unrecorded; S1/S2/S4A DONE; S3 VERIFYING; full S4 accounting remains BLOCKED |
+| P25 | Transfers, payment references, reporting classification | VERIFYING — S4C policy portability implemented locally with clean/Xvfb gates passed; publication/native acceptance pending; S4B merged/native evidence unrecorded; S1/S2/S4A DONE; S3 VERIFYING; full S4 accounting remains BLOCKED |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -687,6 +687,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S4 | Implement the adopted NMR accounting contract (G10) | BLOCKED | P25-S3 closeout evidence and unresolved D03 NMR contract/rates/exemptions/effective dates/legal-entity mapping; other applicable D01–D10 gates |
 | P25-S4A | Prepare D03 NMR accounting-contract proposal (documentation only) | DONE | Owner accepted framework; MR #368 merged at 5894e9ce; final-head clean/repeat/Xvfb CI passed; actual policy inputs remain outstanding for S4 implementation |
 | P25-S4B | Company-owned dated NMR policy configuration | VERIFYING | MR #369 merged at 7943060e; final-head clean/repeat/Xvfb CI passed; explicit native acceptance evidence unrecorded; parent S4 financial gate retained |
+| P25-S4C | Policy-only SCLX portability | VERIFYING | Implemented locally; final clean 917 tests/55 display skips and Xvfb 48 tests passed; no PR; independent portability, no accounting defaults/entries |
 | P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | P25-S4 merged; owning contract and D01–D10 gates as applicable |
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -1516,3 +1517,34 @@ Local closeout commit `400ebc552cf2a1f78726a5814ad185a00a6959d8` is on fresh `co
 The proposed S4C scope remains unselected pending the asynchronous owner choice. An additional inspected constraint for that candidate: NmrPolicyService's original request fingerprint includes the original validTo, while an audited end operation shortens current validTo without replacing the hash. Any portability design must preserve this retained retry identity and saved metadata rather than recomputing the hash from a shortened interval. This is an inspection finding, not an adopted import implementation.
 
 Remaining: owner selects the concrete independent policy-portability slice or resolves the applicable D03 accounting inputs; separately record the required native acceptance evidence. Next exact action: apply the owner's answer to the governing contract and controller, verify its prerequisites and complete the relevant current-source/donor/service/test inspection before implementing one authorized slice. If S4C is selected, rename this fresh unmerged closeout branch to a focused S4C branch while preserving its documentation commits, then record the configuration-only amendment before coding. If accounting policy inputs are selected, complete the adopted decision table without inventing values or lifting acceptance gates. This PLAN-only successor records the known closeout parent; `git rev-parse HEAD` identifies the complete local handoff tip.
+
+
+### P25-S4C selection — 2026-10-15 (America/Denver)
+
+Owner answered the pending scope choice: “Policy SCLX portability (Recommended).” This supersedes preceding unselected/pending-answer statements. Select P25-S4C IN_PROGRESS on `codex/P25-S4C-nmr-policy-sclx`, renamed from the fresh unmerged S4B closeout branch based on confirmed main `7943060ecc66cb747921ea3edfc0204cbb402218`; preserve its three local documentation commits. PR: none; no publication authorization for this slice is inferred. S4B native acceptance remains unrecorded; parent S4/D03/P25-S3 financial gates remain unchanged.
+
+Governing scope and required reading: [S4C portability contract](P25-S4C-nmr-policy-sclx.md), S4B configuration, S4A accepted framework, adopted correction program, SCLX specification and the three UI design rules. Required inspection: current NmrPolicyVersion/Service/UI, V81, SCLX snapshot/serializer/validator/preview/native identities/commit, authorization and existing service/interchange/preview tests. Fresh merged compile passed; focused existing policy/export/authorization baseline passed 10 tests with zero failures/errors/skips.
+
+Deliver optional versioned extension, retained UUID/save hash/source and interval facts, strict preview validation and conflict choices, atomic COMPANY_ADMIN import through existing Save, deterministic export/counts, no defaults or generated NMR accounting. Changed existing versions are retained: only Keep target is offered; ending a target interval uses its existing audited action before retrying a successor. No silent overwrite/extension of policy history. Detailed tests and handoff follow implementation.
+
+
+### P25-S4C implementation and verification checkpoint — 2026-10-15 (America/Denver)
+
+Implemented optional version-1 `nmrPolicies` through current-company snapshot/export validation and counts, strict shared codec, native UUID ownership/content classification, source and target overlap diagnostics, explicit Keep target conflicts and existing atomic SCLX Save. Shared configuration validation and authenticated COMPANY_ADMIN remain authoritative; unguarded compatibility import cannot write policies. Retain original request hash and saved source actor/time independently of current importer audit. Under the company lock recheck actual policy content/ownership/intervals before any write; identities and operation/factual audit use the same transaction. No migration, seed/default rate, or generated NMR ledger entry was added. Old files without the extension remain valid.
+
+Added five round-trip/strict-input/authorization/rollback/conflict/race tests and one real preview/Save JavaFX regression. Coverage includes ended history and original Save retry after target restart, distinct source/import actors, exact native reuse and no-op replay, malformed/duplicate/overlapping source data, foreign-company UUID rejection, target history protection, source-win denial, early and operation-audit-boundary rollback, no financial rows, live role changes and actual guarded Save persistence. Existing NMR pane geometry and shell tests remain in the expanded gate.
+
+Validation checkpoint: baseline 10 tests passed; focused service/interchange rerun 12 passed (six display skips). Initial clean verify passed 917 tests, zero failures/errors, 55 display skips. First expanded Xvfb run exposed one new-test error: the existing button gate cleared the policy denial tooltip when disable changed; the other 47 cases passed. Move the tooltip assignment after disable changes. The focused real preview/Save regression then passed under Xvfb, including role restoration and durable exact-rate persistence. Final expanded Xvfb and fresh clean verify are being rerun after that correction; do not treat the earlier clean result as final-source evidence. No current known business/service failure, GitHub result or human desktop pass is claimed.
+
+Changed documents: PLAN, selected [S4C contract](P25-S4C-nmr-policy-sclx.md), adopted program, S4B's superseded omission note, SCLX specification, operation matrix and editor guidelines. Relative document links and staged whitespace checks passed. No private workbook, donor source, generated target file or scratch asset is staged. PR: none; no publication occurred. Next: complete final gates, record actual results/commit, then hand off the local reviewed change; publish only after explicit owner authorization under AGENTS §5. Full financial NMR gates remain unchanged.
+
+
+### P25-S4C final local verification and review handoff — 2026-10-15 (America/Denver)
+
+Status: VERIFYING, local branch `codex/P25-S4C-nmr-policy-sclx`, based on merged main `7943060ecc66cb747921ea3edfc0204cbb402218`. The preceding in-progress test checkpoints are superseded by these final results. PR/publication: none in this run. Implementation and documentation are reviewable locally; full accounting remains BLOCKED on its separate D03/P25-S3 gates. S4B human native acceptance remains unrecorded.
+
+Final offline **mvn clean verify passed 917 tests, zero failures/errors, 55 display skips**, BUILD SUCCESS (2026-10-16 01:12:38 UTC). The workflow's complete expanded **Xvfb gate passed 48 tests, zero failures/errors/skips**, BUILD SUCCESS (01:16:04 UTC), including all six PaneSaveCoverage cases and four NMR pane cases. The policy preview/Save regression now covers ADMIN -> ACCOUNTANT -> VIEWER -> ACCOUNTANT -> ADMIN, denial explanations, restored Save readiness and actual guarded H2 persistence with exact rate. Both relevant permission changes refresh through weak listeners, with the policy explanation applied after the existing button gate. Initial tooltip failure is corrected; no known failure remains from executed final checks. Source/interchange round trips and injected early/operation-audit rollback passed in the final full suite. No application/test changes follow these results.
+
+Final scope: selected-company deterministic policy export/counts and strict optional versioned import, original save UUID/hash/actor/time and all source/current interval facts, explicit immutable-history conflicts, foreign identity/overlap/race protection, authenticated COMPANY_ADMIN writes and atomic policy/identity/audit persistence through existing Save. No schema migration, defaults, financial assessment/remittance or generated NMR entry. Older files without policy extension remain supported. Changed documents are listed in the checkpoint above; [owner checks](P25-S4C-nmr-policy-sclx.md) use separate disposable databases. Required UI rules, donor design alternatives, staged diff/whitespace and governing-document relative links were reviewed. Tracked build outputs, private originals and scratch files are excluded.
+
+Remaining: owner review/native desktop acceptance, explicit MR publication authorization, actual published-head GitHub checks and merge. No new GitHub result or human desktop acceptance is inferred from local Xvfb. Prepared MR text is in local scratch `work/p25-s4c-mr-body.md` under `/workspace`; it records concrete behavior and these actual gates. Next exact action after authorization: confirm clean local tip/current main, repository and absent/expected remote task branch, reproduce the reviewed local commit sequence with matching trees and no force, open the authorized MR, inspect its actual-head clean/repeat/Xvfb workflow and correct any failure before owner merge. Do not advance parent S4 accounting or invent policy inputs.

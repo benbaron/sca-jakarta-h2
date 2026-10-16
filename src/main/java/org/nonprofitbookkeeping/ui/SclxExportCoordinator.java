@@ -298,6 +298,7 @@ final class SclxExportCoordinator implements SclxExportActions
                 + "\n  Period-close ranges: " + counts.periodCloseRanges()
                 + "\n  Period-close events: " + counts.periodCloseEvents()
                 + "\n  Audit events: " + counts.auditEvents()
+                + "\n  NMR policy versions: " + counts.nmrPolicyVersions()
                 + "\n  Total entities: " + counts.totalEntities()
                 + "\n\nWarnings: " + counts.warnings()
                 + "\nValidation messages:" + messages

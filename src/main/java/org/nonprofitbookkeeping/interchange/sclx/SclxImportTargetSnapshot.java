@@ -19,10 +19,12 @@ record SclxImportTargetSnapshot(
         Map<ExternalIdentityKey, IdentityFact> identities,
         Map<NativePortableKey, NativePortableFact> nativePortableIdentities,
         List<ClosedRange> closedRanges,
-        Set<String> finalizedTransactionLocalIds)
+        Set<String> finalizedTransactionLocalIds,
+        List<org.nonprofitbookkeeping.service.NmrPolicyImport> nmrPolicies)
 {
     SclxImportTargetSnapshot
     {
+        nmrPolicies = List.copyOf(nmrPolicies);
         companyCode = requireText(companyCode, "companyCode");
         companyName = requireText(companyName, "companyName");
         accountsByCode = Map.copyOf(Objects.requireNonNull(accountsByCode, "accountsByCode"));
@@ -34,6 +36,17 @@ record SclxImportTargetSnapshot(
         closedRanges = List.copyOf(Objects.requireNonNull(closedRanges, "closedRanges"));
         finalizedTransactionLocalIds = Set.copyOf(Objects.requireNonNull(
                 finalizedTransactionLocalIds, "finalizedTransactionLocalIds"));
+    }
+
+    SclxImportTargetSnapshot(String companyCode, String companyName, boolean populated,
+            boolean operationalDataPopulated, Map<String, TargetAccount> accountsByCode,
+            Map<String, TargetFund> fundsByCode, Map<String, TargetActivity> activitiesByCode,
+            Map<ExternalIdentityKey, IdentityFact> identities,
+            Map<NativePortableKey, NativePortableFact> nativePortableIdentities,
+            List<ClosedRange> closedRanges, Set<String> finalizedTransactionLocalIds)
+    {
+        this(companyCode, companyName, populated, operationalDataPopulated, accountsByCode, fundsByCode,
+                activitiesByCode, identities, nativePortableIdentities, closedRanges, finalizedTransactionLocalIds, List.of());
     }
 
     /** Compatibility constructor for snapshots that do not model pre-existing activities. */

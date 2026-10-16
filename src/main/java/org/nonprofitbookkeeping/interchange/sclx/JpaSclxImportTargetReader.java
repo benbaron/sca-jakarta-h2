@@ -68,7 +68,11 @@ final class JpaSclxImportTargetReader implements SclxImportTargetReader
                     SclxNativePortableIdentity.read(em, nativePortableKeys);
             List<SclxImportTargetSnapshot.ClosedRange> closedRanges = closedRanges(em, company);
             Set<String> finalizedTransactions = finalizedTransactionIds(em, company);
-            boolean operationalDataPopulated =
+            var policies = em.createQuery("from NmrPolicyVersion p where p.company = :company",
+                            org.nonprofitbookkeeping.model.NmrPolicyVersion.class)
+                    .setParameter("company", company).getResultList().stream()
+                    .map(org.nonprofitbookkeeping.service.NmrPolicyService::importValue).toList();
+            boolean operationalDataPopulated = !policies.isEmpty() ||
                     count(em, "select count(t) from Txn t where t.company = :company", company) > 0L
                     || count(em, "select count(c) from BudgetCategory c where c.company = :company", company) > 0L
                     || count(em, "select count(p) from BudgetPlan p where p.company = :company", company) > 0L
@@ -97,7 +101,7 @@ final class JpaSclxImportTargetReader implements SclxImportTargetReader
                     identities,
                     nativePortableIdentities,
                     closedRanges,
-                    finalizedTransactions);
+                    finalizedTransactions, policies);
         }
     }
 
