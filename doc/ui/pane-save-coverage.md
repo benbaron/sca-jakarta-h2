@@ -25,6 +25,8 @@ File -> Save and the toolbar Save remain present on every destination. Editable 
 | Funds | Save; File -> Save | `FundAdminService` |
 | Fund Transfers | Save; File -> Save | `FundTransferService`; retained linked history corrects by explicit reversal |
 | Events / Activities | Save; File -> Save | `ActivityAdminService`; active/inactive lifecycle unchanged |
+| Administration -> NMR Policies | Save Policy Version; selected-subpane File/toolbar Save | `NmrPolicyService.save`; blank New Version only, retained history read-only, no accounting writes |
+| NMR End Selected Version dialog | Save End Date | `NmrPolicyService.endVersion`; explicit date/reason, atomic audit; invalid Save preserves dialog inputs |
 | Administration -> Preferences | Save; File -> Save | `SettingsPanel.onSave`; existing machine/company preference scopes |
 | Administration -> Company Admin profile | Save; File -> Save | `CompanyAdminPanel.saveCompany` -> `CompanySessionController` |
 | Company Admin reporting defaults | Save Reporting Defaults | Existing `reportingDefaultsChanged` -> company preferences; choice changes continue to save immediately; company profile Save remains a separate operation |

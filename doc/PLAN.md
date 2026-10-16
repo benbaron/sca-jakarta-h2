@@ -1,12 +1,12 @@
 ---
-plan_version: 354
+plan_version: 361
 active_phase: P25
-active_slice: P25-S4A
+active_slice: P25-S4B
 active_status: VERIFYING
-active_branch: codex/P25-S4A-nmr-contract-proposal
-active_pull_request: 368
-active_head: 77a2333a5c756e4ca11f4bdf7a1e18c7a933a51a
-next_action: "Inspect MR #368 final-head clean/repeat/Xvfb checks and repair failures; owner reviews/merges the accepted framework. Complete actual D03 policy inputs and P25-S3 acceptance before unblocking S4 implementation."
+active_branch: codex/P25-S4B-nmr-policy-configuration
+active_pull_request: 369
+active_head: b62eca1dd8ced24f6085213d634b2d93d63578de
+next_action: "Inspect MR #369 final-head GitHub clean/repeat/Xvfb checks, repair failures and record actual results before owner merge. Native owner acceptance and full NMR accounting gates remain outstanding."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,7 +37,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | VERIFYING — S4A D03 proposal prepared; S1/S2 merged, S3 VERIFYING for desktop acceptance; S4 implementation remains BLOCKED |
+| P25 | Transfers, payment references, reporting classification | IN_PROGRESS — S4B configuration-only scope selected; S1/S2/S4A DONE; S3 VERIFYING; full S4 accounting remains BLOCKED |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -685,7 +685,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S2 | Add structured payment/check references (G9) | DONE | P25-S1 merged; owning contract and D01–D10 gates as applicable |
 | P25-S3 | Complete check exception and reconciliation workflows (G9) | VERIFYING | PR #364 merged in local history; live main and final-head CI confirmed; owner desktop acceptance outstanding; D04 gates stale-triggered accounting only |
 | P25-S4 | Implement the adopted NMR accounting contract (G10) | BLOCKED | P25-S3 closeout evidence and unresolved D03 NMR contract/rates/exemptions/effective dates/legal-entity mapping; other applicable D01–D10 gates |
-| P25-S4A | Prepare D03 NMR accounting-contract proposal (documentation only) | VERIFYING | Owner authorized proposal preparation; policy adoption is not implied and parent S4 implementation remains BLOCKED |
+| P25-S4A | Prepare D03 NMR accounting-contract proposal (documentation only) | DONE | Owner accepted framework; MR #368 merged at 5894e9ce; final-head clean/repeat/Xvfb CI passed; actual policy inputs remain outstanding for S4 implementation |
+| P25-S4B | Company-owned dated NMR policy configuration | VERIFYING | Owner explicitly selected configuration first, with no default rates or accounting entries; independent prerequisite only, parent S4 financial gate retained |
 | P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | P25-S4 merged; owning contract and D01–D10 gates as applicable |
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -1407,3 +1408,71 @@ Owner accepted the framework and explicitly authorized publication with “accep
 Opened [MR/PR #368](https://github.com/benbaron/sca-jakarta-h2/pull/368) targeting main, ready for review (not a draft), initial head `77a2333a5c756e4ca11f4bdf7a1e18c7a933a51a`. The MR records owner acceptance, exact scope, existing-source local Maven evidence (898 tests, zero failures/errors, 49 headless skips), passing document arithmetic/fingerprint/link/coverage checks and remaining policy inputs. Initial workflow lookup returned no run yet; no CI success is claimed. This documentation-only ledger is included under the same authorization. Its active_head records the known remote parent because a successor cannot embed its own SHA; verify final branch/PR tip and actual-head clean/repeat/Xvfb results.
 
 S4A stays VERIFYING until CI/merge. The custodial-liability framework is accepted, but D03 remains partially resolved while actual policy inputs are missing; P25-S4 implementation and P25-S3 native acceptance remain gated. No implementation or desktop result is inferred from this documentation MR. Next exact action: inspect the final MR head's required workflow, correct failures and record actual results before owner merge; then carry closure forward from confirmed main while retaining the outstanding input/acceptance gates.
+
+
+### P25-S4A closeout / next-slice prerequisite check — 2026-10-14 (America/Denver)
+
+Owner reports MR #368 merged and requests the next slice. GitHub confirms merge `5894e9ce46b79f34bd6e68cc3a6b6c091fd9b4f9` into current main (2026-10-15 00:16:43 UTC / 2026-10-14 America/Denver). Exact final head `7cc3dced0621c5ab688427156e04dab9118b0a3b` passed [Maven run 38657888270](https://github.com/benbaron/sca-jakarta-h2/actions/runs/38657888270), job `116172211446`: clean headless verification, repeat tests and production Xvfb all succeeded. The owner accepted the framework before publication; the documentation-only S4A contract is DONE. Earlier MR/publication-pending next actions are historical. The merged S4A branch is not reused; this closeout is on fresh `codex/P25-S4-closeout` from confirmed main. No new PR is open.
+
+The next planned accounting implementation is parent P25-S4, still BLOCKED by the accepted contract's actual D03 inputs and P25-S3 native acceptance. Approval of a framework or its merge cannot supply an applicable rate/exemption/date/entity/merchant value or prove a desktop pass. AGENTS §3.2 requires “BLOCKED: do not implement.” Do not bypass that gate by silently adding a configuration sub-slice.
+
+Owner clarification requested during this run: first deliver company policy configuration with no default rates or accounting entries, or provide an approved actual policy for the full workflow. A configuration-first answer would explicitly establish a bounded independent prerequisite slice while leaving assessment, collection/remittance accounting and the parent acceptance gates blocked. No such slice is activated before the answer. Existing policy requirements remain as recorded in the accepted contract.
+
+Completed: verified merge/final CI, closed S4A, cleared obsolete active MR/branch references and identified the exact next prerequisite. Remaining: owner's scope answer or actual policy inputs/acceptance; any subsequent implementation requires its own current-source inspection, baseline and vertically coherent tests. Changed document: PLAN only. Validation: exact-head GitHub evidence above, fresh offline `mvn -DskipTests compile` BUILD SUCCESS at the new merged base, and local document/whitespace/link/status checks passed. No new local full-suite, feature test or native acceptance is claimed. Next exact action: incorporate the owner's answer into the owning contract and slice ledger, then select one allowed slice on a focused branch from current main. If full workflow is selected, obtain the actual applicable D03 answers and P25-S3 acceptance before marking it READY.
+
+Verified local closeout commit `58559d024f8bdeab28e4d425ebf95696958c92a3`, tree `90763bb028d1497b766942d60994b67bf8c04d33`. This documentation-only successor records the known parent; `git rev-parse HEAD` identifies the full local tip. No closeout publication is claimed. Owner scope clarification remains pending before dependent implementation.
+
+
+### P25-S4B selection and bounded scope amendment — 2026-10-14 (America/Denver)
+
+Owner answered the pending scope clarification: “Build policy configuration first, with no default rates or accounting entries (Recommended).” This explicitly permits a configuration-only prerequisite slice independently of unresolved full-workflow inputs. Select P25-S4B IN_PROGRESS on `codex/P25-S4B-nmr-policy-configuration`, a rename of the fresh unmerged closeout branch based on confirmed main `5894e9ce46b79f34bd6e68cc3a6b6c091fd9b4f9`, preserving its local S4A closeout commits. PR: none. This supersedes the preceding pending-answer statements; no actual rate, exemption or financial transaction is inferred.
+
+Deliver H2-backed company-owned dated/sourced policy versions, real Administration New/Save/history, existing COMPANY_ADMIN write gating and authenticated factual audit, overlap/validation/concurrency protections, no default rates or sample policy, and migration/service/UI coverage. Saved policy facts are retained; rate/source history is not overwritten. Full assessment/collection/remittance, liability/cash reporting and NMR interchange remain outside this slice. Parent S4 and P25-S3/D03 financial acceptance gates remain unchanged.
+
+Required reading: AGENTS, PLAN, adopted program/S4A contract, UI rules/editor/interface matrix, P20 authorization, existing administration/service/model/migration/test patterns. Required inspection: AdministrationPanel, UiServiceRegistry, persistence registration, Company/Merchant administration, company ownership, audit, migration constraints, company formatting/table/divider binders and existing FX/service tests. Fresh merged-base offline compile already passed before selection, with unchanged application source; inspect donor configuration patterns as reference only. Record any design choice in the S4B contract before coding.
+
+Governing implementation/owner-check contract for selected S4B: [company NMR policy configuration](P25-S4B-nmr-policy-configuration.md). Saved terms are immutable; explicit reasoned validity shortening is the only history mutation. Donor configuration patterns were reviewed and not imported; normalized current-repository JPA/authorization/audit patterns are retained.
+
+
+### P25-S4B implementation / local verification — 2026-10-14 (America/Denver)
+
+Selected configuration-only vertical slice is implemented on `codex/P25-S4B-nmr-policy-configuration`; no PR or new remote branch has been published. The branch retains its two local S4A closeout/handoff prerequisites from current merged base `5894e9ce46b79f34bd6e68cc3a6b6c091fd9b4f9`. S4B is VERIFYING, not DONE; parent S4 financial and S3/D03 acceptance gates remain unchanged.
+
+Completed: V81 normalized company-owned retained policy versions with no seed/default terms, explicit source/rate/currency/date validation, inclusive overlap checks serialized on the company lock, request UUID/fingerprint exact retry, same-company authenticated reads and COMPANY_ADMIN writes, reasoned validity shortening, atomic factual audit and rollback. Administration -> NMR Policies exposes blank New Version, Save Policy Version, retained read-only history, Refresh, and End Selected Version / Save End Date. Nested File/toolbar Save follows the selected draft. Company formatting preserves the exact rate through focus changes; numeric/date sorting and company-owned column/divider state use the established binders. No accounting service or ledger/supplemental/fund-transfer write is introduced. Retention and SCLX omission are visible; whole-database backup remains the supported complete transfer.
+
+Focused checks cover restart/idempotency/changed or foreign request, company/role/session guards, inactive-company denial, explicit zero and missing/invalid input, inclusive intervals/gaps/categories/companies, concurrent overlapping saves, audit before/after/reason and induced audit-failure rollback, nondestructive V80 upgrade/repeat/untracked recovery, real nested Save, live permissions, dirty-cancel preservation, rate precision, end-date validation, typed sorting, column-state restore and scaled two-axis geometry. Development desktop checks caught and repaired end-button readiness after saved-row reselection and sort-state loss from replacing table items on reload. Desktop tests now attach newly selected/reopened ScrollPane skins before looking up controls. These were corrected during this slice, not deferred failures.
+
+Documents updated: PLAN, S4B governing/manual-check contract, adopted program, S4A scope amendment, interface operation matrix, pane Save coverage, persistence authority inventory, and SCLX specification. Workflow includes NmrPoliciesPanelTest in the existing expanded Xvfb gate. Native visual/owner acceptance is still pending under the [manual checks](P25-S4B-nmr-policy-configuration.md); Xvfb geometry is not claimed as native owner acceptance.
+
+Offline `mvn clean verify` passed with **911 tests, zero failures/errors, 54 display-related skips**, BUILD SUCCESS (2026-10-15 01:04 UTC). The first expanded Xvfb run exposed six existing shell-routing fixture errors: UserAppStateStore restored a previously deleted temporary database; a dummy Journal drill context then leaked into the following fixture and opened a modal prompt. That failed run was stopped after diagnosis. The narrowly scoped prerequisite fix makes ProductionWorkspaceCommandRoutingTest use a nonpersistent active-test session store and clears its dummy context during cleanup; production session behavior is unchanged. The focused configuration/routing/Save run passed **16 tests, zero failures/errors/skips**. The final post-fixture offline clean gate passed again with **911 tests, zero failures/errors, 54 display-related skips**, BUILD SUCCESS at 2026-10-15 01:13 UTC. The final expanded workflow Xvfb gate passed **47 tests, zero failures/errors/skips**, BUILD SUCCESS at 2026-10-15 01:14 UTC. This includes the corrected routing fixture, following Merchant regression (no leaked modal), new policy pane and real nested File/toolbar Save. Final local logs: `/workspace/work/nmr-clean-verify-final.log` and `/workspace/work/nmr-expanded-xvfb-final.log`; these are local evidence, not committed application data. Final diff, local documentation links, migration scope, service/UI boundaries and whitespace checks passed. No unresolved functional failure remains in executed final checks. All application and test behavior was frozen before the final clean/expanded gates; only verification documentation follows. No GitHub CI for this new source is claimed. Remaining: owner review, authorized publication/exact-head CI, native owner acceptance and merge. Next exact action: review this local configuration slice; when publication is explicitly requested, preserve its reviewed commit/tree sequence on the focused branch, open the MR and inspect the required exact-head workflow. Do not mark S4B DONE or unlock full NMR accounting from local verification.
+
+
+### P25-S4B local commit handoff
+
+Reviewed implementation commit `8df81bfbba07b30177b8701dcbede71257cd3bed`, tree `fd344fe814bd26ea509e3e650d82b98552d3569b`, includes the complete configuration slice, migration, tests, workflow fixture correction and current governing/manual-check documentation. Final gates: clean verify 911 tests / zero failures/errors / 54 display skips; expanded Xvfb 47 / zero failures/errors/skips. Source and test behavior did not change after those final gates. No known executed-check failure remains; the earlier failed desktop attempt is explained above. This documentation-only successor records the known implementation parent in active_head; `git rev-parse HEAD` identifies the full local tip.
+
+Branch: `codex/P25-S4B-nmr-policy-configuration`. PR/remote publication: none. Status: VERIFYING pending owner review, publication/exact-head GitHub CI, native acceptance and merge. No new financial workflow is authorized or unlocked. Next exact action: review this local branch and the S4B manual checks; on an explicit publication request, publish the preserved local sequence without force updates, verify matching trees/remote tip, open the MR, run/inspect the required clean/repeat/Xvfb workflow and record actual-head results. Native acceptance is not inferred from Xvfb.
+
+
+### P25-S4B owner review / publication authorization — 2026-10-15 (America/Denver)
+
+Owner reviewed the completed local handoff and said “good. move to the next action.” The immediately recorded next action is publication and actual-head CI; proceed with that accepted configuration slice. This does not authorize merge, certify native acceptance, supply missing actual D03 inputs, or unlock financial NMR implementation.
+
+Fresh checks confirm the clean local branch `codex/P25-S4B-nmr-policy-configuration` at `93e46b20b1cba8e1879a7002fcc222fbe1cb803f`, current GitHub main `5894e9ce46b79f34bd6e68cc3a6b6c091fd9b4f9`, and no remote task branch/MR. Preserve both local S4A closeout prerequisites, the reviewed implementation and its verification handoff, followed by this documentation-only authorization record. Use the connected GitHub service, compare every published commit tree with its local tree, and advance only the expected branch parent with force disabled. Local final clean verification remains 911 tests / zero failures/errors / 54 display skips; expanded Xvfb remains 47 / zero failures/errors/skips. No application/test behavior changes follow those gates. Native acceptance remains pending; no new GitHub success is claimed before the MR checks run.
+
+
+### P25-S4B authorized MR publication — 2026-10-15 (America/Denver)
+
+Owner accepted the local slice and requested the recorded next action with “good. move to the next action.” Published through the connected GitHub service after confirming clean local state, current main, repository, absent remote task branch/MR and the reviewed five-commit sequence. Created each remote tree from the corresponding local changes and required exact tree-SHA equality; preserved commit messages and order. Created the task branch from confirmed main and advanced it with expected parent `5894e9ce46b79f34bd6e68cc3a6b6c091fd9b4f9`, force disabled.
+
+| Local commit | Published commit | Matching tree |
+|---|---|---|
+| `58559d024f8bdeab28e4d425ebf95696958c92a3` | `55de503117f57a4da51e5876ab6ab753845e4570` | `90763bb028d1497b766942d60994b67bf8c04d33` |
+| `105aa4c8b13e181bb9cb3e3e78d296a06fdffcd9` | `59d58830b0da026ad0895c4439bce64a0ec610a4` | `ba8522fbeacbe044cc9192bd89398b9d7eee0251` |
+| `8df81bfbba07b30177b8701dcbede71257cd3bed` | `30a52f78dc1eccd62613ffce22912b13b12f044b` | `fd344fe814bd26ea509e3e650d82b98552d3569b` |
+| `93e46b20b1cba8e1879a7002fcc222fbe1cb803f` | `5ba2830011a8c531ee186a5d08d65988ffbb1404` | `b28535d88731e7a668d3a5a142cc1b879912df21` |
+| `f3f75753b204243c36d78dd014d6aaf5c7d85041` | `b62eca1dd8ced24f6085213d634b2d93d63578de` | `565a5fc8db36d5c0992cfdc15c6c299e80117358` |
+
+Opened [MR/PR #369](https://github.com/benbaron/sca-jakarta-h2/pull/369), **Add company-owned dated NMR policy configuration**, ready for review (not draft), targeting main from `codex/P25-S4B-nmr-policy-configuration`. Initial published head `b62eca1dd8ced24f6085213d634b2d93d63578de` has matching tree `565a5fc8db36d5c0992cfdc15c6c299e80117358`. The MR records actual local clean results (911 tests, zero failures/errors, 54 display skips), expanded Xvfb results (47 tests, no failures/errors/skips), the fixture-only prerequisite correction and native acceptance notes. Initial-head [Maven run 38742195674](https://github.com/benbaron/sca-jakarta-h2/actions/runs/38742195674) is in progress; no new GitHub success is claimed yet.
+
+This documentation-only publication ledger follows the same authorization. active_head records its known remote parent because a successor cannot embed its own SHA. Verify the final branch/PR tip and inspect that exact head's required clean/repeat/expanded Xvfb checks. No application or test behavior changes follow the local gates. S4B remains VERIFYING; native owner acceptance, CI and separately authorized merge remain outstanding. No financial NMR workflow or default rate is introduced, and parent S4/S3/D03 gates are unchanged. Next exact action: inspect the final MR head's workflow/jobs, repair failures if any, update the MR validation with actual results and leave a precise verification handoff before owner merge.

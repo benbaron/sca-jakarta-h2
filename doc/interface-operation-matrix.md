@@ -51,6 +51,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Budget Categories, Payees / Counterparties, Merchants | yes | yes | no | Existing stable-ID maintenance services. |
 | Administration — Preferences | no | yes | no | Capabilities follow the selected inner tab. |
 | Administration — Company/User maintenance | yes | yes | no | Stable durable-record maintenance. |
+| Administration — NMR Policies | yes | new version only | no | Save Policy Version; retained terms read-only, End Selected Version saves a reasoned interval change. COMPANY_ADMIN. |
 | Administration — Authentication | no | yes | no | Selected Authentication exposes Save Timeout, with separate Save Password. |
 | Administration — Ownership repair | no | ready repair only | no | Save Ownership Assignment retains confirmation and DATABASE_ADMIN. |
 | Reconciliation | no | selected Review / Checks subpane | no | Save Unresolved or Save Review; finalized history is read-only. |
@@ -146,3 +147,7 @@ Bank Reconciliation → Checks / Exceptions provides company/bank-scoped factual
 ## P17-C13 Save coverage
 
 All production panes/subpanes are audited in [pane Save coverage](ui/pane-save-coverage.md). Every editable draft has a visible Save route to the existing service; shared details state their owning save scope. Selected-tab Save labels/readiness propagate through composite panes to File/toolbar controls. Inventory Save requires an open item editor, Budget Save requires DRAFT, and read-only panes explain disabled Save. Explicit operational saves and import confirmations remain distinct from profile edits; no new persistence or accounting policy is introduced.
+
+## P25-S4B policy configuration
+
+Administration -> NMR Policies uses `NmrPolicyService` / company-owned `NmrPolicyVersion` (V81). New Version is blank; Save Policy Version publishes through selected-subpane File/toolbar routing. End Selected Version has its own Save End Date dialog; failed validation retains its inputs. Terms cannot be edited/deleted; visible retention and SCLX omission help explains why. These controls save configuration and factual audit only, with no seeded rate or accounting entry. See [scope and manual checks](P25-S4B-nmr-policy-configuration.md).
