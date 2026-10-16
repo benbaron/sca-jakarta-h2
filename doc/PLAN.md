@@ -1,11 +1,11 @@
 ---
-plan_version: 366
+plan_version: 367
 active_phase: P25
 active_slice: P25-S4C
 active_status: VERIFYING
 active_branch: codex/P25-S4C-nmr-policy-sclx
 active_pull_request: null
-active_head: 61eca28eb293616d0592951f3e3743e3a3f7f6ea
+active_head: e728debb588855527f0f3bc607e5d00d105ea2d0
 next_action: "Review the completed local S4C change and owner checks; after explicit publication authorization, publish the reviewed commits without force, open the MR and inspect its actual-head clean/repeat/Xvfb CI. Parent S4 accounting remains blocked."
 ---
 
@@ -1548,3 +1548,6 @@ Final offline **mvn clean verify passed 917 tests, zero failures/errors, 55 disp
 Final scope: selected-company deterministic policy export/counts and strict optional versioned import, original save UUID/hash/actor/time and all source/current interval facts, explicit immutable-history conflicts, foreign identity/overlap/race protection, authenticated COMPANY_ADMIN writes and atomic policy/identity/audit persistence through existing Save. No schema migration, defaults, financial assessment/remittance or generated NMR entry. Older files without policy extension remain supported. Changed documents are listed in the checkpoint above; [owner checks](P25-S4C-nmr-policy-sclx.md) use separate disposable databases. Required UI rules, donor design alternatives, staged diff/whitespace and governing-document relative links were reviewed. Tracked build outputs, private originals and scratch files are excluded.
 
 Remaining: owner review/native desktop acceptance, explicit MR publication authorization, actual published-head GitHub checks and merge. No new GitHub result or human desktop acceptance is inferred from local Xvfb. Prepared MR text is in local scratch `work/p25-s4c-mr-body.md` under `/workspace`; it records concrete behavior and these actual gates. Next exact action after authorization: confirm clean local tip/current main, repository and absent/expected remote task branch, reproduce the reviewed local commit sequence with matching trees and no force, open the authorized MR, inspect its actual-head clean/repeat/Xvfb workflow and correct any failure before owner merge. Do not advance parent S4 accounting or invent policy inputs.
+
+
+Verified local implementation commit `e728debb588855527f0f3bc607e5d00d105ea2d0`, tree `8d7a0010993d6fc94f01954029924ea6a49f82f9`. This documentation-only successor records that known source head because a commit cannot embed its own SHA; `git rev-parse HEAD` identifies the complete local handoff tip. Final application/test bytes are unchanged from the successful clean/Xvfb gates. All S4C commits remain local on `codex/P25-S4C-nmr-policy-sclx`, with the three preserved S4B closeout documentation commits. Worktree is clean after the handoff; no new MR, GitHub S4C pass, merge or human native acceptance is claimed.
