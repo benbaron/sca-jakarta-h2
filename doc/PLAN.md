@@ -1,12 +1,12 @@
 ---
-plan_version: 361
+plan_version: 362
 active_phase: P25
 active_slice: P25-S4B
 active_status: VERIFYING
 active_branch: codex/P25-S4B-nmr-policy-configuration
 active_pull_request: 369
-active_head: b62eca1dd8ced24f6085213d634b2d93d63578de
-next_action: "Inspect MR #369 final-head GitHub clean/repeat/Xvfb checks, repair failures and record actual results before owner merge. Native owner acceptance and full NMR accounting gates remain outstanding."
+active_head: c51d7f133ee8d03f97cc9f6f22120693e98c1915
+next_action: "Owner completes S4B native acceptance and separately merges MR #369 when ready. After merge, verify current main and carry this CI closeout forward; keep full NMR accounting blocked on its policy/acceptance gates."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1476,3 +1476,14 @@ Owner accepted the local slice and requested the recorded next action with “go
 Opened [MR/PR #369](https://github.com/benbaron/sca-jakarta-h2/pull/369), **Add company-owned dated NMR policy configuration**, ready for review (not draft), targeting main from `codex/P25-S4B-nmr-policy-configuration`. Initial published head `b62eca1dd8ced24f6085213d634b2d93d63578de` has matching tree `565a5fc8db36d5c0992cfdc15c6c299e80117358`. The MR records actual local clean results (911 tests, zero failures/errors, 54 display skips), expanded Xvfb results (47 tests, no failures/errors/skips), the fixture-only prerequisite correction and native acceptance notes. Initial-head [Maven run 38742195674](https://github.com/benbaron/sca-jakarta-h2/actions/runs/38742195674) is in progress; no new GitHub success is claimed yet.
 
 This documentation-only publication ledger follows the same authorization. active_head records its known remote parent because a successor cannot embed its own SHA. Verify the final branch/PR tip and inspect that exact head's required clean/repeat/expanded Xvfb checks. No application or test behavior changes follow the local gates. S4B remains VERIFYING; native owner acceptance, CI and separately authorized merge remain outstanding. No financial NMR workflow or default rate is introduced, and parent S4/S3/D03 gates are unchanged. Next exact action: inspect the final MR head's workflow/jobs, repair failures if any, update the MR validation with actual results and leave a precise verification handoff before owner merge.
+
+
+### P25-S4B final-head GitHub verification / handoff — 2026-10-15 (America/Denver)
+
+This supersedes the preceding CI-pending next actions. [MR/PR #369](https://github.com/benbaron/sca-jakarta-h2/pull/369) is open, ready for review, unmerged and mergeable. Final published head `c51d7f133ee8d03f97cc9f6f22120693e98c1915`, tree `08d0adbac6540e3dd6f3bdaf4e85ed03ea687ff6`, passed [Maven run 38742484938](https://github.com/benbaron/sca-jakarta-h2/actions/runs/38742484938), job `116447616233`: clean headless verification, repeat tests and production JavaFX/Xvfb compliance all completed successfully; overall run/job conclusions are success. PR metadata was rechecked against that exact head and its description now records actual CI success. No application/test behavior changed after the local gates (911 clean tests / zero failures/errors / 54 display skips; expanded Xvfb 47 / zero failures/errors/skips). GitHub step success is confirmed independently; the counts quoted here remain the recorded local counts.
+
+Publication ledger mapping: local `ddd426a3c29bd444b092cf004bd4057e594907a4` -> published `c51d7f133ee8d03f97cc9f6f22120693e98c1915`, matching tree `08d0adbac6540e3dd6f3bdaf4e85ed03ea687ff6`. Native Git fetched the final branch and independently verified all six published trees, messages, ordered parents and the aggregate tree against their reviewed local equivalents. Remote updates used the expected parent with force disabled. No source, test, migration or workflow file remains unpublished.
+
+Completed: accepted S4B configuration implementation, governing/manual-check documentation, matched-tree publication, MR, final-head required GitHub checks and MR validation update. Remaining: explicit native owner acceptance and separately authorized merge; S4B remains VERIFYING until its completion contract is met. Full assessment/collection/remittance and parent S4/S3/D03 gates remain unchanged. No known functional failure remains from the executed final checks.
+
+This verification-only local PLAN successor intentionally preserves the already-green published MR head. Carry it forward with the next authorized publication or post-merge closeout; do not rewrite the reviewed implementation history. Its active_head records the verified remote source, while `git rev-parse HEAD` identifies the complete local handoff tip. Next exact action: owner performs the [S4B manual acceptance](P25-S4B-nmr-policy-configuration.md) and merges when ready; after an owner merge report, fetch/verify current main and the merged/final-head CI evidence, then start a fresh closeout/successor branch and select only an unblocked, authorized slice.
