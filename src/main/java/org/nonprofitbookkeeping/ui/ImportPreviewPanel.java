@@ -110,6 +110,8 @@ public class ImportPreviewPanel implements AppPanel
 	private final Button commitAccepted =
 		new Button("Save Accepted COA Rows");
 	private final Button previewCoa = new Button("Preview COA CSV…");
+    private final javafx.beans.value.ChangeListener<Boolean> nmrPolicyPermissionListener =
+            (observable, oldValue, newValue) -> updateSclxCommitAvailability();
 	private final Button previewSclx = new Button("Preview SCLX…");
 	private final Button repreviewSclx = new Button("Re-preview Same SCLX");
 	private final Button commitSclx = new Button("Save Previewed SCLX Import…");
@@ -349,6 +351,10 @@ public class ImportPreviewPanel implements AppPanel
 		commitAccepted.setOnAction(e -> commitAcceptedCoaRows());
 		UiPermissionGate.gate(commitAccepted, ApplicationPermission.BOOKKEEPING_WRITE, "Commit accepted Chart of Accounts rows");
 		UiPermissionGate.gate(commitSclx, ApplicationPermission.BOOKKEEPING_WRITE, "Import previewed SCLX data");
+        UiPermissionGate.deniedProperty(ApplicationPermission.COMPANY_ADMIN).addListener(
+                new javafx.beans.value.WeakChangeListener<>(nmrPolicyPermissionListener));
+        UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE).addListener(
+                new javafx.beans.value.WeakChangeListener<>(nmrPolicyPermissionListener));
 		UiPermissionGate.gate(saveBankCsvProfile, ApplicationPermission.BOOKKEEPING_WRITE, "Save a bank CSV mapping profile");
 		UiPermissionGate.gate(commitBankReview, ApplicationPermission.BOOKKEEPING_WRITE, "Commit previewed bank review rows");
 		commitAccepted.setId("commitAcceptedCoaRowsButton");
@@ -1820,9 +1826,15 @@ public class ImportPreviewPanel implements AppPanel
 		
 	}
 	
+    private static boolean hasNmrPolicies(SclxImportPreview preview)
+    {
+        return preview.operation().items().stream().anyMatch(item -> "NMR_POLICY_VERSION".equals(item.entityType()));
+    }
+
 	private boolean sclxCommitReady(SclxImportPreview preview)
 	{
 		return sclxPreviewEligible(preview) && !sclxMappingsDirty &&
+            (!hasNmrPolicies(preview) || UiPermissionGate.allows(ApplicationPermission.COMPANY_ADMIN)) &&
 			(!confirmLegacySclxAllocations.isManaged() || confirmLegacySclxAllocations.isSelected()) &&
 			(!confirmExistingCompanyImport.isManaged() ||
 				confirmExistingCompanyImport.isSelected()) &&
@@ -1837,7 +1849,11 @@ public class ImportPreviewPanel implements AppPanel
 		boolean ready = lastSclxSource != null && lastSclxPreview != null &&
 			lastSclxCommitService != null && sclxCommitReady(lastSclxPreview) &&
 			!sclxActor.getText().isBlank();
+        boolean policyDenied = lastSclxPreview != null && hasNmrPolicies(lastSclxPreview)
+                && !UiPermissionGate.allows(ApplicationPermission.COMPANY_ADMIN);
 		commitSclx.setDisable(!ready);
+        commitSclx.setTooltip(policyDenied ? new Tooltip(
+                "Importing saved NMR policy versions requires Company Administration permission (ADMIN/MANAGER).") : null);
 		
 	}
 	

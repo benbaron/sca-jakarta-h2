@@ -100,11 +100,11 @@ public final class SclxImportCommitService
             "FIXED_ASSET", "DEPRECIATION_RUN", "INVENTORY_ITEM", "INVENTORY_MOVEMENT",
             "BANK", "BANK_ACCOUNT", "BANK_IMPORT_BATCH", "BANK_STATEMENT_LINE",
             "BANK_IMPORT_ISSUE", "RECONCILIATION_SESSION", "RECONCILIATION_MATCH",
-            "PERIOD_CLOSE_RANGE", "PERIOD_CLOSE_EVENT", "AUDIT_EVENT");
+            "PERIOD_CLOSE_RANGE", "PERIOD_CLOSE_EVENT", "AUDIT_EVENT", "NMR_POLICY_VERSION");
     private static final Set<String> SUPPORTED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
             "supplementalDetails", "transactionBudgets", "paymentReferences", "fixedAssets", "inventory", "bankConfiguration",
-            "bankStatementFacts", "reconciliation", "periodClose", "auditHistory");
+            "bankStatementFacts", "reconciliation", "periodClose", "auditHistory", "nmrPolicies");
 
     private final Jpa jpa;
     private final Supplier<String> companyCodeSupplier;
@@ -274,6 +274,16 @@ public final class SclxImportCommitService
         SclxBankingImportData banking = SclxBankingImportData.parse(root);
         SclxPeriodCloseImportData periodClose = SclxPeriodCloseImportData.parse(root);
         SclxAuditHistoryImportData auditHistory = SclxAuditHistoryImportData.parse(root);
+        var nmrPolicies = SclxNmrPolicies.parse(root);
+        if (!nmrPolicies.isEmpty())
+        {
+            if (authorizationGuard == null)
+            {
+                throw new IllegalStateException("NMR policy import requires authenticated Company Administration authority.");
+            }
+            authorizationGuard.requireActor(ApplicationPermission.COMPANY_ADMIN,
+                    current.targetCompanyCode(), "import NMR policy versions");
+        }
         SclxTransactionDetailImportData details = SclxTransactionDetailImportData.parse(root);
         Map<String, String> transactionBudgetCodes = SclxTransactionBudgetExtension.parse(root);
         var paymentReferences = SclxPaymentReferences.parse(root);
@@ -302,6 +312,35 @@ public final class SclxImportCommitService
                         .filter(item -> item.nativePortableId() != null)
                         .forEach(item -> SclxNativePortableIdentity.requireUnchanged(
                                 em, company.getCode(), item));
+                Map<String, org.nonprofitbookkeeping.model.NmrPolicyVersion> writtenPolicies = new LinkedHashMap<>();
+                int policyWrites = 0;
+                if (!nmrPolicies.isEmpty())
+                {
+                    var policyService = new org.nonprofitbookkeeping.service.NmrPolicyService(
+                            jpa, companyCodeSupplier, authorizationGuard);
+                    for (var policy : nmrPolicies)
+                    {
+                        var item = required(previews, new EntityKey(SclxNmrPolicies.TYPE, policy.externalId()), "policy preview");
+                        org.nonprofitbookkeeping.model.NmrPolicyVersion saved;
+                        if (item.conflictChoice() == SclxImportConflictChoice.KEEP_TARGET)
+                        {
+                            saved = localEntity(em, item, org.nonprofitbookkeeping.model.NmrPolicyVersion.class);
+                            if (!saved.getCompany().getId().equals(company.getId()))
+                            {
+                                throw new IllegalStateException("NMR policy target ownership changed.");
+                            }
+                        }
+                        else
+                        {
+                            saved = policyService.importForInterchange(em, company, policy.value());
+                            if (item.localEntityId() == null)
+                            {
+                                afterBusinessWrite.accept(++policyWrites);
+                            }
+                        }
+                        writtenPolicies.put(policy.externalId(), saved);
+                    }
+                }
                 boolean allIdentical = current.operation().items().stream()
                         .allMatch(item -> item.identityMatch() == InterchangeIdentityMatch.IDENTICAL);
                 if (allIdentical)
@@ -311,7 +350,7 @@ public final class SclxImportCommitService
                             "SCLX_IDENTICAL_REIMPORT",
                             "Every governed core, extension, banking, reconciliation, period-close, audit-history, and correction fact was identical; no data changed.");
                 }
-                int writes = 0;
+                int writes = policyWrites;
                 if (!current.targetPopulated())
                 {
                     applyOrganization(company, root.path("organization"));
@@ -404,6 +443,8 @@ public final class SclxImportCommitService
                 recordBankingIdentities(em, company, current, previews, writtenBanking);
                 recordPeriodCloseIdentities(em, company, current, previews, writtenPeriodClose);
                 recordAuditHistoryIdentities(em, company, current, previews, writtenAuditHistory);
+                writtenPolicies.forEach((id, policy) -> recordIdentity(em, company, current, previews,
+                        SclxNmrPolicies.TYPE, id, policy.getId().toString()));
 
                 AuditEvent operationAudit = new AuditEvent();
                 operationAudit.setCompany(company);

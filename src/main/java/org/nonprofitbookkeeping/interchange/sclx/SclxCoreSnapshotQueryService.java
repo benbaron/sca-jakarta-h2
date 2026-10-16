@@ -193,7 +193,7 @@ public class SclxCoreSnapshotQueryService
                     .setParameter("company", company)
                     .getResultList();
 
-            return assembler.assemble(
+            SclxExportDocument document = assembler.assemble(
                     company,
                     accounts,
                     funds,
@@ -214,6 +214,14 @@ public class SclxCoreSnapshotQueryService
                     periodCloseEvents,
                     auditEvents,
                     exportedAt);
+            var policies = em.createQuery("from NmrPolicyVersion p where p.company = :company order by p.portableId",
+                            org.nonprofitbookkeeping.model.NmrPolicyVersion.class)
+                    .setParameter("company", company).getResultList();
+            var extensions = new java.util.LinkedHashMap<String, Object>(document.extensions().scaJakartaH2());
+            extensions.put(SclxNmrPolicies.KEY, SclxNmrPolicies.export(company.getCode(), policies));
+            return SclxExportDocument.version13(document.exportedAt(), document.organization(),
+                    document.chartOfAccounts(), document.funds(), document.budgets(), document.transactions(),
+                    new SclxExportDocument.Extensions(document.extensions().version(), extensions));
         }
     }
 }

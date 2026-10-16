@@ -131,6 +131,10 @@ The owner authorized this preparatory slice on 2026-10-13 (America/Denver). Deli
 
 Owner explicitly selected configuration-first on 2026-10-14. Deliver the [S4B contract](P25-S4B-nmr-policy-configuration.md) as an independent prerequisite: company-owned dated/sourced retained policy versions, real guarded Administration saves, no seeded rates or accounting entries. This bounded scope is permitted before full D03 values/P25-S3 acceptance; assessment/collection/remittance and the parent S4 accounting gate remain blocked.
 
+### P25-S4C — Policy-only SCLX portability
+
+Owner selected this independent prerequisite on 2026-10-15. Follow the [S4C contract](P25-S4C-nmr-policy-sclx.md): retained policy identities/metadata and effective intervals through governed export/preview/atomic guarded import. No default policies, rates or generated accounting; full S4 financial gates remain unchanged.
+
 ### P25-S5 — Add independent functional-expense classification (G10)
 
 **Work:** Confirm the meanings and permitted use of AR/OA/FR in the required forms. Add the adopted independent line classification, defaults with explicit override, missing-classification diagnostics, and report/export mappings. Preserve it through generated entries, corrections, and interchange.

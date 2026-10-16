@@ -77,6 +77,17 @@ final class SclxNativePortableIdentity
             {
                 continue;
             }
+            if (SclxNmrPolicies.TYPE.equals(entry.getKey()))
+            {
+                em.createQuery("from NmrPolicyVersion p join fetch p.company where p.portableId in :ids",
+                                org.nonprofitbookkeeping.model.NmrPolicyVersion.class)
+                        .setParameter("ids", entry.getValue()).getResultList().forEach(p -> result.put(
+                                new SclxImportTargetSnapshot.NativePortableKey(SclxNmrPolicies.TYPE, p.getPortableId()),
+                                new SclxImportTargetSnapshot.NativePortableFact(p.getId().toString(), p.getCompany().getCode(),
+                                        org.nonprofitbookkeeping.service.NmrPolicyService.importFingerprint(
+                                                org.nonprofitbookkeeping.service.NmrPolicyService.importValue(p)))));
+                continue;
+            }
             @SuppressWarnings("unchecked")
             List<Object[]> rows = em.createNativeQuery(spec.selectSql()
                             + " where " + spec.portableExpression() + " in (:portableIds)")
@@ -107,6 +118,8 @@ final class SclxNativePortableIdentity
     {
         return switch (entityType)
         {
+            case "NMR_POLICY_VERSION" -> org.nonprofitbookkeeping.service.NmrPolicyService.importFingerprint(
+                    SclxNmrPolicies.parseEntry(value).value());
             case "COUNTERPARTY" -> counterpartyFingerprint(
                     text(value, "displayName"), text(value, "kind"), nullableText(value, "email"),
                     nullableText(value, "phone"), nullableText(value, "notes"),
@@ -205,6 +218,7 @@ final class SclxNativePortableIdentity
         values.put("BANK_ACCOUNT", direct("company_bank_account", "e.portable_id", ""));
         values.put("BANK_IMPORT_BATCH", direct("bank_import_batch", "e.portable_id", ""));
         values.put("BANK_STATEMENT_LINE", direct("bank_statement_line", "e.portable_id", ""));
+        values.put("NMR_POLICY_VERSION", direct("nmr_policy_version", "e.portable_id", ""));
         values.put("AUDIT_EVENT", direct("audit_event", "e.portable_id", ""));
         values.put("DEPRECIATION_RUN", indirect(
                 "fixed_asset_depreciation_run e join fixed_asset p on p.id = e.fixed_asset_id",

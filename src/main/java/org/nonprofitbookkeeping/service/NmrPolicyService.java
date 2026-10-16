@@ -151,6 +151,66 @@ public final class NmrPolicyService
         }
     }
 
+    /** Restores one source version inside the caller's atomic interchange transaction. */
+    public NmrPolicyVersion importForInterchange(EntityManager em, Company company, NmrPolicyImport source)
+    {
+        guard.requireActor(ApplicationPermission.COMPANY_ADMIN, currentCompany(), "import NMR policy versions");
+        if (!em.getTransaction().isActive() || !em.contains(company)
+                || !company.getCode().equalsIgnoreCase(currentCompany()))
+        {
+            throw new IllegalArgumentException("Policy import requires the managed active company and caller transaction.");
+        }
+        lockedCompany(em, company.getCode());
+        var existing = em.createQuery("from NmrPolicyVersion p where p.portableId = :uuid", NmrPolicyVersion.class)
+                .setParameter("uuid", source.portableId()).getResultList();
+        if (!existing.isEmpty())
+        {
+            NmrPolicyVersion prior = existing.get(0);
+            requireOwner(company, prior);
+            if (!importValue(prior).equals(source))
+            {
+                throw new IllegalArgumentException("Saved NMR policy history differs; retain the target or resolve its interval before importing.");
+            }
+            return prior;
+        }
+        var retained = em.createQuery("from NmrPolicyVersion p where p.company = :company", NmrPolicyVersion.class)
+                .setParameter("company", company).getResultList();
+        if (retained.stream().anyMatch(p -> overlaps(view(p).terms(), source.terms())))
+        {
+            throw new IllegalArgumentException("Imported NMR policy effective dates overlap retained target history.");
+        }
+        NmrPolicyVersion policy = new NmrPolicyVersion();
+        policy.initializeImportMetadata(source.portableId(), source.savedAt());
+        policy.setCompany(company);
+        policy.setRequestHash(source.requestHash());
+        policy.setSavedBy(source.savedBy());
+        apply(policy, source.terms());
+        em.persist(policy);
+        em.flush();
+        return policy;
+    }
+
+    /** Inclusive interval conflict for the same policy code/category. */
+    public static boolean overlaps(NmrPolicyTerms a, NmrPolicyTerms b)
+    {
+        return a.policyCode().equals(b.policyCode()) && a.category().equals(b.category())
+                && (a.validTo() == null || !a.validTo().isBefore(b.validFrom()))
+                && (b.validTo() == null || !b.validTo().isBefore(a.validFrom()));
+    }
+
+    public static NmrPolicyImport importValue(NmrPolicyVersion policy)
+    {
+        return new NmrPolicyImport(policy.getPortableId(), policy.getRequestHash(), policy.getSavedAt(),
+                policy.getSavedBy(), view(policy).terms());
+    }
+
+    /** Content identity includes current interval and retained original save metadata. */
+    public static String importFingerprint(NmrPolicyImport value)
+    {
+        return value.portableId() + ":" + value.requestHash() + ":" + value.savedAt() + ":"
+                + value.savedBy().length() + ":" + value.savedBy() + ":" + fingerprint(value.terms());
+    }
+
     private String currentCompany()
     {
         return text(companyCode.get(), "Active company", 64);
@@ -175,7 +235,8 @@ public final class NmrPolicyService
         }
     }
 
-    private static NmrPolicyTerms normalize(NmrPolicyTerms t)
+    /** Shared required-field, date, currency and exact-rate validation for saves and interchange. */
+    public static NmrPolicyTerms normalize(NmrPolicyTerms t)
     {
         Objects.requireNonNull(t, "Policy terms are required");
         Objects.requireNonNull(t.validFrom(), "Effective from date is required");

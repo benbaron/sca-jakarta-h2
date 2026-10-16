@@ -60,6 +60,7 @@ public final class SclxExportDocumentValidator
                 transactionReferences.transactionIds());
         validatePeriodClose(SclxPeriodCloseExtension.data(document.extensions()));
         validateAuditHistory(SclxAuditHistoryExtension.data(document.extensions()));
+        SclxNmrPolicies.parseExtensions(document.extensions());
     }
 
     private static Set<String> uniqueAccountIds(List<SclxExportDocument.Account> accounts)

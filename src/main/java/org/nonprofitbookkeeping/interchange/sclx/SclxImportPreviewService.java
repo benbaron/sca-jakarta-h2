@@ -46,7 +46,7 @@ public final class SclxImportPreviewService
             "activeChartName", "activeChartVersion", "activities", "counterparties",
             "supplementalDetails", "transactionBudgets", "paymentReferences", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "fixedAssets", "inventory",
-            "periodClose", "auditHistory");
+            "periodClose", "auditHistory", "nmrPolicies");
     private static final Set<String> UNSUPPORTED_ROOT_SECTIONS = Set.of(
             "people", "bankAccounts", "officeAssignments", "committeeMemberships", "events",
             "documents", "bankingItems", "outstandingItems", "otherAssetItems", "supplementalItems",
@@ -158,6 +158,27 @@ public final class SclxImportPreviewService
         addOwnershipDiagnostics(messages, ownershipIssuesSupplier.get());
         List<SclxImportEntityPreview> entities = classify(
                 extraction.entities(), target, messages, conflictSelections);
+        try
+        {
+            var policies = SclxNmrPolicies.parse(document.root());
+            for (var policy : policies)
+            {
+                var item = entities.stream().filter(e -> e.entityType().equals(SclxNmrPolicies.TYPE)
+                        && e.externalId().equals(policy.externalId())).findFirst().orElseThrow();
+                if (item.identityMatch() == InterchangeIdentityMatch.NEW && item.localEntityId() == null
+                        && target.nmrPolicies().stream().anyMatch(p ->
+                                org.nonprofitbookkeeping.service.NmrPolicyService.overlaps(p.terms(), policy.value().terms())))
+                {
+                    messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_NMR_POLICY_OVERLAP",
+                            item.path(), "Policy dates overlap retained target history. End the target version through NMR Policies and preview again.", true));
+                }
+            }
+        }
+        catch (RuntimeException ex)
+        {
+            messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_NMR_POLICY_INVALID",
+                    "$.extensions.scaJakartaH2.nmrPolicies", ex.getMessage(), true));
+        }
         MappingResult mapping = mappings(document.root(), target, messages, mappingSelections);
         addAllocationWarnings(document.root(), target, mapping, messages);
         TransactionResult transactionResult = transactions(identityRoot, target, messages);
@@ -456,6 +477,9 @@ public final class SclxImportPreviewService
                     counts, entities, messages,
                     new ArraySpec("ranges", "rangeId", "PERIOD_CLOSE_RANGE", "periodCloseRanges"),
                     new ArraySpec("events", "eventId", "PERIOD_CLOSE_EVENT", "periodCloseEvents"));
+            addObjectArrays(app.get("nmrPolicies"), "$.extensions.scaJakartaH2.nmrPolicies",
+                    counts, entities, messages,
+                    new ArraySpec("versions", "policyVersionId", "NMR_POLICY_VERSION", "nmrPolicyVersions"));
             addObjectArrays(app.get("auditHistory"), "$.extensions.scaJakartaH2.auditHistory",
                     counts, entities, messages,
                     new ArraySpec("events", "auditEventId", "AUDIT_EVENT", "auditEvents"));
@@ -510,13 +534,19 @@ public final class SclxImportPreviewService
             String localId = null;
             String conflictDetail = null;
             String nativePortableId = null;
-            if (local == null)
+            if (local == null || SclxNmrPolicies.TYPE.equals(entity.entityType()))
             {
                 match = InterchangeIdentityMatch.NEW;
                 SclxImportTargetSnapshot.NativePortableKey nativeKey =
                         SclxNativePortableIdentity.key(entity.entityType(), entity.externalId());
                 SclxImportTargetSnapshot.NativePortableFact nativeFact = nativeKey == null
                         ? null : target.nativePortableIdentities().get(nativeKey);
+                if (SclxNmrPolicies.TYPE.equals(entity.entityType()) && local != null
+                        && (nativeFact == null || !local.localEntityId().equals(nativeFact.localEntityId())))
+                {
+                    messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_NMR_POLICY_IDENTITY_CHANGED",
+                            entity.path(), "The saved policy identity no longer resolves to its retained target version.", true));
+                }
                 if (nativeFact != null && !nativeFact.ownedBy(target.companyCode()))
                 {
                     messages.add(message(
@@ -535,11 +565,32 @@ public final class SclxImportPreviewService
                 {
                     localId = nativeFact.localEntityId();
                     nativePortableId = nativeKey.portableId().toString();
-                    String incomingFingerprint = SclxNativePortableIdentity.incomingFingerprint(
-                            entity.entityType(), entity.value());
+                    String incomingFingerprint = null;
+                    try
+                    {
+                        incomingFingerprint = SclxNativePortableIdentity.incomingFingerprint(entity.entityType(), entity.value());
+                    }
+                    catch (RuntimeException ex)
+                    {
+                        messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_NATIVE_CONTENT_INVALID",
+                                entity.path(), ex.getMessage(), true));
+                    }
                     if (incomingFingerprint != null
                             && incomingFingerprint.equals(nativeFact.contentFingerprint()))
                     {
+                        if (SclxNmrPolicies.TYPE.equals(entity.entityType()) && local != null)
+                        {
+                            if (local.normalizedContentHash().equals(entity.normalizedHash()))
+                            {
+                                match = InterchangeIdentityMatch.IDENTICAL;
+                            }
+                            else
+                            {
+                                match = InterchangeIdentityMatch.CONFLICT;
+                                conflictDetail = "Saved policy content matches the target, but this SCLX source identity "
+                                        + "previously carried different history. Keep target to retain it explicitly.";
+                            }
+                        }
                         messages.add(message(
                                 InterchangeMessageSeverity.WARNING,
                                 "SCLX_NATIVE_PORTABLE_ID_REUSED",
@@ -552,9 +603,11 @@ public final class SclxImportPreviewService
                     else
                     {
                         match = InterchangeIdentityMatch.CONFLICT;
-                        conflictDetail = "Target " + entity.entityType()
-                                + " already owns native portable identity " + nativeKey.portableId()
-                                + " but has no matching source-specific SCLX identity; its content must be reconciled explicitly.";
+                        conflictDetail = SclxNmrPolicies.TYPE.equals(entity.entityType())
+                                ? "Saved NMR policy history differs from the SCLX version. Keep target; import cannot overwrite "
+                                        + "terms or effective dates. Use End Selected Version in NMR Policies before importing a blocked successor."
+                                : "Target " + entity.entityType() + " already owns native portable identity " + nativeKey.portableId()
+                                        + " but has no matching source-specific SCLX identity; its content must be reconciled explicitly.";
                     }
                 }
                 else if ("ACTIVITY".equals(entity.entityType()))
@@ -1268,7 +1321,7 @@ public final class SclxImportPreviewService
                 "activityId", "counterpartyId", "merchantId", "supplementalDetailId", "bankId",
                 "bankAccountId", "importBatchId", "statementLineId", "issueId", "reconciliationSessionId",
                 "reconciliationMatchId", "assetId", "depreciationRunId", "itemId", "movementId",
-                "rangeId", "eventId", "auditEventId").contains(name);
+                "rangeId", "eventId", "auditEventId", "policyVersionId").contains(name);
     }
 
     private static boolean isReferenceField(String name)

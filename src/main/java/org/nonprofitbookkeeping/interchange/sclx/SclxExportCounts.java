@@ -27,6 +27,7 @@ public record SclxExportCounts(
         long periodCloseRanges,
         long periodCloseEvents,
         long auditEvents,
+        long nmrPolicyVersions,
         long warnings,
         long exclusions,
         long totalEntities)
@@ -41,11 +42,27 @@ public record SclxExportCounts(
                 || reconciliationSessions < 0L || reconciliationMatches < 0L
                 || fixedAssets < 0L || depreciationRuns < 0L
                 || inventoryItems < 0L || inventoryMovements < 0L
-                || periodCloseRanges < 0L || periodCloseEvents < 0L || auditEvents < 0L
+                || periodCloseRanges < 0L || periodCloseEvents < 0L || auditEvents < 0L || nmrPolicyVersions < 0L
                 || warnings < 0L || exclusions < 0L || totalEntities < 0L)
         {
             throw new IllegalArgumentException("SCLX export counts must not be negative");
         }
+    }
+
+    /** Compatibility with snapshots before policy portability. */
+    public SclxExportCounts(
+            long organizations, long accounts, long funds, long activities, long counterparties, long merchants,
+            long budgets, long budgetLines, long transactions, long transactionLines, long supplementalDetails,
+            long banks, long bankAccounts, long importBatches, long statementLines, long importIssues,
+            long reconciliationSessions, long reconciliationMatches, long fixedAssets, long depreciationRuns,
+            long inventoryItems, long inventoryMovements, long periodCloseRanges, long periodCloseEvents,
+            long auditEvents, long warnings, long exclusions, long totalEntities)
+    {
+        this(organizations, accounts, funds, activities, counterparties, merchants, budgets, budgetLines,
+                transactions, transactionLines, supplementalDetails, banks, bankAccounts, importBatches,
+                statementLines, importIssues, reconciliationSessions, reconciliationMatches, fixedAssets,
+                depreciationRuns, inventoryItems, inventoryMovements, periodCloseRanges, periodCloseEvents,
+                auditEvents, 0L, warnings, exclusions, totalEntities);
     }
 
     /** Backward-compatible constructor used before factual audit-history export. */
@@ -164,19 +181,20 @@ public record SclxExportCounts(
         long periodCloseRangeCount = periodCloseData.ranges().size();
         long periodCloseEventCount = periodCloseData.events().size();
         long auditEventCount = auditHistoryData.events().size();
+        long policyCount = SclxNmrPolicies.parseExtensions(document.extensions()).size();
         long entityCount = 1L + document.chartOfAccounts().size() + document.funds().size() + activityCount
                 + counterpartyCount + merchantCount + document.budgets().size() + budgetLineCount
                 + document.transactions().size() + transactionLineCount + supplementalDetailCount + bankCount
                 + bankAccountCount + importBatchCount + statementLineCount + importIssueCount
                 + reconciliationSessionCount + reconciliationMatchCount + fixedAssetCount
                 + depreciationRunCount + inventoryItemCount + inventoryMovementCount
-                + periodCloseRangeCount + periodCloseEventCount + auditEventCount;
+                + periodCloseRangeCount + periodCloseEventCount + auditEventCount + policyCount;
         return new SclxExportCounts(1L, document.chartOfAccounts().size(), document.funds().size(), activityCount,
                 counterpartyCount, merchantCount, document.budgets().size(), budgetLineCount,
                 document.transactions().size(), transactionLineCount, supplementalDetailCount, bankCount,
                 bankAccountCount, importBatchCount, statementLineCount, importIssueCount,
                 reconciliationSessionCount, reconciliationMatchCount, fixedAssetCount, depreciationRunCount,
                 inventoryItemCount, inventoryMovementCount, periodCloseRangeCount, periodCloseEventCount,
-                auditEventCount, warningCount, exclusionCount, entityCount);
+                auditEventCount, policyCount, warningCount, exclusionCount, entityCount);
     }
 }
