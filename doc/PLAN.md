@@ -1,12 +1,12 @@
 ---
-plan_version: 367
+plan_version: 368
 active_phase: P25
 active_slice: P25-S4C
 active_status: VERIFYING
 active_branch: codex/P25-S4C-nmr-policy-sclx
-active_pull_request: null
-active_head: e728debb588855527f0f3bc607e5d00d105ea2d0
-next_action: "Review the completed local S4C change and owner checks; after explicit publication authorization, publish the reviewed commits without force, open the MR and inspect its actual-head clean/repeat/Xvfb CI. Parent S4 accounting remains blocked."
+active_pull_request: 370
+active_head: dd33a52979a22a7734d25e212e5706a2b9bf1de9
+next_action: "Verify MR #370 final published-head clean/repeat/Xvfb CI; fix failures. Before full NMR accounting, complete approved D03 inputs and P25-S3 acceptance, and confirm S4C merge. Do not bypass these gates."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,7 +37,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | VERIFYING — S4C policy portability implemented locally with clean/Xvfb gates passed; publication/native acceptance pending; S4B merged/native evidence unrecorded; S1/S2/S4A DONE; S3 VERIFYING; full S4 accounting remains BLOCKED |
+| P25 | Transfers, payment references, reporting classification | VERIFYING — S4C MR #370 open; local clean/Xvfb passed; final-head CI and native acceptance pending; S4B merged/native evidence unrecorded; S1/S2/S4A DONE; S3 VERIFYING; full S4 accounting remains BLOCKED |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -687,7 +687,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S4 | Implement the adopted NMR accounting contract (G10) | BLOCKED | P25-S3 closeout evidence and unresolved D03 NMR contract/rates/exemptions/effective dates/legal-entity mapping; other applicable D01–D10 gates |
 | P25-S4A | Prepare D03 NMR accounting-contract proposal (documentation only) | DONE | Owner accepted framework; MR #368 merged at 5894e9ce; final-head clean/repeat/Xvfb CI passed; actual policy inputs remain outstanding for S4 implementation |
 | P25-S4B | Company-owned dated NMR policy configuration | VERIFYING | MR #369 merged at 7943060e; final-head clean/repeat/Xvfb CI passed; explicit native acceptance evidence unrecorded; parent S4 financial gate retained |
-| P25-S4C | Policy-only SCLX portability | VERIFYING | Implemented locally; final clean 917 tests/55 display skips and Xvfb 48 tests passed; no PR; independent portability, no accounting defaults/entries |
+| P25-S4C | Policy-only SCLX portability | VERIFYING | MR #370 open; local clean 917 tests/55 display skips and Xvfb 48 tests passed; final-head CI pending; independent portability, no accounting defaults/entries |
 | P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | P25-S4 merged; owning contract and D01–D10 gates as applicable |
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -1551,3 +1551,20 @@ Remaining: owner review/native desktop acceptance, explicit MR publication autho
 
 
 Verified local implementation commit `e728debb588855527f0f3bc607e5d00d105ea2d0`, tree `8d7a0010993d6fc94f01954029924ea6a49f82f9`. This documentation-only successor records that known source head because a commit cannot embed its own SHA; `git rev-parse HEAD` identifies the complete local handoff tip. Final application/test bytes are unchanged from the successful clean/Xvfb gates. All S4C commits remain local on `codex/P25-S4C-nmr-policy-sclx`, with the three preserved S4B closeout documentation commits. Worktree is clean after the handoff; no new MR, GitHub S4C pass, merge or human native acceptance is claimed.
+
+
+### P25-S4C authorized MR publication — 2026-10-15 (America/Denver)
+
+Owner explicitly authorized publication and continued work with “submit the mr and carry on.” Confirmed clean local branch/tip, current main `7943060ecc66cb747921ea3edfc0204cbb402218`, repository, and absent remote task branch/MR. Published through the connected GitHub service, preserving all five reviewed commit messages/order and requiring every blob and tree SHA to match its local source. Created the branch from confirmed main and advanced it using the expected parent with force disabled.
+
+| Local commit | Published commit | Matching tree |
+|---|---|---|
+| `118422aff814efac6de559823ab87fcf27ad7d9e` | `27bc90518b984e5c38293d99a7ccf9071d320827` | `751588270152d253af709807eeb9a1bca51ec4cb` |
+| `400ebc552cf2a1f78726a5814ad185a00a6959d8` | `57382a0c70cd9de992b9a05ca6c6eca936fc41f8` | `3a7b89dde0172cbb37982ca7febc696045edbfff` |
+| `61eca28eb293616d0592951f3e3743e3a3f7f6ea` | `6fe165a4a3f8ffc53fff7b3f4260a586c8f63482` | `9810ff7a33968a647adcaa5f861650d2856405fe` |
+| `e728debb588855527f0f3bc607e5d00d105ea2d0` | `189f54b6cf338e78d256d3042274aff51224cf2f` | `8d7a0010993d6fc94f01954029924ea6a49f82f9` |
+| `be0d1e832511cb5cd875a966941ee38c3d1d92fc` | `dd33a52979a22a7734d25e212e5706a2b9bf1de9` | `5b5e5a09c7a349a39bd759a2f255f3a98116fbad` |
+
+Opened [MR/PR #370](https://github.com/benbaron/sca-jakarta-h2/pull/370), **Preserve saved NMR policy versions through SCLX**, ready for review, targeting main. Verified initial MR head `dd33a52979a22a7734d25e212e5706a2b9bf1de9`; local final gates remain 917 tests/55 display skips and expanded Xvfb 48 tests, zero failures/errors. The description records actual validation, retained history/conflicts and native owner checks. No new GitHub pass or human native acceptance is claimed yet. This publication ledger is a documentation-only successor under the same authorization; verify its final remote/MR tip and actual-head CI.
+
+Continued prerequisite assessment: S4C remains VERIFYING until required review/merge evidence; do not start a dependent implementation prematurely. Parent P25-S4 is still BLOCKED on actual approved D03-01–08 inputs and P25-S3 acceptance; P25-S5 and subsequent slices depend on S4. Read the adopted program and accepted S4A input table again. Asked for the approved policy source (rates, exemptions, dates, recipient/merchant/remittance rules) and the P25-S3 desktop result while CI proceeds. No fictional policy or independent scope amendment is inferred from “carry on.” Full NMR accounting remains blocked; next permitted work is recording the applicable authority inputs and acceptance evidence, followed by selecting one approved slice after its merge gate.
