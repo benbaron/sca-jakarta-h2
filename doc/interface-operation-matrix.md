@@ -151,3 +151,8 @@ All production panes/subpanes are audited in [pane Save coverage](ui/pane-save-c
 ## P25-S4B policy configuration
 
 Administration -> NMR Policies uses `NmrPolicyService` / company-owned `NmrPolicyVersion` (V81). New Version is blank; Save Policy Version publishes through selected-subpane File/toolbar routing. End Selected Version has its own Save End Date dialog; failed validation retains its inputs. Terms cannot be edited/deleted; visible retention and SCLX omission help explains why. These controls save configuration and factual audit only, with no seeded rate or accounting entry. See [scope and manual checks](P25-S4B-nmr-policy-configuration.md).
+
+
+### P25-S4E entered NMR flags
+
+Journal Save retains explicitly entered NMR flags. The current SCLX export and Import Preview Save/File routes now preserve those line facts; preview includes the source marked-line count. Existing bookkeeping permission, conflict, company, period/reconciliation and atomicity controls apply. Optional policy versions retain their separate company-administration guard. No pane, table, command or draft scope is added. See [S4E contract](P25-S4E-nmr-line-portability.md).

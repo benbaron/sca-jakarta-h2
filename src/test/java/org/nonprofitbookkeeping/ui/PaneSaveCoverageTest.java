@@ -254,6 +254,55 @@ class PaneSaveCoverageTest
     }
 
     @Test
+    void nmrLinePreviewSavePreservesEnteredFlagsWithBookkeepingPermission() throws Exception
+    {
+        Path source = org.nonprofitbookkeeping.interchange.sclx.SclxNmrLineRoundTripTest.writeHistory(directory);
+        try (var jpa = new org.nonprofitbookkeeping.persistence.Jpa(
+                Path.of(MainWindow.sharedSessionState().databaseSelection().activeDatabasePath())))
+        {
+            org.nonprofitbookkeeping.interchange.sclx.SclxNmrLineRoundTripTest.seedEmptyTarget(jpa);
+        }
+        ImportPreviewPanel panel = FxTestSupport.onFx(() ->
+        {
+            UiSessionState session = MainWindow.sharedSessionState();
+            var admin = session.authenticatedUser().orElseThrow();
+            String company = org.nonprofitbookkeeping.interchange.sclx.SclxNmrLineRoundTripTest.COMPANY;
+            session.setMultiCompany(new MultiCompanyState(company, List.of("DEFAULT", company)));
+            var accountant = new AuthenticatedUserSession(admin.userId(), admin.username(), admin.displayName(),
+                    company, java.util.Set.of(ReservedSecurityRole.ACCOUNTANT), admin.authenticatedAt(), admin.lastActivityAt());
+            session.setAuthenticatedUser(accountant);
+            var preview = UiServiceRegistry.sclxImportPreview().preview(source);
+            assertFalse(preview.hasBlockingErrors(), () -> preview.operation().messages().toString());
+            assertTrue(preview.operation().messages().stream().anyMatch(m -> m.code().equals("SCLX_NMR_LINE_FLAGS")));
+            ImportPreviewPanel imported = new ImportPreviewPanel();
+            stage.getScene().setRoot((javafx.scene.Parent) imported.root());
+            imported.root().applyCss();
+            imported.applySclxPreview(source, preview);
+            assertTrue(imported.supportsCommand(AppCommand.SAVE_ACTIVE));
+            session.setAuthenticatedUser(new AuthenticatedUserSession(admin.userId(), admin.username(), admin.displayName(),
+                    company, java.util.Set.of(ReservedSecurityRole.VIEWER), admin.authenticatedAt(), admin.lastActivityAt()));
+            assertFalse(imported.supportsCommand(AppCommand.SAVE_ACTIVE));
+            session.setAuthenticatedUser(accountant);
+            assertTrue(imported.supportsCommand(AppCommand.SAVE_ACTIVE));
+            javafx.application.Platform.runLater(() -> Window.getWindows().stream()
+                    .filter(Window::isShowing).filter(value -> value != stage).toList()
+                    .forEach(value -> ((Button) ((DialogPane) value.getScene().getRoot()).lookupButton(ButtonType.OK)).fire()));
+            assertTrue(imported.executeCommand(AppCommand.SAVE_ACTIVE).handled());
+            return imported;
+        });
+        var from = java.time.LocalDate.of(2026, 6, 1);
+        await(() -> UiServiceRegistry.transactionEntry().search(from, from.plusDays(2), "", 100).size() == 3);
+        var transactions = UiServiceRegistry.transactionEntry().search(from, from.plusDays(2), "", 100);
+        assertEquals(3, transactions.stream().flatMap(t -> t.lines().stream()).filter(line -> line.nmr()).count());
+        assertTrue(UiServiceRegistry.nmrPolicies().list().isEmpty());
+        FxTestSupport.onFx(() ->
+        {
+            assertFalse(panel.supportsCommand(AppCommand.SAVE_ACTIVE));
+            return null;
+        });
+    }
+
+    @Test
     void inventoryAndReadOnlyViewsNeverAdvertiseAnInactiveSave()
     {
         FxTestSupport.onFx(() ->

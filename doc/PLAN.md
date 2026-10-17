@@ -1,12 +1,12 @@
 ---
-plan_version: 371
+plan_version: 372
 active_phase: P25
-active_slice: P25-S4D
+active_slice: P25-S4E
 active_status: VERIFYING
-active_branch: codex/P25-S4D-nmr-scope-correction
-active_pull_request: 371
-active_head: 06e6c9fc0fc992817610c6ab94f62aefae5ff749
-next_action: "Owner reviews/merges draft MR #371; final-head CI passed. P25-S3 is accepted/DONE. After confirmed merge, select one bounded user-entered NMR accounting slice on fresh current main, with no external-policy-input or mandatory policy-record gate."
+active_branch: codex/P25-S4E-nmr-line-portability
+active_pull_request: null
+active_head: 33c1e99e48a78db9d0692064557cf6886de9cf4f
+next_action: "Implement and verify S4E NMR line attribution portability through existing export/preview/atomic Save. S3 acceptance is satisfied; external policies are not prerequisites. Parent NMR liability/event workflow remains subsequent work."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,7 +37,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | VERIFYING — S4D scope correction in draft MR #371; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
+| P25 | Transfers, payment references, reporting classification | IN_PROGRESS — S4D merged in MR #371; S4E entered NMR line portability selected; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -684,11 +684,12 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S1 | Implement one internal fund-transfer operation (G7) | DONE | P24-S4 merged; internal-only scope; form-specific legal-entity mappings remain in their owning reporting contract |
 | P25-S2 | Add structured payment/check references (G9) | DONE | P25-S1 merged; owning contract and D01–D10 gates as applicable |
 | P25-S3 | Complete check exception and reconciliation workflows (G9) | DONE | MR #364 merged; final-head CI passed; owner desktop acceptance “Passed — no issues” on 2026-10-17. D04 still gates stale-triggered accounting only |
-| P25-S4 | User-entered NMR accounting and liability tie-out (G10) | BLOCKED | S3 acceptance passed and external-policy gate removed. Merge current S4D scope correction MR #371 before activating one bounded implementation slice on current main |
+| P25-S4 | User-entered NMR accounting and liability tie-out (G10) | IN_PROGRESS | S3 accepted; S4D merged; S4E fixes entered-line data loss first. Full item/event liability detail and remittance workflow remain subsequent slices |
 | P25-S4A | Prepare D03 NMR accounting-contract proposal (documentation only) | DONE | MR #368 merged/final-head CI passed; owner accepted custodial framework. S4D supersedes mandatory external-policy inputs |
 | P25-S4B | Company-owned dated NMR policy configuration | VERIFYING | MR #369 merged at 7943060e; final-head clean/repeat/Xvfb CI passed; explicit native acceptance evidence unrecorded; parent S4 financial gate retained |
 | P25-S4C | Optional policy-reference SCLX portability | VERIFYING | MR #370 merged at 6d3a7214; final head 9d49c102 clean/repeat/Xvfb CI passed; native evidence unrecorded; no generated accounting |
-| P25-S4D | Correct NMR software scope (documentation only) | VERIFYING | Owner excludes codification of operating policies; reconcile owning contracts and merge/CI evidence; no application/schema changes |
+| P25-S4D | Correct NMR software scope (documentation only) | DONE | Owner accepted; MR #371 merged at 33c1e99e; final-head clean/repeat/Xvfb CI passed; S3 desktop acceptance recorded |
+| P25-S4E | Preserve entered NMR line attribution through SCLX | VERIFYING | Fresh merged main; existing Journal flag must survive export/import, conflicts and corrections; no policy engine or new accounting authority |
 | P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | P25-S4 merged; owning contract and D01–D10 gates as applicable |
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -1631,3 +1632,30 @@ Final remote/MR head `06e6c9fc0fc992817610c6ab94f62aefae5ff749` passed [Maven PR
 S4D is VERIFYING, not DONE: draft MR #371 remains open and unmerged at the confirmed head. Local branch `codex/P25-S4D-nmr-scope-correction` includes this local-only post-CI ledger after content parent `aa395df0bc0a53cc4e37c3ab604dfcbfb91afe81`; `git rev-parse HEAD` identifies the complete local handoff. No application/test/migration/workflow changes follow successful validation, and no known failure remains from executed checks. Source/publication scope is seven documents; relative links, whitespace, intended diff and publication tree equality passed. No new remote successor was published after the verified CI head.
 
 Completed: accepted external-policy scope correction, optional-reference boundaries, confirmed S4C merge/CI, owner-supplied S3 desktop acceptance and DONE closeout, draft publication with exact blob/tree checks, fresh local full verification, successful final-head CI and read-only identification of the next accounting/portability gaps. Remaining: owner review/merge of MR #371. After merge confirmation, carry this local evidence forward from fresh current main, do not reuse the merged branch, and select the first bounded user-entered NMR accounting slice under the amended S4A contract. S3 desktop acceptance is satisfied; do not ask for it again. External operating-policy values and saved policy configuration are not implementation prerequisites. S4B/S4C/P17 native results remain separately unrecorded and are not inferred from the S3 response.
+
+
+### P25-S4D merge and P25-S4E selection — 2026-10-16 (America/Denver)
+
+Owner confirmed “merged.” Connected GitHub and native fetch confirm MR #371 merged at current main `33c1e99e48a78db9d0692064557cf6886de9cf4f`; final head `06e6c9fc0fc992817610c6ab94f62aefae5ff749` passed run `38999593885`. S4D is DONE, and S3 acceptance remains satisfied. Fresh `codex/P25-S4E-nmr-line-portability` carries local-only S4D verification ledger `8d7c3313` forward as `cf32b24f`; the merged branch is not reused.
+
+Selected [S4E entered-line portability](P25-S4E-nmr-line-portability.md), the bounded existing data-loss prerequisite identified during S4D. Canonical Journal saves NMR true/false, but current import hardcodes false. Preserve user-entered flags through deterministic optional extension, strict preview, existing transaction/line conflict hashes and atomic history import. No rate/default/policy engine or liability inference. Parent S4 is IN_PROGRESS through this bounded slice, not complete; full NMR item/event detail, tie-out and explicit settlement remain subsequent work.
+
+Read governing contract, adopted program, UI/editor rules and current snapshot/serializer/preview/native identity/import/canonical command/test authorities. Reuse budget/payment metadata patterns; donor split flag is not an interchange authority. Baseline compile and relevant existing tests are running before production edits. PR: none. Next: reproduce flag loss with a real interchange regression, implement this contract and run appropriate gates.
+
+
+### P25-S4E implementation and focused verification
+
+Implemented strict optional `transactionNmr` version 1 line-ID set, deterministic current-company export, serializer validation, source marked-line preview message, flag-aware existing transaction/line hashes and canonical import command flags. Missing extension preserves legacy new-line false semantics without clearing retained history. Changed flags require existing explicit Keep target; no separate write, migration, policy configuration, rate engine or generated NMR entry. Existing scoped history writer owns flags, amounts, dimensions, allocations, correction links and atomic audit.
+
+Baseline compile and 23 existing budget/payment/preview tests passed. The real canonical receipt/remittance/reversal regression reproduced three marked lines becoming zero after export/import before production edits. The same history now passes with three true/four false flags, preserved event/fund dimensions and reversal relationship, zero policy versions, restart/idempotent import and a ready 20.00 outstanding liability tie-out. Final focused gate passed 13 tests, zero failures/errors/skips. New negative-test expectations were corrected to match existing preflight exceptions versus transactional rollback results; no production change was needed for those test assumptions.
+
+The new real JavaFX Preview Save regression exercises ACCOUNTANT -> VIEWER -> ACCOUNTANT readiness and actual H2 flag/history persistence with no policy configuration; its Xvfb execution is running. Full Maven and final published-head CI remain required. Changed governing documents: PLAN, adopted program, S4A, selected S4E contract, SCLX specification, operation matrix and editor guidelines. Seven-document/110-relative-file-link validation and whitespace/scope review passed. No donor source, raw reference data, tracked build output or scratch asset is part of this implementation.
+
+
+### P25-S4E local focused/UI handoff — 2026-10-16 (America/Denver)
+
+The final focused gate passed 13 tests, zero failures/errors/skips. The real `PaneSaveCoverageTest.nmrLinePreviewSavePreservesEnteredFlagsWithBookkeepingPermission` passed under Xvfb (one test, zero failures/errors/skips), BUILD SUCCESS at 2026-10-17 04:13:38 UTC. It saves three flagged canonical lines with ACCOUNTANT permission after VIEWER denial and restores no policy versions. No production/test change follows these focused/UI results. Existing Save controls and geometry are reused.
+
+Status VERIFYING on `codex/P25-S4E-nmr-line-portability`, based on confirmed main `33c1e99e48a78db9d0692064557cf6886de9cf4f`, with the preserved S4D post-CI ledger. The bounded implementation and 7 governing documents/110 local links are reviewed; whitespace/scope checks passed. Prepare a draft MR for this continued work, preserving both local commits and matching each published blob/tree. Run local full `mvn clean verify` and exact published-head clean/repeat/expanded-Xvfb CI before final completion; publication as draft does not claim those gates already passed. Record results locally and in the MR without replacing a successful remote head solely for evidence. No source/test change should follow passed gates unless a failure requires correction.
+
+Full NMR item/event designation, liability tie-out and explicit settlement workflow remain subsequent parent S4 work. After this slice's merge, select that next bounded implementation from fresh main; external policies and S3 acceptance are no longer missing inputs. Owner checks are in the S4E contract; no new human desktop result is inferred.
