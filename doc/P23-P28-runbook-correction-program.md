@@ -143,6 +143,10 @@ Record the owner's 2026-10-17 correction across this program, S4A, the baseline 
 
 After S4D merge, fix the existing Journal flag's loss through export/import before adding full liability detail. Follow the [S4E contract](P25-S4E-nmr-line-portability.md): optional strict line attribution, deterministic export, conflict-aware preview and atomic canonical Save. No policy engine or generated accounting. Parent S4's item/event liability and settlement acceptance remains subsequent work.
 
+### P25-S4F — Explicit NMR item detail and liability coverage
+
+After S4E's confirmed MR #372 merge, select [S4F](P25-S4F-nmr-item-detail.md): stable recipient designation on existing OTHER_LIABILITY allocations, canonical event/account/fund dimensions, shared Journal Save/correction, cutoff detail and conservative GL coverage by account/fund, with versioned lossless SCLX facts. Legacy flags and unclassified liabilities stay visible without inferred NMR amounts. No policy record, assessment/default or new balance authority. Merchant-specific settlement evidence and period movement presentation remain later bounded S4 work.
+
 ### P25-S5 — Add independent functional-expense classification (G10)
 
 **Work:** Confirm the meanings and permitted use of AR/OA/FR in the required forms. Add the adopted independent line classification, defaults with explicit override, missing-classification diagnostics, and report/export mappings. Preserve it through generated entries, corrections, and interchange.

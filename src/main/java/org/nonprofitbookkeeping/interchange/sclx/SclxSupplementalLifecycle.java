@@ -180,6 +180,7 @@ final class SclxSupplementalLifecycle
                     throw new IllegalStateException("SCLX inverse duplicates lifecycle allocations.");
                 }
                 if (!a.path("accountId").equals(b.path("accountId")) || !a.path("fundId").equals(b.path("fundId"))
+                        || !a.path("activityId").equals(b.path("activityId"))
                         || amount(a, "debit").compareTo(amount(b, "credit")) != 0
                         || amount(a, "credit").compareTo(amount(b, "debit")) != 0)
                 {

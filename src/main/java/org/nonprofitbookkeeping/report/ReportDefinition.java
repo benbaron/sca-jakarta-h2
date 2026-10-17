@@ -125,6 +125,9 @@ public enum ReportDefinition
             "OTHER_ASSET", DateMode.AS_OF, false, true),
     OTHER_LIABILITIES(
             "other-liabilities", "Other Liabilities", ReportSource.SUPPLEMENTAL,
+            "OTHER_LIABILITY", DateMode.AS_OF, false, true),
+    NMR_LIABILITIES(
+            "nmr-liabilities", "NMR Liabilities", ReportSource.SUPPLEMENTAL,
             "OTHER_LIABILITY", DateMode.AS_OF, false, true);
 
     private final String id;

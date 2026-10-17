@@ -171,6 +171,7 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
         installDividerState(outer, "outer");
         installDividerState(editor, "editor");
         installDividerState(findById(workspaceRoot, "journalTaggingSplit", SplitPane.class), "tagging");
+        installDividerState(findById(workspaceRoot, "journalNmrDetailSplit", SplitPane.class), "nmrDetail");
         SplitPane detail = findById(workspaceRoot, "journalWorkspaceDetailSplit", SplitPane.class);
         if (detail != null)
         {

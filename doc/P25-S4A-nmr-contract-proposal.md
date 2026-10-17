@@ -84,7 +84,7 @@ The original S4A source inspection identified these authorities; S4C's subsequen
 | `Activity` and canonical line dimensions | Reuse stable company-owned IDs; Event Accounting stays a read model over canonical transactions |
 | `OTHER_LIABILITY` supplemental kind, item/split/effect links and `SupplementalOpenItemQueryService` | Reuse this lifecycle for NMR obligations and settlements, including full control-line allocation and as-of history; no second open-item balance engine |
 | Canonical entry/correction, ownership, authorization and period services | Same caller-owned atomic write includes ledger, supplemental allocations, NMR source metadata, request identity and factual audit; no UI SQL or sidecar ledger |
-| Current SCLX core snapshot/import | S4C preserves optional policy versions. [S4E](P25-S4E-nmr-line-portability.md) preserves entered transaction-line NMR flags through existing conflict-aware import. Explicit NMR item/event and settlement facts remain subsequent work; line flags alone do not complete financial portability |
+| Current SCLX core snapshot/import | S4C preserves optional policy versions. [S4E](P25-S4E-nmr-line-portability.md) preserves entered transaction-line NMR flags through existing conflict-aware import. [S4F](P25-S4F-nmr-item-detail.md) adds explicit recipient/item designation with canonical event/account/fund addressing and liability coverage. Merchant settlement evidence/presentation remain subsequent work; line flags alone do not complete financial portability |
 
 Future additions are user-entered NMR accounting/evidence metadata linked to canonical transaction/split and existing item identity. They must not own a separately editable running financial balance or require a policy-version foreign key. Complete current service/query/migration/test inspection before designing any nondestructive migration. No new policy/entity configuration engine is required.
 
@@ -123,6 +123,6 @@ Use the balanced synthetic accounting fixture above for implementation expectati
 
 ## Exact next action
 
-Complete this scope correction and retain the confirmed S4C merge/CI evidence in PLAN. P25-S3 desktop acceptance is now passed. After the active S4D scope correction merges, inspect current canonical entry/correction, supplemental liability, Journal and SCLX services/tests and select one bounded implementation slice for user-entered NMR accounting. Do not request operating policies as a coding prerequisite.
+MR #372 is merged and P25-S3 desktop acceptance remains passed. Execute selected [S4F](P25-S4F-nmr-item-detail.md) on fresh current main: explicit item designation, recipient/event detail and liability tie-out using existing canonical and supplemental authorities, including lossless SCLX support. Finish local and published-head validation and owner review/merge before selecting the next bounded S4 settlement-evidence slice. Do not request operating policies as a coding prerequisite.
 
 The configuration-first and policy-portability slices were explicitly selected and merged in MRs #369 and #370. Their records remain optional reference data. No application, migration, or saved history is removed by this documentation amendment.

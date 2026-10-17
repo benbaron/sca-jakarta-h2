@@ -139,8 +139,15 @@ public final class SclxImportPreviewService
         JsonNode identityRoot = document.root();
         try
         {
-            identityRoot = SclxTransactionNmrExtension.identityDocument(
-                    SclxPaymentReferences.identityDocument(SclxTransactionBudgetExtension.identityDocument(document.root())));
+            identityRoot = SclxNmrItemMetadata.identityDocument(SclxTransactionNmrExtension.identityDocument(
+                    SclxPaymentReferences.identityDocument(SclxTransactionBudgetExtension.identityDocument(document.root()))));
+            long nmrItems = document.root().path("extensions").path("scaJakartaH2").path("supplementalDetails")
+                    .findValues("nmr").size();
+            if (nmrItems > 0)
+            {
+                messages.add(message(InterchangeMessageSeverity.INFO, "SCLX_NMR_ITEM_DETAILS",
+                        "$.extensions.scaJakartaH2.supplementalDetails", "Explicit NMR item allocations: " + nmrItems + ".", false));
+            }
             int nmrLines = SclxTransactionNmrExtension.parse(document.root()).size();
             if (nmrLines > 0)
             {

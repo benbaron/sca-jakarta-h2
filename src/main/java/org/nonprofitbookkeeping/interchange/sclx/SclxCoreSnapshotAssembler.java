@@ -832,6 +832,12 @@ public final class SclxCoreSnapshotAssembler
             value.put("lifecycle", new SclxSupplementalLifecycle.Link(detail.getItemId(), detail.getItemEffect().name(),
                     Objects.requireNonNull(exportedLineIds.get(detail.getTxnSplit()), "exported lifecycle split")).value());
         }
+        if (detail.getNmrRecipient() != null)
+        {
+            requireCounterpartyOwnership(detail.getNmrRecipient(), detail.getTxn().getCompany());
+            value.put("nmr", Map.of("version", 1, "recipientId", SclxPortableIdentity.counterparty(
+                    detail.getTxn().getCompany().getCode(), detail.getNmrRecipient().getPortableId().toString())));
+        }
         return java.util.Collections.unmodifiableMap(value);
     }
 

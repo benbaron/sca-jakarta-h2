@@ -19,7 +19,8 @@ public record TransactionSupplementalLineView(Long id,
                                               UUID itemId,
                                               String itemEffect,
                                               Long txnSplitId,
-                                              Integer transactionLineIndex)
+                                              Integer transactionLineIndex,
+                                              Long nmrRecipientId, String nmrRecipientName)
 {
     public TransactionSupplementalLineView
     {

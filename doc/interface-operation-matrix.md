@@ -156,3 +156,10 @@ Administration -> NMR Policies uses `NmrPolicyService` / company-owned `NmrPolic
 ### P25-S4E entered NMR flags
 
 Journal Save retains explicitly entered NMR flags. The current SCLX export and Import Preview Save/File routes now preserve those line facts; preview includes the source marked-line count. Existing bookkeeping permission, conflict, company, period/reconciliation and atomicity controls apply. Optional policy versions retain their separate company-administration guard. No pane, table, command or draft scope is added. See [S4E contract](P25-S4E-nmr-line-portability.md).
+
+
+### P25-S4F explicit NMR item detail
+
+Journal Other Liabilities exposes a stable-ID NMR recipient choice. Selecting it explicitly designates that item; its linked liability line supplies account, fund and event. Save Entry/File Save writes all facts atomically through existing canonical entry/correction, with unchanged permissions, Delete/Reverse protections and dirty handling. Apply Existing Item retains the designation for a payment allocation. A blank recipient remains unclassified; an NMR line flag alone does not create an obligation.
+
+Report Library **NMR Liabilities** is read-only and uses existing Export rather than Save. It shows cutoff item/recipient/event detail, full account/fund GL coverage and actionable legacy/gap transaction rows; controls never use truncated detail. SCLX Preview/Save preserves versioned recipient facts with existing exact item/correction relationships and explicit conflicts. See [S4F](P25-S4F-nmr-item-detail.md).
