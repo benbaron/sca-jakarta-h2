@@ -1,12 +1,12 @@
 ---
-plan_version: 370
+plan_version: 371
 active_phase: P25
 active_slice: P25-S4D
 active_status: VERIFYING
 active_branch: codex/P25-S4D-nmr-scope-correction
-active_pull_request: null
-active_head: 6d3a7214c46e171411a6ecb9a6a4c0a78695ead0
-next_action: "Review the completed local S4D documentation correction. Record actual P25-S3 desktop acceptance before activating dependent financial implementation; do not request external operating policies or mandatory policy configuration."
+active_pull_request: 371
+active_head: 94900e4e8ccfff38ec1f8663b4da9804888463cb
+next_action: "Verify draft MR #371 final-head CI and review/merge the accepted S4D correction. Record actual P25-S3 desktop acceptance before dependent financial implementation; external operating policies and saved policy records are not prerequisites."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,7 +37,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | VERIFYING — S4D scope correction active; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S4A DONE; S3 VERIFYING; external operating-policy gate removed |
+| P25 | Transfers, payment references, reporting classification | VERIFYING — S4D scope correction in draft MR #371; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S4A DONE; S3 VERIFYING; external operating-policy gate removed |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -1589,3 +1589,14 @@ The six-document scope correction is complete locally and VERIFYING, not merged.
 Validation passed: `git diff --check`, six-document scope review, 99 relative file links, current branch/base/controller consistency and D03/A10 scope assertions. Fresh connected GitHub queries reconfirmed MR #370's final-head successful run and all job steps. No application/test/migration/workflow files changed; no new Maven or desktop run was performed for this documentation-only amendment. No known documentation-check failure remains; source validation is the existing merged S4C evidence, not a new S4D test claim.
 
 Next exact action: review this local documentation correction for publication, and record the separate actual P25-S3 desktop acceptance result before activating one bounded financial implementation slice. That later slice records user-entered NMR amounts and explicit canonical liability/settlement allocations, starting with current service/correction/supplemental/Journal/interchange inspection. Do not restore the superseded external-policy-input gate or make optional saved policies mandatory. No new publication or desktop result is claimed.
+
+
+### P25-S4D accepted continuation and draft MR — 2026-10-17 (UTC)
+
+Owner accepted the local correction with “good. carry on with the corrected plan.md.” Continued the recorded VERIFYING slice and published the accepted documentation on its fresh branch, without starting blocked financial implementation. Confirmed current main remains `6d3a7214c46e171411a6ecb9a6a4c0a78695ead0` and remote task branch was absent; created it at that base and advanced with the expected parent and force disabled. Local `a401b4ce1a7d6fdc77790c046794011cc1dec4b8` maps to published `94900e4e8ccfff38ec1f8663b4da9804888463cb`, matching tree `38c2c5bf8831e6703ac48a79e9f2333d2b39646d` and all six blob SHAs. Draft [MR #371](https://github.com/benbaron/sca-jakarta-h2/pull/371) targets main; its initial actual head was verified. This publication ledger follows that known content head.
+
+Automatic approval review initially rejected the baseline-document blob because existing workbook metadata was treated as a possible new disclosure. Read the exact existing main-branch file through connected GitHub (blob `c512d1505af25d75638a5a1aff9d045dddc128af`), proved its metadata prefix unchanged, and reviewed the five scope/acceptance line changes. Retry succeeded with that evidence; no private workbook or new metadata was uploaded, and no transport workaround was used.
+
+Fresh scope/whitespace and 99 relative file-link checks passed. Local full Maven verification and actual-head GitHub checks are running; their final results must be recorded before handoff. The owner was asked for the still-unrecorded S3 desktop result while independent verification continued. No human acceptance is inferred from this continuation.
+
+Read-only next-slice inspection confirms `TransactionLineCommand.nmr` is already explicit and `TransactionEntryService` stores it independently of policy configuration. Existing supplemental commands provide item UUID, effect and canonical line index; `OTHER_LIABILITY` query/integrity services own cutoff balances, allocation completeness and availability. Reuse these authorities. A concrete portability gap remains: `SclxImportCommitService` builds imported line commands with NMR `false`; policy-version portability does not preserve financial line attribution. Recheck this with snapshot/conflict/correction tests in the later owning financial slice. No new feature, migration or second balance authority was implemented here.
