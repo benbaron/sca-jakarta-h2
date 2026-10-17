@@ -136,3 +136,10 @@ P25-S4C: Import Preview includes saved NMR policy versions/counts in its existin
 ## P25-S4E NMR line interchange
 
 The existing Journal NMR checkbox remains an explicitly entered line fact. SCLX export/import preserves marked and unmarked lines, their amounts and dimensions through existing Preview/Save. Preview reports the number of marked source lines; changed retained history requires explicit Keep target. No policy record or Company Administration permission is required for these accounting flags; normal bookkeeping permissions apply. Policy-version imports retain their separate administration guard. See [S4E](../P25-S4E-nmr-line-portability.md).
+
+
+## P25-S4F explicit NMR item designation
+
+Other Liabilities has an optional **NMR recipient** selector backed by existing company Counterparty IDs. This is explicit item classification, independent of the Entry Lines NMR checkbox. The exact linked ledger line must use a credit-normal OTHER_LIABILITY liability account and carry the intended Fund and Event. Each stable item keeps the same recipient/account/fund/event across all allocations. Use separate items for different dimensions, and separate debit lines for multi-event payments. Apply Existing Item carries its recipient; it never invents account/event tags or a payment amount beyond the existing explicit allocation draft.
+
+Save Entry/File Save owns this field with all other transaction/supplemental facts; recipient-only cell commits protect the draft. Historical inactive references reload, reference refresh preserves the draft, and existing correction/period/reconciliation rules protect updates/deletion. The selectable recipient column uses the existing table state, resizing, sorting, scrolling and cell focus behavior. Report Library **NMR Liabilities** offers cutoff detail and conservative account/fund coverage, with Export and owning transaction drill-through. No policy data is required. See [contract and owner checks](../P25-S4F-nmr-item-detail.md).

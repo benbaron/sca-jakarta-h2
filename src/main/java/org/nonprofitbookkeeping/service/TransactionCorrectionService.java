@@ -500,6 +500,7 @@ public class TransactionCorrectionService
             copy.setKind(source.getKind());
             copy.setEntryRef(source.getEntryRef());
             copy.setCounterparty(source.getCounterparty());
+            copy.setNmrRecipient(source.getNmrRecipient());
             copy.setDescription(source.getDescription());
             copy.setReference(source.getReference());
             copy.setAmount(source.getAmount());
@@ -644,7 +645,8 @@ public class TransactionCorrectionService
     private static String snapshot(EntityManager em, Txn txn)
     {
         return "id=" + txn.getId() + ",date=" + txn.getTxnDate() + ",status=" + txn.getStatus()
-                + ",memo=" + (txn.getMemo() == null ? "" : txn.getMemo()) + ",payments=" + PaymentReferences.snapshot(em, txn);
+                + ",memo=" + (txn.getMemo() == null ? "" : txn.getMemo()) + ",payments=" + PaymentReferences.snapshot(em, txn)
+                + ",nmrItems=" + SupplementalIntegrityService.nmrSnapshot(em, txn);
     }
 
     private static String requireText(String value, String label)

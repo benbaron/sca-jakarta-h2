@@ -16,7 +16,7 @@ class ReportRequestTest
     @Test
     void catalogHasOnlyRealAuthoritativeDefinitions()
     {
-        assertEquals(18, ReportDefinition.catalog().size());
+        assertEquals(19, ReportDefinition.catalog().size());
         assertTrue(ReportDefinition.catalog().stream()
                 .allMatch(definition -> definition.source() == ReportDefinition.ReportSource.CORE
                         || definition.templateId() != null));
@@ -25,7 +25,7 @@ class ReportRequestTest
         assertFalse(ReportDefinition.catalog().stream()
                 .anyMatch(definition -> "BalanceStmt".equals(definition.templateId())
                         || "IncomeStmt".equals(definition.templateId())));
-        assertEquals(6, ReportDefinition.catalog().stream()
+        assertEquals(7, ReportDefinition.catalog().stream()
                 .filter(definition -> definition.source() == ReportDefinition.ReportSource.SUPPLEMENTAL)
                 .count());
         assertTrue(ReportDefinition.catalog().stream()

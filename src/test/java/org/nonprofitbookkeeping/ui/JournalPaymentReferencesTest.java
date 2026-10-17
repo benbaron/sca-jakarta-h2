@@ -145,6 +145,114 @@ class JournalPaymentReferencesTest
         });
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    void explicitNmrRecipientUsesRealJournalSaveReloadAndProtectsRecipientOnlyDraft() throws Exception
+    {
+        var session = MainWindow.sharedSessionState();
+        org.nonprofitbookkeeping.service.NmrItemTestFixture nmr;
+        try (var jpa = new org.nonprofitbookkeeping.persistence.Jpa(Path.of(session.databaseSelection().activeDatabasePath())))
+        {
+            nmr = org.nonprofitbookkeeping.service.NmrItemTestFixture.seed(jpa);
+        }
+        FxTestSupport.onFx(() ->
+        {
+            session.setMultiCompany(new MultiCompanyState("NMR_DETAIL", List.of("DEFAULT", "NMR_DETAIL")));
+            var now = java.time.Instant.now();
+            session.setAuthenticatedUser(new AuthenticatedUserSession(9001L, "operator", "Operator", "NMR_DETAIL",
+                    java.util.Set.of(org.nonprofitbookkeeping.service.ReservedSecurityRole.ACCOUNTANT), now, now));
+            panel = new JournalWorkspaceCompliancePanel();
+            stage = new Stage(); stage.setScene(new Scene(new VBox(panel.root()), 950, 700)); stage.show();
+            panel.onPanelShown(); return null;
+        });
+        await(() -> choices("journalSelectedFund").getItems().stream().anyMatch(o -> o.id().equals(nmr.fund())));
+        FxTestSupport.onFx(() ->
+        {
+            ((DatePicker)panel.root().lookup("#journalEntryDate")).setValue(org.nonprofitbookkeeping.service.NmrItemTestFixture.DATE);
+            var cash = table().getItems().get(0); var liability = table().getItems().get(1);
+            cash.setAccount(new TransactionLineEditorModel.Option(nmr.cash(), "1000", "Cash"));
+            cash.setFund(new TransactionLineEditorModel.Option(nmr.fund(), "GENERAL", "General")); cash.setDebit("20");
+            liability.setAccount(new TransactionLineEditorModel.Option(nmr.liability(), "2300", "Liability"));
+            liability.setFund(cash.getFund()); liability.setCredit("20");
+            liability.setActivity(new TransactionLineEditorModel.Option(nmr.event(), "EVENT", "Synthetic event"));
+            ((CheckBox)panel.root().lookup("#journalSupplementalOTHER_LIABILITY")).fire();
+            TabPane tabs = (TabPane)panel.root().lookup("#journalSupplementalTabs");
+            tabs.getSelectionModel().select(tabs.getTabs().stream().filter(t -> t.getText().equals("Other Liabilities")).findFirst().orElseThrow());
+            stage.getScene().getRoot().applyCss(); stage.getScene().getRoot().layout();
+            var details = (TableView<JournalWorkspacePanel.SupplementalRow>)panel.root().lookup("#journalWorkspaceSupplementalOTHER_LIABILITYTable");
+            var row = new JournalWorkspacePanel.SupplementalRow();
+            row.setItemId(java.util.UUID.randomUUID().toString()); row.setItemEffect("INCREASE"); row.setTransactionLine("2");
+            row.setDescription("Explicit NMR item"); row.setAmount("20"); details.getItems().add(row);
+            var column = (TableColumn<JournalWorkspacePanel.SupplementalRow, TransactionLineEditorModel.Option>)details.getColumns().stream()
+                    .filter(c -> "NMR recipient".equals(c.getText())).findFirst().orElseThrow();
+            details.scrollToColumn(column); details.applyCss(); details.layout(); details.edit(0, column);
+            var cell = details.lookupAll(".table-cell").stream().map(TableCell.class::cast)
+                    .filter(c -> c.getIndex() == 0 && c.getTableColumn() == column).findFirst().orElseThrow();
+            assertTrue(cell.isEditing());
+            var combo = (ComboBox<TransactionLineEditorModel.Option>)cell.getGraphic();
+            combo.getSelectionModel().select(combo.getItems().stream().filter(o -> o != null && o.id().equals(nmr.recipient())).findFirst().orElseThrow());
+            assertEquals(nmr.recipient(), row.nmrRecipient.get().id());
+            button("journalWorkspaceSaveButton").fire(); return null;
+        });
+        await(() -> !panel.hasUnsavedChanges());
+        var saved = UiServiceRegistry.transactionEntry().search(null, null, "", 20).get(0);
+        assertEquals(nmr.recipient(), saved.supplementalLines().get(0).nmrRecipientId());
+        assertEquals("20.0000", UiServiceRegistry.supplementalOpenItems().queryNmr(org.nonprofitbookkeeping.service.NmrItemTestFixture.DATE)
+                .items().get(0).openBalance().toPlainString());
+        FxTestSupport.onFx(() ->
+        {
+            var details = (TableView<JournalWorkspacePanel.SupplementalRow>)panel.root().lookup("#journalWorkspaceSupplementalOTHER_LIABILITYTable");
+            assertEquals(nmr.recipient(), details.getItems().get(0).nmrRecipient.get().id(), "Save reload retains stable recipient");
+            var column = (TableColumn<JournalWorkspacePanel.SupplementalRow, TransactionLineEditorModel.Option>)details.getColumns().stream()
+                    .filter(c -> "NMR recipient".equals(c.getText())).findFirst().orElseThrow();
+            details.scrollToColumn(column); details.applyCss(); details.layout(); details.edit(0, column);
+            var cell = details.lookupAll(".table-cell").stream().map(TableCell.class::cast)
+                    .filter(c -> c.getIndex() == 0 && c.getTableColumn() == column).findFirst().orElseThrow();
+            ((ComboBox<?>)cell.getGraphic()).getSelectionModel().select(0);
+            assertTrue(panel.hasUnsavedChanges(), "Recipient-only edits protect the transaction draft");
+            for (int index = 0; index < 60; index++) details.getItems().add(new JournalWorkspacePanel.SupplementalRow());
+            panel.root().setStyle("-fx-font-size: 20px;");
+            ((ScrollPane)panel.root().lookup("#journalWorkspaceEditorScroll")).setVvalue(1);
+            ((SplitPane)panel.root().lookup("#journalWorkspaceEditorSplit")).setDividerPositions(0.12, 0.30);
+            ((SplitPane)panel.root().lookup("#journalWorkspaceDetailSplit")).setDividerPositions(0.65);
+            var split = (SplitPane)panel.root().lookup("#journalNmrDetailSplit");
+            split.setDividerPositions(0.3);
+            stage.getScene().getRoot().applyCss(); stage.getScene().getRoot().layout();
+            assertEquals(1, split.getDividers().size(), "Controls/table expose a real draggable divider");
+            double before = details.getHeight();
+            split.setDividerPositions(0.55); stage.getScene().getRoot().layout();
+            assertTrue(details.getHeight() < before, "Divider movement resizes the actual table viewport");
+            assertEquals(0, details.getMinWidth()); assertEquals(0, details.getMinHeight());
+            return null;
+        });
+        // Let JavaFX pulse the nested VirtualFlow after font and divider changes.
+        await(() ->
+        {
+            var details = (TableView<?>)panel.root().lookup("#journalWorkspaceSupplementalOTHER_LIABILITYTable");
+            details.applyCss(); details.layout();
+            return details.lookupAll(".scroll-bar").stream().map(ScrollBar.class::cast).filter(ScrollBar::isVisible).count() >= 2;
+        });
+        FxTestSupport.onFx(() ->
+        {
+            var details = (TableView<?>)panel.root().lookup("#journalWorkspaceSupplementalOTHER_LIABILITYTable");
+            for (var orientation : javafx.geometry.Orientation.values())
+            {
+                assertTrue(details.lookupAll(".scroll-bar").stream().map(ScrollBar.class::cast)
+                        .anyMatch(bar -> bar.getOrientation() == orientation && bar.isVisible()), "Supplemental table overflows in " + orientation);
+            }
+            var controls = (ScrollPane)panel.root().lookup("#journalNmrDetailControlsScroll");
+            assertEquals(ScrollPane.ScrollBarPolicy.AS_NEEDED, controls.getHbarPolicy());
+            assertEquals(ScrollPane.ScrollBarPolicy.AS_NEEDED, controls.getVbarPolicy());
+            assertTrue(controls.getContent().getBoundsInLocal().getWidth() > controls.getViewportBounds().getWidth(), "Controls overflow horizontally without a forced panel minimum");
+            assertTrue(controls.getContent().getBoundsInLocal().getHeight() > controls.getViewportBounds().getHeight(), "Scaled help scrolls vertically within its region");
+            var now = java.time.Instant.now();
+            session.setAuthenticatedUser(new AuthenticatedUserSession(9001L, "operator", "Operator", "NMR_DETAIL",
+                    java.util.Set.of(org.nonprofitbookkeeping.service.ReservedSecurityRole.VIEWER), now, now));
+            assertTrue(button("journalWorkspaceSaveButton").isDisabled());
+            return null;
+        });
+    }
+
     private static void await(BooleanSupplier condition) throws Exception
     {
         long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(10);
