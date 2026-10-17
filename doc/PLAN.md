@@ -5,8 +5,8 @@ active_slice: P25-S4D
 active_status: VERIFYING
 active_branch: codex/P25-S4D-nmr-scope-correction
 active_pull_request: 371
-active_head: 3cc2338c04eb76d4e49f567af67566cbd02e990c
-next_action: "Verify draft MR #371 final-head CI and merge the accepted scope correction. P25-S3 desktop acceptance passed; after the merge select one bounded user-entered NMR accounting slice from current main. No external operating-policy inputs or mandatory policy configuration."
+active_head: 06e6c9fc0fc992817610c6ab94f62aefae5ff749
+next_action: "Owner reviews/merges draft MR #371; final-head CI passed. P25-S3 is accepted/DONE. After confirmed merge, select one bounded user-entered NMR accounting slice on fresh current main, with no external-policy-input or mandatory policy-record gate."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1610,3 +1610,24 @@ Reconciled current controller, S3 owner notes and S4A/program current instructio
 
 
 S4D publication ledger commit local `b6d9379219770eefc246b8045bc828f5d1dbb40a` was reproduced as remote `3cc2338c04eb76d4e49f567af67566cbd02e990c`, matching tree `8bae76310d3c3aa641971a4d207c56c4f3274650`. Native fetch confirmed the remote head and exact local/published tree equality. This successor adds only the newly supplied S3 acceptance and corresponding current instructions; final CI must run on its published successor, not a superseded head.
+
+
+### P25-S4D final published head and local verification
+
+Local acceptance-closeout commit `aa395df0bc0a53cc4e37c3ab604dfcbfb91afe81` was reproduced as remote `06e6c9fc0fc992817610c6ab94f62aefae5ff749`, matching tree `df542829e885365db28fd5fe83d29bfe868cf9ce` and all four changed blobs. Native fetch confirmed that final head/tree and zero local/published content differences. Draft MR #371 targets main and remains open/unmerged; current main remains `6d3a7214c46e171411a6ecb9a6a4c0a78695ead0`. All three reviewed commit messages/order were preserved with expected-parent, non-force updates; complete mapping is in local scratch `/workspace/work/p25-s4d-publication-map.json`.
+
+Fresh offline `mvn clean verify` passed **917 tests, zero failures/errors, 55 display-related skips**, BUILD SUCCESS at 2026-10-17 03:41:20 UTC. No Java/test/migration/workflow change follows that result. Seven-document scope review, 100 relative file links, diff whitespace and local/published tree equality passed. The Maven helper restored the tracked build manifest; it is excluded from all commits. Final-head [CI run 38999593885](https://github.com/benbaron/sca-jakarta-h2/actions/runs/38999593885), job `117299552158`, is running; earlier superseded-head runs are not final evidence.
+
+No native S4B/S4C/P17 acceptance is inferred. The owner explicitly supplied S3 acceptance, and S3 is DONE. Remaining for this corrective slice: final-head clean/repeat/Xvfb CI, record actual results in the MR and local post-CI ledger, then owner review/merge. After confirmed merge, use fresh current main for one bounded user-entered NMR accounting slice; no external operating-policy values or mandatory policy record is needed. This post-publication evidence stays local so it does not replace the remote CI head with another documentation successor.
+
+
+Additional read-only preparation: inspected donor NonprofitAccounting at `c697630ec1f784ebe8338d7300da6c9ac801b180` (`TxnSplit`, `PostingService.SplitInput`). It carries only an NMR boolean, not a reusable NMR item/settlement authority; no donor import is indicated. Current `SupplementalOpenItemQueryService.Row` is a generic kind/item projection without an NMR/event designation. Later implementation must explicitly identify NMR items and their canonical event/account/fund links; neither all Other Liabilities nor every legacy checked split is complete NMR detail. Preserve the existing lifecycle/balance authority and add only the missing explicit facts/projection in the owning slice.
+
+
+### P25-S4D final-head CI and handoff — 2026-10-17 (UTC)
+
+Final remote/MR head `06e6c9fc0fc992817610c6ab94f62aefae5ff749` passed [Maven PR Tests run 38999593885](https://github.com/benbaron/sca-jakarta-h2/actions/runs/38999593885), job `117299552158`. Fresh connected queries confirm the run completed successfully and every job step succeeded, including clean headless verification, repeated tests and the complete expanded JavaFX/Xvfb gate. MR #371's description records these results and local 917 tests/55 display skips. The earlier superseded-head runs are historical; the final successful head remains unchanged.
+
+S4D is VERIFYING, not DONE: draft MR #371 remains open and unmerged at the confirmed head. Local branch `codex/P25-S4D-nmr-scope-correction` includes this local-only post-CI ledger after content parent `aa395df0bc0a53cc4e37c3ab604dfcbfb91afe81`; `git rev-parse HEAD` identifies the complete local handoff. No application/test/migration/workflow changes follow successful validation, and no known failure remains from executed checks. Source/publication scope is seven documents; relative links, whitespace, intended diff and publication tree equality passed. No new remote successor was published after the verified CI head.
+
+Completed: accepted external-policy scope correction, optional-reference boundaries, confirmed S4C merge/CI, owner-supplied S3 desktop acceptance and DONE closeout, draft publication with exact blob/tree checks, fresh local full verification, successful final-head CI and read-only identification of the next accounting/portability gaps. Remaining: owner review/merge of MR #371. After merge confirmation, carry this local evidence forward from fresh current main, do not reuse the merged branch, and select the first bounded user-entered NMR accounting slice under the amended S4A contract. S3 desktop acceptance is satisfied; do not ask for it again. External operating-policy values and saved policy configuration are not implementation prerequisites. S4B/S4C/P17 native results remain separately unrecorded and are not inferred from the S3 response.
