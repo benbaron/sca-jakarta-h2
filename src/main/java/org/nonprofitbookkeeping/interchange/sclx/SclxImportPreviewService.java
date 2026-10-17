@@ -44,7 +44,7 @@ public final class SclxImportPreviewService
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Set<String> RECOGNIZED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
-            "supplementalDetails", "transactionBudgets", "paymentReferences", "bankConfiguration",
+            "supplementalDetails", "transactionBudgets", "transactionNmr", "paymentReferences", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "fixedAssets", "inventory",
             "periodClose", "auditHistory", "nmrPolicies");
     private static final Set<String> UNSUPPORTED_ROOT_SECTIONS = Set.of(
@@ -139,7 +139,14 @@ public final class SclxImportPreviewService
         JsonNode identityRoot = document.root();
         try
         {
-            identityRoot = SclxPaymentReferences.identityDocument(SclxTransactionBudgetExtension.identityDocument(document.root()));
+            identityRoot = SclxTransactionNmrExtension.identityDocument(
+                    SclxPaymentReferences.identityDocument(SclxTransactionBudgetExtension.identityDocument(document.root())));
+            int nmrLines = SclxTransactionNmrExtension.parse(document.root()).size();
+            if (nmrLines > 0)
+            {
+                messages.add(message(InterchangeMessageSeverity.INFO, "SCLX_NMR_LINE_FLAGS",
+                        "$.extensions.scaJakartaH2.transactionNmr", "NMR: " + nmrLines + " source transaction lines marked.", false));
+            }
         }
         catch (IllegalStateException ex)
         {

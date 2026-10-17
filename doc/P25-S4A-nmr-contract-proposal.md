@@ -84,7 +84,7 @@ The original S4A source inspection identified these authorities; S4C's subsequen
 | `Activity` and canonical line dimensions | Reuse stable company-owned IDs; Event Accounting stays a read model over canonical transactions |
 | `OTHER_LIABILITY` supplemental kind, item/split/effect links and `SupplementalOpenItemQueryService` | Reuse this lifecycle for NMR obligations and settlements, including full control-line allocation and as-of history; no second open-item balance engine |
 | Canonical entry/correction, ownership, authorization and period services | Same caller-owned atomic write includes ledger, supplemental allocations, NMR source metadata, request identity and factual audit; no UI SQL or sidecar ledger |
-| Current SCLX core snapshot/import | S4C now preserves optional policy versions. Financial NMR facts, line flags and settlement links still require current-source inspection and explicit coverage; policy portability alone does not complete financial portability |
+| Current SCLX core snapshot/import | S4C preserves optional policy versions. [S4E](P25-S4E-nmr-line-portability.md) preserves entered transaction-line NMR flags through existing conflict-aware import. Explicit NMR item/event and settlement facts remain subsequent work; line flags alone do not complete financial portability |
 
 Future additions are user-entered NMR accounting/evidence metadata linked to canonical transaction/split and existing item identity. They must not own a separately editable running financial balance or require a policy-version foreign key. Complete current service/query/migration/test inspection before designing any nondestructive migration. No new policy/entity configuration engine is required.
 

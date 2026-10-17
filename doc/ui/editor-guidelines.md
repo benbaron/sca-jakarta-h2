@@ -131,3 +131,8 @@ Reconciliation’s Checks / Exceptions tab separates factual Save Review from le
 The Journal header explains that Save Entry writes the header, entry lines, additional details and all supplemental tabs together through the existing canonical command. All other pane/subpane Save routes are recorded in [pane Save coverage](pane-save-coverage.md); selected composite subpanes expose their specific File/toolbar Save scope.
 
 P25-S4C: Import Preview includes saved NMR policy versions/counts in its existing SCLX result and Save. Nonempty policy imports require Company Administration permission; a disabled Save explains the permission. Saved policy conflicts permit Keep target only; source terms/end dates are never overwritten by import. See [policy portability](../P25-S4C-nmr-policy-sclx.md).
+
+
+## P25-S4E NMR line interchange
+
+The existing Journal NMR checkbox remains an explicitly entered line fact. SCLX export/import preserves marked and unmarked lines, their amounts and dimensions through existing Preview/Save. Preview reports the number of marked source lines; changed retained history requires explicit Keep target. No policy record or Company Administration permission is required for these accounting flags; normal bookkeeping permissions apply. Policy-version imports retain their separate administration guard. See [S4E](../P25-S4E-nmr-line-portability.md).

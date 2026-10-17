@@ -503,6 +503,15 @@ public final class SclxCoreSnapshotAssembler
         {
             extensionValues.put(SclxTransactionBudgetExtension.KEY, Map.of("version", 1, "lines", transactionBudgets));
         }
+        List<String> nmrLines = transactionLines.stream()
+                .filter(TxnSplit::isNmr)
+                .map(line -> Objects.requireNonNull(exportedLineIds.get(line)))
+                .sorted()
+                .toList();
+        if (!nmrLines.isEmpty())
+        {
+            extensionValues.put(SclxTransactionNmrExtension.KEY, Map.of("version", 1, "lineIds", nmrLines));
+        }
         List<Map<String, Object>> paymentReferences = transactionLines.stream()
                 .filter(line -> line.getPaymentMethod() != null)
                 .map(line -> SclxPaymentReferences.export(line, exportedLineIds.get(line))).toList();

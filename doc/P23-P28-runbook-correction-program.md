@@ -139,6 +139,10 @@ Owner selected portability on 2026-10-15; MR #370 merged. Retain the [S4C contra
 
 Record the owner's 2026-10-17 correction across this program, S4A, the baseline and PLAN. Remove mandatory external-policy inputs and automated operational rules. Preserve optional reference records and accounting integrity. Reconcile MR #370 merge and final-head CI without inventing desktop acceptance. No application/schema change.
 
+### P25-S4E — Preserve entered NMR line attribution
+
+After S4D merge, fix the existing Journal flag's loss through export/import before adding full liability detail. Follow the [S4E contract](P25-S4E-nmr-line-portability.md): optional strict line attribution, deterministic export, conflict-aware preview and atomic canonical Save. No policy engine or generated accounting. Parent S4's item/event liability and settlement acceptance remains subsequent work.
+
 ### P25-S5 — Add independent functional-expense classification (G10)
 
 **Work:** Confirm the meanings and permitted use of AR/OA/FR in the required forms. Add the adopted independent line classification, defaults with explicit override, missing-classification diagnostics, and report/export mappings. Preserve it through generated entries, corrections, and interchange.
