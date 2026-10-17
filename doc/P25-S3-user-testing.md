@@ -1,6 +1,6 @@
 # P25-S3 — check exceptions and reissue: desktop acceptance
 
-Branch `codex/P25-S3-check-exceptions`. See [check contract](accounting/check-exceptions.md). Automated results are recorded in PLAN.md; native acceptance remains required.
+Branch `codex/P25-S3-check-exceptions`. See [check contract](accounting/check-exceptions.md). Automated results are recorded in PLAN.md; owner native acceptance passed on 2026-10-17 (UTC).
 
 1. In a disposable company copy, save an expense/check `000123` with issue date and no delivery/evidence. Open Reconciliation → Checks / Exceptions, Refresh, choose a review-through date after issue and an age cutoff covering it. Confirm amount, missing delivery/evidence and age-review exceptions. Missing issue date reports unknown age. Selecting a configured bank excludes other banks; All banks restores the full company report. No ledger action occurs by running the report.
 2. Select the check, enter actual delivery, an external evidence reference, review date and a factual note confirming whether the obligation remains valid. Save Review. Confirm restart retains all facts; amounts and cleared state do not change. Review-only edits protect unsaved fields when selecting another row, refreshing or closing the panel. Cancel discard and confirm the draft remains. VIEWER can read and Refresh but cannot Review/Void/Reissue.
@@ -14,3 +14,8 @@ Branch `codex/P25-S3-check-exceptions`. See [check contract](accounting/check-ex
 ## Final local automated evidence — 2026-10-10
 
 Final clean Maven verification: 894 tests, zero failures/errors, 45 headless skips. Complete production Xvfb gate: 25 tests, zero failures/errors/skips, including both check-review and Journal payment cases. Focused service/migration/parser/reconciliation run: 25 tests, zero failures/errors/skips. Actual editor horizontal/vertical overflow and both scrollbars, typed history scrolling/dividers, factual review save, dirty state and live VIEWER gating pass. GitHub publication/CI and owner native desktop acceptance remain pending. D04 stale-triggered accounting is unavailable pending the accounting authority’s policy resolution.
+
+
+## Owner acceptance and merge evidence — 2026-10-17 (UTC)
+
+Owner reported “Passed — no issues” in response to the check exception/reconciliation desktop-workflow question covering issue, delivery, cancel/reissue and protection of reconciled or closed-period entries. PLAN marks P25-S3 DONE. Connected GitHub reconfirmed MR #364 merged at `f9ee8716e545572d66cb8d9494003b8c0b4099db`; final head `47ce0808bf7124ebe51b2349f550495888b37fd1` passed [CI run 38088450792](https://github.com/benbaron/sca-jakarta-h2/actions/runs/38088450792). Earlier publication/CI/native-pending text above is historical. This acceptance does not adopt D04 stale-triggered automatic accounting or certify unrelated panes.

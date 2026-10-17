@@ -125,7 +125,7 @@ Start collecting the authoritative workbook and resolving policy questions durin
 
 ### P25-S4A — Prepare the D03 accounting contract (documentation only)
 
-Owner accepted the [custodial-liability framework](P25-S4A-nmr-contract-proposal.md) on 2026-10-14; MR #368 merged. The 2026-10-17 correction removes the former operating-policy-input gate. P25-S3 desktop acceptance remains separate and unrecorded; no human result is inferred.
+Owner accepted the [custodial-liability framework](P25-S4A-nmr-contract-proposal.md) on 2026-10-14; MR #368 merged. The 2026-10-17 correction removes the former operating-policy-input gate. Owner supplied P25-S3 desktop acceptance as “Passed — no issues” on 2026-10-17; PLAN records its confirmed merged CI. That separate prerequisite is now satisfied.
 
 ### P25-S4B — Company NMR policy configuration
 

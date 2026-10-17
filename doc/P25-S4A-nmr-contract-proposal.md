@@ -10,7 +10,7 @@ Rates, eligibility, exemptions, operational effective dates, remittance deadline
 
 Existing [S4B configuration](P25-S4B-nmr-policy-configuration.md) and [S4C portability](P25-S4C-nmr-policy-sclx.md) remain available as optional reference records. Their stored terms are not evaluated and are not mandatory dependencies of accounting. Preserve their history and data; this amendment introduces no schema or deletion change.
 
-Balanced entries, company ownership, existing permissions, period/reconciliation protection, explicit allocation and factual audit remain required. Form-specific classification belongs to its owning reporting slice and must not be inferred from recipient names or geography. P25-S3 desktop acceptance remains a separate recorded validation prerequisite; this amendment does not claim a desktop pass.
+Balanced entries, company ownership, existing permissions, period/reconciliation protection, explicit allocation and factual audit remain required. Form-specific classification belongs to its owning reporting slice and must not be inferred from recipient names or geography. The owner subsequently recorded P25-S3 desktop acceptance as “Passed — no issues” on 2026-10-17; its merged final-head CI is confirmed in PLAN. This clears that separate prerequisite, without extending acceptance to other panes.
 
 ## Source evidence and conflict
 
@@ -123,6 +123,6 @@ Use the balanced synthetic accounting fixture above for implementation expectati
 
 ## Exact next action
 
-Complete this scope correction and retain the confirmed S4C merge/CI evidence in PLAN. P25-S3 desktop acceptance remains unrecorded; record its actual result before activating the dependent financial slice. Then inspect current canonical entry/correction, supplemental liability, Journal and SCLX services/tests and select one bounded implementation slice for user-entered NMR accounting. Do not request operating policies as a coding prerequisite.
+Complete this scope correction and retain the confirmed S4C merge/CI evidence in PLAN. P25-S3 desktop acceptance is now passed. After the active S4D scope correction merges, inspect current canonical entry/correction, supplemental liability, Journal and SCLX services/tests and select one bounded implementation slice for user-entered NMR accounting. Do not request operating policies as a coding prerequisite.
 
 The configuration-first and policy-portability slices were explicitly selected and merged in MRs #369 and #370. Their records remain optional reference data. No application, migration, or saved history is removed by this documentation amendment.
