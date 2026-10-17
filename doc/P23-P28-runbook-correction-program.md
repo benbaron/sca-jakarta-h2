@@ -119,21 +119,25 @@ Start collecting the authoritative workbook and resolving policy questions durin
 
 ### P25-S4 — Implement the adopted NMR accounting contract (G10)
 
-**Work:** Resolve the runbook's conflicting recognition/remittance instructions with the responsible accounting authority. Specify applicable counts, rates/effective dates, exemptions, collection, merchant withholding, remittance, corrections, and carryover. Add linked event detail and a liability tie-out using canonical transactions. Rate configuration must be dated and sourced, not hard-coded from this plan.
+**Work:** Record user-entered NMR amounts and explicit collection, merchant settlement, remittance and correction allocations through canonical transactions and the existing supplemental liability lifecycle. Add event-linked detail and a GL liability tie-out. The owner's 2026-10-17 scope correction excludes operational rate, exemption, effective-date, deadline and merchant/refund rule engines. External policy inputs and saved policy versions are not accounting prerequisites. Follow the amended [S4A contract](P25-S4A-nmr-contract-proposal.md).
 
-**Acceptance:** A fixture with collected NMR, processor withholding, later remittance, and prior-period balance reconciles detail to liability and cash. No amount is counted both as retained event revenue and as a custodial obligation contrary to the adopted policy. Missing inputs prevent a misleading complete report.
+**Acceptance:** A synthetic fixture with directly entered collections, processor withholding, confirmed settlement, later remittance and prior-period balance reconciles detail to liability and cash. No double income/remittance or duplicate opening entry. Missing accounting links remain visible; absence of optional policy data does not block accounting. Existing authorization, period/reconciliation, audit, atomicity and correction protections remain mandatory.
 
 ### P25-S4A — Prepare the D03 accounting contract (documentation only)
 
-The owner authorized this preparatory slice on 2026-10-13 (America/Denver). Deliver the [D03 proposal](P25-S4A-nmr-contract-proposal.md), verified source/conflict register, required authority inputs, balanced synthetic examples and future acceptance specifications. Reconcile the preceding Save slice's merge/CI evidence in PLAN. Owner accepted the documentation framework and authorized publication on 2026-10-14. Actual policy inputs remain outstanding; this preparation introduces no application behavior. Parent P25-S4 implementation remains blocked until D03 is adopted and P25-S3 acceptance is recorded; preparing or merging the proposal alone does not clear either gate.
+Owner accepted the [custodial-liability framework](P25-S4A-nmr-contract-proposal.md) on 2026-10-14; MR #368 merged. The 2026-10-17 correction removes the former operating-policy-input gate. P25-S3 desktop acceptance remains separate and unrecorded; no human result is inferred.
 
 ### P25-S4B — Company NMR policy configuration
 
-Owner explicitly selected configuration-first on 2026-10-14. Deliver the [S4B contract](P25-S4B-nmr-policy-configuration.md) as an independent prerequisite: company-owned dated/sourced retained policy versions, real guarded Administration saves, no seeded rates or accounting entries. This bounded scope is permitted before full D03 values/P25-S3 acceptance; assessment/collection/remittance and the parent S4 accounting gate remain blocked.
+Owner selected configuration-first on 2026-10-14; MR #369 merged. Retain the [S4B contract](P25-S4B-nmr-policy-configuration.md), saved history and guarded saves. Records are optional reference data, contain no seeded rates, and do not calculate or gate accounting.
 
 ### P25-S4C — Policy-only SCLX portability
 
-Owner selected this independent prerequisite on 2026-10-15. Follow the [S4C contract](P25-S4C-nmr-policy-sclx.md): retained policy identities/metadata and effective intervals through governed export/preview/atomic guarded import. No default policies, rates or generated accounting; full S4 financial gates remain unchanged.
+Owner selected portability on 2026-10-15; MR #370 merged. Retain the [S4C contract](P25-S4C-nmr-policy-sclx.md), native identity/history and guarded atomic import. No generated accounting. Policy portability is separate from future financial NMR portability.
+
+### P25-S4D — Correct NMR software scope (documentation only)
+
+Record the owner's 2026-10-17 correction across this program, S4A, the baseline and PLAN. Remove mandatory external-policy inputs and automated operational rules. Preserve optional reference records and accounting integrity. Reconcile MR #370 merge and final-head CI without inventing desktop acceptance. No application/schema change.
 
 ### P25-S5 — Add independent functional-expense classification (G10)
 

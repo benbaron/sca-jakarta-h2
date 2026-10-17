@@ -1,12 +1,12 @@
 ---
-plan_version: 368
+plan_version: 370
 active_phase: P25
-active_slice: P25-S4C
+active_slice: P25-S4D
 active_status: VERIFYING
-active_branch: codex/P25-S4C-nmr-policy-sclx
-active_pull_request: 370
-active_head: dd33a52979a22a7734d25e212e5706a2b9bf1de9
-next_action: "Verify MR #370 final published-head clean/repeat/Xvfb CI; fix failures. Before full NMR accounting, complete approved D03 inputs and P25-S3 acceptance, and confirm S4C merge. Do not bypass these gates."
+active_branch: codex/P25-S4D-nmr-scope-correction
+active_pull_request: null
+active_head: 6d3a7214c46e171411a6ecb9a6a4c0a78695ead0
+next_action: "Review the completed local S4D documentation correction. Record actual P25-S3 desktop acceptance before activating dependent financial implementation; do not request external operating policies or mandatory policy configuration."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,7 +37,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | VERIFYING — S4C MR #370 open; local clean/Xvfb passed; final-head CI and native acceptance pending; S4B merged/native evidence unrecorded; S1/S2/S4A DONE; S3 VERIFYING; full S4 accounting remains BLOCKED |
+| P25 | Transfers, payment references, reporting classification | VERIFYING — S4D scope correction active; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S4A DONE; S3 VERIFYING; external operating-policy gate removed |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -641,7 +641,7 @@ Validation state:
 
 ## 9. Advancement rule
 
-P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is merged; P24-S4B and P24-S4C are DONE; P24 is complete. P25-S1 is accepted and merged in PR #362. P25-S2 is accepted and merged in PR #363; P25-S3 check exceptions is merged in local history and remains VERIFYING pending closeout evidence; unresolved D03 remains a gate before entity mappings and P25-S4. Conditional P27-S5 remains unadopted.
+P21, P22, P23 and P24-S1 are complete. Owner accepted P24-S1 and GitHub verified PR #356 merged on 2026-09-30. P24-S2 is accepted and merged in PR #357. P24-S3 is accepted and merged in PR #358; P24-S4A Budget Category maintenance is merged; P24-S4B and P24-S4C are DONE; P24 is complete. P25-S1 is accepted and merged in PR #362. P25-S2 is accepted and merged in PR #363; P25-S3 check exceptions remains VERIFYING pending desktop acceptance. D03's former operating-policy-input gate is superseded by the owner's S4D scope correction. Conditional P27-S5 remains unadopted.
 
 ## 10. Archived proposal and adoption
 
@@ -681,13 +681,14 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P24-S4A | Budget Category maintenance | DONE | P24-S3 merged; A08 category workflow |
 | P24-S4B | Payee/Counterparty maintenance | DONE | P24-S4A merged; A08 party workflow |
 | P24-S4C | Merchant maintenance | DONE | P24-S4B merged; A08 merchant workflow |
-| P25-S1 | Implement one internal fund-transfer operation (G7) | DONE | P24-S4 merged; internal-only scope; D03 required before legal-entity mappings; other applicable acceptance gates retained |
+| P25-S1 | Implement one internal fund-transfer operation (G7) | DONE | P24-S4 merged; internal-only scope; form-specific legal-entity mappings remain in their owning reporting contract |
 | P25-S2 | Add structured payment/check references (G9) | DONE | P25-S1 merged; owning contract and D01–D10 gates as applicable |
 | P25-S3 | Complete check exception and reconciliation workflows (G9) | VERIFYING | PR #364 merged in local history; live main and final-head CI confirmed; owner desktop acceptance outstanding; D04 gates stale-triggered accounting only |
-| P25-S4 | Implement the adopted NMR accounting contract (G10) | BLOCKED | P25-S3 closeout evidence and unresolved D03 NMR contract/rates/exemptions/effective dates/legal-entity mapping; other applicable D01–D10 gates |
-| P25-S4A | Prepare D03 NMR accounting-contract proposal (documentation only) | DONE | Owner accepted framework; MR #368 merged at 5894e9ce; final-head clean/repeat/Xvfb CI passed; actual policy inputs remain outstanding for S4 implementation |
+| P25-S4 | User-entered NMR accounting and liability tie-out (G10) | BLOCKED | P25-S3 desktop acceptance remains unrecorded. External policy values/configuration are no longer prerequisites; amended S4A scope governs |
+| P25-S4A | Prepare D03 NMR accounting-contract proposal (documentation only) | DONE | MR #368 merged/final-head CI passed; owner accepted custodial framework. S4D supersedes mandatory external-policy inputs |
 | P25-S4B | Company-owned dated NMR policy configuration | VERIFYING | MR #369 merged at 7943060e; final-head clean/repeat/Xvfb CI passed; explicit native acceptance evidence unrecorded; parent S4 financial gate retained |
-| P25-S4C | Policy-only SCLX portability | VERIFYING | MR #370 open; local clean 917 tests/55 display skips and Xvfb 48 tests passed; final-head CI pending; independent portability, no accounting defaults/entries |
+| P25-S4C | Optional policy-reference SCLX portability | VERIFYING | MR #370 merged at 6d3a7214; final head 9d49c102 clean/repeat/Xvfb CI passed; native evidence unrecorded; no generated accounting |
+| P25-S4D | Correct NMR software scope (documentation only) | VERIFYING | Owner excludes codification of operating policies; reconcile owning contracts and merge/CI evidence; no application/schema changes |
 | P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | P25-S4 merged; owning contract and D01–D10 gates as applicable |
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -703,7 +704,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P28-S2 | Release and close the correction program | BLOCKED | P28-S1 merged; owning contract and D01–D10 gates as applicable |
 | P27-S5 (conditional) | Internal attachments and approvals | BLOCKED | Not adopted; explicit scope amendment and separate specifications required; not a prerequisite for baseline P28 |
 
-P27-S1 consolidates earlier template/policy collection. Its position does not defer D02–D07: relevant facts must be settled before the earlier affected code slices, without marking P27 implementation active.
+P27-S1 consolidates earlier template/policy collection. Its position does not defer unresolved applicable D02–D07 decisions before their affected code slices. D03's former mandatory external-policy-input gate is resolved by the S4D scope correction; do not request those policies before NMR accounting development.
 
 ### P23-S1 handoff
 
@@ -1568,3 +1569,23 @@ Owner explicitly authorized publication and continued work with “submit the mr
 Opened [MR/PR #370](https://github.com/benbaron/sca-jakarta-h2/pull/370), **Preserve saved NMR policy versions through SCLX**, ready for review, targeting main. Verified initial MR head `dd33a52979a22a7734d25e212e5706a2b9bf1de9`; local final gates remain 917 tests/55 display skips and expanded Xvfb 48 tests, zero failures/errors. The description records actual validation, retained history/conflicts and native owner checks. No new GitHub pass or human native acceptance is claimed yet. This publication ledger is a documentation-only successor under the same authorization; verify its final remote/MR tip and actual-head CI.
 
 Continued prerequisite assessment: S4C remains VERIFYING until required review/merge evidence; do not start a dependent implementation prematurely. Parent P25-S4 is still BLOCKED on actual approved D03-01–08 inputs and P25-S3 acceptance; P25-S5 and subsequent slices depend on S4. Read the adopted program and accepted S4A input table again. Asked for the approved policy source (rates, exemptions, dates, recipient/merchant/remittance rules) and the P25-S3 desktop result while CI proceeds. No fictional policy or independent scope amendment is inferred from “carry on.” Full NMR accounting remains blocked; next permitted work is recording the applicable authority inputs and acceptance evidence, followed by selecting one approved slice after its merge gate.
+
+
+### P25-S4D — Owner correction: external operating policies — 2026-10-17 (UTC)
+
+Owner clarified: “These don't need to be codified in the software.” This supersedes earlier requests for actual D03-01–08 policy values and all historical statements that missing rates, exemptions, effective dates, legal/merchant arrangements or remittance/refund rules block NMR development. The accepted custodial-liability framework remains; users enter amounts, dates, account/fund/event/recipient references and settlement allocations explicitly. No assessment, exemption, deadline or policy-driven settlement engine is required. Saved S4B policy versions and S4C portability remain optional reference data, with their history intact and no mandatory accounting dependency.
+
+Selected a documentation-only corrective slice on fresh `codex/P25-S4D-nmr-scope-correction` from confirmed current main `6d3a7214c46e171411a6ecb9a6a4c0a78695ead0`. Connected GitHub confirms MR #370 merged on 2026-10-16 at 03:55:48 UTC; native fetch confirms the merge in current main. Final published head `9d49c102e0f2907072c389e571603053c6a4fd6f` passed [Maven PR Tests run 38845621962](https://github.com/benbaron/sca-jakarta-h2/actions/runs/38845621962), job `116795765834`: clean verification, repeat tests and expanded Xvfb all succeeded. This carries forward the local-only post-CI evidence from `27c4f92b` without reusing the merged branch. Prior publication/CI/merge-pending statements are historical.
+
+Required reading/inspection for this scope correction: root AGENTS, PLAN, adopted P23–P28 program, D03/A10 baseline, accepted S4A contract and merged S4B/S4C contracts. Reconcile these six documents only. No Java, test, migration, workflow, policy row or accounting value changes. External rate/count examples are replaced by directly entered synthetic accounting fixtures; mandatory accounting invariants and canonical authorities remain.
+
+Separate native acceptance evidence for S3/S4B/S4C remains unrecorded; this correction does not invent it. Full S4 remains blocked on the previously recorded P25-S3 desktop acceptance prerequisite, not on external operating policies. D04/D07 and later reporting contracts are unchanged. PR: none; this fresh correction is local. Validation and final handoff follow below.
+
+
+### P25-S4D local verification and handoff
+
+The six-document scope correction is complete locally and VERIFYING, not merged. Changed documents: PLAN, adopted correction program, D03/A10 baseline and S4A/S4B/S4C contracts. Branch `codex/P25-S4D-nmr-scope-correction`; base `6d3a7214c46e171411a6ecb9a6a4c0a78695ead0`; PR: none. The active-head field records the confirmed base; `git rev-parse HEAD` identifies the complete committed local correction.
+
+Validation passed: `git diff --check`, six-document scope review, 99 relative file links, current branch/base/controller consistency and D03/A10 scope assertions. Fresh connected GitHub queries reconfirmed MR #370's final-head successful run and all job steps. No application/test/migration/workflow files changed; no new Maven or desktop run was performed for this documentation-only amendment. No known documentation-check failure remains; source validation is the existing merged S4C evidence, not a new S4D test claim.
+
+Next exact action: review this local documentation correction for publication, and record the separate actual P25-S3 desktop acceptance result before activating one bounded financial implementation slice. That later slice records user-entered NMR amounts and explicit canonical liability/settlement allocations, starting with current service/correction/supplemental/Journal/interchange inspection. Do not restore the superseded external-policy-input gate or make optional saved policies mandatory. No new publication or desktop result is claimed.
