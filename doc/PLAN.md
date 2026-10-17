@@ -4,9 +4,9 @@ active_phase: P25
 active_slice: P25-S4E
 active_status: VERIFYING
 active_branch: codex/P25-S4E-nmr-line-portability
-active_pull_request: null
-active_head: 33c1e99e48a78db9d0692064557cf6886de9cf4f
-next_action: "Implement and verify S4E NMR line attribution portability through existing export/preview/atomic Save. S3 acceptance is satisfied; external policies are not prerequisites. Parent NMR liability/event workflow remains subsequent work."
+active_pull_request: 372
+active_head: d971c7d12d55e7638726de9e3739112747dcb8cc
+next_action: "Owner reviews/merges draft MR #372; full local verification and final-head clean/repeat/Xvfb CI passed. Then select explicit NMR item/event detail and liability tie-out on fresh current main; no external operating-policy inputs are required."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -689,7 +689,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S4B | Company-owned dated NMR policy configuration | VERIFYING | MR #369 merged at 7943060e; final-head clean/repeat/Xvfb CI passed; explicit native acceptance evidence unrecorded; parent S4 financial gate retained |
 | P25-S4C | Optional policy-reference SCLX portability | VERIFYING | MR #370 merged at 6d3a7214; final head 9d49c102 clean/repeat/Xvfb CI passed; native evidence unrecorded; no generated accounting |
 | P25-S4D | Correct NMR software scope (documentation only) | DONE | Owner accepted; MR #371 merged at 33c1e99e; final-head clean/repeat/Xvfb CI passed; S3 desktop acceptance recorded |
-| P25-S4E | Preserve entered NMR line attribution through SCLX | VERIFYING | Fresh merged main; existing Journal flag must survive export/import, conflicts and corrections; no policy engine or new accounting authority |
+| P25-S4E | Preserve entered NMR line attribution through SCLX | VERIFYING | Draft MR #372 open; final-head clean/repeat/Xvfb CI passed; local full 925 tests/56 display skips and real Save Xvfb passed; owner review/merge remains |
 | P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | P25-S4 merged; owning contract and D01–D10 gates as applicable |
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -1659,3 +1659,33 @@ The final focused gate passed 13 tests, zero failures/errors/skips. The real `Pa
 Status VERIFYING on `codex/P25-S4E-nmr-line-portability`, based on confirmed main `33c1e99e48a78db9d0692064557cf6886de9cf4f`, with the preserved S4D post-CI ledger. The bounded implementation and 7 governing documents/110 local links are reviewed; whitespace/scope checks passed. Prepare a draft MR for this continued work, preserving both local commits and matching each published blob/tree. Run local full `mvn clean verify` and exact published-head clean/repeat/expanded-Xvfb CI before final completion; publication as draft does not claim those gates already passed. Record results locally and in the MR without replacing a successful remote head solely for evidence. No source/test change should follow passed gates unless a failure requires correction.
 
 Full NMR item/event designation, liability tie-out and explicit settlement workflow remain subsequent parent S4 work. After this slice's merge, select that next bounded implementation from fresh main; external policies and S3 acceptance are no longer missing inputs. Owner checks are in the S4E contract; no new human desktop result is inferred.
+
+
+### P25-S4E draft publication and running final gates — 2026-10-16 (America/Denver)
+
+Continued the accepted corrected-plan work as a draft. Connected publication preserved both reviewed local commit messages/order, required each blob/tree SHA to match and advanced only the expected parent with force disabled. Fresh branch began at confirmed main `33c1e99e48a78db9d0692064557cf6886de9cf4f`. Draft [MR #372](https://github.com/benbaron/sca-jakarta-h2/pull/372) targets main; final published head `d971c7d12d55e7638726de9e3739112747dcb8cc` was confirmed through its PR metadata and native fetch, with exact local/published tree equality and zero content differences.
+
+| Local commit | Published commit | Matching tree |
+|---|---|---|
+| `cf32b24f24a4138afff406ab199aa8e5f42e09cc` | `5aef8ab2bc57b95d747955121dccd56253d20833` | `d13a04d5fbefd846aa187894356bc4669438e41b` |
+| `06e24d19c3692b941349427a209b5b7f3ebfb24a` | `d971c7d12d55e7638726de9e3739112747dcb8cc` | `a68e966e1a49cdbba892101f12cb1b16dbbfba41` |
+
+Publication review initially rejected the implementation PLAN blob, citing sensitive reference metadata and new-slice publication authorization. Fetched the exact existing public main-branch PLAN through connected GitHub (blob `46ff1503e795638ba9acbfb449eb7514cad9b705`) and proved all existing reference/history content unchanged apart from the listed NMR controller/status rows and appended slice/test/merge evidence. The exact upload retry passed with that evidence; no private source data or alternate transport was used. Complete mapping and prepared MR text remain in local scratch `/workspace/work/p25-s4e-publication-map.json` and `/workspace/work/p25-s4e-mr-body.md`.
+
+Local full clean verification is running on unchanged source/test bytes; actual final-head GitHub checks must complete before a final pass is claimed. Current known passed gates: compile/23 existing baseline tests, primary regression reproduction, final focused 13 tests and genuine Xvfb Preview Save one test. Both final-gate results and the MR description will be updated after completion. This publication/verification ledger remains local so it does not restart remote CI solely for evidence.
+
+
+### P25-S4E final local verification
+
+Fresh offline `mvn clean verify` passed **925 tests, zero failures/errors, 56 display-related skips**, BUILD SUCCESS at 2026-10-17 04:26:40 UTC (2026-10-16 America/Denver). Final source/test bytes equal the already published MR #372 head `d971c7d12d55e7638726de9e3739112747dcb8cc`; only this local publication/evidence ledger follows. The tracked build manifest was restored by the Maven helper and remains excluded. No failure remains in executed local checks. The actual final-head GitHub run `39002064424`, job `117306898033`, passed clean verification and repeat tests; expanded JavaFX/Xvfb is still running. No final CI or human desktop pass is inferred before it completes.
+
+
+### P25-S4E final-head CI and committed handoff — 2026-10-16 (America/Denver)
+
+Final published head `d971c7d12d55e7638726de9e3739112747dcb8cc` passed [Maven PR Tests run 39002064424](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39002064424), job `117306898033`. Fresh connected queries confirm the run completed successfully and every job step succeeded: clean headless verification, repeated tests and the complete expanded JavaFX/Xvfb gate. MR #372's description records these actual results, local full 925 tests/56 display skips, focused 13 tests and the dedicated real Preview Save Xvfb test. No source/test change follows the successful gates.
+
+Status remains VERIFYING, not DONE. Draft MR #372 is open/unmerged, base `33c1e99e48a78db9d0692064557cf6886de9cf4f`; final head and both matching publication trees are confirmed. Local branch `codex/P25-S4E-nmr-line-portability` includes this local-only evidence after implementation parent `06e24d19c3692b941349427a209b5b7f3ebfb24a`; resolve `git rev-parse HEAD` for the complete handoff tip. The successful published head is not replaced solely for this ledger. Worktree is clean after committing the evidence, tracked build artifacts remain excluded, and no known failure remains from executed checks.
+
+Completed: S4D merge reconciliation and preserved verification ledger, scoped financial line-attribution prerequisite, strict codec/export/serializer/preview/conflict/import integration, canonical receipt/remittance/reversal and rollback/permission/ownership regressions, actual ACCOUNTANT Preview Save with VIEWER denial, seven governing documents/owner checks, matching-tree draft publication and final local/GitHub validation. Remaining: owner review/acceptance/merge of MR #372. No human S4E visual result is invented. Parent S4's explicit NMR item/event designation, liability tie-out and settlement workflow remains subsequent work; this flag fix is not full NMR completion.
+
+Next exact action after confirmed merge: carry the local verification ledger forward onto fresh main, do not reuse the merged branch, inspect the current generic liability item/query and Journal correction authorities, and select explicit NMR item/event detail plus its GL tie-out as the next bounded slice. Preserve entered amounts and existing lifecycle balances; do not infer complete NMR detail from arbitrary legacy flags or all Other Liabilities. S3 acceptance is satisfied and external operating policies/optional policy records are not prerequisites.
