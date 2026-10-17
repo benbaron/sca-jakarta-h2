@@ -33,3 +33,6 @@ Baseline compile and 25 existing relevant tests passed. New focused service/inte
 
 
 Other Liabilities controls/help and table have a real remembered vertical divider. Controls expose independent two-axis scrolling without a forced panel minimum; the table keeps its own two scrollbars and zero minimum sizes. Automated JavaFX checks include actual overflow with larger text, divider movement and durable Save; manual native checks remain owner work.
+
+
+Final-review prerequisite: Journal cannot rewrite a canonical reversal whose supplemental items are inherited from its source. Rewriting can otherwise add a duplicate item effect or detach the liability line. The entry service rejects before mutating anything. Use the existing correction workflow to reverse that reversal, then enter corrected accounting; cutoff history remains intact. The regression reproduces the former acceptance and covers both rejected rewrite shapes and a supported reverse-of-reversal. PLAN distinguishes prior-head verification from the required successor checks.

@@ -186,6 +186,37 @@ class NmrItemDetailTest
         }
     }
 
+    @Test
+    void journalCannotReplaceInheritedReversalFactsWithDuplicateItemAllocations()
+    {
+        try (Jpa jpa = new Jpa(directory.resolve("reversal-edit")))
+        {
+            var r = seed(jpa); var entry = r.entry(jpa); UUID item = UUID.randomUUID();
+            entry.enter(r.receipt(item, r.recipient(), r.event()));
+            var payment = entry.enter(r.payment(item, "5", r.recipient(), r.event()));
+            var reversal = new TransactionCorrectionService(jpa, () -> COMPANY)
+                    .reverse(payment.id(), DATE.plusDays(2), "tester", "Restore item", false);
+            var duplicate = new TransactionCommand(DATE.plusDays(2), null, "Duplicate inherited item effect", null,
+                    List.of(r.line(r.cash(), "5", "0", r.event()), r.line(r.liability(), "0", "5", r.event())),
+                    List.of(r.allocation(item, "INCREASE", 1, "5", r.recipient())));
+            long audits = count(jpa, "select count(a) from AuditEvent a");
+            var detached = new TransactionCommand(DATE.plusDays(2), null, "Detach inherited liability", null,
+                    List.of(r.line(r.cash(), "5", "0", r.event()), r.line(r.income(), "0", "5", r.event())), List.of());
+            for (var command : List.of(duplicate, detached))
+            {
+                assertThrows(PostingException.class, () -> entry.update(reversal.reversalTransactionId(), command));
+            }
+            assertEquals(audits, count(jpa, "select count(a) from AuditEvent a"));
+            assertTrue(entry.load(reversal.reversalTransactionId()).supplementalLines().isEmpty());
+            assertTrue(query(jpa).ready()); assertAmount("20", query(jpa).items().get(0).openBalance());
+            // Supported correction is another dated inverse, preserving the original cutoff.
+            new TransactionCorrectionService(jpa, () -> COMPANY).reverse(reversal.reversalTransactionId(), DATE.plusDays(3), "tester", "Undo reversal", false);
+            assertAmount("20", query(jpa).items().get(0).openBalance());
+            var after = new SupplementalOpenItemQueryService(jpa, () -> COMPANY).queryNmr(DATE.plusDays(3));
+            assertTrue(after.ready()); assertAmount("15", after.items().get(0).openBalance());
+        }
+    }
+
     private static AuthorizationGuard guard(Jpa jpa, ReservedSecurityRole role)
     {
         Instant now = Instant.now();

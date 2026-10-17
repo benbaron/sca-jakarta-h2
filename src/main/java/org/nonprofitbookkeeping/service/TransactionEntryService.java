@@ -350,6 +350,11 @@ public class TransactionEntryService
                 {
                     throw new PostingException("Only ENTERED transactions can be updated by the entry service.");
                 }
+                if (txn.getReversalOf() != null && !SupplementalIntegrityService.items(em, txn).isEmpty())
+                {
+                    throw new PostingException("A supplemental-item reversal inherits its original allocations and cannot be rewritten in Journal. "
+                            + "Use the correction workflow to reverse this reversal, then enter the corrected transaction.");
+                }
                 requireNotFixedAssetLifecycleTransaction(em, transactionId);
                 FundTransferIntegrityService.requireUnlinked(em, transactionId, "edit");
                 PaymentReferences.requireUnlinked(em, txn, "edit");

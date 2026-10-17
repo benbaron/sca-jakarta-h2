@@ -4,9 +4,9 @@ active_phase: P25
 active_slice: P25-S4F
 active_status: VERIFYING
 active_branch: codex/P25-S4F-nmr-item-detail
-active_pull_request: null
-active_head: 2f055f26
-next_action: "Publish the reviewed P25-S4F draft with matching commit trees; finish full local clean verify and exact-head clean/repeat/Xvfb CI. After owner acceptance/merge, select explicit merchant/branch settlement evidence and period movement presentation; no policy inputs are required."
+active_pull_request: 373
+active_head: 2e401a02da5909cbe62004d393698f07b4cfe3e7
+next_action: "Finish the reproduced inherited-reversal edit guard, publish the reviewed successor to draft MR #373 and rerun full local clean verify plus exact-head clean/repeat/Xvfb CI before owner acceptance/merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1714,3 +1714,32 @@ Actual validation: baseline compile plus 25 existing relevant tests passed; broa
 Seven governing documents and their 117 relative links, intended diff and whitespace checks passed. PLAN's published reference/history body remains unchanged except current controller/status rows and appended synthetic implementation/test/publication evidence; S4A source/reference metadata is unchanged from public main. No private donor ledger/workbook rows, scratch files, generated targets or workflow edits are included. Donor split-flag code was inspected and is not a suitable NMR item authority.
 
 Remaining: full local `mvn clean verify`, exact published-head GitHub clean/repeat/expanded-Xvfb CI and owner review/acceptance/merge. A draft may be published while final gates run, with pending results stated explicitly. Keep post-publication/CI evidence local rather than restarting a successful remote head solely for documentation. New owner checks are in [S4F](P25-S4F-nmr-item-detail.md); no human desktop pass is invented. Parent S4 remains IN_PROGRESS: merchant/branch discharge evidence, unconfirmed withholding versus confirmed settlement and period movement columns remain subsequent work. After confirmed merge, select that bounded follow-on on fresh main, preserving explicit entered amounts and the same item/ledger authority. External operating policies and P25-S3 acceptance are not missing prerequisites.
+
+
+### P25-S4F draft publication and final gates — 2026-10-17 (UTC)
+
+Published continued authorized work as draft [MR #373](https://github.com/benbaron/sca-jakarta-h2/pull/373), targeting main `704a4a9e89e01d0ecce067c4ed274a315262b180`. Connected publication preserved both local commit messages/order, verified all uploaded blob hashes and both exact tree hashes, created the fresh branch at verified main and advanced only the expected parent with force disabled. Live PR metadata and native fetch confirm final published head `2e401a02da5909cbe62004d393698f07b4cfe3e7`, tree `78184ea3bba209b5fad65e4875db1fd3709b16ea`, draft/open/unmerged. Native content diff against local implementation is empty.
+
+| Local commit | Published commit | Matching tree |
+|---|---|---|
+| `2f055f26b9b0b9ac504100c626e999b798e8392b` | `24aabcfc488eb34c1785bed06a8158cc942beae5` | `489aa6974b3d01cf08615fc634ffea91cded979f` |
+| `4a05a65265f1c95c4e74eba7e67f32621fd6bbca` | `2e401a02da5909cbe62004d393698f07b4cfe3e7` | `78184ea3bba209b5fad65e4875db1fd3709b16ea` |
+
+Full local clean verify is running on unchanged implementation bytes. Final-head [Maven PR Tests run 39047889348](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39047889348), job `117440199637`, is running clean verification, with repeat tests and expanded production JavaFX/Xvfb still pending. MR description states those gates are pending; no full pass is claimed yet. Mapping and draft text are in scratch `/workspace/work/p25-s4f-publication-map.json` and `/workspace/work/p25-s4f-mr-body.md`. This publication/final-CI evidence remains local rather than pushing a documentation successor solely to restart checks. No new native human acceptance is inferred.
+
+
+### P25-S4F final local verification
+
+Full local offline `mvn clean verify` passed **935 tests, zero failures/errors, 57 display-related skips**, BUILD SUCCESS at 2026-10-17 16:08:11 UTC, elapsed 3:04. Source, migration and test bytes equal final published MR #373 head `2e401a02da5909cbe62004d393698f07b4cfe3e7`; only this local evidence/controller follows. The helper restored the tracked manifest, so the sole worktree change is PLAN. Focused 13 tests, broad 73 tests, broad Xvfb 11 tests and final real Journal Save/geometry Xvfb test are recorded above. No failure remains in executed local final gates. Governing-document link validation now checks 118 links across seven documents. Exact-head CI is still running; no GitHub final pass or new human desktop acceptance is claimed yet.
+
+
+### P25-S4F final-review correction prerequisite
+
+Final source review found an existing writable path that could detach inherited supplemental reversal facts: `TransactionEntryService.update` could replace a lifecycle inverse's lines/details. The new real NMR regression reproduced the defect against implementation `4a05a652`: Journal accepted an added INCREASE allocation on a payment inverse instead of rejecting it (`/workspace/work/p25-s4f-reversal-edit-reproduction.log`, one expected regression failure: no exception thrown). This can duplicate item detail despite unchanged GL amounts. The initial test compile used an incorrect correction-result accessor and was corrected before that reproduction; no production change preceded the reproduced accounting failure.
+
+Narrow prerequisite repair: entry-service updates now reject canonical inverses with inherited supplemental items before deleting any lines/details. Users can reverse the reversal through the existing correction service and enter the corrected transaction. Header-only direct correction and supported canonical reversal lineage retain their existing authority. No separate persistence or new UI command is introduced. The regression also covers a balanced attempted removal of the liability line, zero audit/metadata residue, unchanged cutoff balance and a successful dated reverse-of-reversal. This directly protects the selected NMR detail/correction contract; no unrelated correction redesign.
+
+The previously recorded 935-test local full pass and CI run certify the preceding head only. Current repair requires its focused tests, a new complete local clean verify and a new exact published-head CI run. Do not use the preceding head's successful checks to certify the successor. Parent S4 scope and owner acceptance remain unchanged.
+
+
+The inherited-reversal guard and regression passed the focused release gate: **38 tests, zero failures/errors/skips**, BUILD SUCCESS at 2026-10-17 16:15:32 UTC (`/workspace/work/p25-s4f-reversal-guard-focused.log`), including existing entry/correction/integrity/cutoff tests and NMR interchange. Publish this five-file successor with the same expected-head/tree safeguards, then rerun full local and exact-head CI; all initial slice source and schema remain unchanged beyond this directly blocking guard.
