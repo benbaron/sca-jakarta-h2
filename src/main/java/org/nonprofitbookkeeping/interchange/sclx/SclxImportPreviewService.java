@@ -44,7 +44,7 @@ public final class SclxImportPreviewService
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Set<String> RECOGNIZED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
-            "supplementalDetails", "transactionBudgets", "transactionNmr", "paymentReferences", "bankConfiguration",
+            "supplementalDetails", "transactionBudgets", "transactionNmr", "expenseFunctions", "paymentReferences", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "fixedAssets", "inventory",
             "periodClose", "auditHistory", "nmrPolicies");
     private static final Set<String> UNSUPPORTED_ROOT_SECTIONS = Set.of(
@@ -139,8 +139,8 @@ public final class SclxImportPreviewService
         JsonNode identityRoot = document.root();
         try
         {
-            identityRoot = SclxMerchantSettlementMetadata.identityDocument(SclxNmrItemMetadata.identityDocument(SclxTransactionNmrExtension.identityDocument(
-                    SclxPaymentReferences.identityDocument(SclxTransactionBudgetExtension.identityDocument(document.root())))));
+            identityRoot = SclxExpenseFunctions.identityDocument(SclxMerchantSettlementMetadata.identityDocument(SclxNmrItemMetadata.identityDocument(SclxTransactionNmrExtension.identityDocument(
+                    SclxPaymentReferences.identityDocument(SclxTransactionBudgetExtension.identityDocument(document.root()))))));
             long merchantFacts = document.root().path("extensions").path("scaJakartaH2").path("supplementalDetails").findValues("merchantSettlement").size();
             if (merchantFacts > 0)
             {
@@ -161,6 +161,12 @@ public final class SclxImportPreviewService
                 messages.add(message(InterchangeMessageSeverity.INFO, "SCLX_NMR_MOVEMENTS",
                         "$.extensions.scaJakartaH2.supplementalDetails", "Explicitly classified NMR allocations: " + classified
                                 + ". Merchant/evidence facts are retained; unlabeled allocations remain unknown.", false));
+            }
+            int functionLines = SclxExpenseFunctions.parse(document.root()).size();
+            if (functionLines > 0)
+            {
+                messages.add(message(InterchangeMessageSeverity.INFO, "SCLX_EXPENSE_FUNCTIONS",
+                        "$.extensions.scaJakartaH2.expenseFunctions", "Explicit expense functions: " + functionLines + " lines; no defaults inferred.", false));
             }
             int nmrLines = SclxTransactionNmrExtension.parse(document.root()).size();
             if (nmrLines > 0)

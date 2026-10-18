@@ -1,6 +1,6 @@
 # P25-S5A — Functional-expense contract
 
-Status: VERIFYING — documentation only; owner adopted D07 on 2026-10-18 (America/Denver), publication/review/merge remain. [PLAN](PLAN.md) owns execution. [Adopted program S5](P23-P28-runbook-correction-program.md#p25-s5--add-independent-functional-expense-classification-g10) and [baseline D07](P23-S1-baseline-and-acceptance.md#decision-and-evidence-backlog) require the meanings, report basis and defaults to be confirmed before application implementation. Parent S4 financial accounting is accepted through approved/merged MR #376.
+Status: DONE — [MR #377](https://github.com/benbaron/sca-jakarta-h2/pull/377) merged at 7bc89aef; D07 adopted and full local/exact-head CI passed. Documentation contract. [PLAN](PLAN.md) owns execution. [Adopted program S5](P23-P28-runbook-correction-program.md#p25-s5--add-independent-functional-expense-classification-g10) and [baseline D07](P23-S1-baseline-and-acceptance.md#decision-and-evidence-backlog) require the meanings, report basis and defaults to be confirmed before application implementation. Parent S4 financial accounting is accepted through approved/merged MR #376.
 
 ## Adopted D07 decision
 
@@ -67,3 +67,15 @@ Documentation/link/scope review passed. Local offline clean verify passed 965 te
 ## Recorded adoption
 
 On 2026-10-18 (America/Denver), the owner explicitly adopted AR = Events, OA = Administration, FR = Fundraising; explicit classification/no automatic defaults; net GL expense by transaction date; Unclassified/correction/SCLX preservation. D07 is resolved. This is authorization for that implementation scope after this selected contract slice lands, not a claim that the future F01–F09 feature tests have run or that any particular official submission form is certified.
+
+
+## Published contract checkpoint
+
+[Draft MR #377](https://github.com/benbaron/sca-jakarta-h2/pull/377) records the adopted contract and S4 closeout. Head `540ea03aecc291d1e6a140c9aba41a7e0016f8ff`, tree `540aed02eee6ac3691b1684ba67e14d20ec56ca5`, matches local `3d1f5a7a`. All three local messages/order and every blob/tree matched; expected-parent lease and native fetch/content comparison passed. Final-head CI run 39152631112 is pending completion. D07 is resolved; only selected contract review/merge precedes implementation. This later verification evidence stays local to preserve remote CI.
+
+
+## Final verification and remaining action
+
+[Run 39152631112](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39152631112), job 117749218528, completed success at **2026-10-18 18:18:04 UTC** on exact head **540ea03aecc291d1e6a140c9aba41a7e0016f8ff**. Independent run/step checks confirm clean verification, repeat suite and expanded production JavaFX passed. Full local clean verify passed 965 tests, zero failures/errors, 58 display-related skips. The application/test/schema/workflow/dependency bytes remain unchanged; this is verification of the documentation slice's unchanged application, not executed F01–F09 functionality.
+
+D07 is adopted; no additional meaning/default/basis decision is needed. Owner review/merge of draft #377 remains before the next vertical implementation slice. Final verification evidence stays local for the next authorized publication, preserving the green remote head. After confirmed merge, carry it to fresh main, establish the new implementation baseline and implement this contract through canonical entry, Journal, correction/native retry, generated-entry disposition, derived reporting and SCLX together. No NMR policy gate is reopened.

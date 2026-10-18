@@ -132,6 +132,8 @@ public enum ReportDefinition
     NMR_PERIOD_MOVEMENTS(
             "nmr-period-movements", "NMR Period Movements", ReportSource.SUPPLEMENTAL,
             "OTHER_LIABILITY", DateMode.RANGE, false, true),
+    FUNCTIONAL_EXPENSES("functional-expenses", "Functional Expenses", ReportSource.CORE,
+            null, DateMode.RANGE, true, true, DomainFilterMode.EVENT),
     MERCHANT_RECEIVABLE_MOVEMENTS(
             "merchant-receivable-movements", "Merchant Receivable Movements", ReportSource.SUPPLEMENTAL,
             "RECEIVABLE", DateMode.RANGE, false, true);
@@ -241,6 +243,7 @@ public enum ReportDefinition
         NONE,
         ACCOUNT,
         FIXED_ASSET,
-        INVENTORY
+        INVENTORY,
+        EVENT
     }
 }

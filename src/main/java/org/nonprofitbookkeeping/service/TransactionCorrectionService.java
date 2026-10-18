@@ -547,6 +547,7 @@ public class TransactionCorrectionService
         copy.setActivity(source.getActivity());
         copy.setMerchant(source.getMerchant());
         copy.setNmr(source.isNmr());
+        copy.setExpenseFunction(source.getExpenseFunction());
         copy.setNotes(source.getNotes());
         copy.setAmountSigned(amount);
         copy.setPaymentMethod(source.getPaymentMethod());
@@ -660,6 +661,7 @@ public class TransactionCorrectionService
         return "id=" + txn.getId() + ",date=" + txn.getTxnDate() + ",status=" + txn.getStatus()
                 + ",memo=" + (txn.getMemo() == null ? "" : txn.getMemo()) + ",payments=" + PaymentReferences.snapshot(em, txn)
                 + ",merchantReceivables=" + MerchantSettlementFacts.snapshot(em, txn)
+                + ",expenseFunctions=" + ExpenseFunctions.snapshot(em, txn)
                 + ",nmrItems=" + SupplementalIntegrityService.nmrSnapshot(em, txn);
     }
 

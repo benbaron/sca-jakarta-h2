@@ -9,6 +9,7 @@ import org.nonprofitbookkeeping.interchange.InterchangeMessageSeverity;
 import org.nonprofitbookkeeping.interchange.InterchangeOperationCounts;
 import org.nonprofitbookkeeping.interchange.InterchangeValidationMessage;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.ExpenseFunction;
 import org.nonprofitbookkeeping.model.AccountClassification;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
@@ -103,7 +104,7 @@ public final class SclxImportCommitService
             "PERIOD_CLOSE_RANGE", "PERIOD_CLOSE_EVENT", "AUDIT_EVENT", "NMR_POLICY_VERSION");
     private static final Set<String> SUPPORTED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
-            "supplementalDetails", "transactionBudgets", "transactionNmr", "paymentReferences", "fixedAssets", "inventory", "bankConfiguration",
+            "supplementalDetails", "transactionBudgets", "transactionNmr", "expenseFunctions", "paymentReferences", "fixedAssets", "inventory", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "periodClose", "auditHistory", "nmrPolicies");
 
     private final Jpa jpa;
@@ -287,6 +288,7 @@ public final class SclxImportCommitService
         SclxTransactionDetailImportData details = SclxTransactionDetailImportData.parse(root);
         Map<String, String> transactionBudgetCodes = SclxTransactionBudgetExtension.parse(root);
         Set<String> nmrLineIds = SclxTransactionNmrExtension.parse(root);
+        Map<String, ExpenseFunction> expenseFunctions = SclxExpenseFunctions.parse(root);
         var paymentReferences = SclxPaymentReferences.parse(root);
         SclxCorrectionImportData corrections = SclxCorrectionImportData.parse(root);
         requireSupportedTransactionShape(root, details);
@@ -386,7 +388,7 @@ public final class SclxImportCommitService
                         {
                             TransactionWrite written = writeTransactions(em, company, root.path("transactions"), accounts, funds,
                                     activities, counterparties, merchants, details, previews, transactionBudgetCodes,
-                                    nmrLineIds, writtenBudgets.categories(), writesBeforeHistory, history);
+                                    nmrLineIds, expenseFunctions, writtenBudgets.categories(), writesBeforeHistory, history);
                             restoredCorrections[0] = writeCorrectionRelationships(em, company, corrections,
                                     written.transactions(), writesBeforeHistory + written.transactionCount());
                             for (var fact : paymentReferences.entrySet())
@@ -1132,6 +1134,7 @@ public final class SclxImportCommitService
             Map<EntityKey, SclxImportEntityPreview> previews,
             Map<String, String> transactionBudgetCodes,
             Set<String> nmrLineIds,
+            Map<String, ExpenseFunction> expenseFunctions,
             Map<String, BudgetCategory> categories,
             int writesBefore,
             TransactionEntryService.SclxHistoryWriter history)
@@ -1232,7 +1235,7 @@ public final class SclxImportCommitService
                         account.getId(), fund.getId(), category == null ? null : category.getId(),
                         activity == null ? null : activity.getId(),
                         merchant == null ? null : merchant.getId(),
-                        debit, credit, nmrLineIds.contains(lineId), optionalText(line, "memo")));
+                        debit, credit, nmrLineIds.contains(lineId), optionalText(line, "memo"), null, expenseFunctions.get(lineId)));
                 postingLineIds.add(lineId);
             }
             if (counterpartyIds.size() > 1)

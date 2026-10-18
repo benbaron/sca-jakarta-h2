@@ -24,14 +24,20 @@ final class JournalCreateRequests
 
     static String reason(Company company, TransactionCommand command)
     {
+        boolean classified = command.lines().stream().anyMatch(line -> line.expenseFunction() != null);
         List<Object> lines = new ArrayList<>();
         for (var line : command.lines())
         {
             var payment = line.payment();
-            lines.add(Arrays.asList(line.accountId(), line.fundId(), line.budgetCategoryId(), line.activityId(), line.merchantId(),
+            List<Object> facts = new ArrayList<>(Arrays.asList(line.accountId(), line.fundId(), line.budgetCategoryId(), line.activityId(), line.merchantId(),
                     money(line.debit()), money(line.credit()), line.nmr(), line.notes(), payment == null ? null : Arrays.asList(
                             payment.method().name(), payment.reference(), date(payment.issuedOn()), date(payment.deliveredOn()),
                             payment.evidenceReference(), date(payment.reviewedOn()), payment.reviewNote())));
+            if (classified)
+            {
+                facts.add(line.expenseFunction() == null ? null : line.expenseFunction().name());
+            }
+            lines.add(facts);
         }
         List<Object> details = new ArrayList<>();
         int order = 0;
@@ -50,9 +56,9 @@ final class JournalCreateRequests
         }
         try
         {
-            byte[] input = JSON.writeValueAsBytes(Arrays.asList("journal-create-v1", company.getId(), date(command.date()), command.payeeId(),
+            byte[] input = JSON.writeValueAsBytes(Arrays.asList(classified ? "journal-create-v2" : "journal-create-v1", company.getId(), date(command.date()), command.payeeId(),
                     command.memo(), command.bankAccountId(), lines, details));
-            return PREFIX + HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(input));
+            return (classified ? "Journal create request v2 SHA-256: " : PREFIX) + HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(input));
         }
         catch (JsonProcessingException | NoSuchAlgorithmException ex)
         {

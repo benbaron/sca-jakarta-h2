@@ -62,6 +62,13 @@ public class TxnSplit
     @Column(name = "payment_check_key", length = 80)
     private String paymentCheckKey;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "expense_function", length = 2)
+    private ExpenseFunction expenseFunction;
+
+    public ExpenseFunction getExpenseFunction() { return expenseFunction; }
+    public void setExpenseFunction(ExpenseFunction value) { expenseFunction = value; }
+
     @Column(name = "nmr_flag", nullable = false)
     private boolean nmr = false;
 

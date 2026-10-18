@@ -94,6 +94,143 @@ class JournalPaymentReferencesTest
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void expenseFunctionChoiceIsExposedInTheRealSharedJournal() throws Exception
+    {
+        var event = UiServiceRegistry.activityAdmin().save(new ActivityCommand(null, "FUNC_EVENT", "Functional event", true));
+        FxTestSupport.onFx(() ->
+        {
+            panel = new JournalWorkspaceCompliancePanel();
+            stage = new Stage(); stage.setScene(new Scene(new VBox(panel.root()), 950, 700)); stage.show();
+            panel.onPanelShown(); return null;
+        });
+        await(() -> choices("journalSelectedFund").getItems().size() >= 2);
+        FxTestSupport.onFx(() ->
+        {
+            assertTrue(table().getColumns().stream().anyMatch(c -> "Expense function".equals(c.getText())),
+                    "The adopted independent function must be explicitly selectable in Entry Lines");
+            ((DatePicker)panel.root().lookup("#journalEntryDate")).setValue(java.time.LocalDate.of(2026, 2, 1));
+            var expense = table().getItems().get(0); var bank = table().getItems().get(1);
+            expense.setAccount(new TransactionLineEditorModel.Option(fixture.expense(), "5000", "Expense"));
+            expense.setFund(new TransactionLineEditorModel.Option(fixture.source(), "GENERAL", "General")); expense.setDebit("10.1234");
+            expense.setActivity(new TransactionLineEditorModel.Option(event.id(), event.code(), event.name()));
+            bank.setAccount(new TransactionLineEditorModel.Option(fixture.bank(), "1000", "Bank")); bank.setFund(expense.getFund()); bank.setCredit("10.1234");
+            assertEquals("", expense.expenseFunction.get(), "Expense purpose must not be inferred from Event/account");
+            commitExactMoneyCell(0, "debit", "$10.1234");
+            commitExactMoneyCell(1, "credit", "10.1234");
+            editExpenseFunction("AR"); assertTrue(panel.hasUnsavedChanges());
+            button("journalWorkspaceSaveButton").fire(); return null;
+        });
+        await(() -> !panel.hasUnsavedChanges());
+        var saved = UiServiceRegistry.transactionEntry().search(null, null, "", 20).stream()
+                .filter(t -> t.lines().stream().anyMatch(l -> l.expenseFunction() != null)).findFirst().orElseThrow();
+        assertEquals(org.nonprofitbookkeeping.model.ExpenseFunction.AR, saved.lines().get(0).expenseFunction());
+        assertEquals("10.1234", saved.lines().get(0).debit().toPlainString()); assertNull(saved.lines().get(1).expenseFunction());
+        FxTestSupport.onFx(() ->
+        {
+            editExpenseFunction("OA"); assertTrue(panel.hasUnsavedChanges(), "Function-only commits must protect the shared draft");
+            panel.onPanelShown(); assertEquals("OA", table().getItems().get(0).expenseFunction.get());
+            panel.onSave(); return null;
+        });
+        await(() -> !panel.hasUnsavedChanges());
+        assertEquals(org.nonprofitbookkeeping.model.ExpenseFunction.OA, UiServiceRegistry.transactionEntry().load(saved.id()).lines().get(0).expenseFunction());
+        assertEquals("10.1234", UiServiceRegistry.transactionEntry().load(saved.id()).lines().get(0).debit().toPlainString());
+        assertEquals(2, UiServiceRegistry.transactionEntry().search(null, null, "", 20).size());
+        FxTestSupport.onFx(() ->
+        {
+            panel.root().setStyle("-fx-font-size: 20px;");
+            stage.getScene().getRoot().applyCss(); stage.getScene().getRoot().layout();
+            var column = table().getColumns().stream().filter(c -> "Expense function".equals(c.getText())).findFirst().orElseThrow();
+            assertTrue(column.isResizable()); assertTrue(column.isSortable()); assertTrue(column.isReorderable());
+            table().scrollToColumn(column); table().applyCss(); table().layout();
+            assertTrue(table().lookupAll(".scroll-bar").stream().map(ScrollBar.class::cast)
+                    .anyMatch(b -> b.getOrientation() == javafx.geometry.Orientation.HORIZONTAL && b.isVisible() && b.getMax() > b.getMin()));
+            var cell = table().lookupAll(".table-cell").stream().map(TableCell.class::cast)
+                    .filter(c -> c.getIndex() == 0 && c.getTableColumn() == column).findFirst().orElseThrow();
+            var bounds = cell.localToScene(cell.getBoundsInLocal()); var tableBounds = table().localToScene(table().getBoundsInLocal());
+            assertTrue(bounds.getMinX() >= tableBounds.getMinX() - 1 && bounds.getMaxX() <= tableBounds.getMaxX() + 1,
+                    "Expense purpose must remain reachable in the actual table viewport at laptop size and larger text");
+            MainWindow.sharedSessionState().setAuthenticatedUser(UiPermissionTestSessions.viewer());
+            assertTrue(button("journalWorkspaceSaveButton").isDisabled());
+            MainWindow.sharedSessionState().setAuthenticatedUser(UiPermissionTestSessions.manager()); return null;
+        });
+        // Another purpose-unknown expense must disappear under the explicit Event filter.
+        UiServiceRegistry.transactionEntry().enter(new org.nonprofitbookkeeping.service.TransactionCommand(java.time.LocalDate.of(2026, 2, 1), null, "Unknown purpose", null,
+                List.of(org.nonprofitbookkeeping.service.FundTransferTestFixture.line(fixture.expense(), fixture.source(), "20", "0"),
+                        org.nonprofitbookkeeping.service.FundTransferTestFixture.line(fixture.bank(), fixture.source(), "0", "20"))));
+        var report = FxTestSupport.onFx(() ->
+        {
+            var reports = new ReportLibraryPanel(); stage.setScene(new Scene(new VBox(reports.root()), 950, 700)); stage.show(); return reports;
+        });
+        await(() -> report.root().lookup(".formatted-report-table") != null);
+        await(() -> Thread.getAllStackTraces().keySet().stream().noneMatch(t -> t.isAlive() && t.getName().startsWith("report-preview-")));
+        FxTestSupport.onFx(() ->
+        {
+            ((DatePicker)report.root().lookup("#reportLibraryStartDate")).setValue(java.time.LocalDate.of(2026, 2, 1));
+            ((DatePicker)report.root().lookup("#reportLibraryEndDate")).setValue(java.time.LocalDate.of(2026, 2, 1));
+            ((ListView<org.nonprofitbookkeeping.report.ReportDefinition>)report.root().lookup("#reportLibraryReportList"))
+                    .getSelectionModel().select(org.nonprofitbookkeeping.report.ReportDefinition.FUNCTIONAL_EXPENSES); return null;
+        });
+        await(() -> report.root().lookup("#report-table-functional-expenses") != null);
+        await(() -> ((ComboBox<?>)report.root().lookup("#reportLibrarySubject")).getItems().size() >= 2);
+        FxTestSupport.onFx(() ->
+        {
+            var events = (ComboBox<org.nonprofitbookkeeping.report.AssetInventoryReportQueryService.FilterOption>)report.root().lookup("#reportLibrarySubject");
+            assertTrue(events.isVisible());
+            events.getSelectionModel().select(events.getItems().stream().filter(o -> o != null && o.id().equals(event.id())).findFirst().orElseThrow());
+            ((Button)report.root().lookup("#reportLibraryRun")).fire(); return null;
+        });
+        await(() ->
+        {
+            var rows = (TableView<org.nonprofitbookkeeping.report.ReportTableModel.Row>)report.root().lookup("#report-table-functional-expenses");
+            return rows != null && rows.getItems().stream().anyMatch(r -> "GL CONTROL".equals(r.value("record"))
+                    && new java.math.BigDecimal("10.1234").equals(r.value("net")));
+        });
+        FxTestSupport.onFx(() ->
+        {
+            var rows = (TableView<org.nonprofitbookkeeping.report.ReportTableModel.Row>)report.root().lookup("#report-table-functional-expenses");
+            rows.getSelectionModel().select(rows.getItems().stream().filter(r -> "DETAIL".equals(r.value("record"))).findFirst().orElseThrow());
+            var opened = new java.util.concurrent.atomic.AtomicReference<String>();
+            DrillThroughCoordinator.configureOpener(id -> opened.set(DrillThroughCoordinator.consumeContext(id)));
+            ((Button)report.root().lookup("#supplementalReportRepair")).fire();
+            assertTrue(opened.get().contains("Txn #" + saved.id()));
+            var events = (ComboBox<?>)report.root().lookup("#reportLibrarySubject"); events.getSelectionModel().selectFirst();
+            ((Button)report.root().lookup("#reportLibraryRun")).fire(); return null;
+        });
+        await(() ->
+        {
+            var rows = (TableView<org.nonprofitbookkeeping.report.ReportTableModel.Row>)report.root().lookup("#report-table-functional-expenses");
+            return rows != null && rows.getItems().stream().anyMatch(r -> "GL CONTROL".equals(r.value("record")) && new java.math.BigDecimal("30.1234").equals(r.value("net")));
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    private void commitExactMoneyCell(int row, String id, String text)
+    {
+        var column = (TableColumn<JournalWorkspacePanel.EditorLine, String>)table().getColumns().stream()
+                .filter(c -> id.equals(c.getId())).findFirst().orElseThrow();
+        table().scrollToColumn(column); table().applyCss(); table().layout(); table().edit(row, column);
+        var cell = table().lookupAll(".table-cell").stream().map(TableCell.class::cast)
+                .filter(c -> c.getIndex() == row && c.getTableColumn() == column).findFirst().orElseThrow();
+        var editor = (TextField)cell.getGraphic();
+        assertEquals("10.1234", editor.getText());
+        editor.setText(text); editor.fireEvent(new javafx.event.ActionEvent());
+    }
+
+    @SuppressWarnings("unchecked")
+    private void editExpenseFunction(String code)
+    {
+        var column = (TableColumn<JournalWorkspacePanel.EditorLine, String>)table().getColumns().stream()
+                .filter(c -> "Expense function".equals(c.getText())).findFirst().orElseThrow();
+        table().scrollToColumn(column); table().applyCss(); table().layout(); table().edit(0, column);
+        var cell = table().lookupAll(".table-cell").stream().map(TableCell.class::cast)
+                .filter(c -> c.getIndex() == 0 && c.getTableColumn() == column).findFirst().orElseThrow();
+        assertTrue(cell.isEditing(), "Initializing the choice must not prematurely commit it");
+        var editor = (ComboBox<String>)cell.getGraphic(); assertTrue(editor.getItems().containsAll(List.of("", "AR", "OA", "FR")));
+        editor.getSelectionModel().select(code); assertEquals(code, table().getItems().get(0).expenseFunction.get());
+    }
+
+    @Test
     void bankLineFactsSaveReloadAndProtectAnUnsavedPaymentOnlyChange() throws Exception
     {
         FxTestSupport.onFx(() ->

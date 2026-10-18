@@ -1,12 +1,12 @@
 ---
-plan_version: 377
+plan_version: 379
 active_phase: P25
-active_slice: P25-S5A
+active_slice: P25-S5B
 active_status: VERIFYING
-active_branch: codex/P25-S5A-functional-expense-contract
+active_branch: codex/P25-S5B-functional-expenses
 active_pull_request: null
-active_head: 7648faa2d5add27dcb513e9776fcaba0cfd48f53
-next_action: "Publish the adopted S5A functional-expense contract as a draft and verify exact-head CI. Owner adopted all D07 choices; no further classification input is needed. After selected S5A review/merge, start one fresh canonical/Journal/report/correction/generated-entry/SCLX implementation slice."
+active_head: 7bc89aefaa4176215e6adeae58dd946327996b27
+next_action: "Finish full clean verify, publish matching reviewed commits as a fresh draft, inspect exact-head clean/repeat/expanded JavaFX CI and record the handoff. D07 is adopted; parent S5 awaits review/merge and owner desktop checks."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,7 +37,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | IN_PROGRESS — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A functional-expense contract selected; D07 adopted, contract publication/merge pending; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
+| P25 | Transfers, payment references, reporting classification | IN_PROGRESS — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B functional-expense implementation selected; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -694,8 +694,9 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S4G | Explicit settlement attribution/evidence and period movements | DONE | MR #374 merged at fb37feba; full local and exact-head clean/repeat/JavaFX CI passed |
 | P25-S4H | Merchant receivable breakdown and withholding observations | DONE | MR #375 merged at 030b7d3b; final full local and exact-head clean/repeat/JavaFX CI passed |
 | P25-S4I | NMR financial acceptance and replay-safe Journal create | DONE | MR #376 explicitly approved/merged at 4c965490; final head de44946b passed full local and exact-head clean/repeat/JavaFX CI |
-| P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | S4/D07 accepted; selected S5A contract publication/merge remains before the next implementation slice. No further policy/classification input needed |
-| P25-S5A | Prepare functional-expense contract proposal (documentation only) | VERIFYING | [Adopted D07 contract](P25-S5A-functional-expense-contract.md); no application/schema change or assumed form authority |
+| P25-S5 | Add independent functional-expense classification (G10) | IN_PROGRESS | S4/D07 accepted, S5A merged; selected S5B implements the contract; no further classification/policy input required |
+| P25-S5A | Adopt functional-expense contract (documentation only) | DONE | MR #377 merged at 7bc89aef; final-head clean/repeat/JavaFX CI passed; D07 adopted |
+| P25-S5B | Independent functional expense entry, reporting and portability | VERIFYING | [Implementation contract](P25-S5B-functional-expenses.md); nullable canonical fact, shared Save, compatible native retries and lossless SCLX |
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
 | P26-S3 | Complete event/fund budget planning and reporting filters (G12) | BLOCKED | P26-S2 merged; owning contract and D01–D10 gates as applicable |
@@ -1909,3 +1910,53 @@ Status VERIFYING on fresh `codex/P25-S5A-functional-expense-contract`, from conf
 Owner answered “Adopt this proposal (Recommended)” to the complete concrete D07 question. D07 is RESOLVED: AR = Events, OA = Administration, FR = Fundraising; explicit expense-line selection with no automatic defaults; net GL expense on canonical transaction date; visible Unclassified amounts, preserved corrections and SCLX. No third-party approval or official form revision is inferred. This explicit choice supersedes the pending-request checkpoints above. No further NMR operating-policy or functional-classification question is required.
 
 Updated the S5A contract, baseline decision record, adopted program and current controller to reflect adoption. Parent S5 now waits only for the selected documentation slice's publication/review/merge before fresh implementation, not missing D07 input. This remains one documentation-only slice; no production/test/schema change or functional feature completion is claimed. Full local 965-test verification on unchanged code remains applicable; final documentation links/scope/whitespace and exact published-head CI follow.
+
+### P25-S5A adopted-contract draft publication — 2026-10-18 (America/Denver)
+
+Draft [MR #377](https://github.com/benbaron/sca-jakarta-h2/pull/377) targets verified main `4c965490f59a59285b599262f68d0f853fcca582`. D07 is adopted; no further classification input is pending. Connected publication preserved three reviewed local commits/messages/order and every blob/tree:
+
+- Carry `7648faa2d5add27dcb513e9776fcaba0cfd48f53` → `459603f3a5f2af940ccf384fa6db3dd4504c1c9b`, tree `6d124a4048dfaf213a9d141139a1321432f4d9cf`.
+- Proposal/closeout `4ea8fa01ddd3ae70d064a4c65a1d27278498b923` → `83612ac256107359b090af6980779da35826f22d`, tree `2e9ae4b9dc2748a8a1bcca001aac6960ed89a978`.
+- Owner adoption `3d1f5a7aafe1179c89dbb5879f93a2b55a66e0d0` → `540ea03aecc291d1e6a140c9aba41a7e0016f8ff`, tree `540aed02eee6ac3691b1684ba67e14d20ec56ca5`.
+
+Ref advanced from expected `4c965490` with force false. Native fetch and empty tree comparison confirm final remote content equals local `3d1f5a7a`; draft/open metadata confirms that head. Six governing documents / 126 relative links, whitespace and documentation-only scope checks pass; application/test/schema/workflow/dependency bytes still equal merged main. Full local 965-test clean verify passed; no new functional implementation or desktop result is claimed. Final-head Maven run `39152631112` is running clean verification, repeat suite and expanded production JavaFX. MR description records actual local results and pending CI. Map/body scratch files: `/workspace/work/p25-s5a-publication-map.json`, `/workspace/work/p25-s5a-mr-body.md`.
+
+This post-publication verification record stays local, preserving the tested remote head. Next exact action: finish exact-head CI, update MR results and commit the local handoff; owner review/merge of this already adopted contract then enables a fresh S5 implementation slice. No new D07 approval question is needed.
+
+### P25-S5A final-head CI and handoff — 2026-10-18 (America/Denver)
+
+Final [Maven PR Tests run 39152631112](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39152631112), job `117749218528`, completed **success** at **2026-10-18 18:18:04 UTC** for exact head `540ea03aecc291d1e6a140c9aba41a7e0016f8ff`, branch `codex/P25-S5A-functional-expense-contract`. Run metadata and independent job-step reads confirm clean headless verification, repeat suite, expanded production JavaFX and cleanup all passed. Draft MR #377 remains open/unmerged at this head and records actual results, already-adopted D07 choices and the next implementation scope. No failure remains in final executed gates. Full local unchanged-code verification passed 965 tests, zero failures/errors, 58 display-related skips; future F01–F09 functionality is not claimed implemented.
+
+Completed: verified S4I approval/merge/final-head CI and carried its local ledger; closed accepted parent S4 financial scope without inventing a per-check desktop transcript; inspected separate canonical dimensions and donor usedFor compatibility; prepared and obtained explicit adoption of AR/OA/FR meanings, net GL transaction-date basis and no automatic defaults; recorded Unclassified/mixed-purpose/correction/generated-entry/native retry/SCLX requirements and nine future acceptance cases; reconciled current program/baseline/PLAN/S4A/S4I contracts; published all reviewed commits with matching blobs/trees and nonforce expected-parent lease; passed full local and exact-head CI.
+
+Remaining: owner review/merge of already adopted documentation contract MR #377. S5A stays VERIFYING, not DONE, until merged. Parent S5 waits for that selected-slice merge, not unresolved D07 or NMR operating policies. No application UI behavior changed and no new desktop visual test is required for this documentation-only slice. P26/P27 are not activated; official form mappings retain their own scope.
+
+This final PLAN/S5A verification evidence is local-only (commit subject `Record functional expense contract publication and final verification`). active_head remains the successful remote implementation/document source; `git rev-parse HEAD` identifies the complete local handoff. Do not publish a documentation-only successor merely to restart green CI. After owner reports merge, fetch/verify main, carry this local evidence onto a fresh branch and select one vertical P25-S5 implementation slice from [the adopted contract](P25-S5A-functional-expense-contract.md). Inspect current TxnSplit/line command/view, entry/correction/native receipt, Journal/line model, report/date/sign/filter routes, every generated expense writer and SCLX parser/identity/snapshot/commit; establish a fresh compile/relevant-test baseline before code. Preserve nullable legacy unknowns, compatible old native retries and lossless current facts. No further classification/default/basis question is required. Do not reuse the merged branch.
+
+Final handoff checks: 6 changed governing documents / 127 relative links verified, whitespace clean, production/test/schema/workflow/dependency bytes equal merged main and published head. Only PLAN/S5A final verification records follow locally.
+
+### P25-S5A merge and S5B implementation selection — 2026-10-18 (America/Denver)
+
+Owner confirmed “merged; contiinue.” GitHub/native fetch verify MR #377 merged at main `7bc89aefaa4176215e6adeae58dd946327996b27`; final head `540ea03aecc291d1e6a140c9aba41a7e0016f8ff` / run `39152631112` succeeded. Fresh `codex/P25-S5B-functional-expenses` carries final local evidence as `1d7334e8` (from `2451c961`), without reusing the merged branch. Worktree was clean. S5A DONE; S5/S5B IN_PROGRESS. D07 remains adopted, with no new operating-policy/classification gate.
+
+Required reading/inspection: AGENTS/PLAN, adopted program S5, baseline G10/A10/D07, S5A/S4I, ledger/lifecycle/period, three UI contracts and SCLX; canonical split/DTOs/entry/correction/native create receipt, Journal and shared line model/Save/capabilities, financial/report/filter/drill-through routes, every canonical/generated writer, SCLX snapshot/serializer/preview/identity/history/commit and migrations/tests. Donor nullable usedFor does not define strict adopted codes; use the existing optional versioned application extension boundary, retaining one canonical TxnSplit expenseFunction. No second ledger or master dimension. Generated writers without an explicit function input remain Unclassified with report diagnostics; exact source copies/reversals preserve any accepted function.
+
+Baseline before production edits: offline compile passed; 38 relevant entry/correction/native retry/NMR SCLX/inventory/fixed-asset accounting tests passed at 2026-10-18 18:54:32 UTC. Add actual Journal missing-choice regression before repairing production. [S5B](P25-S5B-functional-expenses.md) records the concrete technical choices and required validation. Parent S5 is not DONE from implementation alone; no new human desktop result is assumed.
+
+### P25-S5B implementation and focused verification — 2026-10-18 (America/Denver)
+
+Implemented nullable checked canonical AR/OA/FR expense purpose with no default/backfill, independent command/view/Journal choice, exact correction copies and audit, old-v1/new-v2 native receipt compatibility, derived company/date/Fund/Event Functional Expenses with untruncated GL/unknown-gross controls and owning-transaction drill-through, and strict sparse version-1 SCLX facts with whole-transaction identity/conflict/Keep target. Account maintenance/import now protects classified expense type/normal balance. Generic classified-inverse rewrite rejects in favor of correction/replacement. Enumerated every writer: current generated commands without an input remain visibly Unclassified; accepted inventory OA survives domain reversal and interchange. No rate/policy engine, second ledger, official form mapping or future-phase scope.
+
+Pre-edit actual JavaFX missing-choice regression failed as expected (one test, one wrapped assertion error, no skips). Service/migration initially passed 10 tests; four SCLX tests pass after fixing an incorrect account-array lookup and source/inverse export ordering. Actual function-only Save then exposed an existing Entry Lines precision defect (10.1234 reloaded/saved as 10.1200); repaired exact Debit/Credit editing/reload while keeping formatted display. Focused actual JavaFX run passed 19 tests, no failures/errors/skips. Broad service/migration/SCLX/generated/protection/native-retry run passed 68 tests, zero failures/errors/skips, BUILD SUCCESS 2026-10-18 19:22:48 UTC. Subsequent assertions add classified deletion/audit/no-resurrection and PDF/XLSX export smoke coverage for the full gate. Expanded UI run exposed a new test polling a temporarily cleared report table without a null guard; corrected that asynchronous wait, with rerun pending. No human desktop result is claimed.
+
+Reviewed actual model/services/migration/writers/Journal/report/SCLX changes. [S5B](P25-S5B-functional-expenses.md) maps all F01–F09 to named tests and lists owner steps/limits. Updated ledger authority, lifecycle, SCLX, editor/matrix and adopted program; nine changed governing documents / 147 relative links resolve, whitespace clean. Latest native/connected main remains `7bc89aef`. Next exact action: finish expanded actual JavaFX and full clean verify, review final diff, commit and publish the fresh draft through matching blobs/trees/messages/order with nonforce expected-parent update, then inspect exact-head clean/repeat/expanded JavaFX CI. Parent S5 remains IN_PROGRESS until merge/acceptance; no further D07/NMR input is pending.
+
+### P25-S5B expanded desktop gate — 2026-10-18 (America/Denver)
+
+Expanded actual Xvfb production suite passed **52 tests, zero failures/errors/skips**, BUILD SUCCESS **2026-10-18 19:30:41 UTC**, elapsed 3:26 (`/workspace/work/p25-s5b-expanded-fx-final.log`). This includes the new actual shared Journal choice/precise cell entry/function-only Save/draft/VIEWER/larger-text reach test and genuine Report Library Event/all-Event Run/drill-through, plus all existing production-route/Save/format/table/geometry tests selected by CI. The earlier expanded run's sole error was the new test's unsafe poll during temporary table replacement; its null-aware wait is repaired and the complete rerun passes. No production failure remains in this executed gate. No human desktop acceptance is inferred. S5B now VERIFYING; full local clean verify is running, including final deletion/provenance/export assertions. Publication and exact-head CI follow a passing full gate.
+
+### P25-S5B final local verification — 2026-10-18 (America/Denver)
+
+Final offline `mvn clean verify` passed **980 tests, zero failures/errors, 59 display-dependent skips**, BUILD SUCCESS **2026-10-18 19:34:20 UTC**, elapsed 3:32 (`/workspace/work/p25-s5b-clean-verify.log`). Final service tests include classified deletion audit/no-resurrection and real PDF/XLSX export retaining full GL control despite limited detail. Expanded actual production JavaFX separately passed 52 tests with no failures/errors/skips at 19:30:41 UTC; focused accounting passed 68. All executed final gates pass. JDK 21 builds release 17 locally; exact published-head CI will validate JDK 17 clean/repeat/expanded JavaFX.
+
+Reviewed intended canonical migration/DTO/write/correction/hash/audit/Journal/precision/report/filter/SCLX changes, all new tests, and governing documentation. No dependency/workflow/applied-migration or donor-data change. Helper restored the tracked target manifest; generated output must not be staged. Nine governing documents / 148 relative links and whitespace/scope checks pass. S5B is VERIFYING on fresh branch `codex/P25-S5B-functional-expenses`, with implementation ready for matching-tree draft publication after carry `1d7334e8`. No PR exists yet. Known final failures: none. Remaining: publication, exact-head CI, owner review/merge and documented desktop checks. Do not close parent S5 or activate P26 from local results alone.

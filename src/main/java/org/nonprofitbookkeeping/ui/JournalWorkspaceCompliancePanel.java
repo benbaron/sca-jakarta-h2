@@ -263,7 +263,8 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
             else if ("journalWorkspaceEntryLineTable".equals(tableId)
                     && ("debit".equals(key) || "credit".equals(key)))
             {
-                column.setCellFactory(ignored -> new MoneyEditCell(format));
+                // Formatting is presentation only; function-only edits must retain canonical precision.
+                column.setCellFactory(ignored -> new MoneyEditCell(format, true));
             }
             else if ("journalWorkspaceEntryLineTable".equals(tableId) && "clearedOn".equals(key))
             {

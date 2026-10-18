@@ -252,6 +252,20 @@ class InventoryMovementAccountingTest
             assertEquals("FAIR — Autumn Fair", movement.events());
             assertEquals("COST — Event Cost", movement.budgetCategories());
             assertEquals(movement.id(), inventory.recordMovement(preview, "tester").id());
+            var purposes = new FunctionalExpenseQueryService(jpa, () -> COMPANY);
+            var generated = purposes.query(MOVEMENT_DATE, MOVEMENT_DATE, null, 31001L);
+            assertEquals(new BigDecimal("200.0000"), generated.unknownGross());
+            assertTrue(!generated.ready(), "An Event tag cannot supply an expense function");
+            // Explicit Journal classification changes purpose without changing the generated amounts or tags.
+            var command = preview.transactionCommand();
+            journal.update(movement.transactionId(), new TransactionCommand(command.date(), command.payeeId(), command.memo(), command.bankAccountId(),
+                    command.lines().stream().map(line -> new TransactionLineCommand(line.accountId(), line.fundId(),
+                            line.budgetCategoryId(), line.activityId(), line.merchantId(), line.debit(), line.credit(),
+                            line.nmr(), line.notes(), line.payment(), line.accountId() == OFFSET_ACCOUNT_ID
+                                    ? org.nonprofitbookkeeping.model.ExpenseFunction.OA : null)).toList()));
+            assertTrue(purposes.query(MOVEMENT_DATE, MOVEMENT_DATE, null, 31001L).ready());
+            assertEquals(new BigDecimal("200.0000"), purposes.query(MOVEMENT_DATE, MOVEMENT_DATE, null, 31001L)
+                    .totals().get(org.nonprofitbookkeeping.model.ExpenseFunction.OA));
             var totals = new EventAccountingQueryService(jpa, () -> COMPANY)
                     .workspace(31001L, MOVEMENT_DATE, MOVEMENT_DATE, FUND_ID).summary();
             assertEquals(new BigDecimal("500.0000"), totals.income());
@@ -269,6 +283,10 @@ class InventoryMovementAccountingTest
                     movement.id(), MOVEMENT_DATE.plusDays(1), "Return unused stock"), "tester");
             assertEquals(movement.events(), reversal.events());
             assertEquals(movement.budgetCategories(), reversal.budgetCategories());
+            var correctedPurposes = purposes.query(MOVEMENT_DATE, MOVEMENT_DATE.plusDays(1), null, 31001L);
+            assertTrue(correctedPurposes.ready());
+            assertEquals(new BigDecimal("0.0000"), correctedPurposes.gl());
+            assertTrue(correctedPurposes.details().stream().allMatch(line -> line.function() == org.nonprofitbookkeeping.model.ExpenseFunction.OA));
             assertEquals(new BigDecimal("10.0000"), inventory.load(item.id()).quantity());
             assertEquals(new BigDecimal("0.0000"), new EventAccountingQueryService(jpa, () -> COMPANY)
                     .workspace(31001L, MOVEMENT_DATE, MOVEMENT_DATE.plusDays(1), FUND_ID).summary().expenses());
@@ -304,6 +322,11 @@ class InventoryMovementAccountingTest
             var result = importer.commit(exchange, preview, "tester");
             assertTrue(result.committed(), result.toString());
             assertEquals(3, service(target, COMPANY).listMovements(COMPANY).size());
+            var importedPurposes = new FunctionalExpenseQueryService(target, () -> COMPANY).query(MOVEMENT_DATE, MOVEMENT_DATE.plusDays(1), null, null);
+            assertTrue(importedPurposes.ready());
+            assertEquals(new BigDecimal("0.0000"), importedPurposes.gl());
+            assertEquals(2, importedPurposes.details().size());
+            assertTrue(importedPurposes.details().stream().allMatch(line -> line.function() == org.nonprofitbookkeeping.model.ExpenseFunction.OA));
             // SCLX preserves category codes; a new target initializes the category name from its code.
             assertEquals(2, service(target, COMPANY).listMovements(COMPANY).stream()
                     .filter(row -> "FAIR — Historic Fair".equals(row.events()) && "COST — COST".equals(row.budgetCategories())).count(),

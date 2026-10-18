@@ -244,7 +244,9 @@ public class TransactionEntryService
                 {
                     List<TxnSplit> originals = em.createQuery("from TxnSplit s where s.txn = :txn order by s.id", TxnSplit.class)
                             .setParameter("txn", txn.getReversalOf()).getResultList();
-                    boolean linkedSource = !SupplementalIntegrityService.items(em, txn.getReversalOf()).isEmpty();
+                    boolean linkedSource = !SupplementalIntegrityService.items(em, txn.getReversalOf()).isEmpty()
+                            || originals.stream().anyMatch(s -> s.getExpenseFunction() != null)
+                            || splits.stream().anyMatch(s -> s.getExpenseFunction() != null);
                     if (!entry.getValue())
                     {
                         Txn allocationSource = txn.getReversalOf();
@@ -268,7 +270,8 @@ public class TransactionEntryService
                     for (int i = 0; linkedSource && i < splits.size(); i++)
                     {
                         TxnSplit original = originals.get(i), inverse = splits.get(i);
-                        if (!original.getAccount().getId().equals(inverse.getAccount().getId())
+                        if (original.getExpenseFunction() != inverse.getExpenseFunction()
+                                || !original.getAccount().getId().equals(inverse.getAccount().getId())
                                 || !original.getFund().getId().equals(inverse.getFund().getId())
                                 || original.getAmountSigned().negate().compareTo(inverse.getAmountSigned()) != 0
                                 || !Objects.equals(original.getActivity() == null ? null : original.getActivity().getId(),
@@ -276,7 +279,7 @@ public class TransactionEntryService
                                 || !Objects.equals(original.getMerchant() == null ? null : original.getMerchant().getId(),
                                         inverse.getMerchant() == null ? null : inverse.getMerchant().getId()))
                         {
-                            throw new PostingException("SCLX inverse must preserve source split order, accounts, funds, events, merchants and opposite amounts.");
+                            throw new PostingException("SCLX inverse must preserve source split order, accounts, funds, events, merchants, expense functions and opposite amounts.");
                         }
                     }
                 }
@@ -368,6 +371,12 @@ public class TransactionEntryService
                 {
                     throw new PostingException("A supplemental-item reversal inherits its original allocations and cannot be rewritten in Journal. "
                             + "Use the correction workflow to reverse this reversal, then enter the corrected transaction.");
+                }
+                if (txn.getReversalOf() != null && (command.lines().stream().anyMatch(line -> line.expenseFunction() != null)
+                        || em.createQuery("select count(s) from TxnSplit s where (s.txn = :inverse or s.txn = :source) and s.expenseFunction is not null", Long.class)
+                                .setParameter("inverse", txn).setParameter("source", txn.getReversalOf()).getSingleResult() > 0))
+                {
+                    throw new PostingException("An expense-function reversal retains its source purposes. Reverse it, then enter or edit the replacement transaction.");
                 }
                 requireNotFixedAssetLifecycleTransaction(em, transactionId);
                 FundTransferIntegrityService.requireUnlinked(em, transactionId, "edit");
@@ -659,6 +668,7 @@ public class TransactionEntryService
             ownership().ensureOwnedBy(em, company, category, "Budget category");
             ownership().ensureOwnedBy(em, company, activity, "Activity");
             ownership().ensureOwnedBy(em, company, merchant, "Merchant");
+            ExpenseFunctions.requireEligible(account, line.expenseFunction());
             toSignedAmount(account, line);
         }
     }
@@ -694,6 +704,7 @@ public class TransactionEntryService
             ownership().ensureOwnedBy(em, company, category, "Budget category");
             ownership().ensureOwnedBy(em, company, activity, "Activity");
             ownership().ensureOwnedBy(em, company, merchant, "Merchant");
+            ExpenseFunctions.requireEligible(account, command.expenseFunction());
             TxnSplit split = new TxnSplit();
             split.setTxn(txn);
             split.setAccount(account);
@@ -702,6 +713,7 @@ public class TransactionEntryService
             split.setActivity(activity);
             split.setMerchant(merchant);
             split.setNmr(command.nmr());
+            split.setExpenseFunction(command.expenseFunction());
             split.setNotes(command.notes());
             split.setAmountSigned(toSignedAmount(account, command));
             PaymentReferences.apply(em, split, command.payment());
@@ -938,7 +950,7 @@ public class TransactionEntryService
                     split.isBankCleared(), split.getBankClearedOn(), reconciliationSessions.get(split.getId()),
                     split.getActivity() == null ? null : split.getActivity().getCode(),
                     split.getActivity() == null ? null : split.getActivity().getName(),
-                    split.getMerchant() == null ? null : split.getMerchant().getName(), PaymentReferences.read(split)));
+                    split.getMerchant() == null ? null : split.getMerchant().getName(), PaymentReferences.read(split), split.getExpenseFunction()));
         }
         List<TxnSupplementalLine> supplementalEntities = em.createQuery(
                         "select l from TxnSupplementalLine l left join fetch l.txnSplit where l.txn = :txn order by l.lineOrder, l.id", TxnSupplementalLine.class)
@@ -1076,6 +1088,7 @@ public class TransactionEntryService
         return "id=" + txn.getId() + ",date=" + txn.getTxnDate() + ",status=" + txn.getStatus()
                 + ",memo=" + (txn.getMemo() == null ? "" : txn.getMemo()) + ",payments=" + PaymentReferences.snapshot(em, txn)
                 + ",merchantReceivables=" + MerchantSettlementFacts.snapshot(em, txn)
+                + ",expenseFunctions=" + ExpenseFunctions.snapshot(em, txn)
                 + ",nmrItems=" + SupplementalIntegrityService.nmrSnapshot(em, txn);
     }
 

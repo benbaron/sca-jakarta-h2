@@ -60,6 +60,7 @@ public final class SclxJsonSerializer
         SclxSupplementalLifecycle.explained(root);
         SclxTransactionBudgetExtension.parse(root);
         SclxTransactionNmrExtension.parse(root);
+        SclxExpenseFunctions.parse(root);
         SclxPaymentReferences.parse(root);
         SclxNmrItemMetadata.validate(root);
         SclxMerchantSettlementMetadata.validate(root);

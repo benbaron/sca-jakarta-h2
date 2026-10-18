@@ -543,7 +543,7 @@ public final class JournalWorkspacePanel implements AppPanel
         lineTable.getColumns().add(moneyColumn("Debit", "debit", 120,
                 EditorLine::debitProperty,
                 (row, value) -> {
-                    row.setDebit(normalizeMoney(value));
+                    row.setDebit(normalizeExactMoney(value));
                     BigDecimal amount = parseMoney(row.getDebit());
                     if (amount != null && amount.signum() > 0)
                     {
@@ -553,7 +553,7 @@ public final class JournalWorkspacePanel implements AppPanel
         lineTable.getColumns().add(moneyColumn("Credit", "credit", 120,
                 EditorLine::creditProperty,
                 (row, value) -> {
-                    row.setCredit(normalizeMoney(value));
+                    row.setCredit(normalizeExactMoney(value));
                     BigDecimal amount = parseMoney(row.getCredit());
                     if (amount != null && amount.signum() > 0)
                     {
@@ -563,6 +563,13 @@ public final class JournalWorkspacePanel implements AppPanel
         lineTable.getColumns().add(optionColumn("Merchant", "merchant", 165,
                 EditorLine::merchantProperty,
                 () -> referenceData.merchants()));
+
+        TableColumn<EditorLine, String> function = new TableColumn<>("Expense function");
+        configureColumn(function, "expenseFunction", 185);
+        function.setCellValueFactory(cell -> cell.getValue().expenseFunction);
+        function.setCellFactory(ignored -> new ExpenseFunctionTableCell());
+        function.setOnEditCommit(event -> event.getRowValue().expenseFunction.set(safe(event.getNewValue())));
+        lineTable.getColumns().add(function);
 
         TableColumn<EditorLine, Boolean> nmr = new TableColumn<>("NMR");
         configureColumn(nmr, "nmr", 80);
@@ -1114,9 +1121,10 @@ public final class JournalWorkspacePanel implements AppPanel
         row.setBudget(option(line.budgetCategoryId(), "", ""));
         row.setActivity(option(line.activityId(), line.activityCode(), line.activityName()));
         row.setMerchant(option(line.merchantId(), "", line.merchantName()));
-        row.setDebit(line.debit().signum() == 0 ? "" : normalizeMoney(line.debit().toPlainString()));
-        row.setCredit(line.credit().signum() == 0 ? "" : normalizeMoney(line.credit().toPlainString()));
+        row.setDebit(line.debit().signum() == 0 ? "" : line.debit().toPlainString());
+        row.setCredit(line.credit().signum() == 0 ? "" : line.credit().toPlainString());
         row.setNmr(line.nmr());
+        row.expenseFunction.set(line.expenseFunction() == null ? "" : line.expenseFunction().name());
         row.setNotes(safe(line.notes()));
         if (line.payment() != null)
         {
@@ -1258,7 +1266,8 @@ public final class JournalWorkspacePanel implements AppPanel
                     debit,
                     credit,
                     row.isNmr(),
-                    blankToNull(row.getNotes()), row.payment()));
+                    blankToNull(row.getNotes()), row.payment(),
+                    org.nonprofitbookkeeping.model.ExpenseFunction.fromCode(row.expenseFunction.get())));
         }
         List<TransactionSupplementalLineCommand> supplemental = supplementalCommands();
         return new TransactionCommand(
@@ -1545,6 +1554,7 @@ public final class JournalWorkspacePanel implements AppPanel
         row.paymentReference.addListener((obs, oldValue, newValue) -> markDirty());
         row.paymentIssued.addListener((obs, oldValue, newValue) -> markDirty());
         row.paymentDelivered.addListener((obs, oldValue, newValue) -> markDirty());
+        row.expenseFunction.addListener((obs, oldValue, newValue) -> markDirty());
         row.nmrProperty().addListener((obs, oldValue, newValue) -> markDirty());
     }
 
@@ -1985,6 +1995,12 @@ public final class JournalWorkspacePanel implements AppPanel
         }
     }
 
+    private static String normalizeExactMoney(String value)
+    {
+        BigDecimal amount = parseMoney(value);
+        return amount == null ? safe(value).trim() : amount.toPlainString();
+    }
+
     private static String normalizeMoney(String value)
     {
         BigDecimal amount = parseMoney(value);
@@ -2124,6 +2140,99 @@ public final class JournalWorkspacePanel implements AppPanel
             else
             {
                 setText(item == null ? "" : item.label());
+                setGraphic(null);
+            }
+        }
+    }
+
+    private static String functionLabel(String code)
+    {
+        var function = org.nonprofitbookkeeping.model.ExpenseFunction.fromCode(code);
+        return function == null ? "Unclassified" : function.label();
+    }
+
+    private final class ExpenseFunctionTableCell extends TableCell<EditorLine, String>
+    {
+        private boolean updatingEditor;
+        private final ComboBox<String> editor = new ComboBox<>();
+
+        private ExpenseFunctionTableCell()
+        {
+            setTooltip(new Tooltip("Expense accounts only: choose Events (AR), Administration (OA), Fundraising (FR), or Unclassified."));
+            editor.setTooltip(getTooltip());
+            editor.setMaxWidth(Double.MAX_VALUE);
+            editor.setConverter(new javafx.util.StringConverter<>()
+            {
+                @Override public String toString(String code)
+                {
+                    return functionLabel(code);
+                }
+                @Override public String fromString(String label)
+                {
+                    throw new UnsupportedOperationException("Select an expense function from the list.");
+                }
+            });
+            editor.valueProperty().addListener((obs, oldValue, newValue) -> {
+                if (isEditing() && !updatingEditor)
+                {
+                    commitEdit(newValue);
+                }
+            });
+            editor.focusedProperty().addListener((obs, oldValue, focused) -> {
+                if (!focused && isEditing())
+                {
+                    commitEdit(editor.getValue());
+                }
+            });
+        }
+
+        @Override
+        public void startEdit()
+        {
+            if (!isEditable() || !getTableView().isEditable() || !getTableColumn().isEditable())
+            {
+                return;
+            }
+            super.startEdit();
+            updatingEditor = true;
+            try
+            {
+                editor.getItems().setAll("", "AR", "OA", "FR");
+                if (getItem() != null && !editor.getItems().contains(getItem()))
+                {
+                    editor.getItems().add(getItem());
+                }
+                editor.setValue(getItem());
+            }
+            finally
+            {
+                updatingEditor = false;
+            }
+            setText(null);
+            setGraphic(editor);
+            editor.show();
+        }
+
+        @Override
+        protected void updateItem(String item, boolean empty)
+        {
+            super.updateItem(item, empty);
+            if (empty)
+            {
+                setText(null);
+                setGraphic(null);
+            }
+            else if (isEditing())
+            {
+                updatingEditor = true;
+                editor.setValue(item);
+                updatingEditor = false;
+                setText(null);
+                setGraphic(editor);
+            }
+            else
+            {
+                setText(functionLabel(item));
                 setGraphic(null);
             }
         }
@@ -2578,6 +2687,7 @@ public final class JournalWorkspacePanel implements AppPanel
         private final StringProperty debit = new SimpleStringProperty("");
         private final StringProperty credit = new SimpleStringProperty("");
         private final BooleanProperty nmr = new SimpleBooleanProperty(false);
+        final StringProperty expenseFunction = new SimpleStringProperty("");
         private final StringProperty notes = new SimpleStringProperty("");
         private org.nonprofitbookkeeping.service.PaymentReference paymentReview;
         final StringProperty paymentMethod = new SimpleStringProperty("");
@@ -2649,7 +2759,7 @@ public final class JournalWorkspacePanel implements AppPanel
             return getAccount() != null || getFund() != null || getBudget() != null || getActivity() != null
                     || getMerchant() != null || parseMoney(getDebit()) != null && parseMoney(getDebit()).signum() != 0
                     || parseMoney(getCredit()) != null && parseMoney(getCredit()).signum() != 0
-                    || isNmr() || !getNotes().isBlank() || !paymentMethod.get().isBlank()
+                    || isNmr() || !expenseFunction.get().isBlank() || !getNotes().isBlank() || !paymentMethod.get().isBlank()
                     || !paymentReference.get().isBlank() || !paymentIssued.get().isBlank() || !paymentDelivered.get().isBlank();
         }
 
@@ -2664,6 +2774,7 @@ public final class JournalWorkspacePanel implements AppPanel
             copy.setDebit(getDebit());
             copy.setCredit(getCredit());
             copy.setNmr(isNmr());
+            copy.expenseFunction.set(expenseFunction.get());
             copy.setNotes(getNotes());
             copy.paymentReview = paymentReview;
             copy.paymentMethod.set(paymentMethod.get());

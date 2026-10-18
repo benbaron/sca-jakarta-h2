@@ -128,6 +128,9 @@ class FixedAssetLifecycleAccountingTest
             FixedAssetLifecycleEventView event = service.recordLifecycleEvent(preview, "treasurer");
             assertSigned(jpa, event.transactionId(), BANK_ACCOUNT_ID, "500.0000");
             assertSigned(jpa, event.transactionId(), LOSS_ACCOUNT_ID, "300.0000");
+            var purposes = new FunctionalExpenseQueryService(jpa, () -> "SCA");
+            assertEquals(new BigDecimal("300.0000"), purposes.query(EVENT_DATE, EVENT_DATE, null, null).unknownGross());
+            assertTrue(!purposes.query(EVENT_DATE, EVENT_DATE, null, null).ready());
             assertEquals(FixedAsset.Status.DISPOSED, service.load(asset.id()).status());
 
             FixedAssetService.LifecycleReversalPreview reversal =
@@ -137,6 +140,10 @@ class FixedAssetLifecycleAccountingTest
                     reversal, "treasurer");
 
             assertNotNull(reversed.reversalTransactionId());
+            var corrected = purposes.query(EVENT_DATE, EVENT_DATE.plusDays(1), null, null);
+            assertEquals(new BigDecimal("0.0000"), corrected.gl());
+            assertEquals(new BigDecimal("600.0000"), corrected.unknownGross());
+            assertTrue(!corrected.ready(), "A net-zero reversal cannot silently classify unknown generated losses");
             assertEquals(FixedAsset.Status.ACTIVE, service.load(asset.id()).status());
             assertEquals("REVERSED", text(jpa,
                     "select status from txn where id = ?", event.transactionId()));

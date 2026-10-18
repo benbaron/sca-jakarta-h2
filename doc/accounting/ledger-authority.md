@@ -98,3 +98,9 @@ Deletion persists the transaction audit snapshot before removing the header and 
 ## P25-S4I native create identity
 
 The canonical `TransactionEntryService.enter(command, requestId)` reuses existing Txn and TRANSACTION_ENTERED audit UUIDs as one native create receipt. The immutable create audit reason holds a versioned normalized-input hash. Exact authorized replay returns the current retained transaction without any new write; changed/foreign/deleted/colliding requests reject. Company locking and existing unique constraints enforce one accepted operation; transaction, supplemental facts and create audit roll back together. No schema, separate ledger or request table is introduced. No-key callers still mean a deliberate new operation. See [S4I](../P25-S4I-nmr-acceptance.md).
+
+## P25-S5B independent expense purpose
+
+Optional canonical `TxnSplit.expenseFunction` is AR (Events), OA (Administration), or FR (Fundraising), independently of account, Fund, Event, Budget Category, Merchant and AccountFunction. Only EXPENSE lines accept a code. V85 adds a nullable checked column without backfill; legacy/generated blank expenses remain Unclassified. Mixed purposes use ordinary distinct expense splits with exact amounts. Account maintenance/import cannot retype or invert the normal balance of an account with classified history. This prevents accepted expense facts from disappearing or changing sign in the projection.
+
+Functional Expenses derives net expense from canonical transaction-date debits less credits, including dated reversals, scoped by company/date/Fund/Event. Full totals include AR/OA/FR/Unclassified and a GL control before display limits. Gross absolute Unclassified activity exposes net-zero unknown offsets. No default, second ledger, independent allocation amount or official-form mapping is introduced. See [S5B implementation and acceptance](../P25-S5B-functional-expenses.md).

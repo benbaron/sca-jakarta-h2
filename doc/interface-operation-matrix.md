@@ -180,3 +180,9 @@ Report Library **Merchant Receivable Movements** is read-only with Start/End, Ge
 ## P25-S4I native Journal create retries
 
 Journal Save Entry/File Save remains the sole shared accounting Save. One UUID per New draft prevents duplicate native creates, including a retry after a committed response was lost. In-flight Save/New/Edit/Delete and editor controls disable, shell capabilities update, and direct command routing is guarded. Failure retains the draft; changed input after an already accepted create is rejected until the saved transaction is opened or New starts a distinct entry. No new pane, menu entry, persistence path or permission is introduced. See [S4I](P25-S4I-nmr-acceptance.md).
+
+## P25-S5B functional expenses
+
+Journal Entry Lines **Expense function** uses the existing transaction-wide Save Entry and File/toolbar Save. AR/OA/FR are explicit expense-only choices; blank is Unclassified. Function-only commits protect drafts; copies/reload, permissions, busy guards and correction/protected-date rules apply. Four-decimal accounting precision survives cell editing and function-only Save while company display remains formatted. No new pane or independent Save is introduced.
+
+Report Library **Functional Expenses** is read-only: select Start/End, Fund and Event, Run, Export, or Open Selected in Journal. It shows full function/Unclassified/GL totals, gross unknown diagnostics and disclosed detail limits. Existing formatted-table scrolling/company state apply. Generated expenses without explicit function input remain Unclassified. SCLX uses existing Preview/Save with strict supported facts and Keep target. See [S5B](P25-S5B-functional-expenses.md).
