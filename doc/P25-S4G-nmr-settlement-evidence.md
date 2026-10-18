@@ -1,6 +1,6 @@
 # P25-S4G — NMR settlement attribution and period movements
 
-Status: VERIFYING; local focused/JavaFX checks passed, full local and published-head gates pending. Owner review/merge remain. Extends [S4F](P25-S4F-nmr-item-detail.md) under the [accepted accounting contract](P25-S4A-nmr-contract-proposal.md).
+Status: VERIFYING in draft [MR #374](https://github.com/benbaron/sca-jakarta-h2/pull/374); local full/focused/JavaFX and exact published-head CI gates passed. Owner review/merge remain. Extends [S4F](P25-S4F-nmr-item-detail.md) under the [accepted accounting contract](P25-S4A-nmr-contract-proposal.md).
 
 ## Bounded scope
 
@@ -29,3 +29,13 @@ V83 adds only nullable movement/evidence columns and constraints, preserving leg
 Baseline compile and 28 existing tests passed before production edits. Final focused gate: 52 tests, zero failures/errors/skips (`p25-s4g-final-focused.log`, BUILD SUCCESS 2026-10-18 00:37:11 UTC). Real Xvfb gate: 11 tests, zero failures/errors/skips (`p25-s4g-xvfb.log`, BUILD SUCCESS 2026-10-18 00:36:00 UTC). Coverage includes the balanced accepted fixture, prior opening/current movements/later reversal, actual report pipeline and row-limit totals, withholding without discharge, unknown gross movements, refund/adjustment, permission/atomic validation, V82 upgrade/history recovery, strict metadata/conflict/Keep target/retry/rollback/restart, actual Journal movement/evidence Save/reload and evidence-only dirty protection with existing laptop/large-text scrolling geometry.
 
 Full local clean verification and exact published-head clean/repeat/expanded-Xvfb CI remain pending at this checkpoint. Human desktop review is not inferred. After publication record actual results in the MR and local-only ledger; do not replace a successful remote head solely for evidence.
+
+## Publication and full local result
+
+Draft MR #374 head `10220a3be6654d464884a50ca9a017d7e0e53eb0` has the exact reviewed implementation tree. Full offline local clean verify passed 945 tests, zero failures/errors, 57 display-dependent skips, BUILD SUCCESS 2026-10-18 00:44:28 UTC. The independent real Xvfb gate passed 11 tests. Exact-head CI run `39083944191` is pending; no human desktop pass is claimed. PLAN contains the complete matching-tree publication sequence and remaining action. This evidence remains local until carried onto fresh main after merge.
+
+## Final-head CI and next action
+
+Exact published head `10220a3be6654d464884a50ca9a017d7e0e53eb0` passed [Maven run 39083944191](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39083944191), job `117546465691`: clean headless verification, repeat tests and expanded production JavaFX routes all succeeded. MR #374 records the actual results. No source/test/schema change followed the gates and no known executed-check failure remains. Status VERIFYING pending owner review/acceptance/merge, with no new human desktop result claimed.
+
+The PLAN/S4G publication and final verification ledger is committed locally only after implementation `e94861fa`; it does not replace the successful remote head solely for evidence. After confirmed merge, carry it onto fresh main and select the dedicated withholding/receivable and gross/payout/fee slice described above. Full parent S4 is not declared complete.
