@@ -95,6 +95,11 @@ public final class ReportExecutionService
     {
         return switch (request.definition())
         {
+            case FUNCTIONAL_EXPENSES -> {
+                var filter = (ReportDomainFilter.EventSelection)request.domainFilter();
+                yield FunctionalExpenseReportBuilder.result(request,
+                        reports.functionalExpenses(request.startDate(), request.endDate(), request.fundCode(), filter.eventId()), displayFormat);
+            }
             case TRIAL_BALANCE -> {
                 FinancialReportService.TrialBalanceReport report =
                         reports.trialBalance(request.asOfDate(), request.fundCode());

@@ -6,6 +6,7 @@ import org.nonprofitbookkeeping.model.InventoryItem;
 /** Typed, immutable domain filters retained by preview, export, and drill-through. */
 public sealed interface ReportDomainFilter
         permits ReportDomainFilter.None,
+        ReportDomainFilter.EventSelection,
         ReportDomainFilter.AccountSelection,
         ReportDomainFilter.FixedAssetSelection,
         ReportDomainFilter.InventorySelection
@@ -19,6 +20,20 @@ public sealed interface ReportDomainFilter
 
     record None() implements ReportDomainFilter
     {
+    }
+
+    record EventSelection(Long eventId) implements ReportDomainFilter
+    {
+        public EventSelection
+        {
+            requirePositive(eventId, "eventId");
+        }
+
+        @Override
+        public String summary()
+        {
+            return "event=" + value(eventId);
+        }
     }
 
     record AccountSelection(Long accountId) implements ReportDomainFilter

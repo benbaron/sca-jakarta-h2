@@ -128,6 +128,7 @@ public class ReportLibraryPanel implements AppPanel
         adapters.put(FinancialReportExportFormat.XLSX, new PoiXlsxFinancialReportAdapter());
 
         Button run = new Button("Run");
+        run.setId("reportLibraryRun");
         Button export = new Button("Export");
         UiPermissionGate.gate(export, ApplicationPermission.EXPORT, "Export a financial report");
         Button drillLedger = new Button("Drill to Journal");
@@ -154,6 +155,7 @@ public class ReportLibraryPanel implements AppPanel
 
     private void configureReportList()
     {
+        reportList.setId("reportLibraryReportList");
         reportList.getItems().setAll(ReportDefinition.catalog());
         reportList.setCellFactory(list -> new ListCell<>()
         {
@@ -169,6 +171,10 @@ public class ReportLibraryPanel implements AppPanel
 
     private void configureParameters()
     {
+        startDate.setId("reportLibraryStartDate");
+        endDate.setId("reportLibraryEndDate");
+        fund.setId("reportLibraryFund");
+        domainSubject.setId("reportLibrarySubject");
         DateRange defaults = DateRangeContext.get();
         followActivePeriodDefaults = defaults.isAll();
         if (followActivePeriodDefaults)
@@ -273,7 +279,7 @@ public class ReportLibraryPanel implements AppPanel
             @Override
             public String toString(AssetInventoryReportQueryService.FilterOption option)
             {
-                return option == null ? "" : option.label();
+                return option == null ? combo.getPromptText() : option.label();
             }
 
             @Override
@@ -292,7 +298,7 @@ public class ReportLibraryPanel implements AppPanel
             @Override
             public String toString(ReportAccountOption option)
             {
-                return option == null ? "" : option.label();
+                return option == null ? domainAccount.getPromptText() : option.label();
             }
 
             @Override
@@ -413,6 +419,8 @@ public class ReportLibraryPanel implements AppPanel
                 ex -> status.setText("Could not load funds: " + UiErrors.safeMessage(ex)));
     }
 
+    private List<AssetInventoryReportQueryService.FilterOption> reportEvents = List.of();
+
     private void loadDomainFilters()
     {
         UiAsync.run("report-library-domain-filters",
@@ -425,10 +433,14 @@ public class ReportLibraryPanel implements AppPanel
                                         account.getId(),
                                         account.getCode() + " — " + account.getName()
                                                 + (account.isActive() ? "" : " (inactive)")))
-                                .toList()),
+                                .toList(),
+                        UiServiceRegistry.activityLookup().listAllActivities().stream()
+                                .map(event -> new AssetInventoryReportQueryService.FilterOption(event.id(),
+                                        event.code() + " — " + event.name() + (event.active() ? "" : " (inactive)"))).toList()),
                 catalog -> {
                     domainFilterCatalog = catalog.domainFilters();
                     reportAccounts = catalog.accounts();
+                    reportEvents = catalog.events();
                     ReportDefinition definition = reportList.getSelectionModel().getSelectedItem();
                     if (definition != null)
                     {
@@ -457,15 +469,15 @@ public class ReportLibraryPanel implements AppPanel
         setVisibleManaged(rowLimit, definition.supportsRowLimit());
 
         ReportDefinition.DomainFilterMode mode = definition.domainFilterMode();
-        boolean account = mode != ReportDefinition.DomainFilterMode.NONE;
+        boolean account = mode != ReportDefinition.DomainFilterMode.NONE && mode != ReportDefinition.DomainFilterMode.EVENT;
         boolean subject = mode == ReportDefinition.DomainFilterMode.FIXED_ASSET
-                || mode == ReportDefinition.DomainFilterMode.INVENTORY;
+                || mode == ReportDefinition.DomainFilterMode.INVENTORY || mode == ReportDefinition.DomainFilterMode.EVENT;
         setVisibleManaged(domainAccountLabel, account);
         setVisibleManaged(domainAccount, account);
         setVisibleManaged(domainSubjectLabel, subject);
         setVisibleManaged(domainSubject, subject);
-        setVisibleManaged(domainStatusLabel, subject);
-        setVisibleManaged(domainStatus, subject);
+        setVisibleManaged(domainStatusLabel, subject && mode != ReportDefinition.DomainFilterMode.EVENT);
+        setVisibleManaged(domainStatus, subject && mode != ReportDefinition.DomainFilterMode.EVENT);
         applyDomainFilterCatalog(definition.domainFilterMode());
     }
 
@@ -477,7 +489,15 @@ public class ReportLibraryPanel implements AppPanel
         domainAccount.getItems().clear();
         domainSubject.getItems().clear();
         domainStatus.getItems().clear();
-        if (mode == ReportDefinition.DomainFilterMode.ACCOUNT)
+        if (mode == ReportDefinition.DomainFilterMode.EVENT)
+        {
+            domainSubjectLabel.setText("Event:");
+            domainSubject.setPromptText("All events");
+            domainSubject.getItems().add(null);
+            domainSubject.getItems().addAll(reportEvents);
+            domainSubject.getSelectionModel().selectFirst();
+        }
+        else if (mode == ReportDefinition.DomainFilterMode.ACCOUNT)
         {
             domainAccountLabel.setText("Account:");
             domainAccount.setPromptText("All accounts");
@@ -545,6 +565,7 @@ public class ReportLibraryPanel implements AppPanel
         ReportDomainFilter selectedDomain = switch (definition.domainFilterMode())
         {
             case NONE -> ReportDomainFilter.NONE;
+            case EVENT -> new ReportDomainFilter.EventSelection(selectedId(domainSubject));
             case ACCOUNT -> new ReportDomainFilter.AccountSelection(
                     selectedAccountId(domainAccount));
             case FIXED_ASSET -> new ReportDomainFilter.FixedAssetSelection(
@@ -812,11 +833,13 @@ public class ReportLibraryPanel implements AppPanel
 
     private record ReportParameterCatalog(
             AssetInventoryReportQueryService.FilterCatalog domainFilters,
-            List<ReportAccountOption> accounts)
+            List<ReportAccountOption> accounts,
+            List<AssetInventoryReportQueryService.FilterOption> events)
     {
         private ReportParameterCatalog
         {
             accounts = List.copyOf(accounts);
+            events = List.copyOf(events);
         }
     }
 

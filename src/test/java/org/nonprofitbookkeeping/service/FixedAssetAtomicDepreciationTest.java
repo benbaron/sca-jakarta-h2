@@ -52,6 +52,10 @@ class FixedAssetAtomicDepreciationTest
             assertNotNull(run.id());
             assertNotNull(run.transactionId());
             assertEquals(new BigDecimal("10.0000"), run.depreciationAmount());
+            var purposes = new FunctionalExpenseQueryService(jpa, () -> SCA.code()).query(RUN_DATE, RUN_DATE, null, null);
+            assertEquals(new BigDecimal("10.0000"), purposes.unknownGross());
+            assertTrue(!purposes.ready());
+            assertTrue(purposes.details().stream().allMatch(line -> line.function() == null));
 
             try (EntityManager em = jpa.em())
             {

@@ -163,3 +163,9 @@ Save Entry/File Save owns these facts with all accounting; evidence/observation-
 ## P25-S4I Journal Save in flight
 
 Save Entry and File/toolbar Save share the same guarded async operation. While it runs, Save/New/Edit/Delete and the editable region disable, live shell capabilities remove Save/New, and direct command calls cannot replace the draft or start another write. A single create UUID belongs to each deliberate New draft and survives failures; successful Save loads the accepted transaction. Stale editor loads cannot replace a saving/newer draft. Existing company formatting, permissions and scrolling remain. See [S4I owner checks](../P25-S4I-nmr-acceptance.md).
+
+## P25-S5B explicit expense function
+
+Entry Lines adds a remembered sortable/resizable/reorderable **Expense function** column. The choice starts Unclassified and explicitly offers AR — Events, OA — Administration and FR — Fundraising, with an expense-only explanation. Account/Fund/Event/Budget choices never supply a default. Shared Save Entry/File Save persists it with the transaction; function-only cell commits protect drafts, copies/reload preserve codes and busy/permission/protected-date controls remain authoritative. Bank/nonexpense codes reject visibly. A classified reversal retains source purposes and cannot be rewritten; reverse it and enter/edit the replacement.
+
+Editable Debit/Credit cells and reload retain canonical four-decimal precision, independently of two-decimal company display; a function-only Save cannot round an accepted amount. Laptop/larger-text horizontal reach and existing independent table/editor scrolling/dividers remain required. Report Library **Functional Expenses** offers date range, Fund and Event (including inactive historical Events), Run/Export and owning-transaction drill-through. Full totals and gross Unclassified diagnostics precede detail truncation. See [S5B owner checks and evidence](../P25-S5B-functional-expenses.md).

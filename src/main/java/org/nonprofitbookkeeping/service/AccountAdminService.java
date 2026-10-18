@@ -419,6 +419,12 @@ public class AccountAdminService
             AccountFunction requestedFunction,
             NormalBalance requestedBalance)
     {
+        if ((requestedType != AccountType.EXPENSE || requestedBalance != account.getNormalBalance())
+                && em.createQuery("select count(s) from TxnSplit s where s.account = :account and s.expenseFunction is not null", Long.class)
+                        .setParameter("account", account).getSingleResult() > 0)
+        {
+            throw new IllegalArgumentException("This account has classified expense history. Preserve its EXPENSE type and normal balance; use a new account for a different classification.");
+        }
         if (requestedType == AccountType.ASSET
                 && requestedFunction == AccountFunction.BANK
                 && requestedBalance == NormalBalance.DEBIT)

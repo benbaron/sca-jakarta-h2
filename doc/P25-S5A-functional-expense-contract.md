@@ -1,6 +1,6 @@
 # P25-S5A — Functional-expense contract
 
-Status: VERIFYING — [draft MR #377](https://github.com/benbaron/sca-jakarta-h2/pull/377); D07 adopted, full local/exact-head CI passed, owner review/merge remain. Documentation only. [PLAN](PLAN.md) owns execution. [Adopted program S5](P23-P28-runbook-correction-program.md#p25-s5--add-independent-functional-expense-classification-g10) and [baseline D07](P23-S1-baseline-and-acceptance.md#decision-and-evidence-backlog) require the meanings, report basis and defaults to be confirmed before application implementation. Parent S4 financial accounting is accepted through approved/merged MR #376.
+Status: DONE — [MR #377](https://github.com/benbaron/sca-jakarta-h2/pull/377) merged at 7bc89aef; D07 adopted and full local/exact-head CI passed. Documentation contract. [PLAN](PLAN.md) owns execution. [Adopted program S5](P23-P28-runbook-correction-program.md#p25-s5--add-independent-functional-expense-classification-g10) and [baseline D07](P23-S1-baseline-and-acceptance.md#decision-and-evidence-backlog) require the meanings, report basis and defaults to be confirmed before application implementation. Parent S4 financial accounting is accepted through approved/merged MR #376.
 
 ## Adopted D07 decision
 

@@ -375,16 +375,19 @@ public final class SclxCoreSnapshotAssembler
         Set<Txn> includedTransactions = identitySet(transactions);
         Map<Txn, String> exportedTransactionIds = new IdentityHashMap<>();
         Map<TxnSplit, String> exportedLineIds = new IdentityHashMap<>();
-        Set<Txn> lifecycleTransactions = identitySet(supplementalDetails.stream()
+        Set<Txn> orderedTransactions = identitySet(supplementalDetails.stream()
                 .filter(detail -> detail.getItemId() != null).map(TxnSupplementalLine::getTxn).toList());
+        // Classified expense inverses retain source line order, including mixed purposes on one account.
+        transactionLines.stream().filter(line -> line.getExpenseFunction() != null)
+                .map(TxnSplit::getTxn).forEach(orderedTransactions::add);
         for (Txn transaction : transactions)
         {
             Set<Txn> visited = identitySet(List.of());
             for (Txn source = transaction.getReversalOf(); source != null && visited.add(source); source = source.getReversalOf())
             {
-                if (lifecycleTransactions.contains(source))
+                if (orderedTransactions.contains(source))
                 {
-                    lifecycleTransactions.add(transaction);
+                    orderedTransactions.add(transaction);
                     break;
                 }
             }
@@ -402,7 +405,7 @@ public final class SclxCoreSnapshotAssembler
                                     .filter(line -> line.getTxn() == transaction)
                                     .peek(line -> requireTransactionLineOwnership(
                                             line, company, activeChart, includedTransactions, includedCounterparties, includedMerchants))
-                                    .sorted(lifecycleTransactions.contains(transaction) ? Comparator.comparing(TxnSplit::getId) : TRANSACTION_LINE_ORDER)
+                                    .sorted(orderedTransactions.contains(transaction) ? Comparator.comparing(TxnSplit::getId) : TRANSACTION_LINE_ORDER)
                                     .toList(),
                             exportedLineIds);
                     exportedTransactionIds.put(transaction, exported.transactionId());
@@ -502,6 +505,15 @@ public final class SclxCoreSnapshotAssembler
         if (!transactionBudgets.isEmpty())
         {
             extensionValues.put(SclxTransactionBudgetExtension.KEY, Map.of("version", 1, "lines", transactionBudgets));
+        }
+        List<Map<String, String>> expenseFunctions = transactionLines.stream()
+                .filter(line -> line.getExpenseFunction() != null)
+                .map(line -> Map.of("lineId", Objects.requireNonNull(exportedLineIds.get(line)),
+                        "code", line.getExpenseFunction().name()))
+                .sorted(Comparator.comparing(fact -> fact.get("lineId"))).toList();
+        if (!expenseFunctions.isEmpty())
+        {
+            extensionValues.put(SclxExpenseFunctions.KEY, Map.of("version", 1, "lines", expenseFunctions));
         }
         List<String> nmrLines = transactionLines.stream()
                 .filter(TxnSplit::isNmr)

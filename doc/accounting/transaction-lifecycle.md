@@ -53,3 +53,9 @@ A canonical transaction linked to an existing FundTransfer is retained: both gen
 ## P25-S4I save acknowledgment
 
 A native Journal New draft retains one create UUID through validation, write and lost-response failures. Its immutable create receipt survives edits/reversals/deletion. Exact authorized retry acknowledges the current retained transaction, never restores original lines over later correction, and cannot resurrect deletion. Closed/reconciled entries can be acknowledged without writes; new entry/update/correction protections still apply. New deliberately starts another operation. See [S4I](../P25-S4I-nmr-acceptance.md).
+
+## P25-S5B expense-function history
+
+Entry/update validation accepts optional AR/OA/FR only on EXPENSE splits and audits exact purpose facts. Reversal and initial replacement copy source classification. A classified inverse retains its source purposes: generic Journal update rejects rewriting it; reverse it and enter/edit a replacement through the ordinary protected correction route. Existing permissions, ownership, reconciled/closed dates and atomic rollback apply.
+
+Unclassified native creates retain byte-identical v1 receipt hashing; classified creates use v2 including every optional line code. Exact retries return the current retained record without rewriting later edits or recreating a deleted transaction. Changed classification under an accepted key rejects. Journal Entry Lines retain four-decimal command precision through editing/reload and function-only Save while displaying company money formatting. See [S5B](../P25-S5B-functional-expenses.md).

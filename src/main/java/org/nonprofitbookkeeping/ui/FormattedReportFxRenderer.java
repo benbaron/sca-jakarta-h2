@@ -79,7 +79,7 @@ final class FormattedReportFxRenderer
         {
             javafx.scene.control.Button repair = new javafx.scene.control.Button("Open Selected in Journal");
             repair.setId("supplementalReportRepair");
-            repair.setTooltip(new Tooltip("Review and repair the selected transaction's supplemental allocations in Journal."));
+            repair.setTooltip(new Tooltip("Review the selected transaction in Journal."));
             repair.disableProperty().bind(javafx.beans.binding.Bindings.createBooleanBinding(
                     () -> selectedTransaction(table) == null, table.getSelectionModel().selectedItemProperty()));
             Runnable open = () ->
@@ -87,7 +87,7 @@ final class FormattedReportFxRenderer
                 Long id = selectedTransaction(table);
                 if (id != null)
                 {
-                    DrillThroughCoordinator.openPanelWithContext(AppPanelId.JOURNAL_PANE, "Txn #" + id + " from supplemental allocation review");
+                    DrillThroughCoordinator.openPanelWithContext(AppPanelId.JOURNAL_PANE, "Txn #" + id + " from " + model.title());
                 }
             };
             repair.setOnAction(event -> open.run());

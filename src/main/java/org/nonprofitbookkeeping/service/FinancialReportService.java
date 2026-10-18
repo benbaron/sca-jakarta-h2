@@ -40,6 +40,11 @@ public class FinancialReportService
         this.activeCompanyCode = activeCompanyCode == null ? () -> null : activeCompanyCode;
     }
 
+    public FunctionalExpenseQueryService.Result functionalExpenses(LocalDate start, LocalDate end, String fundCode, Long eventId)
+    {
+        return new FunctionalExpenseQueryService(jpa, activeCompanyCode).query(start, end, fundCode, eventId);
+    }
+
     public TrialBalanceReport trialBalance(LocalDate asOf, String fundCode)
     {
         LocalDate cutoff = asOf == null ? LocalDate.now() : asOf;

@@ -106,6 +106,7 @@ public class WorkbookSemanticReportService
                     request.endDate(),
                     request.fundCode(),
                     request.rowLimit());
+            case EVENT -> throw new IllegalArgumentException("Event-purpose reports use the canonical core report route.");
             case ACCOUNT -> accountValues(request);
             case FIXED_ASSET -> fixedAssetValues(request);
             case INVENTORY -> inventoryValues(request);

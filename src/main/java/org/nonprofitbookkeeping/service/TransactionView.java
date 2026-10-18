@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.service;
 
 import java.math.BigDecimal;
+import org.nonprofitbookkeeping.model.ExpenseFunction;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -108,8 +109,23 @@ public record TransactionView(Long id,
                        String activityCode,
                        String activityName,
                        String merchantName,
-                       PaymentReference payment)
+                       PaymentReference payment,
+                       ExpenseFunction expenseFunction)
     {
+        public Line(Long id, Long accountId, String accountCode, String accountName,
+                    Long fundId, String fundCode, String fundName, Long budgetCategoryId,
+                    Long activityId, Long merchantId, BigDecimal debit, BigDecimal credit,
+                    boolean nmr, String notes, boolean bankAccount, boolean bankCleared,
+                    LocalDate bankClearedOn, Long reconciliationSessionId, String activityCode, String activityName,
+                    String merchantName, PaymentReference payment)
+        {
+            this(id, accountId, accountCode, accountName, fundId, fundCode, fundName,
+                    budgetCategoryId, activityId, merchantId, debit, credit, nmr, notes,
+                    bankAccount, bankCleared, bankClearedOn, reconciliationSessionId, activityCode, activityName,
+                    merchantName, payment, null);
+        }
+
+
         public Line(Long id, Long accountId, String accountCode, String accountName,
                     Long fundId, String fundCode, String fundName, Long budgetCategoryId,
                     Long activityId, Long merchantId, BigDecimal debit, BigDecimal credit,

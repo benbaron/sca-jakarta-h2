@@ -100,6 +100,17 @@ public record ReportRequest(
                 }
                 yield ReportDomainFilter.NONE;
             }
+            case EVENT -> {
+                if (value instanceof ReportDomainFilter.None)
+                {
+                    yield new ReportDomainFilter.EventSelection(null);
+                }
+                if (!(value instanceof ReportDomainFilter.EventSelection))
+                {
+                    throw new IllegalArgumentException("Functional Expenses requires an Event filter.");
+                }
+                yield value;
+            }
             case ACCOUNT -> {
                 if (value instanceof ReportDomainFilter.None)
                 {

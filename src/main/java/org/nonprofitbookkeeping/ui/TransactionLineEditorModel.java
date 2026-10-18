@@ -138,20 +138,21 @@ public class TransactionLineEditorModel
         private BigDecimal debit;
         private BigDecimal credit;
         private boolean nmr;
+        private org.nonprofitbookkeeping.model.ExpenseFunction expenseFunction;
         private String notes;
         private boolean dirty;
 
         public TransactionLineCommand toCommand()
         {
             return new TransactionLineCommand(accountId, fundId, budgetCategoryId, activityId, merchantId,
-                    debit, credit, nmr, notes);
+                    debit, credit, nmr, notes, null, expenseFunction);
         }
 
         boolean hasAnyAccountingInput()
         {
             return accountId != null || fundId != null || budgetCategoryId != null || activityId != null
                     || merchantId != null || counterpartyId != null || normalize(debit).signum() != 0
-                    || normalize(credit).signum() != 0 || nmr || (notes != null && !notes.isBlank());
+                    || normalize(credit).signum() != 0 || nmr || expenseFunction != null || (notes != null && !notes.isBlank());
         }
 
         public Optional<String> fieldError()
@@ -183,6 +184,8 @@ public class TransactionLineEditorModel
         public void setDebit(BigDecimal debit) { this.debit = debit; dirty = true; }
         public BigDecimal credit() { return credit; }
         public void setCredit(BigDecimal credit) { this.credit = credit; dirty = true; }
+        public org.nonprofitbookkeeping.model.ExpenseFunction expenseFunction() { return expenseFunction; }
+        public void setExpenseFunction(org.nonprofitbookkeeping.model.ExpenseFunction value) { expenseFunction = value; dirty = true; }
         public boolean nmr() { return nmr; }
         public void setNmr(boolean nmr) { this.nmr = nmr; dirty = true; }
         public String notes() { return notes; }
