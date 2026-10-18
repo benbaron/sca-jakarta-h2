@@ -501,6 +501,8 @@ public class TransactionCorrectionService
             copy.setEntryRef(source.getEntryRef());
             copy.setCounterparty(source.getCounterparty());
             copy.setNmrRecipient(source.getNmrRecipient());
+            copy.setNmrMovement(source.getNmrMovement());
+            copy.setNmrEvidenceReference(source.getNmrEvidenceReference());
             copy.setDescription(source.getDescription());
             copy.setReference(source.getReference());
             copy.setAmount(source.getAmount());

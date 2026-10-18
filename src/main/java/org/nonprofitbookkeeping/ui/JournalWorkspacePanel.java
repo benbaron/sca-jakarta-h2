@@ -746,6 +746,17 @@ public final class JournalWorkspacePanel implements AppPanel
                 markDirty();
             });
             table.getColumns().add(recipient);
+            TableColumn<SupplementalRow, String> movement = new TableColumn<>("NMR movement");
+            configureColumn(movement, "nmrMovement", 190);
+            movement.setCellValueFactory(value -> value.getValue().nmrMovement);
+            movement.setCellFactory(ignored -> new NmrMovementTableCell());
+            movement.setOnEditCommit(event -> {
+                event.getRowValue().nmrMovement.set(safe(event.getNewValue()));
+                markDirty();
+            });
+            table.getColumns().add(movement);
+            table.getColumns().add(supplementalTextColumn("NMR evidence", "nmrEvidence", 240,
+                    row -> row.nmrEvidence, (row, value) -> row.nmrEvidence.set(safe(value))));
         }
         table.getColumns().add(supplementalTextColumn("Entry Ref", "entryRef", 140, SupplementalRow::entryRefProperty, SupplementalRow::setEntryRef));
         table.getColumns().add(supplementalTextColumn("Counterparty", "counterparty", 170, SupplementalRow::counterpartyProperty, SupplementalRow::setCounterparty));
@@ -784,7 +795,7 @@ public final class JournalWorkspacePanel implements AppPanel
                         + "Save Entry saves all supplemental tabs with the transaction. SCLX preserves item links. "
                         + (kind == SupplementalKind.OTHER_LIABILITY
                             ? "Select NMR recipient to explicitly designate an NMR item; its linked ledger line requires an event. "
-                                + "Use the same recipient, account, fund and event on every allocation. Blank is unclassified; line NMR flags do not designate items."
+                                + "Use the same recipient, account, fund and event on every allocation. Blank is unclassified; line NMR flags do not designate items. Select movement explicitly; merchant discharge requires Merchant on the linked line and NMR evidence. Withholding alone does not settle NMR."
                             : "Remove Detail is saved through the owning transaction correction controls."));
         lifecycleHelp.setWrapText(true);
         lifecycleHelp.getStyleClass().add("field-help");
@@ -1280,7 +1291,7 @@ public final class JournalWorkspacePanel implements AppPanel
                         startDate,
                         endDate,
                         blankToNull(row.getNotes()),
-                        null, itemId, itemEffect, transactionLineIndex, id(row.nmrRecipient.get())));
+                        null, itemId, itemEffect, transactionLineIndex, id(row.nmrRecipient.get()), blankToNull(row.nmrMovement.get()), blankToNull(row.nmrEvidence.get())));
             }
         }
         return commands;
@@ -2049,6 +2060,82 @@ public final class JournalWorkspacePanel implements AppPanel
         }
     }
 
+    private final class NmrMovementTableCell extends TableCell<SupplementalRow, String>
+    {
+        private boolean updatingEditor;
+        private final ComboBox<String> editor = new ComboBox<>();
+
+        private NmrMovementTableCell()
+        {
+            editor.setMaxWidth(Double.MAX_VALUE);
+            editor.valueProperty().addListener((obs, oldValue, newValue) -> {
+                if (isEditing() && !updatingEditor)
+                {
+                    commitEdit(newValue);
+                }
+            });
+            editor.focusedProperty().addListener((obs, oldValue, focused) -> {
+                if (!focused && isEditing())
+                {
+                    commitEdit(editor.getValue());
+                }
+            });
+        }
+
+        @Override
+        public void startEdit()
+        {
+            if (!isEditable() || !getTableView().isEditable() || !getTableColumn().isEditable())
+            {
+                return;
+            }
+            super.startEdit();
+            updatingEditor = true;
+            try
+            {
+                editor.getItems().setAll("");
+                editor.getItems().addAll(java.util.Arrays.stream(org.nonprofitbookkeeping.model.NmrMovementKind.values())
+                        .map(Enum::name).toList());
+                if (getItem() != null && !editor.getItems().contains(getItem()))
+                {
+                    editor.getItems().add(getItem());
+                }
+                editor.setValue(getItem());
+            }
+            finally
+            {
+                updatingEditor = false;
+            }
+            setText(null);
+            setGraphic(editor);
+            editor.show();
+        }
+
+        @Override
+        protected void updateItem(String item, boolean empty)
+        {
+            super.updateItem(item, empty);
+            if (empty)
+            {
+                setText(null);
+                setGraphic(null);
+            }
+            else if (isEditing())
+            {
+                updatingEditor = true;
+                editor.setValue(item);
+                updatingEditor = false;
+                setText(null);
+                setGraphic(editor);
+            }
+            else
+            {
+                setText(item == null ? "" : item);
+                setGraphic(null);
+            }
+        }
+    }
+
     private static final class OptionConverter extends StringConverter<TransactionLineEditorModel.Option>
     {
         @Override
@@ -2441,6 +2528,8 @@ public final class JournalWorkspacePanel implements AppPanel
     static final class SupplementalRow
     {
         final ObjectProperty<TransactionLineEditorModel.Option> nmrRecipient = new SimpleObjectProperty<>();
+        final StringProperty nmrMovement = new SimpleStringProperty("");
+        final StringProperty nmrEvidence = new SimpleStringProperty("");
         private final StringProperty itemId = new SimpleStringProperty("");
         private final StringProperty itemEffect = new SimpleStringProperty("");
         private final StringProperty transactionLine = new SimpleStringProperty("");
@@ -2457,6 +2546,8 @@ public final class JournalWorkspacePanel implements AppPanel
         static SupplementalRow from(TransactionSupplementalLineView view)
         {
             SupplementalRow row = new SupplementalRow();
+            row.nmrMovement.set(safe(view.nmrMovement()));
+            row.nmrEvidence.set(safe(view.nmrEvidenceReference()));
             row.nmrRecipient.set(view.nmrRecipientId() == null ? null : option(view.nmrRecipientId(), "", view.nmrRecipientName()));
             row.setItemId(view.itemId() == null ? "" : view.itemId().toString());
             row.setItemEffect(view.itemEffect());
@@ -2514,7 +2605,7 @@ public final class JournalWorkspacePanel implements AppPanel
         boolean hasAnyInput()
         {
             BigDecimal parsedAmount = parseMoney(getAmount());
-            return nmrRecipient.get() != null || !getItemId().isBlank() || !getItemEffect().isBlank() || !getTransactionLine().isBlank()
+            return nmrRecipient.get() != null || !nmrMovement.get().isBlank() || !nmrEvidence.get().isBlank() || !getItemId().isBlank() || !getItemEffect().isBlank() || !getTransactionLine().isBlank()
                     || !getEntryRef().isBlank() || !getCounterparty().isBlank() || !getDescription().isBlank()
                     || !getReference().isBlank() || parsedAmount == null || parsedAmount.signum() != 0
                     || !getDueDate().isBlank() || !getStartDate().isBlank() || !getEndDate().isBlank()

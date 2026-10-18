@@ -61,34 +61,8 @@ public final class SupplementalOpenItemQueryService
             throw new IllegalStateException("An active company is required for supplemental reporting.");
         }
 
-        List<TxnSupplementalLine> lines = em.createQuery("""
-                select l from TxnSupplementalLine l
-                join fetch l.txn t
-                left join fetch l.txnSplit s
-                left join fetch s.account a
-                where upper(t.company.code) = :companyCode
-                  and t.status in ('ENTERED', 'REVERSED')
-                  and l.kind = :kind
-                order by t.txnDate, l.id
-                """, TxnSupplementalLine.class)
-                .setParameter("companyCode", companyCode.trim().toUpperCase(java.util.Locale.ROOT))
-                .setParameter("kind", kind.name())
-                .getResultList();
-
-        // Load all dates: a permitted inverse may precede its source, and inverse
-        // transactions can themselves be reversed. Status alone cannot reconstruct this.
-        Map<Long, Txn> reversals = new LinkedHashMap<>();
-        for (Txn reversal : em.createQuery("""
-                select t from Txn t join fetch t.reversalOf original
-                where upper(t.company.code) = :companyCode
-                  and t.company = original.company
-                  and t.status in ('ENTERED', 'REVERSED')
-                """, Txn.class)
-                .setParameter("companyCode", companyCode.trim().toUpperCase(java.util.Locale.ROOT))
-                .getResultList())
-        {
-            reversals.put(reversal.getReversalOf().getId(), reversal);
-        }
+        List<TxnSupplementalLine> lines = allocationLines(em, companyCode, kind);
+        Map<Long, Txn> reversals = reversalHistory(em, companyCode);
 
         Map<UUID, Accumulator> grouped = new LinkedHashMap<>();
         List<Row> diagnostics = new ArrayList<>();
@@ -130,7 +104,69 @@ public final class SupplementalOpenItemQueryService
                         : new SupplementalReconciliationService.Reconciliation(List.of(), List.of()));
     }
 
-    private record DatedEffect(int direction, boolean backdated)
+    private static List<TxnSupplementalLine> allocationLines(EntityManager em, String companyCode, Kind kind)
+    {
+        return em.createQuery("""
+                select l from TxnSupplementalLine l
+                join fetch l.txn t
+                left join fetch l.txnSplit s
+                left join fetch s.account a
+                where upper(t.company.code) = :companyCode
+                  and t.status in ('ENTERED', 'REVERSED')
+                  and l.kind = :kind
+                order by t.txnDate, l.id
+                """, TxnSupplementalLine.class)
+                .setParameter("companyCode", companyCode.trim().toUpperCase(java.util.Locale.ROOT))
+                .setParameter("kind", kind.name())
+                .getResultList();
+    }
+
+    private static Map<Long, Txn> reversalHistory(EntityManager em, String companyCode)
+    {
+        Map<Long, Txn> reversals = new LinkedHashMap<>();
+        for (Txn reversal : em.createQuery("""
+                select t from Txn t join fetch t.reversalOf original
+                where upper(t.company.code) = :companyCode
+                  and t.company = original.company
+                  and t.status in ('ENTERED', 'REVERSED')
+                """, Txn.class)
+                .setParameter("companyCode", companyCode.trim().toUpperCase(java.util.Locale.ROOT))
+                .getResultList())
+        {
+            reversals.put(reversal.getReversalOf().getId(), reversal);
+        }
+        return reversals;
+    }
+
+    record AllocationEffect(TxnSupplementalLine allocation, LocalDate date, long transactionId, int direction)
+    {
+    }
+
+    /** Shares the same dated effects with period reporting; no independent balance reconstruction. */
+    static List<AllocationEffect> nmrEffects(EntityManager em, String companyCode, LocalDate start, LocalDate end)
+    {
+        var reversals = reversalHistory(em, companyCode);
+        List<AllocationEffect> result = new ArrayList<>();
+        for (var line : allocationLines(em, companyCode, Kind.OTHER_LIABILITY))
+        {
+            if (line.getNmrRecipient() == null || !lifecycleComplete(line) || lifecycleMismatch(line, Kind.OTHER_LIABILITY) != null)
+            {
+                continue;
+            }
+            for (var effect : datedEffects(line.getTxn(), reversals, end))
+            {
+                if (!effect.date().isBefore(start))
+                {
+                    result.add(new AllocationEffect(line, effect.date(), effect.transactionId(), effect.direction()));
+                }
+            }
+        }
+        result.sort(java.util.Comparator.comparing(AllocationEffect::date).thenComparingLong(AllocationEffect::transactionId)
+                .thenComparing(e -> e.allocation().getId()));
+        return List.copyOf(result);
+    }
+
+    private record DatedEffect(int direction, boolean backdated, LocalDate date, long transactionId)
     {
     }
 
@@ -149,7 +185,7 @@ public final class SupplementalOpenItemQueryService
             }
             if (!current.getTxnDate().isAfter(asOfDate))
             {
-                effects.add(new DatedEffect(direction, backdated));
+                effects.add(new DatedEffect(direction, backdated, current.getTxnDate(), current.getId()));
             }
             Txn next = reversals.get(current.getId());
             backdated = next != null && next.getTxnDate().isBefore(current.getTxnDate());
@@ -306,6 +342,14 @@ public final class SupplementalOpenItemQueryService
     public record NmrDimensions(long recipientId, String recipientName, long accountId, String accountCode,
                                 long fundId, String fundCode, long eventId, String eventCode, String eventName)
     {
+    }
+
+    public NmrPeriodQueryService.Result queryNmrPeriod(LocalDate start, LocalDate end)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            return NmrPeriodQueryService.query(em, companyCodeSupplier.get(), start, end);
+        }
     }
 
     public NmrLiabilityQueryService.Result queryNmr(LocalDate cutoff)

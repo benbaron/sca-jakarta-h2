@@ -147,6 +147,10 @@ After S4D merge, fix the existing Journal flag's loss through export/import befo
 
 After S4E's confirmed MR #372 merge, select [S4F](P25-S4F-nmr-item-detail.md): stable recipient designation on existing OTHER_LIABILITY allocations, canonical event/account/fund dimensions, shared Journal Save/correction, cutoff detail and conservative GL coverage by account/fund, with versioned lossless SCLX facts. Legacy flags and unclassified liabilities stay visible without inferred NMR amounts. No policy record, assessment/default or new balance authority. Merchant-specific settlement evidence and period movement presentation remain later bounded S4 work.
 
+### P25-S4G — NMR settlement attribution and period movements
+
+After S4F's MR #373 merge, select [S4G](P25-S4G-nmr-settlement-evidence.md): explicit collection/branch remittance/merchant discharge/refund/adjustment facts on existing allocations, evidence pointer, company Merchant on a discharge's linked line, existing shared Save and dated correction authority, opening-to-closing range report and versioned SCLX. Legacy classifications remain unknown. Withholding alone never discharges a liability. Dedicated withholding observations linked to receivables and gross/payout/fee presentation remain a following bounded slice, not a prerequisite policy exercise.
+
 ### P25-S5 — Add independent functional-expense classification (G10)
 
 **Work:** Confirm the meanings and permitted use of AR/OA/FR in the required forms. Add the adopted independent line classification, defaults with explicit override, missing-classification diagnostics, and report/export mappings. Preserve it through generated entries, corrections, and interchange.

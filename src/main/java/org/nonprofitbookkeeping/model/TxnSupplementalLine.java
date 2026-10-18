@@ -61,6 +61,13 @@ public class TxnSupplementalLine
     @JoinColumn(name = "nmr_recipient_id")
     private Counterparty nmrRecipient;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "nmr_movement", length = 30)
+    private NmrMovementKind nmrMovement;
+
+    @Column(name = "nmr_evidence_reference", length = 500)
+    private String nmrEvidenceReference;
+
     @Column(length = 255)
     private String counterparty;
 
@@ -108,6 +115,10 @@ public class TxnSupplementalLine
     public void setItemEffect(SupplementalItemEffect itemEffect) { this.itemEffect = itemEffect; }
     public Counterparty getNmrRecipient() { return nmrRecipient; }
     public void setNmrRecipient(Counterparty recipient) { this.nmrRecipient = recipient; }
+    public NmrMovementKind getNmrMovement() { return nmrMovement; }
+    public void setNmrMovement(NmrMovementKind value) { nmrMovement = value; }
+    public String getNmrEvidenceReference() { return nmrEvidenceReference; }
+    public void setNmrEvidenceReference(String value) { nmrEvidenceReference = value; }
     public String getCounterparty() { return counterparty; }
     public void setCounterparty(String counterparty) { this.counterparty = counterparty; }
     public String getDescription() { return description; }

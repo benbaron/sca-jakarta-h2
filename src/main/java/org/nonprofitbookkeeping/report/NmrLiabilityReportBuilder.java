@@ -88,6 +88,13 @@ public final class NmrLiabilityReportBuilder
         rows.add(new ReportTableModel.Row(ReportTableModel.RowStyle.STATUS_WARNING, Map.of("record", "COVERAGE", "status", explanation)));
         var table = new ReportTableModel(request.definition().id(), request.definition().displayName(),
                 "As of " + format.formatDate(projection.cutoff()) + " — " + status, columns, rows);
+        return render(request, table, format);
+    }
+
+    static ReportResult render(ReportRequest request, ReportTableModel table, FinancialReportDisplayFormat format)
+    {
+        var columns = table.columns();
+        var rows = table.rows();
         StringBuilder text = new StringBuilder(table.title()).append('\n').append(table.subtitle()).append('\n');
         text.append(columns.stream().map(ReportTableModel.Column::label).collect(java.util.stream.Collectors.joining(" | "))).append('\n');
         StringBuilder csv = new StringBuilder();

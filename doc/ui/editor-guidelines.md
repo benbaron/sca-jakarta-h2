@@ -146,3 +146,9 @@ Save Entry/File Save owns this field with all other transaction/supplemental fac
 
 
 Supplemental-item reversals inherit the source allocation history. Journal Save rejects rewriting their lines or adding another set of item allocations; use the configured correction workflow to reverse the reversal and enter corrected accounting. This keeps NMR item balances and dated GL effects aligned.
+
+## P25-S4G movement/evidence entry
+
+Other Liabilities offers a blank-or-explicit **NMR movement** selector and **NMR evidence** text column. Collection requires INCREASE; branch remittance, merchant discharge and refund require DECREASE; adjustment accepts either signed effect. Merchant discharge requires the company-owned Merchant on its linked Entry Line and an external evidence pointer (maximum 500 characters). A label records the operator's facts; it does not verify external settlement or calculate a charge. Missing labels remain unknown. Apply Existing Item never copies the opening label/evidence into a new payment.
+
+Cell commits protect the draft; Save Entry/File Save atomically owns both fields with the transaction. Existing remembered vertical divider, independently scrolling controls/table, selectable/resizable/reorderable columns and permission/correction guards remain authoritative. **NMR Period Movements** is read-only with Start/End, Generate/Export and owning-transaction drill-through; opening/closing controls and totals remain complete despite detail truncation. Dedicated withholding/receivable observations follow separately. See [S4G](../P25-S4G-nmr-settlement-evidence.md).

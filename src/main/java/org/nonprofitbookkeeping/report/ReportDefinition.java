@@ -128,7 +128,10 @@ public enum ReportDefinition
             "OTHER_LIABILITY", DateMode.AS_OF, false, true),
     NMR_LIABILITIES(
             "nmr-liabilities", "NMR Liabilities", ReportSource.SUPPLEMENTAL,
-            "OTHER_LIABILITY", DateMode.AS_OF, false, true);
+            "OTHER_LIABILITY", DateMode.AS_OF, false, true),
+    NMR_PERIOD_MOVEMENTS(
+            "nmr-period-movements", "NMR Period Movements", ReportSource.SUPPLEMENTAL,
+            "OTHER_LIABILITY", DateMode.RANGE, false, true);
 
     private final String id;
     private final String displayName;

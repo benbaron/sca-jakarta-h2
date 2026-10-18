@@ -187,6 +187,11 @@ public final class ReportExecutionService
         {
             throw new IllegalStateException("Supplemental report query service is unavailable.");
         }
+        if (request.definition() == ReportDefinition.NMR_PERIOD_MOVEMENTS)
+        {
+            return NmrPeriodReportBuilder.result(request,
+                    supplementalQueries.queryNmrPeriod(request.startDate(), request.endDate()), displayFormat);
+        }
         if (request.definition() == ReportDefinition.NMR_LIABILITIES)
         {
             return NmrLiabilityReportBuilder.result(request, supplementalQueries.queryNmr(request.asOfDate()), displayFormat);

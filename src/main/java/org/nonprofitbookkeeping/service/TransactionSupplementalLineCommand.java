@@ -19,8 +19,17 @@ public record TransactionSupplementalLineCommand(String kind,
                                                  UUID itemId,
                                                  String itemEffect,
                                                  Integer transactionLineIndex,
-                                                 Long nmrRecipientId)
+                                                 Long nmrRecipientId, String nmrMovement, String nmrEvidenceReference)
 {
+    public TransactionSupplementalLineCommand(String kind, String entryRef, String counterparty,
+            String description, String reference, BigDecimal amount, LocalDate dueDate,
+            LocalDate startDate, LocalDate endDate, String notes, Integer lineOrder,
+            UUID itemId, String itemEffect, Integer transactionLineIndex, Long nmrRecipientId)
+    {
+        this(kind, entryRef, counterparty, description, reference, amount, dueDate,
+                startDate, endDate, notes, lineOrder, itemId, itemEffect, transactionLineIndex, nmrRecipientId, null, null);
+    }
+
     /** Compatibility constructor: no explicit NMR item designation. */
     public TransactionSupplementalLineCommand(String kind, String entryRef, String counterparty,
             String description, String reference, BigDecimal amount, LocalDate dueDate,
