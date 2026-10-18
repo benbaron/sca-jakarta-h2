@@ -4,9 +4,9 @@ active_phase: P25
 active_slice: P25-S5A
 active_status: VERIFYING
 active_branch: codex/P25-S5A-functional-expense-contract
-active_pull_request: null
-active_head: 7648faa2d5add27dcb513e9776fcaba0cfd48f53
-next_action: "Publish the adopted S5A functional-expense contract as a draft and verify exact-head CI. Owner adopted all D07 choices; no further classification input is needed. After selected S5A review/merge, start one fresh canonical/Journal/report/correction/generated-entry/SCLX implementation slice."
+active_pull_request: 377
+active_head: 540ea03aecc291d1e6a140c9aba41a7e0016f8ff
+next_action: "Owner review/merge of draft MR #377; D07 is adopted and full local/exact-head CI passed. After confirmed merge refresh main, carry local final evidence and implement the independent functional-expense contract on a fresh S5 branch. No further D07 or NMR policy question is needed."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -695,7 +695,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S4H | Merchant receivable breakdown and withholding observations | DONE | MR #375 merged at 030b7d3b; final full local and exact-head clean/repeat/JavaFX CI passed |
 | P25-S4I | NMR financial acceptance and replay-safe Journal create | DONE | MR #376 explicitly approved/merged at 4c965490; final head de44946b passed full local and exact-head clean/repeat/JavaFX CI |
 | P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | S4/D07 accepted; selected S5A contract publication/merge remains before the next implementation slice. No further policy/classification input needed |
-| P25-S5A | Prepare functional-expense contract proposal (documentation only) | VERIFYING | [Adopted D07 contract](P25-S5A-functional-expense-contract.md); no application/schema change or assumed form authority |
+| P25-S5A | Adopt functional-expense contract (documentation only) | VERIFYING | Draft MR #377; D07 adopted, full local/exact-head CI passed; owner review/merge remain; [contract](P25-S5A-functional-expense-contract.md) |
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
 | P26-S3 | Complete event/fund budget planning and reporting filters (G12) | BLOCKED | P26-S2 merged; owning contract and D01–D10 gates as applicable |
@@ -1909,3 +1909,27 @@ Status VERIFYING on fresh `codex/P25-S5A-functional-expense-contract`, from conf
 Owner answered “Adopt this proposal (Recommended)” to the complete concrete D07 question. D07 is RESOLVED: AR = Events, OA = Administration, FR = Fundraising; explicit expense-line selection with no automatic defaults; net GL expense on canonical transaction date; visible Unclassified amounts, preserved corrections and SCLX. No third-party approval or official form revision is inferred. This explicit choice supersedes the pending-request checkpoints above. No further NMR operating-policy or functional-classification question is required.
 
 Updated the S5A contract, baseline decision record, adopted program and current controller to reflect adoption. Parent S5 now waits only for the selected documentation slice's publication/review/merge before fresh implementation, not missing D07 input. This remains one documentation-only slice; no production/test/schema change or functional feature completion is claimed. Full local 965-test verification on unchanged code remains applicable; final documentation links/scope/whitespace and exact published-head CI follow.
+
+### P25-S5A adopted-contract draft publication — 2026-10-18 (America/Denver)
+
+Draft [MR #377](https://github.com/benbaron/sca-jakarta-h2/pull/377) targets verified main `4c965490f59a59285b599262f68d0f853fcca582`. D07 is adopted; no further classification input is pending. Connected publication preserved three reviewed local commits/messages/order and every blob/tree:
+
+- Carry `7648faa2d5add27dcb513e9776fcaba0cfd48f53` → `459603f3a5f2af940ccf384fa6db3dd4504c1c9b`, tree `6d124a4048dfaf213a9d141139a1321432f4d9cf`.
+- Proposal/closeout `4ea8fa01ddd3ae70d064a4c65a1d27278498b923` → `83612ac256107359b090af6980779da35826f22d`, tree `2e9ae4b9dc2748a8a1bcca001aac6960ed89a978`.
+- Owner adoption `3d1f5a7aafe1179c89dbb5879f93a2b55a66e0d0` → `540ea03aecc291d1e6a140c9aba41a7e0016f8ff`, tree `540aed02eee6ac3691b1684ba67e14d20ec56ca5`.
+
+Ref advanced from expected `4c965490` with force false. Native fetch and empty tree comparison confirm final remote content equals local `3d1f5a7a`; draft/open metadata confirms that head. Six governing documents / 126 relative links, whitespace and documentation-only scope checks pass; application/test/schema/workflow/dependency bytes still equal merged main. Full local 965-test clean verify passed; no new functional implementation or desktop result is claimed. Final-head Maven run `39152631112` is running clean verification, repeat suite and expanded production JavaFX. MR description records actual local results and pending CI. Map/body scratch files: `/workspace/work/p25-s5a-publication-map.json`, `/workspace/work/p25-s5a-mr-body.md`.
+
+This post-publication verification record stays local, preserving the tested remote head. Next exact action: finish exact-head CI, update MR results and commit the local handoff; owner review/merge of this already adopted contract then enables a fresh S5 implementation slice. No new D07 approval question is needed.
+
+### P25-S5A final-head CI and handoff — 2026-10-18 (America/Denver)
+
+Final [Maven PR Tests run 39152631112](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39152631112), job `117749218528`, completed **success** at **2026-10-18 18:18:04 UTC** for exact head `540ea03aecc291d1e6a140c9aba41a7e0016f8ff`, branch `codex/P25-S5A-functional-expense-contract`. Run metadata and independent job-step reads confirm clean headless verification, repeat suite, expanded production JavaFX and cleanup all passed. Draft MR #377 remains open/unmerged at this head and records actual results, already-adopted D07 choices and the next implementation scope. No failure remains in final executed gates. Full local unchanged-code verification passed 965 tests, zero failures/errors, 58 display-related skips; future F01–F09 functionality is not claimed implemented.
+
+Completed: verified S4I approval/merge/final-head CI and carried its local ledger; closed accepted parent S4 financial scope without inventing a per-check desktop transcript; inspected separate canonical dimensions and donor usedFor compatibility; prepared and obtained explicit adoption of AR/OA/FR meanings, net GL transaction-date basis and no automatic defaults; recorded Unclassified/mixed-purpose/correction/generated-entry/native retry/SCLX requirements and nine future acceptance cases; reconciled current program/baseline/PLAN/S4A/S4I contracts; published all reviewed commits with matching blobs/trees and nonforce expected-parent lease; passed full local and exact-head CI.
+
+Remaining: owner review/merge of already adopted documentation contract MR #377. S5A stays VERIFYING, not DONE, until merged. Parent S5 waits for that selected-slice merge, not unresolved D07 or NMR operating policies. No application UI behavior changed and no new desktop visual test is required for this documentation-only slice. P26/P27 are not activated; official form mappings retain their own scope.
+
+This final PLAN/S5A verification evidence is local-only (commit subject `Record functional expense contract publication and final verification`). active_head remains the successful remote implementation/document source; `git rev-parse HEAD` identifies the complete local handoff. Do not publish a documentation-only successor merely to restart green CI. After owner reports merge, fetch/verify main, carry this local evidence onto a fresh branch and select one vertical P25-S5 implementation slice from [the adopted contract](P25-S5A-functional-expense-contract.md). Inspect current TxnSplit/line command/view, entry/correction/native receipt, Journal/line model, report/date/sign/filter routes, every generated expense writer and SCLX parser/identity/snapshot/commit; establish a fresh compile/relevant-test baseline before code. Preserve nullable legacy unknowns, compatible old native retries and lossless current facts. No further classification/default/basis question is required. Do not reuse the merged branch.
+
+Final handoff checks: 6 changed governing documents / 127 relative links verified, whitespace clean, production/test/schema/workflow/dependency bytes equal merged main and published head. Only PLAN/S5A final verification records follow locally.
