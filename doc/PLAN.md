@@ -4,9 +4,9 @@ active_phase: P25
 active_slice: P25-S4H
 active_status: VERIFYING
 active_branch: codex/P25-S4H-merchant-withholding
-active_pull_request: null
-active_head: fb37feba028237d5ae371799f85d409843c8e571
-next_action: "Publish the reviewed S4H draft with matching trees; complete full local clean verify and exact-head clean/repeat/JavaFX CI, then record results locally and in the MR. Owner review/merge remain."
+active_pull_request: 375
+active_head: 5fe764e8aeb26b98d4a281991daa559175df44a3
+next_action: "Owner review/acceptance and merge of draft MR #375. After confirmed merge carry the local ledger onto fresh main, review parent S4 financial acceptance and remaining form-specific boundaries, then select closeout or the next unblocked P25 slice. Do not reuse the merged branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1819,3 +1819,19 @@ Baseline compile and 32 relevant existing tests passed before production edits. 
 Eight governing documents / 133 relative links and intended diff/whitespace review passed. Existing public source/reference metadata remains unchanged; no private donor ledger/workbook rows, scratch assets, generated targets, dependency or workflow changes are included. Donor split code has intentionally unwired Merchant/Event, so production stable relations are retained. Remaining: matching-tree draft publication, full local clean verify and exact published-head clean/repeat/expanded-Xvfb CI, then owner review/acceptance/merge. Keep later evidence local and update MR results without replacing a successful remote head solely for documentation.
 
 After confirmed S4H merge, review parent S4's A10-N01–N10 financial acceptance and remaining form-specific boundaries against current implementation before selecting its closeout or next unblocked P25 slice. Parent S4 stays IN_PROGRESS. No external operating policy, policy record, automatic assessment/settlement or repeated P25-S3 acceptance is required.
+
+### P25-S4H draft publication and full local verification — 2026-10-18 (UTC)
+
+Draft [MR #375](https://github.com/benbaron/sca-jakarta-h2/pull/375) is open at exact head `5fe764e8aeb26b98d4a281991daa559175df44a3`, base `fb37feba028237d5ae371799f85d409843c8e571`. Clean reviewed local history was confirmed before publication. Connected GitHub preserved messages/order: carry `b173629adac0a2e61add01b8addec4f51a34b503` → `a4e625f13894bea5fb72080b6738df41685fb691`, matching tree `4320415bd4aa264a1ae08efd600b5d240d923aed`; implementation `629ec190e35a48f066f0138708b9b9a6a525345b` → final published head, matching tree `04ab02f24cbdc028dc4ede743804a8e39e82a1f7`. Every blob matched. The fresh branch advanced from the expected base with force false; native fetch and empty local-implementation/remote diff independently confirmed final bytes. Mapping and MR body remain in local scratch `/workspace/work/p25-s4h-publication-map.json` and `/workspace/work/p25-s4h-mr-body.md`.
+
+Full local offline `mvn clean verify` passed **957 tests, zero failures/errors, 58 display-dependent skips**, BUILD SUCCESS **2026-10-18 01:25:56 UTC**, elapsed 3:16 (`/workspace/work/p25-s4h-clean-verify.log`). Independent final Xvfb passed 12 tests and focused gate passed 63, all without failures/errors/skips. Eight governing documents / 133 relative links and whitespace/scope review passed. The wrapper restored its temporary tracked manifest at build completion; no generated artifacts are staged. No application/test/schema changes followed the final gates. MR records actual validation and owner checks. Exact-head run `39086527295`, job `117554163127`, is running; no CI success is claimed at this checkpoint. Status VERIFYING pending CI and owner review/acceptance/merge. This later publication/verification evidence is local only, preserving the successful remote source head without a documentation-only CI restart.
+
+### P25-S4H final-head CI and committed handoff — 2026-10-18 (UTC)
+
+Exact published head `5fe764e8aeb26b98d4a281991daa559175df44a3` passed [Maven run 39086527295](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39086527295), job `117554163127`: clean headless verification, repeat tests and expanded production Xvfb route compliance all succeeded. Run API confirms the exact head and completed/success conclusion; individual job stages also confirm success. Draft [MR #375](https://github.com/benbaron/sca-jakarta-h2/pull/375) records final local full/focused/JavaFX and exact-head CI results. No application/test/schema change followed the passed gates; no known failure remains in executed final checks.
+
+Status VERIFYING, not DONE: owner review/acceptance and merge remain. Local `codex/P25-S4H-merchant-withholding` carries this local-only PLAN/S4H evidence after implementation parent `629ec190e35a48f066f0138708b9b9a6a525345b`; `git rev-parse HEAD` identifies the complete committed handoff tip. Final source/test/schema bytes equal the successful published head. The successful remote head is not replaced solely for evidence. Eight governing documents / 133 relative links, whitespace and intended-scope review passed; generated targets, scratch assets, private reference rows, dependency and workflow changes remain excluded. Worktree is clean after committing the evidence. No human desktop acceptance is invented.
+
+Completed: verified S4G merge and carried its final ledger, nullable V84 facts and normalized unique canonical component links, optional dated observations without financial effects, canonical validation/ownership/availability/permissions/correction/Delete/replacement/audit, real shared Journal Save/dirty/reload and company-formatted exact optional money, remembered responsive divider/scrolling, derived range report with full totals/control gaps and dated corrections, strict deterministic lossless SCLX/conflict/Keep target/retry/restart/rollback, migration/recovery/multiple-item/permission/legacy regressions, owner notes, matching-tree draft publication and final full local/GitHub verification.
+
+Next exact action: owner reviews/accepts/merges MR #375 using the S4H checks. On confirmed merge, refresh main and carry this local evidence onto a fresh branch. Review parent S4 A10-N01–N10 against the implemented financial behavior and distinguish any remaining form-specific presentation from accounting acceptance before selecting its closeout or next unblocked P25 slice. Parent S4 remains IN_PROGRESS. Operating-policy inputs, saved policy versions and repeated P25-S3 acceptance are not prerequisites. Do not implement another slice before this merge.
