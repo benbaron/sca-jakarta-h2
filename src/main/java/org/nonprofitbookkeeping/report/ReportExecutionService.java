@@ -187,6 +187,10 @@ public final class ReportExecutionService
         {
             throw new IllegalStateException("Supplemental report query service is unavailable.");
         }
+        if (request.definition() == ReportDefinition.NMR_LIABILITIES)
+        {
+            return NmrLiabilityReportBuilder.result(request, supplementalQueries.queryNmr(request.asOfDate()), displayFormat);
+        }
         SupplementalOpenItemQueryService.Kind kind =
                 SupplementalOpenItemQueryService.Kind.valueOf(request.definition().templateId());
         return SupplementalOpenItemReportBuilder.result(

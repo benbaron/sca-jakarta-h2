@@ -344,6 +344,7 @@ public final class JournalWorkspacePanel implements AppPanel
     private Node buildEntryHeaderRegion()
     {
         editorMode.getStyleClass().add("panel-title");
+        entryDate.setId("journalEntryDate");
         memoArea.setId("journalEntryMemo");
         memoArea.setWrapText(true);
         memoArea.setPrefRowCount(2);
@@ -601,7 +602,7 @@ public final class JournalWorkspacePanel implements AppPanel
         TableColumn<EditorLine, TransactionLineEditorModel.Option> column = new TableColumn<>(title);
         configureColumn(column, key, width);
         column.setCellValueFactory(value -> property.apply(value.getValue()));
-        column.setCellFactory(ignored -> new OptionTableCell(options));
+        column.setCellFactory(ignored -> new OptionTableCell<>(options));
         column.setOnEditCommit(event -> {
             property.apply(event.getRowValue()).set(event.getNewValue());
             markDirty();
@@ -693,6 +694,7 @@ public final class JournalWorkspacePanel implements AppPanel
         for (SupplementalKind kind : SupplementalKind.values())
         {
             CheckBox checkBox = new CheckBox(kind.toggleLabel());
+            checkBox.setId("journalSupplemental" + kind.name());
             checkBox.setOnAction(event -> {
                 markDirty();
                 updateSupplementalAvailability();
@@ -704,6 +706,7 @@ public final class JournalWorkspacePanel implements AppPanel
             supplementalTabIndex.put(kind, tab);
             supplementalTabs.getTabs().add(tab);
         }
+        supplementalTabs.setId("journalSupplementalTabs");
         supplementalTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         updateSupplementalAvailability();
 
@@ -727,6 +730,23 @@ public final class JournalWorkspacePanel implements AppPanel
         table.getColumns().add(supplementalTextColumn("Item ID", "itemId", 220, SupplementalRow::itemIdProperty, SupplementalRow::setItemId));
         table.getColumns().add(supplementalTextColumn("Effect", "itemEffect", 105, SupplementalRow::itemEffectProperty, SupplementalRow::setItemEffect));
         table.getColumns().add(supplementalTextColumn("Ledger Line", "transactionLine", 95, SupplementalRow::transactionLineProperty, SupplementalRow::setTransactionLine));
+        if (kind == SupplementalKind.OTHER_LIABILITY)
+        {
+            TableColumn<SupplementalRow, TransactionLineEditorModel.Option> recipient = new TableColumn<>("NMR recipient");
+            configureColumn(recipient, "nmrRecipient", 200);
+            recipient.setCellValueFactory(value -> value.getValue().nmrRecipient);
+            recipient.setCellFactory(ignored -> new OptionTableCell<>(() -> {
+                List<TransactionLineEditorModel.Option> choices = new ArrayList<>();
+                choices.add(null);
+                choices.addAll(referenceData.counterparties());
+                return choices;
+            }));
+            recipient.setOnEditCommit(event -> {
+                event.getRowValue().nmrRecipient.set(event.getNewValue());
+                markDirty();
+            });
+            table.getColumns().add(recipient);
+        }
         table.getColumns().add(supplementalTextColumn("Entry Ref", "entryRef", 140, SupplementalRow::entryRefProperty, SupplementalRow::setEntryRef));
         table.getColumns().add(supplementalTextColumn("Counterparty", "counterparty", 170, SupplementalRow::counterpartyProperty, SupplementalRow::setCounterparty));
         table.getColumns().add(supplementalTextColumn("Description", "description", 240, SupplementalRow::descriptionProperty, SupplementalRow::setDescription));
@@ -761,12 +781,36 @@ public final class JournalWorkspacePanel implements AppPanel
         });
         Label lifecycleHelp = new Label(
                 "Open-item rows use a stable Item ID, INCREASE/DECREASE effect, and a 1-based Ledger Line. "
-                        + "Current SCLX interchange preserves legacy supplemental detail but does not preserve these lifecycle linkage fields.");
+                        + "Save Entry saves all supplemental tabs with the transaction. SCLX preserves item links. "
+                        + (kind == SupplementalKind.OTHER_LIABILITY
+                            ? "Select NMR recipient to explicitly designate an NMR item; its linked ledger line requires an event. "
+                                + "Use the same recipient, account, fund and event on every allocation. Blank is unclassified; line NMR flags do not designate items."
+                            : "Remove Detail is saved through the owning transaction correction controls."));
         lifecycleHelp.setWrapText(true);
         lifecycleHelp.getStyleClass().add("field-help");
-        VBox panel = new VBox(6, new HBox(8, add, apply, remove), lifecycleHelp, table);
-        VBox.setVgrow(table, Priority.ALWAYS);
-        panel.setMinSize(0, 0);
+        Node panel;
+        if (kind == SupplementalKind.OTHER_LIABILITY)
+        {
+            VBox controls = new VBox(6, new HBox(8, add, apply, remove), lifecycleHelp);
+            controls.setMinSize(0, 0);
+            controls.setPrefWidth(560);
+            ScrollPane controlsScroll = scrollable(controls, false);
+            controlsScroll.setId("journalNmrDetailControlsScroll");
+            table.setMinSize(0, 0);
+            SplitPane split = new SplitPane(controlsScroll, table);
+            split.setId("journalNmrDetailSplit");
+            split.setOrientation(Orientation.VERTICAL);
+            split.setDividerPositions(0.35);
+            split.setMinSize(0, 0);
+            panel = split;
+        }
+        else
+        {
+            VBox box = new VBox(6, new HBox(8, add, apply, remove), lifecycleHelp, table);
+            VBox.setVgrow(table, Priority.ALWAYS);
+            box.setMinSize(0, 0);
+            panel = box;
+        }
         Tab tab = new Tab(kind.tabTitle(), panel);
         tab.setClosable(false);
         return tab;
@@ -841,6 +885,14 @@ public final class JournalWorkspacePanel implements AppPanel
     {
         payeeBox.setValue(resolveOption(payeeBox.getValue(), referenceData.counterparties()));
         bankAccountBox.setValue(resolveOption(bankAccountBox.getValue(), referenceData.accounts()));
+        for (var table : supplementalTables.values())
+        {
+            for (var row : table.getItems())
+            {
+                row.nmrRecipient.set(resolveOption(row.nmrRecipient.get(), referenceData.counterparties()));
+            }
+            table.refresh();
+        }
         for (EditorLine row : lineTable.getItems())
         {
             row.setAccount(resolveOption(row.getAccount(), referenceData.accounts()));
@@ -1228,7 +1280,7 @@ public final class JournalWorkspacePanel implements AppPanel
                         startDate,
                         endDate,
                         blankToNull(row.getNotes()),
-                        null, itemId, itemEffect, transactionLineIndex));
+                        null, itemId, itemEffect, transactionLineIndex, id(row.nmrRecipient.get())));
             }
         }
         return commands;
@@ -1441,6 +1493,10 @@ public final class JournalWorkspacePanel implements AppPanel
             row.setItemEffect("DECREASE");
             row.setEntryRef(choice.row().entryRef());
             row.setCounterparty(choice.row().counterparty());
+            if (choice.row().nmr() != null)
+            {
+                row.nmrRecipient.set(option(choice.row().nmr().recipientId(), "", choice.row().nmr().recipientName()));
+            }
             row.setDescription(choice.row().description());
             row.setReference(choice.row().reference());
             row.setAmount(normalizeMoney(choice.row().openBalance().toPlainString()));
@@ -1842,7 +1898,7 @@ public final class JournalWorkspacePanel implements AppPanel
         column.setReorderable(true);
     }
 
-    private final class OptionTableCell extends TableCell<EditorLine, TransactionLineEditorModel.Option>
+    private final class OptionTableCell<T> extends TableCell<T, TransactionLineEditorModel.Option>
     {
         private final Supplier<List<TransactionLineEditorModel.Option>> options;
         private boolean updatingEditor;
@@ -2384,6 +2440,7 @@ public final class JournalWorkspacePanel implements AppPanel
 
     static final class SupplementalRow
     {
+        final ObjectProperty<TransactionLineEditorModel.Option> nmrRecipient = new SimpleObjectProperty<>();
         private final StringProperty itemId = new SimpleStringProperty("");
         private final StringProperty itemEffect = new SimpleStringProperty("");
         private final StringProperty transactionLine = new SimpleStringProperty("");
@@ -2400,6 +2457,7 @@ public final class JournalWorkspacePanel implements AppPanel
         static SupplementalRow from(TransactionSupplementalLineView view)
         {
             SupplementalRow row = new SupplementalRow();
+            row.nmrRecipient.set(view.nmrRecipientId() == null ? null : option(view.nmrRecipientId(), "", view.nmrRecipientName()));
             row.setItemId(view.itemId() == null ? "" : view.itemId().toString());
             row.setItemEffect(view.itemEffect());
             row.setTransactionLine(view.transactionLineIndex() == null ? "" : Integer.toString(view.transactionLineIndex() + 1));
@@ -2456,7 +2514,7 @@ public final class JournalWorkspacePanel implements AppPanel
         boolean hasAnyInput()
         {
             BigDecimal parsedAmount = parseMoney(getAmount());
-            return !getItemId().isBlank() || !getItemEffect().isBlank() || !getTransactionLine().isBlank()
+            return nmrRecipient.get() != null || !getItemId().isBlank() || !getItemEffect().isBlank() || !getTransactionLine().isBlank()
                     || !getEntryRef().isBlank() || !getCounterparty().isBlank() || !getDescription().isBlank()
                     || !getReference().isBlank() || parsedAmount == null || parsedAmount.signum() != 0
                     || !getDueDate().isBlank() || !getStartDate().isBlank() || !getEndDate().isBlank()

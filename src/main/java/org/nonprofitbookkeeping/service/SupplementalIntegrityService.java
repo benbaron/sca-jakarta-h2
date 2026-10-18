@@ -79,6 +79,7 @@ public final class SupplementalIntegrityService
             return;
         }
         em.flush();
+        requireNmrIdentity(em, company, items);
         List<LocalDate> dates = em.createQuery("select distinct t.txnDate from Txn t where t.company = :company order by t.txnDate", LocalDate.class)
                 .setParameter("company", company).getResultList();
         for (var kind : items.stream().map(Item::kind).distinct().toList())
@@ -98,4 +99,52 @@ public final class SupplementalIntegrityService
             }
         }
     }
+    /** Factual designation and dimensions in the existing canonical transaction audit. */
+    static String nmrSnapshot(EntityManager em, Txn txn)
+    {
+        return em.createQuery("from TxnSupplementalLine l where l.txn = :txn and l.nmrRecipient is not null order by l.lineOrder, l.id",
+                        org.nonprofitbookkeeping.model.TxnSupplementalLine.class)
+                .setParameter("txn", txn).getResultList().stream().map(l -> "item=" + l.getItemId()
+                        + ",nmrRecipientId=" + l.getNmrRecipient().getId() + ",split=" + l.getTxnSplit().getId()
+                        + ",account=" + l.getTxnSplit().getAccount().getId() + ",fund=" + l.getTxnSplit().getFund().getId()
+                        + ",event=" + l.getTxnSplit().getActivity().getId() + ",effect=" + l.getItemEffect()
+                        + ",amount=" + l.getAmount()).collect(java.util.stream.Collectors.joining(";"));
+    }
+
+    private static void requireNmrIdentity(EntityManager em, Company company, Set<Item> items)
+    {
+        for (Item item : items)
+        {
+            var rows = em.createQuery("""
+                    select l from TxnSupplementalLine l left join fetch l.nmrRecipient
+                    left join fetch l.txnSplit s left join fetch s.activity
+                    where l.txn.company = :company and l.itemId = :item
+                    """, org.nonprofitbookkeeping.model.TxnSupplementalLine.class)
+                    .setParameter("company", company).setParameter("item", item.id()).getResultList();
+            var designated = rows.stream().filter(l -> l.getNmrRecipient() != null).toList();
+            if (designated.isEmpty())
+            {
+                continue;
+            }
+            var first = designated.get(0);
+            var source = first.getTxnSplit();
+            for (var row : rows)
+            {
+                var split = row.getTxnSplit();
+                if (!"OTHER_LIABILITY".equals(row.getKind()) || row.getNmrRecipient() == null
+                        || split == null || source == null || split.getActivity() == null
+                        || source.getActivity() == null
+                        || !java.util.Objects.equals(row.getNmrRecipient().getCompany().getId(), company.getId())
+                        || !row.getNmrRecipient().getId().equals(first.getNmrRecipient().getId())
+                        || !split.getAccount().getId().equals(source.getAccount().getId())
+                        || !split.getFund().getId().equals(source.getFund().getId())
+                        || !split.getActivity().getId().equals(source.getActivity().getId()))
+                {
+                    throw new PostingException("NMR item " + item.id()
+                            + " requires the same explicit recipient, liability account, fund and event on every allocation. Use a separate item for different dimensions.");
+                }
+            }
+        }
+    }
+
 }

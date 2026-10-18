@@ -99,6 +99,7 @@ final class SclxSupplementalDetailExtension
             }
             Set<Object> fields = new HashSet<>(map.keySet());
             fields.remove("lifecycle");
+            fields.remove("nmr");
             if (!fields.equals(ENTRY_KEYS))
             {
                 throw new IllegalArgumentException(
@@ -109,6 +110,10 @@ final class SclxSupplementalDetailExtension
             if (map.containsKey("lifecycle"))
             {
                 SclxSupplementalLifecycle.link(new com.fasterxml.jackson.databind.ObjectMapper().valueToTree(map.get("lifecycle")));
+            }
+            if (map.containsKey("nmr"))
+            {
+                SclxNmrItemMetadata.recipient(new com.fasterxml.jackson.databind.ObjectMapper().valueToTree(map.get("nmr")));
             }
             Entry entry = new Entry(
                     text(map, "supplementalDetailId", index),

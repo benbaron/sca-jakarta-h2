@@ -127,7 +127,45 @@ final class SclxTransactionDetailImportData
                 throw new IllegalStateException(
                         "Supplemental detail transaction does not resolve: " + value.transactionId() + ".");
             }
+            if (value.nmrRecipientId() != null)
+            {
+                if (!"OTHER_LIABILITY".equals(value.kind()) || value.lifecycle() == null
+                        || parties.counterparties().stream().noneMatch(p -> p.externalId().equals(value.nmrRecipientId()))
+                        || !lines.get(value.lifecycle().lineId()).path("activityId").isTextual())
+                {
+                    throw new IllegalStateException("NMR item metadata requires a resolved recipient, OTHER_LIABILITY lifecycle and event.");
+                }
+            }
             supplementalByTransaction.computeIfAbsent(value.transactionId(), ignored -> new ArrayList<>()).add(value);
+        }
+        Map<java.util.UUID, List<SupplementalValue>> items = new LinkedHashMap<>();
+        for (SupplementalValue value : supplemental)
+        {
+            if (value.lifecycle() != null)
+            {
+                items.computeIfAbsent(value.lifecycle().itemId(), ignored -> new ArrayList<>()).add(value);
+            }
+        }
+        for (var allocations : items.values())
+        {
+            var designated = allocations.stream().filter(v -> v.nmrRecipientId() != null).findFirst();
+            if (designated.isEmpty())
+            {
+                continue;
+            }
+            var first = designated.get();
+            JsonNode source = lines.get(first.lifecycle().lineId());
+            for (var allocation : allocations)
+            {
+                JsonNode line = lines.get(allocation.lifecycle().lineId());
+                if (!Objects.equals(first.nmrRecipientId(), allocation.nmrRecipientId())
+                        || !source.path("accountId").equals(line.path("accountId"))
+                        || !source.path("fundId").equals(line.path("fundId"))
+                        || !source.path("activityId").equals(line.path("activityId")))
+                {
+                    throw new IllegalStateException("NMR item allocations require consistent recipient, account, fund and event.");
+                }
+            }
         }
         supplementalByTransaction.values().forEach(values -> values.sort(
                 java.util.Comparator.comparingInt(SupplementalValue::lineOrder)
@@ -262,6 +300,7 @@ final class SclxTransactionDetailImportData
         {
             Set<String> fields = new HashSet<>(SUPPLEMENTAL_FIELDS);
             if (values.get(index).has("lifecycle")) fields.add("lifecycle");
+            if (values.get(index).has("nmr")) fields.add("nmr");
             JsonNode item = object(values.get(index), fields,
                     "supplementalDetails[" + index + "]");
             SupplementalValue detail = new SupplementalValue(
@@ -278,7 +317,8 @@ final class SclxTransactionDetailImportData
                     optionalDate(item, "startDate", "supplemental detail"),
                     optionalDate(item, "endDate", "supplemental detail"),
                     optionalText(item, "notes", "supplemental detail"),
-                    SclxSupplementalLifecycle.link(item.get("lifecycle")));
+                    SclxSupplementalLifecycle.link(item.get("lifecycle")),
+                    item.has("nmr") ? SclxNmrItemMetadata.recipient(item.get("nmr")) : null);
             validateSupplemental(detail);
             unique(identities, detail.externalId(), "supplemental-detail identity");
             result.add(detail);
@@ -477,7 +517,7 @@ final class SclxTransactionDetailImportData
             LocalDate startDate,
             LocalDate endDate,
             String notes,
-            SclxSupplementalLifecycle.Link lifecycle)
+            SclxSupplementalLifecycle.Link lifecycle, String nmrRecipientId)
     {
     }
 

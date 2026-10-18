@@ -1,12 +1,12 @@
 ---
-plan_version: 372
+plan_version: 373
 active_phase: P25
-active_slice: P25-S4E
+active_slice: P25-S4F
 active_status: VERIFYING
-active_branch: codex/P25-S4E-nmr-line-portability
-active_pull_request: null
-active_head: 33c1e99e48a78db9d0692064557cf6886de9cf4f
-next_action: "Implement and verify S4E NMR line attribution portability through existing export/preview/atomic Save. S3 acceptance is satisfied; external policies are not prerequisites. Parent NMR liability/event workflow remains subsequent work."
+active_branch: codex/P25-S4F-nmr-item-detail
+active_pull_request: 373
+active_head: 2e401a02da5909cbe62004d393698f07b4cfe3e7
+next_action: "Finish the reproduced inherited-reversal edit guard, publish the reviewed successor to draft MR #373 and rerun full local clean verify plus exact-head clean/repeat/Xvfb CI before owner acceptance/merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,7 +37,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | IN_PROGRESS — S4D merged in MR #371; S4E entered NMR line portability selected; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
+| P25 | Transfers, payment references, reporting classification | IN_PROGRESS — S4D merged in MR #371; S4E DONE through MR #372; S4F explicit item detail selected; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -684,12 +684,13 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S1 | Implement one internal fund-transfer operation (G7) | DONE | P24-S4 merged; internal-only scope; form-specific legal-entity mappings remain in their owning reporting contract |
 | P25-S2 | Add structured payment/check references (G9) | DONE | P25-S1 merged; owning contract and D01–D10 gates as applicable |
 | P25-S3 | Complete check exception and reconciliation workflows (G9) | DONE | MR #364 merged; final-head CI passed; owner desktop acceptance “Passed — no issues” on 2026-10-17. D04 still gates stale-triggered accounting only |
-| P25-S4 | User-entered NMR accounting and liability tie-out (G10) | IN_PROGRESS | S3 accepted; S4D merged; S4E fixes entered-line data loss first. Full item/event liability detail and remittance workflow remain subsequent slices |
+| P25-S4 | User-entered NMR accounting and liability tie-out (G10) | IN_PROGRESS | S3 accepted; S4D/S4E merged; S4F item/recipient/event detail and GL coverage selected. Merchant-specific settlement evidence/presentation remain subsequent slices |
 | P25-S4A | Prepare D03 NMR accounting-contract proposal (documentation only) | DONE | MR #368 merged/final-head CI passed; owner accepted custodial framework. S4D supersedes mandatory external-policy inputs |
-| P25-S4B | Company-owned dated NMR policy configuration | VERIFYING | MR #369 merged at 7943060e; final-head clean/repeat/Xvfb CI passed; explicit native acceptance evidence unrecorded; parent S4 financial gate retained |
+| P25-S4B | Company-owned dated NMR policy configuration | VERIFYING | MR #369 merged at 7943060e; final-head clean/repeat/Xvfb CI passed; explicit native acceptance evidence unrecorded; optional reference data only |
 | P25-S4C | Optional policy-reference SCLX portability | VERIFYING | MR #370 merged at 6d3a7214; final head 9d49c102 clean/repeat/Xvfb CI passed; native evidence unrecorded; no generated accounting |
 | P25-S4D | Correct NMR software scope (documentation only) | DONE | Owner accepted; MR #371 merged at 33c1e99e; final-head clean/repeat/Xvfb CI passed; S3 desktop acceptance recorded |
-| P25-S4E | Preserve entered NMR line attribution through SCLX | VERIFYING | Fresh merged main; existing Journal flag must survive export/import, conflicts and corrections; no policy engine or new accounting authority |
+| P25-S4E | Preserve entered NMR line attribution through SCLX | DONE | MR #372 merged at 704a4a9e; final-head clean/repeat/Xvfb CI and full local verification passed |
+| P25-S4F | Explicit NMR item/recipient/event detail and liability coverage | VERIFYING | S4E merged; canonical supplemental authority, explicit classification, GL coverage and versioned portability |
 | P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | P25-S4 merged; owning contract and D01–D10 gates as applicable |
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -1659,3 +1660,86 @@ The final focused gate passed 13 tests, zero failures/errors/skips. The real `Pa
 Status VERIFYING on `codex/P25-S4E-nmr-line-portability`, based on confirmed main `33c1e99e48a78db9d0692064557cf6886de9cf4f`, with the preserved S4D post-CI ledger. The bounded implementation and 7 governing documents/110 local links are reviewed; whitespace/scope checks passed. Prepare a draft MR for this continued work, preserving both local commits and matching each published blob/tree. Run local full `mvn clean verify` and exact published-head clean/repeat/expanded-Xvfb CI before final completion; publication as draft does not claim those gates already passed. Record results locally and in the MR without replacing a successful remote head solely for evidence. No source/test change should follow passed gates unless a failure requires correction.
 
 Full NMR item/event designation, liability tie-out and explicit settlement workflow remain subsequent parent S4 work. After this slice's merge, select that next bounded implementation from fresh main; external policies and S3 acceptance are no longer missing inputs. Owner checks are in the S4E contract; no new human desktop result is inferred.
+
+
+### P25-S4E draft publication and running final gates — 2026-10-16 (America/Denver)
+
+Continued the accepted corrected-plan work as a draft. Connected publication preserved both reviewed local commit messages/order, required each blob/tree SHA to match and advanced only the expected parent with force disabled. Fresh branch began at confirmed main `33c1e99e48a78db9d0692064557cf6886de9cf4f`. Draft [MR #372](https://github.com/benbaron/sca-jakarta-h2/pull/372) targets main; final published head `d971c7d12d55e7638726de9e3739112747dcb8cc` was confirmed through its PR metadata and native fetch, with exact local/published tree equality and zero content differences.
+
+| Local commit | Published commit | Matching tree |
+|---|---|---|
+| `cf32b24f24a4138afff406ab199aa8e5f42e09cc` | `5aef8ab2bc57b95d747955121dccd56253d20833` | `d13a04d5fbefd846aa187894356bc4669438e41b` |
+| `06e24d19c3692b941349427a209b5b7f3ebfb24a` | `d971c7d12d55e7638726de9e3739112747dcb8cc` | `a68e966e1a49cdbba892101f12cb1b16dbbfba41` |
+
+Publication review initially rejected the implementation PLAN blob, citing sensitive reference metadata and new-slice publication authorization. Fetched the exact existing public main-branch PLAN through connected GitHub (blob `46ff1503e795638ba9acbfb449eb7514cad9b705`) and proved all existing reference/history content unchanged apart from the listed NMR controller/status rows and appended slice/test/merge evidence. The exact upload retry passed with that evidence; no private source data or alternate transport was used. Complete mapping and prepared MR text remain in local scratch `/workspace/work/p25-s4e-publication-map.json` and `/workspace/work/p25-s4e-mr-body.md`.
+
+Local full clean verification is running on unchanged source/test bytes; actual final-head GitHub checks must complete before a final pass is claimed. Current known passed gates: compile/23 existing baseline tests, primary regression reproduction, final focused 13 tests and genuine Xvfb Preview Save one test. Both final-gate results and the MR description will be updated after completion. This publication/verification ledger remains local so it does not restart remote CI solely for evidence.
+
+
+### P25-S4E final local verification
+
+Fresh offline `mvn clean verify` passed **925 tests, zero failures/errors, 56 display-related skips**, BUILD SUCCESS at 2026-10-17 04:26:40 UTC (2026-10-16 America/Denver). Final source/test bytes equal the already published MR #372 head `d971c7d12d55e7638726de9e3739112747dcb8cc`; only this local publication/evidence ledger follows. The tracked build manifest was restored by the Maven helper and remains excluded. No failure remains in executed local checks. The actual final-head GitHub run `39002064424`, job `117306898033`, passed clean verification and repeat tests; expanded JavaFX/Xvfb is still running. No final CI or human desktop pass is inferred before it completes.
+
+
+### P25-S4E final-head CI and committed handoff — 2026-10-16 (America/Denver)
+
+Final published head `d971c7d12d55e7638726de9e3739112747dcb8cc` passed [Maven PR Tests run 39002064424](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39002064424), job `117306898033`. Fresh connected queries confirm the run completed successfully and every job step succeeded: clean headless verification, repeated tests and the complete expanded JavaFX/Xvfb gate. MR #372's description records these actual results, local full 925 tests/56 display skips, focused 13 tests and the dedicated real Preview Save Xvfb test. No source/test change follows the successful gates.
+
+Status remains VERIFYING, not DONE. Draft MR #372 is open/unmerged, base `33c1e99e48a78db9d0692064557cf6886de9cf4f`; final head and both matching publication trees are confirmed. Local branch `codex/P25-S4E-nmr-line-portability` includes this local-only evidence after implementation parent `06e24d19c3692b941349427a209b5b7f3ebfb24a`; resolve `git rev-parse HEAD` for the complete handoff tip. The successful published head is not replaced solely for this ledger. Worktree is clean after committing the evidence, tracked build artifacts remain excluded, and no known failure remains from executed checks.
+
+Completed: S4D merge reconciliation and preserved verification ledger, scoped financial line-attribution prerequisite, strict codec/export/serializer/preview/conflict/import integration, canonical receipt/remittance/reversal and rollback/permission/ownership regressions, actual ACCOUNTANT Preview Save with VIEWER denial, seven governing documents/owner checks, matching-tree draft publication and final local/GitHub validation. Remaining: owner review/acceptance/merge of MR #372. No human S4E visual result is invented. Parent S4's explicit NMR item/event designation, liability tie-out and settlement workflow remains subsequent work; this flag fix is not full NMR completion.
+
+Next exact action after confirmed merge: carry the local verification ledger forward onto fresh main, do not reuse the merged branch, inspect the current generic liability item/query and Journal correction authorities, and select explicit NMR item/event detail plus its GL tie-out as the next bounded slice. Preserve entered amounts and existing lifecycle balances; do not infer complete NMR detail from arbitrary legacy flags or all Other Liabilities. S3 acceptance is satisfied and external operating policies/optional policy records are not prerequisites.
+
+
+### P25-S4E merge and P25-S4F selection — 2026-10-17 (UTC)
+
+Owner confirmed “merged; proced.” Live GitHub and native fetch confirm MR #372 merged at current main `704a4a9e89e01d0ecce067c4ed274a315262b180`, final published head `d971c7d12d55e7638726de9e3739112747dcb8cc`; its clean/repeat/expanded-Xvfb run `39002064424` passed. S4E is DONE. Fresh `codex/P25-S4F-nmr-item-detail` carries the local-only S4E evidence as `2f055f26`; the merged branch is not reused.
+
+Select [S4F explicit NMR item detail](P25-S4F-nmr-item-detail.md) IN_PROGRESS. Required reading: accepted S4A, adopted correction program, SCLX specification and UI rules/operation matrix/editor guidelines. Required inspection: canonical entry/correction, supplemental entity/DTO/integrity/query/reconciliation, Journal, Report Library, SCLX snapshot/identity/preview/commit, V81 and relevant existing tests. Preserve canonical balances; explicit recipient selection on an OTHER_LIABILITY allocation designates NMR, with account/fund/event derived from its linked ledger line. Require consistent recipient/account/fund/event for a stable NMR item; never infer designation from a legacy line checkbox or another liability. No policy/default/rate engine. Existing Journal Save/correction owns the entire atomic operation.
+
+Baseline compile and relevant existing lifecycle/interchange/report tests are running before production edits. Next implement service validation, nondestructive schema, Journal selection/reload, as-of item detail/tie-out and versioned portability, then applicable focused/migration/JavaFX/full/CI gates. Parent S4 remains IN_PROGRESS; merchant-specific settlement attribution/reporting remains subsequent work.
+
+
+### P25-S4F implementation and publication checkpoint — 2026-10-17 (UTC)
+
+Implementation is VERIFYING on `codex/P25-S4F-nmr-item-detail`, based on confirmed main `704a4a9e89e01d0ecce067c4ed274a315262b180`, with local carry-forward `2f055f26`. The controller records the known pre-implementation head; `git rev-parse HEAD` identifies the complete implementation after commit. Publication/PR: not yet created at this checkpoint.
+
+Completed: V82 nullable recipient FK and lifecycle/kind constraint, no data backfill; explicit NMR designation on canonical OTHER_LIABILITY allocations, stable company recipient and credit-normal liability/event requirement, consistent account/fund/event/recipient across an item; existing atomic save, correction, availability, ownership, permission and audit boundaries. Journal exposes the recipient selector and shared Save, preserves existing-item designation/reload/draft protection, and has a real company-remembered divider with independently scrolling Other Liabilities controls/table. A small directly blocking integrity repair rejects imported lifecycle inverses that change the source Event; preflight and final canonical history validation agree and the regression covers it. No unrelated panel rewrite.
+
+NMR Liabilities in existing Report Library projects cumulative cutoff item balances using the existing supplemental lifecycle. It shows recipient/event/item/owning transaction, GL coverage by account/fund, unassigned openings, unclassified differences and actionable legacy flag/gross allocation gaps. Detail limits never truncate control totals and are disclosed in preview/text/CSV. Generic Other Liabilities and legacy flags are never automatically designated NMR. Optional versioned supplemental `nmr` metadata preserves recipient/item/event facts through deterministic export, strict preview, complete-transaction/detail conflicts, explicit Keep target, canonical atomic import and exact retry. Older files remain supported with classification unknown; no policy record or additional permission is required for accounting.
+
+Actual validation: baseline compile plus 25 existing relevant tests passed; broader lifecycle/entry/correction/report/preview gate passed 73 tests without failures/errors/skips. Final focused gate after the last integrity/codec changes passed 13 tests, zero failures/errors/skips (`/workspace/work/p25-s4f-final-focused.log`, BUILD SUCCESS 16:01:25 UTC). Earlier broad JavaFX gate passed 11 tests without failures/errors/skips. After the Other Liabilities layout change, final real Journal Save/reload/recipient-only draft and VIEWER test passed under Xvfb, zero failures/errors/skips (`/workspace/work/p25-s4f-geometry-xvfb.log`, 16:00:14 UTC), including actual table overflow in both directions, larger text, child minima, moved real divider and control viewport overflow. The geometry test now lets JavaFX pulse nested VirtualFlow after resizing; the first immediate pre-pulse assertion failed and was corrected before this final pass. The earlier initial fixtures' audit field/user, migration kind and report catalog-count assumptions were also corrected; no failure remains from the executed final gates.
+
+Seven governing documents and their 117 relative links, intended diff and whitespace checks passed. PLAN's published reference/history body remains unchanged except current controller/status rows and appended synthetic implementation/test/publication evidence; S4A source/reference metadata is unchanged from public main. No private donor ledger/workbook rows, scratch files, generated targets or workflow edits are included. Donor split-flag code was inspected and is not a suitable NMR item authority.
+
+Remaining: full local `mvn clean verify`, exact published-head GitHub clean/repeat/expanded-Xvfb CI and owner review/acceptance/merge. A draft may be published while final gates run, with pending results stated explicitly. Keep post-publication/CI evidence local rather than restarting a successful remote head solely for documentation. New owner checks are in [S4F](P25-S4F-nmr-item-detail.md); no human desktop pass is invented. Parent S4 remains IN_PROGRESS: merchant/branch discharge evidence, unconfirmed withholding versus confirmed settlement and period movement columns remain subsequent work. After confirmed merge, select that bounded follow-on on fresh main, preserving explicit entered amounts and the same item/ledger authority. External operating policies and P25-S3 acceptance are not missing prerequisites.
+
+
+### P25-S4F draft publication and final gates — 2026-10-17 (UTC)
+
+Published continued authorized work as draft [MR #373](https://github.com/benbaron/sca-jakarta-h2/pull/373), targeting main `704a4a9e89e01d0ecce067c4ed274a315262b180`. Connected publication preserved both local commit messages/order, verified all uploaded blob hashes and both exact tree hashes, created the fresh branch at verified main and advanced only the expected parent with force disabled. Live PR metadata and native fetch confirm final published head `2e401a02da5909cbe62004d393698f07b4cfe3e7`, tree `78184ea3bba209b5fad65e4875db1fd3709b16ea`, draft/open/unmerged. Native content diff against local implementation is empty.
+
+| Local commit | Published commit | Matching tree |
+|---|---|---|
+| `2f055f26b9b0b9ac504100c626e999b798e8392b` | `24aabcfc488eb34c1785bed06a8158cc942beae5` | `489aa6974b3d01cf08615fc634ffea91cded979f` |
+| `4a05a65265f1c95c4e74eba7e67f32621fd6bbca` | `2e401a02da5909cbe62004d393698f07b4cfe3e7` | `78184ea3bba209b5fad65e4875db1fd3709b16ea` |
+
+Full local clean verify is running on unchanged implementation bytes. Final-head [Maven PR Tests run 39047889348](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39047889348), job `117440199637`, is running clean verification, with repeat tests and expanded production JavaFX/Xvfb still pending. MR description states those gates are pending; no full pass is claimed yet. Mapping and draft text are in scratch `/workspace/work/p25-s4f-publication-map.json` and `/workspace/work/p25-s4f-mr-body.md`. This publication/final-CI evidence remains local rather than pushing a documentation successor solely to restart checks. No new native human acceptance is inferred.
+
+
+### P25-S4F final local verification
+
+Full local offline `mvn clean verify` passed **935 tests, zero failures/errors, 57 display-related skips**, BUILD SUCCESS at 2026-10-17 16:08:11 UTC, elapsed 3:04. Source, migration and test bytes equal final published MR #373 head `2e401a02da5909cbe62004d393698f07b4cfe3e7`; only this local evidence/controller follows. The helper restored the tracked manifest, so the sole worktree change is PLAN. Focused 13 tests, broad 73 tests, broad Xvfb 11 tests and final real Journal Save/geometry Xvfb test are recorded above. No failure remains in executed local final gates. Governing-document link validation now checks 118 links across seven documents. Exact-head CI is still running; no GitHub final pass or new human desktop acceptance is claimed yet.
+
+
+### P25-S4F final-review correction prerequisite
+
+Final source review found an existing writable path that could detach inherited supplemental reversal facts: `TransactionEntryService.update` could replace a lifecycle inverse's lines/details. The new real NMR regression reproduced the defect against implementation `4a05a652`: Journal accepted an added INCREASE allocation on a payment inverse instead of rejecting it (`/workspace/work/p25-s4f-reversal-edit-reproduction.log`, one expected regression failure: no exception thrown). This can duplicate item detail despite unchanged GL amounts. The initial test compile used an incorrect correction-result accessor and was corrected before that reproduction; no production change preceded the reproduced accounting failure.
+
+Narrow prerequisite repair: entry-service updates now reject canonical inverses with inherited supplemental items before deleting any lines/details. Users can reverse the reversal through the existing correction service and enter the corrected transaction. Header-only direct correction and supported canonical reversal lineage retain their existing authority. No separate persistence or new UI command is introduced. The regression also covers a balanced attempted removal of the liability line, zero audit/metadata residue, unchanged cutoff balance and a successful dated reverse-of-reversal. This directly protects the selected NMR detail/correction contract; no unrelated correction redesign.
+
+The previously recorded 935-test local full pass and CI run certify the preceding head only. Current repair requires its focused tests, a new complete local clean verify and a new exact published-head CI run. Do not use the preceding head's successful checks to certify the successor. Parent S4 scope and owner acceptance remain unchanged.
+
+
+The inherited-reversal guard and regression passed the focused release gate: **38 tests, zero failures/errors/skips**, BUILD SUCCESS at 2026-10-17 16:15:32 UTC (`/workspace/work/p25-s4f-reversal-guard-focused.log`), including existing entry/correction/integrity/cutoff tests and NMR interchange. Publish this five-file successor with the same expected-head/tree safeguards, then rerun full local and exact-head CI; all initial slice source and schema remain unchanged beyond this directly blocking guard.

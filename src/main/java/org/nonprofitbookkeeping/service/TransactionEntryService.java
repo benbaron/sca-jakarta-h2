@@ -258,9 +258,11 @@ public class TransactionEntryService
                         TxnSplit original = originals.get(i), inverse = splits.get(i);
                         if (!original.getAccount().getId().equals(inverse.getAccount().getId())
                                 || !original.getFund().getId().equals(inverse.getFund().getId())
-                                || original.getAmountSigned().negate().compareTo(inverse.getAmountSigned()) != 0)
+                                || original.getAmountSigned().negate().compareTo(inverse.getAmountSigned()) != 0
+                                || !Objects.equals(original.getActivity() == null ? null : original.getActivity().getId(),
+                                        inverse.getActivity() == null ? null : inverse.getActivity().getId()))
                         {
-                            throw new PostingException("SCLX inverse must preserve source split order, accounts, funds and opposite amounts.");
+                            throw new PostingException("SCLX inverse must preserve source split order, accounts, funds, events and opposite amounts.");
                         }
                     }
                 }
@@ -347,6 +349,11 @@ public class TransactionEntryService
                 if (!"ENTERED".equals(txn.getStatus()))
                 {
                     throw new PostingException("Only ENTERED transactions can be updated by the entry service.");
+                }
+                if (txn.getReversalOf() != null && !SupplementalIntegrityService.items(em, txn).isEmpty())
+                {
+                    throw new PostingException("A supplemental-item reversal inherits its original allocations and cannot be rewritten in Journal. "
+                            + "Use the correction workflow to reverse this reversal, then enter the corrected transaction.");
                 }
                 requireNotFixedAssetLifecycleTransaction(em, transactionId);
                 FundTransferIntegrityService.requireUnlinked(em, transactionId, "edit");
@@ -718,6 +725,19 @@ public class TransactionEntryService
                 line.setTxnSplit(split);
                 line.setItemEffect(effect);
             }
+            if (command.nmrRecipientId() != null)
+            {
+                Counterparty recipient = required(em, Counterparty.class, command.nmrRecipientId(), "NMR recipient");
+                ownership().ensureOwnedBy(em, txn.getCompany(), recipient, "NMR recipient");
+                if (!"OTHER_LIABILITY".equals(line.getKind()) || line.getTxnSplit() == null
+                        || line.getItemId() == null || line.getTxnSplit().getActivity() == null
+                        || line.getTxnSplit().getAccount().getAccountType() != AccountType.LIABILITY
+                        || line.getTxnSplit().getAccount().getNormalBalance() != NormalBalance.CREDIT)
+                {
+                    throw new PostingException("NMR designation requires a credit-normal OTHER_LIABILITY liability item allocation and an event on its linked ledger line.");
+                }
+                line.setNmrRecipient(recipient);
+            }
             em.persist(line);
         }
         if (!legacySclx && !deferredHistory)
@@ -880,7 +900,9 @@ public class TransactionEntryService
                     line.getReference(), line.getAmount(), line.getDueDate(), line.getStartDate(), line.getEndDate(),
                     line.getNotes(), line.getItemId(),
                     line.getItemEffect() == null ? null : line.getItemEffect().name(),
-                    line.getTxnSplit() == null ? null : line.getTxnSplit().getId(), splitIndex));
+                    line.getTxnSplit() == null ? null : line.getTxnSplit().getId(), splitIndex,
+                    line.getNmrRecipient() == null ? null : line.getNmrRecipient().getId(),
+                    line.getNmrRecipient() == null ? null : line.getNmrRecipient().getDisplayName()));
         }
         Counterparty payee = txn.getPayee();
         Account bankAccount = txn.getBankAccount();
@@ -986,7 +1008,8 @@ public class TransactionEntryService
     private static String snapshot(EntityManager em, Txn txn)
     {
         return "id=" + txn.getId() + ",date=" + txn.getTxnDate() + ",status=" + txn.getStatus()
-                + ",memo=" + (txn.getMemo() == null ? "" : txn.getMemo()) + ",payments=" + PaymentReferences.snapshot(em, txn);
+                + ",memo=" + (txn.getMemo() == null ? "" : txn.getMemo()) + ",payments=" + PaymentReferences.snapshot(em, txn)
+                + ",nmrItems=" + SupplementalIntegrityService.nmrSnapshot(em, txn);
     }
 
     private static String blankToNull(String value)

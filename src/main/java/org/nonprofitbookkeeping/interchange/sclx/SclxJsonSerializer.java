@@ -61,6 +61,7 @@ public final class SclxJsonSerializer
         SclxTransactionBudgetExtension.parse(root);
         SclxTransactionNmrExtension.parse(root);
         SclxPaymentReferences.parse(root);
+        SclxNmrItemMetadata.validate(root);
 
         DefaultIndenter indenter = new DefaultIndenter("  ", "\n");
         DefaultPrettyPrinter printer = new DefaultPrettyPrinter();

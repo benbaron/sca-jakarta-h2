@@ -209,7 +209,7 @@ public final class SupplementalOpenItemQueryService
                 line.getCounterparty(), line.getDescription(), line.getReference(),
                 scale(line.getAmount()), ZERO, ZERO, line.getDueDate(), line.getStartDate(), line.getEndDate(),
                 "UNMATCHED_LEGACY", line.getNotes(), false,
-                "Legacy supplemental detail has no canonical item/split lifecycle link; no open balance is inferred.");
+                "Legacy supplemental detail has no canonical item/split lifecycle link; no open balance is inferred.", null);
     }
 
     private static Row inconsistentDiagnostic(TxnSupplementalLine line, Kind kind, String explanation)
@@ -218,7 +218,7 @@ public final class SupplementalOpenItemQueryService
                 line.getItemId(), kind, line.getTxn().getId(), line.getTxn().getTxnDate(), line.getEntryRef(),
                 line.getCounterparty(), line.getDescription(), line.getReference(),
                 ZERO, ZERO, ZERO, line.getDueDate(), line.getStartDate(), line.getEndDate(),
-                "INCONSISTENT", line.getNotes(), false, explanation);
+                "INCONSISTENT", line.getNotes(), false, explanation, null);
     }
 
     private static BigDecimal scale(BigDecimal value)
@@ -298,8 +298,36 @@ public final class SupplementalOpenItemQueryService
             String status,
             String notes,
             boolean authoritative,
-            String explanation)
+            String explanation,
+            NmrDimensions nmr)
     {
+    }
+
+    public record NmrDimensions(long recipientId, String recipientName, long accountId, String accountCode,
+                                long fundId, String fundCode, long eventId, String eventCode, String eventName)
+    {
+    }
+
+    public NmrLiabilityQueryService.Result queryNmr(LocalDate cutoff)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            return NmrLiabilityQueryService.query(em, companyCodeSupplier.get(), cutoff);
+        }
+    }
+
+
+    private static NmrDimensions nmrDimensions(TxnSupplementalLine source)
+    {
+        var recipient = source.getNmrRecipient();
+        var split = source.getTxnSplit();
+        if (recipient == null || split == null || split.getActivity() == null)
+        {
+            return null;
+        }
+        return new NmrDimensions(recipient.getId(), recipient.getDisplayName(),
+                split.getAccount().getId(), split.getAccount().getCode(), split.getFund().getId(), split.getFund().getCode(),
+                split.getActivity().getId(), split.getActivity().getCode(), split.getActivity().getName());
     }
 
     private static final class Accumulator
@@ -374,7 +402,7 @@ public final class SupplementalOpenItemQueryService
                     itemId, kind, source.getTxn().getId(), source.getTxn().getTxnDate(), source.getEntryRef(),
                     source.getCounterparty(), source.getDescription(), source.getReference(),
                     increases, reductions, open, source.getDueDate(), source.getStartDate(), source.getEndDate(),
-                    status, source.getNotes(), authoritative, explanation);
+                    status, source.getNotes(), authoritative, explanation, nmrDimensions(source));
         }
     }
 }

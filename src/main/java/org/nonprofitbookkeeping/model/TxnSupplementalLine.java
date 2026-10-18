@@ -57,6 +57,10 @@ public class TxnSupplementalLine
     @Column(name = "item_effect", length = 20)
     private SupplementalItemEffect itemEffect;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "nmr_recipient_id")
+    private Counterparty nmrRecipient;
+
     @Column(length = 255)
     private String counterparty;
 
@@ -102,6 +106,8 @@ public class TxnSupplementalLine
     public void setTxnSplit(TxnSplit txnSplit) { this.txnSplit = txnSplit; }
     public SupplementalItemEffect getItemEffect() { return itemEffect; }
     public void setItemEffect(SupplementalItemEffect itemEffect) { this.itemEffect = itemEffect; }
+    public Counterparty getNmrRecipient() { return nmrRecipient; }
+    public void setNmrRecipient(Counterparty recipient) { this.nmrRecipient = recipient; }
     public String getCounterparty() { return counterparty; }
     public void setCounterparty(String counterparty) { this.counterparty = counterparty; }
     public String getDescription() { return description; }
