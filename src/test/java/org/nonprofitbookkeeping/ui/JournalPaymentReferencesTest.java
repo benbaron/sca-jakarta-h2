@@ -192,11 +192,31 @@ class JournalPaymentReferencesTest
             var combo = (ComboBox<TransactionLineEditorModel.Option>)cell.getGraphic();
             combo.getSelectionModel().select(combo.getItems().stream().filter(o -> o != null && o.id().equals(nmr.recipient())).findFirst().orElseThrow());
             assertEquals(nmr.recipient(), row.nmrRecipient.get().id());
+            var movementColumn = (TableColumn<JournalWorkspacePanel.SupplementalRow, String>)details.getColumns().stream()
+                    .filter(c -> "NMR movement".equals(c.getText())).findFirst().orElseThrow();
+            details.scrollToColumn(movementColumn); details.applyCss(); details.layout(); details.edit(0, movementColumn);
+            var movementCell = details.lookupAll(".table-cell").stream().map(TableCell.class::cast)
+                    .filter(c -> c.getIndex() == 0 && c.getTableColumn() == movementColumn).findFirst().orElseThrow();
+            assertTrue(movementCell.isEditing());
+            ((ComboBox<String>)movementCell.getGraphic()).getSelectionModel().select("COLLECTION");
+            assertEquals("COLLECTION", row.nmrMovement.get());
+            editNmrEvidence(details, "external/collection/001");
             button("journalWorkspaceSaveButton").fire(); return null;
         });
         await(() -> !panel.hasUnsavedChanges());
         var saved = UiServiceRegistry.transactionEntry().search(null, null, "", 20).get(0);
         assertEquals(nmr.recipient(), saved.supplementalLines().get(0).nmrRecipientId());
+        assertEquals("COLLECTION", saved.supplementalLines().get(0).nmrMovement());
+        assertEquals("external/collection/001", saved.supplementalLines().get(0).nmrEvidenceReference());
+        FxTestSupport.onFx(() ->
+        {
+            var details = (TableView<JournalWorkspacePanel.SupplementalRow>)panel.root().lookup("#journalWorkspaceSupplementalOTHER_LIABILITYTable");
+            editNmrEvidence(details, "external/collection/002");
+            assertTrue(panel.hasUnsavedChanges(), "Evidence-only cell commits protect the shared Journal draft");
+            button("journalWorkspaceSaveButton").fire(); return null;
+        });
+        await(() -> !panel.hasUnsavedChanges());
+        assertEquals("external/collection/002", UiServiceRegistry.transactionEntry().load(saved.id()).supplementalLines().get(0).nmrEvidenceReference());
         assertEquals("20.0000", UiServiceRegistry.supplementalOpenItems().queryNmr(org.nonprofitbookkeeping.service.NmrItemTestFixture.DATE)
                 .items().get(0).openBalance().toPlainString());
         FxTestSupport.onFx(() ->
@@ -251,6 +271,18 @@ class JournalPaymentReferencesTest
             assertTrue(button("journalWorkspaceSaveButton").isDisabled());
             return null;
         });
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void editNmrEvidence(TableView<JournalWorkspacePanel.SupplementalRow> table, String value)
+    {
+        var column = (TableColumn<JournalWorkspacePanel.SupplementalRow, String>)table.getColumns().stream()
+                .filter(c -> "NMR evidence".equals(c.getText())).findFirst().orElseThrow();
+        table.scrollToColumn(column); table.applyCss(); table.layout(); table.edit(0, column);
+        var cell = table.lookupAll(".table-cell").stream().map(TableCell.class::cast)
+                .filter(c -> c.getIndex() == 0 && c.getTableColumn() == column).findFirst().orElseThrow();
+        assertTrue(cell.isEditing());
+        var editor = (TextField)cell.getGraphic(); editor.setText(value); editor.fireEvent(new javafx.event.ActionEvent());
     }
 
     private static void await(BooleanSupplier condition) throws Exception

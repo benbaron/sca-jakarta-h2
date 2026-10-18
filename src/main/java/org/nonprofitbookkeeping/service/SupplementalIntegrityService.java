@@ -108,7 +108,9 @@ public final class SupplementalIntegrityService
                         + ",nmrRecipientId=" + l.getNmrRecipient().getId() + ",split=" + l.getTxnSplit().getId()
                         + ",account=" + l.getTxnSplit().getAccount().getId() + ",fund=" + l.getTxnSplit().getFund().getId()
                         + ",event=" + l.getTxnSplit().getActivity().getId() + ",effect=" + l.getItemEffect()
-                        + ",amount=" + l.getAmount()).collect(java.util.stream.Collectors.joining(";"));
+                        + ",amount=" + l.getAmount() + ",movement=" + l.getNmrMovement()
+                        + ",evidence=" + l.getNmrEvidenceReference()
+                        + ",merchant=" + (l.getTxnSplit().getMerchant() == null ? "" : l.getTxnSplit().getMerchant().getId())).collect(java.util.stream.Collectors.joining(";"));
     }
 
     private static void requireNmrIdentity(EntityManager em, Company company, Set<Item> items)

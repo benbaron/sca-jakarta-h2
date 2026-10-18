@@ -260,9 +260,11 @@ public class TransactionEntryService
                                 || !original.getFund().getId().equals(inverse.getFund().getId())
                                 || original.getAmountSigned().negate().compareTo(inverse.getAmountSigned()) != 0
                                 || !Objects.equals(original.getActivity() == null ? null : original.getActivity().getId(),
-                                        inverse.getActivity() == null ? null : inverse.getActivity().getId()))
+                                        inverse.getActivity() == null ? null : inverse.getActivity().getId())
+                                || !Objects.equals(original.getMerchant() == null ? null : original.getMerchant().getId(),
+                                        inverse.getMerchant() == null ? null : inverse.getMerchant().getId()))
                         {
-                            throw new PostingException("SCLX inverse must preserve source split order, accounts, funds, events and opposite amounts.");
+                            throw new PostingException("SCLX inverse must preserve source split order, accounts, funds, events, merchants and opposite amounts.");
                         }
                     }
                 }
@@ -738,6 +740,29 @@ public class TransactionEntryService
                 }
                 line.setNmrRecipient(recipient);
             }
+            String movement = blankToNull(command.nmrMovement());
+            String evidence = blankToNull(command.nmrEvidenceReference());
+            if (movement != null || evidence != null)
+            {
+                if (line.getNmrRecipient() == null || (evidence != null && evidence.length() > 500))
+                {
+                    throw new PostingException("NMR movement/evidence requires an explicitly designated NMR allocation; evidence is limited to 500 characters.");
+                }
+                try
+                {
+                    var kind = movement == null ? null : org.nonprofitbookkeeping.model.NmrMovementKind.valueOf(movement);
+                    if (kind != null)
+                    {
+                        kind.validate(command.itemEffect(), line.getTxnSplit().getMerchant() != null, evidence);
+                    }
+                    line.setNmrMovement(kind);
+                    line.setNmrEvidenceReference(evidence);
+                }
+                catch (IllegalArgumentException ex)
+                {
+                    throw new PostingException("Invalid NMR movement: " + ex.getMessage());
+                }
+            }
             em.persist(line);
         }
         if (!legacySclx && !deferredHistory)
@@ -902,7 +927,8 @@ public class TransactionEntryService
                     line.getItemEffect() == null ? null : line.getItemEffect().name(),
                     line.getTxnSplit() == null ? null : line.getTxnSplit().getId(), splitIndex,
                     line.getNmrRecipient() == null ? null : line.getNmrRecipient().getId(),
-                    line.getNmrRecipient() == null ? null : line.getNmrRecipient().getDisplayName()));
+                    line.getNmrRecipient() == null ? null : line.getNmrRecipient().getDisplayName(),
+                    line.getNmrMovement() == null ? null : line.getNmrMovement().name(), line.getNmrEvidenceReference()));
         }
         Counterparty payee = txn.getPayee();
         Account bankAccount = txn.getBankAccount();

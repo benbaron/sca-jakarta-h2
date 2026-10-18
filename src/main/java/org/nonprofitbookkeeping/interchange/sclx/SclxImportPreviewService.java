@@ -148,6 +148,14 @@ public final class SclxImportPreviewService
                 messages.add(message(InterchangeMessageSeverity.INFO, "SCLX_NMR_ITEM_DETAILS",
                         "$.extensions.scaJakartaH2.supplementalDetails", "Explicit NMR item allocations: " + nmrItems + ".", false));
             }
+            long classified = java.util.stream.StreamSupport.stream(document.root().path("extensions").path("scaJakartaH2")
+                    .path("supplementalDetails").spliterator(), false).filter(detail -> detail.path("nmr").path("movement").isTextual()).count();
+            if (classified > 0)
+            {
+                messages.add(message(InterchangeMessageSeverity.INFO, "SCLX_NMR_MOVEMENTS",
+                        "$.extensions.scaJakartaH2.supplementalDetails", "Explicitly classified NMR allocations: " + classified
+                                + ". Merchant/evidence facts are retained; unlabeled allocations remain unknown.", false));
+            }
             int nmrLines = SclxTransactionNmrExtension.parse(document.root()).size();
             if (nmrLines > 0)
             {

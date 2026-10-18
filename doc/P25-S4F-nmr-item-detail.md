@@ -1,6 +1,6 @@
 # P25-S4F — Explicit NMR item detail and liability tie-out
 
-Status: VERIFYING; implementation, focused/JavaFX checks and corrected full local verification passed. Exact published-head clean/repeat/expanded-Xvfb CI also passed; owner review/native acceptance/merge remain. Governing scope: [accepted S4A](P25-S4A-nmr-contract-proposal.md).
+Status: DONE through MR #373, merged at b2ff4aa6 after owner confirmation; corrected full local and final-head CI passed. Separate human visual evidence is not inferred. Governing scope: [accepted S4A](P25-S4A-nmr-contract-proposal.md).
 
 Add an optional stable company-owned NMR recipient to existing OTHER_LIABILITY supplemental allocations. Choosing a recipient explicitly designates that item as NMR; empty means classification unknown, not an inferred non-NMR obligation. Existing narrative counterparty text remains narrative. Account, fund and event come from the exact linked canonical line; an NMR allocation requires a credit-normal liability account and an event and consistent recipient/account/fund/event across its stable item. Do not require or evaluate policy records. Preserve inactive historical references.
 

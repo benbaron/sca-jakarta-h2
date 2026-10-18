@@ -835,8 +835,17 @@ public final class SclxCoreSnapshotAssembler
         if (detail.getNmrRecipient() != null)
         {
             requireCounterpartyOwnership(detail.getNmrRecipient(), detail.getTxn().getCompany());
-            value.put("nmr", Map.of("version", 1, "recipientId", SclxPortableIdentity.counterparty(
-                    detail.getTxn().getCompany().getCode(), detail.getNmrRecipient().getPortableId().toString())));
+            Map<String, Object> facts = new LinkedHashMap<>();
+            boolean detailed = detail.getNmrMovement() != null || detail.getNmrEvidenceReference() != null;
+            facts.put("version", detailed ? 2 : 1);
+            facts.put("recipientId", SclxPortableIdentity.counterparty(
+                    detail.getTxn().getCompany().getCode(), detail.getNmrRecipient().getPortableId().toString()));
+            if (detailed)
+            {
+                facts.put("movement", detail.getNmrMovement() == null ? null : detail.getNmrMovement().name());
+                facts.put("evidenceReference", detail.getNmrEvidenceReference());
+            }
+            value.put("nmr", facts);
         }
         return java.util.Collections.unmodifiableMap(value);
     }

@@ -20,7 +20,8 @@ public record TransactionSupplementalLineView(Long id,
                                               String itemEffect,
                                               Long txnSplitId,
                                               Integer transactionLineIndex,
-                                              Long nmrRecipientId, String nmrRecipientName)
+                                              Long nmrRecipientId, String nmrRecipientName,
+                                              String nmrMovement, String nmrEvidenceReference)
 {
     public TransactionSupplementalLineView
     {

@@ -119,6 +119,30 @@ final class SclxTransactionDetailImportData
             }
         }
 
+        Map<String, BigDecimal> coveredLines = SclxSupplementalLifecycle.explained(root);
+        for (JsonNode transaction : transactions.values())
+        {
+            if (!"REVERSAL".equals(transaction.path("correctionType").asText()))
+            {
+                continue;
+            }
+            JsonNode source = transactions.get(transaction.path("correctionOfTransactionId").asText());
+            if (source == null)
+            {
+                throw new IllegalStateException("Reversal source does not resolve.");
+            }
+            for (int index = 0; index < source.path("lines").size(); index++)
+            {
+                String sourceId = source.path("lines").get(index).path("lineId").asText();
+                JsonNode inverse = transaction.path("lines").get(index);
+                if (coveredLines.containsKey(sourceId) && (inverse == null
+                        || !Objects.equals(merchantByLine.get(sourceId), merchantByLine.get(inverse.path("lineId").asText()))))
+                {
+                    throw new IllegalStateException("Lifecycle inverse must retain its source Merchant relationship.");
+                }
+            }
+        }
+
         Map<String, List<SupplementalValue>> supplementalByTransaction = new LinkedHashMap<>();
         for (SupplementalValue value : supplemental)
         {
@@ -134,6 +158,18 @@ final class SclxTransactionDetailImportData
                         || !lines.get(value.lifecycle().lineId()).path("activityId").isTextual())
                 {
                     throw new IllegalStateException("NMR item metadata requires a resolved recipient, OTHER_LIABILITY lifecycle and event.");
+                }
+                if (value.nmrMovement() != null)
+                {
+                    try
+                    {
+                        org.nonprofitbookkeeping.model.NmrMovementKind.valueOf(value.nmrMovement()).validate(
+                                value.lifecycle().effect(), merchantByLine.containsKey(value.lifecycle().lineId()), value.nmrEvidenceReference());
+                    }
+                    catch (IllegalArgumentException ex)
+                    {
+                        throw new IllegalStateException("Invalid NMR settlement attribution: " + ex.getMessage(), ex);
+                    }
                 }
             }
             supplementalByTransaction.computeIfAbsent(value.transactionId(), ignored -> new ArrayList<>()).add(value);
@@ -318,7 +354,9 @@ final class SclxTransactionDetailImportData
                     optionalDate(item, "endDate", "supplemental detail"),
                     optionalText(item, "notes", "supplemental detail"),
                     SclxSupplementalLifecycle.link(item.get("lifecycle")),
-                    item.has("nmr") ? SclxNmrItemMetadata.recipient(item.get("nmr")) : null);
+                    item.has("nmr") ? SclxNmrItemMetadata.recipient(item.get("nmr")) : null,
+                    item.has("nmr") ? SclxNmrItemMetadata.facts(item.get("nmr")).movement() : null,
+                    item.has("nmr") ? SclxNmrItemMetadata.facts(item.get("nmr")).evidenceReference() : null);
             validateSupplemental(detail);
             unique(identities, detail.externalId(), "supplemental-detail identity");
             result.add(detail);
@@ -517,7 +555,7 @@ final class SclxTransactionDetailImportData
             LocalDate startDate,
             LocalDate endDate,
             String notes,
-            SclxSupplementalLifecycle.Link lifecycle, String nmrRecipientId)
+            SclxSupplementalLifecycle.Link lifecycle, String nmrRecipientId, String nmrMovement, String nmrEvidenceReference)
     {
     }
 
