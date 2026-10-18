@@ -1,6 +1,6 @@
 # P25-S4H — Merchant receivable breakdown and withholding observations
 
-Status: VERIFYING in draft [MR #375](https://github.com/benbaron/sca-jakarta-h2/pull/375); final local full/focused/JavaFX and exact published-head CI passed. Owner review/merge remain. Extends [S4G](P25-S4G-nmr-settlement-evidence.md) under [S4A](P25-S4A-nmr-contract-proposal.md). PLAN owns execution evidence.
+Status: DONE through merged [MR #375](https://github.com/benbaron/sca-jakarta-h2/pull/375) at `030b7d3b`; final local full/focused/JavaFX and exact published-head CI passed. No additional desktop result is inferred. Extends [S4G](P25-S4G-nmr-settlement-evidence.md) under [S4A](P25-S4A-nmr-contract-proposal.md). PLAN owns execution evidence.
 
 ## Contract
 

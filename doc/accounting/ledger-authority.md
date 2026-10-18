@@ -93,3 +93,8 @@ P02-S4 established the canonical transaction write policy around the `Txn` ledge
 Completed bank reconciliations protect canonical transactions through `txn_reconciliation_protection`, which links a `txn` row to the durable `reconciliation_run` that cleared it. The entry and correction services reject update, direct edit, deletion, and reversal while a linked reconciliation run remains `COMPLETED`. Reopening a reconciliation in a later banking phase can remove or inactivate that protection deliberately; until then, protected transactions remain immutable.
 
 Deletion persists the transaction audit snapshot before removing the header and dependent split rows, and all correction paths roll back the header, splits, and audit records together on validation, period, reconciliation-protection, or persistence failure. The retained `journal_transaction`/`journal_posting_line` tables remain compatibility/projection tables and are not written by these correction flows.
+
+
+## P25-S4I native create identity
+
+The canonical `TransactionEntryService.enter(command, requestId)` reuses existing Txn and TRANSACTION_ENTERED audit UUIDs as one native create receipt. The immutable create audit reason holds a versioned normalized-input hash. Exact authorized replay returns the current retained transaction without any new write; changed/foreign/deleted/colliding requests reject. Company locking and existing unique constraints enforce one accepted operation; transaction, supplemental facts and create audit roll back together. No schema, separate ledger or request table is introduced. No-key callers still mean a deliberate new operation. See [S4I](../P25-S4I-nmr-acceptance.md).

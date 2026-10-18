@@ -201,9 +201,25 @@ class JournalPaymentReferencesTest
             ((ComboBox<String>)movementCell.getGraphic()).getSelectionModel().select("COLLECTION");
             assertEquals("COLLECTION", row.nmrMovement.get());
             editNmrEvidence(details, "external/collection/001");
-            button("journalWorkspaceSaveButton").fire(); return null;
+            var capabilityChanges = new java.util.concurrent.atomic.AtomicInteger();
+            panel.setCommandCapabilitiesChangedListener(capabilityChanges::incrementAndGet);
+            button("journalWorkspaceSaveButton").fire();
+            assertTrue(button("journalWorkspaceSaveButton").isDisabled());
+            assertTrue(button("journalWorkspaceNewButton").isDisabled());
+            assertFalse(panel.commandCapabilities().contains(AppCommand.SAVE_ACTIVE));
+            assertEquals(1, capabilityChanges.get());
+            panel.onSave(); panel.onNew(); return null;
         });
         await(() -> !panel.hasUnsavedChanges());
+        await(() -> Thread.getAllStackTraces().keySet().stream()
+                .noneMatch(t -> t.isAlive() && t.getName().equals("journal-workspace-save")));
+        assertEquals(1, UiServiceRegistry.transactionEntry().search(null, null, "", 20).size(),
+                "Repeated button/File Save commands must represent one NMR receipt");
+        FxTestSupport.onFx(() ->
+        {
+            assertFalse(button("journalWorkspaceSaveButton").isDisabled());
+            assertTrue(panel.commandCapabilities().contains(AppCommand.SAVE_ACTIVE)); return null;
+        });
         var saved = UiServiceRegistry.transactionEntry().search(null, null, "", 20).get(0);
         assertEquals(nmr.recipient(), saved.supplementalLines().get(0).nmrRecipientId());
         assertEquals("COLLECTION", saved.supplementalLines().get(0).nmrMovement());

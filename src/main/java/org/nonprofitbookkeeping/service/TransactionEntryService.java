@@ -102,6 +102,18 @@ public class TransactionEntryService
     }
 
     /**
+     * Native create with one caller-retained identity across retries. The existing create audit
+     * acknowledges exact replay without rewriting later corrections or resurrecting deletion.
+     */
+    public TransactionView enter(TransactionCommand command, UUID requestId)
+    {
+        Objects.requireNonNull(requestId, "requestId");
+        String actor = ServiceAuthorization.actor(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(), "enter journal transaction", "system");
+        return saveNew(command, null, actor, requestId);
+    }
+
+    /**
      * Caller-owned transaction variant for governed import services.
      *
      * <p>The caller must supply a managed company and an active JPA transaction.
@@ -487,6 +499,11 @@ public class TransactionEntryService
 
     private TransactionView saveNew(TransactionCommand command, Txn replacementFor, String auditActor)
     {
+        return saveNew(command, replacementFor, auditActor, null);
+    }
+
+    private TransactionView saveNew(TransactionCommand command, Txn replacementFor, String auditActor, UUID requestId)
+    {
         validateCommand(command);
         try (EntityManager em = jpa.em())
         {
@@ -495,9 +512,24 @@ public class TransactionEntryService
             {
                 Company company = selectedCompany(em);
                 SupplementalIntegrityService.lock(em, company);
+                String requestReason = requestId == null ? null : JournalCreateRequests.reason(company, command);
+                if (requestId != null)
+                {
+                    Txn retained = JournalCreateRequests.replay(em, company, requestId, requestReason);
+                    if (retained != null)
+                    {
+                        TransactionView view = toView(em, retained);
+                        em.getTransaction().commit();
+                        return view;
+                    }
+                }
                 requireOpenRange(em, command.date(), "enter transaction");
                 Txn txn = new Txn();
                 txn.setCompany(company);
+                if (requestId != null)
+                {
+                    txn.setPortableId(requestId);
+                }
                 txn.setReplacementFor(replacementFor);
                 if (replacementFor != null)
                 {
@@ -507,7 +539,12 @@ public class TransactionEntryService
                 em.persist(txn);
                 List<TxnSplit> persistedSplits = persistLines(em, company, txn, command.lines());
                 persistSupplementalLines(em, txn, command.supplementalLines(), persistedSplits);
-                em.persist(audit(company, auditActor, "TRANSACTION_ENTERED", txn, null, snapshot(em, txn), null));
+                var event = audit(company, auditActor, "TRANSACTION_ENTERED", txn, null, snapshot(em, txn), requestReason);
+                if (requestId != null)
+                {
+                    event.initializeOperationIdentity(requestId);
+                }
+                em.persist(event);
                 em.getTransaction().commit();
                 return load(txn.getId());
             }
@@ -536,6 +573,7 @@ public class TransactionEntryService
         {
             row++;
             String label = "Supplemental detail row " + row;
+            MerchantSettlementFacts.validate(command.merchantSettlement(), command.kind(), command.itemEffect());
             if (command.kind() == null || !SUPPLEMENTAL_KINDS.contains(command.kind()))
             {
                 throw new PostingException(label + " has an unsupported kind.");

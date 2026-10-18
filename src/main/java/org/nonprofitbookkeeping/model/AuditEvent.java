@@ -84,6 +84,16 @@ public class AuditEvent
     public String getReason() { return reason; }
     public void setReason(String reason) { this.reason = reason; }
 
+    /** Binds an unpersisted factual create event to its native operation identity. */
+    public void initializeOperationIdentity(UUID operationId)
+    {
+        if (id != null)
+        {
+            throw new IllegalStateException("Operation identity must be initialized before persistence");
+        }
+        portableId = Objects.requireNonNull(operationId, "operationId");
+    }
+
     /** Initializes immutable source metadata before a governed interchange import persists this event. */
     public void initializeImportMetadata(UUID portableId, Instant occurredAt)
     {

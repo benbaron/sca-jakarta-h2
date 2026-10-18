@@ -1,12 +1,12 @@
 ---
-plan_version: 375
+plan_version: 376
 active_phase: P25
-active_slice: P25-S4H
+active_slice: P25-S4I
 active_status: VERIFYING
-active_branch: codex/P25-S4H-merchant-withholding
-active_pull_request: 375
-active_head: 5fe764e8aeb26b98d4a281991daa559175df44a3
-next_action: "Owner review/acceptance and merge of draft MR #375. After confirmed merge carry the local ledger onto fresh main, review parent S4 financial acceptance and remaining form-specific boundaries, then select closeout or the next unblocked P25 slice. Do not reuse the merged branch."
+active_branch: codex/P25-S4I-nmr-acceptance
+active_pull_request: null
+active_head: 496ba7c9b1c0cb53eb4f8ff8adbcd88d9d36a427
+next_action: "S4I implementation and focused/actual JavaFX checks pass. Run final full clean verify, publish matching-tree draft and inspect exact-head clean/repeat/JavaFX CI; record owner checks and merge handoff. Parent S4 remains IN_PROGRESS."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,7 +37,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | IN_PROGRESS — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H merchant receivable/withholding selected; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
+| P25 | Transfers, payment references, reporting classification | IN_PROGRESS — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I financial acceptance and Journal create retries selected; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -692,7 +692,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S4E | Preserve entered NMR line attribution through SCLX | DONE | MR #372 merged at 704a4a9e; final-head clean/repeat/Xvfb CI and full local verification passed |
 | P25-S4F | Explicit NMR item/recipient/event detail and liability coverage | DONE | MR #373 merged at b2ff4aa6; corrected full local and final-head clean/repeat/Xvfb CI passed |
 | P25-S4G | Explicit settlement attribution/evidence and period movements | DONE | MR #374 merged at fb37feba; full local and exact-head clean/repeat/JavaFX CI passed |
-| P25-S4H | Merchant receivable breakdown and withholding observations | VERIFYING | 63 focused and 12 real JavaFX tests passed; full local and exact published-head CI pending |
+| P25-S4H | Merchant receivable breakdown and withholding observations | DONE | MR #375 merged at 030b7d3b; final full local and exact-head clean/repeat/JavaFX CI passed |
+| P25-S4I | NMR financial acceptance and replay-safe Journal create | VERIFYING | Reproduced duplicate actual Save repaired; 12 focused and 16 actual JavaFX/routing tests pass; full local and exact-head CI pending |
 | P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | P25-S4 merged; owning contract and D01–D10 gates as applicable |
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -1835,3 +1836,23 @@ Status VERIFYING, not DONE: owner review/acceptance and merge remain. Local `cod
 Completed: verified S4G merge and carried its final ledger, nullable V84 facts and normalized unique canonical component links, optional dated observations without financial effects, canonical validation/ownership/availability/permissions/correction/Delete/replacement/audit, real shared Journal Save/dirty/reload and company-formatted exact optional money, remembered responsive divider/scrolling, derived range report with full totals/control gaps and dated corrections, strict deterministic lossless SCLX/conflict/Keep target/retry/restart/rollback, migration/recovery/multiple-item/permission/legacy regressions, owner notes, matching-tree draft publication and final full local/GitHub verification.
 
 Next exact action: owner reviews/accepts/merges MR #375 using the S4H checks. On confirmed merge, refresh main and carry this local evidence onto a fresh branch. Review parent S4 A10-N01–N10 against the implemented financial behavior and distinguish any remaining form-specific presentation from accounting acceptance before selecting its closeout or next unblocked P25 slice. Parent S4 remains IN_PROGRESS. Operating-policy inputs, saved policy versions and repeated P25-S3 acceptance are not prerequisites. Do not implement another slice before this merge.
+
+### P25-S4H merge and P25-S4I selection — 2026-10-17 (America/Denver)
+
+Owner confirmed “merged ; proceed.” Connected GitHub/native fetch confirm MR #375 merged at main `030b7d3bed957c614a754ffe55bcc6ea9affe3ff`; final head `5fe764e8aeb26b98d4a281991daa559175df44a3` passed run `39086527295`. S4H is DONE. Fresh `codex/P25-S4I-nmr-acceptance` carries its final local ledger as `496ba7c9`; merged branches are not reused. No new human desktop result is inferred.
+
+Review of A10-N01–N10 found the next bounded accounting gap: native Journal New Save has neither an in-flight guard nor a stable create identity; two commands before callback both call `enter(command)` and create distinct receipts/obligations. SCLX retry identity and company-lock over-application already exist, but they do not make native new-entry retries idempotent. Select [S4I](P25-S4I-nmr-acceptance.md), encompassing this directly relevant repair plus missing integrated fiscal/concurrency/protection evidence and an honest acceptance matrix. Parent S4 remains IN_PROGRESS; form-specific mappings and S5 functional-expense meanings remain separate.
+
+Design: use one draft operation UUID as the existing Txn portable identity and the existing TRANSACTION_ENTERED AuditEvent portable identity. The immutable factual create event retains a versioned normalized command hash in its reason; it remains after direct deletion. Exact same-company retry returns the current retained transaction without writes; changed/foreign/deleted-key reuse rejects. No new request table, balance, migration, policy engine or separate posting workflow. Existing SCLX preserves both intrinsic identities and opaque audit reason; native request comparison is bound to the original database/company/reference IDs, not a cross-database client replay promise. Existing whole-database backup retains complete retry state.
+
+Required reading/inspection: S4A, S4F–S4H, adopted program/baseline A10, ledger authority and period/lifecycle, SCLX, three UI rules; Txn/AuditEvent, command/view/entry/correction/ownership/authorization/availability, Journal/UiAsync/permission gate/command routing, projections/reports, audit export/import identity and existing NMR/merchant/interchange/protection/concurrency/JavaFX tests. Donor PostingService retains intentionally unwired Merchant/Event and no appropriate native retry seam; keep production canonical authorities, without importing donor persistence/private rows. Baseline compile passed and existing relevant tests run before production edits. Reproduce repeated actual Save before repair.
+
+### P25-S4I implementation and focused verification — 2026-10-17 (America/Denver)
+
+Pre-edit offline compile passed at 2026-10-18 03:53:17 UTC; 24 relevant baseline tests passed at 03:59:32 UTC. Actual JavaFX regression before repair failed exactly once: button Save plus immediate File Save produced 2 receipts where 1 was required (no errors/skips). The repaired regression passes and verifies disabled Save/New, removed shell Save capability, guarded direct Save/New, and restored capability after completion.
+
+Implemented one UUID per native New draft, stable across failures, existing canonical create/audit identity with immutable normalized-input hash, exact no-write replay after lost response/restart/concurrency/correction/protection, changed/foreign/deleted/colliding identity rejection, atomic rollback and competing NMR remittance protection. Busy UI guards cover shared commands and edit/delete/load lifecycle without a second Save or geometry change. No schema, ledger, policy/rate engine, migration, dependency, workflow or donor data changes. Existing SCLX retains native receipt UUID/hash provenance without promising source-native-ID request replay in a remapped target.
+
+Focused final run: 12 tests, zero failures/errors/skips, BUILD SUCCESS at 2026-10-18 04:09:03 UTC (`JournalCreateRequestTest` 7, `NmrFinancialAcceptanceTest` 1, `SclxMerchantSettlementRoundTripTest` 4). Initial combined test used nonexistent debit/credit entity attributes; corrected its independent GL assertion to canonical amountSigned/normal balance, reran and passed. The seven new replay tests passed on both runs. Actual Xvfb final run: 16 tests, zero failures/errors/skips, BUILD SUCCESS at 04:10:27 UTC (`JournalPaymentReferencesTest`, `AppPanelCommandCapabilityTest`, `ProductionWorkspaceCommandRoutingTest`). New year-boundary test ties prior opening 40, collections 100, merchant discharge 30, branch 110, closing zero; canonical bank 880/income 900/fee 20 and receivable/liability zero. Row-limited production reports and native-receipt SCLX round-trip/restart/reimport agree without policy records.
+
+[S4I](P25-S4I-nmr-acceptance.md) maps all A10 cases to named tests and explicit limits. Updated S4A/current S4H status, adopted program, ledger/lifecycle, shared UI Save/matrix, and SCLX contracts. Reviewed production diff, existing normalized persistence semantics, permission gate/capability forwarding, retained audit/delete behavior and final scope. Full local clean verify, matching-tree draft publication and exact published-head CI remain pending; no full-suite or human desktop result is claimed yet. Next exact action: run those gates and record the concrete draft/head/results. Parent S4 remains IN_PROGRESS; existing P25-S3 desktop pass remains accepted, with no operating-policy coding prerequisite.
