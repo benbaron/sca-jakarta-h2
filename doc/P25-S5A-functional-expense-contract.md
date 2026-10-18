@@ -1,16 +1,16 @@
-# P25-S5A — Functional-expense contract proposal
+# P25-S5A — Functional-expense contract
 
-Status: VERIFYING — documentation proposal only; D07 is not adopted. [PLAN](PLAN.md) owns execution. [Adopted program S5](P23-P28-runbook-correction-program.md#p25-s5--add-independent-functional-expense-classification-g10) and [baseline D07](P23-S1-baseline-and-acceptance.md#decision-and-evidence-backlog) require the meanings, report basis and defaults to be confirmed before application implementation. Parent S4 financial accounting is accepted through approved/merged MR #376.
+Status: VERIFYING — documentation only; owner adopted D07 on 2026-10-18 (America/Denver), publication/review/merge remain. [PLAN](PLAN.md) owns execution. [Adopted program S5](P23-P28-runbook-correction-program.md#p25-s5--add-independent-functional-expense-classification-g10) and [baseline D07](P23-S1-baseline-and-acceptance.md#decision-and-evidence-backlog) require the meanings, report basis and defaults to be confirmed before application implementation. Parent S4 financial accounting is accepted through approved/merged MR #376.
 
-## Concrete D07 proposal for owner decision
+## Adopted D07 decision
 
-| Decision | Proposed behavior | Reference and limit |
+| Decision | Adopted behavior | Reference and limit |
 |---|---|---|
-| Codes and labels | AR — Events; OA — Administration; FR — Fundraising. These describe the purpose of an expense, independently of natural account, Fund, Event and Budget Category. | Supplied runbook explicitly says AR (Events), OA (Admin.), FR (Fundr.). These labels are proposed software meanings, not a certification of an official submission form or an expansion of AR into an unverified phrase. |
+| Codes and labels | AR — Events; OA — Administration; FR — Fundraising. These describe the purpose of an expense, independently of natural account, Fund, Event and Budget Category. | Supplied runbook explicitly says AR (Events), OA (Admin.), FR (Fundr.). These labels are adopted software meanings, not a certification of an official submission form or an expansion of AR into an unverified phrase. |
 | Eligible facts and basis | Classify actual canonical EXPENSE-account lines. Report net expense (debits less credits) on the canonical transaction date, with the same selected company/date/Fund/Event scope as GL controls. Refunds/expense credits reduce their entered classification; reversals affect their own date. | A derived GL-purpose view, not a new cash/accrual recognition policy. A later official-form cash/payment-date or category mapping needs the P27 contract; it cannot silently replace this basis. |
-| Defaults and missing values | Blank initially; no automatic company/account/Event/Budget/Merchant inference. Users explicitly select a code, or retain Unclassified with a visible diagnostic. Existing records stay unclassified until deliberately corrected. | Proposed permitted default is no classification. This narrows the program's defaults-with-override wording to explicit entry; account/company default suggestions require a separately adopted follow-up. |
+| Defaults and missing values | Blank initially; no automatic company/account/Event/Budget/Merchant inference. Users explicitly select a code, or retain Unclassified with a visible diagnostic. Existing records stay unclassified until deliberately corrected. | Adopted permitted default is no classification. This narrows the program's defaults-with-override wording to explicit entry; account/company default suggestions require a separately adopted follow-up. |
 
-The requested decision is whether to adopt this complete three-row proposal, or specify corrected meanings/basis/defaults. This concerns functional expense reporting. NMR rates, exemptions, settlement policies and the already accepted P25-S3 workflow are not being reopened.
+Owner explicitly answered “Adopt this proposal (Recommended)” for this complete three-row contract on 2026-10-18. D07 is resolved; no repeated classification confirmation is required. This concerns functional expense reporting. NMR rates, exemptions, settlement policies and the already accepted P25-S3 workflow are not being reopened.
 
 ## Accounting and persistence contract after adoption
 
@@ -52,13 +52,18 @@ SCLX must preserve the accepted function on the intrinsic transaction-line ident
 
 Only S5A documentation/link/scope checks are performed here. These are future executable requirements; existing Maven success is not presented as an implemented functional-expense feature.
 
-## Proposed implementation sequence and owner review
+## Implementation sequence and owner review
 
-After D07 adoption and this proposal's review/merge, select one vertically coherent S5 implementation slice covering canonical nullable facts/validation, current Journal Save, correction/native-retry compatibility, generated-entry disposition, derived report and lossless SCLX. Establish a fresh compile/relevant-test baseline before production edits, read every current writer/reader named above, reproduce missing classification with synthetic fixtures and add meaningful service/migration/report/interchange/actual JavaFX regressions. Full clean verify and exact-head clean/repeat/JavaFX CI are required. Do not mark parent S5 DONE merely from a field, a report, tests or this proposal.
+D07 is adopted. After this selected contract slice's review/merge, select one vertically coherent S5 implementation slice covering canonical nullable facts/validation, current Journal Save, correction/native-retry compatibility, generated-entry disposition, derived report and lossless SCLX. Establish a fresh compile/relevant-test baseline before production edits, read every current writer/reader named above, reproduce missing classification with synthetic fixtures and add meaningful service/migration/report/interchange/actual JavaFX regressions. Full clean verify and exact-head clean/repeat/JavaFX CI are required. Do not mark parent S5 DONE merely from a field, a report, tests or this proposal.
 
-Owner review now: confirm the three D07 rows; check mixed payment and Unclassified behavior; confirm this does not conflate Event/Fund/Budget or implement operating rules. Correct any meaning/basis/default requirement in that decision. No application desktop check is required for this documentation-only proposal. Actual functional entry/report desktop acceptance belongs to the later implemented slice. P26/P27 work is not selected by S5A.
+Owner review now: verify the document records the already adopted D07 rows and the mixed payment/Unclassified behavior, without conflating Event/Fund/Budget or introducing operating rules. The owner decision is complete; publication/merge is the remaining selected-slice gate. No application desktop check is required for this documentation-only proposal. Actual functional entry/report desktop acceptance belongs to the later implemented slice. P26/P27 work is not selected by S5A.
 
 
 ## S5A validation and handoff
 
-Documentation/link/scope review passed. Local offline clean verify passed 965 tests, zero failures/errors, 58 display-dependent skips, at 2026-10-18 18:01:31 UTC (3:12). Application/test/schema/workflow/dependency bytes are unchanged from merged S4I main; this result does not implement or pass F01–F09. Draft publication and exact-head CI are pending. Owner D07 choice has been requested and remains unanswered; no adoption is inferred. No new application desktop test is required for this documentation-only proposal.
+Documentation/link/scope review passed. Local offline clean verify passed 965 tests, zero failures/errors, 58 display-dependent skips, at 2026-10-18 18:01:31 UTC (3:12). Application/test/schema/workflow/dependency bytes are unchanged from merged S4I main; this result does not implement or pass F01–F09. Draft publication and exact-head CI are pending. At that initial validation checkpoint the owner question was pending. Owner subsequently adopted all D07 choices; this supersedes that pending state. No new application desktop test is required for this documentation-only proposal.
+
+
+## Recorded adoption
+
+On 2026-10-18 (America/Denver), the owner explicitly adopted AR = Events, OA = Administration, FR = Fundraising; explicit classification/no automatic defaults; net GL expense by transaction date; Unclassified/correction/SCLX preservation. D07 is resolved. This is authorization for that implementation scope after this selected contract slice lands, not a claim that the future F01–F09 feature tests have run or that any particular official submission form is certified.

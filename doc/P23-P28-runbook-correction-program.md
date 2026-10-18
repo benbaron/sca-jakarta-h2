@@ -12,7 +12,7 @@ Current GitHub `main` was rechecked for this plan: **7a18adce529e23cadd09cdaba74
 
 The owner explicitly adopted this program and selected P23-S1 after archive PR #350 merged at **849dc4e8f652d47aff05c124790f78d6dc7f93dc**. P23–P28 are now adopted scope; only P23-S1 is selected for execution. Later slices remain blocked by their recorded prerequisites. Existing P21/P22 completion history remains intact.
 
-Adoption accepts the program's baseline architecture and external-evidence approach. It does not resolve the explicitly pending NMR, stale-check, valuation, or official-template decisions and does not activate conditional P27-S5 attachments/approvals. P23-S5 deliberately supersedes P22-S5's slice-specific SCLX exclusion when that later slice becomes ready.
+Initial adoption accepted the program's baseline architecture and external-evidence approach without resolving the then-pending accounting decisions. Subsequent D03/NMR scope and D07 functional-expense decisions are recorded in their adopted contracts; stale-check, valuation and official-template decisions retain their own gates. Conditional P27-S5 attachments/approvals are not activated. P23-S5 deliberately supersedes P22-S5's slice-specific SCLX exclusion when that later slice becomes ready.
 
 The original review baseline below is historical source evidence. P23-S1 refreshed the targeted source checks against merged main 849dc4e; no application behavior changed between those two baselines.
 
@@ -157,12 +157,12 @@ After S4G's MR #374 merge, select [S4H](P25-S4H-merchant-withholding.md). Reuse 
 
 ### P25-S5 — Add independent functional-expense classification (G10)
 
-**Work:** Confirm the meanings and permitted use of AR/OA/FR in the required forms. Add the adopted independent line classification, defaults with explicit override, missing-classification diagnostics, and report/export mappings. Preserve it through generated entries, corrections, and interchange.
+**Work:** Implement the owner-adopted D07 contract: AR = Events, OA = Administration, FR = Fundraising on independent expense lines; explicit selection with blank/no automatic defaults, missing-classification diagnostics and transaction-date net GL expense reports/exports. Preserve facts through generated entries, corrections, native retries and interchange. Official-form-specific mappings remain P27; any future automatic default suggestion needs separately adopted scope.
 
 **Acceptance:** Expenses can be reported by function independently of account, fund, event, and budget. A mixed-purpose payment can split allocation without duplication. Functional totals reconcile to eligible GL expense totals; unclassified amounts are explicit.
 
 
-[S5A](P25-S5A-functional-expense-contract.md) is the documentation-only D07 proposal following owner-approved/merged S4I. It proposes explicit AR (Events), OA (Administration), FR (Fundraising), transaction-date net GL expense, and no automatic defaults. Those choices are **not adopted** and do not authorize S5 production code until owner confirmation. S4's resolved operating-policy scope is unchanged.
+[S5A](P25-S5A-functional-expense-contract.md) records D07 following owner-approved/merged S4I. Owner explicitly adopted AR (Events), OA (Administration), FR (Fundraising), transaction-date net GL expense and no automatic defaults on 2026-10-18. D07 is resolved; selected S5A documentation publication/merge precedes the next implementation slice. S4's resolved operating-policy scope is unchanged.
 
 ## P26 — Property, planning, recognition, and conversion
 
@@ -277,7 +277,7 @@ Update the operating guide to actual screen labels and steps. Replace workaround
 | Legacy supplemental gaps | Preserve; diagnose; reviewed remediation; no automatic identity guessing | P23-S4/S5 |
 | Excess settlements | Reject by default; model genuine overpayments separately | P23-S4 |
 | NMR and stale-check policy | Written resolution from responsible accounting authority | P25-S3/S4 |
-| Functional classification | Confirm actual AR/OA/FR semantics and required forms | P25-S5 |
+| Functional classification | D07 adopted: explicit AR/OA/FR, no automatic defaults, transaction-date net GL expense; official form mappings remain separate | P25-S5 / P27 |
 | Inventory costing | Choose and document required method with example results | P26-S5 |
 | Workbook authority | Exact template/revision and submission requirements | P27-S2; acquire during P23-S1 |
 | Evidence/approvals | External evidence plus factual references by default; explicit scope amendment for internal controls | P27-S3/S5 |

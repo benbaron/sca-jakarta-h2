@@ -6,7 +6,7 @@ active_status: VERIFYING
 active_branch: codex/P25-S5A-functional-expense-contract
 active_pull_request: null
 active_head: 7648faa2d5add27dcb513e9776fcaba0cfd48f53
-next_action: "Prepare and publish the S5A functional-expense contract proposal for D07 review. Parent NMR accounting is accepted through approved/merged MR #376; S5 implementation remains blocked until AR/OA/FR meanings, transaction-date expense basis and no automatic defaults are adopted."
+next_action: "Publish the adopted S5A functional-expense contract as a draft and verify exact-head CI. Owner adopted all D07 choices; no further classification input is needed. After selected S5A review/merge, start one fresh canonical/Journal/report/correction/generated-entry/SCLX implementation slice."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,7 +37,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | IN_PROGRESS — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A functional-expense contract selected with D07 implementation gate; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
+| P25 | Transfers, payment references, reporting classification | IN_PROGRESS — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A functional-expense contract selected; D07 adopted, contract publication/merge pending; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
 | P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
@@ -694,8 +694,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S4G | Explicit settlement attribution/evidence and period movements | DONE | MR #374 merged at fb37feba; full local and exact-head clean/repeat/JavaFX CI passed |
 | P25-S4H | Merchant receivable breakdown and withholding observations | DONE | MR #375 merged at 030b7d3b; final full local and exact-head clean/repeat/JavaFX CI passed |
 | P25-S4I | NMR financial acceptance and replay-safe Journal create | DONE | MR #376 explicitly approved/merged at 4c965490; final head de44946b passed full local and exact-head clean/repeat/JavaFX CI |
-| P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | S4 accepted/merged; D07 meanings, report basis and defaults await owner adoption of S5A proposal |
-| P25-S5A | Prepare functional-expense contract proposal (documentation only) | VERIFYING | [D07 proposal](P25-S5A-functional-expense-contract.md); no application/schema change or assumed form authority |
+| P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | S4/D07 accepted; selected S5A contract publication/merge remains before the next implementation slice. No further policy/classification input needed |
+| P25-S5A | Prepare functional-expense contract proposal (documentation only) | VERIFYING | [Adopted D07 contract](P25-S5A-functional-expense-contract.md); no application/schema change or assumed form authority |
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
 | P26-S3 | Complete event/fund budget planning and reporting filters (G12) | BLOCKED | P26-S2 merged; owning contract and D01–D10 gates as applicable |
@@ -1903,3 +1903,9 @@ Concrete S5A document is complete: three D07 choices (runbook purpose codes, tra
 Final local offline `mvn clean verify` passed **965 tests, zero failures/errors, 58 display-dependent skips**, BUILD SUCCESS **2026-10-18 18:01:31 UTC**, elapsed 3:12 (`/workspace/work/p25-s5a-clean-verify.log`). This verifies unchanged application behavior, not F01–F09 future functionality. Production/test/schema/workflow/dependency bytes equal merged main; only six governing documents change. Wrapper restored the tracked manifest. Relative document links and whitespace/scope checks passed. No new UI or per-check desktop result is claimed.
 
 Status VERIFYING on fresh `codex/P25-S5A-functional-expense-contract`, from confirmed main `4c965490`; carry commit `7648faa2` precedes this proposal. Next exact action: publish matching blobs/trees/messages/order as a draft, inspect exact published-head CI and record results. Owner adoption/correction of D07 and proposal review/merge remain before selecting a fresh S5 implementation slice. No new publication authorization is needed under the established draft-MR workflow; do not ask about NMR rates/policies.
+
+### D07 owner adoption — 2026-10-18 (America/Denver)
+
+Owner answered “Adopt this proposal (Recommended)” to the complete concrete D07 question. D07 is RESOLVED: AR = Events, OA = Administration, FR = Fundraising; explicit expense-line selection with no automatic defaults; net GL expense on canonical transaction date; visible Unclassified amounts, preserved corrections and SCLX. No third-party approval or official form revision is inferred. This explicit choice supersedes the pending-request checkpoints above. No further NMR operating-policy or functional-classification question is required.
+
+Updated the S5A contract, baseline decision record, adopted program and current controller to reflect adoption. Parent S5 now waits only for the selected documentation slice's publication/review/merge before fresh implementation, not missing D07 input. This remains one documentation-only slice; no production/test/schema change or functional feature completion is claimed. Full local 965-test verification on unchanged code remains applicable; final documentation links/scope/whitespace and exact published-head CI follow.
