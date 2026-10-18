@@ -119,6 +119,7 @@ final class SclxTransactionDetailImportData
             }
         }
 
+        SclxMerchantSettlementMetadata.validateLinks(root, transactions, lines, merchantByLine);
         Map<String, BigDecimal> coveredLines = SclxSupplementalLifecycle.explained(root);
         for (JsonNode transaction : transactions.values())
         {
@@ -337,6 +338,7 @@ final class SclxTransactionDetailImportData
             Set<String> fields = new HashSet<>(SUPPLEMENTAL_FIELDS);
             if (values.get(index).has("lifecycle")) fields.add("lifecycle");
             if (values.get(index).has("nmr")) fields.add("nmr");
+            if (values.get(index).has("merchantSettlement")) fields.add("merchantSettlement");
             JsonNode item = object(values.get(index), fields,
                     "supplementalDetails[" + index + "]");
             SupplementalValue detail = new SupplementalValue(
@@ -356,7 +358,8 @@ final class SclxTransactionDetailImportData
                     SclxSupplementalLifecycle.link(item.get("lifecycle")),
                     item.has("nmr") ? SclxNmrItemMetadata.recipient(item.get("nmr")) : null,
                     item.has("nmr") ? SclxNmrItemMetadata.facts(item.get("nmr")).movement() : null,
-                    item.has("nmr") ? SclxNmrItemMetadata.facts(item.get("nmr")).evidenceReference() : null);
+                    item.has("nmr") ? SclxNmrItemMetadata.facts(item.get("nmr")).evidenceReference() : null,
+                    item.has("merchantSettlement") ? SclxMerchantSettlementMetadata.facts(item.get("merchantSettlement")) : null);
             validateSupplemental(detail);
             unique(identities, detail.externalId(), "supplemental-detail identity");
             result.add(detail);
@@ -555,7 +558,8 @@ final class SclxTransactionDetailImportData
             LocalDate startDate,
             LocalDate endDate,
             String notes,
-            SclxSupplementalLifecycle.Link lifecycle, String nmrRecipientId, String nmrMovement, String nmrEvidenceReference)
+            SclxSupplementalLifecycle.Link lifecycle, String nmrRecipientId, String nmrMovement, String nmrEvidenceReference,
+            SclxMerchantSettlementMetadata.Facts merchantSettlement)
     {
     }
 

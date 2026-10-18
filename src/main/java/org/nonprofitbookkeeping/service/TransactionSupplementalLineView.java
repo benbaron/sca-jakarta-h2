@@ -21,7 +21,8 @@ public record TransactionSupplementalLineView(Long id,
                                               Long txnSplitId,
                                               Integer transactionLineIndex,
                                               Long nmrRecipientId, String nmrRecipientName,
-                                              String nmrMovement, String nmrEvidenceReference)
+                                              String nmrMovement, String nmrEvidenceReference,
+                                              MerchantSettlementCommand merchantSettlement)
 {
     public TransactionSupplementalLineView
     {

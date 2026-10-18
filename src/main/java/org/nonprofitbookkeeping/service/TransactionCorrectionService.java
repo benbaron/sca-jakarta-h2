@@ -500,6 +500,17 @@ public class TransactionCorrectionService
             copy.setKind(source.getKind());
             copy.setEntryRef(source.getEntryRef());
             copy.setCounterparty(source.getCounterparty());
+            copy.setMerchantRole(source.getMerchantRole());
+            copy.setMerchantWithheldUnconfirmed(source.getMerchantWithheldUnconfirmed());
+            copy.setMerchantEvidenceReference(source.getMerchantEvidenceReference());
+            source.getMerchantComponents().forEach((split, kind) -> {
+                TxnSplit linked = replacementSplits.get(split.getId());
+                if (linked == null)
+                {
+                    throw new IllegalStateException("Replacement cannot preserve merchant component linkage.");
+                }
+                copy.getMerchantComponents().put(linked, kind);
+            });
             copy.setNmrRecipient(source.getNmrRecipient());
             copy.setNmrMovement(source.getNmrMovement());
             copy.setNmrEvidenceReference(source.getNmrEvidenceReference());
@@ -648,6 +659,7 @@ public class TransactionCorrectionService
     {
         return "id=" + txn.getId() + ",date=" + txn.getTxnDate() + ",status=" + txn.getStatus()
                 + ",memo=" + (txn.getMemo() == null ? "" : txn.getMemo()) + ",payments=" + PaymentReferences.snapshot(em, txn)
+                + ",merchantReceivables=" + MerchantSettlementFacts.snapshot(em, txn)
                 + ",nmrItems=" + SupplementalIntegrityService.nmrSnapshot(em, txn);
     }
 

@@ -151,6 +151,10 @@ After S4E's confirmed MR #372 merge, select [S4F](P25-S4F-nmr-item-detail.md): s
 
 After S4F's MR #373 merge, select [S4G](P25-S4G-nmr-settlement-evidence.md): explicit collection/branch remittance/merchant discharge/refund/adjustment facts on existing allocations, evidence pointer, company Merchant on a discharge's linked line, existing shared Save and dated correction authority, opening-to-closing range report and versioned SCLX. Legacy classifications remain unknown. Withholding alone never discharges a liability. Dedicated withholding observations linked to receivables and gross/payout/fee presentation remain a following bounded slice, not a prerequisite policy exercise.
 
+### P25-S4H — Merchant receivable breakdown and withholding observations
+
+After S4G's MR #374 merge, select [S4H](P25-S4H-merchant-withholding.md). Reuse RECEIVABLE item balances and dates, with optional explicit gross/settlement roles, normalized links to canonical payout/fee/evidenced NMR-discharge lines, nonfinancial dated withholding observations and evidence, shared Journal Save, opening-to-closing range reporting and strict SCLX. Whole component splits may be claimed once; multi-item settlements require explicit component splits. Unexplained amounts remain unknown. Observations are not summed or treated as a financial balance, receivable reduction or NMR discharge. Parent S4 acceptance/closeout is reviewed after this merge; no form policy or operational rule engine is inferred.
+
 ### P25-S5 — Add independent functional-expense classification (G10)
 
 **Work:** Confirm the meanings and permitted use of AR/OA/FR in the required forms. Add the adopted independent line classification, defaults with explicit override, missing-classification diagnostics, and report/export mappings. Preserve it through generated entries, corrections, and interchange.

@@ -758,6 +758,28 @@ public final class JournalWorkspacePanel implements AppPanel
             table.getColumns().add(supplementalTextColumn("NMR evidence", "nmrEvidence", 240,
                     row -> row.nmrEvidence, (row, value) -> row.nmrEvidence.set(safe(value))));
         }
+        if (kind == SupplementalKind.RECEIVABLE)
+        {
+            TableColumn<SupplementalRow, String> role = new TableColumn<>("Merchant role");
+            configureColumn(role, "merchantRole", 180);
+            role.setCellValueFactory(value -> value.getValue().merchantRole);
+            role.setCellFactory(ignored -> new NmrMovementTableCell(java.util.Arrays.stream(org.nonprofitbookkeeping.model.MerchantReceivableRole.values()).map(Enum::name).toList()));
+            role.setOnEditCommit(event -> {
+                event.getRowValue().merchantRole.set(safe(event.getNewValue()));
+                markDirty();
+            });
+            table.getColumns().add(role);
+            table.getColumns().add(supplementalTextColumn("Observed withholding", "merchantWithheld", 190,
+                    row -> row.merchantWithheld, SupplementalRow::setMerchantWithheld));
+            table.getColumns().add(supplementalTextColumn("Observation / settlement evidence", "merchantEvidence", 250,
+                    row -> row.merchantEvidence, (row, value) -> row.merchantEvidence.set(safe(value))));
+            table.getColumns().add(supplementalTextColumn("Payout lines", "merchantPayoutLines", 150,
+                    row -> row.merchantPayoutLines, (row, value) -> row.merchantPayoutLines.set(safe(value))));
+            table.getColumns().add(supplementalTextColumn("Fee lines", "merchantFeeLines", 150,
+                    row -> row.merchantFeeLines, (row, value) -> row.merchantFeeLines.set(safe(value))));
+            table.getColumns().add(supplementalTextColumn("NMR discharge lines", "merchantNmrLines", 180,
+                    row -> row.merchantNmrLines, (row, value) -> row.merchantNmrLines.set(safe(value))));
+        }
         table.getColumns().add(supplementalTextColumn("Entry Ref", "entryRef", 140, SupplementalRow::entryRefProperty, SupplementalRow::setEntryRef));
         table.getColumns().add(supplementalTextColumn("Counterparty", "counterparty", 170, SupplementalRow::counterpartyProperty, SupplementalRow::setCounterparty));
         table.getColumns().add(supplementalTextColumn("Description", "description", 240, SupplementalRow::descriptionProperty, SupplementalRow::setDescription));
@@ -796,20 +818,22 @@ public final class JournalWorkspacePanel implements AppPanel
                         + (kind == SupplementalKind.OTHER_LIABILITY
                             ? "Select NMR recipient to explicitly designate an NMR item; its linked ledger line requires an event. "
                                 + "Use the same recipient, account, fund and event on every allocation. Blank is unclassified; line NMR flags do not designate items. Select movement explicitly; merchant discharge requires Merchant on the linked line and NMR evidence. Withholding alone does not settle NMR."
-                            : "Remove Detail is saved through the owning transaction correction controls."));
+                            : kind == SupplementalKind.RECEIVABLE
+                                ? "Merchant role is optional. Receipt/settlement requires Merchant and Event on the receivable line. Enter comma-separated 1-based payout/fee/evidenced NMR line numbers with the same Merchant, Fund and Event; each whole line may be claimed once. Observed withholding is a dated nonfinancial fact requiring evidence; blank is unknown and zero is explicit. It never settles NMR or receivable. Save Entry saves all facts together."
+                                : "Remove Detail is saved through the owning transaction correction controls."));
         lifecycleHelp.setWrapText(true);
         lifecycleHelp.getStyleClass().add("field-help");
         Node panel;
-        if (kind == SupplementalKind.OTHER_LIABILITY)
+        if (kind == SupplementalKind.OTHER_LIABILITY || kind == SupplementalKind.RECEIVABLE)
         {
             VBox controls = new VBox(6, new HBox(8, add, apply, remove), lifecycleHelp);
             controls.setMinSize(0, 0);
             controls.setPrefWidth(560);
             ScrollPane controlsScroll = scrollable(controls, false);
-            controlsScroll.setId("journalNmrDetailControlsScroll");
+            controlsScroll.setId(kind == SupplementalKind.RECEIVABLE ? "journalMerchantDetailControlsScroll" : "journalNmrDetailControlsScroll");
             table.setMinSize(0, 0);
             SplitPane split = new SplitPane(controlsScroll, table);
-            split.setId("journalNmrDetailSplit");
+            split.setId(kind == SupplementalKind.RECEIVABLE ? "journalMerchantDetailSplit" : "journalNmrDetailSplit");
             split.setOrientation(Orientation.VERTICAL);
             split.setDividerPositions(0.35);
             split.setMinSize(0, 0);
@@ -1291,10 +1315,53 @@ public final class JournalWorkspacePanel implements AppPanel
                         startDate,
                         endDate,
                         blankToNull(row.getNotes()),
-                        null, itemId, itemEffect, transactionLineIndex, id(row.nmrRecipient.get()), blankToNull(row.nmrMovement.get()), blankToNull(row.nmrEvidence.get())));
+                        null, itemId, itemEffect, transactionLineIndex, id(row.nmrRecipient.get()), blankToNull(row.nmrMovement.get()), blankToNull(row.nmrEvidence.get()), merchantSettlement(row)));
             }
         }
         return commands;
+    }
+
+    private static org.nonprofitbookkeeping.service.MerchantSettlementCommand merchantSettlement(SupplementalRow row)
+    {
+        if (!row.hasMerchantInput())
+        {
+            return null;
+        }
+        List<org.nonprofitbookkeeping.service.MerchantSettlementCommand.Component> components = new ArrayList<>();
+        merchantComponents(components, "PAYOUT", row.merchantPayoutLines.get());
+        merchantComponents(components, "FEE", row.merchantFeeLines.get());
+        merchantComponents(components, "NMR_DISCHARGE", row.merchantNmrLines.get());
+        BigDecimal observed = row.merchantWithheld.get().isBlank() ? null : parseMoney(row.merchantWithheld.get());
+        if (!row.merchantWithheld.get().isBlank() && observed == null)
+        {
+            throw new IllegalArgumentException("Observed withholding requires a valid amount or blank for unknown.");
+        }
+        return new org.nonprofitbookkeeping.service.MerchantSettlementCommand(blankToNull(row.merchantRole.get()), observed,
+                blankToNull(row.merchantEvidence.get()), components);
+    }
+
+    private static void merchantComponents(List<org.nonprofitbookkeeping.service.MerchantSettlementCommand.Component> components, String kind, String text)
+    {
+        if (text.isBlank())
+        {
+            return;
+        }
+        for (String token : text.split(",", -1))
+        {
+            try
+            {
+                int number = Integer.parseInt(token.trim());
+                if (number < 1)
+                {
+                    throw new NumberFormatException();
+                }
+                components.add(new org.nonprofitbookkeeping.service.MerchantSettlementCommand.Component(kind, number - 1));
+            }
+            catch (NumberFormatException ex)
+            {
+                throw new IllegalArgumentException("Merchant component lines must be comma-separated positive 1-based line numbers.");
+            }
+        }
     }
 
     private static String paymentDateText(String value)
@@ -2063,10 +2130,17 @@ public final class JournalWorkspacePanel implements AppPanel
     private final class NmrMovementTableCell extends TableCell<SupplementalRow, String>
     {
         private boolean updatingEditor;
+        private final List<String> choices;
         private final ComboBox<String> editor = new ComboBox<>();
 
         private NmrMovementTableCell()
         {
+            this(java.util.Arrays.stream(org.nonprofitbookkeeping.model.NmrMovementKind.values()).map(Enum::name).toList());
+        }
+
+        private NmrMovementTableCell(List<String> choices)
+        {
+            this.choices = List.copyOf(choices);
             editor.setMaxWidth(Double.MAX_VALUE);
             editor.valueProperty().addListener((obs, oldValue, newValue) -> {
                 if (isEditing() && !updatingEditor)
@@ -2094,8 +2168,7 @@ public final class JournalWorkspacePanel implements AppPanel
             try
             {
                 editor.getItems().setAll("");
-                editor.getItems().addAll(java.util.Arrays.stream(org.nonprofitbookkeeping.model.NmrMovementKind.values())
-                        .map(Enum::name).toList());
+                editor.getItems().addAll(choices);
                 if (getItem() != null && !editor.getItems().contains(getItem()))
                 {
                     editor.getItems().add(getItem());
@@ -2530,6 +2603,12 @@ public final class JournalWorkspacePanel implements AppPanel
         final ObjectProperty<TransactionLineEditorModel.Option> nmrRecipient = new SimpleObjectProperty<>();
         final StringProperty nmrMovement = new SimpleStringProperty("");
         final StringProperty nmrEvidence = new SimpleStringProperty("");
+        final StringProperty merchantRole = new SimpleStringProperty("");
+        final StringProperty merchantWithheld = new SimpleStringProperty("");
+        final StringProperty merchantEvidence = new SimpleStringProperty("");
+        final StringProperty merchantPayoutLines = new SimpleStringProperty("");
+        final StringProperty merchantFeeLines = new SimpleStringProperty("");
+        final StringProperty merchantNmrLines = new SimpleStringProperty("");
         private final StringProperty itemId = new SimpleStringProperty("");
         private final StringProperty itemEffect = new SimpleStringProperty("");
         private final StringProperty transactionLine = new SimpleStringProperty("");
@@ -2546,6 +2625,19 @@ public final class JournalWorkspacePanel implements AppPanel
         static SupplementalRow from(TransactionSupplementalLineView view)
         {
             SupplementalRow row = new SupplementalRow();
+            if (view.merchantSettlement() != null)
+            {
+                var facts = view.merchantSettlement();
+                row.merchantRole.set(facts.role());
+                row.setMerchantWithheld(facts.withheldUnconfirmed() == null ? "" : facts.withheldUnconfirmed().toPlainString());
+                row.merchantEvidence.set(safe(facts.evidenceReference()));
+                for (String kind : List.of("PAYOUT", "FEE", "NMR_DISCHARGE"))
+                {
+                    String text = facts.components().stream().filter(c -> c.kind().equals(kind))
+                            .map(c -> Integer.toString(c.transactionLineIndex() + 1)).collect(java.util.stream.Collectors.joining(", "));
+                    (kind.equals("PAYOUT") ? row.merchantPayoutLines : kind.equals("FEE") ? row.merchantFeeLines : row.merchantNmrLines).set(text);
+                }
+            }
             row.nmrMovement.set(safe(view.nmrMovement()));
             row.nmrEvidence.set(safe(view.nmrEvidenceReference()));
             row.nmrRecipient.set(view.nmrRecipientId() == null ? null : option(view.nmrRecipientId(), "", view.nmrRecipientName()));
@@ -2602,10 +2694,22 @@ public final class JournalWorkspacePanel implements AppPanel
         String getNotes() { return notes.get(); }
         void setNotes(String value) { notes.set(safe(value)); }
 
+        void setMerchantWithheld(String text)
+        {
+            BigDecimal value = text == null || text.isBlank() ? null : parseMoney(text);
+            merchantWithheld.set(text == null || text.isBlank() ? "" : value == null ? text.trim() : value.toPlainString());
+        }
+
+        boolean hasMerchantInput()
+        {
+            return !merchantRole.get().isBlank() || !merchantWithheld.get().isBlank() || !merchantEvidence.get().isBlank()
+                    || !merchantPayoutLines.get().isBlank() || !merchantFeeLines.get().isBlank() || !merchantNmrLines.get().isBlank();
+        }
+
         boolean hasAnyInput()
         {
             BigDecimal parsedAmount = parseMoney(getAmount());
-            return nmrRecipient.get() != null || !nmrMovement.get().isBlank() || !nmrEvidence.get().isBlank() || !getItemId().isBlank() || !getItemEffect().isBlank() || !getTransactionLine().isBlank()
+            return hasMerchantInput() || nmrRecipient.get() != null || !nmrMovement.get().isBlank() || !nmrEvidence.get().isBlank() || !getItemId().isBlank() || !getItemEffect().isBlank() || !getTransactionLine().isBlank()
                     || !getEntryRef().isBlank() || !getCounterparty().isBlank() || !getDescription().isBlank()
                     || !getReference().isBlank() || parsedAmount == null || parsedAmount.signum() != 0
                     || !getDueDate().isBlank() || !getStartDate().isBlank() || !getEndDate().isBlank()

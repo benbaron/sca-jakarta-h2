@@ -100,6 +100,11 @@ final class SclxSupplementalDetailExtension
             Set<Object> fields = new HashSet<>(map.keySet());
             fields.remove("lifecycle");
             fields.remove("nmr");
+            fields.remove("merchantSettlement");
+            if (map.containsKey("merchantSettlement"))
+            {
+                SclxMerchantSettlementMetadata.facts(new com.fasterxml.jackson.databind.ObjectMapper().valueToTree(map.get("merchantSettlement")));
+            }
             if (!fields.equals(ENTRY_KEYS))
             {
                 throw new IllegalArgumentException(

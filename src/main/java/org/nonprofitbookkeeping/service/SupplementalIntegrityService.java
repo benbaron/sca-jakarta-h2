@@ -80,6 +80,7 @@ public final class SupplementalIntegrityService
         }
         em.flush();
         requireNmrIdentity(em, company, items);
+        MerchantSettlementFacts.requireValid(em, company, items);
         List<LocalDate> dates = em.createQuery("select distinct t.txnDate from Txn t where t.company = :company order by t.txnDate", LocalDate.class)
                 .setParameter("company", company).getResultList();
         for (var kind : items.stream().map(Item::kind).distinct().toList())

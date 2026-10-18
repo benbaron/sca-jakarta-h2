@@ -145,11 +145,17 @@ public final class SupplementalOpenItemQueryService
     /** Shares the same dated effects with period reporting; no independent balance reconstruction. */
     static List<AllocationEffect> nmrEffects(EntityManager em, String companyCode, LocalDate start, LocalDate end)
     {
+        return periodEffects(em, companyCode, Kind.OTHER_LIABILITY, start, end).stream()
+                .filter(e -> e.allocation().getNmrRecipient() != null).toList();
+    }
+
+    static List<AllocationEffect> periodEffects(EntityManager em, String companyCode, Kind kind, LocalDate start, LocalDate end)
+    {
         var reversals = reversalHistory(em, companyCode);
         List<AllocationEffect> result = new ArrayList<>();
-        for (var line : allocationLines(em, companyCode, Kind.OTHER_LIABILITY))
+        for (var line : allocationLines(em, companyCode, kind))
         {
-            if (line.getNmrRecipient() == null || !lifecycleComplete(line) || lifecycleMismatch(line, Kind.OTHER_LIABILITY) != null)
+            if (!lifecycleComplete(line) || lifecycleMismatch(line, kind) != null)
             {
                 continue;
             }
@@ -342,6 +348,14 @@ public final class SupplementalOpenItemQueryService
     public record NmrDimensions(long recipientId, String recipientName, long accountId, String accountCode,
                                 long fundId, String fundCode, long eventId, String eventCode, String eventName)
     {
+    }
+
+    public MerchantReceivableQueryService.Result queryMerchantReceivables(LocalDate start, LocalDate end)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            return MerchantReceivableQueryService.query(em, companyCodeSupplier.get(), start, end);
+        }
     }
 
     public NmrPeriodQueryService.Result queryNmrPeriod(LocalDate start, LocalDate end)

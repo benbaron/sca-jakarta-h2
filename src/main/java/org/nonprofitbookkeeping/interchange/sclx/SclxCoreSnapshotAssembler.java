@@ -847,6 +847,19 @@ public final class SclxCoreSnapshotAssembler
             }
             value.put("nmr", facts);
         }
+        if (detail.getMerchantRole() != null)
+        {
+            Map<String, Object> facts = new LinkedHashMap<>();
+            facts.put("version", 1);
+            facts.put("role", detail.getMerchantRole().name());
+            facts.put("withheldUnconfirmed", detail.getMerchantWithheldUnconfirmed() == null ? null : detail.getMerchantWithheldUnconfirmed().toPlainString());
+            facts.put("evidenceReference", detail.getMerchantEvidenceReference());
+            facts.put("components", detail.getMerchantComponents().entrySet().stream()
+                    .sorted(Comparator.comparing((Map.Entry<TxnSplit, org.nonprofitbookkeeping.model.MerchantComponentKind> e) -> e.getValue().name())
+                            .thenComparing(e -> Objects.requireNonNull(exportedLineIds.get(e.getKey()), "exported merchant component")))
+                    .map(e -> Map.of("kind", e.getValue().name(), "lineId", exportedLineIds.get(e.getKey()))).toList());
+            value.put("merchantSettlement", facts);
+        }
         return java.util.Collections.unmodifiableMap(value);
     }
 
