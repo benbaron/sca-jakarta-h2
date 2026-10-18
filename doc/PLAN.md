@@ -5,8 +5,8 @@ active_slice: P25-S4I
 active_status: VERIFYING
 active_branch: codex/P25-S4I-nmr-acceptance
 active_pull_request: 376
-active_head: dca99ff7f6e2fe7891f22894ce58cabba63b95d7
-next_action: "S4I implementation and focused/actual JavaFX checks pass. Run final full clean verify, publish matching-tree draft and inspect exact-head clean/repeat/JavaFX CI; record owner checks and merge handoff. Parent S4 remains IN_PROGRESS."
+active_head: de44946b1cec58ecdd4743585eb095deaf13cf9a
+next_action: "Owner review/native checks and merge of draft MR #376; full local and exact-head clean/repeat/expanded JavaFX CI passed. After confirmed merge refresh main, carry local final evidence and review parent S4 acceptance/closeout before selecting the next unblocked slice. Do not reuse the merged branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -693,7 +693,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S4F | Explicit NMR item/recipient/event detail and liability coverage | DONE | MR #373 merged at b2ff4aa6; corrected full local and final-head clean/repeat/Xvfb CI passed |
 | P25-S4G | Explicit settlement attribution/evidence and period movements | DONE | MR #374 merged at fb37feba; full local and exact-head clean/repeat/JavaFX CI passed |
 | P25-S4H | Merchant receivable breakdown and withholding observations | DONE | MR #375 merged at 030b7d3b; final full local and exact-head clean/repeat/JavaFX CI passed |
-| P25-S4I | NMR financial acceptance and replay-safe Journal create | VERIFYING | Reproduced duplicate actual Save repaired; 12 focused and 16 actual JavaFX/routing tests pass; full local and exact-head CI pending |
+| P25-S4I | NMR financial acceptance and replay-safe Journal create | VERIFYING | Draft MR #376; 965-test full local, 12 focused, 16 actual JavaFX/routing and exact-head clean/repeat/expanded JavaFX CI passed; owner review/native checks/merge remain |
 | P25-S5 | Add independent functional-expense classification (G10) | BLOCKED | P25-S4 merged; owning contract and D01–D10 gates as applicable |
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -1864,3 +1864,21 @@ Draft [MR #376](https://github.com/benbaron/sca-jakarta-h2/pull/376) opened at `
 Initial full clean verify completed at 2026-10-18 04:14:37 UTC: 965 tests, one failure, zero errors, 58 display-dependent skips. The sole failure was `JournalWorkspacePortSourceTest.journalDelegateRemainsServiceBacked`, which still required literal `service.enter(command)` instead of the new native retry-aware `service.enter(command, requestId)`. Updated that existing architecture guard to require the new canonical overload, retaining all service/update/correction/persistence assertions. Production behavior is unchanged. Its six tests passed at 04:15:22 UTC. The accounting, native retry, integrated GL/report/SCLX and real JavaFX gates passed; the initial full run is explicitly not a pass.
 
 This successor includes only the corrected guard and PLAN/S4I evidence. Rerun full local clean verify and publish the matching successor tree on the same draft; inspect clean/repeat/expanded JavaFX CI on that exact new head. Ten governing documents' relative links and whitespace review pass. No further implementation changes are planned unless a final check fails. Required owner desktop/review/merge checks remain; no human result is inferred.
+
+### P25-S4I corrected publication and full local verification — 2026-10-17 (America/Denver)
+
+Published local guard correction `2121575ebe9bcb195bd662c93a6be8411835dcda` as `de44946b1cec58ecdd4743585eb095deaf13cf9a`, matching tree `f54b94a14094b76a7f9afead3fa1daeb5fac0a46`. All three successor blobs/tree and commit message/order matched; ref advanced from expected `dca99ff7` with force false. MR #376 remains draft/open/unmerged at the confirmed successor; native fetch/content comparison is empty. Final-head Maven run `39096513048`, job `117584021290`, owns final CI; the previous head/run is superseded. Publication maps and MR text are in scratch `/workspace/work/p25-s4i-publication-map.json` and `/workspace/work/p25-s4i-mr-body.md`.
+
+Final local offline `mvn clean verify` passed **965 tests, zero failures/errors, 58 display-dependent skips**, BUILD SUCCESS **2026-10-18 04:19:05 UTC**, elapsed 3:20 (`/workspace/work/p25-s4i-final-clean-verify.log`). Focused 12, actual Xvfb 16 and corrected source-guard 6 tests also passed. Production/test/schema bytes match final published head; no generated files are staged and the wrapper restored the temporarily tracked manifest. Ten governing documents / 143 relative links and whitespace/scope review passed before this evidence append. Exact-head CI is still running; no final GitHub result or human desktop acceptance is claimed at this checkpoint. Later publication/verification evidence stays local to preserve the tested remote head without a documentation-only CI restart.
+
+### P25-S4I final-head GitHub validation and handoff — 2026-10-17 (America/Denver)
+
+Final [Maven PR Tests run 39096513048](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39096513048), job `117584021290`, completed **success** at **2026-10-18 04:28:42 UTC** for exact head `de44946b1cec58ecdd4743585eb095deaf13cf9a` and branch `codex/P25-S4I-nmr-acceptance`. Independently read run metadata plus job/step results: clean headless verification, repeat suite, expanded production JavaFX routes and cleanup all succeeded. API head/branch match the published successor, not the superseded run. MR #376 remains draft/open/unmerged at that head, with actual final validation, scope and owner checks in its description. Final full local passed 965 tests / zero failures/errors / 58 display skips; separate actual Xvfb passed 16, focused 12, source guard 6. No failure remains in final executed gates.
+
+Completed: verified S4H merge and carried final evidence; reproduced duplicate actual Save before repair; guarded native shared Save/editor lifecycle with live capabilities; durable no-write retry acknowledgment using existing canonical/audit UUIDs and immutable input receipt; lost response/restart/concurrent/changed/foreign/deleted/colliding/protected/late rollback cases; competing NMR remittances; integrated year-boundary GL and three report paths; lossless native-receipt SCLX/restart/conflict/retry/rollback evidence; named A10 acceptance map and owner notes; matching-blob/tree nonforce draft publication and final full local/GitHub gates. No new schema, secondary persistence, operating-policy engine, defaults/rates, workflow/dependency or generated artifact change.
+
+Remaining: owner review/native checks and merge using [S4I](P25-S4I-nmr-acceptance.md). Status VERIFYING, not DONE; parent S4 remains IN_PROGRESS and no human desktop result is inferred. Existing P25-S3 desktop pass and removal of the operating-policy gate remain accepted. Form-specific legal mappings and independent functional-expense meanings remain with P27/S5.
+
+This final PLAN/S4I evidence is a local-only successor (commit subject `Record Journal retry publication and final verification`); active_head identifies the verified remote implementation, while `git rev-parse HEAD` identifies the complete local handoff. Preserve remote head/CI rather than publishing a documentation-only successor. Next exact action: owner reviews/accepts/merges MR #376. After a merge report, fetch/verify current main and final-head CI, carry this local evidence onto a fresh branch, and review parent S4 acceptance/closeout before selecting the next unblocked authorized slice. Do not start another slice before merge and do not reuse a merged branch.
+
+Final documentation-only handoff checks: 10 governing documents / 144 relative links verified; whitespace and source/test/schema equality checks passed. Only PLAN/S4I verification evidence is staged.

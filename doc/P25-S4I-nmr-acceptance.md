@@ -1,6 +1,6 @@
 # P25-S4I — NMR financial acceptance and replay-safe Journal create
 
-Status: VERIFYING. [PLAN](PLAN.md) owns execution evidence. [S4A](P25-S4A-nmr-contract-proposal.md) owns the accepted framework; [S4H](P25-S4H-merchant-withholding.md) is merged.
+Status: VERIFYING — [draft MR #376](https://github.com/benbaron/sca-jakarta-h2/pull/376), full local and exact-head CI passed; owner review/native checks/merge remain. [PLAN](PLAN.md) owns execution evidence. [S4A](P25-S4A-nmr-contract-proposal.md) owns the accepted framework; [S4H](P25-S4H-merchant-withholding.md) is merged.
 
 ## Discovered gap and contract
 
@@ -51,3 +51,13 @@ Final focused run passed 12 tests with zero failures/errors/skips at 2026-10-18 
 
 
 The first full suite completed at 2026-10-18 04:14:37 UTC with 965 tests, one stale source-guard assertion failure, zero errors and 58 display skips. The existing Journal service-boundary guard expected the old no-key overload. It now requires the retry-aware canonical overload; all six guard tests passed at 04:15:22 UTC. No production behavior changed. Draft MR #376 is open; the corrected successor requires fresh full local and exact-head CI gates before handoff. Initial published head dca99ff7 is superseded, not final validation evidence.
+
+
+Corrected draft #376 head `de44946b1cec58ecdd4743585eb095deaf13cf9a` matches local correction `2121575e` tree `f54b94a14094b76a7f9afead3fa1daeb5fac0a46`. Final local clean verify passed 965 tests, zero failures/errors, 58 display-dependent skips, at 2026-10-18 04:19:05 UTC (3:20). Actual Xvfb 16 and focused 12 tests remain successful; production/test bytes are unchanged. Exact-head run 39096513048 / job 117584021290 is running; owner native checks/review/merge remain. Post-publication evidence is local only; parent S4 remains IN_PROGRESS.
+
+
+## Final-head verification and remaining action
+
+[GitHub run 39096513048](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39096513048), job 117584021290, completed success at **2026-10-18 04:28:42 UTC**, exact head **de44946b1cec58ecdd4743585eb095deaf13cf9a**. Run metadata and every required job step independently confirm clean headless verification, repeat suite and expanded production JavaFX routes passed. Full local clean verify passed **965 tests, zero failures/errors, 58 display-related skips**; focused 12, actual Xvfb 16 and source-guard 6 also passed. No final-gate failure remains. Source/test/schema bytes still match the tested head; only PLAN and this verification evidence follow locally, preserving remote CI.
+
+Owner review/native checks and merge of draft #376 remain. Parent S4 stays IN_PROGRESS; A10's named executable evidence does not infer human acceptance or P27 legal form completion. After confirmed merge, carry this local evidence to fresh main and review parent acceptance/closeout before selecting the next unblocked slice. Do not reopen operating-policy/rate coding inputs or already passed P25-S3 acceptance.
