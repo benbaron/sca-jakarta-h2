@@ -86,7 +86,7 @@ class JournalWorkspacePortSourceTest
         String source = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/JournalWorkspacePanel.java"));
 
         assertTrue(source.contains("TransactionEntryService"));
-        assertTrue(source.contains("service.enter(command)"));
+        assertTrue(source.contains("service.enter(command, requestId)"));
         assertTrue(source.contains("service.update(targetId, command)"));
         assertTrue(source.contains("transactionCorrection().delete"));
         assertTrue(source.contains("transactionCorrection().reverse"));

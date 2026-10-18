@@ -4,8 +4,8 @@ active_phase: P25
 active_slice: P25-S4I
 active_status: VERIFYING
 active_branch: codex/P25-S4I-nmr-acceptance
-active_pull_request: null
-active_head: 496ba7c9b1c0cb53eb4f8ff8adbcd88d9d36a427
+active_pull_request: 376
+active_head: dca99ff7f6e2fe7891f22894ce58cabba63b95d7
 next_action: "S4I implementation and focused/actual JavaFX checks pass. Run final full clean verify, publish matching-tree draft and inspect exact-head clean/repeat/JavaFX CI; record owner checks and merge handoff. Parent S4 remains IN_PROGRESS."
 ---
 
@@ -1856,3 +1856,11 @@ Implemented one UUID per native New draft, stable across failures, existing cano
 Focused final run: 12 tests, zero failures/errors/skips, BUILD SUCCESS at 2026-10-18 04:09:03 UTC (`JournalCreateRequestTest` 7, `NmrFinancialAcceptanceTest` 1, `SclxMerchantSettlementRoundTripTest` 4). Initial combined test used nonexistent debit/credit entity attributes; corrected its independent GL assertion to canonical amountSigned/normal balance, reran and passed. The seven new replay tests passed on both runs. Actual Xvfb final run: 16 tests, zero failures/errors/skips, BUILD SUCCESS at 04:10:27 UTC (`JournalPaymentReferencesTest`, `AppPanelCommandCapabilityTest`, `ProductionWorkspaceCommandRoutingTest`). New year-boundary test ties prior opening 40, collections 100, merchant discharge 30, branch 110, closing zero; canonical bank 880/income 900/fee 20 and receivable/liability zero. Row-limited production reports and native-receipt SCLX round-trip/restart/reimport agree without policy records.
 
 [S4I](P25-S4I-nmr-acceptance.md) maps all A10 cases to named tests and explicit limits. Updated S4A/current S4H status, adopted program, ledger/lifecycle, shared UI Save/matrix, and SCLX contracts. Reviewed production diff, existing normalized persistence semantics, permission gate/capability forwarding, retained audit/delete behavior and final scope. Full local clean verify, matching-tree draft publication and exact published-head CI remain pending; no full-suite or human desktop result is claimed yet. Next exact action: run those gates and record the concrete draft/head/results. Parent S4 remains IN_PROGRESS; existing P25-S3 desktop pass remains accepted, with no operating-policy coding prerequisite.
+
+### P25-S4I first publication and full-suite guard correction — 2026-10-17 (America/Denver)
+
+Draft [MR #376](https://github.com/benbaron/sca-jakarta-h2/pull/376) opened at `dca99ff7f6e2fe7891f22894ce58cabba63b95d7` from unchanged main `030b7d3b`. Local `496ba7c9` maps to remote `f0dfeb1ec11092daaf3b5d3c0501a673e41ad6c6`, tree `82ff9be92d1902300870155e13140aef72193cb4`; implementation local `6ad9bb37` maps to the draft head, tree `9970309193b4aa45482b60b2c51c5ec2d4f7418d`. Every blob/tree and both messages/order matched; expected-parent ref lease with force false, native fetch and empty tree diff verified the published content. Initial run `39096358025` is superseded by the following correction and is not final CI evidence.
+
+Initial full clean verify completed at 2026-10-18 04:14:37 UTC: 965 tests, one failure, zero errors, 58 display-dependent skips. The sole failure was `JournalWorkspacePortSourceTest.journalDelegateRemainsServiceBacked`, which still required literal `service.enter(command)` instead of the new native retry-aware `service.enter(command, requestId)`. Updated that existing architecture guard to require the new canonical overload, retaining all service/update/correction/persistence assertions. Production behavior is unchanged. Its six tests passed at 04:15:22 UTC. The accounting, native retry, integrated GL/report/SCLX and real JavaFX gates passed; the initial full run is explicitly not a pass.
+
+This successor includes only the corrected guard and PLAN/S4I evidence. Rerun full local clean verify and publish the matching successor tree on the same draft; inspect clean/repeat/expanded JavaFX CI on that exact new head. Ten governing documents' relative links and whitespace review pass. No further implementation changes are planned unless a final check fails. Required owner desktop/review/merge checks remain; no human result is inferred.
