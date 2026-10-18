@@ -4,9 +4,9 @@ active_phase: P25
 active_slice: P25-S5B
 active_status: VERIFYING
 active_branch: codex/P25-S5B-functional-expenses
-active_pull_request: null
-active_head: 7bc89aefaa4176215e6adeae58dd946327996b27
-next_action: "Finish full clean verify, publish matching reviewed commits as a fresh draft, inspect exact-head clean/repeat/expanded JavaFX CI and record the handoff. D07 is adopted; parent S5 awaits review/merge and owner desktop checks."
+active_pull_request: 378
+active_head: 378cf10284feae363a18012264820ccc76c831db
+next_action: "Owner review/merge draft MR #378 and perform documented desktop checks. After merge confirmation, verify main and carry the local final evidence onto a fresh branch before selecting the next unblocked adopted slice. No D07/NMR input is pending."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1960,3 +1960,26 @@ Expanded actual Xvfb production suite passed **52 tests, zero failures/errors/sk
 Final offline `mvn clean verify` passed **980 tests, zero failures/errors, 59 display-dependent skips**, BUILD SUCCESS **2026-10-18 19:34:20 UTC**, elapsed 3:32 (`/workspace/work/p25-s5b-clean-verify.log`). Final service tests include classified deletion audit/no-resurrection and real PDF/XLSX export retaining full GL control despite limited detail. Expanded actual production JavaFX separately passed 52 tests with no failures/errors/skips at 19:30:41 UTC; focused accounting passed 68. All executed final gates pass. JDK 21 builds release 17 locally; exact published-head CI will validate JDK 17 clean/repeat/expanded JavaFX.
 
 Reviewed intended canonical migration/DTO/write/correction/hash/audit/Journal/precision/report/filter/SCLX changes, all new tests, and governing documentation. No dependency/workflow/applied-migration or donor-data change. Helper restored the tracked target manifest; generated output must not be staged. Nine governing documents / 148 relative links and whitespace/scope checks pass. S5B is VERIFYING on fresh branch `codex/P25-S5B-functional-expenses`, with implementation ready for matching-tree draft publication after carry `1d7334e8`. No PR exists yet. Known final failures: none. Remaining: publication, exact-head CI, owner review/merge and documented desktop checks. Do not close parent S5 or activate P26 from local results alone.
+
+### P25-S5B draft publication — 2026-10-18 (America/Denver)
+
+Draft [MR #378](https://github.com/benbaron/sca-jakarta-h2/pull/378) targets verified main `7bc89aefaa4176215e6adeae58dd946327996b27`. Connected publication preserved both reviewed local commits/messages/order and every blob/tree:
+
+- Carry `1d7334e822c903c16a5aceffce50ed98027448bb` → `e42e5bd95b869cc2cf00d17c00a55df834ec8719`, tree `2a96ba884c6fbd07061cbe435c85a888748255b1`.
+- Implementation `5bba3c46cde54d708bf68d813b703e0455b64ab9` → `378cf10284feae363a18012264820ccc76c831db`, tree `cb24bfe79a5ea114c2c52441f172a389c253d297`.
+
+Fresh ref advanced from expected `7bc89aef` with force false. Native fetch and empty tree comparison confirm remote content equals local implementation. Draft/open metadata confirms the same head, 2 commits and 46 intended files; worktree was clean before this local record. No dependency/workflow/AGENTS change or generated output was published. Full local 980-test gate and separate 52-test actual JavaFX pass; nine governing documents / 148 relative links and whitespace/scope checks pass. Exact-head [Maven PR Tests run 39159777236](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39159777236) is in progress. MR body records executed local results, pending CI, generated-unknown/official-form limits and owner desktop checks. Publication map/body: `/workspace/work/p25-s5b-publication-map.json`, `/workspace/work/p25-s5b-mr-body.md`.
+
+This publication/final-head evidence stays local to preserve the tested remote head. Next exact action: finish exact-head clean/repeat/expanded production JavaFX CI, update MR results, validate final docs and commit this handoff. S5B remains VERIFYING pending review/merge and documented owner checks. Do not publish a documentation-only successor merely to restart CI; do not select P26 or reopen D07/NMR operating policy gates.
+
+### P25-S5B final-head CI and handoff — 2026-10-18 (America/Denver)
+
+Final [Maven PR Tests run 39159777236](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39159777236), job `117770447885`, completed **success** at **2026-10-18 19:51:16 UTC** for exact head `378cf10284feae363a18012264820ccc76c831db`, branch `codex/P25-S5B-functional-expenses`. Independent run, job and step metadata confirm clean headless verification, repeat suite, expanded production JavaFX and cleanup all passed on JDK 17. Draft MR #378 remains open, unmerged and mergeable at this exact head. The optional raw-job-log fetch returned a connector Transport closed error; no raw-log-derived CI counts are claimed. Executed final checks have no remaining failure. Full local clean verification passed 980 tests, zero failures/errors, 59 display-dependent skips; separate actual production JavaFX passed 52 tests, no failures/errors/skips. MR body now records actual local/CI results and owner checks.
+
+Completed: confirmed S5A merge and D07 adoption; carried its final evidence onto a fresh branch; established pre-edit compile/38-test baseline and actual missing-choice regression; implemented nullable canonical purpose with no defaults, expense-only/account/inverse integrity, shared Journal Save/draft/copy/reload and precise amount editing, compatible v1/new-v2 native receipts, derived GL-date/Fund/Event reporting/full controls/unknown gross/export/drill-through, strict sparse SCLX identity/conflict/Keep target/history/rollback; enumerated generated writers and tested unknown/accepted source dispositions; repaired reproduced precision/export-order issues; mapped F01–F09 and updated governing documents; published identical reviewed trees/messages/order with nonforce lease and native fetched equality; passed full local and exact-head CI.
+
+Remaining: owner review/merge of draft MR #378 and documented user checks in [S5B](P25-S5B-functional-expenses.md). S5B remains VERIFYING; parent S5 IN_PROGRESS until merge/acceptance, not DONE from local implementation. No new human desktop transcript is inferred. Official-form mapping and P26 remain outside this slice; no unresolved D07 or NMR operating-policy gate is reopened.
+
+This final PLAN/S5B evidence is local-only (commit subject `Record functional expense publication and final verification`). active_head remains the successful remote implementation; `git rev-parse HEAD` identifies the complete local handoff. Do not publish a documentation-only successor merely to restart green CI. After owner reports merge, fetch/verify current main, confirm required acceptance, carry this final evidence onto a fresh branch, and select the first incomplete unblocked adopted slice. Do not reuse the merged S5B branch. Final docs/whitespace/source equality checks follow before committing the handoff.
+
+Final handoff checks passed: nine changed governing documents / 149 relative links resolve, whitespace is clean, production/test/schema/workflow/dependency/AGENTS bytes equal successful published head, tracked manifest is restored, and only PLAN/S5B publication/CI records follow locally. MR re-read confirms draft/open/unmerged/mergeable at `378cf102`, with actual passing CI results in the body.
