@@ -161,6 +161,9 @@ After S4G's MR #374 merge, select [S4H](P25-S4H-merchant-withholding.md). Reuse 
 
 **Acceptance:** Expenses can be reported by function independently of account, fund, event, and budget. A mixed-purpose payment can split allocation without duplication. Functional totals reconcile to eligible GL expense totals; unclassified amounts are explicit.
 
+
+[S5A](P25-S5A-functional-expense-contract.md) is the documentation-only D07 proposal following owner-approved/merged S4I. It proposes explicit AR (Events), OA (Administration), FR (Fundraising), transaction-date net GL expense, and no automatic defaults. Those choices are **not adopted** and do not authorize S5 production code until owner confirmation. S4's resolved operating-policy scope is unchanged.
+
 ## P26 — Property, planning, recognition, and conversion
 
 ### P26-S1 — Link fixed-asset acquisition and opening records (G11)

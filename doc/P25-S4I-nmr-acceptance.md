@@ -1,6 +1,6 @@
 # P25-S4I — NMR financial acceptance and replay-safe Journal create
 
-Status: VERIFYING — [draft MR #376](https://github.com/benbaron/sca-jakarta-h2/pull/376), full local and exact-head CI passed; owner review/native checks/merge remain. [PLAN](PLAN.md) owns execution evidence. [S4A](P25-S4A-nmr-contract-proposal.md) owns the accepted framework; [S4H](P25-S4H-merchant-withholding.md) is merged.
+Status: DONE — owner explicitly approved and merged [MR #376](https://github.com/benbaron/sca-jakarta-h2/pull/376) at 4c965490; full local and exact-head CI passed. [PLAN](PLAN.md) owns execution evidence. [S4A](P25-S4A-nmr-contract-proposal.md) owns the accepted framework; [S4H](P25-S4H-merchant-withholding.md) is merged.
 
 ## Discovered gap and contract
 
@@ -61,3 +61,8 @@ Corrected draft #376 head `de44946b1cec58ecdd4743585eb095deaf13cf9a` matches loc
 [GitHub run 39096513048](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39096513048), job 117584021290, completed success at **2026-10-18 04:28:42 UTC**, exact head **de44946b1cec58ecdd4743585eb095deaf13cf9a**. Run metadata and every required job step independently confirm clean headless verification, repeat suite and expanded production JavaFX routes passed. Full local clean verify passed **965 tests, zero failures/errors, 58 display-related skips**; focused 12, actual Xvfb 16 and source-guard 6 also passed. No final-gate failure remains. Source/test/schema bytes still match the tested head; only PLAN and this verification evidence follow locally, preserving remote CI.
 
 Owner review/native checks and merge of draft #376 remain. Parent S4 stays IN_PROGRESS; A10's named executable evidence does not infer human acceptance or P27 legal form completion. After confirmed merge, carry this local evidence to fresh main and review parent acceptance/closeout before selecting the next unblocked slice. Do not reopen operating-policy/rate coding inputs or already passed P25-S3 acceptance.
+
+
+## Owner approval and merged closeout — 2026-10-18 (America/Denver)
+
+Owner explicitly approved and merged MR #376, confirmed at main `4c965490f59a59285b599262f68d0f853fcca582`, after the recorded full local and exact-head clean/repeat/JavaFX gates. S4I and parent S4 financial scope are DONE on that approval plus merged behavior and A10 evidence. This records owner acceptance, not an invented per-check desktop transcript. Earlier pending statements above are historical checkpoints. Optional policy-reference native evidence and form-specific legal mapping remain separate. Next adopted feature is S5 functional expense classification; its D07 proposal is [S5A](P25-S5A-functional-expense-contract.md), not another NMR policy gate.
