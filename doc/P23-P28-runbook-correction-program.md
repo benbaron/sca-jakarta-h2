@@ -301,3 +301,8 @@ Each PR and PLAN entry must record phase/slice, branch, exact commit, deliverabl
 - [UI design rules](https://github.com/benbaron/sca-jakarta-h2/blob/7a18adce529e23cadd09cdaba74d3821af1a6275/doc/ui_design_rules.md)
 - [Journal editor rules](https://github.com/benbaron/sca-jakarta-h2/blob/7a18adce529e23cadd09cdaba74d3821af1a6275/doc/ui/editor-guidelines.md)
 - SCA_2026_Runbook_Application_Guide.md, updated with G14, is the deficiency inventory and contains pinned supporting code references. Its source-derived defect findings remain subject to executable reproduction; its owner feedback remains subject to desktop acceptance.
+
+
+## P25-S4I — NMR acceptance and Journal create replay
+
+Following merged MR #375, select [S4I](P25-S4I-nmr-acceptance.md): map A10-N01–N10 to executed accounting evidence and repair the reproduced duplicate new-entry Save through the existing canonical transaction/create audit identity. Include lost-response/restart/concurrent retries, immutable receipt ownership, corrected/deleted/protected cases, late atomic failure, actual shared UI Save and integrated year-boundary GL/report/SCLX checks. No operating-policy engine, schema or second ledger is introduced. Parent S4 remains IN_PROGRESS pending its owner acceptance/closeout; D07 meanings and form-specific legal mappings stay with S5/P27.

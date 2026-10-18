@@ -48,3 +48,8 @@ Any auditable business record may have one editable notes field. Material change
 ### Internal fund-transfer links (P25-S1)
 
 A canonical transaction linked to an existing FundTransfer is retained: both generic correction direct-edit/delete and entry-service update reject it. Reverse-and-replace rejects it; enter a corrected transfer through Fund Transfers after reversal. A generic Journal reversal or transfer-specific reversal creates the inverse-direction FundTransfer in the same transaction as its canonical opposite lines and audit history. A reason is required for this linked correction. Original facts remain reportable for original dates, reversal facts appear on the correction date, and reversing a reversal restores direction. Current fund retirement/restriction does not prohibit historical correction; correction does not rerun new-transfer availability policy. Existing reconciliation and open-reversal-period protections still apply. See [Internal fund transfers](../funds/internal-fund-transfers.md).
+
+
+## P25-S4I save acknowledgment
+
+A native Journal New draft retains one create UUID through validation, write and lost-response failures. Its immutable create receipt survives edits/reversals/deletion. Exact authorized retry acknowledges the current retained transaction, never restores original lines over later correction, and cannot resurrect deletion. Closed/reconciled entries can be acknowledged without writes; new entry/update/correction protections still apply. New deliberately starts another operation. See [S4I](../P25-S4I-nmr-acceptance.md).

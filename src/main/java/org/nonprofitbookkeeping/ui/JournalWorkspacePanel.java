@@ -117,6 +117,7 @@ public final class JournalWorkspacePanel implements AppPanel
     private final Label validationMessage = new Label("Enter at least two meaningful, balanced lines.");
     private final Button editButton = new Button("Edit Selected");
     private final Button saveButton = new Button("Save Entry");
+    private final Button newButton = new Button("New Entry");
     private final Button deleteButton = new Button("Delete");
     private final Button removeLineButton = new Button("Remove Line");
     private final Button drillReconciliationButton = new Button("Open Selected Line Reconciliation");
@@ -134,6 +135,10 @@ public final class JournalWorkspacePanel implements AppPanel
     private Long requestedTransactionId;
     private boolean dirty;
     private boolean loading;
+    private boolean saveInProgress;
+    private UUID createRequestId;
+    private long editorGeneration;
+    private Runnable capabilitiesChanged = () -> {};
 
     public JournalWorkspacePanel()
     {
@@ -190,7 +195,6 @@ public final class JournalWorkspacePanel implements AppPanel
         searchText.setPrefColumnCount(18);
         Button applyFilters = new Button("Apply Filters");
         Button clearFilters = new Button("Clear Filters");
-        Button newButton = new Button("New Entry");
         Button refreshButton = new Button("Refresh");
 
         newButton.setId("journalWorkspaceNewButton");
@@ -992,6 +996,11 @@ public final class JournalWorkspacePanel implements AppPanel
 
     private void startNew(boolean confirmDiscard)
     {
+        if (saveInProgress)
+        {
+            status.setText(saveUnavailableReason());
+            return;
+        }
         if (confirmDiscard && !confirmDiscardIfDirty())
         {
             status.setText("New journal entry cancelled; unsaved changes remain.");
@@ -1001,6 +1010,8 @@ public final class JournalWorkspacePanel implements AppPanel
         try
         {
             editTransactionId = null;
+            createRequestId = UUID.randomUUID();
+            editorGeneration++;
             entryDate.setValue(ActivePeriodContext.get() == null ? LocalDate.now() : ActivePeriodContext.get());
             memoArea.clear();
             payeeBox.setValue(null);
@@ -1038,14 +1049,24 @@ public final class JournalWorkspacePanel implements AppPanel
 
     private void loadTransactionIntoEditor(long transactionId, boolean confirmDiscard)
     {
+        if (saveInProgress)
+        {
+            status.setText(saveUnavailableReason());
+            return;
+        }
         if (confirmDiscard && !confirmDiscardIfDirty())
         {
             return;
         }
+        long generation = ++editorGeneration;
         status.setText("Loading transaction #" + transactionId + "...");
         UiAsync.run("journal-workspace-edit-" + transactionId,
                 () -> UiServiceRegistry.transactionEntry().load(transactionId),
                 view -> {
+                    if (generation != editorGeneration || saveInProgress)
+                    {
+                        return;
+                    }
                     applyTransactionView(view);
                     centerJournalSelection(view.id());
                     status.setText("Loaded transaction #" + view.id() + " for editing.");
@@ -1059,6 +1080,7 @@ public final class JournalWorkspacePanel implements AppPanel
         try
         {
             editTransactionId = view.id();
+            createRequestId = null;
             entryDate.setValue(view.date());
             memoArea.setText(safe(view.memo()));
             payeeBox.setValue(option(view.payeeId(), "", view.payeeName()));
@@ -1128,6 +1150,11 @@ public final class JournalWorkspacePanel implements AppPanel
 
     private void saveCurrentEntry()
     {
+        if (saveInProgress)
+        {
+            status.setText(saveUnavailableReason());
+            return;
+        }
         TransactionCommand command;
         try
         {
@@ -1151,18 +1178,38 @@ public final class JournalWorkspacePanel implements AppPanel
 
         TransactionEntryService service = UiServiceRegistry.transactionEntry();
         Long targetId = editTransactionId;
+        UUID requestId = createRequestId;
+        ++editorGeneration;
+        setSaveInProgress(true);
         status.setText(targetId == null ? "Saving new journal entry..." : "Updating transaction #" + targetId + "...");
         UiAsync.run("journal-workspace-save",
-                () -> targetId == null ? service.enter(command) : service.update(targetId, command),
+                () -> targetId == null ? service.enter(command, requestId) : service.update(targetId, command),
                 view -> {
-                    applyTransactionView(view);
-                    requestedTransactionId = view.id();
-                    reloadJournal();
-                    status.setText((targetId == null ? "Saved new transaction #" : "Updated transaction #")
-                            + view.id() + " with " + view.lines().size() + " accounting line(s) and "
-                            + view.supplementalLines().size() + " supplemental detail row(s).");
+                    try
+                    {
+                        applyTransactionView(view);
+                        requestedTransactionId = view.id();
+                        reloadJournal();
+                        status.setText((targetId == null ? "Saved new transaction #" : "Updated transaction #")
+                                + view.id() + " with " + view.lines().size() + " accounting line(s) and "
+                                + view.supplementalLines().size() + " supplemental detail row(s).");
+                    }
+                    finally
+                    {
+                        setSaveInProgress(false);
+                    }
                 },
-                ex -> status.setText("Save failed: " + UiErrors.safeMessage(ex)));
+                ex -> {
+                    setSaveInProgress(false);
+                    status.setText("Save failed: " + UiErrors.safeMessage(ex));
+                });
+    }
+
+    private void setSaveInProgress(boolean saving)
+    {
+        saveInProgress = saving;
+        updateActionState();
+        capabilitiesChanged.run();
     }
 
     private TransactionCommand buildCommand()
@@ -1392,6 +1439,11 @@ public final class JournalWorkspacePanel implements AppPanel
 
     private void deleteOrReverseCurrentTransaction()
     {
+        if (saveInProgress)
+        {
+            status.setText(saveUnavailableReason());
+            return;
+        }
         Long targetId = editTransactionId != null ? editTransactionId : selectedTransactionId();
         if (targetId == null)
         {
@@ -1714,8 +1766,11 @@ public final class JournalWorkspacePanel implements AppPanel
 
     private void updateActionState()
     {
-        editButton.setDisable(journalTable.getSelectionModel().getSelectedItem() == null);
-        deleteButton.setDisable(editTransactionId == null && journalTable.getSelectionModel().getSelectedItem() == null);
+        saveButton.setDisable(saveInProgress);
+        newButton.setDisable(saveInProgress);
+        editorSplit.setDisable(saveInProgress);
+        editButton.setDisable(saveInProgress || journalTable.getSelectionModel().getSelectedItem() == null);
+        deleteButton.setDisable(saveInProgress || (editTransactionId == null && journalTable.getSelectionModel().getSelectedItem() == null));
         removeLineButton.setDisable(lineTable.getSelectionModel().getSelectedItem() == null || lineTable.getItems().size() <= 2);
         EditorLine selectedLine = lineTable.getSelectionModel().getSelectedItem();
         drillReconciliationButton.setDisable(
@@ -1786,10 +1841,26 @@ public final class JournalWorkspacePanel implements AppPanel
     @Override
     public java.util.Set<AppCommand> commandCapabilities()
     {
+        if (saveInProgress)
+        {
+            return AppPanel.capabilities(AppCommand.POST_VALIDATE);
+        }
         return AppPanel.capabilities(
                 AppCommand.NEW_ACTIVE,
                 AppCommand.SAVE_ACTIVE,
                 AppCommand.POST_VALIDATE);
+    }
+
+    @Override
+    public void setCommandCapabilitiesChangedListener(Runnable listener)
+    {
+        capabilitiesChanged = listener == null ? () -> {} : listener;
+    }
+
+    @Override
+    public String saveUnavailableReason()
+    {
+        return saveInProgress ? "Save Entry is already in progress; wait for it to finish." : AppPanel.super.saveUnavailableReason();
     }
 
     @Override
@@ -1819,6 +1890,11 @@ public final class JournalWorkspacePanel implements AppPanel
     @Override
     public void onPanelShown()
     {
+        if (saveInProgress)
+        {
+            status.setText(saveUnavailableReason());
+            return;
+        }
         loadReferenceData();
         String context = DrillThroughCoordinator.consumeContext(AppPanelId.JOURNAL_PANE);
         Long transactionId = transactionIdFromContext(context);

@@ -1,6 +1,6 @@
 # P25-S4H — Merchant receivable breakdown and withholding observations
 
-Status: VERIFYING; final focused/JavaFX passed, full local and exact published-head CI pending. Owner review/merge remain. Extends [S4G](P25-S4G-nmr-settlement-evidence.md) under [S4A](P25-S4A-nmr-contract-proposal.md). PLAN owns execution evidence.
+Status: DONE through merged [MR #375](https://github.com/benbaron/sca-jakarta-h2/pull/375) at `030b7d3b`; final local full/focused/JavaFX and exact published-head CI passed. No additional desktop result is inferred. Extends [S4G](P25-S4G-nmr-settlement-evidence.md) under [S4A](P25-S4A-nmr-contract-proposal.md). PLAN owns execution evidence.
 
 ## Contract
 
@@ -33,3 +33,13 @@ Baseline compile and 32 existing accounting/interchange/correction tests passed 
 ## Final focused and JavaFX verification
 
 Final focused gate: 63 tests, zero failures/errors/skips, BUILD SUCCESS 2026-10-18 01:20:18 UTC. Final real Xvfb gate: 12 tests, zero failures/errors/skips, BUILD SUCCESS 2026-10-18 01:22:15 UTC. The latter exercises actual shared Save/reload, role/component/evidence edits, dirty protection, four-decimal observations through company-formatted cells, blank unknown rather than invented zero, VIEWER denial and real laptop/large-text scrolling/divider geometry. Service/interchange gates cover cutoffs, observations without discharge, later discharge/reversal, multiple-item uniqueness, replacement/update/Delete, legacy unknown classifications, full report totals despite limits, V83 upgrade/history recovery, deterministic export and atomic permission/conflict/Keep target/retry/restart/rollback. PLAN owns full local/publication/CI and merge evidence. No new human desktop pass is claimed.
+
+## Publication and full local result
+
+Draft MR #375 at `5fe764e8aeb26b98d4a281991daa559175df44a3` has the exact reviewed implementation tree. Full offline local clean verify passed 957 tests, zero failures/errors, 58 display-dependent skips, BUILD SUCCESS 2026-10-18 01:25:56 UTC. Independent focused and real Xvfb gates passed 63 and 12 respectively. Exact-head CI run `39086527295` is pending. PLAN records matching-tree publication, full evidence and next action. Later evidence stays local until carried onto fresh main after merge; no human desktop result is inferred.
+
+## Final-head CI and next action
+
+Exact head `5fe764e8aeb26b98d4a281991daa559175df44a3` passed [Maven run 39086527295](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39086527295), job `117554163127`: clean headless verification, repeat tests and expanded production JavaFX routes all succeeded. MR #375 records actual local and CI results. No source/test/schema change followed the passed gates and no known final executed-check failure remains. Status VERIFYING pending owner review/acceptance/merge; no human desktop result is claimed.
+
+PLAN/S4H publication and final verification evidence is committed locally only after implementation `629ec190`, retaining the successful remote head. After confirmed merge, carry this ledger onto fresh main and review parent S4 financial acceptance/remaining form boundaries before selecting its closeout or next unblocked P25 slice. Parent S4 is not declared complete by this draft.

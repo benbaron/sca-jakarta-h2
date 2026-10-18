@@ -95,6 +95,18 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
     }
 
     @Override
+    public void setCommandCapabilitiesChangedListener(Runnable listener)
+    {
+        delegate.setCommandCapabilitiesChangedListener(listener);
+    }
+
+    @Override
+    public String saveUnavailableReason()
+    {
+        return delegate.saveUnavailableReason();
+    }
+
+    @Override
     public void onSave()
     {
         delegate.onSave();

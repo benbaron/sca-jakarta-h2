@@ -24,7 +24,9 @@ class SclxMerchantSettlementRoundTripTest
     {
         try (Jpa jpa = new Jpa(directory.resolve("source")))
         {
-            var f = MerchantSettlementTestFixture.seed(jpa); var history = f.history(jpa);
+            var f = MerchantSettlementTestFixture.seed(jpa); var entry = f.nmr().base().entry(jpa);
+            var history = List.of(entry.enter(f.receipt(), UUID.randomUUID()).id(),
+                    entry.enter(f.payout(), UUID.randomUUID()).id(), entry.enter(f.discharge(), UUID.randomUUID()).id());
             new TransactionCorrectionService(jpa, () -> COMPANY).reverse(history.get(2), DATE.plusDays(3), "tester", "Correction", false);
             var document = new SclxCoreSnapshotQueryService(jpa, () -> COMPANY).query(Instant.EPOCH);
             byte[] bytes = new SclxJsonSerializer().serialize(document); assertArrayEquals(bytes, new SclxJsonSerializer().serialize(document));
@@ -77,6 +79,15 @@ class SclxMerchantSettlementRoundTripTest
             assertTrue(new SclxImportCommitService(jpa, () -> COMPANY, guard(jpa, ReservedSecurityRole.ACCOUNTANT)).commit(file, preview, "tester", true, true).committed());
             assertEquals(audits, count(jpa, "select count(a) from AuditEvent a")); assertEquals(4, count(jpa, "select count(t) from Txn t"));
             assertEquals(0, count(jpa, "select count(p) from NmrPolicyVersion p"));
+            try (EntityManager em = jpa.em())
+            {
+                var receipts = em.createQuery("from AuditEvent a where a.actionType = 'TRANSACTION_ENTERED' and a.reason like 'Journal create request v1 SHA-256:%'", AuditEvent.class).getResultList();
+                assertEquals(3, receipts.size());
+                for (var receipt : receipts)
+                {
+                    assertEquals(1L, em.createQuery("select count(t) from Txn t where t.portableId = :id", Long.class).setParameter("id", receipt.getPortableId()).getSingleResult());
+                }
+            }
             try (EntityManager em = jpa.em()) { assertEquals(3L, em.createNativeQuery("select count(*) from txn_supplemental_merchant_component", Long.class).getSingleResult()); }
         }
     }

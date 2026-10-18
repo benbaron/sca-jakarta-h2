@@ -104,7 +104,7 @@ Derive amounts at a requested cutoff from canonical accounting and existing life
 
 Missing accounting references, duplicated settlement, unexplained opening balance or GL/detail difference produces an actionable incomplete result with navigation to the owning record. Missing optional policy records or external gate counts does not block accounting or a valid accounting tie-out. No automatic historical-data conversion or “ready” assertion follows from the legacy checkbox.
 
-## Acceptance specifications — not executed feature tests
+## Acceptance specifications and executable evidence
 
 | Case | Required result after implementation |
 |---|---|
@@ -123,4 +123,4 @@ Use the balanced synthetic accounting fixture above for implementation expectati
 
 ## Exact next action
 
-MR #374 is merged and P25-S3 desktop acceptance remains passed. Finish selected [S4H](P25-S4H-merchant-withholding.md): explicit canonical receivable/component links and dated withholding observations, shared Save, derived period report and strict lossless SCLX. Complete full local/published-head validation and owner review/merge. After merge review parent S4's acceptance cases against the implemented financial behavior before selecting its closeout or the next unblocked P25 slice. Form-specific mappings and independent functional-expense meanings remain with their owning contracts. Do not request operating policies as a coding prerequisite.
+MR #375 is merged and P25-S3 desktop acceptance remains passed. Selected [S4I](P25-S4I-nmr-acceptance.md) maps A10-N01–N10 to named executable evidence, repairs reproduced duplicate native Journal create requests, and verifies integrated year-boundary accounting. Complete full local/published-head validation and owner review/merge, then record any required native acceptance before selecting parent S4 closeout or the next unblocked slice. Form-specific mappings and independent functional-expense meanings remain with their owning contracts. Do not request operating policies as a coding prerequisite.
