@@ -119,8 +119,8 @@ Missing accounting references, duplicated settlement, unexplained opening balanc
 | A10-N09 Legacy and portability | Unmapped old NMR flags remain readable and visibly incomplete; supported new export/import preserves approved facts, item/correction identities and balances; reimport is idempotent |
 | A10-N10 Reports and presentation | Detail, GL, bank/merchant totals and adopted form fields reconcile across fiscal boundaries; no legal classification is inferred and no presentation creates a second ledger entry |
 
-Use the balanced synthetic accounting fixture above for implementation expectations. These cases specify future acceptance; documentation checks or the existing Maven suite cannot pass an unimplemented NMR feature.
+Use the balanced synthetic accounting fixture above for implementation expectations. [S4I](P25-S4I-nmr-acceptance.md) now maps these cases to executed accounting tests and explicit limits; owner approved and merged MR #376. Documentation alone remains insufficient evidence for an unimplemented feature.
 
 ## Exact next action
 
-MR #375 is merged and P25-S3 desktop acceptance remains passed. Selected [S4I](P25-S4I-nmr-acceptance.md) maps A10-N01–N10 to named executable evidence, repairs reproduced duplicate native Journal create requests, and verifies integrated year-boundary accounting. Complete full local/published-head validation and owner review/merge, then record any required native acceptance before selecting parent S4 closeout or the next unblocked slice. Form-specific mappings and independent functional-expense meanings remain with their owning contracts. Do not request operating policies as a coding prerequisite.
+S4 financial scope is accepted and merged through MR #376. Preserve its entered-fact/no-policy-engine contract. The next feature is independent functional expense classification: [S5A](P25-S5A-functional-expense-contract.md) prepares its D07 meanings/basis/defaults proposal before S5 code. Form-specific mappings remain with P27. No further NMR operating-policy inputs or repeated P25-S3 acceptance are prerequisites.
