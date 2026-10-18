@@ -68,6 +68,24 @@ public class TxnSupplementalLine
     @Column(name = "nmr_evidence_reference", length = 500)
     private String nmrEvidenceReference;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "merchant_role", length = 30)
+    private MerchantReceivableRole merchantRole;
+
+    @Column(name = "merchant_withheld_unconfirmed", precision = 19, scale = 4)
+    private BigDecimal merchantWithheldUnconfirmed;
+
+    @Column(name = "merchant_evidence_reference", length = 500)
+    private String merchantEvidenceReference;
+
+    @jakarta.persistence.ElementCollection
+    @jakarta.persistence.CollectionTable(name = "txn_supplemental_merchant_component",
+            joinColumns = @JoinColumn(name = "supplemental_line_id"))
+    @jakarta.persistence.MapKeyJoinColumn(name = "txn_split_id")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "component", length = 30, nullable = false)
+    private java.util.Map<TxnSplit, MerchantComponentKind> merchantComponents = new java.util.LinkedHashMap<>();
+
     @Column(length = 255)
     private String counterparty;
 
@@ -119,6 +137,13 @@ public class TxnSupplementalLine
     public void setNmrMovement(NmrMovementKind value) { nmrMovement = value; }
     public String getNmrEvidenceReference() { return nmrEvidenceReference; }
     public void setNmrEvidenceReference(String value) { nmrEvidenceReference = value; }
+    public MerchantReceivableRole getMerchantRole() { return merchantRole; }
+    public void setMerchantRole(MerchantReceivableRole value) { merchantRole = value; }
+    public BigDecimal getMerchantWithheldUnconfirmed() { return merchantWithheldUnconfirmed; }
+    public void setMerchantWithheldUnconfirmed(BigDecimal value) { merchantWithheldUnconfirmed = value; }
+    public String getMerchantEvidenceReference() { return merchantEvidenceReference; }
+    public void setMerchantEvidenceReference(String value) { merchantEvidenceReference = value; }
+    public java.util.Map<TxnSplit, MerchantComponentKind> getMerchantComponents() { return merchantComponents; }
     public String getCounterparty() { return counterparty; }
     public void setCounterparty(String counterparty) { this.counterparty = counterparty; }
     public String getDescription() { return description; }

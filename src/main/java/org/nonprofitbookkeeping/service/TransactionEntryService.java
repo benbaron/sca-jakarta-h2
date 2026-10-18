@@ -763,6 +763,7 @@ public class TransactionEntryService
                     throw new PostingException("Invalid NMR movement: " + ex.getMessage());
                 }
             }
+            MerchantSettlementFacts.apply(line, command.merchantSettlement(), persistedSplits);
             em.persist(line);
         }
         if (!legacySclx && !deferredHistory)
@@ -928,7 +929,8 @@ public class TransactionEntryService
                     line.getTxnSplit() == null ? null : line.getTxnSplit().getId(), splitIndex,
                     line.getNmrRecipient() == null ? null : line.getNmrRecipient().getId(),
                     line.getNmrRecipient() == null ? null : line.getNmrRecipient().getDisplayName(),
-                    line.getNmrMovement() == null ? null : line.getNmrMovement().name(), line.getNmrEvidenceReference()));
+                    line.getNmrMovement() == null ? null : line.getNmrMovement().name(), line.getNmrEvidenceReference(),
+                    MerchantSettlementFacts.view(line, splits)));
         }
         Counterparty payee = txn.getPayee();
         Account bankAccount = txn.getBankAccount();
@@ -1035,6 +1037,7 @@ public class TransactionEntryService
     {
         return "id=" + txn.getId() + ",date=" + txn.getTxnDate() + ",status=" + txn.getStatus()
                 + ",memo=" + (txn.getMemo() == null ? "" : txn.getMemo()) + ",payments=" + PaymentReferences.snapshot(em, txn)
+                + ",merchantReceivables=" + MerchantSettlementFacts.snapshot(em, txn)
                 + ",nmrItems=" + SupplementalIntegrityService.nmrSnapshot(em, txn);
     }
 

@@ -273,6 +273,119 @@ class JournalPaymentReferencesTest
         });
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    void merchantFactsUseSharedJournalSavePreservePrecisionAndExposeRealScrolling() throws Exception
+    {
+        var session = MainWindow.sharedSessionState();
+        org.nonprofitbookkeeping.service.MerchantSettlementTestFixture merchant;
+        long transaction;
+        try (var jpa = new org.nonprofitbookkeeping.persistence.Jpa(Path.of(session.databaseSelection().activeDatabasePath())))
+        {
+            merchant = org.nonprofitbookkeeping.service.MerchantSettlementTestFixture.seed(jpa);
+            var entry = merchant.nmr().base().entry(jpa);
+            entry.enter(merchant.receipt());
+            transaction = entry.enter(merchant.payout(null)).id();
+        }
+        FxTestSupport.onFx(() ->
+        {
+            session.setMultiCompany(new MultiCompanyState("NMR_DETAIL", List.of("DEFAULT", "NMR_DETAIL")));
+            var now = java.time.Instant.now();
+            session.setAuthenticatedUser(new AuthenticatedUserSession(9001L, "operator", "Operator", "NMR_DETAIL",
+                    java.util.Set.of(org.nonprofitbookkeeping.service.ReservedSecurityRole.ACCOUNTANT), now, now));
+            panel = new JournalWorkspaceCompliancePanel();
+            stage = new Stage(); stage.setScene(new Scene(new VBox(panel.root()), 950, 700)); stage.show();
+            DrillThroughCoordinator.openTransactionEditorWithContext("Edit transaction Txn #" + transaction);
+            panel.onPanelShown(); return null;
+        });
+        await(() ->
+        {
+            var details = (TableView<?>)panel.root().lookup("#journalWorkspaceSupplementalRECEIVABLETable");
+            return details != null && details.getItems().size() == 1;
+        });
+        FxTestSupport.onFx(() ->
+        {
+            var tabs = (TabPane)panel.root().lookup("#journalSupplementalTabs");
+            tabs.getSelectionModel().select(tabs.getTabs().stream().filter(t -> t.getText().equals("Receivables")).findFirst().orElseThrow());
+            stage.getScene().getRoot().applyCss(); stage.getScene().getRoot().layout();
+            var details = (TableView<JournalWorkspacePanel.SupplementalRow>)panel.root().lookup("#journalWorkspaceSupplementalRECEIVABLETable");
+            var column = (TableColumn<JournalWorkspacePanel.SupplementalRow, String>)details.getColumns().stream().filter(c -> "Merchant role".equals(c.getText())).findFirst().orElseThrow();
+            details.scrollToColumn(column); details.applyCss(); details.layout(); details.edit(0, column);
+            var cell = details.lookupAll(".table-cell").stream().map(TableCell.class::cast)
+                    .filter(c -> c.getIndex() == 0 && c.getTableColumn() == column).findFirst().orElseThrow();
+            assertTrue(cell.isEditing()); ((ComboBox<String>)cell.getGraphic()).getSelectionModel().select("SETTLEMENT");
+            editMerchantText(details, "Observed withholding", "30.1234");
+            editMerchantText(details, "Observation / settlement evidence", "processor/observed/001");
+            editMerchantText(details, "Payout lines", "1"); editMerchantText(details, "Fee lines", "2");
+            assertTrue(panel.hasUnsavedChanges()); button("journalWorkspaceSaveButton").fire(); return null;
+        });
+        await(() -> !panel.hasUnsavedChanges());
+        var facts = UiServiceRegistry.transactionEntry().load(transaction).supplementalLines().get(0).merchantSettlement();
+        assertNotNull(facts); assertEquals("SETTLEMENT", facts.role()); assertEquals("30.1234", facts.withheldUnconfirmed().toPlainString()); assertEquals(2, facts.components().size());
+        FxTestSupport.onFx(() ->
+        {
+            var details = (TableView<JournalWorkspacePanel.SupplementalRow>)panel.root().lookup("#journalWorkspaceSupplementalRECEIVABLETable");
+            editMerchantText(details, "Observation / settlement evidence", "processor/observed/002");
+            assertTrue(panel.hasUnsavedChanges(), "Evidence-only commits protect the shared draft");
+            panel.onSave(); return null;
+        });
+        await(() -> !panel.hasUnsavedChanges());
+        facts = UiServiceRegistry.transactionEntry().load(transaction).supplementalLines().get(0).merchantSettlement();
+        assertEquals("30.1234", facts.withheldUnconfirmed().toPlainString(), "Display formatting must not round unchanged stored precision");
+        assertEquals("processor/observed/002", facts.evidenceReference());
+        FxTestSupport.onFx(() ->
+        {
+            var details = (TableView<JournalWorkspacePanel.SupplementalRow>)panel.root().lookup("#journalWorkspaceSupplementalRECEIVABLETable");
+            editMerchantText(details, "Observed withholding", ""); panel.onSave(); return null;
+        });
+        await(() -> !panel.hasUnsavedChanges());
+        assertNull(UiServiceRegistry.transactionEntry().load(transaction).supplementalLines().get(0).merchantSettlement().withheldUnconfirmed(), "Blank remains unknown rather than an invented zero");
+        FxTestSupport.onFx(() ->
+        {
+            var details = (TableView<JournalWorkspacePanel.SupplementalRow>)panel.root().lookup("#journalWorkspaceSupplementalRECEIVABLETable");
+            for (int index = 0; index < 60; index++) details.getItems().add(new JournalWorkspacePanel.SupplementalRow());
+            panel.root().setStyle("-fx-font-size: 20px;");
+            ((ScrollPane)panel.root().lookup("#journalWorkspaceEditorScroll")).setVvalue(1);
+            ((SplitPane)panel.root().lookup("#journalWorkspaceEditorSplit")).setDividerPositions(0.12, 0.30);
+            ((SplitPane)panel.root().lookup("#journalWorkspaceDetailSplit")).setDividerPositions(0.65);
+            var split = (SplitPane)panel.root().lookup("#journalMerchantDetailSplit"); split.setDividerPositions(0.3);
+            stage.getScene().getRoot().applyCss(); stage.getScene().getRoot().layout();
+            assertEquals(1, split.getDividers().size()); double before = details.getHeight();
+            split.setDividerPositions(0.55); stage.getScene().getRoot().layout(); assertTrue(details.getHeight() < before);
+            assertEquals(0, details.getMinWidth()); assertEquals(0, details.getMinHeight()); return null;
+        });
+        await(() ->
+        {
+            var details = (TableView<?>)panel.root().lookup("#journalWorkspaceSupplementalRECEIVABLETable"); details.applyCss(); details.layout();
+            return details.lookupAll(".scroll-bar").stream().map(ScrollBar.class::cast).filter(ScrollBar::isVisible).count() >= 2;
+        });
+        FxTestSupport.onFx(() ->
+        {
+            var details = (TableView<?>)panel.root().lookup("#journalWorkspaceSupplementalRECEIVABLETable");
+            for (var orientation : javafx.geometry.Orientation.values())
+            {
+                assertTrue(details.lookupAll(".scroll-bar").stream().map(ScrollBar.class::cast).anyMatch(bar -> bar.getOrientation() == orientation && bar.isVisible()));
+            }
+            var controls = (ScrollPane)panel.root().lookup("#journalMerchantDetailControlsScroll");
+            assertEquals(ScrollPane.ScrollBarPolicy.AS_NEEDED, controls.getHbarPolicy()); assertEquals(ScrollPane.ScrollBarPolicy.AS_NEEDED, controls.getVbarPolicy());
+            assertTrue(controls.getContent().getBoundsInLocal().getWidth() > controls.getViewportBounds().getWidth());
+            assertTrue(controls.getContent().getBoundsInLocal().getHeight() > controls.getViewportBounds().getHeight());
+            var now = java.time.Instant.now();
+            session.setAuthenticatedUser(new AuthenticatedUserSession(9001L, "operator", "Operator", "NMR_DETAIL",
+                    java.util.Set.of(org.nonprofitbookkeeping.service.ReservedSecurityRole.VIEWER), now, now));
+            assertTrue(button("journalWorkspaceSaveButton").isDisabled()); return null;
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void editMerchantText(TableView<JournalWorkspacePanel.SupplementalRow> table, String title, String value)
+    {
+        var column = (TableColumn<JournalWorkspacePanel.SupplementalRow, String>)table.getColumns().stream().filter(c -> title.equals(c.getText())).findFirst().orElseThrow();
+        table.scrollToColumn(column); table.applyCss(); table.layout(); table.edit(0, column);
+        var cell = table.lookupAll(".table-cell").stream().map(TableCell.class::cast).filter(c -> c.getIndex() == 0 && c.getTableColumn() == column).findFirst().orElseThrow();
+        assertTrue(cell.isEditing()); var editor = (TextField)cell.getGraphic(); editor.setText(value); editor.fireEvent(new javafx.event.ActionEvent());
+    }
+
     @SuppressWarnings("unchecked")
     private static void editNmrEvidence(TableView<JournalWorkspacePanel.SupplementalRow> table, String value)
     {

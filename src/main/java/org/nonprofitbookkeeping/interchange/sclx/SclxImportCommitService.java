@@ -1256,7 +1256,8 @@ public final class SclxImportCommitService
                             detail.lifecycle() == null ? null : postingLineIds.indexOf(detail.lifecycle().lineId()),
                             detail.nmrRecipientId() == null ? null
                                     : required(counterparties, detail.nmrRecipientId(), "NMR recipient").getId(),
-                            detail.nmrMovement(), detail.nmrEvidenceReference()))
+                            detail.nmrMovement(), detail.nmrEvidenceReference(),
+                            detail.merchantSettlement() == null ? null : detail.merchantSettlement().command(postingLineIds)))
                     .toList();
             TransactionCommand command = new TransactionCommand(
                     LocalDate.parse(text(value, "transactionDate")),

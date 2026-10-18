@@ -1,6 +1,6 @@
 # P25-S4G — NMR settlement attribution and period movements
 
-Status: VERIFYING in draft [MR #374](https://github.com/benbaron/sca-jakarta-h2/pull/374); local full/focused/JavaFX and exact published-head CI gates passed. Owner review/merge remain. Extends [S4F](P25-S4F-nmr-item-detail.md) under the [accepted accounting contract](P25-S4A-nmr-contract-proposal.md).
+Status: DONE through merged [MR #374](https://github.com/benbaron/sca-jakarta-h2/pull/374) at `fb37feba`; local full/focused/JavaFX and exact published-head CI gates passed. No additional desktop result is inferred. Extends [S4F](P25-S4F-nmr-item-detail.md) under the [accepted accounting contract](P25-S4A-nmr-contract-proposal.md).
 
 ## Bounded scope
 

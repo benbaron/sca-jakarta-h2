@@ -172,6 +172,7 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
         installDividerState(editor, "editor");
         installDividerState(findById(workspaceRoot, "journalTaggingSplit", SplitPane.class), "tagging");
         installDividerState(findById(workspaceRoot, "journalNmrDetailSplit", SplitPane.class), "nmrDetail");
+        installDividerState(findById(workspaceRoot, "journalMerchantDetailSplit", SplitPane.class), "merchantDetail");
         SplitPane detail = findById(workspaceRoot, "journalWorkspaceDetailSplit", SplitPane.class);
         if (detail != null)
         {
@@ -258,7 +259,11 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
             }
             else if (tableId.startsWith("journalWorkspaceSupplemental"))
             {
-                if ("amount".equals(key))
+                if ("merchantWithheld".equals(key))
+                {
+                    column.setCellFactory(ignored -> new MoneyEditCell(format, true));
+                }
+                else if ("amount".equals(key))
                 {
                     column.setCellFactory(ignored -> new MoneyEditCell(format));
                 }
@@ -628,9 +633,17 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
         private final CompanyUiFormat format;
         private TextField editor;
 
+        private final boolean optionalExact;
+
         private MoneyEditCell(CompanyUiFormat format)
         {
+            this(format, false);
+        }
+
+        private MoneyEditCell(CompanyUiFormat format, boolean optionalExact)
+        {
             this.format = format;
+            this.optionalExact = optionalExact;
         }
 
         @Override
@@ -652,7 +665,7 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
                     }
                 });
             }
-            editor.setText(display(getItem()));
+            editor.setText(optionalExact ? safe(getItem()) : display(getItem()));
             setText(null);
             setGraphic(editor);
             editor.selectAll();
@@ -670,7 +683,7 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
             }
             else if (isEditing() && editor != null)
             {
-                editor.setText(display(item));
+                editor.setText(optionalExact ? safe(item) : display(item));
                 setText(null);
                 setGraphic(editor);
             }
@@ -683,6 +696,10 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
 
         private String display(String value)
         {
+            if (optionalExact && safe(value).isBlank())
+            {
+                return "";
+            }
             BigDecimal amount = format.parseMoney(value);
             return amount == null ? safe(value) : format.formatMoney(amount);
         }
@@ -693,10 +710,15 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
             {
                 return;
             }
+            if (optionalExact && editor.getText().isBlank())
+            {
+                commitValue("");
+                return;
+            }
             BigDecimal amount = format.parseMoney(editor.getText());
             String value = amount == null
                     ? editor.getText().trim()
-                    : amount.setScale(2, RoundingMode.HALF_UP).toPlainString();
+                    : optionalExact ? amount.toPlainString() : amount.setScale(2, RoundingMode.HALF_UP).toPlainString();
             commitValue(value);
         }
 

@@ -139,8 +139,14 @@ public final class SclxImportPreviewService
         JsonNode identityRoot = document.root();
         try
         {
-            identityRoot = SclxNmrItemMetadata.identityDocument(SclxTransactionNmrExtension.identityDocument(
-                    SclxPaymentReferences.identityDocument(SclxTransactionBudgetExtension.identityDocument(document.root()))));
+            identityRoot = SclxMerchantSettlementMetadata.identityDocument(SclxNmrItemMetadata.identityDocument(SclxTransactionNmrExtension.identityDocument(
+                    SclxPaymentReferences.identityDocument(SclxTransactionBudgetExtension.identityDocument(document.root())))));
+            long merchantFacts = document.root().path("extensions").path("scaJakartaH2").path("supplementalDetails").findValues("merchantSettlement").size();
+            if (merchantFacts > 0)
+            {
+                messages.add(message(InterchangeMessageSeverity.INFO, "SCLX_MERCHANT_SETTLEMENT_FACTS", "extensions.scaJakartaH2.supplementalDetails",
+                        merchantFacts + " explicit merchant receivable allocation(s), with canonical component links and nonfinancial observations.", false));
+            }
             long nmrItems = document.root().path("extensions").path("scaJakartaH2").path("supplementalDetails")
                     .findValues("nmr").size();
             if (nmrItems > 0)
