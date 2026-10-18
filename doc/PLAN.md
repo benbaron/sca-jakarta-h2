@@ -5,8 +5,8 @@ active_slice: P25-S4F
 active_status: VERIFYING
 active_branch: codex/P25-S4F-nmr-item-detail
 active_pull_request: 373
-active_head: 2e401a02da5909cbe62004d393698f07b4cfe3e7
-next_action: "Finish the reproduced inherited-reversal edit guard, publish the reviewed successor to draft MR #373 and rerun full local clean verify plus exact-head clean/repeat/Xvfb CI before owner acceptance/merge."
+active_head: 1a353fdc54cb815008b5df59527a1d89b9e8d77b
+next_action: "Owner reviews/accepts/merges draft MR #373; corrected full local verification and exact-head clean/repeat/Xvfb CI passed. After confirmed merge, carry local evidence onto fresh main and select explicit merchant/branch settlement evidence and period movement presentation; no policy inputs are required."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -1743,3 +1743,26 @@ The previously recorded 935-test local full pass and CI run certify the precedin
 
 
 The inherited-reversal guard and regression passed the focused release gate: **38 tests, zero failures/errors/skips**, BUILD SUCCESS at 2026-10-17 16:15:32 UTC (`/workspace/work/p25-s4f-reversal-guard-focused.log`), including existing entry/correction/integrity/cutoff tests and NMR interchange. Publish this five-file successor with the same expected-head/tree safeguards, then rerun full local and exact-head CI; all initial slice source and schema remain unchanged beyond this directly blocking guard.
+
+
+### P25-S4F correction-guard successor publication
+
+Published reviewed local `5ceab134f84e9d39a86c5a06be84eeb534cee1cf` as `1a353fdc54cb815008b5df59527a1d89b9e8d77b`, matching tree `659714dce7e3fc16ce771cae77d7bdd66ad7f7e8`. All five blobs/tree matched; commit message/order preserved; branch advanced only expected prior head `2e401a02da5909cbe62004d393698f07b4cfe3e7` with force disabled. MR #373 remains draft/open/unmerged at the confirmed successor, verified through PR metadata and native fetch/content equality. Its description explicitly distinguishes the preceding full pass from pending successor gates. Full local clean verify is running in `/workspace/work/p25-s4f-final-clean-verify.log`; exact-head GitHub checks must pass before final handoff. The earlier run is superseded, not evidence for this successor. No further source changes are planned absent a failed check.
+
+
+### P25-S4F corrected final local verification
+
+Fresh full local offline `mvn clean verify` passed **936 tests, zero failures/errors, 57 display-related skips**, BUILD SUCCESS at 2026-10-17 16:19:56 UTC, elapsed 3:05 (`/workspace/work/p25-s4f-final-clean-verify.log`). This gate includes the reproduced reversal-edit guard and supported reverse-of-reversal regression. Final source/schema/test bytes equal local `5ceab134f84e9d39a86c5a06be84eeb534cee1cf` / published `1a353fdc54cb815008b5df59527a1d89b9e8d77b`, matching tree `659714dce7e3fc16ce771cae77d7bdd66ad7f7e8`. The Maven helper restored the tracked manifest. No failure remains in executed local final gates; subsequent changes are local verification documentation only.
+
+Actual current-head GitHub [run 39048718804](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39048718804), job `117442627734`, is running the clean/repeat/expanded-Xvfb gate. The preceding head's run `39047889348` ultimately passed every stage, but it does not certify the guard successor. The MR description now records the corrected 936-test local pass and pending current-head CI explicitly. Remain VERIFYING pending that result and owner review/acceptance/merge; no new human desktop acceptance is inferred.
+
+
+### P25-S4F final-head CI and committed handoff — 2026-10-17 (UTC)
+
+Final published head `1a353fdc54cb815008b5df59527a1d89b9e8d77b` passed [Maven PR Tests run 39048718804](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39048718804), job `117442627734`. Fresh direct run metadata confirms that exact head, PR #373, completed/success; fresh job and step reads confirm clean headless verification, repeat tests, complete expanded production JavaFX/Xvfb and every setup/cleanup step succeeded. MR description records actual final results and the reversal-edit prerequisite, with local full **936 tests / zero failures/errors / 57 display skips**, focused 38 tests, prior broader 73-test and 11-test JavaFX gates, and the dedicated real Journal Save/geometry Xvfb test. No source/test/schema changes follow these successful gates.
+
+Status remains VERIFYING, not DONE. Draft MR #373 is open/unmerged and mergeable at the confirmed head; owner review, native checks/acceptance and merge remain. Local `codex/P25-S4F-nmr-item-detail` carries this local-only PLAN/S4F verification ledger after implementation parent `5ceab134f84e9d39a86c5a06be84eeb534cee1cf`; `git rev-parse HEAD` identifies the complete committed handoff tip. The successful published head is not replaced solely for this ledger. All three publication mappings/trees are recorded above and in scratch; final application/test/schema bytes equal the published head. Seven governing documents / 118 relative links, intended diff and whitespace checks passed. Tracked build artifacts, scratch assets and private reference rows remain excluded. No known failure remains in executed final checks; no new human desktop acceptance is invented.
+
+Completed: confirmed S4E merge and preserved its verification ledger; explicit stable recipient/item/event designation on existing supplemental allocations; canonical balance/correction/ownership/permission/audit protection and nondestructive V82; real shared Journal Save/dirty/reload with remembered scrolling/divider geometry; cutoff NMR detail and conservative GL coverage/export/drill-through; strict deterministic SCLX addressing/conflicts/retry/rollback; reproduced and fixed lifecycle inverse Event mismatch and inherited Journal rewrite protection; final full local and exact-head GitHub verification.
+
+Remaining parent S4 scope: explicit merchant versus branch discharge/evidence attribution, unconfirmed withholding versus actual settlement, period movement presentation and their portability/reporting acceptance. Next exact action after owner-confirmed merge: start a fresh branch from current main, carry this local ledger forward, inspect canonical payment/merchant receivable and supplemental item/reference authorities, and select that bounded settlement-evidence slice. Preserve explicit entered amounts and existing single-ledger/item balances; do not ask for external operating policies or a saved policy prerequisite. P25-S3 acceptance remains passed. Do not activate S5 or claim full P25-S4 complete from this bounded detail slice.

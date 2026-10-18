@@ -1,6 +1,6 @@
 # P25-S4F — Explicit NMR item detail and liability tie-out
 
-Status: VERIFYING; local implementation and focused/JavaFX checks passed, full/CI/owner merge gates remain. Governing scope: [accepted S4A](P25-S4A-nmr-contract-proposal.md).
+Status: VERIFYING; implementation, focused/JavaFX checks and corrected full local verification passed. Exact published-head clean/repeat/expanded-Xvfb CI also passed; owner review/native acceptance/merge remain. Governing scope: [accepted S4A](P25-S4A-nmr-contract-proposal.md).
 
 Add an optional stable company-owned NMR recipient to existing OTHER_LIABILITY supplemental allocations. Choosing a recipient explicitly designates that item as NMR; empty means classification unknown, not an inferred non-NMR obligation. Existing narrative counterparty text remains narrative. Account, fund and event come from the exact linked canonical line; an NMR allocation requires a credit-normal liability account and an event and consistent recipient/account/fund/event across its stable item. Do not require or evaluate policy records. Preserve inactive historical references.
 
@@ -36,3 +36,9 @@ Other Liabilities controls/help and table have a real remembered vertical divide
 
 
 Final-review prerequisite: Journal cannot rewrite a canonical reversal whose supplemental items are inherited from its source. Rewriting can otherwise add a duplicate item effect or detach the liability line. The entry service rejects before mutating anything. Use the existing correction workflow to reverse that reversal, then enter corrected accounting; cutoff history remains intact. The regression reproduces the former acceptance and covers both rejected rewrite shapes and a supported reverse-of-reversal. PLAN distinguishes prior-head verification from the required successor checks.
+
+
+Final local gate after the reversal-edit prerequisite passed 936 tests, zero failures/errors, 57 display-related skips. Dedicated real JavaFX Save/overflow validation passed separately under Xvfb. PLAN records exact local/published commit/tree mapping and subsequent CI evidence; no native human acceptance is claimed.
+
+
+Final published head `1a353fdc54cb815008b5df59527a1d89b9e8d77b` passed [Maven PR Tests run 39048718804](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39048718804), including clean verification, repeat tests and expanded JavaFX/Xvfb. MR #373 remains draft/open/unmerged. This local-only verification update follows the passed published head without restarting CI; PLAN records the complete handoff and next slice.
