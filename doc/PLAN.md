@@ -1,12 +1,12 @@
 ---
-plan_version: 385
+plan_version: 386
 active_phase: P26
 active_slice: P26-S2
 active_status: VERIFYING
 active_branch: codex/P26-S2-property-custody
-active_pull_request: null
-active_head: db208e1b5889c2fbe9aa9ee2754718e3881c95cf
-next_action: "Publish the reviewed P26-S2 implementation as a draft MR, verify the final remote tree, and require exact-head JDK 17 CI before owner review/merge."
+active_pull_request: "https://github.com/benbaron/sca-jakarta-h2/pull/380"
+active_head: 1d049d22
+next_action: "Publish this documentation-only successor, verify the final PR #380 remote tree, and require exact-head JDK 17 CI before owner review/merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2037,3 +2037,7 @@ Pre-edit offline compile passed at **2026-10-18 21:05:59 America/Denver**. Thirt
 Implemented the [adopted contract](P26-S2-property-custody.md) as one vertical slice. Migration V87 and the canonical service add append-only custody events for existing fixed assets and inventory items, explicit capitalized-inventory versus zero-value expensed-supply treatment, derived current/overdue state, latest-event corrections, and source-backed removals without posting accounting. The production Property Custody destination exposes New, Correct Selected, Refresh, and Save Custody Event with live role gating, dirty protection, persisted table/divider state, company date formatting, and reachable scrolling. Report Library, strict optional SCLX v1 portability, portable identity/retry behavior, and the operation matrix cover the same facts.
 
 Final-source focused service/accounting/SCLX verification passed **20 tests**, zero failures/errors/skips. SCLX round-trip coverage includes expensed treatment, a correction chain, restart, identical retry, and an empty target ledger. Offline `mvn clean verify` passed at **2026-10-18 21:36:07 America/Denver**: **1,005 tests**, zero failures/errors, **63 headless skips**. The actual `PropertyCustodyPanelTest` then passed under Xvfb at **21:36:54**: **1 test**, zero failures/errors/skips. Changed-tree whitespace review is clean. P26-S2 remains VERIFYING until the draft MR is published, its final remote tree is matched, exact-head CI passes, and the owner reviews/merges it. No human disposable-company acceptance result is inferred from automated tests.
+
+### P26-S2 draft publication — 2026-10-18 (America/Denver)
+
+Published branch `codex/P26-S2-property-custody` and opened draft [PR #380](https://github.com/benbaron/sca-jakarta-h2/pull/380) targeting `main`. The PR records the bounded accounting boundary, delivered custody/UI/report/SCLX behavior, local clean/focused/actual-JavaFX evidence, and remaining owner checks. This documentation-only publication successor follows the same authorization; `active_head` identifies its known remote parent because the successor cannot embed its own SHA. Verify the final branch and PR tip/tree and require the workflow for that exact head to pass. No GitHub CI result is claimed at this checkpoint, and P26-S2 stays VERIFYING pending owner review/merge.
