@@ -1,12 +1,12 @@
 ---
-plan_version: 381
+plan_version: 382
 active_phase: P26
 active_slice: P26-S1
 active_status: VERIFYING
 active_branch: codex/P26-S1-asset-acquisitions
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/379
-active_head: c4465cadc792a4a362d95c4b295245badd14de37
-next_action: "Verify exact-head JDK 17 clean/repeat/expanded JavaFX CI for draft MR #379, update the MR with actual results, then record owner review/merge before selecting P26-S2."
+active_head: b66e0ce17c2acc31ee73c17c41341475bd0bde9f
+next_action: "Owner reviews and merges draft MR #379 after the documented disposable-company checks; then verify current main and select P26-S2 on a fresh branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2009,3 +2009,11 @@ Reviewed migration/model/service/canonical-entry/correction/account-classificati
 Draft [MR #379](https://github.com/benbaron/sca-jakarta-h2/pull/379) targets current main `70462b49015916bc0179143f0bc1bdd532b6e20e`. A normal non-force native push created fresh branch `codex/P26-S1-asset-acquisitions` with the carried P25 evidence, implementation and local-verification commits. Remote head `c4465cadc792a4a362d95c4b295245badd14de37` and tree `6f30c73423f786d28568038cb2d074a6c5e7ec83` were fetched; both exactly match local, and the diff is empty. Live MR metadata confirms draft/open/unmerged, base/head, 3 commits and 37 intended changed files. The MR body records actual local results, bounded later-slice exclusions and owner checks. Exact-head Maven PR Tests is pending.
 
 This publication record is the only post-tested documentation change. Publish it normally, verify the resulting final remote head/tree, and use that exact head for CI. Do not advance P26-S2 from draft publication or automated validation alone.
+
+### P26-S1 exact-head CI and handoff — 2026-10-18 (America/Denver)
+
+The first exact-head run and its failed-job rerun passed clean headless verification and repeat tests but failed the production JavaFX stage. The connected raw-log endpoint closed and the local CLI token could not read Actions logs, so the workflow now publishes failure-only Surefire reports for durable diagnosis. The report identified `AssetAcquisitionPanelTest`: its post-save predicate depended on a transient button-render state, then its focus/precision check exposed the acquisition confirmation as an ownerless dialog under Xvfb. The test now waits on the panel's public command-capability busy contract, and the confirmation is owned by the Assets Register window so focus returns deterministically. The focused actual class passed three consecutive runs after each correction. The repaired complete local Xvfb selector passed **55 tests, zero failures/errors/skips**, BUILD SUCCESS at **2026-10-18 19:25:17 America/Denver** (elapsed 3:40).
+
+Final exact published-head JDK 17 [Maven PR Tests run 39189292452](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39189292452), job `117858319494`, completed **success at 2026-10-18 20:28:22 America/Denver** for `b66e0ce17c2acc31ee73c17c41341475bd0bde9f`. Independent job-step metadata confirms clean headless verification, repeat tests, production JavaFX and cleanup all passed; the failure-only report step correctly skipped. Draft MR #379 remains open, unmerged, mergeable and draft at this exact head, and its description records the final local/CI evidence and owner checks. No executed gate has a remaining failure.
+
+This final PLAN evidence stays local to preserve the green published head. P26-S1 remains VERIFYING until owner review/merge and documented disposable-company checks; no human per-check result is inferred from automated execution. P26-S2 remains unselected. After merge confirmation, fetch and verify current main, carry this evidence onto a fresh branch, and select P26-S2 without reusing the merged branch.
