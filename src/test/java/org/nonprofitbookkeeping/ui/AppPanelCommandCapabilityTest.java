@@ -56,7 +56,7 @@ class AppPanelCommandCapabilityTest
     }
 
     @Test
-    void everyProductionDestinationHasAnExplicitCapabilityContract()
+    void everyProductionDestinationHasAnExplicitCapabilityContract() throws Exception
     {
         Map<AppPanelId, Set<AppCommand>> expected = new EnumMap<>(AppPanelId.class);
         expected.put(AppPanelId.DASHBOARD, Set.of(AppCommand.NEW_ACTIVE));
@@ -87,16 +87,21 @@ class AppPanelCommandCapabilityTest
         expected.put(AppPanelId.DIAGNOSTICS, Set.of());
         expected.put(AppPanelId.HELP, Set.of());
 
-        FxTestSupport.onFx(() ->
+        PanelHost host = FxTestSupport.onFx(PanelHost::new);
+        for (var entry : expected.entrySet())
         {
-            PanelHost host = new PanelHost();
-            expected.forEach((id, commands) ->
+            FxTestSupport.onFx(() -> { host.show(entry.getKey()); return null; });
+            if (entry.getKey() == AppPanelId.ASSETS_REGISTER)
             {
-                host.show(id);
-                assertEquals(commands, host.activeCommandCapabilities(), id.name());
-            });
-            return null;
-        });
+                // This editor disables shared commands while its initial asynchronous load is in flight.
+                long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(10);
+                while (System.nanoTime() < deadline && FxTestSupport.onFx(() -> host.activeCommandCapabilities().isEmpty()))
+                {
+                    Thread.sleep(30);
+                }
+            }
+            FxTestSupport.onFx(() -> { assertEquals(entry.getValue(), host.activeCommandCapabilities(), entry.getKey().name()); return null; });
+        }
     }
 
     @Test

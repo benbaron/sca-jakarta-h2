@@ -198,3 +198,7 @@ All six supplemental reports expose control-account ledger balance, explained ba
 A report is COMPLETE only when control coverage reconciles and every item is authoritative and nonnegative. Otherwise it is NOT READY. This is supplemental readiness; the broader P27 close-readiness workflow is separate. CSV exports retain existing item columns and append reconciliation fields and ITEM/CONTROL/GAP record types. Text and table views show the same reconciliation. Item row limits do not truncate readiness evaluation or control/gap diagnostics.
 
 Select a transaction gap and choose **Open Selected in Journal**, or double-click it, to open the canonical transaction by stable ID. Summary rows have no repair action. The table scrolls in both directions and has a draggable header/table divider. Repairs remain subject to Journal correction and closed-period rules. Opening balances require reviewed opening-balance conversion; the report does not fabricate transactions or item links.
+
+## P26-S1 acquisition controls
+
+Asset Register now exposes acquisition source, Journal transaction and full source debit/claimed/remaining controls from canonical splits and register costs. Existing Fixed Asset Register report remains the as-of domain/GL reconciliation authority; a newly acquired asset's cost and canonical debit tie exactly, while explicit register-only/legacy openings may retain explained differences. S1 does not change workbook/form mappings or invent an opening GL balance. See [S1](../P26-S1-asset-acquisitions.md).

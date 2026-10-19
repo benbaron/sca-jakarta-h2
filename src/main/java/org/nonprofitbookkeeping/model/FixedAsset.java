@@ -69,6 +69,14 @@ public class FixedAsset
     @JoinColumn(name = "fund_id", nullable = false)
     private Fund fund;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "acquisition_source", length = 24)
+    private AssetAcquisitionSource acquisitionSource;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "acquisition_split_id")
+    private TxnSplit acquisitionSplit;
+
     @Column(nullable = false, length = 200)
     private String name;
 
@@ -117,6 +125,10 @@ public class FixedAsset
     public void setDepreciationExpenseAccount(Account depreciationExpenseAccount) { this.depreciationExpenseAccount = depreciationExpenseAccount; }
     public Fund getFund() { return fund; }
     public void setFund(Fund fund) { this.fund = fund; }
+    public AssetAcquisitionSource getAcquisitionSource() { return acquisitionSource; }
+    public void setAcquisitionSource(AssetAcquisitionSource source) { acquisitionSource = source; }
+    public TxnSplit getAcquisitionSplit() { return acquisitionSplit; }
+    public void setAcquisitionSplit(TxnSplit split) { acquisitionSplit = split; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     public LocalDate getAcquisitionDate() { return acquisitionDate; }

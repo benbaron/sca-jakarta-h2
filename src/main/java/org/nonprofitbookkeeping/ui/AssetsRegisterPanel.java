@@ -21,7 +21,6 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
@@ -38,6 +37,11 @@ import org.nonprofitbookkeeping.service.FixedAssetCommand;
 import org.nonprofitbookkeeping.service.FixedAssetLifecycleEventView;
 import org.nonprofitbookkeeping.service.FixedAssetService;
 import org.nonprofitbookkeeping.service.FixedAssetView;
+import org.nonprofitbookkeeping.service.AssetAcquisitionCommand;
+import org.nonprofitbookkeeping.service.AssetAcquisitionPreview;
+import org.nonprofitbookkeeping.service.AssetAcquisitionCandidate;
+import org.nonprofitbookkeeping.model.AssetAcquisitionSource;
+import org.nonprofitbookkeeping.model.AccountClassification;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -69,6 +73,18 @@ public class AssetsRegisterPanel implements AppPanel
     private final Label status = new Label();
     private final BooleanProperty busy = new SimpleBooleanProperty(false);
     private final CompanyUiFormat companyFormat = CompanyUiFormat.activeCompany();
+    private final ComboBox<AssetAcquisitionSource> acquisitionSource = new ComboBox<>();
+    private final ComboBox<Account> acquisitionBank = new ComboBox<>();
+    private final ComboBox<AssetAcquisitionCandidate> acquisitionLine = new ComboBox<>();
+    private final Label acquisitionBankLabel = new Label("Purchase BANK account");
+    private final Label acquisitionLineLabel = new Label("Existing asset debit");
+    private final Label acquisitionSummary = new Label("Select an explicit acquisition route.");
+    private final Button unlinkAcquisition = new Button("Remove Acquisition Link...");
+    private final Button drillAcquisition = new Button("Open Acquisition in Journal");
+    private final java.util.Map<TextField, ExactMoneyInput> moneyInputs = new java.util.IdentityHashMap<>();
+    private java.util.UUID acquisitionRequest = java.util.UUID.randomUUID();
+    private FixedAssetView loadedAsset;
+    private Runnable capabilitiesChanged = () -> {};
     private final FormDirtyTracker dirtyState;
     private List<Account> postingAccounts = List.of();
     private Long selectedAssetId;
@@ -78,6 +94,27 @@ public class AssetsRegisterPanel implements AppPanel
     public AssetsRegisterPanel()
     {
         root.setPadding(new Insets(8));
+        root.setMinSize(0, 0);
+        status.setWrapText(true);
+        name.setId("assetName"); assetAccount.setId("assetAccount");
+        accumulatedDepreciationAccount.setId("assetAccumulatedAccount");
+        depreciationExpenseAccount.setId("assetExpenseAccount"); fund.setId("assetFund");
+        acquisitionDate.setId("assetAcquisitionDate"); acquisitionCost.setId("assetAcquisitionCost");
+        salvageValue.setId("assetSalvageValue"); openingAccumulatedDepreciation.setId("assetOpeningDepreciation");
+        acquisitionSource.setId("assetAcquisitionSource"); acquisitionBank.setId("assetAcquisitionBank");
+        acquisitionLine.setId("assetAcquisitionLine"); acquisitionSummary.setId("assetAcquisitionSummary");
+        acquisitionSummary.setWrapText(true); acquisitionSource.setPromptText("Select acquisition route");
+        table.setId("assetRegisterTable"); lifecycleTable.setId("assetLifecycleTable"); status.setId("assetRegisterStatus");
+        table.disableProperty().bind(busy); lifecycleTable.disableProperty().bind(busy);
+        for (TextField field : List.of(acquisitionCost, salvageValue, openingAccumulatedDepreciation))
+        {
+            moneyInputs.put(field, new ExactMoneyInput(field));
+        }
+        busy.addListener((obs, oldValue, newValue) ->
+        {
+            capabilitiesChanged.run();
+            updateAcquisitionControls();
+        });
         Label title = new Label("Asset Register");
         title.getStyleClass().add("panel-title");
 
@@ -85,10 +122,12 @@ public class AssetsRegisterPanel implements AppPanel
         refresh.disableProperty().bind(busy);
         refresh.setOnAction(e -> reloadWithDiscardProtection());
         Button newAsset = new Button("New Asset");
+        newAsset.setId("assetRegisterNew");
         newAsset.disableProperty().bind(
                 busy.or(UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE)));
         newAsset.setOnAction(e -> onNew());
         Button save = new Button("Save Asset");
+        save.setId("assetRegisterSave");
         save.disableProperty().bind(
                 busy.or(UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE)));
         save.setOnAction(e -> saveAsset());
@@ -118,11 +157,23 @@ public class AssetsRegisterPanel implements AppPanel
         drill.disableProperty().bind(
                 busy.or(lifecycleTable.getSelectionModel().selectedItemProperty().isNull()));
         drill.setOnAction(e -> drillSelectedLifecycleEvent());
+        unlinkAcquisition.setId("assetAcquisitionUnlink");
+        unlinkAcquisition.setOnAction(event -> removeAcquisitionLink());
+        UiPermissionGate.gate(unlinkAcquisition, ApplicationPermission.BOOKKEEPING_WRITE, "Remove acquisition link");
+        drillAcquisition.setId("assetAcquisitionJournal");
+        drillAcquisition.setOnAction(event -> openAcquisition());
         FlowPane actions = new FlowPane(
                 8, 6, refresh, newAsset, save, deactivateAsset, reactivateAsset,
-                lifecycle, reverse, drill);
+                lifecycle, reverse, drill, unlinkAcquisition, drillAcquisition);
 
-        root.setTop(new VBox(6, title, actions, status, new Separator()));
+        ScrollPane actionScroll = new ScrollPane(actions);
+        actionScroll.setId("assetRegisterActionsScroll");
+        actionScroll.setFitToWidth(true);
+        actionScroll.setPrefViewportHeight(68);
+        actionScroll.setMaxHeight(104);
+        actionScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        actionScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        root.setTop(new VBox(6, title, actionScroll, status, new Separator()));
         configureTable();
         configureLifecycleTable();
         configureChoices();
@@ -134,6 +185,8 @@ public class AssetsRegisterPanel implements AppPanel
         lifecycleRegion.setMinHeight(0.0);
         VBox.setVgrow(lifecycleTable, Priority.ALWAYS);
         SplitPane historySplit = new SplitPane(tableRegion, lifecycleRegion);
+        historySplit.setMinHeight(0);
+        table.setMinHeight(0); lifecycleTable.setMinHeight(0);
         historySplit.setOrientation(Orientation.VERTICAL);
         historySplit.setDividerPositions(0.62);
         historySplit.setId("assetRegisterHistorySplit");
@@ -158,9 +211,25 @@ public class AssetsRegisterPanel implements AppPanel
     private GridPane buildForm()
     {
         GridPane form = new GridPane();
+        form.setId("assetRegisterForm");
+        form.disableProperty().bind(busy.or(UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE)));
         form.setHgap(8);
         form.setVgap(6);
         int row = 0;
+        form.add(new Label("Acquisition route"), 0, row);
+        form.add(acquisitionSource, 1, row++);
+        form.add(acquisitionBankLabel, 0, row); form.add(acquisitionBank, 1, row++);
+        form.add(acquisitionLineLabel, 0, row); form.add(acquisitionLine, 1, row++);
+        form.add(acquisitionSummary, 0, row++, 2, 1);
+        Label acquisitionHelp = new Label("Save Asset / File Save accepts the register and acquisition together. For payable invoices, checks, or richer allocations, enter Journal first and Link existing entry. Opening / register only creates no accounting; legacy links are never guessed.");
+        acquisitionHelp.setWrapText(true);
+        form.add(acquisitionHelp, 0, row++, 2, 1);
+        GridPane.setHgrow(acquisitionSource, Priority.ALWAYS);
+        GridPane.setHgrow(acquisitionBank, Priority.ALWAYS);
+        GridPane.setHgrow(acquisitionLine, Priority.ALWAYS);
+        acquisitionSource.setMaxWidth(Double.MAX_VALUE); acquisitionSource.setMinWidth(0);
+        acquisitionBank.setMaxWidth(Double.MAX_VALUE); acquisitionBank.setMinWidth(0);
+        acquisitionLine.setMaxWidth(Double.MAX_VALUE); acquisitionLine.setMinWidth(0);
         form.add(new Label("Name"), 0, row);
         form.add(name, 1, row++);
         form.add(new Label("Asset account"), 0, row);
@@ -204,6 +273,9 @@ public class AssetsRegisterPanel implements AppPanel
         {
             GridPane.setHgrow(field, Priority.ALWAYS);
         }
+        // Keep field labels readable; the editor scrolls when their natural widths cannot fit.
+        form.getChildren().stream().filter(node -> node instanceof Label label && !label.isWrapText())
+                .map(node -> (Label)node).forEach(label -> label.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE));
         return form;
     }
 
@@ -211,18 +283,21 @@ public class AssetsRegisterPanel implements AppPanel
     {
         table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         table.setPlaceholder(new Label("No fixed assets have been recorded."));
-        addColumn("Name", "name", 180);
-        addColumn("Asset Account", "assetAccountCode", 120);
-        addColumn("Fund", "fundCode", 100);
-        addColumn("Acquired", "acquisitionDate", 110);
-        addColumn("Cost", "acquisitionCost", 110);
-        addColumn("Accum. Dep.", "accumulatedDepreciation", 110);
-        addColumn("Impairment", "accumulatedImpairment", 110);
-        addColumn("Book Value", "currentBookValue", 110);
-        addColumn("Next Dep.", "nextDepreciationAmount", 110);
-        addColumn("Status", "status", 100);
+        addColumn("Name", FixedAssetView::name, 180);
+        addColumn("Asset Account", FixedAssetView::assetAccountCode, 120);
+        addColumn("Fund", FixedAssetView::fundCode, 100);
+        addFormattedColumn("Acquired", FixedAssetView::acquisitionDate, companyFormat::formatDate, 110);
+        addFormattedColumn("Cost", FixedAssetView::acquisitionCost, companyFormat::formatMoney, 110);
+        addFormattedColumn("Accum. Dep.", FixedAssetView::accumulatedDepreciation, companyFormat::formatMoney, 110);
+        addFormattedColumn("Impairment", FixedAssetView::accumulatedImpairment, companyFormat::formatMoney, 110);
+        addFormattedColumn("Book Value", FixedAssetView::currentBookValue, companyFormat::formatMoney, 110);
+        addFormattedColumn("Next Dep.", FixedAssetView::nextDepreciationAmount, companyFormat::formatMoney, 110);
+        addColumn("Status", value -> value.status().name(), 100);
+        addAcquisitionColumn("Acquisition source", "acquisitionSource", value -> value.acquisition() == null ? "Legacy unlinked" : value.acquisition().label(), 260);
+        addAcquisitionColumn("Acquisition transaction", "acquisitionTransaction", value -> value.acquisition() == null || value.acquisition().transactionId() == null ? "" : "Txn #" + value.acquisition().transactionId(), 180);
+        addAcquisitionColumn("Source debit / claimed / remaining", "acquisitionControls", value -> value.acquisition() == null || value.acquisition().sourceDebit() == null ? "" : companyFormat.formatMoney(value.acquisition().sourceDebit()) + " / " + companyFormat.formatMoney(value.acquisition().claimed()) + " / " + companyFormat.formatMoney(value.acquisition().remaining()), 310);
         table.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) -> {
-            if (suppressSelection || selected == null)
+            if (busy.get() || suppressSelection || selected == null)
             {
                 return;
             }
@@ -271,15 +346,44 @@ public class AssetsRegisterPanel implements AppPanel
         lifecycleTable.getColumns().add(column);
     }
 
-    private void addColumn(String title, String property, double width)
+    private void addColumn(String title, Function<FixedAssetView, String> value, double width)
     {
         TableColumn<FixedAssetView, String> column = new TableColumn<>(title);
-        column.setCellValueFactory(new PropertyValueFactory<>(property));
+        column.setCellValueFactory(cell -> new SimpleStringProperty(value.apply(cell.getValue())));
         column.setPrefWidth(width);
         column.setMinWidth(72);
         column.setSortable(true);
         column.setResizable(true);
         column.setReorderable(true);
+        table.getColumns().add(column);
+    }
+
+    private <T extends Comparable<? super T>> void addFormattedColumn(String title,
+            Function<FixedAssetView, T> value, Function<T, String> display, double width)
+    {
+        TableColumn<FixedAssetView, T> column = new TableColumn<>(title);
+        column.setCellValueFactory(cell -> new javafx.beans.property.ReadOnlyObjectWrapper<>(value.apply(cell.getValue())));
+        column.setCellFactory(ignored -> new javafx.scene.control.TableCell<>()
+        {
+            @Override
+            protected void updateItem(T item, boolean empty)
+            {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : display.apply(item));
+            }
+        });
+        column.setPrefWidth(width); column.setMinWidth(72);
+        column.setSortable(true); column.setResizable(true); column.setReorderable(true);
+        table.getColumns().add(column);
+    }
+
+    private void addAcquisitionColumn(String title, String id, Function<FixedAssetView, String> value, double width)
+    {
+        TableColumn<FixedAssetView, String> column = new TableColumn<>(title);
+        column.setId(id);
+        column.setCellValueFactory(cell -> new SimpleStringProperty(value.apply(cell.getValue())));
+        column.setPrefWidth(width); column.setMinWidth(72);
+        column.setSortable(true); column.setResizable(true); column.setReorderable(true);
         table.getColumns().add(column);
     }
 
@@ -299,6 +403,25 @@ public class AssetsRegisterPanel implements AppPanel
                 return null;
             }
         };
+        acquisitionBank.setConverter(accountConverter);
+        acquisitionSource.getItems().setAll(AssetAcquisitionSource.values());
+        acquisitionSource.valueProperty().addListener((obs, oldValue, newValue) -> updateAcquisitionControls());
+        acquisitionLine.setConverter(new StringConverter<>()
+        {
+            @Override
+            public String toString(AssetAcquisitionCandidate candidate)
+            {
+                return candidate == null ? "" : "Txn #" + candidate.transactionId() + " — " + companyFormat.formatDate(candidate.date())
+                        + " — " + candidate.account() + " / " + candidate.fund() + " — unclaimed "
+                        + companyFormat.formatMoney(candidate.remaining()) + " — " + candidate.memo();
+            }
+
+            @Override
+            public AssetAcquisitionCandidate fromString(String text)
+            {
+                throw new UnsupportedOperationException("Select an existing asset debit.");
+            }
+        });
         assetAccount.setConverter(accountConverter);
         accumulatedDepreciationAccount.setConverter(accountConverter);
         depreciationExpenseAccount.setConverter(accountConverter);
@@ -333,12 +456,16 @@ public class AssetsRegisterPanel implements AppPanel
                 : operationOutcome + " Refreshing authoritative fixed-asset data...");
         UiAsync.run("asset-register-load",
                 () -> new AssetPanelData(
-                        UiServiceRegistry.accountLookup().listActivePostingAccounts(),
-                        UiServiceRegistry.fundLookup().listActiveFunds(),
+                        UiServiceRegistry.accountLookup().listPostingAccountsIncludingInactive(),
+                        UiServiceRegistry.fundLookup().listAllFunds(),
                         UiServiceRegistry.fixedAssets().listAssets(activeCompanyCode()),
-                        UiServiceRegistry.fixedAssets().listLifecycleEvents(activeCompanyCode())),
+                        UiServiceRegistry.fixedAssets().listLifecycleEvents(activeCompanyCode()),
+                        UiServiceRegistry.fixedAssets().acquisitionCandidates()),
                 data -> {
-                    postingAccounts = List.copyOf(data.accounts());
+                    boolean restoreSelection = selectedAssetId != null && !dirtyState.isDirty();
+                    postingAccounts = List.copyOf(data.accounts().stream().filter(Account::isActive).toList());
+                    acquisitionBank.getItems().setAll(data.accounts().stream().filter(Account::isActive).filter(AccountClassification::isBank).toList());
+                    acquisitionLine.getItems().setAll(data.acquisitions());
                     assetAccount.setItems(FXCollections.observableArrayList(data.accounts().stream()
                             .filter(a -> a.getAccountType() == AccountType.ASSET && a.getSubtype() == AccountSubtype.FIXED_ASSET)
                             .toList()));
@@ -351,7 +478,13 @@ public class AssetsRegisterPanel implements AppPanel
                     fund.setItems(FXCollections.observableArrayList(data.funds()));
                     table.getItems().setAll(data.assets());
                     lifecycleTable.getItems().setAll(data.lifecycleEvents());
+                    if (restoreSelection)
+                    {
+                        table.getItems().stream().filter(value -> value.id().equals(selectedAssetId)).findFirst()
+                                .ifPresent(value -> { fillForm(value); table.getSelectionModel().select(value); });
+                    }
                     busy.set(false);
+                    updateAcquisitionControls();
                     String loaded = "Loaded " + data.assets().size() + " fixed asset(s) and "
                             + data.lifecycleEvents().size() + " lifecycle event(s) from H2.";
                     status.setText(operationOutcome == null ? loaded : operationOutcome + " " + loaded);
@@ -365,21 +498,158 @@ public class AssetsRegisterPanel implements AppPanel
 
     private void saveAsset()
     {
+        if (busy.get())
+        {
+            status.setText("Asset operation is in progress; the draft is retained.");
+            return;
+        }
         try
         {
             FixedAssetCommand command = commandFromForm();
-            FixedAssetView saved = selectedAssetId == null
-                    ? UiServiceRegistry.fixedAssets().create(command)
-                    : UiServiceRegistry.fixedAssets().update(selectedAssetId, command);
-            selectedAssetId = saved.id();
-            dirtyState.markClean();
-            reload();
-            status.setText("Saved fixed asset: " + saved.name());
+            AssetAcquisitionSource source = acquisitionSource.getValue();
+            AssetAcquisitionSource existingSource = loadedAsset == null || loadedAsset.acquisition() == null ? null : loadedAsset.acquisition().source();
+            boolean acceptAcquisition = selectedAssetId == null || source != existingSource;
+            if (!acceptAcquisition)
+            {
+                long id = selectedAssetId;
+                busy.set(true);
+                UiAsync.run("asset-register-save", () -> UiServiceRegistry.fixedAssets().update(id, command),
+                        this::savedAsset, this::saveFailed);
+                return;
+            }
+            if (source == null)
+            {
+                throw new IllegalArgumentException("Select an explicit acquisition route before saving a new asset.");
+            }
+            var acquisition = new AssetAcquisitionCommand(selectedAssetId, command, source,
+                    source == AssetAcquisitionSource.NEW_PURCHASE ? requireSelected(acquisitionBank, "purchase BANK account").getId() : null,
+                    source == AssetAcquisitionSource.EXISTING_ENTRY ? requireSelected(acquisitionLine, "existing asset debit").splitId() : null);
+            busy.set(true);
+            status.setText("Preparing acquisition preview...");
+            UiAsync.run("asset-acquisition-preview", () -> UiServiceRegistry.fixedAssets().previewAcquisition(acquisition, acquisitionRequest),
+                    preview ->
+                    {
+                        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+                        confirmation.getDialogPane().setId("assetAcquisitionConfirmation");
+                        confirmation.setTitle("Save Asset Acquisition");
+                        confirmation.setHeaderText(preview.command().source().label() + ": " + command.name());
+                        confirmation.setContentText(acquisitionPreviewText(preview));
+                        if (root.getScene() != null && root.getScene().getWindow() != null)
+                        {
+                            confirmation.initOwner(root.getScene().getWindow());
+                        }
+                        CompanyDialogUiCompliance.install(confirmation.getDialogPane(), AppPanelId.ASSETS_REGISTER);
+                        if (confirmation.showAndWait().filter(ButtonType.OK::equals).isEmpty())
+                        {
+                            busy.set(false);
+                            status.setText("Acquisition Save cancelled; draft retained and no accounting changed.");
+                            return;
+                        }
+                        status.setText("Saving asset and acquisition atomically...");
+                        UiAsync.run("asset-acquisition-save", () -> UiServiceRegistry.fixedAssets().recordAcquisition(preview),
+                                this::savedAsset, this::saveFailed);
+                    }, this::saveFailed);
         }
         catch (RuntimeException ex)
         {
-            status.setText("Could not save fixed asset: " + UiErrors.safeMessage(ex));
+            saveFailed(ex);
         }
+    }
+
+    private String acquisitionPreviewText(AssetAcquisitionPreview preview)
+    {
+        String text = preview.assetAccount() + "\n" + companyFormat.formatDate(preview.command().asset().acquisitionDate())
+                + "\nCost: " + companyFormat.formatMoney(preview.command().asset().acquisitionCost())
+                + "\n" + preview.sourceLabel();
+        if (preview.acceptedAssetId() != null)
+        {
+            return text + "\nAlready accepted: reload the retained asset without new accounting.";
+        }
+        if (preview.transaction() != null)
+        {
+            return text + "\nDebit asset / credit BANK: " + companyFormat.formatMoney(preview.command().asset().acquisitionCost())
+                    + "\nOne canonical transaction and one register record will be saved together.";
+        }
+        if (preview.sourceDebit() != null)
+        {
+            return text + "\nSource debit: " + companyFormat.formatMoney(preview.sourceDebit())
+                    + "\nAlready claimed: " + companyFormat.formatMoney(preview.alreadyClaimed())
+                    + "\nRemaining after this claim: " + companyFormat.formatMoney(preview.remaining())
+                    + "\nLink only: existing accounting is retained without reposting.";
+        }
+        return text + "\nRegister only: no purchase transaction or opening GL is created.";
+    }
+
+    private void savedAsset(FixedAssetView saved)
+    {
+        fillForm(saved);
+        reload("Saved fixed asset: " + saved.name() + ".");
+    }
+
+    private void saveFailed(Throwable failure)
+    {
+        busy.set(false);
+        status.setText("Could not save asset; draft retained: " + UiErrors.safeMessage(failure));
+    }
+
+    private void updateAcquisitionControls()
+    {
+        boolean linked = loadedAsset != null && loadedAsset.acquisition() != null && loadedAsset.acquisition().splitId() != null;
+        boolean disposed = loadedAsset != null && loadedAsset.status() == FixedAsset.Status.DISPOSED;
+        acquisitionSource.setDisable(linked || disposed);
+        boolean purchase = selectedAssetId == null && acquisitionSource.getValue() == AssetAcquisitionSource.NEW_PURCHASE;
+        boolean link = !linked && acquisitionSource.getValue() == AssetAcquisitionSource.EXISTING_ENTRY;
+        acquisitionBank.setVisible(purchase); acquisitionBank.setManaged(purchase);
+        acquisitionBankLabel.setVisible(purchase); acquisitionBankLabel.setManaged(purchase);
+        acquisitionLine.setVisible(link); acquisitionLine.setManaged(link);
+        acquisitionLineLabel.setVisible(link); acquisitionLineLabel.setManaged(link);
+        unlinkAcquisition.setDisable(busy.get() || !linked);
+        drillAcquisition.setDisable(busy.get() || !linked);
+        if (loadedAsset != null && loadedAsset.acquisition() != null)
+        {
+            var provenance = loadedAsset.acquisition();
+            acquisitionSummary.setText(provenance.label() + (provenance.transactionId() == null ? ""
+                    : " — Txn #" + provenance.transactionId() + "; source " + companyFormat.formatMoney(provenance.sourceDebit())
+                    + ", claimed " + companyFormat.formatMoney(provenance.claimed()) + ", remaining " + companyFormat.formatMoney(provenance.remaining())));
+        }
+        else
+        {
+            acquisitionSummary.setText("Select acquisition provenance. Save accepts register and accounting together; no automatic route is inferred.");
+        }
+    }
+
+    private void openAcquisition()
+    {
+        if (loadedAsset != null && loadedAsset.acquisition() != null && loadedAsset.acquisition().transactionId() != null)
+        {
+            long transaction = loadedAsset.acquisition().transactionId();
+            DrillThroughCoordinator.openPanelWithContext(AppPanelId.JOURNAL_PANE, "Txn #" + transaction + " from asset acquisition " + loadedAsset.name());
+        }
+    }
+
+    private void removeAcquisitionLink()
+    {
+        if (busy.get() || loadedAsset == null)
+        {
+            return;
+        }
+        if (dirtyState.isDirty())
+        {
+            status.setText("Save or discard register edits before removing an acquisition link.");
+            return;
+        }
+        javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog();
+        dialog.setTitle("Remove Acquisition Link");
+        dialog.setHeaderText("Accounting and asset remain. Only an open, unreconciled link without depreciation/lifecycle history may be removed.");
+        dialog.setContentText("Required reason:");
+        CompanyDialogUiCompliance.install(dialog.getDialogPane(), AppPanelId.ASSETS_REGISTER);
+        dialog.showAndWait().filter(value -> !value.isBlank()).ifPresent(reason ->
+        {
+            long id = loadedAsset.id();
+            busy.set(true);
+            UiAsync.run("asset-acquisition-unlink", () -> UiServiceRegistry.fixedAssets().removeAcquisitionLink(id, reason),
+                    this::savedAsset, this::saveFailed);
+        });
     }
 
     private void changeSelectedStatus(FixedAsset.Status targetStatus)
@@ -701,11 +971,11 @@ public class AssetsRegisterPanel implements AppPanel
                 requireSelected(fund, "fund").getId(),
                 name.getText(),
                 acquisitionDate.getValue(),
-                money(acquisitionCost.getText()),
-                money(salvageValue.getText()),
+                moneyInputs.get(acquisitionCost).value(),
+                moneyInputs.get(salvageValue).value(),
                 requireSelected(usefulLifeMonths, "useful life"),
                 FixedAsset.DepreciationMethod.STRAIGHT_LINE,
-                money(openingAccumulatedDepreciation.getText()),
+                moneyInputs.get(openingAccumulatedDepreciation).value(),
                 editingStatus,
                 notes.getText());
     }
@@ -717,11 +987,21 @@ public class AssetsRegisterPanel implements AppPanel
             return;
         }
         selectedAssetId = asset.id();
+        loadedAsset = asset;
+        acquisitionRequest = java.util.UUID.randomUUID();
+        acquisitionSource.getItems().setAll(AssetAcquisitionSource.REGISTER_ONLY, AssetAcquisitionSource.EXISTING_ENTRY);
+        if (asset.acquisition() != null && asset.acquisition().source() == AssetAcquisitionSource.NEW_PURCHASE)
+        {
+            acquisitionSource.getItems().add(AssetAcquisitionSource.NEW_PURCHASE);
+        }
+        acquisitionSource.setValue(asset.acquisition() == null ? null : asset.acquisition().source());
+        acquisitionBank.getSelectionModel().clearSelection();
+        acquisitionLine.getSelectionModel().clearSelection();
         name.setText(asset.name());
         acquisitionDate.setValue(asset.acquisitionDate());
-        acquisitionCost.setText(asset.acquisitionCost().toPlainString());
-        salvageValue.setText(asset.salvageValue().toPlainString());
-        openingAccumulatedDepreciation.setText(asset.openingAccumulatedDepreciation().toPlainString());
+        moneyInputs.get(acquisitionCost).set(asset.acquisitionCost());
+        moneyInputs.get(salvageValue).set(asset.salvageValue());
+        moneyInputs.get(openingAccumulatedDepreciation).set(asset.openingAccumulatedDepreciation());
         usefulLifeMonths.getSelectionModel().select(Integer.valueOf(asset.usefulLifeMonths()));
         editingStatus = asset.status();
         lifecycleStatus.setText(asset.status().name());
@@ -733,17 +1013,23 @@ public class AssetsRegisterPanel implements AppPanel
         selectFundById(fund, asset.fundId());
         setAssetFormDisabled(asset.status() == FixedAsset.Status.DISPOSED);
         updateLifecycleActions(asset);
+        updateAcquisitionControls();
         dirtyState.markClean();
     }
 
     private void clearForm()
     {
         selectedAssetId = null;
+        loadedAsset = null;
+        acquisitionRequest = java.util.UUID.randomUUID();
+        acquisitionSource.getItems().setAll(AssetAcquisitionSource.values());
+        acquisitionSource.getSelectionModel().clearSelection();
+        acquisitionBank.getSelectionModel().clearSelection(); acquisitionLine.getSelectionModel().clearSelection();
         name.clear();
         acquisitionDate.setValue(LocalDate.now());
-        acquisitionCost.setText("0.00");
-        salvageValue.setText("0.00");
-        openingAccumulatedDepreciation.setText("0.00");
+        moneyInputs.get(acquisitionCost).set(BigDecimal.ZERO);
+        moneyInputs.get(salvageValue).set(BigDecimal.ZERO);
+        moneyInputs.get(openingAccumulatedDepreciation).set(BigDecimal.ZERO);
         notes.clear();
         editingStatus = FixedAsset.Status.ACTIVE;
         lifecycleStatus.setText(FixedAsset.Status.ACTIVE.name());
@@ -752,7 +1038,8 @@ public class AssetsRegisterPanel implements AppPanel
         updateLifecycleActions(null);
         usefulLifeMonths.getSelectionModel().select(Integer.valueOf(60));
         table.getSelectionModel().clearSelection();
-        status.setText("Ready to enter a new fixed asset.");
+        updateAcquisitionControls();
+        status.setText("Ready for a new fixed asset; select an explicit acquisition route.");
         dirtyState.markClean();
     }
 
@@ -772,8 +1059,9 @@ public class AssetsRegisterPanel implements AppPanel
         return new AssetFormSnapshot(
                 name.getText(), selectedId(assetAccount), selectedId(accumulatedDepreciationAccount),
                 selectedId(depreciationExpenseAccount), selectedId(fund), acquisitionDate.getValue(),
-                acquisitionCost.getText(), salvageValue.getText(), usefulLifeMonths.getValue(),
-                openingAccumulatedDepreciation.getText(), notes.getText());
+                moneyInputs.get(acquisitionCost).snapshot(), moneyInputs.get(salvageValue).snapshot(), usefulLifeMonths.getValue(),
+                moneyInputs.get(openingAccumulatedDepreciation).snapshot(), notes.getText(), acquisitionSource.getValue(),
+                selectedId(acquisitionBank), acquisitionLine.getValue() == null ? null : acquisitionLine.getValue().splitId());
     }
 
     private static Long selectedId(ComboBox<?> box)
@@ -852,7 +1140,8 @@ public class AssetsRegisterPanel implements AppPanel
             java.util.List<Account> accounts,
             java.util.List<Fund> funds,
             java.util.List<FixedAssetView> assets,
-            java.util.List<FixedAssetLifecycleEventView> lifecycleEvents)
+            java.util.List<FixedAssetLifecycleEventView> lifecycleEvents,
+            java.util.List<AssetAcquisitionCandidate> acquisitions)
     {
     }
 
@@ -876,11 +1165,16 @@ public class AssetsRegisterPanel implements AppPanel
     @Override
     public java.util.Set<AppCommand> commandCapabilities()
     {
-        return AppPanel.capabilities(AppCommand.NEW_ACTIVE, AppCommand.SAVE_ACTIVE);
+        return busy.get() ? java.util.Set.of() : AppPanel.capabilities(AppCommand.NEW_ACTIVE, AppCommand.SAVE_ACTIVE);
     }
     @Override
     public void onNew()
     {
+        if (busy.get())
+        {
+            status.setText("Asset operation is in progress; draft retained.");
+            return;
+        }
         if (!dirtyState.isDirty() || confirmDiscard())
         {
             clearForm();
@@ -892,11 +1186,77 @@ public class AssetsRegisterPanel implements AppPanel
     }
     @Override public void onSave() { saveAsset(); }
     @Override
+    public void setCommandCapabilitiesChangedListener(Runnable listener)
+    {
+        capabilitiesChanged = listener == null ? () -> {} : listener;
+    }
+    @Override
     public String commandResultMessage(AppCommand command)
     {
         return status.getText();
     }
     @Override public boolean hasUnsavedChanges() { return dirtyState.isDirty(); }
+
+    /** Company display is separate from the exact editable command amount. */
+    private final class ExactMoneyInput
+    {
+        private final TextField field;
+        private BigDecimal amount;
+        private boolean displaying;
+
+        ExactMoneyInput(TextField field)
+        {
+            this.field = field;
+            amount = companyFormat.parseMoney(field.getText());
+            field.textProperty().addListener((obs, oldValue, newValue) ->
+            {
+                if (!displaying)
+                {
+                    amount = companyFormat.parseMoney(newValue);
+                }
+            });
+            field.focusedProperty().addListener((obs, oldValue, focused) ->
+            {
+                if (amount != null)
+                {
+                    show(focused ? amount.toPlainString() : companyFormat.formatMoney(amount));
+                }
+            });
+        }
+
+        void set(BigDecimal value)
+        {
+            amount = value;
+            show(companyFormat.formatMoney(value));
+        }
+
+        BigDecimal value()
+        {
+            if (amount == null)
+            {
+                throw new IllegalArgumentException("Invalid asset amount: " + field.getText());
+            }
+            return amount;
+        }
+
+        String snapshot()
+        {
+            return amount == null ? field.getText() : amount.stripTrailingZeros().toPlainString();
+        }
+
+        private void show(String text)
+        {
+            displaying = true;
+            try
+            {
+                field.setText(text);
+            }
+            finally
+            {
+                displaying = false;
+            }
+        }
+    }
 
     private record AssetFormSnapshot(
             String name,
@@ -909,7 +1269,10 @@ public class AssetsRegisterPanel implements AppPanel
             String salvageValue,
             Integer usefulLifeMonths,
             String openingAccumulatedDepreciation,
-            String notes)
+            String notes,
+            AssetAcquisitionSource acquisitionSource,
+            Long acquisitionBank,
+            Long acquisitionSplit)
     {
     }
 }

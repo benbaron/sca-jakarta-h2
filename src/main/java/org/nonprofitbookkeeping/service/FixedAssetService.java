@@ -170,6 +170,59 @@ public class FixedAssetService
         this.lifecycleWriteHook = Objects.requireNonNull(lifecycleWriteHook, "lifecycleWriteHook");
     }
 
+    /** Builds a frozen acquisition/register-only proposal without changing accounting. */
+    public AssetAcquisitionPreview previewAcquisition(AssetAcquisitionCommand command, UUID requestId)
+    {
+        return acquisitions().preview(command, requestId);
+    }
+
+    /** Accepts the exact proposal as one authorized register/accounting/audit transaction. */
+    public FixedAssetView recordAcquisition(AssetAcquisitionPreview preview)
+    {
+        return acquisitions().accept(preview);
+    }
+
+    public List<AssetAcquisitionCandidate> acquisitionCandidates()
+    {
+        return acquisitions().candidates();
+    }
+
+    /** Removes only an eligible metadata link, retaining both the register and accounting. */
+    public FixedAssetView removeAcquisitionLink(long assetId, String reason)
+    {
+        return acquisitions().removeLink(assetId, reason);
+    }
+
+    private FixedAssetAcquisitions acquisitions()
+    {
+        return new FixedAssetAcquisitions(jpa, this, transactionEntryService, companyCodeSupplier, authorizationGuard);
+    }
+
+    /** Caller-owned historical restore; source accounting is retained, never synthesized. */
+    public void restoreAcquisitionForImport(EntityManager em, Company company, FixedAsset asset,
+            org.nonprofitbookkeeping.model.AssetAcquisitionSource source, org.nonprofitbookkeeping.model.TxnSplit split)
+    {
+        if (!em.getTransaction().isActive())
+        {
+            throw new IllegalStateException("Acquisition restore requires a caller-owned transaction.");
+        }
+        new CompanyOwnershipService(jpa).requireOwnedBy(company, asset.getCompany(), "Asset acquisition");
+        if (source == null || (source == org.nonprofitbookkeeping.model.AssetAcquisitionSource.REGISTER_ONLY) != (split == null))
+        {
+            throw new IllegalArgumentException("Acquisition source and line must agree.");
+        }
+        if (split != null)
+        {
+            FixedAssetAcquisitions.requireLink(em, company, asset, split);
+            if (source == org.nonprofitbookkeeping.model.AssetAcquisitionSource.NEW_PURCHASE)
+            {
+                FixedAssetAcquisitions.requireBankPurchase(em, asset, split);
+            }
+        }
+        asset.setAcquisitionSource(source);
+        asset.setAcquisitionSplit(split);
+    }
+
     public FixedAssetView create(FixedAssetCommand command)
     {
         ServiceAuthorization.require(
@@ -221,6 +274,7 @@ public class FixedAssetService
                         em, normalizeCompanyCode(command.companyCode()));
                 ownership.requireOwnedBy(company, asset.getCompany(), "Fixed asset");
                 FixedAsset.Status existingStatus = asset.getStatus();
+                FixedAssetAcquisitions.requireBasisUnchanged(asset, command);
                 requireLifecycleSafeUpdate(em, asset, command);
                 apply(em, asset, command);
                 asset.setStatus(existingStatus);
@@ -1295,7 +1349,7 @@ public class FixedAssetService
         }
     }
 
-    private static void requireOutsideFinalizedReconciliation(
+    static void requireOutsideFinalizedReconciliation(
             EntityManager em,
             Company company,
             Account account,
@@ -1328,7 +1382,7 @@ public class FixedAssetService
         }
     }
 
-    private static void requireTransactionOutsideCompletedReconciliation(
+    static void requireTransactionOutsideCompletedReconciliation(
             EntityManager em,
             long transactionId)
     {
@@ -1759,7 +1813,7 @@ public class FixedAssetService
         return message;
     }
 
-    private void apply(EntityManager em, FixedAsset asset, FixedAssetCommand command)
+    void apply(EntityManager em, FixedAsset asset, FixedAssetCommand command)
     {
         validateCommand(command);
         Company company = em.createQuery("select c from Company c where c.code = :code", Company.class)
@@ -1803,7 +1857,7 @@ public class FixedAssetService
         asset.setNotes(command.notes());
     }
 
-    private static void validateCommand(FixedAssetCommand command)
+    static void validateCommand(FixedAssetCommand command)
     {
         if (command == null)
         {
@@ -1930,7 +1984,7 @@ public class FixedAssetService
         }
     }
 
-    private FixedAssetView toView(EntityManager em, FixedAsset asset)
+    FixedAssetView toView(EntityManager em, FixedAsset asset)
     {
         BigDecimal runTotal = em.createQuery("""
                 select coalesce(sum(r.depreciationAmount), 0)
@@ -1973,7 +2027,8 @@ public class FixedAssetService
                 bookValue,
                 next,
                 asset.getStatus(),
-                asset.getNotes() == null ? "" : asset.getNotes());
+                asset.getNotes() == null ? "" : asset.getNotes(),
+                FixedAssetAcquisitions.view(em, asset));
     }
 
     private DepreciationRunView toRunView(FixedAssetDepreciationRun run)

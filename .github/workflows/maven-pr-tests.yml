@@ -51,4 +51,13 @@ jobs:
         run: mvn -B -ntp -e test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository
 
       - name: Run production JavaFX route compliance
-        run: xvfb-run -a mvn -B -ntp -e -Dtest=DatabaseTransferPanelTest,DatabaseTransferMenuInstallerTest,CompanyTableStateBinderTest,ProductionPanelRouteComplianceTest,CoreEditorComplianceTest,ChartOfAccountsInterchangePanelTest,FormattedReportFxRendererTest,EventDiscoveryPanelTest,JournalFundEventTaggingTest,InventoryEventAttributionPanelTest,BudgetCategoriesPanelTest,CounterpartiesPanelTest,MerchantsPanelTest,FundTransfersPanelTest,JournalPaymentReferencesTest,CheckExceptionsPaneTest,PaneSaveCoverageTest,NmrPoliciesPanelTest,AppPanelCommandCapabilityTest,ProductionWorkspaceCommandRoutingTest test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository
+        run: xvfb-run -a mvn -B -ntp -e -Dtest=AssetAcquisitionPanelTest,DatabaseTransferPanelTest,DatabaseTransferMenuInstallerTest,CompanyTableStateBinderTest,ProductionPanelRouteComplianceTest,CoreEditorComplianceTest,ChartOfAccountsInterchangePanelTest,FormattedReportFxRendererTest,EventDiscoveryPanelTest,JournalFundEventTaggingTest,InventoryEventAttributionPanelTest,BudgetCategoriesPanelTest,CounterpartiesPanelTest,MerchantsPanelTest,FundTransfersPanelTest,JournalPaymentReferencesTest,CheckExceptionsPaneTest,PaneSaveCoverageTest,NmrPoliciesPanelTest,AppPanelCommandCapabilityTest,ProductionWorkspaceCommandRoutingTest test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository
+
+      - name: Publish failed test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-test-reports-${{ github.sha }}
+          path: target/surefire-reports/**
+          if-no-files-found: warn
+          retention-days: 7

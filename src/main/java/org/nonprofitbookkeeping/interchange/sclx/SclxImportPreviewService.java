@@ -44,7 +44,7 @@ public final class SclxImportPreviewService
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Set<String> RECOGNIZED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
-            "supplementalDetails", "transactionBudgets", "transactionNmr", "expenseFunctions", "paymentReferences", "bankConfiguration",
+            "supplementalDetails", "transactionBudgets", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "fixedAssets", "inventory",
             "periodClose", "auditHistory", "nmrPolicies");
     private static final Set<String> UNSUPPORTED_ROOT_SECTIONS = Set.of(
@@ -141,6 +141,7 @@ public final class SclxImportPreviewService
         {
             identityRoot = SclxExpenseFunctions.identityDocument(SclxMerchantSettlementMetadata.identityDocument(SclxNmrItemMetadata.identityDocument(SclxTransactionNmrExtension.identityDocument(
                     SclxPaymentReferences.identityDocument(SclxTransactionBudgetExtension.identityDocument(document.root()))))));
+            identityRoot = SclxAssetAcquisitions.identityDocument(identityRoot);
             long merchantFacts = document.root().path("extensions").path("scaJakartaH2").path("supplementalDetails").findValues("merchantSettlement").size();
             if (merchantFacts > 0)
             {

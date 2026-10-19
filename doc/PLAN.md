@@ -1,12 +1,12 @@
 ---
-plan_version: 379
-active_phase: P25
-active_slice: P25-S5B
+plan_version: 381
+active_phase: P26
+active_slice: P26-S1
 active_status: VERIFYING
-active_branch: codex/P25-S5B-functional-expenses
-active_pull_request: null
-active_head: 7bc89aefaa4176215e6adeae58dd946327996b27
-next_action: "Finish full clean verify, publish matching reviewed commits as a fresh draft, inspect exact-head clean/repeat/expanded JavaFX CI and record the handoff. D07 is adopted; parent S5 awaits review/merge and owner desktop checks."
+active_branch: codex/P26-S1-asset-acquisitions
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/379
+active_head: c4465cadc792a4a362d95c4b295245badd14de37
+next_action: "Verify exact-head JDK 17 clean/repeat/expanded JavaFX CI for draft MR #379, update the MR with actual results, then record owner review/merge before selecting P26-S2."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,8 +37,8 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | IN_PROGRESS — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B functional-expense implementation selected; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
-| P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
+| P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
+| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 acquisition/opening links selected after reviewed/merged P25 |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
@@ -694,10 +694,10 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S4G | Explicit settlement attribution/evidence and period movements | DONE | MR #374 merged at fb37feba; full local and exact-head clean/repeat/JavaFX CI passed |
 | P25-S4H | Merchant receivable breakdown and withholding observations | DONE | MR #375 merged at 030b7d3b; final full local and exact-head clean/repeat/JavaFX CI passed |
 | P25-S4I | NMR financial acceptance and replay-safe Journal create | DONE | MR #376 explicitly approved/merged at 4c965490; final head de44946b passed full local and exact-head clean/repeat/JavaFX CI |
-| P25-S5 | Add independent functional-expense classification (G10) | IN_PROGRESS | S4/D07 accepted, S5A merged; selected S5B implements the contract; no further classification/policy input required |
+| P25-S5 | Add independent functional-expense classification (G10) | DONE | Owner reviewed/merged S5B MR #378; D07 adopted; full local and exact-head CI passed |
 | P25-S5A | Adopt functional-expense contract (documentation only) | DONE | MR #377 merged at 7bc89aef; final-head clean/repeat/JavaFX CI passed; D07 adopted |
-| P25-S5B | Independent functional expense entry, reporting and portability | VERIFYING | [Implementation contract](P25-S5B-functional-expenses.md); nullable canonical fact, shared Save, compatible native retries and lossless SCLX |
-| P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
+| P25-S5B | Independent functional expense entry, reporting and portability | DONE | MR #378 reviewed/merged at 70462b49; full local and exact-head CI passed;  [Implementation contract](P25-S5B-functional-expenses.md); nullable canonical fact, shared Save, compatible native retries and lossless SCLX |
+| P26-S1 | Link fixed-asset acquisition and opening records (G11) | IN_PROGRESS | P25 reviewed/merged; [S1 contract](P26-S1-asset-acquisitions.md); no affected unresolved policy decision |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
 | P26-S3 | Complete event/fund budget planning and reporting filters (G12) | BLOCKED | P26-S2 merged; owning contract and D01–D10 gates as applicable |
 | P26-S4 | Add governed prepaid/deferred recognition assistance (G12) | BLOCKED | P26-S3 merged; owning contract and D01–D10 gates as applicable |
@@ -1960,3 +1960,52 @@ Expanded actual Xvfb production suite passed **52 tests, zero failures/errors/sk
 Final offline `mvn clean verify` passed **980 tests, zero failures/errors, 59 display-dependent skips**, BUILD SUCCESS **2026-10-18 19:34:20 UTC**, elapsed 3:32 (`/workspace/work/p25-s5b-clean-verify.log`). Final service tests include classified deletion audit/no-resurrection and real PDF/XLSX export retaining full GL control despite limited detail. Expanded actual production JavaFX separately passed 52 tests with no failures/errors/skips at 19:30:41 UTC; focused accounting passed 68. All executed final gates pass. JDK 21 builds release 17 locally; exact published-head CI will validate JDK 17 clean/repeat/expanded JavaFX.
 
 Reviewed intended canonical migration/DTO/write/correction/hash/audit/Journal/precision/report/filter/SCLX changes, all new tests, and governing documentation. No dependency/workflow/applied-migration or donor-data change. Helper restored the tracked target manifest; generated output must not be staged. Nine governing documents / 148 relative links and whitespace/scope checks pass. S5B is VERIFYING on fresh branch `codex/P25-S5B-functional-expenses`, with implementation ready for matching-tree draft publication after carry `1d7334e8`. No PR exists yet. Known final failures: none. Remaining: publication, exact-head CI, owner review/merge and documented desktop checks. Do not close parent S5 or activate P26 from local results alone.
+
+### P25-S5B draft publication — 2026-10-18 (America/Denver)
+
+Draft [MR #378](https://github.com/benbaron/sca-jakarta-h2/pull/378) targets verified main `7bc89aefaa4176215e6adeae58dd946327996b27`. Connected publication preserved both reviewed local commits/messages/order and every blob/tree:
+
+- Carry `1d7334e822c903c16a5aceffce50ed98027448bb` → `e42e5bd95b869cc2cf00d17c00a55df834ec8719`, tree `2a96ba884c6fbd07061cbe435c85a888748255b1`.
+- Implementation `5bba3c46cde54d708bf68d813b703e0455b64ab9` → `378cf10284feae363a18012264820ccc76c831db`, tree `cb24bfe79a5ea114c2c52441f172a389c253d297`.
+
+Fresh ref advanced from expected `7bc89aef` with force false. Native fetch and empty tree comparison confirm remote content equals local implementation. Draft/open metadata confirms the same head, 2 commits and 46 intended files; worktree was clean before this local record. No dependency/workflow/AGENTS change or generated output was published. Full local 980-test gate and separate 52-test actual JavaFX pass; nine governing documents / 148 relative links and whitespace/scope checks pass. Exact-head [Maven PR Tests run 39159777236](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39159777236) is in progress. MR body records executed local results, pending CI, generated-unknown/official-form limits and owner desktop checks. Publication map/body: `/workspace/work/p25-s5b-publication-map.json`, `/workspace/work/p25-s5b-mr-body.md`.
+
+This publication/final-head evidence stays local to preserve the tested remote head. Next exact action: finish exact-head clean/repeat/expanded production JavaFX CI, update MR results, validate final docs and commit this handoff. S5B remains VERIFYING pending review/merge and documented owner checks. Do not publish a documentation-only successor merely to restart CI; do not select P26 or reopen D07/NMR operating policy gates.
+
+### P25-S5B final-head CI and handoff — 2026-10-18 (America/Denver)
+
+Final [Maven PR Tests run 39159777236](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39159777236), job `117770447885`, completed **success** at **2026-10-18 19:51:16 UTC** for exact head `378cf10284feae363a18012264820ccc76c831db`, branch `codex/P25-S5B-functional-expenses`. Independent run, job and step metadata confirm clean headless verification, repeat suite, expanded production JavaFX and cleanup all passed on JDK 17. Draft MR #378 remains open, unmerged and mergeable at this exact head. The optional raw-job-log fetch returned a connector Transport closed error; no raw-log-derived CI counts are claimed. Executed final checks have no remaining failure. Full local clean verification passed 980 tests, zero failures/errors, 59 display-dependent skips; separate actual production JavaFX passed 52 tests, no failures/errors/skips. MR body now records actual local/CI results and owner checks.
+
+Completed: confirmed S5A merge and D07 adoption; carried its final evidence onto a fresh branch; established pre-edit compile/38-test baseline and actual missing-choice regression; implemented nullable canonical purpose with no defaults, expense-only/account/inverse integrity, shared Journal Save/draft/copy/reload and precise amount editing, compatible v1/new-v2 native receipts, derived GL-date/Fund/Event reporting/full controls/unknown gross/export/drill-through, strict sparse SCLX identity/conflict/Keep target/history/rollback; enumerated generated writers and tested unknown/accepted source dispositions; repaired reproduced precision/export-order issues; mapped F01–F09 and updated governing documents; published identical reviewed trees/messages/order with nonforce lease and native fetched equality; passed full local and exact-head CI.
+
+Remaining: owner review/merge of draft MR #378 and documented user checks in [S5B](P25-S5B-functional-expenses.md). S5B remains VERIFYING; parent S5 IN_PROGRESS until merge/acceptance, not DONE from local implementation. No new human desktop transcript is inferred. Official-form mapping and P26 remain outside this slice; no unresolved D07 or NMR operating-policy gate is reopened.
+
+This final PLAN/S5B evidence is local-only (commit subject `Record functional expense publication and final verification`). active_head remains the successful remote implementation; `git rev-parse HEAD` identifies the complete local handoff. Do not publish a documentation-only successor merely to restart green CI. After owner reports merge, fetch/verify current main, confirm required acceptance, carry this final evidence onto a fresh branch, and select the first incomplete unblocked adopted slice. Do not reuse the merged S5B branch. Final docs/whitespace/source equality checks follow before committing the handoff.
+
+Final handoff checks passed: nine changed governing documents / 149 relative links resolve, whitespace is clean, production/test/schema/workflow/dependency/AGENTS bytes equal successful published head, tracked manifest is restored, and only PLAN/S5B publication/CI records follow locally. MR re-read confirms draft/open/unmerged/mergeable at `378cf102`, with actual passing CI results in the body.
+
+### P25 acceptance/merge and P26-S1 selection — 2026-10-18 (America/Denver)
+
+Owner said “reviewed and merged. proceed”. Live GitHub/native fetch confirm MR #378 merged at current main `70462b49015916bc0179143f0bc1bdd532b6e20e`; accepted head `378cf102` passed run `39159777236`. Fresh `codex/P26-S1-asset-acquisitions` carries final local evidence as `ed6ca14f` from `e02c8252`; initial worktree clean. S5B/S5/P25 DONE based on owner review/merge and full executed validation, without inventing a per-check human desktop transcript. Optional policy-reference/native evidence limitations remain factual and are not reopened as accounting gates.
+
+Select the first unblocked adopted P26 slice, S1 acquisition/opening links (G11/A11). D05 form mapping does not govern this canonical acquisition relationship; template authority stays P27, custody S2, valuation D06 S5, and D07 remains resolved. Required inspection: current FixedAsset/command/view/service/depreciation/lifecycle and register panel; canonical Txn/Split entry/correction/audit/ownership/protection/native receipts; V55/V65/V71/V85 and persistence registration; asset reports, SCLX fixed-assets snapshot/identity/preview/commit/history; existing asset, authorization, migration, report, import and actual UI tests. Read governing adopted program/baseline A11, asset/ledger/lifecycle/period/auth contracts, SCLX and all three UI rules.
+
+Pre-edit baseline offline compile passed at 2026-10-18 22:34:25 UTC; 32 relevant fixed-asset service/atomic depreciation/lifecycle/authorization/SCLX snapshot tests passed at 22:35:14 UTC, zero failures/errors/skips. Donor AssetRecordService/AssetRecord maintain a separate normalized register with approximate/lot costs and custody; they do not supply a canonical acquisition transaction/claim authority suitable for import. Retain production FixedAsset/Txn/Split and caller-owned atomic entry seam. [S1 contract](P26-S1-asset-acquisitions.md) records concrete choices and acceptance. No P26-S2 or later feature is started.
+
+### P26-S1 final local verification — 2026-10-18 (America/Denver)
+
+Implemented three explicit shared-Save routes on the existing Asset Register: atomic balanced BANK purchase, link an existing ordinary fixed-asset debit, and opening/register-only with no accounting. Existing register items can be linked or explicitly marked register-only. FixedAsset retains nullable source/split provenance; acquisitionCost remains the only claim amount. Company and asset locking, immutable request receipts, exact preview rebuild, source capacity, account/Fund/date eligibility, period/reconciliation controls and full rollback protect native writes and retries. Linked basis, source transactions and linked account classification are protected; eligible audited unlink retains both register and accounting before ordinary Journal correction.
+
+V86 is nondestructive and leaves legacy provenance null. Strict sparse SCLX `assetAcquisitions` version 1 uses intrinsic asset/line identities, validates exact NEW_PURCHASE BANK structure and aggregate claims, participates in complete asset conflicts/Keep target, restores metadata without reposting, revalidates retained-target capacity/dependent history and rolls back late failures. Existing fixedAssets version 1 and files without the optional extension remain compatible. Custody/forms, valuation, conversion and broader lifecycle portability stay in their owning later slices.
+
+Shared Save uses nonmutating preview, confirmation, one request identity, asynchronous busy/capability guards, retained drafts, live permission changes and real Journal navigation. Register rows expose source transaction and full source/claimed/remaining values. Actual inspection reproduced and repaired blank FixedAssetView record cells, preserving company date/money formatting, exact four-decimal editing, company table state, movable dividers and independently reachable two-axis editor/table regions. The action row scrolls within a bounded area at larger text instead of consuming the workspace.
+
+Focused final acquisition/accounting/SCLX tests passed **14 tests**, zero failures/errors/skips. Final isolated offline `mvn clean verify` passed **999 tests, zero failures/errors, 62 display-dependent skips**, BUILD SUCCESS at **2026-10-18 18:32:29 America/Denver** (elapsed 3:41). The workflow-equivalent expanded Xvfb suite passed **55 tests, zero failures/errors/skips**, BUILD SUCCESS at **18:36:22** (elapsed 3:38), including new actual purchase/existing-link/register-only Save, preview/cancel/busy/draft/retry/precision/role/navigation and laptop/larger-text geometry coverage. An earlier invalid full-run result came from two clean Maven processes sharing `target/` after an interrupted wrapper left a child alive; both process groups were stopped, absence was verified, and the isolated full run passed. No product failure remains and no human per-check desktop transcript is inferred.
+
+Reviewed migration/model/service/canonical-entry/correction/account-classification/UI/SCLX/test/documentation/workflow changes. Changed-document relative links resolve, `git diff --check` passes, generated output is not staged, and the tracked manifest remains restored. P26-S1 is VERIFYING; draft publication, matching-tree verification and exact-head CI remain. P26-S2 stays blocked until owner review/merge is confirmed.
+
+### P26-S1 draft publication — 2026-10-18 (America/Denver)
+
+Draft [MR #379](https://github.com/benbaron/sca-jakarta-h2/pull/379) targets current main `70462b49015916bc0179143f0bc1bdd532b6e20e`. A normal non-force native push created fresh branch `codex/P26-S1-asset-acquisitions` with the carried P25 evidence, implementation and local-verification commits. Remote head `c4465cadc792a4a362d95c4b295245badd14de37` and tree `6f30c73423f786d28568038cb2d074a6c5e7ec83` were fetched; both exactly match local, and the diff is empty. Live MR metadata confirms draft/open/unmerged, base/head, 3 commits and 37 intended changed files. The MR body records actual local results, bounded later-slice exclusions and owner checks. Exact-head Maven PR Tests is pending.
+
+This publication record is the only post-tested documentation change. Publish it normally, verify the resulting final remote head/tree, and use that exact head for CI. Do not advance P26-S2 from draft publication or automated validation alone.

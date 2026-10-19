@@ -32,6 +32,42 @@ public record FixedAssetView(Long id,
                              BigDecimal currentBookValue,
                              BigDecimal nextDepreciationAmount,
                              FixedAsset.Status status,
-                             String notes)
+                             String notes,
+                             AssetAcquisitionView acquisition)
 {
+    public FixedAssetView(Long id,
+                             String companyCode,
+                             Long assetAccountId,
+                             String assetAccountCode,
+                             String assetAccountName,
+                             Long accumulatedDepreciationAccountId,
+                             String accumulatedDepreciationAccountCode,
+                             String accumulatedDepreciationAccountName,
+                             Long depreciationExpenseAccountId,
+                             String depreciationExpenseAccountCode,
+                             String depreciationExpenseAccountName,
+                             Long fundId,
+                             String fundCode,
+                             String fundName,
+                             String name,
+                             LocalDate acquisitionDate,
+                             BigDecimal acquisitionCost,
+                             BigDecimal salvageValue,
+                             int usefulLifeMonths,
+                             FixedAsset.DepreciationMethod depreciationMethod,
+                             BigDecimal openingAccumulatedDepreciation,
+                             BigDecimal accumulatedDepreciation,
+                             BigDecimal accumulatedImpairment,
+                             BigDecimal currentBookValue,
+                             BigDecimal nextDepreciationAmount,
+                             FixedAsset.Status status,
+                             String notes)
+    {
+        this(id, companyCode, assetAccountId, assetAccountCode, assetAccountName,
+                accumulatedDepreciationAccountId, accumulatedDepreciationAccountCode, accumulatedDepreciationAccountName,
+                depreciationExpenseAccountId, depreciationExpenseAccountCode, depreciationExpenseAccountName,
+                fundId, fundCode, fundName, name, acquisitionDate, acquisitionCost, salvageValue, usefulLifeMonths,
+                depreciationMethod, openingAccumulatedDepreciation, accumulatedDepreciation, accumulatedImpairment,
+                currentBookValue, nextDepreciationAmount, status, notes, null);
+    }
 }

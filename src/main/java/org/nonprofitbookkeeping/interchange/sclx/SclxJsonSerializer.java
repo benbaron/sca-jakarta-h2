@@ -61,6 +61,7 @@ public final class SclxJsonSerializer
         SclxTransactionBudgetExtension.parse(root);
         SclxTransactionNmrExtension.parse(root);
         SclxExpenseFunctions.parse(root);
+        SclxAssetAcquisitions.parse(root);
         SclxPaymentReferences.parse(root);
         SclxNmrItemMetadata.validate(root);
         SclxMerchantSettlementMetadata.validate(root);
