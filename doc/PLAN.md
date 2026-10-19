@@ -1,12 +1,12 @@
 ---
-plan_version: 379
-active_phase: P25
-active_slice: P25-S5B
+plan_version: 381
+active_phase: P26
+active_slice: P26-S1
 active_status: VERIFYING
-active_branch: codex/P25-S5B-functional-expenses
-active_pull_request: 378
-active_head: 378cf10284feae363a18012264820ccc76c831db
-next_action: "Owner review/merge draft MR #378 and perform documented desktop checks. After merge confirmation, verify main and carry the local final evidence onto a fresh branch before selecting the next unblocked adopted slice. No D07/NMR input is pending."
+active_branch: codex/P26-S1-asset-acquisitions
+active_pull_request: null
+active_head: pending-local-implementation-commit
+next_action: "Publish the reviewed P26-S1 implementation as a draft MR, verify matching trees and exact-head JDK 17 clean/repeat/expanded JavaFX CI, then record owner review/merge before selecting P26-S2."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -37,8 +37,8 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P22 | Post-P21 correctness and authority corrections | DONE through P22-S6 / PR #348 |
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
-| P25 | Transfers, payment references, reporting classification | IN_PROGRESS — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B functional-expense implementation selected; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
-| P26 | Property, planning, recognition, conversion | BLOCKED — P23–P25 and relevant decisions |
+| P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
+| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 acquisition/opening links selected after reviewed/merged P25 |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
@@ -694,10 +694,10 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S4G | Explicit settlement attribution/evidence and period movements | DONE | MR #374 merged at fb37feba; full local and exact-head clean/repeat/JavaFX CI passed |
 | P25-S4H | Merchant receivable breakdown and withholding observations | DONE | MR #375 merged at 030b7d3b; final full local and exact-head clean/repeat/JavaFX CI passed |
 | P25-S4I | NMR financial acceptance and replay-safe Journal create | DONE | MR #376 explicitly approved/merged at 4c965490; final head de44946b passed full local and exact-head clean/repeat/JavaFX CI |
-| P25-S5 | Add independent functional-expense classification (G10) | IN_PROGRESS | S4/D07 accepted, S5A merged; selected S5B implements the contract; no further classification/policy input required |
+| P25-S5 | Add independent functional-expense classification (G10) | DONE | Owner reviewed/merged S5B MR #378; D07 adopted; full local and exact-head CI passed |
 | P25-S5A | Adopt functional-expense contract (documentation only) | DONE | MR #377 merged at 7bc89aef; final-head clean/repeat/JavaFX CI passed; D07 adopted |
-| P25-S5B | Independent functional expense entry, reporting and portability | VERIFYING | [Implementation contract](P25-S5B-functional-expenses.md); nullable canonical fact, shared Save, compatible native retries and lossless SCLX |
-| P26-S1 | Link fixed-asset acquisition and opening records (G11) | BLOCKED | P25-S5 merged; owning contract and D01–D10 gates as applicable |
+| P25-S5B | Independent functional expense entry, reporting and portability | DONE | MR #378 reviewed/merged at 70462b49; full local and exact-head CI passed;  [Implementation contract](P25-S5B-functional-expenses.md); nullable canonical fact, shared Save, compatible native retries and lossless SCLX |
+| P26-S1 | Link fixed-asset acquisition and opening records (G11) | IN_PROGRESS | P25 reviewed/merged; [S1 contract](P26-S1-asset-acquisitions.md); no affected unresolved policy decision |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
 | P26-S3 | Complete event/fund budget planning and reporting filters (G12) | BLOCKED | P26-S2 merged; owning contract and D01–D10 gates as applicable |
 | P26-S4 | Add governed prepaid/deferred recognition assistance (G12) | BLOCKED | P26-S3 merged; owning contract and D01–D10 gates as applicable |
@@ -1983,3 +1983,23 @@ Remaining: owner review/merge of draft MR #378 and documented user checks in [S5
 This final PLAN/S5B evidence is local-only (commit subject `Record functional expense publication and final verification`). active_head remains the successful remote implementation; `git rev-parse HEAD` identifies the complete local handoff. Do not publish a documentation-only successor merely to restart green CI. After owner reports merge, fetch/verify current main, confirm required acceptance, carry this final evidence onto a fresh branch, and select the first incomplete unblocked adopted slice. Do not reuse the merged S5B branch. Final docs/whitespace/source equality checks follow before committing the handoff.
 
 Final handoff checks passed: nine changed governing documents / 149 relative links resolve, whitespace is clean, production/test/schema/workflow/dependency/AGENTS bytes equal successful published head, tracked manifest is restored, and only PLAN/S5B publication/CI records follow locally. MR re-read confirms draft/open/unmerged/mergeable at `378cf102`, with actual passing CI results in the body.
+
+### P25 acceptance/merge and P26-S1 selection — 2026-10-18 (America/Denver)
+
+Owner said “reviewed and merged. proceed”. Live GitHub/native fetch confirm MR #378 merged at current main `70462b49015916bc0179143f0bc1bdd532b6e20e`; accepted head `378cf102` passed run `39159777236`. Fresh `codex/P26-S1-asset-acquisitions` carries final local evidence as `ed6ca14f` from `e02c8252`; initial worktree clean. S5B/S5/P25 DONE based on owner review/merge and full executed validation, without inventing a per-check human desktop transcript. Optional policy-reference/native evidence limitations remain factual and are not reopened as accounting gates.
+
+Select the first unblocked adopted P26 slice, S1 acquisition/opening links (G11/A11). D05 form mapping does not govern this canonical acquisition relationship; template authority stays P27, custody S2, valuation D06 S5, and D07 remains resolved. Required inspection: current FixedAsset/command/view/service/depreciation/lifecycle and register panel; canonical Txn/Split entry/correction/audit/ownership/protection/native receipts; V55/V65/V71/V85 and persistence registration; asset reports, SCLX fixed-assets snapshot/identity/preview/commit/history; existing asset, authorization, migration, report, import and actual UI tests. Read governing adopted program/baseline A11, asset/ledger/lifecycle/period/auth contracts, SCLX and all three UI rules.
+
+Pre-edit baseline offline compile passed at 2026-10-18 22:34:25 UTC; 32 relevant fixed-asset service/atomic depreciation/lifecycle/authorization/SCLX snapshot tests passed at 22:35:14 UTC, zero failures/errors/skips. Donor AssetRecordService/AssetRecord maintain a separate normalized register with approximate/lot costs and custody; they do not supply a canonical acquisition transaction/claim authority suitable for import. Retain production FixedAsset/Txn/Split and caller-owned atomic entry seam. [S1 contract](P26-S1-asset-acquisitions.md) records concrete choices and acceptance. No P26-S2 or later feature is started.
+
+### P26-S1 final local verification — 2026-10-18 (America/Denver)
+
+Implemented three explicit shared-Save routes on the existing Asset Register: atomic balanced BANK purchase, link an existing ordinary fixed-asset debit, and opening/register-only with no accounting. Existing register items can be linked or explicitly marked register-only. FixedAsset retains nullable source/split provenance; acquisitionCost remains the only claim amount. Company and asset locking, immutable request receipts, exact preview rebuild, source capacity, account/Fund/date eligibility, period/reconciliation controls and full rollback protect native writes and retries. Linked basis, source transactions and linked account classification are protected; eligible audited unlink retains both register and accounting before ordinary Journal correction.
+
+V86 is nondestructive and leaves legacy provenance null. Strict sparse SCLX `assetAcquisitions` version 1 uses intrinsic asset/line identities, validates exact NEW_PURCHASE BANK structure and aggregate claims, participates in complete asset conflicts/Keep target, restores metadata without reposting, revalidates retained-target capacity/dependent history and rolls back late failures. Existing fixedAssets version 1 and files without the optional extension remain compatible. Custody/forms, valuation, conversion and broader lifecycle portability stay in their owning later slices.
+
+Shared Save uses nonmutating preview, confirmation, one request identity, asynchronous busy/capability guards, retained drafts, live permission changes and real Journal navigation. Register rows expose source transaction and full source/claimed/remaining values. Actual inspection reproduced and repaired blank FixedAssetView record cells, preserving company date/money formatting, exact four-decimal editing, company table state, movable dividers and independently reachable two-axis editor/table regions. The action row scrolls within a bounded area at larger text instead of consuming the workspace.
+
+Focused final acquisition/accounting/SCLX tests passed **14 tests**, zero failures/errors/skips. Final isolated offline `mvn clean verify` passed **999 tests, zero failures/errors, 62 display-dependent skips**, BUILD SUCCESS at **2026-10-18 18:32:29 America/Denver** (elapsed 3:41). The workflow-equivalent expanded Xvfb suite passed **55 tests, zero failures/errors/skips**, BUILD SUCCESS at **18:36:22** (elapsed 3:38), including new actual purchase/existing-link/register-only Save, preview/cancel/busy/draft/retry/precision/role/navigation and laptop/larger-text geometry coverage. An earlier invalid full-run result came from two clean Maven processes sharing `target/` after an interrupted wrapper left a child alive; both process groups were stopped, absence was verified, and the isolated full run passed. No product failure remains and no human per-check desktop transcript is inferred.
+
+Reviewed migration/model/service/canonical-entry/correction/account-classification/UI/SCLX/test/documentation/workflow changes. Changed-document relative links resolve, `git diff --check` passes, generated output is not staged, and the tracked manifest remains restored. P26-S1 is VERIFYING; draft publication, matching-tree verification and exact-head CI remain. P26-S2 stays blocked until owner review/merge is confirmed.

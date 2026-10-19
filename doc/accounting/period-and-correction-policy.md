@@ -74,3 +74,7 @@ Entered transactions may be deleted only when the active correction policy permi
 - roll back completely on failure.
 
 A transaction included in a completed reconciliation cannot be edited or deleted until that reconciliation is reopened. Reopening a period-close range does not bypass reconciliation protection.
+
+## P26-S1 acquisition protection
+
+New bank purchases respect open dates and finalized reconciliation BANK ranges before atomic canonical entry. Exact accepted request acknowledgement performs no accounting mutation and remains available after closing/reconciliation. Historical existing-entry/register-only metadata creates no new opening ledger. Removing an accepted acquisition link requires open and unreconciled source accounting and no retained depreciation/lifecycle activity; linked basis and generic source transaction rewrites remain blocked. Use the existing lifecycle correction route for subsequent asset history. See [S1](../P26-S1-asset-acquisitions.md).

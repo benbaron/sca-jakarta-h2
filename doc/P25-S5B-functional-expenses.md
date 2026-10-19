@@ -1,6 +1,6 @@
 # P25-S5B — Independent functional expenses
 
-Status VERIFYING — draft [MR #378](https://github.com/benbaron/sca-jakarta-h2/pull/378), published head `378cf102`. [PLAN](PLAN.md) owns execution; [adopted S5A](P25-S5A-functional-expense-contract.md) owns D07. AR = Events, OA = Administration, FR = Fundraising, explicit entry with no automatic defaults, net GL expense by canonical transaction date. No new product decision is required.
+Status DONE — owner reviewed/merged [MR #378](https://github.com/benbaron/sca-jakarta-h2/pull/378) at `70462b49`; accepted head `378cf102` passed full local and exact-head CI. [PLAN](PLAN.md) owns execution; [adopted S5A](P25-S5A-functional-expense-contract.md) owns D07. AR = Events, OA = Administration, FR = Fundraising, explicit entry with no automatic defaults, net GL expense by canonical transaction date. No new product decision is required.
 
 ## Technical choices and scope
 

@@ -1040,6 +1040,7 @@ public class TransactionEntryService
 
     private static void requireNotFixedAssetLifecycleTransaction(EntityManager em, long transactionId)
     {
+        FixedAssetAcquisitions.requireTransactionUnclaimed(em, transactionId);
         Number linked = (Number) em.createNativeQuery("""
                 select count(*)
                   from fixed_asset_lifecycle_event

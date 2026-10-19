@@ -162,7 +162,7 @@ After S4G's MR #374 merge, select [S4H](P25-S4H-merchant-withholding.md). Reuse 
 **Acceptance:** Expenses can be reported by function independently of account, fund, event, and budget. A mixed-purpose payment can split allocation without duplication. Functional totals reconcile to eligible GL expense totals; unclassified amounts are explicit.
 
 
-[S5A](P25-S5A-functional-expense-contract.md) records D07 following owner-approved/merged S4I. Owner explicitly adopted AR (Events), OA (Administration), FR (Fundraising), transaction-date net GL expense and no automatic defaults on 2026-10-18. D07 is resolved and S5A merged as MR #377. [S5B](P25-S5B-functional-expenses.md) implements the nullable canonical purpose, shared Journal Save, derived filtered report and strict sparse SCLX extension; its publication/review/merge and desktop acceptance remain before parent S5 closure. S4's resolved operating-policy scope is unchanged.
+[S5A](P25-S5A-functional-expense-contract.md) records D07 following owner-approved/merged S4I. Owner explicitly adopted AR (Events), OA (Administration), FR (Fundraising), transaction-date net GL expense and no automatic defaults on 2026-10-18. D07 is resolved and S5A merged as MR #377. [S5B](P25-S5B-functional-expenses.md) implements the nullable canonical purpose, shared Journal Save, derived filtered report and strict sparse SCLX extension; the owner reviewed/merged MR #378, completing parent S5 against executed local/CI/actual JavaFX evidence. No per-check human desktop transcript is inferred. S4's resolved operating-policy scope is unchanged.
 
 ## P26 — Property, planning, recognition, and conversion
 
@@ -171,6 +171,8 @@ After S4G's MR #374 merge, select [S4H](P25-S4H-merchant-withholding.md). Reuse 
 **Work:** Provide two deliberate routes: create acquisition accounting with the asset atomically, or link the register to existing validated accounting. Distinguish a new purchase from a historical opening record. Handle multi-asset invoices and prevent repeated claims on the same allocated cost.
 
 **Acceptance:** Register cost and GL acquisition agree; repeated clicks/imports cannot duplicate acquisition. A failed asset/transaction write rolls back both. Existing assets can be linked through reviewed mappings without reposting their costs. Depreciation and disposal retain their canonical links.
+
+[S1 acquisition contract](P26-S1-asset-acquisitions.md) bounds the new accounting route to a balanced BANK purchase. Other complete accounting is entered in Journal and linked; explicit register-only history creates no ledger. It records shared-invoice capacity, retry/correction/protection, shared Save, nullable migration and strict SCLX contracts. D05 template mapping remains P27; no acquisition-policy gate is reopened.
 
 ### P26-S2 — Complete custody, supplies, and property-transfer records (G11)
 

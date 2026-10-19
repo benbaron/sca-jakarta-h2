@@ -84,6 +84,7 @@ public class AccountAdminService
             {
                 CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
                 Company company = ownership.requireCompany(em, companyCodeSupplier.get());
+                SupplementalIntegrityService.lock(em, company);
                 ChartOfAccounts chart = resolveChart(em, company, ownership);
 
                 Account account;
@@ -104,6 +105,7 @@ public class AccountAdminService
                         throw new CompanyOwnershipException(
                                 "Account ID " + command.id() + " does not belong to the active Chart of Accounts.");
                     }
+                    requireAcquisitionClassification(em, account, command.accountType(), command.subtype(), command.normalBalance());
                     validateConfiguredBankClassification(
                             em,
                             company,
@@ -199,6 +201,7 @@ public class AccountAdminService
             {
                 CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
                 Company company = ownership.requireCompany(em, companyCodeSupplier.get());
+                SupplementalIntegrityService.lock(em, company);
                 ChartOfAccounts chart = resolveChart(em, company, ownership);
                 Account account = upsert(
                         em,
@@ -288,6 +291,7 @@ public class AccountAdminService
         }
         CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
         ownership.requireOwnedBy(managedCompany, managedChart, "Chart of Accounts");
+        SupplementalIntegrityService.lock(em, managedCompany);
 
         List<Account> existingMatches = em.createQuery(
                         "from Account a where a.chart = :chart and a.code = :code",
@@ -311,6 +315,7 @@ public class AccountAdminService
         else
         {
             account = existingMatches.get(0);
+            requireAcquisitionClassification(em, account, accountType, subtype, normalBalance);
             validateConfiguredBankClassification(
                     em,
                     managedCompany,
@@ -408,6 +413,17 @@ public class AccountAdminService
         {
             throw new IllegalArgumentException(
                     "BANK function requires an ASSET account with a DEBIT normal balance.");
+        }
+    }
+
+    private static void requireAcquisitionClassification(EntityManager em, Account account,
+            AccountType type, AccountSubtype subtype, NormalBalance balance)
+    {
+        if ((type != AccountType.ASSET || subtype != AccountSubtype.FIXED_ASSET || balance != NormalBalance.DEBIT)
+                && em.createQuery("select count(a) from FixedAsset a where a.acquisitionSplit.account = :account", Long.class)
+                        .setParameter("account", account).getSingleResult() > 0)
+        {
+            throw new IllegalArgumentException("This account supports linked acquisitions; preserve ASSET/FIXED_ASSET with DEBIT normal balance.");
         }
     }
 

@@ -446,6 +446,7 @@ public class TransactionCorrectionService
             long transactionId,
             String operation)
     {
+        FixedAssetAcquisitions.requireTransactionUnclaimed(em, transactionId);
         Number linked = (Number) em.createNativeQuery("""
                 select count(*)
                   from fixed_asset_lifecycle_event

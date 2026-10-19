@@ -495,6 +495,30 @@ public final class SclxCoreSnapshotAssembler
         extensionValues.put(SclxBankStatementFactsExtension.KEY, exportedBanking.bankStatementFacts());
         extensionValues.put(SclxReconciliationExtension.KEY, exportedBanking.reconciliation());
         extensionValues.put(SclxFixedAssetsExtension.KEY, exportedFixedAssets);
+        List<Map<String, String>> acquisitions = new java.util.ArrayList<>();
+        for (FixedAsset asset : fixedAssets)
+        {
+            if (asset.getAcquisitionSource() == null)
+            {
+                continue;
+            }
+            Map<String, String> fact = new LinkedHashMap<>();
+            fact.put("assetId", SclxPortableIdentity.fixedAsset(companyCode, asset.getPortableId().toString()));
+            fact.put("source", asset.getAcquisitionSource().name());
+            if (asset.getAcquisitionSplit() != null)
+            {
+                String lineId = exportedLineIds.entrySet().stream()
+                        .filter(entry -> entry.getKey().getId().equals(asset.getAcquisitionSplit().getId()))
+                        .map(Map.Entry::getValue).findFirst().orElseThrow(
+                                () -> new IllegalStateException("Acquisition line is outside the company snapshot."));
+                fact.put("lineId", lineId);
+            }
+            acquisitions.add(Map.copyOf(fact));
+        }
+        if (!acquisitions.isEmpty())
+        {
+            extensionValues.put(SclxAssetAcquisitions.KEY, Map.of("version", 1, "assets", List.copyOf(acquisitions)));
+        }
         extensionValues.put(SclxInventoryExtension.KEY, exportedInventory);
         List<Map<String, String>> transactionBudgets = transactionLines.stream()
                 .filter(line -> line.getBudgetCategory() != null)

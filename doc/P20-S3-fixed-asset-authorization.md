@@ -40,3 +40,6 @@ Direct H2 integration coverage must prove:
 - the two documented caller-owned import seams continue to operate inside an explicitly caller-owned transaction even when this service instance has no authenticated session.
 
 Existing fixed-asset accounting/lifecycle tests remain authoritative for domain validation, atomicity, period-close/reconciliation protection, portable identity, and correction semantics.
+## P26-S1 acquisition extension
+
+`recordAcquisition` and `removeAcquisitionLink` require BOOKKEEPING_WRITE before argument validation and use the authenticated actor; preview/candidates are read-only. UI shared Save and unlink react to live role changes. `restoreAcquisitionForImport` is an additional caller-owned, active-transaction historical seam under the authorized SCLX outer operation, with ownership, source eligibility and capacity validation. V86 adds nullable source/link columns only; no permission or approval workflow is added. See [S1](P26-S1-asset-acquisitions.md).

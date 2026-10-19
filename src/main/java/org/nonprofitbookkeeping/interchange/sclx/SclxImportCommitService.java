@@ -104,7 +104,7 @@ public final class SclxImportCommitService
             "PERIOD_CLOSE_RANGE", "PERIOD_CLOSE_EVENT", "AUDIT_EVENT", "NMR_POLICY_VERSION");
     private static final Set<String> SUPPORTED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
-            "supplementalDetails", "transactionBudgets", "transactionNmr", "expenseFunctions", "paymentReferences", "fixedAssets", "inventory", "bankConfiguration",
+            "supplementalDetails", "transactionBudgets", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "fixedAssets", "inventory", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "periodClose", "auditHistory", "nmrPolicies");
 
     private final Jpa jpa;
@@ -289,6 +289,7 @@ public final class SclxImportCommitService
         Map<String, String> transactionBudgetCodes = SclxTransactionBudgetExtension.parse(root);
         Set<String> nmrLineIds = SclxTransactionNmrExtension.parse(root);
         Map<String, ExpenseFunction> expenseFunctions = SclxExpenseFunctions.parse(root);
+        var acquisitions = SclxAssetAcquisitions.parse(root);
         var paymentReferences = SclxPaymentReferences.parse(root);
         SclxCorrectionImportData corrections = SclxCorrectionImportData.parse(root);
         requireSupportedTransactionShape(root, details);
@@ -414,11 +415,20 @@ public final class SclxImportCommitService
                         });
                 writes += transactions.transactionCount() + restoredCorrections[0];
                 FixedAssetWrite writtenFixedAssets = writeFixedAssets(
-                        em, company, fixedAssets, accounts, funds, transactions.transactions(), previews, writes);
+                        em, company, fixedAssets, accounts, funds, transactions.transactions(), transactions.lines(), acquisitions, previews, writes);
                 writes += writtenFixedAssets.businessWriteCount();
                 InventoryWrite writtenInventory = writeInventory(
                         em, company, inventory, accounts, funds, transactions.transactions(), previews, writes);
                 writes += writtenInventory.businessWriteCount();
+                // Recheck after dependent domain history is restored: generated entries cannot become acquisition sources.
+                for (FixedAsset asset : writtenFixedAssets.assets().values())
+                {
+                    if (asset.getAcquisitionSource() != null)
+                    {
+                        fixedAssetService.restoreAcquisitionForImport(em, company, asset,
+                                asset.getAcquisitionSource(), asset.getAcquisitionSplit());
+                    }
+                }
                 BankingWrite writtenBanking = writeBanking(
                         em, company, banking, accounts, transactions, previews, writes);
                 writes += writtenBanking.businessWriteCount();
@@ -1312,6 +1322,8 @@ public final class SclxImportCommitService
             Map<String, Account> accounts,
             Map<String, Fund> funds,
             Map<String, Txn> transactions,
+            Map<String, TxnSplit> lines,
+            Map<String, SclxAssetAcquisitions.Fact> acquisitions,
             Map<EntityKey, SclxImportEntityPreview> previews,
             int writesBefore)
     {
@@ -1357,6 +1369,12 @@ public final class SclxImportCommitService
                     portableUuid(value.externalId()),
                     value.createdAt(),
                     value.updatedAt());
+            var acquisition = acquisitions.get(value.externalId());
+            if (acquisition != null)
+            {
+                fixedAssetService.restoreAcquisitionForImport(em, company, asset, acquisition.source(),
+                        acquisition.lineId() == null ? null : required(lines, acquisition.lineId(), "acquisition line"));
+            }
             assets.put(value.externalId(), asset);
             afterBusinessWrite.accept(++writes);
             businessWrites++;
