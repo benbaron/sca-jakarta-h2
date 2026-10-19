@@ -1,12 +1,12 @@
 ---
-plan_version: 383
+plan_version: 385
 active_phase: P26
-active_slice: P26-S1
-active_status: DONE
-active_branch: codex/P26-post-S1
+active_slice: P26-S2
+active_status: VERIFYING
+active_branch: codex/P26-S2-property-custody
 active_pull_request: null
-active_head: 2de87dc3645c69031c7de026e5430cf994c6ed33
-next_action: "Inspect and select P26-S2 complete custody, supplies, and property-transfer records on a fresh slice branch when execution continues."
+active_head: db208e1b5889c2fbe9aa9ee2754718e3881c95cf
+next_action: "Publish the reviewed P26-S2 implementation as a draft MR, verify the final remote tree, and require exact-head JDK 17 CI before owner review/merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -697,8 +697,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S5 | Add independent functional-expense classification (G10) | DONE | Owner reviewed/merged S5B MR #378; D07 adopted; full local and exact-head CI passed |
 | P25-S5A | Adopt functional-expense contract (documentation only) | DONE | MR #377 merged at 7bc89aef; final-head clean/repeat/JavaFX CI passed; D07 adopted |
 | P25-S5B | Independent functional expense entry, reporting and portability | DONE | MR #378 reviewed/merged at 70462b49; full local and exact-head CI passed;  [Implementation contract](P25-S5B-functional-expenses.md); nullable canonical fact, shared Save, compatible native retries and lossless SCLX |
-| P26-S1 | Link fixed-asset acquisition and opening records (G11) | IN_PROGRESS | P25 reviewed/merged; [S1 contract](P26-S1-asset-acquisitions.md); no affected unresolved policy decision |
-| P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
+| P26-S1 | Link fixed-asset acquisition and opening records (G11) | DONE | Owner accepted/merged MR #379 at `2de87dc3`; [S1 contract](P26-S1-asset-acquisitions.md); full local and exact-head CI passed |
+| P26-S2 | Complete custody, supplies, and property-transfer records (G11) | VERIFYING | Implementation and local verification complete; draft publication and exact-head CI pending; internal branch form does not claim P27 official-template mapping; D06 inventory costing remains P26-S5 |
 | P26-S3 | Complete event/fund budget planning and reporting filters (G12) | BLOCKED | P26-S2 merged; owning contract and D01–D10 gates as applicable |
 | P26-S4 | Add governed prepaid/deferred recognition assistance (G12) | BLOCKED | P26-S3 merged; owning contract and D01–D10 gates as applicable |
 | P26-S5 | Resolve inventory valuation limitations (G12) | BLOCKED | P26-S4 merged; owning contract and D01–D10 gates as applicable |
@@ -2023,3 +2023,17 @@ This final PLAN evidence stays local to preserve the green published head. P26-S
 Owner explicitly recorded MR #379 as merged and accepted. Live GitHub and native main verification confirm [MR #379](https://github.com/benbaron/sca-jakarta-h2/pull/379) merged accepted head `b66e0ce17c2acc31ee73c17c41341475bd0bde9f` into current `main` at signed merge `2de87dc3645c69031c7de026e5430cf994c6ed33`; the merge tree `6bb26b568ba430293fda99a21ffa6df615ec0294` equals the accepted head tree. Exact-head run `39189292452` passed all required steps. P26-S1 is DONE. Acceptance is recorded as the owner's slice decision; no separate per-check human transcript is invented.
 
 Fresh branch `codex/P26-post-S1` starts from verified merged main and carries the local final-verification record as `81957795`. P26-S2 remains unselected and no S2 implementation is started by this acceptance record. The next action is to inspect the merged authority and select the bounded custody/supplies/property-transfer slice when execution continues.
+
+### P26-S2 selection and baseline — 2026-10-18 (America/Denver)
+
+Owner instructed “do p26-s2.” Fresh branch `codex/P26-S2-property-custody` carries the accepted S1 evidence and selects the first unblocked adopted G11/A11 slice. [P26-S2 contract](P26-S2-property-custody.md) retains FixedAsset and InventoryItem as the only subjects; adds immutable custody events, explicit zero-value EXPENSED_SUPPLY treatment, append-only latest-event correction, source-backed removal and an internal branch report. D05 official template mapping remains P27 and D06 cost method remains P26-S5; neither is inferred. No second register, GL writer, approval engine or valuation method is introduced.
+
+Donor `NonprofitAccounting` at `c697630e` offers current guardian, one confirmation snapshot and removal fields in a separate AssetRecord model plus JDBC-created detail tables. Only the field concepts are retained. Its parallel register, approximate/lot valuation and static JDBC authority are unsuitable for current canonical FixedAsset/InventoryItem, Flyway/JPA, accounting protections and immutable history.
+
+Pre-edit offline compile passed at **2026-10-18 21:05:59 America/Denver**. Thirty-three relevant fixed-asset, inventory, authorization, accounting, report and SCLX tests passed at **21:06:41**, zero failures/errors/skips. Current Inventory already supports explicit zero-value nonfinancial movements; existing rows have no explicit financial-treatment field, FixedAsset has no custody fields, and neither authority retains confirmation/loan/transfer/removal custody history. Implementation and actual missing-route regression follow.
+
+### P26-S2 implementation and local verification — 2026-10-18 (America/Denver)
+
+Implemented the [adopted contract](P26-S2-property-custody.md) as one vertical slice. Migration V87 and the canonical service add append-only custody events for existing fixed assets and inventory items, explicit capitalized-inventory versus zero-value expensed-supply treatment, derived current/overdue state, latest-event corrections, and source-backed removals without posting accounting. The production Property Custody destination exposes New, Correct Selected, Refresh, and Save Custody Event with live role gating, dirty protection, persisted table/divider state, company date formatting, and reachable scrolling. Report Library, strict optional SCLX v1 portability, portable identity/retry behavior, and the operation matrix cover the same facts.
+
+Final-source focused service/accounting/SCLX verification passed **20 tests**, zero failures/errors/skips. SCLX round-trip coverage includes expensed treatment, a correction chain, restart, identical retry, and an empty target ledger. Offline `mvn clean verify` passed at **2026-10-18 21:36:07 America/Denver**: **1,005 tests**, zero failures/errors, **63 headless skips**. The actual `PropertyCustodyPanelTest` then passed under Xvfb at **21:36:54**: **1 test**, zero failures/errors/skips. Changed-tree whitespace review is clean. P26-S2 remains VERIFYING until the draft MR is published, its final remote tree is matched, exact-head CI passes, and the owner reviews/merges it. No human disposable-company acceptance result is inferred from automated tests.
