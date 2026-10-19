@@ -4,9 +4,9 @@ active_phase: P26
 active_slice: P26-S1
 active_status: VERIFYING
 active_branch: codex/P26-S1-asset-acquisitions
-active_pull_request: null
-active_head: 1fd33e20f75b32aa49810e4e2c3ae801d2698438
-next_action: "Publish the reviewed P26-S1 implementation as a draft MR, verify matching trees and exact-head JDK 17 clean/repeat/expanded JavaFX CI, then record owner review/merge before selecting P26-S2."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/379
+active_head: c4465cadc792a4a362d95c4b295245badd14de37
+next_action: "Verify exact-head JDK 17 clean/repeat/expanded JavaFX CI for draft MR #379, update the MR with actual results, then record owner review/merge before selecting P26-S2."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2003,3 +2003,9 @@ Shared Save uses nonmutating preview, confirmation, one request identity, asynch
 Focused final acquisition/accounting/SCLX tests passed **14 tests**, zero failures/errors/skips. Final isolated offline `mvn clean verify` passed **999 tests, zero failures/errors, 62 display-dependent skips**, BUILD SUCCESS at **2026-10-18 18:32:29 America/Denver** (elapsed 3:41). The workflow-equivalent expanded Xvfb suite passed **55 tests, zero failures/errors/skips**, BUILD SUCCESS at **18:36:22** (elapsed 3:38), including new actual purchase/existing-link/register-only Save, preview/cancel/busy/draft/retry/precision/role/navigation and laptop/larger-text geometry coverage. An earlier invalid full-run result came from two clean Maven processes sharing `target/` after an interrupted wrapper left a child alive; both process groups were stopped, absence was verified, and the isolated full run passed. No product failure remains and no human per-check desktop transcript is inferred.
 
 Reviewed migration/model/service/canonical-entry/correction/account-classification/UI/SCLX/test/documentation/workflow changes. Changed-document relative links resolve, `git diff --check` passes, generated output is not staged, and the tracked manifest remains restored. P26-S1 is VERIFYING; draft publication, matching-tree verification and exact-head CI remain. P26-S2 stays blocked until owner review/merge is confirmed.
+
+### P26-S1 draft publication — 2026-10-18 (America/Denver)
+
+Draft [MR #379](https://github.com/benbaron/sca-jakarta-h2/pull/379) targets current main `70462b49015916bc0179143f0bc1bdd532b6e20e`. A normal non-force native push created fresh branch `codex/P26-S1-asset-acquisitions` with the carried P25 evidence, implementation and local-verification commits. Remote head `c4465cadc792a4a362d95c4b295245badd14de37` and tree `6f30c73423f786d28568038cb2d074a6c5e7ec83` were fetched; both exactly match local, and the diff is empty. Live MR metadata confirms draft/open/unmerged, base/head, 3 commits and 37 intended changed files. The MR body records actual local results, bounded later-slice exclusions and owner checks. Exact-head Maven PR Tests is pending.
+
+This publication record is the only post-tested documentation change. Publish it normally, verify the resulting final remote head/tree, and use that exact head for CI. Do not advance P26-S2 from draft publication or automated validation alone.
