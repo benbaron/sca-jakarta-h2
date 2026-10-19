@@ -534,6 +534,10 @@ public class AssetsRegisterPanel implements AppPanel
                         confirmation.setTitle("Save Asset Acquisition");
                         confirmation.setHeaderText(preview.command().source().label() + ": " + command.name());
                         confirmation.setContentText(acquisitionPreviewText(preview));
+                        if (root.getScene() != null && root.getScene().getWindow() != null)
+                        {
+                            confirmation.initOwner(root.getScene().getWindow());
+                        }
                         CompanyDialogUiCompliance.install(confirmation.getDialogPane(), AppPanelId.ASSETS_REGISTER);
                         if (confirmation.showAndWait().filter(ButtonType.OK::equals).isEmpty())
                         {
