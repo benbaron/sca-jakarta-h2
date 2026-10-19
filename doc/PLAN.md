@@ -1,12 +1,12 @@
 ---
-plan_version: 386
+plan_version: 387
 active_phase: P26
 active_slice: P26-S2
 active_status: VERIFYING
 active_branch: codex/P26-S2-property-custody
 active_pull_request: "https://github.com/benbaron/sca-jakarta-h2/pull/380"
-active_head: 1d049d22
-next_action: "Publish this documentation-only successor, verify the final PR #380 remote tree, and require exact-head JDK 17 CI before owner review/merge."
+active_head: c83db0a54a822a4a4572d3e822442f8d5e90a263
+next_action: "Owner reviews draft PR #380, performs the documented disposable-company checks, and marks it ready/merges when accepted; after merge, verify main and select P26-S3 on a fresh branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2041,3 +2041,9 @@ Final-source focused service/accounting/SCLX verification passed **20 tests**, z
 ### P26-S2 draft publication — 2026-10-18 (America/Denver)
 
 Published branch `codex/P26-S2-property-custody` and opened draft [PR #380](https://github.com/benbaron/sca-jakarta-h2/pull/380) targeting `main`. The PR records the bounded accounting boundary, delivered custody/UI/report/SCLX behavior, local clean/focused/actual-JavaFX evidence, and remaining owner checks. This documentation-only publication successor follows the same authorization; `active_head` identifies its known remote parent because the successor cannot embed its own SHA. Verify the final branch and PR tip/tree and require the workflow for that exact head to pass. No GitHub CI result is claimed at this checkpoint, and P26-S2 stays VERIFYING pending owner review/merge.
+
+### P26-S2 final-head verification — 2026-10-18 (America/Denver)
+
+Final published head `c83db0a54a822a4a4572d3e822442f8d5e90a263` and its fetched remote ref matched exactly; both resolve tree `d1569f6a4510552b10acd585f06b1d737a0fa39b`. Exact-head [Maven PR Tests run 39195692424](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39195692424) completed successfully: clean headless verification, repeat tests, and production JavaFX route compliance all passed; failed-test publication was correctly skipped. The PR validation now records this evidence. P26-S2 remains VERIFYING for owner disposable-company review and merge.
+
+This final PLAN evidence is local only so the reviewed green PR head remains unchanged. Preserve it for post-merge closeout rather than publishing another evidence-only successor. After owner acceptance/merge, fetch and verify current `main`, carry this record onto a fresh branch, and select P26-S3 without reusing the merged P26-S2 branch.
