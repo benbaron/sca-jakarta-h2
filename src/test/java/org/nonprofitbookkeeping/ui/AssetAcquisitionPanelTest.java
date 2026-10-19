@@ -126,7 +126,7 @@ class AssetAcquisitionPanelTest
             button("assetRegisterSave").fire(); return null;
         });
         confirm(ButtonType.OK);
-        await(() -> !button("assetRegisterSave").isDisabled() && table().getItems().size() == 1);
+        await(() -> panel.commandCapabilities().contains(AppCommand.SAVE_ACTIVE) && table().getItems().size() == 1);
         FxTestSupport.onFx(() ->
         {
             assertFalse(panel.hasUnsavedChanges());
@@ -150,7 +150,7 @@ class AssetAcquisitionPanelTest
                     JournalWorkspacePanel.transactionIdFromContext(DrillThroughCoordinator.consumeContext(AppPanelId.JOURNAL_PANE)));
             panel.onSave(); return null;
         });
-        await(() -> !button("assetRegisterSave").isDisabled());
+        await(() -> panel.commandCapabilities().contains(AppCommand.SAVE_ACTIVE));
         FxTestSupport.onFx(() ->
         {
             assertEquals(1, UiServiceRegistry.fixedAssets().listAssets("DEFAULT").size());
