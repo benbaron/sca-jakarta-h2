@@ -5,7 +5,7 @@ active_slice: P26-S1
 active_status: VERIFYING
 active_branch: codex/P26-S1-asset-acquisitions
 active_pull_request: null
-active_head: pending-local-implementation-commit
+active_head: 1fd33e20f75b32aa49810e4e2c3ae801d2698438
 next_action: "Publish the reviewed P26-S1 implementation as a draft MR, verify matching trees and exact-head JDK 17 clean/repeat/expanded JavaFX CI, then record owner review/merge before selecting P26-S2."
 ---
 
