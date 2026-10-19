@@ -1,12 +1,12 @@
 ---
-plan_version: 382
+plan_version: 383
 active_phase: P26
 active_slice: P26-S1
-active_status: VERIFYING
-active_branch: codex/P26-S1-asset-acquisitions
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/379
-active_head: b66e0ce17c2acc31ee73c17c41341475bd0bde9f
-next_action: "Owner reviews and merges draft MR #379 after the documented disposable-company checks; then verify current main and select P26-S2 on a fresh branch."
+active_status: DONE
+active_branch: codex/P26-post-S1
+active_pull_request: null
+active_head: 2de87dc3645c69031c7de026e5430cf994c6ed33
+next_action: "Inspect and select P26-S2 complete custody, supplies, and property-transfer records on a fresh slice branch when execution continues."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -38,7 +38,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
-| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 acquisition/opening links selected after reviewed/merged P25 |
+| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 acquisition/opening links DONE through accepted/merged MR #379; next slice unselected |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
@@ -2017,3 +2017,9 @@ The first exact-head run and its failed-job rerun passed clean headless verifica
 Final exact published-head JDK 17 [Maven PR Tests run 39189292452](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39189292452), job `117858319494`, completed **success at 2026-10-18 20:28:22 America/Denver** for `b66e0ce17c2acc31ee73c17c41341475bd0bde9f`. Independent job-step metadata confirms clean headless verification, repeat tests, production JavaFX and cleanup all passed; the failure-only report step correctly skipped. Draft MR #379 remains open, unmerged, mergeable and draft at this exact head, and its description records the final local/CI evidence and owner checks. No executed gate has a remaining failure.
 
 This final PLAN evidence stays local to preserve the green published head. P26-S1 remains VERIFYING until owner review/merge and documented disposable-company checks; no human per-check result is inferred from automated execution. P26-S2 remains unselected. After merge confirmation, fetch and verify current main, carry this evidence onto a fresh branch, and select P26-S2 without reusing the merged branch.
+
+### P26-S1 acceptance and merge — 2026-10-18 (America/Denver)
+
+Owner explicitly recorded MR #379 as merged and accepted. Live GitHub and native main verification confirm [MR #379](https://github.com/benbaron/sca-jakarta-h2/pull/379) merged accepted head `b66e0ce17c2acc31ee73c17c41341475bd0bde9f` into current `main` at signed merge `2de87dc3645c69031c7de026e5430cf994c6ed33`; the merge tree `6bb26b568ba430293fda99a21ffa6df615ec0294` equals the accepted head tree. Exact-head run `39189292452` passed all required steps. P26-S1 is DONE. Acceptance is recorded as the owner's slice decision; no separate per-check human transcript is invented.
+
+Fresh branch `codex/P26-post-S1` starts from verified merged main and carries the local final-verification record as `81957795`. P26-S2 remains unselected and no S2 implementation is started by this acceptance record. The next action is to inspect the merged authority and select the bounded custody/supplies/property-transfer slice when execution continues.
