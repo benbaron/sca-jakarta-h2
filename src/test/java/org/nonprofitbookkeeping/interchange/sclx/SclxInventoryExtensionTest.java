@@ -36,6 +36,7 @@ class SclxInventoryExtensionTest
         new SclxExportDocumentValidator().validate(document);
         SclxInventoryExtension.Data data = SclxInventoryExtension.data(document.extensions());
         assertEquals(1, data.items().size());
+        assertEquals("CAPITALIZED_INVENTORY", data.items().get(0).financialTreatment());
         assertEquals(1, data.movements().size());
         SclxExportCounts counts = SclxExportCounts.from(document, 0L, 0L);
         assertEquals(1, counts.inventoryItems());

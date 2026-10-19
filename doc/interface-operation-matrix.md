@@ -43,6 +43,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Banking | yes | yes | no | Durable bank/configuration editing plus panel-local statement import/review actions. |
 | Asset Register | yes | yes | no | Stable asset identity and governed lifecycle operations. |
 | Inventory | yes | item editor only | no | Stable item identity and governed movement/lifecycle operations. |
+| Property Custody | yes | custody event draft | no | Save Custody Event appends assignment/confirmation/loan/return/transfer/removal history; Correct Selected appends a replacement. |
 | Chart of Accounts | yes | yes | no | Stable account ID editing; code is mutable business data. |
 | Funds | yes | yes | no | Stable fund ID editing with protected delete/deactivation rules; Fund Transfers navigation preserves the Fund draft. |
 | Fund Transfers | yes | yes | no | Same-company internal allocations, retained history, dated reversal and Journal drill-through. Linked transfers cannot be edited/deleted; reverse then enter a corrected transfer. |
@@ -73,6 +74,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Budget vs Actual | `BudgetVsActualPanel` | active budget plus canonical ledger actuals in company fiscal/accounting-period context | none | No calendar-year substitution. |
 | Asset Register | `AssetsRegisterPanel` | `FixedAssetService` | fixed-asset lifecycle/depreciation/correction services | Asset-linked transactions are domain-governed. |
 | Inventory | `InventoryPanel` | `InventoryService` | inventory movement/lifecycle services | Financial movements require Event or explicit Non-event, with independent optional Budget on the offset split; both lines retain the item Fund. Preview, history and reversal use canonical tags, and financial movements link atomically to canonical transactions. |
+| Property Custody | `PropertyCustodyPanel` | `PropertyCustodyService` | fixed-asset lifecycle and inventory movement evidence | Custody-only events never post accounting; removals cite existing canonical source records. |
 | Chart of Accounts | `ChartOfAccountsPanel` | account/chart services | `AccountAdminService` | Stable account ID; deactivate instead of invented hard delete for referenced history. |
 | Fund Transfers | `FundTransfersPanel` | `FundTransferService.list()/choices()` | `FundTransferService.save()/reverse()` | Atomic canonical ledger and existing transfer facts, BOOKKEEPING_WRITE, stable request IDs, current-company restrictions, period protection and correction history. |
 | Funds | Funds administration panel | fund lookup/admin services | `FundAdminService` | Stable IDs; unused delete only after usage checks, otherwise deactivate. |

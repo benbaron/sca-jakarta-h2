@@ -45,7 +45,7 @@ public final class SclxImportPreviewService
     private static final Set<String> RECOGNIZED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
             "supplementalDetails", "transactionBudgets", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "bankConfiguration",
-            "bankStatementFacts", "reconciliation", "fixedAssets", "inventory",
+            "bankStatementFacts", "reconciliation", "fixedAssets", "inventory", "propertyCustody",
             "periodClose", "auditHistory", "nmrPolicies");
     private static final Set<String> UNSUPPORTED_ROOT_SECTIONS = Set.of(
             "people", "bankAccounts", "officeAssignments", "committeeMemberships", "events",
@@ -508,6 +508,9 @@ public final class SclxImportPreviewService
                     counts, entities, messages,
                     new ArraySpec("items", "itemId", "INVENTORY_ITEM", "inventoryItems"),
                     new ArraySpec("movements", "movementId", "INVENTORY_MOVEMENT", "inventoryMovements"));
+            addObjectArrays(app.get("propertyCustody"), "$.extensions.scaJakartaH2.propertyCustody",
+                    counts, entities, messages,
+                    new ArraySpec("events", "eventId", "PROPERTY_CUSTODY_EVENT", "propertyCustodyEvents"));
             addObjectArrays(app.get("periodClose"), "$.extensions.scaJakartaH2.periodClose",
                     counts, entities, messages,
                     new ArraySpec("ranges", "rangeId", "PERIOD_CLOSE_RANGE", "periodCloseRanges"),

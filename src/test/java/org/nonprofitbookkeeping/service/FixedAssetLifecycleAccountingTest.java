@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.model.FixedAsset;
 import org.nonprofitbookkeeping.model.FixedAssetLifecycleEvent;
+import org.nonprofitbookkeeping.model.InventoryItem;
+import org.nonprofitbookkeeping.model.PropertyCustodyEvent;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.math.BigDecimal;
@@ -78,6 +80,17 @@ class FixedAssetLifecycleAccountingTest
                     "Trailer", "1000.0000", "200.0000", FixedAsset.Status.ACTIVE);
             assertThrows(IllegalStateException.class,
                     () -> service.update(asset.id(), directReactivation));
+
+            PropertyCustodyService.EventView removal = new PropertyCustodyService(jpa, () -> "SCA").save(
+                    new PropertyCustodyService.Command(PropertyCustodyService.SubjectType.FIXED_ASSET,
+                            asset.id(), PropertyCustodyEvent.EventType.REMOVAL, EVENT_DATE,
+                            BigDecimal.ONE, "Facilities", "facilities@example.org", "555-0100", "Released",
+                            InventoryItem.Condition.GOOD, PropertyCustodyEvent.ConfirmationStatus.CONFIRMED,
+                            EVENT_DATE, EVENT_DATE, null, "Sold under board authorization", "BOARD-26-04",
+                            "Physical release after sale", event.id(), null), "treasurer");
+            assertEquals(PropertyCustodyEvent.AccountingTreatment.FIXED_ASSET_LIFECYCLE,
+                    removal.accountingTreatment());
+            assertEquals(event.id(), removal.fixedAssetLifecycleEventId());
         }
     }
 

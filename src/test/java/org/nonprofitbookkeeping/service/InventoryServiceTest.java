@@ -5,7 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.model.InventoryItem;
 import org.nonprofitbookkeeping.model.InventoryMovement;
+import org.nonprofitbookkeeping.model.PropertyCustodyEvent;
 import org.nonprofitbookkeeping.persistence.Jpa;
+import org.nonprofitbookkeeping.report.AssetInventoryReportQueryService;
 
 import java.math.BigDecimal;
 import java.nio.file.Path;
@@ -230,6 +232,82 @@ public class InventoryServiceTest
         }
     }
 
+    @Test
+    void expensedSuppliesRetainCorrectableCustodyWithoutInventoryAccounting(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("expensed-custody")))
+        {
+            seedCompanyAccountsAndFund(jpa);
+            InventoryService inventory = service(jpa);
+            InventoryItemCommand base = itemCommand("Expensed event supplies", new BigDecimal("3.0000"));
+            InventoryItemView item = inventory.create(new InventoryItemCommand(
+                    base.companyCode(), base.inventoryAccountId(), base.fundId(), base.name(), base.itemType(),
+                    base.quantity(), base.unit(), BigDecimal.ZERO, InventoryItem.FinancialTreatment.EXPENSED_SUPPLY,
+                    base.acquisitionDate(), base.custodian(), base.storageLocation(), base.condition(), base.status(), base.notes()));
+            assertEquals(InventoryItem.FinancialTreatment.EXPENSED_SUPPLY, item.financialTreatment());
+            assertEquals(new BigDecimal("0.0000"), item.totalValue());
+            assertEquals(0L, count(jpa, "select count(*) from txn"));
+
+            PropertyCustodyService custody = new PropertyCustodyService(jpa, () -> COMPANY_CODE);
+            PropertyCustodyService.EventView assigned = custody.save(custodyCommand(item.id(),
+                    PropertyCustodyEvent.EventType.ASSIGNMENT, "Alex", "Hall", new BigDecimal("3.0000"), null), "tester");
+            PropertyCustodyService.EventView corrected = custody.correctLatest(assigned.id(), custodyCommand(item.id(),
+                    PropertyCustodyEvent.EventType.TRANSFER, "Morgan", "Store", new BigDecimal("3.0000"), null), "tester");
+            assertEquals(assigned.id(), corrected.correctionOfEventId());
+            assertEquals("Morgan", custody.listSubjects().get(0).guardianName());
+            assertEquals(2, custody.history(PropertyCustodyService.SubjectType.INVENTORY_ITEM, item.id()).size());
+            assertEquals(0L, count(jpa, "select count(*) from txn"));
+
+            InventoryMovementView issue = inventory.recordMovement(item.id(), new InventoryMovementCommand(
+                    InventoryMovement.MovementType.ISSUE, new BigDecimal("3.0000"), LocalDate.of(2026, 2, 2),
+                    null, true, "Removed expensed supplies", null, null, true));
+            PropertyCustodyService.EventView removal = custody.save(custodyCommand(item.id(),
+                    PropertyCustodyEvent.EventType.REMOVAL, "Morgan", "Removed", new BigDecimal("3.0000"), issue.id()), "tester");
+            assertEquals(PropertyCustodyEvent.AccountingTreatment.EXPENSED_NO_VALUE, removal.accountingTreatment());
+            assertEquals(0L, count(jpa, "select count(*) from txn"));
+            var report = new AssetInventoryReportQueryService(jpa, () -> COMPANY_CODE)
+                    .propertyCustody(LocalDate.of(2026, 2, 1), LocalDate.of(2026, 2, 28), 100);
+            assertEquals(3, report.size());
+            assertEquals(PropertyCustodyEvent.AccountingTreatment.EXPENSED_NO_VALUE,
+                    report.get(0).accountingTreatment());
+            assertEquals(1, report.stream().filter(AssetInventoryReportQueryService.PropertyCustodyReportRow::corrected).count());
+        }
+    }
+
+    @Test
+    void expensedSupplyRejectsInventoryValue(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("expensed-value-guard")))
+        {
+            seedCompanyAccountsAndFund(jpa);
+            InventoryItemCommand base = itemCommand("Bad expensed supply", BigDecimal.ZERO);
+            InventoryItemCommand command = new InventoryItemCommand(base.companyCode(), base.inventoryAccountId(),
+                    base.fundId(), base.name(), base.itemType(), base.quantity(), base.unit(), new BigDecimal("1.0000"),
+                    InventoryItem.FinancialTreatment.EXPENSED_SUPPLY, base.acquisitionDate(), base.custodian(),
+                    base.storageLocation(), base.condition(), base.status(), base.notes());
+            assertThrows(IllegalArgumentException.class, () -> service(jpa).create(command));
+        }
+    }
+
+    private static PropertyCustodyService.Command custodyCommand(long itemId,
+            PropertyCustodyEvent.EventType type, String guardian, String location, BigDecimal quantity, Long movementId)
+    {
+        return new PropertyCustodyService.Command(PropertyCustodyService.SubjectType.INVENTORY_ITEM, itemId, type,
+                LocalDate.of(2026, 2, 2), quantity, guardian, "guardian@example.org", "555-0100", location,
+                InventoryItem.Condition.GOOD, PropertyCustodyEvent.ConfirmationStatus.CONFIRMED,
+                LocalDate.of(2026, 3, 1), LocalDate.of(2026, 2, 2), null,
+                type == PropertyCustodyEvent.EventType.REMOVAL ? "Consumed in program" : null,
+                "BOARD-2026-02", "Custody evidence", null, movementId);
+    }
+
+    private static long count(Jpa jpa, String sql)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            return ((Number) em.createNativeQuery(sql).getSingleResult()).longValue();
+        }
+    }
+
     private static InventoryItemCommand itemCommandWithStatus(
             String name,
             BigDecimal quantity,
@@ -269,7 +347,7 @@ public class InventoryServiceTest
                 () -> COMPANY_CODE);
     }
 
-    private static void seedCompanyAccountsAndFund(Jpa jpa)
+    public static void seedCompanyAccountsAndFund(Jpa jpa)
     {
         try (EntityManager em = jpa.em())
         {

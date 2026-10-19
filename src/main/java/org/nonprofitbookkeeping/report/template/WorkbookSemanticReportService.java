@@ -92,6 +92,8 @@ public class WorkbookSemanticReportService
                     effectiveStart, effectiveEnd, fundCode, effectiveLimit);
             case "FundTransfers" -> fundTransferValues(
                     effectiveStart, effectiveEnd, effectiveLimit);
+            case "PropertyCustodyTransfers" -> propertyCustodyValues(
+                    requireAssetInventoryQueries().propertyCustody(effectiveStart, effectiveEnd, effectiveLimit));
             default -> throw new IllegalArgumentException("Unknown semantic report template: " + templateId);
         };
     }
@@ -496,6 +498,29 @@ public class WorkbookSemanticReportService
         SemanticReportValueSet values = new SemanticReportValueSet();
         values.putTable("inventoryMovementHistory.rows", rows);
         return values;
+    }
+
+    private SemanticReportValueSet propertyCustodyValues(
+            List<AssetInventoryReportQueryService.PropertyCustodyReportRow> report)
+    {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (AssetInventoryReportQueryService.PropertyCustodyReportRow source : report)
+        {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("date", source.eventDate()); row.put("eventId", source.eventId());
+            row.put("eventType", source.eventType()); row.put("subjectType", source.subjectType());
+            row.put("subjectId", source.subjectId()); row.put("subjectName", source.subjectName());
+            row.put("quantity", source.quantity()); row.put("guardian", source.guardian());
+            row.put("location", source.location()); row.put("condition", source.condition());
+            row.put("confirmation", source.overdue() ? "OVERDUE" : source.confirmationStatus());
+            row.put("confirmationDue", source.confirmationDueDate()); row.put("confirmationDate", source.confirmationDate());
+            row.put("expectedReturn", source.expectedReturnDate()); row.put("accounting", source.accountingTreatment());
+            row.put("authorization", source.authorizationReference());
+            row.put("history", source.corrected() ? "CORRECTED" : source.correctionOfEventId() == null ? "ORIGINAL" : "REPLACEMENT");
+            row.put("notes", source.notes()); rows.add(row);
+        }
+        SemanticReportValueSet values = new SemanticReportValueSet();
+        values.putTable("propertyCustody.rows", rows); return values;
     }
 
     private Map<String, Object> inventoryMovementSummaryRow(

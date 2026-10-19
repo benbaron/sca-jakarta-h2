@@ -127,6 +127,15 @@ final class SclxNativePortableIdentity
             case "MERCHANT" -> merchantFingerprint(
                     text(value, "name"), nullableText(value, "notes"),
                     value.path("active").asBoolean());
+            case "PROPERTY_CUSTODY_EVENT" -> custodyFingerprint(
+                    text(value, "eventType"), text(value, "eventDate"), decimal(value, "quantity"),
+                    nullableText(value, "guardianName"), nullableText(value, "guardianEmail"),
+                    nullableText(value, "guardianPhone"), nullableText(value, "location"),
+                    text(value, "condition"), text(value, "confirmationStatus"),
+                    nullableText(value, "confirmationDueDate"), nullableText(value, "confirmationDate"),
+                    nullableText(value, "expectedReturnDate"), nullableText(value, "removalReason"),
+                    nullableText(value, "authorizationReference"), nullableText(value, "notes"),
+                    text(value, "actor"), text(value, "accountingTreatment"));
             default -> null;
         };
     }
@@ -163,6 +172,12 @@ final class SclxNativePortableIdentity
                     nullableString(row[6]), nullableString(row[7]), booleanValue(row[8]));
             case "MERCHANT" -> merchantFingerprint(
                     string(row[3]), nullableString(row[4]), booleanValue(row[5]));
+            case "PROPERTY_CUSTODY_EVENT" -> custodyFingerprint(
+                    string(row[3]), string(row[4]), decimal(row[5]), nullableString(row[6]),
+                    nullableString(row[7]), nullableString(row[8]), nullableString(row[9]), string(row[10]),
+                    string(row[11]), nullableString(row[12]), nullableString(row[13]), nullableString(row[14]),
+                    nullableString(row[15]), nullableString(row[16]), nullableString(row[17]), string(row[18]),
+                    string(row[19]));
             default -> null;
         };
     }
@@ -181,6 +196,11 @@ final class SclxNativePortableIdentity
     private static String merchantFingerprint(String name, String notes, boolean active)
     {
         return hash(name, notes, Boolean.toString(active));
+    }
+
+    private static String custodyFingerprint(String... values)
+    {
+        return hash(values);
     }
 
     private static String hash(String... values)
@@ -214,6 +234,8 @@ final class SclxNativePortableIdentity
         values.put("TRANSACTION", direct("txn", "e.portable_id", ""));
         values.put("FIXED_ASSET", direct("fixed_asset", "e.portable_id", ""));
         values.put("INVENTORY_ITEM", direct("inventory_item", "e.portable_id", ""));
+        values.put("PROPERTY_CUSTODY_EVENT", direct("property_custody_event", "e.portable_id",
+                ", e.event_type, e.event_date, e.quantity, e.guardian_name, e.guardian_email, e.guardian_phone, e.location, e.item_condition, e.confirmation_status, e.confirmation_due_date, e.confirmation_date, e.expected_return_date, e.removal_reason, e.external_authorization_reference, cast(e.notes as varchar), e.actor, e.accounting_treatment, e.created_at"));
         values.put("BANK", direct("bank", "e.portable_id", ""));
         values.put("BANK_ACCOUNT", direct("company_bank_account", "e.portable_id", ""));
         values.put("BANK_IMPORT_BATCH", direct("bank_import_batch", "e.portable_id", ""));
@@ -280,6 +302,18 @@ final class SclxNativePortableIdentity
     {
         JsonNode node = value.get(field);
         return node == null || node.isNull() || !node.isTextual() ? null : node.textValue();
+    }
+
+    private static String decimal(JsonNode value, String field)
+    {
+        JsonNode node = value.get(field);
+        return node == null || !node.isNumber() ? "" : node.decimalValue().stripTrailingZeros().toPlainString();
+    }
+
+    private static String decimal(Object value)
+    {
+        return value instanceof java.math.BigDecimal number
+                ? number.stripTrailingZeros().toPlainString() : Objects.toString(value, "");
     }
 
     private static String string(Object value)
