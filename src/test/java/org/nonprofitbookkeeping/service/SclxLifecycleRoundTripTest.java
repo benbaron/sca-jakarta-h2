@@ -9,6 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.nonprofitbookkeeping.interchange.sclx.*;
 import org.nonprofitbookkeeping.model.Company;
+import org.nonprofitbookkeeping.model.ExpenseFunction;
 import org.nonprofitbookkeeping.persistence.Jpa;
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -24,6 +25,50 @@ class SclxLifecycleRoundTripTest
     private static final LocalDate OPEN = LocalDate.of(2026, 1, 10);
     private static final LocalDate PAID = LocalDate.of(2026, 2, 10);
     private static final LocalDate REVERSED = LocalDate.of(2026, 3, 5);
+
+    @Test
+    void acceptedRecognitionRetainsCanonicalBalanceFunctionAndRetryIdentity(@TempDir Path dir) throws Exception
+    {
+        UUID item = UUID.randomUUID();
+        Path file = dir.resolve("recognition.sclx");
+        try (Jpa source = new Jpa(dir.resolve("recognition-source")))
+        {
+            seed(source);
+            enterIncrease(new TransactionEntryService(source, () -> "TEST"),
+                    SupplementalOpenItemQueryService.Kind.PREPAID_EXPENSE, item, OPEN,
+                    new BigDecimal("1200"));
+            var recognition = new SupplementalRecognitionService(source, () -> "TEST");
+            var preview = recognition.preview(new SupplementalRecognitionService.Request(
+                    SupplementalOpenItemQueryService.Kind.PREPAID_EXPENSE, item,
+                    OPEN, LocalDate.of(2026, 12, 31), LocalDate.of(2026, 1, 31),
+                    1006L, ExpenseFunction.AR));
+            assertEquals(1, preview.proposals().size());
+            recognition.save(preview.proposals().get(0));
+            assertBalance(source, SupplementalOpenItemQueryService.Kind.PREPAID_EXPENSE,
+                    item, LocalDate.of(2026, 1, 31), "1100.0000");
+            export(source, file);
+        }
+
+        try (Jpa target = new Jpa(dir.resolve("recognition-target")))
+        {
+            empty(target);
+            importFile(target, file, false);
+            assertBalance(target, SupplementalOpenItemQueryService.Kind.PREPAID_EXPENSE,
+                    item, LocalDate.of(2026, 1, 31), "1100.0000");
+            var transactions = new TransactionEntryService(target, () -> "TEST")
+                    .search(null, null, null, 20);
+            assertEquals(2, transactions.size());
+            var recognized = transactions.stream()
+                    .map(value -> new TransactionEntryService(target, () -> "TEST").load(value.id()))
+                    .filter(value -> value.memo().contains("recognition"))
+                    .findFirst().orElseThrow();
+            assertEquals(ExpenseFunction.AR, recognized.lines().get(0).expenseFunction());
+            assertEquals(item, recognized.supplementalLines().get(0).itemId());
+            importFile(target, file, false);
+            assertEquals(2, new TransactionEntryService(target, () -> "TEST")
+                    .search(null, null, null, 20).size());
+        }
+    }
 
     @ParameterizedTest
     @EnumSource(SupplementalOpenItemQueryService.Kind.class)

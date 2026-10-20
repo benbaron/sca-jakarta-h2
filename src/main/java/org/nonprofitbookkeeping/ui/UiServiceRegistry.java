@@ -61,6 +61,7 @@ import org.nonprofitbookkeeping.service.ReconciliationService;
 import org.nonprofitbookkeeping.service.ReviewedStatementAcceptanceService;
 import org.nonprofitbookkeeping.service.SampleCompanyService;
 import org.nonprofitbookkeeping.service.SupplementalOpenItemQueryService;
+import org.nonprofitbookkeeping.service.SupplementalRecognitionService;
 import org.nonprofitbookkeeping.service.SecurityAdminService;
 import org.nonprofitbookkeeping.service.SecurityBootstrapService;
 import org.nonprofitbookkeeping.service.TransactionEntryService;
@@ -226,6 +227,12 @@ public final class UiServiceRegistry
     {
         return new SupplementalOpenItemQueryService(
                 services().jpa(), UiServiceRegistry::activeCompanyCode);
+    }
+    public static SupplementalRecognitionService supplementalRecognition()
+    {
+        ServiceBundle current = services();
+        return new SupplementalRecognitionService(
+                current.jpa(), UiServiceRegistry::activeCompanyCode, current.transactionEntry());
     }
     public static DashboardQueryService dashboardQuery() { return services().dashboardQuery(); }
     public static SclxFileExportService sclxFileExport(String companyCode, Path activeDatabasePath)
