@@ -182,13 +182,15 @@ public record SclxExportCounts(
         long periodCloseEventCount = periodCloseData.events().size();
         long auditEventCount = auditHistoryData.events().size();
         long policyCount = SclxNmrPolicies.parseExtensions(document.extensions()).size();
+        long propertyCustodyCount = SclxPropertyCustody.count(document.extensions());
         long entityCount = 1L + document.chartOfAccounts().size() + document.funds().size() + activityCount
                 + counterpartyCount + merchantCount + document.budgets().size() + budgetLineCount
                 + document.transactions().size() + transactionLineCount + supplementalDetailCount + bankCount
                 + bankAccountCount + importBatchCount + statementLineCount + importIssueCount
                 + reconciliationSessionCount + reconciliationMatchCount + fixedAssetCount
                 + depreciationRunCount + inventoryItemCount + inventoryMovementCount
-                + periodCloseRangeCount + periodCloseEventCount + auditEventCount + policyCount;
+                + periodCloseRangeCount + periodCloseEventCount + auditEventCount + policyCount
+                + propertyCustodyCount;
         return new SclxExportCounts(1L, document.chartOfAccounts().size(), document.funds().size(), activityCount,
                 counterpartyCount, merchantCount, document.budgets().size(), budgetLineCount,
                 document.transactions().size(), transactionLineCount, supplementalDetailCount, bankCount,

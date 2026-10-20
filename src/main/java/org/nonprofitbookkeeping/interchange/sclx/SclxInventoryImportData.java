@@ -53,7 +53,7 @@ final class SclxInventoryImportData
             requireObject(item, path);
             requireFields(item,
                     Set.of("itemId", "name", "itemType", "quantity", "unit", "unitValue",
-                            "acquisitionDate", "custodian", "storageLocation", "condition", "status",
+                            "financialTreatment", "acquisitionDate", "custodian", "storageLocation", "condition", "status",
                             "notes", "inventoryAccountId", "fundId", "createdAt", "updatedAt"),
                     Set.of("itemId", "name", "itemType", "quantity", "unit", "unitValue",
                             "acquisitionDate", "condition", "status", "inventoryAccountId", "fundId",
@@ -66,6 +66,9 @@ final class SclxInventoryImportData
                     decimal(item, "quantity", path, false),
                     boundedText(item, "unit", path, 40),
                     decimal(item, "unitValue", path, false),
+                    item.has("financialTreatment")
+                            ? enumValue(InventoryItem.FinancialTreatment.class, text(item, "financialTreatment", path), path + ".financialTreatment")
+                            : InventoryItem.FinancialTreatment.CAPITALIZED_INVENTORY,
                     date(item, "acquisitionDate", path),
                     optionalBoundedText(item, "custodian", path, 200),
                     optionalBoundedText(item, "storageLocation", path, 200),
@@ -306,6 +309,7 @@ final class SclxInventoryImportData
             BigDecimal quantity,
             String unit,
             BigDecimal unitValue,
+            InventoryItem.FinancialTreatment financialTreatment,
             LocalDate acquisitionDate,
             String custodian,
             String storageLocation,

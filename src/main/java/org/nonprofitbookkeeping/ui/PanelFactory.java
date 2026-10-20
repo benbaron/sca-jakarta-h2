@@ -85,6 +85,7 @@ public final class PanelFactory
         factories.put(AppPanelId.ASSETS_REGISTER, AssetsRegisterPanel::new);
         factories.put(AppPanelId.DEPRECIATION_RUNS, DepreciationRunsPanel::new);
         factories.put(AppPanelId.INVENTORY, InventoryPanel::new);
+        factories.put(AppPanelId.PROPERTY_CUSTODY, PropertyCustodyPanel::new);
         factories.put(AppPanelId.RECONCILIATION_RUNS, ReconciliationRunsPanel::new);
         factories.put(AppPanelId.PERIOD_CLOSE_RUNS, PeriodCloseRunsPanel::new);
         factories.put(AppPanelId.IMPORT_PREVIEW, importPreviewFactory);

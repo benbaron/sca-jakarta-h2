@@ -103,6 +103,11 @@ public final class SclxPortableIdentity
         return identity("inventory-movement", companyCode, durableMovementKey);
     }
 
+    public static String propertyCustodyEvent(String companyCode, String durableEventKey)
+    {
+        return identity("property-custody-event", companyCode, durableEventKey);
+    }
+
     public static String periodCloseRange(String companyCode, String durableRangeKey)
     {
         return identity("period-close-range", companyCode, durableRangeKey);

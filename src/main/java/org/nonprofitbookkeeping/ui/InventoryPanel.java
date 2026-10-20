@@ -63,6 +63,7 @@ public class InventoryPanel implements AppPanel
     private final TextField quantity = new TextField("0.00");
     private final TextField unit = new TextField("each");
     private final TextField unitValue = new TextField("0.00");
+    private final ComboBox<InventoryItem.FinancialTreatment> financialTreatment = new ComboBox<>();
     private final DatePicker acquisitionDate = new DatePicker(LocalDate.now());
     private final TextField custodian = new TextField();
     private final TextField storageLocation = new TextField();
@@ -383,6 +384,7 @@ public class InventoryPanel implements AppPanel
         row = addRow(grid, row, "Quantity", quantity);
         row = addRow(grid, row, "Unit", unit);
         row = addRow(grid, row, "Value", unitValue);
+        row = addRow(grid, row, "Financial treatment", financialTreatment);
         row = addRow(grid, row, "Acquired", acquisitionDate);
         row = addRow(grid, row, "Custodian", custodian);
         row = addRow(grid, row, "Storage", storageLocation);
@@ -432,6 +434,7 @@ public class InventoryPanel implements AppPanel
         });
         movementOffsetAccount.setConverter(inventoryAccount.getConverter());
         condition.getItems().setAll(InventoryItem.Condition.values());
+        financialTreatment.getItems().setAll(InventoryItem.FinancialTreatment.values());
     }
 
     private void reload()
@@ -761,6 +764,7 @@ public class InventoryPanel implements AppPanel
                 parseQuantityField(quantity, "Quantity"),
                 requiredText(unit, "Unit"),
                 parseMoneyField(unitValue, "Value"),
+                financialTreatment.getValue(),
                 requiredDate(acquisitionDate, "Acquisition date"),
                 custodian.getText(),
                 storageLocation.getText(),
@@ -782,6 +786,7 @@ public class InventoryPanel implements AppPanel
             quantity.setText("0.0000");
             unit.setText("each");
             unitValue.setText("$0.00");
+            financialTreatment.setValue(InventoryItem.FinancialTreatment.CAPITALIZED_INVENTORY);
             acquisitionDate.setValue(LocalDate.now());
             custodian.clear();
             storageLocation.clear();
@@ -811,6 +816,7 @@ public class InventoryPanel implements AppPanel
             quantity.setText(formatQuantity(item.quantity()));
             unit.setText(item.unit());
             unitValue.setText(formatMoney(item.unitValue()));
+            financialTreatment.setValue(item.financialTreatment());
             acquisitionDate.setValue(item.acquisitionDate());
             custodian.setText(item.custodian());
             storageLocation.setText(item.storageLocation());
@@ -834,7 +840,7 @@ public class InventoryPanel implements AppPanel
             field.textProperty().addListener((observable, oldValue, newValue) -> markDirty());
         }
         notes.textProperty().addListener((observable, oldValue, newValue) -> markDirty());
-        for (ComboBox<?> comboBox : List.of(inventoryAccount, fund, condition))
+        for (ComboBox<?> comboBox : List.of(inventoryAccount, fund, condition, financialTreatment))
         {
             comboBox.valueProperty().addListener((observable, oldValue, newValue) -> markDirty());
         }

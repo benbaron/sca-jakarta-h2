@@ -28,6 +28,7 @@ final class SclxInventorySnapshotAssembler
                 .map(item -> SclxInventoryExtension.itemEntry(
                         SclxPortableIdentity.inventoryItem(companyCode, item.getPortableId().toString()),
                         item.getName(), item.getItemType(), item.getQuantity(), item.getUnit(), item.getUnitValue(),
+                        item.getFinancialTreatment().name(),
                         item.getAcquisitionDate(), item.getCustodian(), item.getStorageLocation(),
                         Objects.requireNonNull(item.getCondition(), "inventory condition").name(),
                         Objects.requireNonNull(item.getStatus(), "inventory status").name(), item.getNotes(),

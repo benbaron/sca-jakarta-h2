@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "npbk-semantic-report-1",
+  "templateId": "PropertyCustodyTransfers",
+  "sourceSheet": "PropertyCustodyTransfers",
+  "title": "Property Custody & Transfers",
+  "subtitle": "Physical custody, confirmations, loans, returns, transfers, removals, correction history, and adopted accounting evidence.",
+  "type": "tableReport",
+  "tableKey": "propertyCustody.rows",
+  "columns": [
+    { "label": "Date", "field": "date", "format": "date", "width": 11 },
+    { "label": "Event #", "field": "eventId", "width": 9 },
+    { "label": "Event", "field": "eventType", "width": 13 },
+    { "label": "Register", "field": "subjectType", "width": 16 },
+    { "label": "Subject #", "field": "subjectId", "width": 10 },
+    { "label": "Property", "field": "subjectName", "width": 26 },
+    { "label": "Quantity", "field": "quantity", "width": 11 },
+    { "label": "Guardian", "field": "guardian", "width": 22 },
+    { "label": "Location", "field": "location", "width": 22 },
+    { "label": "Condition", "field": "condition", "width": 12 },
+    { "label": "Confirmation", "field": "confirmation", "width": 14 },
+    { "label": "Due", "field": "confirmationDue", "format": "date", "width": 11 },
+    { "label": "Confirmed", "field": "confirmationDate", "format": "date", "width": 11 },
+    { "label": "Return Due", "field": "expectedReturn", "format": "date", "width": 11 },
+    { "label": "Accounting Evidence", "field": "accounting", "width": 24 },
+    { "label": "Authorization", "field": "authorization", "width": 20 },
+    { "label": "History", "field": "history", "width": 12 },
+    { "label": "Notes", "field": "notes", "width": 36 }
+  ]
+}

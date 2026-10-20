@@ -200,7 +200,8 @@ public class InventoryService
                 if (existingQuantity.signum() > 0
                         && (!Objects.equals(item.getInventoryAccount().getId(), command.inventoryAccountId())
                         || !Objects.equals(item.getFund().getId(), command.fundId())
-                        || scale(item.getUnitValue()).compareTo(scale(command.unitValue())) != 0))
+                        || scale(item.getUnitValue()).compareTo(scale(command.unitValue())) != 0
+                        || item.getFinancialTreatment() != normalizedFinancialTreatment(command)))
                 {
                     throw new IllegalStateException(
                             "Inventory account, fund, and unit value cannot be changed while quantity is on hand; use governed movements and corrections");
@@ -1220,6 +1221,7 @@ public class InventoryService
         item.setQuantity(scale(command.quantity()));
         item.setUnit(command.unit().trim());
         item.setUnitValue(scale(command.unitValue()));
+        item.setFinancialTreatment(normalizedFinancialTreatment(command));
         item.setAcquisitionDate(command.acquisitionDate());
         item.setCustodian(blankToNull(command.custodian()));
         item.setStorageLocation(blankToNull(command.storageLocation()));
@@ -1296,6 +1298,11 @@ public class InventoryService
         {
             throw new IllegalArgumentException("Value must be nonnegative");
         }
+        if (normalizedFinancialTreatment(command) == InventoryItem.FinancialTreatment.EXPENSED_SUPPLY
+                && scale(command.unitValue()).signum() != 0)
+        {
+            throw new IllegalArgumentException("Expensed supplies must have zero inventory unit value");
+        }
         if (command.acquisitionDate() == null)
         {
             throw new IllegalArgumentException("Acquisition date is required");
@@ -1370,12 +1377,20 @@ public class InventoryService
                 item.getUnit(),
                 unitValue,
                 quantity.multiply(unitValue).setScale(4, RoundingMode.HALF_UP),
+                item.getFinancialTreatment(),
                 item.getAcquisitionDate(),
                 item.getCustodian() == null ? "" : item.getCustodian(),
                 item.getStorageLocation() == null ? "" : item.getStorageLocation(),
                 item.getCondition(),
                 item.getStatus(),
                 item.getNotes() == null ? "" : item.getNotes());
+    }
+
+    private static InventoryItem.FinancialTreatment normalizedFinancialTreatment(InventoryItemCommand command)
+    {
+        return command.financialTreatment() == null
+                ? InventoryItem.FinancialTreatment.CAPITALIZED_INVENTORY
+                : command.financialTreatment();
     }
 
     private static boolean sameMovementTags(EntityManager em, InventoryMovement movement, MovementPreview preview)

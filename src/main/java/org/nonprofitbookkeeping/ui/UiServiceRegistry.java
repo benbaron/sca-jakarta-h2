@@ -52,6 +52,7 @@ import org.nonprofitbookkeeping.service.FundAdminService;
 import org.nonprofitbookkeeping.service.FundBalanceService;
 import org.nonprofitbookkeeping.service.FundLookupService;
 import org.nonprofitbookkeeping.service.InventoryService;
+import org.nonprofitbookkeeping.service.PropertyCustodyService;
 import org.nonprofitbookkeeping.service.LedgerQueryService;
 import org.nonprofitbookkeeping.service.PeriodCloseRangeService;
 import org.nonprofitbookkeeping.service.PeriodCloseService;
@@ -155,6 +156,12 @@ public final class UiServiceRegistry
     }
     public static FixedAssetService fixedAssets() { return services().fixedAssets(); }
     public static InventoryService inventory() { return services().inventory(); }
+    public static PropertyCustodyService propertyCustody()
+    {
+        ServiceBundle current = services();
+        return new PropertyCustodyService(current.jpa(), UiServiceRegistry::activeCompanyCode,
+                current.authorizationGuard());
+    }
     public static CompanyAdminService companyAdmin() { return services().companyAdmin(); }
     public static CompanyOwnershipService companyOwnership()
     {

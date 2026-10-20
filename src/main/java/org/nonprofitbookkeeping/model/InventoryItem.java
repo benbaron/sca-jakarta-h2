@@ -30,6 +30,12 @@ import java.util.UUID;
         })
 public class InventoryItem
 {
+    public enum FinancialTreatment
+    {
+        CAPITALIZED_INVENTORY,
+        EXPENSED_SUPPLY
+    }
+
     public enum Condition
     {
         UNKNOWN,
@@ -80,6 +86,10 @@ public class InventoryItem
     @Column(name = "unit_value", nullable = false, precision = 19, scale = 4)
     private BigDecimal unitValue = BigDecimal.ZERO;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "financial_treatment", nullable = false, length = 40)
+    private FinancialTreatment financialTreatment = FinancialTreatment.CAPITALIZED_INVENTORY;
+
     @Column(name = "acquisition_date", nullable = false)
     private LocalDate acquisitionDate;
 
@@ -125,6 +135,8 @@ public class InventoryItem
     public void setUnit(String unit) { this.unit = unit; }
     public BigDecimal getUnitValue() { return unitValue; }
     public void setUnitValue(BigDecimal unitValue) { this.unitValue = unitValue; }
+    public FinancialTreatment getFinancialTreatment() { return financialTreatment; }
+    public void setFinancialTreatment(FinancialTreatment financialTreatment) { this.financialTreatment = financialTreatment; }
     public LocalDate getAcquisitionDate() { return acquisitionDate; }
     public void setAcquisitionDate(LocalDate acquisitionDate) { this.acquisitionDate = acquisitionDate; }
     public String getCustodian() { return custodian; }

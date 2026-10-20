@@ -33,6 +33,7 @@ import org.nonprofitbookkeeping.model.FixedAssetDepreciationRun;
 import org.nonprofitbookkeeping.model.Merchant;
 import org.nonprofitbookkeeping.model.InventoryItem;
 import org.nonprofitbookkeeping.model.InventoryMovement;
+import org.nonprofitbookkeeping.model.PropertyCustodyEvent;
 import org.nonprofitbookkeeping.model.ImportIssue;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.model.Txn;
@@ -69,6 +70,7 @@ import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -99,12 +101,13 @@ public final class SclxImportCommitService
             "ORGANIZATION", "ACCOUNT", "FUND", "ACTIVITY", "COUNTERPARTY", "MERCHANT",
             "BUDGET", "BUDGET_LINE", "TRANSACTION", "TRANSACTION_LINE", "SUPPLEMENTAL_DETAIL",
             "FIXED_ASSET", "DEPRECIATION_RUN", "INVENTORY_ITEM", "INVENTORY_MOVEMENT",
+            "PROPERTY_CUSTODY_EVENT",
             "BANK", "BANK_ACCOUNT", "BANK_IMPORT_BATCH", "BANK_STATEMENT_LINE",
             "BANK_IMPORT_ISSUE", "RECONCILIATION_SESSION", "RECONCILIATION_MATCH",
             "PERIOD_CLOSE_RANGE", "PERIOD_CLOSE_EVENT", "AUDIT_EVENT", "NMR_POLICY_VERSION");
     private static final Set<String> SUPPORTED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
-            "supplementalDetails", "transactionBudgets", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "fixedAssets", "inventory", "bankConfiguration",
+            "supplementalDetails", "transactionBudgets", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "fixedAssets", "inventory", "propertyCustody", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "periodClose", "auditHistory", "nmrPolicies");
 
     private final Jpa jpa;
@@ -272,6 +275,7 @@ public final class SclxImportCommitService
         SclxBudgetImportData budgets = SclxBudgetImportData.parse(root.path("budgets"));
         SclxFixedAssetImportData fixedAssets = SclxFixedAssetImportData.parse(root);
         SclxInventoryImportData inventory = SclxInventoryImportData.parse(root);
+        var propertyCustody = SclxPropertyCustody.parse(root);
         SclxBankingImportData banking = SclxBankingImportData.parse(root);
         SclxPeriodCloseImportData periodClose = SclxPeriodCloseImportData.parse(root);
         SclxAuditHistoryImportData auditHistory = SclxAuditHistoryImportData.parse(root);
@@ -420,6 +424,9 @@ public final class SclxImportCommitService
                 InventoryWrite writtenInventory = writeInventory(
                         em, company, inventory, accounts, funds, transactions.transactions(), previews, writes);
                 writes += writtenInventory.businessWriteCount();
+                PropertyCustodyWrite writtenCustody = writePropertyCustody(em, company, propertyCustody,
+                        writtenFixedAssets.assets(), writtenInventory.items(), writtenInventory.movements(), previews, writes);
+                writes += writtenCustody.businessWriteCount();
                 // Recheck after dependent domain history is restored: generated entries cannot become acquisition sources.
                 for (FixedAsset asset : writtenFixedAssets.assets().values())
                 {
@@ -453,6 +460,8 @@ public final class SclxImportCommitService
                 recordTransactionIdentities(em, company, current, previews, transactions);
                 recordFixedAssetIdentities(em, company, current, previews, writtenFixedAssets);
                 recordInventoryIdentities(em, company, current, previews, writtenInventory);
+                writtenCustody.events().forEach((identity, value) -> recordIdentity(em, company, current, previews,
+                        "PROPERTY_CUSTODY_EVENT", identity, value.getId().toString()));
                 recordBankingIdentities(em, company, current, previews, writtenBanking);
                 recordPeriodCloseIdentities(em, company, current, previews, writtenPeriodClose);
                 recordAuditHistoryIdentities(em, company, current, previews, writtenAuditHistory);
@@ -1458,6 +1467,7 @@ public final class SclxImportCommitService
                             value.quantity(),
                             value.unit(),
                             value.unitValue(),
+                            value.financialTreatment(),
                             value.acquisitionDate(),
                             value.custodian(),
                             value.storageLocation(),
@@ -1513,6 +1523,59 @@ public final class SclxImportCommitService
             businessWrites++;
         }
         return new InventoryWrite(items, movements, businessWrites);
+    }
+
+    private PropertyCustodyWrite writePropertyCustody(EntityManager em, Company company,
+            List<SclxPropertyCustody.Value> source, Map<String, FixedAsset> assets,
+            Map<String, InventoryItem> items, Map<String, InventoryMovement> movements,
+            Map<EntityKey, SclxImportEntityPreview> previews, int writesBefore)
+    {
+        int writes = writesBefore;
+        Map<String, PropertyCustodyEvent> events = new LinkedHashMap<>();
+        Map<String, SclxPropertyCustody.Value> created = new LinkedHashMap<>();
+        for (SclxPropertyCustody.Value value : source)
+        {
+            SclxImportEntityPreview preview = required(previews,
+                    new EntityKey("PROPERTY_CUSTODY_EVENT", value.eventId()), "property custody preview");
+            if (reuseExisting(preview))
+            {
+                PropertyCustodyEvent existing = localEntity(em, preview, PropertyCustodyEvent.class);
+                if (!existing.getCompany().getId().equals(company.getId()))
+                    throw new IllegalStateException("SCLX custody event belongs to another company");
+                events.put(value.eventId(), existing); continue;
+            }
+            requireNew(previews, "PROPERTY_CUSTODY_EVENT", value.eventId());
+            PropertyCustodyEvent event = new PropertyCustodyEvent(); event.setCompany(company);
+            if (value.fixedAssetId() != null) event.setFixedAsset(required(assets, value.fixedAssetId(), "custody fixed asset"));
+            else event.setInventoryItem(required(items, value.inventoryItemId(), "custody inventory item"));
+            event.setEventType(value.eventType()); event.setEventDate(value.eventDate()); event.setQuantity(value.quantity());
+            event.setGuardianName(value.guardianName()); event.setGuardianEmail(value.guardianEmail()); event.setGuardianPhone(value.guardianPhone()); event.setLocation(value.location());
+            event.setCondition(InventoryItem.Condition.valueOf(value.condition()));
+            event.setConfirmationStatus(PropertyCustodyEvent.ConfirmationStatus.valueOf(value.confirmationStatus()));
+            event.setConfirmationDueDate(value.confirmationDueDate()); event.setConfirmationDate(value.confirmationDate()); event.setExpectedReturnDate(value.expectedReturnDate());
+            event.setRemovalReason(value.removalReason()); event.setExternalAuthorizationReference(value.authorizationReference()); event.setNotes(value.notes()); event.setActor(value.actor());
+            event.setAccountingTreatment(PropertyCustodyEvent.AccountingTreatment.valueOf(value.accountingTreatment()));
+            if (value.inventoryMovementId() != null) event.setInventoryMovement(required(movements, value.inventoryMovementId(), "custody inventory movement"));
+            event.initializeImportMetadata(portableUuid(value.eventId()), value.createdAt()); em.persist(event);
+            events.put(value.eventId(), event); created.put(value.eventId(), value); afterBusinessWrite.accept(++writes);
+        }
+        em.flush();
+        for (Map.Entry<String, SclxPropertyCustody.Value> entry : created.entrySet())
+        {
+            PropertyCustodyEvent event = events.get(entry.getKey());
+            if (entry.getValue().correctionOfEventId() != null)
+                event.setCorrectionOf(required(events, entry.getValue().correctionOfEventId(), "corrected custody event"));
+        }
+        em.flush();
+        for (InventoryItem item : items.values())
+        {
+            PropertyCustodyEvent latest = events.values().stream()
+                    .filter(e -> e.getInventoryItem() != null && e.getInventoryItem().getId().equals(item.getId()))
+                    .filter(e -> events.values().stream().noneMatch(c -> c.getCorrectionOf() == e))
+                    .max(Comparator.comparing(PropertyCustodyEvent::getEventDate).thenComparing(PropertyCustodyEvent::getCreatedAt)).orElse(null);
+            if (latest != null) { item.setCustodian(latest.getGuardianName()); item.setStorageLocation(latest.getLocation()); item.setCondition(latest.getCondition()); item.touchUpdatedAt(); }
+        }
+        return new PropertyCustodyWrite(events, writes - writesBefore);
     }
 
     private BankingWrite writeBanking(
@@ -2545,6 +2608,11 @@ public final class SclxImportCommitService
             items = Map.copyOf(items);
             movements = Map.copyOf(movements);
         }
+    }
+
+    private record PropertyCustodyWrite(Map<String, PropertyCustodyEvent> events, int businessWriteCount)
+    {
+        private PropertyCustodyWrite { events = Map.copyOf(events); }
     }
 
     private record BankingWrite(

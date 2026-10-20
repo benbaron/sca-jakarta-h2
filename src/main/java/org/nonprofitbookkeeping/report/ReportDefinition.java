@@ -108,6 +108,14 @@ public enum ReportDefinition
             true,
             true,
             DomainFilterMode.INVENTORY),
+    PROPERTY_CUSTODY_TRANSFERS(
+            "property-custody-transfers",
+            "Property Custody & Transfers",
+            ReportSource.SEMANTIC,
+            "PropertyCustodyTransfers",
+            DateMode.RANGE,
+            false,
+            true),
     ACCOUNTS_RECEIVABLE(
             "accounts-receivable", "Accounts Receivable", ReportSource.SUPPLEMENTAL,
             "RECEIVABLE", DateMode.AS_OF, false, true),

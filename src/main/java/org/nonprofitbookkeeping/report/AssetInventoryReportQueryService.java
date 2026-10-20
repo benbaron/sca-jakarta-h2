@@ -7,6 +7,7 @@ import org.nonprofitbookkeeping.model.FixedAssetDepreciationRun;
 import org.nonprofitbookkeeping.model.FixedAssetLifecycleEvent;
 import org.nonprofitbookkeeping.model.InventoryItem;
 import org.nonprofitbookkeeping.model.InventoryMovement;
+import org.nonprofitbookkeeping.model.PropertyCustodyEvent;
 import org.nonprofitbookkeeping.persistence.Jpa;
 
 import java.math.BigDecimal;
@@ -86,6 +87,42 @@ public final class AssetInventoryReportQueryService
                     assetAccounts.values().stream().toList(),
                     itemOptions,
                     inventoryAccounts.values().stream().toList());
+        }
+    }
+
+    /** Returns immutable custody and transfer history; corrected rows remain visible. */
+    public List<PropertyCustodyReportRow> propertyCustody(LocalDate start, LocalDate end, int rowLimit)
+    {
+        Objects.requireNonNull(start, "start"); Objects.requireNonNull(end, "end");
+        if (end.isBefore(start) || rowLimit < 1 || rowLimit > ReportRequest.MAX_ROW_LIMIT)
+            throw new IllegalArgumentException("Invalid property custody date range or row limit.");
+        try (EntityManager em = jpa.em())
+        {
+            List<PropertyCustodyEvent> events = em.createQuery("""
+                    select e from PropertyCustodyEvent e
+                    left join fetch e.fixedAsset
+                    left join fetch e.inventoryItem
+                    where e.company.code = :company and e.eventDate between :start and :end
+                    order by e.eventDate desc, e.id desc
+                    """, PropertyCustodyEvent.class)
+                    .setParameter("company", requireCompanyCode()).setParameter("start", start).setParameter("end", end)
+                    .setMaxResults(rowLimit).getResultList();
+            Set<Long> corrected = new LinkedHashSet<>(em.createQuery("""
+                    select e.correctionOf.id from PropertyCustodyEvent e
+                    where e.company.code = :company and e.correctionOf is not null
+                    """, Long.class).setParameter("company", requireCompanyCode()).getResultList());
+            return events.stream().map(e -> new PropertyCustodyReportRow(e.getId(), e.getEventDate(),
+                    e.getFixedAsset() == null ? "INVENTORY_ITEM" : "FIXED_ASSET",
+                    e.getFixedAsset() == null ? e.getInventoryItem().getId() : e.getFixedAsset().getId(),
+                    e.getFixedAsset() == null ? e.getInventoryItem().getName() : e.getFixedAsset().getName(),
+                    e.getEventType(), e.getQuantity(), Objects.toString(e.getGuardianName(), ""),
+                    Objects.toString(e.getLocation(), ""), e.getCondition(), e.getConfirmationStatus(),
+                    e.getConfirmationDueDate(), e.getConfirmationDate(), e.getExpectedReturnDate(),
+                    e.getConfirmationDueDate() != null && e.getConfirmationDueDate().isBefore(LocalDate.now())
+                            && e.getConfirmationStatus() != PropertyCustodyEvent.ConfirmationStatus.CONFIRMED,
+                    e.getAccountingTreatment(), e.getExternalAuthorizationReference(),
+                    e.getCorrectionOf() == null ? null : e.getCorrectionOf().getId(), corrected.contains(e.getId()),
+                    e.getNotes())).toList();
         }
     }
 
@@ -1119,6 +1156,14 @@ public final class AssetInventoryReportQueryService
             rows = List.copyOf(rows);
         }
     }
+
+    public record PropertyCustodyReportRow(Long eventId, LocalDate eventDate, String subjectType,
+            Long subjectId, String subjectName, PropertyCustodyEvent.EventType eventType, BigDecimal quantity,
+            String guardian, String location, InventoryItem.Condition condition,
+            PropertyCustodyEvent.ConfirmationStatus confirmationStatus, LocalDate confirmationDueDate,
+            LocalDate confirmationDate, LocalDate expectedReturnDate, boolean overdue,
+            PropertyCustodyEvent.AccountingTreatment accountingTreatment, String authorizationReference,
+            Long correctionOfEventId, boolean corrected, String notes) { }
 
     private record LifecycleFact(
             FixedAssetLifecycleEvent.EventType type,

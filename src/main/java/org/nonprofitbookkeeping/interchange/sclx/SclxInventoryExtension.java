@@ -31,7 +31,7 @@ public final class SclxInventoryExtension
 
     public static Map<String, Object> itemEntry(
             String itemId, String name, String itemType, BigDecimal quantity, String unit,
-            BigDecimal unitValue, LocalDate acquisitionDate, String custodian, String storageLocation,
+            BigDecimal unitValue, String financialTreatment, LocalDate acquisitionDate, String custodian, String storageLocation,
             String condition, String status, String notes, String inventoryAccountId, String fundId,
             Instant createdAt, Instant updatedAt)
     {
@@ -42,6 +42,7 @@ public final class SclxInventoryExtension
         entry.put("quantity", quantity);
         entry.put("unit", unit);
         entry.put("unitValue", unitValue);
+        entry.put("financialTreatment", financialTreatment);
         entry.put("acquisitionDate", acquisitionDate);
         putOptional(entry, "custodian", custodian);
         putOptional(entry, "storageLocation", storageLocation);
@@ -53,6 +54,18 @@ public final class SclxInventoryExtension
         entry.put("createdAt", createdAt);
         entry.put("updatedAt", updatedAt);
         return Map.copyOf(entry);
+    }
+
+    /** Compatibility overload for version-1 capitalized inventory writers. */
+    public static Map<String, Object> itemEntry(
+            String itemId, String name, String itemType, BigDecimal quantity, String unit,
+            BigDecimal unitValue, LocalDate acquisitionDate, String custodian, String storageLocation,
+            String condition, String status, String notes, String inventoryAccountId, String fundId,
+            Instant createdAt, Instant updatedAt)
+    {
+        return itemEntry(itemId, name, itemType, quantity, unit, unitValue, "CAPITALIZED_INVENTORY",
+                acquisitionDate, custodian, storageLocation, condition, status, notes,
+                inventoryAccountId, fundId, createdAt, updatedAt);
     }
 
     public static Map<String, Object> movementEntry(
@@ -105,7 +118,7 @@ public final class SclxInventoryExtension
         List<Map<?, ?>> itemObjects = SclxExtensionValueReader.objects(
                 SclxExtensionValueReader.array(root, "items", "extensions.scaJakartaH2.inventory"),
                 "extensions.scaJakartaH2.inventory.items",
-                Set.of("itemId", "name", "itemType", "quantity", "unit", "unitValue",
+                Set.of("itemId", "name", "itemType", "quantity", "unit", "unitValue", "financialTreatment",
                         "acquisitionDate", "custodian", "storageLocation", "condition", "status",
                         "notes", "inventoryAccountId", "fundId", "createdAt", "updatedAt"));
         for (int index = 0; index < itemObjects.size(); index++)
@@ -119,6 +132,7 @@ public final class SclxInventoryExtension
                     SclxExtensionValueReader.decimal(value, "quantity", path, false),
                     SclxExtensionValueReader.text(value, "unit", path),
                     SclxExtensionValueReader.decimal(value, "unitValue", path, false),
+                    SclxExtensionValueReader.optionalText(value, "financialTreatment", path),
                     SclxExtensionValueReader.date(value, "acquisitionDate", path, false),
                     SclxExtensionValueReader.optionalText(value, "custodian", path),
                     SclxExtensionValueReader.optionalText(value, "storageLocation", path),
@@ -190,7 +204,7 @@ public final class SclxInventoryExtension
     }
 
     public record ItemEntry(String itemId, String name, String itemType, BigDecimal quantity, String unit,
-            BigDecimal unitValue, LocalDate acquisitionDate, String custodian, String storageLocation,
+            BigDecimal unitValue, String financialTreatment, LocalDate acquisitionDate, String custodian, String storageLocation,
             String condition, String status, String notes, String inventoryAccountId, String fundId,
             Instant createdAt, Instant updatedAt)
     {

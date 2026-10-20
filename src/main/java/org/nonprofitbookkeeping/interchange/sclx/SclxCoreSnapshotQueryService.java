@@ -219,6 +219,16 @@ public class SclxCoreSnapshotQueryService
                     .setParameter("company", company).getResultList();
             var extensions = new java.util.LinkedHashMap<String, Object>(document.extensions().scaJakartaH2());
             extensions.put(SclxNmrPolicies.KEY, SclxNmrPolicies.export(company.getCode(), policies));
+            var custody = em.createQuery("""
+                            select e from PropertyCustodyEvent e
+                            left join fetch e.fixedAsset
+                            left join fetch e.inventoryItem
+                            left join fetch e.correctionOf
+                            left join fetch e.inventoryMovement
+                            where e.company = :company order by e.portableId
+                            """, org.nonprofitbookkeeping.model.PropertyCustodyEvent.class)
+                    .setParameter("company", company).getResultList();
+            extensions.put(SclxPropertyCustody.KEY, SclxPropertyCustody.export(company.getCode(), custody));
             return SclxExportDocument.version13(document.exportedAt(), document.organization(),
                     document.chartOfAccounts(), document.funds(), document.budgets(), document.transactions(),
                     new SclxExportDocument.Extensions(document.extensions().version(), extensions));

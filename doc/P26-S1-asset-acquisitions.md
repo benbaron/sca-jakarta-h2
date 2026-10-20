@@ -1,6 +1,6 @@
 # P26-S1 — Fixed-asset acquisition and opening links
 
-Status IN_PROGRESS. [PLAN](PLAN.md) selects this slice following owner-reviewed/merged P25 MR #378. Implements adopted G11/A11 acquisition scope; custody/forms, valuation and conversion remain in their owning later slices.
+Status DONE — owner accepted and merged [MR #379](https://github.com/benbaron/sca-jakarta-h2/pull/379) at `2de87dc3`; accepted head `b66e0ce1` passed full local and exact-head CI. [PLAN](PLAN.md) owns execution. This slice implements adopted G11/A11 acquisition scope; custody/forms, valuation and conversion remain in their owning later slices.
 
 ## Deliberate routes and authority
 
@@ -43,4 +43,4 @@ During actual UI inspection, the existing register's PropertyValueFactory could 
 
 The CI production JavaFX selector now includes AssetAcquisitionPanelTest. Full local/CI outcomes and publication heads are recorded in PLAN.md. Owner checks above remain available; automated desktop execution is distinguished from a human per-check acceptance transcript.
 
-Final local verification passed 999 tests with zero failures/errors and 62 headless display skips. The separate workflow-equivalent Xvfb suite passed 55 production JavaFX tests with zero failures/errors/skips. Exact published-head CI and owner review/merge remain before DONE.
+Final local verification passed 999 tests with zero failures/errors and 62 headless display skips. The separate workflow-equivalent Xvfb suite passed 55 production JavaFX tests with zero failures/errors/skips. Exact published-head CI run `39189292452` passed, and the owner accepted/merged MR #379. No separate per-check human transcript is inferred.

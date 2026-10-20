@@ -81,6 +81,7 @@ public class NavigationPane extends VBox
         addItem(content, AppPanelId.ASSETS_REGISTER, "Asset Register", UiIcons.Glyph.ACCOUNTS);
         addItem(content, AppPanelId.DEPRECIATION_RUNS, "Depreciation Runs", UiIcons.Glyph.CALENDAR);
         addItem(content, AppPanelId.INVENTORY, "Inventory", UiIcons.Glyph.FUNDS);
+        addItem(content, AppPanelId.PROPERTY_CUSTODY, "Property Custody", UiIcons.Glyph.NOTE);
 
         section(content, "IMPORT & OVERSIGHT");
         addItem(content, AppPanelId.IMPORT_PREVIEW, "Import Preview", UiIcons.Glyph.IMPORT);

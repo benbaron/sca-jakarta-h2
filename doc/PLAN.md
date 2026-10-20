@@ -1,12 +1,12 @@
 ---
-plan_version: 381
+plan_version: 386
 active_phase: P26
-active_slice: P26-S1
+active_slice: P26-S2
 active_status: VERIFYING
-active_branch: codex/P26-S1-asset-acquisitions
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/379
-active_head: c4465cadc792a4a362d95c4b295245badd14de37
-next_action: "Verify exact-head JDK 17 clean/repeat/expanded JavaFX CI for draft MR #379, update the MR with actual results, then record owner review/merge before selecting P26-S2."
+active_branch: codex/P26-S2-property-custody
+active_pull_request: "https://github.com/benbaron/sca-jakarta-h2/pull/380"
+active_head: 1d049d22
+next_action: "Publish this documentation-only successor, verify the final PR #380 remote tree, and require exact-head JDK 17 CI before owner review/merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -38,7 +38,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
-| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 acquisition/opening links selected after reviewed/merged P25 |
+| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 acquisition/opening links DONE through accepted/merged MR #379; next slice unselected |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
@@ -697,8 +697,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S5 | Add independent functional-expense classification (G10) | DONE | Owner reviewed/merged S5B MR #378; D07 adopted; full local and exact-head CI passed |
 | P25-S5A | Adopt functional-expense contract (documentation only) | DONE | MR #377 merged at 7bc89aef; final-head clean/repeat/JavaFX CI passed; D07 adopted |
 | P25-S5B | Independent functional expense entry, reporting and portability | DONE | MR #378 reviewed/merged at 70462b49; full local and exact-head CI passed;  [Implementation contract](P25-S5B-functional-expenses.md); nullable canonical fact, shared Save, compatible native retries and lossless SCLX |
-| P26-S1 | Link fixed-asset acquisition and opening records (G11) | IN_PROGRESS | P25 reviewed/merged; [S1 contract](P26-S1-asset-acquisitions.md); no affected unresolved policy decision |
-| P26-S2 | Complete custody, supplies, and property-transfer records (G11) | BLOCKED | P26-S1 merged; owning contract and D01–D10 gates as applicable |
+| P26-S1 | Link fixed-asset acquisition and opening records (G11) | DONE | Owner accepted/merged MR #379 at `2de87dc3`; [S1 contract](P26-S1-asset-acquisitions.md); full local and exact-head CI passed |
+| P26-S2 | Complete custody, supplies, and property-transfer records (G11) | VERIFYING | Implementation and local verification complete; draft publication and exact-head CI pending; internal branch form does not claim P27 official-template mapping; D06 inventory costing remains P26-S5 |
 | P26-S3 | Complete event/fund budget planning and reporting filters (G12) | BLOCKED | P26-S2 merged; owning contract and D01–D10 gates as applicable |
 | P26-S4 | Add governed prepaid/deferred recognition assistance (G12) | BLOCKED | P26-S3 merged; owning contract and D01–D10 gates as applicable |
 | P26-S5 | Resolve inventory valuation limitations (G12) | BLOCKED | P26-S4 merged; owning contract and D01–D10 gates as applicable |
@@ -2009,3 +2009,35 @@ Reviewed migration/model/service/canonical-entry/correction/account-classificati
 Draft [MR #379](https://github.com/benbaron/sca-jakarta-h2/pull/379) targets current main `70462b49015916bc0179143f0bc1bdd532b6e20e`. A normal non-force native push created fresh branch `codex/P26-S1-asset-acquisitions` with the carried P25 evidence, implementation and local-verification commits. Remote head `c4465cadc792a4a362d95c4b295245badd14de37` and tree `6f30c73423f786d28568038cb2d074a6c5e7ec83` were fetched; both exactly match local, and the diff is empty. Live MR metadata confirms draft/open/unmerged, base/head, 3 commits and 37 intended changed files. The MR body records actual local results, bounded later-slice exclusions and owner checks. Exact-head Maven PR Tests is pending.
 
 This publication record is the only post-tested documentation change. Publish it normally, verify the resulting final remote head/tree, and use that exact head for CI. Do not advance P26-S2 from draft publication or automated validation alone.
+
+### P26-S1 exact-head CI and handoff — 2026-10-18 (America/Denver)
+
+The first exact-head run and its failed-job rerun passed clean headless verification and repeat tests but failed the production JavaFX stage. The connected raw-log endpoint closed and the local CLI token could not read Actions logs, so the workflow now publishes failure-only Surefire reports for durable diagnosis. The report identified `AssetAcquisitionPanelTest`: its post-save predicate depended on a transient button-render state, then its focus/precision check exposed the acquisition confirmation as an ownerless dialog under Xvfb. The test now waits on the panel's public command-capability busy contract, and the confirmation is owned by the Assets Register window so focus returns deterministically. The focused actual class passed three consecutive runs after each correction. The repaired complete local Xvfb selector passed **55 tests, zero failures/errors/skips**, BUILD SUCCESS at **2026-10-18 19:25:17 America/Denver** (elapsed 3:40).
+
+Final exact published-head JDK 17 [Maven PR Tests run 39189292452](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39189292452), job `117858319494`, completed **success at 2026-10-18 20:28:22 America/Denver** for `b66e0ce17c2acc31ee73c17c41341475bd0bde9f`. Independent job-step metadata confirms clean headless verification, repeat tests, production JavaFX and cleanup all passed; the failure-only report step correctly skipped. Draft MR #379 remains open, unmerged, mergeable and draft at this exact head, and its description records the final local/CI evidence and owner checks. No executed gate has a remaining failure.
+
+This final PLAN evidence stays local to preserve the green published head. P26-S1 remains VERIFYING until owner review/merge and documented disposable-company checks; no human per-check result is inferred from automated execution. P26-S2 remains unselected. After merge confirmation, fetch and verify current main, carry this evidence onto a fresh branch, and select P26-S2 without reusing the merged branch.
+
+### P26-S1 acceptance and merge — 2026-10-18 (America/Denver)
+
+Owner explicitly recorded MR #379 as merged and accepted. Live GitHub and native main verification confirm [MR #379](https://github.com/benbaron/sca-jakarta-h2/pull/379) merged accepted head `b66e0ce17c2acc31ee73c17c41341475bd0bde9f` into current `main` at signed merge `2de87dc3645c69031c7de026e5430cf994c6ed33`; the merge tree `6bb26b568ba430293fda99a21ffa6df615ec0294` equals the accepted head tree. Exact-head run `39189292452` passed all required steps. P26-S1 is DONE. Acceptance is recorded as the owner's slice decision; no separate per-check human transcript is invented.
+
+Fresh branch `codex/P26-post-S1` starts from verified merged main and carries the local final-verification record as `81957795`. P26-S2 remains unselected and no S2 implementation is started by this acceptance record. The next action is to inspect the merged authority and select the bounded custody/supplies/property-transfer slice when execution continues.
+
+### P26-S2 selection and baseline — 2026-10-18 (America/Denver)
+
+Owner instructed “do p26-s2.” Fresh branch `codex/P26-S2-property-custody` carries the accepted S1 evidence and selects the first unblocked adopted G11/A11 slice. [P26-S2 contract](P26-S2-property-custody.md) retains FixedAsset and InventoryItem as the only subjects; adds immutable custody events, explicit zero-value EXPENSED_SUPPLY treatment, append-only latest-event correction, source-backed removal and an internal branch report. D05 official template mapping remains P27 and D06 cost method remains P26-S5; neither is inferred. No second register, GL writer, approval engine or valuation method is introduced.
+
+Donor `NonprofitAccounting` at `c697630e` offers current guardian, one confirmation snapshot and removal fields in a separate AssetRecord model plus JDBC-created detail tables. Only the field concepts are retained. Its parallel register, approximate/lot valuation and static JDBC authority are unsuitable for current canonical FixedAsset/InventoryItem, Flyway/JPA, accounting protections and immutable history.
+
+Pre-edit offline compile passed at **2026-10-18 21:05:59 America/Denver**. Thirty-three relevant fixed-asset, inventory, authorization, accounting, report and SCLX tests passed at **21:06:41**, zero failures/errors/skips. Current Inventory already supports explicit zero-value nonfinancial movements; existing rows have no explicit financial-treatment field, FixedAsset has no custody fields, and neither authority retains confirmation/loan/transfer/removal custody history. Implementation and actual missing-route regression follow.
+
+### P26-S2 implementation and local verification — 2026-10-18 (America/Denver)
+
+Implemented the [adopted contract](P26-S2-property-custody.md) as one vertical slice. Migration V87 and the canonical service add append-only custody events for existing fixed assets and inventory items, explicit capitalized-inventory versus zero-value expensed-supply treatment, derived current/overdue state, latest-event corrections, and source-backed removals without posting accounting. The production Property Custody destination exposes New, Correct Selected, Refresh, and Save Custody Event with live role gating, dirty protection, persisted table/divider state, company date formatting, and reachable scrolling. Report Library, strict optional SCLX v1 portability, portable identity/retry behavior, and the operation matrix cover the same facts.
+
+Final-source focused service/accounting/SCLX verification passed **20 tests**, zero failures/errors/skips. SCLX round-trip coverage includes expensed treatment, a correction chain, restart, identical retry, and an empty target ledger. Offline `mvn clean verify` passed at **2026-10-18 21:36:07 America/Denver**: **1,005 tests**, zero failures/errors, **63 headless skips**. The actual `PropertyCustodyPanelTest` then passed under Xvfb at **21:36:54**: **1 test**, zero failures/errors/skips. Changed-tree whitespace review is clean. P26-S2 remains VERIFYING until the draft MR is published, its final remote tree is matched, exact-head CI passes, and the owner reviews/merges it. No human disposable-company acceptance result is inferred from automated tests.
+
+### P26-S2 draft publication — 2026-10-18 (America/Denver)
+
+Published branch `codex/P26-S2-property-custody` and opened draft [PR #380](https://github.com/benbaron/sca-jakarta-h2/pull/380) targeting `main`. The PR records the bounded accounting boundary, delivered custody/UI/report/SCLX behavior, local clean/focused/actual-JavaFX evidence, and remaining owner checks. This documentation-only publication successor follows the same authorization; `active_head` identifies its known remote parent because the successor cannot embed its own SHA. Verify the final branch and PR tip/tree and require the workflow for that exact head to pass. No GitHub CI result is claimed at this checkpoint, and P26-S2 stays VERIFYING pending owner review/merge.
