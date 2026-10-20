@@ -55,6 +55,8 @@ class SclxFinancialSnapshotQueryServiceTest
             assertTrue(budget.active());
             assertEquals(List.of("2026-07", "2026-08"),
                     budget.lines().stream().map(SclxExportDocument.BudgetLine::periodMonth).toList());
+            assertEquals(null, budget.lines().get(0).activityId());
+            assertEquals("activity:ALPHA:EVENT", budget.lines().get(1).activityId());
             assertNotEquals(budget.lines().get(0).lineId(), budget.lines().get(1).lineId());
 
             List<SclxActivityExtension.Entry> activities = SclxActivityExtension.entries(document.extensions());
@@ -152,7 +154,9 @@ class SclxFinancialSnapshotQueryServiceTest
             BudgetPlan betaBudget = budget(beta, "BETA 2026", "ADOPTED");
             em.persist(alphaBudget);
             em.persist(betaBudget);
-            em.persist(budgetLine(alphaBudget, alphaCategory, alphaFund, YearMonth.of(2026, 8), "600.0000"));
+            BudgetLine eventBudget = budgetLine(alphaBudget, alphaCategory, alphaFund, YearMonth.of(2026, 8), "600.0000");
+            eventBudget.setActivity(alphaEvent);
+            em.persist(eventBudget);
             em.persist(budgetLine(alphaBudget, alphaCategory, alphaFund, YearMonth.of(2026, 7), "500.0000"));
             em.persist(budgetLine(betaBudget, betaCategory, betaFund, YearMonth.of(2026, 7), "999.0000"));
 

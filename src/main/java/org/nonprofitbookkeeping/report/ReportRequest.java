@@ -107,7 +107,7 @@ public record ReportRequest(
                 }
                 if (!(value instanceof ReportDomainFilter.EventSelection))
                 {
-                    throw new IllegalArgumentException("Functional Expenses requires an Event filter.");
+                    throw new IllegalArgumentException(definition.displayName() + " requires an Event filter.");
                 }
                 yield value;
             }

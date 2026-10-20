@@ -143,6 +143,7 @@ public record SclxExportDocument(
             String lineId,
             String accountId,
             String fundId,
+            String activityId,
             String categoryCode,
             String periodMonth,
             BigDecimal amount)
@@ -163,9 +164,20 @@ public record SclxExportDocument(
                 String accountId,
                 String fundId,
                 String categoryCode,
+                String periodMonth,
                 BigDecimal amount)
         {
-            this(lineId, accountId, fundId, categoryCode, null, amount);
+            this(lineId, accountId, fundId, null, categoryCode, periodMonth, amount);
+        }
+
+        public BudgetLine(
+                String lineId,
+                String accountId,
+                String fundId,
+                String categoryCode,
+                BigDecimal amount)
+        {
+            this(lineId, accountId, fundId, null, categoryCode, null, amount);
         }
     }
 

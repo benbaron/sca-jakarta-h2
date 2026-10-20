@@ -74,6 +74,7 @@ final class SclxBudgetImportData
                             linePath + ".accountId cannot be preserved by the normalized budget model.");
                 }
                 String fundId = optionalText(line, "fundId");
+                String activityId = optionalText(line, "activityId");
                 String categoryCode = boundedText(line, "categoryCode", linePath, 64);
                 String monthText = optionalText(line, "periodMonth");
                 YearMonth periodMonth = monthText == null ? null : parseMonth(monthText, linePath);
@@ -92,13 +93,14 @@ final class SclxBudgetImportData
                     throw new IllegalStateException(linePath + ".amount exceeds DECIMAL(19,4).");
                 }
                 String scope = categoryCode + "\u0000" + Objects.toString(fundId, "")
+                        + "\u0000" + Objects.toString(activityId, "")
                         + "\u0000" + Objects.toString(periodMonth, "");
                 if (!scopes.add(scope))
                 {
                     throw new IllegalStateException(
                             linePath + " duplicates a category, fund, and period scope in " + externalId + ".");
                 }
-                lines.add(new LineValue(lineId, fundId, categoryCode, periodMonth, amount));
+                lines.add(new LineValue(lineId, fundId, activityId, categoryCode, periodMonth, amount));
             }
             lines.sort(Comparator.comparing(LineValue::externalId));
             budgets.add(new BudgetValue(
@@ -215,6 +217,7 @@ final class SclxBudgetImportData
     record LineValue(
             String externalId,
             String fundId,
+            String activityId,
             String categoryCode,
             YearMonth periodMonth,
             BigDecimal amount)

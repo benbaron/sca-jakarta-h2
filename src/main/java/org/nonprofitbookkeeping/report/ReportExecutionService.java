@@ -208,8 +208,10 @@ public final class ReportExecutionService
         }
         SupplementalOpenItemQueryService.Kind kind =
                 SupplementalOpenItemQueryService.Kind.valueOf(request.definition().templateId());
+        Long activityId = request.domainFilter() instanceof ReportDomainFilter.EventSelection event
+                ? event.eventId() : null;
         return SupplementalOpenItemReportBuilder.result(
-                request, supplementalQueries.query(kind, request.asOfDate()), displayFormat);
+                request, supplementalQueries.query(kind, request.asOfDate(), request.fund().id(), activityId), displayFormat);
     }
 
     private ReportResult executeSemantic(ReportRequest request)

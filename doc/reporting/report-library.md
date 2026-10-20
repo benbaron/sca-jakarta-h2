@@ -202,3 +202,9 @@ Select a transaction gap and choose **Open Selected in Journal**, or double-clic
 ## P26-S1 acquisition controls
 
 Asset Register now exposes acquisition source, Journal transaction and full source debit/claimed/remaining controls from canonical splits and register costs. Existing Fixed Asset Register report remains the as-of domain/GL reconciliation authority; a newly acquired asset's cost and canonical debit tie exactly, while explicit register-only/legacy openings may retain explained differences. S1 does not change workbook/form mappings or invent an opening GL balance. See [S1](../P26-S1-asset-acquisitions.md).
+
+## P26-S3 supplemental Fund/Event filters
+
+Accounts Receivable, Accounts Payable, Prepaid Expenses, Deferred Revenue, Other Assets, and Other Liabilities accept the standard stable-ID Fund selector and Event selector. Item inclusion uses the authoritative opening/increase allocation's Fund/Event. Later settlement, recognition, reversal, or correction effects remain in the selected item's balance even if their own split dimensions differ.
+
+Filtered TEXT, CSV, and table output retains the opening Fund/Event and states that control-account reconciliation remains company-wide. This avoids presenting a partial dimension as a complete ledger tie-out when opening and settlement dimensions differ. Row limits apply after the item filter; filters never change canonical lifecycle or accounting facts. See [P26-S3](../P26-S3-event-fund-budgeting.md).

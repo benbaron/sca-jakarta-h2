@@ -24,10 +24,14 @@ public class BudgetPlanMigrationTest
         {
             statement.executeUpdate("INSERT INTO budget_category (id, code, name, is_active) VALUES (1, 'PROGRAM', 'Program Services', TRUE)");
             statement.executeUpdate("INSERT INTO budget_plan (id, name, fiscal_year, version_code, status, period_start, period_end) VALUES (1, 'FY2026', 2026, 'draft-1', 'DRAFT', DATE '2026-01-01', DATE '2026-12-31')");
+            statement.executeUpdate("INSERT INTO activity (id, code, name, is_active) VALUES (1, 'EVENT-A', 'Event A', TRUE), (2, 'EVENT-B', 'Event B', TRUE)");
             statement.executeUpdate("INSERT INTO budget_line (budget_plan_id, budget_category_id, fund_id, period_month, amount) VALUES (1, 1, NULL, NULL, 125.0000)");
+            statement.executeUpdate("INSERT INTO budget_line (budget_plan_id, budget_category_id, fund_id, activity_id, period_month, amount) VALUES (1, 1, NULL, 1, NULL, 50.0000)");
+            statement.executeUpdate("INSERT INTO budget_line (budget_plan_id, budget_category_id, fund_id, activity_id, period_month, amount) VALUES (1, 1, NULL, 2, NULL, 75.0000)");
 
-            assertEquals(1L, scalarLong(statement, "SELECT COUNT(*) FROM budget_line WHERE amount = 125.0000"));
+            assertEquals(3L, scalarLong(statement, "SELECT COUNT(*) FROM budget_line"));
             assertThrows(Exception.class, () -> statement.executeUpdate("INSERT INTO budget_line (budget_plan_id, budget_category_id, fund_id, period_month, amount) VALUES (1, 1, NULL, NULL, 200.0000)"));
+            assertThrows(Exception.class, () -> statement.executeUpdate("INSERT INTO budget_line (budget_plan_id, budget_category_id, fund_id, activity_id, period_month, amount) VALUES (1, 1, NULL, 1, NULL, 200.0000)"));
             assertThrows(Exception.class, () -> statement.executeUpdate("INSERT INTO budget_plan (name, fiscal_year, version_code, status, period_start, period_end) VALUES ('FY2026 copy', 2026, 'draft-1', 'DRAFT', DATE '2026-01-01', DATE '2026-12-31')"));
         }
     }

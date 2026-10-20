@@ -118,22 +118,22 @@ public enum ReportDefinition
             true),
     ACCOUNTS_RECEIVABLE(
             "accounts-receivable", "Accounts Receivable", ReportSource.SUPPLEMENTAL,
-            "RECEIVABLE", DateMode.AS_OF, false, true),
+            "RECEIVABLE", DateMode.AS_OF, true, true, DomainFilterMode.EVENT),
     ACCOUNTS_PAYABLE(
             "accounts-payable", "Accounts Payable", ReportSource.SUPPLEMENTAL,
-            "PAYABLE", DateMode.AS_OF, false, true),
+            "PAYABLE", DateMode.AS_OF, true, true, DomainFilterMode.EVENT),
     PREPAID_EXPENSES(
             "prepaid-expenses", "Prepaid Expenses", ReportSource.SUPPLEMENTAL,
-            "PREPAID_EXPENSE", DateMode.AS_OF, false, true),
+            "PREPAID_EXPENSE", DateMode.AS_OF, true, true, DomainFilterMode.EVENT),
     DEFERRED_REVENUE(
             "deferred-revenue", "Deferred Revenue", ReportSource.SUPPLEMENTAL,
-            "DEFERRED_REVENUE", DateMode.AS_OF, false, true),
+            "DEFERRED_REVENUE", DateMode.AS_OF, true, true, DomainFilterMode.EVENT),
     OTHER_ASSETS(
             "other-assets", "Other Assets", ReportSource.SUPPLEMENTAL,
-            "OTHER_ASSET", DateMode.AS_OF, false, true),
+            "OTHER_ASSET", DateMode.AS_OF, true, true, DomainFilterMode.EVENT),
     OTHER_LIABILITIES(
             "other-liabilities", "Other Liabilities", ReportSource.SUPPLEMENTAL,
-            "OTHER_LIABILITY", DateMode.AS_OF, false, true),
+            "OTHER_LIABILITY", DateMode.AS_OF, true, true, DomainFilterMode.EVENT),
     NMR_LIABILITIES(
             "nmr-liabilities", "NMR Liabilities", ReportSource.SUPPLEMENTAL,
             "OTHER_LIABILITY", DateMode.AS_OF, false, true),

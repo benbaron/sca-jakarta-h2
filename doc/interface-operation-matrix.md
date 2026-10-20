@@ -48,7 +48,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Funds | yes | yes | no | Stable fund ID editing with protected delete/deactivation rules; Fund Transfers navigation preserves the Fund draft. |
 | Fund Transfers | yes | yes | no | Same-company internal allocations, retained history, dated reversal and Journal drill-through. Linked transfers cannot be edited/deleted; reverse then enter a corrected transfer. |
 | Events / Activities | yes | yes | no | New Event, name/code search and Edit over stable Activity IDs; referenced/interchange-linked history deactivates rather than deletes. |
-| Budget Editor | no | DRAFT only | no | Version creation/activation/archive remain explicit panel actions. |
+| Budget Editor | no | DRAFT only | no | Save owns the selected Fund/Event scope while retaining other scopes; version creation/activation/archive remain explicit panel actions. |
 | Budget Categories, Payees / Counterparties, Merchants | yes | yes | no | Existing stable-ID maintenance services. |
 | Administration — Preferences | no | yes | no | Capabilities follow the selected inner tab. |
 | Administration — Company/User maintenance | yes | yes | no | Stable durable-record maintenance. |
@@ -71,7 +71,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Budget Categories | `BudgetCategoriesPanel` | `BudgetCategoryLookupService` | `BudgetCategoryAdminService.save(...)` | Stable category IDs; active/inactive retention, effective dates and audit history. |
 | Payees / Counterparties | `CounterpartiesPanel` | `CounterpartyAdminService.listForMaintenance()` | `CounterpartyAdminService.save(...)` | Company-owned stable/portable IDs, contact/kind editing, audited lifecycle retention and Journal choice refresh. |
 | Merchants | `MerchantsPanel` | `MerchantAdminService.listForMaintenance()` | `MerchantAdminService.save(...)` | Company-owned stable/portable IDs, name/notes, audited deactivation retention and mixed-line Journal choice/label refresh. |
-| Budget vs Actual | `BudgetVsActualPanel` | active budget plus canonical ledger actuals in company fiscal/accounting-period context | none | No calendar-year substitution. |
+| Budget vs Actual | `BudgetVsActualPanel` | active budget plus canonical ledger actuals in company fiscal/accounting-period and selected Fund/Event context | none | Mutually exclusive scopes prevent double counting; no calendar-year substitution. |
 | Asset Register | `AssetsRegisterPanel` | `FixedAssetService` | fixed-asset lifecycle/depreciation/correction services | Asset-linked transactions are domain-governed. |
 | Inventory | `InventoryPanel` | `InventoryService` | inventory movement/lifecycle services | Financial movements require Event or explicit Non-event, with independent optional Budget on the offset split; both lines retain the item Fund. Preview, history and reversal use canonical tags, and financial movements link atomically to canonical transactions. |
 | Property Custody | `PropertyCustodyPanel` | `PropertyCustodyService` | fixed-asset lifecycle and inventory movement evidence | Custody-only events never post accounting; removals cite existing canonical source records. |

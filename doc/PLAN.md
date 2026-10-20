@@ -1,12 +1,12 @@
 ---
-plan_version: 386
+plan_version: 389
 active_phase: P26
-active_slice: P26-S2
+active_slice: P26-S3
 active_status: VERIFYING
-active_branch: codex/P26-S2-property-custody
-active_pull_request: "https://github.com/benbaron/sca-jakarta-h2/pull/380"
-active_head: 1d049d22
-next_action: "Publish this documentation-only successor, verify the final PR #380 remote tree, and require exact-head JDK 17 CI before owner review/merge."
+active_branch: codex/P26-S3-budget-planning
+active_pull_request: "https://github.com/benbaron/sca-jakarta-h2/pull/381"
+active_head: e3adf75b
+next_action: "Verify draft PR #381's final remote tree and require exact-head clean/repeat/JavaFX CI before owner review and merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -38,7 +38,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
-| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 acquisition/opening links DONE through accepted/merged MR #379; next slice unselected |
+| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 DONE through accepted/merged MR #379; S2 DONE through verified/merged PR #380; S3 VERIFYING |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
@@ -698,8 +698,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S5A | Adopt functional-expense contract (documentation only) | DONE | MR #377 merged at 7bc89aef; final-head clean/repeat/JavaFX CI passed; D07 adopted |
 | P25-S5B | Independent functional expense entry, reporting and portability | DONE | MR #378 reviewed/merged at 70462b49; full local and exact-head CI passed;  [Implementation contract](P25-S5B-functional-expenses.md); nullable canonical fact, shared Save, compatible native retries and lossless SCLX |
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | DONE | Owner accepted/merged MR #379 at `2de87dc3`; [S1 contract](P26-S1-asset-acquisitions.md); full local and exact-head CI passed |
-| P26-S2 | Complete custody, supplies, and property-transfer records (G11) | VERIFYING | Implementation and local verification complete; draft publication and exact-head CI pending; internal branch form does not claim P27 official-template mapping; D06 inventory costing remains P26-S5 |
-| P26-S3 | Complete event/fund budget planning and reporting filters (G12) | BLOCKED | P26-S2 merged; owning contract and D01–D10 gates as applicable |
+| P26-S2 | Complete custody, supplies, and property-transfer records (G11) | DONE | Owner verified/merged PR #380 at `21f379dd`; final head `c83db0a5` and exact-head clean/repeat/JavaFX CI passed; internal branch form does not claim P27 official-template mapping |
+| P26-S3 | Complete event/fund budget planning and reporting filters (G12) | VERIFYING | P26-S2 verified/merged; [S3 contract](P26-S3-event-fund-budgeting.md); implementation and local gates passed; draft publication/exact-head CI/owner review remain; D05 form mapping remains P27 |
 | P26-S4 | Add governed prepaid/deferred recognition assistance (G12) | BLOCKED | P26-S3 merged; owning contract and D01–D10 gates as applicable |
 | P26-S5 | Resolve inventory valuation limitations (G12) | BLOCKED | P26-S4 merged; owning contract and D01–D10 gates as applicable |
 | P26-S6 | Provide controlled conversion and merchant-settlement assistance | BLOCKED | P26-S5 merged; owning contract and D01–D10 gates as applicable |
@@ -2041,3 +2041,33 @@ Final-source focused service/accounting/SCLX verification passed **20 tests**, z
 ### P26-S2 draft publication — 2026-10-18 (America/Denver)
 
 Published branch `codex/P26-S2-property-custody` and opened draft [PR #380](https://github.com/benbaron/sca-jakarta-h2/pull/380) targeting `main`. The PR records the bounded accounting boundary, delivered custody/UI/report/SCLX behavior, local clean/focused/actual-JavaFX evidence, and remaining owner checks. This documentation-only publication successor follows the same authorization; `active_head` identifies its known remote parent because the successor cannot embed its own SHA. Verify the final branch and PR tip/tree and require the workflow for that exact head to pass. No GitHub CI result is claimed at this checkpoint, and P26-S2 stays VERIFYING pending owner review/merge.
+
+### P26-S2 final-head verification — 2026-10-18 (America/Denver)
+
+Final published head `c83db0a54a822a4a4572d3e822442f8d5e90a263` and its fetched remote ref matched exactly; both resolve tree `d1569f6a4510552b10acd585f06b1d737a0fa39b`. Exact-head [Maven PR Tests run 39195692424](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39195692424) completed successfully: clean headless verification, repeat tests, and production JavaFX route compliance all passed; failed-test publication was correctly skipped. The PR validation now records this evidence. P26-S2 remains VERIFYING for owner disposable-company review and merge.
+
+This final PLAN evidence is local only so the reviewed green PR head remains unchanged. Preserve it for post-merge closeout rather than publishing another evidence-only successor. After owner acceptance/merge, fetch and verify current `main`, carry this record onto a fresh branch, and select P26-S3 without reusing the merged P26-S2 branch.
+
+### P26-S2 acceptance/merge and P26-S3 selection — 2026-10-19 (America/Denver)
+
+Owner reported P26-S2 verified and merged. Fetched current `origin/main` and confirmed [PR #380](https://github.com/benbaron/sca-jakarta-h2/pull/380) merged accepted head `c83db0a54a822a4a4572d3e822442f8d5e90a263` at merge commit `21f379dd`; main contains the accepted head and its previously recorded exact-head run `39195692424` passed. Fresh branch `codex/P26-S3-budget-planning` starts from that main and carries the local S2 final-verification record as `61e4ce41`. P26-S2 is DONE.
+
+Selected [P26-S3](P26-S3-event-fund-budgeting.md), the first unblocked adopted G12/A12 slice. `BudgetPlan`/`BudgetLine`, existing Fund/Activity, canonical TxnSplit actuals, supplemental lifecycle projection, Report Library and SCLX remain the authorities. Event scopes are mutually exclusive; null Event means general/untagged. All Funds aggregates only when it does not overlap fund-specific lines for the same category/Event/month. Supplemental item filters use opening allocation Fund/Event while keeping later cross-scope effects in the item balance and retaining company-wide control reconciliation. Donor BudgetWorkspaceStore supplies only the explicit Fund-selection idea; its sidecar/string rows and separate records are rejected.
+
+Pre-edit offline compile passed at **2026-10-19 19:23 America/Denver**. Fifty existing budget, reversal, authorization, open-item, report-request and SCLX tests passed, zero failures/errors/skips. Implementation must add unit tests for two Events/two Funds, general and scoped actuals, overlap rollback, revision, opening-allocation filters with cross-scope settlement, migration uniqueness and optional SCLX event identity; actual JavaFX coverage remains a separate gate.
+
+### P26-S3 implementation and local verification — 2026-10-20 (UTC)
+
+Implemented the [adopted contract](P26-S3-event-fund-budgeting.md) on the existing budget, ledger, supplemental-item, Report Library and SCLX authorities. V88 adds an optional Event relationship and null-safe scope uniqueness to budget lines. Budget write validation preserves atomic rollback and rejects overlapping All Funds and fund-specific lines for the same category, Event and period. Variance projection keeps general and Event-specific actuals mutually exclusive, aggregates across Funds only for an applicable All Funds budget, and counts every actual once. Revisions and SCLX preserve the optional Event identity.
+
+Budget Editor now exposes explicit Fund and Event scopes and its existing Save Draft Amount command replaces only the visible scope while preserving all other scope lines. Budget vs Actual exposes matching filters and an Event column. The six supplemental open-item reports accept Fund/Event filters based on each item's authoritative opening allocation; later cross-scope settlements and corrections remain in the selected item's balance. Filtered output includes opening dimensions and clearly retains company-wide reconciliation controls rather than implying a partial-ledger tie-out. Prepaid/deferred recognition, inventory valuation and official form mapping remain P26-S4, P26-S5 and P27 work.
+
+The requested scenario-level unit coverage is present: two Events/two Funds/general actuals and no double counting; revision preservation; overlap rejection with atomic rollback; cross-company Event rejection; opening-allocation filters with cross-scope settlement; scoped editor merge behavior; migration uniqueness/recovery; optional/duplicate SCLX Event scope, export and import restoration; supplemental request/output dimensions; and the existing inventory Event-cost round trip updated to use an Event-scoped budget. The final focused gate passed **79 tests**, zero failures/errors/skips. A migration/recovery/inventory retest passed **18 tests**, zero failures/errors/skips after making the new foreign key recovery-idempotent.
+
+Final offline `mvn clean verify` passed **1,013 tests**, zero failures/errors and **64 display-dependent skips**, BUILD SUCCESS at **2026-10-20 01:56:41 UTC** (elapsed 3:54). The dedicated `BudgetPlanningPanelTest` ran under Xvfb with **1 test**, zero failures/errors/skips, proving the actual editor/comparison controls, shared Save command, split layout and VIEWER write gate. The CI workflow's explicit production JavaFX selector includes this test. `git diff --check` and the intended-scope review passed. Implementation commit `0b1108a5` contains source, migration, tests, workflow and governing documentation; only this verification ledger follows locally.
+
+P26-S3 remains VERIFYING. Next publish the reviewed branch as a draft MR, confirm its fetched remote head/tree equal local, and require clean verification, repeat tests and production JavaFX on that exact head. Owner review/acceptance and merge remain required; no human desktop result is inferred from automated execution. P26-S4 stays blocked until merge confirmation.
+
+### P26-S3 draft publication — 2026-10-20 (UTC)
+
+Published `codex/P26-S3-budget-planning` and opened draft [PR #381](https://github.com/benbaron/sca-jakarta-h2/pull/381) against current `main`. The PR description records the implemented scope, the full/focused/actual-JavaFX results, the requested scenario-level unit coverage and concrete owner checks. This documentation-only publication successor follows the reviewed implementation and local-verification commits; `active_head` records its known parent because a commit cannot embed its own hash. Push this record, fetch the resulting remote branch, require exact local/remote head and tree equality, and inspect CI for that final head. P26-S3 remains VERIFYING; no GitHub CI success or owner desktop result is claimed at this checkpoint.

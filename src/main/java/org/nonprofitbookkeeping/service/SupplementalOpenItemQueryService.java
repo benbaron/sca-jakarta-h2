@@ -40,9 +40,23 @@ public final class SupplementalOpenItemQueryService
 
     public Result query(Kind kind, LocalDate asOfDate)
     {
+        return query(kind, asOfDate, null, null);
+    }
+
+    public Result query(Kind kind, LocalDate asOfDate, Long fundId, Long activityId)
+    {
         try (EntityManager em = jpa.em())
         {
-            return query(em, companyCodeSupplier.get(), kind, asOfDate);
+            Result complete = query(em, companyCodeSupplier.get(), kind, asOfDate);
+            if (fundId == null && activityId == null)
+            {
+                return complete;
+            }
+            List<Row> filtered = complete.rows().stream()
+                    .filter(row -> matches(row.dimensions(), fundId, activityId))
+                    .toList();
+            return new Result(kind, asOfDate, filtered,
+                    filtered.stream().anyMatch(Row::authoritative), complete.reconciliation(), fundId, activityId);
         }
     }
 
@@ -101,7 +115,14 @@ public final class SupplementalOpenItemQueryService
         rows.addAll(diagnostics);
         return new Result(kind, asOfDate, rows, authorityAvailable,
                 reconcile ? SupplementalReconciliationService.query(em, companyCode, kind, asOfDate)
-                        : new SupplementalReconciliationService.Reconciliation(List.of(), List.of()));
+                        : new SupplementalReconciliationService.Reconciliation(List.of(), List.of()), null, null);
+    }
+
+    private static boolean matches(AllocationDimensions dimensions, Long fundId, Long activityId)
+    {
+        return dimensions != null
+                && (fundId == null || Objects.equals(fundId, dimensions.fundId()))
+                && (activityId == null || Objects.equals(activityId, dimensions.activityId()));
     }
 
     private static List<TxnSupplementalLine> allocationLines(EntityManager em, String companyCode, Kind kind)
@@ -251,7 +272,8 @@ public final class SupplementalOpenItemQueryService
                 line.getCounterparty(), line.getDescription(), line.getReference(),
                 scale(line.getAmount()), ZERO, ZERO, line.getDueDate(), line.getStartDate(), line.getEndDate(),
                 "UNMATCHED_LEGACY", line.getNotes(), false,
-                "Legacy supplemental detail has no canonical item/split lifecycle link; no open balance is inferred.", null);
+                "Legacy supplemental detail has no canonical item/split lifecycle link; no open balance is inferred.",
+                null, dimensions(line));
     }
 
     private static Row inconsistentDiagnostic(TxnSupplementalLine line, Kind kind, String explanation)
@@ -260,7 +282,7 @@ public final class SupplementalOpenItemQueryService
                 line.getItemId(), kind, line.getTxn().getId(), line.getTxn().getTxnDate(), line.getEntryRef(),
                 line.getCounterparty(), line.getDescription(), line.getReference(),
                 ZERO, ZERO, ZERO, line.getDueDate(), line.getStartDate(), line.getEndDate(),
-                "INCONSISTENT", line.getNotes(), false, explanation, null);
+                "INCONSISTENT", line.getNotes(), false, explanation, null, dimensions(line));
     }
 
     private static BigDecimal scale(BigDecimal value)
@@ -291,11 +313,18 @@ public final class SupplementalOpenItemQueryService
     }
 
     public record Result(Kind kind, LocalDate asOfDate, List<Row> rows, boolean authorityAvailable,
-                         SupplementalReconciliationService.Reconciliation reconciliation)
+                         SupplementalReconciliationService.Reconciliation reconciliation,
+                         Long fundFilterId, Long activityFilterId)
     {
         public Result
         {
             rows = rows == null ? List.of() : List.copyOf(rows);
+        }
+
+        public Result(Kind kind, LocalDate asOfDate, List<Row> rows, boolean authorityAvailable,
+                      SupplementalReconciliationService.Reconciliation reconciliation)
+        {
+            this(kind, asOfDate, rows, authorityAvailable, reconciliation, null, null);
         }
 
         public boolean ready()
@@ -341,7 +370,17 @@ public final class SupplementalOpenItemQueryService
             String notes,
             boolean authoritative,
             String explanation,
-            NmrDimensions nmr)
+            NmrDimensions nmr,
+            AllocationDimensions dimensions)
+    {
+    }
+
+    public record AllocationDimensions(
+            long fundId,
+            String fundCode,
+            Long activityId,
+            String activityCode,
+            String activityName)
     {
     }
 
@@ -386,6 +425,21 @@ public final class SupplementalOpenItemQueryService
         return new NmrDimensions(recipient.getId(), recipient.getDisplayName(),
                 split.getAccount().getId(), split.getAccount().getCode(), split.getFund().getId(), split.getFund().getCode(),
                 split.getActivity().getId(), split.getActivity().getCode(), split.getActivity().getName());
+    }
+
+    private static AllocationDimensions dimensions(TxnSupplementalLine source)
+    {
+        if (source == null || source.getTxnSplit() == null || source.getTxnSplit().getFund() == null)
+        {
+            return null;
+        }
+        var split = source.getTxnSplit();
+        var activity = split.getActivity();
+        return new AllocationDimensions(
+                split.getFund().getId(), split.getFund().getCode(),
+                activity == null ? null : activity.getId(),
+                activity == null ? "" : activity.getCode(),
+                activity == null ? "" : activity.getName());
     }
 
     private static final class Accumulator
@@ -460,7 +514,7 @@ public final class SupplementalOpenItemQueryService
                     itemId, kind, source.getTxn().getId(), source.getTxn().getTxnDate(), source.getEntryRef(),
                     source.getCounterparty(), source.getDescription(), source.getReference(),
                     increases, reductions, open, source.getDueDate(), source.getStartDate(), source.getEndDate(),
-                    status, source.getNotes(), authoritative, explanation, nmrDimensions(source));
+                    status, source.getNotes(), authoritative, explanation, nmrDimensions(source), dimensions(source));
         }
     }
 }
