@@ -1,12 +1,12 @@
 ---
-plan_version: 389
+plan_version: 390
 active_phase: P26
 active_slice: P26-S3
 active_status: VERIFYING
 active_branch: codex/P26-S3-budget-planning
 active_pull_request: "https://github.com/benbaron/sca-jakarta-h2/pull/381"
-active_head: e3adf75b
-next_action: "Verify draft PR #381's final remote tree and require exact-head clean/repeat/JavaFX CI before owner review and merge."
+active_head: ee36b6410d9b37651f0ea97ae88f505727c93020
+next_action: "Owner reviews draft PR #381, performs the documented checks, and marks it ready/merges when accepted; after merge, verify main and select P26-S4 on a fresh branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2071,3 +2071,9 @@ P26-S3 remains VERIFYING. Next publish the reviewed branch as a draft MR, confir
 ### P26-S3 draft publication — 2026-10-20 (UTC)
 
 Published `codex/P26-S3-budget-planning` and opened draft [PR #381](https://github.com/benbaron/sca-jakarta-h2/pull/381) against current `main`. The PR description records the implemented scope, the full/focused/actual-JavaFX results, the requested scenario-level unit coverage and concrete owner checks. This documentation-only publication successor follows the reviewed implementation and local-verification commits; `active_head` records its known parent because a commit cannot embed its own hash. Push this record, fetch the resulting remote branch, require exact local/remote head and tree equality, and inspect CI for that final head. P26-S3 remains VERIFYING; no GitHub CI success or owner desktop result is claimed at this checkpoint.
+
+### P26-S3 exact-head CI and handoff — 2026-10-20 (UTC)
+
+Final published head `ee36b6410d9b37651f0ea97ae88f505727c93020` and its fetched remote branch match exactly; both resolve tree `fd0e693a35d58f06e922c0cd27e738a21c7a3733`. Exact-head [Maven PR Tests run 39356379674](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39356379674), job `118412084786`, completed successfully: clean headless verification, repeat tests and production JavaFX route compliance all passed, including the newly explicit `BudgetPlanningPanelTest`; failed-test report publication correctly skipped. Draft PR #381 is open, unmerged and mergeable at that exact head, and its description records the final local and CI evidence.
+
+This final evidence remains local so the green remote head is not replaced solely by a documentation update. P26-S3 remains VERIFYING pending owner review/acceptance and merge; no human desktop transcript is inferred. After merge confirmation, fetch and verify current `main`, carry this record onto a fresh branch, and select P26-S4 without reusing the merged branch.
