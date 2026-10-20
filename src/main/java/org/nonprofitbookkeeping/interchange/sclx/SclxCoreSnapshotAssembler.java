@@ -732,11 +732,15 @@ public final class SclxCoreSnapshotAssembler
         String fundId = line.getFund() == null
                 ? null
                 : SclxPortableIdentity.fund(companyCode, line.getFund().getCode());
+        String activityId = line.getActivity() == null
+                ? null
+                : SclxPortableIdentity.activity(companyCode, line.getActivity().getCode());
         String periodMonth = line.getPeriodMonth() == null ? null : line.getPeriodMonth().toString();
         return new SclxExportDocument.BudgetLine(
-                SclxPortableIdentity.budgetLine(budgetId, categoryCode, null, fundId, periodMonth),
+                SclxPortableIdentity.budgetLine(budgetId, categoryCode, null, fundId, activityId, periodMonth),
                 null,
                 fundId,
+                activityId,
                 categoryCode,
                 periodMonth,
                 Objects.requireNonNull(line.getAmount(), "budget line amount"));

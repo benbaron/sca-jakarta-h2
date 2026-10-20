@@ -22,12 +22,13 @@ import java.time.YearMonth;
  */
 @Entity
 @Table(name = "budget_line",
-       uniqueConstraints = @UniqueConstraint(name = "uq_budget_line_scope", columnNames = {"budget_plan_id", "budget_category_id", "fund_id", "period_month"}),
+       uniqueConstraints = @UniqueConstraint(name = "uq_budget_line_scope", columnNames = {"budget_plan_id", "budget_category_id", "fund_id", "activity_id", "period_month"}),
        indexes = {
            @Index(name = "ix_budget_line_plan", columnList = "budget_plan_id"),
            @Index(name = "ix_budget_line_category", columnList = "budget_category_id"),
            @Index(name = "ix_budget_line_fund", columnList = "fund_id"),
-           @Index(name = "ix_budget_line_period", columnList = "period_month")
+           @Index(name = "ix_budget_line_period", columnList = "period_month"),
+           @Index(name = "ix_budget_line_activity", columnList = "activity_id")
        })
 public class BudgetLine
 {
@@ -46,6 +47,10 @@ public class BudgetLine
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fund_id")
     private Fund fund;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "activity_id")
+    private Activity activity;
 
     @Column(name = "period_month", length = 7)
     private String periodMonth;
@@ -69,6 +74,8 @@ public class BudgetLine
     public void setBudgetCategory(BudgetCategory budgetCategory) { this.budgetCategory = budgetCategory; }
     public Fund getFund() { return fund; }
     public void setFund(Fund fund) { this.fund = fund; }
+    public Activity getActivity() { return activity; }
+    public void setActivity(Activity activity) { this.activity = activity; }
     public YearMonth getPeriodMonth() { return periodMonth == null ? null : YearMonth.parse(periodMonth); }
     public void setPeriodMonth(YearMonth periodMonth) { this.periodMonth = periodMonth == null ? null : periodMonth.toString(); }
     public BigDecimal getAmount() { return amount; }

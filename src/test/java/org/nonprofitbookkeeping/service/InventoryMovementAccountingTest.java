@@ -274,7 +274,8 @@ class InventoryMovementAccountingTest
             BudgetPlanService budgets = new BudgetPlanService(jpa, () -> COMPANY);
             var plan = budgets.createDraft(new BudgetPlanCommand("Event budget", 2026, "v1",
                     LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31), ""));
-            budgets.replaceDraftLines(plan.id(), List.of(new BudgetLineCommand(31001L, FUND_ID, null, new BigDecimal("200"), "")));
+            budgets.replaceDraftLines(plan.id(), List.of(new BudgetLineCommand(
+                    31001L, FUND_ID, 31001L, null, new BigDecimal("200"), "")));
             budgets.activate(plan.id());
             assertEquals(new BigDecimal("200.0000"), budgets.activeVariance(MOVEMENT_DATE).stream()
                     .filter(row -> "COST".equals(row.budgetCategoryCode())).findFirst().orElseThrow().actual());

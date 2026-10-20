@@ -121,6 +121,11 @@ class BudgetPlanAuthorizationIntegrationTest
                             line(BigDecimal.ONE, "One"),
                             line(BigDecimal.TEN, "Duplicate scope"))));
             assertEquals(0L, lineCount(jpa, draft.id()));
+            assertThrows(CompanyOwnershipException.class,
+                    () -> budgets.replaceDraftLines(draft.id(), List.of(
+                            new BudgetLineCommand(1L, 1L, 2L, YearMonth.of(2026, 1),
+                                    BigDecimal.ONE, "Foreign event"))));
+            assertEquals(0L, lineCount(jpa, draft.id()));
 
             BudgetPlanView active = budgets.activate(draft.id());
             assertThrows(IllegalStateException.class, () -> budgets.archive(active.id()));
@@ -205,11 +210,15 @@ class BudgetPlanAuthorizationIntegrationTest
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
+            em.createNativeQuery("INSERT INTO company (id, code, display_name) VALUES (2, 'FOREIGN', 'Foreign')")
+                    .executeUpdate();
             em.createNativeQuery(
                     "INSERT INTO fund (id, company_id, code, name, fund_type) VALUES (1, 1, 'OPERATING', 'Operating', 'UNRESTRICTED')")
                     .executeUpdate();
             em.createNativeQuery(
                     "INSERT INTO budget_category (id, company_id, code, name, is_active) VALUES (1, 1, 'PROGRAM', 'Program Services', TRUE)")
+                    .executeUpdate();
+            em.createNativeQuery("INSERT INTO activity (id, company_id, code, name, is_active) VALUES (1, 1, 'EVENT', 'Event', TRUE), (2, 2, 'FOREIGN', 'Foreign Event', TRUE)")
                     .executeUpdate();
             em.getTransaction().commit();
         }

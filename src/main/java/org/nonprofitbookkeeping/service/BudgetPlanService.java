@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.nonprofitbookkeeping.model.AccountType;
+import org.nonprofitbookkeeping.model.Activity;
 import org.nonprofitbookkeeping.model.BudgetCategory;
 import org.nonprofitbookkeeping.model.BudgetLine;
 import org.nonprofitbookkeeping.model.BudgetPlan;
@@ -150,11 +151,19 @@ public class BudgetPlanService
             {
                 ownership().ensureOwnedBy(em, company, fund, "Fund");
             }
+            Activity activity = lineCommand.activityId() == null
+                    ? null
+                    : require(em, Activity.class, lineCommand.activityId(), "Event");
+            if (activity != null)
+            {
+                ownership().ensureOwnedBy(em, company, activity, "Event");
+            }
 
             BudgetLine line = new BudgetLine();
             line.setBudgetPlan(plan);
             line.setBudgetCategory(category);
             line.setFund(fund);
+            line.setActivity(activity);
             line.setPeriodMonth(lineCommand.periodMonth());
             line.setAmount(lineCommand.amount());
             line.setNotes(lineCommand.notes());
@@ -193,8 +202,16 @@ public class BudgetPlanService
                     {
                         ownership().ensureOwnedBy(em, company, fund, "Fund");
                     }
+                    Activity activity = command.activityId() == null
+                            ? null
+                            : require(em, Activity.class, command.activityId(), "Event");
+                    if (activity != null)
+                    {
+                        ownership().ensureOwnedBy(em, company, activity, "Event");
+                    }
                     line.setBudgetCategory(category);
                     line.setFund(fund);
+                    line.setActivity(activity);
                     line.setPeriodMonth(command.periodMonth());
                     line.setAmount(command.amount());
                     line.setNotes(command.notes());
@@ -417,6 +434,7 @@ public class BudgetPlanService
                     copy.setBudgetPlan(revision);
                     copy.setBudgetCategory(sourceLine.getBudgetCategory());
                     copy.setFund(sourceLine.getFund());
+                    copy.setActivity(sourceLine.getActivity());
                     copy.setPeriodMonth(sourceLine.getPeriodMonth());
                     copy.setAmount(sourceLine.getAmount());
                     copy.setNotes(sourceLine.getNotes());
@@ -525,27 +543,30 @@ public class BudgetPlanService
     {
         Map<String, VarianceAccumulator> rows = new LinkedHashMap<>();
         List<Object[]> budgetRows = em.createQuery("""
-                select bc.code, bc.name, f.id, f.code, f.name, coalesce(sum(l.amount), 0)
+                select bc.code, bc.name, f.id, f.code, f.name,
+                       ev.id, ev.code, ev.name, coalesce(sum(l.amount), 0)
                 from BudgetLine l
                 join l.budgetCategory bc
                 left join l.fund f
+                left join l.activity ev
                 where l.budgetPlan.id = :planId
                   and (l.periodMonth is null or l.periodMonth <= :period)
-                group by bc.code, bc.name, f.id, f.code, f.name
-                order by bc.code, f.code
+                group by bc.code, bc.name, f.id, f.code, f.name, ev.id, ev.code, ev.name
+                order by bc.code, ev.code, f.code
                 """, Object[].class)
                 .setParameter("planId", planId)
                 .setParameter("period", YearMonth.from(range.periodEnd()).toString())
                 .getResultList();
         for (Object[] row : budgetRows)
         {
-            accumulator(rows, row).budget = decimal(row[5]);
+            accumulator(rows, row).budget = decimal(row[8]);
         }
 
         // REVERSED originals remain ledger facts on their original dates. Their inverse
         // entries offset them only when the inverse transaction's own date is in range.
         List<Object[]> actualRows = em.createQuery("""
                 select bc.code, bc.name, f.id, f.code, f.name,
+                       ev.id, ev.code, ev.name,
                        coalesce(sum(case
                            when a.accountType = :incomeType then -s.amountSigned
                            when a.accountType = :expenseType then s.amountSigned
@@ -554,13 +575,14 @@ public class BudgetPlanService
                 left join s.budgetCategory bc
                 join s.account a
                 join s.fund f
+                left join s.activity ev
                 where (s.txn.company = :company
                        or (s.txn.company is null and (select count(c) from Company c) = 1))
                   and s.txn.txnDate between :start and :asOf
                   and s.txn.status in ('ENTERED', 'REVERSED')
                   and a.accountType in (:incomeType, :expenseType)
-                group by bc.code, bc.name, f.id, f.code, f.name
-                order by bc.code, f.code
+                group by bc.code, bc.name, f.id, f.code, f.name, ev.id, ev.code, ev.name
+                order by bc.code, ev.code, f.code
                 """, Object[].class)
                 .setParameter("company", company)
                 .setParameter("incomeType", AccountType.INCOME)
@@ -570,7 +592,12 @@ public class BudgetPlanService
                 .getResultList();
         for (Object[] row : actualRows)
         {
-            accumulator(rows, row).actual = decimal(row[5]);
+            VarianceAccumulator target = rows.get(scopeKey(row[0], null, row[5]));
+            if (target == null)
+            {
+                target = accumulator(rows, row);
+            }
+            target.actual = target.actual.add(decimal(row[8]));
         }
         return rows.values().stream().map(VarianceAccumulator::toView).toList();
     }
@@ -579,13 +606,24 @@ public class BudgetPlanService
     {
         String categoryCode = string(row[0]);
         Long fundId = row[2] == null ? null : ((Number) row[2]).longValue();
-        String key = (row[0] == null ? "unclassified:" : "category:" + categoryCode) + "|" + fundId;
+        Long activityId = row[5] == null ? null : ((Number) row[5]).longValue();
+        String key = scopeKey(row[0], row[2], row[5]);
         return rows.computeIfAbsent(key, ignored -> new VarianceAccumulator(
                 categoryCode,
                 row[0] == null ? "Unclassified (no budget category)" : string(row[1]),
                 fundId,
                 string(row[3]),
-                string(row[4])));
+                string(row[4]),
+                activityId,
+                string(row[6]),
+                string(row[7])));
+    }
+
+    private static String scopeKey(Object categoryCode, Object fundId, Object activityId)
+    {
+        return (categoryCode == null ? "unclassified:" : "category:" + categoryCode)
+                + "|fund:" + Objects.toString(fundId, "ALL")
+                + "|event:" + Objects.toString(activityId, "GENERAL");
     }
 
     private static void validateLineScopes(BudgetPlan plan, List<BudgetLineCommand> commands)
@@ -599,10 +637,29 @@ public class BudgetPlanService
             {
                 throw new IllegalArgumentException("Budget line period is outside the plan period");
             }
-            String key = command.budgetCategoryId() + "|" + command.fundId() + "|" + command.periodMonth();
+            String key = command.budgetCategoryId() + "|" + command.fundId() + "|"
+                    + command.activityId() + "|" + command.periodMonth();
             if (seen.put(key, Boolean.TRUE) != null)
             {
                 throw new IllegalArgumentException("Duplicate budget line scope");
+            }
+        }
+        for (BudgetLineCommand command : commands)
+        {
+            boolean hasAllFunds = commands.stream().anyMatch(other ->
+                    other.budgetCategoryId().equals(command.budgetCategoryId())
+                            && Objects.equals(other.activityId(), command.activityId())
+                            && Objects.equals(other.periodMonth(), command.periodMonth())
+                            && other.fundId() == null);
+            boolean hasSpecificFund = commands.stream().anyMatch(other ->
+                    other.budgetCategoryId().equals(command.budgetCategoryId())
+                            && Objects.equals(other.activityId(), command.activityId())
+                            && Objects.equals(other.periodMonth(), command.periodMonth())
+                            && other.fundId() != null);
+            if (hasAllFunds && hasSpecificFund)
+            {
+                throw new IllegalArgumentException(
+                        "All-funds and fund-specific budget lines cannot overlap for the same category, event, and period");
             }
         }
     }
@@ -692,12 +749,14 @@ public class BudgetPlanService
     private static List<BudgetLineView> lines(EntityManager em, long planId)
     {
         return em.createQuery("""
-                select l.id, bc.id, bc.code, bc.name, f.id, f.code, f.name, l.periodMonth, l.amount, coalesce(l.notes, '')
+                select l.id, bc.id, bc.code, bc.name, f.id, f.code, f.name,
+                       ev.id, ev.code, ev.name, l.periodMonth, l.amount, coalesce(l.notes, '')
                 from BudgetLine l
                 join l.budgetCategory bc
                 left join l.fund f
+                left join l.activity ev
                 where l.budgetPlan.id = :planId
-                order by bc.code, f.code, l.periodMonth, l.id
+                order by bc.code, ev.code, f.code, l.periodMonth, l.id
                 """, Object[].class)
                 .setParameter("planId", planId)
                 .getResultList()
@@ -710,9 +769,12 @@ public class BudgetPlanService
                         row[4] == null ? null : ((Number) row[4]).longValue(),
                         string(row[5]),
                         string(row[6]),
-                        row[7] == null ? null : YearMonth.parse(string(row[7])),
-                        decimal(row[8]),
-                        string(row[9])))
+                        row[7] == null ? null : ((Number) row[7]).longValue(),
+                        string(row[8]),
+                        string(row[9]),
+                        row[10] == null ? null : YearMonth.parse(string(row[10])),
+                        decimal(row[11]),
+                        string(row[12])))
                 .toList();
     }
 
@@ -762,16 +824,30 @@ public class BudgetPlanService
         private final Long fundId;
         private final String fundCode;
         private final String fundName;
+        private final Long activityId;
+        private final String activityCode;
+        private final String activityName;
         private BigDecimal budget = BigDecimal.ZERO;
         private BigDecimal actual = BigDecimal.ZERO;
 
-        private VarianceAccumulator(String categoryCode, String categoryName, Long fundId, String fundCode, String fundName)
+        private VarianceAccumulator(
+                String categoryCode,
+                String categoryName,
+                Long fundId,
+                String fundCode,
+                String fundName,
+                Long activityId,
+                String activityCode,
+                String activityName)
         {
             this.categoryCode = categoryCode;
             this.categoryName = categoryName;
             this.fundId = fundId;
             this.fundCode = fundCode;
             this.fundName = fundName;
+            this.activityId = activityId;
+            this.activityCode = activityCode;
+            this.activityName = activityName;
         }
 
         private BudgetVarianceView toView()
@@ -782,6 +858,9 @@ public class BudgetPlanService
                     Optional.ofNullable(fundId),
                     optionalText(fundCode),
                     optionalText(fundName),
+                    Optional.ofNullable(activityId),
+                    optionalText(activityCode),
+                    optionalText(activityName),
                     budget,
                     actual,
                     actual.subtract(budget));

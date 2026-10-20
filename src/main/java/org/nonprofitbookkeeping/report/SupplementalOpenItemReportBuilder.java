@@ -42,6 +42,11 @@ public final class SupplementalOpenItemReportBuilder
                 .append(format.formatDate(projection.asOfDate())).append(System.lineSeparator());
         out.append(projection.ready() ? "Supplemental readiness: COMPLETE" : "Supplemental readiness: NOT READY — review allocation gaps")
                 .append(System.lineSeparator());
+        if (projection.fundFilterId() != null || projection.activityFilterId() != null)
+        {
+            out.append("Item filters use the opening allocation's Fund/Event; later settlements remain in the item's balance. Control reconciliation remains company-wide.")
+                    .append(System.lineSeparator());
+        }
         out.append("Control account | Ledger | Explained | Unmatched (gross) | Difference").append(System.lineSeparator());
         for (var control : projection.reconciliation().controls())
         {
@@ -55,12 +60,14 @@ public final class SupplementalOpenItemReportBuilder
                     .append(" / ").append(gap.accountCode()).append(": unmatched ").append(format.formatMoney(gap.unmatched()))
                     .append(". ").append(gap.repair()).append(System.lineSeparator());
         }
-        out.append("Item | Date | Reference | Description | Increases | Reductions | Open | Status")
+        out.append("Item | Date | Fund | Event | Reference | Description | Increases | Reductions | Open | Status")
                 .append(System.lineSeparator());
         for (SupplementalOpenItemQueryService.Row row : rows)
         {
             out.append(row.itemId() == null ? "" : row.itemId()).append(" | ")
                     .append(format.formatDate(row.openingDate())).append(" | ")
+                    .append(row.dimensions() == null ? "" : safe(row.dimensions().fundCode())).append(" | ")
+                    .append(row.dimensions() == null ? "" : safe(row.dimensions().activityCode())).append(" | ")
                     .append(safe(row.entryRef())).append(" | ")
                     .append(safe(row.description())).append(" | ")
                     .append(format.formatMoney(row.increases())).append(" | ")
@@ -78,7 +85,7 @@ public final class SupplementalOpenItemReportBuilder
 
     private static String csv(SupplementalOpenItemQueryService.Result projection, List<SupplementalOpenItemQueryService.Row> rows)
     {
-        StringBuilder out = new StringBuilder("item_id,transaction_id,date,entry_ref,counterparty,description,reference,increases,reductions,open_balance,due_date,start_date,end_date,status,notes,explanation,account_code,ledger,explained,unmatched,difference,record_type\n");
+        StringBuilder out = new StringBuilder("item_id,transaction_id,date,entry_ref,counterparty,description,reference,increases,reductions,open_balance,due_date,start_date,end_date,status,notes,explanation,account_code,ledger,explained,unmatched,difference,record_type,fund_code,event_code,event_name\n");
         for (SupplementalOpenItemQueryService.Row row : rows)
         {
             List<String> values = List.of(
@@ -90,13 +97,16 @@ public final class SupplementalOpenItemReportBuilder
                     row.dueDate() == null ? "" : row.dueDate().toString(),
                     row.startDate() == null ? "" : row.startDate().toString(),
                     row.endDate() == null ? "" : row.endDate().toString(),
-                    safe(row.status()), safe(row.notes()), safe(row.explanation()), "", "", "", "", "", "ITEM");
+                    safe(row.status()), safe(row.notes()), safe(row.explanation()), "", "", "", "", "", "ITEM",
+                    row.dimensions() == null ? "" : safe(row.dimensions().fundCode()),
+                    row.dimensions() == null ? "" : safe(row.dimensions().activityCode()),
+                    row.dimensions() == null ? "" : safe(row.dimensions().activityName()));
             out.append(values.stream().map(SupplementalOpenItemReportBuilder::csvValue)
                     .collect(java.util.stream.Collectors.joining(","))).append('\n');
         }
         for (var control : projection.reconciliation().controls())
         {
-            String[] values = new String[22];
+            String[] values = new String[25];
             java.util.Arrays.fill(values, "");
             values[5] = control.name();
             values[13] = control.unmatched().signum() == 0 ? "COMPLETE" : "NOT READY";
@@ -111,7 +121,7 @@ public final class SupplementalOpenItemReportBuilder
         }
         for (var gap : projection.reconciliation().gaps())
         {
-            String[] values = new String[22];
+            String[] values = new String[25];
             java.util.Arrays.fill(values, "");
             values[1] = Long.toString(gap.transactionId());
             values[2] = gap.date().toString();
@@ -144,6 +154,8 @@ public final class SupplementalOpenItemReportBuilder
                 new ReportTableModel.Column("difference", "Difference", ReportTableModel.ValueFormat.MONEY, 110),
                 new ReportTableModel.Column("item", "Item ID", ReportTableModel.ValueFormat.TEXT, 210),
                 new ReportTableModel.Column("date", "Opening Date", ReportTableModel.ValueFormat.DATE, 115),
+                new ReportTableModel.Column("fund", "Opening Fund", ReportTableModel.ValueFormat.TEXT, 130),
+                new ReportTableModel.Column("event", "Opening Event", ReportTableModel.ValueFormat.TEXT, 150),
                 new ReportTableModel.Column("entryRef", "Reference", ReportTableModel.ValueFormat.TEXT, 140),
                 new ReportTableModel.Column("counterparty", "Counterparty", ReportTableModel.ValueFormat.TEXT, 160),
                 new ReportTableModel.Column("description", "Description", ReportTableModel.ValueFormat.TEXT, 220),
@@ -190,6 +202,8 @@ public final class SupplementalOpenItemReportBuilder
             values.put("transaction", row.openingTransactionId());
             values.put("item", row.itemId() == null ? "" : row.itemId().toString());
             values.put("date", row.openingDate());
+            values.put("fund", row.dimensions() == null ? "" : safe(row.dimensions().fundCode()));
+            values.put("event", row.dimensions() == null ? "" : safe(row.dimensions().activityCode()));
             values.put("entryRef", safe(row.entryRef()));
             values.put("counterparty", safe(row.counterparty()));
             values.put("description", safe(row.description()));
@@ -215,7 +229,10 @@ public final class SupplementalOpenItemReportBuilder
         return new ReportTableModel(
                 request.definition().id(),
                 projection.kind().displayName(),
-                "As of " + request.asOfDate() + (projection.ready() ? " — Supplemental readiness: COMPLETE" : " — Supplemental readiness: NOT READY; review allocations"),
+                "As of " + request.asOfDate()
+                        + (projection.fundFilterId() != null || projection.activityFilterId() != null
+                        ? " — item scope uses opening Fund/Event; reconciliation remains company-wide" : "")
+                        + (projection.ready() ? " — Supplemental readiness: COMPLETE" : " — Supplemental readiness: NOT READY; review allocations"),
                 columns,
                 tableRows);
     }

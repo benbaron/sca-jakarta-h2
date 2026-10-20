@@ -23,7 +23,7 @@ public final class SclxExportDocumentValidator
         Set<String> merchantIds = SclxPartyExtension.uniqueMerchantIds(partyData);
         validateAccountParents(document.chartOfAccounts(), accountIds);
         validateFundParents(document.funds(), fundIds);
-        validateBudgets(document.budgets(), accountIds, fundIds);
+        validateBudgets(document.budgets(), accountIds, fundIds, activityIds);
         TransactionReferences transactionReferences = validateTransactions(
                 document.transactions(), accountIds, fundIds, activityIds, counterpartyIds);
         validateTransactionLineMerchants(
@@ -128,7 +128,7 @@ public final class SclxExportDocumentValidator
     }
 
     private static void validateBudgets(List<SclxExportDocument.Budget> budgets,
-            Set<String> accountIds, Set<String> fundIds)
+            Set<String> accountIds, Set<String> fundIds, Set<String> activityIds)
     {
         Set<String> budgetIds = new HashSet<>();
         Set<String> lineIds = new HashSet<>();
@@ -142,6 +142,8 @@ public final class SclxExportDocumentValidator
                         "budget line " + line.lineId() + " accountId");
                 requireOptionalReference(line.fundId(), fundIds,
                         "budget line " + line.lineId() + " fundId");
+                requireOptionalReference(line.activityId(), activityIds,
+                        "budget line " + line.lineId() + " activityId");
             }
         }
     }

@@ -105,6 +105,56 @@ public class BudgetPlanServiceTest
         }
     }
 
+    @Test
+    public void eventAndFundScopesAreMutuallyExclusiveAndNeverDoubleCountActuals(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("budget-event-fund-scopes")))
+        {
+            seedReferences(jpa);
+            seedScopedActuals(jpa);
+            BudgetPlanService service = new BudgetPlanService(jpa);
+            BudgetPlanView draft = service.createDraft(command("scoped"));
+            service.replaceDraftLines(draft.id(), List.of(
+                    new BudgetLineCommand(1L, 1L, 1L, null, new BigDecimal("100.0000"), "Event A / Operating"),
+                    new BudgetLineCommand(1L, 2L, 1L, null, new BigDecimal("200.0000"), "Event A / Restricted"),
+                    new BudgetLineCommand(1L, 1L, 2L, null, new BigDecimal("300.0000"), "Event B / Operating"),
+                    new BudgetLineCommand(1L, null, null, null, new BigDecimal("400.0000"), "General / all funds")));
+            service.activate(draft.id());
+
+            List<BudgetVarianceView> rows = service.activeVariance(LocalDate.of(2026, 12, 31));
+
+            assertEquals(4, rows.size());
+            assertScopedRow(rows, 1L, 1L, "100.0000", "40.0000");
+            assertScopedRow(rows, 2L, 1L, "200.0000", "50.0000");
+            assertScopedRow(rows, 1L, 2L, "300.0000", "60.0000");
+            assertScopedRow(rows, null, null, "400.0000", "150.0000");
+            assertEquals(new BigDecimal("300.0000"), rows.stream()
+                    .map(BudgetVarianceView::actual).reduce(BigDecimal.ZERO, BigDecimal::add));
+
+            BudgetPlanView revision = service.createRevision(draft.id());
+            assertTrue(revision.lines().stream().anyMatch(line -> Long.valueOf(2L).equals(line.activityId())));
+        }
+    }
+
+    @Test
+    public void allFundsAndFundSpecificLinesCannotOverlapWithinEventScope(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("budget-overlap")))
+        {
+            seedReferences(jpa);
+            BudgetPlanService service = new BudgetPlanService(jpa);
+            BudgetPlanView draft = service.createDraft(command("overlap"));
+
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                    () -> service.replaceDraftLines(draft.id(), List.of(
+                            new BudgetLineCommand(1L, null, 1L, null, BigDecimal.TEN, "All funds"),
+                            new BudgetLineCommand(1L, 1L, 1L, null, BigDecimal.ONE, "Specific fund"))));
+
+            assertTrue(failure.getMessage().contains("cannot overlap"));
+            assertTrue(service.load(draft.id()).orElseThrow().lines().isEmpty());
+        }
+    }
+
 
 
     @Test
@@ -285,9 +335,53 @@ public class BudgetPlanServiceTest
         {
             em.getTransaction().begin();
             em.createNativeQuery("INSERT INTO fund (id, company_id, code, name, fund_type) VALUES (1, 1, 'OPERATING', 'Operating', 'UNRESTRICTED')").executeUpdate();
+            em.createNativeQuery("INSERT INTO fund (id, company_id, code, name, fund_type) VALUES (2, 1, 'RESTRICTED', 'Restricted', 'TEMP_RESTRICTED')").executeUpdate();
             em.createNativeQuery("INSERT INTO budget_category (id, company_id, code, name, is_active) VALUES (1, 1, 'PROGRAM', 'Program Services', TRUE)").executeUpdate();
+            em.createNativeQuery("INSERT INTO activity (id, company_id, code, name, is_active) VALUES (1, 1, 'EVENT-A', 'Event A', TRUE)").executeUpdate();
+            em.createNativeQuery("INSERT INTO activity (id, company_id, code, name, is_active) VALUES (2, 1, 'EVENT-B', 'Event B', TRUE)").executeUpdate();
             em.getTransaction().commit();
         }
+    }
+
+    private static void seedScopedActuals(Jpa jpa)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            em.getTransaction().begin();
+            em.createNativeQuery("INSERT INTO chart_of_accounts (id, company_id, name, version, status) VALUES (1, 1, 'Test', '1', 'ACTIVE')").executeUpdate();
+            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, account_function, subtype, normal_balance) VALUES (1, 1, '1000', 'Checking', 'ASSET', 'BANK', 'CASH', 'DEBIT')").executeUpdate();
+            em.createNativeQuery("INSERT INTO account (id, chart_id, code, name, account_type, normal_balance) VALUES (2, 1, '5000', 'Expense', 'EXPENSE', 'DEBIT')").executeUpdate();
+            scopedActual(em, 1L, 1L, 1L, "40.0000");
+            scopedActual(em, 2L, 2L, 1L, "50.0000");
+            scopedActual(em, 3L, 1L, 2L, "60.0000");
+            scopedActual(em, 4L, 1L, null, "70.0000");
+            scopedActual(em, 5L, 2L, null, "80.0000");
+            em.getTransaction().commit();
+        }
+    }
+
+    private static void scopedActual(EntityManager em, long txnId, long fundId, Long activityId, String amount)
+    {
+        em.createNativeQuery("INSERT INTO txn (id, company_id, txn_date, memo, status) VALUES (?1, 1, DATE '2026-04-01', 'Scoped expense', 'ENTERED')")
+                .setParameter(1, txnId).executeUpdate();
+        long base = txnId * 10L;
+        em.createNativeQuery("INSERT INTO txn_split (id, txn_id, account_id, fund_id, activity_id, amount_signed) VALUES (?1, ?2, 1, ?3, ?4, ?5)")
+                .setParameter(1, base + 1).setParameter(2, txnId).setParameter(3, fundId)
+                .setParameter(4, activityId).setParameter(5, new BigDecimal(amount).negate()).executeUpdate();
+        em.createNativeQuery("INSERT INTO txn_split (id, txn_id, account_id, fund_id, activity_id, budget_category_id, amount_signed) VALUES (?1, ?2, 2, ?3, ?4, 1, ?5)")
+                .setParameter(1, base + 2).setParameter(2, txnId).setParameter(3, fundId)
+                .setParameter(4, activityId).setParameter(5, new BigDecimal(amount)).executeUpdate();
+    }
+
+    private static void assertScopedRow(List<BudgetVarianceView> rows, Long fundId, Long activityId,
+                                        String budget, String actual)
+    {
+        BudgetVarianceView row = rows.stream()
+                .filter(candidate -> java.util.Objects.equals(candidate.fundId().orElse(null), fundId)
+                        && java.util.Objects.equals(candidate.activityId().orElse(null), activityId))
+                .findFirst().orElseThrow();
+        assertEquals(new BigDecimal(budget), row.budget());
+        assertEquals(new BigDecimal(actual), row.actual());
     }
 
     private static void seedActual(Jpa jpa)

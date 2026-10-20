@@ -372,13 +372,13 @@ public final class SclxImportCommitService
                 Map<String, Fund> funds = writeFunds(
                         em, company, root.path("funds"), current.mappings(), previews, writes);
                 writes += newMasterCount(current.mappings(), SclxImportMappingRequirement.Kind.FUND);
-                BudgetWrite writtenBudgets = writeBudgets(
-                        em, company, budgets, funds, previews, transactionBudgetCodes, writes);
-                writes += writtenBudgets.businessWriteCount();
                 Map<String, Activity> activities = writeActivities(
                         em, company, details.activities(), previews, writes);
                 writes += newEntityCount(previews, "ACTIVITY", details.activities().stream()
                         .map(SclxTransactionDetailImportData.ActivityValue::externalId).toList());
+                BudgetWrite writtenBudgets = writeBudgets(
+                        em, company, budgets, funds, activities, previews, transactionBudgetCodes, writes);
+                writes += writtenBudgets.businessWriteCount();
                 Map<String, Counterparty> counterparties = writeCounterparties(
                         em, company, details.counterparties(), previews, writes);
                 writes += counterparties.size();
@@ -908,6 +908,7 @@ public final class SclxImportCommitService
             Company company,
             SclxBudgetImportData source,
             Map<String, Fund> funds,
+            Map<String, Activity> activities,
             Map<EntityKey, SclxImportEntityPreview> previews,
             Map<String, String> transactionBudgetCodes,
             int writesBefore)
@@ -983,6 +984,8 @@ public final class SclxImportCommitService
                     added.setBudgetCategory(required(categories, line.categoryCode(), "budget category"));
                     added.setFund(line.fundId() == null ? null
                             : required(funds, line.fundId(), "budget fund"));
+                    added.setActivity(line.activityId() == null ? null
+                            : required(activities, line.activityId(), "budget event"));
                     added.setPeriodMonth(line.periodMonth());
                     added.setAmount(line.amount());
                     added.setNotes("");
@@ -1003,9 +1006,13 @@ public final class SclxImportCommitService
                 Fund fund = line.fundId() == null
                         ? null
                         : required(funds, line.fundId(), "budget fund");
+                Activity activity = line.activityId() == null
+                        ? null
+                        : required(activities, line.activityId(), "budget event");
                 commands.add(new BudgetLineCommand(
                         category.getId(),
                         fund == null ? null : fund.getId(),
+                        activity == null ? null : activity.getId(),
                         line.periodMonth(),
                         line.amount(),
                         ""));

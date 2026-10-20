@@ -8,6 +8,7 @@ import java.util.Objects;
 public record BudgetLineCommand(
         Long budgetCategoryId,
         Long fundId,
+        Long activityId,
         YearMonth periodMonth,
         BigDecimal amount,
         String notes)
@@ -21,5 +22,15 @@ public record BudgetLineCommand(
             throw new IllegalArgumentException("amount supports at most four decimal places");
         }
         notes = notes == null ? "" : notes.trim();
+    }
+
+    public BudgetLineCommand(
+            Long budgetCategoryId,
+            Long fundId,
+            YearMonth periodMonth,
+            BigDecimal amount,
+            String notes)
+    {
+        this(budgetCategoryId, fundId, null, periodMonth, amount, notes);
     }
 }

@@ -158,6 +158,7 @@ public final class SclxJsonSerializer
                                 lineNode.put("lineId", line.lineId());
                                 optionalText(lineNode, "accountId", line.accountId());
                                 optionalText(lineNode, "fundId", line.fundId());
+                                optionalText(lineNode, "activityId", line.activityId());
                                 lineNode.put("categoryCode", line.categoryCode());
                                 optionalText(lineNode, "periodMonth", line.periodMonth());
                                 lineNode.put("amount", decimal(line.amount()));

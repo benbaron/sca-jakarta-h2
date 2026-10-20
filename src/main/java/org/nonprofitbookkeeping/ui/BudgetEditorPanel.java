@@ -23,6 +23,8 @@ import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 import org.nonprofitbookkeeping.model.BudgetCategory;
 import org.nonprofitbookkeeping.model.BudgetPlan;
+import org.nonprofitbookkeeping.model.Fund;
+import org.nonprofitbookkeeping.service.ActivityView;
 import org.nonprofitbookkeeping.service.BudgetLineCommand;
 import org.nonprofitbookkeeping.service.BudgetPlanService;
 import org.nonprofitbookkeeping.service.BudgetPlanView;
@@ -34,8 +36,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /** Budget editor backed by normalized H2 budget plans and lines. */
 public class BudgetEditorPanel implements AppPanel
@@ -43,6 +43,8 @@ public class BudgetEditorPanel implements AppPanel
     private final BorderPane root = new BorderPane();
     private final TableView<CategoryBudgetRow> table = new TableView<>();
     private final ComboBox<BudgetPlanView> planSelector = new ComboBox<>();
+    private final ComboBox<ScopeOption> fundScope = new ComboBox<>();
+    private final ComboBox<ScopeOption> eventScope = new ComboBox<>();
     private final Label status = new Label();
     private final TextField amountField = new TextField();
     private final Button saveTargetButton = new Button("Save Draft Amount");
@@ -53,6 +55,7 @@ public class BudgetEditorPanel implements AppPanel
     private final FormDirtyTracker dirtyState;
     private boolean suppressCategorySelection;
     private boolean suppressPlanSelection;
+    private boolean suppressScopeSelection;
     private BudgetPlanView currentPlan;
     private FiscalPeriodRange currentRange;
     private List<BudgetCategory> currentCategories = List.of();
@@ -67,6 +70,8 @@ public class BudgetEditorPanel implements AppPanel
         status.setId("budgetEditorStatus");
         table.setId("budgetEditorCategoryTable");
         planSelector.setId("budgetEditorPlanSelector");
+        fundScope.setId("budgetEditorFundScope");
+        eventScope.setId("budgetEditorEventScope");
         amountField.setId("budgetEditorAmountField");
         amountField.setPromptText("Budget amount");
 
@@ -113,14 +118,20 @@ public class BudgetEditorPanel implements AppPanel
 
         status.setId("budgetEditorStatusLabel");
         HBox versionRow = new HBox(8, new Label("Version"), planSelector);
+        configureScopeSelector(fundScope, "All funds");
+        configureScopeSelector(eventScope, "General / no event");
+        HBox scopeRow = new HBox(8, new Label("Fund scope"), fundScope,
+                new Label("Event scope"), eventScope);
         HBox actions = new HBox(8, refresh, newDraft, createRevisionButton, activateButton, archiveButton);
         Label lifecycle = new Label(
                 "Budget versions are retained as history. Archive Draft retires an abandoned draft without deleting it. "
                 + "Active versions are archived automatically when a replacement is activated; archived versions are read-only.");
         lifecycle.setId("budgetEditorLifecycleHint");
         lifecycle.setWrapText(true);
-        root.setTop(new VBox(6, title, versionRow, actions, lifecycle, status, new Separator()));
+        root.setTop(new VBox(6, title, versionRow, scopeRow, actions, lifecycle, status, new Separator()));
         dirtyState = new FormDirtyTracker(this::formSnapshot);
+        fundScope.valueProperty().addListener((obs, oldValue, newValue) -> changeScope(oldValue, newValue, fundScope));
+        eventScope.valueProperty().addListener((obs, oldValue, newValue) -> changeScope(oldValue, newValue, eventScope));
 
         TableColumn<CategoryBudgetRow, String> code = new TableColumn<>("Category");
         code.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().categoryCode()));
@@ -191,6 +202,10 @@ public class BudgetEditorPanel implements AppPanel
         UiAsync.run("budget-editor-load", () -> loadSnapshot(selectedPeriodStart), snapshot -> {
             currentRange = snapshot.range();
             currentCategories = snapshot.categories();
+            setScopeOptions(fundScope, "All funds", snapshot.funds().stream()
+                    .map(fund -> new ScopeOption(fund.getId(), fund.getCode() + " — " + fund.getName())).toList());
+            setScopeOptions(eventScope, "General / no event", snapshot.activities().stream()
+                    .map(activity -> new ScopeOption(activity.id(), activity.code() + " — " + activity.name())).toList());
             planSelector.getItems().setAll(snapshot.plans());
             BudgetPlanView selected = findPlan(snapshot.plans(), preferredPlanId);
             if (selected == null)
@@ -222,7 +237,9 @@ public class BudgetEditorPanel implements AppPanel
         return new BudgetEditorSnapshot(
                 range,
                 service.versionsForFiscalYear(range.fiscalYear()),
-                UiServiceRegistry.budgetCategoryLookup().listActiveBudgetCategories());
+                UiServiceRegistry.budgetCategoryLookup().listActiveBudgetCategories(),
+                UiServiceRegistry.fundLookup().listAllFunds(),
+                UiServiceRegistry.activityLookup().listAllActivities());
     }
 
     private void selectPlan(BudgetPlanView oldPlan, BudgetPlanView newPlan)
@@ -252,6 +269,8 @@ public class BudgetEditorPanel implements AppPanel
     {
         Map<Long, CategoryBudgetRow> rows = new LinkedHashMap<>();
         boolean archived = currentPlan != null && currentPlan.status() == BudgetPlan.Status.ARCHIVED;
+        Long selectedFundId = selectedScopeId(fundScope);
+        Long selectedActivityId = selectedScopeId(eventScope);
 
         if (!archived)
         {
@@ -268,7 +287,9 @@ public class BudgetEditorPanel implements AppPanel
         if (currentPlan != null)
         {
             currentPlan.lines().stream()
-                    .filter(line -> line.fundId() == null && line.periodMonth() == null)
+                    .filter(line -> java.util.Objects.equals(line.fundId(), selectedFundId)
+                            && java.util.Objects.equals(line.activityId(), selectedActivityId)
+                            && line.periodMonth() == null)
                     .forEach(line -> rows.put(line.budgetCategoryId(), new CategoryBudgetRow(
                             line.budgetCategoryId(),
                             line.budgetCategoryCode(),
@@ -382,17 +403,10 @@ public class BudgetEditorPanel implements AppPanel
             return;
         }
         long planId = currentPlan.id();
-        Map<Long, CategoryBudgetRow> rows = table.getItems().stream()
-                .collect(Collectors.toMap(CategoryBudgetRow::categoryId, Function.identity()));
-        List<BudgetLineCommand> commands = new ArrayList<>();
-        for (CategoryBudgetRow row : rows.values())
-        {
-            BigDecimal amount = row.categoryId().equals(selected.categoryId()) ? target : row.budgetAmount();
-            if (amount.signum() != 0)
-            {
-                commands.add(new BudgetLineCommand(row.categoryId(), null, null, amount, "Budget Editor"));
-            }
-        }
+        Long selectedFundId = selectedScopeId(fundScope);
+        Long selectedActivityId = selectedScopeId(eventScope);
+        List<BudgetLineCommand> commands = mergeScopeCommands(
+                currentPlan, table.getItems(), selected.categoryId(), target, selectedFundId, selectedActivityId);
         UiAsync.run("budget-editor-save",
                 () -> UiServiceRegistry.budgetPlan().replaceDraftLines(planId, commands),
                 plan -> {
@@ -441,6 +455,34 @@ public class BudgetEditorPanel implements AppPanel
         }
     }
 
+    static List<BudgetLineCommand> mergeScopeCommands(
+            BudgetPlanView plan,
+            List<CategoryBudgetRow> visibleRows,
+            Long selectedCategoryId,
+            BigDecimal target,
+            Long selectedFundId,
+            Long selectedActivityId)
+    {
+        List<BudgetLineCommand> commands = new ArrayList<>();
+        plan.lines().stream()
+                .filter(line -> !(java.util.Objects.equals(line.fundId(), selectedFundId)
+                        && java.util.Objects.equals(line.activityId(), selectedActivityId)
+                        && line.periodMonth() == null))
+                .map(line -> new BudgetLineCommand(line.budgetCategoryId(), line.fundId(), line.activityId(),
+                        line.periodMonth(), line.amount(), line.notes()))
+                .forEach(commands::add);
+        for (CategoryBudgetRow row : visibleRows)
+        {
+            BigDecimal amount = row.categoryId().equals(selectedCategoryId) ? target : row.budgetAmount();
+            if (amount.signum() != 0)
+            {
+                commands.add(new BudgetLineCommand(row.categoryId(), selectedFundId, selectedActivityId,
+                        null, amount, "Budget Editor"));
+            }
+        }
+        return List.copyOf(commands);
+    }
+
     private static BudgetPlanView findPlan(List<BudgetPlanView> plans, Long planId)
     {
         if (planId == null)
@@ -457,12 +499,16 @@ public class BudgetEditorPanel implements AppPanel
     private record BudgetEditorSnapshot(
             FiscalPeriodRange range,
             List<BudgetPlanView> plans,
-            List<BudgetCategory> categories)
+            List<BudgetCategory> categories,
+            List<Fund> funds,
+            List<ActivityView> activities)
     {
         private BudgetEditorSnapshot
         {
             plans = List.copyOf(plans);
             categories = List.copyOf(categories);
+            funds = List.copyOf(funds);
+            activities = List.copyOf(activities);
         }
     }
 
@@ -548,5 +594,58 @@ public class BudgetEditorPanel implements AppPanel
     void setAmountForTests(String value)
     {
         amountField.setText(value);
+    }
+
+    private void changeScope(ScopeOption oldValue, ScopeOption newValue, ComboBox<ScopeOption> selector)
+    {
+        if (suppressScopeSelection || newValue == null || java.util.Objects.equals(oldValue, newValue))
+        {
+            return;
+        }
+        if (dirtyState.isDirty() && !confirmDiscard())
+        {
+            suppressScopeSelection = true;
+            selector.setValue(oldValue);
+            suppressScopeSelection = false;
+            return;
+        }
+        table.getSelectionModel().clearSelection();
+        amountField.clear();
+        renderRows();
+        dirtyState.markClean();
+    }
+
+    private static void configureScopeSelector(ComboBox<ScopeOption> selector, String prompt)
+    {
+        selector.setPrefWidth(240.0);
+        selector.setPromptText(prompt);
+        selector.setConverter(new StringConverter<>()
+        {
+            @Override public String toString(ScopeOption value) { return value == null ? "" : value.label(); }
+            @Override public ScopeOption fromString(String value) { return null; }
+        });
+    }
+
+    private void setScopeOptions(ComboBox<ScopeOption> selector, String generalLabel, List<ScopeOption> options)
+    {
+        Long selected = selectedScopeId(selector);
+        List<ScopeOption> values = new ArrayList<>();
+        values.add(new ScopeOption(null, generalLabel));
+        values.addAll(options);
+        suppressScopeSelection = true;
+        selector.getItems().setAll(values);
+        selector.setValue(values.stream().filter(value -> java.util.Objects.equals(value.id(), selected))
+                .findFirst().orElse(values.get(0)));
+        suppressScopeSelection = false;
+    }
+
+    private static Long selectedScopeId(ComboBox<ScopeOption> selector)
+    {
+        return selector.getValue() == null ? null : selector.getValue().id();
+    }
+
+    private record ScopeOption(Long id, String label)
+    {
+        @Override public String toString() { return label; }
     }
 }

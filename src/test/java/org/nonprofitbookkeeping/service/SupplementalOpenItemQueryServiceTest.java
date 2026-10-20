@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.nonprofitbookkeeping.service.dashboard.JpaDashboardQueryService;
 import org.nonprofitbookkeeping.report.ReportDefinition;
 import org.nonprofitbookkeeping.report.ReportExecutionService;
+import org.nonprofitbookkeeping.report.ReportDomainFilter;
 import org.nonprofitbookkeeping.report.ReportFundOption;
 import org.nonprofitbookkeeping.report.ReportPresentationMetadata;
 import org.nonprofitbookkeeping.report.ReportRequest;
@@ -139,6 +140,54 @@ class SupplementalOpenItemQueryServiceTest
                             .query(SupplementalOpenItemQueryService.Kind.RECEIVABLE, LocalDate.of(2026, 2, 28));
             assertFalse(other.authorityAvailable());
             assertTrue(other.rows().isEmpty());
+        }
+    }
+
+    @Test
+    void fundAndEventFiltersUseOpeningAllocationWhileRetainingCrossScopeSettlements(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("supplemental-scope-filters")))
+        {
+            seed(jpa);
+            var entry = new TransactionEntryService(jpa, () -> "TEST");
+            UUID operatingEvent = UUID.randomUUID();
+            UUID restrictedEvent = UUID.randomUUID();
+            entry.enter(scopedCommand(SupplementalOpenItemQueryService.Kind.RECEIVABLE,
+                    operatingEvent, LocalDate.of(2026, 1, 10), new BigDecimal("100.00"),
+                    true, 1001L, 101L));
+            entry.enter(scopedCommand(SupplementalOpenItemQueryService.Kind.RECEIVABLE,
+                    restrictedEvent, LocalDate.of(2026, 1, 11), new BigDecimal("80.00"),
+                    true, 1002L, 102L));
+            // The settlement uses a different Fund/Event, but remains part of the item selected
+            // by its opening allocation.
+            entry.enter(scopedCommand(SupplementalOpenItemQueryService.Kind.RECEIVABLE,
+                    operatingEvent, LocalDate.of(2026, 2, 10), new BigDecimal("25.00"),
+                    false, 1002L, 102L));
+
+            var query = new SupplementalOpenItemQueryService(jpa, () -> "TEST");
+            var selected = query.query(SupplementalOpenItemQueryService.Kind.RECEIVABLE,
+                    LocalDate.of(2026, 2, 28), 1001L, 101L);
+
+            assertEquals(1, selected.authoritativeRows().size());
+            assertEquals(operatingEvent, selected.authoritativeRows().get(0).itemId());
+            assertEquals(new BigDecimal("75.0000"), selected.openAmount());
+            assertEquals(1001L, selected.authoritativeRows().get(0).dimensions().fundId());
+            assertEquals(101L, selected.authoritativeRows().get(0).dimensions().activityId());
+
+            var execution = new ReportExecutionService(new FinancialReportService(jpa, () -> "TEST"),
+                    FinancialReportDisplayFormat.plain(), null, null, query, ReportPresentationMetadata.EMPTY);
+            var report = execution.execute(new ReportRequest(
+                    ReportDefinition.ACCOUNTS_RECEIVABLE,
+                    LocalDate.of(2026, 2, 28),
+                    LocalDate.of(2026, 2, 28),
+                    new ReportFundOption(1001L, "OPERATING", "Operating"),
+                    100,
+                    new ReportDomainFilter.EventSelection(101L)));
+            assertTrue(report.text().contains("opening allocation"));
+            assertTrue(report.csv().contains("\"EVENT-A\""));
+            assertFalse(report.csv().contains(restrictedEvent.toString()));
+            assertTrue(report.tableModel().rows().stream()
+                    .anyMatch(row -> "EVENT-A".equals(row.value("event"))));
         }
     }
 
@@ -344,6 +393,35 @@ class SupplementalOpenItemQueryServiceTest
         return new TransactionLineCommand(accountId, 1001L, null, null, null, debit, credit, false, null);
     }
 
+    private static TransactionCommand scopedCommand(
+            SupplementalOpenItemQueryService.Kind kind,
+            UUID itemId,
+            LocalDate date,
+            BigDecimal amount,
+            boolean increase,
+            long fundId,
+            long activityId)
+    {
+        long control = accountId(kind);
+        List<TransactionLineCommand> lines = increase
+                ? List.of(scopedLine(control, fundId, activityId, amount, BigDecimal.ZERO),
+                        scopedLine(1003L, fundId, activityId, BigDecimal.ZERO, amount))
+                : List.of(scopedLine(1007L, fundId, activityId, amount, BigDecimal.ZERO),
+                        scopedLine(control, fundId, activityId, BigDecimal.ZERO, amount));
+        return new TransactionCommand(date, null, increase ? "open scoped item" : "settle scoped item", null,
+                lines, List.of(new TransactionSupplementalLineCommand(
+                kind.name(), "SCOPED", "Counterparty", "Scoped receivable", null,
+                amount, null, null, null, null, null, itemId, increase ? "INCREASE" : "DECREASE",
+                increase ? 0 : 1)));
+    }
+
+    private static TransactionLineCommand scopedLine(
+            long accountId, long fundId, long activityId, BigDecimal debit, BigDecimal credit)
+    {
+        return new TransactionLineCommand(accountId, fundId, null, activityId, null,
+                debit, credit, false, null);
+    }
+
     private static long accountId(SupplementalOpenItemQueryService.Kind kind)
     {
         return switch (kind)
@@ -413,7 +491,8 @@ class SupplementalOpenItemQueryServiceTest
                     (1008,100,'1300','Other Asset','ASSET','OTHER_ASSET','DEBIT'),
                     (1009,100,'2300','Other Liability','LIABILITY','OTHER_LIABILITY','CREDIT')
                     """).executeUpdate();
-            em.createNativeQuery("insert into fund (id, company_id, code, name, fund_type) values (1001,100,'OPERATING','Operating','UNRESTRICTED')").executeUpdate();
+            em.createNativeQuery("insert into fund (id, company_id, code, name, fund_type) values (1001,100,'OPERATING','Operating','UNRESTRICTED'),(1002,100,'RESTRICTED','Restricted','TEMP_RESTRICTED')").executeUpdate();
+            em.createNativeQuery("insert into activity (id, company_id, code, name, is_active) values (101,100,'EVENT-A','Event A',true),(102,100,'EVENT-B','Event B',true)").executeUpdate();
             em.getTransaction().commit();
         }
     }

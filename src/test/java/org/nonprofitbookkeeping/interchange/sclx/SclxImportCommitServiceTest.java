@@ -1111,6 +1111,7 @@ class SclxImportCommitServiceTest
                 assertEquals("PROGRAM", budgetLine.getBudgetCategory().getCode());
                 assertEquals("PROGRAM", budgetLine.getBudgetCategory().getName());
                 assertEquals("GENERAL", budgetLine.getFund().getCode());
+                assertEquals("EVENT", budgetLine.getActivity().getCode());
                 assertEquals(YearMonth.of(2026, 7), budgetLine.getPeriodMonth());
                 assertEquals(new BigDecimal("125.0000"), budgetLine.getAmount());
                 Txn transaction = em.createQuery("from Txn t", Txn.class).getSingleResult();
@@ -2017,6 +2018,7 @@ class SclxImportCommitServiceTest
                         {
                           "lineId": "%s",
                           "fundId": "%s",
+                          "activityId": "%s",
                           "categoryCode": "PROGRAM",
                           "periodMonth": "2026-07",
                           "amount": "125.0000"
@@ -2194,6 +2196,7 @@ class SclxImportCommitServiceTest
                 budget,
                 budgetLine,
                 fund,
+                activity,
                 transaction,
                 debitLine,
                 expense,

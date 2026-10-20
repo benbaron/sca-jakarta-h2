@@ -129,6 +129,22 @@ class ReportRequestTest
     }
 
     @Test
+    void supplementalOpenItemRequestRetainsFundAndEventFilters()
+    {
+        ReportRequest request = new ReportRequest(
+                ReportDefinition.ACCOUNTS_RECEIVABLE,
+                LocalDate.of(2026, 6, 30),
+                LocalDate.of(2026, 6, 30),
+                new ReportFundOption(7L, "OPERATING", "Operating"),
+                250,
+                new ReportDomainFilter.EventSelection(11L));
+
+        assertEquals(7L, request.fund().id());
+        assertEquals(11L, ((ReportDomainFilter.EventSelection) request.domainFilter()).eventId());
+        assertTrue(request.contextSummary().contains("event=11"));
+    }
+
+    @Test
     void fixedAssetRequestRetainsTypedStableIdentityFilters()
     {
         ReportRequest request = new ReportRequest(

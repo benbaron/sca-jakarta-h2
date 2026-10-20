@@ -133,6 +133,7 @@ public final class SclxPortableIdentity
             String categoryCode,
             String accountId,
             String fundId,
+            String activityId,
             String periodMonth)
     {
         return identity(
@@ -141,12 +142,23 @@ public final class SclxPortableIdentity
                 categoryCode,
                 nullablePart(accountId),
                 nullablePart(fundId),
+                nullablePart(activityId),
                 nullablePart(periodMonth));
+    }
+
+    public static String budgetLine(
+            String budgetId,
+            String categoryCode,
+            String accountId,
+            String fundId,
+            String periodMonth)
+    {
+        return budgetLine(budgetId, categoryCode, accountId, fundId, null, periodMonth);
     }
 
     public static String budgetLine(String budgetId, String categoryCode, String accountId, String fundId)
     {
-        return budgetLine(budgetId, categoryCode, accountId, fundId, null);
+        return budgetLine(budgetId, categoryCode, accountId, fundId, null, null);
     }
 
     public static String transaction(String companyCode, String durableTransactionKey)
