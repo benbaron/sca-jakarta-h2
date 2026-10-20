@@ -4,9 +4,9 @@ active_phase: P26
 active_slice: P26-S3
 active_status: VERIFYING
 active_branch: codex/P26-S3-budget-planning
-active_pull_request: null
-active_head: 0b1108a5
-next_action: "Publish the reviewed P26-S3 implementation as a draft MR, verify the exact remote tree, and require exact-head clean/repeat/JavaFX CI before owner review and merge."
+active_pull_request: "https://github.com/benbaron/sca-jakarta-h2/pull/381"
+active_head: e3adf75b
+next_action: "Verify draft PR #381's final remote tree and require exact-head clean/repeat/JavaFX CI before owner review and merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2067,3 +2067,7 @@ The requested scenario-level unit coverage is present: two Events/two Funds/gene
 Final offline `mvn clean verify` passed **1,013 tests**, zero failures/errors and **64 display-dependent skips**, BUILD SUCCESS at **2026-10-20 01:56:41 UTC** (elapsed 3:54). The dedicated `BudgetPlanningPanelTest` ran under Xvfb with **1 test**, zero failures/errors/skips, proving the actual editor/comparison controls, shared Save command, split layout and VIEWER write gate. The CI workflow's explicit production JavaFX selector includes this test. `git diff --check` and the intended-scope review passed. Implementation commit `0b1108a5` contains source, migration, tests, workflow and governing documentation; only this verification ledger follows locally.
 
 P26-S3 remains VERIFYING. Next publish the reviewed branch as a draft MR, confirm its fetched remote head/tree equal local, and require clean verification, repeat tests and production JavaFX on that exact head. Owner review/acceptance and merge remain required; no human desktop result is inferred from automated execution. P26-S4 stays blocked until merge confirmation.
+
+### P26-S3 draft publication — 2026-10-20 (UTC)
+
+Published `codex/P26-S3-budget-planning` and opened draft [PR #381](https://github.com/benbaron/sca-jakarta-h2/pull/381) against current `main`. The PR description records the implemented scope, the full/focused/actual-JavaFX results, the requested scenario-level unit coverage and concrete owner checks. This documentation-only publication successor follows the reviewed implementation and local-verification commits; `active_head` records its known parent because a commit cannot embed its own hash. Push this record, fetch the resulting remote branch, require exact local/remote head and tree equality, and inspect CI for that final head. P26-S3 remains VERIFYING; no GitHub CI success or owner desktop result is claimed at this checkpoint.
