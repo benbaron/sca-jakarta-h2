@@ -1,12 +1,12 @@
 ---
-plan_version: 392
+plan_version: 393
 active_phase: P26
 active_slice: P26-S4
 active_status: VERIFYING
 active_branch: codex/P26-S4-recognition-assistance
 active_pull_request: null
-active_head: e05b9c0e
-next_action: "Publish the P26-S4 draft, verify the fetched remote tree and exact-head clean/repeat/Xvfb CI, then present the documented owner checks for review and merge."
+active_head: 2e418baf09f02119d39b7499bd2b22de8c402957
+next_action: "Open the P26-S4 draft from the published exact branch, then verify exact-head clean/repeat/Xvfb CI and present the documented owner checks for review and merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2093,3 +2093,5 @@ Implemented the governed Recognition Assistant through a transient `Supplemental
 Added behavioral tests for exact 1,200/12 recognition, clipped partial months and final residuals, prior reductions, retry identity, retained dimensions, deferred direction, validation and ownership failures, stale-preview rollback, reversal reopening, SCLX round-trip, JavaFX shared Save/role/layout behavior, and command capability. The new [P25/P26 unit coverage audit](P25-P26-unit-coverage.md) maps every implemented P25 and P26 slice to concrete tests; its 48 cited test classes all resolve. P26-S5 and P26-S6 remain unimplemented and must add behavioral tests with their implementations.
 
 Focused P25/P26 verification ran **190 tests with zero failures or errors** and 17 expected display-dependent skips. Full `mvn clean verify` completed at **2026-10-19 21:12 America/Denver** with **1,020 tests, zero failures, zero errors, 65 expected display-dependent skips, and BUILD SUCCESS**. An earlier full run reached the same assertions but three existing UI compliance tests could not create the sandboxed application-data directory; granting that test process the required workspace-external directory access and rerunning produced the clean result above. `git diff --check`, documentation-link validation, and coverage-matrix class validation pass. Local Xvfb is unavailable, so actual JavaFX execution remains assigned to the explicit `RecognitionAssistantPanelTest` selector in exact-head CI.
+
+Published `codex/P26-S4-recognition-assistance` at implementation head `2e418baf09f02119d39b7499bd2b22de8c402957`. A native fetch confirmed the published and local heads match exactly and both resolve tree `c2f206a74a552dc8462391584af390f865098af2`. Draft creation and exact-head CI remain pending.
