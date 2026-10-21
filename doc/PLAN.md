@@ -1,12 +1,12 @@
 ---
-plan_version: 389
+plan_version: 393
 active_phase: P26
-active_slice: P26-S3
+active_slice: P26-S4
 active_status: VERIFYING
-active_branch: codex/P26-S3-budget-planning
-active_pull_request: "https://github.com/benbaron/sca-jakarta-h2/pull/381"
-active_head: e3adf75b
-next_action: "Verify draft PR #381's final remote tree and require exact-head clean/repeat/JavaFX CI before owner review and merge."
+active_branch: codex/P26-S4-recognition-assistance
+active_pull_request: null
+active_head: 2e418baf09f02119d39b7499bd2b22de8c402957
+next_action: "Open the P26-S4 draft from the published exact branch, then verify exact-head clean/repeat/Xvfb CI and present the documented owner checks for review and merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -38,7 +38,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
-| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 DONE through accepted/merged MR #379; S2 DONE through verified/merged PR #380; S3 VERIFYING |
+| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 DONE through accepted/merged MR #379; S2 DONE through verified/merged PR #380; S3 DONE through verified/merged PR #381; S4 VERIFYING |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
@@ -699,8 +699,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P25-S5B | Independent functional expense entry, reporting and portability | DONE | MR #378 reviewed/merged at 70462b49; full local and exact-head CI passed;  [Implementation contract](P25-S5B-functional-expenses.md); nullable canonical fact, shared Save, compatible native retries and lossless SCLX |
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | DONE | Owner accepted/merged MR #379 at `2de87dc3`; [S1 contract](P26-S1-asset-acquisitions.md); full local and exact-head CI passed |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | DONE | Owner verified/merged PR #380 at `21f379dd`; final head `c83db0a5` and exact-head clean/repeat/JavaFX CI passed; internal branch form does not claim P27 official-template mapping |
-| P26-S3 | Complete event/fund budget planning and reporting filters (G12) | VERIFYING | P26-S2 verified/merged; [S3 contract](P26-S3-event-fund-budgeting.md); implementation and local gates passed; draft publication/exact-head CI/owner review remain; D05 form mapping remains P27 |
-| P26-S4 | Add governed prepaid/deferred recognition assistance (G12) | BLOCKED | P26-S3 merged; owning contract and D01–D10 gates as applicable |
+| P26-S3 | Complete event/fund budget planning and reporting filters (G12) | DONE | Owner verified/merged PR #381 at `c7170328`; final head `ee36b641` and exact-head clean/repeat/JavaFX CI passed; D05 form mapping remains P27 |
+| P26-S4 | Add governed prepaid/deferred recognition assistance (G12) | VERIFYING | P26-S3 verified/merged; [S4 contract](P26-S4-prepaid-deferred-recognition.md); implementation and local gates passed; draft publication/exact-head CI/owner review remain; no new schedule authority or policy/default engine |
 | P26-S5 | Resolve inventory valuation limitations (G12) | BLOCKED | P26-S4 merged; owning contract and D01–D10 gates as applicable |
 | P26-S6 | Provide controlled conversion and merchant-settlement assistance | BLOCKED | P26-S5 merged; owning contract and D01–D10 gates as applicable |
 | P27-S1 | Finalize the form contract and resolve runbook conflicts (G5/G10/G13) | BLOCKED | P26-S6 merged; owning contract and D01–D10 gates as applicable |
@@ -2071,3 +2071,27 @@ P26-S3 remains VERIFYING. Next publish the reviewed branch as a draft MR, confir
 ### P26-S3 draft publication — 2026-10-20 (UTC)
 
 Published `codex/P26-S3-budget-planning` and opened draft [PR #381](https://github.com/benbaron/sca-jakarta-h2/pull/381) against current `main`. The PR description records the implemented scope, the full/focused/actual-JavaFX results, the requested scenario-level unit coverage and concrete owner checks. This documentation-only publication successor follows the reviewed implementation and local-verification commits; `active_head` records its known parent because a commit cannot embed its own hash. Push this record, fetch the resulting remote branch, require exact local/remote head and tree equality, and inspect CI for that final head. P26-S3 remains VERIFYING; no GitHub CI success or owner desktop result is claimed at this checkpoint.
+
+### P26-S3 exact-head CI and handoff — 2026-10-20 (UTC)
+
+Final published head `ee36b6410d9b37651f0ea97ae88f505727c93020` and its fetched remote branch match exactly; both resolve tree `fd0e693a35d58f06e922c0cd27e738a21c7a3733`. Exact-head [Maven PR Tests run 39356379674](https://github.com/benbaron/sca-jakarta-h2/actions/runs/39356379674), job `118412084786`, completed successfully: clean headless verification, repeat tests and production JavaFX route compliance all passed, including the newly explicit `BudgetPlanningPanelTest`; failed-test report publication correctly skipped. Draft PR #381 is open, unmerged and mergeable at that exact head, and its description records the final local and CI evidence.
+
+This final evidence remains local so the green remote head is not replaced solely by a documentation update. P26-S3 remains VERIFYING pending owner review/acceptance and merge; no human desktop transcript is inferred. After merge confirmation, fetch and verify current `main`, carry this record onto a fresh branch, and select P26-S4 without reusing the merged branch.
+
+### P26-S3 acceptance/merge and P26-S4 selection — 2026-10-19 (America/Denver)
+
+Owner reported P26-S3 verified and merged. Native fetch confirms [PR #381](https://github.com/benbaron/sca-jakarta-h2/pull/381) merged accepted head `ee36b6410d9b37651f0ea97ae88f505727c93020` into current `main` at merge commit `c7170328`; the recorded exact-head run `39356379674`, job `118412084786`, passed clean verification, repeat tests and production JavaFX. Fresh `codex/P26-S4-recognition-assistance` starts from that merge and carries the local S3 final evidence as `e05b9c0e`. P26-S3 is DONE.
+
+Selected [P26-S4](P26-S4-prepaid-deferred-recognition.md), the first unblocked adopted G12/A12 slice. The bounded design uses transient user-entered straight-line rules, existing supplemental item balances and one explicit selected Save through `TransactionEntryService`. It creates no schedule table, automatic background posting, default account/function, or second balance. Existing SCLX transaction/supplemental portability covers accepted recognition; cancelled previews have no durable fact. Canonical reversal/replacement owns correction and cancellation after Save.
+
+Pre-edit offline compile passed at **2026-10-19 20:45 America/Denver**. Sixty-three relevant supplemental lifecycle, entry, correction, SCLX and Save-coverage tests passed, zero failures/errors, with seven display-dependent skips. Donor inspection found grant deferral fields and report-oriented schedule configuration but no compatible canonical prepaid/deferred recognition authority; no donor persistence is adopted. Implementation must cover 1,200/12 exact recognition, partial-month and residual rounding, prior partial reductions, repeat/no-duplicate behavior, reversal reopening, deferred direction, account/function/ownership/period/concurrency failures, retained dimensions, restart/SCLX, and actual JavaFX Save/role/layout behavior.
+
+### P26-S4 implementation and local verification — 2026-10-19 (America/Denver)
+
+Implemented the governed Recognition Assistant through a transient `SupplementalRecognitionService` and a production Planning panel with Preview, Refresh and one explicit `Save Selected Recognition` command. Accepted installments post only through the canonical transaction entry authority, retain the source Fund/Event/Budget Category and required expense function, reduce the existing supplemental open item, support exact-request retry without duplicates, revalidate on Save, and reopen after canonical reversal. Prepaid postings debit expense and credit prepaid; deferred postings debit the deferred liability and credit income. No schedule table, background posting, default rate/account/function, or second ledger/balance authority was introduced. Existing transaction and supplemental-item SCLX records round-trip accepted recognition.
+
+Added behavioral tests for exact 1,200/12 recognition, clipped partial months and final residuals, prior reductions, retry identity, retained dimensions, deferred direction, validation and ownership failures, stale-preview rollback, reversal reopening, SCLX round-trip, JavaFX shared Save/role/layout behavior, and command capability. The new [P25/P26 unit coverage audit](P25-P26-unit-coverage.md) maps every implemented P25 and P26 slice to concrete tests; its 48 cited test classes all resolve. P26-S5 and P26-S6 remain unimplemented and must add behavioral tests with their implementations.
+
+Focused P25/P26 verification ran **190 tests with zero failures or errors** and 17 expected display-dependent skips. Full `mvn clean verify` completed at **2026-10-19 21:12 America/Denver** with **1,020 tests, zero failures, zero errors, 65 expected display-dependent skips, and BUILD SUCCESS**. An earlier full run reached the same assertions but three existing UI compliance tests could not create the sandboxed application-data directory; granting that test process the required workspace-external directory access and rerunning produced the clean result above. `git diff --check`, documentation-link validation, and coverage-matrix class validation pass. Local Xvfb is unavailable, so actual JavaFX execution remains assigned to the explicit `RecognitionAssistantPanelTest` selector in exact-head CI.
+
+Published `codex/P26-S4-recognition-assistance` at implementation head `2e418baf09f02119d39b7499bd2b22de8c402957`. A native fetch confirmed the published and local heads match exactly and both resolve tree `c2f206a74a552dc8462391584af390f865098af2`. Draft creation and exact-head CI remain pending.

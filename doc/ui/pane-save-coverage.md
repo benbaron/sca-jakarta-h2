@@ -13,6 +13,7 @@ File -> Save and the toolbar Save remain present on every destination. Editable 
 | Banking bank editor | Save Bank; File -> Save prioritizes the dirty bank form | `saveBank` -> `BankConfigurationService` |
 | Banking configured-bank-account editor | Save Bank Account | `saveBankAccount` -> same configuration authority; separate form button avoids ambiguity if both forms change |
 | Budget Editor category amount | Save Draft Amount; File -> Save on DRAFT only | `saveTarget` -> `BudgetPlanService`; ACTIVE/ARCHIVED versions are read-only |
+| Recognition Assistant proposal | Save Selected Recognition; File -> Save with a selected preview proposal | `SupplementalRecognitionService.save` -> canonical `TransactionEntryService`; Preview/Refresh never write |
 | Budget Categories | Save; File -> Save | `BudgetCategoryAdminService` |
 | Payees / Counterparties | Save; File -> Save | `CounterpartyAdminService` |
 | Merchants | Save; File -> Save | `MerchantAdminService` |

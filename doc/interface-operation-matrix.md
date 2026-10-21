@@ -49,6 +49,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Fund Transfers | yes | yes | no | Same-company internal allocations, retained history, dated reversal and Journal drill-through. Linked transfers cannot be edited/deleted; reverse then enter a corrected transfer. |
 | Events / Activities | yes | yes | no | New Event, name/code search and Edit over stable Activity IDs; referenced/interchange-linked history deactivates rather than deletes. |
 | Budget Editor | no | DRAFT only | no | Save owns the selected Fund/Event scope while retaining other scopes; version creation/activation/archive remain explicit panel actions. |
+| Recognition Assistant | no | selected preview proposal only | no | Save Selected Recognition and File/toolbar Save accept the same canonical prepaid/deferred proposal; Preview is non-mutating. |
 | Budget Categories, Payees / Counterparties, Merchants | yes | yes | no | Existing stable-ID maintenance services. |
 | Administration — Preferences | no | yes | no | Capabilities follow the selected inner tab. |
 | Administration — Company/User maintenance | yes | yes | no | Stable durable-record maintenance. |
@@ -68,6 +69,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Event Accounting | `EventAccountingPanel` | `EventAccountingQueryService` over company-scoped canonical Activity-tagged `TxnSplit` rows plus configured `CompanyBankAccount` split context | none | Read-only. Income/expense retain signed natural-balance amounts; related bank rows require configured `ASSET + BANK function + DEBIT normal` authority and are contextual rather than inferred Activity allocation. |
 | Banking | `BankingPanel` | `BankConfigurationService`, account lookup, `BankReviewQueryService` | bank/configuration services; explicit navigation to import/review | Bank statement import is non-posting until explicit reviewed-row acceptance. |
 | Budget Editor | `BudgetEditorPanel` | `BudgetPlanService` | draft/revision/save/activate/archive via same service | Stable `BudgetPlan.id`; retained archived history. |
+| Recognition Assistant | `RecognitionAssistantPanel` | `SupplementalRecognitionService` over `SupplementalOpenItemQueryService` | `TransactionEntryService` through the selected proposal | Preview is transient. Accepted entries are canonical transactions with supplemental item effects; correction remains Journal-owned. |
 | Budget Categories | `BudgetCategoriesPanel` | `BudgetCategoryLookupService` | `BudgetCategoryAdminService.save(...)` | Stable category IDs; active/inactive retention, effective dates and audit history. |
 | Payees / Counterparties | `CounterpartiesPanel` | `CounterpartyAdminService.listForMaintenance()` | `CounterpartyAdminService.save(...)` | Company-owned stable/portable IDs, contact/kind editing, audited lifecycle retention and Journal choice refresh. |
 | Merchants | `MerchantsPanel` | `MerchantAdminService.listForMaintenance()` | `MerchantAdminService.save(...)` | Company-owned stable/portable IDs, name/notes, audited deactivation retention and mixed-line Journal choice/label refresh. |
