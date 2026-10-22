@@ -1,12 +1,12 @@
 ---
-plan_version: 396
+plan_version: 397
 active_phase: P26
 active_slice: P26-S5A
 active_status: VERIFYING
 active_branch: codex/P26-S5A-inventory-valuation-contract
 active_pull_request: null
-active_head: 0b94177e
-next_action: "Publish the owner-adopted P26-S5A contract as a draft, verify the fetched remote tree and exact-head CI, then obtain merge before beginning P26-S5 implementation."
+active_head: 2e968059d497900bd18100c977a6b178f0c0bd30
+next_action: "Open a draft PR from the published P26-S5A branch, then verify its exact-head CI and merge before beginning P26-S5 implementation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2112,3 +2112,5 @@ Documentation validation passed: the worked valuation fixture reaches 12 units a
 ### P26-S5A owner adoption — 2026-10-21 (America/Denver)
 
 Owner answered “yes” to the reviewed decision and adopted perpetual moving weighted average as the sole capitalized-inventory valuation method, including the recorded legacy opening basis, negative-stock/backdating/revaluation limits, exact reversal boundary and comprehensive implementation-test requirements. D06 is resolved by this accounting decision. P26-S5 remains blocked only on publication, exact-head CI and merge of this contract; no implementation is included in S5A.
+
+Published `codex/P26-S5A-inventory-valuation-contract` at adopted-contract head `2e968059d497900bd18100c977a6b178f0c0bd30`. A native fetch confirmed the published and local heads match exactly and both resolve tree `79fbacf3192926b20abcc5d936f3975d291c83f2`. Draft creation and exact-head CI remain pending.
