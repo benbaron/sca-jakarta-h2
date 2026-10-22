@@ -1,12 +1,12 @@
 ---
-plan_version: 395
+plan_version: 396
 active_phase: P26
 active_slice: P26-S5A
 active_status: VERIFYING
 active_branch: codex/P26-S5A-inventory-valuation-contract
 active_pull_request: null
-active_head: bf5bc979
-next_action: "Owner reviews and adopts the P26-S5A moving-weighted-average contract proposal; then record the decision, publish the documentation slice as a draft, and verify exact-head CI before P26-S5 implementation."
+active_head: 0b94177e
+next_action: "Publish the owner-adopted P26-S5A contract as a draft, verify the fetched remote tree and exact-head CI, then obtain merge before beginning P26-S5 implementation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -701,7 +701,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | DONE | Owner verified/merged PR #380 at `21f379dd`; final head `c83db0a5` and exact-head clean/repeat/JavaFX CI passed; internal branch form does not claim P27 official-template mapping |
 | P26-S3 | Complete event/fund budget planning and reporting filters (G12) | DONE | Owner verified/merged PR #381 at `c7170328`; final head `ee36b641` and exact-head clean/repeat/JavaFX CI passed; D05 form mapping remains P27 |
 | P26-S4 | Add governed prepaid/deferred recognition assistance (G12) | DONE | Owner accepted and merged PR #382 at `bf5bc979`; exact published head `70ca3b1b`; [S4 contract](P26-S4-prepaid-deferred-recognition.md); full local verification passed; no new schedule authority or policy/default engine |
-| P26-S5A | Adopt inventory valuation contract (documentation only) | VERIFYING | P26-S4 accepted/merged; [S5A proposal](P26-S5A-inventory-valuation-contract.md); local validation passed; owner acceptance/publication/CI/merge resolve D06 before implementation |
+| P26-S5A | Adopt inventory valuation contract (documentation only) | VERIFYING | Owner adopted [S5A contract](P26-S5A-inventory-valuation-contract.md) on 2026-10-21; local validation passed; publication/CI/merge remain before implementation |
 | P26-S5 | Resolve inventory valuation limitations (G12) | BLOCKED | P26-S5A accepted/merged; implementation must add the proposal's complete behavioral unit, migration, SCLX, reporting and JavaFX coverage |
 | P26-S6 | Provide controlled conversion and merchant-settlement assistance | BLOCKED | P26-S5 merged; owning contract and D01–D10 gates as applicable |
 | P27-S1 | Finalize the form contract and resolve runbook conflicts (G5/G10/G13) | BLOCKED | P26-S6 merged; owning contract and D01–D10 gates as applicable |
@@ -2108,3 +2108,7 @@ The [P26-S5A proposal](P26-S5A-inventory-valuation-contract.md) recommends perpe
 Initial Maven baseline could not execute because the prior container's temporary proxy settings file was absent; direct-Central retries without Maven proxy configuration then failed on DNS resolution. Recreating the temporary central/proxy settings recovered the environment without repository build changes. Baseline compile passed, followed by **20 inventory service, accounting, authorization and report tests with zero failures/errors/skips**. No production code or schema changed in S5A; documentation validation remains required before publication.
 
 Documentation validation passed: the worked valuation fixture reaches 12 units and $30 carrying value exactly, all 128 relative links in the affected governing documents resolve, and `git diff --check` passes. Full `mvn clean verify` passed at **2026-10-20 22:05 America/Denver** with **1,020 tests, zero failures, zero errors, 65 expected display-dependent skips, and BUILD SUCCESS**. P26-S5A is ready for owner decision; no cost method is adopted merely by preparing or testing this proposal.
+
+### P26-S5A owner adoption — 2026-10-21 (America/Denver)
+
+Owner answered “yes” to the reviewed decision and adopted perpetual moving weighted average as the sole capitalized-inventory valuation method, including the recorded legacy opening basis, negative-stock/backdating/revaluation limits, exact reversal boundary and comprehensive implementation-test requirements. D06 is resolved by this accounting decision. P26-S5 remains blocked only on publication, exact-head CI and merge of this contract; no implementation is included in S5A.

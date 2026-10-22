@@ -1,10 +1,10 @@
 # P26-S5A inventory valuation contract proposal
 
-## Decision requested
+## Adopted decision
 
-Adopt **perpetual moving weighted average** as the one supported valuation method for capitalized inventory. Do not claim FIFO, periodic weighted average, standard cost, or specific identification.
+The owner adopted **perpetual moving weighted average** on 2026-10-21 (America/Denver) as the one supported valuation method for capitalized inventory. Do not claim FIFO, periodic weighted average, standard cost, or specific identification.
 
-This proposal resolves D06 only after owner acceptance. Until then P26-S5 implementation remains blocked.
+This adoption resolves the policy choice in D06. P26-S5 implementation remains sequentially blocked until this contract is merged.
 
 ## Why this method fits the current authority
 
@@ -66,7 +66,7 @@ P26-S5 is not complete without behavioral unit/integration coverage for:
 - JavaFX entry of receipt cost, previewed old/new carrying value and average, explicit Save, Viewer restriction, scrolling, and shared command behavior;
 - the existing P25/P26 coverage ledger updated with all new test classes and scenarios.
 
-## Owner decision
+## Accepted owner decision
 
 Acceptance of this proposal means:
 
@@ -76,4 +76,4 @@ Acceptance of this proposal means:
 - no standalone revaluation, FIFO reconstruction, or partial movement reversal is added;
 - returned stock uses an explicit receipt cost unless the whole original issue is reversed.
 
-After acceptance, P26-S5 implementation begins on a fresh implementation branch from the accepted contract merge. Official workbook/form mapping remains P27 work.
+The owner accepted these terms on 2026-10-21 (America/Denver). P26-S5 implementation begins on a fresh implementation branch from the accepted contract merge. Official workbook/form mapping remains P27 work.
