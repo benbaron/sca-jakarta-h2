@@ -144,18 +144,29 @@ class RecognitionAssistantPanelTest
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
-            em.createNativeQuery("insert into company (id, code, display_name) values (100,'DEFAULT','Default')").executeUpdate();
-            em.createNativeQuery("insert into chart_of_accounts (id, company_id, name, version, status) values (100,100,'Default','1','ACTIVE')").executeUpdate();
-            em.createNativeQuery("update company set active_chart_of_accounts_id = 100 where id = 100").executeUpdate();
+            em.createNativeQuery("""
+                    insert into chart_of_accounts (id, company_id, name, version, status)
+                    values (100,(select id from company where code = 'DEFAULT'),'Default','1','ACTIVE')
+                    """).executeUpdate();
+            em.createNativeQuery("update company set active_chart_of_accounts_id = 100 where code = 'DEFAULT'").executeUpdate();
             em.createNativeQuery("""
                     insert into account (id, chart_id, code, name, account_type, subtype, normal_balance)
                     values (1004,100,'1200','Prepaid','ASSET','PREPAID','DEBIT'),
                            (1006,100,'5000','Expense','EXPENSE',null,'DEBIT'),
                            (1007,100,'1000','Cash','ASSET','CASH','DEBIT')
                     """).executeUpdate();
-            em.createNativeQuery("insert into fund (id, company_id, code, name, fund_type) values (1001,100,'OPERATING','Operating','UNRESTRICTED')").executeUpdate();
-            em.createNativeQuery("insert into activity (id, company_id, code, name, is_active) values (101,100,'EVENT-A','Event A',true)").executeUpdate();
-            em.createNativeQuery("insert into budget_category (id, company_id, code, name, is_active) values (1101,100,'PROGRAM','Program',true)").executeUpdate();
+            em.createNativeQuery("""
+                    insert into fund (id, company_id, code, name, fund_type)
+                    values (1001,(select id from company where code = 'DEFAULT'),'OPERATING','Operating','UNRESTRICTED')
+                    """).executeUpdate();
+            em.createNativeQuery("""
+                    insert into activity (id, company_id, code, name, is_active)
+                    values (101,(select id from company where code = 'DEFAULT'),'EVENT-A','Event A',true)
+                    """).executeUpdate();
+            em.createNativeQuery("""
+                    insert into budget_category (id, company_id, code, name, is_active)
+                    values (1101,(select id from company where code = 'DEFAULT'),'PROGRAM','Program',true)
+                    """).executeUpdate();
             em.getTransaction().commit();
         }
     }

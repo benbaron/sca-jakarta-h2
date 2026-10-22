@@ -1,12 +1,12 @@
 ---
-plan_version: 397
+plan_version: 398
 active_phase: P26
 active_slice: P26-S5A
 active_status: VERIFYING
 active_branch: codex/P26-S5A-inventory-valuation-contract
-active_pull_request: null
-active_head: 2e968059d497900bd18100c977a6b178f0c0bd30
-next_action: "Open a draft PR from the published P26-S5A branch, then verify its exact-head CI and merge before beginning P26-S5 implementation."
+active_pull_request: "https://github.com/benbaron/sca-jakarta-h2/pull/383"
+active_head: 79c50746583c4b0c141e7f0b18e49ea44fa2d952
+next_action: "Publish the RecognitionAssistantPanelTest isolation correction to PR #383, verify the fetched remote tree and exact-head clean/repeat/Xvfb CI, then merge before beginning P26-S5 implementation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2114,3 +2114,9 @@ Documentation validation passed: the worked valuation fixture reaches 12 units a
 Owner answered “yes” to the reviewed decision and adopted perpetual moving weighted average as the sole capitalized-inventory valuation method, including the recorded legacy opening basis, negative-stock/backdating/revaluation limits, exact reversal boundary and comprehensive implementation-test requirements. D06 is resolved by this accounting decision. P26-S5 remains blocked only on publication, exact-head CI and merge of this contract; no implementation is included in S5A.
 
 Published `codex/P26-S5A-inventory-valuation-contract` at adopted-contract head `2e968059d497900bd18100c977a6b178f0c0bd30`. A native fetch confirmed the published and local heads match exactly and both resolve tree `79fbacf3192926b20abcc5d936f3975d291c83f2`. Draft creation and exact-head CI remain pending.
+
+### P26-S5A PR #383 CI fixture correction — 2026-10-21 (America/Denver)
+
+Owner created draft [PR #383](https://github.com/benbaron/sca-jakarta-h2/pull/383). Its production JavaFX job correctly exposed one test-isolation error: `RecognitionAssistantPanelTest.setup` inserted company code `DEFAULT` after `UiServiceRegistry.reconnectToDatabase` had already bootstrapped that unique company. The authorization stack traces elsewhere in the log were not the failing assertion. The fixture now reuses the bootstrapped company for its chart, fund, Event and Budget Category instead of inserting a duplicate; production behavior and the adopted valuation contract are unchanged.
+
+Recovered an isolated Xvfb runtime under `/tmp` and ran the actual test with **1 test, zero failures/errors/skips**. The complete CI-equivalent production JavaFX selector then passed **57 tests, zero failures, zero errors, zero skips** in the shared process that reproduced the collision. Final `mvn clean verify` passed at **2026-10-21 22:54 America/Denver** with **1,020 tests, zero failures, zero errors, 65 expected display-dependent skips, and BUILD SUCCESS**. Publish this correction normally to PR #383 and require new exact-head CI before merge.
