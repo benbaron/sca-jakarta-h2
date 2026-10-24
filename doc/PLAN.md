@@ -5,8 +5,8 @@ active_slice: P26-S6B
 active_status: VERIFYING
 active_branch: codex/P26-S6B-merchant-settlement
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/386
-active_head: c1b24222e054062869ea247f5fec574fe296eb95
-next_action: "Confirm draft PR #386's final fetched head/tree and require exact-head clean/repeat/production-JavaFX CI before owner review."
+active_head: fb7f78131a8ce935dd832f3168112dff3c14234c
+next_action: "Owner reviews draft PR #386 and performs the disposable-company settlement checks; after acceptance and merge, confirm current main before advancing beyond P26."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2181,3 +2181,5 @@ Implementation head `dda9c050ad3dfb142c952c6c7ba017b835c9e00a` adds **Accounting
 Focused accounting regressions passed **25 tests, zero failures/errors and six expected display skips** in the headless portion; the new panel/route subset then passed **9 tests, zero failures/errors/skips** on an actual X display. Final `mvn clean verify` passed **1,035 tests, zero failures/errors and 69 expected display-dependent skips** at 2026-10-24 14:52:38 America/Denver. The exact production JavaFX workflow selector passed **61 tests, zero failures/errors/skips** under Xvfb at 14:54:42. Whitespace review is clean. P26-S6B is VERIFYING pending draft publication, exact-head CI, owner disposable-company checks and merge.
 
 Published `codex/P26-S6B-merchant-settlement` and opened draft [PR #386](https://github.com/benbaron/sca-jakarta-h2/pull/386) against current `main`. The PR records the accounting boundary, scenario-level unit coverage, local clean/actual-JavaFX evidence and disposable-company review steps. This publication-ledger successor follows verified head `c1b24222e054062869ea247f5fec574fe296eb95`; confirm the resulting remote head and tree after pushing it, then inspect exact-head CI. No GitHub CI success or owner desktop result is claimed at this checkpoint.
+
+Final published head `fb7f78131a8ce935dd832f3168112dff3c14234c` and its fetched remote ref match exactly; both resolve tree `aca8c8b3e029ab563ddd51491e7c2a24fab5cb9f`. Exact-head [Maven PR Tests run 40132078817](https://github.com/benbaron/sca-jakarta-h2/actions/runs/40132078817), job `120985945930`, completed successfully: clean headless verification, repeated tests and production JavaFX route compliance all passed; failed-test publication was correctly skipped. The PR description records this evidence. This final PLAN evidence remains local so the green published head is not replaced only by a documentation update. P26-S6B remains VERIFYING pending owner review/acceptance and merge; no human desktop result is inferred.
