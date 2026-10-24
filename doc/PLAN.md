@@ -5,7 +5,7 @@ active_slice: P26-S6B
 active_status: VERIFYING
 active_branch: codex/P26-S6B-merchant-settlement
 active_pull_request: null
-active_head: e298d2e0bd5e802f8d03c452ce73813a98dc9ff6
+active_head: dda9c050ad3dfb142c952c6c7ba017b835c9e00a
 next_action: "Publish the verified P26-S6B merchant-settlement assistant as a draft PR, confirm the fetched remote head/tree, and inspect exact-head CI before owner review."
 ---
 
@@ -2174,7 +2174,7 @@ Donor inspection at `c697630ec1f784ebe8338d7300da6c9ac801b180` found only free-t
 
 ### P26-S6B implementation and local verification — 2026-10-24 (America/Denver)
 
-Implemented **Accounting -> Merchant Settlement Assistant** over the existing merchant RECEIVABLE, NMR OTHER_LIABILITY and canonical Journal authorities. The workspace lists authoritative open items and requires explicit bank payout, processor fee account/function, optional evidenced NMR discharge, settlement date and retained request identity. Preview produces one balanced transaction and revalidates its source balances and command fingerprint under the company lock before Save; exact retry and restart return the same transaction. Withholding remains a dated nonfinancial observation. Chargebacks and refunds visibly route to Journal correction, and reconciliation continues to own bank clearing. No provider feed, inferred amount/rate, migration, SCLX shape or second balance was added.
+Implementation head `dda9c050ad3dfb142c952c6c7ba017b835c9e00a` adds **Accounting -> Merchant Settlement Assistant** over the existing merchant RECEIVABLE, NMR OTHER_LIABILITY and canonical Journal authorities. The workspace lists authoritative open items and requires explicit bank payout, processor fee account/function, optional evidenced NMR discharge, settlement date and retained request identity. Preview produces one balanced transaction and revalidates its source balances and command fingerprint under the company lock before Save; exact retry and restart return the same transaction. Withholding remains a dated nonfinancial observation. Chargebacks and refunds visibly route to Journal correction, and reconciliation continues to own bank clearing. No provider feed, inferred amount/rate, migration, SCLX shape or second balance was added.
 
 `MerchantSettlementAssistantServiceTest` covers payout/fee/withholding, later and combined NMR discharge, no duplicate income, exact retry/restart, stale preview, amount precision and bounds, account/function/evidence validation, Viewer denial and atomic failure. Existing merchant settlement, SCLX and correction/reconciliation tests retain the underlying lifecycle coverage. `MerchantSettlementAssistantPanelTest` covers actual Preview/shared Save, live permission gating, retained result, correction routing, both tables, scrolling and split geometry; the test now resets the shared drill-through opener so it remains isolated after production workspace tests. The P25/P26 unit-coverage ledger, interface-operation matrix, Help route inventory, navigation/factory/registry wiring and CI Xvfb selector include S6B.
 
