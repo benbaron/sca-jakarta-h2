@@ -12,7 +12,7 @@ Chargebacks and refunds identify and correct their original records through the 
 
 ## Preview and Save contract
 
-The selected receivable must be an authoritative open GROSS_RECEIPT item with one company-owned Merchant, debit-normal RECEIVABLE account, Fund and Event. A payout requires an active posting BANK asset account. A fee requires an active posting EXPENSE account and explicit AR, OA or FR function. An NMR discharge requires an authoritative open NMR OTHER_LIABILITY item for the same Fund, Event and Merchant, a positive amount within availability, and a nonblank external evidence reference.
+The selected receivable must be an authoritative open GROSS_RECEIPT item with one company-owned Merchant, debit-normal RECEIVABLE account, Fund and Event. A payout requires an active posting BANK asset account. A fee requires an active posting EXPENSE account and explicit AR, OA or FR function. An NMR discharge requires an authoritative open NMR OTHER_LIABILITY item for the same Fund and Event, a positive amount within availability, and a nonblank external evidence reference. The discharge line carries the receivable's Merchant while retaining the NMR item's recipient.
 
 Preview builds one balanced canonical transaction:
 

@@ -1,12 +1,12 @@
 ---
-plan_version: 407
+plan_version: 408
 active_phase: P26
 active_slice: P26-S6B
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P26-S6B-merchant-settlement
 active_pull_request: null
 active_head: e298d2e0bd5e802f8d03c452ce73813a98dc9ff6
-next_action: "Implement the adopted P26-S6B merchant-settlement assistant through the existing Journal, receivable, NMR, correction and reconciliation authorities, then run focused/full/actual-JavaFX verification."
+next_action: "Publish the verified P26-S6B merchant-settlement assistant as a draft PR, confirm the fetched remote head/tree, and inspect exact-head CI before owner review."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -38,7 +38,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
-| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 DONE through accepted/merged MR #379; S2 DONE through verified/merged PR #380; S3 DONE through verified/merged PR #381; S4 DONE through accepted/merged PR #382; S5A DONE through reviewed/merged PR #383; S5 DONE through owner-merged PR #384; S6A DONE through owner-merged PR #385; S6B selected |
+| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 DONE through accepted/merged MR #379; S2 DONE through verified/merged PR #380; S3 DONE through verified/merged PR #381; S4 DONE through accepted/merged PR #382; S5A DONE through reviewed/merged PR #383; S5 DONE through owner-merged PR #384; S6A DONE through owner-merged PR #385; S6B locally verified |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
@@ -704,7 +704,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P26-S5A | Adopt inventory valuation contract (documentation only) | DONE | Owner reviewed/merged PR #383 at `e750f73c`; final head `4f965262` passed exact-head clean/repeat/JavaFX CI; [S5A contract](P26-S5A-inventory-valuation-contract.md) resolves D06 |
 | P26-S5 | Resolve inventory valuation limitations (G12) | DONE | Owner merged PR #384 at main `7739698b`; implementation head `0c102dfd`; local headless and actual JavaFX gates passed; exact-head PR workflow was still in progress when the merge was reported and must not be described as passed without its result |
 | P26-S6A | Review and accept opening/carryover conversion | DONE | Owner merged PR #385 at `e298d2e0`; accepted head `bba4f944` passed full local, actual JavaFX and exact-head GitHub CI |
-| P26-S6B | Assist merchant settlement | IN_PROGRESS | [Adopted S6B contract](P26-S6B-merchant-settlement-assistant.md); fresh branch from merged S6A; reuse canonical Journal, merchant receivable, NMR, correction and reconciliation authorities; no provider API or second balance |
+| P26-S6B | Assist merchant settlement | VERIFYING | [Adopted S6B contract](P26-S6B-merchant-settlement-assistant.md); canonical Preview/Save assistant implemented with scenario-level service and actual JavaFX coverage; full clean and workflow-selector gates passed; draft publication/exact-head CI/owner review remain |
 | P27-S1 | Finalize the form contract and resolve runbook conflicts (G5/G10/G13) | BLOCKED | P26-S6 merged; owning contract and D01–D10 gates as applicable |
 | P27-S2 | Export the complete required workbook and supporting packet (G5) | BLOCKED | P27-S1 merged; owning contract and D01–D10 gates as applicable |
 | P27-S3 | Add factual close readiness and evidence references (G3/G5/G13) | BLOCKED | P27-S2 merged; owning contract and D01–D10 gates as applicable |
@@ -2171,3 +2171,11 @@ Owner reported PR #385 merged. Connected GitHub and native fetch confirm accepte
 Selected the adopted [P26-S6B contract](P26-S6B-merchant-settlement-assistant.md). Current production already owns merchant receivable roles/components, withholding observations, NMR discharge attribution, dated movement reporting, SCLX, correction/reversal and reconciliation protection. S6B adds a guided Preview/Save workspace over those authorities: entered payout, fee and optional evidenced NMR discharge become one canonical balanced Journal transaction with one retained request identity. Unconfirmed withholding remains a nonfinancial observation. Chargebacks and refunds retain the existing explicit correction route because their accounts and legal treatment cannot be inferred. No migration, provider API, automatic rate, fee, NMR amount or second settlement balance is introduced.
 
 Donor inspection at `c697630ec1f784ebe8338d7300da6c9ac801b180` found only free-text undeposited-fund merchant fields and generic settlement links, with no compatible canonical merchant-settlement workflow to port. Reuse the production stable-ID authorities. Baseline compilation passed after restoring the cached JDK/Maven runtime; implementation, scenario-level tests, full clean verification and actual JavaFX remain.
+
+### P26-S6B implementation and local verification — 2026-10-24 (America/Denver)
+
+Implemented **Accounting -> Merchant Settlement Assistant** over the existing merchant RECEIVABLE, NMR OTHER_LIABILITY and canonical Journal authorities. The workspace lists authoritative open items and requires explicit bank payout, processor fee account/function, optional evidenced NMR discharge, settlement date and retained request identity. Preview produces one balanced transaction and revalidates its source balances and command fingerprint under the company lock before Save; exact retry and restart return the same transaction. Withholding remains a dated nonfinancial observation. Chargebacks and refunds visibly route to Journal correction, and reconciliation continues to own bank clearing. No provider feed, inferred amount/rate, migration, SCLX shape or second balance was added.
+
+`MerchantSettlementAssistantServiceTest` covers payout/fee/withholding, later and combined NMR discharge, no duplicate income, exact retry/restart, stale preview, amount precision and bounds, account/function/evidence validation, Viewer denial and atomic failure. Existing merchant settlement, SCLX and correction/reconciliation tests retain the underlying lifecycle coverage. `MerchantSettlementAssistantPanelTest` covers actual Preview/shared Save, live permission gating, retained result, correction routing, both tables, scrolling and split geometry; the test now resets the shared drill-through opener so it remains isolated after production workspace tests. The P25/P26 unit-coverage ledger, interface-operation matrix, Help route inventory, navigation/factory/registry wiring and CI Xvfb selector include S6B.
+
+Focused accounting regressions passed **25 tests, zero failures/errors and six expected display skips** in the headless portion; the new panel/route subset then passed **9 tests, zero failures/errors/skips** on an actual X display. Final `mvn clean verify` passed **1,035 tests, zero failures/errors and 69 expected display-dependent skips** at 2026-10-24 14:52:38 America/Denver. The exact production JavaFX workflow selector passed **61 tests, zero failures/errors/skips** under Xvfb at 14:54:42. Whitespace review is clean. P26-S6B is VERIFYING pending draft publication, exact-head CI, owner disposable-company checks and merge.
