@@ -4,9 +4,9 @@ active_phase: P26
 active_slice: P26-S6B
 active_status: VERIFYING
 active_branch: codex/P26-S6B-merchant-settlement
-active_pull_request: null
-active_head: dda9c050ad3dfb142c952c6c7ba017b835c9e00a
-next_action: "Publish the verified P26-S6B merchant-settlement assistant as a draft PR, confirm the fetched remote head/tree, and inspect exact-head CI before owner review."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/386
+active_head: c1b24222e054062869ea247f5fec574fe296eb95
+next_action: "Confirm draft PR #386's final fetched head/tree and require exact-head clean/repeat/production-JavaFX CI before owner review."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2179,3 +2179,5 @@ Implementation head `dda9c050ad3dfb142c952c6c7ba017b835c9e00a` adds **Accounting
 `MerchantSettlementAssistantServiceTest` covers payout/fee/withholding, later and combined NMR discharge, no duplicate income, exact retry/restart, stale preview, amount precision and bounds, account/function/evidence validation, Viewer denial and atomic failure. Existing merchant settlement, SCLX and correction/reconciliation tests retain the underlying lifecycle coverage. `MerchantSettlementAssistantPanelTest` covers actual Preview/shared Save, live permission gating, retained result, correction routing, both tables, scrolling and split geometry; the test now resets the shared drill-through opener so it remains isolated after production workspace tests. The P25/P26 unit-coverage ledger, interface-operation matrix, Help route inventory, navigation/factory/registry wiring and CI Xvfb selector include S6B.
 
 Focused accounting regressions passed **25 tests, zero failures/errors and six expected display skips** in the headless portion; the new panel/route subset then passed **9 tests, zero failures/errors/skips** on an actual X display. Final `mvn clean verify` passed **1,035 tests, zero failures/errors and 69 expected display-dependent skips** at 2026-10-24 14:52:38 America/Denver. The exact production JavaFX workflow selector passed **61 tests, zero failures/errors/skips** under Xvfb at 14:54:42. Whitespace review is clean. P26-S6B is VERIFYING pending draft publication, exact-head CI, owner disposable-company checks and merge.
+
+Published `codex/P26-S6B-merchant-settlement` and opened draft [PR #386](https://github.com/benbaron/sca-jakarta-h2/pull/386) against current `main`. The PR records the accounting boundary, scenario-level unit coverage, local clean/actual-JavaFX evidence and disposable-company review steps. This publication-ledger successor follows verified head `c1b24222e054062869ea247f5fec574fe296eb95`; confirm the resulting remote head and tree after pushing it, then inspect exact-head CI. No GitHub CI success or owner desktop result is claimed at this checkpoint.
