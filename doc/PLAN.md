@@ -1,12 +1,12 @@
 ---
-plan_version: 393
+plan_version: 398
 active_phase: P26
-active_slice: P26-S4
+active_slice: P26-S5A
 active_status: VERIFYING
-active_branch: codex/P26-S4-recognition-assistance
-active_pull_request: null
-active_head: 2e418baf09f02119d39b7499bd2b22de8c402957
-next_action: "Open the P26-S4 draft from the published exact branch, then verify exact-head clean/repeat/Xvfb CI and present the documented owner checks for review and merge."
+active_branch: codex/P26-S5A-inventory-valuation-contract
+active_pull_request: "https://github.com/benbaron/sca-jakarta-h2/pull/383"
+active_head: 79c50746583c4b0c141e7f0b18e49ea44fa2d952
+next_action: "Publish the RecognitionAssistantPanelTest isolation correction to PR #383, verify the fetched remote tree and exact-head clean/repeat/Xvfb CI, then merge before beginning P26-S5 implementation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -38,7 +38,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
-| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 DONE through accepted/merged MR #379; S2 DONE through verified/merged PR #380; S3 DONE through verified/merged PR #381; S4 VERIFYING |
+| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 DONE through accepted/merged MR #379; S2 DONE through verified/merged PR #380; S3 DONE through verified/merged PR #381; S4 DONE through accepted/merged PR #382; S5A contract proposal IN_PROGRESS |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
@@ -700,8 +700,9 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P26-S1 | Link fixed-asset acquisition and opening records (G11) | DONE | Owner accepted/merged MR #379 at `2de87dc3`; [S1 contract](P26-S1-asset-acquisitions.md); full local and exact-head CI passed |
 | P26-S2 | Complete custody, supplies, and property-transfer records (G11) | DONE | Owner verified/merged PR #380 at `21f379dd`; final head `c83db0a5` and exact-head clean/repeat/JavaFX CI passed; internal branch form does not claim P27 official-template mapping |
 | P26-S3 | Complete event/fund budget planning and reporting filters (G12) | DONE | Owner verified/merged PR #381 at `c7170328`; final head `ee36b641` and exact-head clean/repeat/JavaFX CI passed; D05 form mapping remains P27 |
-| P26-S4 | Add governed prepaid/deferred recognition assistance (G12) | VERIFYING | P26-S3 verified/merged; [S4 contract](P26-S4-prepaid-deferred-recognition.md); implementation and local gates passed; draft publication/exact-head CI/owner review remain; no new schedule authority or policy/default engine |
-| P26-S5 | Resolve inventory valuation limitations (G12) | BLOCKED | P26-S4 merged; owning contract and D01–D10 gates as applicable |
+| P26-S4 | Add governed prepaid/deferred recognition assistance (G12) | DONE | Owner accepted and merged PR #382 at `bf5bc979`; exact published head `70ca3b1b`; [S4 contract](P26-S4-prepaid-deferred-recognition.md); full local verification passed; no new schedule authority or policy/default engine |
+| P26-S5A | Adopt inventory valuation contract (documentation only) | VERIFYING | Owner adopted [S5A contract](P26-S5A-inventory-valuation-contract.md) on 2026-10-21; local validation passed; publication/CI/merge remain before implementation |
+| P26-S5 | Resolve inventory valuation limitations (G12) | BLOCKED | P26-S5A accepted/merged; implementation must add the proposal's complete behavioral unit, migration, SCLX, reporting and JavaFX coverage |
 | P26-S6 | Provide controlled conversion and merchant-settlement assistance | BLOCKED | P26-S5 merged; owning contract and D01–D10 gates as applicable |
 | P27-S1 | Finalize the form contract and resolve runbook conflicts (G5/G10/G13) | BLOCKED | P26-S6 merged; owning contract and D01–D10 gates as applicable |
 | P27-S2 | Export the complete required workbook and supporting packet (G5) | BLOCKED | P27-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -2095,3 +2096,27 @@ Added behavioral tests for exact 1,200/12 recognition, clipped partial months an
 Focused P25/P26 verification ran **190 tests with zero failures or errors** and 17 expected display-dependent skips. Full `mvn clean verify` completed at **2026-10-19 21:12 America/Denver** with **1,020 tests, zero failures, zero errors, 65 expected display-dependent skips, and BUILD SUCCESS**. An earlier full run reached the same assertions but three existing UI compliance tests could not create the sandboxed application-data directory; granting that test process the required workspace-external directory access and rerunning produced the clean result above. `git diff --check`, documentation-link validation, and coverage-matrix class validation pass. Local Xvfb is unavailable, so actual JavaFX execution remains assigned to the explicit `RecognitionAssistantPanelTest` selector in exact-head CI.
 
 Published `codex/P26-S4-recognition-assistance` at implementation head `2e418baf09f02119d39b7499bd2b22de8c402957`. A native fetch confirmed the published and local heads match exactly and both resolve tree `c2f206a74a552dc8462391584af390f865098af2`. Draft creation and exact-head CI remain pending.
+
+### P26-S4 acceptance/merge and P26-S5A selection — 2026-10-20 (America/Denver)
+
+Owner reported the branch created and merged. Native fetch confirms [PR #382](https://github.com/benbaron/sca-jakarta-h2/pull/382) merged exact published head `70ca3b1b92df13f9b4637517fbf6c52e9eabe98c` into current `main` at `bf5bc979`. Owner acceptance plus the recorded 190-test P25/P26 audit and 1,020-test clean local verification close P26-S4; no unqueried GitHub CI detail is invented.
+
+Selected documentation-only P26-S5A on fresh `codex/P26-S5A-inventory-valuation-contract` because D06 requires an adopted cost method and opening basis before P26-S5 code. Current production inspection confirms one fixed `InventoryItem.unitValue` drives all receipts, issues, adjustments, reversals and reports; movements persist that applied value and canonical transaction links, but varying-cost receipt authority and exact current carrying value do not exist. Donor inspection found manually entered sales unit cost and inventory presentation but no compatible FIFO, weighted-average, return-link or durable accounting authority to import.
+
+The [P26-S5A proposal](P26-S5A-inventory-valuation-contract.md) recommends perpetual moving weighted average, exact item carrying value and signed movement value changes, legacy opening basis from quantity × persisted fixed unit value, no negative stock/backdating/standalone revaluation, and exact canonical reversal. It defines the 10@$2 + 10@$3 fixture and requires behavioral unit coverage for arithmetic/residuals, every movement direction, concurrency/authorization/period protections, rollback/retry, migration/restart, SCLX, reports and JavaFX Save. P26-S5 remains BLOCKED pending owner acceptance and contract merge.
+
+Initial Maven baseline could not execute because the prior container's temporary proxy settings file was absent; direct-Central retries without Maven proxy configuration then failed on DNS resolution. Recreating the temporary central/proxy settings recovered the environment without repository build changes. Baseline compile passed, followed by **20 inventory service, accounting, authorization and report tests with zero failures/errors/skips**. No production code or schema changed in S5A; documentation validation remains required before publication.
+
+Documentation validation passed: the worked valuation fixture reaches 12 units and $30 carrying value exactly, all 128 relative links in the affected governing documents resolve, and `git diff --check` passes. Full `mvn clean verify` passed at **2026-10-20 22:05 America/Denver** with **1,020 tests, zero failures, zero errors, 65 expected display-dependent skips, and BUILD SUCCESS**. P26-S5A is ready for owner decision; no cost method is adopted merely by preparing or testing this proposal.
+
+### P26-S5A owner adoption — 2026-10-21 (America/Denver)
+
+Owner answered “yes” to the reviewed decision and adopted perpetual moving weighted average as the sole capitalized-inventory valuation method, including the recorded legacy opening basis, negative-stock/backdating/revaluation limits, exact reversal boundary and comprehensive implementation-test requirements. D06 is resolved by this accounting decision. P26-S5 remains blocked only on publication, exact-head CI and merge of this contract; no implementation is included in S5A.
+
+Published `codex/P26-S5A-inventory-valuation-contract` at adopted-contract head `2e968059d497900bd18100c977a6b178f0c0bd30`. A native fetch confirmed the published and local heads match exactly and both resolve tree `79fbacf3192926b20abcc5d936f3975d291c83f2`. Draft creation and exact-head CI remain pending.
+
+### P26-S5A PR #383 CI fixture correction — 2026-10-21 (America/Denver)
+
+Owner created draft [PR #383](https://github.com/benbaron/sca-jakarta-h2/pull/383). Its production JavaFX job correctly exposed one test-isolation error: `RecognitionAssistantPanelTest.setup` inserted company code `DEFAULT` after `UiServiceRegistry.reconnectToDatabase` had already bootstrapped that unique company. The authorization stack traces elsewhere in the log were not the failing assertion. The fixture now reuses the bootstrapped company for its chart, fund, Event and Budget Category instead of inserting a duplicate; production behavior and the adopted valuation contract are unchanged.
+
+Recovered an isolated Xvfb runtime under `/tmp` and ran the actual test with **1 test, zero failures/errors/skips**. The complete CI-equivalent production JavaFX selector then passed **57 tests, zero failures, zero errors, zero skips** in the shared process that reproduced the collision. Final `mvn clean verify` passed at **2026-10-21 22:54 America/Denver** with **1,020 tests, zero failures, zero errors, 65 expected display-dependent skips, and BUILD SUCCESS**. Publish this correction normally to PR #383 and require new exact-head CI before merge.

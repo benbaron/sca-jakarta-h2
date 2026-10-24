@@ -198,6 +198,8 @@ After S4G's MR #374 merge, select [S4H](P25-S4H-merchant-withholding.md). Reuse 
 
 **Acceptance:** Receipts of 10 units at $2 and 10 at $3, a partial issue, return, and reversal produce the adopted cost result and exact register-to-GL agreement. Historical stock migration identifies its opening cost basis without inventing unavailable lot history. Negative stock and revaluation policies are explicit.
 
+[P26-S5A contract](P26-S5A-inventory-valuation-contract.md) adopts perpetual moving weighted average within the existing inventory movement and canonical transaction authorities. Owner acceptance resolves D06; contract merge remains required before valuation implementation begins.
+
 ### P26-S6 — Provide controlled conversion and merchant-settlement assistance
 
 **Work:** Address guide limitations beyond the numbered gaps in two bounded sub-slices. First, an opening/carryover preview ties opening GL balances, outstanding bank items, assets, inventory, and open-item allocations together without double counting. Second, a merchant settlement assistant links gross receipts, fees, withholding, chargebacks, and net deposits using existing Journal/open-item/reconciliation services. Provider API downloads are not required for this correction; supported file/manual input is sufficient.
