@@ -1,12 +1,12 @@
 ---
-plan_version: 401
+plan_version: 402
 active_phase: P26
 active_slice: P26-S5
 active_status: VERIFYING
 active_branch: codex/P26-S5-inventory-valuation
-active_pull_request: null
+active_pull_request: "https://github.com/benbaron/sca-jakarta-h2/pull/384"
 active_head: 0c102dfd62be4c26fc444aa485d5fe26bfbf4fdb
-next_action: "Publish codex/P26-S5-inventory-valuation as a draft pull request, then require exact-head Maven PR Tests and owner review before merge."
+next_action: "Require exact-head Maven PR Tests on draft PR #384, correct any failure, then obtain owner review before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -2137,4 +2137,6 @@ Inventory reports now use exact current and historical carrying values. Inventor
 
 Local focused valuation, migration, accounting, reporting and SCLX tests passed. The final `mvn clean verify` completed at **2026-10-23 19:19 America/Denver** with **1,023 tests, zero failures, zero errors, 65 expected display-dependent skips, and BUILD SUCCESS**. The exact production JavaFX workflow selector then ran under Xvfb with **57 tests, zero failures, zero errors and zero skips**. `git diff --check` passes and there are no known failures.
 
-User-visible testing notes: create a capitalized item, receive equal quantities at two different costs, confirm the preview and saved carrying value/average, issue part of the stock, and reverse that issue. Verify that each preview shows the expected signed value and that the Inventory Valuation report reaches the same final carrying value. Also verify that an expensed supply accepts quantity changes without a cost or inventory accounting entry. Publication as a draft PR, exact-head GitHub CI and owner review remain before merge; P26-S5 is not DONE locally.
+User-visible testing notes: create a capitalized item, receive equal quantities at two different costs, confirm the preview and saved carrying value/average, issue part of the stock, and reverse that issue. Verify that each preview shows the expected signed value and that the Inventory Valuation report reaches the same final carrying value. Also verify that an expensed supply accepts quantity changes without a cost or inventory accounting entry. Exact-head GitHub CI and owner review remain before merge; P26-S5 is not DONE locally.
+
+Published `codex/P26-S5-inventory-valuation` and opened draft [PR #384](https://github.com/benbaron/sca-jakarta-h2/pull/384) with the completed behavior, validation evidence and manual-review scenarios. The implementation authority remains head `0c102dfd`; the later plan-only publication record does not change production behavior. Exact-head GitHub CI and owner review remain required.
