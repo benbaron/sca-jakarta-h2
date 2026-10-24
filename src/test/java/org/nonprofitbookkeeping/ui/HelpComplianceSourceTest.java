@@ -20,7 +20,7 @@ class HelpComplianceSourceTest
         assertTrue(source.contains("/blob/main/doc/ui_design_rules.md"));
         assertTrue(source.contains("/blob/main/doc/workflow/development-workflow.md"));
         assertTrue(source.contains("Journal, Event Accounting, Banking, Bank Reconciliation, Bank Transactions"));
-        assertTrue(source.contains("Import Preview, Audit History, Period Close"));
+        assertTrue(source.contains("Import Preview, Opening Conversion, Audit History, Period Close"));
         assertTrue(source.contains("Administration -> Company Admin"));
         assertTrue(source.contains("helpContentScroll"));
 

@@ -42,7 +42,7 @@ public class HelpPanel implements AppPanel
                 + "Accounting: Journal, Event Accounting, Banking, Bank Reconciliation, Bank Transactions\n"
                 + "Planning: Budget Editor, Budget vs Actual, Recognition Assistant\n"
                 + "Assets & Inventory: Asset Register, Depreciation Runs, Inventory\n"
-                + "Import & Oversight: Import Preview, Audit History, Period Close\n"
+                + "Import & Oversight: Import Preview, Opening Conversion, Audit History, Period Close\n"
                 + "Reports: Report Library\n"
                 + "Administration: Chart of Accounts, Funds, Events / Activities, Administration, Diagnostics");
 

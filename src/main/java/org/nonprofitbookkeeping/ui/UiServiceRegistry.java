@@ -35,6 +35,7 @@ import org.nonprofitbookkeeping.service.BudgetCategoryAdminService;
 import org.nonprofitbookkeeping.service.CounterpartyAdminService;
 import org.nonprofitbookkeeping.service.MerchantAdminService;
 import org.nonprofitbookkeeping.service.NmrPolicyService;
+import org.nonprofitbookkeeping.service.OpeningConversionService;
 import org.nonprofitbookkeeping.service.FundTransferService;
 import org.nonprofitbookkeeping.service.BudgetCategoryLookupService;
 import org.nonprofitbookkeeping.service.BudgetPlanService;
@@ -114,6 +115,12 @@ public final class UiServiceRegistry
     public static FundTransferService fundTransfers() { return services().fundTransfers(); }
     public static MerchantAdminService merchantAdmin() { return services().merchantAdmin(); }
     public static NmrPolicyService nmrPolicies() { return services().nmrPolicies(); }
+    public static OpeningConversionService openingConversion()
+    {
+        ServiceBundle current = services();
+        return new OpeningConversionService(
+                current.jpa(), UiServiceRegistry::activeCompanyCode, current.authorizationGuard());
+    }
     public static BudgetCategoryAdminService budgetCategoryAdmin() { return services().budgetCategoryAdmin(); }
     public static BudgetPlanService budgetPlan() { return services().budgetPlan(); }
     public static BankConfigurationService bankConfiguration() { return services().bankConfiguration(); }

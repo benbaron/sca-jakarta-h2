@@ -90,6 +90,7 @@ public final class PanelFactory
         factories.put(AppPanelId.RECONCILIATION_RUNS, ReconciliationRunsPanel::new);
         factories.put(AppPanelId.PERIOD_CLOSE_RUNS, PeriodCloseRunsPanel::new);
         factories.put(AppPanelId.IMPORT_PREVIEW, importPreviewFactory);
+        factories.put(AppPanelId.OPENING_CONVERSION, OpeningConversionPanel::new);
         factories.put(AppPanelId.APPROVAL_AUDIT, ApprovalAuditPanel::new);
         factories.putIfAbsent(AppPanelId.BANK_TRANSACTIONS, BankTransactionsPanel::new);
         factories.put(AppPanelId.REPORT_LIBRARY, ReportLibraryPanel::new);
