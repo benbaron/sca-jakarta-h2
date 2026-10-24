@@ -77,6 +77,7 @@ class AppPanelCommandCapabilityTest
         expected.put(AppPanelId.RECONCILIATION_RUNS, Set.of());
         expected.put(AppPanelId.PERIOD_CLOSE_RUNS, Set.of());
         expected.put(AppPanelId.IMPORT_PREVIEW, Set.of());
+        expected.put(AppPanelId.OPENING_CONVERSION, Set.of());
         expected.put(AppPanelId.APPROVAL_AUDIT, Set.of());
         expected.put(AppPanelId.BANK_TRANSACTIONS, Set.of());
         expected.put(AppPanelId.REPORT_LIBRARY, Set.of());

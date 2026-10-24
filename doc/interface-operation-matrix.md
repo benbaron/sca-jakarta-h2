@@ -58,6 +58,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Administration — Ownership repair | no | ready repair only | no | Save Ownership Assignment retains confirmation and DATABASE_ADMIN. |
 | Reconciliation | no | selected Review / Checks subpane | no | Save Unresolved or Save Review; finalized history is read-only. |
 | Import Preview | no | valid confirmed selected format | no | Save Accepted COA Rows, Save Previewed SCLX Import, or Save Previewed Bank Review use existing commit confirmations. |
+| Opening Conversion | no | ready unchanged preview only | no | Save Conversion Acceptance records one immutable audit fact; it creates no accounting entry. BOOKKEEPING_WRITE. |
 | Report Library, Budget vs Actual, Depreciation Runs, Period Close, Audit History, Bank Transactions, Diagnostics, Help | no | no | no | Run/review/navigation commands remain panel-local. |
 
 ## Canonical panel matrix
@@ -85,6 +86,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Period Close | `PeriodCloseRunsPanel` | `PeriodCloseRangeService` and factual history | `PeriodCloseRangeService` guarded close/reopen operations | `BOOKKEEPING_WRITE` is authoritative at the service boundary; calculated period honors configured period start day. |
 | Bank Transactions | current bank-transaction workspace | canonical configured-bank split projection plus statement-review facts | explicit reviewed-row acceptance/correction routes only | No second bank ledger. |
 | Import Preview | `ImportPreviewPanel` and format-specific review surfaces | transient frozen preview state plus current target facts | format-specific atomic commit service | Preview is intentionally transient; accepted facts become H2 authority. |
+| Opening Conversion | `OpeningConversionPanel` | `OpeningConversionService` over existing account openings, configured banks, fixed assets, inventory and supplemental schedules | `OpeningConversionService.saveAcceptance(...)` | Ready preview fingerprint is revalidated; one immutable `OPENING_CONVERSION_ACCEPTED` audit fact is SCLX-portable. No balancing entry or second ledger. |
 | Report Library | report library panels/services | report query/execution services | export only where supported | Explicit report dates may detach from shell-selected accounting period. |
 | Administration | `AdministrationPanel` | preferences/company/user/database-transfer services | owning service of selected tab | No second shell identifier or preference store. |
 | Diagnostics | diagnostics/recovery query surfaces | `DiagnosticsQueryService` and current session/database services | explicit typed recovery/database actions | Failed/cancelled recovery retains prior active bundle. |
