@@ -37,6 +37,10 @@ class InventoryPanelSourceTest
         assertTrue(source.contains("previewMovementReversal("));
         assertTrue(source.contains("reverseMovement(preview,"));
         assertTrue(source.contains("Drill Selected Txn to Ledger"));
+        assertTrue(source.contains("inventoryMovementUnitCost"));
+        assertTrue(source.contains("Receipt/upward unit cost"));
+        assertTrue(source.contains("Carrying value:"));
+        assertTrue(source.contains("New moving average:"));
     }
     @Test
     void inventoryStatusIsServiceOwnedRatherThanDirectlyEdited() throws Exception

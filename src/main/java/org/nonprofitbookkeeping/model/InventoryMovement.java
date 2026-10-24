@@ -64,6 +64,12 @@ public class InventoryMovement
     @Column(name = "unit_value", nullable = false, precision = 19, scale = 4)
     private BigDecimal unitValue = BigDecimal.ZERO;
 
+    @Column(name = "value_change", nullable = false, precision = 19, scale = 4)
+    private BigDecimal valueChange = BigDecimal.ZERO;
+
+    @Column(name = "resulting_carrying_value", nullable = false, precision = 19, scale = 4)
+    private BigDecimal resultingCarryingValue = BigDecimal.ZERO;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "transaction_id")
     private Txn transaction;
@@ -89,6 +95,10 @@ public class InventoryMovement
     public void setResultingQuantity(BigDecimal resultingQuantity) { this.resultingQuantity = resultingQuantity; }
     public BigDecimal getUnitValue() { return unitValue; }
     public void setUnitValue(BigDecimal unitValue) { this.unitValue = unitValue; }
+    public BigDecimal getValueChange() { return valueChange; }
+    public void setValueChange(BigDecimal valueChange) { this.valueChange = valueChange; }
+    public BigDecimal getResultingCarryingValue() { return resultingCarryingValue; }
+    public void setResultingCarryingValue(BigDecimal resultingCarryingValue) { this.resultingCarryingValue = resultingCarryingValue; }
     public Txn getTransaction() { return transaction; }
     public void setTransaction(Txn transaction) { this.transaction = transaction; }
     public String getNotes() { return notes; }

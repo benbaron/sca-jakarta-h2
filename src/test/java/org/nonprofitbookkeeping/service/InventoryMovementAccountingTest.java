@@ -46,7 +46,7 @@ class InventoryMovementAccountingTest
 
             assertEquals(before, counts(jpa));
             assertTrue(preview.financial());
-            assertEquals(new BigDecimal("7.0368"), preview.extendedValue());
+            assertEquals(new BigDecimal("30.0000"), preview.extendedValue());
             assertEquals(new BigDecimal("3.0000"), preview.quantityAfter());
             assertEquals(2, preview.transactionCommand().lines().size());
 
@@ -166,7 +166,7 @@ class InventoryMovementAccountingTest
                             MOVEMENT_DATE,
                             BANK_OFFSET_ACCOUNT_ID,
                             false,
-                            "Inside finalized range", null, null, true)));
+                            "Inside finalized range", null, null, true, BigDecimal.ONE)));
         }
     }
 
@@ -233,7 +233,8 @@ class InventoryMovementAccountingTest
             itemId = item.id();
             inventory.recordMovement(inventory.previewMovement(item.id(), new InventoryMovementCommand(
                     InventoryMovement.MovementType.RECEIPT, BigDecimal.TEN, MOVEMENT_DATE,
-                    BANK_OFFSET_ACCOUNT_ID, false, "Stock received", null, null, true)), "tester");
+                    BANK_OFFSET_ACCOUNT_ID, false, "Stock received", null, null, true,
+                    new BigDecimal("20"))), "tester");
             TransactionEntryService journal = new TransactionEntryService(jpa, () -> COMPANY);
             journal.enter(new TransactionCommand(MOVEMENT_DATE, null, "Event sales", null, List.of(
                     new TransactionLineCommand(BANK_OFFSET_ACCOUNT_ID, FUND_ID, null, null, null,
@@ -359,13 +360,13 @@ class InventoryMovementAccountingTest
             var inventory = service(jpa, COMPANY);
             var item = inventory.create(itemCommand("Stock", BigDecimal.TEN));
             var missing = new InventoryMovementCommand(InventoryMovement.MovementType.RECEIPT, BigDecimal.ONE,
-                    MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Missing choice", null, null, false);
+                    MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Missing choice", null, null, false, BigDecimal.TEN);
             assertThrows(IllegalArgumentException.class, () -> inventory.previewMovement(item.id(), missing));
             var both = new InventoryMovementCommand(InventoryMovement.MovementType.RECEIPT, BigDecimal.ONE,
-                    MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Conflicting choice", 31001L, null, true);
+                    MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Conflicting choice", 31001L, null, true, BigDecimal.TEN);
             assertThrows(IllegalArgumentException.class, () -> inventory.previewMovement(item.id(), both));
             var tagged = new InventoryMovementCommand(InventoryMovement.MovementType.RECEIPT, BigDecimal.ONE,
-                    MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Tagged", 31001L, 31001L, false);
+                    MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Tagged", 31001L, 31001L, false, BigDecimal.TEN);
             var preview = inventory.previewMovement(item.id(), tagged);
             Counts before = counts(jpa);
             try (EntityManager em = jpa.em())
@@ -404,14 +405,14 @@ class InventoryMovementAccountingTest
             Counts before = counts(jpa);
             for (var command : List.of(
                     new InventoryMovementCommand(InventoryMovement.MovementType.RECEIPT, BigDecimal.ONE,
-                            MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Foreign Event", 32001L, null, false),
+                            MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Foreign Event", 32001L, null, false, BigDecimal.TEN),
                     new InventoryMovementCommand(InventoryMovement.MovementType.RECEIPT, BigDecimal.ONE,
-                            MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Foreign Budget", null, 32001L, true)))
+                            MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Foreign Budget", null, 32001L, true, BigDecimal.TEN)))
             {
                 assertThrows(CompanyOwnershipException.class, () -> inventory.previewMovement(item.id(), command));
             }
             var command = new InventoryMovementCommand(InventoryMovement.MovementType.RECEIPT, BigDecimal.ONE,
-                    MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Independent Budget", null, 31001L, true);
+                    MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, "Independent Budget", null, 31001L, true, BigDecimal.TEN);
             var preview = inventory.previewMovement(item.id(), command);
             assertEquals("Non-event", preview.eventLabel());
             for (String restriction : List.of("is_active = false", "is_active = true, effective_from = DATE '2026-06-01'",
@@ -458,7 +459,8 @@ class InventoryMovementAccountingTest
             String notes)
     {
         return new InventoryMovementCommand(
-                type, new BigDecimal(quantity), MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, notes, null, null, true);
+                type, new BigDecimal(quantity), MOVEMENT_DATE, OFFSET_ACCOUNT_ID, false, notes,
+                null, null, true, type == InventoryMovement.MovementType.RECEIPT ? BigDecimal.TEN : null);
     }
 
     private static InventoryItemCommand itemCommand(String name, BigDecimal unitValue)
@@ -471,7 +473,11 @@ class InventoryMovementAccountingTest
 
     private static InventoryItemCommand zeroValueItemCommand(String name)
     {
-        return itemCommand(name, BigDecimal.ZERO);
+        return new InventoryItemCommand(
+                COMPANY, INVENTORY_ACCOUNT_ID, FUND_ID, name, "Supplies", BigDecimal.ZERO, "each",
+                BigDecimal.ZERO, InventoryItem.FinancialTreatment.EXPENSED_SUPPLY,
+                LocalDate.of(2026, 1, 1), "", "", InventoryItem.Condition.GOOD,
+                InventoryItem.Status.ACTIVE, "");
     }
 
     private static void seed(Jpa jpa)

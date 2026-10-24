@@ -154,6 +154,9 @@ public class InventoryService
                             InventoryMovement.MovementType.RECEIPT,
                             item.getQuantity(),
                             item.getQuantity(),
+                            item.getCarryingValue(),
+                            item.getCarryingValue(),
+                            item.getUnitValue(),
                             item.getAcquisitionDate(),
                             "Initial quantity");
                     em.persist(movement);
@@ -197,6 +200,8 @@ public class InventoryService
                 InventoryItem.Status existingStatus = item.getStatus();
                 requireInteractiveStatusUnchanged(item, command);
                 BigDecimal existingQuantity = scale(item.getQuantity());
+                BigDecimal existingCarryingValue = scale(item.getCarryingValue());
+                InventoryItem.ValuationMethod existingValuationMethod = item.getValuationMethod();
                 if (existingQuantity.signum() > 0
                         && (!Objects.equals(item.getInventoryAccount().getId(), command.inventoryAccountId())
                         || !Objects.equals(item.getFund().getId(), command.fundId())
@@ -208,6 +213,8 @@ public class InventoryService
                 }
                 apply(em, item, command);
                 item.setQuantity(existingQuantity);
+                item.setCarryingValue(existingCarryingValue);
+                item.setValuationMethod(existingValuationMethod);
                 item.setStatus(existingStatus);
                 item.touchUpdatedAt();
                 em.getTransaction().commit();
@@ -392,6 +399,8 @@ public class InventoryService
                         || !preview.movementDate().equals(existing.getMovementDate())
                         || preview.quantityChange().compareTo(scale(existing.getQuantityChange())) != 0
                         || preview.quantityAfter().compareTo(scale(existing.getResultingQuantity())) != 0
+                        || preview.valueChange().compareTo(scale(existing.getValueChange())) != 0
+                        || preview.carryingValueAfter().compareTo(scale(existing.getResultingCarryingValue())) != 0
                         || !sameTransaction
                         || !sameMovementTags(em, existing, preview))
                 {
@@ -440,12 +449,17 @@ public class InventoryService
                 movementWriteHook.afterTransactionPersisted(em, item, transaction, preview);
 
                 item.setQuantity(preview.quantityAfter());
+                item.setCarryingValue(preview.carryingValueAfter());
+                item.setUnitValue(preview.averageUnitValueAfter());
                 item.touchUpdatedAt();
                 InventoryMovement movement = movement(
                         item,
                         preview.movementType(),
                         preview.quantityChange(),
                         preview.quantityAfter(),
+                        preview.valueChange(),
+                        preview.carryingValueAfter(),
+                        preview.unitValue(),
                         preview.movementDate(),
                         preview.notes());
                 movement.initializePortableIdentity(preview.movementPortableId());
@@ -534,7 +548,9 @@ public class InventoryService
                         || !preview.reversalTransactionPortableId().equals(
                         existing.getTransaction().getPortableId())
                         || preview.quantityChange().compareTo(scale(existing.getQuantityChange())) != 0
-                        || preview.quantityAfter().compareTo(scale(existing.getResultingQuantity())) != 0)
+                        || preview.quantityAfter().compareTo(scale(existing.getResultingQuantity())) != 0
+                        || preview.valueChange().compareTo(scale(existing.getValueChange())) != 0
+                        || preview.carryingValueAfter().compareTo(scale(existing.getResultingCarryingValue())) != 0)
                 {
                     throw new IllegalStateException(
                             "Inventory reversal portable identity is already used by a different operation");
@@ -577,6 +593,8 @@ public class InventoryService
                         preview.reason(),
                         preview.reversalTransactionPortableId());
                 item.setQuantity(preview.quantityAfter());
+                item.setCarryingValue(preview.carryingValueAfter());
+                item.setUnitValue(preview.averageUnitValueAfter());
                 item.touchUpdatedAt();
 
                 InventoryMovement correction = new InventoryMovement();
@@ -587,6 +605,8 @@ public class InventoryService
                 correction.setQuantityChange(preview.quantityChange());
                 correction.setResultingQuantity(preview.quantityAfter());
                 correction.setUnitValue(preview.unitValue());
+                correction.setValueChange(preview.valueChange());
+                correction.setResultingCarryingValue(preview.carryingValueAfter());
                 correction.setTransaction(reversal);
                 correction.setNotes("Reversal of movement " + original.getId() + ": " + preview.reason());
                 em.persist(correction);
@@ -668,6 +688,30 @@ public class InventoryService
             UUID portableId,
             Instant createdAt)
     {
+        return recordMovementForImport(em, company, item, movementDate, movementType,
+                quantityChange, resultingQuantity, unitValue,
+                scale(quantityChange).multiply(scale(unitValue)).setScale(4, RoundingMode.HALF_UP),
+                scale(resultingQuantity).multiply(scale(unitValue)).setScale(4, RoundingMode.HALF_UP),
+                transaction, notes, portableId, createdAt);
+    }
+
+    /** Records versioned source valuation facts without recomputing their rounding history. */
+    public InventoryMovement recordMovementForImport(
+            EntityManager em,
+            Company company,
+            InventoryItem item,
+            LocalDate movementDate,
+            InventoryMovement.MovementType movementType,
+            BigDecimal quantityChange,
+            BigDecimal resultingQuantity,
+            BigDecimal unitValue,
+            BigDecimal valueChange,
+            BigDecimal resultingCarryingValue,
+            Txn transaction,
+            String notes,
+            UUID portableId,
+            Instant createdAt)
+    {
         Objects.requireNonNull(em, "em");
         Objects.requireNonNull(company, "company");
         Objects.requireNonNull(item, "item");
@@ -692,6 +736,15 @@ public class InventoryService
         {
             throw new IllegalArgumentException("Inventory movement unit value must be nonnegative");
         }
+        if (valueChange == null || resultingCarryingValue == null
+                || resultingCarryingValue.compareTo(BigDecimal.ZERO) < 0)
+        {
+            throw new IllegalArgumentException("Inventory movement valuation facts are required and carrying value must be nonnegative");
+        }
+        if (resultingQuantity.signum() == 0 && resultingCarryingValue.signum() != 0)
+        {
+            throw new IllegalArgumentException("Zero resulting quantity requires zero carrying value");
+        }
         CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
         ownership.ensureOwnedBy(em, company, item, "Inventory item");
         if (transaction != null)
@@ -705,6 +758,8 @@ public class InventoryService
         movement.setQuantityChange(scale(quantityChange));
         movement.setResultingQuantity(scale(resultingQuantity));
         movement.setUnitValue(scale(unitValue));
+        movement.setValueChange(scale(valueChange));
+        movement.setResultingCarryingValue(scale(resultingCarryingValue));
         movement.setTransaction(transaction);
         movement.setNotes(notes);
         movement.initializeImportMetadata(portableId, createdAt);
@@ -752,6 +807,7 @@ public class InventoryService
                 em, company.getCode(), reversalDate, "reverse inventory movement");
 
         BigDecimal current = scale(item.getQuantity());
+        BigDecimal currentCarryingValue = scale(item.getCarryingValue());
         BigDecimal change = scale(original.getQuantityChange()).negate();
         BigDecimal resulting = current.add(change).setScale(4, RoundingMode.HALF_UP);
         if (resulting.signum() < 0)
@@ -759,8 +815,21 @@ public class InventoryService
             throw new IllegalStateException(
                     "Reversing inventory movement " + original.getId() + " would make quantity negative");
         }
+        BigDecimal valueChange = scale(original.getValueChange()).negate();
+        BigDecimal resultingCarryingValue = currentCarryingValue.add(valueChange).setScale(4, RoundingMode.HALF_UP);
+        if (resultingCarryingValue.signum() < 0)
+        {
+            throw new IllegalStateException(
+                    "Reversing inventory movement " + original.getId() + " would make carrying value negative");
+        }
+        if (resulting.signum() == 0 && resultingCarryingValue.signum() != 0)
+        {
+            throw new IllegalStateException("Reversal would leave carrying value without quantity");
+        }
+        requireNotBeforeLatestMovement(em, item, reversalDate);
         BigDecimal unitValue = scale(original.getUnitValue());
-        BigDecimal extendedValue = change.abs().multiply(unitValue).setScale(4, RoundingMode.HALF_UP);
+        BigDecimal extendedValue = valueChange.abs();
+        BigDecimal averageAfter = average(resultingCarryingValue, resulting);
         return new MovementReversalPreview(
                 company.getCode(),
                 original.getId(),
@@ -777,6 +846,10 @@ public class InventoryService
                 resulting,
                 unitValue,
                 extendedValue,
+                valueChange,
+                currentCarryingValue,
+                resultingCarryingValue,
+                averageAfter,
                 reversalTransactionPortableId,
                 reversalMovementPortableId,
                 reason);
@@ -896,6 +969,7 @@ public class InventoryService
         requireUsableFund(inventoryFund, command.movementDate());
 
         BigDecimal current = scale(item.getQuantity());
+        BigDecimal carryingBefore = scale(item.getCarryingValue());
         BigDecimal requested = scale(command.quantity());
         BigDecimal change = switch (command.movementType())
         {
@@ -913,9 +987,48 @@ public class InventoryService
             throw new IllegalArgumentException("Inventory movement cannot make quantity negative");
         }
 
-        BigDecimal unitValue = scale(item.getUnitValue());
-        BigDecimal extendedValue = change.abs().multiply(unitValue).setScale(4, RoundingMode.HALF_UP);
-        boolean financial = unitValue.signum() > 0;
+        requireNotBeforeLatestMovement(em, item, command.movementDate());
+        boolean financial = item.getFinancialTreatment() == InventoryItem.FinancialTreatment.CAPITALIZED_INVENTORY;
+        BigDecimal appliedUnitCost;
+        BigDecimal valueChange;
+        if (!financial)
+        {
+            if (command.unitCost() != null && scale(command.unitCost()).signum() != 0)
+            {
+                throw new IllegalArgumentException("Expensed supplies cannot carry an inventory movement cost");
+            }
+            appliedUnitCost = BigDecimal.ZERO.setScale(4);
+            valueChange = BigDecimal.ZERO.setScale(4);
+        }
+        else if (change.signum() > 0)
+        {
+            if (command.unitCost() == null || command.unitCost().signum() <= 0)
+            {
+                throw new IllegalArgumentException("Receipt and upward adjustment cost is required");
+            }
+            appliedUnitCost = scale(command.unitCost());
+            valueChange = change.multiply(appliedUnitCost).setScale(4, RoundingMode.HALF_UP);
+        }
+        else
+        {
+            if (command.unitCost() != null)
+            {
+                throw new IllegalArgumentException("Issue and downward adjustment use the current moving average cost");
+            }
+            appliedUnitCost = average(carryingBefore, current);
+            BigDecimal issuedValue = change.abs().compareTo(current) == 0
+                    ? carryingBefore
+                    : carryingBefore.multiply(change.abs()).divide(current, 4, RoundingMode.HALF_UP);
+            valueChange = issuedValue.negate();
+        }
+        BigDecimal carryingAfter = carryingBefore.add(valueChange).setScale(4, RoundingMode.HALF_UP);
+        if (resulting.signum() == 0)
+        {
+            carryingAfter = BigDecimal.ZERO.setScale(4);
+        }
+        BigDecimal averageAfter = average(carryingAfter, resulting);
+        BigDecimal unitValue = appliedUnitCost;
+        BigDecimal extendedValue = valueChange.abs();
         Account offsetAccount = null;
         TransactionCommand transactionCommand = null;
         Activity activity = null;
@@ -995,6 +1108,10 @@ public class InventoryService
                 resulting,
                 unitValue,
                 extendedValue,
+                valueChange,
+                carryingBefore,
+                carryingAfter,
+                averageAfter,
                 financial,
                 inventoryAccount.getId(),
                 inventoryAccount.getCode(),
@@ -1221,6 +1338,9 @@ public class InventoryService
         item.setQuantity(scale(command.quantity()));
         item.setUnit(command.unit().trim());
         item.setUnitValue(scale(command.unitValue()));
+        item.setCarryingValue(scale(command.quantity()).multiply(scale(command.unitValue()))
+                .setScale(4, RoundingMode.HALF_UP));
+        item.setValuationMethod(InventoryItem.ValuationMethod.MOVING_WEIGHTED_AVERAGE);
         item.setFinancialTreatment(normalizedFinancialTreatment(command));
         item.setAcquisitionDate(command.acquisitionDate());
         item.setCustodian(blankToNull(command.custodian()));
@@ -1234,6 +1354,9 @@ public class InventoryService
                                               InventoryMovement.MovementType type,
                                               BigDecimal quantityChange,
                                               BigDecimal resultingQuantity,
+                                              BigDecimal valueChange,
+                                              BigDecimal resultingCarryingValue,
+                                              BigDecimal appliedUnitCost,
                                               LocalDate movementDate,
                                               String notes)
     {
@@ -1243,7 +1366,9 @@ public class InventoryService
         movement.setMovementType(type);
         movement.setQuantityChange(scale(quantityChange));
         movement.setResultingQuantity(scale(resultingQuantity));
-        movement.setUnitValue(scale(item.getUnitValue()));
+        movement.setUnitValue(scale(appliedUnitCost));
+        movement.setValueChange(scale(valueChange));
+        movement.setResultingCarryingValue(scale(resultingCarryingValue));
         movement.setNotes(notes);
         return movement;
     }
@@ -1376,7 +1501,7 @@ public class InventoryService
                 quantity,
                 item.getUnit(),
                 unitValue,
-                quantity.multiply(unitValue).setScale(4, RoundingMode.HALF_UP),
+                scale(item.getCarryingValue()),
                 item.getFinancialTreatment(),
                 item.getAcquisitionDate(),
                 item.getCustodian() == null ? "" : item.getCustodian(),
@@ -1452,6 +1577,30 @@ public class InventoryService
         return (value == null ? BigDecimal.ZERO : value).setScale(4, RoundingMode.HALF_UP);
     }
 
+    private static BigDecimal average(BigDecimal carryingValue, BigDecimal quantity)
+    {
+        BigDecimal scaledQuantity = scale(quantity);
+        return scaledQuantity.signum() == 0
+                ? BigDecimal.ZERO.setScale(4)
+                : scale(carryingValue).divide(scaledQuantity, 4, RoundingMode.HALF_UP);
+    }
+
+    private static void requireNotBeforeLatestMovement(
+            EntityManager em, InventoryItem item, LocalDate movementDate)
+    {
+        LocalDate latest = em.createQuery("""
+                select max(m.movementDate) from InventoryMovement m
+                where m.inventoryItem = :item
+                """, LocalDate.class)
+                .setParameter("item", item)
+                .getSingleResult();
+        if (latest != null && movementDate.isBefore(latest))
+        {
+            throw new IllegalArgumentException(
+                    "Inventory movement date cannot precede the latest movement date " + latest);
+        }
+    }
+
     private static UUID requirePortableId(UUID value, String label)
     {
         if (value == null)
@@ -1506,6 +1655,10 @@ public class InventoryService
             BigDecimal quantityAfter,
             BigDecimal unitValue,
             BigDecimal extendedValue,
+            BigDecimal valueChange,
+            BigDecimal carryingValueBefore,
+            BigDecimal carryingValueAfter,
+            BigDecimal averageUnitValueAfter,
             boolean financial,
             Long inventoryAccountId,
             String inventoryAccountCode,
@@ -1542,6 +1695,10 @@ public class InventoryService
             BigDecimal quantityAfter,
             BigDecimal unitValue,
             BigDecimal extendedValue,
+            BigDecimal valueChange,
+            BigDecimal carryingValueBefore,
+            BigDecimal carryingValueAfter,
+            BigDecimal averageUnitValueAfter,
             UUID reversalTransactionPortableId,
             UUID reversalMovementPortableId,
             String reason)

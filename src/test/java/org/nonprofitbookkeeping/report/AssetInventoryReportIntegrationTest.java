@@ -353,6 +353,8 @@ class AssetInventoryReportIntegrationTest
         item.setQuantity(quantity);
         item.setUnit("each");
         item.setUnitValue(new BigDecimal("5.0000"));
+        item.setCarryingValue(quantity.multiply(new BigDecimal("5.0000")));
+        item.setValuationMethod(InventoryItem.ValuationMethod.MOVING_WEIGHTED_AVERAGE);
         item.setAcquisitionDate(START);
         item.setCondition(InventoryItem.Condition.GOOD);
         item.setStatus(InventoryItem.Status.ACTIVE);
@@ -374,6 +376,8 @@ class AssetInventoryReportIntegrationTest
         movement.setQuantityChange(new BigDecimal(change));
         movement.setResultingQuantity(new BigDecimal(resulting));
         movement.setUnitValue(new BigDecimal("5.0000"));
+        movement.setValueChange(new BigDecimal(change).multiply(new BigDecimal("5.0000")));
+        movement.setResultingCarryingValue(new BigDecimal(resulting).multiply(new BigDecimal("5.0000")));
         movement.setTransaction(txn);
         movement.setNotes(type.name().toLowerCase());
         return movement;

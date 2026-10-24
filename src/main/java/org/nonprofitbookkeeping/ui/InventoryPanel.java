@@ -71,6 +71,7 @@ public class InventoryPanel implements AppPanel
     private final Label itemStatus = new Label(InventoryItem.Status.ACTIVE.name());
     private final TextArea notes = new TextArea();
     private final TextField movementQuantity = new TextField("1.0000");
+    private final TextField movementUnitCost = new TextField();
     private final DatePicker movementDate = new DatePicker(LocalDate.now());
     private final TextField movementNotes = new TextField();
     private final ComboBox<Account> movementOffsetAccount = new ComboBox<>();
@@ -223,6 +224,7 @@ public class InventoryPanel implements AppPanel
         HBox lifecycleActions = new HBox(8, deactivateItem, reactivateItem, disposeItem);
         HBox movementInputs = new HBox(8,
                 new Label("Movement qty"), movementQuantity,
+                new Label("Receipt/upward unit cost"), movementUnitCost,
                 new Label("Movement date"), movementDate,
                 new Label("Movement notes"), movementNotes,
                 new Label("Offset account"), movementOffsetAccount,
@@ -230,8 +232,10 @@ public class InventoryPanel implements AppPanel
         javafx.scene.layout.FlowPane movementActions = new javafx.scene.layout.FlowPane(8, 6,
                 confirmNonfinancial, receive, issue, adjust, reverse, drill);
         movementQuantity.setId("inventoryMovementQuantity");
+        movementUnitCost.setId("inventoryMovementUnitCost");
         movementNotes.setId("inventoryMovementNotes");
         movementQuantity.setPrefWidth(90);
+        movementUnitCost.setPrefWidth(100);
         movementDate.setPrefWidth(130);
         movementNotes.setPrefWidth(240);
         movementOffsetAccount.setPrefWidth(260);
@@ -640,6 +644,13 @@ public class InventoryPanel implements AppPanel
             clearValidation();
             InventoryService inventoryService = UiServiceRegistry.inventory();
             Account offset = movementOffsetAccount.getValue();
+            boolean increase = type == InventoryMovement.MovementType.RECEIPT
+                    || (type == InventoryMovement.MovementType.ADJUSTMENT
+                    && parseQuantityField(movementQuantity, "Movement quantity")
+                    .compareTo(selected.quantity()) > 0);
+            BigDecimal movementCost = selected.financialTreatment()
+                    == InventoryItem.FinancialTreatment.CAPITALIZED_INVENTORY && increase
+                    ? parseMoneyField(movementUnitCost, "Receipt/upward unit cost") : null;
             InventoryService.MovementPreview preview = inventoryService.previewMovement(
                     selected.id(), new InventoryMovementCommand(
                     type,
@@ -650,7 +661,8 @@ public class InventoryPanel implements AppPanel
                     movementNotes.getText(),
                     movementEvent.getValue() == null ? null : movementEvent.getValue().id(),
                     movementBudget.getValue() == null ? null : movementBudget.getValue().id(),
-                    confirmNonEvent.isSelected()));
+                    confirmNonEvent.isSelected(),
+                    movementCost));
             if (!confirmMovement(preview))
             {
                 status.setText("Inventory movement cancelled; no quantity or ledger change was made.");
@@ -686,8 +698,11 @@ public class InventoryPanel implements AppPanel
                         + "\nQuantity: " + formatQuantity(preview.quantityBefore())
                         + " → " + formatQuantity(preview.quantityAfter())
                         + " (change " + formatQuantity(preview.quantityChange()) + ")"
-                        + "\nUnit value: " + formatMoney(preview.unitValue())
-                        + "\nExtended value: " + formatMoney(preview.extendedValue())
+                        + "\nApplied unit cost: " + formatMoney(preview.unitValue())
+                        + "\nValue change: " + formatMoney(preview.valueChange())
+                        + "\nCarrying value: " + formatMoney(preview.carryingValueBefore())
+                        + " → " + formatMoney(preview.carryingValueAfter())
+                        + "\nNew moving average: " + formatMoney(preview.averageUnitValueAfter())
                         + "\nFund: " + preview.fundCode() + " — " + preview.fundName()
                         + "\nOffset Event: " + preview.eventLabel()
                         + "\nOffset Budget: " + preview.budgetLabel()
@@ -859,6 +874,7 @@ public class InventoryPanel implements AppPanel
     {
         installDecimalCorrection(quantity, false);
         installDecimalCorrection(movementQuantity, false);
+        installDecimalCorrection(movementUnitCost, true);
         installDecimalCorrection(unitValue, true);
         installDateCorrection(acquisitionDate);
         installDateCorrection(movementDate);

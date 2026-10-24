@@ -28,6 +28,7 @@ final class SclxInventorySnapshotAssembler
                 .map(item -> SclxInventoryExtension.itemEntry(
                         SclxPortableIdentity.inventoryItem(companyCode, item.getPortableId().toString()),
                         item.getName(), item.getItemType(), item.getQuantity(), item.getUnit(), item.getUnitValue(),
+                        item.getCarryingValue(), item.getValuationMethod().name(),
                         item.getFinancialTreatment().name(),
                         item.getAcquisitionDate(), item.getCustodian(), item.getStorageLocation(),
                         Objects.requireNonNull(item.getCondition(), "inventory condition").name(),
@@ -46,6 +47,7 @@ final class SclxInventorySnapshotAssembler
                         movement.getMovementDate(),
                         Objects.requireNonNull(movement.getMovementType(), "inventory movement type").name(),
                         movement.getQuantityChange(), movement.getResultingQuantity(), movement.getUnitValue(),
+                        movement.getValueChange(), movement.getResultingCarryingValue(),
                         movement.getTransaction() == null ? null : transactionIds.get(movement.getTransaction()),
                         movement.getNotes(), movement.getCreatedAt()))
                 .toList();

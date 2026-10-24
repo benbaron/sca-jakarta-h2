@@ -116,8 +116,10 @@ class InventoryEventAttributionPanelTest
             assertFalse(nonEvent.isSelected());
             var selectedEvent = event.getValue();
             TextField quantity = (TextField) panel.root().lookup("#inventoryMovementQuantity");
+            TextField unitCost = (TextField) panel.root().lookup("#inventoryMovementUnitCost");
             TextField notes = (TextField) panel.root().lookup("#inventoryMovementNotes");
             quantity.setText("10");
+            unitCost.setText("2.50");
             notes.setText("Event cost draft");
             UiServiceRegistry.activityAdmin().save(new ActivityCommand(null, "NEW", "New event", true));
             panel.onPanelShown();
@@ -125,6 +127,7 @@ class InventoryEventAttributionPanelTest
             assertEquals(selectedEvent.id(), event.getValue().id());
             assertEquals(selectedBudget.id(), budget.getValue().id());
             assertEquals("10", quantity.getText());
+            assertEquals("2.50", unitCost.getText());
             assertEquals("Event cost draft", notes.getText());
             UiServiceRegistry.activityAdmin().save(new ActivityCommand(second.id(), second.code(), second.name(), false));
             button("inventoryRefreshTags").fire();
