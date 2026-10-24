@@ -241,6 +241,12 @@ public final class UiServiceRegistry
         return new SupplementalRecognitionService(
                 current.jpa(), UiServiceRegistry::activeCompanyCode, current.transactionEntry());
     }
+    public static org.nonprofitbookkeeping.service.MerchantSettlementAssistantService merchantSettlementAssistant()
+    {
+        ServiceBundle current = services();
+        return new org.nonprofitbookkeeping.service.MerchantSettlementAssistantService(
+                current.jpa(), UiServiceRegistry::activeCompanyCode, current.transactionEntry());
+    }
     public static DashboardQueryService dashboardQuery() { return services().dashboardQuery(); }
     public static SclxFileExportService sclxFileExport(String companyCode, Path activeDatabasePath)
     {

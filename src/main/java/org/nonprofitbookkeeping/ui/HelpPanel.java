@@ -39,7 +39,7 @@ public class HelpPanel implements AppPanel
                 + "4) Use Journal for transaction entry/review, Banking and Bank Reconciliation for bank work, and Import Preview before accepting supported imports.");
 
         Label navigation = wrapped("Production destinations\n"
-                + "Accounting: Journal, Event Accounting, Banking, Bank Reconciliation, Bank Transactions\n"
+                + "Accounting: Journal, Payees / Counterparties, Merchants, Merchant Settlement Assistant, Event Accounting, Banking, Bank Reconciliation, Bank Transactions\n"
                 + "Planning: Budget Editor, Budget vs Actual, Recognition Assistant\n"
                 + "Assets & Inventory: Asset Register, Depreciation Runs, Inventory\n"
                 + "Import & Oversight: Import Preview, Opening Conversion, Audit History, Period Close\n"

@@ -50,6 +50,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Events / Activities | yes | yes | no | New Event, name/code search and Edit over stable Activity IDs; referenced/interchange-linked history deactivates rather than deletes. |
 | Budget Editor | no | DRAFT only | no | Save owns the selected Fund/Event scope while retaining other scopes; version creation/activation/archive remain explicit panel actions. |
 | Recognition Assistant | no | selected preview proposal only | no | Save Selected Recognition and File/toolbar Save accept the same canonical prepaid/deferred proposal; Preview is non-mutating. |
+| Merchant Settlement Assistant | no | ready unchanged preview only | no | Save Settlement and File/toolbar Save create the same canonical payout/fee/optional evidenced NMR-discharge transaction. Chargebacks/refunds route to Journal correction. |
 | Budget Categories, Payees / Counterparties, Merchants | yes | yes | no | Existing stable-ID maintenance services. |
 | Administration — Preferences | no | yes | no | Capabilities follow the selected inner tab. |
 | Administration — Company/User maintenance | yes | yes | no | Stable durable-record maintenance. |
@@ -71,6 +72,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Banking | `BankingPanel` | `BankConfigurationService`, account lookup, `BankReviewQueryService` | bank/configuration services; explicit navigation to import/review | Bank statement import is non-posting until explicit reviewed-row acceptance. |
 | Budget Editor | `BudgetEditorPanel` | `BudgetPlanService` | draft/revision/save/activate/archive via same service | Stable `BudgetPlan.id`; retained archived history. |
 | Recognition Assistant | `RecognitionAssistantPanel` | `SupplementalRecognitionService` over `SupplementalOpenItemQueryService` | `TransactionEntryService` through the selected proposal | Preview is transient. Accepted entries are canonical transactions with supplemental item effects; correction remains Journal-owned. |
+| Merchant Settlement Assistant | `MerchantSettlementAssistantPanel` | `MerchantSettlementAssistantService` over canonical merchant RECEIVABLE and NMR OTHER_LIABILITY items | `TransactionEntryService.enterAfterLockedValidation(...)` | Preview fingerprint is revalidated under the company lock; exact retry retains one canonical transaction. Reconciliation owns bank clearing; Journal correction owns chargebacks/refunds. |
 | Budget Categories | `BudgetCategoriesPanel` | `BudgetCategoryLookupService` | `BudgetCategoryAdminService.save(...)` | Stable category IDs; active/inactive retention, effective dates and audit history. |
 | Payees / Counterparties | `CounterpartiesPanel` | `CounterpartyAdminService.listForMaintenance()` | `CounterpartyAdminService.save(...)` | Company-owned stable/portable IDs, contact/kind editing, audited lifecycle retention and Journal choice refresh. |
 | Merchants | `MerchantsPanel` | `MerchantAdminService.listForMaintenance()` | `MerchantAdminService.save(...)` | Company-owned stable/portable IDs, name/notes, audited deactivation retention and mixed-line Journal choice/label refresh. |

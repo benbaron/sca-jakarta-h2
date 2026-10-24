@@ -83,6 +83,7 @@ public final class PanelFactory
         factories.put(AppPanelId.RECOGNITION_ASSISTANT, RecognitionAssistantPanel::new);
         factories.put(AppPanelId.COUNTERPARTIES, CounterpartiesPanel::new);
         factories.put(AppPanelId.MERCHANTS, MerchantsPanel::new);
+        factories.put(AppPanelId.MERCHANT_SETTLEMENT_ASSISTANT, MerchantSettlementAssistantPanel::new);
         factories.put(AppPanelId.ASSETS_REGISTER, AssetsRegisterPanel::new);
         factories.put(AppPanelId.DEPRECIATION_RUNS, DepreciationRunsPanel::new);
         factories.put(AppPanelId.INVENTORY, InventoryPanel::new);

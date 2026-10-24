@@ -1,12 +1,12 @@
 ---
-plan_version: 405
+plan_version: 408
 active_phase: P26
-active_slice: P26-S6A
+active_slice: P26-S6B
 active_status: VERIFYING
-active_branch: codex/P26-S6A-opening-conversion
-active_pull_request: 385
-active_head: d45e675b
-next_action: "Inspect exact-head GitHub CI for draft PR #385, repair any failure, and leave the verified draft ready for owner review."
+active_branch: codex/P26-S6B-merchant-settlement
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/386
+active_head: c1b24222e054062869ea247f5fec574fe296eb95
+next_action: "Confirm draft PR #386's final fetched head/tree and require exact-head clean/repeat/production-JavaFX CI before owner review."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -38,7 +38,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
-| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 DONE through accepted/merged MR #379; S2 DONE through verified/merged PR #380; S3 DONE through verified/merged PR #381; S4 DONE through accepted/merged PR #382; S5A DONE through reviewed/merged PR #383; S5 DONE through owner-merged PR #384; S6A selected |
+| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 DONE through accepted/merged MR #379; S2 DONE through verified/merged PR #380; S3 DONE through verified/merged PR #381; S4 DONE through accepted/merged PR #382; S5A DONE through reviewed/merged PR #383; S5 DONE through owner-merged PR #384; S6A DONE through owner-merged PR #385; S6B locally verified |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
@@ -703,8 +703,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P26-S4 | Add governed prepaid/deferred recognition assistance (G12) | DONE | Owner accepted and merged PR #382 at `bf5bc979`; exact published head `70ca3b1b`; [S4 contract](P26-S4-prepaid-deferred-recognition.md); full local verification passed; no new schedule authority or policy/default engine |
 | P26-S5A | Adopt inventory valuation contract (documentation only) | DONE | Owner reviewed/merged PR #383 at `e750f73c`; final head `4f965262` passed exact-head clean/repeat/JavaFX CI; [S5A contract](P26-S5A-inventory-valuation-contract.md) resolves D06 |
 | P26-S5 | Resolve inventory valuation limitations (G12) | DONE | Owner merged PR #384 at main `7739698b`; implementation head `0c102dfd`; local headless and actual JavaFX gates passed; exact-head PR workflow was still in progress when the merge was reported and must not be described as passed without its result |
-| P26-S6A | Review and accept opening/carryover conversion | VERIFYING | Draft PR #385; implementation head `7cdbe7f1`, published plan head `d45e675b`; full local and actual JavaFX gates passed; exact-head CI and owner review remain |
-| P26-S6B | Assist merchant settlement | BLOCKED | P26-S6A merged; reuse canonical Journal, merchant receivable, supplemental and reconciliation authorities; no provider API required |
+| P26-S6A | Review and accept opening/carryover conversion | DONE | Owner merged PR #385 at `e298d2e0`; accepted head `bba4f944` passed full local, actual JavaFX and exact-head GitHub CI |
+| P26-S6B | Assist merchant settlement | VERIFYING | [Adopted S6B contract](P26-S6B-merchant-settlement-assistant.md); canonical Preview/Save assistant implemented with scenario-level service and actual JavaFX coverage; full clean and workflow-selector gates passed; draft publication/exact-head CI/owner review remain |
 | P27-S1 | Finalize the form contract and resolve runbook conflicts (G5/G10/G13) | BLOCKED | P26-S6 merged; owning contract and D01–D10 gates as applicable |
 | P27-S2 | Export the complete required workbook and supporting packet (G5) | BLOCKED | P27-S1 merged; owning contract and D01–D10 gates as applicable |
 | P27-S3 | Add factual close readiness and evidence references (G3/G5/G13) | BLOCKED | P27-S2 merged; owning contract and D01–D10 gates as applicable |
@@ -2157,3 +2157,27 @@ Implementation head `7cdbe7f1` adds the production **Opening Conversion** route 
 The final local `mvn clean verify` completed with **1,030 tests, zero failures, zero errors and 67 expected display-dependent skips**. The exact workflow JavaFX selector then ran on an authenticated X display with **59 tests, zero failures, zero errors and zero skips**. `git diff --check` passes and the worktree was clean before this plan-only verification record. User testing: open **Import & Oversight -> Opening Conversion**, choose the intended cutoff, Preview, inspect each blocking/info row and every detail tab, confirm Save stays unavailable while a mismatch exists, repair and preview again, save the acceptance, then reopen/preview and confirm the retained accepted-by/as-of message and disabled Save. Draft publication, exact-head GitHub CI and owner review remain; S6A is not DONE before merge.
 
 Published `codex/P26-S6A-opening-conversion` and opened draft [PR #385](https://github.com/benbaron/sca-jakarta-h2/pull/385). The implementation authority remains `7cdbe7f1`; plan/publication head `d45e675b` records the completed local evidence and does not change production behavior. Exact-head GitHub CI and owner review remain.
+
+### P26-S6A exact-head CI and handoff — 2026-10-24 (America/Denver)
+
+Final published head `bba4f944b8073189d11ba220810281a78173b70b` is the open draft PR #385 head. Exact-head [Maven PR Tests run 40114429370](https://github.com/benbaron/sca-jakarta-h2/actions/runs/40114429370), job `120932738705`, completed successfully: clean verification, repeat tests and production JavaFX route compliance all passed. The draft description records this exact-head result together with the local 1,030-test clean verification and 59-test actual JavaFX result.
+
+This final evidence remains local so the green reviewed PR head is not replaced solely by a documentation update. P26-S6A remains VERIFYING pending owner review and merge. P26-S6B is the next bounded slice, but its explicit prerequisite is the S6A merge; do not implement it on this branch. After merge confirmation, fetch and verify current `main`, carry this record onto a fresh branch, and select the merchant-settlement slice without reusing the merged S6A branch.
+
+### P26-S6A merge and P26-S6B selection — 2026-10-24 (America/Denver)
+
+Owner reported PR #385 merged. Connected GitHub and native fetch confirm accepted head `bba4f944b8073189d11ba220810281a78173b70b` is contained in current `main` at merge `e298d2e0bd5e802f8d03c452ce73813a98dc9ff6`; exact-head Maven PR Tests run `40114429370`, job `120932738705`, passed. P26-S6A is DONE. Fresh `codex/P26-S6B-merchant-settlement` starts from that merge and carries the local S6A final-CI record; the merged branch is not reused.
+
+Selected the adopted [P26-S6B contract](P26-S6B-merchant-settlement-assistant.md). Current production already owns merchant receivable roles/components, withholding observations, NMR discharge attribution, dated movement reporting, SCLX, correction/reversal and reconciliation protection. S6B adds a guided Preview/Save workspace over those authorities: entered payout, fee and optional evidenced NMR discharge become one canonical balanced Journal transaction with one retained request identity. Unconfirmed withholding remains a nonfinancial observation. Chargebacks and refunds retain the existing explicit correction route because their accounts and legal treatment cannot be inferred. No migration, provider API, automatic rate, fee, NMR amount or second settlement balance is introduced.
+
+Donor inspection at `c697630ec1f784ebe8338d7300da6c9ac801b180` found only free-text undeposited-fund merchant fields and generic settlement links, with no compatible canonical merchant-settlement workflow to port. Reuse the production stable-ID authorities. Baseline compilation passed after restoring the cached JDK/Maven runtime; implementation, scenario-level tests, full clean verification and actual JavaFX remain.
+
+### P26-S6B implementation and local verification — 2026-10-24 (America/Denver)
+
+Implementation head `dda9c050ad3dfb142c952c6c7ba017b835c9e00a` adds **Accounting -> Merchant Settlement Assistant** over the existing merchant RECEIVABLE, NMR OTHER_LIABILITY and canonical Journal authorities. The workspace lists authoritative open items and requires explicit bank payout, processor fee account/function, optional evidenced NMR discharge, settlement date and retained request identity. Preview produces one balanced transaction and revalidates its source balances and command fingerprint under the company lock before Save; exact retry and restart return the same transaction. Withholding remains a dated nonfinancial observation. Chargebacks and refunds visibly route to Journal correction, and reconciliation continues to own bank clearing. No provider feed, inferred amount/rate, migration, SCLX shape or second balance was added.
+
+`MerchantSettlementAssistantServiceTest` covers payout/fee/withholding, later and combined NMR discharge, no duplicate income, exact retry/restart, stale preview, amount precision and bounds, account/function/evidence validation, Viewer denial and atomic failure. Existing merchant settlement, SCLX and correction/reconciliation tests retain the underlying lifecycle coverage. `MerchantSettlementAssistantPanelTest` covers actual Preview/shared Save, live permission gating, retained result, correction routing, both tables, scrolling and split geometry; the test now resets the shared drill-through opener so it remains isolated after production workspace tests. The P25/P26 unit-coverage ledger, interface-operation matrix, Help route inventory, navigation/factory/registry wiring and CI Xvfb selector include S6B.
+
+Focused accounting regressions passed **25 tests, zero failures/errors and six expected display skips** in the headless portion; the new panel/route subset then passed **9 tests, zero failures/errors/skips** on an actual X display. Final `mvn clean verify` passed **1,035 tests, zero failures/errors and 69 expected display-dependent skips** at 2026-10-24 14:52:38 America/Denver. The exact production JavaFX workflow selector passed **61 tests, zero failures/errors/skips** under Xvfb at 14:54:42. Whitespace review is clean. P26-S6B is VERIFYING pending draft publication, exact-head CI, owner disposable-company checks and merge.
+
+Published `codex/P26-S6B-merchant-settlement` and opened draft [PR #386](https://github.com/benbaron/sca-jakarta-h2/pull/386) against current `main`. The PR records the accounting boundary, scenario-level unit coverage, local clean/actual-JavaFX evidence and disposable-company review steps. This publication-ledger successor follows verified head `c1b24222e054062869ea247f5fec574fe296eb95`; confirm the resulting remote head and tree after pushing it, then inspect exact-head CI. No GitHub CI success or owner desktop result is claimed at this checkpoint.

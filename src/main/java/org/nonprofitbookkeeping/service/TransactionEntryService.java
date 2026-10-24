@@ -113,6 +113,26 @@ public class TransactionEntryService
         return saveNew(command, null, actor, requestId);
     }
 
+    @FunctionalInterface
+    interface LockedCreateValidation
+    {
+        void validate(EntityManager entityManager, Company company);
+    }
+
+    /** Canonical create with a feature-specific stale-preview check under the company lock. */
+    TransactionView enterAfterLockedValidation(
+            TransactionCommand command,
+            UUID requestId,
+            String operation,
+            LockedCreateValidation validation)
+    {
+        Objects.requireNonNull(requestId, "requestId");
+        Objects.requireNonNull(validation, "validation");
+        String actor = ServiceAuthorization.actor(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(), operation, "system");
+        return saveNew(command, null, actor, requestId, validation);
+    }
+
     /**
      * Caller-owned transaction variant for governed import services.
      *
@@ -513,6 +533,16 @@ public class TransactionEntryService
 
     private TransactionView saveNew(TransactionCommand command, Txn replacementFor, String auditActor, UUID requestId)
     {
+        return saveNew(command, replacementFor, auditActor, requestId, null);
+    }
+
+    private TransactionView saveNew(
+            TransactionCommand command,
+            Txn replacementFor,
+            String auditActor,
+            UUID requestId,
+            LockedCreateValidation lockedValidation)
+    {
         validateCommand(command);
         try (EntityManager em = jpa.em())
         {
@@ -531,6 +561,10 @@ public class TransactionEntryService
                         em.getTransaction().commit();
                         return view;
                     }
+                }
+                if (lockedValidation != null)
+                {
+                    lockedValidation.validate(em, company);
                 }
                 requireOpenRange(em, command.date(), "enter transaction");
                 Txn txn = new Txn();
