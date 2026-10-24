@@ -1,12 +1,12 @@
 ---
-plan_version: 403
+plan_version: 404
 active_phase: P26
 active_slice: P26-S6A
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P26-S6A-opening-conversion
 active_pull_request: null
-active_head: 7739698b
-next_action: "Implement the adopted P26-S6A opening-conversion preview and idempotent audit acceptance with service, JavaFX and scenario-level unit coverage."
+active_head: 7cdbe7f1
+next_action: "Publish the verified P26-S6A branch, open a draft pull request, and inspect exact-head GitHub CI before owner review."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -703,7 +703,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P26-S4 | Add governed prepaid/deferred recognition assistance (G12) | DONE | Owner accepted and merged PR #382 at `bf5bc979`; exact published head `70ca3b1b`; [S4 contract](P26-S4-prepaid-deferred-recognition.md); full local verification passed; no new schedule authority or policy/default engine |
 | P26-S5A | Adopt inventory valuation contract (documentation only) | DONE | Owner reviewed/merged PR #383 at `e750f73c`; final head `4f965262` passed exact-head clean/repeat/JavaFX CI; [S5A contract](P26-S5A-inventory-valuation-contract.md) resolves D06 |
 | P26-S5 | Resolve inventory valuation limitations (G12) | DONE | Owner merged PR #384 at main `7739698b`; implementation head `0c102dfd`; local headless and actual JavaFX gates passed; exact-head PR workflow was still in progress when the merge was reported and must not be described as passed without its result |
-| P26-S6A | Review and accept opening/carryover conversion | IN_PROGRESS | P26-S5 merged; [S6A contract](P26-S6A-opening-conversion-contract.md); reuse opening, bank, property, inventory, supplemental and audit/SCLX authorities |
+| P26-S6A | Review and accept opening/carryover conversion | VERIFYING | Implementation head `7cdbe7f1`; full local and actual JavaFX gates passed; [S6A contract](P26-S6A-opening-conversion-contract.md); draft publication and exact-head CI remain |
 | P26-S6B | Assist merchant settlement | BLOCKED | P26-S6A merged; reuse canonical Journal, merchant receivable, supplemental and reconciliation authorities; no provider API required |
 | P27-S1 | Finalize the form contract and resolve runbook conflicts (G5/G10/G13) | BLOCKED | P26-S6 merged; owning contract and D01–D10 gates as applicable |
 | P27-S2 | Export the complete required workbook and supporting packet (G5) | BLOCKED | P27-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -2147,3 +2147,11 @@ Published `codex/P26-S5-inventory-valuation` and opened draft [PR #384](https://
 Owner reported PR #384 merged. Native fetch confirms its exact published head `5b48746e79999f85a1df7a53d8215fe3a3d4fa74` is contained in current `main` at merge `7739698b`. The recorded local gates remain 1,023 clean-verification tests and 57 actual JavaFX tests with zero failures/errors. Exact-head Maven PR Tests run `40049762170` was still in progress when inspected after merge, so no passing GitHub result is invented. Owner merge plus completed local gates closes P26-S5.
 
 Fresh `codex/P26-S6A-opening-conversion` starts from that merge. P26-S6 is split along its already adopted boundary: [S6A](P26-S6A-opening-conversion-contract.md) owns opening/carryover review and one immutable acceptance; S6B remains blocked and owns merchant-settlement assistance. S6A compares existing opening GL, configured-bank/outstanding, fixed-asset, inventory and six supplemental-schedule facts without creating balancing transactions, inferred item identities or a parallel ledger. A ready unchanged preview saves one idempotent `OPENING_CONVERSION_ACCEPTED` fact through the existing audit/SCLX authority. Baseline compilation passed; implementation and focused/full/actual-JavaFX verification remain.
+
+### P26-S6A implementation and local verification — 2026-10-24 (America/Denver)
+
+Implementation head `7cdbe7f1` adds the production **Opening Conversion** route and a resizable review workspace for account openings, configured bank baselines, uncleared canonical bank items, fixed-asset and inventory register/ledger ties, orphan controls, and all six supplemental schedules. Preview is non-mutating. **Save Conversion Acceptance** is exposed both locally and through shared File/toolbar Save only for a ready unchanged preview with `BOOKKEEPING_WRITE`; it revalidates the complete displayed fingerprint while holding the company lock and writes one immutable/idempotent `OPENING_CONVERSION_ACCEPTED` audit event. It creates no transaction, balancing entry, inferred item identity, provider integration, or second ledger. Existing factual audit-history SCLX owns portability.
+
+`OpeningConversionServiceTest` covers balanced acceptance, exact retry/restart, no ledger writes, bank mismatch, orphan bank/fixed-asset/inventory controls, raw supplemental opening gaps, stale preview, Viewer denial, conflicting second acceptance and rollback after persistence. `OpeningConversionPanelTest` covers actual Preview/shared Save, live permission gating, retained acceptance, tabs/tables and resizable layout. The P25/P26 coverage ledger, command capability matrix, Help route inventory and CI Xvfb selector now include this slice.
+
+The final local `mvn clean verify` completed with **1,030 tests, zero failures, zero errors and 67 expected display-dependent skips**. The exact workflow JavaFX selector then ran on an authenticated X display with **59 tests, zero failures, zero errors and zero skips**. `git diff --check` passes and the worktree was clean before this plan-only verification record. User testing: open **Import & Oversight -> Opening Conversion**, choose the intended cutoff, Preview, inspect each blocking/info row and every detail tab, confirm Save stays unavailable while a mismatch exists, repair and preview again, save the acceptance, then reopen/preview and confirm the retained accepted-by/as-of message and disabled Save. Draft publication, exact-head GitHub CI and owner review remain; S6A is not DONE before merge.
