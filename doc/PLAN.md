@@ -1,12 +1,12 @@
 ---
-plan_version: 406
+plan_version: 407
 active_phase: P26
-active_slice: P26-S6A
-active_status: VERIFYING
-active_branch: codex/P26-S6A-opening-conversion
-active_pull_request: 385
-active_head: bba4f944b8073189d11ba220810281a78173b70b
-next_action: "Owner reviews and merges draft PR #385; after merge confirmation, verify current main and select P26-S6B on a fresh branch."
+active_slice: P26-S6B
+active_status: IN_PROGRESS
+active_branch: codex/P26-S6B-merchant-settlement
+active_pull_request: null
+active_head: e298d2e0bd5e802f8d03c452ce73813a98dc9ff6
+next_action: "Implement the adopted P26-S6B merchant-settlement assistant through the existing Journal, receivable, NMR, correction and reconciliation authorities, then run focused/full/actual-JavaFX verification."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -38,7 +38,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
-| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 DONE through accepted/merged MR #379; S2 DONE through verified/merged PR #380; S3 DONE through verified/merged PR #381; S4 DONE through accepted/merged PR #382; S5A DONE through reviewed/merged PR #383; S5 DONE through owner-merged PR #384; S6A selected |
+| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 DONE through accepted/merged MR #379; S2 DONE through verified/merged PR #380; S3 DONE through verified/merged PR #381; S4 DONE through accepted/merged PR #382; S5A DONE through reviewed/merged PR #383; S5 DONE through owner-merged PR #384; S6A DONE through owner-merged PR #385; S6B selected |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
@@ -703,8 +703,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P26-S4 | Add governed prepaid/deferred recognition assistance (G12) | DONE | Owner accepted and merged PR #382 at `bf5bc979`; exact published head `70ca3b1b`; [S4 contract](P26-S4-prepaid-deferred-recognition.md); full local verification passed; no new schedule authority or policy/default engine |
 | P26-S5A | Adopt inventory valuation contract (documentation only) | DONE | Owner reviewed/merged PR #383 at `e750f73c`; final head `4f965262` passed exact-head clean/repeat/JavaFX CI; [S5A contract](P26-S5A-inventory-valuation-contract.md) resolves D06 |
 | P26-S5 | Resolve inventory valuation limitations (G12) | DONE | Owner merged PR #384 at main `7739698b`; implementation head `0c102dfd`; local headless and actual JavaFX gates passed; exact-head PR workflow was still in progress when the merge was reported and must not be described as passed without its result |
-| P26-S6A | Review and accept opening/carryover conversion | VERIFYING | Draft PR #385 at `bba4f944`; full local, actual JavaFX and exact-head GitHub CI passed; owner review/merge remain |
-| P26-S6B | Assist merchant settlement | BLOCKED | P26-S6A merged; reuse canonical Journal, merchant receivable, supplemental and reconciliation authorities; no provider API required |
+| P26-S6A | Review and accept opening/carryover conversion | DONE | Owner merged PR #385 at `e298d2e0`; accepted head `bba4f944` passed full local, actual JavaFX and exact-head GitHub CI |
+| P26-S6B | Assist merchant settlement | IN_PROGRESS | [Adopted S6B contract](P26-S6B-merchant-settlement-assistant.md); fresh branch from merged S6A; reuse canonical Journal, merchant receivable, NMR, correction and reconciliation authorities; no provider API or second balance |
 | P27-S1 | Finalize the form contract and resolve runbook conflicts (G5/G10/G13) | BLOCKED | P26-S6 merged; owning contract and D01–D10 gates as applicable |
 | P27-S2 | Export the complete required workbook and supporting packet (G5) | BLOCKED | P27-S1 merged; owning contract and D01–D10 gates as applicable |
 | P27-S3 | Add factual close readiness and evidence references (G3/G5/G13) | BLOCKED | P27-S2 merged; owning contract and D01–D10 gates as applicable |
@@ -2163,3 +2163,11 @@ Published `codex/P26-S6A-opening-conversion` and opened draft [PR #385](https://
 Final published head `bba4f944b8073189d11ba220810281a78173b70b` is the open draft PR #385 head. Exact-head [Maven PR Tests run 40114429370](https://github.com/benbaron/sca-jakarta-h2/actions/runs/40114429370), job `120932738705`, completed successfully: clean verification, repeat tests and production JavaFX route compliance all passed. The draft description records this exact-head result together with the local 1,030-test clean verification and 59-test actual JavaFX result.
 
 This final evidence remains local so the green reviewed PR head is not replaced solely by a documentation update. P26-S6A remains VERIFYING pending owner review and merge. P26-S6B is the next bounded slice, but its explicit prerequisite is the S6A merge; do not implement it on this branch. After merge confirmation, fetch and verify current `main`, carry this record onto a fresh branch, and select the merchant-settlement slice without reusing the merged S6A branch.
+
+### P26-S6A merge and P26-S6B selection — 2026-10-24 (America/Denver)
+
+Owner reported PR #385 merged. Connected GitHub and native fetch confirm accepted head `bba4f944b8073189d11ba220810281a78173b70b` is contained in current `main` at merge `e298d2e0bd5e802f8d03c452ce73813a98dc9ff6`; exact-head Maven PR Tests run `40114429370`, job `120932738705`, passed. P26-S6A is DONE. Fresh `codex/P26-S6B-merchant-settlement` starts from that merge and carries the local S6A final-CI record; the merged branch is not reused.
+
+Selected the adopted [P26-S6B contract](P26-S6B-merchant-settlement-assistant.md). Current production already owns merchant receivable roles/components, withholding observations, NMR discharge attribution, dated movement reporting, SCLX, correction/reversal and reconciliation protection. S6B adds a guided Preview/Save workspace over those authorities: entered payout, fee and optional evidenced NMR discharge become one canonical balanced Journal transaction with one retained request identity. Unconfirmed withholding remains a nonfinancial observation. Chargebacks and refunds retain the existing explicit correction route because their accounts and legal treatment cannot be inferred. No migration, provider API, automatic rate, fee, NMR amount or second settlement balance is introduced.
+
+Donor inspection at `c697630ec1f784ebe8338d7300da6c9ac801b180` found only free-text undeposited-fund merchant fields and generic settlement links, with no compatible canonical merchant-settlement workflow to port. Reuse the production stable-ID authorities. Baseline compilation passed after restoring the cached JDK/Maven runtime; implementation, scenario-level tests, full clean verification and actual JavaFX remain.
