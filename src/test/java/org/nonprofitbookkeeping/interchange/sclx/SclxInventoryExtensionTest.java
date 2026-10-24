@@ -37,7 +37,11 @@ class SclxInventoryExtensionTest
         SclxInventoryExtension.Data data = SclxInventoryExtension.data(document.extensions());
         assertEquals(1, data.items().size());
         assertEquals("CAPITALIZED_INVENTORY", data.items().get(0).financialTreatment());
+        assertEquals(new BigDecimal("50.0000"), data.items().get(0).carryingValue());
+        assertEquals("MOVING_WEIGHTED_AVERAGE", data.items().get(0).valuationMethod());
         assertEquals(1, data.movements().size());
+        assertEquals(new BigDecimal("50.0000"), data.movements().get(0).valueChange());
+        assertEquals(new BigDecimal("50.0000"), data.movements().get(0).resultingCarryingValue());
         SclxExportCounts counts = SclxExportCounts.from(document, 0L, 0L);
         assertEquals(1, counts.inventoryItems());
         assertEquals(1, counts.inventoryMovements());

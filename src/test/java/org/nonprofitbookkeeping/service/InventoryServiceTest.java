@@ -63,14 +63,14 @@ public class InventoryServiceTest
                     LocalDate.of(2026, 2, 1),
                     CASH_ACCOUNT_ID,
                     false,
-                    "Received ten trays", null, null, true));
+                    "Received ten trays", null, null, true, new BigDecimal("2.0000")));
             service.recordMovement(item.id(), new InventoryMovementCommand(
                     InventoryMovement.MovementType.RECEIPT,
                     new BigDecimal("2.0000"),
                     LocalDate.of(2026, 2, 1),
                     CASH_ACCOUNT_ID,
                     false,
-                    "Received two trays", null, null, true));
+                    "Received two trays", null, null, true, new BigDecimal("3.0000")));
             service.recordMovement(item.id(), new InventoryMovementCommand(
                     InventoryMovement.MovementType.ISSUE,
                     new BigDecimal("4.0000"),
@@ -94,6 +94,92 @@ public class InventoryServiceTest
     }
 
     @Test
+    public void movingAverageReceiptsIssueReturnAndReversalPreserveExactCarryingValue(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("inventory-moving-average")))
+        {
+            seedCompanyAccountsAndFund(jpa);
+            InventoryService service = service(jpa);
+            InventoryItemView item = service.create(itemCommand("Weighted stock", BigDecimal.ZERO));
+
+            service.recordMovement(item.id(), new InventoryMovementCommand(
+                    InventoryMovement.MovementType.RECEIPT, new BigDecimal("10"),
+                    LocalDate.of(2026, 3, 1), CASH_ACCOUNT_ID, false, "first lot",
+                    null, null, true, new BigDecimal("2")));
+            service.recordMovement(item.id(), new InventoryMovementCommand(
+                    InventoryMovement.MovementType.RECEIPT, new BigDecimal("10"),
+                    LocalDate.of(2026, 3, 2), CASH_ACCOUNT_ID, false, "second lot",
+                    null, null, true, new BigDecimal("3")));
+            InventoryMovementView issue = service.recordMovement(item.id(), new InventoryMovementCommand(
+                    InventoryMovement.MovementType.ISSUE, new BigDecimal("5"),
+                    LocalDate.of(2026, 3, 3), CASH_ACCOUNT_ID, false, "issued",
+                    null, null, true));
+            InventoryMovementView returned = service.recordMovement(item.id(), new InventoryMovementCommand(
+                    InventoryMovement.MovementType.RECEIPT, new BigDecimal("2"),
+                    LocalDate.of(2026, 3, 4), CASH_ACCOUNT_ID, false, "return",
+                    null, null, true, new BigDecimal("2.5000")));
+
+            assertEquals(new BigDecimal("17.0000"), service.load(item.id()).quantity());
+            assertEquals(new BigDecimal("42.5000"), service.load(item.id()).totalValue());
+
+            InventoryService.MovementReversalPreview reversal = service.previewMovementReversal(
+                    returned.id(), LocalDate.of(2026, 3, 5), "return entered twice");
+            assertEquals(new BigDecimal("-5.0000"), reversal.valueChange());
+            service.reverseMovement(reversal, "tester");
+
+            InventoryItemView after = service.load(item.id());
+            assertEquals(new BigDecimal("15.0000"), after.quantity());
+            assertEquals(new BigDecimal("37.5000"), after.totalValue());
+            assertEquals(new BigDecimal("2.5000"), after.unitValue());
+            try (EntityManager em = jpa.em())
+            {
+                InventoryMovement issued = em.find(InventoryMovement.class, issue.id());
+                assertEquals(new BigDecimal("-12.5000"), issued.getValueChange());
+                assertEquals(new BigDecimal("37.5000"), issued.getResultingCarryingValue());
+                BigDecimal ledgerAmount = em.createQuery("""
+                        select s.amountSigned from TxnSplit s
+                        where s.txn.id = :txnId and s.account.id = :accountId
+                        """, BigDecimal.class)
+                        .setParameter("txnId", issue.transactionId())
+                        .setParameter("accountId", INVENTORY_ACCOUNT_ID)
+                        .getSingleResult();
+                assertEquals(issued.getValueChange().abs(), ledgerAmount.abs());
+            }
+        }
+    }
+
+    @Test
+    public void capitalizedIncreaseRequiresExplicitCostAndFinalIssueConsumesResidual(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("inventory-residual")))
+        {
+            seedCompanyAccountsAndFund(jpa);
+            InventoryService service = service(jpa);
+            InventoryItemView item = service.create(itemCommand("Fractional stock", BigDecimal.ZERO));
+            assertThrows(IllegalArgumentException.class, () -> service.previewMovement(item.id(),
+                    new InventoryMovementCommand(InventoryMovement.MovementType.RECEIPT,
+                            new BigDecimal("3"), LocalDate.of(2026, 4, 1), CASH_ACCOUNT_ID,
+                            false, "missing cost", null, null, true)));
+            service.recordMovement(item.id(), new InventoryMovementCommand(
+                    InventoryMovement.MovementType.RECEIPT, new BigDecimal("3"),
+                    LocalDate.of(2026, 4, 1), CASH_ACCOUNT_ID, false, "fractional receipt",
+                    null, null, true, new BigDecimal("0.3333")));
+            service.recordMovement(item.id(), new InventoryMovementCommand(
+                    InventoryMovement.MovementType.ISSUE, new BigDecimal("1"),
+                    LocalDate.of(2026, 4, 2), CASH_ACCOUNT_ID, false, "partial issue",
+                    null, null, true));
+            service.recordMovement(item.id(), new InventoryMovementCommand(
+                    InventoryMovement.MovementType.ISSUE, new BigDecimal("2"),
+                    LocalDate.of(2026, 4, 3), CASH_ACCOUNT_ID, false, "final issue",
+                    null, null, true));
+            InventoryItemView after = service.load(item.id());
+            assertEquals(new BigDecimal("0.0000"), after.quantity());
+            assertEquals(new BigDecimal("0.0000"), after.totalValue());
+            assertEquals(new BigDecimal("0.0000"), after.unitValue());
+        }
+    }
+
+    @Test
     public void movementCannotMakeQuantityNegative(@TempDir Path tempDir)
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("inventory-negative")))
@@ -107,7 +193,7 @@ public class InventoryServiceTest
                     LocalDate.of(2026, 1, 31),
                     CASH_ACCOUNT_ID,
                     false,
-                    "One banner", null, null, true));
+                    "One banner", null, null, true, new BigDecimal("25.0000")));
 
             assertThrows(IllegalArgumentException.class, () -> service.recordMovement(item.id(), new InventoryMovementCommand(
                     InventoryMovement.MovementType.ISSUE,
@@ -187,7 +273,7 @@ public class InventoryServiceTest
                     LocalDate.of(2026, 2, 1),
                     CASH_ACCOUNT_ID,
                     false,
-                    "Receive two", null, null, true));
+                    "Receive two", null, null, true, new BigDecimal("25.0000")));
 
             IllegalStateException quantityGuard = assertThrows(IllegalStateException.class,
                     () -> service.changeStatus(item.id(), InventoryItem.Status.INACTIVE,

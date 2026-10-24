@@ -284,7 +284,10 @@ public final class SclxExportDocumentValidator
                     "inventory item " + item.itemId() + " inventoryAccountId");
             requireReference(item.fundId(), fundIds,
                     "inventory item " + item.itemId() + " fundId");
-            if (item.quantity().signum() < 0 || item.unitValue().signum() < 0)
+            if (item.quantity().signum() < 0 || item.unitValue().signum() < 0
+                    || item.carryingValue().signum() < 0
+                    || (item.quantity().signum() == 0 && item.carryingValue().signum() != 0)
+                    || !"MOVING_WEIGHTED_AVERAGE".equals(item.valuationMethod()))
             {
                 throw new IllegalArgumentException(
                         "inventory item quantity and unitValue must not be negative: " + item.itemId());
@@ -296,7 +299,10 @@ public final class SclxExportDocumentValidator
                     "inventory movement " + movement.movementId() + " itemId");
             requireOptionalReference(movement.transactionId(), transactionIds,
                     "inventory movement " + movement.movementId() + " transactionId");
-            if (movement.resultingQuantity().signum() < 0 || movement.unitValue().signum() < 0)
+            if (movement.resultingQuantity().signum() < 0 || movement.unitValue().signum() < 0
+                    || movement.resultingCarryingValue().signum() < 0
+                    || (movement.resultingQuantity().signum() == 0
+                    && movement.resultingCarryingValue().signum() != 0))
             {
                 throw new IllegalArgumentException(
                         "inventory movement resultingQuantity and unitValue must not be negative: "

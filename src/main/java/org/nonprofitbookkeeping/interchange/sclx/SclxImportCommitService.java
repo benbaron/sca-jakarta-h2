@@ -1484,6 +1484,8 @@ public final class SclxImportCommitService
                     portableUuid(value.externalId()),
                     value.createdAt(),
                     value.updatedAt());
+            item.setCarryingValue(value.carryingValue());
+            item.setValuationMethod(value.valuationMethod());
             items.put(value.externalId(), item);
             afterBusinessWrite.accept(++writes);
             businessWrites++;
@@ -1521,6 +1523,8 @@ public final class SclxImportCommitService
                     value.quantityChange(),
                     value.resultingQuantity(),
                     value.unitValue(),
+                    value.valueChange(),
+                    value.resultingCarryingValue(),
                     transaction,
                     value.notes(),
                     portableUuid(value.externalId()),

@@ -426,7 +426,10 @@ public final class AssetInventoryReportQueryService
                 }
                 InventoryPosition position = positions.get(item.getId());
                 BigDecimal quantity = scale(position == null ? item.getQuantity() : position.quantity());
-                BigDecimal unitValue = scale(position == null ? item.getUnitValue() : position.unitValue());
+                BigDecimal carryingValue = scale(position == null
+                        ? item.getCarryingValue() : position.carryingValue());
+                BigDecimal unitValue = quantity.signum() == 0 ? ZERO
+                        : carryingValue.divide(quantity, 4, java.math.RoundingMode.HALF_UP);
                 rows.add(new InventoryValuationRow(
                         item.getId(),
                         item.getName(),
@@ -440,7 +443,7 @@ public final class AssetInventoryReportQueryService
                         quantity,
                         item.getUnit(),
                         unitValue,
-                        scale(quantity.multiply(unitValue)),
+                        carryingValue,
                         position == null ? null : position.movementId(),
                         position == null ? null : position.transactionId()));
                 if (rows.size() >= request.rowLimit())
@@ -510,8 +513,7 @@ public final class AssetInventoryReportQueryService
             for (InventoryMovement movement : source)
             {
                 InventoryItem item = movement.getInventoryItem();
-                BigDecimal signedValue = scale(movement.getQuantityChange()
-                        .multiply(movement.getUnitValue()));
+                BigDecimal signedValue = scale(movement.getValueChange());
                 domainNet = domainNet.add(signedValue);
                 if (movement.getTransaction() == null)
                 {
@@ -732,7 +734,7 @@ public final class AssetInventoryReportQueryService
         {
             out.putIfAbsent(movement.getInventoryItem().getId(), new InventoryPosition(
                     movement.getResultingQuantity(),
-                    movement.getUnitValue(),
+                    movement.getResultingCarryingValue(),
                     movement.getId(),
                     movement.getTransaction() == null ? null : movement.getTransaction().getId()));
         }
@@ -753,7 +755,7 @@ public final class AssetInventoryReportQueryService
             {
                 out.putIfAbsent(movement.getInventoryItem().getId(), new InventoryPosition(
                         movement.getResultingQuantity().subtract(movement.getQuantityChange()),
-                        movement.getUnitValue(),
+                        movement.getResultingCarryingValue().subtract(movement.getValueChange()),
                         null,
                         null));
             }
@@ -862,21 +864,21 @@ public final class AssetInventoryReportQueryService
         {
             return ZERO;
         }
-        List<Object[]> rows = em.createQuery("""
-                select movement.quantityChange, movement.unitValue
+        List<BigDecimal> rows = em.createQuery("""
+                select movement.valueChange
                 from InventoryMovement movement
                 where movement.inventoryItem.id in :itemIds
                   and movement.transaction is null
                   and movement.movementDate >= :start and movement.movementDate <= :end
-                """, Object[].class)
+                """, BigDecimal.class)
                 .setParameter("itemIds", itemIds)
                 .setParameter("start", start)
                 .setParameter("end", end)
                 .getResultList();
         BigDecimal value = ZERO;
-        for (Object[] row : rows)
+        for (BigDecimal row : rows)
         {
-            value = value.add(scale(((BigDecimal) row[0]).multiply((BigDecimal) row[1])));
+            value = value.add(scale(row));
         }
         return value;
     }
@@ -890,20 +892,20 @@ public final class AssetInventoryReportQueryService
         {
             return ZERO;
         }
-        List<Object[]> rows = em.createQuery("""
-                select movement.quantityChange, movement.unitValue
+        List<BigDecimal> rows = em.createQuery("""
+                select movement.valueChange
                 from InventoryMovement movement
                 where movement.inventoryItem.id in :itemIds
                   and movement.transaction is null
                   and movement.movementDate <= :end
-                """, Object[].class)
+                """, BigDecimal.class)
                 .setParameter("itemIds", itemIds)
                 .setParameter("end", end)
                 .getResultList();
         BigDecimal value = ZERO;
-        for (Object[] row : rows)
+        for (BigDecimal row : rows)
         {
-            value = value.add(scale(((BigDecimal) row[0]).multiply((BigDecimal) row[1])));
+            value = value.add(scale(row));
         }
         return value;
     }
@@ -1199,7 +1201,7 @@ public final class AssetInventoryReportQueryService
 
     private record InventoryPosition(
             BigDecimal quantity,
-            BigDecimal unitValue,
+            BigDecimal carryingValue,
             Long movementId,
             Long transactionId)
     {

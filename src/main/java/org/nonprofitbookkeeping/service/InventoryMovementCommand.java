@@ -14,14 +14,24 @@ public record InventoryMovementCommand(InventoryMovement.MovementType movementTy
                                        String notes,
                                        Long activityId,
                                        Long budgetCategoryId,
-                                       boolean nonEventConfirmed)
+                                       boolean nonEventConfirmed,
+                                       BigDecimal unitCost)
 {
+    public InventoryMovementCommand(InventoryMovement.MovementType movementType,
+            BigDecimal quantity, LocalDate movementDate, Long offsetAccountId,
+            boolean nonfinancialConfirmed, String notes, Long activityId,
+            Long budgetCategoryId, boolean nonEventConfirmed)
+    {
+        this(movementType, quantity, movementDate, offsetAccountId, nonfinancialConfirmed, notes,
+                activityId, budgetCategoryId, nonEventConfirmed, null);
+    }
+
     public InventoryMovementCommand(InventoryMovement.MovementType movementType,
             BigDecimal quantity, LocalDate movementDate, Long offsetAccountId,
             boolean nonfinancialConfirmed, String notes)
     {
         this(movementType, quantity, movementDate, offsetAccountId, nonfinancialConfirmed, notes,
-                null, null, false);
+                null, null, false, null);
     }
 
     public InventoryMovementCommand(

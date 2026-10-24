@@ -36,6 +36,11 @@ public class InventoryItem
         EXPENSED_SUPPLY
     }
 
+    public enum ValuationMethod
+    {
+        MOVING_WEIGHTED_AVERAGE
+    }
+
     public enum Condition
     {
         UNKNOWN,
@@ -86,6 +91,13 @@ public class InventoryItem
     @Column(name = "unit_value", nullable = false, precision = 19, scale = 4)
     private BigDecimal unitValue = BigDecimal.ZERO;
 
+    @Column(name = "carrying_value", nullable = false, precision = 19, scale = 4)
+    private BigDecimal carryingValue = BigDecimal.ZERO;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "valuation_method", nullable = false, length = 40)
+    private ValuationMethod valuationMethod = ValuationMethod.MOVING_WEIGHTED_AVERAGE;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "financial_treatment", nullable = false, length = 40)
     private FinancialTreatment financialTreatment = FinancialTreatment.CAPITALIZED_INVENTORY;
@@ -135,6 +147,10 @@ public class InventoryItem
     public void setUnit(String unit) { this.unit = unit; }
     public BigDecimal getUnitValue() { return unitValue; }
     public void setUnitValue(BigDecimal unitValue) { this.unitValue = unitValue; }
+    public BigDecimal getCarryingValue() { return carryingValue; }
+    public void setCarryingValue(BigDecimal carryingValue) { this.carryingValue = carryingValue; }
+    public ValuationMethod getValuationMethod() { return valuationMethod; }
+    public void setValuationMethod(ValuationMethod valuationMethod) { this.valuationMethod = valuationMethod; }
     public FinancialTreatment getFinancialTreatment() { return financialTreatment; }
     public void setFinancialTreatment(FinancialTreatment financialTreatment) { this.financialTreatment = financialTreatment; }
     public LocalDate getAcquisitionDate() { return acquisitionDate; }

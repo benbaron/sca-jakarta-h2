@@ -318,7 +318,7 @@ class InventoryAuthorizationIntegrationTest
                 date,
                 CASH_ACCOUNT_ID,
                 false,
-                "Receive inventory", null, null, true);
+                "Receive inventory", null, null, true, new BigDecimal("10.0000"));
     }
 
     private static void seedMasterData(Jpa jpa)

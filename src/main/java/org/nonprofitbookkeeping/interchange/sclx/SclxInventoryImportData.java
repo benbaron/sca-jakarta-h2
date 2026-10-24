@@ -38,9 +38,10 @@ final class SclxInventoryImportData
         requireObject(value, "$.extensions.scaJakartaH2.inventory");
         requireFields(value, Set.of("version", "items", "movements"),
                 Set.of("version", "items", "movements"), "$.extensions.scaJakartaH2.inventory");
-        if (integer(value, "version", "$.extensions.scaJakartaH2.inventory") != 1)
+        int version = integer(value, "version", "$.extensions.scaJakartaH2.inventory");
+        if (version != 1 && version != 2)
         {
-            throw new IllegalStateException("$.extensions.scaJakartaH2.inventory.version must be 1.");
+            throw new IllegalStateException("$.extensions.scaJakartaH2.inventory.version must be 1 or 2.");
         }
 
         List<ItemValue> items = new ArrayList<>();
@@ -54,18 +55,34 @@ final class SclxInventoryImportData
             requireFields(item,
                     Set.of("itemId", "name", "itemType", "quantity", "unit", "unitValue",
                             "financialTreatment", "acquisitionDate", "custodian", "storageLocation", "condition", "status",
-                            "notes", "inventoryAccountId", "fundId", "createdAt", "updatedAt"),
+                            "notes", "inventoryAccountId", "fundId", "createdAt", "updatedAt",
+                            "carryingValue", "valuationMethod"),
                     Set.of("itemId", "name", "itemType", "quantity", "unit", "unitValue",
                             "acquisitionDate", "condition", "status", "inventoryAccountId", "fundId",
                             "createdAt", "updatedAt"), path);
+            if (version == 2 && (!item.has("carryingValue") || !item.has("valuationMethod")))
+            {
+                throw new IllegalStateException(path + " is missing version-2 valuation fields.");
+            }
             String externalId = uniqueId(item, "itemId", path, itemIds, "inventory item");
+            BigDecimal quantity = decimal(item, "quantity", path, false);
+            BigDecimal unitValue = decimal(item, "unitValue", path, false);
+            BigDecimal carryingValue = version == 2
+                    ? decimal(item, "carryingValue", path, false)
+                    : quantity.multiply(unitValue).setScale(4, RoundingMode.HALF_UP);
+            InventoryItem.ValuationMethod valuationMethod = version == 2
+                    ? enumValue(InventoryItem.ValuationMethod.class,
+                    text(item, "valuationMethod", path), path + ".valuationMethod")
+                    : InventoryItem.ValuationMethod.MOVING_WEIGHTED_AVERAGE;
             items.add(new ItemValue(
                     externalId,
                     boundedText(item, "name", path, 200),
                     boundedText(item, "itemType", path, 120),
-                    decimal(item, "quantity", path, false),
+                    quantity,
                     boundedText(item, "unit", path, 40),
-                    decimal(item, "unitValue", path, false),
+                    unitValue,
+                    carryingValue,
+                    valuationMethod,
                     item.has("financialTreatment")
                             ? enumValue(InventoryItem.FinancialTreatment.class, text(item, "financialTreatment", path), path + ".financialTreatment")
                             : InventoryItem.FinancialTreatment.CAPITALIZED_INVENTORY,
@@ -92,9 +109,15 @@ final class SclxInventoryImportData
             requireObject(movement, path);
             requireFields(movement,
                     Set.of("movementId", "itemId", "movementDate", "movementType", "quantityChange",
-                            "resultingQuantity", "unitValue", "transactionId", "notes", "createdAt"),
+                            "resultingQuantity", "unitValue", "transactionId", "notes", "createdAt",
+                            "valueChange", "resultingCarryingValue"),
                     Set.of("movementId", "itemId", "movementDate", "movementType", "quantityChange",
                             "resultingQuantity", "unitValue", "createdAt"), path);
+            if (version == 2 && (!movement.has("valueChange")
+                    || !movement.has("resultingCarryingValue")))
+            {
+                throw new IllegalStateException(path + " is missing version-2 valuation fields.");
+            }
             String externalId = uniqueId(
                     movement, "movementId", path, movementIds, "inventory movement");
             String itemId = text(movement, "itemId", path);
@@ -107,6 +130,14 @@ final class SclxInventoryImportData
             {
                 throw new IllegalStateException(path + ".quantityChange must be nonzero.");
             }
+            BigDecimal resultingQuantity = decimal(movement, "resultingQuantity", path, false);
+            BigDecimal unitValue = decimal(movement, "unitValue", path, false);
+            BigDecimal valueChange = version == 2
+                    ? decimal(movement, "valueChange", path, true)
+                    : quantityChange.multiply(unitValue).setScale(4, RoundingMode.HALF_UP);
+            BigDecimal resultingCarryingValue = version == 2
+                    ? decimal(movement, "resultingCarryingValue", path, false)
+                    : resultingQuantity.multiply(unitValue).setScale(4, RoundingMode.HALF_UP);
             movements.add(new MovementValue(
                     externalId,
                     itemId,
@@ -114,12 +145,15 @@ final class SclxInventoryImportData
                     enumValue(InventoryMovement.MovementType.class,
                             text(movement, "movementType", path), path + ".movementType"),
                     quantityChange,
-                    decimal(movement, "resultingQuantity", path, false),
-                    decimal(movement, "unitValue", path, false),
+                    resultingQuantity,
+                    unitValue,
+                    valueChange,
+                    resultingCarryingValue,
                     optionalText(movement, "transactionId", path),
                     optionalText(movement, "notes", path),
                     instant(movement, "createdAt", path)));
         }
+        validateValuationSequences(items, movements);
         items.sort(Comparator.comparing(ItemValue::externalId));
         movements.sort(Comparator.comparing(MovementValue::externalId));
         return new SclxInventoryImportData(items, movements);
@@ -133,6 +167,57 @@ final class SclxInventoryImportData
     List<MovementValue> movements()
     {
         return movements;
+    }
+
+    private static void validateValuationSequences(
+            List<ItemValue> items, List<MovementValue> movements)
+    {
+        for (ItemValue item : items)
+        {
+            if (item.quantity().signum() == 0 && item.carryingValue().signum() != 0)
+            {
+                throw new IllegalStateException("Inventory item " + item.externalId()
+                        + " has carrying value without quantity.");
+            }
+            if (item.financialTreatment() == InventoryItem.FinancialTreatment.EXPENSED_SUPPLY
+                    && item.carryingValue().signum() != 0)
+            {
+                throw new IllegalStateException("Expensed inventory item " + item.externalId()
+                        + " must have zero carrying value.");
+            }
+            List<MovementValue> history = movements.stream()
+                    .filter(value -> value.itemId().equals(item.externalId()))
+                    .sorted(Comparator.comparing(MovementValue::movementDate)
+                            .thenComparing(MovementValue::createdAt)
+                            .thenComparing(MovementValue::externalId))
+                    .toList();
+            BigDecimal priorQuantity = null;
+            BigDecimal priorCarrying = null;
+            for (MovementValue movement : history)
+            {
+                BigDecimal beforeQuantity = movement.resultingQuantity().subtract(movement.quantityChange())
+                        .setScale(4, RoundingMode.UNNECESSARY);
+                BigDecimal beforeCarrying = movement.resultingCarryingValue().subtract(movement.valueChange())
+                        .setScale(4, RoundingMode.UNNECESSARY);
+                if (beforeQuantity.signum() < 0 || beforeCarrying.signum() < 0
+                        || (movement.resultingQuantity().signum() == 0
+                        && movement.resultingCarryingValue().signum() != 0)
+                        || (priorQuantity != null && (priorQuantity.compareTo(beforeQuantity) != 0
+                        || priorCarrying.compareTo(beforeCarrying) != 0)))
+                {
+                    throw new IllegalStateException("Inventory movement history is not a continuous valuation sequence for "
+                            + item.externalId() + ".");
+                }
+                priorQuantity = movement.resultingQuantity();
+                priorCarrying = movement.resultingCarryingValue();
+            }
+            if (!history.isEmpty() && (priorQuantity.compareTo(item.quantity()) != 0
+                    || priorCarrying.compareTo(item.carryingValue()) != 0))
+            {
+                throw new IllegalStateException("Inventory movement history does not reach the item balance for "
+                        + item.externalId() + ".");
+            }
+        }
     }
 
     private static String uniqueId(
@@ -309,6 +394,8 @@ final class SclxInventoryImportData
             BigDecimal quantity,
             String unit,
             BigDecimal unitValue,
+            BigDecimal carryingValue,
+            InventoryItem.ValuationMethod valuationMethod,
             InventoryItem.FinancialTreatment financialTreatment,
             LocalDate acquisitionDate,
             String custodian,
@@ -331,6 +418,8 @@ final class SclxInventoryImportData
             BigDecimal quantityChange,
             BigDecimal resultingQuantity,
             BigDecimal unitValue,
+            BigDecimal valueChange,
+            BigDecimal resultingCarryingValue,
             String transactionId,
             String notes,
             Instant createdAt)

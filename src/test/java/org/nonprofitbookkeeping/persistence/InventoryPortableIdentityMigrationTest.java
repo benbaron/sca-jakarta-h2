@@ -25,7 +25,7 @@ public class InventoryPortableIdentityMigrationTest
         try (Connection connection = connect(url); Statement statement = connection.createStatement())
         {
             insertSupportGraph(statement);
-            insertItemAndMovement(statement, 16_001L, 16_002L, "Event Tokens");
+            insertItemAndMovement(statement, 16_001L, 16_002L, "Event Tokens", false);
         }
 
         migrate(url);
@@ -41,15 +41,15 @@ public class InventoryPortableIdentityMigrationTest
             assertEquals("RECEIPT", scalarString(statement,
                     "SELECT movement_type FROM inventory_movement WHERE id = 16002"));
 
-            insertItemAndMovement(statement, 17_001L, 17_002L, "Feast Supplies");
+            insertItemAndMovement(statement, 17_001L, 17_002L, "Feast Supplies", true);
             assertNotEquals(firstItem, portableId(statement, "inventory_item", 17_001L));
             assertNotEquals(firstMovement, portableId(statement, "inventory_movement", 17_002L));
 
             assertThrows(SQLException.class, () -> statement.executeUpdate(
-                    itemInsertSql(18_001L, "Duplicate item", firstItem)));
-            statement.executeUpdate(itemInsertSql(18_002L, "Third item", null));
+                    itemInsertSql(18_001L, "Duplicate item", firstItem, true)));
+            statement.executeUpdate(itemInsertSql(18_002L, "Third item", null, true));
             assertThrows(SQLException.class, () -> statement.executeUpdate(
-                    movementInsertSql(18_003L, 18_002L, firstMovement)));
+                    movementInsertSql(18_003L, 18_002L, firstMovement, true)));
         }
     }
 
@@ -61,7 +61,7 @@ public class InventoryPortableIdentityMigrationTest
         try (Connection connection = connect(url); Statement statement = connection.createStatement())
         {
             insertSupportGraph(statement);
-            insertItemAndMovement(statement, 16_001L, 16_002L, "Recovery Tokens");
+            insertItemAndMovement(statement, 16_001L, 16_002L, "Recovery Tokens", false);
             statement.executeUpdate("ALTER TABLE inventory_item ADD COLUMN portable_id UUID");
             statement.executeUpdate("UPDATE inventory_item SET portable_id = RANDOM_UUID()");
             statement.executeUpdate("ALTER TABLE inventory_movement ADD COLUMN portable_id UUID DEFAULT RANDOM_UUID()");
@@ -107,33 +107,42 @@ public class InventoryPortableIdentityMigrationTest
     }
 
     private static void insertItemAndMovement(
-            Statement statement, long itemId, long movementId, String name) throws SQLException
+            Statement statement, long itemId, long movementId, String name,
+            boolean includeValuationFacts) throws SQLException
     {
-        statement.executeUpdate(itemInsertSql(itemId, name, null));
-        statement.executeUpdate(movementInsertSql(movementId, itemId, null));
+        statement.executeUpdate(itemInsertSql(itemId, name, null, includeValuationFacts));
+        statement.executeUpdate(movementInsertSql(movementId, itemId, null, includeValuationFacts));
     }
 
-    private static String itemInsertSql(long id, String name, UUID portableId)
+    private static String itemInsertSql(
+            long id, String name, UUID portableId, boolean includeValuationFacts)
     {
         String portableColumn = portableId == null ? "" : ", portable_id";
         String portableValue = portableId == null ? "" : ", UUID '" + portableId + "'";
+        String valuationColumns = includeValuationFacts ? ", carrying_value, valuation_method" : "";
+        String valuationValues = includeValuationFacts ? ", 25.0000, 'MOVING_WEIGHTED_AVERAGE'" : "";
         return "INSERT INTO inventory_item "
                 + "(id, company_id, inventory_account_id, fund_id, name, item_type, quantity, unit_name, "
-                + "unit_value, acquisition_date, item_condition, status, notes" + portableColumn + ") VALUES ("
+                + "unit_value, acquisition_date, item_condition, status, notes" + portableColumn
+                + valuationColumns + ") VALUES ("
                 + id + ", 15001, 15001, 15001, '" + name.replace("'", "''")
                 + "', 'SUPPLIES', 10.0000, 'each', 2.5000, DATE '2026-01-01', "
-                + "'GOOD', 'ACTIVE', 'Portable identity fixture'" + portableValue + ")";
+                + "'GOOD', 'ACTIVE', 'Portable identity fixture'" + portableValue
+                + valuationValues + ")";
     }
 
-    private static String movementInsertSql(long id, long itemId, UUID portableId)
+    private static String movementInsertSql(
+            long id, long itemId, UUID portableId, boolean includeValuationFacts)
     {
         String portableColumn = portableId == null ? "" : ", portable_id";
         String portableValue = portableId == null ? "" : ", UUID '" + portableId + "'";
+        String valuationColumns = includeValuationFacts ? ", value_change, resulting_carrying_value" : "";
+        String valuationValues = includeValuationFacts ? ", 25.0000, 25.0000" : "";
         return "INSERT INTO inventory_movement "
                 + "(id, inventory_item_id, movement_date, movement_type, quantity_change, "
-                + "resulting_quantity, unit_value, notes" + portableColumn + ") VALUES ("
+                + "resulting_quantity, unit_value, notes" + portableColumn + valuationColumns + ") VALUES ("
                 + id + ", " + itemId + ", DATE '2026-01-01', 'RECEIPT', 10.0000, 10.0000, "
-                + "2.5000, 'Initial receipt'" + portableValue + ")";
+                + "2.5000, 'Initial receipt'" + portableValue + valuationValues + ")";
     }
 
     private static UUID portableId(Statement statement, String table, long id) throws SQLException
