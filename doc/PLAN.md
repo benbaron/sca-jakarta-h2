@@ -1,12 +1,12 @@
 ---
-plan_version: 400
+plan_version: 401
 active_phase: P26
 active_slice: P26-S5
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P26-S5-inventory-valuation
 active_pull_request: null
-active_head: e750f73c
-next_action: "Implement the adopted P26-S5 moving-weighted-average valuation contract with migration, canonical movement/reversal behavior, SCLX, reporting, JavaFX and comprehensive unit coverage."
+active_head: 0c102dfd62be4c26fc444aa485d5fe26bfbf4fdb
+next_action: "Publish codex/P26-S5-inventory-valuation as a draft pull request, then require exact-head Maven PR Tests and owner review before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -38,7 +38,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
-| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 DONE through accepted/merged MR #379; S2 DONE through verified/merged PR #380; S3 DONE through verified/merged PR #381; S4 DONE through accepted/merged PR #382; S5A DONE through reviewed/merged PR #383; S5 IN_PROGRESS |
+| P26 | Property, planning, recognition, conversion | VERIFYING — S1 DONE through accepted/merged MR #379; S2 DONE through verified/merged PR #380; S3 DONE through verified/merged PR #381; S4 DONE through accepted/merged PR #382; S5A DONE through reviewed/merged PR #383; S5 implementation and local gates complete pending draft PR, exact-head CI and owner review |
 | P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
@@ -702,7 +702,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P26-S3 | Complete event/fund budget planning and reporting filters (G12) | DONE | Owner verified/merged PR #381 at `c7170328`; final head `ee36b641` and exact-head clean/repeat/JavaFX CI passed; D05 form mapping remains P27 |
 | P26-S4 | Add governed prepaid/deferred recognition assistance (G12) | DONE | Owner accepted and merged PR #382 at `bf5bc979`; exact published head `70ca3b1b`; [S4 contract](P26-S4-prepaid-deferred-recognition.md); full local verification passed; no new schedule authority or policy/default engine |
 | P26-S5A | Adopt inventory valuation contract (documentation only) | DONE | Owner reviewed/merged PR #383 at `e750f73c`; final head `4f965262` passed exact-head clean/repeat/JavaFX CI; [S5A contract](P26-S5A-inventory-valuation-contract.md) resolves D06 |
-| P26-S5 | Resolve inventory valuation limitations (G12) | IN_PROGRESS | P26-S5A accepted/merged; implementation must add the contract's complete behavioral unit, migration, SCLX, reporting and JavaFX coverage |
+| P26-S5 | Resolve inventory valuation limitations (G12) | VERIFYING | Implementation head `0c102dfd` adds the adopted moving-weighted-average authority, V89 migration, exact movement/reversal facts, SCLX v2, historical reporting, JavaFX cost/preview behavior and scenario coverage; local headless and actual JavaFX gates pass; draft PR and exact-head CI remain |
 | P26-S6 | Provide controlled conversion and merchant-settlement assistance | BLOCKED | P26-S5 merged; owning contract and D01–D10 gates as applicable |
 | P27-S1 | Finalize the form contract and resolve runbook conflicts (G5/G10/G13) | BLOCKED | P26-S6 merged; owning contract and D01–D10 gates as applicable |
 | P27-S2 | Export the complete required workbook and supporting packet (G5) | BLOCKED | P27-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -2128,3 +2128,13 @@ Published correction head `4f96526279b2cfad1498a73064062636c454e3fd`; its fetche
 Owner reported PR #383 reviewed and merged. Native fetch confirms exact accepted head `4f96526279b2cfad1498a73064062636c454e3fd` is contained in current `main` at merge commit `e750f73c`. The recorded exact-head run `39725056189`, job `119646945238`, passed clean verification, repeat tests and production JavaFX. P26-S5A and D06 are DONE.
 
 Fresh `codex/P26-S5-inventory-valuation` starts from that merge and selects the adopted [P26-S5 contract](P26-S5A-inventory-valuation-contract.md). Implementation owns perpetual moving weighted average, exact carrying/movement value facts, legacy fixed-value migration, canonical movement/reversal/retry/concurrency behavior, historical reporting, versioned SCLX, production JavaFX cost/preview/Save behavior and the complete scenario-level unit coverage recorded in the contract and [P25/P26 coverage ledger](P25-P26-unit-coverage.md). No FIFO layers, backdating, negative stock, standalone revaluation or parallel inventory ledger is in scope.
+
+### P26-S5 implementation and local verification — 2026-10-23 (America/Denver)
+
+Implementation head `0c102dfd62be4c26fc444aa485d5fe26bfbf4fdb` completes the adopted moving-weighted-average behavioral unit. V89 nondestructively records exact item carrying value, the sole valuation method, signed movement value change and resulting carrying value while backfilling legacy fixed-value data. Capitalized receipts and upward adjustments require explicit positive cost; issues and downward adjustments consume the current moving average, with the final issue consuming the exact residual. Interactive backdating and negative quantity/value are rejected. Canonical reversals restore the original signed quantity and value facts exactly, and retries compare those durable facts before accepting an existing identity. Expensed supplies retain zero inventory value.
+
+Inventory reports now use exact current and historical carrying values. Inventory SCLX version 2 exports and imports the new facts, still reads version 1 by deriving its legacy fixed-value basis, and rejects incomplete or discontinuous valuation histories before commit. The production Inventory panel exposes receipt/upward cost and shows the signed value change, carrying-value transition and new average in its confirmation; its existing shared Save Item command remains the durable item-maintenance action. The P25/P26 coverage ledger now identifies the migration, service arithmetic/residual/reversal, accounting, SCLX, report and actual JavaFX tests for P26-S5.
+
+Local focused valuation, migration, accounting, reporting and SCLX tests passed. The final `mvn clean verify` completed at **2026-10-23 19:19 America/Denver** with **1,023 tests, zero failures, zero errors, 65 expected display-dependent skips, and BUILD SUCCESS**. The exact production JavaFX workflow selector then ran under Xvfb with **57 tests, zero failures, zero errors and zero skips**. `git diff --check` passes and there are no known failures.
+
+User-visible testing notes: create a capitalized item, receive equal quantities at two different costs, confirm the preview and saved carrying value/average, issue part of the stock, and reverse that issue. Verify that each preview shows the expected signed value and that the Inventory Valuation report reaches the same final carrying value. Also verify that an expensed supply accepts quantity changes without a cost or inventory accounting entry. Publication as a draft PR, exact-head GitHub CI and owner review remain before merge; P26-S5 is not DONE locally.
