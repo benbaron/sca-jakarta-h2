@@ -1,12 +1,12 @@
 ---
-plan_version: 405
+plan_version: 406
 active_phase: P26
 active_slice: P26-S6A
 active_status: VERIFYING
 active_branch: codex/P26-S6A-opening-conversion
 active_pull_request: 385
-active_head: d45e675b
-next_action: "Inspect exact-head GitHub CI for draft PR #385, repair any failure, and leave the verified draft ready for owner review."
+active_head: bba4f944b8073189d11ba220810281a78173b70b
+next_action: "Owner reviews and merges draft PR #385; after merge confirmation, verify current main and select P26-S6B on a fresh branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -703,7 +703,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P26-S4 | Add governed prepaid/deferred recognition assistance (G12) | DONE | Owner accepted and merged PR #382 at `bf5bc979`; exact published head `70ca3b1b`; [S4 contract](P26-S4-prepaid-deferred-recognition.md); full local verification passed; no new schedule authority or policy/default engine |
 | P26-S5A | Adopt inventory valuation contract (documentation only) | DONE | Owner reviewed/merged PR #383 at `e750f73c`; final head `4f965262` passed exact-head clean/repeat/JavaFX CI; [S5A contract](P26-S5A-inventory-valuation-contract.md) resolves D06 |
 | P26-S5 | Resolve inventory valuation limitations (G12) | DONE | Owner merged PR #384 at main `7739698b`; implementation head `0c102dfd`; local headless and actual JavaFX gates passed; exact-head PR workflow was still in progress when the merge was reported and must not be described as passed without its result |
-| P26-S6A | Review and accept opening/carryover conversion | VERIFYING | Draft PR #385; implementation head `7cdbe7f1`, published plan head `d45e675b`; full local and actual JavaFX gates passed; exact-head CI and owner review remain |
+| P26-S6A | Review and accept opening/carryover conversion | VERIFYING | Draft PR #385 at `bba4f944`; full local, actual JavaFX and exact-head GitHub CI passed; owner review/merge remain |
 | P26-S6B | Assist merchant settlement | BLOCKED | P26-S6A merged; reuse canonical Journal, merchant receivable, supplemental and reconciliation authorities; no provider API required |
 | P27-S1 | Finalize the form contract and resolve runbook conflicts (G5/G10/G13) | BLOCKED | P26-S6 merged; owning contract and D01–D10 gates as applicable |
 | P27-S2 | Export the complete required workbook and supporting packet (G5) | BLOCKED | P27-S1 merged; owning contract and D01–D10 gates as applicable |
@@ -2157,3 +2157,9 @@ Implementation head `7cdbe7f1` adds the production **Opening Conversion** route 
 The final local `mvn clean verify` completed with **1,030 tests, zero failures, zero errors and 67 expected display-dependent skips**. The exact workflow JavaFX selector then ran on an authenticated X display with **59 tests, zero failures, zero errors and zero skips**. `git diff --check` passes and the worktree was clean before this plan-only verification record. User testing: open **Import & Oversight -> Opening Conversion**, choose the intended cutoff, Preview, inspect each blocking/info row and every detail tab, confirm Save stays unavailable while a mismatch exists, repair and preview again, save the acceptance, then reopen/preview and confirm the retained accepted-by/as-of message and disabled Save. Draft publication, exact-head GitHub CI and owner review remain; S6A is not DONE before merge.
 
 Published `codex/P26-S6A-opening-conversion` and opened draft [PR #385](https://github.com/benbaron/sca-jakarta-h2/pull/385). The implementation authority remains `7cdbe7f1`; plan/publication head `d45e675b` records the completed local evidence and does not change production behavior. Exact-head GitHub CI and owner review remain.
+
+### P26-S6A exact-head CI and handoff — 2026-10-24 (America/Denver)
+
+Final published head `bba4f944b8073189d11ba220810281a78173b70b` is the open draft PR #385 head. Exact-head [Maven PR Tests run 40114429370](https://github.com/benbaron/sca-jakarta-h2/actions/runs/40114429370), job `120932738705`, completed successfully: clean verification, repeat tests and production JavaFX route compliance all passed. The draft description records this exact-head result together with the local 1,030-test clean verification and 59-test actual JavaFX result.
+
+This final evidence remains local so the green reviewed PR head is not replaced solely by a documentation update. P26-S6A remains VERIFYING pending owner review and merge. P26-S6B is the next bounded slice, but its explicit prerequisite is the S6A merge; do not implement it on this branch. After merge confirmation, fetch and verify current `main`, carry this record onto a fresh branch, and select the merchant-settlement slice without reusing the merged S6A branch.
