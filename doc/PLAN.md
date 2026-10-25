@@ -4,12 +4,14 @@ active_phase: P27
 active_slice: P27-S2A
 active_status: VERIFYING
 active_branch: codex/P27-S2A-core-packet
-active_pull_request: null
-active_head: a5c6ef171519948e9d141ab6df4494c5acea70ee
-next_action: "Publish the locally verified S2A draft, confirm matching remote head/tree and inspect exact-head CI; S2B remains blocked until S2A merges."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/388
+active_head: 3348b05322a19ddbb49f2b2c71b26f0e5c772bb1
+next_action: "Inspect final-head CI for draft PR #388, repair any failures and leave the verified draft for owner review/merge; S2B remains blocked until S2A merges."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+Published implementation head `3348b05322a19ddbb49f2b2c71b26f0e5c772bb1` on `codex/P27-S2A-core-packet` and opened draft [PR #388](https://github.com/benbaron/sca-jakarta-h2/pull/388) against confirmed main `a5c6ef17`. This publication-only successor records the draft and completed local gates. Confirm its resulting remote head/tree and inspect CI for that actual commit; no GitHub success is claimed yet. Owner review/merge and separate human spreadsheet checks remain.
 
 ### P27-S1 closeout and P27-S2A implementation — 2026-10-25 (America/Denver)
 
@@ -723,7 +725,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P26-S6B | Assist merchant settlement | DONE | Owner merged PR #386 at db488cd2; final published head fb7f7813 passed full CI |
 | P27-S1 | Define generic accounting packet contract | DONE | Owner confirmed/merged PR #387 at a5c6ef17; final head 6ac81bcf passed CI run 40232697699 |
 | P27-S2 | Export generic accounting workbook and supporting packet | IN_PROGRESS | Split into S2A core packet and S2B operational completion; [S2A contract](P27-S2A-core-packet.md); S2 is not DONE until both merge |
-| P27-S2A | Export an incomplete core financial packet | IN_PROGRESS | Fresh branch from merged S1; existing consistent H2 backup/report authorities, XLSX/CSV/manifest, explicit omissions and scenario-level tests |
+| P27-S2A | Export an incomplete core financial packet | VERIFYING | Draft PR #388; consistent H2 backup/report authorities, XLSX/CSV/manifest, explicit omissions and scenario-level tests; local clean and actual JavaFX gates passed |
 | P27-S2B | Complete operational sections and enriched ledger | BLOCKED | S2A merged; add all remaining S1 sections, same snapshot/scope, complete detail and final packet acceptance |
 | P27-S3 | Add factual close readiness and evidence references (G3/G5/G13) | BLOCKED | P27-S2 merged; owning contract and D01–D10 gates as applicable |
 | P27-S4 | Complete interchange coverage for all new fields (G4 and cross-cutting) | BLOCKED | P27-S3 merged; owning contract and D01–D10 gates as applicable |
