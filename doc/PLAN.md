@@ -4,14 +4,16 @@ active_phase: P27
 active_slice: P27-S1
 active_status: VERIFYING
 active_branch: codex/P27-S1-form-contract
-active_pull_request: null
-active_head: db488cd259eef65ceb2cab1f8b2fdaa650690363
-next_action: "Publish the generic P27-S1 packet contract as a draft, inspect its CI, then owner review/merge before P27-S2 implementation."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/387
+active_head: 92cd583931107c13ab9af1acd97a008817feb5c6
+next_action: "Inspect final-head CI for draft PR #387; owner reviews/merges the generic contract before P27-S2 export implementation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 Current scope amendment — 2026-10-25: owner directs generic accounting rules for P27. The [generic packet contract](P27-S1-submission-contract.md) supersedes historical official-template, signature, deadline and runbook-resolution gates for generic export. P27-S2 remains sequenced after S1 merge; historical entries below remain evidence of earlier scope.
+
+Published draft [PR #387](https://github.com/benbaron/sca-jakarta-h2/pull/387) on fresh `codex/P27-S1-form-contract`, based on merged P26 main. Contract head `92cd583931107c13ab9af1acd97a008817feb5c6` passed documentation link and whitespace validation. This publication-only successor records the draft; verify its fetched head/tree and inspect CI before owner merge. No P27 application code, human spreadsheet result or CI success is claimed yet.
 
 P26 closeout and P27-S1 handoff — 2026-10-25: GitHub and native fetch confirm PR #386 merged at current main `db488cd259eef65ceb2cab1f8b2fdaa650690363`, containing accepted head `fb7f7813`; its clean/repeat/JavaFX run `40132078817` passed. P26 is DONE. Fresh `codex/P27-S1-form-contract` carries the local final-CI record as `7ccba770`. Source inspection covered canonical financial/semantic reports, workbook semantic adapters, property/inventory and period-close services. Reference workbook SHA matches the P23 inventory; populated source bytes remain unmodified and uncommitted. Owner then explicitly declined official-template use and selected generic accounting rules. S1 now defines required packet sections/sources, snapshot/cutoff/precision/completeness rules, safe output behavior, visible missing data and required synthetic unit scenarios. D02/D05 are resolved for generic output. No production, migration, Save or accounting behavior changed; no additional application unit tests are warranted for this documentation slice. Documentation consistency, links and whitespace checks precede draft publication; exact published-head CI and owner review/merge remain. No human spreadsheet validation is claimed.
 
