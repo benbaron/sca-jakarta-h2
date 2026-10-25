@@ -66,6 +66,24 @@ class ProductionPanelRouteComplianceTest
                     window.layout();
                     javafx.scene.Node root = window.panelHost().activeRoot();
                     assertNotNull(root, panelId + " must create a production root.");
+                    if (panelId == AppPanelId.REPORT_LIBRARY)
+                    {
+                        @SuppressWarnings("unchecked")
+                        var reports = (javafx.scene.control.ListView<org.nonprofitbookkeeping.report.ReportDefinition>)
+                                root.lookup("#reportLibraryReportList");
+                        reports.getSelectionModel().select(org.nonprofitbookkeeping.report.ReportDefinition.TRIAL_BALANCE);
+                        var packetStart = (javafx.scene.control.DatePicker) root.lookup("#reportLibraryPacketStart");
+                        var packetEnd = (javafx.scene.control.DatePicker) root.lookup("#reportLibraryPacketEnd");
+                        assertTrue(packetStart.isVisible() && packetStart.isManaged());
+                        assertTrue(packetEnd.isVisible() && packetEnd.isManaged());
+                        assertNotNull(packetStart.getValue());
+                        assertNotNull(packetEnd.getValue());
+                        packetStart.setValue(java.time.LocalDate.of(2026, 1, 1));
+                        reports.getSelectionModel().select(org.nonprofitbookkeeping.report.ReportDefinition.INCOME_STATEMENT);
+                        assertEquals(java.time.LocalDate.of(2026, 1, 1), packetStart.getValue(),
+                                "Packet dates stay editable and independent of the selected report's date mode.");
+                        assertNotNull(root.lookup("#reportLibraryCorePacketExport"));
+                    }
                     Set<AppCommand> capabilities = window.panelHost().activeCommandCapabilities();
                     assertNotNull(capabilities, panelId + " must declare factual command capabilities.");
                     for (AppCommand command : EnumSet.of(

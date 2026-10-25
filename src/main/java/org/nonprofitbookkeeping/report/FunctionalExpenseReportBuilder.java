@@ -14,6 +14,17 @@ public final class FunctionalExpenseReportBuilder
 
     public static ReportResult result(ReportRequest request, FunctionalExpenseQueryService.Result result, FinancialReportDisplayFormat format)
     {
+        return render(request, result, format, request.rowLimit());
+    }
+
+    /** Packet export retains every detail row rather than inheriting interactive preview limits. */
+    public static ReportResult completeResult(ReportRequest request, FunctionalExpenseQueryService.Result result, FinancialReportDisplayFormat format)
+    {
+        return render(request, result, format, Integer.MAX_VALUE);
+    }
+
+    private static ReportResult render(ReportRequest request, FunctionalExpenseQueryService.Result result, FinancialReportDisplayFormat format, int detailLimit)
+    {
         List<ReportTableModel.Column> columns = new ArrayList<>();
         for (String key : List.of("record", "function", "transaction", "split", "account", "fund", "event", "memo"))
         {
@@ -32,7 +43,7 @@ public final class FunctionalExpenseReportBuilder
                 "net", result.unclassified(), "unknownGross", result.unknownGross(), "status", "No account/Event/Budget default is inferred.")));
         rows.add(new ReportTableModel.Row(ReportTableModel.RowStyle.TOTAL, Map.of("record", "GL CONTROL", "net", result.gl(),
                 "status", "All canonical expense activity in this scope; AR + OA + FR + Unclassified. Opening balances excluded.")));
-        for (var detail : result.details().stream().limit(request.rowLimit()).toList())
+        for (var detail : result.details().stream().limit(detailLimit).toList())
         {
             Map<String, Object> values = new LinkedHashMap<>();
             values.put("record", "DETAIL"); values.put("transaction", detail.transactionId()); values.put("split", detail.splitId());
@@ -48,7 +59,7 @@ public final class FunctionalExpenseReportBuilder
             rows.add(new ReportTableModel.Row(detail.function() == null ? ReportTableModel.RowStyle.STATUS_WARNING : ReportTableModel.RowStyle.DETAIL, values));
         }
         rows.add(new ReportTableModel.Row(ReportTableModel.RowStyle.STATUS_WARNING, Map.of("record", "COVERAGE", "status",
-                "Showing " + Math.min(request.rowLimit(), result.details().size()) + " of " + result.details().size()
+                "Showing " + Math.min(detailLimit, result.details().size()) + " of " + result.details().size()
                         + " expense lines. Totals/control include all lines; net-zero unknowns do not imply complete classification. Transaction-date GL basis; no official form mapping is inferred.")));
         var table = new ReportTableModel(request.definition().id(), request.definition().displayName(),
                 format.formatDate(result.start()) + " through " + format.formatDate(result.end())

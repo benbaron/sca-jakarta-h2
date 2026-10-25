@@ -1,15 +1,27 @@
 ---
-plan_version: 409
+plan_version: 410
 active_phase: P27
-active_slice: P27-S1
+active_slice: P27-S2A
 active_status: VERIFYING
-active_branch: codex/P27-S1-form-contract
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/387
-active_head: 92cd583931107c13ab9af1acd97a008817feb5c6
-next_action: "Inspect final-head CI for draft PR #387; owner reviews/merges the generic contract before P27-S2 export implementation."
+active_branch: codex/P27-S2A-core-packet
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/388
+active_head: 3348b05322a19ddbb49f2b2c71b26f0e5c772bb1
+next_action: "Inspect final-head CI for draft PR #388, repair any failures and leave the verified draft for owner review/merge; S2B remains blocked until S2A merges."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+Published implementation head `3348b05322a19ddbb49f2b2c71b26f0e5c772bb1` on `codex/P27-S2A-core-packet` and opened draft [PR #388](https://github.com/benbaron/sca-jakarta-h2/pull/388) against confirmed main `a5c6ef17`. This publication-only successor records the draft and completed local gates. Confirm its resulting remote head/tree and inspect CI for that actual commit; no GitHub success is claimed yet. Owner review/merge and separate human spreadsheet checks remain.
+
+### P27-S1 closeout and P27-S2A implementation — 2026-10-25 (America/Denver)
+
+Owner confirmed and merged PR #387. GitHub/native fetch confirm merge `a5c6ef171519948e9d141ab6df4494c5acea70ee`, containing accepted head `6ac81bcf`; workflow `40232697699` passed. S1 is DONE. Fresh `codex/P27-S2A-core-packet` starts from that main. S2 is split into S2A core export and S2B completion, retaining every adopted generic packet requirement and the existing sequential merge prerequisite.
+
+[S2A](P27-S2A-core-packet.md) adds Report Library's **Export Core Packet (all funds/events)** with independent always-visible Packet start/end dates, live EXPORT gating and background execution. One consistent private H2 backup copy supplies canonical Trial Balance, Balance Sheet, Income Statement, complete GL and Functional Expenses. ZIP output contains a new XLSX, five CSV reports and manifest with snapshot SHA, company, dates, exact-decimal policy and explicit incomplete/omitted-section status. Source backup bytes and other-company data are never included. The service rejects existing destinations, stages output and checks permission again before publication; temporary snapshots are removed on success/failure. No ledger, schema, period-close or reconciliation mutation is introduced.
+
+Source inspection covered FinancialReportService, report execution/table/CSV adapters, FunctionalExpenseQueryService/renderer, DatabaseTransferService and Report Library routing/preferences. Donor `c697630e` has individual statement/table exports rather than a compatible consistent packet, so production authorities/POI are reused. Functional expense export now has an untruncated rendering entry point while screen limits remain intact. Unit cases cover 502 GL rows, 501 expense lines, exact decimals, canonical totals, company/cutoff separation, year-end/reversal dates, deterministic report contents, capacity overflow, invalid/denied/overwrite paths and unchanged source transaction/audit counts. Actual JavaFX coverage exercises the action, background completion, permission/busy state and independent packet-date controls via production routing. CI's display selector includes the new action test. Final validation and publication evidence follow; no human spreadsheet result is inferred. Operational schedules/enriched ledger remain S2B and the packet never claims complete readiness.
+
+Final local verification passed: `mvn clean verify` at 2026-10-25 15:34:20 America/Denver reported **1,040 tests, zero failures/errors, 70 expected headless display skips**. The final expanded production JavaFX selector passed **62 tests, zero failures/errors/skips** under Xvfb at 15:30:15. Focused service/functional regression testing passed 12 tests; final clean verification includes the capacity guard added afterward. The packet date controls were revised after the first clean run so they remain accessible independently of as-of report selection; both final gates include that revision. Documentation links and whitespace review passed; the build helper restored tracked generated output. Remaining: draft publication, exact published-head CI and owner review/merge using the S2A checks.
 
 Current scope amendment — 2026-10-25: owner directs generic accounting rules for P27. The [generic packet contract](P27-S1-submission-contract.md) supersedes historical official-template, signature, deadline and runbook-resolution gates for generic export. P27-S2 remains sequenced after S1 merge; historical entries below remain evidence of earlier scope.
 
@@ -45,7 +57,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
 | P26 | Property, planning, recognition, conversion | DONE through owner-merged PR #386; final published head passed clean/repeat/JavaFX CI |
-| P27 | Generic accounting packet, evidence, complete portability | IN_PROGRESS — S1 contract; owner selects generic accounting rules on 2026-10-25; official-template gate removed |
+| P27 | Generic accounting packet, evidence, complete portability | IN_PROGRESS — S1 accepted/merged in PR #387; S2A core export selected; generic accounting rules govern and official-template gate is removed |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
 ## 3. Established product decisions
@@ -711,8 +723,10 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P26-S5 | Resolve inventory valuation limitations (G12) | DONE | Owner merged PR #384 at main `7739698b`; implementation head `0c102dfd`; local headless and actual JavaFX gates passed; exact-head PR workflow was still in progress when the merge was reported and must not be described as passed without its result |
 | P26-S6A | Review and accept opening/carryover conversion | DONE | Owner merged PR #385 at `e298d2e0`; accepted head `bba4f944` passed full local, actual JavaFX and exact-head GitHub CI |
 | P26-S6B | Assist merchant settlement | DONE | Owner merged PR #386 at db488cd2; final published head fb7f7813 passed full CI |
-| P27-S1 | Define generic accounting packet contract | VERIFYING | [Generic contract](P27-S1-submission-contract.md); owner direction removes template/signature/deadline gate; documentation prepared for draft review |
-| P27-S2 | Export the complete required workbook and supporting packet (G5) | BLOCKED | P27-S1 merged; owning contract and D01–D10 gates as applicable |
+| P27-S1 | Define generic accounting packet contract | DONE | Owner confirmed/merged PR #387 at a5c6ef17; final head 6ac81bcf passed CI run 40232697699 |
+| P27-S2 | Export generic accounting workbook and supporting packet | IN_PROGRESS | Split into S2A core packet and S2B operational completion; [S2A contract](P27-S2A-core-packet.md); S2 is not DONE until both merge |
+| P27-S2A | Export an incomplete core financial packet | VERIFYING | Draft PR #388; consistent H2 backup/report authorities, XLSX/CSV/manifest, explicit omissions and scenario-level tests; local clean and actual JavaFX gates passed |
+| P27-S2B | Complete operational sections and enriched ledger | BLOCKED | S2A merged; add all remaining S1 sections, same snapshot/scope, complete detail and final packet acceptance |
 | P27-S3 | Add factual close readiness and evidence references (G3/G5/G13) | BLOCKED | P27-S2 merged; owning contract and D01–D10 gates as applicable |
 | P27-S4 | Complete interchange coverage for all new fields (G4 and cross-cutting) | BLOCKED | P27-S3 merged; owning contract and D01–D10 gates as applicable |
 | P28-S1 | Run the complete runbook acceptance matrix | BLOCKED | P27-S4 merged; owning contract and D01–D10 gates as applicable |
