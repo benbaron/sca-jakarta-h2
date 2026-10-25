@@ -220,6 +220,14 @@ public final class UiServiceRegistry
     }
     public static SampleCompanyService sampleCompany() { return services().sampleCompany(); }
     public static FinancialReportService financialReports() { return services().financialReports(); }
+    public static org.nonprofitbookkeeping.service.CoreAccountingPacketService coreAccountingPacket()
+    {
+        Path database = DatabaseLocationService.resolveDatabasePath(
+                MainWindow.sharedSessionState().databaseSelection().activeDatabasePath());
+        String company = activeCompanyCode();
+        return new org.nonprofitbookkeeping.service.CoreAccountingPacketService(
+                () -> database, () -> company, services().authorizationGuard());
+    }
     public static SemanticAccountingReportQueryService semanticAccountingReports()
     {
         return new SemanticAccountingReportQueryService(

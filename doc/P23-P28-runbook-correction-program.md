@@ -218,6 +218,8 @@ After S4G's MR #374 merge, select [S4H](P25-S4H-merchant-withholding.md). Reuse 
 
 ### P27-S2 — Export the complete required workbook and supporting packet (G5)
 
+Execution split after S1 merge: [S2A](P27-S2A-core-packet.md) provides an explicitly incomplete core packet from one consistent snapshot; S2B completes operational sections and enriched ledger details. S2 and its P27-S3 successor remain incomplete/blocked until both merge. This split does not remove any section from the adopted generic contract.
+
 **Work:** Generate a generic XLSX workbook and supporting reports under the S1 contract. Include company/period metadata, statements, full ledger, schedules, bank and operational details, exceptions and a manifest with scope, packet/application version, snapshot identity and creation time. Use one consistent snapshot without UI row-limit truncation.
 
 **Acceptance:** Representative quarter/year-end workbooks open without repair and all sections tie to canonical reports. Test precision, completeness, company isolation, exceptions, safe destination handling and zero database writes. Supporting reports use consistent formatting. No official filing or signature compliance is claimed.

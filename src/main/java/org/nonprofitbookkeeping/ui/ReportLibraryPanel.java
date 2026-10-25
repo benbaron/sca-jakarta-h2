@@ -72,6 +72,8 @@ public class ReportLibraryPanel implements AppPanel
     private final Label domainStatusLabel = new Label("Status:");
     private final DatePicker startDate = new DatePicker();
     private final DatePicker endDate = new DatePicker();
+    private final DatePicker packetStartDate = new DatePicker();
+    private final DatePicker packetEndDate = new DatePicker();
     private final ComboBox<ReportFundOption> fund = new ComboBox<>();
     private final ComboBox<ReportAccountOption> domainAccount = new ComboBox<>();
     private final ComboBox<AssetInventoryReportQueryService.FilterOption> domainSubject =
@@ -137,10 +139,21 @@ public class ReportLibraryPanel implements AppPanel
         exportFormat.setPrefWidth(160);
         HBox actions = new HBox(8, run, export, drillLedger, new Label("Export format:"), exportFormat);
 
-        root.setTop(new VBox(6, title, actions, status, new Separator()));
+        var corePacket = new CorePacketExportAction(UiServiceRegistry::coreAccountingPacket,
+                packetStartDate::getValue, packetEndDate::getValue, status::setText,
+                () -> root.getScene() == null ? null : root.getScene().getWindow());
+        packetStartDate.setId("reportLibraryPacketStart");
+        packetEndDate.setId("reportLibraryPacketEnd");
+        companyFormat.install(packetStartDate);
+        companyFormat.install(packetEndDate);
+        root.setTop(new VBox(6, title, actions,
+                new javafx.scene.layout.FlowPane(8, 6, new Label("Packet start:"), packetStartDate,
+                        new Label("Packet end:"), packetEndDate, corePacket.button()), status, new Separator()));
 
         configureReportList();
         configureParameters();
+        packetStartDate.setValue(startDate.getValue());
+        packetEndDate.setValue(endDate.getValue());
         configurePreview();
         configureWorkspace();
         configureActions(run, export, drillLedger);
