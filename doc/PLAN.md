@@ -1,15 +1,19 @@
 ---
-plan_version: 408
-active_phase: P26
-active_slice: P26-S6B
+plan_version: 409
+active_phase: P27
+active_slice: P27-S1
 active_status: VERIFYING
-active_branch: codex/P26-S6B-merchant-settlement
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/386
-active_head: fb7f78131a8ce935dd832f3168112dff3c14234c
-next_action: "Owner reviews draft PR #386 and performs the disposable-company settlement checks; after acceptance and merge, confirm current main before advancing beyond P26."
+active_branch: codex/P27-S1-form-contract
+active_pull_request: null
+active_head: db488cd259eef65ceb2cab1f8b2fdaa650690363
+next_action: "Publish the generic P27-S1 packet contract as a draft, inspect its CI, then owner review/merge before P27-S2 implementation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+Current scope amendment — 2026-10-25: owner directs generic accounting rules for P27. The [generic packet contract](P27-S1-submission-contract.md) supersedes historical official-template, signature, deadline and runbook-resolution gates for generic export. P27-S2 remains sequenced after S1 merge; historical entries below remain evidence of earlier scope.
+
+P26 closeout and P27-S1 handoff — 2026-10-25: GitHub and native fetch confirm PR #386 merged at current main `db488cd259eef65ceb2cab1f8b2fdaa650690363`, containing accepted head `fb7f7813`; its clean/repeat/JavaFX run `40132078817` passed. P26 is DONE. Fresh `codex/P27-S1-form-contract` carries the local final-CI record as `7ccba770`. Source inspection covered canonical financial/semantic reports, workbook semantic adapters, property/inventory and period-close services. Reference workbook SHA matches the P23 inventory; populated source bytes remain unmodified and uncommitted. Owner then explicitly declined official-template use and selected generic accounting rules. S1 now defines required packet sections/sources, snapshot/cutoff/precision/completeness rules, safe output behavior, visible missing data and required synthetic unit scenarios. D02/D05 are resolved for generic output. No production, migration, Save or accounting behavior changed; no additional application unit tests are warranted for this documentation slice. Documentation consistency, links and whitespace checks precede draft publication; exact published-head CI and owner review/merge remain. No human spreadsheet validation is claimed.
 
 ## 1. Purpose and source of truth
 
@@ -38,8 +42,8 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P23 | Accounting correctness and open-item integrity | DONE through P23-S5 / PR #355 |
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
-| P26 | Property, planning, recognition, conversion | IN_PROGRESS — S1 DONE through accepted/merged MR #379; S2 DONE through verified/merged PR #380; S3 DONE through verified/merged PR #381; S4 DONE through accepted/merged PR #382; S5A DONE through reviewed/merged PR #383; S5 DONE through owner-merged PR #384; S6A DONE through owner-merged PR #385; S6B locally verified |
-| P27 | Submission, evidence, complete portability | BLOCKED — required P23–P26 contracts and template approval |
+| P26 | Property, planning, recognition, conversion | DONE through owner-merged PR #386; final published head passed clean/repeat/JavaFX CI |
+| P27 | Generic accounting packet, evidence, complete portability | IN_PROGRESS — S1 contract; owner selects generic accounting rules on 2026-10-25; official-template gate removed |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
 ## 3. Established product decisions
@@ -704,8 +708,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P26-S5A | Adopt inventory valuation contract (documentation only) | DONE | Owner reviewed/merged PR #383 at `e750f73c`; final head `4f965262` passed exact-head clean/repeat/JavaFX CI; [S5A contract](P26-S5A-inventory-valuation-contract.md) resolves D06 |
 | P26-S5 | Resolve inventory valuation limitations (G12) | DONE | Owner merged PR #384 at main `7739698b`; implementation head `0c102dfd`; local headless and actual JavaFX gates passed; exact-head PR workflow was still in progress when the merge was reported and must not be described as passed without its result |
 | P26-S6A | Review and accept opening/carryover conversion | DONE | Owner merged PR #385 at `e298d2e0`; accepted head `bba4f944` passed full local, actual JavaFX and exact-head GitHub CI |
-| P26-S6B | Assist merchant settlement | VERIFYING | [Adopted S6B contract](P26-S6B-merchant-settlement-assistant.md); canonical Preview/Save assistant implemented with scenario-level service and actual JavaFX coverage; full clean and workflow-selector gates passed; draft publication/exact-head CI/owner review remain |
-| P27-S1 | Finalize the form contract and resolve runbook conflicts (G5/G10/G13) | BLOCKED | P26-S6 merged; owning contract and D01–D10 gates as applicable |
+| P26-S6B | Assist merchant settlement | DONE | Owner merged PR #386 at db488cd2; final published head fb7f7813 passed full CI |
+| P27-S1 | Define generic accounting packet contract | VERIFYING | [Generic contract](P27-S1-submission-contract.md); owner direction removes template/signature/deadline gate; documentation prepared for draft review |
 | P27-S2 | Export the complete required workbook and supporting packet (G5) | BLOCKED | P27-S1 merged; owning contract and D01–D10 gates as applicable |
 | P27-S3 | Add factual close readiness and evidence references (G3/G5/G13) | BLOCKED | P27-S2 merged; owning contract and D01–D10 gates as applicable |
 | P27-S4 | Complete interchange coverage for all new fields (G4 and cross-cutting) | BLOCKED | P27-S3 merged; owning contract and D01–D10 gates as applicable |

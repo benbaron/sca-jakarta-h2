@@ -1,5 +1,7 @@
 # P23–P28 — Adopted runbook correction program
 
+Scope amendment, 2026-10-25: owner directs generic accounting rules for P27. The [generic packet contract](P27-S1-submission-contract.md) supersedes earlier official-template, signature, deadline and document-owner runbook-resolution prerequisites for generic export. Historical template collection and official-form acceptance wording elsewhere are reference evidence, not current implementation gates.
+
 Adopted by the owner on 26 September 2026. Live governing specification; execution status belongs to [PLAN.md](PLAN.md).
 
 P23-S1 evidence, decisions, and reproducible acceptance cases are in [P23-S1 baseline](P23-S1-baseline-and-acceptance.md). Owner checks are in [P23-S1 user testing](P23-S1-user-testing.md). The archived proposal remains unchanged.
@@ -34,7 +36,7 @@ The original review baseline below is historical source evidence. P23-S1 refresh
 | P24 | Usable named events, Journal tags, complete event costs and setup | P23; current Activity/Fund authority retained |
 | P25 | Controlled transfers, checks, NMR, and functional classification | P23–P24; relevant accounting policy decisions |
 | P26 | Linked property records, improved planning, recognition, and conversion | P23–P25; valuation and conversion contracts |
-| P27 | Complete interchange, workbook output, and close-readiness evidence | Required P23–P26 data contracts; approved workbook template |
+| P27 | Generic accounting packet, interchange and close-readiness evidence | Required P23–P26 data contracts; generic packet contract |
 | P28 | End-to-end runbook acceptance and release | All preceding required slices merged and verified |
 
 Start collecting the authoritative workbook and resolving policy questions during P23-S1. Do not defer discovery of submission requirements until P27. Dependencies describe technical readiness; they do not authorize simultaneous implementation branches.
@@ -208,17 +210,17 @@ After S4G's MR #374 merge, select [S4H](P25-S4H-merchant-withholding.md). Reuse 
 
 ## P27 — Submission, evidence, and complete portability
 
-### P27-S1 — Finalize the form contract and resolve runbook conflicts (G5/G10/G13)
+### P27-S1 — Define the generic accounting packet (G5/G10/G13)
 
-**Work:** Turn the template inventory begun in P23-S1 into a versioned field-to-source mapping for every required workbook tab/form. Resolve NMR, stale checks, carryover/classification conflicts, duplicated sections, and the missing substantive section 22 with the document owner. Record the adopted rule, source, effective date, and approving authority. Identify external evidence and signatures explicitly.
+**Work:** Owner direction on 2026-10-25 replaces official-template reproduction with generic accounting rules. The [packet contract](P27-S1-submission-contract.md) defines canonical statements, complete ledger, schedules, bank/operational details, manifest and visible exceptions. Historical template revision, signatures, deadlines and runbook conflict resolution do not gate this scope.
 
-**Acceptance:** Every required field has a canonical source, operator input, external evidence reference, or a visible unresolved blocker. No invented zero or unsupported certification fills a missing requirement. This contract must be ready before affected coding slices proceed; P27-S1 finalizes, rather than postpones, earlier decisions.
+**Acceptance:** Every required section/field has a canonical source or visible unavailable diagnostic; no invented zero or certification fills missing facts. Scope, cutoff, precision, completeness and scenario-level tests are defined before S2 implementation.
 
 ### P27-S2 — Export the complete required workbook and supporting packet (G5)
 
-**Work:** Populate a copy of the approved template, preserving required formulas, validation, names, layout, and macros where applicable. Map organization/period metadata, ledger, outstanding items, asset/liability details, property/supplies, and financial statements according to the actual template. Produce supporting reports and an export manifest with scope, application/template version, and creation time. Keep exports reproducible from a defined data snapshot.
+**Work:** Generate a generic XLSX workbook and supporting reports under the S1 contract. Include company/period metadata, statements, full ledger, schedules, bank and operational details, exceptions and a manifest with scope, packet/application version, snapshot identity and creation time. Use one consistent snapshot without UI row-limit truncation.
 
-**Acceptance:** A representative quarter and year-end workbook open in the owner's Excel environment without repair, with expected formulas/results and all required tabs intact. Every reported total ties to the same canonical scope. PDF and on-screen financial reports use consistent formatting. Re-export does not overwrite a previously submitted packet without explicit destination handling.
+**Acceptance:** Representative quarter/year-end workbooks open without repair and all sections tie to canonical reports. Test precision, completeness, company isolation, exceptions, safe destination handling and zero database writes. Supporting reports use consistent formatting. No official filing or signature compliance is claimed.
 
 ### P27-S3 — Add factual close readiness and evidence references (G3/G5/G13)
 
@@ -283,7 +285,7 @@ Update the operating guide to actual screen labels and steps. Replace workaround
 | NMR and stale-check policy | Written resolution from responsible accounting authority | P25-S3/S4 |
 | Functional classification | D07 adopted: explicit AR/OA/FR, no automatic defaults, transaction-date net GL expense; official form mappings remain separate | P25-S5 / P27 |
 | Inventory costing | Choose and document required method with example results | P26-S5 |
-| Workbook authority | Exact template/revision and submission requirements | P27-S2; acquire during P23-S1 |
+| Workbook authority | RESOLVED 2026-10-25: owner selects generic accounting rules; historical template is reference only | P27-S1/S2 |
 | Evidence/approvals | External evidence plus factual references by default; explicit scope amendment for internal controls | P27-S3/S5 |
 
 These are bounded decisions within a complete plan, not reasons to delay unrelated corrective work. Do not substitute an undocumented implementation assumption for an accounting policy decision.
