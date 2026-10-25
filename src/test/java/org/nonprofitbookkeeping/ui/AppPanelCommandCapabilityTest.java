@@ -71,6 +71,7 @@ class AppPanelCommandCapabilityTest
         expected.put(AppPanelId.RECOGNITION_ASSISTANT, Set.of());
         expected.put(AppPanelId.COUNTERPARTIES, editorCommands());
         expected.put(AppPanelId.MERCHANTS, editorCommands());
+        expected.put(AppPanelId.MERCHANT_SETTLEMENT_ASSISTANT, Set.of());
         expected.put(AppPanelId.ASSETS_REGISTER, editorCommands());
         expected.put(AppPanelId.DEPRECIATION_RUNS, Set.of());
         expected.put(AppPanelId.INVENTORY, Set.of(AppCommand.NEW_ACTIVE));
