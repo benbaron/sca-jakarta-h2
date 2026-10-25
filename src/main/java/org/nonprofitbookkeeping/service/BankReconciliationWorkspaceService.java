@@ -335,6 +335,20 @@ public class BankReconciliationWorkspaceService
         }
     }
 
+    /** Recorded session state for a read-only packet; deliberately does not recalculate or persist balances. */
+    public Snapshot readForPacket(long sessionId, String companyCode)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            SessionRow row = session(em, sessionId);
+            if (!row.company().getCode().equalsIgnoreCase(companyCode))
+            {
+                throw new IllegalArgumentException("Reconciliation session belongs to another company.");
+            }
+            return snapshot(em, sessionId);
+        }
+    }
+
     public Snapshot addManualLine(ManualStatementLineCommand command)
     {
         requireBookkeepingWriteForSession(

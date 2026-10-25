@@ -25,15 +25,11 @@ import java.util.function.Supplier;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-/** Non-mutating, company-wide core reports from one private H2 backup snapshot. */
+/** Non-mutating company-wide accounting packet from one private H2 backup snapshot. */
 public final class CoreAccountingPacketService
 {
     static final int MAX_LEDGER_ROWS = 1_000_000;
-    public static final List<String> OMITTED = List.of(
-            "Bank reconciliation and outstanding instruments", "Supplemental schedules and control tie-outs",
-            "NMR and merchant receivable movements", "Fixed assets", "Inventory and supplies",
-            "Property custody", "Budget versus Actual", "Fund transfers",
-            "Full ledger Event, category, split identity and correction-link enrichment");
+    public static final List<String> OMITTED = List.of();
     private final Supplier<Path> database;
     private final Supplier<String> company;
     private final AuthorizationGuard guard;
@@ -64,7 +60,11 @@ public final class CoreAccountingPacketService
         {
             throw new IllegalArgumentException("End date must not precede start date.");
         }
-        String code = Objects.requireNonNull(company.get(), "Company is required");
+        if (start.equals(LocalDate.MIN))
+        {
+            throw new IllegalArgumentException("Packet start needs a representable preceding date for opening balances.");
+        }
+        String code = Objects.requireNonNull(company.get(), "Company is required").strip().toUpperCase(java.util.Locale.ROOT);
         if (code.isBlank())
         {
             throw new IllegalArgumentException("Company is required.");
@@ -90,6 +90,7 @@ public final class CoreAccountingPacketService
             transfer.restoreDatabaseCopy(backup.backupFile(), copy);
             Map<String, String> reports = new LinkedHashMap<>();
             String displayName;
+            List<PacketOperationalSections.ExceptionRow> exceptions;
             try (Jpa snapshot = new Jpa(copy))
             {
                 displayName = new CompanyAdminService(snapshot).findCompany(code)
@@ -98,20 +99,15 @@ public final class CoreAccountingPacketService
                 reports.put("Trial Balance", FinancialReportRenderer.renderTrialBalanceCsv(financial.trialBalance(end, null)));
                 reports.put("Balance Sheet", FinancialReportRenderer.renderBalanceSheetCsv(financial.balanceSheet(end, null)));
                 reports.put("Income Statement", FinancialReportRenderer.renderIncomeStatementCsv(financial.incomeStatement(start, end, null)));
-                var ledger = financial.generalLedgerDetail(start, end, null, ledgerCapacity + 1);
-                if (ledger.size() > ledgerCapacity)
-                {
-                    throw new IllegalArgumentException("Core packet exceeds ledger capacity of " + ledgerCapacity + " rows; choose a smaller period.");
-                }
-                reports.put("General Ledger", FinancialReportRenderer.renderGeneralLedgerCsv(ledger));
                 var request = new ReportRequest(ReportDefinition.FUNCTIONAL_EXPENSES, start, end,
                         ReportFundOption.ALL_FUNDS, ReportRequest.DEFAULT_ROW_LIMIT);
                 reports.put("Functional Expenses", FunctionalExpenseReportBuilder.completeResult(request,
                         financial.functionalExpenses(start, end, null, null), FinancialReportDisplayFormat.plain()).csv());
+                exceptions = new PacketOperationalSections(snapshot, code, start, end, ledgerCapacity).append(reports);
             }
             Instant created = Instant.now();
             Map<String, Object> manifest = new LinkedHashMap<>();
-            manifest.put("packetVersion", "core-1");
+            manifest.put("packetVersion", "accounting-2");
             manifest.put("applicationVersion", applicationVersion());
             manifest.put("companyCode", code);
             manifest.put("companyName", displayName);
@@ -121,8 +117,14 @@ public final class CoreAccountingPacketService
             manifest.put("scope", "All funds and all events; selected Report Library filters do not apply");
             manifest.put("createdAt", created.toString());
             manifest.put("snapshotSha256", backup.sha256());
-            manifest.put("status", "INCOMPLETE CORE PACKET — operational sections are not included; no readiness certification");
+            manifest.put("status", exceptions.isEmpty() ? "ACCOUNTING PACKET — no close-readiness certification"
+                    : "INCOMPLETE — accounting packet has exceptions; no close-readiness certification");
             manifest.put("omittedSections", OMITTED);
+            manifest.put("exceptions", exceptions);
+            manifest.put("ledgerCapacity", ledgerCapacity);
+            manifest.put("assetInventoryCustodyCapacity", PacketOperationalSections.DOMAIN_SENTINEL - 1);
+            manifest.put("budgetBasis", "Active version at captured snapshot, explicitly identified; canonical fiscal YTD through cutoff, not prorated; all retained versions and lines included");
+            manifest.put("bankMetadataBasis", "Recorded reconciliation/check metadata at snapshot; cleared-through-cutoff uses recorded clearing dates, not age or cancellation");
             manifest.put("precision", "Exact decimal strings; no additional presentation rounding; XLSX amounts are text");
             manifest.put("csvSafety", "Text beginning with =, +, -, @, tab or carriage return is prefixed with an apostrophe; numeric amounts remain exact");
             manifest.put("sections", List.copyOf(reports.keySet()));
@@ -136,7 +138,9 @@ public final class CoreAccountingPacketService
                 {
                     var row = sheet.createRow(index++);
                     row.createCell(0).setCellValue(entry.getKey());
-                    row.createCell(1).setCellValue(entry.getValue().toString());
+                    row.createCell(1).setCellValue(entry.getValue() instanceof java.util.Collection<?> values
+                            ? values.size() + " entries; see manifest.json and the corresponding worksheets"
+                            : entry.getValue().toString());
                 }
                 sheet.setColumnWidth(0, 26 * 256);
                 sheet.setColumnWidth(1, 100 * 256);
@@ -144,7 +148,7 @@ public final class CoreAccountingPacketService
                 {
                     var reportSheet = workbook.createSheet(entry.getKey());
                     List<List<String>> rows = PoiXlsxFinancialReportAdapter.parseCsv(entry.getValue());
-                    if (rows.size() > 1_048_576)
+                    if (rows.size() > Math.min(1_048_576, ledgerCapacity + 1))
                     {
                         throw new IOException("Worksheet row capacity exceeded.");
                     }
@@ -177,14 +181,14 @@ public final class CoreAccountingPacketService
                     write(zip, entry.getKey() + ".csv", safeCsv.toString().getBytes(StandardCharsets.UTF_8));
                 }
                 write(zip, "manifest.json", new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsBytes(manifest));
-                zip.putNextEntry(new ZipEntry("Core Accounting Packet.xlsx"));
+                zip.putNextEntry(new ZipEntry("Accounting Packet.xlsx"));
                 workbook.write(zip);
                 zip.closeEntry();
             }
             requireExport(code);
             // A hard link publishes a completed file atomically and never replaces an existing destination.
             Files.createLink(target, staged);
-            return new Result(target, backup.sha256(), created, List.copyOf(reports.keySet()));
+            return new Result(target, backup.sha256(), created, List.copyOf(reports.keySet()), exceptions.size());
         }
         finally
         {
@@ -238,5 +242,5 @@ public final class CoreAccountingPacketService
         zip.closeEntry();
     }
 
-    public record Result(Path destination, String snapshotSha256, Instant createdAt, List<String> sections) { }
+    public record Result(Path destination, String snapshotSha256, Instant createdAt, List<String> sections, int exceptionCount) { }
 }

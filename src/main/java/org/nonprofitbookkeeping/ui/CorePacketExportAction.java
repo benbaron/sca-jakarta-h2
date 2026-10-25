@@ -17,7 +17,7 @@ import java.util.function.Supplier;
 /** Report Library action with captured dates and service, off-thread snapshot/export and live permission gating. */
 final class CorePacketExportAction
 {
-    private final Button button = new Button("Export Core Packet (all funds/events)");
+    private final Button button = new Button("Export Accounting Packet (all funds/events)");
     private CompletableFuture<CoreAccountingPacketService.Result> completion;
 
     CorePacketExportAction(Supplier<CoreAccountingPacketService> service, Supplier<LocalDate> start,
@@ -31,8 +31,8 @@ final class CorePacketExportAction
             Supplier<LocalDate> end, Supplier<Path> destination, Consumer<String> status)
     {
         button.setId("reportLibraryCorePacketExport");
-        button.setTooltip(new Tooltip("Exports core statements only. Operational sections are omitted and the packet is marked incomplete. Uses the selected dates, all funds and all events."));
-        UiPermissionGate.gate(button, ApplicationPermission.EXPORT, "Export core accounting packet");
+        button.setTooltip(new Tooltip("Exports statements and operational schedules from one snapshot using Packet start/end, all funds and all events. Exceptions remain visible; this does not certify period close."));
+        UiPermissionGate.gate(button, ApplicationPermission.EXPORT, "Export accounting packet");
         button.setOnAction(event ->
         {
             if (completion != null && !completion.isDone())
@@ -42,13 +42,13 @@ final class CorePacketExportAction
             Path target = destination.get();
             if (target == null)
             {
-                status.accept("Core packet export cancelled.");
+                status.accept("Accounting packet export cancelled.");
                 return;
             }
             LocalDate from = start.get();
             LocalDate through = end.get();
             CoreAccountingPacketService captured = service.get();
-            status.accept("Exporting incomplete core packet for all funds/events…");
+            status.accept("Exporting accounting packet for all funds/events…");
             completion = new CompletableFuture<>();
             button.setDisable(true);
             Thread worker = new Thread(() ->
@@ -58,8 +58,9 @@ final class CorePacketExportAction
                     var result = captured.export(from, through, target);
                     Platform.runLater(() ->
                     {
-                        status.accept("Exported INCOMPLETE core packet to " + result.destination()
-                                + ". Operational sections remain omitted; see manifest.");
+                        status.accept("Exported accounting packet to " + result.destination()
+                                + (result.exceptionCount() == 0 ? ". No close-readiness certification."
+                                : ". INCOMPLETE: " + result.exceptionCount() + " exception(s); see manifest and Exceptions and Notes."));
                         button.setDisable(false);
                         completion.complete(result);
                     });
@@ -68,7 +69,7 @@ final class CorePacketExportAction
                 {
                     Platform.runLater(() ->
                     {
-                        status.accept("Could not export core packet: " + UiErrors.safeMessage(ex));
+                        status.accept("Could not export accounting packet: " + UiErrors.safeMessage(ex));
                         button.setDisable(false);
                         completion.completeExceptionally(ex);
                     });
@@ -85,9 +86,9 @@ final class CorePacketExportAction
     private static Path choose(Window window)
     {
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Export Incomplete Core Accounting Packet — Choose a New File");
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Core packet ZIP", "*.zip"));
-        chooser.setInitialFileName("core-accounting-packet.zip");
+        chooser.setTitle("Export Accounting Packet — Choose a New File");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Accounting packet ZIP", "*.zip"));
+        chooser.setInitialFileName("accounting-packet.zip");
         var file = chooser.showSaveDialog(window);
         return file == null ? null : file.toPath();
     }

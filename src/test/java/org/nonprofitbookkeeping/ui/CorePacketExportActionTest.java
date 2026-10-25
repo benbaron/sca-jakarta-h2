@@ -54,13 +54,15 @@ class CorePacketExportActionTest
                     assertTrue(action.get().button().isDisabled());
                     MainWindow.sharedSessionState().setAuthenticatedUser(UiPermissionTestSessions.manager());
                     assertFalse(action.get().button().isDisabled());
+                    assertTrue(action.get().button().getText().contains("Export Accounting Packet"));
                     action.get().button().fire();
                     assertTrue(status.get().contains("Exporting"));
                     assertTrue(action.get().button().isDisabled());
                     assertNotNull(action.get().completion());
                     return null;
                 });
-                action.get().completion().get(60, TimeUnit.SECONDS);
+                var result = action.get().completion().get(60, TimeUnit.SECONDS);
+                assertTrue(result.sections().containsAll(java.util.List.of("NMR Movements", "Property Custody", "Budget vs Actual", "Exceptions and Notes")));
                 assertTrue(Files.isRegularFile(target));
                 assertTrue(status.get().contains("INCOMPLETE"));
                 FxTestSupport.onFx(() ->

@@ -1,15 +1,25 @@
 ---
-plan_version: 410
+plan_version: 412
 active_phase: P27
-active_slice: P27-S2A
+active_slice: P27-S2B
 active_status: VERIFYING
-active_branch: codex/P27-S2A-core-packet
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/388
-active_head: d63a8fbff7fc0f88b37d170d1d63ff1d0c3118f5
-next_action: "Owner reviews draft PR #388 and the S2A packet checks, then accepts/merges; confirm main before starting S2B operational completion."
+active_branch: codex/P27-S2B-operational-packet
+active_pull_request: null
+active_head: 54d939fc1d60b805a622d42632ccbd3aca12e3a5
+next_action: "Publish the verified S2B draft, verify the published head/tree and inspect its CI; owner spreadsheet review and merge follow."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+Final S2B local verification — 2026-10-25: `mvn clean verify` passed at 22:42:04 UTC with **1,043 tests, zero failures/errors, 70 expected headless display skips**. The exact workflow production JavaFX selector passed under Xvfb at 22:46:32 UTC with **62 tests, zero failures/errors/skips**. Both gates include the final supporting reconciliation tables, NMR opening controls and populated workbook/CSV checks. Relative documentation links and `git diff --check` pass; no source/test changes follow these gates. Draft publication, exact-head CI and owner spreadsheet review/merge remain. P27-S2B is VERIFYING; S2 and S3 do not advance before merge.
+
+### P27-S2A acceptance/merge and S2B operational completion — 2026-10-25
+
+Owner confirmed PR #388 merged. GitHub and native fetch confirm accepted head `d63a8fbff7fc0f88b37d170d1d63ff1d0c3118f5` in current main at `54d939fc1d60b805a622d42632ccbd3aca12e3a5`; exact-head workflow `40236217512` passed. S2A is DONE. Fresh `codex/P27-S2B-operational-packet` carries its local final-CI evidence and implements the [S2B contract](P27-S2B-operational-packet.md). This supersedes historical S2A merge-pending statements below.
+
+The existing private snapshot now supplies the enriched ledger, bank activity/outstanding items/configuration, read-only reconciliation sessions/supporting lines, checks, all six supplemental schedules and opening/closing controls, dated NMR/merchant movements, assets/depreciation/acquisition links, inventory/supplies/movements, historical custody, retained budgets/active fiscal-YTD comparisons, transfers and full Exceptions and Notes. The UI exports an accounting packet and reports its exception count. Missing data never becomes invented zeroes or close-readiness certification. No schema, SCLX, ledger or policy default is introduced. Donor placeholder projections are not imported; canonical production queries are reused.
+
+Scenario coverage adds populated operational CSV/XLSX parity, earlier outstanding items with future clearing, NMR/merchant partial settlement and observations, six-schedule controls/period effects, asset/depreciation/inventory facts, custody cutoff/future correction, canonical budget identity/YTD, saved opposite-direction transfer reversals, 5,001-row capacity refusal and unchanged source session/ledger/audit facts. Existing company isolation, precision, year boundary, complete-ledger, permission, overwrite and actual JavaFX tests remain. Initial clean verification passed 1,043 tests with zero failures/errors and 70 headless display skips; final supporting-table checks and final gates follow. User checks are in the S2B contract. No human spreadsheet result or S2B GitHub success is claimed yet.
 
 Final S2A publication/CI evidence — 2026-10-25: published PR #388 head `d63a8fbff7fc0f88b37d170d1d63ff1d0c3118f5` and its fetched remote ref match exactly, with tree `1ea610331dab77d5119475dde5ca4b4f7f180f67`. [Maven PR Tests run 40236217512](https://github.com/benbaron/sca-jakarta-h2/actions/runs/40236217512), job `121298519862`, completed successfully: clean verification, repeated tests and production JavaFX checks all passed. The PR description records this result and the final local 1,040-test clean / 62-test actual JavaFX gates. This final evidence stays local to preserve the green published head. S2A remains VERIFYING for owner review/acceptance and merge; parent S2 is incomplete and S2B stays blocked until that merge. No human spreadsheet result is claimed.
 
@@ -59,7 +69,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
 | P26 | Property, planning, recognition, conversion | DONE through owner-merged PR #386; final published head passed clean/repeat/JavaFX CI |
-| P27 | Generic accounting packet, evidence, complete portability | IN_PROGRESS — S1 accepted/merged in PR #387; S2A core export selected; generic accounting rules govern and official-template gate is removed |
+| P27 | Generic accounting packet, evidence, complete portability | IN_PROGRESS — S1/S2A accepted and merged; S2B operational completion selected; generic accounting rules govern |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
 ## 3. Established product decisions
@@ -727,8 +737,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P26-S6B | Assist merchant settlement | DONE | Owner merged PR #386 at db488cd2; final published head fb7f7813 passed full CI |
 | P27-S1 | Define generic accounting packet contract | DONE | Owner confirmed/merged PR #387 at a5c6ef17; final head 6ac81bcf passed CI run 40232697699 |
 | P27-S2 | Export generic accounting workbook and supporting packet | IN_PROGRESS | Split into S2A core packet and S2B operational completion; [S2A contract](P27-S2A-core-packet.md); S2 is not DONE until both merge |
-| P27-S2A | Export an incomplete core financial packet | VERIFYING | Draft PR #388; consistent H2 backup/report authorities, XLSX/CSV/manifest, explicit omissions and scenario-level tests; local clean and actual JavaFX gates passed |
-| P27-S2B | Complete operational sections and enriched ledger | BLOCKED | S2A merged; add all remaining S1 sections, same snapshot/scope, complete detail and final packet acceptance |
+| P27-S2A | Export an incomplete core financial packet | DONE | Owner merged PR #388 at 54d939fc; published head d63a8fbf passed clean/repeat/JavaFX CI run 40236217512 |
+| P27-S2B | Complete operational sections and enriched ledger | VERIFYING | [S2B contract](P27-S2B-operational-packet.md); complete same-snapshot generic packet with explicit exceptions; local clean/actual JavaFX passed; publication/CI and owner review remain |
 | P27-S3 | Add factual close readiness and evidence references (G3/G5/G13) | BLOCKED | P27-S2 merged; owning contract and D01–D10 gates as applicable |
 | P27-S4 | Complete interchange coverage for all new fields (G4 and cross-cutting) | BLOCKED | P27-S3 merged; owning contract and D01–D10 gates as applicable |
 | P28-S1 | Run the complete runbook acceptance matrix | BLOCKED | P27-S4 merged; owning contract and D01–D10 gates as applicable |
