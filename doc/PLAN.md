@@ -5,11 +5,13 @@ active_slice: P27-S2B
 active_status: VERIFYING
 active_branch: codex/P27-S2B-operational-packet
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/389
-active_head: 6a0313b780a6bd1702086e857ccf1211fc37435b
-next_action: "Verify final PR #389 head/tree and inspect its clean/repeat/JavaFX CI; owner spreadsheet review and merge follow."
+active_head: 62f0a051ca043ac6efc8b591853acdc178a741c6
+next_action: "Owner reviews PR #389 using S2B spreadsheet checks and merges when ready; after merge verification, carry this evidence onto a fresh branch and select the next unblocked slice."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+Final S2B publication/CI evidence — 2026-10-25: published head `62f0a051ca043ac6efc8b591853acdc178a741c6` and fetched remote head/tree match exactly, tree `764ce55c66320fbc5f1d4030b5bd28f4982daa59`. [Maven PR Tests run 40241876620](https://github.com/benbaron/sca-jakarta-h2/actions/runs/40241876620), job `121315249403`, passed clean verification, repeated tests and production JavaFX checks. The draft PR #389 description records final-head CI and the final local 1,043-test clean / 62-test actual JavaFX results. This evidence is a local-only PLAN successor to preserve the green published head. S2B stays VERIFYING pending owner spreadsheet review/acceptance and merge; no human spreadsheet result is inferred. After the owner reports merge, verify current main, carry this evidence forward to a fresh branch and select the next unblocked slice; do not reuse this branch or start S3 before S2B merges.
 
 Published implementation `6a0313b780a6bd1702086e857ccf1211fc37435b` and opened draft [PR #389](https://github.com/benbaron/sca-jakarta-h2/pull/389) against verified main `54d939fc`. The PR records scope, unit scenarios, final clean/actual JavaFX gates and owner spreadsheet checks. This documentation-only publication successor records the known implementation parent; confirm its resulting remote head and tree and require CI for that exact commit. No S2B GitHub success or human spreadsheet result is claimed yet. S2B stays VERIFYING; owner review and merge remain.
 
