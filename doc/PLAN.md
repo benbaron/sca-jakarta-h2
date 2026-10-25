@@ -4,12 +4,14 @@ active_phase: P27
 active_slice: P27-S2B
 active_status: VERIFYING
 active_branch: codex/P27-S2B-operational-packet
-active_pull_request: null
-active_head: 54d939fc1d60b805a622d42632ccbd3aca12e3a5
-next_action: "Publish the verified S2B draft, verify the published head/tree and inspect its CI; owner spreadsheet review and merge follow."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/389
+active_head: 6a0313b780a6bd1702086e857ccf1211fc37435b
+next_action: "Verify final PR #389 head/tree and inspect its clean/repeat/JavaFX CI; owner spreadsheet review and merge follow."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+Published implementation `6a0313b780a6bd1702086e857ccf1211fc37435b` and opened draft [PR #389](https://github.com/benbaron/sca-jakarta-h2/pull/389) against verified main `54d939fc`. The PR records scope, unit scenarios, final clean/actual JavaFX gates and owner spreadsheet checks. This documentation-only publication successor records the known implementation parent; confirm its resulting remote head and tree and require CI for that exact commit. No S2B GitHub success or human spreadsheet result is claimed yet. S2B stays VERIFYING; owner review and merge remain.
 
 Final S2B local verification — 2026-10-25: `mvn clean verify` passed at 22:42:04 UTC with **1,043 tests, zero failures/errors, 70 expected headless display skips**. The exact workflow production JavaFX selector passed under Xvfb at 22:46:32 UTC with **62 tests, zero failures/errors/skips**. Both gates include the final supporting reconciliation tables, NMR opening controls and populated workbook/CSV checks. Relative documentation links and `git diff --check` pass; no source/test changes follow these gates. Draft publication, exact-head CI and owner spreadsheet review/merge remain. P27-S2B is VERIFYING; S2 and S3 do not advance before merge.
 
