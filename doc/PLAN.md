@@ -5,11 +5,13 @@ active_slice: P27-S2A
 active_status: VERIFYING
 active_branch: codex/P27-S2A-core-packet
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/388
-active_head: 3348b05322a19ddbb49f2b2c71b26f0e5c772bb1
-next_action: "Inspect final-head CI for draft PR #388, repair any failures and leave the verified draft for owner review/merge; S2B remains blocked until S2A merges."
+active_head: d63a8fbff7fc0f88b37d170d1d63ff1d0c3118f5
+next_action: "Owner reviews draft PR #388 and the S2A packet checks, then accepts/merges; confirm main before starting S2B operational completion."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+Final S2A publication/CI evidence — 2026-10-25: published PR #388 head `d63a8fbff7fc0f88b37d170d1d63ff1d0c3118f5` and its fetched remote ref match exactly, with tree `1ea610331dab77d5119475dde5ca4b4f7f180f67`. [Maven PR Tests run 40236217512](https://github.com/benbaron/sca-jakarta-h2/actions/runs/40236217512), job `121298519862`, completed successfully: clean verification, repeated tests and production JavaFX checks all passed. The PR description records this result and the final local 1,040-test clean / 62-test actual JavaFX gates. This final evidence stays local to preserve the green published head. S2A remains VERIFYING for owner review/acceptance and merge; parent S2 is incomplete and S2B stays blocked until that merge. No human spreadsheet result is claimed.
 
 Published implementation head `3348b05322a19ddbb49f2b2c71b26f0e5c772bb1` on `codex/P27-S2A-core-packet` and opened draft [PR #388](https://github.com/benbaron/sca-jakarta-h2/pull/388) against confirmed main `a5c6ef17`. This publication-only successor records the draft and completed local gates. Confirm its resulting remote head/tree and inspect CI for that actual commit; no GitHub success is claimed yet. Owner review/merge and separate human spreadsheet checks remain.
 
