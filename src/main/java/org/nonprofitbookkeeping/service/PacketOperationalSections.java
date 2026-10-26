@@ -57,6 +57,11 @@ final class PacketOperationalSections
         List<LedgerRow> bank = ledger(null, true);
         table(out, "Bank Activity", LedgerRow.class, bank.stream().filter(r -> !r.date().isBefore(start)).toList());
         table(out, "Outstanding Bank Items", LedgerRow.class, bank.stream().filter(r -> !r.clearedThroughCutoff()).toList());
+        long outstanding = bank.stream().filter(r -> !r.clearedThroughCutoff()).count();
+        if (outstanding > 0)
+        {
+            issue("WARNING", "Reconciliation", "", outstanding + " bank line(s) remain outstanding through cutoff; inspect instruments and statement timing.");
+        }
         for (var row : bank)
         {
             if (row.recordedCleared() && row.clearedOn() == null)
@@ -198,6 +203,11 @@ final class PacketOperationalSections
             var before = queries.query(kind, start.minusDays(1));
             var closing = queries.query(kind, end);
             table(out, "Schedule " + kind.name(), SupplementalOpenItemQueryService.Row.class, closing.rows());
+            long unsettled = closing.authoritativeRows().stream().filter(row -> row.openBalance().signum() != 0).count();
+            if (unsettled > 0)
+            {
+                issue("WARNING", "Unsettled Items", kind.name(), unsettled + " item(s) retain a balance at cutoff; review due dates and supporting evidence.");
+            }
             for (var row : before.rows()) openings.add(PacketCsv.row("kind", kind, "itemId", row.itemId(), "opening", row.openBalance(), "status", row.status()));
             for (var scoped : List.of(before, closing))
             {
@@ -379,6 +389,10 @@ final class PacketOperationalSections
             {
                 boolean reversal = f.getPostedTxn() != null && f.getPostedTxn().getReversalOf() != null;
                 rows.add(transferRow(f, f.getTransferDate(), f.getAmount(), f.getPostedTxn(), reversal ? "DATED REVERSAL" : "RECORDED TRANSFER"));
+                if (f.getPostedTxn() == null)
+                {
+                    issue("WARNING", "Transfers", f.getId().toString(), "Recorded transfer has no canonical transaction; no accounting effect is inferred.");
+                }
             }
         }
         out.put("Fund Transfers", PacketCsv.rows(List.of("transferId", "date", "originalTransferDate", "record", "fromFundId", "fromFund", "toFundId", "toFund", "amount", "recordedStatus", "transactionId", "reversalOfTransactionId", "accountingEffect", "memo"), rows));
