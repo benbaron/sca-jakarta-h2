@@ -226,6 +226,8 @@ Execution split after S1 merge: [S2A](P27-S2A-core-packet.md) provides an explic
 
 ### P27-S3 — Add factual close readiness and evidence references (G3/G5/G13)
 
+Execution split: [S3A](P27-S3A-readiness-preview.md) delivers shared-snapshot automated observations and correction navigation; S3B follows its merge with durable evidence/exception reasons and atomic close-time revalidation. Parent S3 stays incomplete until both merge. S3A changes no close enforcement and provides no external-review certification.
+
 **Work:** Add a close-readiness projection covering bank differences, unsettled items, control-account tie-outs, missing classifications/tags, inventory/assets, NMR/transfers, custody confirmation, and required submission fields. Each failure links to its existing correction surface. Retain structured external receipt/approval/count-packet references and factual who/when attestations through H2 audit authority. Define blockers versus warnings and reasons for permitted exceptions. Integrate with `PeriodCloseRangeService`; recheck at commit to prevent stale readiness results.
 
 **Acceptance:** An unbalanced schedule or incomplete required packet cannot appear fully ready. A recorded external review is described as an attestation, not independently verified approval. Reopening/reclosing retains history. Reports and readiness reference the same company, cutoff, and data revision. Missing receipts and policy questions appear in an actionable exceptions list without introducing an approval queue.

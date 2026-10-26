@@ -1,15 +1,23 @@
 ---
-plan_version: 412
+plan_version: 413
 active_phase: P27
-active_slice: P27-S2B
+active_slice: P27-S3A
 active_status: VERIFYING
-active_branch: codex/P27-S2B-operational-packet
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/389
-active_head: 62f0a051ca043ac6efc8b591853acdc178a741c6
-next_action: "Owner reviews PR #389 using S2B spreadsheet checks and merges when ready; after merge verification, carry this evidence onto a fresh branch and select the next unblocked slice."
+active_branch: codex/P27-S3A-readiness-preview
+active_pull_request: null
+active_head: fac8b07142be413106fff36dc77366f459c3535d
+next_action: "Publish the locally verified S3A draft and inspect final-head CI. Owner checks and merge follow; durable evidence/close-commit enforcement remain S3B."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+Final local S3A gates — 2026-10-25 (America/Denver): `mvn clean verify` passed at 20:41:33 with **1,050 tests, zero failures/errors, 73 expected display-dependent skips**. The expanded exact production JavaFX workflow selector passed under Xvfb at 20:46:12 with **65 tests, zero failures/errors/skips**. All final source/test behavior is included in these gates; 142 relative documentation links and whitespace review passed. No known executed-check failure remains. Initial financial-opening test precision was corrected to the existing two-decimal account-opening column; no schema/accounting precision policy was changed. Remaining: draft publication, final-head GitHub CI, owner [S3A checks](P27-S3A-readiness-preview.md) and merge. No human desktop/spreadsheet result is inferred.
+
+### P27-S2B merge and P27-S3A selection — 2026-10-25 (America/Denver)
+
+Owner reported PR #389 merged. GitHub/native fetch confirm accepted head `62f0a051` in current main at `fac8b07142be413106fff36dc77366f459c3535d`; exact-head workflow `40241876620` passed clean/repeat/JavaFX. S2B and parent S2 are DONE. Fresh branch carries the final local CI evidence. S3 is split into a vertically usable [S3A readiness preview](P27-S3A-readiness-preview.md) and S3B durable evidence/exception reasons with close-time revalidation. S3 is not DONE until both merge; S3A does not certify readiness or change close authorization/enforcement.
+
+S3A implementation reuses one factored packet snapshot capture for preview/export, adding immutable typed findings, stable finding identities, a content revision and explicit Trial Balance/Balance Sheet blockers plus outstanding/unsettled/transfer warnings. Packet format accounting-3 includes the matching readiness worksheet/CSV and manifest basis/counts/revision. Period Close's Readiness tab captures asynchronously, exposes existing correction destinations, invalidates on date/company/database/access changes, discards stale results and clears previous findings on errors. Existing close/reopen and ledger authorities are unchanged. Donor MonthlyCloseChecklistService was inspected; alternate gateways/unwired placeholders are not ported. No migration or SCLX shape changes. Baseline compile, 11 focused service tests and six focused actual-JavaFX tests passed. New cases exercise content/cutoff/company isolation, changed revisions, financial/classification blockers, unsettled warnings, packet parity, capacity/permission failure and post-capture revocation, no source writes, background/busy behavior, correction routing, scope-away-and-back discard, company/database change and error clearing. Full clean and expanded workflow-display gates remain in progress; no new GitHub or human desktop result is claimed.
 
 Final S2B publication/CI evidence — 2026-10-25: published head `62f0a051ca043ac6efc8b591853acdc178a741c6` and fetched remote head/tree match exactly, tree `764ce55c66320fbc5f1d4030b5bd28f4982daa59`. [Maven PR Tests run 40241876620](https://github.com/benbaron/sca-jakarta-h2/actions/runs/40241876620), job `121315249403`, passed clean verification, repeated tests and production JavaFX checks. The draft PR #389 description records final-head CI and the final local 1,043-test clean / 62-test actual JavaFX results. This evidence is a local-only PLAN successor to preserve the green published head. S2B stays VERIFYING pending owner spreadsheet review/acceptance and merge; no human spreadsheet result is inferred. After the owner reports merge, verify current main, carry this evidence forward to a fresh branch and select the next unblocked slice; do not reuse this branch or start S3 before S2B merges.
 
@@ -73,7 +81,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
 | P26 | Property, planning, recognition, conversion | DONE through owner-merged PR #386; final published head passed clean/repeat/JavaFX CI |
-| P27 | Generic accounting packet, evidence, complete portability | IN_PROGRESS — S1/S2A accepted and merged; S2B operational completion selected; generic accounting rules govern |
+| P27 | Generic accounting packet, evidence, complete portability | IN_PROGRESS — S1/S2 accepted and merged; S3A factual preview selected; generic accounting rules govern |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
 ## 3. Established product decisions
@@ -740,10 +748,12 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P26-S6A | Review and accept opening/carryover conversion | DONE | Owner merged PR #385 at `e298d2e0`; accepted head `bba4f944` passed full local, actual JavaFX and exact-head GitHub CI |
 | P26-S6B | Assist merchant settlement | DONE | Owner merged PR #386 at db488cd2; final published head fb7f7813 passed full CI |
 | P27-S1 | Define generic accounting packet contract | DONE | Owner confirmed/merged PR #387 at a5c6ef17; final head 6ac81bcf passed CI run 40232697699 |
-| P27-S2 | Export generic accounting workbook and supporting packet | IN_PROGRESS | Split into S2A core packet and S2B operational completion; [S2A contract](P27-S2A-core-packet.md); S2 is not DONE until both merge |
+| P27-S2 | Export generic accounting workbook and supporting packet | DONE | S2A/S2B merged in PRs #388/#389; generic packet and operational sections complete |
 | P27-S2A | Export an incomplete core financial packet | DONE | Owner merged PR #388 at 54d939fc; published head d63a8fbf passed clean/repeat/JavaFX CI run 40236217512 |
-| P27-S2B | Complete operational sections and enriched ledger | VERIFYING | [S2B contract](P27-S2B-operational-packet.md); complete same-snapshot generic packet with explicit exceptions; local clean/actual JavaFX passed; publication/CI and owner review remain |
-| P27-S3 | Add factual close readiness and evidence references (G3/G5/G13) | BLOCKED | P27-S2 merged; owning contract and D01–D10 gates as applicable |
+| P27-S2B | Complete operational sections and enriched ledger | DONE | Owner merged PR #389 at fac8b071; final-head clean/repeat/JavaFX workflow 40241876620 passed |
+| P27-S3 | Add factual close readiness and evidence references (G3/G5/G13) | IN_PROGRESS | Split into S3A preview and S3B durable evidence/close-time revalidation; incomplete until both merge |
+| P27-S3A | Shared-snapshot readiness preview and correction navigation | VERIFYING | [S3A contract](P27-S3A-readiness-preview.md); local clean 1,050 / actual JavaFX 65 passed; publication/CI and owner review remain |
+| P27-S3B | Durable factual evidence, exception reasons and close-time revalidation | BLOCKED | S3A merged; preserve audit/close history, revalidate within commit; no approval queue |
 | P27-S4 | Complete interchange coverage for all new fields (G4 and cross-cutting) | BLOCKED | P27-S3 merged; owning contract and D01–D10 gates as applicable |
 | P28-S1 | Run the complete runbook acceptance matrix | BLOCKED | P27-S4 merged; owning contract and D01–D10 gates as applicable |
 | P28-S2 | Release and close the correction program | BLOCKED | P28-S1 merged; owning contract and D01–D10 gates as applicable |

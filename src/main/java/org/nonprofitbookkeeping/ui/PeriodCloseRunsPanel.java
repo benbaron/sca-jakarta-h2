@@ -15,6 +15,8 @@ import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -44,6 +46,7 @@ public class PeriodCloseRunsPanel implements AppPanel
     private final TableView<PeriodCloseRangeView> ranges = new TableView<>();
     private final TableView<PeriodCloseEventView> history = new TableView<>();
     private final Label status = new Label();
+    private final AccountingReadinessPane readiness;
 
     public PeriodCloseRunsPanel()
     {
@@ -112,7 +115,30 @@ public class PeriodCloseRunsPanel implements AppPanel
         split.setMinSize(0, 0);
         split.setId("periodCloseTablesSplit");
         CompanySplitPaneStateBinder.bind(split, "period-close-tables", 0.58);
-        root.setCenter(split);
+        readiness = new AccountingReadinessPane(startDate, endDate,
+                () -> UiServiceRegistry.coreAccountingPacket()::previewReadiness,
+                () -> activeCompanyCode() + "|" + MainWindow.sharedSessionState().databaseSelection().activeDatabasePath());
+        TabPane tabs = new TabPane(new Tab("Close History", split), new Tab("Readiness", readiness));
+        tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        tabs.setId("periodCloseTabs");
+        root.setCenter(tabs);
+        var weakReadiness = new java.lang.ref.WeakReference<>(readiness);
+        MainWindow.sharedSessionState().onMultiCompanyChanged(ignored ->
+        {
+            var pane = weakReadiness.get();
+            if (pane != null)
+            {
+                pane.invalidate();
+            }
+        });
+        MainWindow.sharedSessionState().onDatabaseSelectionChanged(ignored ->
+        {
+            var pane = weakReadiness.get();
+            if (pane != null)
+            {
+                pane.invalidate();
+            }
+        });
 
         setCalculatedMonth();
         reload();
@@ -122,6 +148,7 @@ public class PeriodCloseRunsPanel implements AppPanel
     public void onPanelShown()
     {
         applyPreferenceDefaults();
+        readiness.invalidate();
     }
 
     @Override
