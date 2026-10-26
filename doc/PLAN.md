@@ -5,11 +5,13 @@ active_slice: P27-S3B1
 active_status: VERIFYING
 active_branch: codex/P27-S3B1-review-evidence
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/391
-active_head: a4f36227d399f5db260ea7171752aaa12b86fd02
-next_action: "Verify final PR #391 head/tree and inspect clean/repeat/JavaFX CI. Owner review and merge follow; close-time serialization/enforcement remains S3B2."
+active_head: 6291fcfce8295565c4e33d91bc45517d61b40545
+next_action: "Owner reviews PR #391 using S3B1 checks and merges when ready. After merge verification, carry final CI evidence to a fresh S3B2 branch and implement/test shared writer serialization plus atomic close-time enforcement."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+Final S3B1 publication/CI evidence — 2026-10-26 (America/Denver): published head `6291fcfce8295565c4e33d91bc45517d61b40545` matches the fetched remote branch and open draft PR #391 head exactly, reviewed tree `a332dd370f6a56be7a52378e2385e974a4a5aec1`. [Maven PR Tests run 40337557545](https://github.com/benbaron/sca-jakarta-h2/actions/runs/40337557545), job `121623782297`, completed successfully: clean verification, repeated tests and production JavaFX all passed. The PR description records exact-head CI and final local 1,058-test clean / 68-test actual JavaFX results. This final evidence remains a local-only PLAN successor to preserve the green remote head. S3B1 stays VERIFYING pending owner review/acceptance and merge; no native human result is inferred. S3B2 remains blocked until that merge. After owner reports merge, verify current main, carry this evidence to a fresh branch and inspect all readiness-source writers before designing shared serialization and atomic PeriodCloseRangeService revalidation. Reuse neither this task branch nor a content hash as a concurrency lock. Preserve factual evidence, reasons, native retry and close/reopen history; generic accounting rules remain authoritative.
 
 Published S3B1 implementation `a4f36227d399f5db260ea7171752aaa12b86fd02` on fresh `codex/P27-S3B1-review-evidence` and opened draft [PR #391](https://github.com/benbaron/sca-jakarta-h2/pull/391) against verified main `ad21bfab`. The PR records factual-review scope, serialization/enforcement remaining in S3B2, final local gates, unit scenarios and owner checks. This documentation-only publication successor records its known implementation parent; verify its resulting remote head/tree and inspect CI for that exact commit. No S3B1 GitHub success or human native result is claimed yet. S3B1 stays VERIFYING and S3B2 stays gated on merge.
 
