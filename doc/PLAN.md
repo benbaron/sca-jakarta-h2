@@ -4,12 +4,14 @@ active_phase: P27
 active_slice: P27-S3B1
 active_status: VERIFYING
 active_branch: codex/P27-S3B1-review-evidence
-active_pull_request: null
-active_head: ad21bfab2dd5c2add08f198e082dbe960e712798
-next_action: "Publish the verified S3B1 draft and inspect its final-head CI. Owner review and merge follow; close-time serialization/enforcement remains S3B2."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/391
+active_head: a4f36227d399f5db260ea7171752aaa12b86fd02
+next_action: "Verify final PR #391 head/tree and inspect clean/repeat/JavaFX CI. Owner review and merge follow; close-time serialization/enforcement remains S3B2."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+Published S3B1 implementation `a4f36227d399f5db260ea7171752aaa12b86fd02` on fresh `codex/P27-S3B1-review-evidence` and opened draft [PR #391](https://github.com/benbaron/sca-jakarta-h2/pull/391) against verified main `ad21bfab`. The PR records factual-review scope, serialization/enforcement remaining in S3B2, final local gates, unit scenarios and owner checks. This documentation-only publication successor records its known implementation parent; verify its resulting remote head/tree and inspect CI for that exact commit. No S3B1 GitHub success or human native result is claimed yet. S3B1 stays VERIFYING and S3B2 stays gated on merge.
 
 Final S3B1 local gates — 2026-10-26 (America/Denver): `mvn clean verify` passed at 08:05:58 with **1,058 tests, zero failures/errors, 76 expected display skips**. The expanded exact production JavaFX selector passed under Xvfb at 08:11:04 with **68 tests, zero failures/errors/skips**. These gates include all final source/test changes. Focused service gate passed 16 tests; focused display gate passed nine tests and the final layout subset passed three. Relative documentation links (144) and whitespace review passed. No known executed-check failure remains. Remaining: draft publication, exact-head GitHub CI and owner [S3B1 review steps](P27-S3B1-review-evidence.md). No human desktop/spreadsheet result is inferred; S3B1 remains VERIFYING and S3B2 remains blocked until merge.
 
