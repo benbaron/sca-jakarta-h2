@@ -5,11 +5,13 @@ active_slice: P27-S3A
 active_status: VERIFYING
 active_branch: codex/P27-S3A-readiness-preview
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/390
-active_head: 2635bc7030c4f6d13447a9dd21aff1620f89993a
-next_action: "Confirm final PR #390 head/tree and inspect its clean/repeat/JavaFX CI. Owner checks and merge follow; durable evidence/close-commit enforcement remain S3B."
+active_head: 41b461bf16b043d0581c469ba6569ff9c6fb60d0
+next_action: "Owner reviews PR #390 using S3A checks and merges when ready. After merge verification, carry final CI evidence onto a fresh S3B branch for durable evidence/exception reasons and close-time revalidation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+Final S3A publication/CI evidence — 2026-10-25 (America/Denver): published head `41b461bf16b043d0581c469ba6569ff9c6fb60d0` matches the fetched remote branch and open draft PR #390 head exactly; reviewed tree `b536743086164759dc09dda67f583ea004043a8d`. [Maven PR Tests run 40260820386](https://github.com/benbaron/sca-jakarta-h2/actions/runs/40260820386), job `121372950976`, completed successfully: clean verification, repeated tests and production JavaFX all passed. The PR description records that exact-head result and final local 1,050-test clean / 65-test actual JavaFX gates. This final PLAN evidence remains a local-only successor to preserve the green remote head. S3A is VERIFYING pending owner review/acceptance and merge; no native human result is inferred. S3B remains blocked until this merge. Next: after owner reports merge, verify current main, carry this evidence to a fresh S3B branch and implement durable factual evidence, warning-exception reasons and commit-time readiness revalidation under the existing period-close authority. Do not reuse the merged branch or treat the content revision alone as a concurrency token.
 
 Published implementation `2635bc7030c4f6d13447a9dd21aff1620f89993a` on fresh `codex/P27-S3A-readiness-preview` and opened draft [PR #390](https://github.com/benbaron/sca-jakarta-h2/pull/390) against verified main `fac8b071`. The PR records the bounded preview scope, final local gates, scenario coverage and concrete owner checks. This documentation-only publication successor records its known implementation parent; verify the final remote head/tree and require CI for that exact commit. No S3A GitHub success or native owner result is claimed yet. S3A remains VERIFYING, parent S3 incomplete and S3B gated on this merge.
 
