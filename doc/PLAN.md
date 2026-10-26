@@ -1,15 +1,27 @@
 ---
-plan_version: 413
+plan_version: 414
 active_phase: P27
-active_slice: P27-S3A
+active_slice: P27-S3B1
 active_status: VERIFYING
-active_branch: codex/P27-S3A-readiness-preview
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/390
-active_head: 2635bc7030c4f6d13447a9dd21aff1620f89993a
-next_action: "Confirm final PR #390 head/tree and inspect its clean/repeat/JavaFX CI. Owner checks and merge follow; durable evidence/close-commit enforcement remain S3B."
+active_branch: codex/P27-S3B1-review-evidence
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/391
+active_head: a4f36227d399f5db260ea7171752aaa12b86fd02
+next_action: "Verify final PR #391 head/tree and inspect clean/repeat/JavaFX CI. Owner review and merge follow; close-time serialization/enforcement remains S3B2."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+Published S3B1 implementation `a4f36227d399f5db260ea7171752aaa12b86fd02` on fresh `codex/P27-S3B1-review-evidence` and opened draft [PR #391](https://github.com/benbaron/sca-jakarta-h2/pull/391) against verified main `ad21bfab`. The PR records factual-review scope, serialization/enforcement remaining in S3B2, final local gates, unit scenarios and owner checks. This documentation-only publication successor records its known implementation parent; verify its resulting remote head/tree and inspect CI for that exact commit. No S3B1 GitHub success or human native result is claimed yet. S3B1 stays VERIFYING and S3B2 stays gated on merge.
+
+Final S3B1 local gates — 2026-10-26 (America/Denver): `mvn clean verify` passed at 08:05:58 with **1,058 tests, zero failures/errors, 76 expected display skips**. The expanded exact production JavaFX selector passed under Xvfb at 08:11:04 with **68 tests, zero failures/errors/skips**. These gates include all final source/test changes. Focused service gate passed 16 tests; focused display gate passed nine tests and the final layout subset passed three. Relative documentation links (144) and whitespace review passed. No known executed-check failure remains. Remaining: draft publication, exact-head GitHub CI and owner [S3B1 review steps](P27-S3B1-review-evidence.md). No human desktop/spreadsheet result is inferred; S3B1 remains VERIFYING and S3B2 remains blocked until merge.
+
+### P27-S3A merge and S3B1 evidence selection — 2026-10-26 (America/Denver)
+
+Owner confirmed PR #390 merged. GitHub/native fetch confirm accepted head `41b461bf` in current main at `ad21bfab2dd5c2add08f198e082dbe960e712798`; final-head workflow `40260820386` passed clean/repeat/JavaFX. S3A is DONE. Fresh branch carries its final local CI evidence. Inspection found PeriodCloseRangeService does not serialize all operational writers used by readiness; a content hash alone cannot make its separate snapshot atomic with closing. Split remaining S3B into [S3B1 durable snapshot review facts](P27-S3B1-review-evidence.md) and S3B2 shared writer serialization/close-commit revalidation. This is a scope decision, not a claim of enforcement: S3B1 leaves existing close/reopen behavior unchanged and cannot waive blockers or authorize close. Parent S3 remains incomplete until S3B2 merges.
+
+S3B1 adds CloseReviewEvidenceService over immutable AuditEvent facts, with versioned one-MiB structured payloads, explicit external-reference self-attestation, optional warning reasons, exact native request retry/restart and authenticated actor/time. Save recaptures canonical accounting content and rejects a changed preview, unknown warning identities, blocker reasons, conflicting identities and denied permissions; it records a historical snapshot, not atomic close readiness. Period Close's Review Evidence tab exposes real Save Review/shared Save, reference/reason drafts, retained history, busy/access/dirty guards and scope invalidation. Accounting packet format accounting-4 adds exact-period review headers, references, recorded findings and reasons without including those facts in the accounting content revision. Existing generic audit SCLX and whole-database backup preserve the payload; no migration, ledger or close-state changes. Baseline compile, 16 focused service regressions and nine focused actual-JavaFX checks passed, followed by three passing layout checks including bounded editor scrolling, horizontal table scroll and divider movement. Final clean verification and expanded production JavaFX remain pending; no GitHub or human desktop result is claimed.
+
+Final S3A publication/CI evidence — 2026-10-25 (America/Denver): published head `41b461bf16b043d0581c469ba6569ff9c6fb60d0` matches the fetched remote branch and open draft PR #390 head exactly; reviewed tree `b536743086164759dc09dda67f583ea004043a8d`. [Maven PR Tests run 40260820386](https://github.com/benbaron/sca-jakarta-h2/actions/runs/40260820386), job `121372950976`, completed successfully: clean verification, repeated tests and production JavaFX all passed. The PR description records that exact-head result and final local 1,050-test clean / 65-test actual JavaFX gates. This final PLAN evidence remains a local-only successor to preserve the green remote head. S3A is VERIFYING pending owner review/acceptance and merge; no native human result is inferred. S3B remains blocked until this merge. Next: after owner reports merge, verify current main, carry this evidence to a fresh S3B branch and implement durable factual evidence, warning-exception reasons and commit-time readiness revalidation under the existing period-close authority. Do not reuse the merged branch or treat the content revision alone as a concurrency token.
 
 Published implementation `2635bc7030c4f6d13447a9dd21aff1620f89993a` on fresh `codex/P27-S3A-readiness-preview` and opened draft [PR #390](https://github.com/benbaron/sca-jakarta-h2/pull/390) against verified main `fac8b071`. The PR records the bounded preview scope, final local gates, scenario coverage and concrete owner checks. This documentation-only publication successor records its known implementation parent; verify the final remote head/tree and require CI for that exact commit. No S3A GitHub success or native owner result is claimed yet. S3A remains VERIFYING, parent S3 incomplete and S3B gated on this merge.
 
@@ -83,7 +95,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
 | P26 | Property, planning, recognition, conversion | DONE through owner-merged PR #386; final published head passed clean/repeat/JavaFX CI |
-| P27 | Generic accounting packet, evidence, complete portability | IN_PROGRESS — S1/S2 accepted and merged; S3A factual preview selected; generic accounting rules govern |
+| P27 | Generic accounting packet, evidence, complete portability | IN_PROGRESS — S1/S2/S3A accepted and merged; S3B1 durable review facts selected; generic accounting rules govern |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
 ## 3. Established product decisions
@@ -754,8 +766,10 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P27-S2A | Export an incomplete core financial packet | DONE | Owner merged PR #388 at 54d939fc; published head d63a8fbf passed clean/repeat/JavaFX CI run 40236217512 |
 | P27-S2B | Complete operational sections and enriched ledger | DONE | Owner merged PR #389 at fac8b071; final-head clean/repeat/JavaFX workflow 40241876620 passed |
 | P27-S3 | Add factual close readiness and evidence references (G3/G5/G13) | IN_PROGRESS | Split into S3A preview and S3B durable evidence/close-time revalidation; incomplete until both merge |
-| P27-S3A | Shared-snapshot readiness preview and correction navigation | VERIFYING | [S3A contract](P27-S3A-readiness-preview.md); local clean 1,050 / actual JavaFX 65 passed; publication/CI and owner review remain |
-| P27-S3B | Durable factual evidence, exception reasons and close-time revalidation | BLOCKED | S3A merged; preserve audit/close history, revalidate within commit; no approval queue |
+| P27-S3A | Shared-snapshot readiness preview and correction navigation | DONE | Owner merged PR #390 at ad21bfab; final-head workflow 40260820386 passed |
+| P27-S3B | Durable factual evidence, exception reasons and close-time revalidation | IN_PROGRESS | Split into S3B1 review facts and S3B2 atomic close enforcement; incomplete until both merge |
+| P27-S3B1 | Snapshot-bound external evidence references and review history | VERIFYING | [Contract](P27-S3B1-review-evidence.md); local clean 1,058 / actual JavaFX 68 passed; publication/CI and owner review remain |
+| P27-S3B2 | Serialize readiness writers and enforce close-time revalidation | BLOCKED | S3B1 merged; prove concurrent writers cannot commit past stale close validation; preserve close/reopen history |
 | P27-S4 | Complete interchange coverage for all new fields (G4 and cross-cutting) | BLOCKED | P27-S3 merged; owning contract and D01–D10 gates as applicable |
 | P28-S1 | Run the complete runbook acceptance matrix | BLOCKED | P27-S4 merged; owning contract and D01–D10 gates as applicable |
 | P28-S2 | Release and close the correction program | BLOCKED | P28-S1 merged; owning contract and D01–D10 gates as applicable |

@@ -228,6 +228,15 @@ public final class UiServiceRegistry
         return new org.nonprofitbookkeeping.service.CoreAccountingPacketService(
                 () -> database, () -> company, services().authorizationGuard());
     }
+
+    public static org.nonprofitbookkeeping.service.CloseReviewEvidenceService closeReviewEvidence()
+    {
+        ServiceBundle bundle = services();
+        String company = activeCompanyCode();
+        var packet = coreAccountingPacket();
+        return new org.nonprofitbookkeeping.service.CloseReviewEvidenceService(
+                bundle.jpa(), () -> company, () -> packet, bundle.authorizationGuard());
+    }
     public static SemanticAccountingReportQueryService semanticAccountingReports()
     {
         return new SemanticAccountingReportQueryService(

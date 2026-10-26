@@ -58,7 +58,7 @@ final class AccountingReadinessPane extends BorderPane
         open.disableProperty().bind(findings.getSelectionModel().selectedItemProperty().isNull()
                 .or(UiPermissionGate.deniedProperty(ApplicationPermission.EXPORT)).or(busy));
         open.setOnAction(event -> openSelected());
-        Label explanation = new Label("Automated observations only. External evidence is not attested. This preview does not authorize or certify period close.");
+        Label explanation = new Label("Automated observations only. External evidence is not independently verified. Record factual self-attestations in Review Evidence; this preview does not authorize or certify period close.");
         explanation.setWrapText(true);
         status.setWrapText(true);
         status.setId("periodCloseReadinessStatus");
@@ -154,7 +154,7 @@ final class AccountingReadinessPane extends BorderPane
             status.setText(result.companyCode() + " | " + format.formatDate(result.start()) + " through " + format.formatDate(result.end())
                     + " | " + result.automatedStatus() + ": " + result.blockers() + " blocker(s), " + result.warnings()
                     + " warning(s). Content revision: " + result.dataRevision() + ". Captured " + format.formatDateTime(result.capturedAt())
-                    + ". Preview only; external evidence not attested.");
+                    + ". Preview only; external evidence not independently verified.");
             completion.complete(result);
         }, error ->
         {

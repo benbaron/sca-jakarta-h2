@@ -103,7 +103,7 @@ class OperationalAccountingPacketTest
                 BigDecimal actual = comparison.stream().map(r -> new BigDecimal(r.get("actual"))).reduce(BigDecimal.ZERO, BigDecimal::add);
                 assertEquals(0, expectedActual.compareTo(actual));
                 var manifest = new ObjectMapper().readTree(zip.getInputStream(zip.getEntry("manifest.json")));
-                assertEquals("accounting-3", manifest.get("packetVersion").asText());
+                assertEquals("accounting-4", manifest.get("packetVersion").asText());
                 assertTrue(manifest.get("status").asText().contains("INCOMPLETE"));
                 assertEquals(0, manifest.get("omittedSections").size());
                 assertTrue(read(zip, "Exceptions and Notes.csv").contains("Unclassified"));
