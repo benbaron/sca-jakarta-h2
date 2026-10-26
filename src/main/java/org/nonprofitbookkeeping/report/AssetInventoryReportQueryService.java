@@ -93,6 +93,18 @@ public final class AssetInventoryReportQueryService
     /** Returns immutable custody and transfer history; corrected rows remain visible. */
     public List<PropertyCustodyReportRow> propertyCustody(LocalDate start, LocalDate end, int rowLimit)
     {
+        return propertyCustody(start, end, rowLimit, LocalDate.now(), false);
+    }
+
+    /** Packet history and overdue evaluation use the explicit cutoff, preserving interactive current-state behavior. */
+    public List<PropertyCustodyReportRow> propertyCustodyAsOf(LocalDate cutoff, int rowLimit)
+    {
+        return propertyCustody(LocalDate.of(1, 1, 1), cutoff, rowLimit, cutoff, true);
+    }
+
+    private List<PropertyCustodyReportRow> propertyCustody(LocalDate start, LocalDate end, int rowLimit,
+            LocalDate evaluationDate, boolean datedCorrections)
+    {
         Objects.requireNonNull(start, "start"); Objects.requireNonNull(end, "end");
         if (end.isBefore(start) || rowLimit < 1 || rowLimit > ReportRequest.MAX_ROW_LIMIT)
             throw new IllegalArgumentException("Invalid property custody date range or row limit.");
@@ -110,7 +122,9 @@ public final class AssetInventoryReportQueryService
             Set<Long> corrected = new LinkedHashSet<>(em.createQuery("""
                     select e.correctionOf.id from PropertyCustodyEvent e
                     where e.company.code = :company and e.correctionOf is not null
-                    """, Long.class).setParameter("company", requireCompanyCode()).getResultList());
+                    and (:dated = false or e.eventDate <= :cutoff)
+                    """, Long.class).setParameter("company", requireCompanyCode()).setParameter("dated", datedCorrections)
+                    .setParameter("cutoff", end).getResultList());
             return events.stream().map(e -> new PropertyCustodyReportRow(e.getId(), e.getEventDate(),
                     e.getFixedAsset() == null ? "INVENTORY_ITEM" : "FIXED_ASSET",
                     e.getFixedAsset() == null ? e.getInventoryItem().getId() : e.getFixedAsset().getId(),
@@ -118,7 +132,7 @@ public final class AssetInventoryReportQueryService
                     e.getEventType(), e.getQuantity(), Objects.toString(e.getGuardianName(), ""),
                     Objects.toString(e.getLocation(), ""), e.getCondition(), e.getConfirmationStatus(),
                     e.getConfirmationDueDate(), e.getConfirmationDate(), e.getExpectedReturnDate(),
-                    e.getConfirmationDueDate() != null && e.getConfirmationDueDate().isBefore(LocalDate.now())
+                    e.getConfirmationDueDate() != null && e.getConfirmationDueDate().isBefore(evaluationDate)
                             && e.getConfirmationStatus() != PropertyCustodyEvent.ConfirmationStatus.CONFIRMED,
                     e.getAccountingTreatment(), e.getExternalAuthorizationReference(),
                     e.getCorrectionOf() == null ? null : e.getCorrectionOf().getId(), corrected.contains(e.getId()),

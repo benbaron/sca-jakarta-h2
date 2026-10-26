@@ -39,7 +39,7 @@ class CoreAccountingPacketServiceTest
             var result = service.export(DATE, DATE, directory.resolve("packet.zip"));
             try (ZipFile zip = new ZipFile(result.destination().toFile()))
             {
-                assertEquals(7, zip.size());
+                assertEquals(result.sections().size() + 2, zip.size());
                 assertNull(zip.getEntry("snapshot.zip"));
                 var manifest = new ObjectMapper().readTree(zip.getInputStream(zip.getEntry("manifest.json")));
                 assertEquals(COMPANY, manifest.get("companyCode").asText());
@@ -55,9 +55,12 @@ class CoreAccountingPacketServiceTest
                         FinancialReportRenderer.renderTrialBalanceCsv(financial.trialBalance(DATE, null)));
                 assertEquals(expected, PoiXlsxFinancialReportAdapter.parseCsv(read(zip, "Trial Balance.csv")));
                 assertTrue(read(zip, "Income Statement.csv").contains("309.8595"));
-                try (XSSFWorkbook workbook = new XSSFWorkbook(zip.getInputStream(zip.getEntry("Core Accounting Packet.xlsx"))))
+                assertTrue(result.sections().contains("Budget vs Actual"));
+                assertTrue(result.sections().contains("Outstanding Bank Items"));
+                assertEquals(0, manifest.get("omittedSections").size());
+                try (XSSFWorkbook workbook = new XSSFWorkbook(zip.getInputStream(zip.getEntry("Accounting Packet.xlsx"))))
                 {
-                    assertEquals(6, workbook.getNumberOfSheets());
+                    assertEquals(result.sections().size() + 1, workbook.getNumberOfSheets());
                     assertEquals(502, workbook.getSheet("General Ledger").getLastRowNum());
                     for (var row : workbook.getSheet("General Ledger"))
                         for (var cell : row) assertNotEquals(org.apache.poi.ss.usermodel.CellType.FORMULA, cell.getCellType());
