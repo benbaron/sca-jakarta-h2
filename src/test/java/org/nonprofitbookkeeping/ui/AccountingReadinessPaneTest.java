@@ -97,7 +97,7 @@ class AccountingReadinessPaneTest
                 assertFalse(button("periodClosePreviewReadiness").isDisabled());
                 assertEquals(result.findings().size(), table().getItems().size());
                 assertTrue(status().contains("Content revision: " + result.dataRevision()));
-                assertTrue(status().contains("external evidence not attested"));
+                assertTrue(status().contains("external evidence not independently verified"));
                 AtomicReference<AppPanelId> opened = new AtomicReference<>();
                 DrillThroughCoordinator.configureOpener(opened::set);
                 table().getSelectionModel().select(0);

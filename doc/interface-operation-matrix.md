@@ -60,7 +60,8 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Reconciliation | no | selected Review / Checks subpane | no | Save Unresolved or Save Review; finalized history is read-only. |
 | Import Preview | no | valid confirmed selected format | no | Save Accepted COA Rows, Save Previewed SCLX Import, or Save Previewed Bank Review use existing commit confirmations. |
 | Opening Conversion | no | ready unchanged preview only | no | Save Conversion Acceptance records one immutable audit fact; it creates no accounting entry. BOOKKEEPING_WRITE. |
-| Report Library, Budget vs Actual, Depreciation Runs, Period Close, Audit History, Bank Transactions, Diagnostics, Help | no | no | no | Run/review/navigation commands remain panel-local. |
+| Period Close | no | selected Review Evidence draft | no | Save Review records snapshot-bound factual references/reasons through audit history; Save Closed Range/Reopen remain explicit independent operations. |
+| Report Library, Budget vs Actual, Depreciation Runs, Audit History, Bank Transactions, Diagnostics, Help | no | no | no | Run/review/navigation commands remain panel-local. |
 
 ## Canonical panel matrix
 
@@ -85,7 +86,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Funds | Funds administration panel | fund lookup/admin services | `FundAdminService` | Stable IDs; unused delete only after usage checks, otherwise deactivate. |
 | Events / Activities | `ActivitiesPanel` | `ActivityLookupService` | `ActivityAdminService` | Stable Activity ID; code/name are mutable. Delete requires no `TxnSplit` or Activity `interchange_identity` references; otherwise deactivate/reactivate. |
 | Reconciliation | reconciliation workspace | current reconciliation query/workspace services | current reconciliation finalization/matching services | Matching and cleared-state mutation remain reconciliation-owned. |
-| Period Close | `PeriodCloseRunsPanel` | `PeriodCloseRangeService` and factual history; packet-backed readiness preview | `PeriodCloseRangeService` guarded close/reopen operations | `BOOKKEEPING_WRITE` guards close/reopen; read-only Preview Readiness requires EXPORT, captures all Funds/Events and opens existing correction surfaces. S3A is not close authorization; durable evidence/revalidation remain S3B. |
+| Period Close | `PeriodCloseRunsPanel` | `PeriodCloseRangeService`, packet readiness and immutable review audit facts | existing close/reopen; `CloseReviewEvidenceService.save` | BOOKKEEPING_WRITE guards factual Save Review and close/reopen; EXPORT guards preview/history. External references and optional warning reasons bind to a retained snapshot; blockers remain. Close-time serialization/enforcement remains S3B2. |
 | Bank Transactions | current bank-transaction workspace | canonical configured-bank split projection plus statement-review facts | explicit reviewed-row acceptance/correction routes only | No second bank ledger. |
 | Import Preview | `ImportPreviewPanel` and format-specific review surfaces | transient frozen preview state plus current target facts | format-specific atomic commit service | Preview is intentionally transient; accepted facts become H2 authority. |
 | Opening Conversion | `OpeningConversionPanel` | `OpeningConversionService` over existing account openings, configured banks, fixed assets, inventory and supplemental schedules | `OpeningConversionService.saveAcceptance(...)` | Ready preview fingerprint is revalidated; one immutable `OPENING_CONVERSION_ACCEPTED` audit fact is SCLX-portable. No balancing entry or second ledger. |

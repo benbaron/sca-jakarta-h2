@@ -44,6 +44,7 @@ public class HelpPanel implements AppPanel
                 + "Assets & Inventory: Asset Register, Depreciation Runs, Inventory\n"
                 + "Import & Oversight: Import Preview, Opening Conversion, Audit History, Period Close\n"
                 + "Period Close -> Readiness: preview automated findings and open their correction screens. Preview does not attest external evidence or authorize closing.\n"
+                + "Period Close -> Review Evidence: record external references and factual self-attestation with Save Review. Retained reviews do not excuse blockers or authorize closing.\n"
                 + "Reports: Report Library\n"
                 + "Administration: Chart of Accounts, Funds, Events / Activities, Administration, Diagnostics");
 

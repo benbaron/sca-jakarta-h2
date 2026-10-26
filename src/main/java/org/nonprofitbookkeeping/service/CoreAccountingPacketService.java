@@ -73,7 +73,7 @@ public final class CoreAccountingPacketService
         {
             Instant created = readiness.capturedAt();
             Map<String, Object> manifest = new LinkedHashMap<>();
-            manifest.put("packetVersion", "accounting-3");
+            manifest.put("packetVersion", "accounting-4");
             manifest.put("applicationVersion", applicationVersion());
             manifest.put("companyCode", code);
             manifest.put("companyName", captured.displayName());
@@ -87,7 +87,8 @@ public final class CoreAccountingPacketService
             manifest.put("automatedReadiness", readiness.automatedStatus());
             manifest.put("readinessBlockers", readiness.blockers());
             manifest.put("readinessWarnings", readiness.warnings());
-            manifest.put("readinessBasis", "Automated snapshot observations only; external evidence not attested; no close authorization");
+            manifest.put("readinessBasis", "Automated snapshot observations only; external evidence not independently verified; recorded self-attestations remain separate facts; no close authorization");
+            manifest.put("recordedReviewBasis", "Exact-period factual self-attestations recorded by captured snapshot; historical content revision, external documents not independently verified; no close authorization");
             manifest.put("status", readiness.findings().isEmpty() ? "ACCOUNTING PACKET — no close-readiness certification"
                     : "INCOMPLETE — accounting packet has exceptions; no close-readiness certification");
             manifest.put("omittedSections", OMITTED);
@@ -158,6 +159,7 @@ public final class CoreAccountingPacketService
             Map<String, String> reports = new LinkedHashMap<>();
             String displayName;
             List<PacketOperationalSections.ExceptionRow> exceptions;
+            AccountingReadiness readiness;
             try (Jpa snapshot = new Jpa(copy))
             {
                 displayName = new CompanyAdminService(snapshot).findCompany(code)
@@ -184,9 +186,13 @@ public final class CoreAccountingPacketService
                             "Assets minus liabilities and net assets: " + balance.totalAssets().subtract(balance.liabilitiesAndEquity()).toPlainString()));
                 }
                 reports.put("Exceptions and Notes", PacketCsv.records(PacketOperationalSections.ExceptionRow.class, exceptions));
+                readiness = AccountingReadiness.assess(code, start, end, Instant.now(), backup.sha256(), reports, exceptions);
+                reports.put("Readiness Findings", PacketCsv.records(AccountingReadiness.Finding.class, readiness.findings()));
+                // Historical review facts must not invalidate the accounting content they describe.
+                CloseReviewEvidenceService.appendPacket(snapshot, readiness, ledgerCapacity, reports);
             }
-            AccountingReadiness readiness = AccountingReadiness.assess(code, start, end, Instant.now(), backup.sha256(), reports, exceptions);
-            reports.put("Readiness Findings", PacketCsv.records(AccountingReadiness.Finding.class, readiness.findings()));
+            readiness = new AccountingReadiness(code, start, end, readiness.capturedAt(), backup.sha256(), readiness.dataRevision(),
+                    List.copyOf(reports.keySet()), readiness.findings());
             validateReports(reports);
             return new Captured(displayName, reports, List.copyOf(exceptions), readiness);
         }

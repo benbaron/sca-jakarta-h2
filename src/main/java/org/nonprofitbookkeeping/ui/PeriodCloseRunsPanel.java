@@ -47,6 +47,9 @@ public class PeriodCloseRunsPanel implements AppPanel
     private final TableView<PeriodCloseEventView> history = new TableView<>();
     private final Label status = new Label();
     private final AccountingReadinessPane readiness;
+    private final CloseReviewEvidencePane evidence;
+    private final TabPane tabs;
+    private Runnable capabilitiesChanged = () -> { };
 
     public PeriodCloseRunsPanel()
     {
@@ -118,11 +121,16 @@ public class PeriodCloseRunsPanel implements AppPanel
         readiness = new AccountingReadinessPane(startDate, endDate,
                 () -> UiServiceRegistry.coreAccountingPacket()::previewReadiness,
                 () -> activeCompanyCode() + "|" + MainWindow.sharedSessionState().databaseSelection().activeDatabasePath());
-        TabPane tabs = new TabPane(new Tab("Close History", split), new Tab("Readiness", readiness));
+        evidence = new CloseReviewEvidencePane(startDate, endDate, UiServiceRegistry::closeReviewEvidence,
+                () -> activeCompanyCode() + "|" + MainWindow.sharedSessionState().databaseSelection().activeDatabasePath());
+        tabs = new TabPane(new Tab("Close History", split), new Tab("Readiness", readiness), new Tab("Review Evidence", evidence.root()));
+        tabs.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, value) -> capabilitiesChanged.run());
+        evidence.setCommandCapabilitiesChangedListener(() -> capabilitiesChanged.run());
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tabs.setId("periodCloseTabs");
         root.setCenter(tabs);
         var weakReadiness = new java.lang.ref.WeakReference<>(readiness);
+        var weakEvidence = new java.lang.ref.WeakReference<>(evidence);
         MainWindow.sharedSessionState().onMultiCompanyChanged(ignored ->
         {
             var pane = weakReadiness.get();
@@ -130,6 +138,8 @@ public class PeriodCloseRunsPanel implements AppPanel
             {
                 pane.invalidate();
             }
+            var editor = weakEvidence.get();
+            if (editor != null) editor.invalidate(true);
         });
         MainWindow.sharedSessionState().onDatabaseSelectionChanged(ignored ->
         {
@@ -138,6 +148,8 @@ public class PeriodCloseRunsPanel implements AppPanel
             {
                 pane.invalidate();
             }
+            var editor = weakEvidence.get();
+            if (editor != null) editor.invalidate(true);
         });
 
         setCalculatedMonth();
@@ -161,6 +173,34 @@ public class PeriodCloseRunsPanel implements AppPanel
     public Node root()
     {
         return root;
+    }
+
+    @Override public java.util.Set<AppCommand> commandCapabilities()
+    {
+        return tabs.getSelectionModel().getSelectedIndex() == 2 ? evidence.commandCapabilities() : java.util.Set.of();
+    }
+
+    @Override public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
+    {
+        return java.util.Optional.of(ApplicationPermission.BOOKKEEPING_WRITE);
+    }
+
+    @Override public String commandLabel(AppCommand command)
+    {
+        return command == AppCommand.SAVE_ACTIVE && tabs.getSelectionModel().getSelectedIndex() == 2 ? "Save Review" : AppPanel.super.commandLabel(command);
+    }
+
+    @Override public void onSave()
+    {
+        evidence.onSave();
+    }
+    @Override public boolean hasUnsavedChanges()
+    {
+        return evidence.hasUnsavedChanges();
+    }
+    @Override public void setCommandCapabilitiesChangedListener(Runnable listener)
+    {
+        capabilitiesChanged = listener == null ? () -> { } : listener;
     }
 
     private void configureRangeTable()
@@ -322,6 +362,11 @@ public class PeriodCloseRunsPanel implements AppPanel
     String actorForTests()
     {
         return actor.getText();
+    }
+
+    CloseReviewEvidencePane reviewEvidenceForTests()
+    {
+        return evidence;
     }
 
     private static PeriodCloseRangeService service()

@@ -72,6 +72,7 @@ Import Save follows the selected result tab, not the last format that happened t
 | Period Close range editor | Save Closed Range uses the existing close service; Reopen Selected is an explicit persisted operation |
 | Period Close factual history | Read-only; no history rewrite |
 | Period Close readiness preview | Read-only Preview Readiness and correction navigation; no Save, attestation or close authorization. Date/company changes discard stale results. Existing Save Closed Range remains an explicit operation |
+| Period Close Review Evidence draft | Save Review and selected-tab File/toolbar Save use CloseReviewEvidenceService, with explicit attestation, references and unchanged preview. Busy/access gating and parent dirty-state protection apply. Saved reviews are immutable; corrections require New Review, never deletion or rewriting. No close authorization is granted |
 | Dashboard and its balance/budget/recent-transaction/reconciliation regions | Read-only queries and Journal navigation |
 | Event Accounting summary, split details, configured-bank context and closeout review | Read-only query projections and Journal/maintenance navigation |
 | Budget vs Actual | Read-only Run output |
