@@ -4,12 +4,14 @@ active_phase: P27
 active_slice: P27-S3A
 active_status: VERIFYING
 active_branch: codex/P27-S3A-readiness-preview
-active_pull_request: null
-active_head: fac8b07142be413106fff36dc77366f459c3535d
-next_action: "Publish the locally verified S3A draft and inspect final-head CI. Owner checks and merge follow; durable evidence/close-commit enforcement remain S3B."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/390
+active_head: 2635bc7030c4f6d13447a9dd21aff1620f89993a
+next_action: "Confirm final PR #390 head/tree and inspect its clean/repeat/JavaFX CI. Owner checks and merge follow; durable evidence/close-commit enforcement remain S3B."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+Published implementation `2635bc7030c4f6d13447a9dd21aff1620f89993a` on fresh `codex/P27-S3A-readiness-preview` and opened draft [PR #390](https://github.com/benbaron/sca-jakarta-h2/pull/390) against verified main `fac8b071`. The PR records the bounded preview scope, final local gates, scenario coverage and concrete owner checks. This documentation-only publication successor records its known implementation parent; verify the final remote head/tree and require CI for that exact commit. No S3A GitHub success or native owner result is claimed yet. S3A remains VERIFYING, parent S3 incomplete and S3B gated on this merge.
 
 Final local S3A gates — 2026-10-25 (America/Denver): `mvn clean verify` passed at 20:41:33 with **1,050 tests, zero failures/errors, 73 expected display-dependent skips**. The expanded exact production JavaFX workflow selector passed under Xvfb at 20:46:12 with **65 tests, zero failures/errors/skips**. All final source/test behavior is included in these gates; 142 relative documentation links and whitespace review passed. No known executed-check failure remains. Initial financial-opening test precision was corrected to the existing two-decimal account-opening column; no schema/accounting precision policy was changed. Remaining: draft publication, final-head GitHub CI, owner [S3A checks](P27-S3A-readiness-preview.md) and merge. No human desktop/spreadsheet result is inferred.
 
