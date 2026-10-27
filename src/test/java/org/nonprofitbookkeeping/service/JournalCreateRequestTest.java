@@ -164,7 +164,7 @@ class JournalCreateRequestTest
             }
             assertEquals(id, service.enter(f.receipt(), key).id());
             assertThrows(RuntimeException.class, () -> service.update(id, f.receipt()));
-            new PeriodCloseRangeService(jpa).closeRange(COMPANY, DATE, DATE, "CALCULATED", "tester", "Synthetic close");
+            org.nonprofitbookkeeping.service.PeriodCloseTestFixture.historical(jpa,COMPANY, DATE, DATE, "CALCULATED", "tester", "Synthetic close");
             long audits = count(jpa, "select count(a) from AuditEvent a");
             assertEquals(id, service.enter(f.receipt(), key).id());
             assertEquals(audits, count(jpa, "select count(a) from AuditEvent a"));

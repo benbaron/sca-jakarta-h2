@@ -46,6 +46,9 @@ public class PeriodCloseRunsPanel implements AppPanel
     private final TableView<PeriodCloseRangeView> ranges = new TableView<>();
     private final TableView<PeriodCloseEventView> history = new TableView<>();
     private final Label status = new Label();
+    private final Button close = new Button("Save Closed Range");
+    private final javafx.beans.property.SimpleBooleanProperty closing = new javafx.beans.property.SimpleBooleanProperty();
+    private java.util.concurrent.CompletableFuture<PeriodCloseRangeView> closeCompletion;
     private final AccountingReadinessPane readiness;
     private final CloseReviewEvidencePane evidence;
     private final TabPane tabs;
@@ -59,6 +62,7 @@ public class PeriodCloseRunsPanel implements AppPanel
         Label title = new Label("Period Close");
         title.getStyleClass().add("panel-title");
         status.setWrapText(true);
+        status.setId("periodCloseStatus");
 
         rangeKind.getItems().setAll("CALCULATED", "CUSTOM");
         rangeKind.setValue("CALCULATED");
@@ -72,11 +76,16 @@ public class PeriodCloseRunsPanel implements AppPanel
 
         Button useActiveMonth = new Button("Use Active Period");
         useActiveMonth.setOnAction(event -> setCalculatedMonth());
-        Button close = new Button("Save Closed Range");
+        close.setId("periodCloseSaveClosedRange");
         close.setOnAction(event -> closeRange());
         Button reopen = new Button("Reopen Selected");
         reopen.setOnAction(event -> reopenSelected());
-        UiPermissionGate.gate(close, ApplicationPermission.BOOKKEEPING_WRITE, "Close an accounting period range");
+        close.disableProperty().bind(closing.or(UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE)));
+        close.setTooltip(new javafx.scene.control.Tooltip("Requires a matching recorded review, zero blockers and reasons for every warning. Revalidated atomically before closing."));
+        startDate.disableProperty().bind(closing);
+        endDate.disableProperty().bind(closing);
+        rangeKind.disableProperty().bind(closing);
+        reason.disableProperty().bind(closing);
         UiPermissionGate.gate(reopen, ApplicationPermission.BOOKKEEPING_WRITE, "Reopen an accounting period range");
         Button refresh = new Button("Refresh");
         refresh.setOnAction(event -> reload());
@@ -277,23 +286,27 @@ public class PeriodCloseRunsPanel implements AppPanel
 
     private void closeRange()
     {
+        if (closing.get())
+        {
+            return;
+        }
         LocalDate start = startDate.getValue();
         LocalDate end = endDate.getValue();
-        status.setText("Closing range...");
-        UiAsync.run("period-close-close-range", () -> service().closeRange(
-                        activeCompanyCode(),
-                        start,
-                        end,
-                        rangeKind.getValue(),
-                        actor.getText(),
-                        reason.getText()),
+        String company = activeCompanyCode(), kind = rangeKind.getValue(), recordedActor = actor.getText(), closeReason = reason.getText();
+        var capturedService = service();
+        closing.set(true);
+        closeCompletion = new java.util.concurrent.CompletableFuture<>();
+        status.setText("Revalidating recorded review and closing range...");
+        UiAsync.run("period-close-close-range", () -> capturedService.closeRange(company, start, end, kind, recordedActor, closeReason),
                 closed -> {
+                    closing.set(false);
                     status.setText("Closed " + companyFormat.formatDate(closed.startDate()) + " through " + companyFormat.formatDate(closed.endDate())
                             + " for " + closed.companyCode() + ".");
                     reason.clear();
                     reload();
+                    closeCompletion.complete(closed);
                 },
-                ex -> status.setText("Could not close range: " + UiErrors.safeMessage(ex)));
+                ex -> { closing.set(false); status.setText("Could not close range: " + UiErrors.safeMessage(ex)); closeCompletion.completeExceptionally(ex); });
     }
 
     private void reopenSelected()
@@ -367,6 +380,11 @@ public class PeriodCloseRunsPanel implements AppPanel
     CloseReviewEvidencePane reviewEvidenceForTests()
     {
         return evidence;
+    }
+
+    java.util.concurrent.CompletableFuture<PeriodCloseRangeView> closeCompletionForTests()
+    {
+        return closeCompletion;
     }
 
     private static PeriodCloseRangeService service()

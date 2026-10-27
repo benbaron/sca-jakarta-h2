@@ -39,7 +39,7 @@ class PeriodCloseAuthorizationIntegrationTest
             UserAdminService users = initializeSecurity(jpa);
             long viewerUserId = reservedUserId(users, ReservedSecurityRole.VIEWER);
             PeriodCloseRangeService setup = new PeriodCloseRangeService(jpa);
-            PeriodCloseRangeView existing = setup.closeRange(
+            PeriodCloseRangeView existing = PeriodCloseTestFixture.historical(jpa,
                     "DEFAULT",
                     LocalDate.of(2026, 3, 1),
                     LocalDate.of(2026, 3, 31),
@@ -73,7 +73,7 @@ class PeriodCloseAuthorizationIntegrationTest
     }
 
     @Test
-    void bookkeepingRolesAndUnionCanMutateWithImmediateSessionChanges(@TempDir Path tempDir)
+    void bookkeepingRolesAndUnionCanMutateWithImmediateSessionChanges(@TempDir Path tempDir) throws Exception
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("period-close-role-authorization")))
         {
@@ -90,6 +90,7 @@ class PeriodCloseAuthorizationIntegrationTest
                             Set.of(ReservedSecurityRole.ACCOUNTANT))));
             PeriodCloseRangeService service = guardedService(jpa, current::get);
 
+            PeriodCloseTestFixture.readyReview(jpa, tempDir.resolve("period-close-role-authorization"), "DEFAULT", LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31));
             PeriodCloseRangeView march = service.closeRange(
                     "DEFAULT",
                     LocalDate.of(2026, 3, 1),
@@ -102,6 +103,7 @@ class PeriodCloseAuthorizationIntegrationTest
                     managerUserId,
                     "DEFAULT",
                     Set.of(ReservedSecurityRole.MANAGER))));
+            PeriodCloseTestFixture.readyReview(jpa, tempDir.resolve("period-close-role-authorization"), "DEFAULT", LocalDate.of(2026, 4, 1), LocalDate.of(2026, 4, 30));
             PeriodCloseRangeView april = service.closeRange(
                     "DEFAULT",
                     LocalDate.of(2026, 4, 1),
@@ -164,7 +166,7 @@ class PeriodCloseAuthorizationIntegrationTest
             long accountantUserId = reservedUserId(users, ReservedSecurityRole.ACCOUNTANT);
 
             PeriodCloseRangeService setup = new PeriodCloseRangeService(jpa);
-            PeriodCloseRangeView otherRange = setup.closeRange(
+            PeriodCloseRangeView otherRange = PeriodCloseTestFixture.historical(jpa,
                     "OTHER",
                     LocalDate.of(2026, 2, 1),
                     LocalDate.of(2026, 2, 28),

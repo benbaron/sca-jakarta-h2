@@ -30,7 +30,7 @@ class PeriodCloseRangeServiceTest
         {
             seedCompany(jpa, SCA_COMPANY_ID, "SCA", "SCA Company");
             PeriodCloseRangeService service = new PeriodCloseRangeService(jpa);
-            PeriodCloseRangeView closed = service.closeRange(
+            PeriodCloseRangeView closed = PeriodCloseTestFixture.historical(jpa,
                     "sca",
                     LocalDate.of(2026, 3, 1),
                     LocalDate.of(2026, 3, 31),
@@ -109,7 +109,7 @@ class PeriodCloseRangeServiceTest
         {
             seedCompany(jpa, OTHER_COMPANY_ID, "OTHER", "Other Company");
             PeriodCloseRangeService service = new PeriodCloseRangeService(jpa);
-            service.closeRange(
+            PeriodCloseTestFixture.historical(jpa,
                     "OTHER",
                     LocalDate.of(2026, 4, 1),
                     LocalDate.of(2026, 4, 30),
@@ -128,7 +128,7 @@ class PeriodCloseRangeServiceTest
         try (Jpa jpa = new Jpa(tempDir.resolve("formal-adjustment")))
         {
             PeriodCloseRangeService service = new PeriodCloseRangeService(jpa);
-            PeriodCloseRangeView range = service.closeRange(
+            PeriodCloseRangeView range = PeriodCloseTestFixture.historical(jpa,
                     "DEFAULT",
                     LocalDate.of(2026, 6, 1),
                     LocalDate.of(2026, 6, 30),

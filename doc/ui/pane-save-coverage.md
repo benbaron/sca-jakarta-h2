@@ -69,7 +69,7 @@ Import Save follows the selected result tab, not the last format that happened t
 |---|---|
 | Depreciation active-period preview | Save Eligible Depreciation invokes the existing explicit batch confirmation. Each asset retains its established atomicity and retry behavior |
 | Depreciation completed runs | Read-only durable history; existing report navigation/export |
-| Period Close range editor | Save Closed Range uses the existing close service; Reopen Selected is an explicit persisted operation |
+| Period Close range editor | Save Closed Range revalidates the exact-scope recorded review and all readiness findings atomically with range/event/audit writes. Busy/permission gates prevent duplicate submission; an exact retry is idempotent. Reopen Selected preserves existing factual history and reason policy; reclosing requires a fresh review |
 | Period Close factual history | Read-only; no history rewrite |
 | Period Close readiness preview | Read-only Preview Readiness and correction navigation; no Save, attestation or close authorization. Date/company changes discard stale results. Existing Save Closed Range remains an explicit operation |
 | Period Close Review Evidence draft | Save Review and selected-tab File/toolbar Save use CloseReviewEvidenceService, with explicit attestation, references and unchanged preview. Busy/access gating and parent dirty-state protection apply. Saved reviews are immutable; corrections require New Review, never deletion or rewriting. No close authorization is granted |

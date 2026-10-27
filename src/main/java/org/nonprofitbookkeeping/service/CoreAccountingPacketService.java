@@ -156,45 +156,10 @@ public final class CoreAccountingPacketService
             var backup = transfer.backUpDatabase(workspace.resolve("snapshot.zip"));
             Path copy = workspace.resolve("snapshot");
             transfer.restoreDatabaseCopy(backup.backupFile(), copy);
-            Map<String, String> reports = new LinkedHashMap<>();
-            String displayName;
-            List<PacketOperationalSections.ExceptionRow> exceptions;
-            AccountingReadiness readiness;
             try (Jpa snapshot = new Jpa(copy))
             {
-                displayName = new CompanyAdminService(snapshot).findCompany(code)
-                        .orElseThrow(() -> new IllegalArgumentException("Company is absent from captured snapshot.")).displayName();
-                FinancialReportService financial = new FinancialReportService(snapshot, () -> code);
-                var trial = financial.trialBalance(end, null);
-                var balance = financial.balanceSheet(end, null);
-                reports.put("Trial Balance", FinancialReportRenderer.renderTrialBalanceCsv(trial));
-                reports.put("Balance Sheet", FinancialReportRenderer.renderBalanceSheetCsv(balance));
-                reports.put("Income Statement", FinancialReportRenderer.renderIncomeStatementCsv(financial.incomeStatement(start, end, null)));
-                var request = new ReportRequest(ReportDefinition.FUNCTIONAL_EXPENSES, start, end,
-                        ReportFundOption.ALL_FUNDS, ReportRequest.DEFAULT_ROW_LIMIT);
-                reports.put("Functional Expenses", FunctionalExpenseReportBuilder.completeResult(request,
-                        financial.functionalExpenses(start, end, null, null), FinancialReportDisplayFormat.plain()).csv());
-                exceptions = new java.util.ArrayList<>(new PacketOperationalSections(snapshot, code, start, end, ledgerCapacity).append(reports));
-                if (!trial.isBalanced())
-                {
-                    exceptions.add(new PacketOperationalSections.ExceptionRow("BLOCKER", "Trial Balance", "",
-                            "Debits minus credits: " + trial.totalDebits().subtract(trial.totalCredits()).toPlainString()));
-                }
-                if (!balance.isBalanced())
-                {
-                    exceptions.add(new PacketOperationalSections.ExceptionRow("BLOCKER", "Balance Sheet", "",
-                            "Assets minus liabilities and net assets: " + balance.totalAssets().subtract(balance.liabilitiesAndEquity()).toPlainString()));
-                }
-                reports.put("Exceptions and Notes", PacketCsv.records(PacketOperationalSections.ExceptionRow.class, exceptions));
-                readiness = AccountingReadiness.assess(code, start, end, Instant.now(), backup.sha256(), reports, exceptions);
-                reports.put("Readiness Findings", PacketCsv.records(AccountingReadiness.Finding.class, readiness.findings()));
-                // Historical review facts must not invalidate the accounting content they describe.
-                CloseReviewEvidenceService.appendPacket(snapshot, readiness, ledgerCapacity, reports);
+                return assemble(snapshot, code, start, end, backup.sha256(), ledgerCapacity);
             }
-            readiness = new AccountingReadiness(code, start, end, readiness.capturedAt(), backup.sha256(), readiness.dataRevision(),
-                    List.copyOf(reports.keySet()), readiness.findings());
-            validateReports(reports);
-            return new Captured(displayName, reports, List.copyOf(exceptions), readiness);
         }
         finally
         {
@@ -208,7 +173,61 @@ public final class CoreAccountingPacketService
         }
     }
 
-    private void validateReports(Map<String, String> reports) throws IOException
+    /** Reads the same canonical tables as export while the caller holds the database write guard. */
+    static AccountingReadiness assessLocked(Jpa jpa, jakarta.persistence.EntityManager owner, String code, LocalDate start, LocalDate end)
+    {
+        AccountingWriteGuard.lock(owner);
+        try
+        {
+            return assemble(jpa, code, start, end, "transaction-guarded live assessment; no backup created", MAX_LEDGER_ROWS).readiness();
+        }
+        catch (IOException ex)
+        {
+            throw new java.io.UncheckedIOException(ex);
+        }
+    }
+
+    private static Captured assemble(Jpa snapshot, String code, LocalDate start, LocalDate end, String snapshotSha, int ledgerCapacity) throws IOException
+    {
+        Map<String, String> reports = new LinkedHashMap<>();
+        String displayName;
+        List<PacketOperationalSections.ExceptionRow> exceptions;
+        AccountingReadiness readiness;
+        displayName = new CompanyAdminService(snapshot).findCompany(code)
+                .orElseThrow(() -> new IllegalArgumentException("Company is absent from captured snapshot.")).displayName();
+        FinancialReportService financial = new FinancialReportService(snapshot, () -> code);
+        var trial = financial.trialBalance(end, null);
+        var balance = financial.balanceSheet(end, null);
+        reports.put("Trial Balance", FinancialReportRenderer.renderTrialBalanceCsv(trial));
+        reports.put("Balance Sheet", FinancialReportRenderer.renderBalanceSheetCsv(balance));
+        reports.put("Income Statement", FinancialReportRenderer.renderIncomeStatementCsv(financial.incomeStatement(start, end, null)));
+        var request = new ReportRequest(ReportDefinition.FUNCTIONAL_EXPENSES, start, end,
+                ReportFundOption.ALL_FUNDS, ReportRequest.DEFAULT_ROW_LIMIT);
+        reports.put("Functional Expenses", FunctionalExpenseReportBuilder.completeResult(request,
+                financial.functionalExpenses(start, end, null, null), FinancialReportDisplayFormat.plain()).csv());
+        exceptions = new java.util.ArrayList<>(new PacketOperationalSections(snapshot, code, start, end, ledgerCapacity).append(reports));
+        if (!trial.isBalanced())
+        {
+            exceptions.add(new PacketOperationalSections.ExceptionRow("BLOCKER", "Trial Balance", "",
+                    "Debits minus credits: " + trial.totalDebits().subtract(trial.totalCredits()).toPlainString()));
+        }
+        if (!balance.isBalanced())
+        {
+            exceptions.add(new PacketOperationalSections.ExceptionRow("BLOCKER", "Balance Sheet", "",
+                    "Assets minus liabilities and net assets: " + balance.totalAssets().subtract(balance.liabilitiesAndEquity()).toPlainString()));
+        }
+        reports.put("Exceptions and Notes", PacketCsv.records(PacketOperationalSections.ExceptionRow.class, exceptions));
+        readiness = AccountingReadiness.assess(code, start, end, Instant.now(), snapshotSha, reports, exceptions);
+        reports.put("Readiness Findings", PacketCsv.records(AccountingReadiness.Finding.class, readiness.findings()));
+        // Historical review facts must not invalidate the accounting content they describe.
+        CloseReviewEvidenceService.appendPacket(snapshot, readiness, ledgerCapacity, reports);
+        readiness = new AccountingReadiness(code, start, end, readiness.capturedAt(), snapshotSha, readiness.dataRevision(),
+                List.copyOf(reports.keySet()), readiness.findings());
+        validateReports(reports, ledgerCapacity);
+        return new Captured(displayName, reports, List.copyOf(exceptions), readiness);
+    }
+
+    private static void validateReports(Map<String, String> reports, int ledgerCapacity) throws IOException
     {
         for (String csv : reports.values())
         {

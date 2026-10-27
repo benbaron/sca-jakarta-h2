@@ -248,7 +248,7 @@ class FixedAssetAtomicDepreciationTest
             seedScope(jpa, SCA);
             FixedAssetService service = service(jpa, SCA.code());
             FixedAssetView asset = service.create(assetCommand(SCA, "Trailer"));
-            new PeriodCloseRangeService(jpa).closeRange(
+            org.nonprofitbookkeeping.service.PeriodCloseTestFixture.historical(jpa,
                     SCA.code(), RUN_DATE, RUN_DATE, "CALCULATED", "treasurer", "month closed");
             Counts before = counts(jpa);
 

@@ -152,7 +152,7 @@ class PaymentReferenceServiceTest
                     List.of(new TransactionLineCommand(f.bank(), f.source(), null, null, null,
                             BigDecimal.TEN, BigDecimal.ZERO, false, null, check("1")),
                             line(f.income(), f.source(), "0", "10")))));
-            new PeriodCloseRangeService(jpa).closeRange("DEFAULT", DATE, DATE.plusDays(10), "CUSTOM", "Tester", "Close");
+            org.nonprofitbookkeeping.service.PeriodCloseTestFixture.historical(jpa,"DEFAULT", DATE, DATE.plusDays(10), "CUSTOM", "Tester", "Close");
             assertThrows(RuntimeException.class, () -> service.enter(payment(f, f.bank(), check("1"))));
             assertEquals(1L, count(jpa, "Txn"));
         }

@@ -195,7 +195,7 @@ class FixedAssetAcquisitionTest
             var accepted = service.previewAcquisition(purchase(f, "Retained", "100"), UUID.randomUUID());
             var saved = service.recordAcquisition(accepted);
             var unaccepted = service.previewAcquisition(purchase(f, "Closed", "100"), UUID.randomUUID());
-            var closed = new PeriodCloseRangeService(jpa).closeRange(COMPANY, DATE, DATE, "CALCULATED", "tester", "Close acquisitions");
+            var closed = org.nonprofitbookkeeping.service.PeriodCloseTestFixture.historical(jpa,COMPANY, DATE, DATE, "CALCULATED", "tester", "Close acquisitions");
             assertThrows(RuntimeException.class, () -> service.recordAcquisition(unaccepted));
             assertEquals(saved.id(), service.recordAcquisition(accepted).id());
             assertThrows(RuntimeException.class, () -> service.removeAcquisitionLink(saved.id(), "Protected"));

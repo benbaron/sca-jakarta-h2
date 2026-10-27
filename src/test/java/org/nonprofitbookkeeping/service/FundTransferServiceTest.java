@@ -256,7 +256,7 @@ class FundTransferServiceTest
             assertThrows(CompanyOwnershipException.class, () -> new FundTransferService(jpa).save(f.command(UUID.randomUUID(), "1")));
             change(jpa, em -> em.find(Fund.class, f.destination()).setCompany(em.createQuery("from Company c where c.code = 'DEFAULT'", Company.class).getSingleResult()));
             var saved = new FundTransferService(jpa).save(f.command(UUID.randomUUID(), "1"));
-            new PeriodCloseRangeService(jpa).closeRange("DEFAULT", DATE, DATE.plusDays(10), "CUSTOM", "Tester", "Close");
+            org.nonprofitbookkeeping.service.PeriodCloseTestFixture.historical(jpa,"DEFAULT", DATE, DATE.plusDays(10), "CUSTOM", "Tester", "Close");
             assertThrows(IllegalStateException.class, () -> new FundTransferService(jpa).save(f.command(UUID.randomUUID(), "1")));
             assertThrows(IllegalStateException.class, () -> new FundTransferService(jpa).reverse(saved.id(), DATE.plusDays(1), "Closed reversal"));
             assertEquals(1L, count(jpa, "FundTransfer"));

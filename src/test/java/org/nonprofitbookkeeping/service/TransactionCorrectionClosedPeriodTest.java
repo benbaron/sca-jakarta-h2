@@ -23,7 +23,7 @@ public class TransactionCorrectionClosedPeriodTest
         {
             seedBalancedTransaction(jpa);
             PeriodCloseRangeService periods = new PeriodCloseRangeService(jpa);
-            periods.closeRange(
+            PeriodCloseTestFixture.historical(jpa,
                     "DEFAULT",
                     LocalDate.of(2026, 1, 1),
                     LocalDate.of(2026, 1, 31),
@@ -65,7 +65,7 @@ public class TransactionCorrectionClosedPeriodTest
         {
             seedBalancedTransaction(jpa);
             PeriodCloseRangeService periods = new PeriodCloseRangeService(jpa);
-            periods.closeRange(
+            PeriodCloseTestFixture.historical(jpa,
                     "DEFAULT",
                     LocalDate.of(2026, 2, 1),
                     LocalDate.of(2026, 2, 28),
@@ -112,7 +112,7 @@ public class TransactionCorrectionClosedPeriodTest
         {
             seedBalancedTransaction(jpa);
             PeriodCloseRangeService periods = new PeriodCloseRangeService(jpa);
-            PeriodCloseRangeView january = periods.closeRange(
+            PeriodCloseRangeView january = PeriodCloseTestFixture.historical(jpa,
                     "DEFAULT",
                     LocalDate.of(2026, 1, 1),
                     LocalDate.of(2026, 1, 31),

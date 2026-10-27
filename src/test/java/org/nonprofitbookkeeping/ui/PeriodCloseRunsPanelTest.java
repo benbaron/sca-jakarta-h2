@@ -34,7 +34,7 @@ class PeriodCloseRunsPanelTest
         assertTrue(source.contains("ActivePeriodContext.periodStartFor("));
         assertTrue(source.contains("new Button(\"Save Closed Range\")"));
         assertTrue(source.contains("new Button(\"Reopen Selected\")"));
-        assertTrue(source.contains("service().closeRange("));
+        assertTrue(source.contains("capturedService.closeRange("));
         assertTrue(source.contains("service().reopenRange("));
         assertTrue(source.contains("service().listRanges(company)"));
         assertTrue(source.contains("service().listEvents(company)"));

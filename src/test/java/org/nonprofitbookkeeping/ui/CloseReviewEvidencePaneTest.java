@@ -157,6 +157,27 @@ class CloseReviewEvidencePaneTest
         });
     }
 
+    @Test
+    void actualCloseActionRejectsMissingReviewAndTracksBusyAndPermission() throws Exception
+    {
+        FxTestSupport.onFx(() ->
+        {
+            Button close = (Button) panel.root().lookup("#periodCloseSaveClosedRange");
+            close.fire(); assertTrue(close.isDisabled());
+            return null;
+        });
+        var failed = assertThrows(java.util.concurrent.ExecutionException.class, () -> panel.closeCompletionForTests().get(30, TimeUnit.SECONDS));
+        assertInstanceOf(IllegalArgumentException.class, failed.getCause());
+        FxTestSupport.onFx(() ->
+        {
+            Button close = (Button) panel.root().lookup("#periodCloseSaveClosedRange");
+            assertFalse(close.isDisabled());
+            assertTrue(((Label) panel.root().lookup("#periodCloseStatus")).getText().contains("Could not close range"));
+            MainWindow.sharedSessionState().setAuthenticatedUser(UiPermissionTestSessions.viewer()); assertTrue(close.isDisabled());
+            return null;
+        });
+    }
+
     @SuppressWarnings("unchecked")
     private void addReference()
     {
