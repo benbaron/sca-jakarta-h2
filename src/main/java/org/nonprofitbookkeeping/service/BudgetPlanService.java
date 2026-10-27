@@ -95,6 +95,14 @@ public class BudgetPlanService
             BudgetPlan.Status status,
             List<BudgetLineCommand> commands)
     {
+        return createForImport(em, company, command, status, commands, null);
+    }
+
+    /** Creates a historical plan with its source lifecycle metadata before the first insert. */
+    public BudgetPlan createForImport(
+            EntityManager em, Company company, BudgetPlanCommand command, BudgetPlan.Status status,
+            List<BudgetLineCommand> commands, ImportHistory history)
+    {
         Objects.requireNonNull(em, "em");
         Objects.requireNonNull(company, "company");
         Objects.requireNonNull(command, "command");
@@ -136,6 +144,17 @@ public class BudgetPlanService
         {
             plan.setActivatedAt(Instant.now());
         }
+        if (history != null)
+        {
+            if ((status == BudgetPlan.Status.ACTIVE && (history.activatedAt() == null || history.archivedAt() != null))
+                    || (status == BudgetPlan.Status.ARCHIVED && history.archivedAt() == null)
+                    || (status == BudgetPlan.Status.DRAFT && history.archivedAt() != null))
+            {
+                throw new IllegalArgumentException("Budget history contradicts its lifecycle state");
+            }
+            plan.setActivatedAt(history.activatedAt()); plan.setArchivedAt(history.archivedAt());
+            plan.setNotes(history.notes()); plan.restoreImportTimestamps(history.createdAt(), history.updatedAt());
+        }
         em.persist(plan);
         validateLineScopes(plan, safeCommands);
 
@@ -170,6 +189,61 @@ public class BudgetPlanService
             em.persist(line);
         }
         return plan;
+    }
+
+    /** Original source history; null activation/archive times remain unknown legacy facts. */
+    public record ImportHistory(Instant activatedAt, Instant archivedAt, Instant createdAt, Instant updatedAt, String notes)
+    {
+        public ImportHistory
+        {
+            requireImportTimestamp(createdAt, false); requireImportTimestamp(updatedAt, false);
+            requireImportTimestamp(activatedAt, true); requireImportTimestamp(archivedAt, true);
+            if (notes != null && notes.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 1_048_576)
+            {
+                throw new IllegalArgumentException("Budget notes exceed import capacity");
+            }
+        }
+    }
+
+    public record ImportLineHistory(Instant createdAt, Instant updatedAt, String notes)
+    {
+        public ImportLineHistory
+        {
+            requireImportTimestamp(createdAt, false); requireImportTimestamp(updatedAt, false);
+            if (notes != null && notes.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 1_048_576)
+            {
+                throw new IllegalArgumentException("Budget line notes exceed import capacity");
+            }
+        }
+    }
+
+    private static void requireImportTimestamp(Instant value, boolean nullable)
+    {
+        if (value == null && nullable) return;
+        Objects.requireNonNull(value, "Required budget history timestamp");
+        if (value.getNano() % 1000 != 0 || value.isBefore(Instant.parse("1900-01-01T00:00:00Z"))
+                || value.isAfter(Instant.parse("9999-12-31T23:59:59.999999Z")))
+        {
+            throw new IllegalArgumentException("Budget history timestamp exceeds stored range/precision");
+        }
+    }
+
+    /** Restores one caller-created line after validating its retained target plan scope. */
+    public void restoreLineHistoryForImport(EntityManager em, Company company, BudgetPlan plan, BudgetLine line, ImportLineHistory history)
+    {
+        requireImportOwner(em, company, plan);
+        if (!em.contains(line) || line.getBudgetPlan() != plan) throw new IllegalArgumentException("Budget line must belong to the managed imported plan");
+        validateLineScopes(plan, List.of(new BudgetLineCommand(line.getBudgetCategory().getId(),
+                line.getFund() == null ? null : line.getFund().getId(), line.getActivity() == null ? null : line.getActivity().getId(),
+                line.getPeriodMonth(), line.getAmount(), line.getNotes())));
+        line.setNotes(history.notes()); line.restoreImportTimestamps(history.createdAt(), history.updatedAt());
+    }
+
+    private void requireImportOwner(EntityManager em, Company company, BudgetPlan plan)
+    {
+        if (!em.getTransaction().isActive() || !em.contains(company) || !em.contains(plan))
+            throw new IllegalStateException("Budget history import requires managed records and a caller-owned transaction");
+        ownership().requireOwnedBy(company, plan, "Budget history");
     }
 
     public BudgetPlanView replaceDraftLines(long planId, List<BudgetLineCommand> commands)

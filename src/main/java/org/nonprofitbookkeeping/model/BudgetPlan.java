@@ -111,5 +111,11 @@ public class BudgetPlan
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public void touchUpdatedAt() { this.updatedAt = Instant.now(); }
+    /** Retains source history through the caller-owned budget import service. */
+    public void restoreImportTimestamps(Instant createdAt, Instant updatedAt)
+    {
+        this.createdAt = java.util.Objects.requireNonNull(createdAt);
+        this.updatedAt = java.util.Objects.requireNonNull(updatedAt);
+    }
     public List<BudgetLine> getLines() { return lines; }
 }

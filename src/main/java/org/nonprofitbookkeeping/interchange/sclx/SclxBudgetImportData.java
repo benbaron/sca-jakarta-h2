@@ -24,6 +24,16 @@ final class SclxBudgetImportData
 
     static SclxBudgetImportData parse(JsonNode value)
     {
+        return parse(value, false);
+    }
+
+    static SclxBudgetImportData parseDocument(JsonNode root)
+    {
+        return parse(root.path("budgets"), SclxBudgetMetadata.parse(root).present());
+    }
+
+    private static SclxBudgetImportData parse(JsonNode value, boolean fullMetadata)
+    {
         if (value == null || value.isMissingNode() || value.isNull())
         {
             return new SclxBudgetImportData(List.of());
@@ -78,7 +88,7 @@ final class SclxBudgetImportData
                 String categoryCode = boundedText(line, "categoryCode", linePath, 64);
                 String monthText = optionalText(line, "periodMonth");
                 YearMonth periodMonth = monthText == null ? null : parseMonth(monthText, linePath);
-                if (periodMonth != null && periodMonth.getYear() != fiscalYear)
+                if (!fullMetadata && periodMonth != null && periodMonth.getYear() != fiscalYear)
                 {
                     throw new IllegalStateException(
                             linePath + ".periodMonth must be within fiscal year " + fiscalYear + ".");

@@ -20,6 +20,8 @@ Control-account reconciliation remains company-wide because filtering one item b
 
 Migration V88 adds nullable `activity_id` to `budget_line`, its foreign key/index, and event-aware null-safe scope uniqueness. Existing rows remain general/untagged. SCLX budget lines add an optional `activityId` that references the existing Activity extension identity. Absence stays compatible; strict validation, import ownership, deterministic identity, retry, and rollback cover the event scope.
 
+[P27-S4B](P27-S4B-budget-metadata.md) adds optional complete plan/line history: exact fiscal dates, DRAFT/ACTIVE/ARCHIVED state, retained notes and source timestamps. Its identity-bound extension preserves cross-calendar months and historical inactive Fund/Event references without activating or revising target records. Legacy files without it retain the original reduced calendar-year import contract.
+
 ## Required verification and owner checks
 
 Unit and integration coverage must include two Events and two Funds, general and event-specific actuals, All Funds aggregation, overlap rejection/rollback, revision preservation, ownership/authorization, reversal handling, opening-allocation report filters with a cross-scope settlement, request validation, migration uniqueness, and SCLX sparse compatibility/event identity. Actual JavaFX coverage must confirm both Budget panes expose reachable Fund/Event controls, the existing Save route, role gating, scrolling, and persisted dividers.

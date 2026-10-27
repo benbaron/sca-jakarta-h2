@@ -44,7 +44,7 @@ public final class SclxImportPreviewService
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Set<String> RECOGNIZED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
-            "supplementalDetails", "transactionBudgets", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "bankConfiguration",
+            "supplementalDetails", "transactionBudgets", "budgetMetadata", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "fixedAssets", "inventory", "propertyCustody",
             "periodClose", "auditHistory", "nmrPolicies");
     private static final Set<String> UNSUPPORTED_ROOT_SECTIONS = Set.of(
@@ -142,6 +142,13 @@ public final class SclxImportPreviewService
             identityRoot = SclxExpenseFunctions.identityDocument(SclxMerchantSettlementMetadata.identityDocument(SclxNmrItemMetadata.identityDocument(SclxTransactionNmrExtension.identityDocument(
                     SclxPaymentReferences.identityDocument(SclxTransactionBudgetExtension.identityDocument(document.root()))))));
             identityRoot = SclxAssetAcquisitions.identityDocument(identityRoot);
+            identityRoot = SclxBudgetMetadata.identityDocument(identityRoot);
+            var budgetMetadata = SclxBudgetMetadata.parse(document.root());
+            if (budgetMetadata.present())
+            {
+                messages.add(message(InterchangeMessageSeverity.INFO, "SCLX_BUDGET_METADATA", "$.extensions.scaJakartaH2.budgetMetadata",
+                        "Full budget history: " + budgetMetadata.plans().size() + " plans and " + budgetMetadata.lines().size() + " lines.", false));
+            }
             long merchantFacts = document.root().path("extensions").path("scaJakartaH2").path("supplementalDetails").findValues("merchantSettlement").size();
             if (merchantFacts > 0)
             {
@@ -193,6 +200,26 @@ public final class SclxImportPreviewService
         addOwnershipDiagnostics(messages, ownershipIssuesSupplier.get());
         List<SclxImportEntityPreview> entities = classify(
                 extraction.entities(), target, messages, conflictSelections);
+        if (document.root().path("extensions").path("scaJakartaH2").has(SclxBudgetMetadata.KEY))
+        {
+            for (JsonNode budget : document.root().path("budgets"))
+            {
+                boolean kept = entities.stream().anyMatch(item -> item.entityType().equals("BUDGET")
+                        && item.externalId().equals(budget.path("budgetId").asText())
+                        && item.conflictChoice() == SclxImportConflictChoice.KEEP_TARGET);
+                if (kept)
+                {
+                    Set<String> ids = new HashSet<>();
+                    budget.path("lines").forEach(line -> ids.add(line.path("lineId").asText()));
+                    if (entities.stream().anyMatch(item -> item.entityType().equals("BUDGET_LINE") && ids.contains(item.externalId())
+                            && item.identityMatch() == InterchangeIdentityMatch.NEW && item.localEntityId() == null))
+                    {
+                        messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_KEPT_BUDGET_NEW_LINE", "$.budgets",
+                                "Keep target preserves the complete budget; source-only enriched lines cannot be added beneath it.", true));
+                    }
+                }
+            }
+        }
         try
         {
             var policies = SclxNmrPolicies.parse(document.root());
