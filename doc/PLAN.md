@@ -5,13 +5,17 @@ active_slice: P27-S3B2
 active_status: VERIFYING
 active_branch: codex/P27-S3B2-close-enforcement
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/392
-active_head: 1b51e95dae57d13e6828fc4960cf4b640b475fd4
+active_head: 17d43b7e7e3521033df0de9da00f43b8dcb9720d
 next_action: "Confirm final PR #392 head/tree and inspect clean/repeat/JavaFX CI. Owner upgrade/close/reopen checks and merge follow; P27-S4 remains gated on this merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 Published implementation `1b51e95dae57d13e6828fc4960cf4b640b475fd4` on fresh `codex/P27-S3B2-close-enforcement` and opened draft [PR #392](https://github.com/benbaron/sca-jakarta-h2/pull/392) against verified main `6b1d4a34`. The PR records the guarded close behavior, V90 deployment/serialization boundary, cascade correction, actual final gates, fixture rationale and native owner checks. This documentation-only successor records its known implementation parent; verify final remote head/tree and require CI for that exact commit. No S3B2 GitHub success or human upgrade/desktop result is claimed yet. S3B2 remains VERIFYING; parent S3 and P27-S4 do not advance before merge.
+
+Initial final-head workflow `40426942871`, job `121935408371`, passed clean verification and repeated tests but failed the display stage at AssetAcquisitionPanelTest:220, checking the horizontal scrollbar immediately after asynchronous row loading and before the skin's first layout pulse. The downloaded failed-test artifact identified this as the sole display error. The geometry test now waits, using its existing bounded FX polling helper, for that exact visible horizontal-scroll condition before retaining all original assertions. Production geometry/accounting code is unchanged. This successor requires its own final-head CI; no initial-head success is inferred from the passing headless stages.
+
+The corrected AssetAcquisitionPanelTest passed all three actual-display tests locally. Publish this reviewed synchronization-only test/PLAN successor to the same draft, verify its remote head/tree and run the full local clean/expanded-display gates while inspecting the successor CI. The active_head field records the known parent; resulting actual-head validation supersedes the initial workflow.
 
 Final S3B2 local verification — 2026-10-26 (America/Denver): post-fix `mvn clean verify` passed at **18:25:06 with 1,065 tests, zero failures/errors, 77 expected display skips**. The exact expanded production JavaFX selector passed under Xvfb at **18:29:47 with 69 tests, zero failures/errors/skips**. Both include the final session-publication/timestamp and H2 cascade fixes. The original merchant migration regression plus new upgrade/cascade/rollback/concurrent-close subset passed seven tests before the full gate. Relative documentation links (147) and whitespace review passed. No known executed-check failure remains. Remaining: draft publication, exact-head GitHub CI and owner [S3B2 upgrade/close/reopen checks](P27-S3B2-close-enforcement.md). No native human result is inferred; S3B2 remains VERIFYING and P27-S4 remains blocked until merge.
 

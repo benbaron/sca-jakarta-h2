@@ -213,6 +213,9 @@ class AssetAcquisitionPanelTest
             fixture.service(jpa).create(fixture.command("Retained equipment for layout", "1000"));
         }
         show();
+        // Async data completion precedes the TableView skin's first layout pulse on CI.
+        await(() -> table().lookupAll(".scroll-bar").stream().anyMatch(n -> n instanceof ScrollBar b
+                && b.isVisible() && b.getOrientation() == Orientation.HORIZONTAL && b.getMax() > b.getMin()));
         FxTestSupport.onFx(() ->
         {
             assertEquals("Retained equipment for layout", table().getColumns().get(0).getCellObservableValue(0).getValue());
