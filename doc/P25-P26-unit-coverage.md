@@ -2,6 +2,8 @@
 
 This ledger maps every implemented P25/P26 slice to behavioral automated coverage. Fixture-only classes are omitted. The Maven suite remains authoritative; this list prevents a completed slice from relying only on source-shape checks or manual acceptance.
 
+P27's [integrated portability audit](P27-S4-portability-audit.md) supplements these feature tests. `ClosePortabilityAuditTest` verifies complete persisted-row/trigger recovery for original/reversed P25 transfers and reviewed P27 closes, native retry and restored period protection. SCLX transfer metadata and full budget metadata remain explicit completion gaps; this recovery test does not assert all-feature SCLX fidelity.
+
 | Slice | Behaviors covered | Principal tests |
 |---|---|---|
 | P25-S1 Fund transfers | atomic balanced save, request retry, ownership/period/authorization rejection, reversal history, migration, SCLX, JavaFX Save and Viewer gate | `FundTransferServiceTest`, `FundTransferMigrationTest`, `FundTransferSclxTest`, `FundTransfersPanelTest` |

@@ -8,7 +8,7 @@ Selected-company SCLX 1.3 export writes authoritative H2-backed inventory items 
 extensions.scaJakartaH2.inventory
 ```
 
-The extension is versioned independently with `version: 1` and contains ordered `items` and `movements` arrays. It does not create a second inventory authority and does not export local numeric database identifiers.
+The extension is versioned independently. Current export writes `version: 2`; import also accepts legacy version 1. Both contain ordered `items` and `movements` arrays. It does not create a second inventory authority and does not export local numeric database identifiers.
 
 ## Portable identities
 
@@ -28,6 +28,9 @@ Each item preserves:
 - `quantity`
 - `unit`
 - `unitValue`
+- `carryingValue` (version 2)
+- `valuationMethod` (`MOVING_WEIGHTED_AVERAGE`, version 2)
+- `financialTreatment` (`CAPITALIZED_INVENTORY` or `EXPENSED_SUPPLY`)
 - `acquisitionDate`
 - optional `custodian`
 - optional `storageLocation`
@@ -52,6 +55,8 @@ Each movement preserves:
 - signed `quantityChange`
 - `resultingQuantity`
 - `unitValue`
+- signed `valueChange` (version 2)
+- `resultingCarryingValue` (version 2)
 - optional `transactionId`
 - optional `notes`
 - `createdAt`
@@ -60,7 +65,7 @@ A movement may omit `transactionId` when no canonical accounting transaction was
 
 ## Selection and ordering
 
-Export includes every inventory item owned by the selected company and every movement belonging to those items. Items and movements are ordered by intrinsic portable UUID so unchanged data serializes deterministically.
+Export includes every inventory item owned by the selected company and every movement belonging to those items. Serialized arrays use deterministic portable identities; historical import validates and restores the dated source acceptance sequence before accepting the final quantity/carrying value. It does not replay interactive weighted-average calculations.
 
 Records from other companies are excluded. An item account must belong to the selected company's active chart, and the item fund must belong to the selected company.
 
@@ -86,13 +91,15 @@ This extension does not export JavaFX state, filesystem paths, compatibility sto
 
 ## Transactional import
 
-P15-S5-C6 strictly validates the complete version 1 extension before mutation. Items are recreated through a caller-owned `InventoryService` transaction boundary after their company-owned account and fund references exist. Movement history is then recorded through the same service after optional canonical transaction provenance resolves.
+Import strictly validates the complete supported extension before mutation. Version 2 preserves exact signed value changes and resulting carrying values; unsupported valuation methods/versions and inconsistent histories reject. Version 1 retains the governed fixed-unit compatibility basis without inventing unavailable receipt prices. Items are recreated through a caller-owned `InventoryService` transaction boundary after their company-owned account and fund references exist. Movement history is then recorded through the same service after optional canonical transaction provenance resolves.
 
 Import preserves the intrinsic item and movement UUIDs, item facts, movement facts, source timestamps, status, condition, notes, and exact decimal values. It does not synthesize an initial receipt, recalculate source quantities, or create another ledger transaction. Every item and movement receives a durable SCLX interchange identity, identical reimport is a no-op, and any late failure rolls the complete imported company graph back.
 
 P16-S9 does not route restore through the interactive movement preview/posting command. `createForImport(...)` and `recordMovementForImport(...)` remain the only SCLX inventory seams: an imported `transactionId` reattaches the already restored canonical transaction, while an absent reference stays null. Neither case synthesizes a second transaction or movement audit fact.
 
-The target must remain empty under the governed P15-S5 merge policy. A populated inventory item is sufficient to block preview and commit. Banking, reconciliation, period-close, imported audit-history, correction, and unknown populated extensions remain blocked after C6.
+The original C6 empty-target restriction is superseded by the current existing-company Preview/Save and identity/conflict contract in [SCLX](sclx.md). Exact retained identities are reused, changed facts require a supported explicit resolution, and unsupported populated extensions still block before commit. Current production also supports banking, reconciliation, period-close, factual audit and canonical correction graphs through their governed sections; C6's historical exclusions are not current restrictions.
+
+The [P27-S4 audit](../P27-S4-portability-audit.md) tracks the final integrated recovery/compatibility gate; individual inventory tests do not establish all-feature acceptance.
 
 ## P24-S3 Event and Budget attribution
 
