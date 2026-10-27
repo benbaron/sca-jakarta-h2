@@ -4,12 +4,14 @@ active_phase: P27
 active_slice: P27-S3B2
 active_status: VERIFYING
 active_branch: codex/P27-S3B2-close-enforcement
-active_pull_request: null
-active_head: 6b1d4a34fe7f56aa056dc9d6a9d717c406081cb0
-next_action: "Publish the locally verified S3B2 draft and inspect final-head CI. Owner upgrade/close/reopen checks and merge follow; P27-S4 remains gated on this merge."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/392
+active_head: 1b51e95dae57d13e6828fc4960cf4b640b475fd4
+next_action: "Confirm final PR #392 head/tree and inspect clean/repeat/JavaFX CI. Owner upgrade/close/reopen checks and merge follow; P27-S4 remains gated on this merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+Published implementation `1b51e95dae57d13e6828fc4960cf4b640b475fd4` on fresh `codex/P27-S3B2-close-enforcement` and opened draft [PR #392](https://github.com/benbaron/sca-jakarta-h2/pull/392) against verified main `6b1d4a34`. The PR records the guarded close behavior, V90 deployment/serialization boundary, cascade correction, actual final gates, fixture rationale and native owner checks. This documentation-only successor records its known implementation parent; verify final remote head/tree and require CI for that exact commit. No S3B2 GitHub success or human upgrade/desktop result is claimed yet. S3B2 remains VERIFYING; parent S3 and P27-S4 do not advance before merge.
 
 Final S3B2 local verification — 2026-10-26 (America/Denver): post-fix `mvn clean verify` passed at **18:25:06 with 1,065 tests, zero failures/errors, 77 expected display skips**. The exact expanded production JavaFX selector passed under Xvfb at **18:29:47 with 69 tests, zero failures/errors/skips**. Both include the final session-publication/timestamp and H2 cascade fixes. The original merchant migration regression plus new upgrade/cascade/rollback/concurrent-close subset passed seven tests before the full gate. Relative documentation links (147) and whitespace review passed. No known executed-check failure remains. Remaining: draft publication, exact-head GitHub CI and owner [S3B2 upgrade/close/reopen checks](P27-S3B2-close-enforcement.md). No native human result is inferred; S3B2 remains VERIFYING and P27-S4 remains blocked until merge.
 
