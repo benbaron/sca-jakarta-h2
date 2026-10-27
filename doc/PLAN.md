@@ -5,11 +5,13 @@ active_slice: P27-S3B2
 active_status: VERIFYING
 active_branch: codex/P27-S3B2-close-enforcement
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/392
-active_head: 17d43b7e7e3521033df0de9da00f43b8dcb9720d
-next_action: "Confirm final PR #392 head/tree and inspect clean/repeat/JavaFX CI. Owner upgrade/close/reopen checks and merge follow; P27-S4 remains gated on this merge."
+active_head: e30914525ad7d6b4163d5b6587c06647a54a16d1
+next_action: "Owner reviews PR #392 using S3B2 upgrade/close/reopen checks and merges when ready. After merge verification, carry final CI evidence onto a fresh branch, close S3/S3B and select P27-S4 integrated portability."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+Final S3B2 publication/CI evidence — 2026-10-26 (America/Denver): corrected published head `e30914525ad7d6b4163d5b6587c06647a54a16d1` matches the fetched remote branch and open draft PR #392 head exactly, reviewed tree `c70f6aa781b15f3a68beb3cb77f09d050f2551f7`. [Maven PR Tests run 40428989992](https://github.com/benbaron/sca-jakarta-h2/actions/runs/40428989992), job `121941777354`, completed successfully: clean verification, repeated tests and production JavaFX all passed. The corrected head also passed local `mvn clean verify` at 18:54:56 with 1,065 tests / zero failures/errors / 77 expected display skips, followed by the exact production Xvfb selector at 18:59:15 with 69 tests / zero failures/errors/skips. The PR description records the actual-head result and test-only layout synchronization correction. No known executed-check failure remains. This final PLAN evidence stays local to preserve the green remote head. S3B2 remains VERIFYING pending native owner upgrade/close/reopen checks and merge; no human result is inferred. After owner reports merge, verify current main, carry this evidence to a fresh branch, close parent S3/S3B and select P27-S4's integrated SCLX/backup compatibility audit without reusing the merged branch or asking for official-template/rate-policy inputs.
 
 Published implementation `1b51e95dae57d13e6828fc4960cf4b640b475fd4` on fresh `codex/P27-S3B2-close-enforcement` and opened draft [PR #392](https://github.com/benbaron/sca-jakarta-h2/pull/392) against verified main `6b1d4a34`. The PR records the guarded close behavior, V90 deployment/serialization boundary, cascade correction, actual final gates, fixture rationale and native owner checks. This documentation-only successor records its known implementation parent; verify final remote head/tree and require CI for that exact commit. No S3B2 GitHub success or human upgrade/desktop result is claimed yet. S3B2 remains VERIFYING; parent S3 and P27-S4 do not advance before merge.
 
