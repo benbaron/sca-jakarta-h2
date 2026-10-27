@@ -4,12 +4,14 @@ active_phase: P27
 active_slice: P27-S4A
 active_status: VERIFYING
 active_branch: codex/P27-S4A-portability-audit
-active_pull_request: null
-active_head: 84d5d916
-next_action: "Finish S4A audit/recovery tests and focused/full/JavaFX gates; publish draft and inspect exact-head CI. After merge, select S4B budget metadata before S4C transfer links and S4D integrated compatibility."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/393
+active_head: 248dd8e5c272b7187398c40b5fb062eddbe4c3a6
+next_action: "Finish production JavaFX and inspect exact published-head CI for draft PR #393. Owner reviews the audit/recovery checks and merges; after merge verification, select S4B budget metadata on a fresh branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+S4A draft publication — 2026-10-26 (America/Denver): implementation `248dd8e5c272b7187398c40b5fb062eddbe4c3a6`, tree `386cc4b3b4f79527df7b393d064f80f37a048b25`, was pushed without force to `codex/P27-S4A-portability-audit`. Native fetch and draft [PR #393](https://github.com/benbaron/sca-jakarta-h2/pull/393) confirm the exact matching head on base `76fe8450`. The PR records gaps, test scenarios and owner checks. Full local clean verification passed 1,068 / zero failures/errors / 77 expected display skips, the focused cross-feature suite passed 57, and the final warning-reason subset passed three. Production JavaFX is running. Initial-head CI run `40442749069` has started; no GitHub success is claimed. This publication-only PLAN successor requires verification of its resulting head/tree and CI; it does not change the tested application/test/schema bytes. Status remains VERIFYING until review/merge; parent S4 remains incomplete. Relative documentation links (156) and whitespace/scope review passed; generated target files are excluded.
 
 ### P27-S3B2 merge and S4A audit selection — 2026-10-26 (America/Denver)
 
