@@ -4,12 +4,14 @@ active_phase: P27
 active_slice: P27-S4B
 active_status: VERIFYING
 active_branch: codex/P27-S4B-budget-metadata
-active_pull_request: null
-active_head: 79f19870
-next_action: "Implement and validate S4B budget metadata through existing SCLX Preview/Save; cover exact history, fiscal dates, legacy compatibility, conflicts, retry and rollback, then publish draft and inspect exact-head CI."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/394
+active_head: 6f677607d7d5f655b7d4796338004dd00da489ee
+next_action: "Finish production JavaFX and exact published-head CI for draft PR #394. Owner reviews budget portability checks and merges; after merge verification, carry final evidence to a fresh S4C transfer-portability branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+S4B draft publication — 2026-10-27 (America/Denver): implementation `6f677607d7d5f655b7d4796338004dd00da489ee`, tree `c06dd76c26fa9fc5334b57a2232877609e0f6135`, was pushed without force to fresh `codex/P27-S4B-budget-metadata` from confirmed main `8500d99b`. Native fetched branch and draft [PR #394](https://github.com/benbaron/sca-jakarta-h2/pull/394) confirm the matching head. The PR records the six new scenarios, V50 insert ordering, exact inactive-identity regression, final 1,074-test clean result, compatibility limits and owner checks. Production JavaFX is running; no GitHub success is claimed yet. This publication-only PLAN successor requires its resulting exact head/tree and CI to be verified; it changes none of the tested application/test/schema bytes. S4B remains VERIFYING, parent S4 stays incomplete and P28 stays blocked.
 
 ### P27-S4A merge and S4B selection — 2026-10-27 (America/Denver)
 
