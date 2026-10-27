@@ -121,7 +121,7 @@ class InventoryMovementAccountingTest
             assertThrows(IllegalStateException.class, () -> otherCompany.previewMovement(
                     valued.id(), command(InventoryMovement.MovementType.RECEIPT, "1.0000", "Other")));
 
-            new PeriodCloseRangeService(jpa).closeRange(
+            org.nonprofitbookkeeping.service.PeriodCloseTestFixture.historical(jpa,
                     COMPANY, MOVEMENT_DATE, MOVEMENT_DATE, "CUSTOM", "treasurer", "Inventory close test");
             assertThrows(ClosedPeriodRangeException.class, () -> service.previewMovement(
                     valued.id(), command(InventoryMovement.MovementType.RECEIPT, "1.0000", "Closed")));

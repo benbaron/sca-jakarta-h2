@@ -1359,7 +1359,7 @@ class SclxImportCommitServiceTest
         try (Jpa jpa = new Jpa(tempDir.resolve("period-close-target")))
         {
             seedEmptyTarget(jpa);
-            new PeriodCloseRangeService(jpa).closeRange(
+            org.nonprofitbookkeeping.service.PeriodCloseTestFixture.historical(jpa,
                     TARGET,
                     LocalDate.of(2025, 1, 1),
                     LocalDate.of(2025, 12, 31),

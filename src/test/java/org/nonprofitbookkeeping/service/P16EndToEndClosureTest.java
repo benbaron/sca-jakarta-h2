@@ -129,7 +129,7 @@ class P16EndToEndClosureTest
                     jpa, ALPHA::code).reverse(
                     bankTransaction.id(), ACTIVITY_DATE.plusDays(1), "architect", "blocked", false));
 
-            new PeriodCloseRangeService(jpa).closeRange(
+            org.nonprofitbookkeeping.service.PeriodCloseTestFixture.historical(jpa,
                     ALPHA.code(),
                     ACTIVITY_DATE.plusDays(2),
                     ACTIVITY_DATE.plusDays(2),

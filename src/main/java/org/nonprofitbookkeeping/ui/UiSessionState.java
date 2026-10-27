@@ -24,7 +24,7 @@ public class UiSessionState
             UserPrivilegeLevel.ACCOUNTANT);
     private MultiCompanyState multiCompany = new MultiCompanyState("DEFAULT", List.of("DEFAULT"));
     private DatabaseSelectionState databaseSelection = defaultDatabaseSelection();
-    private AuthenticatedUserSession authenticatedUser;
+    private volatile AuthenticatedUserSession authenticatedUser;
 
     private final List<Consumer<AppPreferencesState>> preferenceListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<MultiCompanyState>> companyListeners = new CopyOnWriteArrayList<>();

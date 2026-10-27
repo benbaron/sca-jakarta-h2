@@ -24,7 +24,7 @@ class TransactionEntryCloseRangeTest
         {
             seedReferenceData(jpa);
             PeriodCloseRangeService closeService = new PeriodCloseRangeService(jpa);
-            closeService.closeRange(
+            PeriodCloseTestFixture.historical(jpa,
                     "OTHER",
                     LocalDate.of(2026, 4, 1),
                     LocalDate.of(2026, 4, 30),
@@ -36,7 +36,7 @@ class TransactionEntryCloseRangeTest
             TransactionView entered = defaultCompany.enter(command(LocalDate.of(2026, 4, 10)));
             assertEquals(LocalDate.of(2026, 4, 10), entered.date());
 
-            closeService.closeRange(
+            PeriodCloseTestFixture.historical(jpa,
                     "DEFAULT",
                     LocalDate.of(2026, 5, 1),
                     LocalDate.of(2026, 5, 31),

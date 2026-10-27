@@ -307,7 +307,7 @@ public class BankStatementImportContractMatrixTest
                     .setParameter(1, runId).executeUpdate();
             em.getTransaction().commit();
         }
-        new PeriodCloseRangeService(jpa).closeRange(
+        org.nonprofitbookkeeping.service.PeriodCloseTestFixture.historical(jpa,
                 "SCA", LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30),
                 "CALCULATED", "treasurer", "June closed");
     }

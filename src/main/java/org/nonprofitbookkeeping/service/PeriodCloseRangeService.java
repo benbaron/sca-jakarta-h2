@@ -36,6 +36,8 @@ public class PeriodCloseRangeService
 
     private final Jpa jpa;
     private final AuthorizationGuard authorizationGuard;
+    private final java.util.function.Consumer<AccountingReadiness> beforeClose;
+    private final Runnable afterClosePersist;
 
     public PeriodCloseRangeService(Jpa jpa)
     {
@@ -44,8 +46,20 @@ public class PeriodCloseRangeService
 
     public PeriodCloseRangeService(Jpa jpa, AuthorizationGuard authorizationGuard)
     {
+        this(jpa, authorizationGuard, assessed -> { });
+    }
+
+    PeriodCloseRangeService(Jpa jpa, AuthorizationGuard authorizationGuard, java.util.function.Consumer<AccountingReadiness> beforeClose)
+    {
+        this(jpa, authorizationGuard, beforeClose, () -> { });
+    }
+
+    PeriodCloseRangeService(Jpa jpa, AuthorizationGuard authorizationGuard, java.util.function.Consumer<AccountingReadiness> beforeClose, Runnable afterClosePersist)
+    {
         this.jpa = Objects.requireNonNull(jpa, "jpa");
         this.authorizationGuard = authorizationGuard;
+        this.beforeClose = Objects.requireNonNull(beforeClose);
+        this.afterClosePersist = Objects.requireNonNull(afterClosePersist);
     }
 
     /**
@@ -71,6 +85,7 @@ public class PeriodCloseRangeService
         {
             throw new IllegalStateException("Period-close interchange import requires an active transaction");
         }
+        AccountingWriteGuard.lock(em);
         if (owner.getId() == null)
         {
             throw new IllegalArgumentException("Period-close interchange company must be persisted");
@@ -175,6 +190,14 @@ public class PeriodCloseRangeService
             String actor,
             String reason)
     {
+        return closeRange(companyCode, startDate, endDate, rangeKind, actor, reason, null);
+    }
+
+    /** Revalidates authoritative content and a factual review under the same transaction guard as every source write. */
+    public PeriodCloseRangeView closeRange(
+            String companyCode, LocalDate startDate, LocalDate endDate, String rangeKind,
+            String actor, String reason, UUID selectedReviewId)
+    {
         String requestedCompany = companyCode == null
                 ? "" : companyCode.trim().toUpperCase(Locale.ROOT);
         String cleanActor = requireText(ServiceAuthorization.actor(
@@ -193,16 +216,56 @@ public class PeriodCloseRangeService
 
         String kind = normalizeKind(rangeKind);
         String cleanReason = blankToNull(reason);
-        UUID id = UUID.randomUUID();
+        UUID id;
         UUID eventId = UUID.randomUUID();
-        Instant now = Instant.now();
 
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
             try
             {
+                AccountingWriteGuard.lock(em);
                 Company companyEntity = requireCompany(em, company);
+                var reviews = CloseReviewEvidenceService.readHistory(jpa, company, start, end, CoreAccountingPacketService.MAX_LEDGER_ROWS);
+                var review = reviews.stream().filter(value -> selectedReviewId == null || value.id().equals(selectedReviewId))
+                        .findFirst().orElseThrow(() -> new IllegalArgumentException("Record a factual review for these exact dates before closing"));
+                id = review.id();
+                var existing = singleRangeRow(em, id).map(PeriodCloseRangeService::mapRange).orElse(null);
+                if (existing != null)
+                {
+                    if (!existing.companyCode().equals(company) || !existing.startDate().equals(start) || !existing.endDate().equals(end)
+                            || !existing.rangeKind().equals(kind) || !Objects.equals(existing.closeReason(), cleanReason))
+                    {
+                        throw new IllegalStateException("This review was already used for a different close request");
+                    }
+                    if (!existing.closed())
+                    {
+                        throw new IllegalStateException("Record a new review before reclosing a reopened range");
+                    }
+                    ServiceAuthorization.require(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE, company, "return closed range");
+                    em.getTransaction().commit();
+                    return existing;
+                }
+                AccountingReadiness assessed = CoreAccountingPacketService.assessLocked(jpa, em, company, start, end);
+                if (assessed.blockers() != 0) throw new IllegalStateException("Readiness has blocking findings; correct them before closing");
+                if (!review.payload().dataRevision().equals(assessed.dataRevision())) throw new IllegalStateException("Recorded review is stale; preview and record a new review");
+                if (!review.payload().attested() || review.payload().references().isEmpty())
+                {
+                    throw new IllegalStateException("Review lacks factual evidence attestation");
+                }
+                for (var finding : assessed.findings())
+                {
+                    if (finding.severity() == AccountingReadiness.Severity.WARNING
+                            && (review.payload().warningReasons().get(finding.id()) == null || review.payload().warningReasons().get(finding.id()).isBlank()))
+                    {
+                        throw new IllegalStateException("Record a reason for every warning before closing: " + finding.area());
+                    }
+                }
+                beforeClose.accept(assessed);
+                if (!cleanActor.equals(ServiceAuthorization.actor(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE, company, "commit reviewed period close", actor)))
+                {
+                    throw new AuthorizationException(ApplicationPermission.BOOKKEEPING_WRITE, "Authenticated actor changed during close validation");
+                }
                 Number overlaps = (Number) em.createNativeQuery("""
                         SELECT COUNT(*)
                         FROM period_close_range
@@ -221,6 +284,7 @@ public class PeriodCloseRangeService
                             "The requested close range overlaps an existing closed range for " + company);
                 }
 
+                Instant now = Instant.now();
                 em.createNativeQuery("""
                         INSERT INTO period_close_range
                             (id, company_id, company_code, start_date, end_date, range_kind, status,
@@ -241,13 +305,20 @@ public class PeriodCloseRangeService
                         .executeUpdate();
 
                 insertEvent(em, eventId, id, companyEntity.getId(), company, "CLOSED", cleanActor, cleanReason, now);
-                em.persist(audit(
+                AuditEvent closeAudit = audit(
                         companyEntity,
                         cleanActor,
                         "PERIOD_RANGE_CLOSED",
                         id,
                         "Closed " + start + " through " + end + " for " + company,
-                        cleanReason));
+                        cleanReason);
+                closeAudit.setAfterValue("reviewId=" + review.id() + ";dataRevision=" + assessed.dataRevision()
+                        + ";assessedAt=" + assessed.capturedAt()
+                        + ";warningReasons=" + review.payload().warningReasons().keySet()
+                        + ";basis=transaction-guarded canonical revalidation; external evidence is self-attested");
+                em.persist(closeAudit);
+                em.flush();
+                afterClosePersist.run();
                 em.getTransaction().commit();
             }
             catch (RuntimeException ex)
@@ -286,13 +357,13 @@ public class PeriodCloseRangeService
             throw new IllegalArgumentException("A reopening reason is required");
         }
 
-        Instant now = Instant.now();
         UUID eventId = UUID.randomUUID();
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
             try
             {
+                AccountingWriteGuard.lock(em);
                 Object[] current = singleRangeRow(em, id)
                         .orElseThrow(() -> new IllegalArgumentException("Unknown close range: " + id));
                 String company = String.valueOf(current[1]);
@@ -308,6 +379,7 @@ public class PeriodCloseRangeService
                     throw new IllegalStateException("Close range " + id + " is already reopened");
                 }
 
+                Instant now = Instant.now();
                 int updated = em.createNativeQuery("""
                         UPDATE period_close_range
                         SET status = 'REOPENED', reopened_at = ?, reopened_by = ?,
@@ -423,6 +495,10 @@ public class PeriodCloseRangeService
     {
         String company = normalizeCompanyCode(companyCode);
         LocalDate target = requireDate(date, "date");
+        if (em.getTransaction().isActive())
+        {
+            AccountingWriteGuard.lock(em);
+        }
         Optional<PeriodCloseRangeView> closed = findClosedRange(em, company, target);
         if (closed.isPresent())
         {

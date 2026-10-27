@@ -45,6 +45,7 @@ public class HelpPanel implements AppPanel
                 + "Import & Oversight: Import Preview, Opening Conversion, Audit History, Period Close\n"
                 + "Period Close -> Readiness: preview automated findings and open their correction screens. Preview does not attest external evidence or authorize closing.\n"
                 + "Period Close -> Review Evidence: record external references and factual self-attestation with Save Review. Retained reviews do not excuse blockers or authorize closing.\n"
+                + "Save Closed Range requires a current matching review, zero blockers and reasons for every warning. The service rechecks all accounting content before committing; a reopened range needs a new review to close again.\n"
                 + "Reports: Report Library\n"
                 + "Administration: Chart of Accounts, Funds, Events / Activities, Administration, Diagnostics");
 

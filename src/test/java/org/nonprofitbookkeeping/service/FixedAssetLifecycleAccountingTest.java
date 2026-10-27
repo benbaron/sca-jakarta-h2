@@ -301,7 +301,7 @@ class FixedAssetLifecycleAccountingTest
                     () -> service.recordLifecycleEvent(preview, "treasurer"));
             assertEquals(beforeStale, counts(jpa));
 
-            new PeriodCloseRangeService(jpa).closeRange(
+            org.nonprofitbookkeeping.service.PeriodCloseTestFixture.historical(jpa,
                     "SCA", EVENT_DATE, EVENT_DATE, "CALCULATED", "treasurer", "closed");
             Counts beforeClosed = counts(jpa);
             RuntimeException closed = assertThrows(RuntimeException.class,

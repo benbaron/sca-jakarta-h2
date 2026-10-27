@@ -116,7 +116,7 @@ class CheckExceptionServiceTest
             assertThrows(IllegalArgumentException.class, () -> service(jpa).review(id, f.bank(), "wrong", null, "ref", DATE, "Review", "Tester"));
             assertThrows(IllegalArgumentException.class, () -> service(jpa).review(id, f.bank(), "000123", DATE.minusDays(1), null, DATE, "Review", "Tester"));
             assertThrows(RuntimeException.class, () -> new CheckExceptionService(jpa, () -> "OTHER", null).review(id, f.bank(), "000123", null, null, DATE, "Review", "Tester"));
-            new PeriodCloseRangeService(jpa).closeRange("DEFAULT", DATE, DATE.plusDays(10), "CUSTOM", "Tester", "Close");
+            org.nonprofitbookkeeping.service.PeriodCloseTestFixture.historical(jpa,"DEFAULT", DATE, DATE.plusDays(10), "CUSTOM", "Tester", "Close");
             assertThrows(IllegalStateException.class, () -> service(jpa).review(id, f.bank(), "000123", null, null, DATE.plusDays(1), "Review", "Tester"));
             assertNull(entries.load(id).lines().get(1).payment().reviewNote());
         }

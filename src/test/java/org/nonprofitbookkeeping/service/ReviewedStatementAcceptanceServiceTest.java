@@ -154,7 +154,7 @@ public class ReviewedStatementAcceptanceServiceTest
             assertEquals(0L, count(jpa, "select count(t) from Txn t"));
             activeCompany.set("SCA");
 
-            new PeriodCloseRangeService(jpa).closeRange(
+            org.nonprofitbookkeeping.service.PeriodCloseTestFixture.historical(jpa,
                     "SCA", preview.effectiveSourceDate(), preview.effectiveSourceDate(),
                     "CUSTOM", "Owner Tester", "Test close protection");
             assertThrows(RuntimeException.class,

@@ -165,7 +165,7 @@ class FunctionalExpenseTest
                 em.createNativeQuery("INSERT INTO txn_reconciliation_protection (txn_id, reconciliation_run_id, protected_by, notes) VALUES (?, ?, 'tester', 'Synthetic')").setParameter(1, id).setParameter(2, run).executeUpdate(); em.getTransaction().commit();
             }
             assertThrows(PostingException.class, () -> entry.update(id, f.mixed()));
-            new PeriodCloseRangeService(jpa).closeRange(COMPANY, DATE, DATE, "CALCULATED", "tester", "Synthetic close");
+            org.nonprofitbookkeeping.service.PeriodCloseTestFixture.historical(jpa,COMPANY, DATE, DATE, "CALCULATED", "tester", "Synthetic close");
             assertThrows(RuntimeException.class, () -> entry.enter(f.mixed(), UUID.randomUUID()));
             assertEquals(id, entry.enter(f.mixed(), key).id());
         }
