@@ -1,15 +1,23 @@
 ---
-plan_version: 415
+plan_version: 416
 active_phase: P27
-active_slice: P27-S3B2
+active_slice: P27-S4A
 active_status: VERIFYING
-active_branch: codex/P27-S3B2-close-enforcement
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/392
-active_head: e30914525ad7d6b4163d5b6587c06647a54a16d1
-next_action: "Owner reviews PR #392 using S3B2 upgrade/close/reopen checks and merges when ready. After merge verification, carry final CI evidence onto a fresh branch, close S3/S3B and select P27-S4 integrated portability."
+active_branch: codex/P27-S4A-portability-audit
+active_pull_request: null
+active_head: 84d5d916
+next_action: "Finish S4A audit/recovery tests and focused/full/JavaFX gates; publish draft and inspect exact-head CI. After merge, select S4B budget metadata before S4C transfer links and S4D integrated compatibility."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P27-S3B2 merge and S4A audit selection — 2026-10-26 (America/Denver)
+
+Owner reported PR #392 merged. GitHub and native fetch confirm main `76fe8450` contains accepted head `e3091452`, whose clean/repeat/JavaFX workflow `40428989992` passed. S3B2 and parents S3B/S3 are DONE. Fresh `codex/P27-S4A-portability-audit` carries local final evidence as `84d5d916`. No additional human upgrade/desktop result is inferred from the merge message.
+
+Select [S4A inventory and recovery gate](P27-S4-portability-audit.md) IN_PROGRESS. Baseline compile passed. Required reading/inspection and donor decision are recorded in that contract. The audit found missing operational transfer links, lost budget dates/archive/notes/times, and generic audit import's lack of recognized nested review-payload validation. These are pending S4B budget metadata, S4C transfer links and S4D evidence validation/integrated compatibility, not deliberate exclusions or completed coverage. Parent S4 remains IN_PROGRESS; P28 remains blocked. S4A changes tests/documentation only and corrects stale inventory v1/C6 documentation.
+
+Three new real-boundary tests passed: actual SCLX review/close/reopen/history into a differently named company with restart/no-op retry; changed/blocked target close rejection with no partial writes; whole-database recovery comparing every stored row/column plus triggers for two companies, reviewed close and reversed transfers, followed by exact native retries and restored period protection. Focused cross-feature portability passed 57 tests; the final strengthened actual-warning-reason subset passed three. Full `mvn clean verify` passed at 21:10:06 with 1,068 tests, zero failures/errors and 77 expected display skips. Production JavaFX, draft publication and exact-head CI remain pending. Known initial compile typo in the new test's requireOpen call was corrected before these passes. No known executed test failure remains; no S4B/C/D implementation is included.
 
 Final S3B2 publication/CI evidence — 2026-10-26 (America/Denver): corrected published head `e30914525ad7d6b4163d5b6587c06647a54a16d1` matches the fetched remote branch and open draft PR #392 head exactly, reviewed tree `c70f6aa781b15f3a68beb3cb77f09d050f2551f7`. [Maven PR Tests run 40428989992](https://github.com/benbaron/sca-jakarta-h2/actions/runs/40428989992), job `121941777354`, completed successfully: clean verification, repeated tests and production JavaFX all passed. The corrected head also passed local `mvn clean verify` at 18:54:56 with 1,065 tests / zero failures/errors / 77 expected display skips, followed by the exact production Xvfb selector at 18:59:15 with 69 tests / zero failures/errors/skips. The PR description records the actual-head result and test-only layout synchronization correction. No known executed-check failure remains. This final PLAN evidence stays local to preserve the green remote head. S3B2 remains VERIFYING pending native owner upgrade/close/reopen checks and merge; no human result is inferred. After owner reports merge, verify current main, carry this evidence to a fresh branch, close parent S3/S3B and select P27-S4's integrated SCLX/backup compatibility audit without reusing the merged branch or asking for official-template/rate-policy inputs.
 
@@ -117,7 +125,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
 | P26 | Property, planning, recognition, conversion | DONE through owner-merged PR #386; final published head passed clean/repeat/JavaFX CI |
-| P27 | Generic accounting packet, evidence, complete portability | IN_PROGRESS — S1/S2/S3A/S3B1 merged; S3B2 atomic close enforcement selected; generic accounting rules govern |
+| P27 | Generic accounting packet, evidence, complete portability | IN_PROGRESS — S1/S2/S3 merged; S4A portability audit selected; generic accounting rules govern |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
 ## 3. Established product decisions
@@ -787,12 +795,16 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P27-S2 | Export generic accounting workbook and supporting packet | DONE | S2A/S2B merged in PRs #388/#389; generic packet and operational sections complete |
 | P27-S2A | Export an incomplete core financial packet | DONE | Owner merged PR #388 at 54d939fc; published head d63a8fbf passed clean/repeat/JavaFX CI run 40236217512 |
 | P27-S2B | Complete operational sections and enriched ledger | DONE | Owner merged PR #389 at fac8b071; final-head clean/repeat/JavaFX workflow 40241876620 passed |
-| P27-S3 | Add factual close readiness and evidence references (G3/G5/G13) | IN_PROGRESS | Split into S3A preview and S3B durable evidence/close-time revalidation; incomplete until both merge |
+| P27-S3 | Add factual close readiness and evidence references (G3/G5/G13) | DONE | S3A/S3B1/S3B2 merged, most recently PR #392 at 76fe8450; accepted-head CI passed |
 | P27-S3A | Shared-snapshot readiness preview and correction navigation | DONE | Owner merged PR #390 at ad21bfab; final-head workflow 40260820386 passed |
-| P27-S3B | Durable factual evidence, exception reasons and close-time revalidation | IN_PROGRESS | Split into S3B1 review facts and S3B2 atomic close enforcement; incomplete until both merge |
+| P27-S3B | Durable factual evidence, exception reasons and close-time revalidation | DONE | S3B1/S3B2 merged with accepted-head CI passed |
 | P27-S3B1 | Snapshot-bound external evidence references and review history | DONE | Owner merged PR #391 at 6b1d4a34; final-head clean/repeat/JavaFX passed |
-| P27-S3B2 | Serialize readiness writers and enforce close-time revalidation | VERIFYING | [Contract](P27-S3B2-close-enforcement.md); final clean 1,065 / actual JavaFX 69 passed; publication/CI and owner review remain |
-| P27-S4 | Complete interchange coverage for all new fields (G4 and cross-cutting) | BLOCKED | P27-S3 merged; owning contract and D01–D10 gates as applicable |
+| P27-S3B2 | Serialize readiness writers and enforce close-time revalidation | DONE | PR #392 merged at 76fe8450; accepted head e3091452 passed clean/repeat/JavaFX workflow 40428989992 |
+| P27-S4 | Complete interchange coverage for all new fields (G4 and cross-cutting) | IN_PROGRESS | [Audit and remaining gates](P27-S4-portability-audit.md); incomplete until S4A–S4D merge |
+| P27-S4A | Durable field inventory and recovery gate | VERIFYING | Fresh merged-base branch; real-file evidence/close and whole-database recovery tests; final local clean passed 1,068 |
+| P27-S4B | Complete budget metadata portability | BLOCKED | S4A merged; preserve fiscal dates, archived state, notes/times and explicit conflicts |
+| P27-S4C | Preserve operational transfer links | BLOCKED | S4B merged; no duplicate canonical accounting; history/retry/conflict/rollback |
+| P27-S4D | Evidence validation and integrated compatibility gate | BLOCKED | S4C merged; typed review-payload validation, full fixture, report/history/conflict/backup acceptance |
 | P28-S1 | Run the complete runbook acceptance matrix | BLOCKED | P27-S4 merged; owning contract and D01–D10 gates as applicable |
 | P28-S2 | Release and close the correction program | BLOCKED | P28-S1 merged; owning contract and D01–D10 gates as applicable |
 | P27-S5 (conditional) | Internal attachments and approvals | BLOCKED | Not adopted; explicit scope amendment and separate specifications required; not a prerequisite for baseline P28 |

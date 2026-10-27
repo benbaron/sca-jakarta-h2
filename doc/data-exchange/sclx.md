@@ -796,3 +796,9 @@ Facts participate in whole FIXED_ASSET identity, so changed/missing metadata con
 ## P26-S4 prepaid and deferred recognition
 
 The Recognition Assistant adds no schedule/configuration extension. A saved proposal is an ordinary portable canonical transaction with the existing expense-function, Fund/Event/Budget, and supplemental lifecycle facts. Export/import therefore preserves the recognition debit/credit, `DECREASE` item link, dimensions, correction graph, and native request receipt through the existing sections. A discarded preview has no durable fact to export. Exact reimport is a no-op and does not post recognition again. See [S4](../P26-S4-prepaid-deferred-recognition.md).
+
+## P27 integrated portability gate
+
+The [P27-S4 field inventory](../P27-S4-portability-audit.md) records feature-level coverage, exact deliberate exclusions, source-local audit provenance and remaining completion gaps. Current SCLX still loses full budget metadata (non-calendar dates, archived state, notes/times) and operational transfer links. Audit history preserves supported close-review JSON and close proof as historical text; generic audit validation does not yet reject an unsupported nested review format before storage. S4B–S4D own those remaining changes and the combined fixture. Do not describe SCLX as a complete database backup or claim P27 portability complete based on individual section support.
+
+`ClosePortabilityAuditTest` exercises actual-file review/close/reopen import and exact retry/restart, target close revalidation, and all-row/all-column/trigger comparison after a two-company whole-database backup/restore. Whole-database recovery retains native identities and request retries; a source-bound native command fingerprint inside imported audit text is not remapped target authorization.
