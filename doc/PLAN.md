@@ -1,15 +1,27 @@
 ---
-plan_version: 417
+plan_version: 418
 active_phase: P27
-active_slice: P27-S4B
+active_slice: P27-S4C
 active_status: VERIFYING
-active_branch: codex/P27-S4B-budget-metadata
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/394
-active_head: 3437de8b6278c281e55cb240340b1039fdc488fc
-next_action: "Owner reviews draft PR #394 using the budget portability checks and merges. After verifying current main/merge, carry final evidence to a fresh S4C transfer-portability branch; preserve exact source links/history without duplicate accounting."
+active_branch: codex/P27-S4C-transfer-portability
+active_pull_request: null
+active_head: f9768e6f
+next_action: "Validate S4C transfer UUID migration and strict export/preview/atomic restoration; cover complete reversal graph, request provenance/collisions, conflicts, legacy absence, native correction protection, retry and rollback; publish draft and inspect exact-head CI."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P27-S4B merge and S4C selection — 2026-10-27 (America/Denver)
+
+Owner reported PR #394 merged. GitHub/native fetch confirm main `00aa3cb6` contains accepted head `3437de8b`, whose workflow `40604890977` passed clean/repeat/JavaFX. S4B is DONE. Fresh `codex/P27-S4C-transfer-portability` carries its final local evidence as `f9768e6f`; no additional native human result is inferred. Baseline compile and existing transfer/service/migration/interchange tests passed.
+
+Select [S4C operational transfer portability](P27-S4C-transfer-portability.md) IN_PROGRESS. Inspection found no intrinsic transfer UUID and legacy unlinked rows, so nondestructive V91 retains all existing facts and supplies durable UUIDs. The versioned extension covers native saved/reversal facts and legacy DRAFT/VOID without manufacturing transactions. Existing canonical correction restoration is non-posting; metadata is attached afterward through FundTransferService. Request IDs/hashes remain source provenance; native-ID remapping never authorizes a changed replay. Preview checks global request collisions and incompatible kept transaction links; final service validation rechecks actual target ownership, shape and reversal graph, including retained identities. No new posting/approval UI, donor persistence or second ledger. Required reading/inspection, donor decision and owner checks are in the contract. S4D evidence/category-master/integrated coverage and P28 remain blocked.
+
+S4C implementation/verification: V91 UUID migration, exact immutable transfer export/parser, intrinsic/source-specific identity integration, transaction metadata binding, request/kept-link preview checks and actual managed-graph restoration/validation. FundTransferService preserves historical facts after canonical correction restoration without Save/Reverse replay. Unlinked legacy facts mark a target populated; exact-retained retries validate native existence/ownership/accounting rather than acknowledging stale identity rows. Export/Preview counts and Fund Transfers retention copy reflect included links. Baseline compile / 13 existing tests passed. Final focused migration/transfer/export gate passed 11 tests, including seven new behavioral tests and the new V90-to-V91 upgrade case. A broader run's sole failure was its obsolete deferred-transfer warning expectation; that assertion is corrected and passed in the final focused gate. No current executed-check failure remains. Full clean verification, production JavaFX, publication/exact-head CI and owner checks remain pending. Generated target files, dependencies and workflow changes are excluded.
+
+Final S4C review additionally rejects distinct external IDs carrying one intrinsic transfer UUID, preventing duplicate aliases from coalescing into one stored fact. The alias regression is in the final source. The initial clean run was intentionally stopped and restarted after this review fix; only `/tmp/p27-s4c-clean-final.log` owns full clean-gate validation. Existing canonical correction validation remains the status/inverse authority; transfer validation adds operational consistency without duplicating posting logic.
+
+Final S4C clean verification — 2026-10-27 (America/Denver): `mvn clean verify` passed at **19:53:45 with 1,082 tests, zero failures/errors and 77 expected display skips**. This includes seven new transfer behavioral tests, the V90-to-V91 UUID/guard upgrade regression, alias rejection and updated section/count assertions. Eight governing documents / 178 relative links and whitespace/scope review passed. The exact production JavaFX selector is running; draft publication/exact-head CI and owner checks remain. S4C stays VERIFYING and P28 stays blocked. No generated target files or dependency/workflow changes are included.
 
 Final S4B exact-head CI and handoff — 2026-10-27 (America/Denver): [Maven PR Tests run 40604890977](https://github.com/benbaron/sca-jakarta-h2/actions/runs/40604890977), job `122542260050`, **passed clean verification, repeated tests and production JavaFX** on published head `3437de8b6278c281e55cb240340b1039fdc488fc`, tree `cdb9ee451a942025a8fd44d2f4525dfe8977552e`. Native fetched ref and draft PR #394 head match; final source/test/build bytes remain identical. The PR description records exact-head success, local 1,074-test clean / 69-test actual-display results, scope, regressions and owner checks. No known executed-check failure remains. This final local-only PLAN successor is intentionally not pushed solely to restart green CI; carry it after owner reports merge. S4B remains VERIFYING, not DONE, pending review/merge. No native human test result is invented. Next: verify PR #394 merge/current main, start a fresh S4C branch and inspect FundTransfer original/reversal/request relationships, canonical import/correction, existing identity/conflict/Keep target and snapshot/preview/commit boundaries before implementing its versioned extension. S4D structured-evidence/category-master/integrated fidelity work remains incomplete, and P28 stays blocked.
 
@@ -824,8 +836,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P27-S3B2 | Serialize readiness writers and enforce close-time revalidation | DONE | PR #392 merged at 76fe8450; accepted head e3091452 passed clean/repeat/JavaFX workflow 40428989992 |
 | P27-S4 | Complete interchange coverage for all new fields (G4 and cross-cutting) | IN_PROGRESS | [Audit and remaining gates](P27-S4-portability-audit.md); incomplete until S4A–S4D merge |
 | P27-S4A | Durable field inventory and recovery gate | DONE | PR #393 merged at 8500d99b; accepted head a5263d26 passed workflow 40442798593 |
-| P27-S4B | Complete budget metadata portability | VERIFYING | [Contract](P27-S4B-budget-metadata.md); six new tests / 66 focused regressions passed; final clean/display/CI remain |
-| P27-S4C | Preserve operational transfer links | BLOCKED | S4B merged; no duplicate canonical accounting; history/retry/conflict/rollback |
+| P27-S4B | Complete budget metadata portability | DONE | PR #394 merged at 00aa3cb6; accepted head 3437de8b passed workflow 40604890977 |
+| P27-S4C | Preserve operational transfer links | VERIFYING | [Contract](P27-S4C-transfer-portability.md); final focused migration/transfer/export gate passed 11; final clean/display/CI remain |
 | P27-S4D | Evidence validation and integrated compatibility gate | BLOCKED | S4C merged; typed review-payload validation, full fixture, report/history/conflict/backup acceptance |
 | P28-S1 | Run the complete runbook acceptance matrix | BLOCKED | P27-S4 merged; owning contract and D01–D10 gates as applicable |
 | P28-S2 | Release and close the correction program | BLOCKED | P28-S1 merged; owning contract and D01–D10 gates as applicable |

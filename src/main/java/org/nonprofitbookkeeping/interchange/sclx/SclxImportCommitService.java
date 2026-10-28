@@ -101,13 +101,13 @@ public final class SclxImportCommitService
             "ORGANIZATION", "ACCOUNT", "FUND", "ACTIVITY", "COUNTERPARTY", "MERCHANT",
             "BUDGET", "BUDGET_LINE", "TRANSACTION", "TRANSACTION_LINE", "SUPPLEMENTAL_DETAIL",
             "FIXED_ASSET", "DEPRECIATION_RUN", "INVENTORY_ITEM", "INVENTORY_MOVEMENT",
-            "PROPERTY_CUSTODY_EVENT",
+            "PROPERTY_CUSTODY_EVENT", "FUND_TRANSFER",
             "BANK", "BANK_ACCOUNT", "BANK_IMPORT_BATCH", "BANK_STATEMENT_LINE",
             "BANK_IMPORT_ISSUE", "RECONCILIATION_SESSION", "RECONCILIATION_MATCH",
             "PERIOD_CLOSE_RANGE", "PERIOD_CLOSE_EVENT", "AUDIT_EVENT", "NMR_POLICY_VERSION");
     private static final Set<String> SUPPORTED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
-            "supplementalDetails", "transactionBudgets", "budgetMetadata", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "fixedAssets", "inventory", "propertyCustody", "bankConfiguration",
+            "supplementalDetails", "fundTransfers", "transactionBudgets", "budgetMetadata", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "fixedAssets", "inventory", "propertyCustody", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "periodClose", "auditHistory", "nmrPolicies");
 
     private final Jpa jpa;
@@ -274,6 +274,7 @@ public final class SclxImportCommitService
         requireSupportedSections(current, root);
         SclxBudgetImportData budgets = SclxBudgetImportData.parseDocument(root);
         var budgetMetadata = SclxBudgetMetadata.parse(root);
+        var transferFacts = SclxFundTransfers.parse(root);
         SclxFixedAssetImportData fixedAssets = SclxFixedAssetImportData.parse(root);
         SclxInventoryImportData inventory = SclxInventoryImportData.parse(root);
         var propertyCustody = SclxPropertyCustody.parse(root);
@@ -352,6 +353,29 @@ public final class SclxImportCommitService
                 }
                 boolean allIdentical = current.operation().items().stream()
                         .allMatch(item -> item.identityMatch() == InterchangeIdentityMatch.IDENTICAL);
+                if (!transferFacts.isEmpty())
+                {
+                    List<org.nonprofitbookkeeping.model.FundTransfer> retainedTransfers = new ArrayList<>();
+                    // Do not acknowledge stale identity rows whose native transfer was removed or re-owned.
+                    for (var fact : transferFacts)
+                    {
+                        var item = required(previews, new EntityKey(SclxFundTransfers.TYPE, fact.id()), "transfer preview");
+                        if (reuseExisting(item))
+                        {
+                            var existing = localEntity(em, item, org.nonprofitbookkeeping.model.FundTransfer.class);
+                            ownership.requireOwnedBy(company, existing.getFromFund(), "Retained transfer");
+                            ownership.requireOwnedBy(company, existing.getToFund(), "Retained transfer");
+                            if (item.identityMatch() == InterchangeIdentityMatch.IDENTICAL
+                                    && (!org.nonprofitbookkeeping.service.FundTransferService.importFact(existing).equals(fact.value())
+                                    || !Objects.equals(existing.getPostedTxn() == null ? null : existing.getPostedTxn().getPortableId(),
+                                            fact.transaction() == null ? null : SclxNativePortableIdentity.portableUuid(fact.transaction()))))
+                                throw new IllegalStateException("Retained transfer facts changed after their recorded import identity");
+                            retainedTransfers.add(existing);
+                        }
+                    }
+                    new org.nonprofitbookkeeping.service.FundTransferService(jpa, companyCodeSupplier, authorizationGuard)
+                            .validateImportedGraph(em, company, retainedTransfers);
+                }
                 if (allIdentical)
                 {
                     em.getTransaction().commit();
@@ -447,6 +471,31 @@ public final class SclxImportCommitService
                         em, company, auditHistory, previews, writes);
                 writes += writtenAuditHistory.businessWriteCount();
 
+                Map<String, org.nonprofitbookkeeping.model.FundTransfer> writtenTransfers = new LinkedHashMap<>();
+                var transferService = new org.nonprofitbookkeeping.service.FundTransferService(jpa, companyCodeSupplier, authorizationGuard);
+                for (var fact : transferFacts)
+                {
+                    var item = required(previews, new EntityKey(SclxFundTransfers.TYPE, fact.id()), "transfer preview");
+                    Txn linked = fact.transaction() == null ? null : required(transactions.transactions(), fact.transaction(), "transfer transaction");
+                    org.nonprofitbookkeeping.model.FundTransfer saved;
+                    if (reuseExisting(item))
+                    {
+                        saved = localEntity(em, item, org.nonprofitbookkeeping.model.FundTransfer.class);
+                        if (!Objects.equals(saved.getPostedTxn() == null ? null : saved.getPostedTxn().getId(), linked == null ? null : linked.getId()))
+                            throw new IllegalStateException("Kept transfer and canonical transaction history must retain the same link");
+                    }
+                    else
+                    {
+                        requireNew(previews, SclxFundTransfers.TYPE, fact.id());
+                        saved = transferService.importForInterchange(em, company, fact.value(),
+                                required(funds, fact.from(), "transfer source"), required(funds, fact.to(), "transfer destination"), linked);
+                        afterBusinessWrite.accept(++writes);
+                    }
+                    writtenTransfers.put(fact.id(), saved);
+                }
+                em.flush();
+                transferService.validateImportedGraph(em, company, writtenTransfers.values());
+
                 em.flush();
                 recordIdentity(em, company, current, previews, "ORGANIZATION",
                         text(root.path("organization"), "organizationId"), String.valueOf(company.getId()));
@@ -455,6 +504,8 @@ public final class SclxImportCommitService
                 recordMasterIdentities(em, company, current, previews, root.path("funds"),
                         "FUND", "fundId", funds);
                 recordBudgetIdentities(em, company, current, previews, writtenBudgets);
+                writtenTransfers.forEach((identity, value) -> recordIdentity(em, company, current, previews,
+                        SclxFundTransfers.TYPE, identity, value.getId().toString()));
                 recordEntityIdentities(em, company, current, previews, activities, "ACTIVITY");
                 recordEntityIdentities(em, company, current, previews, counterparties, "COUNTERPARTY");
                 recordEntityIdentities(em, company, current, previews, merchants, "MERCHANT");

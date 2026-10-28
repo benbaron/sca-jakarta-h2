@@ -44,7 +44,7 @@ public final class SclxImportPreviewService
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Set<String> RECOGNIZED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
-            "supplementalDetails", "transactionBudgets", "budgetMetadata", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "bankConfiguration",
+            "supplementalDetails", "fundTransfers", "transactionBudgets", "budgetMetadata", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "fixedAssets", "inventory", "propertyCustody",
             "periodClose", "auditHistory", "nmrPolicies");
     private static final Set<String> UNSUPPORTED_ROOT_SECTIONS = Set.of(
@@ -143,6 +143,10 @@ public final class SclxImportPreviewService
                     SclxPaymentReferences.identityDocument(SclxTransactionBudgetExtension.identityDocument(document.root()))))));
             identityRoot = SclxAssetAcquisitions.identityDocument(identityRoot);
             identityRoot = SclxBudgetMetadata.identityDocument(identityRoot);
+            identityRoot = SclxFundTransfers.identityDocument(identityRoot);
+            int transferCount = SclxFundTransfers.parse(document.root()).size();
+            if (transferCount > 0) messages.add(message(InterchangeMessageSeverity.INFO, "SCLX_FUND_TRANSFERS", "$.extensions.scaJakartaH2.fundTransfers",
+                    "Operational fund transfer facts: " + transferCount + "; no duplicate accounting is generated.", false));
             var budgetMetadata = SclxBudgetMetadata.parse(document.root());
             if (budgetMetadata.present())
             {
@@ -200,6 +204,30 @@ public final class SclxImportPreviewService
         addOwnershipDiagnostics(messages, ownershipIssuesSupplier.get());
         List<SclxImportEntityPreview> entities = classify(
                 extraction.entities(), target, messages, conflictSelections);
+        try
+        {
+            var facts = SclxFundTransfers.parse(document.root());
+            Set<java.util.UUID> ids = new HashSet<>(), requests = new HashSet<>();
+            facts.forEach(f -> { ids.add(f.value().portableId()); if (f.value().requestId() != null) requests.add(f.value().requestId()); });
+            var retained = targetReader.transfers(ids, requests);
+            for (var fact : facts)
+            {
+                if (fact.value().requestId() != null && retained.values().stream().anyMatch(t -> fact.value().requestId().equals(t.request())
+                        && (!fact.value().portableId().equals(t.id()) || !targetCode.equals(t.company()))))
+                    messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_TRANSFER_REQUEST_COLLISION", "$.extensions.scaJakartaH2.fundTransfers",
+                            "A transfer request identity is already retained by a different fact or company.", true));
+                var actual = retained.get(fact.value().portableId());
+                boolean kept = entities.stream().anyMatch(i -> i.entityType().equals(SclxFundTransfers.TYPE) && i.externalId().equals(fact.id())
+                        && i.conflictChoice() == SclxImportConflictChoice.KEEP_TARGET);
+                if (kept && actual != null && !Objects.equals(actual.transaction(), fact.transaction() == null ? null : SclxNativePortableIdentity.portableUuid(fact.transaction())))
+                    messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_TRANSFER_LINK_CONFLICT", "$.extensions.scaJakartaH2.fundTransfers",
+                            "Keep target cannot attach retained transfer history to a different canonical transaction.", true));
+            }
+        }
+        catch (RuntimeException ex)
+        {
+            messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_TRANSFER_INVALID", "$.extensions.scaJakartaH2.fundTransfers", ex.getMessage(), true));
+        }
         if (document.root().path("extensions").path("scaJakartaH2").has(SclxBudgetMetadata.KEY))
         {
             for (JsonNode budget : document.root().path("budgets"))
@@ -504,6 +532,8 @@ public final class SclxImportPreviewService
         {
             addArray(app.get("activities"), "activityId", "ACTIVITY", "activities",
                     "$.extensions.scaJakartaH2.activities", counts, entities, messages);
+            addObjectArrays(app.get(SclxFundTransfers.KEY), "$.extensions.scaJakartaH2.fundTransfers", counts, entities, messages,
+                    new ArraySpec("transfers", "transferId", SclxFundTransfers.TYPE, "fundTransfers"));
             addObjectArrays(app.get("counterparties"), "$.extensions.scaJakartaH2.counterparties",
                     counts, entities, messages,
                     new ArraySpec("counterparties", "counterpartyId", "COUNTERPARTY", "counterparties"),

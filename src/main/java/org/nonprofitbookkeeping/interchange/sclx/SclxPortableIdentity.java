@@ -11,6 +11,10 @@ import java.util.Objects;
  */
 public final class SclxPortableIdentity
 {
+    public static String fundTransfer(String companyCode, String uuid)
+    {
+        return identity("fund-transfer", companyCode, uuid);
+    }
     private static final int MAX_ID_CODE_POINTS = 160;
     private static final HexFormat HEX = HexFormat.of().withUpperCase();
 

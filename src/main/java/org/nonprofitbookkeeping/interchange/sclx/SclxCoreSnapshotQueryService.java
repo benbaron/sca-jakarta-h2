@@ -229,6 +229,13 @@ public class SclxCoreSnapshotQueryService
                             """, org.nonprofitbookkeeping.model.PropertyCustodyEvent.class)
                     .setParameter("company", company).getResultList();
             extensions.put(SclxPropertyCustody.KEY, SclxPropertyCustody.export(company.getCode(), custody));
+            var transfers = em.createQuery("""
+                    select f from FundTransfer f join fetch f.fromFund a join fetch f.toFund b
+                    left join fetch f.postedTxn t
+                    where a.company=:company or b.company=:company or t.company=:company
+                    order by f.portableId
+                    """, org.nonprofitbookkeeping.model.FundTransfer.class).setParameter("company", company).getResultList();
+            extensions.put(SclxFundTransfers.KEY, SclxFundTransfers.export(company.getCode(), transfers));
             return SclxExportDocument.version13(document.exportedAt(), document.organization(),
                     document.chartOfAccounts(), document.funds(), document.budgets(), document.transactions(),
                     new SclxExportDocument.Extensions(document.extensions().version(), extensions));

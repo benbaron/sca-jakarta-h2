@@ -24,6 +24,28 @@ import java.util.stream.Collectors;
 /** Batches every local fact needed by SCLX preview in one read-only EntityManager scope. */
 final class JpaSclxImportTargetReader implements SclxImportTargetReader
 {
+    @Override
+    public Map<java.util.UUID, TransferTarget> transfers(Set<java.util.UUID> portableIds, Set<java.util.UUID> requests)
+    {
+        if (portableIds.isEmpty() && requests.isEmpty()) return Map.of();
+        try (EntityManager em = jpa.em())
+        {
+            Map<java.util.UUID, TransferTarget> result = new LinkedHashMap<>();
+            for (var fact : em.createQuery("""
+                    select f from FundTransfer f join fetch f.fromFund a join fetch f.toFund b left join fetch f.postedTxn t
+                    where f.portableId in :ids or f.requestId in :requests
+                    """, org.nonprofitbookkeeping.model.FundTransfer.class)
+                    .setParameter("ids", portableIds).setParameter("requests", requests).getResultList())
+            {
+                String owner = fact.getFromFund().getCompany() == null ? null : fact.getFromFund().getCompany().getCode();
+                if (owner == null || fact.getToFund().getCompany() == null || !owner.equals(fact.getToFund().getCompany().getCode()) || fact.getPostedTxn() != null
+                        && (fact.getPostedTxn().getCompany() == null || !owner.equals(fact.getPostedTxn().getCompany().getCode()))) owner = null;
+                result.put(fact.getPortableId(), new TransferTarget(fact.getPortableId(), fact.getRequestId(), owner,
+                        fact.getPostedTxn() == null ? null : fact.getPostedTxn().getPortableId()));
+            }
+            return Map.copyOf(result);
+        }
+    }
     private final Jpa jpa;
 
     JpaSclxImportTargetReader(Jpa jpa)
@@ -73,6 +95,7 @@ final class JpaSclxImportTargetReader implements SclxImportTargetReader
                     .setParameter("company", company).getResultList().stream()
                     .map(org.nonprofitbookkeeping.service.NmrPolicyService::importValue).toList();
             boolean operationalDataPopulated = !policies.isEmpty() ||
+                    count(em, "select count(f) from FundTransfer f where f.fromFund.company=:company or f.toFund.company=:company", company) > 0L ||
                     count(em, "select count(t) from Txn t where t.company = :company", company) > 0L
                     || count(em, "select count(c) from BudgetCategory c where c.company = :company", company) > 0L
                     || count(em, "select count(p) from BudgetPlan p where p.company = :company", company) > 0L

@@ -12,6 +12,32 @@ import static org.junit.jupiter.api.Assertions.*;
 class FundTransferMigrationTest
 {
     @Test
+    void v91BackfillsStableUuidWithoutChangingLegacyFactsOrWriteGuards() throws Exception
+    {
+        String url = "jdbc:h2:mem:transfer_identity_" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE";
+        Flyway.configure().dataSource(url, "sa", "").target("90").load().migrate();
+        try (var connection = DriverManager.getConnection(url, "sa", ""); var sql = connection.createStatement())
+        {
+            sql.execute("INSERT INTO fund (id,code,name,fund_type) VALUES (1,'ONE','One','UNRESTRICTED'),(2,'TWO','Two','DESIGNATED')");
+            sql.execute("INSERT INTO fund_transfer (id,transfer_date,from_fund_id,to_fund_id,amount,status,memo,request_id,request_hash) VALUES (1,DATE '2026-01-01',1,2,5.1234,'DRAFT','Retained legacy','11111111-1111-1111-1111-111111111111','" + "a".repeat(64) + "')");
+            Flyway.configure().dataSource(url, "sa", "").load().migrate();
+            Object uuid;
+            try (var rows = sql.executeQuery("SELECT portable_id,amount,memo,status,request_id,request_hash FROM fund_transfer WHERE id=1"))
+            {
+                assertTrue(rows.next()); uuid = rows.getObject(1); assertNotNull(uuid);
+                assertEquals("5.1234", rows.getBigDecimal(2).toPlainString()); assertEquals("Retained legacy", rows.getString(3));
+                assertEquals("DRAFT", rows.getString(4)); assertEquals("11111111-1111-1111-1111-111111111111", rows.getObject(5).toString()); assertEquals("a".repeat(64), rows.getString(6));
+            }
+            Flyway.configure().dataSource(url, "sa", "").load().migrate();
+            try (var rows = sql.executeQuery("SELECT portable_id FROM fund_transfer WHERE id=1")) { assertTrue(rows.next()); assertEquals(uuid, rows.getObject(1)); }
+            assertThrows(SQLException.class, () -> sql.execute("INSERT INTO fund_transfer (transfer_date,from_fund_id,to_fund_id,amount,status,portable_id) VALUES (DATE '2026-01-02',1,2,1,'VOID','" + uuid + "')"));
+            try (var rows = sql.executeQuery("SELECT count(*) FROM information_schema.triggers WHERE event_object_table='fund_transfer' AND trigger_name LIKE 'accounting_guard_%'"))
+            {
+                assertTrue(rows.next()); assertEquals(3, rows.getInt(1));
+            }
+        }
+    }
+    @Test
     void upgradePreservesLegacyRowsAndEnforcesRequestIdentity() throws Exception
     {
         String url = "jdbc:h2:mem:transfer_upgrade_" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE";

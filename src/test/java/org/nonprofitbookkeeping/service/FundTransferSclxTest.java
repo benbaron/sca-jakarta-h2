@@ -17,7 +17,7 @@ import static org.nonprofitbookkeeping.service.FundTransferTestFixture.*;
 class FundTransferSclxTest
 {
     @Test
-    void portableLedgerPreservesFourLinesAndDatedReversalWhileDisclosingMissingOperationalLinks(@TempDir Path directory) throws Exception
+    void portableLedgerPreservesFourLinesAndDatedReversalWithOperationalLinks(@TempDir Path directory) throws Exception
     {
         try (Jpa source = new Jpa(directory.resolve("source")); Jpa target = new Jpa(directory.resolve("target")))
         {
@@ -28,8 +28,8 @@ class FundTransferSclxTest
             Path file = directory.resolve("transfers.sclx");
             var result = new SclxFileExportService(new SclxCoreSnapshotQueryService(source), () -> directory.resolve("source"))
                     .export(new SclxExportRequest(file, Instant.now(), false));
-            assertTrue(result.deferredSections().contains(SclxExportSection.FUND_TRANSFERS));
-            assertTrue(result.messages().stream().anyMatch(m -> m.message().contains("whole-database backup")));
+            assertFalse(result.deferredSections().contains(SclxExportSection.FUND_TRANSFERS));
+            assertEquals(2, result.counts().fundTransfers());
             var preview = new SclxImportPreviewService(target, () -> "DEFAULT").preview(file);
             assertFalse(preview.hasBlockingErrors(), preview.operation().messages().toString());
             var imported = new SclxImportCommitService(target, () -> "DEFAULT").commit(file, preview, "Tester");
@@ -44,7 +44,7 @@ class FundTransferSclxTest
                 assertEquals(4L, em.createQuery("select count(s) from TxnSplit s where s.txn = :txn", Long.class).setParameter("txn", reversal).getSingleResult());
                 assertEquals(0, em.createQuery("select sum(s.amountSigned) from TxnSplit s where s.account.code = '1500'", java.math.BigDecimal.class).getSingleResult().signum());
             }
-            assertTrue(new FundTransferService(target).list().isEmpty(), "Current SCLX deliberately cannot restore operational links");
+            assertEquals(2, new FundTransferService(target).list().size(), "Operational links must survive without duplicate accounting");
             assertEquals(2, service.list().size(), "Export must not mutate source history");
         }
     }

@@ -59,10 +59,11 @@ class SclxFileExportServiceTest
         assertFalse(result.deferredSections().contains(SclxExportSection.INVENTORY));
         assertFalse(result.deferredSections().contains(SclxExportSection.PERIOD_CLOSE));
         assertFalse(result.deferredSections().contains(SclxExportSection.AUDIT_HISTORY));
-        assertEquals(java.util.List.of(SclxExportSection.FUND_TRANSFERS), result.deferredSections());
-        assertEquals(1, result.counts().warnings());
+        assertTrue(result.deferredSections().isEmpty());
+        assertEquals(0, result.counts().fundTransfers());
+        assertEquals(0, result.counts().warnings());
         assertEquals(result.excludedSections().size(), result.counts().exclusions());
-        assertEquals("SCLX_DEFERRED_SECTION", result.messages().get(0).code());
+        assertTrue(result.messages().stream().noneMatch(message -> message.code().equals("SCLX_DEFERRED_SECTION")));
         assertTrue(result.excludedSections().contains(SclxExportSection.DATABASE_INTERNALS));
 
         SclxParsedDocument parsed = new SclxDocumentParser().parse(destination);
