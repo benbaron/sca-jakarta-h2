@@ -290,15 +290,10 @@ public final class CloseReviewEvidenceService
     {
         try
         {
-            Payload payload = JSON.readValue(event.getAfterValue(), Payload.class);
-            if (payload.version() != 1 || !payload.attested())
-            {
-                throw new IllegalStateException("Unsupported review evidence format");
-            }
-            LocalDate.parse(payload.start()); LocalDate.parse(payload.end()); Instant.parse(payload.capturedAt());
+            Payload payload = CloseReviewPayloadCodec.decode(event.getAfterValue());
             return new Review(event.getPortableId(), event.getCompany().getCode(), event.getOccurredAt(), event.getActor(), payload);
         }
-        catch (IOException | RuntimeException ex)
+        catch (RuntimeException ex)
         {
             throw new IllegalStateException("Cannot read retained review evidence " + event.getPortableId(), ex);
         }

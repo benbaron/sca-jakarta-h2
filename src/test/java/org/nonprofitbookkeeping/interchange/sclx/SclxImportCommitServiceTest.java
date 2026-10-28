@@ -570,11 +570,12 @@ class SclxImportCommitServiceTest
             seedEmptyTarget(jpa);
             SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
 
-            IllegalStateException failure = assertThrows(IllegalStateException.class,
+            assertTrue(preview.hasBlockingErrors());
+            assertTrue(preview.operation().messages().stream()
+                    .anyMatch(message -> message.message().contains("actor exceeds 200")));
+            assertThrows(IllegalStateException.class,
                     () -> new SclxImportCommitService(jpa, () -> TARGET)
                             .commit(source, preview, "tester"));
-
-            assertTrue(failure.getMessage().contains("actor exceeds 200"));
             try (EntityManager em = jpa.em())
             {
                 assertEquals("Empty Target", company(em).getDisplayName());

@@ -339,6 +339,8 @@ public final class SclxExportDocumentValidator
     private static void validateAuditHistory(SclxAuditHistoryExtension.Data data)
     {
         SclxAuditHistoryExtension.requireUniqueIds(data);
+        data.events().forEach(event -> org.nonprofitbookkeeping.service.CloseReviewPayloadCodec.validateAudit(
+                event.actionType(), event.entityType(), event.afterValue()));
     }
 
     private static void validateBankConfiguration(

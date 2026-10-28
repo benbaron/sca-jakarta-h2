@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.interchange.sclx;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.nonprofitbookkeeping.service.CloseReviewPayloadCodec;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -59,7 +60,7 @@ final class SclxAuditHistoryImportData
                 throw new IllegalStateException(
                         "SCLX contains duplicate audit-event identity " + externalId + ".");
             }
-            events.add(new EventValue(
+            EventValue parsed = new EventValue(
                     externalId,
                     boundedInstant(event, "occurredAt", path),
                     boundedText(event, "actor", path, 200),
@@ -69,7 +70,16 @@ final class SclxAuditHistoryImportData
                     boundedText(event, "summary", path, 500),
                     optionalBoundedText(event, "beforeValue", path, MAX_LOB_TEXT),
                     optionalBoundedText(event, "afterValue", path, MAX_LOB_TEXT),
-                    optionalBoundedText(event, "reason", path, 1000)));
+                    optionalBoundedText(event, "reason", path, 1000));
+            try
+            {
+                CloseReviewPayloadCodec.validateAudit(parsed.actionType(), parsed.entityType(), parsed.afterValue());
+            }
+            catch (IllegalArgumentException ex)
+            {
+                throw new IllegalStateException(path + ".afterValue: " + ex.getMessage(), ex);
+            }
+            events.add(parsed);
         }
         events.sort(Comparator.comparing(EventValue::occurredAt).thenComparing(EventValue::externalId));
         return new SclxAuditHistoryImportData(events);
@@ -175,8 +185,8 @@ final class SclxAuditHistoryImportData
         {
             throw new IllegalStateException(path + "." + field + " must be text or null.");
         }
-        String result = node.textValue().trim();
-        return result.isEmpty() ? null : result;
+        String result = node.textValue();
+        return result.trim().isEmpty() ? null : result;
     }
 
     private static Instant boundedInstant(JsonNode value, String field, String path)
