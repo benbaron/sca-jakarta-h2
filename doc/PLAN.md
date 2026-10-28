@@ -4,12 +4,14 @@ active_phase: P27
 active_slice: P27-S4C
 active_status: VERIFYING
 active_branch: codex/P27-S4C-transfer-portability
-active_pull_request: null
-active_head: f9768e6f
-next_action: "Validate S4C transfer UUID migration and strict export/preview/atomic restoration; cover complete reversal graph, request provenance/collisions, conflicts, legacy absence, native correction protection, retry and rollback; publish draft and inspect exact-head CI."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/395
+active_head: beed32d79ec022148da3f7b3e04240e1054c9f46
+next_action: "Finish production JavaFX and exact published-head CI for draft PR #395. Owner reviews transfer portability checks and merges; after merge verification, carry final evidence to a fresh S4D evidence/category/integrated gate branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+S4C draft publication — 2026-10-27 (America/Denver): implementation `beed32d79ec022148da3f7b3e04240e1054c9f46`, tree `63a0c82e2a3b3f278266d51ab73353f3bc63876f`, was pushed without force to fresh `codex/P27-S4C-transfer-portability` on confirmed main `00aa3cb6`. Native fetched ref and draft [PR #395](https://github.com/benbaron/sca-jakarta-h2/pull/395) confirm the matching head. The PR records UUID upgrade/legacy preservation, full operational/canonical graph authority, source request provenance, all new scenarios, final 1,082-test clean result and owner checks. Production JavaFX is running; no GitHub success or native human result is inferred. This publication-only PLAN successor changes none of the tested source/test/schema bytes and requires its resulting head/tree and CI to be verified. S4C remains VERIFYING; S4D/P28 remain blocked.
 
 ### P27-S4B merge and S4C selection — 2026-10-27 (America/Denver)
 
