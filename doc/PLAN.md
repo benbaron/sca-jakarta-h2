@@ -4,12 +4,16 @@ active_phase: P27
 active_slice: P27-S4D1
 active_status: VERIFYING
 active_branch: codex/P27-S4D1-close-evidence-validation
-active_pull_request: null
-active_head: 20f27033
-next_action: "Finish production JavaFX, publish S4D1 as a draft PR, verify its exact final head/tree and CI, then hand off owner review/merge. S4D2 follows confirmed merge."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/396
+active_head: a02a5c36ceb0ac0fc79d34c720e969c59a9311a9
+next_action: "Finish production JavaFX and exact published-head CI for draft PR #396, then hand off owner review/merge. After confirmed merge, carry final evidence to a fresh S4D2 category-master branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+S4D1 draft publication — 2026-10-27 (America/Denver): pushed implementation `a02a5c36ceb0ac0fc79d34c720e969c59a9311a9`, tree `1791fe3cdc46f08c2eb67b972aa0fd1fa5592e21`, without force from verified main `6ed44f63`. Native fetched ref and connected GitHub branch/commit confirm that exact head/tree. Opened draft [PR #396](https://github.com/benbaron/sca-jakarta-h2/pull/396), recording seven new tests, the 50-test focused and 1,089-test clean gates, historical-fact semantics and owner checks.
+
+The first local Xvfb attempt could not open DISPLAY (60 tests, 55 skips), so it is not actual-display evidence. A rerun with the environment's required network/display permission is running; no display success is claimed yet. Automatic approval review initially blocked native verification because its usage quota was exhausted; after the owner's continuation, the permitted native fetch succeeded and the connected GitHub verification independently matched. This publication-only PLAN successor changes no tested source/test/schema/build bytes. Verify its resulting final head/tree and exact-head workflow before handoff; the initial-head run `40639676678` is pending, not evidence for this successor. S4D1 remains VERIFYING; S4D2/S4D3/P28 remain blocked.
 
 ### P27-S4C merge and S4D1 selection — 2026-10-27 (America/Denver)
 
