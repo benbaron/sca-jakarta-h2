@@ -98,6 +98,8 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 
 SCLX [budget metadata portability](P27-S4B-budget-metadata.md) uses the existing File export and Import Preview/Save routes. Preview reports full plan/line history counts; imported lifecycle facts do not execute the Budget Editor's activation/archive commands. Full metadata retains saved fiscal dates, archived state, notes and times; older files retain the reduced compatibility contract. No new panel or Save authority is introduced.
 
+[Transfer portability](P27-S4C-transfer-portability.md) uses those same routes and BOOKKEEPING_WRITE Save. Export/Preview report exact transfer counts; Fund Transfers displays restored saved/reversal links. Restoration does not execute interactive transfer Save/Reverse or post duplicate accounting. Legacy unlinked operational facts make a target populated; they cannot be silently treated as an empty company.
+
 | Format / operation | Preview/review boundary | Commit/write authority | Important invariant |
 |---|---|---|---|
 | Chart of Accounts CSV | frozen COA preview with source/company/chart/target identity | `CoaCsvImportService` guarded outer commit + caller-owned `AccountAdminService` transaction | Accepted commit requires `BOOKKEEPING_WRITE`; preview remains non-mutating; accepted rows commit atomically and drift requires new preview. |

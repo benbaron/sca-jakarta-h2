@@ -82,7 +82,7 @@ public final class FundTransfersPanel implements AppPanel
         title.getStyleClass().add("panel-title");
         Label help = new Label("Allocate resources between unrestricted or designated funds in this company. This changes fund allocations; it does not move money between bank accounts. History displays the latest 500 transfers.");
         help.setWrapText(true);
-        Label retention = new Label("Saved transfers cannot be edited or deleted because the ledger and transfer report retain their history. Reverse Selected, then enter a corrected transfer. SCLX preserves ledger lines but omits transfer links; use a whole-database backup for those links.");
+        Label retention = new Label("Saved transfers cannot be edited or deleted because the ledger and transfer report retain their history. Reverse Selected, then enter a corrected transfer. SCLX preserves transfer history and ledger links. Keep a whole-database backup for complete recovery.");
         retention.setId("fundTransfersRetention");
         retention.setWrapText(true);
         Button add = action("New", "fundTransfersNew", this::onNew, true);

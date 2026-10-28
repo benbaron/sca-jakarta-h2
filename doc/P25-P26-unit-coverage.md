@@ -2,9 +2,11 @@
 
 This ledger maps every implemented P25/P26 slice to behavioral automated coverage. Fixture-only classes are omitted. The Maven suite remains authoritative; this list prevents a completed slice from relying only on source-shape checks or manual acceptance.
 
-P27's [integrated portability audit](P27-S4-portability-audit.md) supplements these feature tests. `ClosePortabilityAuditTest` verifies complete persisted-row/trigger recovery for original/reversed P25 transfers and reviewed P27 closes, native retry and restored period protection. SCLX transfer metadata remains an explicit completion gap; S4B adds full budget plan/line metadata below. This recovery test does not assert all-feature SCLX fidelity.
+P27's [integrated portability audit](P27-S4-portability-audit.md) supplements these feature tests. `ClosePortabilityAuditTest` verifies complete persisted-row/trigger recovery for original/reversed P25 transfers and reviewed P27 closes, native retry and restored period protection. S4B adds budget plan/line metadata and S4C adds operational transfer metadata below. This recovery test does not assert all-feature SCLX fidelity.
 
-`SclxBudgetMetadataTest` adds P27-S4B behavioral coverage for P26 budget fiscal dates and exact archived/draft/active plan and line history, cross-company/inactive dimensions, deterministic export, legacy absence, malformed data, conflict/Keep target, restart/retry, denied import and late rollback. Category-master descriptive metadata and operational transfer links remain separate S4 completion concerns.
+`SclxBudgetMetadataTest` adds P27-S4B behavioral coverage for P26 budget fiscal dates and exact archived/draft/active plan and line history, cross-company/inactive dimensions, deterministic export, legacy absence, malformed data, conflict/Keep target, restart/retry, denied import and late rollback. Category-master descriptive metadata remains a separate S4 completion concern.
+
+P27-S4C adds `SclxFundTransfersTest` and expands `FundTransferSclxTest`/`FundTransferMigrationTest`: original/reversal/reversal-of-reversal, unlinked legacy facts, exact source metadata/UUID/request provenance, native future reversal/correction protection, deterministic bytes, remapped company/IDs, changed/stripped/conflicting input, unsupported/malformed graphs, request collisions, legacy absence, restart/retry, Viewer denial and late rollback. S4D remains the full integrated/category/evidence gate.
 
 | Slice | Behaviors covered | Principal tests |
 |---|---|---|

@@ -20,6 +20,9 @@ public class FundTransfer
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "portable_id", nullable = false, unique = true)
+    private java.util.UUID portableId = java.util.UUID.randomUUID();
+
     @Column(name = "transfer_date", nullable = false)
     private LocalDate transferDate;
 
@@ -58,6 +61,14 @@ public class FundTransfer
     private Instant updatedAt = Instant.now();
 
     public Long getId() { return id; }
+    public java.util.UUID getPortableId() { return portableId; }
+    public void setPortableId(java.util.UUID value) { portableId = java.util.Objects.requireNonNull(value); }
+    /** Retains source timestamps through the governed historical import seam. */
+    public void restoreImportTimestamps(Instant created, Instant updated)
+    {
+        createdAt = java.util.Objects.requireNonNull(created);
+        updatedAt = java.util.Objects.requireNonNull(updated);
+    }
     public java.util.UUID getRequestId()
     {
         return requestId;

@@ -257,6 +257,9 @@ final class SclxNativePortableIdentity
                 "bank_reconciliation_match e join bank_reconciliation_session p on p.id = e.session_id",
                 "e.portable_id", "p.company_id"));
         values.put("PERIOD_CLOSE_RANGE", direct("period_close_range", "e.id", ""));
+        values.put(SclxFundTransfers.TYPE, indirect(
+                "fund_transfer e join fund f on f.id=e.from_fund_id join fund g on g.id=e.to_fund_id left join txn t on t.id=e.posted_txn_id",
+                "e.portable_id", "case when f.company_id=g.company_id and (t.id is null or t.company_id=f.company_id) then f.company_id else null end"));
         values.put("PERIOD_CLOSE_EVENT", direct("period_close_event", "e.id", ""));
         return Map.copyOf(values);
     }
