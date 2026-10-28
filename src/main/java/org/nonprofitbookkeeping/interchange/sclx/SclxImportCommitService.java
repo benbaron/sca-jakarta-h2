@@ -107,7 +107,7 @@ public final class SclxImportCommitService
             "PERIOD_CLOSE_RANGE", "PERIOD_CLOSE_EVENT", "AUDIT_EVENT", "NMR_POLICY_VERSION");
     private static final Set<String> SUPPORTED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
-            "supplementalDetails", "transactionBudgets", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "fixedAssets", "inventory", "propertyCustody", "bankConfiguration",
+            "supplementalDetails", "transactionBudgets", "budgetMetadata", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "fixedAssets", "inventory", "propertyCustody", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "periodClose", "auditHistory", "nmrPolicies");
 
     private final Jpa jpa;
@@ -272,7 +272,8 @@ public final class SclxImportCommitService
         }
         JsonNode root = parsed.root();
         requireSupportedSections(current, root);
-        SclxBudgetImportData budgets = SclxBudgetImportData.parse(root.path("budgets"));
+        SclxBudgetImportData budgets = SclxBudgetImportData.parseDocument(root);
+        var budgetMetadata = SclxBudgetMetadata.parse(root);
         SclxFixedAssetImportData fixedAssets = SclxFixedAssetImportData.parse(root);
         SclxInventoryImportData inventory = SclxInventoryImportData.parse(root);
         var propertyCustody = SclxPropertyCustody.parse(root);
@@ -377,7 +378,7 @@ public final class SclxImportCommitService
                 writes += newEntityCount(previews, "ACTIVITY", details.activities().stream()
                         .map(SclxTransactionDetailImportData.ActivityValue::externalId).toList());
                 BudgetWrite writtenBudgets = writeBudgets(
-                        em, company, budgets, funds, activities, previews, transactionBudgetCodes, writes);
+                        em, company, budgets, funds, activities, previews, transactionBudgetCodes, budgetMetadata, writes);
                 writes += writtenBudgets.businessWriteCount();
                 Map<String, Counterparty> counterparties = writeCounterparties(
                         em, company, details.counterparties(), previews, writes);
@@ -911,6 +912,7 @@ public final class SclxImportCommitService
             Map<String, Activity> activities,
             Map<EntityKey, SclxImportEntityPreview> previews,
             Map<String, String> transactionBudgetCodes,
+            SclxBudgetMetadata.Data metadata,
             int writesBefore)
     {
         Set<String> categoryCodes = new HashSet<>();
@@ -979,6 +981,10 @@ public final class SclxImportCommitService
                         continue;
                     }
                     requireNew(previews, "BUDGET_LINE", line.externalId());
+                    if (metadata.present() && budgetPreview.conflictChoice() == SclxImportConflictChoice.KEEP_TARGET)
+                    {
+                        throw new IllegalStateException("Keep target preserves the whole budget; source-only enriched lines cannot be added");
+                    }
                     BudgetLine added = new BudgetLine();
                     added.setBudgetPlan(existing);
                     added.setBudgetCategory(required(categories, line.categoryCode(), "budget category"));
@@ -990,6 +996,7 @@ public final class SclxImportCommitService
                     added.setAmount(line.amount());
                     added.setNotes("");
                     em.persist(added);
+                    if (metadata.present()) budgetPlanService.restoreLineHistoryForImport(em, company, existing, added, metadata.lines().get(line.externalId()));
                     lines.put(line.externalId(), added);
                     afterBusinessWrite.accept(++writes);
                     businessWrites++;
@@ -1018,6 +1025,7 @@ public final class SclxImportCommitService
                         ""));
             }
 
+            var history = metadata.plans().get(budget.externalId());
             BudgetPlan plan = budgetPlanService.createForImport(
                     em,
                     company,
@@ -1025,11 +1033,11 @@ public final class SclxImportCommitService
                             budget.name(),
                             budget.fiscalYear(),
                             budget.version(),
-                            LocalDate.of(budget.fiscalYear(), 1, 1),
-                            LocalDate.of(budget.fiscalYear(), 12, 31),
+                            history == null ? LocalDate.of(budget.fiscalYear(), 1, 1) : history.start(),
+                            history == null ? LocalDate.of(budget.fiscalYear(), 12, 31) : history.end(),
                             ""),
-                    budget.active() ? BudgetPlan.Status.ACTIVE : BudgetPlan.Status.DRAFT,
-                    commands);
+                    history == null ? (budget.active() ? BudgetPlan.Status.ACTIVE : BudgetPlan.Status.DRAFT) : history.status(),
+                    commands, history == null ? null : history.history());
             plans.put(budget.externalId(), plan);
             em.flush();
             List<BudgetLine> persistedLines = em.createQuery(
@@ -1043,6 +1051,8 @@ public final class SclxImportCommitService
             for (int index = 0; index < persistedLines.size(); index++)
             {
                 lines.put(budget.lines().get(index).externalId(), persistedLines.get(index));
+                if (metadata.present()) budgetPlanService.restoreLineHistoryForImport(em, company, plan,
+                        persistedLines.get(index), metadata.lines().get(budget.lines().get(index).externalId()));
             }
             afterBusinessWrite.accept(++writes);
             businessWrites++;
@@ -2232,7 +2242,10 @@ public final class SclxImportCommitService
             Fund target)
     {
         FundType sourceType = enumValue(FundType.class, text(source, "type"), "fund type");
-        if (sourceType != target.getFundType() || (mapping.used() && !target.isActive()))
+        // Exact retained source identity can preserve historical inactive references without remapping them.
+        boolean retainedInactive = mapping.resolution() == SclxImportMappingRequirement.Resolution.AS_IS
+                && !source.path("active").asBoolean(true) && !target.isActive();
+        if (sourceType != target.getFundType() || (mapping.used() && !target.isActive() && !retainedInactive))
         {
             throw new IllegalStateException(
                     "The approved target fund is no longer compatible: " + target.getCode() + ".");

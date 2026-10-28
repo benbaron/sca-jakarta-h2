@@ -417,6 +417,8 @@ and populated target-company merge. The JavaFX SCLX commit action remains absent
 
 ### 10.5 P15-S5-C4 budget import boundary
 
+This section records the historical core-only compatibility boundary, still used when budgetMetadata is absent. [P27-S4B](../P27-S4B-budget-metadata.md) extends it with exact plan dates/state/notes/times and cross-calendar month validation when full metadata is present.
+
 P15-S5-C4 extends the same caller-owned transaction to the governed standard `budgets` section.
 Before mutation, `SclxBudgetImportData` validates plan and line identities, required fields, four-digit
 fiscal years, one active version per fiscal year, category/fund/month scope uniqueness, fund
@@ -799,6 +801,16 @@ The Recognition Assistant adds no schedule/configuration extension. A saved prop
 
 ## P27 integrated portability gate
 
-The [P27-S4 field inventory](../P27-S4-portability-audit.md) records feature-level coverage, exact deliberate exclusions, source-local audit provenance and remaining completion gaps. Current SCLX still loses full budget metadata (non-calendar dates, archived state, notes/times) and operational transfer links. Audit history preserves supported close-review JSON and close proof as historical text; generic audit validation does not yet reject an unsupported nested review format before storage. S4B–S4D own those remaining changes and the combined fixture. Do not describe SCLX as a complete database backup or claim P27 portability complete based on individual section support.
+The [P27-S4 field inventory](../P27-S4-portability-audit.md) records feature-level coverage, exact deliberate exclusions, source-local audit provenance and remaining completion gaps. S4B adds full budget plan/line metadata below; operational transfer links remain S4C. Audit history preserves supported close-review JSON and close proof as historical text; generic audit validation does not yet reject an unsupported nested review format before storage. S4D owns that validation and the combined fixture. Do not describe SCLX as a complete database backup or claim P27 portability complete based on individual section support.
 
 `ClosePortabilityAuditTest` exercises actual-file review/close/reopen import and exact retry/restart, target close revalidation, and all-row/all-column/trigger comparison after a two-company whole-database backup/restore. Whole-database recovery retains native identities and request retries; a source-bound native command fingerprint inside imported audit text is not remapped target authorization.
+
+## P27-S4B complete budget plan/line history
+
+Optional `extensions.scaJakartaH2.budgetMetadata` has exactly `version: 1`, `plans` and `lines`. It completely covers the standard budget/line identities when present. Plan entries contain exactly budgetId, periodStart, periodEnd, status (DRAFT/ACTIVE/ARCHIVED), activatedAt, archivedAt, notes, createdAt and updatedAt. Line entries contain exactly lineId, notes, createdAt and updatedAt. Notes and activation/archive times may explicitly be null; other dates/times are required ISO values in years 1900–9999. Notes preserve exact text and support up to one MiB per field. No raw numeric database IDs are exported.
+
+Duplicate/dangling/partial identities, unsupported shape/version, contradictory core active flag, invalid activation/archive state, inverted dates and out-of-range months reject before commit. Timestamps must fit stored microsecond precision; notes are bounded by UTF-8 bytes and are never trimmed. Cross-calendar months are validated against the exact saved plan dates rather than fiscal-year number. Sparse legacy absence preserves the previous calendar-year/active-or-draft import behavior and original normalized hashes. Missing optional historical activation/archive timestamps remain unknown instead of being manufactured.
+
+Metadata participates in whole-plan and line identities, with each line also binding its plan metadata. Changed or stripped facts conflict; explicit Keep target preserves retained history, and source-only enriched lines beneath a kept plan are blocked visibly. Take source is unavailable for normalized budget history. Exact file retry/restart remains a no-op. The caller-owned BudgetPlanService import restores exact state, notes and timestamps after normal scope/ownership/one-active-version validation, without replaying lifecycle commands or creating accounting. Preview reports plan/line metadata counts; existing BOOKKEEPING_WRITE Save, file/target revalidation and atomic rollback remain authoritative. See the [contract and owner checks](../P27-S4B-budget-metadata.md).
+
+Budget Category master names, description, effective dates/status and timestamps remain outside this plan/line extension; core SCLX carries referenced category codes only. The final S4 inventory must track that separate boundary explicitly rather than claiming complete category-master fidelity.

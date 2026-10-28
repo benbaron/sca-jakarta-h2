@@ -485,6 +485,10 @@ public final class SclxCoreSnapshotAssembler
         Map<String, Object> extensionValues = new LinkedHashMap<>();
         extensionValues.put("activeChartName", activeChart.getName());
         extensionValues.put("activeChartVersion", activeChart.getVersion());
+        if (!budgetPlans.isEmpty())
+        {
+            extensionValues.put(SclxBudgetMetadata.KEY, SclxBudgetMetadata.export(companyCode, budgetPlans, budgetLines));
+        }
         extensionValues.put(SclxActivityExtension.KEY, exportedActivities);
         extensionValues.put(SclxPartyExtension.KEY, SclxPartyExtension.value(
                 exportedCounterparties,

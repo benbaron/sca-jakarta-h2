@@ -1,15 +1,31 @@
 ---
-plan_version: 416
+plan_version: 417
 active_phase: P27
-active_slice: P27-S4A
+active_slice: P27-S4B
 active_status: VERIFYING
-active_branch: codex/P27-S4A-portability-audit
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/393
-active_head: 248dd8e5c272b7187398c40b5fb062eddbe4c3a6
-next_action: "Finish production JavaFX and inspect exact published-head CI for draft PR #393. Owner reviews the audit/recovery checks and merges; after merge verification, select S4B budget metadata on a fresh branch."
+active_branch: codex/P27-S4B-budget-metadata
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/394
+active_head: 6f677607d7d5f655b7d4796338004dd00da489ee
+next_action: "Finish production JavaFX and exact published-head CI for draft PR #394. Owner reviews budget portability checks and merges; after merge verification, carry final evidence to a fresh S4C transfer-portability branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+S4B draft publication — 2026-10-27 (America/Denver): implementation `6f677607d7d5f655b7d4796338004dd00da489ee`, tree `c06dd76c26fa9fc5334b57a2232877609e0f6135`, was pushed without force to fresh `codex/P27-S4B-budget-metadata` from confirmed main `8500d99b`. Native fetched branch and draft [PR #394](https://github.com/benbaron/sca-jakarta-h2/pull/394) confirm the matching head. The PR records the six new scenarios, V50 insert ordering, exact inactive-identity regression, final 1,074-test clean result, compatibility limits and owner checks. Production JavaFX is running; no GitHub success is claimed yet. This publication-only PLAN successor requires its resulting exact head/tree and CI to be verified; it changes none of the tested application/test/schema bytes. S4B remains VERIFYING, parent S4 stays incomplete and P28 stays blocked.
+
+### P27-S4A merge and S4B selection — 2026-10-27 (America/Denver)
+
+Owner reported PR #393 merged. GitHub/native fetch confirm main `8500d99b` contains accepted head `a5263d26`, whose workflow `40442798593` passed clean/repeat/JavaFX. S4A is DONE. Fresh `codex/P27-S4B-budget-metadata` carries final local evidence as `79f19870`; no additional native human result is inferred.
+
+Select [S4B complete budget metadata](P27-S4B-budget-metadata.md) IN_PROGRESS. Baseline compile and focused existing budget/import/lifecycle tests passed. Inspection confirms that existing canonical budget services already support non-calendar ranges and archived plans; the loss is at the core-only interchange representation. An optional complete version-1 plan/line metadata extension preserves those facts through the existing caller-owned service, identity/conflict and Preview/Save boundaries. No migration, second budget/ledger, new Save or policy gate. Preserve nullable missing legacy times as unknown facts. Source-only enriched lines beneath an explicitly kept target plan reject before mutation. Budget Category descriptive/effective metadata is a separate audit concern, not silently claimed as part of plan/line fidelity. S4C/S4D and P28 remain blocked.
+
+S4B implementation/verification: strict complete budgetMetadata v1 export/parser and canonical identity projection; exact non-calendar dates/status/notes/times through BudgetPlanService's caller-owned creation/history boundary; cross-calendar month validation, preview counts, changed/stripped metadata conflicts and Keep target guards. Historical status/timestamps are set before the initial insert to satisfy existing V50 activation constraints. A reproduced partial-reimport defect now permits the exact retained AS_IS fund identity when source and target are both inactive, without enabling inactive remapping. Six new behavioral tests passed, then 66 cross-feature budget/import/close/auth regressions passed. Final review added explicit persisted microsecond/UTF-8 capacity rejection and immutable nested export values. The first full run was intentionally stopped and restarted after that final snapshot refinement; only the final run owns clean-gate validation. Full clean, production JavaFX, publication and exact-head CI remain pending. No known current test failure remains. No migration/workflow/dependency changes, private financial rows or generated target artifacts are included.
+
+Final S4B clean verification — 2026-10-27 (America/Denver): final `mvn clean verify` passed at **17:49:42 with 1,074 tests, zero failures/errors and 77 expected display skips** (`/tmp/p27-s4b-clean-final.log`). This includes the final immutable snapshot, precision/UTF-8 capacity and all invalid lifecycle cases. Eight governing documents / 174 relative links and whitespace/scope review passed. The production JavaFX selector is running; draft publication and exact-head CI remain next. No human desktop result or GitHub success is claimed. S4B stays VERIFYING; S4C/S4D and P28 stay blocked.
+
+Final S4A exact-head CI and handoff — 2026-10-26 (America/Denver): [Maven PR Tests run 40442798593](https://github.com/benbaron/sca-jakarta-h2/actions/runs/40442798593), job `121987169044`, **passed clean verification, repeated tests and production JavaFX** on published head `a5263d26c2fef9e655c6f13282c90898c14e636d`, tree `e1de7842322381d9f2c8dd7830e0c5e75e10405f`. The PR description records exact-head success and local 1,068-test clean / 69-test actual-display results. No known executed-check failure remains. Native remote and PR head were verified; final source/test/build bytes remain identical. This final local-only PLAN evidence follows the green remote head and is intentionally not pushed solely to restart CI. S4A remains VERIFYING pending owner review/merge. No native human acceptance is invented. Next: verify PR #393 merge/current main, carry this evidence to a fresh S4B branch, inspect BudgetPlan/Line/Category and existing SCLX metadata/identity/import contracts, then preserve full dates/archive/notes/times with explicit compatibility/conflict/rollback tests. S4C transfer links and S4D evidence/integrated acceptance remain incomplete; P28 stays blocked.
+
+Final S4A local gates — 2026-10-26 (America/Denver): final `mvn clean verify` passed at 21:10:06 with **1,068 tests, zero failures/errors, 77 expected display skips**; the exact production JavaFX selector passed under Xvfb at 21:14:37 with **69 tests, zero failures/errors/skips**. Published head `a5263d26c2fef9e655c6f13282c90898c14e636d`, tree `e1de7842322381d9f2c8dd7830e0c5e75e10405f`, matches native remote ref and PR #393 head. Final test/application/schema bytes match that published head. Run `40442798593`, job `121987169044`, is in progress; no CI success or native human check is inferred. The PR description records both local gates. This final evidence stays local to avoid restarting exact-head CI for documentation alone; S4A remains VERIFYING, S4B/C/D remain blocked until their preceding merges, and P28 remains blocked.
 
 S4A draft publication — 2026-10-26 (America/Denver): implementation `248dd8e5c272b7187398c40b5fb062eddbe4c3a6`, tree `386cc4b3b4f79527df7b393d064f80f37a048b25`, was pushed without force to `codex/P27-S4A-portability-audit`. Native fetch and draft [PR #393](https://github.com/benbaron/sca-jakarta-h2/pull/393) confirm the exact matching head on base `76fe8450`. The PR records gaps, test scenarios and owner checks. Full local clean verification passed 1,068 / zero failures/errors / 77 expected display skips, the focused cross-feature suite passed 57, and the final warning-reason subset passed three. Production JavaFX is running. Initial-head CI run `40442749069` has started; no GitHub success is claimed. This publication-only PLAN successor requires verification of its resulting head/tree and CI; it does not change the tested application/test/schema bytes. Status remains VERIFYING until review/merge; parent S4 remains incomplete. Relative documentation links (156) and whitespace/scope review passed; generated target files are excluded.
 
@@ -803,8 +819,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P27-S3B1 | Snapshot-bound external evidence references and review history | DONE | Owner merged PR #391 at 6b1d4a34; final-head clean/repeat/JavaFX passed |
 | P27-S3B2 | Serialize readiness writers and enforce close-time revalidation | DONE | PR #392 merged at 76fe8450; accepted head e3091452 passed clean/repeat/JavaFX workflow 40428989992 |
 | P27-S4 | Complete interchange coverage for all new fields (G4 and cross-cutting) | IN_PROGRESS | [Audit and remaining gates](P27-S4-portability-audit.md); incomplete until S4A–S4D merge |
-| P27-S4A | Durable field inventory and recovery gate | VERIFYING | Fresh merged-base branch; real-file evidence/close and whole-database recovery tests; final local clean passed 1,068 |
-| P27-S4B | Complete budget metadata portability | BLOCKED | S4A merged; preserve fiscal dates, archived state, notes/times and explicit conflicts |
+| P27-S4A | Durable field inventory and recovery gate | DONE | PR #393 merged at 8500d99b; accepted head a5263d26 passed workflow 40442798593 |
+| P27-S4B | Complete budget metadata portability | VERIFYING | [Contract](P27-S4B-budget-metadata.md); six new tests / 66 focused regressions passed; final clean/display/CI remain |
 | P27-S4C | Preserve operational transfer links | BLOCKED | S4B merged; no duplicate canonical accounting; history/retry/conflict/rollback |
 | P27-S4D | Evidence validation and integrated compatibility gate | BLOCKED | S4C merged; typed review-payload validation, full fixture, report/history/conflict/backup acceptance |
 | P28-S1 | Run the complete runbook acceptance matrix | BLOCKED | P27-S4 merged; owning contract and D01–D10 gates as applicable |
