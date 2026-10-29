@@ -136,6 +136,21 @@ public final class SclxImportPreviewService
         structure.warnings().forEach(warning -> messages.add(message(
                 InterchangeMessageSeverity.WARNING, "SCLX_STRUCTURE_WARNING", pathOf(warning), warning, false)));
 
+        try
+        {
+            SclxAuditHistoryImportData.parse(document.root());
+        }
+        catch (IllegalStateException ex)
+        {
+            String detail = Objects.toString(ex.getMessage(), "Invalid audit history");
+            if (detail.length() > 800)
+            {
+                detail = detail.substring(0, 800) + "…";
+            }
+            messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_AUDIT_HISTORY_INVALID",
+                    "$.extensions.scaJakartaH2.auditHistory", detail, true));
+        }
+
         JsonNode identityRoot = document.root();
         try
         {

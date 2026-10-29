@@ -1,5 +1,7 @@
 package org.nonprofitbookkeeping.interchange.sclx;
 
+import org.nonprofitbookkeeping.service.CloseReviewEvidenceService;
+
 import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -339,6 +341,11 @@ public final class SclxExportDocumentValidator
     private static void validateAuditHistory(SclxAuditHistoryExtension.Data data)
     {
         SclxAuditHistoryExtension.requireUniqueIds(data);
+        for (var event : data.events())
+        {
+            CloseReviewEvidenceService.validateRetainedAudit(
+                    event.actionType(), event.entityType(), event.afterValue());
+        }
     }
 
     private static void validateBankConfiguration(
