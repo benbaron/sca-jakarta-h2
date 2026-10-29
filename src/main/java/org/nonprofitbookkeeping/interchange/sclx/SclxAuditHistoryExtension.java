@@ -96,13 +96,27 @@ public final class SclxAuditHistoryExtension
                     SclxExtensionValueReader.text(value, "actor", path),
                     SclxExtensionValueReader.text(value, "actionType", path),
                     SclxExtensionValueReader.text(value, "entityType", path),
-                    SclxExtensionValueReader.optionalText(value, "entityId", path),
+                    historicalText(value, "entityId", path),
                     SclxExtensionValueReader.text(value, "summary", path),
-                    SclxExtensionValueReader.optionalText(value, "beforeValue", path),
-                    SclxExtensionValueReader.optionalText(value, "afterValue", path),
-                    SclxExtensionValueReader.optionalText(value, "reason", path)));
+                    historicalText(value, "beforeValue", path),
+                    historicalText(value, "afterValue", path),
+                    historicalText(value, "reason", path)));
         }
         return new Data(events);
+    }
+
+    private static String historicalText(Map<?, ?> value, String field, String path)
+    {
+        Object text = value.get(field);
+        if (text == null)
+        {
+            return null;
+        }
+        if (!(text instanceof String result))
+        {
+            throw new IllegalArgumentException(path + '.' + field + " must be text or null");
+        }
+        return result;
     }
 
     public static void requireUniqueIds(Data data)

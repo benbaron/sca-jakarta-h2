@@ -113,6 +113,9 @@ public final class AuditHistoryService
             throw new IllegalArgumentException("Audit-history interchange company must be managed and persisted");
         }
 
+        source.forEach(value -> CloseReviewEvidenceService.validateRetainedAudit(
+                value.actionType(), value.entityType(), value.afterValue()));
+
         Set<UUID> portableIds = source.stream()
                 .map(AuditEventImport::portableId)
                 .collect(Collectors.toSet());

@@ -290,17 +290,25 @@ public final class CloseReviewEvidenceService
     {
         try
         {
-            Payload payload = JSON.readValue(event.getAfterValue(), Payload.class);
-            if (payload.version() != 1 || !payload.attested())
-            {
-                throw new IllegalStateException("Unsupported review evidence format");
-            }
-            LocalDate.parse(payload.start()); LocalDate.parse(payload.end()); Instant.parse(payload.capturedAt());
+            Payload payload = CloseReviewPayloadReader.read(event.getAfterValue());
             return new Review(event.getPortableId(), event.getCompany().getCode(), event.getOccurredAt(), event.getActor(), payload);
         }
-        catch (IOException | RuntimeException ex)
+        catch (RuntimeException ex)
         {
             throw new IllegalStateException("Cannot read retained review evidence " + event.getPortableId(), ex);
+        }
+    }
+
+    /** Validates recognized historical review JSON without rewriting it or evaluating target readiness. */
+    public static void validateRetainedAudit(String action, String entity, String afterValue)
+    {
+        if (ACTION.equals(action) || ENTITY.equals(entity))
+        {
+            if (!ACTION.equals(action) || !ENTITY.equals(entity))
+            {
+                throw new IllegalArgumentException("Retained close-review action/entity markers must agree");
+            }
+            CloseReviewPayloadReader.read(afterValue);
         }
     }
 
@@ -309,7 +317,7 @@ public final class CloseReviewEvidenceService
         return text(company.get(), "Company", 80, true).toUpperCase(Locale.ROOT);
     }
 
-    private static String fingerprint(Command command)
+    static String fingerprint(Command command)
     {
         Map<String, Object> facts = new LinkedHashMap<>();
         facts.put("start", command.start().toString()); facts.put("end", command.end().toString());
